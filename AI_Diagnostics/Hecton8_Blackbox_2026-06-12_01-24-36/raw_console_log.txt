@@ -1,0 +1,392 @@
+﻿[Log] [General] [H8Blackbox] Domain reload detected. Recovering PlayMode state machine...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:.cctor () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:37)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate: startTime set to 53.043721 (realTimeSinceStart=31.7565377, timeSinceStartup=53.0441157)
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:223)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate tick: elapsed=0.00171879999999902, startTime=53.043721, timeSinceStartup=53.0454448
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:231)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] InitializeCoreServicesPhaseAsync started
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2894)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] JoinBackgroundDomainHandshakeAsync finished
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2900)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SystemDispatcher
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node SystemDispatcher
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node GameTickManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node GameTickManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SaveManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node SaveManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ObjectPoolManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node ObjectPoolManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node RenderDispatcher
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node RenderDispatcher
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SceneRuntimeService
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node SceneRuntimeService
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EquipmentInteractionHandler
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node EquipmentInteractionHandler
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ModWorldPersistenceManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5261)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Registry] [ModWorldPersistenceManager] Awake: this=-1924, GlobalRegistry.ModWorldPersistence=
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:Awake () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:68)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5262)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<He...
+
+[Log] [General] [ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this=-1924, registered=, ReferenceEquals(registered, this)=False
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:TryAbortForUsableExistingRuntime () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:148)
+Hecton8.Modding.ModWorldPersistenceManager:Awake () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:69)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAs...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService: this=-1924, _serviceShuttingDown=False, GlobalRegistry.ModWorldPersistence=
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:128)
+Hecton8.Modding.ModWorldPersistenceManager:Awake () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:72)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:Move...
+
+[Log] [General] [ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this=-1924, registered=, ReferenceEquals(registered, this)=False
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:TryAbortForUsableExistingRuntime () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:148)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:132)
+Hecton8.Modding.ModWorldPersistenceManager:Awake () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:72)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependenc...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService finished: _serviceRegistered=True, GlobalRegistry.ModWorldPersistence=-1924
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:139)
+Hecton8.Modding.ModWorldPersistenceManager:Awake () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:72)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:Move...
+
+[Log] [General] [ModWorldPersistenceManager] OnEnable: this=-1924, _serviceShuttingDown=False
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:OnEnable () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:77)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5262)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start...
+
+[Log] [General] [ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this=-1924, registered=-1924, ReferenceEquals(registered, this)=True
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:TryAbortForUsableExistingRuntime () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:148)
+Hecton8.Modding.ModWorldPersistenceManager:OnEnable () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:81)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNode...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService: this=-1924, _serviceShuttingDown=False, GlobalRegistry.ModWorldPersistence=-1924
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:128)
+Hecton8.Modding.ModWorldPersistenceManager:OnEnable () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:94)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:M...
+
+[Log] [General] [ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this=-1924, registered=-1924, ReferenceEquals(registered, this)=True
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:TryAbortForUsableExistingRuntime () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:148)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:132)
+Hecton8.Modding.ModWorldPersistenceManager:OnEnable () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:94)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDepend...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService finished: _serviceRegistered=True, GlobalRegistry.ModWorldPersistence=-1924
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:139)
+Hecton8.Modding.ModWorldPersistenceManager:OnEnable () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:94)
+UnityEngine.GameObject:AddComponent<Hecton8.Modding.ModWorldPersistenceManager> ()
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5883)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:M...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService: this=-1924, _serviceShuttingDown=False, GlobalRegistry.ModWorldPersistence=-1924
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:128)
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5887)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5262)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d...
+
+[Log] [General] [ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this=-1924, registered=-1924, ReferenceEquals(registered, this)=True
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:TryAbortForUsableExistingRuntime () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:148)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:132)
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5887)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBoots...
+
+[Log] [Registry] [ModWorldPersistenceManager] InitializeService finished: _serviceRegistered=True, GlobalRegistry.ModWorldPersistence=-1924
+UnityEngine.Debug:Log (object)
+Hecton8.Modding.ModWorldPersistenceManager:InitializeService () (at Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:139)
+Hecton8.Bootstrap.GameBootstrapper:EnsureModWorldPersistenceRegistered () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5887)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapDependencyNode (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5692)
+Hecton8.Bootstrap.GameBootstrapper:TryInitializeBootstrapDependencyNodeWithFallback (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5489)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5262)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d...
+
+[Log] [Bootstrap] [GameBootstrapper] Waiting for heartbeat for node ModWorldPersistenceManager
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5268)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456> (Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3368)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__395&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.Cancella...
+
+[Log] [Bootstrap] [GameBootstrapper] ModWorldPersistenceManager Heartbeat Check: service=-1924, isIServiceHeartbeat=True, IsServiceReady=True, HeartbeatState=Ready
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper:IsBootstrapDependencyHeartbeatReady (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5369)
+Hecton8.Bootstrap.GameBootstrapper/<WaitForBootstrapDependencyHeartbeatAsync>d__457:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5298)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<WaitForBootstrapDependencyHeartbeatAsync>d__457> (Hecton8.Bootstrap.GameBootstrapper/<WaitForBootstrapDependencyHeartbeatAsync>d__457&)
+Hecton8.Bootstrap.GameBootstrapper:WaitForBootstrapDependencyHeartbeatAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapDependencyNode,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__456:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5271)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] InitializeCoreLayerAsync finished
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2909)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] Awaiting WarmObjectPoolPresetsAsync...
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2911)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] WarmObjectPoolPresetsAsync: objectPoolManager=93136, AreWarmupPresetsCompleted=True
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<WarmObjectPoolPresetsAsync>d__373:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2946)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<WarmObjectPoolPresetsAsync>d__373> (Hecton8.Bootstrap.GameBootstrapper/<WarmObjectPoolPresetsAsync>d__373&)
+Hecton8.Bootstrap.GameBootstrapper:WarmObjectPoolPresetsAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2912)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<Run...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] WarmObjectPoolPresetsAsync finished
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2917)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [Bootstrap] [GameBootstrapper-HANG-DIAG] Awaiting InitializePresentationBootstrapAsync...
+UnityEngine.Debug:Log (object)
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2920)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372> (Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__372&)
+Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2425)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1<bool>:Start<Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353> (Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__353&)
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Fu...
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate tick: elapsed=20.2284987, startTime=53.043721, timeSinceStartup=73.2722207
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:231)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 1s snapshot. elapsed=20.2284987, startTime=53.043721, timeSinceStartup=73.2725594
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:237)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 5s snapshot. elapsed=20.2284987, startTime=53.043721, timeSinceStartup=78.0986105
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:244)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 15s final snapshot. elapsed=20.2284987, startTime=53.043721, timeSinceStartup=78.9600617
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:251)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+

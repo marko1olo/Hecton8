@@ -35,6 +35,7 @@ namespace Hecton8.BlackboxDiagnostics
             if (SessionState.GetBool(SS_IS_RUNNING, false))
             {
                 Debug.Log("[H8Blackbox] Domain reload detected. Recovering PlayMode state machine...");
+                SessionState.SetString(SS_START_TIME, "0");
                 // Note: delegates (s_OnComplete, s_Opts) are lost on domain reload.
                 // In a fully persistent system we would serialize the full comparison state machine.
                 // For now, we continue the state machine to collect snapshots and exit playmode,
@@ -183,7 +184,7 @@ namespace Hecton8.BlackboxDiagnostics
             SessionState.SetString(SS_OUTDIR, outDir);
             SessionState.SetString(SS_LABEL, label);
             SessionState.SetString(SS_START_TIME, "0");
-            SessionState.SetString(SS_REAL_START_TIME, EditorApplication.timeSinceStartup.ToString());
+            SessionState.SetString(SS_REAL_START_TIME, EditorApplication.timeSinceStartup.ToString(System.Globalization.CultureInfo.InvariantCulture));
             SessionState.SetFloat(SS_WAIT_LIMIT, waitLimit > 0 ? waitLimit : 15.0f);
             SessionState.SetBool(SS_S1_DONE, false);
             SessionState.SetBool(SS_S5_DONE, false);
@@ -194,6 +195,8 @@ namespace Hecton8.BlackboxDiagnostics
             EditorApplication.update += ActiveOnUpdate;
             EditorApplication.isPlaying = true;
         }
+
+        private static double s_LastLogTime = 0;
 
         private static void ActiveOnUpdate()
         {
@@ -206,70 +209,82 @@ namespace Hecton8.BlackboxDiagnostics
             string label = SessionState.GetString(SS_LABEL, "unknown");
             string outDir = SessionState.GetString(SS_OUTDIR, "");
             float waitLimit = SessionState.GetFloat(SS_WAIT_LIMIT, 15.0f);
-            double totalRealTimeSinceStart = double.Parse(SessionState.GetString(SS_REAL_START_TIME, "0"));
-            double startTime = double.Parse(SessionState.GetString(SS_START_TIME, "0"));
+            double totalRealTimeSinceStart = double.Parse(SessionState.GetString(SS_REAL_START_TIME, "0"), System.Globalization.CultureInfo.InvariantCulture);
+            double startTime = double.Parse(SessionState.GetString(SS_START_TIME, "0"), System.Globalization.CultureInfo.InvariantCulture);
             bool stopRequested = SessionState.GetBool(SS_STOP_REQUESTED, false);
-            double stopRequestedTime = double.Parse(SessionState.GetString(SS_STOP_REQUESTED_TIME, "0"));
-
-            // Timeout safety for start
-            if (!EditorApplication.isPlaying && startTime == 0 && EditorApplication.timeSinceStartup - totalRealTimeSinceStart > 30.0)
-            {
-                Debug.LogError($"[H8Blackbox] PlayMode failed to start within 30s ({label}).");
-                FinishStateMachine(null);
-                return;
-            }
-
-            // Wait for exit
-            if (stopRequested)
-            {
-                if (!EditorApplication.isPlaying)
-                {
-                    // Exit completed
-                    var finalSnapPath = Path.Combine(outDir, $"snapshot_{label.ToLower()}_{waitLimit}s.json");
-                    H8DiagnosticSnapshot finalSnap = null;
-                    if (File.Exists(finalSnapPath))
-                        finalSnap = JsonUtility.FromJson<H8DiagnosticSnapshot>(File.ReadAllText(finalSnapPath));
-                    FinishStateMachine(finalSnap);
-                }
-                else if (EditorApplication.timeSinceStartup - stopRequestedTime > 30.0)
-                {
-                    Debug.LogWarning($"[H8Blackbox] PlayMode did not stop cleanly within 30s ({label}).");
-                    FinishStateMachine(null);
-                }
-                return;
-            }
+            double stopRequestedTime = double.Parse(SessionState.GetString(SS_STOP_REQUESTED_TIME, "0"), System.Globalization.CultureInfo.InvariantCulture);
 
             if (EditorApplication.isPlaying)
             {
                 if (startTime == 0)
                 {
                     startTime = EditorApplication.timeSinceStartup;
-                    SessionState.SetString(SS_START_TIME, startTime.ToString());
+                    SessionState.SetString(SS_START_TIME, startTime.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                    Debug.Log($"[H8Blackbox] ActiveOnUpdate: startTime set to {startTime} (realTimeSinceStart={totalRealTimeSinceStart}, timeSinceStartup={EditorApplication.timeSinceStartup})");
                 }
                 
                 double elapsed = EditorApplication.timeSinceStartup - startTime;
                 
+                if (EditorApplication.timeSinceStartup - s_LastLogTime >= 1.0)
+                {
+                    s_LastLogTime = EditorApplication.timeSinceStartup;
+                    Debug.Log($"[H8Blackbox] ActiveOnUpdate tick: elapsed={elapsed}, startTime={startTime}, timeSinceStartup={EditorApplication.timeSinceStartup}");
+                }
+                
                 if (elapsed >= 1.0 && !SessionState.GetBool(SS_S1_DONE, false))
                 {
                     SessionState.SetBool(SS_S1_DONE, true);
+                    Debug.Log($"[H8Blackbox] Capturing 1s snapshot. elapsed={elapsed}, startTime={startTime}, timeSinceStartup={EditorApplication.timeSinceStartup}");
                     var snap = H8Collectors.CollectFullSnapshot(s_Opts, $"PlayMode_{label}_1s");
                     H8Writers.WriteSnapshot(outDir, snap, $"snapshot_{label.ToLower()}_1s.json");
                 }
                 if (elapsed >= 5.0 && !SessionState.GetBool(SS_S5_DONE, false) && waitLimit >= 5.0)
                 {
                     SessionState.SetBool(SS_S5_DONE, true);
+                    Debug.Log($"[H8Blackbox] Capturing 5s snapshot. elapsed={elapsed}, startTime={startTime}, timeSinceStartup={EditorApplication.timeSinceStartup}");
                     var snap = H8Collectors.CollectFullSnapshot(s_Opts, $"PlayMode_{label}_5s");
                     H8Writers.WriteSnapshot(outDir, snap, $"snapshot_{label.ToLower()}_5s.json");
                 }
                 if (elapsed >= waitLimit && !SessionState.GetBool(SS_S15_DONE, false))
                 {
                     SessionState.SetBool(SS_S15_DONE, true);
+                    Debug.Log($"[H8Blackbox] Capturing {waitLimit}s final snapshot. elapsed={elapsed}, startTime={startTime}, timeSinceStartup={EditorApplication.timeSinceStartup}");
                     var finalSnap = H8Collectors.CollectFullSnapshot(s_Opts, $"PlayMode_{label}_{waitLimit}s");
                     H8Writers.WriteSnapshot(outDir, finalSnap, $"snapshot_{label.ToLower()}_{waitLimit}s.json");
                     
                     SessionState.SetBool(SS_STOP_REQUESTED, true);
-                    SessionState.SetString(SS_STOP_REQUESTED_TIME, EditorApplication.timeSinceStartup.ToString());
+                    SessionState.SetString(SS_STOP_REQUESTED_TIME, EditorApplication.timeSinceStartup.ToString(System.Globalization.CultureInfo.InvariantCulture));
                     EditorApplication.isPlaying = false;
+                }
+            }
+            else
+            {
+                // Timeout safety for start
+                if (startTime == 0 && EditorApplication.timeSinceStartup - totalRealTimeSinceStart > 30.0)
+                {
+                    Debug.LogError($"[H8Blackbox] PlayMode failed to start within 30s ({label}).");
+                    FinishStateMachine(null);
+                    return;
+                }
+
+                // Wait for exit
+                if (stopRequested)
+                {
+                    if (!EditorApplication.isPlaying)
+                    {
+                        // Exit completed
+                        var finalSnapPath = Path.Combine(outDir, $"snapshot_{label.ToLower()}_{waitLimit}s.json");
+                        H8DiagnosticSnapshot finalSnap = null;
+                        if (File.Exists(finalSnapPath))
+                            finalSnap = JsonUtility.FromJson<H8DiagnosticSnapshot>(File.ReadAllText(finalSnapPath));
+                        FinishStateMachine(finalSnap);
+                    }
+                    else if (EditorApplication.timeSinceStartup - stopRequestedTime > 30.0)
+                    {
+                        Debug.LogWarning($"[H8Blackbox] PlayMode did not stop cleanly within 30s ({label}).");
+                        FinishStateMachine(null);
+                    }
+                    return;
                 }
             }
         }
@@ -306,6 +321,7 @@ namespace Hecton8.BlackboxDiagnostics
             {
                 var findings = H8FindingsEngine.Analyze(snap);
                 WriteOutput(outDir, snap, findings, SessionState.GetString(SS_LABEL, "PlayMode"));
+                if (Application.isBatchMode) EditorApplication.Exit(0);
             }
             else if (phase == 1) // Finished Direct
             {

@@ -2828,6 +2828,7 @@ namespace Hecton8.Core.Memory
             if (!_initialized)
             {
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                array = default;
                 return;
             }
 
@@ -2868,6 +2869,7 @@ namespace Hecton8.Core.Memory
             if (!_initialized)
             {
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                array = default;
                 return dependency;
             }
 

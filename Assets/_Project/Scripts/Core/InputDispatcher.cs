@@ -4813,6 +4813,12 @@ namespace Hecton8.Core
 
         public static async Awaitable NextFrameAsync(CancellationToken cancellationToken = default)
         {
+            if (UnityEngine.Application.isBatchMode)
+            {
+                await System.Threading.Tasks.Task.Yield();
+                await Awaitable.MainThreadAsync();
+                return;
+            }
             int pending = Interlocked.Increment(ref _pendingNextFrameContinuations);
             RecordPeakNextFrameContinuations(pending);
             try

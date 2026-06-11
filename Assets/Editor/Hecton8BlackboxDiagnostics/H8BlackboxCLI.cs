@@ -21,7 +21,7 @@ namespace Hecton8.BlackboxDiagnostics
                 includeEditorLogTail = true,
                 includeGitDiff = true,
                 includePlayModeDiff = true,
-                playModeWaitSeconds = 15f
+                playModeWaitSeconds = 60f
             };
         }
 
