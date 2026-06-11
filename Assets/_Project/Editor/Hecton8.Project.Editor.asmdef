@@ -11,6 +11,7 @@
         "Hecton8.Crest.Bridge.Editor",
         "Hecton8.Rendering.OceanSinglePass",
         "Hecton8.Dev.SpaceEngine098",
+        "Hecton8.SpaceEngine098Terrain",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "Unity.Collections",

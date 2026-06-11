@@ -65,6 +65,7 @@ namespace Hecton8.Modding
 
         private void Awake()
         {
+            Debug.Log($"[ModWorldPersistenceManager] Awake: this={this.GetHashCode()}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             if (TryAbortForUsableExistingRuntime())
                 return;
 
@@ -73,6 +74,7 @@ namespace Hecton8.Modding
 
         private void OnEnable()
         {
+            Debug.Log($"[ModWorldPersistenceManager] OnEnable: this={this.GetHashCode()}, _serviceShuttingDown={_serviceShuttingDown}");
             if (_serviceShuttingDown)
                 return;
 
@@ -94,6 +96,7 @@ namespace Hecton8.Modding
 
         private void OnDisable()
         {
+            Debug.Log($"[ModWorldPersistenceManager] OnDisable: this={this.GetHashCode()}, _serviceRegistered={_serviceRegistered}");
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             if (_bootstrapListenerRegistered)
             {
@@ -122,6 +125,7 @@ namespace Hecton8.Modding
 
         public void InitializeService()
         {
+            Debug.Log($"[ModWorldPersistenceManager] InitializeService: this={this.GetHashCode()}, _serviceShuttingDown={_serviceShuttingDown}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             if (_serviceShuttingDown || !Application.isPlaying)
                 return;
 
@@ -132,6 +136,7 @@ namespace Hecton8.Modding
                 GlobalRegistry.RegisterModWorldPersistenceRuntime(this);
 
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ModWorldPersistence, this);
+            Debug.Log($"[ModWorldPersistenceManager] InitializeService finished: _serviceRegistered={_serviceRegistered}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             TryRegisterHotSwapListener();
             RefreshColdRegistryDependencies();
             TryRegisterWithSaveManager();
@@ -140,29 +145,35 @@ namespace Hecton8.Modding
         private bool TryAbortForUsableExistingRuntime()
         {
             ModWorldPersistenceManager registered = GlobalRegistry.ModWorldPersistence;
+            Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this={this.GetHashCode()}, registered={registered?.GetHashCode()}, ReferenceEquals(registered, this)={ReferenceEquals(registered, this)}");
             if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
                 return false;
 
             if (IsModWorldPersistenceRuntimeUsable(registered))
             {
+                Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime -> ABORTING (registered is usable)");
                 Destroy(gameObject);
                 return true;
             }
 
+            Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime -> registered is NOT usable, unregistering registered");
             GlobalRegistry.UnregisterModWorldPersistenceRuntime(registered);
             return false;
         }
 
         private static bool IsModWorldPersistenceRuntimeUsable(ModWorldPersistenceManager manager)
         {
-            return manager != null &&
+            bool usable = manager != null &&
                    manager._serviceRegistered &&
                    !manager._serviceShuttingDown &&
                    manager.isActiveAndEnabled;
+            Debug.Log($"[ModWorldPersistenceManager] IsModWorldPersistenceRuntimeUsable: manager={manager?.GetHashCode()}, usable={usable} (manager!=null={manager!=null}, _serviceRegistered={manager?._serviceRegistered}, !_serviceShuttingDown={manager != null && !manager._serviceShuttingDown}, isActiveAndEnabled={manager != null && manager.isActiveAndEnabled})");
+            return usable;
         }
 
         public void OnServiceShutdown()
         {
+            Debug.Log($"[ModWorldPersistenceManager] OnServiceShutdown: this={this.GetHashCode()}");
             if (_serviceShutdownComplete)
                 return;
 
