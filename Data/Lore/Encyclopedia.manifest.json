@@ -1,13 +1,8 @@
 {
   "alignment_bytes": 16,
   "blob": "Data/Lore/Encyclopedia.h8bin",
-<<<<<<< HEAD
-  "blob_length": 7681584,
-  "blob_sha256": "E7CFE288143BC248EA481D271781BF20491843EFB6DD89A970F5057BDCC9751E",
-=======
-  "blob_length": 7674800,
-  "blob_sha256": "B9F6450A3290D1C0C0A05815262D0FFE985A471A1FC98FB954F01287BEE0C70A",
->>>>>>> origin/jules-2390195947671511092-703be00c
+  "blob_length": 7674784,
+  "blob_sha256": "D221915226EC1FD0F9AFB1B2067E03683A4724D1A623491821028C8C81E6D584",
   "btree_alignment_bytes": 64,
   "btree_node_struct_format": "<16I",
   "compression": "none/raw-utf8",
@@ -5947,26 +5942,17 @@
     {
       "hash": "0xC2C8AC33",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_en_US",
-<<<<<<< HEAD
-      "length": 11261,
-      "offset": 5961104,
-=======
-      "length": 11175,
+      "length": 11155,
       "offset": 5955776,
->>>>>>> origin/jules-2390195947671511092-703be00c
       "pad": 0,
-      "sha256": "59227790E1411C21F6549E8E31A4148A333C4B04DFD43C6F9EDFAC052211868C",
+      "sha256": "2F6E4E942FFD26A1605C0FC959D639E268AC650A4F5F2AB0033975AD402A470B",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_en_US.md"
     },
     {
       "hash": "0xC3F90945",
       "id": "HECTON8_Depth_Bands",
       "length": 2034,
-<<<<<<< HEAD
-      "offset": 5972368,
-=======
-      "offset": 5966960,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 5966944,
       "pad": 0,
       "sha256": "F3E581EF7EE490F69B72F11F5E0F58E1B5802F47727160357C2977534FC8F586",
       "source": "Docs/Lore/Encyclopedia/HECTON8_Depth_Bands.md"
@@ -5975,11 +5961,7 @@
       "hash": "0xC40E69CB",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_he_IL",
       "length": 15842,
-<<<<<<< HEAD
-      "offset": 5974416,
-=======
-      "offset": 5969008,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 5968992,
       "pad": 0,
       "sha256": "C752085D3ADB76ED74E33CFC0B92DCC446FBBE4F9ADD94B470D8C8A38C238FDF",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_he_IL.md"
@@ -5988,11 +5970,7 @@
       "hash": "0xC434AFDA",
       "id": "Relay_Spine",
       "length": 1051,
-<<<<<<< HEAD
-      "offset": 5990272,
-=======
-      "offset": 5984864,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 5984848,
       "pad": 0,
       "sha256": "B89A2AB189D5AC3BA11535A8B5568BA4656ECBA2301D26A1DC81356281E6CE2B",
       "source": "Docs/Lore/Encyclopedia/Relay_Spine.md"
@@ -6001,11 +5979,7 @@
       "hash": "0xC674809C",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_ar_SA",
       "length": 7496,
-<<<<<<< HEAD
-      "offset": 5991328,
-=======
-      "offset": 5985920,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 5985904,
       "pad": 0,
       "sha256": "84C823A1EFE5501BB0ADCF1896275F287C58532DEFA99D0F6D6D961505439052",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_ar_SA.md"
@@ -6014,11 +5988,7 @@
       "hash": "0xC71F8E9D",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_es_ES",
       "length": 8026,
-<<<<<<< HEAD
-      "offset": 5998832,
-=======
-      "offset": 5993424,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 5993408,
       "pad": 0,
       "sha256": "2004CA227169A9445B92D89C4579909579CFC9647744205D4ADB50B1F74DE3ED",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_es_ES.md"
@@ -6026,13 +5996,8 @@
     {
       "hash": "0xC731663A",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_tr_TR",
-<<<<<<< HEAD
-      "length": 3601,
-      "offset": 6006864,
-=======
       "length": 3570,
-      "offset": 6001456,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6001440,
       "pad": 0,
       "sha256": "C1AFB4B1075C33A690A9756B03E9F4D52A73B3292741A7B49A2EEC47D6BBCC53",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_tr_TR.md"
@@ -6041,11 +6006,7 @@
       "hash": "0xC772A58D",
       "id": "Atlas_6",
       "length": 1304,
-<<<<<<< HEAD
-      "offset": 6010480,
-=======
-      "offset": 6005040,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6005024,
       "pad": 0,
       "sha256": "A98ECD6B466A4F0D6F8B17CB52511F59D8E089E7CA4F15434A88431676B32F25",
       "source": "Docs/Lore/Encyclopedia/Atlas_6.md"
@@ -6054,11 +6015,7 @@
       "hash": "0xC7D6D632",
       "id": "29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_pt_BR",
       "length": 6508,
-<<<<<<< HEAD
-      "offset": 6011792,
-=======
-      "offset": 6006352,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6006336,
       "pad": 0,
       "sha256": "7FEAAE7F63CD110A05433B8F2AADC4B1749754414F83A7BFE01664E9EF9E2A87",
       "source": "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_pt_BR.md"
@@ -6067,11 +6024,7 @@
       "hash": "0xC8290430",
       "id": "21_THE_STYX_DROP_PODS_pl_PL",
       "length": 10660,
-<<<<<<< HEAD
-      "offset": 6018304,
-=======
-      "offset": 6012864,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6012848,
       "pad": 0,
       "sha256": "EA0045D255AB6D9B567DCB73E9ABF45A521A4B38D5F3B7353EE0250670DB3128",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_pl_PL.md"
@@ -6079,13 +6032,8 @@
     {
       "hash": "0xC859B172",
       "id": "21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_fr_FR",
-<<<<<<< HEAD
-      "length": 8960,
-      "offset": 6028976,
-=======
       "length": 8898,
-      "offset": 6023536,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6023520,
       "pad": 0,
       "sha256": "9BA201EC95945AD4752EBA1D80B1AE868C5DADF09D5114F2A27B2DC59AAF1A01",
       "source": "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_fr_FR.md"
@@ -6094,11 +6042,7 @@
       "hash": "0xC87A3D6B",
       "id": "33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_ar_SA",
       "length": 7542,
-<<<<<<< HEAD
-      "offset": 6037936,
-=======
-      "offset": 6032448,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6032432,
       "pad": 0,
       "sha256": "8C15E5AA1E50D85E3FB6686BF4E34EA9FD898B43DAD8AA1F4FDED4019820846F",
       "source": "Docs/Lore/Grand_Library/33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_ar_SA.md"
@@ -6107,11 +6051,7 @@
       "hash": "0xC8E28F16",
       "id": "07_SUBMARINE_TECH_AND_DIVING_SUITS_zh_CN",
       "length": 9647,
-<<<<<<< HEAD
-      "offset": 6045488,
-=======
-      "offset": 6040000,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6039984,
       "pad": 0,
       "sha256": "E227840B0039968F6139085F24DAB8BE1DE87913F1DAFBCFB46C50A61F979E0C",
       "source": "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_zh_CN.md"
@@ -6120,11 +6060,7 @@
       "hash": "0xC9348B64",
       "id": "27_THE_HISTORY_OF_DEEP_REACH_fr_FR",
       "length": 2403,
-<<<<<<< HEAD
-      "offset": 6055136,
-=======
-      "offset": 6049648,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6049632,
       "pad": 0,
       "sha256": "F112E4F337D757FFA235F448E72074CE7397CC030331E5144AAFFB1FAE85A8E8",
       "source": "Docs/Lore/Grand_Library/27_THE_HISTORY_OF_DEEP_REACH_fr_FR.md"
@@ -6133,11 +6069,7 @@
       "hash": "0xC9761DED",
       "id": "Ending_Dossiers",
       "length": 35278,
-<<<<<<< HEAD
-      "offset": 6057552,
-=======
-      "offset": 6052064,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6052048,
       "pad": 0,
       "sha256": "40EC1234F90AEC401BF094834C3B1C6EF5252B20E1526C503AA5E84BDADB1C94",
       "source": "Docs/Lore/Encyclopedia/Ending_Dossiers.md"
@@ -6145,13 +6077,8 @@
     {
       "hash": "0xC9FE53C7",
       "id": "17_THE_RUINS_OF_SECTOR_44_uk_UA",
-<<<<<<< HEAD
-      "length": 4975,
-      "offset": 6092832,
-=======
       "length": 4943,
-      "offset": 6087344,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6087328,
       "pad": 0,
       "sha256": "C72022702B498903BDB3C33D96140273EEBA3B1AECB352087BDA5ED42CE15DCB",
       "source": "Docs/Lore/Grand_Library/17_THE_RUINS_OF_SECTOR_44_uk_UA.md"
@@ -6160,11 +6087,7 @@
       "hash": "0xCA33ED7F",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_ru_RU",
       "length": 13180,
-<<<<<<< HEAD
-      "offset": 6097808,
-=======
-      "offset": 6092288,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6092272,
       "pad": 0,
       "sha256": "AEF4F927C5F95E0F4D6F69B7C02606D8F1F90791F4FFC1B08DD99A5E02AADDA1",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_ru_RU.md"
@@ -6173,11 +6096,7 @@
       "hash": "0xCA5A71CF",
       "id": "BETHESDA_ENCYCLOPEDIA_CANON_en_US",
       "length": 4467,
-<<<<<<< HEAD
-      "offset": 6110992,
-=======
-      "offset": 6105472,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6105456,
       "pad": 0,
       "sha256": "783E3A9A5B5B13AD96A18545295C2A967A3DE4569B4D47BE37DE8730CA145EC9",
       "source": "Docs/Lore/BETHESDA_ENCYCLOPEDIA_CANON_en_US.md"
@@ -6186,11 +6105,7 @@
       "hash": "0xCA86A463",
       "id": "06_THE_XENON_OMEGA_CONSPIRACY_en_US",
       "length": 9312,
-<<<<<<< HEAD
-      "offset": 6115472,
-=======
-      "offset": 6109952,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6109936,
       "pad": 0,
       "sha256": "FC4160D4F62E18C7F79ACB097C086B8957793139D39B1F8A6E31C52B02223230",
       "source": "Docs/Lore/Grand_Library/06_THE_XENON_OMEGA_CONSPIRACY_en_US.md"
@@ -6198,13 +6113,8 @@
     {
       "hash": "0xCAB2AFDD",
       "id": "19_THE_DEBT_LEDGER_pt_BR",
-<<<<<<< HEAD
-      "length": 3337,
-      "offset": 6124784,
-=======
       "length": 3305,
-      "offset": 6119264,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6119248,
       "pad": 0,
       "sha256": "44D3C4F270FD30F76B9134043F0C834AA7EFBB6069C86C8CE13C36870127931A",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_pt_BR.md"
@@ -6213,11 +6123,7 @@
       "hash": "0xCABA632E",
       "id": "CP05_Atlas_Repair_Scars",
       "length": 4072,
-<<<<<<< HEAD
-      "offset": 6128128,
-=======
-      "offset": 6122576,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6122560,
       "pad": 0,
       "sha256": "9DC1658A48C1E9A47F432F12A0CCF20922FBE3B5CA481486693BA0E961178C21",
       "source": "Docs/Lore/ContentPacks/CP05_Atlas_Repair_Scars.md"
@@ -6226,11 +6132,7 @@
       "hash": "0xCAF4369A",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_ar_SA",
       "length": 16793,
-<<<<<<< HEAD
-      "offset": 6132208,
-=======
-      "offset": 6126656,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6126640,
       "pad": 0,
       "sha256": "6E7C059DFEBEDC1ABC4E5E5FC2F8ADE210D091016EB25F9954608B5FB03618F6",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_ar_SA.md"
@@ -6239,11 +6141,7 @@
       "hash": "0xCAF61FD3",
       "id": "Aegir_Moon_System",
       "length": 2700,
-<<<<<<< HEAD
-      "offset": 6149008,
-=======
-      "offset": 6143456,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6143440,
       "pad": 0,
       "sha256": "AA67556D6F2D0315D339883F49C820A4D9B11C23910449135AF11D64EACBB51B",
       "source": "Docs/Lore/Encyclopedia/Aegir_Moon_System.md"
@@ -6252,11 +6150,7 @@
       "hash": "0xCB04AD9B",
       "id": "44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_es_ES",
       "length": 8724,
-<<<<<<< HEAD
-      "offset": 6151712,
-=======
-      "offset": 6146160,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6146144,
       "pad": 0,
       "sha256": "9BFA015EA62D4E12F48BFD8319EFA971345FD4ADDF90CDC76E217DDEF67BFF1A",
       "source": "Docs/Lore/Grand_Library/44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_es_ES.md"
@@ -6265,11 +6159,7 @@
       "hash": "0xCB24C509",
       "id": "05_MARAUDER_AND_CORP_CULTURE_zh_CN",
       "length": 9909,
-<<<<<<< HEAD
-      "offset": 6160448,
-=======
-      "offset": 6154896,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6154880,
       "pad": 0,
       "sha256": "7C404F93FB8B41C4D2B7380BA60C5C73BC98CDEBB540CB48253D167159DB674F",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_zh_CN.md"
@@ -6278,11 +6168,7 @@
       "hash": "0xCBC4967B",
       "id": "12_THE_CULTS_OF_THE_ABYSS_de_DE",
       "length": 9788,
-<<<<<<< HEAD
-      "offset": 6170368,
-=======
-      "offset": 6164816,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6164800,
       "pad": 0,
       "sha256": "8558D37B28538651FA690CA1E65B1E15912EEDEBE026A098B3B8B09A2D34477E",
       "source": "Docs/Lore/Grand_Library/12_THE_CULTS_OF_THE_ABYSS_de_DE.md"
@@ -6290,13 +6176,8 @@
     {
       "hash": "0xCBC75CBE",
       "id": "18_THE_IRON_KELP_FORESTS_en_US",
-<<<<<<< HEAD
-      "length": 2752,
-      "offset": 6180160,
-=======
       "length": 2720,
-      "offset": 6174608,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6174592,
       "pad": 0,
       "sha256": "761B00796667D92B66F8535CCEB641DA56EAB38EAD63A099659FAA39BB141481",
       "source": "Docs/Lore/Grand_Library/18_THE_IRON_KELP_FORESTS_en_US.md"
@@ -6305,11 +6186,7 @@
       "hash": "0xCBE3F3C5",
       "id": "23_THE_ABYSSAL_MINING_RIGS_id_ID",
       "length": 2803,
-<<<<<<< HEAD
-      "offset": 6182912,
-=======
-      "offset": 6177328,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6177312,
       "pad": 0,
       "sha256": "1D7D117FCC58373F592A538511E26F72C435639F848424347E64A28837381459",
       "source": "Docs/Lore/Grand_Library/23_THE_ABYSSAL_MINING_RIGS_id_ID.md"
@@ -6317,13 +6194,8 @@
     {
       "hash": "0xCC1602DD",
       "id": "17_THE_RUINS_OF_SECTOR_44_nl_NL",
-<<<<<<< HEAD
-      "length": 3203,
-      "offset": 6185728,
-=======
       "length": 3171,
-      "offset": 6180144,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6180128,
       "pad": 0,
       "sha256": "B78580FE9CE9D1C9C4B5A5DA9DC28E5696928F01CAEADC14BB22CB8907FD30ED",
       "source": "Docs/Lore/Grand_Library/17_THE_RUINS_OF_SECTOR_44_nl_NL.md"
@@ -6332,11 +6204,7 @@
       "hash": "0xCC1BC20E",
       "id": "43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_ru_RU",
       "length": 16772,
-<<<<<<< HEAD
-      "offset": 6188944,
-=======
-      "offset": 6183328,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6183312,
       "pad": 0,
       "sha256": "26445020D549A258C51D8C0BDDF6965DB849817B1A39FC64F53EE41784D8FF5E",
       "source": "Docs/Lore/Grand_Library/43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_ru_RU.md"
@@ -6345,11 +6213,7 @@
       "hash": "0xCC3177CC",
       "id": "25_ASTRONOMY_AND_THE_BLACK_KEEL_zh_CN",
       "length": 8031,
-<<<<<<< HEAD
-      "offset": 6205728,
-=======
-      "offset": 6200112,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6200096,
       "pad": 0,
       "sha256": "A7D44489621411E57CA8043B78D3B3203F7A907CE3F9F4AB316800357294EF8E",
       "source": "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_zh_CN.md"
@@ -6358,11 +6222,7 @@
       "hash": "0xCC46727E",
       "id": "24_THE_DEBT_LEDGER_zh_CN",
       "length": 4001,
-<<<<<<< HEAD
-      "offset": 6213760,
-=======
-      "offset": 6208144,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6208128,
       "pad": 0,
       "sha256": "E94EB568E5A7266390A7F040939F534237E3BF2F9ABC244F3E0DE2F1B4B7127D",
       "source": "Docs/Lore/Grand_Library/24_THE_DEBT_LEDGER_zh_CN.md"
@@ -6371,11 +6231,7 @@
       "hash": "0xCC973970",
       "id": "Human_Domains",
       "length": 1544,
-<<<<<<< HEAD
-      "offset": 6217776,
-=======
-      "offset": 6212160,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6212144,
       "pad": 0,
       "sha256": "A88CC87E5FDEFEDEB3C8CAF4CA6ACD7A6B24C737209937DED40F1CA53A0F57E9",
       "source": "Docs/Lore/Encyclopedia/Human_Domains.md"
@@ -6384,11 +6240,7 @@
       "hash": "0xCCA2F84D",
       "id": "40_PING_GHOSTS_QUIET_WORK_AND_LISTENING_DISCIPLINE_pl_PL",
       "length": 7347,
-<<<<<<< HEAD
-      "offset": 6219328,
-=======
-      "offset": 6213712,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6213696,
       "pad": 0,
       "sha256": "A138A7B46B38524E045C330AC7C493820B075EDA6551E046F5CBF2D0D5FB4C79",
       "source": "Docs/Lore/Grand_Library/40_PING_GHOSTS_QUIET_WORK_AND_LISTENING_DISCIPLINE_pl_PL.md"
@@ -6397,11 +6249,7 @@
       "hash": "0xCCC3AF3D",
       "id": "41_FLOODLINES_FALSE_DRYNESS_AND_LEAK_DISCIPLINE_ar_SA",
       "length": 12934,
-<<<<<<< HEAD
-      "offset": 6226688,
-=======
-      "offset": 6221072,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6221056,
       "pad": 0,
       "sha256": "CE68E2BE37815DA68832FFD040090E4D50AD995CCCA76DA289B9398E32DAA320",
       "source": "Docs/Lore/Grand_Library/41_FLOODLINES_FALSE_DRYNESS_AND_LEAK_DISCIPLINE_ar_SA.md"
@@ -6409,13 +6257,8 @@
     {
       "hash": "0xCCF30A65",
       "id": "20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_pl_PL",
-<<<<<<< HEAD
-      "length": 10267,
-      "offset": 6239632,
-=======
       "length": 10185,
-      "offset": 6234016,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6234000,
       "pad": 0,
       "sha256": "2E87AE459C32DD89DFDC4CCCBA60E2BED9B390A94456C2358FE5BC6F210E1FB6",
       "source": "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_pl_PL.md"
@@ -6423,13 +6266,8 @@
     {
       "hash": "0xCD3C1FA8",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_it_IT",
-<<<<<<< HEAD
-      "length": 3073,
-      "offset": 6249904,
-=======
       "length": 3042,
-      "offset": 6244208,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6244192,
       "pad": 0,
       "sha256": "2ADD021362608093C50027503EE576A1528A544536861C7F74846BF8232C5650",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_it_IT.md"
@@ -6438,11 +6276,7 @@
       "hash": "0xCDAA9AEC",
       "id": "01_ASTRONOMY_AND_HISTORY_pt_BR",
       "length": 10469,
-<<<<<<< HEAD
-      "offset": 6252992,
-=======
-      "offset": 6247264,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6247248,
       "pad": 0,
       "sha256": "01560EAD92980A91A9AAAEC5717AA264B4F4FEA2AFA998BEDBF4B35AA652E8E9",
       "source": "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_pt_BR.md"
@@ -6451,11 +6285,7 @@
       "hash": "0xCE7F398E",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_he_IL",
       "length": 11077,
-<<<<<<< HEAD
-      "offset": 6263472,
-=======
-      "offset": 6257744,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6257728,
       "pad": 0,
       "sha256": "EC80FD4AC0D93B85048360D7D12D2CAC3994FA80625E71EA732A2845C7D5378F",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_he_IL.md"
@@ -6464,11 +6294,7 @@
       "hash": "0xCEB42092",
       "id": "Deep_Reach_Liability_Doctrine",
       "length": 1748,
-<<<<<<< HEAD
-      "offset": 6274560,
-=======
-      "offset": 6268832,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6268816,
       "pad": 0,
       "sha256": "B15AA2BC580A1646A61D00B54D12250E0C5690E9B46EEF5A151EA3F6BB91ABB1",
       "source": "Docs/Lore/Encyclopedia/Deep_Reach_Liability_Doctrine.md"
@@ -6477,11 +6303,7 @@
       "hash": "0xCEE48ECC",
       "id": "35_CLAIM_MARKS_CUSTODY_TAGS_AND_SALVAGE_MANNERS_uk_UA",
       "length": 9634,
-<<<<<<< HEAD
-      "offset": 6276320,
-=======
-      "offset": 6270592,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6270576,
       "pad": 0,
       "sha256": "FC770CA7D849E5C5345CAC6A5907D0FCCA79B274FF4A3093A6DB48F9FB6DB6F7",
       "source": "Docs/Lore/Grand_Library/35_CLAIM_MARKS_CUSTODY_TAGS_AND_SALVAGE_MANNERS_uk_UA.md"
@@ -6490,11 +6312,7 @@
       "hash": "0xCF5035CB",
       "id": "25_ASTRONOMY_AND_THE_BLACK_KEEL_fr_FR",
       "length": 10248,
-<<<<<<< HEAD
-      "offset": 6285968,
-=======
-      "offset": 6280240,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6280224,
       "pad": 0,
       "sha256": "4BBD7C872A442D1B57B16037DD397371AEDFE7150F553D044B86C089F2D0C822",
       "source": "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_fr_FR.md"
@@ -6503,11 +6321,7 @@
       "hash": "0xCF5AA36A",
       "id": "06_THE_XENON_OMEGA_CONSPIRACY_tr_TR",
       "length": 3502,
-<<<<<<< HEAD
-      "offset": 6296224,
-=======
-      "offset": 6290496,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6290480,
       "pad": 0,
       "sha256": "3E8030B2DB3033D2DF9EB8218EE6539C8FB49FB7177282E77F3394A549C660CA",
       "source": "Docs/Lore/Grand_Library/06_THE_XENON_OMEGA_CONSPIRACY_tr_TR.md"
@@ -6516,11 +6330,7 @@
       "hash": "0xCFAA10F2",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_pl_PL",
       "length": 11530,
-<<<<<<< HEAD
-      "offset": 6299728,
-=======
-      "offset": 6294000,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6293984,
       "pad": 0,
       "sha256": "56022E33C7440A5BA26A6DC752B94CC832790C96C78A00CC0A7BEE534499EC82",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_pl_PL.md"
@@ -6528,13 +6338,8 @@
     {
       "hash": "0xD0036AA4",
       "id": "21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_uk_UA",
-<<<<<<< HEAD
-      "length": 12080,
-      "offset": 6311264,
-=======
       "length": 12020,
-      "offset": 6305536,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6305520,
       "pad": 0,
       "sha256": "DFAD52261C474E67E0B09FB8DE0A08DE4F8742E718B684F10381C56FC554E0F8",
       "source": "Docs/Lore/Grand_Library/21_THE_BATHYMETRIC_BANDS_AND_ABYSSAL_SOUND_uk_UA.md"
@@ -6543,11 +6348,7 @@
       "hash": "0xD0332A97",
       "id": "28_DEAD_CLAIMS_AND_SALVAGE_LAW_fr_FR",
       "length": 6002,
-<<<<<<< HEAD
-      "offset": 6323344,
-=======
-      "offset": 6317568,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6317552,
       "pad": 0,
       "sha256": "2A4984674DF16DE7DDA5A6AE0ED5F32E3FBF71B7B305BCE3FDC96352C56371E1",
       "source": "Docs/Lore/Grand_Library/28_DEAD_CLAIMS_AND_SALVAGE_LAW_fr_FR.md"
@@ -6556,11 +6357,7 @@
       "hash": "0xD12D37A5",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_ru_RU",
       "length": 22025,
-<<<<<<< HEAD
-      "offset": 6329360,
-=======
-      "offset": 6323584,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6323568,
       "pad": 0,
       "sha256": "7053B4E775EE07B99EB6A4C32062707105F2DB00F1736A6C14408290EDA1EA93",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_ru_RU.md"
@@ -6569,11 +6366,7 @@
       "hash": "0xD1391F2D",
       "id": "16_CLASS_IV_DIVING_SUITS_AND_EQUIPMENT_es_ES",
       "length": 11247,
-<<<<<<< HEAD
-      "offset": 6351392,
-=======
-      "offset": 6345616,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6345600,
       "pad": 0,
       "sha256": "12A7B561957E1EDC13179C026E90BB656F1620F372BB1C17135EDC5075925293",
       "source": "Docs/Lore/Grand_Library/16_CLASS_IV_DIVING_SUITS_AND_EQUIPMENT_es_ES.md"
@@ -6582,11 +6375,7 @@
       "hash": "0xD15552DD",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_pt_BR",
       "length": 5816,
-<<<<<<< HEAD
-      "offset": 6362640,
-=======
-      "offset": 6356864,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6356848,
       "pad": 0,
       "sha256": "6BC914B86116FC938F58E10C0211C97B31F0741D03572B6024EEE1CB6A9A6628",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_pt_BR.md"
@@ -6595,11 +6384,7 @@
       "hash": "0xD190A4B9",
       "id": "40_PING_GHOSTS_QUIET_WORK_AND_LISTENING_DISCIPLINE_fr_FR",
       "length": 7941,
-<<<<<<< HEAD
-      "offset": 6368464,
-=======
-      "offset": 6362688,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6362672,
       "pad": 0,
       "sha256": "ABF22312958A814F27545F22481FB682B070B3890A8D03BCE4C7A4CE617BFE10",
       "source": "Docs/Lore/Grand_Library/40_PING_GHOSTS_QUIET_WORK_AND_LISTENING_DISCIPLINE_fr_FR.md"
@@ -6608,11 +6393,7 @@
       "hash": "0xD1A6F990",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_zh_CN",
       "length": 10352,
-<<<<<<< HEAD
-      "offset": 6376416,
-=======
-      "offset": 6370640,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6370624,
       "pad": 0,
       "sha256": "B71DAAFBE1EF121001B9EC185E2E67C1AB693923F7BD6D4A9D3671750F35A2A2",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_zh_CN.md"
@@ -6621,11 +6402,7 @@
       "hash": "0xD1A99590",
       "id": "05_MARAUDER_AND_CORP_CULTURE_de_DE",
       "length": 11645,
-<<<<<<< HEAD
-      "offset": 6386768,
-=======
-      "offset": 6380992,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6380976,
       "pad": 0,
       "sha256": "3A90173FD9BB1FA48CDCB382F45A64002D370FB48A8FEF09B66EC871DF74494D",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_de_DE.md"
@@ -6634,11 +6411,7 @@
       "hash": "0xD1EAF73F",
       "id": "01_ASTRONOMY_AND_HISTORY_zh_CN",
       "length": 9089,
-<<<<<<< HEAD
-      "offset": 6398416,
-=======
-      "offset": 6392640,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6392624,
       "pad": 0,
       "sha256": "8E8101C657F0E3FEBCA3ACAB88A29F155131F4AC3D7E6784A280FF3970A9D3B3",
       "source": "Docs/Lore/Grand_Library/01_ASTRONOMY_AND_HISTORY_zh_CN.md"
@@ -6647,11 +6420,7 @@
       "hash": "0xD25C4F7A",
       "id": "05_MARAUDER_AND_CORP_CULTURE_pl_PL",
       "length": 11717,
-<<<<<<< HEAD
-      "offset": 6407520,
-=======
-      "offset": 6401744,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6401728,
       "pad": 0,
       "sha256": "634C69BB5D668747F20EEF6D016E043F5764B98CCADB6B292C527FA4CFD250A7",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_pl_PL.md"
@@ -6660,11 +6429,7 @@
       "hash": "0xD277EAD5",
       "id": "38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_id_ID",
       "length": 9820,
-<<<<<<< HEAD
-      "offset": 6419248,
-=======
-      "offset": 6413472,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6413456,
       "pad": 0,
       "sha256": "19E4AFB0351475C4066C06C8D02AB954AD4907BA4546C837B0BB93BBF073C3CD",
       "source": "Docs/Lore/Grand_Library/38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_id_ID.md"
@@ -6673,11 +6438,7 @@
       "hash": "0xD36F8B3D",
       "id": "28_DEAD_CLAIMS_AND_SALVAGE_LAW_de_DE",
       "length": 5676,
-<<<<<<< HEAD
-      "offset": 6429072,
-=======
-      "offset": 6423296,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6423280,
       "pad": 0,
       "sha256": "541D640FA56D98D2155A7B2F71AACEF5CB72B31071D652168BE01B48A4964A2C",
       "source": "Docs/Lore/Grand_Library/28_DEAD_CLAIMS_AND_SALVAGE_LAW_de_DE.md"
@@ -6685,13 +6446,8 @@
     {
       "hash": "0xD3DAA431",
       "id": "17_THE_RUINS_OF_SECTOR_44_tr_TR",
-<<<<<<< HEAD
-      "length": 3044,
-      "offset": 6434752,
-=======
       "length": 3013,
-      "offset": 6428976,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6428960,
       "pad": 0,
       "sha256": "03D3BA252BF298A67AC5EEBD6C86763A901E802D4A90F71B0478964375DCC3F0",
       "source": "Docs/Lore/Grand_Library/17_THE_RUINS_OF_SECTOR_44_tr_TR.md"
@@ -6699,13 +6455,8 @@
     {
       "hash": "0xD40DF2B5",
       "id": "19_THE_DEBT_LEDGER_fr_FR",
-<<<<<<< HEAD
-      "length": 3574,
-      "offset": 6437808,
-=======
       "length": 3542,
-      "offset": 6432000,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6431984,
       "pad": 0,
       "sha256": "629D9872A3733BCD9916F77D1EF5D5E88F37308F62F32A767C27D12A6E9B4127",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_fr_FR.md"
@@ -6714,11 +6465,7 @@
       "hash": "0xD441907F",
       "id": "23_THE_ABYSSAL_MINING_RIGS_nl_NL",
       "length": 3018,
-<<<<<<< HEAD
-      "offset": 6441392,
-=======
-      "offset": 6435552,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6435536,
       "pad": 0,
       "sha256": "A09D2E80B5785A4D4AF96629B9803BE68AA6B2F0D3C58D5FDEFCE72238480026",
       "source": "Docs/Lore/Grand_Library/23_THE_ABYSSAL_MINING_RIGS_nl_NL.md"
@@ -6727,11 +6474,7 @@
       "hash": "0xD483ADE5",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_zh_CN",
       "length": 7705,
-<<<<<<< HEAD
-      "offset": 6444416,
-=======
-      "offset": 6438576,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6438560,
       "pad": 0,
       "sha256": "BE20085E9F69454090E241ECAF1D618FB9B324BC4BC7F68CE79143A6BC2CD5C7",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_zh_CN.md"
@@ -6740,11 +6483,7 @@
       "hash": "0xD498C5EE",
       "id": "11_APEX_PREDATORS_AND_BIOLOGY_en_US",
       "length": 7346,
-<<<<<<< HEAD
-      "offset": 6452128,
-=======
-      "offset": 6446288,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6446272,
       "pad": 0,
       "sha256": "FE172AAFAFE03C624E083BED9B0EA969503C66B7FECAD2074B1B8B9ED6D51CC1",
       "source": "Docs/Lore/Grand_Library/11_APEX_PREDATORS_AND_BIOLOGY_en_US.md"
@@ -6752,13 +6491,8 @@
     {
       "hash": "0xD4B2DF37",
       "id": "19_THE_DEBT_LEDGER_id_ID",
-<<<<<<< HEAD
-      "length": 3291,
-      "offset": 6459488,
-=======
       "length": 3259,
-      "offset": 6453648,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6453632,
       "pad": 0,
       "sha256": "EC48A841597FECA13B958D71525D0D263EED3330C68BC7911ACE83BE8C523173",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_id_ID.md"
@@ -6766,13 +6500,8 @@
     {
       "hash": "0xD50E2D6C",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_it_IT",
-<<<<<<< HEAD
-      "length": 3590,
-      "offset": 6462784,
-=======
       "length": 3559,
-      "offset": 6456912,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6456896,
       "pad": 0,
       "sha256": "8EDCE1A21B0D21028C3559078645064A0D3619B0F4DBE7E6A1D888B2974C5000",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_it_IT.md"
@@ -6781,11 +6510,7 @@
       "hash": "0xD557BFEC",
       "id": "26_NEARLIGHT_TRANSIT_STACKS_de_DE",
       "length": 5203,
-<<<<<<< HEAD
-      "offset": 6466384,
-=======
-      "offset": 6460480,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6460464,
       "pad": 0,
       "sha256": "74965FD16F282E84DB2CA3A4E3482125EB2E13870B8C687A5928AFBB19FA11B8",
       "source": "Docs/Lore/Grand_Library/26_NEARLIGHT_TRANSIT_STACKS_de_DE.md"
@@ -6794,11 +6519,7 @@
       "hash": "0xD5733BF8",
       "id": "43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_fr_FR",
       "length": 10895,
-<<<<<<< HEAD
-      "offset": 6471600,
-=======
-      "offset": 6465696,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6465680,
       "pad": 0,
       "sha256": "B5F85C729FF13F03707E8739E496D816818E862FF16459368887042766845175",
       "source": "Docs/Lore/Grand_Library/43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_fr_FR.md"
@@ -6807,11 +6528,7 @@
       "hash": "0xD5743E4D",
       "id": "43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_en_US",
       "length": 8577,
-<<<<<<< HEAD
-      "offset": 6482496,
-=======
-      "offset": 6476592,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6476576,
       "pad": 0,
       "sha256": "F143F74B7B5902D15E9E888F0A01AB869D502051563090307BD955B4F4E660DD",
       "source": "Docs/Lore/Grand_Library/43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_en_US.md"
@@ -6820,11 +6537,7 @@
       "hash": "0xD5D3BB8D",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_pl_PL",
       "length": 5913,
-<<<<<<< HEAD
-      "offset": 6491088,
-=======
-      "offset": 6485184,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6485168,
       "pad": 0,
       "sha256": "D9FDB4F40707CB2766327532877FB67EBD22070D0C8FE7819091AAE70AC3A933",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_pl_PL.md"
@@ -6833,11 +6546,7 @@
       "hash": "0xD5DBC827",
       "id": "13_MEDICAL_TRAUMA_AND_SYNTHETICS_ru_RU",
       "length": 13163,
-<<<<<<< HEAD
-      "offset": 6497008,
-=======
-      "offset": 6491104,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6491088,
       "pad": 0,
       "sha256": "945477708AB20F2A10DDBD408F938E1B1B9983A2F08F69CCCCF73EE9A52DD3F3",
       "source": "Docs/Lore/Grand_Library/13_MEDICAL_TRAUMA_AND_SYNTHETICS_ru_RU.md"
@@ -6846,11 +6555,7 @@
       "hash": "0xD5E2228C",
       "id": "21_THE_STYX_DROP_PODS_nl_NL",
       "length": 10246,
-<<<<<<< HEAD
-      "offset": 6510176,
-=======
-      "offset": 6504272,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6504256,
       "pad": 0,
       "sha256": "B716B5E5946FED2A86223B56ECF34AA89EDB57C4ABF753932D3AB7DC4B8BC885",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_nl_NL.md"
@@ -6858,13 +6563,8 @@
     {
       "hash": "0xD612C12D",
       "id": "09_COMMUNICATIONS_AND_ISOLATION_tr_TR",
-<<<<<<< HEAD
-      "length": 3260,
-      "offset": 6520432,
-=======
       "length": 3227,
-      "offset": 6514528,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6514512,
       "pad": 0,
       "sha256": "247D4C648F7457A203CC4CFA63C997AA3C80E34B9670B2D637E75136F91A6E06",
       "source": "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_tr_TR.md"
@@ -6873,11 +6573,7 @@
       "hash": "0xD6471A03",
       "id": "03_GEOLOGY_AND_THE_GREAT_TIDE_ja_JP",
       "length": 10074,
-<<<<<<< HEAD
-      "offset": 6523696,
-=======
-      "offset": 6517760,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6517744,
       "pad": 0,
       "sha256": "1A1B3052B387D602B1B5E7CEB36CFB005F030BC222D7E80BB2100B3020CB4721",
       "source": "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ja_JP.md"
@@ -6886,11 +6582,7 @@
       "hash": "0xD6919382",
       "id": "04_FLORA_AND_FAUNA_he_IL",
       "length": 12125,
-<<<<<<< HEAD
-      "offset": 6533776,
-=======
-      "offset": 6527840,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6527824,
       "pad": 0,
       "sha256": "3A0E314B706CD948EC5214DB46B23D185E04A861CF181360EEC76FA18DEEAEB8",
       "source": "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_he_IL.md"
@@ -6899,11 +6591,7 @@
       "hash": "0xD746DEB7",
       "id": "44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_fr_FR",
       "length": 9066,
-<<<<<<< HEAD
-      "offset": 6545904,
-=======
-      "offset": 6539968,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6539952,
       "pad": 0,
       "sha256": "52019609419A9B9EEC0B6C0C5CC1D8A0B722832B3B28170E3951C8FF027362AA",
       "source": "Docs/Lore/Grand_Library/44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_fr_FR.md"
@@ -6912,11 +6600,7 @@
       "hash": "0xD81E4208",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_de_DE",
       "length": 12437,
-<<<<<<< HEAD
-      "offset": 6554976,
-=======
-      "offset": 6549040,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6549024,
       "pad": 0,
       "sha256": "B6425CAB8416633F14D4C9D69D9D3053683857C30940AF1C03022467579F56EC",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_de_DE.md"
@@ -6925,11 +6609,7 @@
       "hash": "0xD841D4B4",
       "id": "05_MARAUDER_AND_CORP_CULTURE_it_IT",
       "length": 4359,
-<<<<<<< HEAD
-      "offset": 6567424,
-=======
-      "offset": 6561488,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6561472,
       "pad": 0,
       "sha256": "3F3C39AE911E0C53A248F5240CDC791FE3E28445426F37B68160942A2EB2E163",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_it_IT.md"
@@ -6937,13 +6617,8 @@
     {
       "hash": "0xD8616FBB",
       "id": "07_SUBMARINE_TECH_AND_DIVING_SUITS_it_IT",
-<<<<<<< HEAD
-      "length": 3449,
-      "offset": 6571792,
-=======
       "length": 3414,
-      "offset": 6565856,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6565840,
       "pad": 0,
       "sha256": "3601288CB0A5D8D46607228F268F53F52013D558F9EE020F5B6FF97761E38037",
       "source": "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_it_IT.md"
@@ -6952,11 +6627,7 @@
       "hash": "0xD872BA5D",
       "id": "45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_pt_BR",
       "length": 6257,
-<<<<<<< HEAD
-      "offset": 6575248,
-=======
-      "offset": 6569280,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6569264,
       "pad": 0,
       "sha256": "271CCF69945C6B8394935D89C08533855012D585E133F1F5F609551A425B7C6B",
       "source": "Docs/Lore/Grand_Library/45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_pt_BR.md"
@@ -6965,11 +6636,7 @@
       "hash": "0xD8C69800",
       "id": "21_THE_STYX_DROP_PODS_he_IL",
       "length": 13441,
-<<<<<<< HEAD
-      "offset": 6581520,
-=======
-      "offset": 6575552,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6575536,
       "pad": 0,
       "sha256": "36287EBC71B1BE436858E520730771F31CDC9893F69A87A035DF870D84A6B310",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_he_IL.md"
@@ -6978,11 +6645,7 @@
       "hash": "0xD8F76E08",
       "id": "21_THE_STYX_DROP_PODS_pt_BR",
       "length": 10852,
-<<<<<<< HEAD
-      "offset": 6594976,
-=======
-      "offset": 6589008,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6588992,
       "pad": 0,
       "sha256": "C5A93358F4D81389429AB2EBDED3012BDF1385CC6E17F4489D847EA8CDFDF383",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_pt_BR.md"
@@ -6991,11 +6654,7 @@
       "hash": "0xD9B7B354",
       "id": "Aegir_System_Game_Texture",
       "length": 3463,
-<<<<<<< HEAD
-      "offset": 6605840,
-=======
-      "offset": 6599872,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6599856,
       "pad": 0,
       "sha256": "2F50A8961C79710A6C9879EA5D99B8E1780DD06DD7BC97050FDC4FCA21F3C7AD",
       "source": "Docs/Lore/Aegir_System_Game_Texture.md"
@@ -7004,11 +6663,7 @@
       "hash": "0xDA358E92",
       "id": "26_NEARLIGHT_TRANSIT_STACKS_nl_NL",
       "length": 5056,
-<<<<<<< HEAD
-      "offset": 6609312,
-=======
-      "offset": 6603344,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6603328,
       "pad": 0,
       "sha256": "06228A85A3E99EF48A1658D53A3796D87A96956FC62FEA8B09A5134616F83B74",
       "source": "Docs/Lore/Grand_Library/26_NEARLIGHT_TRANSIT_STACKS_nl_NL.md"
@@ -7017,11 +6672,7 @@
       "hash": "0xDA629850",
       "id": "Aegir_Astronomy_Reference",
       "length": 2215,
-<<<<<<< HEAD
-      "offset": 6614368,
-=======
-      "offset": 6608400,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6608384,
       "pad": 0,
       "sha256": "66DD2D1B189AE2E1B7C98FBD984594F35404F323FA0A8502B7EEA8947E2E8AFC",
       "source": "Docs/Lore/Encyclopedia/Aegir_Astronomy_Reference.md"
@@ -7030,11 +6681,7 @@
       "hash": "0xDAB095B5",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_fr_FR",
       "length": 6548,
-<<<<<<< HEAD
-      "offset": 6616592,
-=======
-      "offset": 6610624,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6610608,
       "pad": 0,
       "sha256": "F361613837C1B8453793E727E870B88104B5A66465DA087F2D69DC7BE0E840FF",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_fr_FR.md"
@@ -7043,11 +6690,7 @@
       "hash": "0xDB4C8E99",
       "id": "07_SUBMARINE_TECH_AND_DIVING_SUITS_fr_FR",
       "length": 12693,
-<<<<<<< HEAD
-      "offset": 6623152,
-=======
-      "offset": 6617184,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6617168,
       "pad": 0,
       "sha256": "60F360842E6D15B9FE9416CF4DA941D99AA419DCAE2D1B9D1E7988B375FACB75",
       "source": "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_fr_FR.md"
@@ -7056,11 +6699,7 @@
       "hash": "0xDB558237",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_id_ID",
       "length": 5903,
-<<<<<<< HEAD
-      "offset": 6635856,
-=======
-      "offset": 6629888,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6629872,
       "pad": 0,
       "sha256": "0DEC9833F59CDA40327DB8F6605DEEE66A04028D22C4D0F77351C34A5C5C38B4",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_id_ID.md"
@@ -7069,11 +6708,7 @@
       "hash": "0xDB6767CF",
       "id": "11_APEX_PREDATORS_AND_BIOLOGY_pt_BR",
       "length": 8014,
-<<<<<<< HEAD
-      "offset": 6641760,
-=======
-      "offset": 6635792,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6635776,
       "pad": 0,
       "sha256": "D95363DF4A6B3EAB98C03174AB81B715F677DE666CF16E0E092A386F1B37A41D",
       "source": "Docs/Lore/Grand_Library/11_APEX_PREDATORS_AND_BIOLOGY_pt_BR.md"
@@ -7082,11 +6717,7 @@
       "hash": "0xDC019FC8",
       "id": "CP04_Blue_Debt_Industrial_Descent",
       "length": 4205,
-<<<<<<< HEAD
-      "offset": 6649776,
-=======
-      "offset": 6643808,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6643792,
       "pad": 0,
       "sha256": "A680BB5BA0BD521F611B59CD9EF7EAD3C485592619FBC1A2641DBBCABADA6A76",
       "source": "Docs/Lore/ContentPacks/CP04_Blue_Debt_Industrial_Descent.md"
@@ -7095,11 +6726,7 @@
       "hash": "0xDC332FD9",
       "id": "22_COMMUNICATIONS_AND_TELEMETRY_de_DE",
       "length": 3771,
-<<<<<<< HEAD
-      "offset": 6653984,
-=======
-      "offset": 6648016,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6648000,
       "pad": 0,
       "sha256": "0E4605F98444A9B7910A09174CD05084E7239A99A7D70600FB1F30AD0401C4B3",
       "source": "Docs/Lore/Grand_Library/22_COMMUNICATIONS_AND_TELEMETRY_de_DE.md"
@@ -7108,11 +6735,7 @@
       "hash": "0xDD36FED1",
       "id": "SA007_ATLAS6_DAMAGED_REPAIR_LOGIC",
       "length": 53203,
-<<<<<<< HEAD
-      "offset": 6657760,
-=======
-      "offset": 6651792,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6651776,
       "pad": 0,
       "sha256": "F86CA7CAE47A2920C44D8F1EAC7A0409A77985C4D7D2C4952475AB4D8BD936AD",
       "source": "Docs/Lore/SourceArticles/SA007_ATLAS6_DAMAGED_REPAIR_LOGIC.md"
@@ -7120,13 +6743,8 @@
     {
       "hash": "0xDD4E3F39",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_it_IT",
-<<<<<<< HEAD
-      "length": 3433,
-      "offset": 6710976,
-=======
       "length": 3398,
-      "offset": 6705008,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6704992,
       "pad": 0,
       "sha256": "1CBD62639E40A89B98C04EF48AB0DEF71210334E951656035E033D220CBF57ED",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_it_IT.md"
@@ -7134,13 +6752,8 @@
     {
       "hash": "0xDD695D04",
       "id": "20_THE_LEVIATHANS_en_US",
-<<<<<<< HEAD
-      "length": 3265,
-      "offset": 6714416,
-=======
       "length": 3233,
-      "offset": 6708416,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6708400,
       "pad": 0,
       "sha256": "A7A8B22D4A445F4893079A67FC9FFAA4FEF5E979EB9E63098386202D15C85890",
       "source": "Docs/Lore/Grand_Library/20_THE_LEVIATHANS_en_US.md"
@@ -7149,11 +6762,7 @@
       "hash": "0xDDBBABA0",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_en_US",
       "length": 6877,
-<<<<<<< HEAD
-      "offset": 6717696,
-=======
-      "offset": 6711664,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6711648,
       "pad": 0,
       "sha256": "8C93814C6BC63282D235B8986D39524BBD10F15359BC737BEE7944D677A9D9BD",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_en_US.md"
@@ -7162,11 +6771,7 @@
       "hash": "0xDE25F559",
       "id": "08_COLONY_LIFE_AND_SECTOR_44_uk_UA",
       "length": 21312,
-<<<<<<< HEAD
-      "offset": 6724576,
-=======
-      "offset": 6718544,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6718528,
       "pad": 0,
       "sha256": "97BAFD51D64D33546BCE132824D814E22B08E371C5DCFD7BFBD88BF4F98826C8",
       "source": "Docs/Lore/Grand_Library/08_COLONY_LIFE_AND_SECTOR_44_uk_UA.md"
@@ -7175,11 +6780,7 @@
       "hash": "0xDE7405FC",
       "id": "04_FLORA_AND_FAUNA_it_IT",
       "length": 4759,
-<<<<<<< HEAD
-      "offset": 6745888,
-=======
-      "offset": 6739856,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6739840,
       "pad": 0,
       "sha256": "0F587EB20D359BF1B0A13B45131C6A952F8CBEB08C2A2FA0C6C733C5BE4CA1C6",
       "source": "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_it_IT.md"
@@ -7188,11 +6789,7 @@
       "hash": "0xDE75B2BF",
       "id": "12_THE_CULTS_OF_THE_ABYSS_id_ID",
       "length": 9441,
-<<<<<<< HEAD
-      "offset": 6750656,
-=======
-      "offset": 6744624,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6744608,
       "pad": 0,
       "sha256": "92B5173FD16C0CE6DCE13BB45AD5C9CBE6D646DB0AB03416368E40144D0C5D7A",
       "source": "Docs/Lore/Grand_Library/12_THE_CULTS_OF_THE_ABYSS_id_ID.md"
@@ -7201,11 +6798,7 @@
       "hash": "0xDEBA1536",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_es_ES",
       "length": 12396,
-<<<<<<< HEAD
-      "offset": 6760112,
-=======
-      "offset": 6754080,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6754064,
       "pad": 0,
       "sha256": "C4CC79ABC40527A87E941A30779ACC8445A6E18B4C86E16372CB489538085F2E",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_es_ES.md"
@@ -7214,11 +6807,7 @@
       "hash": "0xDF68ED78",
       "id": "03_GEOLOGY_AND_THE_GREAT_TIDE_it_IT",
       "length": 4805,
-<<<<<<< HEAD
-      "offset": 6772512,
-=======
-      "offset": 6766480,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6766464,
       "pad": 0,
       "sha256": "5692871DF67B5877E1420A8D5DD56E2FFAC2DB68C0F9F330E675531CA2A72B0C",
       "source": "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_it_IT.md"
@@ -7226,13 +6815,8 @@
     {
       "hash": "0xDF801342",
       "id": "20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ru_RU",
-<<<<<<< HEAD
-      "length": 6494,
-      "offset": 6777328,
-=======
       "length": 6470,
-      "offset": 6771296,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6771280,
       "pad": 0,
       "sha256": "B58F0033BE154F123E2CA1F5B1E66624266AA92646CEF387FD6ED710EF9B201A",
       "source": "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_ru_RU.md"
@@ -7240,13 +6824,8 @@
     {
       "hash": "0xDFB43521",
       "id": "13_MEDICAL_TRAUMA_AND_SYNTHETICS_tr_TR",
-<<<<<<< HEAD
-      "length": 3391,
-      "offset": 6783824,
-=======
       "length": 3360,
-      "offset": 6777776,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6777760,
       "pad": 0,
       "sha256": "813AD6951EDFD87683343753BA81AB567526B1FCEADFBF4B7E277E72CB7D8274",
       "source": "Docs/Lore/Grand_Library/13_MEDICAL_TRAUMA_AND_SYNTHETICS_tr_TR.md"
@@ -7255,11 +6834,7 @@
       "hash": "0xE083B7D5",
       "id": "03_GEOLOGY_AND_THE_GREAT_TIDE_zh_CN",
       "length": 7770,
-<<<<<<< HEAD
-      "offset": 6787216,
-=======
-      "offset": 6781136,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6781120,
       "pad": 0,
       "sha256": "704474FB35149C10B792F3F043E01DF477E72E03E36383EDA161C0EEB69313E4",
       "source": "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_zh_CN.md"
@@ -7268,11 +6843,7 @@
       "hash": "0xE09D9577",
       "id": "26_NEARLIGHT_TRANSIT_STACKS_ar_SA",
       "length": 6440,
-<<<<<<< HEAD
-      "offset": 6794992,
-=======
-      "offset": 6788912,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6788896,
       "pad": 0,
       "sha256": "0DEA85E361DF6C0BF22776B18477D7568211DAB7FA717B0E189BEC0E03C78731",
       "source": "Docs/Lore/Grand_Library/26_NEARLIGHT_TRANSIT_STACKS_ar_SA.md"
@@ -7281,11 +6852,7 @@
       "hash": "0xE0A48037",
       "id": "32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_zh_CN",
       "length": 5152,
-<<<<<<< HEAD
-      "offset": 6801440,
-=======
-      "offset": 6795360,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6795344,
       "pad": 0,
       "sha256": "A953D6317AEA40920AE9CAB647E35FB3C54038E6577E0B97F64B66D8C8F54E20",
       "source": "Docs/Lore/Grand_Library/32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_zh_CN.md"
@@ -7294,11 +6861,7 @@
       "hash": "0xE0E14C1A",
       "id": "32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_de_DE",
       "length": 6164,
-<<<<<<< HEAD
-      "offset": 6806592,
-=======
-      "offset": 6800512,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6800496,
       "pad": 0,
       "sha256": "9833CEF5DAFF6900B532FBACA01C14EBE070C343AD6E90EEAF84E8FDF1F2053B",
       "source": "Docs/Lore/Grand_Library/32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_de_DE.md"
@@ -7307,11 +6870,7 @@
       "hash": "0xE0E3F892",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_es_ES",
       "length": 9449,
-<<<<<<< HEAD
-      "offset": 6812768,
-=======
-      "offset": 6806688,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6806672,
       "pad": 0,
       "sha256": "9AC394BD0107153354070AEFF70CF846651834A8BC6ED8E0FED836156CC6B317",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_es_ES.md"
@@ -7320,11 +6879,7 @@
       "hash": "0xE1CDFD35",
       "id": "45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_fr_FR",
       "length": 7077,
-<<<<<<< HEAD
-      "offset": 6822224,
-=======
-      "offset": 6816144,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6816128,
       "pad": 0,
       "sha256": "D6E473C68BE0768CAE3CB84CB8C15A8E69BDEBDD87DEFF386EB9948DEB90323A",
       "source": "Docs/Lore/Grand_Library/45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_fr_FR.md"
@@ -7333,11 +6888,7 @@
       "hash": "0xE1DBA9A6",
       "id": "06_THE_XENON_OMEGA_CONSPIRACY_fr_FR",
       "length": 11036,
-<<<<<<< HEAD
-      "offset": 6829312,
-=======
-      "offset": 6823232,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6823216,
       "pad": 0,
       "sha256": "5A9474D34ECA84C95FC38D9C5A97C7C11A1FCCE7852D034F50664FEBF4DC1E11",
       "source": "Docs/Lore/Grand_Library/06_THE_XENON_OMEGA_CONSPIRACY_fr_FR.md"
@@ -7346,11 +6897,7 @@
       "hash": "0xE272E9B7",
       "id": "45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_id_ID",
       "length": 6182,
-<<<<<<< HEAD
-      "offset": 6840352,
-=======
-      "offset": 6834272,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6834256,
       "pad": 0,
       "sha256": "3E57175BE778333DAA0CD52734A4B64DA4C8971744D6B249FEB14AED6520CA08",
       "source": "Docs/Lore/Grand_Library/45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_id_ID.md"
@@ -7359,11 +6906,7 @@
       "hash": "0xE28F756A",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_ko_KR",
       "length": 6747,
-<<<<<<< HEAD
-      "offset": 6846544,
-=======
-      "offset": 6840464,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6840448,
       "pad": 0,
       "sha256": "5C87416C5E039813033A4A335F3CC916504DAD369FBD9CE490360979667F9540",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_ko_KR.md"
@@ -7372,11 +6915,7 @@
       "hash": "0xE2F26954",
       "id": "05_MARAUDER_AND_CORP_CULTURE_id_ID",
       "length": 11275,
-<<<<<<< HEAD
-      "offset": 6853296,
-=======
-      "offset": 6847216,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6847200,
       "pad": 0,
       "sha256": "C852E0031A544F9B974FD9C7484E1A6F590F6254957CA62C31585F4848818890",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_id_ID.md"
@@ -7385,11 +6924,7 @@
       "hash": "0xE3175FEA",
       "id": "Deep_Reach_2147_Cover_Story",
       "length": 2010,
-<<<<<<< HEAD
-      "offset": 6864576,
-=======
-      "offset": 6858496,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6858480,
       "pad": 0,
       "sha256": "5939487A3D6AE0507941EC4AD384AEB10E3F93D345C9C47F012F85A375FAFA39",
       "source": "Docs/Lore/Encyclopedia/Deep_Reach_2147_Cover_Story.md"
@@ -7398,11 +6933,7 @@
       "hash": "0xE331EC06",
       "id": "04_FLORA_AND_FAUNA_fr_FR",
       "length": 11086,
-<<<<<<< HEAD
-      "offset": 6866592,
-=======
-      "offset": 6860512,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6860496,
       "pad": 0,
       "sha256": "838113C5FCBBBD30D530DE5334937488FC51E14E3C32DECBAA2B43B38505100C",
       "source": "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_fr_FR.md"
@@ -7410,13 +6941,8 @@
     {
       "hash": "0xE39257B9",
       "id": "19_THE_DEBT_LEDGER_he_IL",
-<<<<<<< HEAD
-      "length": 3928,
-      "offset": 6877680,
-=======
       "length": 3896,
-      "offset": 6871600,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6871584,
       "pad": 0,
       "sha256": "528A873FE302CEEEA4B8A4EC4BD6B5C59A64D2CFE213D1239ECFD581B9272D4A",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_he_IL.md"
@@ -7424,13 +6950,8 @@
     {
       "hash": "0xE3E01C92",
       "id": "14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_ko_KR",
-<<<<<<< HEAD
-      "length": 3310,
-      "offset": 6881616,
-=======
       "length": 3278,
-      "offset": 6875504,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6875488,
       "pad": 0,
       "sha256": "3A290A8E99BED00764B5C3A00210FE5B07F9C0F7B0A2811F27E4AF6C3EC78F73",
       "source": "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_ko_KR.md"
@@ -7439,11 +6960,7 @@
       "hash": "0xE40B8A39",
       "id": "28_DEAD_CLAIMS_AND_SALVAGE_LAW_id_ID",
       "length": 5147,
-<<<<<<< HEAD
-      "offset": 6884928,
-=======
-      "offset": 6878784,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6878768,
       "pad": 0,
       "sha256": "7ECF681B477157F557844C7B36270CCE550165E3769AECC7C6B8BA1E9B57870B",
       "source": "Docs/Lore/Grand_Library/28_DEAD_CLAIMS_AND_SALVAGE_LAW_id_ID.md"
@@ -7452,11 +6969,7 @@
       "hash": "0xE45C7B6A",
       "id": "21_THE_STYX_DROP_PODS_uk_UA",
       "length": 5812,
-<<<<<<< HEAD
-      "offset": 6890080,
-=======
-      "offset": 6883936,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6883920,
       "pad": 0,
       "sha256": "A0650C4DC8407CB29515FFB6D51AB3FABE2BF912BE5583E62CC2536B72897F1C",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_uk_UA.md"
@@ -7465,11 +6978,7 @@
       "hash": "0xE498BBD1",
       "id": "23_THE_ABYSSAL_MINING_RIGS_ru_RU",
       "length": 5957,
-<<<<<<< HEAD
-      "offset": 6895904,
-=======
-      "offset": 6889760,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6889744,
       "pad": 0,
       "sha256": "E264F1897A5CF380F017E46EF03712A810C972DF9564C66EA3C4FEB65FFD0D7E",
       "source": "Docs/Lore/Grand_Library/23_THE_ABYSSAL_MINING_RIGS_ru_RU.md"
@@ -7478,11 +6987,7 @@
       "hash": "0xE4AC80DD",
       "id": "02_INTERSTELLAR_ENGINES_he_IL",
       "length": 11262,
-<<<<<<< HEAD
-      "offset": 6901872,
-=======
-      "offset": 6895728,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6895712,
       "pad": 0,
       "sha256": "8E571145A213E001E31F834FFB0D3B20D0F6DCF67CAB5721F2072D1C83560D01",
       "source": "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_he_IL.md"
@@ -7491,11 +6996,7 @@
       "hash": "0xE4F847EA",
       "id": "05_MARAUDER_AND_CORP_CULTURE_he_IL",
       "length": 13755,
-<<<<<<< HEAD
-      "offset": 6913136,
-=======
-      "offset": 6906992,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6906976,
       "pad": 0,
       "sha256": "ABB44A0F79B7D8408042AFEC12CD1BAA605489EE51BB246CC4B046A608B59626",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_he_IL.md"
@@ -7504,11 +7005,7 @@
       "hash": "0xE567409F",
       "id": "29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_ja_JP",
       "length": 6305,
-<<<<<<< HEAD
-      "offset": 6926896,
-=======
-      "offset": 6920752,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6920736,
       "pad": 0,
       "sha256": "026B3CD0CC8DAE848334A7EDC58C276FCCF81CBA13B5C90444CDE12605DB4D2B",
       "source": "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_ja_JP.md"
@@ -7517,11 +7014,7 @@
       "hash": "0xE577BC3B",
       "id": "29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_en_US",
       "length": 5647,
-<<<<<<< HEAD
-      "offset": 6933216,
-=======
-      "offset": 6927072,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6927056,
       "pad": 0,
       "sha256": "3C318BAC2F05CF87E2381F527F2575DA43A38FF5BB30FADE0CB22E5ACEDFA557",
       "source": "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_en_US.md"
@@ -7530,11 +7023,7 @@
       "hash": "0xE5B332EB",
       "id": "Open_Questions",
       "length": 30758,
-<<<<<<< HEAD
-      "offset": 6938864,
-=======
-      "offset": 6932720,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6932704,
       "pad": 0,
       "sha256": "958E82330A5214C01EB1BDE2A6C1FFFA63C84F2E1BC5BFE484BC1A0FD0F59FB4",
       "source": "Docs/Lore/Open_Questions.md"
@@ -7543,11 +7032,7 @@
       "hash": "0xE5C570B1",
       "id": "MASSIVE_BETHESDA_ENCYCLOPEDIA_ru_RU",
       "length": 14379,
-<<<<<<< HEAD
-      "offset": 6969632,
-=======
-      "offset": 6963488,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6963472,
       "pad": 0,
       "sha256": "5E357F76FE7C55A33DBB2B18EEF48DE88D9A548D8A16A4CB140F954B986E27FA",
       "source": "Docs/Lore/MASSIVE_BETHESDA_ENCYCLOPEDIA_ru_RU.md"
@@ -7556,11 +7041,7 @@
       "hash": "0xE60C462D",
       "id": "16_CLASS_IV_DIVING_SUITS_AND_EQUIPMENT_pl_PL",
       "length": 11081,
-<<<<<<< HEAD
-      "offset": 6984016,
-=======
-      "offset": 6977872,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6977856,
       "pad": 0,
       "sha256": "EAE09BD2EA88DB91F52C674C3D6C832EF0B9BDDA4F4F6EA8DA35867AEA24C092",
       "source": "Docs/Lore/Grand_Library/16_CLASS_IV_DIVING_SUITS_AND_EQUIPMENT_pl_PL.md"
@@ -7569,11 +7050,7 @@
       "hash": "0xE648AB91",
       "id": "27_THE_HISTORY_OF_DEEP_REACH_en_US",
       "length": 4274,
-<<<<<<< HEAD
-      "offset": 6995104,
-=======
-      "offset": 6988960,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6988944,
       "pad": 0,
       "sha256": "3DE7AFF255339A5C563D02342517772EADBBDA4661CBC4E1AD284A7FB4F56ECF",
       "source": "Docs/Lore/Grand_Library/27_THE_HISTORY_OF_DEEP_REACH_en_US.md"
@@ -7582,11 +7059,7 @@
       "hash": "0xE64D7242",
       "id": "05_MARAUDER_AND_CORP_CULTURE_tr_TR",
       "length": 4167,
-<<<<<<< HEAD
-      "offset": 6999392,
-=======
-      "offset": 6993248,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6993232,
       "pad": 0,
       "sha256": "65FCB7627A9009989EEC2C1085F257C04C014D815960BE3D3F34535BF940CA78",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_tr_TR.md"
@@ -7595,11 +7068,7 @@
       "hash": "0xE6F18279",
       "id": "34_DOORS_LOCKS_AND_PERMISSION_STACKS_fr_FR",
       "length": 4916,
-<<<<<<< HEAD
-      "offset": 7003568,
-=======
-      "offset": 6997424,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 6997408,
       "pad": 0,
       "sha256": "CBD713D7DCF3B565CB1505F18E366F452AA6095CD2326858B29A06B903E7CD62",
       "source": "Docs/Lore/Grand_Library/34_DOORS_LOCKS_AND_PERMISSION_STACKS_fr_FR.md"
@@ -7608,11 +7077,7 @@
       "hash": "0xE7AAB68F",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_ar_SA",
       "length": 11545,
-<<<<<<< HEAD
-      "offset": 7008496,
-=======
-      "offset": 7002352,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7002336,
       "pad": 0,
       "sha256": "D4A61ECD54F942BAD5EA344F370796EC5E53BB4CD081F576DF6848905C35AA65",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_ar_SA.md"
@@ -7621,11 +7086,7 @@
       "hash": "0xE8370E30",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_en_US",
       "length": 7155,
-<<<<<<< HEAD
-      "offset": 7020048,
-=======
-      "offset": 7013904,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7013888,
       "pad": 0,
       "sha256": "E3F5C4F72CAEF75F90D6D0EDF1146B088687DB1373DA7DCD95AAAAE1B61BEE18",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_en_US.md"
@@ -7634,11 +7095,7 @@
       "hash": "0xE8BD242D",
       "id": "Lore_Multilingual_Content_Architecture",
       "length": 8652,
-<<<<<<< HEAD
-      "offset": 7027216,
-=======
-      "offset": 7021072,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7021056,
       "pad": 0,
       "sha256": "5B168D629FE489DD311C7E1EDBE5186E15A4889357526601A30D45142CF41E93",
       "source": "Docs/Lore/Lore_Multilingual_Content_Architecture.md"
@@ -7647,11 +7104,7 @@
       "hash": "0xE96BB8F6",
       "id": "26_NEARLIGHT_TRANSIT_STACKS_pl_PL",
       "length": 5136,
-<<<<<<< HEAD
-      "offset": 7035872,
-=======
-      "offset": 7029728,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7029712,
       "pad": 0,
       "sha256": "96E24E4782B40A9FBBCD0E53DF6F0202C1B0CDB8844F41BB048AF2779C314078",
       "source": "Docs/Lore/Grand_Library/26_NEARLIGHT_TRANSIT_STACKS_pl_PL.md"
@@ -7660,11 +7113,7 @@
       "hash": "0xE97195F1",
       "id": "13_MEDICAL_TRAUMA_AND_SYNTHETICS_fr_FR",
       "length": 8566,
-<<<<<<< HEAD
-      "offset": 7041008,
-=======
-      "offset": 7034864,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7034848,
       "pad": 0,
       "sha256": "E5035FE74B933BD7CF681410CA904C0A807BD426453DD4D29AA5E61D126EA943",
       "source": "Docs/Lore/Grand_Library/13_MEDICAL_TRAUMA_AND_SYNTHETICS_fr_FR.md"
@@ -7673,11 +7122,7 @@
       "hash": "0xE98562D8",
       "id": "06_THE_XENON_OMEGA_CONSPIRACY_uk_UA",
       "length": 16461,
-<<<<<<< HEAD
-      "offset": 7049584,
-=======
-      "offset": 7043440,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7043424,
       "pad": 0,
       "sha256": "4689F3C7326E618A8FE49A00CF63C0B10F9F48DF6728852AFF58C968FD47E7FA",
       "source": "Docs/Lore/Grand_Library/06_THE_XENON_OMEGA_CONSPIRACY_uk_UA.md"
@@ -7686,11 +7131,7 @@
       "hash": "0xE9C8A6A7",
       "id": "23_THE_ABYSSAL_MINING_RIGS_es_ES",
       "length": 3655,
-<<<<<<< HEAD
-      "offset": 7066048,
-=======
-      "offset": 7059904,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7059888,
       "pad": 0,
       "sha256": "D6CD65E19551604AFB7BD6EE9C33290C82096401060129E54867FDA6790FD476",
       "source": "Docs/Lore/Grand_Library/23_THE_ABYSSAL_MINING_RIGS_es_ES.md"
@@ -7699,11 +7140,7 @@
       "hash": "0xEA34FAB9",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_he_IL",
       "length": 7553,
-<<<<<<< HEAD
-      "offset": 7069712,
-=======
-      "offset": 7063568,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7063552,
       "pad": 0,
       "sha256": "563B4BCEC471A9E4E9FE331A9E2E85E851427AC0C8328C14533D80B3360D7067",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_he_IL.md"
@@ -7712,11 +7149,7 @@
       "hash": "0xEAEDCCBD",
       "id": "32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_ar_SA",
       "length": 7394,
-<<<<<<< HEAD
-      "offset": 7077280,
-=======
-      "offset": 7071136,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7071120,
       "pad": 0,
       "sha256": "01E0594145ECACD2DC35DC99C8CBE85C2866E4901B7597ECD06D3045B71C7D22",
       "source": "Docs/Lore/Grand_Library/32_TETHERS_RECEIVERS_AND_RECOVERY_QUEUES_ar_SA.md"
@@ -7725,11 +7158,7 @@
       "hash": "0xEAFCB34B",
       "id": "29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_ar_SA",
       "length": 7422,
-<<<<<<< HEAD
-      "offset": 7084688,
-=======
-      "offset": 7078544,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7078528,
       "pad": 0,
       "sha256": "F15761B889AC8DA4AC74CC68B6860BFA2184793337190E135302BF9B95C9667D",
       "source": "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_ar_SA.md"
@@ -7738,11 +7167,7 @@
       "hash": "0xEB0FDF55",
       "id": "Marauders",
       "length": 803,
-<<<<<<< HEAD
-      "offset": 7092112,
-=======
-      "offset": 7085968,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7085952,
       "pad": 0,
       "sha256": "32CECADC871C4D9876CBC0A718FB79B95CE49B081F051BA969C035CFC28CF8E0",
       "source": "Docs/Lore/Encyclopedia/Marauders.md"
@@ -7751,11 +7176,7 @@
       "hash": "0xEB20D159",
       "id": "44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_id_ID",
       "length": 7962,
-<<<<<<< HEAD
-      "offset": 7092928,
-=======
-      "offset": 7086784,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7086768,
       "pad": 0,
       "sha256": "4E5265345B565789D62425EADF2F78438FF7D38FB7502562777EF7BEC17C43F2",
       "source": "Docs/Lore/Grand_Library/44_RUIN_FOOD_WEBS_CARRION_BLOOMS_AND_HUMAN_SMELL_id_ID.md"
@@ -7764,11 +7185,7 @@
       "hash": "0xEBFC757D",
       "id": "05_MARAUDER_AND_CORP_CULTURE_ko_KR",
       "length": 12699,
-<<<<<<< HEAD
-      "offset": 7100896,
-=======
-      "offset": 7094752,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7094736,
       "pad": 0,
       "sha256": "CE0EEBAB63845A6FA12EC471EE83B349F215ABDAFEAB8176C11C404232715E9E",
       "source": "Docs/Lore/Grand_Library/05_MARAUDER_AND_CORP_CULTURE_ko_KR.md"
@@ -7777,11 +7194,7 @@
       "hash": "0xEC6D4810",
       "id": "LoreCorpusManualRewriteAgentPrompt",
       "length": 11985,
-<<<<<<< HEAD
-      "offset": 7113600,
-=======
-      "offset": 7107456,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7107440,
       "pad": 0,
       "sha256": "A889DD92059996F1FF876CF889BA607C7F3ED240D310CB4EBAFA734C5BD9372E",
       "source": "Docs/Lore/LoreCorpusManualRewriteAgentPrompt.md"
@@ -7790,11 +7203,7 @@
       "hash": "0xEC8D8464",
       "id": "41_FLOODLINES_FALSE_DRYNESS_AND_LEAK_DISCIPLINE_he_IL",
       "length": 12304,
-<<<<<<< HEAD
-      "offset": 7125600,
-=======
-      "offset": 7119456,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7119440,
       "pad": 0,
       "sha256": "4265C90C18C0C50040BF852BE9996F7A765D2FA795A723BA815DD8A5877A33D7",
       "source": "Docs/Lore/Grand_Library/41_FLOODLINES_FALSE_DRYNESS_AND_LEAK_DISCIPLINE_he_IL.md"
@@ -7803,11 +7212,7 @@
       "hash": "0xECB46D57",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_de_DE",
       "length": 6073,
-<<<<<<< HEAD
-      "offset": 7137904,
-=======
-      "offset": 7131760,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7131744,
       "pad": 0,
       "sha256": "6367A2BBE096C2FB4AF920B18E82347B98C3BA438A658C217FBA9C2FC60DC6C6",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_de_DE.md"
@@ -7816,11 +7221,7 @@
       "hash": "0xED0ED94F",
       "id": "34_DOORS_LOCKS_AND_PERMISSION_STACKS_uk_UA",
       "length": 6713,
-<<<<<<< HEAD
-      "offset": 7143984,
-=======
-      "offset": 7137840,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7137824,
       "pad": 0,
       "sha256": "0E1A7E7AB8E95EC4FC027A9DA69B32AD9031D4925EA60BF51E81AA72EB854448",
       "source": "Docs/Lore/Grand_Library/34_DOORS_LOCKS_AND_PERMISSION_STACKS_uk_UA.md"
@@ -7829,11 +7230,7 @@
       "hash": "0xED3FA58D",
       "id": "37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_es_ES",
       "length": 5993,
-<<<<<<< HEAD
-      "offset": 7150704,
-=======
-      "offset": 7144560,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7144544,
       "pad": 0,
       "sha256": "BE18E64CD18E738E4CDD765359B785C297F188F29621478A130E328A4A1EAFD8",
       "source": "Docs/Lore/Grand_Library/37_BREATH_DEBT_CO2_AND_AIR_DISCIPLINE_es_ES.md"
@@ -7842,11 +7239,7 @@
       "hash": "0xEE02CE30",
       "id": "33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_uk_UA",
       "length": 9251,
-<<<<<<< HEAD
-      "offset": 7156704,
-=======
-      "offset": 7150560,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7150544,
       "pad": 0,
       "sha256": "9A8816DBDE6845C0E1DA2F4C00780D349F1BA914B7573792E8CC34E3852D9170",
       "source": "Docs/Lore/Grand_Library/33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_uk_UA.md"
@@ -7855,11 +7248,7 @@
       "hash": "0xEE19A558",
       "id": "04_FLORA_AND_FAUNA_de_DE",
       "length": 10071,
-<<<<<<< HEAD
-      "offset": 7165968,
-=======
-      "offset": 7159824,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7159808,
       "pad": 0,
       "sha256": "1B786EEF4E178CB8F5C95A848FCFC9CCB7581EEED6411EF8A3892AAD3C7257D9",
       "source": "Docs/Lore/Grand_Library/04_FLORA_AND_FAUNA_de_DE.md"
@@ -7868,11 +7257,7 @@
       "hash": "0xEE207BCF",
       "id": "38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_nl_NL",
       "length": 9910,
-<<<<<<< HEAD
-      "offset": 7176048,
-=======
-      "offset": 7169904,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7169888,
       "pad": 0,
       "sha256": "B3FDAE8B78B4E434810DEFA390C240708E9EB081ADA8E990A8DCB6A1C8E25B56",
       "source": "Docs/Lore/Grand_Library/38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_nl_NL.md"
@@ -7881,11 +7266,7 @@
       "hash": "0xEE6E0212",
       "id": "24_THE_DEBT_LEDGER_ko_KR",
       "length": 5018,
-<<<<<<< HEAD
-      "offset": 7185968,
-=======
-      "offset": 7179824,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7179808,
       "pad": 0,
       "sha256": "17CB28EBF0DB60E90DE23E0685D2E6EB08EC21F9313DAF4C3A718C073DE7C13F",
       "source": "Docs/Lore/Grand_Library/24_THE_DEBT_LEDGER_ko_KR.md"
@@ -7894,11 +7275,7 @@
       "hash": "0xEE9E8031",
       "id": "30_PRESSURE_AS_ECONOMY_en_US",
       "length": 6915,
-<<<<<<< HEAD
-      "offset": 7190992,
-=======
-      "offset": 7184848,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7184832,
       "pad": 0,
       "sha256": "AAC08FE3DDCF922EAEA7A6D8785D9BD337A48F7A09BCA785AAE6E019BB5ED755",
       "source": "Docs/Lore/Grand_Library/30_PRESSURE_AS_ECONOMY_en_US.md"
@@ -7907,11 +7284,7 @@
       "hash": "0xEECB2307",
       "id": "43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_zh_CN",
       "length": 7860,
-<<<<<<< HEAD
-      "offset": 7197920,
-=======
-      "offset": 7191776,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7191760,
       "pad": 0,
       "sha256": "1812CDADF2A54A84EC9162ECE66F9DADCE62F91282CD9FC246DCCC7959CD8B1D",
       "source": "Docs/Lore/Grand_Library/43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_zh_CN.md"
@@ -7920,11 +7293,7 @@
       "hash": "0xEEF27865",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_nl_NL",
       "length": 7694,
-<<<<<<< HEAD
-      "offset": 7205792,
-=======
-      "offset": 7199648,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7199632,
       "pad": 0,
       "sha256": "7DFB74BF45DE856AC35858794AB459A698D1C1B75C732C53D1A70ED9A43B8AC8",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_nl_NL.md"
@@ -7932,13 +7301,8 @@
     {
       "hash": "0xEF2B58A4",
       "id": "20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_nl_NL",
-<<<<<<< HEAD
-      "length": 3893,
-      "offset": 7213488,
-=======
       "length": 3869,
-      "offset": 7207344,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7207328,
       "pad": 0,
       "sha256": "E88E70FA147ACFC06868B0DEDB7E73EF6F893EB01B333E7D418487BE53D631A5",
       "source": "Docs/Lore/Grand_Library/20_THE_SEED_PROGRAM_AND_THE_ATLAS_DIRECTIVE_nl_NL.md"
@@ -7946,13 +7310,8 @@
     {
       "hash": "0xF0268AA7",
       "id": "18_THE_IRON_KELP_FORESTS_fr_FR",
-<<<<<<< HEAD
-      "length": 3293,
-      "offset": 7217392,
-=======
       "length": 3261,
-      "offset": 7211216,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7211200,
       "pad": 0,
       "sha256": "EF4305971F41B4DF8838A968AB08ED078FE983B141E346D2BC6B44AC9E980359",
       "source": "Docs/Lore/Grand_Library/18_THE_IRON_KELP_FORESTS_fr_FR.md"
@@ -7960,13 +7319,8 @@
     {
       "hash": "0xF12637FB",
       "id": "19_THE_DEBT_LEDGER_uk_UA",
-<<<<<<< HEAD
-      "length": 5223,
-      "offset": 7220688,
-=======
       "length": 5191,
-      "offset": 7214480,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7214464,
       "pad": 0,
       "sha256": "C5F429270298312A108245FF4EFE2DDCF85616E05DE286E569763904F4EDA8C6",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_uk_UA.md"
@@ -7975,11 +7329,7 @@
       "hash": "0xF1526239",
       "id": "45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_he_IL",
       "length": 7776,
-<<<<<<< HEAD
-      "offset": 7225920,
-=======
-      "offset": 7219680,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7219664,
       "pad": 0,
       "sha256": "A7E21AA3D6BC3FFEFD9F11F57521B3DC2EC450373731F84F95F0B53B9975217D",
       "source": "Docs/Lore/Grand_Library/45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_he_IL.md"
@@ -7987,13 +7337,8 @@
     {
       "hash": "0xF23D5007",
       "id": "14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_ru_RU",
-<<<<<<< HEAD
-      "length": 5491,
-      "offset": 7233696,
-=======
       "length": 5459,
-      "offset": 7227456,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7227440,
       "pad": 0,
       "sha256": "620FA27B2CA0379D2833273F5894D4A5432AA9E3151E358F9B45A1CD45B28230",
       "source": "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_ru_RU.md"
@@ -8002,11 +7347,7 @@
       "hash": "0xF27964B6",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_fr_FR",
       "length": 13366,
-<<<<<<< HEAD
-      "offset": 7239200,
-=======
-      "offset": 7232928,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7232912,
       "pad": 0,
       "sha256": "3CE727D853352982AD480B5AD0490F5539712DC01CCE2AC06F7AC989F4293A1C",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_fr_FR.md"
@@ -8015,11 +7356,7 @@
       "hash": "0xF299F2BB",
       "id": "Deep_Reach",
       "length": 1648,
-<<<<<<< HEAD
-      "offset": 7252576,
-=======
-      "offset": 7246304,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7246288,
       "pad": 0,
       "sha256": "C483A5282814694D89A45864A8FDB8D3C00F79DCE393AB90241D1691AF89F46F",
       "source": "Docs/Lore/Encyclopedia/Deep_Reach.md"
@@ -8028,11 +7365,7 @@
       "hash": "0xF2E8EDF7",
       "id": "Aegir_Gas_Giant",
       "length": 2095,
-<<<<<<< HEAD
-      "offset": 7254224,
-=======
-      "offset": 7247952,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7247936,
       "pad": 0,
       "sha256": "A65523D626289349B9B865A45B9B58AD08284A2A723E4CA97D3BC86394BB74EA",
       "source": "Docs/Lore/Encyclopedia/Aegir_Gas_Giant.md"
@@ -8041,11 +7374,7 @@
       "hash": "0xF31E439A",
       "id": "33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_he_IL",
       "length": 7272,
-<<<<<<< HEAD
-      "offset": 7256320,
-=======
-      "offset": 7250048,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7250032,
       "pad": 0,
       "sha256": "CD6CF424F195AC208B10FCA192EF04D8E27348ACBC3B1564C82D5D1645424D79",
       "source": "Docs/Lore/Grand_Library/33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_he_IL.md"
@@ -8054,11 +7383,7 @@
       "hash": "0xF33C7C0F",
       "id": "13_MEDICAL_TRAUMA_AND_SYNTHETICS_de_DE",
       "length": 8031,
-<<<<<<< HEAD
-      "offset": 7263600,
-=======
-      "offset": 7257328,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7257312,
       "pad": 0,
       "sha256": "D9CAC258D365089D865C8EF7C0B9E0A5ADD1F4E9DC6963E328DACA80630B4EA3",
       "source": "Docs/Lore/Grand_Library/13_MEDICAL_TRAUMA_AND_SYNTHETICS_de_DE.md"
@@ -8067,11 +7392,7 @@
       "hash": "0xF3B42C4D",
       "id": "33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_ko_KR",
       "length": 6616,
-<<<<<<< HEAD
-      "offset": 7271632,
-=======
-      "offset": 7265360,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7265344,
       "pad": 0,
       "sha256": "B89B698DF809E015867F96C5DB9DE6EB7E54D39D6F057B7FA63D684FA200B595",
       "source": "Docs/Lore/Grand_Library/33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_ko_KR.md"
@@ -8079,13 +7400,8 @@
     {
       "hash": "0xF3D1BBBF",
       "id": "18_THE_IRON_KELP_FORESTS_pt_BR",
-<<<<<<< HEAD
-      "length": 3108,
-      "offset": 7278256,
-=======
       "length": 3076,
-      "offset": 7271984,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7271968,
       "pad": 0,
       "sha256": "C59CCC3B65DDD407FCC19108E170D43631DC32DE626E3A4C9144C2244C152ACE",
       "source": "Docs/Lore/Grand_Library/18_THE_IRON_KELP_FORESTS_pt_BR.md"
@@ -8094,11 +7410,7 @@
       "hash": "0xF41154E0",
       "id": "43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_es_ES",
       "length": 9916,
-<<<<<<< HEAD
-      "offset": 7281376,
-=======
-      "offset": 7275072,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7275056,
       "pad": 0,
       "sha256": "6CA77E5851F36093A42C43A5DF09FDDE25D81C98B1AD28347B6CFA3FC28C41DA",
       "source": "Docs/Lore/Grand_Library/43_QUARANTINE_LOCKERS_SAMPLE_CHAINS_AND_DIRTY_GEAR_es_ES.md"
@@ -8107,11 +7419,7 @@
       "hash": "0xF4540A4D",
       "id": "42_BIOFOULING_CONDUCTIVE_FILMS_AND_THE_LIVING_SKIN_uk_UA",
       "length": 14793,
-<<<<<<< HEAD
-      "offset": 7291296,
-=======
-      "offset": 7284992,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7284976,
       "pad": 0,
       "sha256": "12CCA079CDE8B614DFFA6A0F02D87A731791958CB914B2445C462400AFD2B38C",
       "source": "Docs/Lore/Grand_Library/42_BIOFOULING_CONDUCTIVE_FILMS_AND_THE_LIVING_SKIN_uk_UA.md"
@@ -8119,13 +7427,8 @@
     {
       "hash": "0xF4A6192D",
       "id": "12_THE_CULTS_OF_THE_ABYSS_tr_TR",
-<<<<<<< HEAD
-      "length": 3380,
-      "offset": 7306096,
-=======
       "length": 3349,
-      "offset": 7299792,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7299776,
       "pad": 0,
       "sha256": "58F5C069AB90C0EA6AE409DE608BD13AAF21A5407C71099E5DE0A21E996EAE7C",
       "source": "Docs/Lore/Grand_Library/12_THE_CULTS_OF_THE_ABYSS_tr_TR.md"
@@ -8134,11 +7437,7 @@
       "hash": "0xF4BE2610",
       "id": "29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_uk_UA",
       "length": 9829,
-<<<<<<< HEAD
-      "offset": 7309488,
-=======
-      "offset": 7303152,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7303136,
       "pad": 0,
       "sha256": "F8D573720AAA94DA62F5020A2DE8E8BEAEB17C3235ABE1A8A1CBC7AA1DB7187A",
       "source": "Docs/Lore/Grand_Library/29_SALVAGE_CARRIERS_AND_BAD_CONTRACTS_uk_UA.md"
@@ -8147,11 +7446,7 @@
       "hash": "0xF4BFB91E",
       "id": "10_THE_ECONOMY_OF_SURVIVAL_pt_BR",
       "length": 9143,
-<<<<<<< HEAD
-      "offset": 7319328,
-=======
-      "offset": 7312992,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7312976,
       "pad": 0,
       "sha256": "2D5EDB9F497B9F638358484C4A73D1361F7576361E3F9A924910A8E5A00D5D4D",
       "source": "Docs/Lore/Grand_Library/10_THE_ECONOMY_OF_SURVIVAL_pt_BR.md"
@@ -8160,11 +7455,7 @@
       "hash": "0xF503CCCA",
       "id": "30_PRESSURE_AS_ECONOMY_id_ID",
       "length": 7460,
-<<<<<<< HEAD
-      "offset": 7328480,
-=======
-      "offset": 7322144,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7322128,
       "pad": 0,
       "sha256": "3DEFD835CDBAFA7D875F402E3C14C2448F8F7F346C234759751A916B1B9722D4",
       "source": "Docs/Lore/Grand_Library/30_PRESSURE_AS_ECONOMY_id_ID.md"
@@ -8172,13 +7463,8 @@
     {
       "hash": "0xF53D84AD",
       "id": "20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_nl_NL",
-<<<<<<< HEAD
-      "length": 9782,
-      "offset": 7335952,
-=======
       "length": 9700,
-      "offset": 7329616,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7329600,
       "pad": 0,
       "sha256": "7C5508430D2DD1DEE8885FA0B7FD39BAE8721F5EECCB4E07EC78804881E0BD67",
       "source": "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_nl_NL.md"
@@ -8186,13 +7472,8 @@
     {
       "hash": "0xF554EC1A",
       "id": "19_THE_DEBT_LEDGER_zh_CN",
-<<<<<<< HEAD
-      "length": 2829,
-      "offset": 7345744,
-=======
       "length": 2797,
-      "offset": 7339328,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7339312,
       "pad": 0,
       "sha256": "4B46D32B1A5EC4C56DDB40F7FE10AB37CD74DF8DC37FCD0EC903C8143770DBAC",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_zh_CN.md"
@@ -8201,11 +7482,7 @@
       "hash": "0xF56E1F4F",
       "id": "07_SUBMARINE_TECH_AND_DIVING_SUITS_ru_RU",
       "length": 19973,
-<<<<<<< HEAD
-      "offset": 7348576,
-=======
-      "offset": 7342128,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7342112,
       "pad": 0,
       "sha256": "06C155FDC228A47F03F48164F45424332DE08C80EDE3D9440F1F168580C28D41",
       "source": "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_ru_RU.md"
@@ -8213,13 +7490,8 @@
     {
       "hash": "0xF5DBA645",
       "id": "19_THE_DEBT_LEDGER_tr_TR",
-<<<<<<< HEAD
-      "length": 3238,
-      "offset": 7368560,
-=======
       "length": 3207,
-      "offset": 7362112,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7362096,
       "pad": 0,
       "sha256": "108EED2B0383327F1BB3CFDC8D6404B8A684E5F0C0F53C9973B94B1DF3C04550",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_tr_TR.md"
@@ -8228,11 +7500,7 @@
       "hash": "0xF6335B35",
       "id": "Implementation_Notes",
       "length": 24644,
-<<<<<<< HEAD
-      "offset": 7371808,
-=======
-      "offset": 7365328,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7365312,
       "pad": 0,
       "sha256": "2E56C4BA52A5E1C8ADB4BC1256264F190C1712C4EFD3C446E350BB6D81A35853",
       "source": "Docs/Lore/Implementation_Notes.md"
@@ -8241,11 +7509,7 @@
       "hash": "0xF69D89E1",
       "id": "06_THE_XENON_OMEGA_CONSPIRACY_zh_CN",
       "length": 8777,
-<<<<<<< HEAD
-      "offset": 7396464,
-=======
-      "offset": 7389984,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7389968,
       "pad": 0,
       "sha256": "612C5DB884643CB3C8F57F54CDB00AEBC9EA1E67233A2231E3B572BD34D4E69F",
       "source": "Docs/Lore/Grand_Library/06_THE_XENON_OMEGA_CONSPIRACY_zh_CN.md"
@@ -8254,11 +7518,7 @@
       "hash": "0xF6ACF7EC",
       "id": "02_INTERSTELLAR_ENGINES_ar_SA",
       "length": 11859,
-<<<<<<< HEAD
-      "offset": 7405248,
-=======
-      "offset": 7398768,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7398752,
       "pad": 0,
       "sha256": "49E46904415CFB61A65D501F68378DC0A483B8251B8977049A24FF6C154D1E1F",
       "source": "Docs/Lore/Grand_Library/02_INTERSTELLAR_ENGINES_ar_SA.md"
@@ -8266,13 +7526,8 @@
     {
       "hash": "0xF6C1D4EB",
       "id": "21_THE_STYX_DROP_PODS_ko_KR",
-<<<<<<< HEAD
-      "length": 3774,
-      "offset": 7417120,
-=======
       "length": 3773,
-      "offset": 7410640,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7410624,
       "pad": 0,
       "sha256": "90A2C5B9AE039614DE238A34A4606AF54EC9BC2D7D3DFE4E781FD7F83023C040",
       "source": "Docs/Lore/Grand_Library/21_THE_STYX_DROP_PODS_ko_KR.md"
@@ -8280,13 +7535,8 @@
     {
       "hash": "0xF6E87BE3",
       "id": "17_THE_RUINS_OF_SECTOR_44_it_IT",
-<<<<<<< HEAD
-      "length": 3084,
-      "offset": 7420896,
-=======
       "length": 3053,
-      "offset": 7414416,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7414400,
       "pad": 0,
       "sha256": "6CD44CE150E6FFA1EE68BE06E261BAD5CBEF49BB371230322635392196A93750",
       "source": "Docs/Lore/Grand_Library/17_THE_RUINS_OF_SECTOR_44_it_IT.md"
@@ -8295,11 +7545,7 @@
       "hash": "0xF7301509",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_pt_BR",
       "length": 7868,
-<<<<<<< HEAD
-      "offset": 7423984,
-=======
-      "offset": 7417472,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7417456,
       "pad": 0,
       "sha256": "C3BE4EC3089F4EEB4C224FCB8D49257D6F55F884FFF98C786E960C3651F6A6A4",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_pt_BR.md"
@@ -8308,11 +7554,7 @@
       "hash": "0xF789F807",
       "id": "25_ASTRONOMY_AND_THE_BLACK_KEEL_nl_NL",
       "length": 9123,
-<<<<<<< HEAD
-      "offset": 7431856,
-=======
-      "offset": 7425344,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7425328,
       "pad": 0,
       "sha256": "B37BDF735A7629E2E1E82F6E6ABDFB9BF42951E8A5EB974BA53A8AAFCBCF4E25",
       "source": "Docs/Lore/Grand_Library/25_ASTRONOMY_AND_THE_BLACK_KEEL_nl_NL.md"
@@ -8321,11 +7563,7 @@
       "hash": "0xF7B44109",
       "id": "31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_fr_FR",
       "length": 8632,
-<<<<<<< HEAD
-      "offset": 7440992,
-=======
-      "offset": 7434480,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7434464,
       "pad": 0,
       "sha256": "9F8F16B86BE24932AD244FF9C639228D10BB5E633B346279A2274B810CF848F8",
       "source": "Docs/Lore/Grand_Library/31_CLASS_IV_SUITS_AND_ABYSSAL_WORK_fr_FR.md"
@@ -8333,13 +7571,8 @@
     {
       "hash": "0xF7C51DC9",
       "id": "18_THE_IRON_KELP_FORESTS_id_ID",
-<<<<<<< HEAD
-      "length": 2827,
-      "offset": 7449632,
-=======
       "length": 2795,
-      "offset": 7443120,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7443104,
       "pad": 0,
       "sha256": "E55309DE9B4ABF6ABC33F471D0B77E080202815418EAFC98D464D9496BEE7639",
       "source": "Docs/Lore/Grand_Library/18_THE_IRON_KELP_FORESTS_id_ID.md"
@@ -8348,11 +7581,7 @@
       "hash": "0xF7C8DAFB",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_uk_UA",
       "length": 9547,
-<<<<<<< HEAD
-      "offset": 7452464,
-=======
-      "offset": 7445920,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7445904,
       "pad": 0,
       "sha256": "F6B5FD016FE8CE4763C949C4C756CE9FA703749F9493246CF2A915C0AB11D607",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_uk_UA.md"
@@ -8361,11 +7590,7 @@
       "hash": "0xF7E64820",
       "id": "Player_Motive_Arc",
       "length": 2643,
-<<<<<<< HEAD
-      "offset": 7462016,
-=======
-      "offset": 7455472,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7455456,
       "pad": 0,
       "sha256": "1D9A41FD8B4E7CF93532136DDBA8EC5007FF272E22E319741BC4FDC45BB4BDC5",
       "source": "Docs/Lore/Encyclopedia/Player_Motive_Arc.md"
@@ -8374,11 +7599,7 @@
       "hash": "0xF8F6A3CA",
       "id": "HECTON8_Resource_Gameplay_Catalog",
       "length": 5506,
-<<<<<<< HEAD
-      "offset": 7464672,
-=======
-      "offset": 7458128,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7458112,
       "pad": 0,
       "sha256": "1C333FFA01918423745C2065D143EBB45786E726CF1A9126E9F91E95DD088379",
       "source": "Docs/Lore/HECTON8_Resource_Gameplay_Catalog.md"
@@ -8386,13 +7607,8 @@
     {
       "hash": "0xF9628ED9",
       "id": "20_THE_LEVIATHANS_pl_PL",
-<<<<<<< HEAD
-      "length": 3644,
-      "offset": 7470192,
-=======
       "length": 3612,
-      "offset": 7463648,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7463632,
       "pad": 0,
       "sha256": "D79D4C7BC0FBB88E3DBB1770C2407B454148BDE1B76F9A5370C0C9FFB1452BF3",
       "source": "Docs/Lore/Grand_Library/20_THE_LEVIATHANS_pl_PL.md"
@@ -8401,11 +7617,7 @@
       "hash": "0xF979B58C",
       "id": "15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_ru_RU",
       "length": 20937,
-<<<<<<< HEAD
-      "offset": 7473840,
-=======
-      "offset": 7467264,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7467248,
       "pad": 0,
       "sha256": "50AB24134FFE3456B1809F30CEF768ABECF878EADE87BB8C1E9A61BB0173E5ED",
       "source": "Docs/Lore/Grand_Library/15_XENON_OMEGA_REFINEMENT_AND_PROPERTIES_ru_RU.md"
@@ -8414,11 +7626,7 @@
       "hash": "0xF9D473C3",
       "id": "Blue_Debt_Field_Behavior",
       "length": 2243,
-<<<<<<< HEAD
-      "offset": 7494784,
-=======
-      "offset": 7488208,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7488192,
       "pad": 0,
       "sha256": "842F8F5AB2BF0459FBB45E30F9F48738FED17C4BE43B39F007F16BE0D429F25F",
       "source": "Docs/Lore/Encyclopedia/Blue_Debt_Field_Behavior.md"
@@ -8427,11 +7635,7 @@
       "hash": "0xFA2FF5AB",
       "id": "42_BIOFOULING_CONDUCTIVE_FILMS_AND_THE_LIVING_SKIN_pt_BR",
       "length": 8998,
-<<<<<<< HEAD
-      "offset": 7497040,
-=======
-      "offset": 7490464,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7490448,
       "pad": 0,
       "sha256": "8C0AD61D768BAACA8F76CFF5129F46C3F371F8977C5B5A0074E2E2738AE228BD",
       "source": "Docs/Lore/Grand_Library/42_BIOFOULING_CONDUCTIVE_FILMS_AND_THE_LIVING_SKIN_pt_BR.md"
@@ -8440,11 +7644,7 @@
       "hash": "0xFA6F51B3",
       "id": "38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_pt_BR",
       "length": 10472,
-<<<<<<< HEAD
-      "offset": 7506048,
-=======
-      "offset": 7499472,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7499456,
       "pad": 0,
       "sha256": "33A6295904A2E8BD3378D389FCB6E5B65F62CDE28CAF01A8ECF8629182E65BD9",
       "source": "Docs/Lore/Grand_Library/38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_pt_BR.md"
@@ -8453,11 +7653,7 @@
       "hash": "0xFB1626AA",
       "id": "33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_pl_PL",
       "length": 5983,
-<<<<<<< HEAD
-      "offset": 7516528,
-=======
-      "offset": 7509952,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7509936,
       "pad": 0,
       "sha256": "EDF142591DD1A50ACAB5DA113D59C7F816A0E7B9BB833AD12FBA430DFDD5E053",
       "source": "Docs/Lore/Grand_Library/33_HABITATS_SAFE_ROOMS_AND_QUIET_POWER_pl_PL.md"
@@ -8466,11 +7662,7 @@
       "hash": "0xFB3BE912",
       "id": "09_COMMUNICATIONS_AND_ISOLATION_zh_CN",
       "length": 9046,
-<<<<<<< HEAD
-      "offset": 7522512,
-=======
-      "offset": 7515936,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7515920,
       "pad": 0,
       "sha256": "7F2700B251C3ADF21DF2293209759C50F2A10BC83499F271941871833CB1D83B",
       "source": "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_zh_CN.md"
@@ -8479,11 +7671,7 @@
       "hash": "0xFBC349B9",
       "id": "03_GEOLOGY_AND_THE_GREAT_TIDE_ko_KR",
       "length": 10146,
-<<<<<<< HEAD
-      "offset": 7531568,
-=======
-      "offset": 7524992,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7524976,
       "pad": 0,
       "sha256": "5D8C4CC310D114E732F3515706F2D8075FF118158DB0D5B3C421DBAEEAB6489E",
       "source": "Docs/Lore/Grand_Library/03_GEOLOGY_AND_THE_GREAT_TIDE_ko_KR.md"
@@ -8492,11 +7680,7 @@
       "hash": "0xFBE336DE",
       "id": "39_BORROWED_LIGHT_BROWNOUTS_AND_COLD_STARTS_es_ES",
       "length": 8499,
-<<<<<<< HEAD
-      "offset": 7541728,
-=======
-      "offset": 7535152,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7535136,
       "pad": 0,
       "sha256": "3DB7DEAE8F184B698FB095F708C4E45982DEEA937B391A5F9058126F9652C5F3",
       "source": "Docs/Lore/Grand_Library/39_BORROWED_LIGHT_BROWNOUTS_AND_COLD_STARTS_es_ES.md"
@@ -8505,11 +7689,7 @@
       "hash": "0xFBF78F1A",
       "id": "36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_zh_CN",
       "length": 5238,
-<<<<<<< HEAD
-      "offset": 7550240,
-=======
-      "offset": 7543664,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7543648,
       "pad": 0,
       "sha256": "DA0DE362563293E87804413C9DF23722C7D02F296E00857D33E9E8FC4C776512",
       "source": "Docs/Lore/Grand_Library/36_ROUTE_MEMORY_BAD_MAPS_AND_THE_OCEAN_EDITOR_zh_CN.md"
@@ -8518,11 +7698,7 @@
       "hash": "0xFC75A947",
       "id": "38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_pl_PL",
       "length": 10379,
-<<<<<<< HEAD
-      "offset": 7555488,
-=======
-      "offset": 7548912,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7548896,
       "pad": 0,
       "sha256": "F55B6588E436F35C44D2488B05A6B958ADEFF210BDBC95058799B82923AFF548",
       "source": "Docs/Lore/Grand_Library/38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_pl_PL.md"
@@ -8531,11 +7707,7 @@
       "hash": "0xFCCB3587",
       "id": "24_THE_DEBT_LEDGER_ru_RU",
       "length": 8816,
-<<<<<<< HEAD
-      "offset": 7565872,
-=======
-      "offset": 7559296,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7559280,
       "pad": 0,
       "sha256": "E99224371B0C61FAA3A809082E9B64AE436496EC9D647EFA627C3938F4315EC3",
       "source": "Docs/Lore/Grand_Library/24_THE_DEBT_LEDGER_ru_RU.md"
@@ -8544,11 +7716,7 @@
       "hash": "0xFD16C90D",
       "id": "34_DOORS_LOCKS_AND_PERMISSION_STACKS_he_IL",
       "length": 5762,
-<<<<<<< HEAD
-      "offset": 7574688,
-=======
-      "offset": 7568112,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7568096,
       "pad": 0,
       "sha256": "776C2BD8EE07A90C6729F76C0C3ADBA1C968D7323C9F7FC00F3B852FFF98B8C4",
       "source": "Docs/Lore/Grand_Library/34_DOORS_LOCKS_AND_PERMISSION_STACKS_he_IL.md"
@@ -8556,13 +7724,8 @@
     {
       "hash": "0xFD9B1425",
       "id": "14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_es_ES",
-<<<<<<< HEAD
-      "length": 3343,
-      "offset": 7580464,
-=======
       "length": 3311,
-      "offset": 7573888,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7573872,
       "pad": 0,
       "sha256": "8296777F2E24EE3F4445510728B8BA8EC6062B403868ABEAA28F150E8CD77328",
       "source": "Docs/Lore/Grand_Library/14_THE_SILENT_ORBIT_AND_THE_BLACK_KEEL_es_ES.md"
@@ -8571,11 +7734,7 @@
       "hash": "0xFE1727C0",
       "id": "07_SUBMARINE_TECH_AND_DIVING_SUITS_en_US",
       "length": 10562,
-<<<<<<< HEAD
-      "offset": 7583808,
-=======
-      "offset": 7577200,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7577184,
       "pad": 0,
       "sha256": "701CEF4571A476994D3132CE4EB365287E3B0D013ACFE3EDDDB56DED20080D48",
       "source": "Docs/Lore/Grand_Library/07_SUBMARINE_TECH_AND_DIVING_SUITS_en_US.md"
@@ -8584,11 +7743,7 @@
       "hash": "0xFE372099",
       "id": "Named_Domains_2190",
       "length": 1932,
-<<<<<<< HEAD
-      "offset": 7594384,
-=======
-      "offset": 7587776,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7587760,
       "pad": 0,
       "sha256": "E2FF919C85C95A3106793FF7EACB635794047AF223634C2B82D073B541F5CF9C",
       "source": "Docs/Lore/Encyclopedia/Named_Domains_2190.md"
@@ -8597,11 +7752,7 @@
       "hash": "0xFE524285",
       "id": "38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_uk_UA",
       "length": 17047,
-<<<<<<< HEAD
-      "offset": 7596320,
-=======
-      "offset": 7589712,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7589696,
       "pad": 0,
       "sha256": "F72BCF4CE0C5B4F2AB58ADC05654F03BEB43E43DAD843245095D38F9D321C973",
       "source": "Docs/Lore/Grand_Library/38_ALARMS_DEAD_SENSORS_AND_MACHINE_HONESTY_uk_UA.md"
@@ -8609,13 +7760,8 @@
     {
       "hash": "0xFE7DDD13",
       "id": "19_THE_DEBT_LEDGER_de_DE",
-<<<<<<< HEAD
-      "length": 3506,
-      "offset": 7613376,
-=======
       "length": 3474,
-      "offset": 7606768,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7606752,
       "pad": 0,
       "sha256": "1FEA8802DBEBEC070FAD50C4B7573475AFDBE2E860159FCCF39F0DA84A446792",
       "source": "Docs/Lore/Grand_Library/19_THE_DEBT_LEDGER_de_DE.md"
@@ -8624,11 +7770,7 @@
       "hash": "0xFEBB9FA1",
       "id": "26_NEARLIGHT_TRANSIT_STACKS_ko_KR",
       "length": 5404,
-<<<<<<< HEAD
-      "offset": 7616896,
-=======
-      "offset": 7610256,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7610240,
       "pad": 0,
       "sha256": "9ED63BDF17F72103D3487246C6FBBF8618961A9606AFEB2B9546FD04B9B3EB21",
       "source": "Docs/Lore/Grand_Library/26_NEARLIGHT_TRANSIT_STACKS_ko_KR.md"
@@ -8637,11 +7779,7 @@
       "hash": "0xFEE6427B",
       "id": "45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_uk_UA",
       "length": 10398,
-<<<<<<< HEAD
-      "offset": 7622304,
-=======
-      "offset": 7615664,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7615648,
       "pad": 0,
       "sha256": "BDDDC30A25BA01491D2A389D6421EEF90D71E70889EB92226FC09B795DBBA4BB",
       "source": "Docs/Lore/Grand_Library/45_FAULT_ROCK_SERPENTINITE_AND_MOVING_WALLS_uk_UA.md"
@@ -8649,13 +7787,8 @@
     {
       "hash": "0xFF25FF04",
       "id": "20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ja_JP",
-<<<<<<< HEAD
-      "length": 10102,
-      "offset": 7632704,
-=======
       "length": 10020,
-      "offset": 7626064,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7626048,
       "pad": 0,
       "sha256": "6B7733D22B82190E135862E8DC2C29FF16E7C23D62FB48E0C7A2C6F150332ED1",
       "source": "Docs/Lore/Grand_Library/20_THE_AEGIR_MOONS_AND_ORBITAL_HAZARDS_ja_JP.md"
@@ -8664,11 +7797,7 @@
       "hash": "0xFF38864C",
       "id": "09_COMMUNICATIONS_AND_ISOLATION_en_US",
       "length": 9657,
-<<<<<<< HEAD
-      "offset": 7642816,
-=======
-      "offset": 7636096,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7636080,
       "pad": 0,
       "sha256": "D0BC94DBE7D46E96588A4D319B0D7E147F846B7A4C43D306C25DACD5A211BB0A",
       "source": "Docs/Lore/Grand_Library/09_COMMUNICATIONS_AND_ISOLATION_en_US.md"
@@ -8676,13 +7805,8 @@
     {
       "hash": "0xFF416068",
       "id": "20_THE_LEVIATHANS_ar_SA",
-<<<<<<< HEAD
-      "length": 5026,
-      "offset": 7652480,
-=======
       "length": 4994,
-      "offset": 7645760,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7645744,
       "pad": 0,
       "sha256": "D25A7005FAA9ABFF357EDFF6A1B6D90A2770028F4D9C65E0B1463C540B61AE8D",
       "source": "Docs/Lore/Grand_Library/20_THE_LEVIATHANS_ar_SA.md"
@@ -8691,11 +7815,7 @@
       "hash": "0xFF8205B1",
       "id": "HECTON8_Resource_Catalog",
       "length": 2392,
-<<<<<<< HEAD
-      "offset": 7657520,
-=======
-      "offset": 7650768,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7650752,
       "pad": 0,
       "sha256": "4CCEA623064992921BE68E43300F5777A98A53B853420808F627E059A49DEDEE",
       "source": "Docs/Lore/Encyclopedia/HECTON8_Resource_Catalog.md"
@@ -8704,11 +7824,7 @@
       "hash": "0xFF8A66C6",
       "id": "27_THE_HISTORY_OF_DEEP_REACH_de_DE",
       "length": 2311,
-<<<<<<< HEAD
-      "offset": 7659920,
-=======
-      "offset": 7653168,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7653152,
       "pad": 0,
       "sha256": "16251B48E5855B2FC2B75D0074E8700A0DF9C35B13FA98C48446842EA275A769",
       "source": "Docs/Lore/Grand_Library/27_THE_HISTORY_OF_DEEP_REACH_de_DE.md"
@@ -8717,11 +7833,7 @@
       "hash": "0xFF9C88FE",
       "id": "Gameable_World_Packets",
       "length": 13888,
-<<<<<<< HEAD
-      "offset": 7662240,
-=======
-      "offset": 7655488,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7655472,
       "pad": 0,
       "sha256": "5D37321AE5EA88D300827F2EBB9F161798482883D15C7F3C5AE705FE340CEB46",
       "source": "Docs/Lore/Gameable_World_Packets.md"
@@ -8729,13 +7841,8 @@
     {
       "hash": "0xFFFD8D55",
       "id": "18_THE_IRON_KELP_FORESTS_ru_RU",
-<<<<<<< HEAD
-      "length": 5452,
-      "offset": 7676128,
-=======
       "length": 5420,
-      "offset": 7669376,
->>>>>>> origin/jules-2390195947671511092-703be00c
+      "offset": 7669360,
       "pad": 0,
       "sha256": "3A6D1032B011EEAA220A88AF3C5541A991A7FCBC0BFAD269C14D3F3A3BD7B6F6",
       "source": "Docs/Lore/Grand_Library/18_THE_IRON_KELP_FORESTS_ru_RU.md"
