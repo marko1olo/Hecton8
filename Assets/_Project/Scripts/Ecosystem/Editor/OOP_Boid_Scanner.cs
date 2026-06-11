@@ -201,83 +201,130 @@ namespace Hecton8.Ecosystem.Editor
             return matches.Count;
         }
 
-        private static string StripCommentsAndStrings(string source)
+        private struct CommentStripper
         {
-            StringBuilder output = new StringBuilder(source.Length);
-            bool lineComment = false;
-            bool blockComment = false;
-            bool stringLiteral = false;
-            bool charLiteral = false;
-            bool verbatimString = false;
+            private readonly string source;
+            private StringBuilder output;
+            private bool lineComment;
+            private bool blockComment;
+            private bool stringLiteral;
+            private bool charLiteral;
+            private bool verbatimString;
+            private int i;
 
-            for (int i = 0; i < source.Length; i++)
+            public CommentStripper(string source)
             {
-                char c = source[i];
-                char n = i + 1 < source.Length ? source[i + 1] : '\0';
+                this.source = source;
+                this.output = new StringBuilder(source.Length);
+                this.lineComment = false;
+                this.blockComment = false;
+                this.stringLiteral = false;
+                this.charLiteral = false;
+                this.verbatimString = false;
+                this.i = 0;
+            }
 
-                if (lineComment)
+            public string Strip()
+            {
+                for (i = 0; i < source.Length; i++)
                 {
-                    if (c == '\n')
-                    {
-                        lineComment = false;
-                        output.Append(c);
-                    }
-                    else
-                    {
-                        output.Append(' ');
-                    }
-                    continue;
-                }
+                    char c = source[i];
+                    char n = i + 1 < source.Length ? source[i + 1] : '\0';
 
-                if (blockComment)
-                {
-                    if (c == '*' && n == '/')
+                    if (lineComment)
                     {
-                        blockComment = false;
-                        output.Append("  ");
-                        i++;
-                    }
-                    else
-                    {
-                        output.Append(c == '\n' ? '\n' : ' ');
-                    }
-                    continue;
-                }
-
-                if (stringLiteral)
-                {
-                    if (verbatimString && c == '"' && n == '"')
-                    {
-                        output.Append("  ");
-                        i++;
+                        HandleLineComment(c);
                         continue;
                     }
 
-                    bool end = c == '"' && (verbatimString || !IsEscaped(source, i));
-                    output.Append(c == '\n' ? '\n' : ' ');
-                    if (end)
+                    if (blockComment)
                     {
-                        stringLiteral = false;
-                        verbatimString = false;
+                        HandleBlockComment(c, n);
+                        continue;
                     }
-                    continue;
+
+                    if (stringLiteral)
+                    {
+                        HandleStringLiteral(c, n);
+                        continue;
+                    }
+
+                    if (charLiteral)
+                    {
+                        HandleCharLiteral(c);
+                        continue;
+                    }
+
+                    if (TryStartTokens(c, n))
+                        continue;
+
+                    output.Append(c);
                 }
 
-                if (charLiteral)
+                return output.ToString();
+            }
+
+            private void HandleLineComment(char c)
+            {
+                if (c == '\n')
                 {
-                    bool end = c == '\'' && !IsEscaped(source, i);
+                    lineComment = false;
+                    output.Append(c);
+                }
+                else
+                {
+                    output.Append(' ');
+                }
+            }
+
+            private void HandleBlockComment(char c, char n)
+            {
+                if (c == '*' && n == '/')
+                {
+                    blockComment = false;
+                    output.Append("  ");
+                    i++;
+                }
+                else
+                {
                     output.Append(c == '\n' ? '\n' : ' ');
-                    if (end)
-                        charLiteral = false;
-                    continue;
+                }
+            }
+
+            private void HandleStringLiteral(char c, char n)
+            {
+                if (verbatimString && c == '"' && n == '"')
+                {
+                    output.Append("  ");
+                    i++;
+                    return;
                 }
 
+                bool end = c == '"' && (verbatimString || !IsEscaped(source, i));
+                output.Append(c == '\n' ? '\n' : ' ');
+                if (end)
+                {
+                    stringLiteral = false;
+                    verbatimString = false;
+                }
+            }
+
+            private void HandleCharLiteral(char c)
+            {
+                bool end = c == '\'' && !IsEscaped(source, i);
+                output.Append(c == '\n' ? '\n' : ' ');
+                if (end)
+                    charLiteral = false;
+            }
+
+            private bool TryStartTokens(char c, char n)
+            {
                 if (c == '/' && n == '/')
                 {
                     lineComment = true;
                     output.Append("  ");
                     i++;
-                    continue;
+                    return true;
                 }
 
                 if (c == '/' && n == '*')
@@ -285,7 +332,7 @@ namespace Hecton8.Ecosystem.Editor
                     blockComment = true;
                     output.Append("  ");
                     i++;
-                    continue;
+                    return true;
                 }
 
                 if (c == '"' || (c == '@' && n == '"'))
@@ -298,20 +345,24 @@ namespace Hecton8.Ecosystem.Editor
                         output.Append(' ');
                         i++;
                     }
-                    continue;
+                    return true;
                 }
 
                 if (c == '\'')
                 {
                     charLiteral = true;
                     output.Append(' ');
-                    continue;
+                    return true;
                 }
 
-                output.Append(c);
+                return false;
             }
+        }
 
-            return output.ToString();
+        private static string StripCommentsAndStrings(string source)
+        {
+            var stripper = new CommentStripper(source);
+            return stripper.Strip();
         }
 
         private static string StripEditorPreprocessorBlocks(string source)
