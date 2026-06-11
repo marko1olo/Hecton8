@@ -1,18 +1,21 @@
 {
     "name": "Hecton8.UI.Tools",
-    "rootNamespace": "Hecton8.UI.Tools",
+    "rootNamespace": "Hecton8.UI",
     "references": [
-        "Hecton8.Core",
-        "Hecton8.Core.Contracts",
+        "Unity.TextMeshPro",
         "Unity.Mathematics",
-        "Unity.TextMeshPro"
+        "Unity.Collections",
+        "Hecton8.Core",
+        "Hecton8.Inventory",
+        "Hecton8.Gameplay",
+        "Hecton8.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": false,
+    "allowUnsafeCode": true,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
