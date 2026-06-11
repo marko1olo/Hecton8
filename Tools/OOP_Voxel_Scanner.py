@@ -156,42 +156,48 @@ def classify_native_allocation_hits(hits):
     return buckets
 
 
-def _safe_eval_node(node):
-    if isinstance(node, ast.Constant):
-        return node.value
-    elif isinstance(node, ast.BinOp):
-        left = _safe_eval_node(node.left)
-        right = _safe_eval_node(node.right)
-        ops = {
-            ast.Add: operator.add,
-            ast.Sub: operator.sub,
-            ast.Mult: operator.mul,
-            ast.Div: operator.truediv,
-            ast.FloorDiv: operator.floordiv,
-            ast.Mod: operator.mod,
-            ast.Pow: operator.pow,
-            ast.LShift: operator.lshift,
-            ast.RShift: operator.rshift,
-            ast.BitOr: operator.or_,
-            ast.BitXor: operator.xor,
-            ast.BitAnd: operator.and_,
-        }
-        if type(node.op) not in ops:
-            raise ValueError(f"Unsupported operator {type(node.op)}")
-        return ops[type(node.op)](left, right)
-    elif isinstance(node, ast.UnaryOp):
-        operand = _safe_eval_node(node.operand)
-        ops = {
-            ast.UAdd: operator.pos,
-            ast.USub: operator.neg,
-            ast.Invert: operator.invert,
-        }
-        if type(node.op) not in ops:
-            raise ValueError(f"Unsupported operator {type(node.op)}")
-        return ops[type(node.op)](operand)
-    elif isinstance(node, ast.Expression):
-        return _safe_eval_node(node.body)
-    raise ValueError(f"Unsupported node {type(node)}")
+def _safe_eval(expr_str):
+    operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.FloorDiv: operator.floordiv,
+        ast.Mod: operator.mod,
+        ast.Pow: operator.pow,
+        ast.LShift: operator.lshift,
+        ast.RShift: operator.rshift,
+        ast.BitOr: operator.or_,
+        ast.BitXor: operator.xor,
+        ast.BitAnd: operator.and_,
+        ast.UAdd: operator.pos,
+        ast.USub: operator.neg,
+        ast.Invert: operator.invert,
+    }
+
+    def _eval(node):
+        if isinstance(node, ast.Constant):
+            return node.value
+        elif isinstance(node, ast.BinOp):
+            left = _eval(node.left)
+            right = _eval(node.right)
+            if type(node.op) not in operators:
+                raise ValueError(f"Unsupported operator {type(node.op)}")
+            return operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            operand = _eval(node.operand)
+            if type(node.op) not in operators:
+                raise ValueError(f"Unsupported operator {type(node.op)}")
+            return operators[type(node.op)](operand)
+        elif isinstance(node, ast.Expression):
+            return _eval(node.body)
+        raise ValueError(f"Unsupported node {type(node)}")
+
+    try:
+        return _eval(ast.parse(expr_str, mode='eval').body)
+    except Exception as e:
+        raise ValueError("Failed to evaluate expression") from e
+
 
 def eval_int_expr(expr, constants):
     normalized = expr.strip()
@@ -203,7 +209,7 @@ def eval_int_expr(expr, constants):
     if not re.fullmatch(r"[0-9+\-*/()<> \t]+", normalized):
         return None
     try:
-        return int(_safe_eval_node(ast.parse(normalized, mode='eval')))
+        return int(_safe_eval(normalized))
     except Exception:
         return None
 
