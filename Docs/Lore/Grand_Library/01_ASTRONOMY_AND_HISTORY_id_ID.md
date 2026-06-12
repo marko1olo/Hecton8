@@ -17,7 +17,7 @@ Pada 2190, ruang manusia bukan satu kekaisaran. Ia tumpukan domain yang masih sa
 
 Keuangan Sol Core dan hukum sertifikasi lama menentukan dokumen mana yang masih terlihat sah. Centauri Compact membawa prestise ekspansi legal awal. Barnard Yards mengubah kapal rusak, alat tekanan, dan klaim mati menjadi budaya kerja. Tau Ceti bisa membuat bukti publik, terlalu terlambat untuk menyelamatkan siapa pun secara langsung. Luyten Junction memindahkan paket, berkas, spool kustodi, dan antrean tarif. Aegir Claim adalah tempat semua mesin sopan itu menjadi cukup kotor untuk menyentuh air.
 
-Pemain tidak perlu menghafal peta ini. Pemain perlu merasakannya melalui benda: cap Barnard pada kunci pas, segel audit Centauri pada pelat tekanan, hash kustodi Luyten pada paket tertunda, klausul asuransi kompatibel Sol yang masih memiliki ruangan banjir.
+Arsip tidak memintamu menghafal peta ini. Ia menuntutmu membacanya di objek yang diselamatkan: cap Barnard pada kunci pas, segel audit Centauri pada pelat tekanan, hash kustodi Luyten pada paket tertunda, klausul asuransi kompatibel Sol yang masih memiliki ruangan banjir.
 
 ## 2. Ran, Aegir, dan trik nama
 
@@ -69,17 +69,17 @@ Itu bukan berarti masalah selesai. Klaim mati tidak menjadi sederhana karena wak
 
 Jadi situs itu tetap cukup mati untuk menolak penyelamatan, cukup hidup untuk ditagih, dan cukup berharga untuk terus mengirim orang ke bawah.
 
-Marauder masuk ke celah itu. Bukan sebagai turis. Bukan sebagai penumpang heroik. Bukan sebagai pemilik kapal pribadi bersih. Asal kerjanya Barnard Yards atau sabuk salvage frontier terkait, tempat klaim mati adalah kerja normal dan alat bisa lebih berharga daripada tangan yang membawanya. Pemain tiba dengan kompetensi, utang, dan keakraban buruk: kuras, isolasi, tambal dalam rating, potong hanya logam servis, jaga bukti, bergerak sebelum jendela menutup.
+Marauder masuk ke celah itu. Bukan sebagai turis. Bukan sebagai penumpang heroik. Bukan sebagai pemilik kapal pribadi bersih. Asal kerjanya Barnard Yards atau sabuk salvage frontier terkait, tempat klaim mati adalah kerja normal dan alat bisa lebih berharga daripada tangan yang membawanya. Marauder tiba dengan kompetensi, utang, dan keakraban buruk: kuras, isolasi, tambal dalam rating, potong hanya logam servis, jaga bukti, bergerak sebelum jendela menutup.
 
 Kontrak mengatakan salvage. Ruangan mengatakan sejarah. Laut tidak mengatakan apa pun sampai diganggu.
 
-## 7. Apa yang harus diajarkan halaman pertama
+## 7. Perangkap Arsip
 
-Artikel ini bukan untuk membuat latar terasa besar demi ukuran. Ia menjelaskan mengapa setiap sistem berikutnya terasa terkurung.
+Arsip ini bukan buku sejarah. Ini alasan mengapa setiap sistem berikutnya dikunci, ditunda, dan diberi harga.
 
 Perjalanan dekat-cahaya membuat penyelamatan terlambat. Tangga bulan Aegir membuat komunikasi bersyarat. Deep Reach membuat tanggung jawab menjadi prosedural. Black Keel membuat turun terbaca sebelum membuat siapa pun aman. Atlas membuat koloni tenggelam terbaca dan berbahaya sekaligus. Hukum salvage membuat pencurian dan bukti berada di tangan yang sama.
 
-Ketika pemain menemukan nama di loker, peta tekanan di koridor rusak, hash rute di buoy, atau cap bulan pada rangka kargo, mereka tidak menemukan hiasan. Mereka menemukan peradaban yang menaruh HECTON-8 di bawah air lalu membuat air bertanggung jawab menyimpan bukti.
+Ketika kontraktor menemukan nama di loker, peta tekanan di koridor rusak, hash rute di buoy, atau cap bulan pada rangka kargo, mereka tidak menemukan hiasan. Mereka menemukan peradaban yang menaruh HECTON-8 di bawah air lalu membuat air bertanggung jawab menyimpan bukti.
 
 Pertanyaan pertama bukan "apa yang terjadi di sini?"
 

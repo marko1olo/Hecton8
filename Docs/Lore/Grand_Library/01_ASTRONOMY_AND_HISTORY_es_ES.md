@@ -17,7 +17,7 @@ Para 2190, el espacio humano no es un imperio. Es una pila de dominios que sigue
 
 Las finanzas de Sol Core y la vieja ley de certificacion deciden que documentos aun parecen legitimos. El Centauri Compact lleva el prestigio de la expansion legal temprana. Barnard Yards convierte naves rotas, herramientas de presion y reclamaciones muertas en una cultura de trabajo. Tau Ceti puede volver publicas las pruebas, demasiado tarde para salvar a alguien de inmediato. Luyten Junction mueve paquetes, haces, bobinas de custodia y colas de tarifa. Aegir Claim es donde toda esa maquinaria educada se vuelve lo bastante sucia para tocar agua.
 
-El jugador no necesita memorizar el mapa. Necesita sentirlo en objetos: un sello Barnard en una llave, un sello de auditoria Centauri en una placa de presion, un hash de custodia Luyten en un paquete retrasado, una clausula compatible con Sol que aun posee una sala inundada.
+El archivo no te pide que memorices este mapa. Exige que lo leas en los objetos recuperados: un sello Barnard en una llave, un sello de auditoria Centauri en una placa de presion, un hash de custodia Luyten en un paquete retrasado, una clausula compatible con Sol que aun posee una sala inundada.
 
 ## 2. Ran, Aegir y el truco del nombre
 
@@ -69,17 +69,17 @@ Eso no significa que este resuelta. Las reclamaciones muertas no se vuelven simp
 
 Asi que el sitio sigue lo bastante muerto para negar rescate, lo bastante vivo para facturar y lo bastante valioso para seguir mandando gente abajo.
 
-El Marauder entra en ese hueco. No como turista. No como pasajero heroico. No como dueño de una nave privada limpia. Su origen de trabajo es Barnard Yards o un cinturon de salvamento fronterizo relacionado, donde las reclamaciones muertas son labor normal y una herramienta puede valer mas que la mano que la lleva. El jugador llega con competencia, deuda y familiaridad fea: drenar, aislar, parchear dentro de rango, cortar solo metal de servicio, preservar evidencia, moverse antes de que cierre la ventana.
+El Marauder entra en ese hueco. No como turista. No como pasajero heroico. No como dueño de una nave privada limpia. Su origen de trabajo es Barnard Yards o un cinturon de salvamento fronterizo relacionado, donde las reclamaciones muertas son labor normal y una herramienta puede valer mas que la mano que la lleva. El Marauder llega con competencia, deuda y familiaridad fea: drenar, aislar, parchear dentro de rango, cortar solo metal de servicio, preservar evidencia, moverse antes de que cierre la ventana.
 
 El contrato dice salvage. Las salas dicen historia. El oceano no dice nada hasta que se le molesta.
 
-## 7. Que debe enseñar la primera pagina
+## 7. La trampa del archivo
 
-Este articulo no esta para hacer grande el escenario por tamaño. Esta para explicar por que todo sistema posterior se siente atrapado.
+Este archivo no es un libro de historia. Es la razon por la que todo sistema posterior esta bloqueado, retrasado y tasado.
 
 El viaje casi-luz vuelve tardio el rescate. La escalera lunar de Aegir vuelve condicional la comunicacion. Deep Reach vuelve procedimental la responsabilidad. Black Keel vuelve legible el descenso antes de volver seguro a nadie. Atlas vuelve la colonia ahogada legible y peligrosa al mismo tiempo. La ley de salvage pone robo y prueba en la misma mano.
 
-Cuando el jugador encuentra un nombre en una taquilla, un mapa de presion en un pasillo roto, un hash de ruta en una boya o un sello lunar en un bastidor de carga, no encuentra sabor. Encuentra la civilizacion que puso HECTON-8 bajo el agua y luego hizo responsable al agua de conservar las pruebas.
+Cuando un contratista encuentra un nombre en una taquilla, un mapa de presion en un pasillo roto, un hash de ruta en una boya o un sello lunar en un bastidor de carga, no encuentra sabor. Encuentra la civilizacion que puso HECTON-8 bajo el agua y luego hizo responsable al agua de conservar las pruebas.
 
 La primera pregunta no es "que paso aqui?"
 

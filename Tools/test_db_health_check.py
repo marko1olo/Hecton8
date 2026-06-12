@@ -32,6 +32,47 @@ class DbHealthCheckTests(unittest.TestCase):
         self.assertEqual(4080, self.tool.NODE_COMPUTED_BYTES)
         self.assertEqual(16, self.tool.NODE_PADDING_BYTES)
 
+
+    def test_create_dummy_h8db_writes_structurally_correct_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "structural.h8db"
+            self.tool.create_dummy_h8db(path)
+
+            self.assertTrue(path.exists())
+
+            data = path.read_bytes()
+
+            # Basic Header Checks
+            self.assertEqual(self.tool.FILE_MAGIC, self.tool.read_u32(data, self.tool.HEADER_MAGIC_OFFSET))
+            self.assertEqual(self.tool.VERSION, self.tool.read_i32(data, self.tool.HEADER_VERSION_OFFSET))
+            self.assertEqual(self.tool.HEADER_SIZE_BYTES, self.tool.read_i32(data, self.tool.HEADER_SIZE_OFFSET))
+            self.assertEqual(self.tool.NODE_SIZE_BYTES, self.tool.read_i32(data, self.tool.HEADER_NODE_SIZE_OFFSET))
+            self.assertEqual(self.tool.HEADER_SIZE_BYTES, self.tool.read_i64(data, self.tool.HEADER_ROOT_NODE_OFFSET))
+            self.assertEqual(512, self.tool.read_i32(data, self.tool.HEADER_SECTOR_SIZE_OFFSET))
+
+            # Check Root Node
+            root_offset = self.tool.read_i64(data, self.tool.HEADER_ROOT_NODE_OFFSET)
+            self.assertEqual(1, self.tool.read_u16(data, root_offset + self.tool.NODE_KEY_COUNT_OFFSET))
+            self.assertEqual(1, data[root_offset + self.tool.NODE_IS_LEAF_OFFSET])
+
+            # Check payloads
+            live_hash = self.tool.compute_sector_hash(12, -3, 44)
+            old_hash = self.tool.compute_sector_hash(11, -3, 44)
+
+            append = self.tool.HEADER_SIZE_BYTES + self.tool.NODE_SIZE_BYTES
+            dead_offset = self.tool.align_up(append, self.tool.PAYLOAD_ALIGNMENT_BYTES)
+
+            self.assertEqual(self.tool.PAYLOAD_MAGIC, self.tool.read_u32(data, dead_offset + self.tool.PAYLOAD_MAGIC_OFFSET))
+            self.assertEqual(old_hash, self.tool.read_u64(data, dead_offset + self.tool.PAYLOAD_HASH_OFFSET))
+            self.assertEqual(3584, self.tool.read_i32(data, dead_offset + self.tool.PAYLOAD_BYTES_OFFSET))
+
+            dead_record_bytes = self.tool.align_up(self.tool.PAYLOAD_HEADER_SIZE_BYTES + 3584, self.tool.PAYLOAD_ALIGNMENT_BYTES)
+            live_offset = dead_offset + dead_record_bytes
+
+            self.assertEqual(self.tool.PAYLOAD_MAGIC, self.tool.read_u32(data, live_offset + self.tool.PAYLOAD_MAGIC_OFFSET))
+            self.assertEqual(live_hash, self.tool.read_u64(data, live_offset + self.tool.PAYLOAD_HASH_OFFSET))
+            self.assertEqual(1536, self.tool.read_i32(data, live_offset + self.tool.PAYLOAD_BYTES_OFFSET))
+
     def test_dummy_audit_reports_expected_fragmentation(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "dummy.h8db"

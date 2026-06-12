@@ -17,7 +17,7 @@ By 2190, human space is not one empire. It is a stack of domains that still talk
 
 Sol Core finance and old certification law decide which documents still look legitimate. The Centauri Compact carries the prestige of early lawful expansion. Barnard Yards turns broken ships, pressure tools, and dead claims into a working culture. Tau Ceti can make evidence public, too late to save anyone immediately. Luyten Junction moves packets, beams, custody spools, and tariff queues. Aegir Claim is where all that polite machinery becomes dirty enough to touch water.
 
-The player does not need to memorize this map. The player needs to feel it through objects: a Barnard stamp on a wrench, a Centauri audit seal on a pressure plate, a Luyten custody hash on a delayed packet, a Sol-compatible insurance clause still owning a flooded room.
+The archive does not ask you to memorize this map. It demands that you read it in the objects recovered: a Barnard stamp on a wrench, a Centauri audit seal on a pressure plate, a Luyten custody hash on a delayed packet, a Sol-compatible insurance clause still owning a flooded room.
 
 ## 2. Ran, Aegir, And The Naming Trick
 
@@ -69,17 +69,17 @@ That does not mean it is settled. Dead claims do not become simple because time 
 
 So the site remains dead enough to deny rescue, alive enough to invoice, and valuable enough to keep sending people down.
 
-The Marauder enters that gap. Not as a tourist. Not as a hero passenger. Not as the owner of a clean private ship. The working origin is Barnard Yards or a connected frontier salvage belt, where dead claims are normal labor and a tool can be worth more than the hand carrying it. The player arrives with competence, debt, and ugly familiarity: drain, isolate, patch within rating, cut only service metal, preserve evidence, move before the window closes.
+The Marauder enters that gap. Not as a tourist. Not as a hero passenger. Not as the owner of a clean private ship. The working origin is Barnard Yards or a connected frontier salvage belt, where dead claims are normal labor and a tool can be worth more than the hand carrying it. The Marauder arrives with competence, debt, and ugly familiarity: drain, isolate, patch within rating, cut only service metal, preserve evidence, move before the window closes.
 
 The contract says salvage. The rooms say history. The ocean says nothing until disturbed.
 
-## 7. What This First Page Should Teach
+## 7. The Trap of the Archive
 
-This article is not here to make the setting large for its own sake. It is here to explain why every later system feels trapped.
+This archive is not a history book. It is the reason every later system is locked, delayed, and priced.
 
 Nearlight travel makes rescue late. Aegir's moon ladder makes communication conditional. Deep Reach makes liability procedural. Black Keel makes descent legible before it makes anyone safe. Atlas makes the drowned colony readable and dangerous at the same time. Salvage law makes theft and evidence share the same hand.
 
-When the player finds a name on a locker, a pressure map in a broken corridor, a route hash on a buoy, or a moon stamp on a cargo frame, they are not finding flavor. They are finding the civilization that put HECTON-8 under water and then made the water responsible for keeping the proof.
+When a contractor finds a name on a locker, a pressure map in a broken corridor, a route hash on a buoy, or a moon stamp on a cargo frame, they are finding the civilization that put HECTON-8 under water and then made the water responsible for keeping the proof.
 
 The first question is not "what happened here?"
 
