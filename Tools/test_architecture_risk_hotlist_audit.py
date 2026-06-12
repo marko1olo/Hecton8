@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -67,6 +68,54 @@ public class Comments {}
         )
         self.assertEqual(audit.extract_domain("Assets/_Project/Scripts/PlayerInventory.cs"), "Root")
 
+    def test_write_markdown_success(self) -> None:
+        payload = {
+            "schema": "v1",
+            "sourceRoot": "Assets",
+            "csFileCount": 100,
+            "scoredFileCount": 10,
+            "categoryTotals": {"hectonEventBusPubSub": 5},
+            "familyTotals": {"Coupling": 5},
+            "domainTotals": [
+                {
+                    "domain": "Root",
+                    "score": 50,
+                    "files": 2,
+                    "familyCounts": {"Coupling": 5},
+                    "topFiles": [{"path": "Test.cs", "score": 25}],
+                }
+            ],
+            "topFiles": [
+                {
+                    "path": "Test.cs",
+                    "score": 25,
+                    "categoryCounts": {"hectonEventBusPubSub": 5},
+                    "familyCounts": {"Coupling": 5},
+                    "examples": [{"line": 10, "category": "hectonEventBusPubSub", "text": "Publish()"}],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "report.md"
+            audit.write_markdown(p, payload)
+            self.assertTrue(p.exists())
+            content = p.read_text(encoding="utf-8")
+            self.assertIn("# Architecture Risk Hotlist", content)
+            self.assertIn("Test.cs", content)
+            self.assertIn("hectonEventBusPubSub", content)
+            self.assertIn("Publish()", content)
+
+    def test_write_markdown_malformed_payload(self) -> None:
+        payload = {
+            "categoryTotals": "not a dict",
+            "familyTotals": {},
+            "domainTotals": [],
+            "topFiles": [],
+        }
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "report.md"
+            with self.assertRaises(TypeError):
+                audit.write_markdown(p, payload)
 
 if __name__ == "__main__":
     unittest.main()
