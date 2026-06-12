@@ -89,5 +89,31 @@ class PdaTechnicalLogTests(unittest.TestCase):
             LoreTechValidator.validate(entries, self.load_localization())
 
 
+
+    def test_validate_structure_missing_text_is_rejected(self) -> None:
+        # Missing Text
+        entries = json.loads(json.dumps(self.load_entries()))
+        del entries[0]["Text"]
+        with self.assertRaisesRegex(ValueError, "TECH_01 missing Text"):
+            LoreTechValidator.validate_structure(entries)
+
+        # Empty Text
+        entries = json.loads(json.dumps(self.load_entries()))
+        entries[0]["Text"] = ""
+        with self.assertRaisesRegex(ValueError, "TECH_01 missing Text"):
+            LoreTechValidator.validate_structure(entries)
+
+        # Missing CompactText
+        entries = json.loads(json.dumps(self.load_entries()))
+        del entries[0]["CompactText"]
+        with self.assertRaisesRegex(ValueError, "TECH_01 missing CompactText"):
+            LoreTechValidator.validate_structure(entries)
+
+        # Empty CompactText
+        entries = json.loads(json.dumps(self.load_entries()))
+        entries[0]["CompactText"] = ""
+        with self.assertRaisesRegex(ValueError, "TECH_01 missing CompactText"):
+            LoreTechValidator.validate_structure(entries)
+
 if __name__ == "__main__":
     unittest.main()
