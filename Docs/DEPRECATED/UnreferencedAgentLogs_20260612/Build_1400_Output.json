@@ -1,0 +1,15 @@
+﻿{
+    "generatedAt":  "2026-06-11T00:09:37.5753635+04:00",
+    "status":  "FAILED_WITH_PARSED_SUMMARY",
+    "solutionPath":  "Hecton8.slnx",
+    "logPath":  "Docs/AgentLogs/Build_1400_Output.log",
+    "cpuLoadPercent":  26,
+    "compilerProcesses":  [
+
+                          ],
+    "exitCode":  1,
+    "durationMilliseconds":  762025,
+    "warnings":  5464,
+    "errors":  15,
+    "message":  "dotnet build guarded compile completed."
+}

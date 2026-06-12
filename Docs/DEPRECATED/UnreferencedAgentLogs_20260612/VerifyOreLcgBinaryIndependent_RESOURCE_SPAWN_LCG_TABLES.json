@@ -1,0 +1,89 @@
+{
+  "binary": {
+    "bytes": 1776,
+    "endian": "<",
+    "header": {
+      "biomeCount": 10,
+      "biomeOffset": 64,
+      "endianMarker": 16909060,
+      "fileSizeBytes": 1776,
+      "fnvCollisionCount": 0,
+      "headerBytes": 64,
+      "incrementC": 1013904223,
+      "magic": "H8OL",
+      "minimalOffset": 1424,
+      "modulusBits": 32,
+      "multiplierA": 1664525,
+      "payloadCrc32": 2957493204,
+      "resourceCount": 150,
+      "resourceOffset": 224,
+      "tableVersionHash32": 3968294156,
+      "ultraOffset": 1616,
+      "version": 1
+    },
+    "path": "Data/Economy/Ore_Distribution.h8bin",
+    "sha256": "60f9a95ec619b4c9b7c168a01ac308415190df44b545fb1f722a11e983709c06"
+  },
+  "biomeRecordsChecked": 10,
+  "evidenceClass": "STATIC_SOURCE/STATIC_DOC/PY_TOOL",
+  "failures": [],
+  "histogram": {
+    "rows": 150,
+    "safeShallowsTitaniumRows": 1
+  },
+  "minimalSection": {
+    "clump": [
+      16,
+      21,
+      27,
+      35,
+      50,
+      68,
+      99,
+      142,
+      170,
+      240
+    ],
+    "density": [
+      224,
+      210,
+      196,
+      181,
+      192,
+      210,
+      127,
+      98,
+      85,
+      32
+    ],
+    "payloadBytes": 190,
+    "sectionBytes": 192,
+    "totalWeightU16": [
+      510,
+      455,
+      431,
+      408,
+      425,
+      454,
+      320,
+      273,
+      253,
+      166
+    ],
+    "weightMatrixCount": 150
+  },
+  "policy": {
+    "iterationsPerBiome": 1000000,
+    "safeShallowsTitaniumBasisPoints": 5000
+  },
+  "resourceRecordsChecked": 150,
+  "runtimeProof": "PENDING_VERIFICATION",
+  "sourceMatrix": {
+    "biomeCount": 10,
+    "hashFailures": [],
+    "resourceCount": 15,
+    "rows": 150
+  },
+  "status": "ORE_LCG_BINARY_INDEPENDENT_VERIFIED_STATIC_ONLY",
+  "ultraRecordsChecked": 10
+}
