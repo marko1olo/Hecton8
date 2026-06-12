@@ -55,4 +55,4 @@ A marked object can be honored, challenged, copied, cut loose, reported, hidden 
 
 Good salvage manners are not softness. They are survival economics. Leave a useful warning and another Marauder may leave one for you. Preserve a custody tag and Black Keel may pay for proof instead of scrap. Break a false mark cleanly and the wreck becomes less dangerous for everyone who follows. Erase the wrong sign and the ocean gets one more anonymous room.
 
-On HECTON-8, ownership is rarely a clean sentence. It is a stain, a notch, a weak signal and a hand-cut warning. The player who learns to read those marks is not merely looting better. They are learning which parts of the dead colony are still speaking.
+On HECTON-8, ownership is rarely a clean sentence. It is a stain, a notch, a weak signal and a hand-cut warning. A player who learns to read those marks stops treating the dead colony as blind loot. They start treating it as a hostile, heavily documented worksite.

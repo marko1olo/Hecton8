@@ -59,7 +59,7 @@ Black Keel rents tools with return conditions. A suit comes back clean, or the w
 
 The system creates ugly habits. Crews wipe tools before helping each other. They hide stains that might prove a route because a route fee is cheaper than a contamination fee. They trade clean gloves like currency. They keep one sacrificial pouch for things that smell like court and one trusted pouch for things that smell like money. They learn which dirt can be sold, which dirt must be hidden and which dirt should stay on the seafloor because bringing it back gives Black Keel a new handle.
 
-Dirty gear is also memory. A scratch pattern on a helmet can identify a hatch. Salt in a boot seam can name a brine layer. Rust dust in a cutter tooth can prove a door was cut after flooding. A smear on a glove can connect a body to a room it never admitted entering.
+Dirty gear is an evidence record. A scratch pattern on a helmet can identify a hatch. Salt in a boot seam can name a brine layer. Rust dust in a cutter tooth can prove a door was cut after flooding. A smear on a glove can connect a body to a room it never admitted entering.
 
 The same dirt that fines a worker can keep that worker from being erased.
 

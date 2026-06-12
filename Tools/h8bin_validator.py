@@ -2152,7 +2152,7 @@ def parse_expected_record_sizes(
                 except Exception:
                     pass
             cursor = end + 1
-    for section_name, size in list(expected.items()):
+    for section_name, size in expected.items():
         if section_name in section_structs:
             continue
         hinted = SECTION_STRUCT_HINTS.get(section_name)
