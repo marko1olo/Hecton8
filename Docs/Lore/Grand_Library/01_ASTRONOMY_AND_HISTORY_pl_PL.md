@@ -17,7 +17,7 @@ W 2190 przestrzen ludzka nie jest jednym imperium. Jest stosem domen, ktore nada
 
 Finanse Sol Core i stare prawo certyfikacyjne decyduja, ktore dokumenty nadal wygladaja legalnie. Centauri Compact niesie prestiz wczesnej legalnej ekspansji. Barnard Yards zmienia polamane statki, narzedzia cisnieniowe i martwe roszczenia w kulture pracy. Tau Ceti moze upublicznic dowody, za pozno, by kogos natychmiast uratowac. Luyten Junction przesuwa pakiety, wiazki, szpule depozytu i kolejki taryf. Aegir Claim to miejsce, gdzie cala ta uprzejma maszyna robi sie dosc brudna, by dotknac wody.
 
-Gracz nie musi zapamietywac tej mapy. Ma ja czuc przez przedmioty: stempel Barnard na kluczu, pieczec audytu Centauri na plycie cisnieniowej, hash depozytu Luyten na opoznionym pakiecie, klauzule zgodna z Sol, ktora nadal posiada zalany pokoj.
+Archiwum nie prosi o zapamietywanie tej mapy. Wymaga czytania jej w odzyskanych obiektach: stempel Barnard na kluczu, pieczec audytu Centauri na plycie cisnieniowej, hash depozytu Luyten na opoznionym pakiecie, klauzule zgodna z Sol, ktora nadal posiada zalany pokoj.
 
 ## 2. Ran, Aegir i sztuczka z nazwami
 
@@ -69,17 +69,17 @@ Nie znaczy to, ze sprawa jest zamknieta. Martwe roszczenia nie staja sie proste,
 
 Miejsce pozostaje wiec dość martwe, by odmawiac ratunku, dość zywe, by fakturowac, i dość cenne, by wysylac ludzi w dol.
 
-Marauder wchodzi w te luke. Nie jako turysta. Nie jako heroiczny pasazer. Nie jako wlasciciel czystego prywatnego statku. Pochodzenie robocze to Barnard Yards albo polaczony frontierowy pas salvage, gdzie martwe roszczenia sa normalna praca, a narzedzie moze byc warte wiecej niz reka, ktora je niesie. Gracz przybywa z kompetencja, dlugiem i brzydka znajomoscia procedury: spuscic, odizolowac, zalatac w granicach ratingu, ciac tylko metal serwisowy, zachowac dowod, ruszyc sie przed zamknieciem okna.
+Marauder wchodzi w te luke. Nie jako turysta. Nie jako heroiczny pasazer. Nie jako wlasciciel czystego prywatnego statku. Pochodzenie robocze to Barnard Yards albo polaczony frontierowy pas salvage, gdzie martwe roszczenia sa normalna praca, a narzedzie moze byc warte wiecej niz reka, ktora je niesie. Marauder przybywa z kompetencja, dlugiem i brzydka znajomoscia procedury: spuscic, odizolowac, zalatac w granicach ratingu, ciac tylko metal serwisowy, zachowac dowod, ruszyc sie przed zamknieciem okna.
 
 Kontrakt mowi salvage. Pokoje mowia historia. Ocean nie mowi nic, dopoki go nie poruszysz.
 
-## 7. Czego ma uczyc pierwsza strona
+## 7. Pulapka archiwum
 
-Ten artykul nie istnieje po to, by powiekszac setting dla samej wielkosci. Wyjasnia, dlaczego kazdy pozniejszy system wydaje sie zamkniety.
+To archiwum to nie podrecznik historii. To powod, dla ktorego kazdy pozniejszy system jest zamkniety, opozniony i wyceniony.
 
 Podroze okoloswietlne czynia ratunek spoznionym. Drabina ksiezycowa Aegir czyni komunikacje warunkowa. Deep Reach czyni odpowiedzialnosc proceduralna. Black Keel czyni zejscie czytelnym, zanim czyni kogokolwiek bezpiecznym. Atlas czyni zatopiona kolonie jednoczesnie czytelna i niebezpieczna. Prawo salvage kladzie kradziez i dowod w tej samej rece.
 
-Kiedy gracz znajduje imie na szafce, mape cisnienia w peknietym korytarzu, route hash na boi albo stempel ksiezyca na ramie cargo, nie znajduje smaczku. Znajduje cywilizacje, ktora polozyla HECTON-8 pod woda, a potem uczynila wode odpowiedzialna za przechowanie dowodu.
+Kiedy podwykonawca znajduje imie na szafce, mape cisnienia w peknietym korytarzu, route hash na boi albo stempel ksiezyca na ramie cargo, nie znajduje smaczku. Znajduje cywilizacje, ktora polozyla HECTON-8 pod woda, a potem uczynila wode odpowiedzialna za przechowanie dowodu.
 
 Pierwsze pytanie nie brzmi: co tu sie stalo?
 

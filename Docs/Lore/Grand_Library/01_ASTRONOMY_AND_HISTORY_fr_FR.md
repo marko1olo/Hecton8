@@ -17,7 +17,7 @@ En 2190, l'espace humain n'est pas un empire unique. C'est une pile de domaines 
 
 La finance de Sol Core et l'ancien droit de certification décident quels documents ont encore l'air légitimes. Le Centauri Compact porte le prestige de la première expansion légale. Barnard Yards transforme les vaisseaux cassés, les outils de pression et les revendications mortes en culture de travail. Tau Ceti peut rendre les preuves publiques, trop tard pour sauver quelqu'un tout de suite. Luyten Junction déplace paquets, faisceaux, bobines de garde et files tarifaires. Aegir Claim est l'endroit où toute cette machine polie devient assez sale pour toucher l'eau.
 
-Le joueur n'a pas besoin de mémoriser cette carte. Il doit la sentir dans les objets : poinçon Barnard sur une clé, sceau d'audit Centauri sur une plaque de pression, hash de garde Luyten sur un paquet retardé, clause d'assurance compatible Sol possédant encore une salle inondée.
+L'archive ne vous demande pas de mémoriser cette carte. Elle exige que vous la lisiez dans les objets récupérés : poinçon Barnard sur une clé, sceau d'audit Centauri sur une plaque de pression, hash de garde Luyten sur un paquet retardé, clause d'assurance compatible Sol possédant encore une salle inondée.
 
 ## 2. Ran, Aegir et le tour des noms
 
@@ -69,17 +69,17 @@ Cela ne veut pas dire que le dossier est réglé. Les revendications mortes ne d
 
 Le site reste donc assez mort pour refuser le secours, assez vivant pour facturer, et assez précieux pour renvoyer des gens en bas.
 
-Le Maraudeur entre dans cet intervalle. Pas comme touriste. Pas comme passager héroïque. Pas comme propriétaire d'un vaisseau privé propre. L'origine de travail est Barnard Yards ou une ceinture de récupération frontalière liée, où les revendications mortes sont du travail ordinaire et où un outil peut valoir plus que la main qui le porte. Le joueur arrive avec compétence, dette et familiarité laide : drainer, isoler, réparer dans la tolérance, couper seulement le métal de service, préserver la preuve, bouger avant la fermeture de la fenêtre.
+Le Maraudeur entre dans cet intervalle. Pas comme touriste. Pas comme passager héroïque. Pas comme propriétaire d'un vaisseau privé propre. L'origine de travail est Barnard Yards ou une ceinture de récupération frontalière liée, où les revendications mortes sont du travail ordinaire et où un outil peut valoir plus que la main qui le porte. Le Marauder arrive avec compétence, dette et familiarité laide : drainer, isoler, réparer dans la tolérance, couper seulement le métal de service, préserver la preuve, bouger avant la fermeture de la fenêtre.
 
 Le contrat dit salvage. Les pièces disent histoire. L'océan ne dit rien tant qu'on ne le dérange pas.
 
-## 7. Ce que la première page doit enseigner
+## 7. Le piège de l'archive
 
-Cet article n'est pas là pour agrandir le monde pour le plaisir. Il explique pourquoi chaque système suivant se sent enfermé.
+Cette archive n'est pas un livre d'histoire. C'est la raison pour laquelle chaque système suivant est verrouillé, retardé et facturé.
 
 Le voyage proche-lumière rend le secours tardif. L'échelle lunaire d'Aegir rend la communication conditionnelle. Deep Reach rend la responsabilité procédurale. Black Keel rend la descente lisible avant de rendre quelqu'un sauf. Atlas rend la colonie noyée lisible et dangereuse à la fois. Le droit du salvage met le vol et la preuve dans la même main.
 
-Quand le joueur trouve un nom sur un casier, une carte de pression dans un couloir brisé, un hash de route sur une bouée ou un poinçon lunaire sur un cadre cargo, il ne trouve pas du décor. Il trouve la civilisation qui a mis HECTON-8 sous l'eau, puis rendu l'eau responsable de garder les preuves.
+Quand un entrepreneur trouve un nom sur un casier, une carte de pression dans un couloir brisé, un hash de route sur une bouée ou un poinçon lunaire sur un cadre cargo, il ne trouve pas du décor. Il trouve la civilisation qui a mis HECTON-8 sous l'eau, puis rendu l'eau responsable de garder les preuves.
 
 La première question n'est pas : que s'est-il passé ici ?
 

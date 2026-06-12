@@ -17,7 +17,7 @@ In 2190 is menselijke ruimte geen enkel rijk. Ze is een stapel domeinen die blij
 
 Sol Core-financiering en oud certificeringsrecht bepalen welke documenten nog legitiem lijken. Het Centauri Compact draagt het prestige van vroege rechtmatige expansie. Barnard Yards verandert gebroken schepen, drukgereedschap en dode claims in werkcultuur. Tau Ceti kan bewijs openbaar maken, te laat om iemand onmiddellijk te redden. Luyten Junction beweegt pakketten, bundels, bewaarsrollen en tariefwachtrijen. Aegir Claim is waar al die beleefde machinerie vuil genoeg wordt om water aan te raken.
 
-De speler hoeft deze kaart niet uit het hoofd te leren. De speler moet haar voelen via objecten: een Barnard-stempel op een sleutel, een Centauri-auditzegel op een drukplaat, een Luyten-bewaarhash op een vertraagd pakket, een Sol-compatibele verzekeringsclausule die nog steeds een overstroomde kamer bezit.
+Het archief vraagt je niet om deze kaart uit het hoofd te leren. Het eist dat je haar leest in de geborgen objecten: een Barnard-stempel op een sleutel, een Centauri-auditzegel op een drukplaat, een Luyten-bewaarhash op een vertraagd pakket, een Sol-compatibele verzekeringsclausule die nog steeds een overstroomde kamer bezit.
 
 ## 2. Ran, Aegir en de naamtruc
 
@@ -69,17 +69,17 @@ Dat betekent niet dat ze geregeld is. Dode claims worden niet simpel omdat tijd 
 
 Dus blijft de plek dood genoeg om redding te weigeren, levend genoeg om te factureren en waardevol genoeg om opnieuw mensen naar beneden te sturen.
 
-De Marauder stapt die opening binnen. Niet als toerist. Niet als heroïsche passagier. Niet als eigenaar van een schoon privéschip. De werkoorsprong is Barnard Yards of een verbonden frontier-salvagegordel, waar dode claims gewoon werk zijn en een gereedschap meer waard kan zijn dan de hand die het draagt. De speler arriveert met competentie, schuld en lelijke vertrouwdheid: drainen, isoleren, binnen rating patchen, alleen servicemetaal snijden, bewijs bewaren, bewegen voordat het venster sluit.
+De Marauder stapt die opening binnen. Niet als toerist. Niet als heroïsche passagier. Niet als eigenaar van een schoon privéschip. De werkoorsprong is Barnard Yards of een verbonden frontier-salvagegordel, waar dode claims gewoon werk zijn en een gereedschap meer waard kan zijn dan de hand die het draagt. De Marauder arriveert met competentie, schuld en lelijke vertrouwdheid: drainen, isoleren, binnen rating patchen, alleen servicemetaal snijden, bewijs bewaren, bewegen voordat het venster sluit.
 
 Het contract zegt salvage. De kamers zeggen geschiedenis. De oceaan zegt niets tot hij wordt gestoord.
 
-## 7. Wat deze eerste pagina moet leren
+## 7. De val van het archief
 
-Dit artikel is er niet om de setting groot te maken om grootte. Het legt uit waarom elk later systeem opgesloten voelt.
+Dit archief is geen geschiedenisboek. Het is de reden waarom elk later systeem is vergrendeld, vertraagd en geprijsd.
 
 Nabij-lichtreizen maken redding laat. Aegirs maanladder maakt communicatie voorwaardelijk. Deep Reach maakt aansprakelijkheid procedureel. Black Keel maakt afdaling leesbaar voordat het iemand veilig maakt. Atlas maakt de verdronken kolonie tegelijk leesbaar en gevaarlijk. Salvagewet legt diefstal en bewijs in dezelfde hand.
 
-Wanneer de speler een naam op een locker vindt, een drukkaart in een gebroken gang, een routehash op een boei of een maanstempel op een vrachtframe, vindt hij geen smaaktekst. Hij vindt de beschaving die HECTON-8 onder water zette en daarna het water verantwoordelijk maakte voor het bewaren van bewijs.
+Wanneer een aannemer een naam op een locker vindt, een drukkaart in een gebroken gang, een routehash op een boei of een maanstempel op een vrachtframe, vindt hij geen smaaktekst. Hij vindt de beschaving die HECTON-8 onder water zette en daarna het water verantwoordelijk maakte voor het bewaren van bewijs.
 
 De eerste vraag is niet: wat is hier gebeurd?
 

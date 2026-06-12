@@ -69,17 +69,17 @@ Das heißt nicht, dass sie erledigt ist. Tote Ansprüche werden durch Zeit nicht
 
 Also bleibt die Anlage tot genug, um Rettung zu verweigern, lebendig genug, um Rechnungen zu stellen, und wertvoll genug, um wieder Menschen hinabzuschicken.
 
-Der Marauder tritt in diese Lücke. Nicht als Tourist. Nicht als heroischer Passagier. Nicht als Besitzer eines sauberen Privatschiffs. Die Arbeitsherkunft ist Barnard Yards oder ein verbundener Frontier-Salvage-Gürtel, wo tote Ansprüche normale Arbeit sind und ein Werkzeug mehr wert sein kann als die Hand, die es trägt. Der Spieler kommt mit Kompetenz, Schuld und hässlicher Vertrautheit: ablassen, isolieren, innerhalb der Freigabe flicken, nur Servicemetall schneiden, Beweise bewahren, vor dem Schließen des Fensters bewegen.
+Der Marauder tritt in diese Lücke. Nicht als Tourist. Nicht als heroischer Passagier. Nicht als Besitzer eines sauberen Privatschiffs. Die Arbeitsherkunft ist Barnard Yards oder ein verbundener Frontier-Salvage-Gürtel, wo tote Ansprüche normale Arbeit sind und ein Werkzeug mehr wert sein kann als die Hand, die es trägt. Der Marauder kommt mit Kompetenz, Schuld und hässlicher Vertrautheit: ablassen, isolieren, innerhalb der Freigabe flicken, nur Servicemetall schneiden, Beweise bewahren, vor dem Schließen des Fensters bewegen.
 
 Der Vertrag sagt Salvage. Die Räume sagen Geschichte. Der Ozean sagt nichts, bis er gestört wird.
 
-## 7. Was die erste Seite lehren soll
+## 7. Die Falle des Archivs
 
-Dieser Artikel soll das Setting nicht um der Größe willen groß machen. Er erklärt, warum jedes spätere System eingesperrt wirkt.
+Dieses Archiv ist kein Geschichtsbuch. Es ist der Grund, warum jedes spätere System gesperrt, verzögert und bepreist ist.
 
 Nahlichtreise macht Rettung spät. Aegirs Mondleiter macht Kommunikation bedingt. Deep Reach macht Haftung prozedural. Black Keel macht Abstieg lesbar, bevor er irgendwen sicher macht. Atlas macht die ertrunkene Kolonie zugleich lesbar und gefährlich. Salvage-Recht legt Diebstahl und Beweis in dieselbe Hand.
 
-Wenn der Spieler einen Namen auf einem Spind, eine Druckkarte in einem gebrochenen Korridor, einen Routenhash auf einer Boje oder einen Mondstempel auf einem Frachtrahmen findet, findet er keinen Geschmackstext. Er findet die Zivilisation, die HECTON-8 unter Wasser legte und dann das Wasser für die Beweisverwahrung verantwortlich machte.
+Wenn ein Auftragnehmer einen Namen auf einem Spind, eine Druckkarte in einem gebrochenen Korridor, einen Routenhash auf einer Boje oder einen Mondstempel auf einem Frachtrahmen findet, findet er keinen Geschmackstext. Er findet die Zivilisation, die HECTON-8 unter Wasser legte und dann das Wasser für die Beweisverwahrung verantwortlich machte.
 
 Die erste Frage lautet nicht: Was ist hier passiert?
 
