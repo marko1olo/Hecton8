@@ -56,13 +56,3 @@ It remembers who signed it out, which cage released it, which seals were changed
 This is why experienced Marauders treat a returned suit with suspicion. A cleaned exterior means almost nothing. Salt hides under latch lips. Stress hides in glass edges. Bad work hides in neat notes. A suit that came back from a silent route may be worth more as testimony than as equipment, and more dangerous for the same reason.
 
 Some contractors carve private marks where the cage camera cannot easily see them: one dot for a descent survived, two for a body recovered, a short line for a seal they do not trust. Officially this is vandalism. Unofficially, handlers read those marks before signing out a suit to anyone they do not hate.
-
-## 6. What The Player Learns
-
-The player learns that the suit is not separate from the story. It is the story's first body.
-
-Upgrading it is not a clean ladder from weak to strong. It is a set of tradeoffs that changes what kind of risk becomes visible. Better heaters may buy longer thought in cold zones. Better joints may turn a wreck interior from impossible to merely stupid. Better seals may let a player carry proof through a pressure band that would ruin cheaper equipment. A stronger tool mount may bring back more salvage and also make every failed return more expensive.
-
-The suit teaches the same lesson as the ocean, but in a human voice: survive first, understand second, profit only if the first two leave anything intact.
-
-When the player climbs out of a Class-IV after a good descent, they are not stepping out of armor. They are stepping out of a witness box, a rented coffin, a workshop and a debt instrument that kept them alive long enough to owe more.

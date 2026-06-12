@@ -72,13 +72,3 @@ Red fiber tied above a hatch instead of beside it. Three scrape marks on a pump 
 These marks should not all mean the same thing. Some are warnings. Some are grief. Some are route memory. Some are fraud. Some are intimidation. Some are attempts to keep biology, machines or people calm. Some are old enough that their original purpose is gone and only the habit remains.
 
 The player can use them. A hush mark may identify a route where sound matters. A tithe mark may reveal where animals feed. A ledger mark may point to hidden evidence, unpaid debt or a body that was never logged. A false mark may lure another crew away from a prize. A real mark may save the player if they do not treat it like folklore.
-
-## 7. What The Player Learns
-
-The player learns that belief is another survival technology, and like every technology on HECTON-8, it fails badly when used without context.
-
-A rite can preserve a route, hide a claim, calm a crew, warn of pressure, encode a death, manipulate a rival or excuse a crime. A superstition can be bad science, compressed fieldcraft, corporate cover, grief with a pattern, or all of those at once. The player does not have to believe the abyss is watching. The player has to understand why someone else believed it, what they did because of that belief and what the ocean learned from the repetition.
-
-Good play means reading ritual like a damaged sensor. Do not mock it. Do not obey it blindly. Test it against water, pressure, biology, machinery, debt and fear.
-
-On HECTON-8, the abyss does not need worshippers. It only needs people to repeat a useful mistake until the mistake becomes infrastructure.

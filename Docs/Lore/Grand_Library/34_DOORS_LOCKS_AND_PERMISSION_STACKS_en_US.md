@@ -38,11 +38,3 @@ People who work under pressure develop manners around doors.
 Do not stand in the swing arc. Do not crowd a hatch that is still thinking. Do not mock a slow lock; slow locks have saved more lives than fast workers. If a door hisses, everybody listens. If a door opens too easily, nobody steps through first without checking why. A worker who says "hold" near a pressure frame is obeyed before being questioned.
 
 Marauders leave marks for each other when they dare: one line for bad air, two for wet floor, a crossed notch for living fauna beyond, a small dot under the handle for "worth opening quietly." Black Keel does not recognize these marks. That is part of why they matter.
-
-## 5. What The Player Learns
-
-The player learns that opening is not the same as entering.
-
-A door may be beaten, bypassed, powered, argued with, restored or left alone. Each choice changes what the room becomes. A cut door is a louder room. A powered door is a room with records. A bypassed door is a room that may still think it is sealed. A door left closed can become more valuable later than a door opened too early.
-
-In HECTON-8, progress is not always forward motion. Sometimes progress is understanding which locked thing deserves patience, which deserves heat and which deserves to stay shut until the player can make the truth inside survive the opening.

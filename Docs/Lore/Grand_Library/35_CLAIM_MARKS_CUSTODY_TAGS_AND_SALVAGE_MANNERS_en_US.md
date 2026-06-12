@@ -46,13 +46,3 @@ A clean panel in a dirty room may have been wiped. A cut tag may mean release, t
 False tags are common enough to have manners around them. You do not accuse first. You photograph, scan, sample the attachment point and check whether the grime grew around the tag or under it. A new tag on old corrosion is a sales pitch. Old grime over a new tag is worse: it means somebody had time, tools and patience.
 
 Silence has its own meanings. No tag on a corpse-adjacent locker may be respect. No tag on a sealed lab may be fear. No tag on a clean, powered crate in a dead corridor is almost never innocence.
-
-## 5. What The Player Learns
-
-The player learns that salvage is reading before taking.
-
-A marked object can be honored, challenged, copied, cut loose, reported, hidden or stolen. Each choice changes more than inventory. It changes who will believe the player later, which doors trust their custody trail, which buyers accept the lot and which old systems decide the player is an intruder with tools.
-
-Good salvage manners are not softness. They are survival economics. Leave a useful warning and another Marauder may leave one for you. Preserve a custody tag and Black Keel may pay for proof instead of scrap. Break a false mark cleanly and the wreck becomes less dangerous for everyone who follows. Erase the wrong sign and the ocean gets one more anonymous room.
-
-On HECTON-8, ownership is rarely a clean sentence. It is a stain, a notch, a weak signal and a hand-cut warning. The player who learns to read those marks is not merely looting better. They are learning which parts of the dead colony are still speaking.

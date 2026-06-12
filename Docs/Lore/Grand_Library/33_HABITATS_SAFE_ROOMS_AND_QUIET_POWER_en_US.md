@@ -46,13 +46,3 @@ Official logs say when a room lost pressure, when a crew transferred out, when a
 Marauders enter these rooms with practical hunger. They need filters, fuses, dry bags, charge, medicine, sealant, firmware keys and anything that can be traded to a receiver queue. But the rooms also teach. A habitat with all cups washed and no spare cells left says a different final hour than a habitat with a cutter still warm in its clamp. A room can accuse without a voice.
 
 Good scavengers learn to take what keeps them alive and still notice what the room was trying to say.
-
-## 5. What The Player Learns
-
-The player learns that shelter is a temporary verb.
-
-To shelter is to keep pressure out for another interval, keep air moving, keep heat where thought can still happen, keep evidence dry, keep tools findable, keep panic from becoming procedure and keep the next return possible. A habitat is not safe because it is marked safe. It is safe because the player understands what it depends on.
-
-Upgrading a shelter should feel less like buying furniture and more like choosing what kind of failure becomes survivable. Better filters buy calm. Better locks buy time. Better storage buys proof. Better power buys choices. Better lighting does not remove fear; it lets fear stop lying about corners.
-
-In HECTON-8, a safe room is not where the ocean stops. It is where the player gets one controlled breath before arguing with it again.

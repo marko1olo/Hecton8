@@ -46,13 +46,3 @@ Fault zones refuse them. A scanner may see a mineral vein as a cable. A wet cond
 This is where cheap certainty kills. If the display says "wall," the wall may still be moving. If it says "open gap," the gap may be a polished fracture too narrow for a tether. If it says "inactive structure," the structure may be using rock moisture to complete a circuit. If it says "no organism," the organism may be the thin crust that made the reading possible.
 
 Good crews use instruments as arguments, not verdicts. Ping, scrape, wait, watch the dust, check the clamp, tug the line, look again after the tide note changes. A wall that fails slowly is still failing.
-
-## 5. What The Player Learns
-
-The player learns that geology is part of gameplay, not scenery.
-
-Fault rock changes routes without asking permission. It can hide sound, carry charge, jam machinery, mislead scanners, preserve evidence, destroy evidence and make a safe room unsafe without opening a single door. A green-black wall may be a landmark, a warning, a resource clue, a seal risk, a current guide or the reason a previous crew never left.
-
-Good play means treating stone as a system with memory. Do not cut every mineral seam. Do not trust every smooth surface. Do not anchor a tether in a wall that is polishing itself. Do not assume a shifted hatch is broken only by age. Read the rock the way you read a dead console: what fed it, what stressed it, what did people bolt into it, and what did the ocean do after they stopped watching?
-
-On HECTON-8, the wall does not need to become a monster. It only needs to remain a wall under pressure.

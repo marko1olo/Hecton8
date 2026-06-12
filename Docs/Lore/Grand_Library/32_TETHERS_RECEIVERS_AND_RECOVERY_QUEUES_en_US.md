@@ -46,13 +46,3 @@ Marauders learn not to waste a clear channel. They keep panic off public audio i
 There are ugly customs. A contractor may send a sample up first because the sample can buy the receiver time needed for the person. A pair may cut a tool loose to keep the tether from overstraining. Someone may lie about contamination to avoid losing a window and then live long enough to pay for that lie. None of this is heroic. It is queue behavior under pressure.
 
 Black Keel records queue discipline as efficiency. Marauders remember it as character.
-
-## 5. What The Player Learns
-
-The player learns that returning is a system, not a button.
-
-A good return is prepared before the descent begins: route known, tether watched, anchor points understood, receiver window respected, payload tagged, proof packaged and suit telemetry clean enough that nobody above can pretend confusion. A bad return may still succeed if it creates the right problem. A worse return may fail politely, with every rule followed and every office protected.
-
-This is where salvage becomes drama without needing speeches. The player is not merely trying to reach safety. They are trying to make their return legible, valuable and inconvenient to refuse.
-
-In HECTON-8, the line upward is never only a line upward. It is a claim, a receipt, a threat, a prayer and sometimes the last honest sound between the ocean and the ship.

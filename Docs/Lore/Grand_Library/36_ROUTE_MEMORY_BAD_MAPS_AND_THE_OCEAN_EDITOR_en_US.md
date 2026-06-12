@@ -46,13 +46,3 @@ They look for polished corners where shoulders brushed the same turn. They look 
 This is not mysticism. It is attention under pressure. HECTON-8 rewards the player for learning the small grammar of movement: what repeated contact does to paint, what panic does to a handrail, what a long-abandoned route sounds like when the suit stops filling the silence with warnings.
 
 The best path is rarely the shortest one. It is the one whose lies the player understands.
-
-## 5. What The Player Learns
-
-The player learns to treat navigation as custody, not travel.
-
-Every route used becomes part of a record. It can be updated, sold, hidden, poisoned, cleaned or left as a warning. A corrected map can save another worker or raise the value of a district. A concealed shortcut can keep a claim alive or lead somebody else into a room the player no longer wants to describe. A bad note can outlive the person who wrote it and keep doing harm.
-
-Black Keel pays for routes because routes are future labor. Marauders protect routes because routes are private breath. Deep Reach left routes because colonies cannot exist without the assumption that people will need to move under stress.
-
-On HECTON-8, a map is never just a map. It is an argument with the ocean about whether yesterday can still be trusted. The player wins that argument only by learning when to follow the line, when to question it and when to leave a better mark for the next person who has to breathe their way through the dark.

@@ -42,13 +42,3 @@ Marauders learn to sleep in short debt-free pieces: before the scrubber changes 
 The carrier staff are not all monsters. That makes the place worse. A logistics tech can save your life by moving a suit cage forward one slot and still charge the fee that keeps you trapped. A med clerk can hide a bad oxygen scan under a maintenance note and still file you as labor fit. A handler can warn you that a contract is poisonous and still need the payload before the next window closes.
 
 Black Keel culture is built from favors that do not break the system, only dent it.
-
-## 5. What The Player Learns
-
-The player learns that escape is not a single launch. It is a negotiation with physics, machinery and ownership.
-
-A damaged descent capsule is only the first lock. After that come the carrier's locks: route handshake, pressure certification, quarantine answer, proof of payload, evidence custody and a recovery call that can be accepted by more than one office for more than one reason. Black Keel can become the way out, but only if the player changes what the carrier thinks it is recovering.
-
-Bring back mass, and the contract pays. Bring back evidence with custody, and the claim changes. Bring back proof that makes delay expensive, and rescue starts to look like the cheaper option.
-
-That is why bad contracts matter in HECTON-8. They are not background paperwork. They are the shape of the player's loneliness, the sound of the voice above the water, and the reason every useful thing pulled from the ocean asks the same question: who owns this now?

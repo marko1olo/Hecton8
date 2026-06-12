@@ -76,13 +76,3 @@ For a salvage crew, that matters as much as a memo.
 A recovered document can say a room was clear. A wall can say water reached it. A sensor can say no movement. A clamp scar can say the rock moved anyway. A claim office may prefer clean categories, but HECTON-8 writes in layers: pressure, salt, heat, biology, metal, time.
 
 Good Marauders learn to read those layers because they change payment, route safety and truth at the same time.
-
-## 7. What The Player Learns
-
-Geology is gameplay, not scenery.
-
-The player should learn that a route is never only distance. It is depth, density, sound, pressure, fault motion, heat, corrosion, sensor trust, sample state and the time left before a window closes. A bright shelf can be dangerous because it invites speed. A quiet canyon can be dangerous because sound returns too cleanly. A green-black wall can be dangerous because it is still moving. A sealed room can be dangerous because geology may have opened a smaller door than the map knows.
-
-The Great Tide gives the whole game its grammar. Nothing on HECTON-8 fails in one category. Rock moves into machinery. Water moves into law. Salt moves into memory. Heat moves into debt. A sample becomes evidence. A door becomes a claim. A corridor becomes a question about who was allowed to wait.
-
-When the player descends in 2190, the disaster is not over. The dramatic wave has passed. The pressure system remains.
