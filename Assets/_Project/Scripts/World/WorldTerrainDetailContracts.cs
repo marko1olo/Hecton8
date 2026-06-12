@@ -456,15 +456,18 @@ namespace Hecton8.World
             float terraceWarp = (ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x7D4B9143u, 910f) - 0.5f) * terraceStep * 0.42f;
             float terraceHeight = macro.HeightMeters + terraceWarp;
             float terraceLocal = terraceHeight / math.max(1f, terraceStep);
-            float terraceLevel = math.round(terraceLocal);
-            float terraceOffset = terraceLevel * terraceStep - terraceHeight;
-            float terraceDistance = math.abs(terraceOffset) / math.max(1f, terraceStep);
-            float terracePlate = 1f - math.smoothstep(0.16f, 0.54f, terraceDistance);
-            float terraceSoftEdge = 1f - math.smoothstep(0.42f, 0.64f, terraceDistance);
+            float terraceBase = math.floor(terraceLocal);
+            float terraceFrac = terraceLocal - terraceBase;
+            // Organic smooth-step instead of primitive rounding
+            float terraceSoft = terraceBase + math.smoothstep(0.25f, 0.75f, terraceFrac);
+            float terraceOffset = terraceSoft * terraceStep - terraceHeight;
+            
+            // Mask out the terrace in steep areas to prevent texture stretching
+            float terraceMask = math.smoothstep(0.85f, 0.45f, slope);
+            
             float terraceDelta = (terraceOffset - terraceWarp * 0.18f) *
                 terrace *
-                terracePlate *
-                terraceSoftEdge *
+                terraceMask *
                 p.TerraceStrengthMeters *
                 detailGate;
 

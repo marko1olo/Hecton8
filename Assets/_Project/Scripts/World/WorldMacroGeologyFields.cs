@@ -325,7 +325,14 @@ namespace Hecton8.World
             float depth = math.lerp(p.ShelfDepthMeters, p.AbyssDepthMeters, descent01);
             depth += math.saturate((absoluteZ - shelfCurve) / math.max(1f, half)) * 820f;
 
-            float terraceTarget = math.round(depth / 260f) * 260f;
+            float terraceScale = 260f;
+            float terraceLocal = depth / terraceScale;
+            float terraceBase = math.floor(terraceLocal);
+            float terraceFrac = terraceLocal - terraceBase;
+            // Organic soft-stepping instead of primitive math.round
+            float terraceSoft = terraceBase + math.smoothstep(0.2f, 0.8f, terraceFrac);
+            float terraceTarget = terraceSoft * terraceScale;
+            
             float terraceNoise = (FractalNoise01(norm * 16.5f + new float2(-4f, 9f), p.Seed ^ 0xD1B54A32u) * 2f - 1f) * 58f;
             float terraceWeight = math.saturate(shelfMask * 0.08f + shelfBreakMask * 0.22f);
             depth = math.lerp(depth, terraceTarget + terraceNoise, terraceWeight);

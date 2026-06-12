@@ -54,7 +54,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Island Junction")] public float islandJunctionThreshold = 0.58f;
         [Den.Tools.GUI.ValAttribute("Seed")] public int seed = WorldMacroGeologyFields.DefaultAuthoringSeed;
 
-        [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = true;
+        [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = false;
         [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 8f;
         [Den.Tools.GUI.ValAttribute("Plateau Target deg")] public float plateauTargetAngleDegrees = 2.5f;
         [Den.Tools.GUI.ValAttribute("Cliff Source deg")] public float cliffSourceAngleDegrees = 45f;
