@@ -443,7 +443,7 @@ public class HectonPlayerSpawner : MonoBehaviour
         // ══════════════════════════════════════════════════════════
         //  FAZA 2: Poisk melkovodya po Arhimedovoy spirali
         //
-        //  v3.1 FIX: Per-point retry counter.
+        //  v3.1 Patch: Per-point retry counter.
         //
         //  BYLO (v3.0, DEDLOK):
         //    if (!GroundProbe) { await delay; continue; }
