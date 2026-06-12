@@ -15,7 +15,7 @@ The opening figure on the intake screen is 4.8 tonne-window equivalent before ox
 
 That is why debt on Black Keel feels physical. It has weight, timing, heat, quarantine class and a place in the manifest. A worker can argue about credits. A worker cannot argue with a closed window.
 
-## 2. The Cost Of Staying Alive
+## 2. Staying Alive
 
 Black Keel charges for survival through clean nouns.
 
