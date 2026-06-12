@@ -5146,7 +5146,7 @@ namespace Hecton8.Gameplay
             char delimiter,
             out ReadOnlySpan<char> token)
         {
-            if (cursor > source.Length)
+            if (cursor >= source.Length)
             {
                 token = default;
                 return false;

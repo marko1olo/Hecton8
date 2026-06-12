@@ -232,7 +232,7 @@
     "Docs/Lore/Archives/DeepReach_ColonyFailureArchive.metadata.json": "5e182f2dd08800123e090ee59b5f031e2658657e6edefefa74793a75f5157e99",
     "Docs/Modding/Signal_Schema.json": "37e0e2edd9531d85f51b859c4dd251c23322b65b1f930e92a5ec8221bf571521",
     "Docs/Reports/H8_Hash_Catalog_Audit.json": "536072f5c2ba449ce6f46b3f448bf20eb7752532a6066ee550f81a33b7e991c0",
-    "Tools/AiBattleSim_Report.json": "e7e02fb5fcbd011d86d2ec8bf25822f3018c584f2b908fa50c5206e9604b2eda"
+    "Tools/AiBattleSim_Report.json": "880fb803f689ff37f892389ebbdf1f166173052a308007796a48bd40eb148991"
   },
   "sources": [
     "Assets/_Project/Data/Localization/BabelMocks/es_ES.json",

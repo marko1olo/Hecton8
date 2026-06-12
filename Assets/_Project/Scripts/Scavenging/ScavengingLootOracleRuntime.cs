@@ -68,10 +68,10 @@ namespace Hecton8.Scavenging
         public const uint DefaultSessionSalt = 0x1251255Du;
         public const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_LOOT_ORACLE.bin";
 
-        public static readonly BufferID LootEntriesBufferId = (BufferID)70930;
-        public static readonly BufferID BiomeModifiersBufferId = (BufferID)70933;
-        public static readonly BufferID DistributionAuditBufferId = (BufferID)70935;
-        public static readonly BufferID CsvScratchBufferId = (BufferID)70936;
+        public static readonly BufferID LootEntriesBufferId = BufferID.ScavengingLootOracleRuntime_LootEntriesBufferId;
+        public static readonly BufferID BiomeModifiersBufferId = BufferID.ScavengingLootOracleRuntime_BiomeModifiersBufferId;
+        public static readonly BufferID DistributionAuditBufferId = BufferID.ScavengingLootOracleRuntime_DistributionAuditBufferId;
+        public static readonly BufferID CsvScratchBufferId = BufferID.ScavengingLootOracleRuntime_CsvScratchBufferId;
     }
 
     internal static class ScavengingLootOracleMath

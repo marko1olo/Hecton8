@@ -14,13 +14,13 @@ namespace Hecton8.Construction
         private const int InitialNodeCapacity = 4096;
         private const int InitialEdgeCapacity = 8192;
         private const SystemID OwnerSystem = SystemID.Construction;
-        private const BufferID EdgeOffsetsBufferId = (BufferID)72032;
-        private const BufferID EdgeDestinationsBufferId = (BufferID)72033;
-        private const BufferID EdgeWriteCursorBufferId = (BufferID)72034;
-        private const BufferID StorageCapacityByNodeBufferId = (BufferID)72035;
-        private const BufferID VisitedBufferId = (BufferID)72036;
-        private const BufferID QueueBufferId = (BufferID)72037;
-        private const BufferID ResultNodeIndexBufferId = (BufferID)72038;
+        private const BufferID EdgeOffsetsBufferId = BufferID.LogisticsRouteScratchMemory_EdgeOffsetsBufferId;
+        private const BufferID EdgeDestinationsBufferId = BufferID.LogisticsRouteScratchMemory_EdgeDestinationsBufferId;
+        private const BufferID EdgeWriteCursorBufferId = BufferID.LogisticsRouteScratchMemory_EdgeWriteCursorBufferId;
+        private const BufferID StorageCapacityByNodeBufferId = BufferID.LogisticsRouteScratchMemory_StorageCapacityByNodeBufferId;
+        private const BufferID VisitedBufferId = BufferID.LogisticsRouteScratchMemory_VisitedBufferId;
+        private const BufferID QueueBufferId = BufferID.LogisticsRouteScratchMemory_QueueBufferId;
+        private const BufferID ResultNodeIndexBufferId = BufferID.LogisticsRouteScratchMemory_ResultNodeIndexBufferId;
         private const ulong RouteScratchMutationGuardMask = 0x000000000000007FUL;
 
         private static VaultGenerationHandle<int> s_EdgeOffsetsHandle;

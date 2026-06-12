@@ -357,10 +357,10 @@ namespace Hecton8.EditorTools
                                                        pipePreview.Contains("HasGraphicsBuffers()");
             bool holographyTelemetryHeartbeat = previewBatch.Contains("RecordActiveTelemetryHeartbeat()") &&
                                                 MethodContains(previewBatch, "LateFrameTick", "RecordActiveTelemetryHeartbeat();");
-            bool habitatIntegrityGraphVaultOwned = habitatConstruction.Contains("IntegrityNodeBufferId = (BufferID)70949") &&
-                                                   habitatConstruction.Contains("IntegrityWriteScratchBufferId = (BufferID)70956") &&
-                                                   habitatConstruction.Contains("IntegrityConnectionBufferId = (BufferID)70957") &&
-                                                   habitatConstruction.Contains("IntegritySocketLookupBufferId = (BufferID)70958") &&
+            bool habitatIntegrityGraphVaultOwned = habitatConstruction.Contains("IntegrityNodeBufferId = BufferID.HabitatConstructionManager_IntegrityNodeBufferId") &&
+                                                   habitatConstruction.Contains("IntegrityWriteScratchBufferId = BufferID.HabitatConstructionManager_IntegrityWriteScratchBufferId") &&
+                                                   habitatConstruction.Contains("IntegrityConnectionBufferId = BufferID.HabitatConstructionManager_IntegrityConnectionBufferId") &&
+                                                   habitatConstruction.Contains("IntegritySocketLookupBufferId = BufferID.HabitatConstructionManager_IntegritySocketLookupBufferId") &&
                                                    habitatConstruction.Contains("VaultGenerationHandle<IntegrityNodeRecord>") &&
                                                    habitatConstruction.Contains("VaultGenerationHandle<SocketLookupSlot>") &&
                                                    habitatConstruction.Contains("AdjacencyCounts") &&

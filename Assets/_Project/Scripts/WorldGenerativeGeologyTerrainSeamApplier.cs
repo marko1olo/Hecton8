@@ -76,11 +76,11 @@ namespace Hecton8.World
         private const int TerrainSeamBlackBoxCapacity = 300;
         private const float SeamExpensiveSamplingStartWeight = 0.30f;
         private const string HybridDumpPath = "Docs/AgentLogs/Dump_HYBRID_TERRAIN_BLENDER.bin";
-        private const BufferID TerrainSeamBlackBoxBufferId = (BufferID)0x530421;
-        private const BufferID TerrainSeamNativePlansBufferId = (BufferID)0x530422;
-        private const BufferID TerrainSeamPatchHeightsBufferId = (BufferID)0x530423;
-        private const BufferID TerrainSeamBlendMaskBufferId = (BufferID)0x530424;
-        private const BufferID TerrainSeamNormalsBufferId = (BufferID)0x530425;
+        private const BufferID TerrainSeamBlackBoxBufferId = BufferID.WorldGenerativeGeologyTerrainSeamApplier_TerrainSeamBlackBoxBufferId;
+        private const BufferID TerrainSeamNativePlansBufferId = BufferID.WorldGenerativeGeologyTerrainSeamApplier_TerrainSeamNativePlansBufferId;
+        private const BufferID TerrainSeamPatchHeightsBufferId = BufferID.WorldGenerativeGeologyTerrainSeamApplier_TerrainSeamPatchHeightsBufferId;
+        private const BufferID TerrainSeamBlendMaskBufferId = BufferID.WorldGenerativeGeologyTerrainSeamApplier_TerrainSeamBlendMaskBufferId;
+        private const BufferID TerrainSeamNormalsBufferId = BufferID.WorldGenerativeGeologyTerrainSeamApplier_TerrainSeamNormalsBufferId;
         private const int TerrainSeamBaselineBufferIdBase = 0x531000;
         private const int TerrainSeamBaselineBufferIdMask = 0x000FFFFF;
         private const SystemID OwnerSystem = SystemID.TerrainSeams;

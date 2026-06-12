@@ -50,19 +50,19 @@ namespace Hecton8.Gameplay.AirlockPressurization
 
     public static class AirlockPressurizationBufferIds
     {
-        public const BufferID AirlockStates = (BufferID)73380;
-        public const BufferID Tuning = (BufferID)73381;
-        public const BufferID DoorPoses = (BufferID)73382;
-        public const BufferID ExchangeIndices = (BufferID)73383;
-        public const BufferID EvaluationResults = (BufferID)73384;
-        public const BufferID BulkheadIntents = (BufferID)73385;
-        public const BufferID VfxSignals = (BufferID)73386;
-        public const BufferID AcousticSignals = (BufferID)73387;
-        public const BufferID TelemetryRing = (BufferID)73388;
-        public const BufferID TelemetryCursor = (BufferID)73389;
-        public const BufferID HardwareProfiles = (BufferID)73390;
-        public const BufferID DebugGizmos = (BufferID)73391;
-        public const BufferID DumpRequested = (BufferID)73392;
+        public const BufferID AirlockStates = BufferID.AirlockPressurizationContracts_AirlockStates;
+        public const BufferID Tuning = BufferID.AirlockPressurizationContracts_Tuning;
+        public const BufferID DoorPoses = BufferID.AirlockPressurizationContracts_DoorPoses;
+        public const BufferID ExchangeIndices = BufferID.AirlockPressurizationContracts_ExchangeIndices;
+        public const BufferID EvaluationResults = BufferID.AirlockPressurizationContracts_EvaluationResults;
+        public const BufferID BulkheadIntents = BufferID.AirlockPressurizationContracts_BulkheadIntents;
+        public const BufferID VfxSignals = BufferID.AirlockPressurizationContracts_VfxSignals;
+        public const BufferID AcousticSignals = BufferID.AirlockPressurizationContracts_AcousticSignals;
+        public const BufferID TelemetryRing = BufferID.AirlockPressurizationContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.AirlockPressurizationContracts_TelemetryCursor;
+        public const BufferID HardwareProfiles = BufferID.AirlockPressurizationContracts_HardwareProfiles;
+        public const BufferID DebugGizmos = BufferID.AirlockPressurizationContracts_DebugGizmos;
+        public const BufferID DumpRequested = BufferID.AirlockPressurizationContracts_DumpRequested;
     }
 
     public static class AirlockCycleFlags

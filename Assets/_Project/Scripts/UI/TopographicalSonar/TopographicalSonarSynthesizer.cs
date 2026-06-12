@@ -73,14 +73,14 @@ namespace Hecton8.UI
 
     public static class TopographicalSonarBufferIds
     {
-        public const BufferID Points = (BufferID)70840;
-        public const BufferID HitMask = (BufferID)70841;
-        public const BufferID Counters = (BufferID)70842;
-        public const BufferID TelemetryRing = (BufferID)70845;
-        public const BufferID TelemetryCursor = (BufferID)70846;
-        public const BufferID MaterialColorLut = (BufferID)70847;
-        public const BufferID IndirectArgs = (BufferID)70849;
-        public const BufferID ShaderGlobals = (BufferID)70850;
+        public const BufferID Points = BufferID.TopographicalSonarSynthesizer_Points;
+        public const BufferID HitMask = BufferID.TopographicalSonarSynthesizer_HitMask;
+        public const BufferID Counters = BufferID.TopographicalSonarSynthesizer_Counters;
+        public const BufferID TelemetryRing = BufferID.TopographicalSonarSynthesizer_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.TopographicalSonarSynthesizer_TelemetryCursor;
+        public const BufferID MaterialColorLut = BufferID.TopographicalSonarSynthesizer_MaterialColorLut;
+        public const BufferID IndirectArgs = BufferID.TopographicalSonarSynthesizer_IndirectArgs;
+        public const BufferID ShaderGlobals = BufferID.PowerGridJacobiContracts_Nodes;
     }
 
     public static class TopographicalSonarConstants

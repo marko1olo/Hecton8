@@ -41,9 +41,9 @@ namespace Hecton8.Thermodynamics
         private const byte PendingFrontBufferCurrent = 0;
         private const byte PendingFrontBufferBack = 1;
         private const byte PendingFrontBufferScratch = 2;
-        private static readonly BufferID SolverConvergenceStateId = (BufferID)70052;
-        private static readonly BufferID SolverResidualSamplesId = (BufferID)70053;
-        private static readonly BufferID SolverDumpLatchId = (BufferID)70054;
+        private static readonly BufferID SolverConvergenceStateId = BufferID.AbyssalThermodynamicsSolver_SolverConvergenceStateId;
+        private static readonly BufferID SolverResidualSamplesId = BufferID.AbyssalThermodynamicsSolver_SolverResidualSamplesId;
+        private static readonly BufferID SolverDumpLatchId = BufferID.AbyssalThermodynamicsSolver_SolverDumpLatchId;
         private static readonly ulong HeatSourceProfileMutationGuardMask =
             ThermodynamicsMutationGuardBit(BufferID.AbyssalThermalProfiles) |
             ThermodynamicsMutationGuardBit(BufferID.AbyssalThermalProfileCount);

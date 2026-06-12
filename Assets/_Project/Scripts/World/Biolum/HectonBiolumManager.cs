@@ -243,6 +243,8 @@ namespace Hecton8.Biolum
         private float _lastPublishedGlobalBiolumPhase = -1f;
         private AbsoluteUniversePosition _cachedCameraAup;
         private int _cachedCameraAupFrame = -1;
+        private bool _isWritingTelemetry;
+        private byte[] _telemetryBytePayload;
 
         private const float CameraResolveCooldown = 1f;
         private static readonly Color _SonarResponseColor = new Color(0.62f, 0.94f, 1f, 1f);
@@ -332,6 +334,8 @@ namespace Hecton8.Biolum
         {
             if (TryAbortForUsableExistingRuntime())
                 return;
+
+            _telemetryBytePayload = new byte[BiolumDumpHeaderBytes + BiolumTelemetryCapacity * BiolumDumpEntryBytes];
 
             CacheGlobalRegistryServicesCold();
             if (!TryRegisterService())
@@ -1531,57 +1535,48 @@ namespace Hecton8.Biolum
 
         private void DumpBiolumTelemetry(byte reasonFlags)
         {
+            if (_isWritingTelemetry)
+                return;
+
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
+                return;
+
             if (!TryAcquireTelemetryRingGuard(out IDataVault telemetryVault, out NativeArray<BiolumTelemetryEntry> telemetryRing))
                 return;
 
+            _lastBiolumDumpFrame = frame;
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
+            int byteCount = BiolumDumpHeaderBytes + BiolumTelemetryCapacity * BiolumDumpEntryBytes;
+
             try
             {
-                int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-                if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
-                    return;
+                int cursor = 0;
+                WriteUInt32LittleEndian(_telemetryBytePayload, ref cursor, 0x42494F4Cu);
+                WriteUInt32LittleEndian(_telemetryBytePayload, ref cursor, _telemetrySequence);
+                _telemetryBytePayload[cursor++] = reasonFlags;
+                WriteInt32LittleEndian(_telemetryBytePayload, ref cursor, BiolumTelemetryCapacity);
 
-                _lastBiolumDumpFrame = frame;
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
-                int byteCount = BiolumDumpHeaderBytes + BiolumTelemetryCapacity * BiolumDumpEntryBytes;
-                const string PayloadLabel = "biolumTelemetryDumpPayload";
-                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
-                    byteCount,
-                    nameof(HectonBiolumManager),
-                    PayloadLabel,
-                    NativeArrayOptions.UninitializedMemory);
-                try
+                for (int i = 0; i < BiolumTelemetryCapacity; i++)
                 {
-                    int cursor = 0;
-                    WriteUInt32LittleEndian(payload, ref cursor, 0x42494F4Cu);
-                    WriteUInt32LittleEndian(payload, ref cursor, _telemetrySequence);
-                    payload[cursor++] = reasonFlags;
-                    WriteInt32LittleEndian(payload, ref cursor, BiolumTelemetryCapacity);
-
-                    for (int i = 0; i < BiolumTelemetryCapacity; i++)
-                    {
-                        BiolumTelemetryEntry entry = telemetryRing[i];
-                        WriteUInt32LittleEndian(payload, ref cursor, entry.Frame);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionX);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionY);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionZ);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.Intensity);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.Phase);
-                        WriteFloatLittleEndian(payload, ref cursor, entry.PredatorDim);
-                        WriteUInt16LittleEndian(payload, ref cursor, entry.PredatorHits);
-                        payload[cursor++] = entry.ActiveRipples;
-                        payload[cursor++] = entry.Flags;
-                    }
-
-                    if (cursor == byteCount)
-                        NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+                    BiolumTelemetryEntry entry = telemetryRing[i];
+                    WriteUInt32LittleEndian(_telemetryBytePayload, ref cursor, entry.Frame);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.CameraPositionX);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.CameraPositionY);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.CameraPositionZ);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.Intensity);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.Phase);
+                    WriteFloatLittleEndian(_telemetryBytePayload, ref cursor, entry.PredatorDim);
+                    WriteUInt16LittleEndian(_telemetryBytePayload, ref cursor, entry.PredatorHits);
+                    _telemetryBytePayload[cursor++] = entry.ActiveRipples;
+                    _telemetryBytePayload[cursor++] = entry.Flags;
                 }
-                finally
+
+                if (cursor == byteCount)
                 {
-                    NativeFaultDumpWriter.DisposeTransientPayload(
-                        ref payload,
-                        nameof(HectonBiolumManager),
-                        PayloadLabel);
+                    _isWritingTelemetry = true;
+                    _ = WriteTelemetryDumpAsync(dumpPath, _telemetryBytePayload, byteCount);
                 }
             }
             finally
@@ -1590,18 +1585,39 @@ namespace Hecton8.Biolum
             }
         }
 
-        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        private async Awaitable WriteTelemetryDumpAsync(string path, byte[] payloadData, int byteCount)
+        {
+            await Awaitable.BackgroundThreadAsync();
+            try
+            {
+                ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(payloadData, 0, byteCount);
+                NativeFaultDumpWriter.TryWriteAll(path, span, byteCount);
+            }
+            catch (Exception ex)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning($"[HectonBiolumManager] Telemetry background write failed: {ex.Message}");
+#endif
+            }
+            finally
+            {
+                await Awaitable.MainThreadAsync();
+                _isWritingTelemetry = false;
+            }
+        }
+
+        private static void WriteInt32LittleEndian(byte[] payload, ref int cursor, int value)
         {
             WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
         }
 
-        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, ref int cursor, ushort value)
+        private static void WriteUInt16LittleEndian(byte[] payload, ref int cursor, ushort value)
         {
             payload[cursor++] = (byte)value;
             payload[cursor++] = (byte)(value >> 8);
         }
 
-        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        private static void WriteUInt32LittleEndian(byte[] payload, ref int cursor, uint value)
         {
             payload[cursor++] = (byte)value;
             payload[cursor++] = (byte)(value >> 8);
@@ -1609,7 +1625,7 @@ namespace Hecton8.Biolum
             payload[cursor++] = (byte)(value >> 24);
         }
 
-        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        private static void WriteFloatLittleEndian(byte[] payload, ref int cursor, float value)
         {
             WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
         }

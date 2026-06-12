@@ -190,7 +190,7 @@ namespace Hecton8.World
         private const int RuntimeKeySetCapacity = 64;
         private const int VoxelBridgeBlackBoxCapacity = 300;
         private const string VoxelBridgeDumpPath = "Docs/AgentLogs/Dump_13GEO_VoxelBridge.bin";
-        private const BufferID VoxelBridgeBlackBoxBufferId = (BufferID)0x530426;
+        private const BufferID VoxelBridgeBlackBoxBufferId = BufferID.WorldGenerativeGeologyVoxelBridgeDirector_VoxelBridgeBlackBoxBufferId;
         private const SystemID VoxelBridgeOwnerSystem = SystemID.TerrainSeams;
         private const uint VoxelBridgeFlagMissingDependencies = 1u << 0;
         private const uint VoxelBridgeFlagVolumeNull = 1u << 1;
@@ -1469,7 +1469,7 @@ namespace Hecton8.World
                 gridDimensionCap);
 
             uint seed = unchecked((uint)(request.runtimeKey * 92821L + 15731L));
-            CavePreset preset = ResolveGenerationPreset();
+            CavePreset preset = ResolveGenerationPreset(request.archetype);
             CaveGenerationParams generationParams = preset.ToGenerationParams(seed);
             generationParams.structureOnlyMode = 1;
             generationParams.structureBlendK = Mathf.Clamp(stabilizedWeight * 10f, 3.5f, 12f);
@@ -1503,8 +1503,11 @@ namespace Hecton8.World
             }
         }
 
-        private CavePreset ResolveGenerationPreset()
+        private CavePreset ResolveGenerationPreset(WorldGenerativeGeologyProfile.ShapeArchetype archetype)
         {
+            if (archetype == WorldGenerativeGeologyProfile.ShapeArchetype.OpenTrench)
+                return CavePresetLibrary.Create(CavePresetType.SurfaceTrench);
+
             if (voxelEngine != null && voxelEngine.defaultPreset != null)
                 return voxelEngine.defaultPreset;
 

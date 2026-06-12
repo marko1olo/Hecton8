@@ -47,6 +47,12 @@ namespace Hecton8.World
         private float _profileNearDistanceScale = 1f;
         private float _profileMidDistanceScale = 1f;
 
+        private float _lastResolvedNearDistanceScale = -1f;
+        private float _lastResolvedMidDistanceScale = -1f;
+        private AbsoluteUniversePosition _lastEvaluatedPlayerAup;
+        private bool _hasLastEvaluatedPlayerAup;
+        private int _lastAnchorCount = -1;
+
         private void Awake()
         {
             PublishActiveRuntimeInstance();
@@ -183,6 +189,20 @@ namespace Hecton8.World
                 midDistanceScale *
                 interestMidDistanceScale *
                 zoneMidDistanceScale;
+
+            bool canSkip = !forceRefresh &&
+                _anchorCount == _lastAnchorCount &&
+                activeAnchorVersion == _lastAnchorVersion &&
+                Mathf.Approximately(resolvedNearDistanceScale, _lastResolvedNearDistanceScale) &&
+                Mathf.Approximately(resolvedMidDistanceScale, _lastResolvedMidDistanceScale) &&
+                _hasLastEvaluatedPlayerAup &&
+                AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastEvaluatedPlayerAup) < 4.0;
+
+            if (canSkip)
+            {
+                return;
+            }
+
             for (int i = 0; i < _anchorCount; i++)
             {
                 WorldSliceAnchor anchor = _anchors[i];
@@ -195,6 +215,13 @@ namespace Hecton8.World
                     resolvedNearDistanceScale,
                     resolvedMidDistanceScale);
             }
+
+            _lastResolvedNearDistanceScale = resolvedNearDistanceScale;
+            _lastResolvedMidDistanceScale = resolvedMidDistanceScale;
+            _lastAnchorCount = _anchorCount;
+            _lastAnchorVersion = activeAnchorVersion;
+            _lastEvaluatedPlayerAup = playerAup;
+            _hasLastEvaluatedPlayerAup = true;
 
             UpdateDiagnostics(true);
         }

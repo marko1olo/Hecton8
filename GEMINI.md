@@ -19,6 +19,10 @@ Do not hardcode an old mandate count. Read `.agents-skills\README.md` for the cu
 Do not bulk-read unrelated docs, dated reports, task logs, old prompts, or archives as a substitute for routing. Current source, current assets, and fresh proof outrank stale prose.
 
 [HECTON-8 BOUNDARIES]
+- THIRD-PARTY TOOL SHIM / NOT PROJECT LAW. This is a one-way adapter.
+- If this file conflicts with project authority, project authority wins.
+- LANE_CLASS: DOCS_RULES
+- Do not launch or trigger Unity from this shim.
 - `C:\hades\Hecton8\AGENTS.md` overrides this file for HECTON-8.
 - `C:\hades\Hecton8\GEMINI.md` is a Gemini/Antigravity shim only; it must not duplicate divergent project law.
 - `.codexrules\AGENTS.md` and `.github\agents\AGENTS.md` must stay delegated to or byte-intent synced with root `AGENTS.md`.

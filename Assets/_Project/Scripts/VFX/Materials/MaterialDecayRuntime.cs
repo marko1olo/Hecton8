@@ -81,6 +81,7 @@ namespace Hecton8.VFX.Materials
         private bool _dumpedFault;
         private float _globalQualityWeight01 = 1f;
 
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -91,6 +92,10 @@ namespace Hecton8.VFX.Materials
         private static void EnsureSceneRuntime()
         {
             if (!Application.isPlaying)
+                return;
+
+            string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+            if (sceneName == "00_BOOTSTRAP" || sceneName == "01_MAIN_MENU" || sceneName == "01_ORBIT")
                 return;
 
             if (s_runtimeInstance != null)

@@ -98,13 +98,13 @@ namespace Hecton8.Lighting
         private const float DayNightTelemetryWarnMicroseconds = 200f;
         private const uint DayNightTuningMagic = 0x53484749u;
         private const uint DayNightRelayHash = 0x53483334u;
-        private const BufferID DayNightEnvironmentLightingBuffer = (BufferID)0x630826;
-        private const BufferID DayNightTelemetryRingBuffer = (BufferID)0x630827;
-        private const BufferID DayNightTelemetryCursorBuffer = (BufferID)0x630828;
-        private const BufferID DayNightTuningBuffer = (BufferID)0x630829;
-        private const BufferID DayNightGradientProfilesBuffer = (BufferID)0x63082A;
-        private const BufferID DayNightGradientProfileCountBuffer = (BufferID)0x63082B;
-        private const BufferID DayNightMockSamplesBuffer = (BufferID)0x63082C;
+        private const BufferID DayNightEnvironmentLightingBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightEnvironmentLightingBuffer;
+        private const BufferID DayNightTelemetryRingBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightTelemetryRingBuffer;
+        private const BufferID DayNightTelemetryCursorBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightTelemetryCursorBuffer;
+        private const BufferID DayNightTuningBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightTuningBuffer;
+        private const BufferID DayNightGradientProfilesBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightGradientProfilesBuffer;
+        private const BufferID DayNightGradientProfileCountBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightGradientProfileCountBuffer;
+        private const BufferID DayNightMockSamplesBuffer = BufferID.HectonLightingRuntime_DayNightRelay_DayNightMockSamplesBuffer;
         private const string DayNightBlackBoxDumpPath = "Docs/AgentLogs/Dump_13KRA.bin";
         private const string LightingGradientProfilesRelativePath = "Docs/Data/lighting_gradient_profiles.csv";
 

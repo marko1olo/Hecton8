@@ -69,15 +69,15 @@ namespace Hecton8.Power
 
     public static class SolarPowerBufferIds
     {
-        public const BufferID PanelStates = (BufferID)73410;
-        public const BufferID PanelOutputs = (BufferID)73411;
-        public const BufferID PanelPowerNodeIndices = (BufferID)73412;
-        public const BufferID NodeSolarInputMilliWatts = (BufferID)73413;
-        public const BufferID Conditions = (BufferID)73414;
-        public const BufferID TelemetryRing = (BufferID)73415;
-        public const BufferID TelemetryCursor = (BufferID)73416;
-        public const BufferID Profiles = (BufferID)73417;
-        public const BufferID CsvScratch = (BufferID)73418;
+        public const BufferID PanelStates = BufferID.PowerGridSolarContracts_PanelStates;
+        public const BufferID PanelOutputs = BufferID.PowerGridSolarContracts_PanelOutputs;
+        public const BufferID PanelPowerNodeIndices = BufferID.PowerGridSolarContracts_PanelPowerNodeIndices;
+        public const BufferID NodeSolarInputMilliWatts = BufferID.PowerGridSolarContracts_NodeSolarInputMilliWatts;
+        public const BufferID Conditions = BufferID.PowerGridSolarContracts_Conditions;
+        public const BufferID TelemetryRing = BufferID.PowerGridSolarContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.PowerGridSolarContracts_TelemetryCursor;
+        public const BufferID Profiles = BufferID.PowerGridSolarContracts_Profiles;
+        public const BufferID CsvScratch = BufferID.PowerGridSolarContracts_CsvScratch;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SolarPowerGenerationConstants.SolarPanelStateDtoSizeBytes)]

@@ -18,16 +18,16 @@ namespace Hecton8.Visor
 {
     internal static class DynamicDecalVaultBufferIds
     {
-        public const BufferID Instances = (BufferID)73190;
-        public const BufferID UploadScratch = (BufferID)73191;
-        public const BufferID RuntimeState = (BufferID)73192;
-        public const BufferID TelemetryRing = (BufferID)73193;
-        public const BufferID Tuning = (BufferID)73194;
-        public const BufferID MaterialProfiles = (BufferID)73195;
-        public const BufferID CsvScratch = (BufferID)73196;
-        public const BufferID RequestRing = (BufferID)73197;
-        public const BufferID RequestState = (BufferID)73198;
-        public const BufferID SignalIngestKeyRing = (BufferID)73199;
+        public const BufferID Instances = BufferID.DynamicDecalVaultRuntime_Instances;
+        public const BufferID UploadScratch = BufferID.DynamicDecalVaultRuntime_UploadScratch;
+        public const BufferID RuntimeState = BufferID.DynamicDecalVaultRuntime_RuntimeState;
+        public const BufferID TelemetryRing = BufferID.DynamicDecalVaultRuntime_TelemetryRing;
+        public const BufferID Tuning = BufferID.DynamicDecalVaultRuntime_Tuning;
+        public const BufferID MaterialProfiles = BufferID.DynamicDecalVaultRuntime_MaterialProfiles;
+        public const BufferID CsvScratch = BufferID.DynamicDecalVaultRuntime_CsvScratch;
+        public const BufferID RequestRing = BufferID.DynamicDecalVaultRuntime_RequestRing;
+        public const BufferID RequestState = BufferID.DynamicDecalVaultRuntime_RequestState;
+        public const BufferID SignalIngestKeyRing = BufferID.DynamicDecalVaultRuntime_SignalIngestKeyRing;
     }
 
     public static class DynamicDecalMaterialHashes

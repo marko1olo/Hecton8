@@ -96,7 +96,7 @@ namespace Hecton8.Core
         private const uint MasterDispatcherFlagVisualSyncShed = 1u << 0;
         private const uint MasterDispatcherFlagRollbackFence = 1u << 1;
         private const uint MasterDispatcherFlagHealthPressureShed = 1u << 2;
-        private const BufferID MasterRollbackRuntimeStateBuffer = (BufferID)70752;
+        private const BufferID MasterRollbackRuntimeStateBuffer = BufferID.ShinobuHydroKccResolvedHits;
         private const uint MasterRollbackRequiredFlag = 1u << 3;
         private const uint MasterRollbackResimulatingFlag = 1u << 4;
         private const uint MasterRollbackHardResyncRequiredFlag = 1u << 14;

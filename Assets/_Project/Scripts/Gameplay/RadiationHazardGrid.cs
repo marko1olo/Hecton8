@@ -72,8 +72,8 @@ namespace Hecton8.Gameplay
         private const uint RadiationTelemetryFlagJobActive = 1u << 5;
         private const uint RadiationSystemHash = 0x53483237u;
         private const ushort RadiationCombatSourceId = 274;
-        private const BufferID RadiationStatusSignalBuffer = (BufferID)72748;
-        private const BufferID RadiationSdfSnapshotBuffer = (BufferID)72752;
+        private const BufferID RadiationStatusSignalBuffer = BufferID.Shinobu274RadiationDamageSignal;
+        private const BufferID RadiationSdfSnapshotBuffer = BufferID.RadiationHazardGrid_RadiationSdfSnapshotBuffer;
         private const SystemID OwnerSystemId = SystemID.GameplayRadiation;
         private const string RadiationDumpFileName = "Dump_SHINOBU_274.bin";
         private static readonly ulong RadiationSdfSnapshotMutationGuardMask = RadiationMutationGuardBit(RadiationSdfSnapshotBuffer);

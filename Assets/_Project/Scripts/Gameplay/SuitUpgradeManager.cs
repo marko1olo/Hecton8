@@ -90,7 +90,7 @@ namespace Hecton8.Gameplay
         private const uint ItemEquipHudVisorAtlasHash = 0x7F5F6211u;
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 64;
-        private const BufferID SuitUpgradeTelemetryRingBuffer = (BufferID)71411;
+        private const BufferID SuitUpgradeTelemetryRingBuffer = BufferID.SuitUpgradeManager_SuitUpgradeTelemetryRingBuffer;
         private const ulong TelemetryDumpMagic = 0x5250475055544953UL;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SUIT_UPGRADE_SYSTEM.bin";
         private const string UpgradeInstalledPrefix = "UPGRADE INSTALLED: ";

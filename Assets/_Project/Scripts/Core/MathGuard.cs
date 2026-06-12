@@ -21,8 +21,8 @@ namespace Hecton8.Core
         private const float MinDirectionLengthSq = 0.000001f;
         private const float UnitDirectionLengthSqTolerance = 0.0625f;
         private const int NaNErrorHash = unchecked((int)0x4E414E21); // "NAN!"
-        private const BufferID InvalidNumberCodesBufferId = (BufferID)70883;
-        private const BufferID InvalidNumberCounterBufferId = (BufferID)70884;
+        private const BufferID InvalidNumberCodesBufferId = BufferID.MathGuard_InvalidNumberCodesBufferId;
+        private const BufferID InvalidNumberCounterBufferId = BufferID.MathGuard_InvalidNumberCounterBufferId;
         private const SystemID VaultOwner = SystemID.CoreDiagnostics;
 
         private static IDataVault _dataVault;

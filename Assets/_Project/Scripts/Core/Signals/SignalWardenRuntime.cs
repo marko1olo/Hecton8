@@ -264,8 +264,8 @@ namespace Hecton8.Core.Contracts.Signals
         private const int DefaultMockPlayerFootstepMaxFrameSignals = 48;
         private const float DefaultMockPlayerFootstepCoalescingRadiusMeters = 1.5f;
         private const int DefaultMockPlayerFootstepPriority = 10;
-        private const BufferID ProfileBufferId = (BufferID)73040;
-        private const BufferID ProfileCountBufferId = (BufferID)73041;
+        private const BufferID ProfileBufferId = BufferID.SignalWardenRuntime_ProfileBufferId;
+        private const BufferID ProfileCountBufferId = BufferID.SignalWardenRuntime_ProfileCountBufferId;
 
         private static IDataVault _vault;
         private static VaultGenerationHandle<SignalTuningProfile> _profilesHandle;
@@ -884,8 +884,8 @@ namespace Hecton8.Core.Contracts.Signals
     {
         private const int Capacity = 300;
         private const int EntryBytes = 64;
-        private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;
-        private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;
+        private const BufferID SignalTelemetryRingBufferId = BufferID.SignalWardenRuntime_SignalTelemetryRingBufferId;
+        private const BufferID SignalTelemetryCursorBufferId = BufferID.SignalWardenRuntime_SignalTelemetryCursorBufferId;
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1403_SIGNAL_TELEMETRY.bin";
 
@@ -2496,18 +2496,18 @@ namespace Hecton8.Core.Contracts.Signals
         internal const int MaxCommittedSignalsForEditor = MaxCommittedSignals;
         private const int MaxOverflowSignals = 1024;
         private const uint TuningMagic = 0x5343544Eu; // SCTN
-        private const BufferID FrontBytesBufferId = (BufferID)73043;
-        private const BufferID BackBytesBufferId = (BufferID)73044;
-        private const BufferID FrontHeadersBufferId = (BufferID)73045;
-        private const BufferID BackHeadersBufferId = (BufferID)73046;
-        private const BufferID CommittedSignalsBufferId = (BufferID)73047;
-        private const BufferID CommittedCountBufferId = (BufferID)73048;
-        private const BufferID TelemetryRingBufferId = (BufferID)73049;
-        private const BufferID TelemetryCursorBufferId = (BufferID)73050;
-        private const BufferID TuningBufferId = (BufferID)73051;
-        private const BufferID CoalescenceBucketsBufferId = (BufferID)73052;
-        private const BufferID OverflowSignalsBufferId = (BufferID)73053;
-        private const BufferID OverflowHeaderBufferId = (BufferID)73054;
+        private const BufferID FrontBytesBufferId = BufferID.SignalWardenRuntime_FrontBytesBufferId;
+        private const BufferID BackBytesBufferId = BufferID.SignalWardenRuntime_BackBytesBufferId;
+        private const BufferID FrontHeadersBufferId = BufferID.SignalWardenRuntime_FrontHeadersBufferId;
+        private const BufferID BackHeadersBufferId = BufferID.SignalWardenRuntime_BackHeadersBufferId;
+        private const BufferID CommittedSignalsBufferId = BufferID.SignalWardenRuntime_CommittedSignalsBufferId;
+        private const BufferID CommittedCountBufferId = BufferID.SignalWardenRuntime_CommittedCountBufferId;
+        private const BufferID TelemetryRingBufferId = BufferID.SignalWardenRuntime_TelemetryRingBufferId;
+        private const BufferID TelemetryCursorBufferId = BufferID.SignalWardenRuntime_TelemetryCursorBufferId;
+        private const BufferID TuningBufferId = BufferID.SignalWardenRuntime_TuningBufferId;
+        private const BufferID CoalescenceBucketsBufferId = BufferID.SignalWardenRuntime_CoalescenceBucketsBufferId;
+        private const BufferID OverflowSignalsBufferId = BufferID.SignalWardenRuntime_OverflowSignalsBufferId;
+        private const BufferID OverflowHeaderBufferId = BufferID.SignalWardenRuntime_OverflowHeaderBufferId;
         private const string ThreadContentionDumpRelativePath = "Docs/AgentLogs/Dump_1403_SIGNAL_THREAD_CONTENTION.bin";
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
 

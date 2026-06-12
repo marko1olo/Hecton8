@@ -267,9 +267,9 @@ namespace Hecton8.Audio
         private const int SonarSdfHighProbeCount = 32;
         private const int SonarEchoCompositeCandidateCapacity = 32;
         private const int SonarEchoCompositeGroupCapacity = 8;
-        private const BufferID PlayerCriticalSonarEchoTapUploadRingBufferId = (BufferID)70889;
-        private const BufferID PlayerCriticalPrologueTransitionRingBufferId = (BufferID)70890;
-        private const BufferID PlayerCriticalAudioSynthesisTelemetryRingBufferId = (BufferID)70891;
+        private const BufferID PlayerCriticalSonarEchoTapUploadRingBufferId = BufferID.PlayerCriticalProceduralAudioRenderer_PlayerCriticalSonarEchoTapUploadRingBufferId;
+        private const BufferID PlayerCriticalPrologueTransitionRingBufferId = BufferID.PlayerCriticalProceduralAudioRenderer_PlayerCriticalPrologueTransitionRingBufferId;
+        private const BufferID PlayerCriticalAudioSynthesisTelemetryRingBufferId = BufferID.PlayerCriticalProceduralAudioRenderer_PlayerCriticalAudioSynthesisTelemetryRingBufferId;
         private const ulong PrologueTransitionRingMutationGuardMask = 1UL << ((int)PlayerCriticalPrologueTransitionRingBufferId & 31);
         private const ulong PrologueTransitionTelemetryMutationGuardMask = 1UL << ((int)BufferID.PlayerCriticalPrologueTransitionTelemetryRing & 31);
         private const ulong GranularTelemetryMutationGuardMask = 1UL << ((int)BufferID.PlayerCriticalGranularTelemetryRing & 31);

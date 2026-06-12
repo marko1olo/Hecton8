@@ -54,15 +54,15 @@ namespace Hecton8.Gameplay
 
     internal static class BallisticsVaultBufferIds
     {
-        public const BufferID TrajectoriesA = (BufferID)71270;
-        public const BufferID TrajectoriesB = (BufferID)71271;
-        public const BufferID AabbPrimitives = (BufferID)71272;
-        public const BufferID HitResults = (BufferID)71273;
-        public const BufferID PenetrationLut = (BufferID)71274;
-        public const BufferID TelemetryRing = (BufferID)71275;
-        public const BufferID Counters = (BufferID)71276;
-        public const BufferID Tuning = (BufferID)71277;
-        public const BufferID ImpactVfx = (BufferID)71278;
+        public const BufferID TrajectoriesA = BufferID.BallisticsRuntime_TrajectoriesA;
+        public const BufferID TrajectoriesB = BufferID.BallisticsRuntime_TrajectoriesB;
+        public const BufferID AabbPrimitives = BufferID.BallisticsRuntime_AabbPrimitives;
+        public const BufferID HitResults = BufferID.BallisticsRuntime_HitResults;
+        public const BufferID PenetrationLut = BufferID.BallisticsRuntime_PenetrationLut;
+        public const BufferID TelemetryRing = BufferID.BallisticsRuntime_TelemetryRing;
+        public const BufferID Counters = BufferID.BallisticsRuntime_Counters;
+        public const BufferID Tuning = BufferID.BallisticsRuntime_Tuning;
+        public const BufferID ImpactVfx = BufferID.BallisticsRuntime_ImpactVfx;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

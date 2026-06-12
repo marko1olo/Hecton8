@@ -133,6 +133,7 @@ namespace Hecton8.World
         private int _lastTerrainDraftRange = -1;
         private int _lastTerrainDraftResolution = -1;
         private bool _terrainStreamingTopologyDirty = true;
+        private bool _profilesDirty = true;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
         private IHectonOceanKinematicsService _oceanKinematicsService;
@@ -322,9 +323,8 @@ namespace Hecton8.World
         internal void ServiceEmergencyReset()
         {
             InvalidateStreamingProfileState();
+            _profilesDirty = true;
             ResolveReferences();
-            RefreshRuntimeProfilesFromChunkProfile();
-            ClampSettings();
             ApplyStreamingProfile(force: true);
         }
 
@@ -364,16 +364,19 @@ namespace Hecton8.World
         public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
         {
             chunkStreamingProfile = profile;
-            RefreshRuntimeProfilesFromChunkProfile();
-            ClampSettings();
+            _profilesDirty = true;
             ApplyStreamingProfile(force: true);
         }
 
         private void ApplyStreamingProfile(bool force)
         {
             ResolveReferences();
-            RefreshRuntimeProfilesFromChunkProfile();
-            ClampSettings();
+            if (force || _profilesDirty)
+            {
+                RefreshRuntimeProfilesFromChunkProfile();
+                ClampSettings();
+                _profilesDirty = false;
+            }
 
             StreamingProfile activeProfile = surfaceSurveyProfile;
 
@@ -639,12 +642,15 @@ namespace Hecton8.World
 
         private void ResolveReferences()
         {
-            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (IsPlayerRuntimeContextBound(runtimeContext))
+            if (_playerRuntimeContext == null)
             {
-                RebindPlayerRuntimeContext(runtimeContext);
+                IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+                if (IsPlayerRuntimeContextBound(runtimeContext))
+                {
+                    RebindPlayerRuntimeContext(runtimeContext);
+                }
             }
-            else if (_playerRuntimeContext != null && !IsPlayerRuntimeContextBound(_playerRuntimeContext))
+            else if (!IsPlayerRuntimeContextBound(_playerRuntimeContext))
             {
                 RebindPlayerRuntimeContext(null);
             }

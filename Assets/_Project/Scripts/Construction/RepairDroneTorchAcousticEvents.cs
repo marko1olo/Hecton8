@@ -68,8 +68,8 @@ namespace Hecton8.Construction
         private const int PendingEventCapacity = 32;
         private const int ReferenceSlotCapacity = 32;
         private const ushort TorchAcousticEventType = 1;
-        private const BufferID PendingEventBufferId = (BufferID)72039;
-        private const BufferID NextFrameEventBufferId = (BufferID)72040;
+        private const BufferID PendingEventBufferId = BufferID.RepairDroneTorchAcousticEvents_PendingEventBufferId;
+        private const BufferID NextFrameEventBufferId = BufferID.RepairDroneTorchAcousticEvents_NextFrameEventBufferId;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents"));
         private static readonly uint _duplicateListenerWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.DuplicateListener"));

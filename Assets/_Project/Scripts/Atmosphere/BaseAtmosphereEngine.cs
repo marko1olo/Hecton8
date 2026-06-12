@@ -68,10 +68,10 @@ namespace Hecton8.Atmosphere
         private const float OxygenDepletedKPa = 1f;
         private const float AuthoritativeQualityWeight = 1f;
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
-        private const BufferID FrontBufferId = (BufferID)0x42415341; // "BASA"
-        private const BufferID BackBufferId = (BufferID)0x42415342; // "BASB"
-        private const BufferID CarbonDioxideByteLaneBufferId = (BufferID)0x42415343; // "BASC"
-        private const BufferID BlackBoxBufferId = (BufferID)0x42415344; // "BASD"
+        private const BufferID FrontBufferId = BufferID.BaseAtmosphereEngine_FrontBufferId; // "BASA"
+        private const BufferID BackBufferId = BufferID.BaseAtmosphereEngine_BackBufferId; // "BASB"
+        private const BufferID CarbonDioxideByteLaneBufferId = BufferID.BaseAtmosphereEngine_CarbonDioxideByteLaneBufferId; // "BASC"
+        private const BufferID BlackBoxBufferId = BufferID.BaseAtmosphereEngine_BlackBoxBufferId; // "BASD"
 
         private static readonly uint OxygenDepletedEventHash =
             unchecked((uint)LocHash.Compute("Atmosphere.OxygenDepleted"));

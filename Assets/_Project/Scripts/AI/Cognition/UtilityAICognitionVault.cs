@@ -10,18 +10,18 @@ namespace Hecton8.AI.Cognition
 {
     public static class UtilityAICognitionVaultBufferIds
     {
-        public const BufferID States = (BufferID)71960;
-        public const BufferID Aups = (BufferID)71961;
-        public const BufferID Targets = (BufferID)71962;
-        public const BufferID TargetNext = (BufferID)71963;
-        public const BufferID BucketHeads = (BufferID)71964;
-        public const BufferID Tuning = (BufferID)71965;
-        public const BufferID Outputs = (BufferID)71966;
-        public const BufferID TelemetryRing = (BufferID)71967;
-        public const BufferID TelemetryCursor = (BufferID)71968;
-        public const BufferID Profiles = (BufferID)71969;
+        public const BufferID States = BufferID.UtilityAICognitionVault_States;
+        public const BufferID Aups = BufferID.UtilityAICognitionVault_Aups;
+        public const BufferID Targets = BufferID.UtilityAICognitionVault_Targets;
+        public const BufferID TargetNext = BufferID.UtilityAICognitionVault_TargetNext;
+        public const BufferID BucketHeads = BufferID.UtilityAICognitionVault_BucketHeads;
+        public const BufferID Tuning = BufferID.UtilityAICognitionVault_Tuning;
+        public const BufferID Outputs = BufferID.UtilityAICognitionVault_Outputs;
+        public const BufferID TelemetryRing = BufferID.UtilityAICognitionVault_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.UtilityAICognitionVault_TelemetryCursor;
+        public const BufferID Profiles = BufferID.UtilityAICognitionVault_Profiles;
 #if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)71970;
+        public const BufferID CsvScratch = BufferID.UtilityAICognitionVault_CsvScratch;
 #endif
     }
 

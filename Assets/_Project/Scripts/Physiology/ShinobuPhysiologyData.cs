@@ -28,11 +28,11 @@ namespace Hecton8.Physiology
         public const uint PlayerTargetHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         public const uint CombatDamageTypeBarotrauma = 1u << 0;
         public const byte GasToxicitySignalCause = PhysiologyStateSignal.CauseGasToxicity;
-        public const BufferID BreathingGasFractionsBuffer = (BufferID)70214;
-        public const BufferID GasPhysiologyTuningBuffer = (BufferID)70215;
-        public const BufferID StatusEffectStatesBuffer = (BufferID)70216;
-        public const BufferID GasPhysiologyStatesBuffer = (BufferID)70239;
-        public const BufferID DecompressionTelemetryRingBuffer = (BufferID)73343;
+        public const BufferID BreathingGasFractionsBuffer = BufferID.ShinobuPhysiologyData_BreathingGasFractionsBuffer;
+        public const BufferID GasPhysiologyTuningBuffer = BufferID.ShinobuPhysiologyData_GasPhysiologyTuningBuffer;
+        public const BufferID StatusEffectStatesBuffer = BufferID.ShinobuPhysiologyData_StatusEffectStatesBuffer;
+        public const BufferID GasPhysiologyStatesBuffer = BufferID.ShinobuPhysiologyData_GasPhysiologyStatesBuffer;
+        public const BufferID DecompressionTelemetryRingBuffer = BufferID.ShinobuPhysiologyData_DecompressionTelemetryRingBuffer;
         public const float AtmosphericPressureAtSurfaceAtm = 1f;
         public const float OxygenFraction = 0.2095f;
         public const float NitrogenFraction = 0.7902f;

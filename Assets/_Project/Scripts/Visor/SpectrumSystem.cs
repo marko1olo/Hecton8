@@ -1574,8 +1574,8 @@ namespace Hecton8.Visor
         private const string ActiveSonarGeoDumpPayloadLabel = "activeSonarGeoDumpPayload";
         private const float ActiveSonarGeoSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float ActiveSonarGeoMaxRangeMeters = 400f;
-        private static readonly BufferID AupDiscoveryGridBufferId = (BufferID)71030;
-        private static readonly BufferID ActiveSonarGeoTelemetryRingBufferId = (BufferID)71031;
+        private static readonly BufferID AupDiscoveryGridBufferId = BufferID.UberNoirReconstructionConstants;
+        private static readonly BufferID ActiveSonarGeoTelemetryRingBufferId = BufferID.UberNoirReconstructionTelemetry;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR

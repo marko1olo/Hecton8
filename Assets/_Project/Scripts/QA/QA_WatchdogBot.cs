@@ -146,8 +146,8 @@ namespace Hecton8.QA
         private const float SceneRouteTimeoutSeconds = 40f;
         private const float DefragCadenceSeconds = 60f;
 
-        private const BufferID MetricsBufferId = (BufferID)74240;
-        private const BufferID BlackBoxBufferId = (BufferID)74241;
+        private const BufferID MetricsBufferId = BufferID.QA_WatchdogBot_MetricsBufferId;
+        private const BufferID BlackBoxBufferId = BufferID.QA_WatchdogBot_BlackBoxBufferId;
         private const SystemID OwnerSystemId = SystemID.QAEndurance;
 
         private static readonly string[] FrameTimeCounters = { "CPU Total Frame Time", "Frame Time" };

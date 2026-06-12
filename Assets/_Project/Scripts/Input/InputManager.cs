@@ -475,7 +475,7 @@ namespace Hecton8.Input
 
             InputActionAsset templateAsset = _inputActionAsset;
             if (templateAsset == null)
-                templateAsset = TryResolveGeneratedInputActionAsset(ref _generatedInputActions);
+                templateAsset = TryResolveGeneratedInputActionAsset(ref _generatedInputActions, _inputActionAsset);
 
             if (templateAsset == null)
             {
@@ -660,7 +660,7 @@ namespace Hecton8.Input
         // EVENT SUBSCRIPTION (ZERO GC)
         // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-        private static InputActionAsset TryResolveGeneratedInputActionAsset(ref IInputActionCollection2 generatedInputActions)
+        private static InputActionAsset TryResolveGeneratedInputActionAsset(ref IInputActionCollection2 generatedInputActions, InputActionAsset fallbackAsset)
         {
             if (generatedInputActions != null)
                 return TryExtractGeneratedInputActionAsset(generatedInputActions);
@@ -668,14 +668,9 @@ namespace Hecton8.Input
             Type generatedType = Type.GetType(GeneratedInputActionsTypeName, throwOnError: false);
             if (generatedType == null)
             {
-                // Fallback to Resources if generated type is missing
-                InputActionAsset resourcesFallback = Resources.Load<InputActionAsset>("HectonRuntimeInputActions");
-                if (resourcesFallback != null)
-                    return resourcesFallback;
-
-                resourcesFallback = Resources.Load<InputActionAsset>("InputSystem_Actions");
-                if (resourcesFallback != null)
-                    return resourcesFallback;
+                // Fallback to serialized asset if generated type is missing
+                if (fallbackAsset != null)
+                    return fallbackAsset;
 
                 return null;
             }

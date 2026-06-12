@@ -163,7 +163,7 @@ namespace Hecton8.Bootstrap
         private const int BootstrapShaderWarmupTelemetryCapacity = 300;
         private const int BootstrapTelemetryEntrySizeBytes = 64;
         private const int BootstrapShaderWarmupDumpBytes = BootstrapShaderWarmupTelemetryCapacity * BootstrapTelemetryEntrySizeBytes;
-        private const BufferID BootstrapShaderWarmupTelemetryRingBufferId = (BufferID)76000;
+        private const BufferID BootstrapShaderWarmupTelemetryRingBufferId = BufferID.GameBootstrapper_BootstrapShaderWarmupTelemetryRingBufferId;
         private const string BootstrapShaderWarmupDumpFileName = "Dump_1336_Bootstrapper.bin";
         private const string GraphicsStateCollectionExtension = ".graphicsstate";
         private const string AssetsPathPrefix = "Assets/";
@@ -6992,11 +6992,19 @@ namespace Hecton8.Bootstrap
 
         private static bool TryRecoverEntryVector(Scene scene, bool allowRecovery)
         {
-            return true;
+            if (IsBootstrapScene(scene))
+                return true;
+
+            if (!allowRecovery)
+                return false;
 
             _entryRecoveryIssued = true;
             if (!GameStartContextHolder.TryGetPendingTargetSceneName(out _))
-                GameStartContextHolder.Reset();
+            {
+                GameStartContext context = GameStartContext.CreateNewGame();
+                GameStartContextHolder.SetCurrent(context, scene.name);
+            }
+
             AsyncOperation operation = LoadProductionSceneAsync(
                 BootstrapScenePath,
                 LoadSceneMode.Single);

@@ -43,17 +43,17 @@ namespace Hecton8.Graphics.Culling
 
     public static class AbyssalShadowBufferIds
     {
-        public const BufferID Instances = (BufferID)71340;
-        public const BufferID States = (BufferID)71341;
-        public const BufferID IlluminationScalars = (BufferID)71342;
-        public const BufferID FrustumPlanes = (BufferID)71343;
-        public const BufferID Counters = (BufferID)71344;
-        public const BufferID TelemetryRing = (BufferID)71345;
-        public const BufferID RuntimeState = (BufferID)71346;
-        public const BufferID ProfileRules = (BufferID)71347;
-        public const BufferID CsvScratch = (BufferID)71348;
-        public const BufferID HzbDepthTiles = (BufferID)71349;
-        public const BufferID IndirectArgs = (BufferID)71350;
+        public const BufferID Instances = BufferID.AbyssalShadowCullingTypes_Instances;
+        public const BufferID States = BufferID.AbyssalShadowCullingTypes_States;
+        public const BufferID IlluminationScalars = BufferID.AbyssalShadowCullingTypes_IlluminationScalars;
+        public const BufferID FrustumPlanes = BufferID.AbyssalShadowCullingTypes_FrustumPlanes;
+        public const BufferID Counters = BufferID.AbyssalShadowCullingTypes_Counters;
+        public const BufferID TelemetryRing = BufferID.AbyssalShadowCullingTypes_TelemetryRing;
+        public const BufferID RuntimeState = BufferID.AbyssalShadowCullingTypes_RuntimeState;
+        public const BufferID ProfileRules = BufferID.AbyssalShadowCullingTypes_ProfileRules;
+        public const BufferID CsvScratch = BufferID.AbyssalShadowCullingTypes_CsvScratch;
+        public const BufferID HzbDepthTiles = BufferID.AbyssalShadowCullingTypes_HzbDepthTiles;
+        public const BufferID IndirectArgs = BufferID.AbyssalShadowCullingTypes_IndirectArgs;
     }
 
     public static class AbyssalShadowCullFlags

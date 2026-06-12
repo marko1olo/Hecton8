@@ -25,7 +25,7 @@ namespace Hecton8.Prologue.Space
         private const string DirectionalLightName = "Directional Light";
         private const string HectonSurfaceName = "Hecton8_Surface";
         private const string AegirName = "GasGiant_Aegir";
-        private const string HectonCloudsName = "\u043E\u0431\u043B\u0430\u043A\u0430 \u0433\u0435\u043A\u0442\u043E\u043D8";
+        private const string HectonCloudsName = "Hecton8_Clouds";
         private const string PlasmaOverlayName = "__HECTON_REENTRY_PLASMA_OVERLAY";
         private const string OrbitVolumeProfileName = "__H8_Orbit_OpticalProfile";
         private const string OrbitReflectionProbeName = "__H8_ORBIT_STATIC_REFLECTION_PROBE";

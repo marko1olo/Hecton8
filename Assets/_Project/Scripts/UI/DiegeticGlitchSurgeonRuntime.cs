@@ -226,22 +226,22 @@ namespace Hecton8.UI
         private const string DefaultDumpRelativePath = "Docs/AgentLogs/Dump_1309_UIPresentation.bin";
         private const string DumpPayloadLabel = "diegeticGlitchSurgeonDumpPayload";
 
-        private const BufferID StateBufferId = (BufferID)70900;
+        private const BufferID StateBufferId = BufferID.ShinobuModSandboxBlackboxMemory;
         private const BufferID GlitchTableBufferId = (BufferID)GlitchTableBufferIdRaw;
-        private const BufferID OriginalTextBufferId = (BufferID)70902;
-        private const BufferID WorkTextBufferId = (BufferID)70903;
-        private const BufferID TextSpanBufferId = (BufferID)70904;
-        private const BufferID CorruptionSignalBufferId = (BufferID)70905;
-        private const BufferID DepthSignalBufferId = (BufferID)70906;
-        private const BufferID BreachSignalBufferId = (BufferID)70907;
-        private const BufferID TuningBufferId = (BufferID)70908;
-        private const BufferID MockQuadBufferId = (BufferID)70909;
-        private const BufferID RadarBlipBufferId = (BufferID)70910;
-        private const BufferID SynthParameterBufferId = (BufferID)70911;
-        private const BufferID TelemetryRingBufferId = (BufferID)70912;
-        private const BufferID TelemetryCursorBufferId = (BufferID)70913;
-        private const BufferID CsvScratchBufferId = (BufferID)70914;
-        private const BufferID TerminalOsStateBridgeBufferId = (BufferID)71360;
+        private const BufferID OriginalTextBufferId = BufferID.ShinobuModSandboxTelemetryRing;
+        private const BufferID WorkTextBufferId = BufferID.ShinobuModSandboxTelemetryCursor;
+        private const BufferID TextSpanBufferId = BufferID.ShinobuModSandboxCsvScratch;
+        private const BufferID CorruptionSignalBufferId = BufferID.ShinobuModSandboxPendingRing;
+        private const BufferID DepthSignalBufferId = BufferID.ShinobuModSandboxDevNullRing;
+        private const BufferID BreachSignalBufferId = BufferID.ShinobuModSandboxStaging;
+        private const BufferID TuningBufferId = BufferID.ShinobuModSandboxStats;
+        private const BufferID MockQuadBufferId = BufferID.ShinobuModSandboxOpcodeRecords;
+        private const BufferID RadarBlipBufferId = BufferID.ShinobuModSandboxModCounters;
+        private const BufferID SynthParameterBufferId = BufferID.ShinobuModSandboxMemoryLeases;
+        private const BufferID TelemetryRingBufferId = BufferID.ShinobuModSandboxApprovedAssets;
+        private const BufferID TelemetryCursorBufferId = BufferID.ShinobuModSandboxRingState;
+        private const BufferID CsvScratchBufferId = BufferID.DiegeticGlitchSurgeonRuntime_CsvScratchBufferId;
+        private const BufferID TerminalOsStateBridgeBufferId = BufferID.DiegeticGlitchSurgeonRuntime_TerminalOsStateBridgeBufferId;
 
         private static readonly int _terminalDamageGlitchId = Shader.PropertyToID("_TerminalDamageGlitch");
         private static readonly int _diegeticGlitchIntensityId = Shader.PropertyToID("_HectonDiegeticGlitchIntensity");

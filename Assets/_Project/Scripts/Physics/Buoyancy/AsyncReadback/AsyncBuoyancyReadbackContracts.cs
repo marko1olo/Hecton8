@@ -42,17 +42,17 @@ namespace Hecton8.Physics
 
     public static class AsyncBuoyancyReadbackBufferIds
     {
-        public const BufferID Requests = (BufferID)71820;
-        public const BufferID CompletedRequests = (BufferID)71821;
-        public const BufferID ResolvedHeights = (BufferID)71822;
-        public const BufferID ResultStates = (BufferID)71823;
-        public const BufferID Tuning = (BufferID)71824;
-        public const BufferID TelemetryRing = (BufferID)71825;
-        public const BufferID TelemetryCursor = (BufferID)71826;
-        public const BufferID MockRing = (BufferID)71827;
-        public const BufferID FallbackWaves = (BufferID)71828;
-        public const BufferID VehicleSamplingProfiles = (BufferID)71829;
-        public const BufferID Counter = (BufferID)71831;
+        public const BufferID Requests = BufferID.AsyncBuoyancyReadbackContracts_Requests;
+        public const BufferID CompletedRequests = BufferID.AsyncBuoyancyReadbackContracts_CompletedRequests;
+        public const BufferID ResolvedHeights = BufferID.AsyncBuoyancyReadbackContracts_ResolvedHeights;
+        public const BufferID ResultStates = BufferID.AsyncBuoyancyReadbackContracts_ResultStates;
+        public const BufferID Tuning = BufferID.AsyncBuoyancyReadbackContracts_Tuning;
+        public const BufferID TelemetryRing = BufferID.AsyncBuoyancyReadbackContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.AsyncBuoyancyReadbackContracts_TelemetryCursor;
+        public const BufferID MockRing = BufferID.AsyncBuoyancyReadbackContracts_MockRing;
+        public const BufferID FallbackWaves = BufferID.AsyncBuoyancyReadbackContracts_FallbackWaves;
+        public const BufferID VehicleSamplingProfiles = BufferID.AsyncBuoyancyReadbackContracts_VehicleSamplingProfiles;
+        public const BufferID Counter = BufferID.AsyncBuoyancyReadbackContracts_Counter;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = AsyncBuoyancyReadbackConstants.ReadbackRequestBytes)]

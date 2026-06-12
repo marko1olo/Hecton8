@@ -181,8 +181,8 @@ namespace Hecton8.Construction
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 64;
-        private const BufferID PendingEventBufferId = (BufferID)72041;
-        private const BufferID NextFrameEventBufferId = (BufferID)72042;
+        private const BufferID PendingEventBufferId = BufferID.DroneFleetManager_PendingEventBufferId;
+        private const BufferID NextFrameEventBufferId = BufferID.DroneFleetManager_NextFrameEventBufferId;
         private static readonly ulong PendingEventMutationGuardMask = SnapshotMutationGuardBit(PendingEventBufferId);
         private static readonly ulong NextFrameEventMutationGuardMask = SnapshotMutationGuardBit(NextFrameEventBufferId);
 
@@ -897,17 +897,17 @@ namespace Hecton8.Construction
         private const string PhantomDronesComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_PhantomDrones.compute";
         private const uint DroneProceduralVerticesPerInstance = 36u;
         private const float DroneProceduralScaleMeters = 0.28f;
-        private const BufferID DroneFleetStateDtoBufferId = (BufferID)70265;
-        private const BufferID DroneFleetTargetDtoBufferId = (BufferID)70266;
-        private const BufferID DroneFleetAssignmentTasksBufferId = (BufferID)70267;
-        private const BufferID DroneFleetProceduralArgsBufferId = (BufferID)70268;
-        private const BufferID DroneFleetServiceCommandsBufferId = (BufferID)70269;
-        private const BufferID DroneFleetServiceCommandCursorBufferId = (BufferID)70270;
-        private const BufferID DroneFleetSpatialBucketHeadsBufferId = (BufferID)70273;
-        private const BufferID DroneFleetSpatialNextIndicesBufferId = (BufferID)70274;
-        private const BufferID DroneFleetSpatialKeysBufferId = (BufferID)70275;
-        private const BufferID DroneFleetChassisSpecsBufferId = (BufferID)72043;
-        private const BufferID DroneFleetAStarPersistentStatesBufferId = (BufferID)72045;
+        private const BufferID DroneFleetStateDtoBufferId = BufferID.DroneFleetManager_DroneFleetStateDtoBufferId;
+        private const BufferID DroneFleetTargetDtoBufferId = BufferID.DroneFleetManager_DroneFleetTargetDtoBufferId;
+        private const BufferID DroneFleetAssignmentTasksBufferId = BufferID.DroneFleetManager_DroneFleetAssignmentTasksBufferId;
+        private const BufferID DroneFleetProceduralArgsBufferId = BufferID.DroneFleetManager_DroneFleetProceduralArgsBufferId;
+        private const BufferID DroneFleetServiceCommandsBufferId = BufferID.DroneFleetManager_DroneFleetServiceCommandsBufferId;
+        private const BufferID DroneFleetServiceCommandCursorBufferId = BufferID.SaveMerkleNodeFront;
+        private const BufferID DroneFleetSpatialBucketHeadsBufferId = BufferID.SaveMerkleDeltaRecords;
+        private const BufferID DroneFleetSpatialNextIndicesBufferId = BufferID.SaveMerkleDeltaBytes;
+        private const BufferID DroneFleetSpatialKeysBufferId = BufferID.SaveMerkleCompressedBytes;
+        private const BufferID DroneFleetChassisSpecsBufferId = BufferID.DroneFleetManager_DroneFleetChassisSpecsBufferId;
+        private const BufferID DroneFleetAStarPersistentStatesBufferId = BufferID.DroneFleetManager_DroneFleetAStarPersistentStatesBufferId;
         private const int DroneBoneJointTableCapacity = 64;
         private const int DroneAttachmentTableCapacity = 16;
         private const float DroneCullRadiusMeters = 1.25f;

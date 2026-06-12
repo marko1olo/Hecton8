@@ -35,17 +35,17 @@ namespace Hecton8.Physics
 
     internal static class AbyssalCavitationVaultBufferIds
     {
-        public const BufferID ShockwaveEvents = (BufferID)71560;
-        public const BufferID ShockwaveCounters = (BufferID)71561;
-        public const BufferID EntitySnapshots = (BufferID)71562;
-        public const BufferID ForcePackets = (BufferID)71563;
-        public const BufferID VisualSpheres = (BufferID)71564;
-        public const BufferID TelemetryRing = (BufferID)71565;
-        public const BufferID OrdnanceProfiles = (BufferID)71566;
-        public const BufferID Tuning = (BufferID)71568;
-        public const BufferID SdfDescriptor = (BufferID)71569;
-        public const BufferID SdfVoxels = (BufferID)71570;
-        public const BufferID ForceTransportPackets = (BufferID)71571;
+        public const BufferID ShockwaveEvents = BufferID.AbyssalCavitationContracts_ShockwaveEvents;
+        public const BufferID ShockwaveCounters = BufferID.AbyssalCavitationContracts_ShockwaveCounters;
+        public const BufferID EntitySnapshots = BufferID.AbyssalCavitationContracts_EntitySnapshots;
+        public const BufferID ForcePackets = BufferID.AbyssalCavitationContracts_ForcePackets;
+        public const BufferID VisualSpheres = BufferID.AbyssalCavitationContracts_VisualSpheres;
+        public const BufferID TelemetryRing = BufferID.AbyssalCavitationContracts_TelemetryRing;
+        public const BufferID OrdnanceProfiles = BufferID.AbyssalCavitationContracts_OrdnanceProfiles;
+        public const BufferID Tuning = BufferID.AbyssalCavitationContracts_Tuning;
+        public const BufferID SdfDescriptor = BufferID.AbyssalCavitationContracts_SdfDescriptor;
+        public const BufferID SdfVoxels = BufferID.AbyssalCavitationContracts_SdfVoxels;
+        public const BufferID ForceTransportPackets = BufferID.AbyssalCavitationContracts_ForceTransportPackets;
     }
 
     internal static class AbyssalCavitationCounterIndex

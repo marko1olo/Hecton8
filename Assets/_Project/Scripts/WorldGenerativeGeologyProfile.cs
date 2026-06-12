@@ -19,7 +19,8 @@ namespace Hecton8.World
             ComplexRock,
             ArchCluster,
             ReefPack,
-            CaveBridge
+            CaveBridge,
+            OpenTrench
         }
 
         public enum CompositionMode

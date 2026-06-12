@@ -49,17 +49,17 @@ namespace Hecton8.Power
 
     public static class BatteryChargerLogisticsBufferIds
     {
-        public const BufferID Links = (BufferID)72300;
-        public const BufferID LinkAup = (BufferID)72301;
-        public const BufferID ExpectedPowerNodeHashes = (BufferID)72302;
-        public const BufferID VisualStates = (BufferID)72303;
-        public const BufferID Tuning = (BufferID)72304;
-        public const BufferID TelemetryRing = (BufferID)72305;
-        public const BufferID TelemetryCursor = (BufferID)72306;
-        public const BufferID AtomicCounters = (BufferID)72307;
-        public const BufferID Profiles = (BufferID)72308;
-        public const BufferID CsvScratch = (BufferID)72309;
-        public const BufferID MockInventorySlots = (BufferID)72310;
+        public const BufferID Links = BufferID.BatteryChargerLogisticsContracts_Links;
+        public const BufferID LinkAup = BufferID.BatteryChargerLogisticsContracts_LinkAup;
+        public const BufferID ExpectedPowerNodeHashes = BufferID.BatteryChargerLogisticsContracts_ExpectedPowerNodeHashes;
+        public const BufferID VisualStates = BufferID.BatteryChargerLogisticsContracts_VisualStates;
+        public const BufferID Tuning = BufferID.BatteryChargerLogisticsContracts_Tuning;
+        public const BufferID TelemetryRing = BufferID.BatteryChargerLogisticsContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.BatteryChargerLogisticsContracts_TelemetryCursor;
+        public const BufferID AtomicCounters = BufferID.BatteryChargerLogisticsContracts_AtomicCounters;
+        public const BufferID Profiles = BufferID.BatteryChargerLogisticsContracts_Profiles;
+        public const BufferID CsvScratch = BufferID.BatteryChargerLogisticsContracts_CsvScratch;
+        public const BufferID MockInventorySlots = BufferID.BatteryChargerLogisticsContracts_MockInventorySlots;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = BatteryChargerLogisticsConstants.ChargerLinkDtoSizeBytes)]

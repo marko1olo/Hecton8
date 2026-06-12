@@ -132,9 +132,9 @@ namespace Hecton8.UI
         private const uint SubtitleCuePublishSignalDropContextHash = 0x53545044u; // STPD.
         private const int DefaultSampleRate = 48000;
         private const float SlowDecodeDumpThresholdMs = 0.5f;
-        private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
-        private const BufferID SubtitleCueTelemetryBufferId = (BufferID)15070551;
-        private const BufferID UIOptimizationTelemetryBufferId = (BufferID)15070552;
+        private const BufferID SubtitleCueStateBufferId = BufferID.BabelSubtitleSyncRuntime_SubtitleCueStateBufferId;
+        private const BufferID SubtitleCueTelemetryBufferId = BufferID.BabelSubtitleSyncRuntime_SubtitleCueTelemetryBufferId;
+        private const BufferID UIOptimizationTelemetryBufferId = BufferID.BabelSubtitleSyncRuntime_UIOptimizationTelemetryBufferId;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_BabelSubtitleSync.bin";
         private const string UIOptimizationDumpRelativePath = "Docs/AgentLogs/Dump_1423.bin";
         private static readonly ulong CueStateMutationGuardMask = SubtitleMutationGuardBit(SubtitleCueStateBufferId);

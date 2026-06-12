@@ -267,26 +267,26 @@ namespace Hecton8.Power
         private static GlobalDataVault s_standaloneVault;
 #endif
 
-        private static readonly BufferID NodesAId = (BufferID)731060;
-        private static readonly BufferID NodesBId = (BufferID)731061;
-        private static readonly BufferID EdgesId = (BufferID)731062;
-        private static readonly BufferID InjectionsId = (BufferID)731063;
-        private static readonly BufferID ExternalHeatId = (BufferID)731064;
-        private static readonly BufferID AnchorsId = (BufferID)731065;
-        private static readonly BufferID TuningId = (BufferID)731066;
-        private static readonly BufferID TelemetryId = (BufferID)731067;
-        private static readonly BufferID CountersId = (BufferID)731068;
-        private static readonly BufferID SpecsId = (BufferID)731069;
-        private static readonly BufferID CsvBytesId = (BufferID)731070;
-        private static readonly BufferID VisualStateId = (BufferID)731071;
-        private static readonly BufferID PendingNodesId = (BufferID)731072;
-        private static readonly BufferID PendingEdgesId = (BufferID)731073;
-        private static readonly BufferID PendingInjectionsId = (BufferID)731074;
-        private static readonly BufferID PendingAnchorsId = (BufferID)731075;
-        private static readonly BufferID PendingVisualStateId = (BufferID)731076;
-        private static readonly BufferID PendingCountersId = (BufferID)731077;
-        private static readonly BufferID ConvergenceStateId = (BufferID)731078;
-        private static readonly BufferID ResidualSamplesId = (BufferID)731079;
+        private static readonly BufferID NodesAId = BufferID.SubmarineOsThermalGridRuntime_NodesAId;
+        private static readonly BufferID NodesBId = BufferID.SubmarineOsThermalGridRuntime_NodesBId;
+        private static readonly BufferID EdgesId = BufferID.SubmarineOsThermalGridRuntime_EdgesId;
+        private static readonly BufferID InjectionsId = BufferID.SubmarineOsThermalGridRuntime_InjectionsId;
+        private static readonly BufferID ExternalHeatId = BufferID.SubmarineOsThermalGridRuntime_ExternalHeatId;
+        private static readonly BufferID AnchorsId = BufferID.SubmarineOsThermalGridRuntime_AnchorsId;
+        private static readonly BufferID TuningId = BufferID.SubmarineOsThermalGridRuntime_TuningId;
+        private static readonly BufferID TelemetryId = BufferID.SubmarineOsThermalGridRuntime_TelemetryId;
+        private static readonly BufferID CountersId = BufferID.SubmarineOsThermalGridRuntime_CountersId;
+        private static readonly BufferID SpecsId = BufferID.SubmarineOsThermalGridRuntime_SpecsId;
+        private static readonly BufferID CsvBytesId = BufferID.SubmarineOsThermalGridRuntime_CsvBytesId;
+        private static readonly BufferID VisualStateId = BufferID.SubmarineOsThermalGridRuntime_VisualStateId;
+        private static readonly BufferID PendingNodesId = BufferID.SubmarineOsThermalGridRuntime_PendingNodesId;
+        private static readonly BufferID PendingEdgesId = BufferID.SubmarineOsThermalGridRuntime_PendingEdgesId;
+        private static readonly BufferID PendingInjectionsId = BufferID.SubmarineOsThermalGridRuntime_PendingInjectionsId;
+        private static readonly BufferID PendingAnchorsId = BufferID.SubmarineOsThermalGridRuntime_PendingAnchorsId;
+        private static readonly BufferID PendingVisualStateId = BufferID.SubmarineOsThermalGridRuntime_PendingVisualStateId;
+        private static readonly BufferID PendingCountersId = BufferID.SubmarineOsThermalGridRuntime_PendingCountersId;
+        private static readonly BufferID ConvergenceStateId = BufferID.SubmarineOsThermalGridRuntime_ConvergenceStateId;
+        private static readonly BufferID ResidualSamplesId = BufferID.SubmarineOsThermalGridRuntime_ResidualSamplesId;
         private static readonly ulong TopologyRebuildMutationGuardMask =
             ThermalGridBufferGuardBit(PendingNodesId) |
             ThermalGridBufferGuardBit(PendingEdgesId) |

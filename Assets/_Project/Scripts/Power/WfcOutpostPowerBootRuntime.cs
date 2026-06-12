@@ -62,11 +62,11 @@ namespace Hecton8.Power
         private const uint AupShiftFlag = 1u << 2;
         private const uint ReactorClockFaultFlag = 1u << 3;
         private static readonly ulong TranslationMutationGuardMask =
-            MutationGuardBit((BufferID)731640) |
-            MutationGuardBit((BufferID)731641) |
-            MutationGuardBit((BufferID)731642) |
-            MutationGuardBit((BufferID)731643) |
-            MutationGuardBit((BufferID)731645);
+            MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731640) |
+            MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731641) |
+            MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731642) |
+            MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731643) |
+            MutationGuardBit(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731645);
 
         private readonly LogisticsNetworkGraph _graph; // COLD ALLOC: LogisticsNetworkGraph[1] - WFC outpost power evaluator - owner: WfcOutpostPowerBootRuntime
         private VaultGenerationHandle<WfcOutpostPowerNode> _nodesHandle;
@@ -238,12 +238,12 @@ namespace Hecton8.Power
             if (vault == null)
                 return;
 
-            _nodesHandle = vault.EnsureGenerationHandle<WfcOutpostPowerNode>((BufferID)731640, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
-            _cellToNodeHandle = vault.EnsureGenerationHandle<int>((BufferID)731641, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
-            _countsHandle = vault.EnsureGenerationHandle<int>((BufferID)731642, WfcOutpostGraphCountSlots.Count, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
-            _generatorNodeIndexHandle = vault.EnsureGenerationHandle<int>((BufferID)731643, 1, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
-            _blackBoxHandle = vault.EnsureGenerationHandle<WfcOutpostPowerBootTelemetryEntry>((BufferID)731644, TelemetryCapacity, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
-            _powerEdgesHandle = vault.EnsureGenerationHandle<int2>((BufferID)731645, MaxDirectedEdges, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _nodesHandle = vault.EnsureGenerationHandle<WfcOutpostPowerNode>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731640, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _cellToNodeHandle = vault.EnsureGenerationHandle<int>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731641, MaxCells, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _countsHandle = vault.EnsureGenerationHandle<int>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731642, WfcOutpostGraphCountSlots.Count, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _generatorNodeIndexHandle = vault.EnsureGenerationHandle<int>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731643, 1, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _blackBoxHandle = vault.EnsureGenerationHandle<WfcOutpostPowerBootTelemetryEntry>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731644, TelemetryCapacity, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
+            _powerEdgesHandle = vault.EnsureGenerationHandle<int2>(BufferID.WfcOutpostPowerBootRuntime_MigratedID_731645, MaxDirectedEdges, LogisticsGridSystemId, NativeArrayOptions.ClearMemory);
         }
 
         private NativeArray<T> ResolveBuffer<T>(in VaultGenerationHandle<T> handle)

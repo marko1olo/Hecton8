@@ -33,16 +33,16 @@ namespace Hecton8.Visor
         private const uint RuntimeSourceHash = 0x53483635u;
         private const SystemID OwnerSystem = SystemID.Vfx;
 
-        private static readonly BufferID StateBufferId = (BufferID)71020;
-        private static readonly BufferID TuningBufferId = (BufferID)71021;
-        private static readonly BufferID PhysiologyBufferId = (BufferID)71022;
-        private static readonly BufferID EnvironmentBufferId = (BufferID)71023;
-        private static readonly BufferID GpuGlobalsBufferId = (BufferID)71024;
-        private static readonly BufferID TelemetryRingBufferId = (BufferID)71025;
-        private static readonly BufferID TelemetryCursorBufferId = (BufferID)71026;
-        private static readonly BufferID CsvByteBufferId = (BufferID)71027;
-        private static readonly BufferID BinaryProbeByteBufferId = (BufferID)71028;
-        private static readonly BufferID NanFlagBufferId = (BufferID)71029;
+        private static readonly BufferID StateBufferId = BufferID.DiegeticVisorLensRuntime_StateBufferId;
+        private static readonly BufferID TuningBufferId = BufferID.DiegeticVisorLensRuntime_TuningBufferId;
+        private static readonly BufferID PhysiologyBufferId = BufferID.DiegeticVisorLensRuntime_PhysiologyBufferId;
+        private static readonly BufferID EnvironmentBufferId = BufferID.DiegeticVisorLensRuntime_EnvironmentBufferId;
+        private static readonly BufferID GpuGlobalsBufferId = BufferID.DiegeticVisorLensRuntime_GpuGlobalsBufferId;
+        private static readonly BufferID TelemetryRingBufferId = BufferID.DiegeticVisorLensRuntime_TelemetryRingBufferId;
+        private static readonly BufferID TelemetryCursorBufferId = BufferID.DiegeticVisorLensRuntime_TelemetryCursorBufferId;
+        private static readonly BufferID CsvByteBufferId = BufferID.DiegeticVisorLensRuntime_CsvByteBufferId;
+        private static readonly BufferID BinaryProbeByteBufferId = BufferID.DiegeticVisorLensRuntime_BinaryProbeByteBufferId;
+        private static readonly BufferID NanFlagBufferId = BufferID.DiegeticVisorLensRuntime_NanFlagBufferId;
 
         private static readonly int GpuGlobalsNameId = Shader.PropertyToID("HectonDiegeticVisorLensGlobals");
         private static readonly int LensStateId = Shader.PropertyToID("_HectonDiegeticVisorLensState");

@@ -29,12 +29,12 @@ namespace Hecton8.Environment.Fluids
         public const int ProfileCapacity = 16;
         public const int CsvScratchBytes = 65536;
         public const float DefaultWaterLevel = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
-        public const BufferID RequestBufferID = (BufferID)72960;
-        public const BufferID ResultBufferID = (BufferID)72961;
-        public const BufferID TelemetryRingBufferID = (BufferID)72962;
-        public const BufferID ProfileBufferID = (BufferID)72963;
-        public const BufferID GlobalWaterLevelBufferID = (BufferID)72964;
-        public const BufferID CsvScratchBufferID = (BufferID)72965;
+        public const BufferID RequestBufferID = BufferID.OceanAdapterVaultRoute_RequestBufferID;
+        public const BufferID ResultBufferID = BufferID.OceanAdapterVaultRoute_ResultBufferID;
+        public const BufferID TelemetryRingBufferID = BufferID.OceanAdapterVaultRoute_TelemetryRingBufferID;
+        public const BufferID ProfileBufferID = BufferID.OceanAdapterVaultRoute_ProfileBufferID;
+        public const BufferID GlobalWaterLevelBufferID = BufferID.OceanAdapterVaultRoute_GlobalWaterLevelBufferID;
+        public const BufferID CsvScratchBufferID = BufferID.OceanAdapterVaultRoute_CsvScratchBufferID;
         private const SystemID OwnerSystem = SystemID.Fluid;
 
         public static bool TryAcquireBootHandles(IDataVault vault, out OceanAdapterVaultHandles handles)

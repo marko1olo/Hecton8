@@ -210,25 +210,25 @@ namespace Hecton8.World
 
         private static readonly int3 GridDimensions = new int3(GridAxisX, GridAxisY, GridAxisZ);
         private static readonly int3 GridHalfExtents = new int3(GridAxisX / 2, GridAxisY / 2, GridAxisZ / 2);
-        private static readonly BufferID GridFrontBufferId = (BufferID)71150;
-        private static readonly BufferID GridBackBufferId = (BufferID)71151;
-        private static readonly BufferID PublishedGridBufferId = (BufferID)71152;
-        private static readonly BufferID OverlayGridBufferId = (BufferID)71153;
-        private static readonly BufferID BreadcrumbBufferId = (BufferID)71154;
-        private static readonly BufferID PendingEmitterBufferId = (BufferID)71155;
-        private static readonly BufferID PendingEmitterCountBufferId = (BufferID)71156;
-        private static readonly BufferID ActiveEmitterBufferId = (BufferID)71157;
-        private static readonly BufferID ActiveEmitterCountBufferId = (BufferID)71158;
-        private static readonly BufferID MockEmitterBufferId = (BufferID)71159;
-        private static readonly BufferID MockEmitterCountBufferId = (BufferID)71160;
-        private static readonly BufferID TuningBufferId = (BufferID)71161;
-        private static readonly BufferID TelemetryRingBufferId = (BufferID)71162;
-        private static readonly BufferID TelemetryCursorBufferId = (BufferID)71163;
-        private static readonly BufferID AtomicCounterBufferId = (BufferID)71164;
-        private static readonly BufferID DefoliantZoneBufferId = (BufferID)71165;
-        private static readonly BufferID CsvScratchBufferId = (BufferID)71166;
-        private static readonly BufferID EmitterProfileTableBufferId = (BufferID)71167;
-        private static readonly BufferID EmitterProfileCountBufferId = (BufferID)71168;
+        private static readonly BufferID GridFrontBufferId = BufferID.ChemicalInfluenceGrid_GridFrontBufferId;
+        private static readonly BufferID GridBackBufferId = BufferID.ChemicalInfluenceGrid_GridBackBufferId;
+        private static readonly BufferID PublishedGridBufferId = BufferID.ShinobuMetabolismData_ChemicalPublishedGridReadbackBuffer;
+        private static readonly BufferID OverlayGridBufferId = BufferID.ShinobuMetabolismData_ChemicalOverlayGridReadbackBuffer;
+        private static readonly BufferID BreadcrumbBufferId = BufferID.ChemicalInfluenceGrid_BreadcrumbBufferId;
+        private static readonly BufferID PendingEmitterBufferId = BufferID.ChemicalInfluenceGrid_PendingEmitterBufferId;
+        private static readonly BufferID PendingEmitterCountBufferId = BufferID.ChemicalInfluenceGrid_PendingEmitterCountBufferId;
+        private static readonly BufferID ActiveEmitterBufferId = BufferID.ChemicalInfluenceGrid_ActiveEmitterBufferId;
+        private static readonly BufferID ActiveEmitterCountBufferId = BufferID.ChemicalInfluenceGrid_ActiveEmitterCountBufferId;
+        private static readonly BufferID MockEmitterBufferId = BufferID.ChemicalInfluenceGrid_MockEmitterBufferId;
+        private static readonly BufferID MockEmitterCountBufferId = BufferID.ChemicalInfluenceGrid_MockEmitterCountBufferId;
+        private static readonly BufferID TuningBufferId = BufferID.ShinobuMetabolismData_ChemicalTuningReadbackBuffer;
+        private static readonly BufferID TelemetryRingBufferId = BufferID.ShinobuMetabolismData_ChemicalTelemetryReadbackBuffer;
+        private static readonly BufferID TelemetryCursorBufferId = BufferID.ShinobuMetabolismData_ChemicalTelemetryCursorReadbackBuffer;
+        private static readonly BufferID AtomicCounterBufferId = BufferID.ChemicalInfluenceGrid_AtomicCounterBufferId;
+        private static readonly BufferID DefoliantZoneBufferId = BufferID.ChemicalInfluenceGrid_DefoliantZoneBufferId;
+        private static readonly BufferID CsvScratchBufferId = BufferID.ChemicalInfluenceGrid_CsvScratchBufferId;
+        private static readonly BufferID EmitterProfileTableBufferId = BufferID.ChemicalInfluenceGrid_EmitterProfileTableBufferId;
+        private static readonly BufferID EmitterProfileCountBufferId = BufferID.ChemicalInfluenceGrid_EmitterProfileCountBufferId;
         private static readonly ulong SimulationMutationGuardMask =
             MutationGuardBit(GridFrontBufferId) |
             MutationGuardBit(GridBackBufferId) |

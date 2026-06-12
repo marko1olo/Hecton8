@@ -33,24 +33,24 @@ namespace Hecton8.Tools
         public const uint ResultFlagBatteryDrainQueued = 1u << 4;
         public const uint ResultFlagDecalQueued = 1u << 5;
 
-        public const BufferID RequestsBuffer = (BufferID)71320;
-        public const BufferID RequestCountBuffer = (BufferID)71321;
-        public const BufferID ReservedLegacyProbeBuffer = (BufferID)71322;
-        public const BufferID SdfSnapshotBuffer = (BufferID)71322;
-        public const BufferID SdfProbeHitsBuffer = (BufferID)71323;
-        public const BufferID HitResultsBuffer = (BufferID)71324;
-        public const BufferID DeformationBuffer = (BufferID)71325;
-        public const BufferID BatteryDrainBuffer = (BufferID)71326;
-        public const BufferID GlowDecalBuffer = (BufferID)71327;
-        public const BufferID ImpactVfxBuffer = (BufferID)71328;
-        public const BufferID CooldownBuffer = (BufferID)71329;
-        public const BufferID TelemetryRingBuffer = (BufferID)71330;
-        public const BufferID TelemetryCursorBuffer = (BufferID)71331;
-        public const BufferID TuningBuffer = (BufferID)71332;
-        public const BufferID SpecBuffer = (BufferID)71333;
-        public const BufferID CsvScratchBuffer = (BufferID)71334;
-        public const BufferID CountersBuffer = (BufferID)71335;
-        public const BufferID RequestMetaBuffer = (BufferID)71336;
+        public const BufferID RequestsBuffer = BufferID.CablePhysicsSolver132_CableNodes;
+        public const BufferID RequestCountBuffer = BufferID.CablePhysicsSolver132_CableConstraints;
+        public const BufferID ReservedLegacyProbeBuffer = BufferID.CablePhysicsSolver132_SplineVertices;
+        public const BufferID SdfSnapshotBuffer = BufferID.CablePhysicsSolver132_SplineVertices;
+        public const BufferID SdfProbeHitsBuffer = BufferID.CablePhysicsSolver132_SegmentTensions;
+        public const BufferID HitResultsBuffer = BufferID.CablePhysicsSolver132_PhysicsEvents;
+        public const BufferID DeformationBuffer = BufferID.CablePhysicsSolver132_TelemetryRing;
+        public const BufferID BatteryDrainBuffer = BufferID.CablePhysicsSolver132_TelemetryHead;
+        public const BufferID GlowDecalBuffer = BufferID.CablePhysicsSolver132_PinnedAups;
+        public const BufferID ImpactVfxBuffer = BufferID.CablePhysicsSolver132_PinnedMask;
+        public const BufferID CooldownBuffer = BufferID.CablePhysicsSolver132_Tuning;
+        public const BufferID TelemetryRingBuffer = BufferID.CablePhysicsSolver132_CableMaterials;
+        public const BufferID TelemetryCursorBuffer = BufferID.CablePhysicsSolver132_BootstrapState;
+        public const BufferID TuningBuffer = BufferID.CablePhysicsSolver132_Endpoints;
+        public const BufferID SpecBuffer = BufferID.LaserCutterDodContracts_SpecBuffer;
+        public const BufferID CsvScratchBuffer = BufferID.LaserCutterDodContracts_CsvScratchBuffer;
+        public const BufferID CountersBuffer = BufferID.LaserCutterDodContracts_CountersBuffer;
+        public const BufferID RequestMetaBuffer = BufferID.LaserCutterDodContracts_RequestMetaBuffer;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

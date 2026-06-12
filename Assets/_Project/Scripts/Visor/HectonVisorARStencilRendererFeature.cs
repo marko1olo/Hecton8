@@ -90,13 +90,13 @@ namespace Hecton8.Visor
         public const int TelemetryFrameCount = 300;
         public const int ProfileCapacity = 16;
         public const int CsvScratchBytes = 16 * 1024;
-        public const BufferID HudParamsBufferId = (BufferID)73180;
-        public const BufferID TargetSourceBufferId = (BufferID)73181;
-        public const BufferID ProjectedTargetBufferId = (BufferID)73182;
-        public const BufferID DigitParamsBufferId = (BufferID)73183;
-        public const BufferID TelemetryRingBufferId = (BufferID)73184;
-        public const BufferID ProfileBufferId = (BufferID)73185;
-        public const BufferID CsvScratchBufferId = (BufferID)73186;
+        public const BufferID HudParamsBufferId = BufferID.HectonVisorARStencilRendererFeature_HudParamsBufferId;
+        public const BufferID TargetSourceBufferId = BufferID.HectonVisorARStencilRendererFeature_TargetSourceBufferId;
+        public const BufferID ProjectedTargetBufferId = BufferID.HectonVisorARStencilRendererFeature_ProjectedTargetBufferId;
+        public const BufferID DigitParamsBufferId = BufferID.HectonVisorARStencilRendererFeature_DigitParamsBufferId;
+        public const BufferID TelemetryRingBufferId = BufferID.HectonVisorARStencilRendererFeature_TelemetryRingBufferId;
+        public const BufferID ProfileBufferId = BufferID.HectonVisorARStencilRendererFeature_ProfileBufferId;
+        public const BufferID CsvScratchBufferId = BufferID.HectonVisorARStencilRendererFeature_CsvScratchBufferId;
 
         public static bool ValidateLayouts()
         {

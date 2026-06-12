@@ -122,23 +122,23 @@ namespace Hecton8.Core.Diagnostics
 
     public static class AnalyticsVaultBufferIds
     {
-        public const BufferID EventRing = (BufferID)71860;
-        public const BufferID Staging = (BufferID)71861;
-        public const BufferID Counters = (BufferID)71862;
-        public const BufferID TelemetryRing = (BufferID)71863;
-        public const BufferID TelemetryCursor = (BufferID)71864;
-        public const BufferID Tuning = (BufferID)71865;
-        public const BufferID CsvScratch = (BufferID)71866;
-        public const BufferID CompressedScratch = (BufferID)71867;
-        public const BufferID HeatmapDebug = (BufferID)71868;
-        public const BufferID HandoffA = (BufferID)71869;
-        public const BufferID HandoffB = (BufferID)71870;
-        public const BufferID WorkerAccum = (BufferID)71871;
-        public const BufferID RawBatchScratch = (BufferID)71872;
-        public const BufferID DumpSnapshot = (BufferID)71873;
-        public const BufferID RoutineIngress = (BufferID)71874;
-        public const BufferID CriticalIngress = (BufferID)71875;
-        public const BufferID IngressCursor = (BufferID)71876;
+        public const BufferID EventRing = BufferID.AsynchronousTelemetryExporter_EventRing;
+        public const BufferID Staging = BufferID.AsynchronousTelemetryExporter_Staging;
+        public const BufferID Counters = BufferID.AsynchronousTelemetryExporter_Counters;
+        public const BufferID TelemetryRing = BufferID.AsynchronousTelemetryExporter_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.AsynchronousTelemetryExporter_TelemetryCursor;
+        public const BufferID Tuning = BufferID.AsynchronousTelemetryExporter_Tuning;
+        public const BufferID CsvScratch = BufferID.AsynchronousTelemetryExporter_CsvScratch;
+        public const BufferID CompressedScratch = BufferID.AsynchronousTelemetryExporter_CompressedScratch;
+        public const BufferID HeatmapDebug = BufferID.AsynchronousTelemetryExporter_HeatmapDebug;
+        public const BufferID HandoffA = BufferID.AsynchronousTelemetryExporter_HandoffA;
+        public const BufferID HandoffB = BufferID.AsynchronousTelemetryExporter_HandoffB;
+        public const BufferID WorkerAccum = BufferID.AsynchronousTelemetryExporter_WorkerAccum;
+        public const BufferID RawBatchScratch = BufferID.AsynchronousTelemetryExporter_RawBatchScratch;
+        public const BufferID DumpSnapshot = BufferID.AsynchronousTelemetryExporter_DumpSnapshot;
+        public const BufferID RoutineIngress = BufferID.AsynchronousTelemetryExporter_RoutineIngress;
+        public const BufferID CriticalIngress = BufferID.AsynchronousTelemetryExporter_CriticalIngress;
+        public const BufferID IngressCursor = BufferID.AsynchronousTelemetryExporter_IngressCursor;
     }
 
     public static class AnalyticsExporterFlags

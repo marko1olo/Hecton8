@@ -31,15 +31,15 @@ namespace Hecton8.Physics.KCC.Editor
 
     public static class Shinobu355KccSmokeRunner
     {
-        private const BufferID SmokeStatesBuffer = (BufferID)71810;
-        private const BufferID SmokePositionHistoryBuffer = (BufferID)71811;
-        private const BufferID SmokeRollbackRingBuffer = (BufferID)71812;
-        private const BufferID SmokeResultBuffer = (BufferID)71813;
-        private const BufferID SmokeFailureBuffer = (BufferID)71814;
-        private const BufferID SmokeTelemetryBuffer = (BufferID)71815;
-        private const BufferID SmokeDriftBuffer = (BufferID)71816;
-        private const BufferID SmokeDesyncSignalBuffer = (BufferID)71817;
-        private const BufferID SmokeProfilesBuffer = (BufferID)71818;
+        private const BufferID SmokeStatesBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeStatesBuffer;
+        private const BufferID SmokePositionHistoryBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokePositionHistoryBuffer;
+        private const BufferID SmokeRollbackRingBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeRollbackRingBuffer;
+        private const BufferID SmokeResultBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeResultBuffer;
+        private const BufferID SmokeFailureBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeFailureBuffer;
+        private const BufferID SmokeTelemetryBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeTelemetryBuffer;
+        private const BufferID SmokeDriftBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeDriftBuffer;
+        private const BufferID SmokeDesyncSignalBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeDesyncSignalBuffer;
+        private const BufferID SmokeProfilesBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeProfilesBuffer;
         private const float PerformanceBudgetMicroseconds = 100f;
         private const long RetainedTelemetryVaultBytes = 1024L * 1024L;
         private const double MaxProfileAupMagnitudeMeters = 250000.0d;

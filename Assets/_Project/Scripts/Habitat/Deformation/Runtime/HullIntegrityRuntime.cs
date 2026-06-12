@@ -51,16 +51,16 @@ namespace Hecton8.Habitat.Deformation
         private const float DefaultPressureBuckleThreshold01 = 0.82f;
         private const float DefaultVisualOverkillLimit = 1f;
         private const int BreachJetVertexCount = 6;
-        private const BufferID DeformationStatesBufferId = (BufferID)70090;
-        private const BufferID HullImpactScratchBufferId = (BufferID)70091;
-        private const BufferID DeformationTelemetryBufferId = (BufferID)70092;
-        private const BufferID DeformationTelemetryCursorBufferId = (BufferID)70093;
-        private const BufferID BreachJetsBufferId = (BufferID)70094;
-        private const BufferID BreachJetArgsBufferId = (BufferID)70095;
-        private const BufferID HullMaterialStrengthBufferId = (BufferID)70096;
-        private const BufferID HullMaterialStrengthCsvScratchBufferId = (BufferID)70097;
-        private const BufferID ExternalPressure01BufferId = (BufferID)70098;
-        private const BufferID PendingVisualImpactsBufferId = (BufferID)70099;
+        private const BufferID DeformationStatesBufferId = BufferID.HullIntegrityRuntime_DeformationStatesBufferId;
+        private const BufferID HullImpactScratchBufferId = BufferID.HullIntegrityRuntime_HullImpactScratchBufferId;
+        private const BufferID DeformationTelemetryBufferId = BufferID.HullIntegrityRuntime_DeformationTelemetryBufferId;
+        private const BufferID DeformationTelemetryCursorBufferId = BufferID.HullIntegrityRuntime_DeformationTelemetryCursorBufferId;
+        private const BufferID BreachJetsBufferId = BufferID.HullIntegrityRuntime_BreachJetsBufferId;
+        private const BufferID BreachJetArgsBufferId = BufferID.HullIntegrityRuntime_BreachJetArgsBufferId;
+        private const BufferID HullMaterialStrengthBufferId = BufferID.HullIntegrityRuntime_HullMaterialStrengthBufferId;
+        private const BufferID HullMaterialStrengthCsvScratchBufferId = BufferID.HullIntegrityRuntime_HullMaterialStrengthCsvScratchBufferId;
+        private const BufferID ExternalPressure01BufferId = BufferID.HullIntegrityRuntime_ExternalPressure01BufferId;
+        private const BufferID PendingVisualImpactsBufferId = BufferID.HullIntegrityRuntime_PendingVisualImpactsBufferId;
 
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.Habitat.HullIntegrity.Tick");
         private static readonly ProfilerMarker _lateMarker = new ProfilerMarker("H8.Habitat.HullIntegrity.LateFrame");

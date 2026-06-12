@@ -624,8 +624,8 @@ namespace Hecton8.Systems.AI
         private const uint AcousticImpulseFlagLarge = 1u << 3;
         private const int AcousticPingPredatorContactCapacity = 64;
         private const int PredatorSpatialHashContactCapacity = 64;
-        private const BufferID PredatorSpatialAbsolutePositionsBufferId = (BufferID)73238;
-        private const BufferID PredatorSpatialCellCoordsBufferId = (BufferID)73239;
+        private const BufferID PredatorSpatialAbsolutePositionsBufferId = BufferID.HectonDirectorAI_PredatorSpatialAbsolutePositionsBufferId;
+        private const BufferID PredatorSpatialCellCoordsBufferId = BufferID.HectonDirectorAI_PredatorSpatialCellCoordsBufferId;
         private static readonly ulong _predatorSpatialHashMutationGuardMask =
             PredatorSpatialHashMutationGuardBit(PredatorSpatialAbsolutePositionsBufferId) |
             PredatorSpatialHashMutationGuardBit(PredatorSpatialCellCoordsBufferId);

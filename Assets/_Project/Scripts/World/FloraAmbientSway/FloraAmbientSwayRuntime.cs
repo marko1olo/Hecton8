@@ -281,13 +281,13 @@ namespace Hecton8.World.FloraAmbientSway
         private const int FloraSwayTuningSizeBytes = 32;
         private const int FloraBiomeSwayProfileSizeBytes = 32;
 
-        private const BufferID FloraAmbientSwayParamsBufferId = (BufferID)72900;
-        private const BufferID FloraAmbientSwayFlowStateBufferId = (BufferID)72901;
-        private const BufferID FloraAmbientSwayTelemetryRingBufferId = (BufferID)72902;
-        private const BufferID FloraAmbientSwayTelemetryCursorBufferId = (BufferID)72903;
-        private const BufferID FloraAmbientSwayTuningBufferId = (BufferID)72904;
-        private const BufferID FloraAmbientSwayBiomeProfilesBufferId = (BufferID)72905;
-        private const BufferID FloraAmbientSwayCsvScratchBufferId = (BufferID)72906;
+        private const BufferID FloraAmbientSwayParamsBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayParamsBufferId;
+        private const BufferID FloraAmbientSwayFlowStateBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayFlowStateBufferId;
+        private const BufferID FloraAmbientSwayTelemetryRingBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayTelemetryRingBufferId;
+        private const BufferID FloraAmbientSwayTelemetryCursorBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayTelemetryCursorBufferId;
+        private const BufferID FloraAmbientSwayTuningBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayTuningBufferId;
+        private const BufferID FloraAmbientSwayBiomeProfilesBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayBiomeProfilesBufferId;
+        private const BufferID FloraAmbientSwayCsvScratchBufferId = BufferID.FloraAmbientSwayRuntime_FloraAmbientSwayCsvScratchBufferId;
         private static readonly ulong TelemetryMutationGuardMask =
             FloraAmbientSwayMutationGuardBit(FloraAmbientSwayTelemetryRingBufferId) |
             FloraAmbientSwayMutationGuardBit(FloraAmbientSwayTelemetryCursorBufferId);
@@ -359,6 +359,10 @@ namespace Hecton8.World.FloraAmbientSway
         private static void EnsureSceneRuntime()
         {
             if (!Application.isPlaying)
+                return;
+
+            string sceneName = SceneManager.GetActiveScene().name;
+            if (sceneName == "00_BOOTSTRAP" || sceneName == "01_MAIN_MENU" || sceneName == "01_ORBIT")
                 return;
 
             SceneManager.sceneLoaded -= OnSceneLoaded;

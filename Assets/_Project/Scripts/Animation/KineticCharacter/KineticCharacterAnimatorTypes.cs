@@ -62,19 +62,19 @@ namespace Hecton8.Animation.KineticCharacter
 
     public static class KineticCharacterAnimatorBufferIds
     {
-        public const BufferID Rigs = (BufferID)13671360;
-        public const BufferID FrameInputs = (BufferID)13671361;
-        public const BufferID ParentIndices = (BufferID)13671362;
-        public const BufferID BindPoses = (BufferID)13671363;
-        public const BufferID BoneOutputs = (BufferID)13671364;
-        public const BufferID BoneMatrices = (BufferID)13671365;
-        public const BufferID IkTargets = (BufferID)13671366;
-        public const BufferID FrameStats = (BufferID)13671367;
-        public const BufferID TelemetryRing = (BufferID)13671368;
-        public const BufferID TelemetryCursor = (BufferID)13671369;
-        public const BufferID Tuning = (BufferID)13671370;
+        public const BufferID Rigs = BufferID.KineticCharacterAnimatorTypes_Rigs;
+        public const BufferID FrameInputs = BufferID.KineticCharacterAnimatorTypes_FrameInputs;
+        public const BufferID ParentIndices = BufferID.KineticCharacterAnimatorTypes_ParentIndices;
+        public const BufferID BindPoses = BufferID.KineticCharacterAnimatorTypes_BindPoses;
+        public const BufferID BoneOutputs = BufferID.KineticCharacterAnimatorTypes_BoneOutputs;
+        public const BufferID BoneMatrices = BufferID.KineticCharacterAnimatorTypes_BoneMatrices;
+        public const BufferID IkTargets = BufferID.KineticCharacterAnimatorTypes_IkTargets;
+        public const BufferID FrameStats = BufferID.KineticCharacterAnimatorTypes_FrameStats;
+        public const BufferID TelemetryRing = BufferID.KineticCharacterAnimatorTypes_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.KineticCharacterAnimatorTypes_TelemetryCursor;
+        public const BufferID Tuning = BufferID.KineticCharacterAnimatorTypes_Tuning;
 #if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)13671371;
+        public const BufferID CsvScratch = BufferID.KineticCharacterAnimatorTypes_CsvScratch;
 #endif
     }
 

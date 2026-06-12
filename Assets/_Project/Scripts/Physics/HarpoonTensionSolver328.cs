@@ -126,20 +126,20 @@ namespace Hecton8.Physics
 
     public static class HarpoonTensionSolver328BufferIds
     {
-        public const BufferID TetherStates = (BufferID)72180;
-        public const BufferID TetherNodes = (BufferID)72181;
-        public const BufferID TetherPreviousNodes = (BufferID)72182;
-        public const BufferID TetherConstraints = (BufferID)72183;
-        public const BufferID ForcePackets = (BufferID)72184;
-        public const BufferID PhysicsEvents = (BufferID)72185;
-        public const BufferID SplineVertices = (BufferID)72186;
-        public const BufferID TelemetryRing = (BufferID)72187;
-        public const BufferID TelemetryHead = (BufferID)72188;
-        public const BufferID Tuning = (BufferID)72189;
-        public const BufferID MaterialProfiles = (BufferID)72190;
-        public const BufferID BootstrapState = (BufferID)72191;
-        public const BufferID FaultFlags = (BufferID)72192;
-        public const BufferID StressStates = (BufferID)72193;
+        public const BufferID TetherStates = BufferID.HarpoonTensionSolver328_TetherStates;
+        public const BufferID TetherNodes = BufferID.HarpoonTensionSolver328_TetherNodes;
+        public const BufferID TetherPreviousNodes = BufferID.HarpoonTensionSolver328_TetherPreviousNodes;
+        public const BufferID TetherConstraints = BufferID.HarpoonTensionSolver328_TetherConstraints;
+        public const BufferID ForcePackets = BufferID.HarpoonTensionSolver328_ForcePackets;
+        public const BufferID PhysicsEvents = BufferID.HarpoonTensionSolver328_PhysicsEvents;
+        public const BufferID SplineVertices = BufferID.HarpoonTensionSolver328_SplineVertices;
+        public const BufferID TelemetryRing = BufferID.HarpoonTensionSolver328_TelemetryRing;
+        public const BufferID TelemetryHead = BufferID.HarpoonTensionSolver328_TelemetryHead;
+        public const BufferID Tuning = BufferID.HarpoonTensionSolver328_Tuning;
+        public const BufferID MaterialProfiles = BufferID.HarpoonTensionSolver328_MaterialProfiles;
+        public const BufferID BootstrapState = BufferID.HarpoonTensionSolver328_BootstrapState;
+        public const BufferID FaultFlags = BufferID.HarpoonTensionSolver328_FaultFlags;
+        public const BufferID StressStates = BufferID.HarpoonTensionSolver328_StressStates;
     }
 
     public static class TetherStateFlags328

@@ -65,27 +65,27 @@ namespace Hecton8.Cartography
     /// </summary>
     public static class CartographyVaultBufferIds
     {
-        public const BufferID DiscoveryWords = (BufferID)71420;
-        public const BufferID SectorTable = (BufferID)71421;
-        public const BufferID UploadPackedR8 = (BufferID)71422;
-        public const BufferID TelemetryRing = (BufferID)71423;
-        public const BufferID TelemetryCursor = (BufferID)71424;
-        public const BufferID Tuning = (BufferID)71425;
-        public const BufferID ScannerProfiles = (BufferID)71426;
-        public const BufferID CsvScratch = (BufferID)71427;
-        public const BufferID MockPings = (BufferID)71428;
-        public const BufferID Counters = (BufferID)71429;
-        public const BufferID ActiveSectorHashes = (BufferID)71430;
-        public const BufferID DebugVoxels = (BufferID)71431;
-        public const BufferID RleRuns = (BufferID)71432;
-        public const BufferID SurfaceMaskWords = (BufferID)71433;
-        public const BufferID RollbackSnapshotWords = (BufferID)71434;
-        public const BufferID PendingPings = (BufferID)71435;
-        public const BufferID PendingSignalCounts = (BufferID)71436;
-        public const BufferID State = (BufferID)71437;
-        public const BufferID LegacyExplorationWords = (BufferID)71459;
-        public const BufferID LegacyExploredBitIndices = (BufferID)71460;
-        public const BufferID LegacyExploredBitIndexCount = (BufferID)71461;
+        public const BufferID DiscoveryWords = BufferID.CartographyGridJobs_DiscoveryWords;
+        public const BufferID SectorTable = BufferID.CartographyGridJobs_SectorTable;
+        public const BufferID UploadPackedR8 = BufferID.CartographyGridJobs_UploadPackedR8;
+        public const BufferID TelemetryRing = BufferID.CartographyGridJobs_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.CartographyGridJobs_TelemetryCursor;
+        public const BufferID Tuning = BufferID.CartographyGridJobs_Tuning;
+        public const BufferID ScannerProfiles = BufferID.CartographyGridJobs_ScannerProfiles;
+        public const BufferID CsvScratch = BufferID.CartographyGridJobs_CsvScratch;
+        public const BufferID MockPings = BufferID.CartographyGridJobs_MockPings;
+        public const BufferID Counters = BufferID.CartographyGridJobs_Counters;
+        public const BufferID ActiveSectorHashes = BufferID.CartographyGridJobs_ActiveSectorHashes;
+        public const BufferID DebugVoxels = BufferID.CartographyGridJobs_DebugVoxels;
+        public const BufferID RleRuns = BufferID.CartographyGridJobs_RleRuns;
+        public const BufferID SurfaceMaskWords = BufferID.CartographyGridJobs_SurfaceMaskWords;
+        public const BufferID RollbackSnapshotWords = BufferID.CartographyGridJobs_RollbackSnapshotWords;
+        public const BufferID PendingPings = BufferID.CartographyGridJobs_PendingPings;
+        public const BufferID PendingSignalCounts = BufferID.CartographyGridJobs_PendingSignalCounts;
+        public const BufferID State = BufferID.CartographyGridJobs_State;
+        public const BufferID LegacyExplorationWords = BufferID.CartographyGridJobs_LegacyExplorationWords;
+        public const BufferID LegacyExploredBitIndices = BufferID.CartographyGridJobs_LegacyExploredBitIndices;
+        public const BufferID LegacyExploredBitIndexCount = BufferID.CartographyGridJobs_LegacyExploredBitIndexCount;
     }
 
     public enum MapRevealSignalFlags : byte

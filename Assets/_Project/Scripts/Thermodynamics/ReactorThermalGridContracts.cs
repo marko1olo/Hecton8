@@ -9,15 +9,15 @@ namespace Hecton8.Thermodynamics
 {
     public static class BaseReactorThermalBufferIds
     {
-        public const BufferID States = (BufferID)73642;
-        public const BufferID Tuning = (BufferID)73643;
-        public const BufferID PowerLedger = (BufferID)73644;
-        public const BufferID TelemetryRing = (BufferID)73645;
-        public const BufferID TelemetryCursor = (BufferID)73646;
-        public const BufferID Visuals = (BufferID)73647;
-        public const BufferID DumpLatch = (BufferID)73648;
-        public const BufferID Profiles = (BufferID)73649;
-        public const BufferID ProfileCount = (BufferID)73650;
+        public const BufferID States = BufferID.ReactorThermalGridContracts_States;
+        public const BufferID Tuning = BufferID.ReactorThermalGridContracts_Tuning;
+        public const BufferID PowerLedger = BufferID.ReactorThermalGridContracts_PowerLedger;
+        public const BufferID TelemetryRing = BufferID.ReactorThermalGridContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.ReactorThermalGridContracts_TelemetryCursor;
+        public const BufferID Visuals = BufferID.ReactorThermalGridContracts_Visuals;
+        public const BufferID DumpLatch = BufferID.ReactorThermalGridContracts_DumpLatch;
+        public const BufferID Profiles = BufferID.ReactorThermalGridContracts_Profiles;
+        public const BufferID ProfileCount = BufferID.ReactorThermalGridContracts_ProfileCount;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

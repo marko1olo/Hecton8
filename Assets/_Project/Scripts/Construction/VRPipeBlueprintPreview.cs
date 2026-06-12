@@ -24,9 +24,9 @@ namespace Hecton8.Construction
         private const float PointDirtyDistanceSq = 0.000025f;
         private const string HologramMaterialPath = "Assets/_Project/Art/Materials/Construction/Mat_BuildGhost_Valid.mat";
         private const uint PipePreviewHash = 0x56525050u;
-        private const BufferID PipeStateBufferId = (BufferID)70946;
-        private const BufferID PipeVisualBufferId = (BufferID)70947;
-        private const BufferID PipeIndirectArgsBufferId = (BufferID)70948;
+        private const BufferID PipeStateBufferId = BufferID.VRPipeBlueprintPreview_PipeStateBufferId;
+        private const BufferID PipeVisualBufferId = BufferID.VRPipeBlueprintPreview_PipeVisualBufferId;
+        private const BufferID PipeIndirectArgsBufferId = BufferID.VRPipeBlueprintPreview_PipeIndirectArgsBufferId;
         private const ulong PreviewBuildMutationGuardMask =
             (1UL << ((int)PipeStateBufferId & 31)) |
             (1UL << ((int)PipeVisualBufferId & 31)) |

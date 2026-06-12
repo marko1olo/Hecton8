@@ -42,17 +42,17 @@ namespace Hecton8.Animation.FaunaProcedural
 
     public static class ProceduralBoneBlenderBufferIds
     {
-        public const BufferID Rigs = (BufferID)71680;
-        public const BufferID FrameInputs = (BufferID)71681;
-        public const BufferID ParentIndices = (BufferID)71682;
-        public const BufferID BindPoses = (BufferID)71683;
-        public const BufferID BoneStates = (BufferID)71684;
-        public const BufferID BoneMatrices = (BufferID)71685;
-        public const BufferID FrameStats = (BufferID)71686;
-        public const BufferID TelemetryRing = (BufferID)71687;
-        public const BufferID TelemetryCursor = (BufferID)71688;
-        public const BufferID Tuning = (BufferID)71689;
-        public const BufferID MockAiSignals = (BufferID)71690;
+        public const BufferID Rigs = BufferID.ProceduralBoneBlenderTypes_Rigs;
+        public const BufferID FrameInputs = BufferID.ProceduralBoneBlenderTypes_FrameInputs;
+        public const BufferID ParentIndices = BufferID.ProceduralBoneBlenderTypes_ParentIndices;
+        public const BufferID BindPoses = BufferID.ProceduralBoneBlenderTypes_BindPoses;
+        public const BufferID BoneStates = BufferID.ProceduralBoneBlenderTypes_BoneStates;
+        public const BufferID BoneMatrices = BufferID.ProceduralBoneBlenderTypes_BoneMatrices;
+        public const BufferID FrameStats = BufferID.ProceduralBoneBlenderTypes_FrameStats;
+        public const BufferID TelemetryRing = BufferID.ProceduralBoneBlenderTypes_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.ProceduralBoneBlenderTypes_TelemetryCursor;
+        public const BufferID Tuning = BufferID.ProceduralBoneBlenderTypes_Tuning;
+        public const BufferID MockAiSignals = BufferID.ProceduralBoneBlenderTypes_MockAiSignals;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = ProceduralBoneBlenderConstants.BoneStateBytes)]

@@ -238,8 +238,8 @@ namespace Hecton8.VFX.Bioluminescence
         private const uint ProfileFallbackHash = 0x424C4642u; // BLFB
         private const uint ProfileBinaryHash = 0x424C554Du; // BLUM
         private const uint EmergencyNeonBluePacked = 0xFBBE1000u;
-        private const BufferID BiolumPulseStateBufferId = (BufferID)70311;
-        private const BufferID BiolumBlackBoxDumpScratchBufferId = (BufferID)70312;
+        private const BufferID BiolumPulseStateBufferId = BufferID.BiolumPulseSyncRuntime_BiolumPulseStateBufferId;
+        private const BufferID BiolumBlackBoxDumpScratchBufferId = BufferID.BiolumPulseSyncRuntime_BiolumBlackBoxDumpScratchBufferId;
         private const string ProfileFileName = "Biolum_Profiles.bin";
         private const string ProfileH8BinFileName = "Biolum_Profiles.h8bin";
         private const string LegacyPaletteArchiveName = "biolum_color_palettes.h8bin";

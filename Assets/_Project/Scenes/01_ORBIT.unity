@@ -136,7 +136,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &871228484
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -196,18 +196,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 283594202596199900, guid: 9bafceacd557491409f6134514063ff4, type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
-    - target: {fileID: 3070237100265782359, guid: 9bafceacd557491409f6134514063ff4, type: 3}
-      propertyPath: m_CastShadows
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3070237100265782359, guid: 9bafceacd557491409f6134514063ff4, type: 3}
-      propertyPath: m_LightProbeUsage
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3883420752019119224, guid: 9bafceacd557491409f6134514063ff4, type: 3}
       propertyPath: m_LocalPosition.x
       value: 60000
@@ -548,9 +536,8 @@ GameObject:
   - component: {fileID: 1847269920}
   - component: {fileID: 1847269919}
   - component: {fileID: 1847269918}
-  - component: {fileID: 1847269922}
   m_Layer: 0
-  m_Name: "\u043E\u0431\u043B\u0430\u043A\u0430 \u0433\u0435\u043A\u0442\u043E\u043D8"
+  m_Name: Hecton8_Clouds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -649,19 +636,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1847269922
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1847269917}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bd2c14f836422c43b3400d6d22fb497, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlanetRotation
-  rotationSpeed: 2
 --- !u!1 &2002936757
 GameObject:
   m_ObjectHideFlags: 0
@@ -674,7 +648,6 @@ GameObject:
   - component: {fileID: 2002936760}
   - component: {fileID: 2002936759}
   - component: {fileID: 2002936758}
-  - component: {fileID: 2002936762}
   m_Layer: 0
   m_Name: Hecton8_Surface
   m_TagString: Untagged
@@ -776,19 +749,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2002936762
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2002936757}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6bd2c14f836422c43b3400d6d22fb497, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlanetRotation
-  rotationSpeed: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

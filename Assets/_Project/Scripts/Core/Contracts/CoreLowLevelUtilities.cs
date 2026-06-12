@@ -464,7 +464,7 @@ namespace Hecton8.Core
 #endif
                 string persistentRoot = Application.persistentDataPath;
                 if (string.IsNullOrEmpty(persistentRoot))
-                    persistentRoot = Environment.CurrentDirectory;
+                    persistentRoot = System.Environment.CurrentDirectory;
 
                 fullPath = Path.GetFullPath(Path.Combine(persistentRoot, relativePath));
                 return true;

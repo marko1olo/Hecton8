@@ -67,6 +67,7 @@ namespace Hecton8.World
         private const string ArchetypeArchClusterLabel = "ArchCluster";
         private const string ArchetypeReefPackLabel = "ReefPack";
         private const string ArchetypeCaveBridgeLabel = "CaveBridge";
+        private const string ArchetypeOpenTrenchLabel = "OpenTrench";
         private const string TerrainSeamNoneLabel = "None";
         private const string TerrainSeamHeightBlendLabel = "HeightBlend";
         private const string TerrainSeamSdfBlendLabel = "SdfBlend";
@@ -140,6 +141,14 @@ namespace Hecton8.World
         public static int ActiveBindingCount => _activeBindings.Count;
 
         private bool HasConfiguredRuntimeKey => runtimeKey != 0L;
+
+        internal void InjectDynamicState(long newKey, string arch)
+        {
+            runtimeKey = newKey;
+            archetype = arch;
+            if (HasConfiguredRuntimeKey)
+                RegisterActiveBinding(this);
+        }
 
         public WorldGenerativeGeologyProfile.ShapeArchetype Archetype
         {
@@ -418,6 +427,8 @@ namespace Hecton8.World
                 return WorldGenerativeGeologyProfile.ShapeArchetype.ReefPack;
             if (string.Equals(value, ArchetypeCaveBridgeLabel, StringComparison.Ordinal))
                 return WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge;
+            if (string.Equals(value, ArchetypeOpenTrenchLabel, StringComparison.Ordinal))
+                return WorldGenerativeGeologyProfile.ShapeArchetype.OpenTrench;
 
             return WorldGenerativeGeologyProfile.ShapeArchetype.ComplexRock;
         }

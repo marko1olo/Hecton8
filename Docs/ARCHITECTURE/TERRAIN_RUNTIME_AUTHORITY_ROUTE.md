@@ -1,9 +1,146 @@
-﻿# Terrain Runtime Authority Route
+# Terrain Runtime Authority Route
 
-Status: repair-pass route card, 2026-05-26.
+Status: repair-pass route card, 2026-05-26; chain section added 2026-06-12 (full code audit).
 Evidence class: STATIC_DOC
 Owner domain: Echelon 2 World Generation & Terrain.
 Review disposition: YELLOW / STATIC_DOC_ONLY until compile/import/runtime/profiler/player proof exists.
+
+---
+
+## Полная цепочка процедурной генерации (VERIFIED 2026-06-12, все файлы прочитаны целиком)
+
+### Источник формы рельефа
+
+**`WorldMacroGeologyFields`** (`Assets/_Project/Scripts/World/WorldMacroGeologyFields.cs`) — единственный первоисточник. Никакого `.h8bin` для рельефа нет. Это статическая аналитическая функция `ArtifactVersion = 6`.
+
+Алгоритм `EvaluateHeightMeters()` в порядке слоёв:
+1. Три уровня domain warp (low/mid/high, 980/520/240 м)
+2. Синусоидальная линия шельфа с warp-смещением
+3. 5 процедурных каньонов
+4. Первичный разлом с tectonic trench (направление 0.72/-0.69)
+5. Вторичный разлом (-0.38/-0.925)
+6. 3 хребта параллельно разломам
+7. 3 эллиптических бассейна (фиксированные координаты в AUP)
+8. 4 хребтовых цепи (ridge chain hills)
+9. Cellular Voronoi тектоническая сеть + uplift waves
+10. Региональный breakup (macro + meso шум)
+11. Hard clamp: depth ∈ [−620, HadalDepth], нелинейный зажим при depth < −260
+
+Возвращает `WorldMacroGeologySample` (20+ полей): height, depth, shelf/shelfBreak/ridge/trench/basin/fault masks, slope01, curvature01, erosionFlow01, terrace/slump/tributary/nodule/reef/hardRock/voxelSeam masks, PrimaryZone.
+
+**Параметры по умолчанию** (`WorldMacroGeologyParams.CreateDefault`):
+- ShelfDepth 90 м, AbyssDepth 2950 м, HadalDepth 4600 м
+- ShelfBreakWidth 5200 м, RidgeHeight 1550 м / Width 2350 м
+- TrenchDepth 900 м / Width 2200 м, BasinDepth 620 м
+- Authoring seed: `880031`, MinimumWorldExtent: 30 000 м, DefaultChunkSize: 512 м
+
+**Version gate:** если `MacroGeologyArtifactVersion` в Burst-джобе не совпадает с `ArtifactVersion = 6` — активируется Voronoi fallback в `HectonSandboxAbyssalShelfMath`. Сейчас версии совпадают.
+
+---
+
+### Полная цепочка генерации (рантайм)
+
+```text
+WorldMacroGeologyFields.EvaluateHeightMeters()   ← ЕДИНСТВЕННЫЙ ПЕРВОИСТОЧНИК ФОРМЫ
+│  AUP XZ float, детерминированный, без аллокаций
+│  seed = CombineWorldSeed(authoringSeed=880031, runtimeWorldSeed)
+│
+├─► HectonSandboxAbyssalShelfMapMagicNode         [MapMagic граф, нода высоты]
+│     Burst IJob, NativeArray<float>, Allocator.TempJob
+│     → HectonSandboxAbyssalShelfBaseJob (первичный путь при ArtifactVersion совпадении)
+│     → HectonSandboxAbyssalShelfMath (Voronoi fallback при version mismatch)
+│     → записывает в MapMagic MatrixWorld → TerrainData (SetHeightsDelayLOD)
+│
+├─► HectonTerrainSplatmapMapMagicNode             [MapMagic граф, сплатмап]
+│     → WorldProceduralTerrainSlopeCavitySplatmapJob [Burst IJobParallelFor]
+│       → WorldMacroGeologyFields.Evaluate() → WorldTerrainSurfaceMaterialResolver
+│       → WorldTerrainMesoDetailFields.Evaluate() (террасы/обвалы/каналы ±70 м)
+│       Выходы: sand / rock / silt / cavity / slopeWeight (MatrixWorld)
+│
+├─► HectonTerrainSurfaceMaterialMapMagicNode      [MapMagic граф, 8 материальных масок]
+│     → WorldTerrainSurfaceMaterialMaskJob [Burst IJobParallelFor]
+│       → WorldMacroGeologyFields.Evaluate() → WorldTerrainSurfaceMaterialResolver
+│       Выходы: shellSand / limestoneShelf / claySilt / hardRock /
+│               brineSaltCrust / manganeseNodulePlain / reefRubble / seepCrust
+│               + packed RGBA (R=rock, G=sand, B=silt, A=deposition)
+│
+├─► WorldGenerativeGeologyTerrainSeamApplier      [MonoBehaviour, запись в Terrain]
+│     SetHeightsDelayLOD, _HectonVoxelBlendMask texture
+│
+├─► WorldGenerativeGeologyVoxelBridgeDirector     [жизненный цикл Voxel volumes]
+│     → HectonVoxelEngine (Marching Cubes, Mesh.AllocateWritableMeshData)
+│     → VoxelSeamDirector (seam math в AUP, без Transform-space)
+│
+└─► WorldProceduralFieldSampler                   [центральный рантайм-сэмплер]
+      SeafloorSource enum:
+        MapMagicHeight (первичный) → MapMagicBridge
+        MacroGeologyFallback       → WorldMacroGeologyFields.Evaluate() напрямую
+        TerrainProviderHeight / SceneProbeLegacy / FallbackSynthetic
+      CellSamplingJob [Burst IJobParallelFor, 4096 биом-ячеек]:
+        → зона, биом, паттерн, плотности scatter, cave proximity
+      FieldSample.macroGeologySample содержит полный WorldMacroGeologySample
+      → (spawn, scatter, cave, fauna, loot, PDA, resource distribution)
+```
+
+---
+
+### Детальная цепочка WorldTerrainDetailContracts (из WorldMacroGeologySample вниз)
+
+```text
+WorldMacroGeologySample
+│
+├─ WorldTerrainMesoDetailFields.Evaluate()   → WorldTerrainMesoDetailSample
+│    (ContractVersion=1, дельта высоты ±70 м, terraces/slump/tributary/talus/rubble/reef)
+│
+├─ WorldTerrainSurfaceMaterialResolver.Resolve()  → WorldTerrainSurfaceMaterialWeights
+│    (ContractVersion=1, 8 нормализованных весов материалов)
+│    ApplyMesoDetailBias() → уточнение весов через meso-сэмпл
+│    ResolvePackedControlRgba() → float4(R=rock, G=sand, B=silt, A=deposition)
+│
+└─ WorldTerrainDetailContracts.ResolveEligibilityFlags()  → uint flags
+     SandScatter / RockScatter / NoduleScatter / ReefScatter / BrineDeposit /
+     SeepDeposit / TalusBoulder / RubblePebble / DetailNormal / DecalOverlay /
+     VoxelAnchor / CaveMouthCandidate
+
+Тиры детализации (WorldTerrainDetailContracts):
+  NearPlayable:  513 px, 1 м/px, до  768 м,   все control maps
+  MidTraversal:  257 px, 2 м/px, до 2048 м,   macro+slope+curvature+erosion+terrace+slump+tributary+material+voxelSeam
+  FarSilhouette: 129 px, 4 м/px, до 6144 м,   macro+slope+material+voxelSeam
+  DistantHlod:    65 px, 8 м/px, до 24576 м,  macro+material
+```
+
+---
+
+### Python-близнец: предпросмотр по сиду
+
+**`Tools/BuildWorldMacroGeologyPreview.py`** (1434 строки) — точная математическая копия `WorldMacroGeologyFields` на Python.
+
+Запуск:
+```powershell
+python -B Tools/BuildWorldMacroGeologyPreview.py --seed 880031 [--runtime-seed 0] [--resolution 512] [--workers N]
+```
+
+Генерирует в `Docs/GeneratedAssets/Terrain/MacroGeology/`:
+- `terrain_relief_proof.png` — hillshade + erosion (основной визуал)
+- `raw_elevation.png`, `hillshade.png`, `local_relief.png`
+- `geology_zones.png` — 8 зон цветом (PhoticShelf/ShelfBreak/FaultRidge/BrineTrench/AbyssalPlain/SedimentFan/ColdSeepField/HadalBasin)
+- `depth_strata.png` — Photic/Mesophotic/Bathyal/Abyssal/Hadal
+- `waterline_sweep.png` — при WaterY ∈ {-100, 0, +100}
+- `material_regions.png` — 8 материальных масок
+- `terrain_control_rgba_fold.png` — packed R/G/B/A
+- `slope.png`, `curvature.png`, `erosion_flow.png`
+- `shelf_mask.png`, `trench_mask.png`, `ridge_fault_mask.png`, `sediment_seep_mask.png`
+- `meso_terrain_controls.png`, `scatter_eligibility.png`, `voxel_seam_mask.png`
+- `contact_sheet.png`, `terrain_contact_sheet.png`
+- `WorldMacroGeologyPreviewManifest.json` + `WorldMacroGeologyChunkManifest.json`
+
+Также пишет player-approach proof waypoints: `shelf_approach`, `shelf_break_descent`, `canyon_sediment_fan`, `ridge_flank`, `trench_floor`, `basin_floor`, `voxel_seam_candidate`.
+
+Валидатор: **`Tools/ValidateWorldMacroGeologyPreview.py`** — проверяет manifest, sha256 всех PNG, zone counts, depth strata, waypoints, chunk manifest.
+
+**Смена сида:** меняешь `--seed` или `--runtime-seed` → получаешь другой рельеф с теми же дефолтными параметрами. `combine_world_seed(authoring, runtime)` = `hash32(authoring, runtime, 0x6D2B79F5)`.
+
+---
 
 ## Runtime Truth
 

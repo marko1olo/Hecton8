@@ -42,7 +42,7 @@ namespace Hecton8.Power
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
 
-        private const BufferID GridSlotBase = (BufferID)731620;
+        private const BufferID GridSlotBase = BufferID.WfcOutpostGridRegistry_GridSlotBase;
         private static readonly VaultGenerationHandle<byte>[] _gridSlots = new VaultGenerationHandle<byte>[DataVaultExemptGridSlotCount];
         private static readonly IDataVault[] _slotVaults = new IDataVault[DataVaultExemptGridSlotCount];
         // COLD ALLOC: WfcOutpostGridDescriptor[4] - registered WFC grid descriptors - owner: WfcOutpostGridRegistry

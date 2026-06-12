@@ -410,8 +410,8 @@ namespace Hecton8.Audio
         private const int PendingAudioPingCapacity = 8;
         private const int PendingStructuralStressCapacity = 8;
         private const int PendingAudioEventCapacity = PendingAudioPingCapacity + PendingStructuralStressCapacity;
-        private const BufferID PendingAudioEventsBufferId = (BufferID)70885;
-        private const BufferID NextFrameAudioEventsBufferId = (BufferID)70886;
+        private const BufferID PendingAudioEventsBufferId = BufferID.ProceduralAudioEvents_PendingAudioEventsBufferId;
+        private const BufferID NextFrameAudioEventsBufferId = BufferID.ProceduralAudioEvents_NextFrameAudioEventsBufferId;
         private const SystemID VaultOwner = SystemID.Audio;
         private static readonly uint _overflowWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.Overflow"));
         private static readonly uint _audioPingQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.AudioPing"));

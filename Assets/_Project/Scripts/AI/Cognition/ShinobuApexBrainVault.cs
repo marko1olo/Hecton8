@@ -13,23 +13,23 @@ namespace Hecton8.AI.Cognition
     /// </summary>
     public static class ApexBrainVaultBufferIds
     {
-        public const BufferID ApexState = (BufferID)70609;
-        public const BufferID MockPlayerAup = (BufferID)70610;
-        public const BufferID AcousticEchoTap = (BufferID)70611;
-        public const BufferID Tuning = (BufferID)70612;
-        public const BufferID EmergencyStats = (BufferID)70613;
-        public const BufferID MockWorldSampler = (BufferID)70614;
-        public const BufferID Output = (BufferID)70615;
-        public const BufferID ProximitySignal = (BufferID)70616;
-        public const BufferID CombatDamageSignal = (BufferID)70617;
-        public const BufferID PanicSignal = (BufferID)70618;
-        public const BufferID InfluenceNodes = (BufferID)70619;
-        public const BufferID TelemetryRing = (BufferID)70626;
-        public const BufferID TelemetryCursor = (BufferID)70627;
+        public const BufferID ApexState = BufferID.ShinobuApexBrainVault_ApexState;
+        public const BufferID MockPlayerAup = BufferID.ShinobuApexBrainVault_MockPlayerAup;
+        public const BufferID AcousticEchoTap = BufferID.ShinobuApexBrainVault_AcousticEchoTap;
+        public const BufferID Tuning = BufferID.ShinobuApexBrainVault_Tuning;
+        public const BufferID EmergencyStats = BufferID.ShinobuApexBrainVault_EmergencyStats;
+        public const BufferID MockWorldSampler = BufferID.ShinobuApexBrainVault_MockWorldSampler;
+        public const BufferID Output = BufferID.ShinobuApexBrainVault_Output;
+        public const BufferID ProximitySignal = BufferID.ShinobuApexBrainVault_ProximitySignal;
+        public const BufferID CombatDamageSignal = BufferID.ShinobuApexBrainVault_CombatDamageSignal;
+        public const BufferID PanicSignal = BufferID.ShinobuApexBrainVault_PanicSignal;
+        public const BufferID InfluenceNodes = BufferID.ShinobuApexBrainVault_InfluenceNodes;
+        public const BufferID TelemetryRing = BufferID.SystemDispatcherMasterPresentationSuppression;
+        public const BufferID TelemetryCursor = BufferID.SystemDispatcherDomainFenceHandles;
 #if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)70628;
+        public const BufferID CsvScratch = BufferID.SystemDispatcherFenceTelemetry;
 #endif
-        public const BufferID AmbushNodeScratch = (BufferID)70629;
+        public const BufferID AmbushNodeScratch = BufferID.SystemDispatcherFenceTelemetryCursor;
     }
 
     /// <summary>

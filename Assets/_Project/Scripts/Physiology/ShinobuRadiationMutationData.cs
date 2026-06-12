@@ -19,11 +19,11 @@ namespace Hecton8.Physiology
         public const uint DumpVersion = 1u;
         public const ulong DumpMagic = 0x533332344D555441u; // S324MUTA
 
-        public const BufferID MutationStateBuffer = (BufferID)75320;
-        public const BufferID MutationTuningBuffer = (BufferID)75321;
-        public const BufferID MutationTelemetryBuffer = (BufferID)75322;
-        public const BufferID MutationProfileBuffer = (BufferID)75323;
-        public const BufferID MutationMockDoseBuffer = (BufferID)75325;
+        public const BufferID MutationStateBuffer = BufferID.ShinobuRadiationMutationData_MutationStateBuffer;
+        public const BufferID MutationTuningBuffer = BufferID.ShinobuRadiationMutationData_MutationTuningBuffer;
+        public const BufferID MutationTelemetryBuffer = BufferID.ShinobuRadiationMutationData_MutationTelemetryBuffer;
+        public const BufferID MutationProfileBuffer = BufferID.ShinobuRadiationMutationData_MutationProfileBuffer;
+        public const BufferID MutationMockDoseBuffer = BufferID.ShinobuRadiationMutationData_MutationMockDoseBuffer;
 
         public const float DefaultSafeDoseRad = 25f;
         public const float DefaultFatalDoseRad = 850f;

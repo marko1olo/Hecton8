@@ -63,17 +63,17 @@ namespace Hecton8.Vehicles.Automation
 
     public static class SubmarineAutopilotVaultRoute
     {
-        public const BufferID AutopilotStates = (BufferID)71592;
-        public const BufferID AutopilotAvoidance = (BufferID)71593;
-        public const BufferID AutopilotFeelerResults = (BufferID)71594;
-        public const BufferID AutopilotWaypoints = (BufferID)71595;
-        public const BufferID AutopilotRouteRanges = (BufferID)71596;
-        public const BufferID AutopilotTuning = (BufferID)71597;
-        public const BufferID AutopilotTelemetryRing = (BufferID)71598;
-        public const BufferID AutopilotTelemetryCursor = (BufferID)71599;
-        public const BufferID AutopilotMockSdf = (BufferID)71600;
-        public const BufferID AutopilotFlowSamples = (BufferID)71601;
-        public const BufferID AutopilotHandlingProfiles = (BufferID)71603;
+        public const BufferID AutopilotStates = BufferID.SubmarineAutopilotSdfNavigator_AutopilotStates;
+        public const BufferID AutopilotAvoidance = BufferID.SubmarineAutopilotSdfNavigator_AutopilotAvoidance;
+        public const BufferID AutopilotFeelerResults = BufferID.SubmarineAutopilotSdfNavigator_AutopilotFeelerResults;
+        public const BufferID AutopilotWaypoints = BufferID.SubmarineAutopilotSdfNavigator_AutopilotWaypoints;
+        public const BufferID AutopilotRouteRanges = BufferID.SubmarineAutopilotSdfNavigator_AutopilotRouteRanges;
+        public const BufferID AutopilotTuning = BufferID.SubmarineAutopilotSdfNavigator_AutopilotTuning;
+        public const BufferID AutopilotTelemetryRing = BufferID.SubmarineAutopilotSdfNavigator_AutopilotTelemetryRing;
+        public const BufferID AutopilotTelemetryCursor = BufferID.SubmarineAutopilotSdfNavigator_AutopilotTelemetryCursor;
+        public const BufferID AutopilotMockSdf = BufferID.SubmarineAutopilotSdfNavigator_AutopilotMockSdf;
+        public const BufferID AutopilotFlowSamples = BufferID.SubmarineAutopilotSdfNavigator_AutopilotFlowSamples;
+        public const BufferID AutopilotHandlingProfiles = BufferID.SubmarineAutopilotSdfNavigator_AutopilotHandlingProfiles;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

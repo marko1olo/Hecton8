@@ -127,21 +127,21 @@ namespace Hecton8.Physics
 
         private static class StructuralGridVaultRoute
         {
-            public const BufferID CellIntegrityFront = (BufferID)1326000;
-            public const BufferID CellIntegrityBack = (BufferID)1326001;
-            public const BufferID CellFatigue = (BufferID)1326002;
-            public const BufferID CellCompartmentIndices = (BufferID)1326003;
-            public const BufferID HullBreachMaskFront = (BufferID)1326004;
-            public const BufferID HullBreachMaskBack = (BufferID)1326005;
-            public const BufferID CompartmentBreachAreasFront = (BufferID)1326006;
-            public const BufferID CompartmentBreachAreasBack = (BufferID)1326007;
-            public const BufferID QueuedImpacts = (BufferID)1326008;
-            public const BufferID ScheduledImpacts = (BufferID)1326009;
-            public const BufferID CompartmentCentroids = (BufferID)1326010;
-            public const BufferID FatigueCompartmentFlags = (BufferID)1326011;
-            public const BufferID FatigueIntegrityLossPerCycle = (BufferID)1326012;
-            public const BufferID FatiguePeakResult = (BufferID)1326013;
-            public const BufferID BreachSeveritySumResult = (BufferID)1326014;
+            public const BufferID CellIntegrityFront = BufferID.SubmarineStructuralGrid_CellIntegrityFront;
+            public const BufferID CellIntegrityBack = BufferID.SubmarineStructuralGrid_CellIntegrityBack;
+            public const BufferID CellFatigue = BufferID.SubmarineStructuralGrid_CellFatigue;
+            public const BufferID CellCompartmentIndices = BufferID.SubmarineStructuralGrid_CellCompartmentIndices;
+            public const BufferID HullBreachMaskFront = BufferID.SubmarineStructuralGrid_HullBreachMaskFront;
+            public const BufferID HullBreachMaskBack = BufferID.SubmarineStructuralGrid_HullBreachMaskBack;
+            public const BufferID CompartmentBreachAreasFront = BufferID.SubmarineStructuralGrid_CompartmentBreachAreasFront;
+            public const BufferID CompartmentBreachAreasBack = BufferID.SubmarineStructuralGrid_CompartmentBreachAreasBack;
+            public const BufferID QueuedImpacts = BufferID.SubmarineStructuralGrid_QueuedImpacts;
+            public const BufferID ScheduledImpacts = BufferID.SubmarineStructuralGrid_ScheduledImpacts;
+            public const BufferID CompartmentCentroids = BufferID.SubmarineStructuralGrid_CompartmentCentroids;
+            public const BufferID FatigueCompartmentFlags = BufferID.SubmarineStructuralGrid_FatigueCompartmentFlags;
+            public const BufferID FatigueIntegrityLossPerCycle = BufferID.SubmarineStructuralGrid_FatigueIntegrityLossPerCycle;
+            public const BufferID FatiguePeakResult = BufferID.SubmarineStructuralGrid_FatiguePeakResult;
+            public const BufferID BreachSeveritySumResult = BufferID.SubmarineStructuralGrid_BreachSeveritySumResult;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

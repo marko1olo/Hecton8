@@ -103,7 +103,7 @@ namespace Hecton8.AI.GPU
         private const int BoidBlackBoxStride = 128;
         private const uint BoidBlackBoxDumpMagic = 0x424F4944u;
         private const uint BoidBlackBoxDumpVersion = 1u;
-        private const BufferID BoidBlackBoxBufferId = (BufferID)71979;
+        private const BufferID BoidBlackBoxBufferId = BufferID.HectonBoidController_BoidBlackBoxBufferId;
         private const string BoidBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1301_Boids.bin";
         private const float RuntimeVectorComponentLimitMeters = 100000f;
         private const float MaxBoidWeight = 64f;

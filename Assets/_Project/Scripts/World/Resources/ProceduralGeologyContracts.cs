@@ -37,28 +37,28 @@ namespace Hecton8.World
 
     public static class ProceduralGeologyVaultBufferIds
     {
-        public const BufferID ResourceNodes = (BufferID)71530;
-        public const BufferID OrePositions = (BufferID)71531;
-        public const BufferID OreTypes = (BufferID)71532;
-        public const BufferID DepletionMasks = (BufferID)71533;
-        public const BufferID ResourceMatrices = (BufferID)71534;
-        public const BufferID BiomeHeatmap = (BufferID)71535;
-        public const BufferID SpawnCounts = (BufferID)71536;
-        public const BufferID TelemetryRing = (BufferID)71537;
-        public const BufferID MockTerrainSdf = (BufferID)71538;
-        public const BufferID DistributionRules = (BufferID)71539;
-        public const BufferID Tuning = (BufferID)71540;
-        public const BufferID CsvScratch = (BufferID)71541;
-        public const BufferID SelfAudit = (BufferID)71542;
-        public const BufferID CandidateSlots = (BufferID)71543;
-        public const BufferID DepletionCacheKeys = (BufferID)71544;
-        public const BufferID DepletionCacheMasks = (BufferID)71545;
-        public const BufferID DepletionCacheCount = (BufferID)71546;
-        public const BufferID SectorHashGrid = (BufferID)71547;
-        public const BufferID IndirectArgs = (BufferID)71548;
-        public const BufferID HzbTiles = (BufferID)71549;
-        public const BufferID HzbMeta = (BufferID)71550;
-        public const BufferID PlayerEcosystemTelemetry = (BufferID)141905;
+        public const BufferID ResourceNodes = BufferID.ProceduralGeologyContracts_ResourceNodes;
+        public const BufferID OrePositions = BufferID.ProceduralGeologyContracts_OrePositions;
+        public const BufferID OreTypes = BufferID.ProceduralGeologyContracts_OreTypes;
+        public const BufferID DepletionMasks = BufferID.ProceduralGeologyContracts_DepletionMasks;
+        public const BufferID ResourceMatrices = BufferID.ProceduralGeologyContracts_ResourceMatrices;
+        public const BufferID BiomeHeatmap = BufferID.ProceduralGeologyContracts_BiomeHeatmap;
+        public const BufferID SpawnCounts = BufferID.ProceduralGeologyContracts_SpawnCounts;
+        public const BufferID TelemetryRing = BufferID.ProceduralGeologyContracts_TelemetryRing;
+        public const BufferID MockTerrainSdf = BufferID.ProceduralGeologyContracts_MockTerrainSdf;
+        public const BufferID DistributionRules = BufferID.ProceduralGeologyContracts_DistributionRules;
+        public const BufferID Tuning = BufferID.ProceduralGeologyContracts_Tuning;
+        public const BufferID CsvScratch = BufferID.ProceduralGeologyContracts_CsvScratch;
+        public const BufferID SelfAudit = BufferID.ProceduralGeologyContracts_SelfAudit;
+        public const BufferID CandidateSlots = BufferID.ProceduralGeologyContracts_CandidateSlots;
+        public const BufferID DepletionCacheKeys = BufferID.ProceduralGeologyContracts_DepletionCacheKeys;
+        public const BufferID DepletionCacheMasks = BufferID.ProceduralGeologyContracts_DepletionCacheMasks;
+        public const BufferID DepletionCacheCount = BufferID.ProceduralGeologyContracts_DepletionCacheCount;
+        public const BufferID SectorHashGrid = BufferID.ProceduralGeologyContracts_SectorHashGrid;
+        public const BufferID IndirectArgs = BufferID.ProceduralGeologyContracts_IndirectArgs;
+        public const BufferID HzbTiles = BufferID.ProceduralGeologyContracts_HzbTiles;
+        public const BufferID HzbMeta = BufferID.ProceduralGeologyContracts_HzbMeta;
+        public const BufferID PlayerEcosystemTelemetry = BufferID.ProceduralGeologyContracts_PlayerEcosystemTelemetry;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]

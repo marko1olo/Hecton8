@@ -11,15 +11,15 @@ namespace Hecton8.AI.Cognition
 {
     public static class UtilityAIAnxietyVaultBufferIds
     {
-        public const BufferID Profiles = (BufferID)71971;
-        public const BufferID Tuning = (BufferID)71972;
-        public const BufferID Scratch = (BufferID)71973;
-        public const BufferID TelemetryRing = (BufferID)71974;
-        public const BufferID TelemetryCursor = (BufferID)71975;
-        public const BufferID ShelterSdf = (BufferID)71976;
-        public const BufferID ShelterHeader = (BufferID)71977;
+        public const BufferID Profiles = BufferID.UtilityAICognitionVault_AnxietyDecay_Profiles;
+        public const BufferID Tuning = BufferID.UtilityAICognitionVault_AnxietyDecay_Tuning;
+        public const BufferID Scratch = BufferID.UtilityAICognitionVault_AnxietyDecay_Scratch;
+        public const BufferID TelemetryRing = BufferID.UtilityAICognitionVault_AnxietyDecay_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.UtilityAICognitionVault_AnxietyDecay_TelemetryCursor;
+        public const BufferID ShelterSdf = BufferID.UtilityAICognitionVault_AnxietyDecay_ShelterSdf;
+        public const BufferID ShelterHeader = BufferID.UtilityAICognitionVault_AnxietyDecay_ShelterHeader;
 #if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)71978;
+        public const BufferID CsvScratch = BufferID.UtilityAICognitionVault_AnxietyDecay_CsvScratch;
 #endif
     }
 

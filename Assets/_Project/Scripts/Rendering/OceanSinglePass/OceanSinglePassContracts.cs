@@ -29,14 +29,14 @@ namespace Hecton8.Rendering.OceanSinglePass
         public const uint LayoutHash = 0x53323632u;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_262.bin";
 
-        public const BufferID VisualOverridesBuffer = (BufferID)71895;
-        public const BufferID TuningBuffer = (BufferID)71896;
-        public const BufferID TelemetryRingBuffer = (BufferID)71897;
-        public const BufferID TelemetryCursorBuffer = (BufferID)71898;
-        public const BufferID AestheticProfilesBuffer = (BufferID)71899;
-        public const BufferID CsvScratchBuffer = (BufferID)71900;
-        public const BufferID MockRenderStateBuffer = (BufferID)71901;
-        public const BufferID SelfAuditBuffer = (BufferID)71902;
+        public const BufferID VisualOverridesBuffer = BufferID.ShinobuNetcodeFuzzerHostDispatcherState;
+        public const BufferID TuningBuffer = BufferID.ShinobuNetcodeFuzzerClientDispatcherState;
+        public const BufferID TelemetryRingBuffer = BufferID.OceanSinglePassContracts_TelemetryRingBuffer;
+        public const BufferID TelemetryCursorBuffer = BufferID.OceanSinglePassContracts_TelemetryCursorBuffer;
+        public const BufferID AestheticProfilesBuffer = BufferID.OceanSinglePassContracts_AestheticProfilesBuffer;
+        public const BufferID CsvScratchBuffer = BufferID.OceanSinglePassContracts_CsvScratchBuffer;
+        public const BufferID MockRenderStateBuffer = BufferID.OceanSinglePassContracts_MockRenderStateBuffer;
+        public const BufferID SelfAuditBuffer = BufferID.OceanSinglePassContracts_SelfAuditBuffer;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

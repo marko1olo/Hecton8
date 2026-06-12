@@ -50,21 +50,21 @@ namespace Hecton8.Power
 
     public static class PowerGridBufferIds
     {
-        public const BufferID Nodes = (BufferID)70850;
-        public const BufferID Edges = (BufferID)70851;
-        public const BufferID NodeAup = (BufferID)70852;
-        public const BufferID CsrOffsets = (BufferID)70853;
-        public const BufferID CsrDestinations = (BufferID)70854;
-        public const BufferID CsrConductance = (BufferID)70855;
-        public const BufferID CsrFlow = (BufferID)70856;
-        public const BufferID PotentialFront = (BufferID)70857;
-        public const BufferID PotentialBack = (BufferID)70858;
-        public const BufferID DemandRate = (BufferID)70859;
-        public const BufferID BatteryRemainderMilli = (BufferID)70860;
-        public const BufferID TelemetryRing = (BufferID)70861;
-        public const BufferID TelemetryCursor = (BufferID)70862;
-        public const BufferID Profiles = (BufferID)70863;
-        public const BufferID CsvScratch = (BufferID)70864;
+        public const BufferID Nodes = BufferID.PowerGridJacobiContracts_Nodes;
+        public const BufferID Edges = BufferID.PowerGridJacobiContracts_Edges;
+        public const BufferID NodeAup = BufferID.PowerGridJacobiContracts_NodeAup;
+        public const BufferID CsrOffsets = BufferID.PowerGridJacobiContracts_CsrOffsets;
+        public const BufferID CsrDestinations = BufferID.PowerGridJacobiContracts_CsrDestinations;
+        public const BufferID CsrConductance = BufferID.PowerGridJacobiContracts_CsrConductance;
+        public const BufferID CsrFlow = BufferID.PowerGridJacobiContracts_CsrFlow;
+        public const BufferID PotentialFront = BufferID.PowerGridJacobiContracts_PotentialFront;
+        public const BufferID PotentialBack = BufferID.PowerGridJacobiContracts_PotentialBack;
+        public const BufferID DemandRate = BufferID.PowerGridJacobiContracts_DemandRate;
+        public const BufferID BatteryRemainderMilli = BufferID.PowerGridJacobiContracts_BatteryRemainderMilli;
+        public const BufferID TelemetryRing = BufferID.PowerGridJacobiContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.PowerGridJacobiContracts_TelemetryCursor;
+        public const BufferID Profiles = BufferID.PowerGridJacobiContracts_Profiles;
+        public const BufferID CsvScratch = BufferID.PowerGridJacobiContracts_CsvScratch;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = PowerGridJacobiConstants.PowerNodeDtoSizeBytes)]

@@ -31,15 +31,15 @@ namespace Hecton8.Physiology
         public const uint MedicalBayPriorityMask = 0x00FF0000u;
         public const uint SourceHash = 0x53333239u; // S329
 
-        public const BufferID RespawnStateBuffer = (BufferID)71604;
-        public const BufferID MedicalBayRespawnPointsBuffer = (BufferID)71605;
-        public const BufferID RespawnFadeBuffer = (BufferID)71606;
-        public const BufferID RespawnTelemetryRingBuffer = (BufferID)71607;
-        public const BufferID RespawnTelemetryCursorBuffer = (BufferID)71608;
-        public const BufferID RespawnTuningBuffer = (BufferID)71609;
-        public const BufferID RespawnPenaltyRulesBuffer = (BufferID)71610;
-        public const BufferID RespawnPenaltyRuleCountBuffer = (BufferID)71611;
-        public const BufferID RespawnRequestBuffer = (BufferID)71613;
+        public const BufferID RespawnStateBuffer = BufferID.ShinobuRespawnData_RespawnStateBuffer;
+        public const BufferID MedicalBayRespawnPointsBuffer = BufferID.ShinobuRespawnData_MedicalBayRespawnPointsBuffer;
+        public const BufferID RespawnFadeBuffer = BufferID.ShinobuRespawnData_RespawnFadeBuffer;
+        public const BufferID RespawnTelemetryRingBuffer = BufferID.ShinobuRespawnData_RespawnTelemetryRingBuffer;
+        public const BufferID RespawnTelemetryCursorBuffer = BufferID.ShinobuRespawnData_RespawnTelemetryCursorBuffer;
+        public const BufferID RespawnTuningBuffer = BufferID.ShinobuRespawnData_RespawnTuningBuffer;
+        public const BufferID RespawnPenaltyRulesBuffer = BufferID.ShinobuRespawnData_RespawnPenaltyRulesBuffer;
+        public const BufferID RespawnPenaltyRuleCountBuffer = BufferID.ShinobuRespawnData_RespawnPenaltyRuleCountBuffer;
+        public const BufferID RespawnRequestBuffer = BufferID.ShinobuRespawnData_RespawnRequestBuffer;
     }
 
     public static class ShinobuRespawnFlags

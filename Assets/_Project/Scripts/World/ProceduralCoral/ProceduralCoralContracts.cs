@@ -69,26 +69,26 @@ namespace Hecton8.World.ProceduralCoral
 
     public static class ProceduralCoralVaultBufferIds
     {
-        public const BufferID Rules = (BufferID)71390;
-        public const BufferID InstructionScratchA = (BufferID)71391;
-        public const BufferID InstructionScratchB = (BufferID)71392;
-        public const BufferID Branches = (BufferID)71393;
-        public const BufferID TurtleStack = (BufferID)71394;
-        public const BufferID SpatialCells = (BufferID)71395;
-        public const BufferID RenderMatrices = (BufferID)71396;
-        public const BufferID IndirectArgs = (BufferID)71397;
-        public const BufferID SectorTriggers = (BufferID)71398;
-        public const BufferID CollisionProxies = (BufferID)71399;
-        public const BufferID SyncPulses = (BufferID)71400;
-        public const BufferID TelemetryRing = (BufferID)71401;
-        public const BufferID TelemetryCursor = (BufferID)71402;
-        public const BufferID Tuning = (BufferID)71403;
-        public const BufferID CsvScratch = (BufferID)71404;
-        public const BufferID Counters = (BufferID)71405;
-        public const BufferID DebugSegments = (BufferID)71406;
-        public const BufferID GpuSway = (BufferID)71407;
-        public const BufferID SelfAudit = (BufferID)71408;
-        public const BufferID HzbTiles = (BufferID)71409;
+        public const BufferID Rules = BufferID.ProceduralCoralContracts_Rules;
+        public const BufferID InstructionScratchA = BufferID.ProceduralCoralContracts_InstructionScratchA;
+        public const BufferID InstructionScratchB = BufferID.ProceduralCoralContracts_InstructionScratchB;
+        public const BufferID Branches = BufferID.ProceduralCoralContracts_Branches;
+        public const BufferID TurtleStack = BufferID.ProceduralCoralContracts_TurtleStack;
+        public const BufferID SpatialCells = BufferID.ProceduralCoralContracts_SpatialCells;
+        public const BufferID RenderMatrices = BufferID.ProceduralCoralContracts_RenderMatrices;
+        public const BufferID IndirectArgs = BufferID.ProceduralCoralContracts_IndirectArgs;
+        public const BufferID SectorTriggers = BufferID.ProceduralCoralContracts_SectorTriggers;
+        public const BufferID CollisionProxies = BufferID.ProceduralCoralContracts_CollisionProxies;
+        public const BufferID SyncPulses = BufferID.ProceduralCoralContracts_SyncPulses;
+        public const BufferID TelemetryRing = BufferID.ProceduralCoralContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.ProceduralCoralContracts_TelemetryCursor;
+        public const BufferID Tuning = BufferID.ProceduralCoralContracts_Tuning;
+        public const BufferID CsvScratch = BufferID.ProceduralCoralContracts_CsvScratch;
+        public const BufferID Counters = BufferID.ProceduralCoralContracts_Counters;
+        public const BufferID DebugSegments = BufferID.ProceduralCoralContracts_DebugSegments;
+        public const BufferID GpuSway = BufferID.ProceduralCoralContracts_GpuSway;
+        public const BufferID SelfAudit = BufferID.ProceduralCoralContracts_SelfAudit;
+        public const BufferID HzbTiles = BufferID.ProceduralCoralContracts_HzbTiles;
     }
 
     public static class CoralBranchFlags

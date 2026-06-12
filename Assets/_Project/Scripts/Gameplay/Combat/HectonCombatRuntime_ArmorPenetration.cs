@@ -19,25 +19,25 @@ namespace Hecton8.Gameplay
 {
     internal static class ArmorPenetrationVaultBufferIds
     {
-        public const BufferID SignalImpactAups = (BufferID)73580;
-        public const BufferID TargetRootAups = (BufferID)73581;
-        public const BufferID TargetRotations = (BufferID)73582;
-        public const BufferID TargetHalfExtents = (BufferID)73583;
-        public const BufferID TargetArmorProfiles = (BufferID)73584;
-        public const BufferID TelemetryRing = (BufferID)73585;
-        public const BufferID DebugHits = (BufferID)73586;
-        public const BufferID Tuning = (BufferID)73587;
-        public const BufferID MockRequests = (BufferID)73588;
-        public const BufferID MockDetails = (BufferID)73589;
-        public const BufferID MockAups = (BufferID)73590;
-        public const BufferID MockTargetSlots = (BufferID)73591;
-        public const BufferID TortureRequests = (BufferID)73592;
-        public const BufferID TortureDetails = (BufferID)73593;
-        public const BufferID TortureAups = (BufferID)73594;
-        public const BufferID TortureTargetSlots = (BufferID)73595;
-        public const BufferID TortureResolvedHits = (BufferID)73596;
-        public const BufferID CasTortureHealth = (BufferID)73597;
-        public const BufferID CasTortureSuccesses = (BufferID)73598;
+        public const BufferID SignalImpactAups = BufferID.HectonCombatRuntime_ArmorPenetration_SignalImpactAups;
+        public const BufferID TargetRootAups = BufferID.HectonCombatRuntime_ArmorPenetration_TargetRootAups;
+        public const BufferID TargetRotations = BufferID.HectonCombatRuntime_ArmorPenetration_TargetRotations;
+        public const BufferID TargetHalfExtents = BufferID.HectonCombatRuntime_ArmorPenetration_TargetHalfExtents;
+        public const BufferID TargetArmorProfiles = BufferID.HectonCombatRuntime_ArmorPenetration_TargetArmorProfiles;
+        public const BufferID TelemetryRing = BufferID.HectonCombatRuntime_ArmorPenetration_TelemetryRing;
+        public const BufferID DebugHits = BufferID.HectonCombatRuntime_ArmorPenetration_DebugHits;
+        public const BufferID Tuning = BufferID.HectonCombatRuntime_ArmorPenetration_Tuning;
+        public const BufferID MockRequests = BufferID.HectonCombatRuntime_ArmorPenetration_MockRequests;
+        public const BufferID MockDetails = BufferID.HectonCombatRuntime_ArmorPenetration_MockDetails;
+        public const BufferID MockAups = BufferID.HectonCombatRuntime_ArmorPenetration_MockAups;
+        public const BufferID MockTargetSlots = BufferID.HectonCombatRuntime_ArmorPenetration_MockTargetSlots;
+        public const BufferID TortureRequests = BufferID.HectonCombatRuntime_ArmorPenetration_TortureRequests;
+        public const BufferID TortureDetails = BufferID.HectonCombatRuntime_ArmorPenetration_TortureDetails;
+        public const BufferID TortureAups = BufferID.HectonCombatRuntime_ArmorPenetration_TortureAups;
+        public const BufferID TortureTargetSlots = BufferID.HectonCombatRuntime_ArmorPenetration_TortureTargetSlots;
+        public const BufferID TortureResolvedHits = BufferID.HectonCombatRuntime_ArmorPenetration_TortureResolvedHits;
+        public const BufferID CasTortureHealth = BufferID.HectonCombatRuntime_ArmorPenetration_CasTortureHealth;
+        public const BufferID CasTortureSuccesses = BufferID.HectonCombatRuntime_ArmorPenetration_CasTortureSuccesses;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

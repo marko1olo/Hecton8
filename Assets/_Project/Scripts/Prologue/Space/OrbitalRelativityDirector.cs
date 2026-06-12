@@ -51,7 +51,7 @@ namespace Hecton8.Prologue.Space
         private const float CameraPressureHighPriorityThreshold = 0.72f;
         private const string DumpFileName = "Dump_ORBITAL_MECHANICS_DIRECTOR.bin";
         private const SystemID OwnerSystemId = SystemID.CoreBridge;
-        private const BufferID TelemetryRingBufferId = (BufferID)0x4F524241; // "ORBA"
+        private const BufferID TelemetryRingBufferId = BufferID.OrbitalRelativityDirector_TelemetryRingBufferId; // "ORBA"
 
         private static readonly int _planetDistanceId = Shader.PropertyToID("_H8OrbitalPlanetDistanceMeters");
         private static readonly int _fakeRadiusId = Shader.PropertyToID("_H8OrbitalFakeRadiusMeters");

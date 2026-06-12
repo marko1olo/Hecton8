@@ -290,11 +290,11 @@ namespace Hecton8.Audio
         private const uint PlayerToxicityFallbackEntityHash = ToxicityExposureSignal.PlayerEntityFallbackHash;
         private const uint VocalWarningSystemHash = 0x56333532u; // V352
         private const uint VaultOwnerSignalHash = 0x41565753u; // AVWS
-        private const BufferID AlarmStateBufferId = (BufferID)72430;
-        private const BufferID VocalWarningCurrentStateBufferId = (BufferID)72431;
-        private const BufferID VocalWarningDispatchBufferId = (BufferID)72432;
-        private const BufferID VocalWarningProfilesBufferId = (BufferID)72433;
-        private const BufferID VocalWarningTuningBufferId = (BufferID)72435;
+        private const BufferID AlarmStateBufferId = BufferID.SpatialAudioVirtualVoiceTuning;
+        private const BufferID VocalWarningCurrentStateBufferId = BufferID.SpatialAudioVirtualVoiceWritePool;
+        private const BufferID VocalWarningDispatchBufferId = BufferID.SpatialAudioVirtualVoiceSortPool;
+        private const BufferID VocalWarningProfilesBufferId = BufferID.SpatialAudioVirtualVoiceDtoPool;
+        private const BufferID VocalWarningTuningBufferId = BufferID.SpatialAudioAcousticSourceWritePool;
         private const uint QueueFlagCritical = 1u << 0;
         private const uint QueueFlagInterrupt = 1u << 1;
         private const uint QueueFlagHabitatIntegrity = 1u << 2;

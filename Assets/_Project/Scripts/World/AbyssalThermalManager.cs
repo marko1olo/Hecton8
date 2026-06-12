@@ -234,10 +234,10 @@ namespace Hecton8.World
         private const uint ThermalTelemetryFlagThermalShock = 1u << 2;
         private const string ThermalTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_THERMODYNAMICS_LEAD.bin";
         private const byte ThermalShockAcousticChannel = 11;
-        private const BufferID ThermalMapReadCelsiusBufferId = (BufferID)70056;
-        private const BufferID ThermalMapWriteCelsiusBufferId = (BufferID)70057;
-        private const BufferID ThermalMapSourceCelsiusBufferId = (BufferID)70058;
-        private const BufferID ThermalMapInsulationBufferId = (BufferID)70059;
+        private const Hecton8.Core.Memory.BufferID ThermalMapReadCelsiusBufferId = Hecton8.Core.Memory.BufferID.AbyssalThermalManager_ThermalMapReadCelsiusBufferId;
+        private const Hecton8.Core.Memory.BufferID ThermalMapWriteCelsiusBufferId = Hecton8.Core.Memory.BufferID.AbyssalThermalManager_ThermalMapWriteCelsiusBufferId;
+        private const Hecton8.Core.Memory.BufferID ThermalMapSourceCelsiusBufferId = Hecton8.Core.Memory.BufferID.AbyssalThermalManager_ThermalMapSourceCelsiusBufferId;
+        private const Hecton8.Core.Memory.BufferID ThermalMapInsulationBufferId = Hecton8.Core.Memory.BufferID.AbyssalThermalManager_ThermalMapInsulationBufferId;
         private static readonly ulong ThermalMapReadbackMutationGuardMask =
             ThermalVaultMutationGuardBit(ThermalMapReadCelsiusBufferId);
         private const uint ThermalHashSeed = 0xC6BC2796u;

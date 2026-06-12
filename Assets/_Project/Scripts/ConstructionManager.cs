@@ -78,11 +78,11 @@ namespace Hecton8.Construction
         private const int DeconstructionRefundCommandCountIndex = 0;
         private const int DeconstructionLootCacheCountIndex = 1;
         private const string DeconstructionInventoryFullMessage = "DECONSTRUCTION BLOCKED // INVENTORY FULL";
-        private const BufferID DeconstructionDfsStackBufferId = (BufferID)72140;
-        private const BufferID DeconstructionDfsVisitedBufferId = (BufferID)72141;
-        private const BufferID DeconstructionDfsResultBufferId = (BufferID)72142;
-        private const BufferID DeconstructionBlackBoxBufferId = (BufferID)72143;
-        private const BufferID DeconstructionFallbackCostsBufferId = (BufferID)72144;
+        private const BufferID DeconstructionDfsStackBufferId = BufferID.ConstructionManager_DeconstructionDfsStackBufferId;
+        private const BufferID DeconstructionDfsVisitedBufferId = BufferID.ConstructionManager_DeconstructionDfsVisitedBufferId;
+        private const BufferID DeconstructionDfsResultBufferId = BufferID.ConstructionManager_DeconstructionDfsResultBufferId;
+        private const BufferID DeconstructionBlackBoxBufferId = BufferID.ConstructionManager_DeconstructionBlackBoxBufferId;
+        private const BufferID DeconstructionFallbackCostsBufferId = BufferID.ConstructionManager_DeconstructionFallbackCostsBufferId;
         private static readonly ulong DeconstructionMutationGuardMask =
             DeconstructionMutationGuardBit(DeconstructionDfsStackBufferId) |
             DeconstructionMutationGuardBit(DeconstructionDfsVisitedBufferId) |

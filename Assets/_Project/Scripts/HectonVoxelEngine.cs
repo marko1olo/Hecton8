@@ -39,8 +39,8 @@ public static class MCTables
 {
     public static bool IsReady => Volatile.Read(ref _ready) == 1;
 
-    const BufferID EdgeTableBufferId = (BufferID)644;
-    const BufferID TriTableBufferId = (BufferID)645;
+    const BufferID EdgeTableBufferId = BufferID.VoxelMarchingCubesEdgeTable;
+    const BufferID TriTableBufferId = BufferID.VoxelMarchingCubesTriTable;
     const SystemID TableOwnerSystemId = SystemID.TerrainSeams;
     const int EdgeTableLength = 256;
     const int TriTableLength = 4096;
@@ -1605,10 +1605,13 @@ public struct VoxelDensityJob : IJobParallelFor
 
         if (node.noiseAmplitude > 0.001f)
         {
+            float sizeScale = math.max(1f, math.cmax(node.radii) * 0.15f); // 15% of max radius scales the noise
+            float scaledNoise = node.noiseAmplitude * sizeScale;
+            float scaledFrequency = (node.noiseScale * caveParams.wallNoiseFrequency) / sizeScale;
             float localNoise = Fractal3DFast(
-                absoluteOriginalPos * node.noiseScale * caveParams.wallNoiseFrequency,
+                absoluteOriginalPos * scaledFrequency,
                 2, caveParams.seed + 7777u);
-            finalDist += localNoise * node.noiseAmplitude;
+            finalDist += localNoise * scaledNoise;
         }
 
         if (caveParams.floorFlatness > 0.001f && smoothDist < 0f)
@@ -1670,6 +1673,19 @@ public struct VoxelDensityJob : IJobParallelFor
             if (tunnel.tunnelType == CaveTunnelType.Round)
             {
                 segmentDist = SDCapsuleConic(evalPos, p0, p1, r0, r1);
+            }
+            else if (tunnel.tunnelType == CaveTunnelType.OpenTrench)
+            {
+                float baseRadius = math.max((r0 + r1) * 0.5f, 0.1f);
+                // Trench: Massive vertical height to cut through the surface terrain completely
+                // Width is controlled by standard widthScale (or radius).
+                segmentDist = SDCapsuleElliptic(
+                    evalPos,
+                    p0,
+                    p1,
+                    baseRadius,
+                    200.0f, // Infinite upward/downward extrusion for the open canyon
+                    math.max(tunnel.widthScale, 0.5f));
             }
             else
             {
@@ -1793,9 +1809,12 @@ public struct VoxelDensityJob : IJobParallelFor
 
             if (s.noiseAmount > 0.001f)
             {
-                float noise = Fractal3DFast((absoluteWp + s.position * 0.17f) * 0.3f, 2, caveParams.seed + 9999u) * s.noiseAmount;
+                float sizeScale = math.max(1f, math.cmax(s.size) * 0.22f); // 22% of largest axis scales the noise
+                float scaledNoiseAmount = s.noiseAmount * sizeScale;
+                float scaledFrequency = 0.3f / sizeScale; // Inversely scale frequency to preserve gradient
+                float noise = Fractal3DFast((absoluteWp + s.position * 0.17f) * scaledFrequency, 2, caveParams.seed + 9999u) * scaledNoiseAmount;
                 if (s.structureType == CaveStructureType.Arch)
-                    noise += EvaluateLayeredArchNoise(absoluteWp, s) * s.noiseAmount;
+                    noise += EvaluateLayeredArchNoise(absoluteWp, s) * scaledNoiseAmount;
 
                 finalSd += noise;
             }
@@ -1919,7 +1938,11 @@ public struct VoxelDensityJob : IJobParallelFor
         }
 
         float maxDisplacement = math.max(voxelStep * 0.45f, 0.2f);
-        return math.clamp(detail * nearSurfaceMask, -maxDisplacement, maxDisplacement);
+        float rawDetail = detail * nearSurfaceMask;
+        
+        // Soft clamp to prevent jagged plateaus: x / (1 + |x|/max)
+        float softClampedDetail = (rawDetail / (1f + math.abs(rawDetail) / maxDisplacement));
+        return softClampedDetail;
     }
 
     float ApplyDerivativeSafeAmplitude(float amplitude, float derivativeBudget)
@@ -5717,15 +5740,39 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 terrainHeightCenter = sampledHeight;
 
             CaveGenerationParams caveParams = preset.ToGenerationParams(seed);
-            if (!CaveGraphGenerator.TryMeasure(
-                seed,
-                preset,
-                worldCenter,
-                terrainHeightCenter,
-                volumeHalfExtent,
-                out CaveGraphGenerator.CaveGraphCounts caveGraphCounts))
+            int graphNodes, graphTunnels, graphEntrances, graphStructures;
+            
+            if (preset.presetType == CavePresetType.SurfaceTrench)
             {
-                return null;
+                if (!SurfaceTrenchGraphGenerator.TryMeasure(
+                    seed,
+                    worldCenter,
+                    volumeHalfExtent,
+                    out SurfaceTrenchGraphGenerator.TrenchGraphCounts trenchCounts))
+                {
+                    return null;
+                }
+                graphNodes = trenchCounts.Nodes;
+                graphTunnels = trenchCounts.Segments;
+                graphEntrances = 0;
+                graphStructures = trenchCounts.Structures;
+            }
+            else
+            {
+                if (!CaveGraphGenerator.TryMeasure(
+                    seed,
+                    preset,
+                    worldCenter,
+                    terrainHeightCenter,
+                    volumeHalfExtent,
+                    out CaveGraphGenerator.CaveGraphCounts caveGraphCounts))
+                {
+                    return null;
+                }
+                graphNodes = caveGraphCounts.Nodes;
+                graphTunnels = caveGraphCounts.Tunnels;
+                graphEntrances = caveGraphCounts.Entrances;
+                graphStructures = caveGraphCounts.Structures;
             }
 
             generationScratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, totalCells, gridDim, ct);
@@ -5734,10 +5781,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             if (!TryPrepareRebuildGraphScratch(
                     ref generationScratchLease,
-                    caveGraphCounts.Nodes,
-                    caveGraphCounts.Tunnels,
-                    caveGraphCounts.Entrances,
-                    caveGraphCounts.Structures,
+                    graphNodes,
+                    graphTunnels,
+                    graphEntrances,
+                    graphStructures,
                     0,
                     out caveNodes,
                     out caveTunnels,
@@ -5751,23 +5798,43 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             usesStreamingScratchGraphSnapshots = true;
 
-            if (!CaveGraphGenerator.TryFill(
-                    seed,
-                    preset,
-                    worldCenter,
-                    terrainHeightCenter,
-                    volumeHalfExtent,
-                    caveNodes,
-                    caveTunnels,
-                    caveEntrances,
-                    caveStructures,
-                    out CaveGraphGenerator.CaveGraphCounts filledCaveGraphCounts) ||
-                filledCaveGraphCounts.Nodes != caveGraphCounts.Nodes ||
-                filledCaveGraphCounts.Tunnels != caveGraphCounts.Tunnels ||
-                filledCaveGraphCounts.Entrances != caveGraphCounts.Entrances ||
-                filledCaveGraphCounts.Structures != caveGraphCounts.Structures)
+            if (preset.presetType == CavePresetType.SurfaceTrench)
             {
-                return null;
+                if (!SurfaceTrenchGraphGenerator.TryFill(
+                        seed,
+                        worldCenter,
+                        volumeHalfExtent,
+                        caveNodes,
+                        caveTunnels,
+                        caveStructures,
+                        out SurfaceTrenchGraphGenerator.TrenchGraphCounts filledTrenchCounts) ||
+                    filledTrenchCounts.Nodes != graphNodes ||
+                    filledTrenchCounts.Segments != graphTunnels ||
+                    filledTrenchCounts.Structures != graphStructures)
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                if (!CaveGraphGenerator.TryFill(
+                        seed,
+                        preset,
+                        worldCenter,
+                        terrainHeightCenter,
+                        volumeHalfExtent,
+                        caveNodes,
+                        caveTunnels,
+                        caveEntrances,
+                        caveStructures,
+                        out CaveGraphGenerator.CaveGraphCounts filledCaveGraphCounts) ||
+                    filledCaveGraphCounts.Nodes != graphNodes ||
+                    filledCaveGraphCounts.Tunnels != graphTunnels ||
+                    filledCaveGraphCounts.Entrances != graphEntrances ||
+                    filledCaveGraphCounts.Structures != graphStructures)
+                {
+                    return null;
+                }
             }
 
 #if UNITY_EDITOR

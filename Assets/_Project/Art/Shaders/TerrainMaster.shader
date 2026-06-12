@@ -536,12 +536,12 @@ Shader "HECTON/Terrain/TerrainMaster"
                 if (useBiomeArray > 0.0h)
                 {
                     biomeArraySample = HectonSampleDitheredBiomeArray(IN.positionWS, IN.positionCS, stochasticJitter, selectedBiomeSlice);
+                    
+                    // Biome array acts as the diverse Ground (Sand) for the region.
+                    // Rock (cliffs) and Silt (sediment) retain global physical properties.
                     sandSample = biomeArraySample;
-                    rockSample = biomeArraySample;
-                    siltSample = biomeArraySample;
-                    rockWeight = 0.0h;
-                    sandWeight = 1.0h;
-                    siltWeight = 0.0h;
+                    rockSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_RockTex, sampler_RockTex), rockUv, stochasticJitter);
+                    siltSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SiltTex, sampler_SiltTex), siltUv, stochasticJitter * 0.5);
                 }
                 else
                 {
@@ -550,9 +550,27 @@ Shader "HECTON/Terrain/TerrainMaster"
                     siltSample = HectonSampleStochastic2D(TEXTURE2D_ARGS(_SiltTex, sampler_SiltTex), siltUv, stochasticJitter * 0.5);
                 }
 
+                // Crisp height-based blending (safe against 0-weights and 0-heights)
+                half rockH = rockWeight * (rockSample.a + 0.05h);
+                half sandH = sandWeight * (sandSample.a + 0.05h);
+                half siltH = siltWeight * (siltSample.a + 0.05h);
+                
+                half rockBlend = rockH * rockH * rockH;
+                half sandBlend = sandH * sandH * sandH;
+                half siltBlend = siltH * siltH * siltH;
+                
+                half heightBlendTotal = max(rockBlend + sandBlend + siltBlend, 0.0001h);
+                rockWeight = rockBlend * rcp(heightBlendTotal);
+                sandWeight = sandBlend * rcp(heightBlendTotal);
+                siltWeight = siltBlend * rcp(heightBlendTotal);
+
+                // Apply voxel seam override AFTER height blending to guarantee cave seams are rocky
                 half voxelBlendMask = EvaluateHectonVoxelBlendMask(IN.positionWS);
                 rockWeight = saturate(max(rockWeight, voxelBlendMask));
-                half postVoxelTotal = max(rockWeight + sandWeight + siltWeight, 0.001h);
+                sandWeight = sandWeight * saturate(1.0h - voxelBlendMask);
+                siltWeight = siltWeight * saturate(1.0h - voxelBlendMask);
+                
+                half postVoxelTotal = max(rockWeight + sandWeight + siltWeight, 0.0001h);
                 rockWeight *= rcp(postVoxelTotal);
                 sandWeight *= rcp(postVoxelTotal);
                 siltWeight *= rcp(postVoxelTotal);
@@ -567,20 +585,20 @@ Shader "HECTON/Terrain/TerrainMaster"
                     half rockLuma = dot(rockSample.rgb, half3(0.25h, 0.5h, 0.25h));
                     half siltLuma = dot(siltSample.rgb, half3(0.25h, 0.5h, 0.25h));
                     half weightedLuma = (sandLuma * sandWeight) + (rockLuma * rockWeight) + (siltLuma * siltWeight);
-                    half materialLuma = useBiomeArray > 0.0h ? dot(biomeArraySample.rgb, half3(0.25h, 0.5h, 0.25h)) : weightedLuma;
+                    half materialLuma = weightedLuma; 
                     half weightedDetail = (half)_SandNormalStr * sandWeight + (half)_RockNormalStr * rockWeight + (half)_SiltNormalStr * siltWeight;
-                    half materialDetailStrength = (useBiomeArray > 0.0h ? (half)_SandNormalStr : weightedDetail) * 0.16h;
+                    half materialDetailStrength = weightedDetail * 0.16h;
                     half2 detailMaterialRgOffset = half2(ddx(materialLuma), ddy(materialLuma)) * materialDetailStrength;
                     detailMaterialRgOffset += cheapMaterialRgOffset;
                     materialRgOffset = lerp(cheapMaterialRgOffset, detailMaterialRgOffset, terrainMathLodWeight);
                 }
                 half3 blendedNormalOffset = half3(materialRgOffset.x, 0.0h, materialRgOffset.y);
-                half3 sandAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : sandSample.rgb * _SandColor.rgb;
-                half3 rockAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : rockSample.rgb * _RockColor.rgb;
-                half3 siltAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : siltSample.rgb * _SiltColor.rgb;
-                half3 albedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : (sandAlbedo * sandWeight) + (rockAlbedo * rockWeight) + (siltAlbedo * siltWeight);
+                half3 sandAlbedo = useBiomeArray > 0.0h ? sandSample.rgb : sandSample.rgb * _SandColor.rgb;
+                half3 rockAlbedo = rockSample.rgb * _RockColor.rgb;
+                half3 siltAlbedo = siltSample.rgb * _SiltColor.rgb;
+                half3 albedo = (sandAlbedo * sandWeight) + (rockAlbedo * rockWeight) + (siltAlbedo * siltWeight);
                 half weightedSmooth = (sandSample.a * sandWeight) + (rockSample.a * rockWeight) + (siltSample.a * siltWeight);
-                half smoothness = (useBiomeArray > 0.0h ? biomeArraySample.a : weightedSmooth) * _BaseSmooth;
+                half smoothness = weightedSmooth * _BaseSmooth;
 
                 // ---- Biome tint ----
                 half biomeBleed = ResolveBiomeEdgeBleed(IN.positionWS, biome);

@@ -74,36 +74,36 @@ namespace Hecton8.Atmosphere
         private const string DumpRelativePath = "Docs/AgentLogs/" + DumpFileName;
         private const string DumpPayloadLabel = "gasDynamicsTelemetryDumpPayload";
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
-        private const BufferID RoomO2BufferId = (BufferID)74420;
-        private const BufferID RoomCO2BufferId = (BufferID)74421;
-        private const BufferID RoomPressureBufferId = (BufferID)74422;
-        private const BufferID RoomO2BackBufferId = (BufferID)74423;
-        private const BufferID RoomCO2BackBufferId = (BufferID)74424;
-        private const BufferID RoomNitrogenBufferId = (BufferID)74425;
-        private const BufferID RoomNitrogenBackBufferId = (BufferID)74426;
-        private const BufferID RoomPressureBackBufferId = (BufferID)74427;
-        private const BufferID RoomAmbientPressureBufferId = (BufferID)74428;
-        private const BufferID RoomSubmerged01BufferId = (BufferID)74429;
-        private const BufferID RoomPlayerStress01BufferId = (BufferID)74430;
-        private const BufferID RoomPlayerHeartRateBpmBufferId = (BufferID)74431;
-        private const BufferID RoomTemperatureCelsiusBufferId = (BufferID)74432;
-        private const BufferID RoomPlayerPresentBufferId = (BufferID)74433;
-        private const BufferID RoomScrubberPoweredBufferId = (BufferID)74434;
-        private const BufferID RoomFlagsBufferId = (BufferID)74435;
-        private const BufferID RoomBaseIndexBufferId = (BufferID)74436;
-        private const BufferID BasePlayerInsideBufferId = (BufferID)74437;
-        private const BufferID BasePlayerInsideCountBufferId = (BufferID)74438;
-        private const BufferID BaseRoomStartBufferId = (BufferID)74439;
-        private const BufferID BaseRoomCountBufferId = (BufferID)74440;
-        private const BufferID BaseCenterAupBufferId = (BufferID)74441;
-        private const BufferID BaseHibernatedUnscaledTimeBufferId = (BufferID)74442;
-        private const BufferID BaseBatteryWattSecondsBufferId = (BufferID)74443;
-        private const BufferID BaseIdleDrawWattsBufferId = (BufferID)74444;
-        private const BufferID BaseLeakRatePerSecondBufferId = (BufferID)74445;
-        private const BufferID BaseAmbientOxygenKPaBufferId = (BufferID)74446;
-        private const BufferID BulkheadRoomABufferId = (BufferID)74447;
-        private const BufferID BulkheadRoomBBufferId = (BufferID)74448;
-        private const BufferID BulkheadSealedBufferId = (BufferID)74449;
+        private const BufferID RoomO2BufferId = BufferID.VegetationAbyssalNavConduitStrengths;
+        private const BufferID RoomCO2BufferId = BufferID.VegetationAbyssalNavNodeTypes;
+        private const BufferID RoomPressureBufferId = BufferID.VegetationTerrainHoleStreamingRecords;
+        private const BufferID RoomO2BackBufferId = BufferID.VegetationDensityQueryScratch;
+        private const BufferID RoomCO2BackBufferId = BufferID.VegetationDensityQueryChunks;
+        private const BufferID RoomNitrogenBufferId = BufferID.VegetationDensityQueryGrid;
+        private const BufferID RoomNitrogenBackBufferId = BufferID.VegetationThreatAttractorGrid;
+        private const BufferID RoomPressureBackBufferId = BufferID.VegetationTerrainHoleRecords;
+        private const BufferID RoomAmbientPressureBufferId = BufferID.VegetationArtificialStructureRecords;
+        private const BufferID RoomSubmerged01BufferId = BufferID.VegetationEcosystemFlowField;
+        private const BufferID RoomPlayerStress01BufferId = BufferID.VegetationAbyssalThermalGrid;
+        private const BufferID RoomPlayerHeartRateBpmBufferId = BufferID.VegetationAbyssalFlowVolume;
+        private const BufferID RoomTemperatureCelsiusBufferId = BufferID.VegetationEcosystemThreatGrid;
+        private const BufferID RoomPlayerPresentBufferId = BufferID.VegetationEcosystemThreatGridCompressed;
+        private const BufferID RoomScrubberPoweredBufferId = BufferID.VegetationEcosystemThreatVoxel;
+        private const BufferID RoomFlagsBufferId = BufferID.VegetationEcosystemThreatEcho;
+        private const BufferID RoomBaseIndexBufferId = BufferID.GasDynamicsSolver_RoomBaseIndexBufferId;
+        private const BufferID BasePlayerInsideBufferId = BufferID.GasDynamicsSolver_BasePlayerInsideBufferId;
+        private const BufferID BasePlayerInsideCountBufferId = BufferID.GasDynamicsSolver_BasePlayerInsideCountBufferId;
+        private const BufferID BaseRoomStartBufferId = BufferID.GasDynamicsSolver_BaseRoomStartBufferId;
+        private const BufferID BaseRoomCountBufferId = BufferID.VegetationSurfaceAggregateFrontMatrices;
+        private const BufferID BaseCenterAupBufferId = BufferID.VegetationSurfaceAggregateFrontMetadata;
+        private const BufferID BaseHibernatedUnscaledTimeBufferId = BufferID.VegetationSurfaceAggregateFrontTypes;
+        private const BufferID BaseBatteryWattSecondsBufferId = BufferID.VegetationSurfaceAggregateFrontSemanticTypes;
+        private const BufferID BaseIdleDrawWattsBufferId = BufferID.VegetationSurfaceAggregateFrontBiomeLayers;
+        private const BufferID BaseLeakRatePerSecondBufferId = BufferID.VegetationSurfaceAggregateFrontFlowDirections;
+        private const BufferID BaseAmbientOxygenKPaBufferId = BufferID.VegetationSurfaceAggregateFrontFlowVectors;
+        private const BufferID BulkheadRoomABufferId = BufferID.VegetationSurfaceAggregateBackMatrices;
+        private const BufferID BulkheadRoomBBufferId = BufferID.VegetationSurfaceAggregateBackMetadata;
+        private const BufferID BulkheadSealedBufferId = BufferID.VegetationSurfaceAggregateBackTypes;
         private const uint LockRoomO2 = 1u << 0;
         private const uint LockRoomCO2 = 1u << 1;
         private const uint LockRoomPressure = 1u << 2;
@@ -1538,7 +1538,7 @@ namespace Hecton8.Atmosphere
                 case LockBulkheadSealed:
                     return BulkheadSealedBufferId;
                 default:
-                    return (BufferID)0;
+                    return BufferID.Unknown;
             }
         }
 

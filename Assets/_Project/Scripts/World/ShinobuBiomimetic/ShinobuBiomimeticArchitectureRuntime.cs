@@ -521,25 +521,25 @@ namespace Hecton8.World.ShinobuBiomimetic
     public static class ShinobuPoiVaultBridge
     {
         private const SystemID OwnerSystem = SystemID.WorldStreaming;
-        public const BufferID PoiTransformsBufferId = (BufferID)70420;
-        public const BufferID PoiSortedTransformsBufferId = (BufferID)70421;
-        public const BufferID PoiRoutesBufferId = (BufferID)70422;
-        public const BufferID PoiSectorRangesBufferId = (BufferID)70423;
-        public const BufferID PoiNarrativeRulesBufferId = (BufferID)70424;
-        public const BufferID PoiFloraMasksBufferId = (BufferID)70425;
-        public const BufferID PoiTelemetryRingBufferId = (BufferID)70426;
-        public const BufferID PoiVisualAnchorsBufferId = (BufferID)70427;
-        public const BufferID PoiRulesBufferId = (BufferID)70428;
-        public const BufferID PoiBoundsBufferId = (BufferID)70429;
-        public const BufferID PoiBakeConfigBufferId = (BufferID)70430;
-        public const BufferID PoiCullProxyBufferId = (BufferID)70431;
-        public const BufferID PoiHzbDepthPyramidBufferId = (BufferID)70432;
-        public const BufferID PoiVisibleMaskBufferId = (BufferID)70433;
-        public const BufferID PoiIndirectArgsBufferId = (BufferID)70434;
-        public const BufferID PoiCandidateAupsBufferId = (BufferID)70435;
-        public const BufferID PoiMockSignalsBufferId = (BufferID)70436;
-        public const BufferID PoiPlacementCountersBufferId = (BufferID)70437;
-        public const BufferID PoiCsvScratchBufferId = (BufferID)70438;
+        public const BufferID PoiTransformsBufferId = BufferID.ShinobuSymbiosisCounters;
+        public const BufferID PoiSortedTransformsBufferId = BufferID.ShinobuSymbiosisCsvScratch;
+        public const BufferID PoiRoutesBufferId = BufferID.ShinobuSymbiosisScannerVfx;
+        public const BufferID PoiSectorRangesBufferId = BufferID.ShinobuSymbiosisOxygenEmitters;
+        public const BufferID PoiNarrativeRulesBufferId = BufferID.ShinobuSymbiosisAdherence;
+        public const BufferID PoiFloraMasksBufferId = BufferID.ShinobuSymbiosisSeeds;
+        public const BufferID PoiTelemetryRingBufferId = BufferID.ShinobuSymbiosisAcousticTaps;
+        public const BufferID PoiVisualAnchorsBufferId = BufferID.ShinobuSymbiosisTuning;
+        public const BufferID PoiRulesBufferId = BufferID.ShinobuSymbiosisFloraHashBucketHeads;
+        public const BufferID PoiBoundsBufferId = BufferID.ShinobuSymbiosisFloraHashNext;
+        public const BufferID PoiBakeConfigBufferId = BufferID.ShinobuSymbiosisMockBoids;
+        public const BufferID PoiCullProxyBufferId = BufferID.ShinobuSymbiosisLegacyScratch;
+        public const BufferID PoiHzbDepthPyramidBufferId = BufferID.ShinobuSymbiosisMockFish;
+        public const BufferID PoiVisibleMaskBufferId = BufferID.ShinobuMacroEcosystemSectorFront;
+        public const BufferID PoiIndirectArgsBufferId = BufferID.ShinobuMacroEcosystemSectorBack;
+        public const BufferID PoiCandidateAupsBufferId = BufferID.ShinobuMacroEcosystemRemainders;
+        public const BufferID PoiMockSignalsBufferId = BufferID.ShinobuMacroEcosystemSectorCoords;
+        public const BufferID PoiPlacementCountersBufferId = BufferID.ShinobuMacroEcosystemIndexEntries;
+        public const BufferID PoiCsvScratchBufferId = BufferID.ShinobuMacroEcosystemBiomeSpecs;
         public const int BlackBoxFrameCount = 300;
 
         public static bool TryResolveExistingPlacementBuffers(

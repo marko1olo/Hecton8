@@ -57,7 +57,7 @@ namespace Hecton8.Optimization
         // ── INSPECTOR SETTINGS ─────────────────────────────────────────────────────
 
         private const int VramTelemetryCapacity = 300;
-        private const BufferID VramTelemetryBufferId = (BufferID)71617;
+        private const BufferID VramTelemetryBufferId = BufferID.VRAMMonitor_VramTelemetryBufferId;
         private const SystemID VramTelemetryOwner = SystemID.GraphicsScalability;
         private const uint TelemetryFlagTextureOverBudget = 1u << 0;
         private const uint TelemetryFlagRenderTextureOverBudget = 1u << 1;

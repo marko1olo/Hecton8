@@ -15,8 +15,8 @@ namespace Hecton8.Input
         public const int ControlRemapIoResultStrideBytes = 88;
         public const int InputBindingTelemetryCapacity = 300;
 
-        public const BufferID InputBindingTelemetryRingBufferId = (BufferID)70534;
-        public const BufferID InputBindingTelemetryCursorBufferId = (BufferID)70535;
+        public const BufferID InputBindingTelemetryRingBufferId = BufferID.ShinobuLogisticsComponentIds;
+        public const BufferID InputBindingTelemetryCursorBufferId = BufferID.ShinobuLogisticsPressureFront;
     }
 
     [Flags]

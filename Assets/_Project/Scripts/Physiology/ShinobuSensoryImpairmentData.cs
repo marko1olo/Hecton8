@@ -18,11 +18,11 @@ namespace Hecton8.Physiology
         public const uint DumpVersion = 1u;
         public const ulong DumpMagic = 0x533332324859504Fu; // S322HYPO
 
-        public const BufferID SensoryImpairmentBuffer = (BufferID)75220;
-        public const BufferID SensoryImpairmentTuningBuffer = (BufferID)75221;
-        public const BufferID SensoryImpairmentTelemetryBuffer = (BufferID)75222;
-        public const BufferID SensoryImpairmentProfilesBuffer = (BufferID)75223;
-        public const BufferID SensoryInputDriftDebugBuffer = (BufferID)75225;
+        public const BufferID SensoryImpairmentBuffer = BufferID.ShinobuSensoryImpairmentData_SensoryImpairmentBuffer;
+        public const BufferID SensoryImpairmentTuningBuffer = BufferID.ShinobuSensoryImpairmentData_SensoryImpairmentTuningBuffer;
+        public const BufferID SensoryImpairmentTelemetryBuffer = BufferID.ShinobuSensoryImpairmentData_SensoryImpairmentTelemetryBuffer;
+        public const BufferID SensoryImpairmentProfilesBuffer = BufferID.ShinobuSensoryImpairmentData_SensoryImpairmentProfilesBuffer;
+        public const BufferID SensoryInputDriftDebugBuffer = BufferID.ShinobuSensoryImpairmentData_SensoryInputDriftDebugBuffer;
 
         public const float DefaultHypoxiaCurveExponent = 3f;
         public const float DefaultMaxInputLatencyMilliseconds = 180f;

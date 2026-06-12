@@ -55,8 +55,8 @@ namespace Hecton8.Tools
         private const float EquipmentMockRootOffsetMeters = 0.35f;
         private const float EquipmentFaultCostThresholdMicroseconds = 100f;
         private const float EquipmentDryHeatMultiplier = 3.25f;
-        private const BufferID FlashlightTelemetryRingBufferId = (BufferID)71317;
-        private const BufferID FlashlightTelemetryCursorBufferId = (BufferID)71318;
+        private const BufferID FlashlightTelemetryRingBufferId = BufferID.ModularEquipmentEngine_FlashlightTelemetryRingBufferId;
+        private const BufferID FlashlightTelemetryCursorBufferId = BufferID.ModularEquipmentEngine_FlashlightTelemetryCursorBufferId;
         private const uint EquipmentFaultNonFinite = 1u << 0;
         private const uint EquipmentFaultThermalGridInvalid = 1u << 1;
         private const uint EquipmentFaultCsvOverflow = 1u << 2;

@@ -33,13 +33,13 @@ namespace Hecton8.Rendering.OceanSinglePass
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_277.bin";
         public const string CsvRelativePath = "Assets/_Project/Data/shoreline_foam_profiles.csv";
 
-        public const BufferID ParamsBuffer = (BufferID)71940;
-        public const BufferID RuntimeStateBuffer = (BufferID)71941;
-        public const BufferID TelemetryRingBuffer = (BufferID)71942;
-        public const BufferID TelemetryCursorBuffer = (BufferID)71943;
-        public const BufferID ProfileBuffer = (BufferID)71944;
-        public const BufferID CsvScratchBuffer = (BufferID)71945;
-        public const BufferID SelfAuditBuffer = (BufferID)71946;
+        public const BufferID ParamsBuffer = BufferID.ShorelineFoamGraftContracts_ParamsBuffer;
+        public const BufferID RuntimeStateBuffer = BufferID.ShorelineFoamGraftContracts_RuntimeStateBuffer;
+        public const BufferID TelemetryRingBuffer = BufferID.ShorelineFoamGraftContracts_TelemetryRingBuffer;
+        public const BufferID TelemetryCursorBuffer = BufferID.ShorelineFoamGraftContracts_TelemetryCursorBuffer;
+        public const BufferID ProfileBuffer = BufferID.ShorelineFoamGraftContracts_ProfileBuffer;
+        public const BufferID CsvScratchBuffer = BufferID.ShorelineFoamGraftContracts_CsvScratchBuffer;
+        public const BufferID SelfAuditBuffer = BufferID.ShorelineFoamGraftContracts_SelfAuditBuffer;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

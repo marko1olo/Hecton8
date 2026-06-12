@@ -26,14 +26,14 @@ namespace Hecton8.Construction
         private const uint DroneMiningTaskTypeHash = 0x44524D4Eu; // DRMN
         private const uint DroneTransactionLayoutHash = 0x53333335u; // S335
         private const string DroneFleetTransactionBlackBoxDumpPath = "Docs/AgentLogs/Dump_1306_Construction.bin";
-        private const BufferID DroneFleetTransactionTasksBufferId = (BufferID)72046;
-        private const BufferID DroneFleetTransactionIntegrityBufferId = (BufferID)72047;
-        private const BufferID DroneFleetTransactionResultsBufferId = (BufferID)72048;
-        private const BufferID DroneFleetTransactionCountersBufferId = (BufferID)72049;
-        private const BufferID DroneFleetTransactionCommandConsumedBufferId = (BufferID)72050;
-        private const BufferID DroneFleetTransactionTelemetryBufferId = (BufferID)72051;
-        private const BufferID DroneFleetTransactionCommandsBufferId = (BufferID)72052;
-        private const BufferID DroneFleetTransactionAupSnapshotsBufferId = (BufferID)72053;
+        private const BufferID DroneFleetTransactionTasksBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionTasksBufferId;
+        private const BufferID DroneFleetTransactionIntegrityBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionIntegrityBufferId;
+        private const BufferID DroneFleetTransactionResultsBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionResultsBufferId;
+        private const BufferID DroneFleetTransactionCountersBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionCountersBufferId;
+        private const BufferID DroneFleetTransactionCommandConsumedBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionCommandConsumedBufferId;
+        private const BufferID DroneFleetTransactionTelemetryBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionTelemetryBufferId;
+        private const BufferID DroneFleetTransactionCommandsBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionCommandsBufferId;
+        private const BufferID DroneFleetTransactionAupSnapshotsBufferId = BufferID.DroneFleetManager_Transactions_DroneFleetTransactionAupSnapshotsBufferId;
         private static readonly ulong DroneTransactionMutationGuardMask =
             DroneMutationGuardBit(DroneFleetTransactionTasksBufferId) |
             DroneMutationGuardBit(DroneFleetTransactionCommandsBufferId) |

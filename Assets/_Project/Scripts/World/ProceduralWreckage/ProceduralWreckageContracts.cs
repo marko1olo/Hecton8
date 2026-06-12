@@ -55,24 +55,24 @@ namespace Hecton8.World.ProceduralWreckage
 
     public static class ProceduralWreckageVaultBufferIds
     {
-        public const BufferID Rules = (BufferID)70840;
-        public const BufferID Grid = (BufferID)70841;
-        public const BufferID Nodes = (BufferID)70842;
-        public const BufferID DebrisNodes = (BufferID)70843;
-        public const BufferID RenderMatrices = (BufferID)70844;
-        public const BufferID IndirectArgs = (BufferID)70845;
-        public const BufferID SectorTriggers = (BufferID)70846;
-        public const BufferID LootRequests = (BufferID)70847;
-        public const BufferID CollisionProxies = (BufferID)70848;
-        public const BufferID TelemetryRing = (BufferID)70849;
-        public const BufferID TelemetryCursor = (BufferID)70850;
-        public const BufferID Tuning = (BufferID)70851;
-        public const BufferID CsvScratch = (BufferID)70852;
-        public const BufferID Counters = (BufferID)70853;
-        public const BufferID DebugCells = (BufferID)70854;
-        public const BufferID GpuScalars = (BufferID)70855;
-        public const BufferID SelfAudit = (BufferID)70856;
-        public const BufferID HzbTiles = (BufferID)70857;
+        public const BufferID Rules = BufferID.TopographicalSonarSynthesizer_Points;
+        public const BufferID Grid = BufferID.TopographicalSonarSynthesizer_HitMask;
+        public const BufferID Nodes = BufferID.TopographicalSonarSynthesizer_Counters;
+        public const BufferID DebrisNodes = BufferID.ProceduralWreckageContracts_DebrisNodes;
+        public const BufferID RenderMatrices = BufferID.ProceduralWreckageContracts_RenderMatrices;
+        public const BufferID IndirectArgs = BufferID.TopographicalSonarSynthesizer_TelemetryRing;
+        public const BufferID SectorTriggers = BufferID.TopographicalSonarSynthesizer_TelemetryCursor;
+        public const BufferID LootRequests = BufferID.TopographicalSonarSynthesizer_MaterialColorLut;
+        public const BufferID CollisionProxies = BufferID.ProceduralWreckageContracts_CollisionProxies;
+        public const BufferID TelemetryRing = BufferID.TopographicalSonarSynthesizer_IndirectArgs;
+        public const BufferID TelemetryCursor = BufferID.PowerGridJacobiContracts_Nodes;
+        public const BufferID Tuning = BufferID.PowerGridJacobiContracts_Edges;
+        public const BufferID CsvScratch = BufferID.PowerGridJacobiContracts_NodeAup;
+        public const BufferID Counters = BufferID.PowerGridJacobiContracts_CsrOffsets;
+        public const BufferID DebugCells = BufferID.PowerGridJacobiContracts_CsrDestinations;
+        public const BufferID GpuScalars = BufferID.PowerGridJacobiContracts_CsrConductance;
+        public const BufferID SelfAudit = BufferID.PowerGridJacobiContracts_CsrFlow;
+        public const BufferID HzbTiles = BufferID.PowerGridJacobiContracts_PotentialFront;
     }
 
     public static class WreckageDirections

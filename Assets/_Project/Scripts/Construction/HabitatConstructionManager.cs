@@ -36,16 +36,16 @@ namespace Hecton8.Construction
         private const int InitialConnectionCapacity = 384;
         private const int InitialSocketLookupCapacity = 512;
         private const int MaxCostCapacity = 32;
-        private const BufferID IntegrityNodeBufferId = (BufferID)70949;
-        private const BufferID IntegrityRangeBufferId = (BufferID)70950;
-        private const BufferID IntegrityAdjacencyBufferId = (BufferID)70951;
-        private const BufferID IntegrityQueueBufferId = (BufferID)70952;
-        private const BufferID IntegrityDepthBufferId = (BufferID)70953;
-        private const BufferID IntegrityResultBufferId = (BufferID)70954;
-        private const BufferID IntegrityDegreeScratchBufferId = (BufferID)70955;
-        private const BufferID IntegrityWriteScratchBufferId = (BufferID)70956;
-        private const BufferID IntegrityConnectionBufferId = (BufferID)70957;
-        private const BufferID IntegritySocketLookupBufferId = (BufferID)70958;
+        private const BufferID IntegrityNodeBufferId = BufferID.HabitatConstructionManager_IntegrityNodeBufferId;
+        private const BufferID IntegrityRangeBufferId = BufferID.HabitatConstructionManager_IntegrityRangeBufferId;
+        private const BufferID IntegrityAdjacencyBufferId = BufferID.HabitatConstructionManager_IntegrityAdjacencyBufferId;
+        private const BufferID IntegrityQueueBufferId = BufferID.HabitatConstructionManager_IntegrityQueueBufferId;
+        private const BufferID IntegrityDepthBufferId = BufferID.HabitatConstructionManager_IntegrityDepthBufferId;
+        private const BufferID IntegrityResultBufferId = BufferID.HabitatConstructionManager_IntegrityResultBufferId;
+        private const BufferID IntegrityDegreeScratchBufferId = BufferID.HabitatConstructionManager_IntegrityDegreeScratchBufferId;
+        private const BufferID IntegrityWriteScratchBufferId = BufferID.HabitatConstructionManager_IntegrityWriteScratchBufferId;
+        private const BufferID IntegrityConnectionBufferId = BufferID.HabitatConstructionManager_IntegrityConnectionBufferId;
+        private const BufferID IntegritySocketLookupBufferId = BufferID.HabitatConstructionManager_IntegritySocketLookupBufferId;
         private const ulong ValidationMutationGuardMask =
             (1UL << ((int)IntegrityNodeBufferId & 31)) |
             (1UL << ((int)IntegrityRangeBufferId & 31)) |

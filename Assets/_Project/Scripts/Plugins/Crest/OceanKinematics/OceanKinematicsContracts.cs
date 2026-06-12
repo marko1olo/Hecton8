@@ -58,17 +58,17 @@ namespace Hecton8.Physics
     /// </summary>
     public static class OceanKinematicsBufferIds
     {
-        public const BufferID Requests = (BufferID)72940;
-        public const BufferID Results = (BufferID)72941;
-        public const BufferID GerstnerWaves = (BufferID)72942;
-        public const BufferID Tuning = (BufferID)72943;
-        public const BufferID MacroState = (BufferID)72944;
-        public const BufferID TelemetryRing = (BufferID)72945;
-        public const BufferID TelemetryCursor = (BufferID)72946;
-        public const BufferID GpuCachedResults = (BufferID)72947;
-        public const BufferID CsvScratch = (BufferID)72948;
-        public const BufferID QueueCounters = (BufferID)72949;
-        public const BufferID RollbackFence = (BufferID)72950;
+        public const BufferID Requests = BufferID.OceanKinematicsContracts_Requests;
+        public const BufferID Results = BufferID.OceanKinematicsContracts_Results;
+        public const BufferID GerstnerWaves = BufferID.OceanKinematicsContracts_GerstnerWaves;
+        public const BufferID Tuning = BufferID.OceanKinematicsContracts_Tuning;
+        public const BufferID MacroState = BufferID.OceanKinematicsContracts_MacroState;
+        public const BufferID TelemetryRing = BufferID.OceanKinematicsContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.OceanKinematicsContracts_TelemetryCursor;
+        public const BufferID GpuCachedResults = BufferID.OceanKinematicsContracts_GpuCachedResults;
+        public const BufferID CsvScratch = BufferID.OceanKinematicsContracts_CsvScratch;
+        public const BufferID QueueCounters = BufferID.OceanKinematicsContracts_QueueCounters;
+        public const BufferID RollbackFence = BufferID.OceanKinematicsContracts_RollbackFence;
     }
 
     public static class OceanKinematicsWaterlineUtility

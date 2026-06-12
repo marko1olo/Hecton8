@@ -15,10 +15,10 @@ namespace Hecton8.UI
 {
     public unsafe sealed partial class TerminalOsRuntime
     {
-        private const BufferID TerminalInputStatesBufferId = (BufferID)71380;
-        private const BufferID TerminalInputTelemetryRingBufferId = (BufferID)71381;
-        private const BufferID TerminalInputTuningBufferId = (BufferID)71382;
-        private const BufferID TerminalInputRowHashesBufferId = (BufferID)71383;
+        private const BufferID TerminalInputStatesBufferId = BufferID.UpgradeMatrixCompiler_UpgradeMasksBuffer;
+        private const BufferID TerminalInputTelemetryRingBufferId = BufferID.UpgradeMatrixCompiler_UpgradeBaseStatsBuffer;
+        private const BufferID TerminalInputTuningBufferId = BufferID.UpgradeMatrixCompiler_UpgradeCompiledStatsBuffer;
+        private const BufferID TerminalInputRowHashesBufferId = BufferID.UpgradeMatrixCompiler_UpgradeLutBuffer;
         private const string TerminalProjectionDumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalProjection.bin";
         private const uint TerminalProjectionFaultNonFinite = 1u << 16;
         private const uint TerminalProjectionFaultBudget = 1u << 17;

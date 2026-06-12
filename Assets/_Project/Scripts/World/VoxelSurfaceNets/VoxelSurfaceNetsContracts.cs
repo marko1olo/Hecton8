@@ -45,23 +45,23 @@ namespace Hecton8.World.VoxelSurfaceNets
 
     public static class VoxelSurfaceNetsVaultBufferIds
     {
-        public const BufferID Density = (BufferID)70780;
-        public const BufferID Vertices = (BufferID)70781;
-        public const BufferID Indices = (BufferID)70782;
-        public const BufferID CellVertexMap = (BufferID)70783;
-        public const BufferID States = (BufferID)70784;
-        public const BufferID Tuning = (BufferID)70785;
-        public const BufferID TelemetryRing = (BufferID)70786;
-        public const BufferID TelemetryCursor = (BufferID)70787;
-        public const BufferID SurfaceEdgeMasks = (BufferID)70789;
-        public const BufferID RawDebugVertices = (BufferID)70790;
-        public const BufferID ChunkAabbs = (BufferID)70791;
-        public const BufferID ModifiedSignals = (BufferID)70792;
-        public const BufferID Priorities = (BufferID)70793;
-        public const BufferID IndirectArgs = (BufferID)70794;
-        public const BufferID MockDensityConfig = (BufferID)70795;
-        public const BufferID PhysicsBakeRequests = (BufferID)70796;
-        public const BufferID HzbTiles = (BufferID)70797;
+        public const BufferID Density = BufferID.ShinobuFluidCompartmentFront;
+        public const BufferID Vertices = BufferID.ShinobuFluidCompartmentBack;
+        public const BufferID Indices = BufferID.ShinobuFluidIntegrityState;
+        public const BufferID CellVertexMap = BufferID.ShinobuFluidEdgeOffsets;
+        public const BufferID States = BufferID.ShinobuFluidEdgeDestinations;
+        public const BufferID Tuning = BufferID.ShinobuFluidEdgeFlags;
+        public const BufferID TelemetryRing = BufferID.ShinobuFluidCompartmentCentroids;
+        public const BufferID TelemetryCursor = BufferID.ShinobuFluidWaterlineShader;
+        public const BufferID SurfaceEdgeMasks = BufferID.ShinobuFluidTuning;
+        public const BufferID RawDebugVertices = BufferID.ShinobuFluidTelemetryRing;
+        public const BufferID ChunkAabbs = BufferID.ShinobuFluidTelemetryCursor;
+        public const BufferID ModifiedSignals = BufferID.ShinobuFluidBfsQueue;
+        public const BufferID Priorities = BufferID.ShinobuFluidBfsVisited;
+        public const BufferID IndirectArgs = BufferID.ShinobuFluidDeltaVolumes;
+        public const BufferID MockDensityConfig = BufferID.ShinobuFluidFrameSummary;
+        public const BufferID PhysicsBakeRequests = BufferID.ShinobuFluidCsvScratch;
+        public const BufferID HzbTiles = BufferID.ShinobuFluidMockBreach;
     }
 
     public enum VoxelMeshingStage : byte

@@ -72,7 +72,11 @@ namespace Hecton8.Caves
 
         /// <summary>Horizontally stretched ellipse. Low crawlspace.
         /// heightScale < 1, widthScale > 1.</summary>
-        Wide = 2
+        Wide = 2,
+
+        /// <summary>Infinite vertical extrusion for surface ravines.
+        /// Ignores ceiling constraints, forming open canyons.</summary>
+        OpenTrench = 3
     }
 
     /// <summary>
@@ -138,6 +142,9 @@ namespace Hecton8.Caves
         /// <summary>Long winding single tunnel with periodic widenings.
         /// Lava tube aesthetic.</summary>
         Tube = 6,
+
+        /// <summary>2D Surface trench network, OpenTrench topology.</summary>
+        SurfaceTrench = 7,
 
         /// <summary>Custom parameters — no library preset applied.</summary>
         Custom = 255
@@ -936,8 +943,48 @@ namespace Hecton8.Caves
                 case CavePresetType.Abyss:     return Abyss();
                 case CavePresetType.Mega:      return Mega();
                 case CavePresetType.Tube:      return Tube();
+                case CavePresetType.SurfaceTrench: return SurfaceTrench();
                 default:                       return new CavePreset();
             }
+        }
+
+        /// <summary>
+        /// Tiny lair. 1-2 small rooms connected by a short passage.
+        /// Quick to generate, cheap to render. For fish lairs, loot stashes.
+        /// Volume: 48³ × 0.5m = 24m cube.
+        /// </summary>
+        public static CavePreset SurfaceTrench()
+        {
+            return new CavePreset
+            {
+                presetName              = "SurfaceTrench",
+                presetType              = CavePresetType.SurfaceTrench,
+                gridDimension           = 128,
+                voxelSize               = 0.5f,
+                minRooms                = 4,
+                maxRooms                = 12,
+                minRoomRadius           = 4f,
+                maxRoomRadius           = 8f,
+                verticalShaftChance     = 0f,
+                flatHallChance          = 1f,
+                creviceChance           = 0f,
+                verticalSpread          = 0f,
+                maxDepth                = 5f,
+                minTunnelRadius         = 4f,
+                maxTunnelRadius         = 12f,
+                tallTunnelChance        = 0f,
+                wideTunnelChance        = 1f,
+                tunnelWarpAmount        = 1f,
+                extraConnectionChance   = 0f,
+                minEntrances            = 0,
+                maxEntrances            = 0,
+                entranceRadius          = 0f,
+                entranceFunnelLength    = 0f,
+                allowedStructureTypes   = new[] { CaveStructureType.Arch },
+                structureCountMax       = 12,
+                wallNoiseAmplitude      = 2f,
+                wallNoiseFrequency      = 0.1f
+            };
         }
 
         /// <summary>

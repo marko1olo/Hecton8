@@ -10,9 +10,9 @@
 
 ## Scope
 
-- Scanned files: `930`.
-- Total findings: `3008`.
-- Active scene findings: `346`.
+- Scanned files: `1036`.
+- Total findings: `2779`.
+- Active scene findings: `198`.
 - CSV detail: `Docs/Reports/Batch21/2104_PRIMITIVE_NULL_DEFAULT_STATIC_VALIDATOR.csv`.
 - JSON detail: `Docs/Reports/Batch21/2104_PRIMITIVE_NULL_DEFAULT_STATIC_VALIDATOR.json`.
 
@@ -29,17 +29,15 @@
 
 ## Summary
 
-- By severity: `{"CRITICAL": 1947, "HIGH": 875, "LOW": 7, "MEDIUM": 179}`.
-- By issue type: `{"BUILTIN_PRIMITIVE_MESH_REF": 1097, "EMPTY_BASE_TEXTURE_SLOT": 402, "NULL_RENDERER_MATERIAL_SLOT": 26, "PLACEHOLDER_OR_PROXY_MATERIAL_ASSET": 83, "PLACEHOLDER_OR_PROXY_MATERIAL_REF": 1376, "UNRESOLVED_MATERIAL_GUID": 20, "UNRESOLVED_TEXTURE_GUID": 4}`.
-- By route band: `{"diagnostic_only_candidate": 7, "placeholder_proxy_candidate": 92, "product_face": 782, "surface_sky_photic_medium_product_face": 1735, "unknown_candidate": 392}`.
+- By severity: `{"CRITICAL": 1780, "HIGH": 843, "LOW": 7, "MEDIUM": 149}`.
+- By issue type: `{"BUILTIN_PRIMITIVE_MESH_REF": 976, "EMPTY_BASE_TEXTURE_SLOT": 303, "NULL_RENDERER_MATERIAL_SLOT": 26, "PLACEHOLDER_OR_PROXY_MATERIAL_ASSET": 96, "PLACEHOLDER_OR_PROXY_MATERIAL_REF": 1355, "UNRESOLVED_MATERIAL_GUID": 19, "UNRESOLVED_TEXTURE_GUID": 4}`.
+- By route band: `{"diagnostic_only_candidate": 7, "placeholder_proxy_candidate": 67, "product_face": 775, "surface_sky_photic_medium_product_face": 1670, "unknown_candidate": 260}`.
 
 ## Top Findings
 
 | Severity | Issue | Path:Line | Hint | Slot/Property | Detail |
 | --- | --- | --- | --- | --- | --- |
-| CRITICAL | UNRESOLVED_TEXTURE_GUID | `Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat:52` | MAT_H8_SurfaceCrestOcean_1428 | `_MainTex` | Texture GUID is not present in the scanned Assets/Packages meta index. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/MAT_H8_SurfaceFoamRibbons_1428.mat:45` | MAT_H8_SurfaceFoamRibbons_1428 | `_BaseMap` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/MAT_H8_SurfaceFoamRibbons_1428.mat:49` | MAT_H8_SurfaceFoamRibbons_1428 | `_MainTex` | Primary/base texture property is empty in material source. |
+| CRITICAL | UNRESOLVED_TEXTURE_GUID | `Assets/_Project/Art/Materials/MAT_H8_SurfaceCrestOcean_1428.mat:49` | MAT_H8_SurfaceCrestOcean_1428 | `_MainTex` | Texture GUID is not present in the scanned Assets/Packages meta index. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/MAT_H8WorldWaterMassVeil_1428.mat:45` | MAT_H8WorldWaterMassVeil_1428 | `_BaseMap` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/MAT_H8WorldWaterMassVeil_1428.mat:49` | MAT_H8WorldWaterMassVeil_1428 | `_MainTex` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/Mat_HectonSky.mat:45` | Mat_HectonSky | `_BaseMap` | Primary/base texture property is empty in material source. |
@@ -99,7 +97,6 @@
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_PhoticWarmBasaltRubble_1429.mat:66` | MAT_H8_PhoticWarmBasaltRubble_1429 | `_MainTex` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_SurfaceDropPodPanel_1430.mat:29` | MAT_H8_SurfaceDropPodPanel_1430 | `_BaseMap` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_SurfaceDropPodPanel_1430.mat:53` | MAT_H8_SurfaceDropPodPanel_1430 | `_MainTex` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_SurfaceFoamRing_1432.mat:27` | MAT_H8_SurfaceFoamRing_1432 | `_BaseMap` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_VisibleFoamUnlit_1436.mat:32` | MAT_H8_VisibleFoamUnlit_1436 | `_BaseMap` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1428/MAT_H8_VisibleFoamUnlit_1436.mat:36` | MAT_H8_VisibleFoamUnlit_1436 | `_MainTex` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1453/MAT_H8_HeroTubeCoralAmber_1453.mat:29` | MAT_H8_HeroTubeCoralAmber_1453 | `_BaseMap` | Primary/base texture property is empty in material source. |
@@ -113,11 +110,14 @@
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1457/MAT_H8_PhoticCoralPlate_1457.mat:72` | MAT_H8_PhoticCoralPlate_1457 | `_MainTex` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1457/MAT_H8_PhoticKelpPatch_1457.mat:69` | MAT_H8_PhoticKelpPatch_1457 | `_MainTex` | Primary/base texture property is empty in material source. |
 | CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/World/Photic1457/MAT_H8_PhoticKelpTall_1457.mat:56` | MAT_H8_PhoticKelpTall_1457 | `_MainTex` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_branching.mat:72` | MAT_family_coral_branching | `_MainTex` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat:56` | MAT_family_coral_brittle | `_MainTex` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_low.mat:59` | MAT_family_coral_low | `_MainTex` | Primary/base texture property is empty in material source. |
-| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_massive.mat:72` | MAT_family_coral_massive | `_MainTex` | Primary/base texture property is empty in material source. |
-| INFO | TRUNCATED | Full CSV |  |  | 2928 additional rows omitted from Markdown table. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Construction/MAT_family_ruin_cluster_medium_Placeholder.mat:42` | MAT_family_ruin_cluster_medium_Placeholder | `_BaseMap` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Construction/MAT_family_ruin_cluster_medium_Placeholder.mat:66` | MAT_family_ruin_cluster_medium_Placeholder | `_MainTex` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Flora/MAT_family_coral_branching_Placeholder.mat:42` | MAT_family_coral_branching_Placeholder | `_BaseMap` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Flora/MAT_family_coral_branching_Placeholder.mat:66` | MAT_family_coral_branching_Placeholder | `_MainTex` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Flora/MAT_family_coral_low_Placeholder.mat:29` | MAT_family_coral_low_Placeholder | `_BaseMap` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Flora/MAT_family_coral_low_Placeholder.mat:53` | MAT_family_coral_low_Placeholder | `_MainTex` | Primary/base texture property is empty in material source. |
+| CRITICAL | EMPTY_BASE_TEXTURE_SLOT | `Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders/Flora/MAT_family_coral_massive_Placeholder.mat:29` | MAT_family_coral_massive_Placeholder | `_BaseMap` | Primary/base texture property is empty in material source. |
+| INFO | TRUNCATED | Full CSV |  |  | 2699 additional rows omitted from Markdown table. |
 
 ## Severity Rules
 

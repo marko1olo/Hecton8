@@ -33,19 +33,19 @@ namespace Hecton8.Tools
         public const uint FaultLutIndexClamped = 1u << 3;
         public const ulong ThermalReactorBit = 1UL << 10;
         public const ulong VisualFlagMask = 0xFFFF000000000000UL;
-        public const BufferID UpgradeMasksBuffer = (BufferID)71380;
-        public const BufferID UpgradeBaseStatsBuffer = (BufferID)71381;
-        public const BufferID UpgradeCompiledStatsBuffer = (BufferID)71382;
-        public const BufferID UpgradeLutBuffer = (BufferID)71383;
-        public const BufferID UpgradeRulesBuffer = (BufferID)71384;
-        public const BufferID UpgradeTelemetryRingBuffer = (BufferID)71385;
-        public const BufferID UpgradeTelemetryCursorBuffer = (BufferID)71386;
-        public const BufferID UpgradeInventorySlotsBuffer = (BufferID)71387;
-        public const BufferID UpgradeItemMapBuffer = (BufferID)71388;
-        public const BufferID UpgradeVisualStateBuffer = (BufferID)71389;
+        public const BufferID UpgradeMasksBuffer = BufferID.UpgradeMatrixCompiler_UpgradeMasksBuffer;
+        public const BufferID UpgradeBaseStatsBuffer = BufferID.UpgradeMatrixCompiler_UpgradeBaseStatsBuffer;
+        public const BufferID UpgradeCompiledStatsBuffer = BufferID.UpgradeMatrixCompiler_UpgradeCompiledStatsBuffer;
+        public const BufferID UpgradeLutBuffer = BufferID.UpgradeMatrixCompiler_UpgradeLutBuffer;
+        public const BufferID UpgradeRulesBuffer = BufferID.UpgradeMatrixCompiler_UpgradeRulesBuffer;
+        public const BufferID UpgradeTelemetryRingBuffer = BufferID.UpgradeMatrixCompiler_UpgradeTelemetryRingBuffer;
+        public const BufferID UpgradeTelemetryCursorBuffer = BufferID.UpgradeMatrixCompiler_UpgradeTelemetryCursorBuffer;
+        public const BufferID UpgradeInventorySlotsBuffer = BufferID.UpgradeMatrixCompiler_UpgradeInventorySlotsBuffer;
+        public const BufferID UpgradeItemMapBuffer = BufferID.UpgradeMatrixCompiler_UpgradeItemMapBuffer;
+        public const BufferID UpgradeVisualStateBuffer = BufferID.UpgradeMatrixCompiler_UpgradeVisualStateBuffer;
         public const BufferID UpgradeVisualFlagsBuffer = UpgradeVisualStateBuffer;
-        public const BufferID UpgradeToolModuleRulesBuffer = (BufferID)71410;
-        public const BufferID UpgradeToolProfilesBuffer = (BufferID)71412;
+        public const BufferID UpgradeToolModuleRulesBuffer = BufferID.UpgradeMatrixCompiler_UpgradeToolModuleRulesBuffer;
+        public const BufferID UpgradeToolProfilesBuffer = BufferID.UpgradeMatrixCompiler_UpgradeToolProfilesBuffer;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_231.bin";
     }
 

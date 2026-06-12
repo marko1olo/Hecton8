@@ -230,15 +230,15 @@ namespace Hecton8.UI
         private const int DataMonolithSeedMinRecordsPerFrame = 16;
         private const int DataMonolithSeedMaxRecordsPerFrame = 96;
         private const int PdaLogEventReplayMaxPerFrame = 16;
-        private const BufferID UnlockMaskBufferId = (BufferID)70560;
-        private const BufferID RuntimeStateBufferId = (BufferID)70561;
-        private const BufferID MetadataBufferId = (BufferID)70562;
-        private const BufferID TelemetryBufferId = (BufferID)70563;
-        private const BufferID TelemetryCursorBufferId = (BufferID)70564;
-        private const BufferID MockUtf8BufferId = (BufferID)70565;
-        private const BufferID MockIndexBufferId = (BufferID)70566;
-        private const BufferID TypewriterStateBufferId = (BufferID)70569;
-        internal const BufferID H8lrMirrorBufferId = (BufferID)70570;
+        private const BufferID UnlockMaskBufferId = BufferID.PDAEncyclopediaStreamer_UnlockMaskBufferId;
+        private const BufferID RuntimeStateBufferId = BufferID.PDAEncyclopediaStreamer_RuntimeStateBufferId;
+        private const BufferID MetadataBufferId = BufferID.PDAEncyclopediaStreamer_MetadataBufferId;
+        private const BufferID TelemetryBufferId = BufferID.PDAEncyclopediaStreamer_TelemetryBufferId;
+        private const BufferID TelemetryCursorBufferId = BufferID.PDAEncyclopediaStreamer_TelemetryCursorBufferId;
+        private const BufferID MockUtf8BufferId = BufferID.PDAEncyclopediaStreamer_MockUtf8BufferId;
+        private const BufferID MockIndexBufferId = BufferID.PDAEncyclopediaStreamer_MockIndexBufferId;
+        private const BufferID TypewriterStateBufferId = BufferID.PDAEncyclopediaStreamer_TypewriterStateBufferId;
+        internal const BufferID H8lrMirrorBufferId = BufferID.PDAEncyclopediaStreamer_H8lrMirrorBufferId;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
 
         private static readonly uint TokenDepthHash = ComputeStaticAsciiHash("DEPTH".AsSpan());

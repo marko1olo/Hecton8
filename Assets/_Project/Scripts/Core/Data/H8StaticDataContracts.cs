@@ -390,10 +390,10 @@ namespace Hecton8.Core.Data
     /// </summary>
     public static unsafe class H8CacheBTree
     {
-        public const BufferID BTreeTelemetryRingBufferId = (BufferID)72070;
-        public const BufferID BTreeTelemetryCursorBufferId = (BufferID)72071;
-        public const BufferID BTreeTelemetryAccumulatorBufferId = (BufferID)72072;
-        public const BufferID BTreeTuningProfilesBufferId = (BufferID)72073;
+        public const BufferID BTreeTelemetryRingBufferId = BufferID.H8StaticDataContracts_BTreeTelemetryRingBufferId;
+        public const BufferID BTreeTelemetryCursorBufferId = BufferID.H8StaticDataContracts_BTreeTelemetryCursorBufferId;
+        public const BufferID BTreeTelemetryAccumulatorBufferId = BufferID.H8StaticDataContracts_BTreeTelemetryAccumulatorBufferId;
+        public const BufferID BTreeTuningProfilesBufferId = BufferID.H8StaticDataContracts_BTreeTuningProfilesBufferId;
         public const int BTreeTuningProfileCapacity = 16;
         public const uint BTreeTelemetrySlowBatchFlag = 1u << 0;
         public const uint BTreeTelemetryMalformedFlag = 1u << 1;

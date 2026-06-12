@@ -14,7 +14,7 @@ namespace Hecton8.Visor
     /// Applies critical-state pulse feedback through shader globals and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressVFX : MonoBehaviour, ILateFrameTickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerStressVFX : MonoBehaviour, ILateFrameTickable, ISlowTickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Audio ──────────────────")]
         [Tooltip("Helmet heartbeat cue played while the player approaches death.")]
@@ -114,6 +114,10 @@ namespace Hecton8.Visor
         private float _pendingHeartbeatStress01;
         private bool _stressGlobalsDirty;
         private bool _heartbeatDirty;
+        private float _cachedRawStress;
+        private float _cachedRawFog;
+        private float _cachedRawFrost;
+        private bool _registeredSlowTick;
 
         private const float ShaderUniformEpsilon = 0.0005f;
 
@@ -206,10 +210,10 @@ namespace Hecton8.Visor
             if (_traumaPulse01 > 0f)
                 _traumaPulse01 = math.max(0f, _traumaPulse01 - deltaTime * math.max(0.1f, traumaChromaticPulseDecayPerSecond));
 
-            float stress01 = math.max(SanitizeUnit(ResolveStress01()), _traumaPulse01);
+            float stress01 = math.max(_cachedRawStress, _traumaPulse01);
             float audioStress01 = _hasInteractionSignal ? math.max(stress01, _interactionStress01) : stress01;
-            float fog01 = ResolveFogging01();
-            float frost01 = ResolveFrost01();
+            float fog01 = _cachedRawFog;
+            float frost01 = _cachedRawFrost;
 
             if (audioStress01 <= 0.001f && fog01 <= 0.001f && frost01 <= 0.001f)
             {
@@ -293,11 +297,15 @@ namespace Hecton8.Visor
         void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
         {
             _traumaPulse01 = math.max(SanitizeUnit(_traumaPulse01), SanitizeUnit(signal.GlitchIntensity));
+            if (_traumaPulse01 > 0.001f)
+                TryRegisterLateFrameTick();
         }
 
         void IPlayerSignalEventListener.OnInteractionSignal(in PlayerInteractionStressSignal signal)
         {
             HandleInteractionSignal(in signal);
+            if (_interactionStress01 > 0.001f)
+                TryRegisterLateFrameTick();
         }
 
         void IPlayerSignalEventListener.OnToolDepletedSignal(in PlayerToolDepletedSignal signal)
@@ -365,21 +373,63 @@ namespace Hecton8.Visor
 
         private void TryRegisterTickHandler()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterTickHandler()
+        {
+            TryUnregisterLateFrameTick();
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
-        private void TryUnregisterTickHandler()
+        private void TryUnregisterLateFrameTick()
         {
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
+        }
 
+        public void SlowTick()
+        {
+            TryResolveDependencies(0f, false);
+            _cachedRawStress = ResolveStress01();
+            _cachedRawFog = ResolveFogging01();
+            _cachedRawFrost = ResolveFrost01();
+
+            bool hasActiveVFX = _cachedRawStress > 0.001f || _cachedRawFog > 0.001f || _cachedRawFrost > 0.001f || _traumaPulse01 > 0.001f || _interactionStress01 > 0.001f;
+
+            if (hasActiveVFX)
+            {
+                TryRegisterLateFrameTick();
+            }
+            else
+            {
+                if (_registeredLateFrame)
+                {
+                    TryUnregisterLateFrameTick();
+                    ResetRuntimeEffects();
+                }
+            }
         }
 
         private void TryRegisterHotSwapListener()

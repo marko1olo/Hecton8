@@ -30,12 +30,12 @@ namespace Hecton8.VFX
         private const int CameraJuiceCsvScratchBytes = 4096;
         private const string CameraJuiceTraumaProfilesFileName = "camera_trauma_profiles.csv";
 #endif
-        private const BufferID CameraJuiceStateBufferId = (BufferID)73373;
-        private const BufferID CameraJuiceImpulseBufferId = (BufferID)73374;
-        private const BufferID CameraJuiceProjectionBufferId = (BufferID)73375;
-        private const BufferID CameraJuiceTuningBufferId = (BufferID)73376;
-        private const BufferID CameraJuiceProfilesBufferId = (BufferID)73377;
-        private const BufferID CameraJuiceMockSignalsBufferId = (BufferID)73378;
+        private const BufferID CameraJuiceStateBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceStateBufferId;
+        private const BufferID CameraJuiceImpulseBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceImpulseBufferId;
+        private const BufferID CameraJuiceProjectionBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceProjectionBufferId;
+        private const BufferID CameraJuiceTuningBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceTuningBufferId;
+        private const BufferID CameraJuiceProfilesBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceProfilesBufferId;
+        private const BufferID CameraJuiceMockSignalsBufferId = BufferID.CameraJuiceSystem_CameraJuiceBurst_CameraJuiceMockSignalsBufferId;
         private const float CameraJuiceProjectionTranslationScale = 0.035f;
         private const float CameraJuiceProjectionRotationScale = 0.00125f;
         private const float CameraJuiceProjectionRollScale = 0.0015f;

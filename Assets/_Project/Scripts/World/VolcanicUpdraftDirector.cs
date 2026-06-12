@@ -182,18 +182,18 @@ namespace Hecton8.World
         private static JobHandle _pendingVentReadHandle;
         private static JobHandle _pendingVentWriteHandle;
 
-        public const BufferID VentsBuffer = (BufferID)70750;
-        public const BufferID SettingsBuffer = (BufferID)70751;
-        public const BufferID TelemetryBuffer = (BufferID)70752;
-        public const BufferID MockSubmarinesBuffer = (BufferID)70753;
-        public const BufferID MockLeviathansBuffer = (BufferID)70754;
-        public const BufferID FloatSignalsBuffer = (BufferID)70755;
-        public const BufferID DynamicWakesBuffer = (BufferID)70756;
-        public const BufferID MockFlowFieldBuffer = (BufferID)70757;
-        public const BufferID CsvScratchBuffer = (BufferID)70758;
-        public const BufferID FrameCountersBuffer = (BufferID)70759;
-        public const BufferID MockDebrisBuffer = (BufferID)70760;
-        public const BufferID PlayerHeatBuffer = (BufferID)70761;
+        public const BufferID VentsBuffer = BufferID.RollbackNetcodeContracts_StateRingBuffer;
+        public const BufferID SettingsBuffer = BufferID.ShinobuHydroKccDebugOutputs;
+        public const BufferID TelemetryBuffer = BufferID.ShinobuHydroKccResolvedHits;
+        public const BufferID MockSubmarinesBuffer = BufferID.RollbackNetcodeContracts_RemoteInputRing;
+        public const BufferID MockLeviathansBuffer = BufferID.RollbackNetcodeContracts_TickCommands;
+        public const BufferID FloatSignalsBuffer = BufferID.RollbackNetcodeContracts_VisualStates;
+        public const BufferID DynamicWakesBuffer = BufferID.RollbackNetcodeContracts_TelemetryRing;
+        public const BufferID MockFlowFieldBuffer = BufferID.RollbackNetcodeContracts_Tuning;
+        public const BufferID CsvScratchBuffer = BufferID.RollbackNetcodeContracts_AudioSuppression;
+        public const BufferID FrameCountersBuffer = BufferID.RollbackNetcodeContracts_CsvScratch;
+        public const BufferID MockDebrisBuffer = BufferID.ShinobuOceanWaveParameters;
+        public const BufferID PlayerHeatBuffer = BufferID.ShinobuOceanAtmosphere;
 
         private const int SubmarineCounterBase = 64;
 

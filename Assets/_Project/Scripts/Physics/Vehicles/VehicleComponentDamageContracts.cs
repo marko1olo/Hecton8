@@ -73,15 +73,15 @@ namespace Hecton8.Physics.Vehicles
         public const uint TuningFlagRuntimeSerialized = 1u << 1;
         public const uint TuningFlagEditorOverride = 1u << 2;
 
-        public const BufferID GridWriteBuffer = (BufferID)71640;
-        public const BufferID GridReadBuffer = (BufferID)71641;
-        public const BufferID SignalBuffer = (BufferID)71642;
-        public const BufferID MockSignalBuffer = (BufferID)71643;
-        public const BufferID StateWriteBuffer = (BufferID)71644;
-        public const BufferID StateReadBuffer = (BufferID)71645;
-        public const BufferID TuningBuffer = (BufferID)71646;
-        public const BufferID TelemetryRingBuffer = (BufferID)71647;
-        public const BufferID TelemetryCursorBuffer = (BufferID)71648;
+        public const BufferID GridWriteBuffer = BufferID.ShinobuSimdVisibleIndices;
+        public const BufferID GridReadBuffer = BufferID.ShinobuSimdVisibleCount;
+        public const BufferID SignalBuffer = BufferID.ShinobuSimdHydrodynamicTuning;
+        public const BufferID MockSignalBuffer = BufferID.ShinobuBuoyancySleepSdfDensity;
+        public const BufferID StateWriteBuffer = BufferID.ShinobuBuoyancySleepSdfConfig;
+        public const BufferID StateReadBuffer = BufferID.ShinobuBuoyancySleepTelemetryRing;
+        public const BufferID TuningBuffer = BufferID.ShinobuBuoyancySleepTelemetryCursor;
+        public const BufferID TelemetryRingBuffer = BufferID.ShinobuBuoyancyMaterialSettlingProfiles;
+        public const BufferID TelemetryCursorBuffer = BufferID.VehicleComponentDamageContracts_TelemetryCursorBuffer;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]

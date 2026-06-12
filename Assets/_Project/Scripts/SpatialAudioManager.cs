@@ -644,7 +644,7 @@ namespace Hecton8.Audio
         private static readonly ulong PreviousVelocityAupMutationGuardMask =
             AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupsBufferId) |
             AudioVaultMutationGuardBit(SpatialAudioPreviousVelocityAupFramesBufferId);
-        private const BufferID SpatialAudioAcousticVoxelSdfTexture3DBufferId = (BufferID)72447;
+        private const BufferID SpatialAudioAcousticVoxelSdfTexture3DBufferId = BufferID.SpatialAudioManager_SpatialAudioAcousticVoxelSdfTexture3DBufferId;
         private static readonly ulong AcousticOcclusionSdfSnapshotMutationGuardMask =
             AudioVaultMutationGuardBit(SpatialAudioAcousticVoxelSdfTexture3DBufferId);
         private const int AcousticSdfDefaultWidth = 64;

@@ -33,19 +33,19 @@ namespace Hecton8.Physics
 
     public static class CablePhysics132BufferIds
     {
-        public const BufferID CableNodes = (BufferID)71320;
-        public const BufferID CableConstraints = (BufferID)71321;
-        public const BufferID SplineVertices = (BufferID)71322;
-        public const BufferID SegmentTensions = (BufferID)71323;
-        public const BufferID PhysicsEvents = (BufferID)71324;
-        public const BufferID TelemetryRing = (BufferID)71325;
-        public const BufferID TelemetryHead = (BufferID)71326;
-        public const BufferID PinnedAups = (BufferID)71327;
-        public const BufferID PinnedMask = (BufferID)71328;
-        public const BufferID Tuning = (BufferID)71329;
-        public const BufferID CableMaterials = (BufferID)71330;
-        public const BufferID BootstrapState = (BufferID)71331;
-        public const BufferID Endpoints = (BufferID)71332;
+        public const BufferID CableNodes = BufferID.CablePhysicsSolver132_CableNodes;
+        public const BufferID CableConstraints = BufferID.CablePhysicsSolver132_CableConstraints;
+        public const BufferID SplineVertices = BufferID.CablePhysicsSolver132_SplineVertices;
+        public const BufferID SegmentTensions = BufferID.CablePhysicsSolver132_SegmentTensions;
+        public const BufferID PhysicsEvents = BufferID.CablePhysicsSolver132_PhysicsEvents;
+        public const BufferID TelemetryRing = BufferID.CablePhysicsSolver132_TelemetryRing;
+        public const BufferID TelemetryHead = BufferID.CablePhysicsSolver132_TelemetryHead;
+        public const BufferID PinnedAups = BufferID.CablePhysicsSolver132_PinnedAups;
+        public const BufferID PinnedMask = BufferID.CablePhysicsSolver132_PinnedMask;
+        public const BufferID Tuning = BufferID.CablePhysicsSolver132_Tuning;
+        public const BufferID CableMaterials = BufferID.CablePhysicsSolver132_CableMaterials;
+        public const BufferID BootstrapState = BufferID.CablePhysicsSolver132_BootstrapState;
+        public const BufferID Endpoints = BufferID.CablePhysicsSolver132_Endpoints;
     }
 
     internal static class CableNodeFlags132

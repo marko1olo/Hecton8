@@ -52,31 +52,31 @@ namespace Hecton8.Construction
     /// </summary>
     public static class SumpPumpDrainageBufferIds
     {
-        public const BufferID PumpNodes = (BufferID)95820;
-        public const BufferID PipeEdges = (BufferID)95821;
-        public const BufferID NodeAup = (BufferID)95822;
-        public const BufferID PumpRoomIndices = (BufferID)95823;
-        public const BufferID CsrOffsets = (BufferID)95824;
-        public const BufferID CsrDestinations = (BufferID)95825;
-        public const BufferID CsrConductance = (BufferID)95826;
-        public const BufferID CsrFlow = (BufferID)95827;
-        public const BufferID CsrFlatEdgeIndex = (BufferID)95828;
-        public const BufferID CsrWriteCursor = (BufferID)95829;
-        public const BufferID PressureFront = (BufferID)95830;
-        public const BufferID PressureBack = (BufferID)95831;
-        public const BufferID PowerPotential = (BufferID)95832;
-        public const BufferID PumpRemainder = (BufferID)95833;
-        public const BufferID Tuning = (BufferID)95834;
-        public const BufferID TelemetryRing = (BufferID)95835;
-        public const BufferID TelemetryCursor = (BufferID)95836;
-        public const BufferID Counters = (BufferID)95837;
-        public const BufferID PipeProfiles = (BufferID)95838;
-        public const BufferID FrameSummary = (BufferID)95840;
-        public const BufferID FlowGpu = (BufferID)95841;
-        public const BufferID PumpMassError = (BufferID)95842;
-        public const BufferID RoomDrainLocks = (BufferID)95843;
-        public const BufferID PumpBaseMaxRate = (BufferID)95844;
-        public const BufferID PumpPowerNodeHashes = (BufferID)95845;
+        public const BufferID PumpNodes = BufferID.SumpPumpPipeGridContracts_PumpNodes;
+        public const BufferID PipeEdges = BufferID.SumpPumpPipeGridContracts_PipeEdges;
+        public const BufferID NodeAup = BufferID.SumpPumpPipeGridContracts_NodeAup;
+        public const BufferID PumpRoomIndices = BufferID.SumpPumpPipeGridContracts_PumpRoomIndices;
+        public const BufferID CsrOffsets = BufferID.SumpPumpPipeGridContracts_CsrOffsets;
+        public const BufferID CsrDestinations = BufferID.SumpPumpPipeGridContracts_CsrDestinations;
+        public const BufferID CsrConductance = BufferID.SumpPumpPipeGridContracts_CsrConductance;
+        public const BufferID CsrFlow = BufferID.SumpPumpPipeGridContracts_CsrFlow;
+        public const BufferID CsrFlatEdgeIndex = BufferID.SumpPumpPipeGridContracts_CsrFlatEdgeIndex;
+        public const BufferID CsrWriteCursor = BufferID.SumpPumpPipeGridContracts_CsrWriteCursor;
+        public const BufferID PressureFront = BufferID.SumpPumpPipeGridContracts_PressureFront;
+        public const BufferID PressureBack = BufferID.SumpPumpPipeGridContracts_PressureBack;
+        public const BufferID PowerPotential = BufferID.SumpPumpPipeGridContracts_PowerPotential;
+        public const BufferID PumpRemainder = BufferID.SumpPumpPipeGridContracts_PumpRemainder;
+        public const BufferID Tuning = BufferID.SumpPumpPipeGridContracts_Tuning;
+        public const BufferID TelemetryRing = BufferID.SumpPumpPipeGridContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.SumpPumpPipeGridContracts_TelemetryCursor;
+        public const BufferID Counters = BufferID.SumpPumpPipeGridContracts_Counters;
+        public const BufferID PipeProfiles = BufferID.SumpPumpPipeGridContracts_PipeProfiles;
+        public const BufferID FrameSummary = BufferID.SumpPumpPipeGridContracts_FrameSummary;
+        public const BufferID FlowGpu = BufferID.SumpPumpPipeGridContracts_FlowGpu;
+        public const BufferID PumpMassError = BufferID.SumpPumpPipeGridContracts_PumpMassError;
+        public const BufferID RoomDrainLocks = BufferID.SumpPumpPipeGridContracts_RoomDrainLocks;
+        public const BufferID PumpBaseMaxRate = BufferID.SumpPumpPipeGridContracts_PumpBaseMaxRate;
+        public const BufferID PumpPowerNodeHashes = BufferID.SumpPumpPipeGridContracts_PumpPowerNodeHashes;
     }
 
     /// <summary>

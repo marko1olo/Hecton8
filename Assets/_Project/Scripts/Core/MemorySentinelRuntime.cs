@@ -43,15 +43,15 @@ namespace Hecton8.Core
         private const string CsvRootPath = "validation_rules.csv";
         private const string CsvDocsPath = "Docs/Tasks/validation_rules.csv";
         private const SystemID OwnerSystemId = SystemID.CoreDeterminism;
-        private const BufferID ValidationStatesBuffer = (BufferID)70873;
-        private const BufferID TargetsBuffer = (BufferID)70874;
-        private const BufferID ResultsBuffer = (BufferID)70875;
-        private const BufferID RollbackBytesBuffer = (BufferID)70876;
-        private const BufferID MockInventoryBuffer = (BufferID)70877;
-        private const BufferID TelemetryBuffer = (BufferID)70878;
-        private const BufferID RuntimeStateBuffer = (BufferID)70879;
-        private const BufferID AupSnapshotBuffer = (BufferID)70880;
-        private const BufferID ModQuarantineBuffer = (BufferID)70882;
+        private const BufferID ValidationStatesBuffer = BufferID.MemorySentinelRuntime_ValidationStatesBuffer;
+        private const BufferID TargetsBuffer = BufferID.MemorySentinelRuntime_TargetsBuffer;
+        private const BufferID ResultsBuffer = BufferID.MemorySentinelRuntime_ResultsBuffer;
+        private const BufferID RollbackBytesBuffer = BufferID.MemorySentinelRuntime_RollbackBytesBuffer;
+        private const BufferID MockInventoryBuffer = BufferID.MemorySentinelRuntime_MockInventoryBuffer;
+        private const BufferID TelemetryBuffer = BufferID.MemorySentinelRuntime_TelemetryBuffer;
+        private const BufferID RuntimeStateBuffer = BufferID.MemorySentinelRuntime_RuntimeStateBuffer;
+        private const BufferID AupSnapshotBuffer = BufferID.MemorySentinelRuntime_AupSnapshotBuffer;
+        private const BufferID ModQuarantineBuffer = BufferID.MemorySentinelRuntime_ModQuarantineBuffer;
 
         private const uint TelemetryFlagJobBusy = 1u << 0;
         private const uint TelemetryFlagRollback = 1u << 1;

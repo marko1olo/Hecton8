@@ -50,7 +50,7 @@ namespace Hecton8.AI
         private const float BiteHullDentMaximumDepthMeters = 0.28f;
         private const uint LeviathanRigMagicH8lr = 0x524C3848u; // H8LR
         private const uint LeviathanRigMagicLvrg = 0x4752564Cu; // LVRG
-        private const BufferID TerrainSdfSnapshotBuffer = (BufferID)71337;
+        private const BufferID TerrainSdfSnapshotBuffer = BufferID.FaunaKinematicsRuntime_TerrainSdfSnapshotBuffer;
         private static readonly ulong TerrainSdfSnapshotMutationGuardMask =
             FaunaVaultMutationGuardBit(TerrainSdfSnapshotBuffer);
         private const int LeviathanRigHeaderBytes = 16;

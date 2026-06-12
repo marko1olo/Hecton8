@@ -68,26 +68,26 @@ namespace Hecton8.Power
 
     public static class PowerJacobiStressFuzzerBufferIds
     {
-        public const BufferID Nodes = (BufferID)35610;
-        public const BufferID NodeAup = (BufferID)35611;
-        public const BufferID CsrOffsets = (BufferID)35612;
-        public const BufferID CsrDestinations = (BufferID)35613;
-        public const BufferID CsrConductance = (BufferID)35614;
-        public const BufferID CsrFlow = (BufferID)35615;
-        public const BufferID PotentialFront = (BufferID)35616;
-        public const BufferID PotentialBack = (BufferID)35617;
-        public const BufferID DemandRate = (BufferID)35618;
-        public const BufferID BatteryRemainder = (BufferID)35619;
-        public const BufferID Result = (BufferID)35620;
-        public const BufferID StressTelemetry = (BufferID)35621;
-        public const BufferID GraphCounts = (BufferID)35622;
-        public const BufferID CsvScratch = (BufferID)35623;
-        public const BufferID VoltageHistory = (BufferID)35624;
-        public const BufferID RollbackFront = (BufferID)35625;
-        public const BufferID RollbackBack = (BufferID)35626;
-        public const BufferID FuzzState = (BufferID)35627;
-        public const BufferID FuzzTelemetry = (BufferID)35628;
-        public const BufferID TopologyProfile = (BufferID)35629;
+        public const BufferID Nodes = BufferID.PowerGridJacobiStressFuzzer_Nodes;
+        public const BufferID NodeAup = BufferID.PowerGridJacobiStressFuzzer_NodeAup;
+        public const BufferID CsrOffsets = BufferID.PowerGridJacobiStressFuzzer_CsrOffsets;
+        public const BufferID CsrDestinations = BufferID.PowerGridJacobiStressFuzzer_CsrDestinations;
+        public const BufferID CsrConductance = BufferID.PowerGridJacobiStressFuzzer_CsrConductance;
+        public const BufferID CsrFlow = BufferID.PowerGridJacobiStressFuzzer_CsrFlow;
+        public const BufferID PotentialFront = BufferID.PowerGridJacobiStressFuzzer_PotentialFront;
+        public const BufferID PotentialBack = BufferID.PowerGridJacobiStressFuzzer_PotentialBack;
+        public const BufferID DemandRate = BufferID.PowerGridJacobiStressFuzzer_DemandRate;
+        public const BufferID BatteryRemainder = BufferID.PowerGridJacobiStressFuzzer_BatteryRemainder;
+        public const BufferID Result = BufferID.PowerGridJacobiStressFuzzer_Result;
+        public const BufferID StressTelemetry = BufferID.PowerGridJacobiStressFuzzer_StressTelemetry;
+        public const BufferID GraphCounts = BufferID.PowerGridJacobiStressFuzzer_GraphCounts;
+        public const BufferID CsvScratch = BufferID.PowerGridJacobiStressFuzzer_CsvScratch;
+        public const BufferID VoltageHistory = BufferID.PowerGridJacobiStressFuzzer_VoltageHistory;
+        public const BufferID RollbackFront = BufferID.PowerGridJacobiStressFuzzer_RollbackFront;
+        public const BufferID RollbackBack = BufferID.PowerGridJacobiStressFuzzer_RollbackBack;
+        public const BufferID FuzzState = BufferID.PowerGridJacobiStressFuzzer_FuzzState;
+        public const BufferID FuzzTelemetry = BufferID.PowerGridJacobiStressFuzzer_FuzzTelemetry;
+        public const BufferID TopologyProfile = BufferID.PowerGridJacobiStressFuzzer_TopologyProfile;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

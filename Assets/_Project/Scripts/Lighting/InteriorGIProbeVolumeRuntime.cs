@@ -251,18 +251,18 @@ namespace Hecton8.Lighting
         }
 
         private const SystemID MemoryOwner = SystemID.GraphicsScalability;
-        private const BufferID ProbeFrontBuffer = (BufferID)0x630800;
-        private const BufferID ProbeBackBuffer = (BufferID)0x630801;
-        private const BufferID ProbeSourcesBuffer = (BufferID)0x630802;
-        private const BufferID ProbeOcclusionBuffer = (BufferID)0x630803;
-        private const BufferID ProbeTuningBuffer = (BufferID)0x630804;
-        private const BufferID ProbeTelemetryRingBuffer = (BufferID)0x630805;
-        private const BufferID ProbeTelemetryScratchBuffer = (BufferID)0x630806;
-        private const BufferID ProbeMockPowerBuffer = (BufferID)0x630808;
-        private const BufferID ProbeFaultBuffer = (BufferID)0x630809;
-        private const BufferID ProbeCsvBytesBuffer = (BufferID)0x63080A;
-        private const BufferID ProbeAmbientProfileBuffer = (BufferID)0x63080B;
-        private const BufferID ProbeAmbientProfileCountBuffer = (BufferID)0x63080C;
+        private const BufferID ProbeFrontBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeFrontBuffer;
+        private const BufferID ProbeBackBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeBackBuffer;
+        private const BufferID ProbeSourcesBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeSourcesBuffer;
+        private const BufferID ProbeOcclusionBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeOcclusionBuffer;
+        private const BufferID ProbeTuningBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeTuningBuffer;
+        private const BufferID ProbeTelemetryRingBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeTelemetryRingBuffer;
+        private const BufferID ProbeTelemetryScratchBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeTelemetryScratchBuffer;
+        private const BufferID ProbeMockPowerBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeMockPowerBuffer;
+        private const BufferID ProbeFaultBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeFaultBuffer;
+        private const BufferID ProbeCsvBytesBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeCsvBytesBuffer;
+        private const BufferID ProbeAmbientProfileBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeAmbientProfileBuffer;
+        private const BufferID ProbeAmbientProfileCountBuffer = BufferID.InteriorGIProbeVolumeRuntime_ProbeAmbientProfileCountBuffer;
 
         private static readonly int InteriorGIProbeBufferId = Shader.PropertyToID("_H8CustomLightProbeGrid");
         private static readonly int InteriorGIParamsId = Shader.PropertyToID("_H8InteriorGIProbeParams");

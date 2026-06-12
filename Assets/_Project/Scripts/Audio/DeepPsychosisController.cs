@@ -1,4 +1,4 @@
-﻿using Hecton8.Core;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -189,6 +189,15 @@ namespace Hecton8.Audio
             float depthStress01 = deepPressure01 * oxygenDanger01;
             _psychosisIntensity01 = math.saturate(math.max(depthStress01, pollutionPressure01 * 0.65f));
 
+            if (_psychosisIntensity01 > 0.001f)
+            {
+                TryRegisterUpdateHandlers();
+            }
+            else
+            {
+                TryUnregisterUpdateHandlers();
+            }
+
             _debugDepthMeters = depthMeters;
             _debugOxygenNormalized = oxygenNormalized;
             _debugPollution01 = pollutionPressure01;
@@ -245,14 +254,31 @@ namespace Hecton8.Audio
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-            {
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            }
-
             if (!_registeredSlowTick)
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+            }
+        }
+
+        private void TryUnregisterTickHandlers()
+        {
+            TryUnregisterUpdateHandlers();
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = false;
+            }
+        }
+
+        private void TryRegisterUpdateHandlers()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!_registeredTick)
+            {
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             }
 
             if (!_registeredLateFrame)
@@ -261,18 +287,12 @@ namespace Hecton8.Audio
             }
         }
 
-        private void TryUnregisterTickHandlers()
+        private void TryUnregisterUpdateHandlers()
         {
             if (_registeredTick)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = false;
-            }
-
-            if (_registeredSlowTick)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-                _registeredSlowTick = false;
             }
 
             if (_registeredLateFrame)

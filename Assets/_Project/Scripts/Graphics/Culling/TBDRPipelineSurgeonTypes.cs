@@ -363,21 +363,21 @@ namespace Hecton8.Graphics.Culling
 
     public static class TBDRBufferIds
     {
-        public const BufferID VertexBudgetCounters = (BufferID)70820;
-        public const BufferID TileWarnings = (BufferID)70821;
-        public const BufferID TransparentQuadCounters = (BufferID)70822;
-        public const BufferID TelemetryRing = (BufferID)70823;
-        public const BufferID MockVisibleInstances = (BufferID)70824;
-        public const BufferID SortScratch = (BufferID)70825;
-        public const BufferID MeshVertexCounts = (BufferID)70826;
-        public const BufferID RadixHistogram = (BufferID)70827;
-        public const BufferID VisibleCountOut = (BufferID)70828;
-        public const BufferID MockQualitySignal = (BufferID)70829;
-        public const BufferID MockCamera = (BufferID)70830;
-        public const BufferID SourceFrustumPlanes = (BufferID)70831;
-        public const BufferID SqueezedFrustumPlanes = (BufferID)70832;
-        public const BufferID HzbVisibilityMask = (BufferID)70833;
-        public const BufferID IndirectDrawArgs = (BufferID)70834;
+        public const BufferID VertexBudgetCounters = BufferID.TBDRPipelineSurgeonTypes_VertexBudgetCounters;
+        public const BufferID TileWarnings = BufferID.TBDRPipelineSurgeonTypes_TileWarnings;
+        public const BufferID TransparentQuadCounters = BufferID.TBDRPipelineSurgeonTypes_TransparentQuadCounters;
+        public const BufferID TelemetryRing = BufferID.TBDRPipelineSurgeonTypes_TelemetryRing;
+        public const BufferID MockVisibleInstances = BufferID.TBDRPipelineSurgeonTypes_MockVisibleInstances;
+        public const BufferID SortScratch = BufferID.TBDRPipelineSurgeonTypes_SortScratch;
+        public const BufferID MeshVertexCounts = BufferID.TBDRPipelineSurgeonTypes_MeshVertexCounts;
+        public const BufferID RadixHistogram = BufferID.TBDRPipelineSurgeonTypes_RadixHistogram;
+        public const BufferID VisibleCountOut = BufferID.TBDRPipelineSurgeonTypes_VisibleCountOut;
+        public const BufferID MockQualitySignal = BufferID.TBDRPipelineSurgeonTypes_MockQualitySignal;
+        public const BufferID MockCamera = BufferID.TBDRPipelineSurgeonTypes_MockCamera;
+        public const BufferID SourceFrustumPlanes = BufferID.TBDRPipelineSurgeonTypes_SourceFrustumPlanes;
+        public const BufferID SqueezedFrustumPlanes = BufferID.TBDRPipelineSurgeonTypes_SqueezedFrustumPlanes;
+        public const BufferID HzbVisibilityMask = BufferID.TBDRPipelineSurgeonTypes_HzbVisibilityMask;
+        public const BufferID IndirectDrawArgs = BufferID.TBDRPipelineSurgeonTypes_IndirectDrawArgs;
     }
 
     internal static class TBDRByteFlags
@@ -1372,7 +1372,7 @@ namespace Hecton8.Graphics.Culling
                 UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(dataVault != null);
                 if (UsesGlobalDataVaultFlag != 0)
                 {
-                    bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref SliceTableHandle, (BufferID)70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable);
+                    bool acquired = OpenOrAcquireVaultBuffer(dataVault, ref SliceTableHandle, BufferID.TBDRPipelineSurgeonTypes_MigratedID_70835, SliceCapacity, NativeArrayOptions.UninitializedMemory, out SliceTable);
                     UsesGlobalDataVaultFlag = TBDRByteFlags.FromBool(acquired);
                     if (!acquired)
                     {

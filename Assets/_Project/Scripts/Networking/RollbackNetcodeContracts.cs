@@ -89,25 +89,25 @@ namespace Hecton8.Networking
     public static class RollbackNetcodeVault
     {
         public const SystemID OwnerSystem = SystemID.CoreDeterminism;
-        public const BufferID StateRingBuffer = (BufferID)70750;
-        public const BufferID FrameSnapshots = (BufferID)70751;
-        public const BufferID RuntimeState = (BufferID)70752;
-        public const BufferID RemoteInputRing = (BufferID)70753;
-        public const BufferID TickCommands = (BufferID)70754;
-        public const BufferID VisualStates = (BufferID)70755;
-        public const BufferID TelemetryRing = (BufferID)70756;
-        public const BufferID Tuning = (BufferID)70757;
-        public const BufferID AudioSuppression = (BufferID)70758;
-        public const BufferID CsvScratch = (BufferID)70759;
-        public const BufferID LatencyProfile = (BufferID)70769;
-        public const BufferID MerkleNodes = (BufferID)70770;
-        public const BufferID MerkleLeafDescriptors = (BufferID)70771;
-        public const BufferID LeafDeltaRecords = (BufferID)70772;
-        public const BufferID InputJournalRing = (BufferID)70773;
-        public const BufferID MockJitterPackets = (BufferID)70774;
-        public const BufferID MockJitterState = (BufferID)70775;
-        public const BufferID VisualHistory = (BufferID)70776;
-        public const BufferID RemoteMerkleNodes = (BufferID)70777;
+        public const BufferID StateRingBuffer = BufferID.RollbackNetcodeContracts_StateRingBuffer;
+        public const BufferID FrameSnapshots = BufferID.ShinobuHydroKccDebugOutputs;
+        public const BufferID RuntimeState = BufferID.ShinobuHydroKccResolvedHits;
+        public const BufferID RemoteInputRing = BufferID.RollbackNetcodeContracts_RemoteInputRing;
+        public const BufferID TickCommands = BufferID.RollbackNetcodeContracts_TickCommands;
+        public const BufferID VisualStates = BufferID.RollbackNetcodeContracts_VisualStates;
+        public const BufferID TelemetryRing = BufferID.RollbackNetcodeContracts_TelemetryRing;
+        public const BufferID Tuning = BufferID.RollbackNetcodeContracts_Tuning;
+        public const BufferID AudioSuppression = BufferID.RollbackNetcodeContracts_AudioSuppression;
+        public const BufferID CsvScratch = BufferID.RollbackNetcodeContracts_CsvScratch;
+        public const BufferID LatencyProfile = BufferID.ShinobuOceanWaveReadbackQueries;
+        public const BufferID MerkleNodes = BufferID.ShinobuOceanWaveReadbackResults;
+        public const BufferID MerkleLeafDescriptors = BufferID.ShinobuOceanWaveReadbackCompletedQueries;
+        public const BufferID LeafDeltaRecords = BufferID.ShinobuOceanWaveReadbackRingQueries;
+        public const BufferID InputJournalRing = BufferID.ShinobuOceanBeaufortProfiles;
+        public const BufferID MockJitterPackets = BufferID.ShinobuOceanSurfaceSwell;
+        public const BufferID MockJitterState = BufferID.ShinobuCausticsParameters;
+        public const BufferID VisualHistory = BufferID.ShinobuCausticsTuning;
+        public const BufferID RemoteMerkleNodes = BufferID.ShinobuCausticsTelemetryRing;
         public const BufferID InputPredictionTelemetry = BufferID.ShinobuInputPredictionTelemetry;
     }
 

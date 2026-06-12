@@ -23,25 +23,25 @@ namespace Hecton8.Lighting
     /// </summary>
     public static class DynamicPointLightCullingVaultIds
     {
-        public const BufferID Sources = (BufferID)71440;
-        public const BufferID States = (BufferID)71441;
-        public const BufferID Settings = (BufferID)71442;
-        public const BufferID GpuPayloadFront = (BufferID)71443;
-        public const BufferID GpuPayloadBack = (BufferID)71444;
-        public const BufferID TelemetryRing = (BufferID)71445;
-        public const BufferID TelemetryCursor = (BufferID)71446;
-        public const BufferID ImportanceKeys = (BufferID)71447;
-        public const BufferID ImportanceIndices = (BufferID)71448;
-        public const BufferID SortScratchKeys = (BufferID)71449;
-        public const BufferID SortScratchIndices = (BufferID)71450;
-        public const BufferID CsvScratch = (BufferID)71451;
-        public const BufferID ProfileRules = (BufferID)71452;
-        public const BufferID MockSdfSamples = (BufferID)71453;
-        public const BufferID DynamicProbeLights = (BufferID)71454;
-        public const BufferID RuntimeCounters = (BufferID)71455;
-        public const BufferID FrustumPlanes = (BufferID)71456;
-        public const BufferID SelfAudit = (BufferID)71457;
-        public const BufferID SourceManifest = (BufferID)71458;
+        public const BufferID Sources = BufferID.DynamicPointLightCullingContracts_Sources;
+        public const BufferID States = BufferID.DynamicPointLightCullingContracts_States;
+        public const BufferID Settings = BufferID.DynamicPointLightCullingContracts_Settings;
+        public const BufferID GpuPayloadFront = BufferID.DynamicPointLightCullingContracts_GpuPayloadFront;
+        public const BufferID GpuPayloadBack = BufferID.DynamicPointLightCullingContracts_GpuPayloadBack;
+        public const BufferID TelemetryRing = BufferID.DynamicPointLightCullingContracts_TelemetryRing;
+        public const BufferID TelemetryCursor = BufferID.DynamicPointLightCullingContracts_TelemetryCursor;
+        public const BufferID ImportanceKeys = BufferID.DynamicPointLightCullingContracts_ImportanceKeys;
+        public const BufferID ImportanceIndices = BufferID.DynamicPointLightCullingContracts_ImportanceIndices;
+        public const BufferID SortScratchKeys = BufferID.DynamicPointLightCullingContracts_SortScratchKeys;
+        public const BufferID SortScratchIndices = BufferID.DynamicPointLightCullingContracts_SortScratchIndices;
+        public const BufferID CsvScratch = BufferID.DynamicPointLightCullingContracts_CsvScratch;
+        public const BufferID ProfileRules = BufferID.DynamicPointLightCullingContracts_ProfileRules;
+        public const BufferID MockSdfSamples = BufferID.DynamicPointLightCullingContracts_MockSdfSamples;
+        public const BufferID DynamicProbeLights = BufferID.DynamicPointLightCullingContracts_DynamicProbeLights;
+        public const BufferID RuntimeCounters = BufferID.DynamicPointLightCullingContracts_RuntimeCounters;
+        public const BufferID FrustumPlanes = BufferID.DynamicPointLightCullingContracts_FrustumPlanes;
+        public const BufferID SelfAudit = BufferID.DynamicPointLightCullingContracts_SelfAudit;
+        public const BufferID SourceManifest = BufferID.DynamicPointLightCullingContracts_SourceManifest;
     }
 
     /// <summary>
