@@ -68,13 +68,3 @@ It is a salvage label for events where the normal food web changes shape around 
 Deep Reach hid some Alpha-tagged records because they were embarrassing, not because they proved a sea god. Several incidents show the same pattern: extraction noise, concentrated prey, structural vibration, then a large animal or animal group moving through the area on a route humans had made profitable. Sometimes the label may refer to a single apex body. Sometimes to a feeding convergence. Sometimes to a machine reading biological silence as a safe interval and sending workers into the worst possible moment.
 
 For the player, Alpha means one thing: the dive route has changed before the map admits it. Leave the prize, go quiet, stop making regular noise, and do not assume the tether is still a promise.
-
-## 7. What The Player Learns
-
-The player learns to read life as information.
-
-Biology marks depth, temperature, current, chemistry, age, food, danger and ownership. A scrape in a mat can be a route sign. A missing swarm can be louder than a roar. A kelp wall can be cover, wire, trap, seal, food source or witness. A predator may be avoided by understanding what it expected the last diver to do.
-
-Good play does not treat fauna as random damage and flora as decoration. It treats the ocean as a living index of what changed. What fed here? What fled? What grew over evidence? What stayed clean? What uses the player's light, blood, sound or trash better than the player does?
-
-On HECTON-8, survival begins when the player stops asking whether the water is safe and starts asking what the water has already decided.

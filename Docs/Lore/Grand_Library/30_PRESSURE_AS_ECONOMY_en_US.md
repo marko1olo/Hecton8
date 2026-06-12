@@ -56,13 +56,3 @@ One contractor trades a scrubber slot for a route rumor. Another buys a quiet in
 The best Marauders are not the loudest. They are the ones who understand which favor changes a system and which favor only changes a mood. They know when to spend credit, when to spend proof, when to spend silence and when to make a delay expensive for someone above them.
 
 That is the closest thing HECTON-8 gives to mercy. Not freedom. Not fairness. A small gap between procedure and cost, wide enough for a prepared person to move through.
-
-## 6. What The Player Learns
-
-Pressure turns the player's equipment into character.
-
-The suit is not only armor. It is a debt shape, a legal object, a clock, a house and a confession of what the player chose to risk. The habitat is not only a safe room. It is a temporary argument against the ocean. Black Keel is not only a menu, a voice or a vendor. It is the place where every breath, repair, sample and delay becomes legible enough to be used against somebody.
-
-The player learns to stop asking what an object is worth in the abstract. They learn to ask what it can change under pressure. Can it buy air? Can it certify a route? Can it make a claim unstable? Can it force a rescue to become cheaper than denial?
-
-In HECTON-8, wealth is not the pile of things you drag from the dark. Wealth is the number of systems that must answer when you surface.

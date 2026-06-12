@@ -58,11 +58,3 @@ The bay records where it starts, how long it lasts, what motion worsens it, what
 Pain-inhibitor stims are not magic courage. They narrow the body. They push the hands steady, mute the warning bells, flatten fear and steal the hour after the hour they buy. Used well, a stim gets a trapped worker back through a hatch. Used badly, it lets someone keep cutting after the hand has stopped reporting damage. Used under debt, it becomes a way to borrow tomorrow's body for today's quota.
 
 Most Marauders do not become addicted because they are weak. They become dependent because the system prices rest higher than chemistry.
-
-## 6. What The Player Learns
-
-The player learns that injury is part of the world model.
-
-A wound can reveal a route, contaminate a sample, attract life, alter suit handling, change a debt line, unlock a medical record, destroy a claim or preserve one. A synthetic replacement can expand capability and add maintenance vulnerability. A pain choice can save oxygen now and cost control later. A medical scan can be care, evidence collection, quarantine sorting or labor certification depending on who reads it.
-
-Good play means treating the body as another pressure system. Seal it, clean it, listen to it, distrust it when the chemistry says to, and remember that every repair aboard Black Keel has two outcomes: the person who survives and the account that survives them.
