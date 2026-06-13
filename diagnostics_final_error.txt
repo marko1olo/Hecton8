@@ -1,0 +1,3 @@
+System.NullReferenceException: Object reference not set to an instance of an object
+  at UnityEngine.Object.FindAnyObjectByType (System.Type type) [0x00008] in <82d1d45c517f4141b90705b5d74c5160>:0 
+  at DiagnosticDumper.RunDump () [0x00026] in C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiagnosticDumper.cs:13 

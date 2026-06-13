@@ -1,0 +1,184 @@
+{
+  "criticalCount": 22,
+  "filesScanned": 1854,
+  "findings": [
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 634,
+      "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 316,
+      "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 379,
+      "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 402,
+      "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 108,
+      "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 287,
+      "path": "Assets/_Project/Scripts/Gameplay/OxygenBubble.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 1134,
+      "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 141,
+      "path": "Assets/_Project/Scripts/Gameplay/SargassumPhysicsZone.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 149,
+      "path": "Assets/_Project/Scripts/Gameplay/SargassumPhysicsZone.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 605,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 613,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 622,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 632,
+      "path": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 639,
+      "path": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 1227,
+      "path": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 189,
+      "path": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 511,
+      "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 527,
+      "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 133,
+      "path": "Assets/_Project/Scripts/SkySystemFollowCamera.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 523,
+      "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 532,
+      "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    },
+    {
+      "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
+      "line": 541,
+      "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "rule": "AUP_WORLD_SPACE_HOT_PATH",
+      "scanner": "AUP_Compliance",
+      "severity": 2
+    }
+  ],
+  "scanner": "AUP_Compliance",
+  "warningCount": 0
+}

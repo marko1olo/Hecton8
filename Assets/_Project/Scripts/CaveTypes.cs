@@ -981,7 +981,7 @@ namespace Hecton8.Caves
                 entranceRadius          = 0f,
                 entranceFunnelLength    = 0f,
                 allowedStructureTypes   = new[] { CaveStructureType.Arch },
-                structureCountMax       = 12,
+                maxStructures           = 12,
                 wallNoiseAmplitude      = 2f,
                 wallNoiseFrequency      = 0.1f
             };

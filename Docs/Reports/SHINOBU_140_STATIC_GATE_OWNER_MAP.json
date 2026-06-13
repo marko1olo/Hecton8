@@ -1,0 +1,1245 @@
+{
+  "agent": "SHINOBU_140",
+  "evidence": "STATIC_SOURCE/PY_TOOL/CI_FALLBACK",
+  "ownerTotals": [
+    {
+      "criticalCount": 155,
+      "domainHint": "Core",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 110,
+      "domainHint": "World",
+      "warningCount": 3
+    },
+    {
+      "criticalCount": 65,
+      "domainHint": "RootScripts",
+      "warningCount": 24
+    },
+    {
+      "criticalCount": 65,
+      "domainHint": "Gameplay",
+      "warningCount": 8
+    },
+    {
+      "criticalCount": 48,
+      "domainHint": "Physics",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 35,
+      "domainHint": "AI",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 29,
+      "domainHint": "Construction",
+      "warningCount": 3
+    },
+    {
+      "criticalCount": 28,
+      "domainHint": "Fauna",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 21,
+      "domainHint": "UI",
+      "warningCount": 1
+    },
+    {
+      "criticalCount": 19,
+      "domainHint": "Ecosystem",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 18,
+      "domainHint": "Physiology",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 17,
+      "domainHint": "Interaction",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 16,
+      "domainHint": "Atmosphere",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 15,
+      "domainHint": "Tools",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 14,
+      "domainHint": "Animation",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 13,
+      "domainHint": "Power",
+      "warningCount": 2
+    },
+    {
+      "criticalCount": 10,
+      "domainHint": "Inventory",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 9,
+      "domainHint": "Thermodynamics",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 9,
+      "domainHint": "Audio",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 8,
+      "domainHint": "SaveSystem",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 8,
+      "domainHint": "QA",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 8,
+      "domainHint": "Economy",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 7,
+      "domainHint": "Environment",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 6,
+      "domainHint": "Vehicles",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 6,
+      "domainHint": "Narrative",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 6,
+      "domainHint": "Habitat",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 5,
+      "domainHint": "Scavenging",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 4,
+      "domainHint": "ModdingAPI",
+      "warningCount": 3
+    },
+    {
+      "criticalCount": 3,
+      "domainHint": "Player",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 3,
+      "domainHint": "Equipment",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 3,
+      "domainHint": "Dev",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 3,
+      "domainHint": "Data",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 2,
+      "domainHint": "VFX",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 2,
+      "domainHint": "Rendering",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 2,
+      "domainHint": "Prologue",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 2,
+      "domainHint": "ProjectWide",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 1,
+      "domainHint": "Hecton8.Core.asmdef",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 1,
+      "domainHint": "AtlasSignal",
+      "warningCount": 0
+    }
+  ],
+  "purpose": "Route static red debt to owner domains without mutating foreign runtime code.",
+  "scanners": {
+    "AUP_Compliance": {
+      "criticalCount": 22,
+      "topPaths": [
+        {
+          "criticalCount": 3,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "QA",
+          "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/SargassumPhysicsZone.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SkySystemFollowCamera.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Power",
+          "path": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Narrative",
+          "path": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/OxygenBubble.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Burst_Job_Directives": {
+      "criticalCount": 417,
+      "topPaths": [
+        {
+          "criticalCount": 11,
+          "domainHint": "UI",
+          "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 11,
+          "domainHint": "Tools",
+          "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 9,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 9,
+          "domainHint": "Thermodynamics",
+          "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 8,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 8,
+          "domainHint": "Physics",
+          "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 8,
+          "domainHint": "Ecosystem",
+          "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 8,
+          "domainHint": "Economy",
+          "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 8,
+          "domainHint": "AI",
+          "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 7,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 7,
+          "domainHint": "Physics",
+          "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 7,
+          "domainHint": "Inventory",
+          "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 7,
+          "domainHint": "Fauna",
+          "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 7,
+          "domainHint": "Atmosphere",
+          "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "QA",
+          "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Power",
+          "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Physics",
+          "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Habitat",
+          "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Environment",
+          "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Ecosystem",
+          "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 6,
+          "domainHint": "Animation",
+          "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 5,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 5,
+          "domainHint": "Physiology",
+          "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Compile_Wall": {
+      "criticalCount": 154,
+      "topPaths": [
+        {
+          "criticalCount": 59,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 18,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 16,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 13,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 5,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 5,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/PlayerInventoryManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/EnvironmentRuntimeContextService.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Hecton8.Core.asmdef",
+          "path": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.State.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/SceneRuntimeService.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/Origin/RuntimeOriginRoute.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Core",
+          "path": "Assets/_Project/Scripts/Core/InstanceCullingServiceRegistryBridge.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Dev_Virtualization": {
+      "criticalCount": 0,
+      "topPaths": [
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PowerGrid.cs",
+          "warningCount": 13
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PowerNode.cs",
+          "warningCount": 4
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/PlayerTransportLifecycleRegistry.cs",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Construction",
+          "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/Contracts/WorldWaterLevelCalibrationContracts.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "UI",
+          "path": "Assets/_Project/Scripts/UI/PDALoadoutTab.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveManager.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Power",
+          "path": "Assets/_Project/Scripts/Power/WfcOutpostGridRegistry.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Power",
+          "path": "Assets/_Project/Scripts/Power/PowerRelayNode.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PDAInventoryTab.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "ModdingAPI",
+          "path": "Assets/_Project/Scripts/ModdingAPI/ModRegistryEvents.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "ModdingAPI",
+          "path": "Assets/_Project/Scripts/ModdingAPI/ModCommandDispatcher.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "ModdingAPI",
+          "path": "Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/LaserCutter.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/TransportChargingStation.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/HabitatIntegrityManager.cs",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 0,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+          "warningCount": 1
+        }
+      ],
+      "warningCount": 44
+    },
+    "Hot_Helper_Complete": {
+      "criticalCount": 0,
+      "topPaths": [],
+      "warningCount": 0
+    },
+    "Hot_Helper_Registry_Polling": {
+      "criticalCount": 73,
+      "topPaths": [
+        {
+          "criticalCount": 6,
+          "domainHint": "Construction",
+          "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Vehicles",
+          "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/VRValveWheelHandle.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapLatch.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/VoxelCarveVolume.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "VFX",
+          "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Narrative",
+          "path": "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/InteractionHighlighter.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/InteractionUI.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/TransportChargingStation.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Construction",
+          "path": "Assets/_Project/Scripts/Construction/ValveWheelInteractable.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/WreckageScatterManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Vehicles",
+          "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodDashboardToggleSwitch.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Vehicles",
+          "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodAirlockController.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "UI",
+          "path": "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/RepairTool.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Prologue",
+          "path": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Prologue",
+          "path": "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Hot_Registry_Polling": {
+      "criticalCount": 4,
+      "topPaths": [
+        {
+          "criticalCount": 4,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Mid_Frame_Complete": {
+      "criticalCount": 0,
+      "topPaths": [],
+      "warningCount": 0
+    },
+    "Rollback_Fence_Compliance": {
+      "criticalCount": 0,
+      "topPaths": [],
+      "warningCount": 0
+    },
+    "Runtime_Struct_Layout": {
+      "criticalCount": 56,
+      "topPaths": [
+        {
+          "criticalCount": 10,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 9,
+          "domainHint": "UI",
+          "path": "Assets/_Project/Scripts/UI/ARWaypointOverlay.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 5,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/WorldChunkStreamingProfile.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "Data",
+          "path": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "SaveSystem",
+          "path": "Assets/_Project/Scripts/SaveSystem/SteamCloudSaveConflictResolver.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "SaveSystem",
+          "path": "Assets/_Project/Scripts/SaveSystem/SaveDeltaCompression.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Rendering",
+          "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerFeature.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Fauna",
+          "path": "Assets/_Project/Scripts/Fauna/FaunaStateMachine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "Fauna",
+          "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveData.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Physics",
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Physics",
+          "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Interaction",
+          "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_VaultViews.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Fauna",
+          "path": "Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/EncounterProfile.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Self_Audit_Proof": {
+      "criticalCount": 0,
+      "topPaths": [],
+      "warningCount": 0
+    },
+    "Signal_Bus_Topology": {
+      "criticalCount": 0,
+      "topPaths": [],
+      "warningCount": 0
+    },
+    "Static_Gate_Regression": {
+      "criticalCount": 2,
+      "topPaths": [
+        {
+          "criticalCount": 2,
+          "domainHint": "ProjectWide",
+          "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    },
+    "Vault_Sovereignty": {
+      "criticalCount": 48,
+      "topPaths": [
+        {
+          "criticalCount": 7,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 4,
+          "domainHint": "Audio",
+          "path": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/VegetationDensityQueryService.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/ThermalMeltSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Scavenging",
+          "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveSystemRuntimeSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "SaveSystem",
+          "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "SaveSystem",
+          "path": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveRecoverySmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/LocRegistry.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "Gameplay",
+          "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+          "warningCount": 0
+        }
+      ],
+      "warningCount": 0
+    }
+  },
+  "status": "PENDING VERIFICATION"
+}

@@ -1,0 +1,1240 @@
+{
+  "criticalCount": 154,
+  "filesScanned": 2079,
+  "findings": [
+    {
+      "detail": "Hecton8.Core references Hecton8.Environment.Fluids; move through contracts or EventBus/DataVault surfaces.",
+      "line": 1,
+      "path": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+      "rule": "CORE_RUNTIME_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Optimization; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 7,
+      "path": "Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/Contracts/Audio/AcousticEcholocationRayHit.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 135,
+      "path": "Assets/_Project/Scripts/Core/Contracts/CoreContractsAssemblyMarker.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 589,
+      "path": "Assets/_Project/Scripts/Core/Contracts/GroundRadarContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.SaveSystem; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Core/Diagnostics/AsynchronousTelemetryExporter.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 1,
+      "path": "Assets/_Project/Scripts/Core/EnvironmentRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2,
+      "path": "Assets/_Project/Scripts/Core/EnvironmentRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 8,
+      "path": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Celestial; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 14,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 23,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Quest; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 25,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 26,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Narrative; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 31,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Optimization; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 32,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Physics; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 34,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Systems.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 35,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Visor; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 38,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.VFX; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 41,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Physics; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 968,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.SaveSystem; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 1096,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 1181,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.SaveSystem; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 7,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 18,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 19,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 20,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Systems.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 23,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 26,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6296,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6301,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6306,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/HapticSynthesisContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 30,
+      "path": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 37,
+      "path": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 111,
+      "path": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 17,
+      "path": "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2,
+      "path": "Assets/_Project/Scripts/Core/InstanceCullingServiceRegistryBridge.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/Origin/RuntimeOriginRoute.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2,
+      "path": "Assets/_Project/Scripts/Core/PlayerInventoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 3,
+      "path": "Assets/_Project/Scripts/Core/PlayerInventoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 1,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 3,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 7,
+      "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 1,
+      "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2,
+      "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 3,
+      "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.SaveSystem; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6,
+      "path": "Assets/_Project/Scripts/Core/RebindingManager.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/SceneRuntimeService.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 8,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.UiSaveWorld.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 7,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 8,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyFacade.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 13,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 4,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 14,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 9,
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.State.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 16,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 30,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 31,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2228,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2230,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2231,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2232,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2233,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2237,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2239,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2240,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2241,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2242,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2255,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2257,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2258,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2259,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2260,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2264,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2266,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2267,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2268,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2269,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2273,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2275,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2276,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2277,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2278,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2282,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2284,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2285,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2286,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2287,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2291,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2293,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2294,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2295,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2296,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2300,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2302,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2303,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2304,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2305,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2309,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2311,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2312,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2313,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2314,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2318,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2320,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2321,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2322,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2323,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2327,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2329,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2330,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2331,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 2332,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 5,
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 14,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Atmosphere; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Audio; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 16,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Celestial; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 18,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Construction; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 19,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Environment; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 24,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Gameplay; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 25,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Inventory; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 26,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Narrative; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 27,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Optimization; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 28,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Power; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 29,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Quest; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 30,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.SaveSystem; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 31,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Systems.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 32,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.Visor; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 34,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 35,
+      "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.World; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 7,
+      "path": "Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    }
+  ],
+  "scanner": "Compile_Wall",
+  "warningCount": 0
+}

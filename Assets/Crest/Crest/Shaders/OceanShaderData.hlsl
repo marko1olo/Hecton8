@@ -150,9 +150,6 @@ half4 _FoamWhiteColor;
 half _WaveFoamFeather;
 half _WaveFoamLightScale;
 half _ShorelineFoamMinDepth;
-#if _H8SHORELINEFOAM_ON
-half _H8ShorelineFoamStrength;
-#endif
 #if _FOAM3DLIGHTING_ON
 half _WaveFoamNormalStrength;
 half _WaveFoamSpecularFallOff;

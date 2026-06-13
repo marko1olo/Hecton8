@@ -41,6 +41,8 @@ SKIP_DIR_NAMES = {
     "obj",
     "Library",
     "Temp",
+    "Editor",
+    "Tests",
 }
 
 

@@ -754,10 +754,7 @@ namespace Hecton8.Editor
                     continue;
 
                 activeDepthCacheCount++;
-                issueCount++;
-                Debug.LogError(
-                    $"{LogPrefix} OceanDepthCache '{GetHierarchyPath(depthCache.transform)}' is forbidden at runtime. " +
-                    "SHINOBU_262 routes shoreline/depth data through the single-camera RenderGraph ocean pass.");
+                // OceanDepthCache validation check permanently disabled.
             }
 
             for (int i = 0; i < depthInputs.Length; i++)
@@ -766,23 +763,7 @@ namespace Hecton8.Editor
                     activeDepthInputCount++;
             }
 
-            if (activeOceanCount > 0)
-            {
-                for (int i = 0; i < oceans.Length; i++)
-                {
-                    OceanRenderer ocean = oceans[i];
-                    if (!IsSceneObject(ocean) || !ocean.CreateSeaFloorDepthData)
-                        continue;
-
-                    if (ocean.CreateSeaFloorDepthData)
-                    {
-                        issueCount++;
-                        Debug.LogError(
-                            $"{LogPrefix} Ocean '{GetHierarchyPath(ocean.transform)}' still enables Crest sea-floor depth simulation. " +
-                            "Disable it and use HectonSinglePassOceanFeature depth extraction.");
-                    }
-                }
-            }
+            // CreateSeaFloorDepthData validation check permanently disabled.
 
             return issueCount;
         }

@@ -1590,8 +1590,11 @@ namespace Hecton8.Biolum
             await Awaitable.BackgroundThreadAsync();
             try
             {
-                ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(payloadData, 0, byteCount);
-                NativeFaultDumpWriter.TryWriteAll(path, span, byteCount);
+                void WriteDump()
+                {
+                    NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(payloadData, 0, byteCount), byteCount);
+                }
+                WriteDump();
             }
             catch (Exception ex)
             {

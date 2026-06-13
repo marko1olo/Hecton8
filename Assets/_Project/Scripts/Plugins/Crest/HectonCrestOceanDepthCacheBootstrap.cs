@@ -59,7 +59,7 @@ namespace Hecton8.World
         private const int RuntimeCameraBufferSize = 8;
         private const int RuntimeTerrainBufferSize = 64;
         private const string DepthDebugOutputPath = "C:/hades/Hecton8/Temp/depth_debug.png";
-        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = true;
+        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = false;
         private static int TerrainLayer = int.MinValue;
         private static int TerrainLayerWithTrailingSpace = int.MinValue;
         // COLD ALLOC: Camera[8] - reusable runtime-camera resolve scratch for Crest viewpoint ownership - owner: HectonCrestOceanDepthCacheBootstrap

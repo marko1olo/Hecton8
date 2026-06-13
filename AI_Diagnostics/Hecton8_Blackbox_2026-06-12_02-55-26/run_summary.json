@@ -1,0 +1,37 @@
+﻿{
+    "success": true,
+    "partialSuccess": false,
+    "abortReason": "",
+    "unityVersion": "6000.4.10f1",
+    "activeScene": "02_HECTON_WORLD",
+    "mode": "Direct",
+    "timestamp": "2026-06-12 02:56:56",
+    "outputPath": "C:\\hades\\Hecton8\\AI_Diagnostics\\Hecton8_Blackbox_2026-06-12_02-55-26",
+    "errorCount": 23,
+    "warningCount": 5,
+    "criticalCount": 1,
+    "outputFiles": [
+        "run_summary.json",
+        "snapshot_direct.json",
+        "findings.md",
+        "report.md",
+        "compact_handoff_for_claude.md",
+        "next_steps_for_agent.md",
+        "hierarchy_editmode.txt",
+        "raw_console_log.txt"
+    ],
+    "topFindings": [
+        "[Bootstrap] 02_HECTON_WORLD is active but bootstrap did not complete",
+        "[Console] Console contains 7 error(s)",
+        "[Atmosphere] Atmosphere/Celestial missing and bootstrap not complete — likely bootstrap-order issue",
+        "[Atmosphere] CelestialEngine not found in scene",
+        "[Atmosphere] AtmosphereManager not found in scene",
+        "[Crest] OceanKinematics is not registered in GlobalRegistry",
+        "[Crest] OceanRenderer._primaryLight is null",
+        "[Crest] OceanRenderer._viewCamera is null",
+        "[Console] Bootstrap-related error in console (1 occurrence)",
+        "[Registry] Registry slot 'Dispatcher' is null"
+    ],
+    "errors": [],
+    "warnings": []
+}

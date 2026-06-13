@@ -1,0 +1,3344 @@
+{
+  "criticalCount": 417,
+  "filesScanned": 1854,
+  "findings": [
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2350,
+      "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2439,
+      "path": "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/AI/Cognition/LeviathanStalkJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 79,
+      "path": "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionAnxietyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 65,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionAnxietyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 178,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionAnxietyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 12,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 83,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 115,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 195,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 351,
+      "path": "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1194,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6184,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6218,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6300,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6377,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6798,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6866,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6938,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 6970,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2921,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3109,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3147,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 730,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 808,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 856,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 913,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1059,
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 16,
+      "path": "Assets/_Project/Scripts/AI/Pathfinding/FunnelSmoothingJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 238,
+      "path": "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 344,
+      "path": "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1135,
+      "path": "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 93,
+      "path": "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 128,
+      "path": "Assets/_Project/Scripts/Animation/Fauna/ProceduralBiteIkJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 12,
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 208,
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 585,
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 748,
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 764,
+      "path": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 302,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 575,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 610,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 670,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 703,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 739,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanProceduralIkStageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 405,
+      "path": "Assets/_Project/Scripts/Animation/LeviathanTerrainIkJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 126,
+      "path": "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 450,
+      "path": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereMath.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3449,
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3555,
+      "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 626,
+      "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 668,
+      "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 752,
+      "path": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 46,
+      "path": "Assets/_Project/Scripts/Atmosphere/StormPropagation/ShinobuStormPropagationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 234,
+      "path": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherMath.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1966,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1991,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2037,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2084,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2265,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2389,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2447,
+      "path": "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 410,
+      "path": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 449,
+      "path": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 64,
+      "path": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 173,
+      "path": "Assets/_Project/Scripts/Construction/DroneCognitionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 271,
+      "path": "Assets/_Project/Scripts/Construction/DroneCognitionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 333,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 537,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 665,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 745,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1494,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 202,
+      "path": "Assets/_Project/Scripts/Construction/DroneFleetTransactionKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/Construction/FluidPipePressureJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 115,
+      "path": "Assets/_Project/Scripts/Construction/FluidPipePressureJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1707,
+      "path": "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 273,
+      "path": "Assets/_Project/Scripts/Construction/HabitatDeconstructionTransactionKernel.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 120,
+      "path": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 166,
+      "path": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 261,
+      "path": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 309,
+      "path": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 470,
+      "path": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1401,
+      "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1430,
+      "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1479,
+      "path": "Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 28,
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 55,
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 95,
+      "path": "Assets/_Project/Scripts/CraftingSystem.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1106,
+      "path": "Assets/_Project/Scripts/CraftingSystem.FastFail.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1325,
+      "path": "Assets/_Project/Scripts/CraftingSystem.FastFail.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 644,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 682,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 981,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1456,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1589,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1713,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1772,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1833,
+      "path": "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 969,
+      "path": "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1000,
+      "path": "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1034,
+      "path": "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1069,
+      "path": "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2343,
+      "path": "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1782,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1817,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1828,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1875,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2006,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2060,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2173,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2193,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1243,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1272,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1353,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1515,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1612,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1739,
+      "path": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 80,
+      "path": "Assets/_Project/Scripts/Environment/Fluids/EmergencyMockOceanKinematicsAdapter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4425,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4498,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4520,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4690,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4764,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4803,
+      "path": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 39,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 131,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 395,
+      "path": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 152,
+      "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 274,
+      "path": "Assets/_Project/Scripts/Fauna/FaunaSimulationEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 112,
+      "path": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 283,
+      "path": "Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 336,
+      "path": "Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 503,
+      "path": "Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 593,
+      "path": "Assets/_Project/Scripts/Fauna/MesofaunaBehavioralStateMachine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1645,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1722,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1823,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2107,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1350,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1376,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1522,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1651,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1743,
+      "path": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2780,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2845,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2959,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3071,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3261,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3323,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3352,
+      "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 25,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 112,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 405,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 669,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1825,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1883,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2164,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2219,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2270,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2296,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1896,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1929,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2019,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2232,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2279,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2324,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2339,
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 95,
+      "path": "Assets/_Project/Scripts/Gameplay/HazardZoneManager.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Gameplay/Loot/Contracts/LootMagnetPullJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 337,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2501,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2531,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2580,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2653,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2706,
+      "path": "Assets/_Project/Scripts/Gameplay/ScannerDataMiningRouter.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 97,
+      "path": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 253,
+      "path": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 255,
+      "path": "Assets/_Project/Scripts/Gameplay/SuitUpgradeResolver.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 31,
+      "path": "Assets/_Project/Scripts/Gameplay/SurvivalPhysiologyScalarJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1838,
+      "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 215,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 256,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 298,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 349,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 482,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 758,
+      "path": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1018,
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 504,
+      "path": "Assets/_Project/Scripts/HectonDirectorAI.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Job structs must be Burst compiled before dispatcher phase scheduling.",
+      "line": 5304,
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "rule": "JOB_MISSING_BURSTCOMPILE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Inventory/ItemSalinityCorrosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1025,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1120,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.CargoSync.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1373,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1386,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1414,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1455,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1494,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1611,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1674,
+      "path": "Assets/_Project/Scripts/Inventory/SoaInventoryQueryEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 646,
+      "path": "Assets/_Project/Scripts/MathLodApproximation.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3946,
+      "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4738,
+      "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4772,
+      "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 4838,
+      "path": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3804,
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3857,
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3898,
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 421,
+      "path": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 525,
+      "path": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 597,
+      "path": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 13,
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 83,
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 118,
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 170,
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 441,
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1757,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1812,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1897,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1965,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2005,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2054,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2418,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2495,
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 12,
+      "path": "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2542,
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2555,
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2595,
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2683,
+      "path": "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1636,
+      "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1701,
+      "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1801,
+      "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1997,
+      "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2045,
+      "path": "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 27,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 157,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 420,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 454,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 506,
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 487,
+      "path": "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 50,
+      "path": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 208,
+      "path": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 424,
+      "path": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 453,
+      "path": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 511,
+      "path": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 71,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/Automation/DockingAutopilotService.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 471,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 503,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 616,
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 657,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 743,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 962,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1034,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1055,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1090,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1158,
+      "path": "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 179,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 202,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 223,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 381,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 422,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 15,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 68,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 153,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 313,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 767,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 32,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 95,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 164,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 133,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 165,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 188,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 249,
+      "path": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 121,
+      "path": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 578,
+      "path": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 618,
+      "path": "Assets/_Project/Scripts/Player/Movement/ZeroGMovementJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 332,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 347,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 439,
+      "path": "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1597,
+      "path": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 28,
+      "path": "Assets/_Project/Scripts/Power/LogisticsGridTortureJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 363,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 403,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 418,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 462,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 744,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 779,
+      "path": "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 13,
+      "path": "Assets/_Project/Scripts/Power/WfcOutpostGraphTranslationJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 123,
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1143,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1326,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1419,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1492,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2059,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 2122,
+      "path": "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1741,
+      "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1753,
+      "path": "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 183,
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 229,
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 284,
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 669,
+      "path": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracleRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 206,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 263,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 324,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 375,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 414,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 748,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 881,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1190,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1313,
+      "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 13,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 85,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 129,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 351,
+      "path": "Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 866,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 947,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 976,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1006,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1077,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1127,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1161,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1177,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1205,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1220,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1252,
+      "path": "Assets/_Project/Scripts/Tools/UpgradeMatrixCompiler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 523,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 589,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 632,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 669,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 709,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 781,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 865,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1108,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1173,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1192,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1359,
+      "path": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 371,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 455,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 538,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 556,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 827,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 963,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1011,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1039,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1079,
+      "path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 868,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 958,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1080,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1161,
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 14,
+      "path": "Assets/_Project/Scripts/World/ErosionHarnessJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 167,
+      "path": "Assets/_Project/Scripts/World/ErosionHarnessJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 146,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 185,
+      "path": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 284,
+      "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 464,
+      "path": "Assets/_Project/Scripts/World/FloraGenomics/FloraGenomeJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 62,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyBrineJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 820,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 894,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1286,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyEngine.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 193,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyFeatureJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 444,
+      "path": "Assets/_Project/Scripts/World/HectonAnomalyFeatureJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 280,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1087,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1141,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1261,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1331,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1391,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 82,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 218,
+      "path": "Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 13,
+      "path": "Assets/_Project/Scripts/World/MacroSwarmTravelJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 158,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 255,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 781,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 910,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1091,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1147,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1204,
+      "path": "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 217,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 311,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 717,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 768,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 879,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1032,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1083,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 1131,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 182,
+      "path": "Assets/_Project/Scripts/World/ResourceDistributionDirector.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 284,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralGeologyContracts.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 3657,
+      "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Job structs must be Burst compiled before dispatcher phase scheduling.",
+      "line": 314,
+      "path": "Assets/_Project/Scripts/World/ScatterEvaluator.cs",
+      "rule": "JOB_MISSING_BURSTCOMPILE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 21,
+      "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 57,
+      "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 236,
+      "path": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 484,
+      "path": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 534,
+      "path": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 560,
+      "path": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 586,
+      "path": "Assets/_Project/Scripts/World/SpawnZoneSdfValidation.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 422,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 541,
+      "path": "Assets/_Project/Scripts/World/TerrainChunkPagerTypes.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 14,
+      "path": "Assets/_Project/Scripts/World/ThermalSlumpingJob.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainFakeOverhangJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainSplatmapJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 146,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainSplatmapJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 12,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainTectonicDisplacementJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 12,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainTerraceJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 11,
+      "path": "Assets/_Project/Scripts/World/WorldProceduralTerrainThermalWeatheringJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 92,
+      "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 145,
+      "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 250,
+      "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 298,
+      "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 337,
+      "path": "Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 743,
+      "path": "Assets/_Project/Scripts/WorldProceduralFieldSampler.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    },
+    {
+      "detail": "Burst jobs require CompileSynchronously=true, FloatPrecision.Standard, and domain-correct FloatMode.",
+      "line": 916,
+      "path": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
+      "rule": "BURST_DIRECTIVE_FLAGS_INCOMPLETE",
+      "scanner": "Burst_Job_Directives",
+      "severity": 2
+    }
+  ],
+  "scanner": "Burst_Job_Directives",
+  "warningCount": 0
+}

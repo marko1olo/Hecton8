@@ -37,7 +37,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             float shell = math.abs(distance - Config.Radius) - math.max(Config.ShellThickness, voxelSize);
             float sphere = distance - Config.Radius;
             float sdf = math.lerp(sphere, shell, (float)(Config.Flags & 1u)) + signedNoise;
-            int packed = (int)math.round(math.clamp(sdf * math.rcp(voxelSize) * 24f, -127f, 127f));
+            int packed = (int)math.round(math.clamp(sdf * math.rcp(voxelSize) * 127f, -127f, 127f));
             Densities[index] = (sbyte)packed;
         }
 
@@ -970,7 +970,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             {
                 GlobalQualityWeight = 1f,
                 IsoSurface = 0f,
-                DecimationAggression = 0.35f,
+                DecimationAggression = 0f,
                 NormalSmoothingAngleDegrees = 35f,
                 VoxelSize = 1f,
                 BiomeBlendScale = 1f,

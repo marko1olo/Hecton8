@@ -113,6 +113,8 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-29980)]
     public sealed class GameBootstrapper : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
+        private static bool HectonForceSandboxScene = true;
+
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string DefaultGameplaySceneName = "02_HECTON_WORLD";
@@ -3023,6 +3025,12 @@ namespace Hecton8.Bootstrap
                     }
 
                     Debug.Log("[GameBootstrapper-DEBUG] Calling LoadMainMenuAsync");
+#if UNITY_EDITOR
+                    if (HectonForceSandboxScene)
+                    {
+                        return await LoadSandboxSceneAsync(ct);
+                    }
+#endif
                     return await LoadMainMenuAsync(ct);
                 }
 
@@ -3106,6 +3114,37 @@ namespace Hecton8.Bootstrap
                 return false;
             }
         }
+
+#if UNITY_EDITOR
+        private static async Awaitable<bool> LoadSandboxSceneAsync(CancellationToken ct)
+        {
+            try
+            {
+                Debug.Log("[GameBootstrapper-DEBUG] Bypassing Main Menu and forcing 020_RENDER_SANDBOX");
+                string sandboxPath = "Assets/_Project/Scenes/020_RENDER_SANDBOX.unity";
+                AsyncOperation loadOperation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
+                    sandboxPath,
+                    new UnityEngine.SceneManagement.LoadSceneParameters(UnityEngine.SceneManagement.LoadSceneMode.Single));
+
+                if (loadOperation == null)
+                    return false;
+
+                while (!loadOperation.isDone)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
+                }
+
+                BootstrapStatus.MarkMainMenuReached();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex);
+                return false;
+            }
+        }
+#endif
 
         private static async Awaitable<bool> LoadMainMenuAsync(CancellationToken ct)
         {

@@ -1,0 +1,40 @@
+﻿[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(263,38): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(295,38): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxReflection.cs(274,50): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxReflection.cs(273,29): warning CS0618: 'Object.FindObjectsByType(Type, FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType(Type) or FindObjectsByType(Type, FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(604,50): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(603,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(809,50): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(808,33): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(1027,50): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+[Log] [General] Assets\Editor\Hecton8BlackboxDiagnostics\H8BlackboxCollectors.cs(1026,34): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+[Log] [General] Cannot add menu item 'Window/Hecton-8/SpaceEngine 0.9.8 Preview' for method 'Hecton8.Editor.Generators.SpaceEngineTerrainPreviewWindow.ShowWindow' because a menu item with the same name already exists.
+UnityEditor.MenuService:GetMenuItemsFromAttributes ()
+
+
+[Log] [General] [H8Blackbox] CLI starting RunEditMode...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8CLI:RunEditMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:37)
+
+
+[Log] [SceneLoad] [H8Blackbox] Loading scene: Assets/_Project/Scenes/02_HECTON_WORLD.unity
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8CLI:RunEditMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:43)
+
+
+[Log] [General] [H8Blackbox] Starting Edit Mode Diagnostic...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:RunEditMode (Hecton8.BlackboxDiagnostics.H8DiagnosticOptions) (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:95)
+Hecton8.BlackboxDiagnostics.H8CLI:RunEditMode () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxCLI.cs:50)
+
+

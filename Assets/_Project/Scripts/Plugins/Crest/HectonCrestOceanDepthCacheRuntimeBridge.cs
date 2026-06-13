@@ -18,7 +18,7 @@ namespace Hecton8.World
         private const float HectonMinimumCameraHeightAboveSeaLevel = 8f;
         private const string NativeMemoryOwner = nameof(HectonCrestOceanDepthCacheRuntimeBridge);
         private const string DepthCacheReadbackPixelsLabel = "depthCacheReadbackPixels";
-        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = true;
+        private static readonly bool HectonRuntimeDepthCacheCameraDisabled = false;
 
         internal static void HectonConfigureRealtimeCapture(
             this OceanDepthCache depthCache,

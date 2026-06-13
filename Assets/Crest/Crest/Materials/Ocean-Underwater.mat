@@ -196,7 +196,7 @@ Material:
     - _DepthFogDensity: {r: 0.026, g: 0.034, b: 0.046, a: 0}
     - _Diffuse: {r: 0.33732638, g: 0.43819323, b: 0.5005762, a: 1}
     - _DiffuseGrazing: {r: 0.5641073, g: 0.56884634, b: 0.5496663, a: 1}
-    - _DiffuseShadow: {r: 0.4062916, g: 0.5436123, b: 0.63056517, a: 1}
+    - _DiffuseShadow: {r: 0.40629148, g: 0.5436123, b: 0.63056517, a: 1}
     - _FoamBubbleColor: {r: 0.82, g: 0.95, b: 1, a: 0.72}
     - _FoamWhiteColor: {r: 0.94, g: 0.99, b: 1, a: 0.82}
     - _SkyAwayFromSun: {r: 0.52902377, g: 0.57888484, b: 0.6130713, a: 1}

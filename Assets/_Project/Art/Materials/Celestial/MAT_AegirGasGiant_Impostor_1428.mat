@@ -19,7 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -38,22 +38,23 @@ Material:
     m_Ints: []
     m_Floats:
     - _AutoRotationSpeed: 0.00004
-    - _DetailStrength: 1.05
-    - _Exposure: 1.42
+    - _DetailStrength: 2
+    - _Exposure: 2.52
     - _GameTime: 0
     - _GlobalRotation: 0
-    - _HorizonVeilEnd: 0.3
-    - _HorizonVeilStart: -0.01
-    - _HorizonVeilStrength: 0.72
-    - _PhaseCenter: 0.38
-    - _PhaseSoftness: 0.6
-    - _RimPower: 2.6
-    - _RimStrength: 0.92
+    - _HorizonVeilEnd: 0.55
+    - _HorizonVeilStart: -0.049
+    - _HorizonVeilStrength: 0.659
+    - _PhaseCenter: 0
+    - _PhaseSoftness: 1
+    - _PlanetPhase: 0
+    - _RimPower: 7.93
+    - _RimStrength: 1.22
     - _Rotation: 0.18
-    - _StormEmission: 1
+    - _StormEmission: 1.36
     - _StormStrength: 0.32
     m_Colors:
-    - _AtmosphereVeilColor: {r: 0.78, g: 0.86, b: 1.12, a: 1}
+    - _AtmosphereVeilColor: {r: 0.9192577, g: 0.9504024, b: 1.0534196, a: 1}
     - _DeepTint: {r: 0.24, g: 0.18, b: 0.44, a: 1}
     - _DetailTiling: {r: 1.8, g: 1.8, b: 0.08, a: 0}
     - _HighTint: {r: 0.78, g: 0.68, b: 1.18, a: 1}

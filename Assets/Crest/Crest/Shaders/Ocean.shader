@@ -116,11 +116,6 @@ Shader "Crest/Ocean URP"
 		// Proximity to sea floor where foam starts to get generated
 		_ShorelineFoamMinDepth("Shoreline Foam Min Depth", Range(0.01, 5.0)) = 0.27
 
-		[Header(Hecton Single Pass)]
-		// Adds first-party single-camera shoreline foam mask to Crest foam without enabling Crest depth cache.
-		[Toggle] _H8ShorelineFoam("Single-Pass Shoreline Foam", Float) = 0
-		_H8ShorelineFoamStrength("Shoreline Foam Strength", Range(0.0, 3.0)) = 1.0
-
 		[Header(Foam 3D Lighting)]
 		// Generates normals for the foam based on foam values/texture and use it for foam lighting
 		[Toggle] _Foam3DLighting("Enable", Float) = 1
@@ -253,7 +248,6 @@ Shader "Crest/Ocean URP"
 			#pragma shader_feature_local _TRANSPARENCY_ON
 			#pragma shader_feature_local _CAUSTICS_ON
 			#pragma shader_feature_local _FOAM_ON
-			#pragma shader_feature_local _H8SHORELINEFOAM_ON
 			#pragma shader_feature_local _FOAM3DLIGHTING_ON
 			#pragma shader_feature_local _PLANARREFLECTIONS_ON
 			//#pragma shader_feature_local _OVERRIDEREFLECTIONCUBEMAP_ON
@@ -306,19 +300,6 @@ Shader "Crest/Ocean URP"
 			#include "OceanNormalMapping.hlsl"
 			#include "OceanReflection.hlsl"
 			#include "OceanFoam.hlsl"
-
-#if _H8SHORELINEFOAM_ON
-			TEXTURE2D_X(_H8OceanDepthFoamMask);
-			SAMPLER(sampler_H8OceanDepthFoamMask);
-
-			float H8SampleSinglePassShorelineFoam(real2 screenUv)
-			{
-				float2 uv = saturate((float2)screenUv);
-				uv = UnityStereoTransformScreenSpaceTex(uv);
-				float foamMask = SAMPLE_TEXTURE2D_X(_H8OceanDepthFoamMask, sampler_H8OceanDepthFoamMask, uv).r;
-				return saturate((foamMask == foamMask && abs(foamMask) < 1.0e20) ? foamMask : 0.0);
-			}
-#endif
 
 			struct Attributes
 			{
@@ -619,10 +600,6 @@ Shader "Crest/Ocean URP"
 				#if _FOAM_ON
 				// Foam can saturate.
 				foam = saturate(foam);
-
-				#if _H8SHORELINEFOAM_ON
-				foam = saturate(max(foam, H8SampleSinglePassShorelineFoam(uvDepth) * max(_H8ShorelineFoamStrength, 0.0)));
-				#endif
 
 				real4 whiteFoamCol;
 				#if !_FLOW_ON

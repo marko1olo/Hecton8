@@ -1,0 +1,36 @@
+{
+  "aligned16": true,
+  "blueAt500mClear": 1.1920928955078125e-07,
+  "byteOrder": "little-endian",
+  "coefficientProvenance": [],
+  "dataSovereignty": "stateless_binary_lookup",
+  "expectedBytes": 33554432,
+  "fnvCollisions": 0,
+  "matrix": "Data/Visuals/Water_Extinction_Matrix.bin",
+  "matrixBytes": 33554432,
+  "pack": "<e",
+  "redAt500mClear": 0.0,
+  "shape": [
+    256,
+    256,
+    256
+  ],
+  "sourceReferences": [
+    {
+      "source": "NOAA Ocean Explorer ocean color guidance",
+      "url": "https://oceanexplorer.noaa.gov/ocean-fact/red-color/",
+      "usage": "External sanity check that red wavelengths disappear early underwater."
+    },
+    {
+      "source": "Pope/Fry visible pure-water absorption reference listing (10.1364/AO.36.008710)",
+      "url": "https://opg.optica.org/ao/issue.cfm?issue=33&volume=36",
+      "usage": "Reference trail for the rounded visible-water absorption anchor family used by the baker."
+    },
+    {
+      "path": "Docs/Archive/Batch003/AgentLogs/LOG_RENDER_GI_RELAY_SYNC.md",
+      "source": "RENDER_GI_RELAY_SYNC batch logs",
+      "usage": "Preserves the depth-palette/fog-global premium approximation contract."
+    }
+  ],
+  "status": "OPTICS_LUT_VERIFIED"
+}

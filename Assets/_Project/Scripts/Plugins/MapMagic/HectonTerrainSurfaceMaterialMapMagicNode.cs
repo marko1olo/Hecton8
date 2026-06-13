@@ -136,12 +136,12 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             try
             {
-                primary = new NativeArray<float4>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                secondary = new NativeArray<float4>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                packed = new NativeArray<float4>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                primaryRegistrationId = RegisterTempJobArray(primary, PrimaryLabel);
-                secondaryRegistrationId = RegisterTempJobArray(secondary, SecondaryLabel);
-                packedRegistrationId = RegisterTempJobArray(packed, PackedLabel);
+                primary = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                secondary = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                packed = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                primaryRegistrationId = RegisterPersistentArray(primary, PrimaryLabel);
+                secondaryRegistrationId = RegisterPersistentArray(secondary, SecondaryLabel);
+                packedRegistrationId = RegisterPersistentArray(packed, PackedLabel);
 
                 var job = new WorldTerrainSurfaceMaterialMaskJob
                 {
@@ -249,10 +249,10 @@ namespace MapMagic.Nodes.MatrixGenerators
             return math.max(1, math.min(64, cellCount / 16));
         }
 
-        private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
+        private static int RegisterPersistentArray<T>(NativeArray<T> array, string label)
             where T : struct
         {
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Permanent);
             if (registrationId <= 0)
                 throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
 

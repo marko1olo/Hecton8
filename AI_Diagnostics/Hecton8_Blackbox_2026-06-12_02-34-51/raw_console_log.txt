@@ -1,0 +1,104 @@
+﻿[Log] [General] [H8Blackbox] Domain reload detected. Recovering PlayMode state machine...
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:.cctor () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:37)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+
+[Error] [Bootstrap] [GlobalRegistry] SystemDispatcher is not registered. Bootstrap must create and register it before runtime tick registration.
+UnityEngine.Debug:LogError (object)
+Hecton8.Core.GlobalRegistry:TryEnsureDispatcherRegistration () (at Assets/_Project/Scripts/Core/GlobalRegistry.cs:7051)
+Hecton8.Core.GlobalRegistry:TryRegisterLateFrameTickable (Hecton8.Core.ILateFrameTickable,Hecton8.Core.PriorityLayer) (at Assets/_Project/Scripts/Core/GlobalRegistry.cs:6674)
+Hecton8.World.SeamGapDitherRenderer:TryRegister () (at Assets/_Project/Scripts/SeamGapDitherRenderer.cs:290)
+Hecton8.World.SeamGapDitherRenderer:OnEnable () (at Assets/_Project/Scripts/SeamGapDitherRenderer.cs:125)
+
+
+[Error] [General] [SuitUpgrade] baseStats not assigned. Disabling.
+UnityEngine.Debug:LogError (object,UnityEngine.Object)
+Hecton8.Core.H8Debug:LogError (string,UnityEngine.Object) (at Assets/_Project/Scripts/Core/H8Debug.cs:79)
+Hecton8.Gameplay.SuitUpgradeManager:Awake () (at Assets/_Project/Scripts/Gameplay/SuitUpgradeManager.cs:228)
+
+
+[Log] [Bootstrap] [HectonPlayerSpawner] Rigidbody is not assigned in the Inspector. Trying to resolve the current player through GameBootstrapper.
+UnityEngine.Debug:Log (object)
+Hecton8.Core.H8Debug:Log (string) (at Assets/_Project/Scripts/Core/H8Debug.cs:21)
+HectonPlayerSpawner:LogSpawner (string) (at Assets/_Project/Scripts/HectonPlayerSpawner.cs:77)
+HectonPlayerSpawner:Awake () (at Assets/_Project/Scripts/HectonPlayerSpawner.cs:272)
+
+
+[Error] [Bootstrap] [HectonPlayerSpawner] Player Rigidbody not found. Inspector reference and bootstrap lookup both failed. Spawn is impossible.
+UnityEngine.Debug:LogError (object,UnityEngine.Object)
+Hecton8.Core.H8Debug:LogError (string,UnityEngine.Object) (at Assets/_Project/Scripts/Core/H8Debug.cs:79)
+HectonPlayerSpawner:LogSpawnerError (string,UnityEngine.Object) (at Assets/_Project/Scripts/HectonPlayerSpawner.cs:104)
+HectonPlayerSpawner:Awake () (at Assets/_Project/Scripts/HectonPlayerSpawner.cs:339)
+
+
+[Error] [General] [WorldPickupStateAuthoringValidator] Persistent pickup has empty stableWorldStateId.
+UnityEngine.Debug:LogError (object,UnityEngine.Object)
+Hecton8.EditorTools.SaveSystem.WorldPickupStateAuthoringValidator:ScanOpenScenePickupStableIds (bool,string) (at Assets/_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs:103)
+Hecton8.EditorTools.SaveSystem.WorldPickupStableIdBuildGate:OnProcessScene (UnityEngine.SceneManagement.Scene,UnityEditor.Build.Reporting.BuildReport) (at Assets/_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs:216)
+UnityEditor.Build.BuildPipelineInterfaces:OnSceneProcess (UnityEngine.SceneManagement.Scene,UnityEditor.Build.Reporting.BuildReport)
+
+
+[Log] [General] [WorldShippingSceneRuntimeGuard] Deactivated 2 suppressed objects in scene '02_HECTON_WORLD'.
+UnityEngine.Debug:Log (object)
+Hecton8.Core.H8Debug:Log (string) (at Assets/_Project/Scripts/Core/H8Debug.cs:21)
+Hecton8.World.WorldShippingSceneRuntimeGuard:CleanupLoadedScene (UnityEngine.SceneManagement.Scene) (at Assets/_Project/Scripts/World/WorldShippingSceneRuntimeGuard.cs:62)
+Hecton8.World.WorldShippingSceneRuntimeGuard:CleanupScene (UnityEngine.SceneManagement.Scene) (at Assets/_Project/Scripts/World/WorldShippingSceneRuntimeGuard.cs:76)
+Hecton8.World.WorldShippingSceneRuntimeGuard:Install () (at Assets/_Project/Scripts/World/WorldShippingSceneRuntimeGuard.cs:41)
+
+
+[Error] [General] [MaterialDecayRuntime] Missing authored scene instance. Runtime component creation is forbidden.
+UnityEngine.Debug:LogError (object)
+Hecton8.Core.H8Debug:LogError (string) (at Assets/_Project/Scripts/Core/H8Debug.cs:67)
+Hecton8.VFX.Materials.MaterialDecayRuntime:EnsureSceneRuntime () (at Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs:99)
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate: startTime set to 143.161623 (realTimeSinceStart=119.7367767, timeSinceStartup=143.1627072)
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:223)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate tick: elapsed=0.00280199999997421, startTime=143.161623, timeSinceStartup=143.1644364
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:231)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate tick: elapsed=50.5650081, startTime=143.161623, timeSinceStartup=193.7266327
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:231)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 1s snapshot. elapsed=50.5650081, startTime=143.161623, timeSinceStartup=193.7270828
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:237)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 5s snapshot. elapsed=50.5650081, startTime=143.161623, timeSinceStartup=206.3092304
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:244)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] ActiveOnUpdate tick: elapsed=67.0125176, startTime=143.161623, timeSinceStartup=210.1741419
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:231)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+
+[Log] [General] [H8Blackbox] Capturing 60s final snapshot. elapsed=67.0125176, startTime=143.161623, timeSinceStartup=210.174546
+UnityEngine.Debug:Log (object)
+Hecton8.BlackboxDiagnostics.H8Runner:ActiveOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:251)
+Hecton8.BlackboxDiagnostics.H8Runner:RecoveredOnUpdate () (at Assets/Editor/Hecton8BlackboxDiagnostics/H8BlackboxRunner.cs:302)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+

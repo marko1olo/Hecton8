@@ -6,6 +6,8 @@
 // geometry-centric) and assumes a single main camera which simplifies the code.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if CREST_URP
@@ -16,23 +18,62 @@ namespace Crest
 {
     internal static class PreparedReflections
     {
+        private static volatile RenderTexture _currentreflectiontexture = null;
+        private static volatile int _referenceCameraInstanceId = -1;
+        private static volatile KeyValuePair<int, RenderTexture>[] _collection = new KeyValuePair<int, RenderTexture>[0];
+
         public static RenderTexture GetRenderTexture(int camerainstanceid)
         {
+            if (camerainstanceid == _referenceCameraInstanceId)
+                return _currentreflectiontexture;
+
+            // Prevent crash if somebody change collection now in over thread, useless in unity now
+            var currentcollection = _collection;
+            for (int i = 0; i < currentcollection.Length; i++)
+            {
+                if (currentcollection[i].Key == camerainstanceid)
+                {
+                    var texture = currentcollection[i].Value;
+                    _currentreflectiontexture = texture;
+                    _referenceCameraInstanceId = camerainstanceid;
+                    return texture;
+                }
+            }
             return null;
         }
 
         // Remove element if exists
         public static void Remove(int camerainstanceid)
         {
+            if (!GetRenderTexture(camerainstanceid)) return;
+            _collection = _collection.Where(e => e.Key != camerainstanceid).ToArray(); //rebuild array without element
+            _currentreflectiontexture = null;
+            _referenceCameraInstanceId = -1;
         }
 
         public static void Register(int instanceId, RenderTexture reflectionTexture)
         {
+            var currentcollection = _collection;
+            for (var i = 0; i < currentcollection.Length; i++)
+            {
+                if (currentcollection[i].Key == instanceId)
+                {
+                    currentcollection[i] = new KeyValuePair<int, RenderTexture>(instanceId, reflectionTexture);
+                    return;
+                }
+            }
+            // Rebuild with new element if not found
+            _collection = currentcollection
+                .Append(new KeyValuePair<int, RenderTexture>(instanceId, reflectionTexture)).ToArray();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void InitStatics()
         {
+            // Init here from 2019.3 onwards
+            _currentreflectiontexture = null;
+            _referenceCameraInstanceId = -1;
+            _collection = new KeyValuePair<int, RenderTexture>[0];
         }
     }
 
@@ -43,8 +84,6 @@ namespace Crest
     [AddComponentMenu(Internal.Constants.MENU_PREFIX_SCRIPTS + "Ocean Planar Reflections")]
     public partial class OceanPlanarReflection : CustomMonoBehaviour
     {
-        private static readonly bool HectonPlanarReflectionDisabled = true;
-
         /// <summary>
         /// The version of this asset. Can be used to migrate across versions. This value should
         /// only be changed when the editor upgrades the version.
@@ -92,11 +131,6 @@ namespace Crest
         UniversalAdditionalCameraData _cameraData;
 #endif
 
-#if UNITY_EDITOR
-        Camera _editorPlanarReflectionCamera;
-        OceanPlanarReflection _editorPlanarReflection;
-#endif
-
         private long _lastRefreshOnFrame = -1;
 
         const int CULL_DISTANCE_COUNT = 32;
@@ -104,12 +138,6 @@ namespace Crest
 
         private void Start()
         {
-            if (HectonPlanarReflectionDisabled)
-            {
-                enabled = false;
-                return;
-            }
-
             if (OceanRenderer.Instance == null)
             {
                 enabled = false;
@@ -127,9 +155,6 @@ namespace Crest
             // This is anyway called in OnPreRender, but was required here as there was a black reflection
             // for a frame without this earlier setup call.
             CreateWaterObjects(_camViewpoint);
-#if CREST_URP
-            CacheReflectionCameraDataCold();
-#endif
 
 #if UNITY_EDITOR
             if (!OceanRenderer.Instance.OceanMaterial.IsKeywordEnabled("_PLANARREFLECTIONS_ON"))
@@ -150,9 +175,6 @@ namespace Crest
 
         void LateUpdate()
         {
-            if (HectonPlanarReflectionDisabled)
-                return;
-
             if (!RequestRefresh(Time.renderedFrameCount))
                 return; // Skip if not need to refresh on this frame
 
@@ -166,11 +188,9 @@ namespace Crest
             var editorCamera = OceanRenderer.Instance.ViewCamera;
             if (_camViewpoint.CompareTag("MainCamera") && editorCamera != null && editorCamera.cameraType == CameraType.SceneView)
             {
-                if (!TryGetEditorPlanarReflection(editorCamera, out var editor))
+                if (!editorCamera.TryGetComponent<OceanPlanarReflection>(out var editor))
                 {
                     editor = editorCamera.gameObject.AddComponent<OceanPlanarReflection>();
-                    _editorPlanarReflectionCamera = editorCamera;
-                    _editorPlanarReflection = editor;
                 }
 
                 if (editor != null)
@@ -248,7 +268,7 @@ namespace Crest
 
             try
             {
-                // HECTON-8 SHINOBU_262: planar reflection camera render path removed.
+                _camReflections.Render();
             }
             finally
             {
@@ -263,25 +283,6 @@ namespace Crest
             // Remember this frame as last refreshed.
             Refreshed(Time.renderedFrameCount);
         }
-
-#if UNITY_EDITOR
-        bool TryGetEditorPlanarReflection(Camera editorCamera, out OceanPlanarReflection editor)
-        {
-            if (!ReferenceEquals(editorCamera, _editorPlanarReflectionCamera))
-            {
-                _editorPlanarReflectionCamera = editorCamera;
-                _editorPlanarReflection = null;
-
-                if (editorCamera != null)
-                {
-                    editorCamera.TryGetComponent(out _editorPlanarReflection);
-                }
-            }
-
-            editor = _editorPlanarReflection;
-            return editor != null;
-        }
-#endif
 
         bool RequestRefresh(long frame)
         {
@@ -357,49 +358,55 @@ namespace Crest
             _camReflections.useOcclusionCulling = !_disableOcclusionCulling && _camViewpoint.useOcclusionCulling;
         }
 
-#if CREST_URP
-        void CacheReflectionCameraDataCold()
-        {
-            _cameraData = null;
-            if (_camReflections != null)
-                _camReflections.TryGetComponent(out _cameraData);
-        }
-#endif
-
         // On-demand create any objects we need for water
         void CreateWaterObjects(Camera currentCamera)
         {
-            if (HectonPlanarReflectionDisabled)
-            {
-                if (currentCamera != null)
-                    PreparedReflections.Remove(currentCamera.GetHashCode());
-                if (_reflectionTexture)
-                {
-                    Helpers.Destroy(_reflectionTexture);
-                    _reflectionTexture = null;
-                }
-                _camReflections = null;
-                _camReflectionsSkybox = null;
-                return;
-            }
-
             // Reflection render texture
             if (!_reflectionTexture || _reflectionTexture.width != _textureSize)
             {
-                return;
+                if (_reflectionTexture)
+                {
+                    Helpers.Destroy(_reflectionTexture);
+                }
+
+                var format = _hdr ? RenderTextureFormat.ARGBHalf : RenderTextureFormat.ARGB32;
+                Debug.Assert(SystemInfo.SupportsRenderTextureFormat(format), "Crest: The graphics device does not support the render texture format " + format.ToString());
+                _reflectionTexture = new RenderTexture(_textureSize, _textureSize, _stencil ? 24 : 16, format)
+                {
+                    name = "__WaterReflection" + GetHashCode(),
+                    isPowerOfTwo = true,
+                };
+                _reflectionTexture.Create();
+                PreparedReflections.Register(currentCamera.GetHashCode(), _reflectionTexture);
             }
 
             // Camera for reflection
             if (!_camReflections)
             {
-                return;
+                _camReflections = new GameObject("Crest Water Reflection Camera").AddComponent<Camera>();
+                _camReflections.enabled = false;
+                _camReflections.transform.SetPositionAndRotation(transform.position, transform.rotation);
+                _camReflectionsSkybox = _camReflections.gameObject.AddComponent<Skybox>();
+                _camReflections.gameObject.AddComponent<FlareLayer>();
+                _camReflections.cameraType = CameraType.Reflection;
+
+#if CREST_URP
+                if (RenderPipelineHelper.IsUniversal)
+                {
+                    _cameraData = _camReflections.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                    _cameraData.requiresColorTexture = false;
+                    _cameraData.requiresDepthTexture = false;
+                }
+#endif
             }
 
 #if CREST_URP
             if (RenderPipelineHelper.IsUniversal)
             {
-                if (_cameraData)
+                if (_cameraData || _camReflections.TryGetComponent(out _cameraData))
+                {
                     _cameraData.renderShadows = !_disableShadows;
+                }
             }
 #endif
 

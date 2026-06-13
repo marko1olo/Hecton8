@@ -1,0 +1,40 @@
+{
+  "criticalCount": 4,
+  "filesScanned": 1854,
+  "findings": [
+    {
+      "detail": "Global authority lookup in hot method; cache at boot or consume dispatcher snapshot.",
+      "line": 246,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+      "rule": "HOT_REGISTRY_POLL",
+      "scanner": "Hot_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Global authority lookup in hot method; cache at boot or consume dispatcher snapshot.",
+      "line": 253,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+      "rule": "HOT_REGISTRY_POLL",
+      "scanner": "Hot_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Global authority lookup in hot method; cache at boot or consume dispatcher snapshot.",
+      "line": 302,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+      "rule": "HOT_REGISTRY_POLL",
+      "scanner": "Hot_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Global authority lookup in hot method; cache at boot or consume dispatcher snapshot.",
+      "line": 309,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+      "rule": "HOT_REGISTRY_POLL",
+      "scanner": "Hot_Registry_Polling",
+      "severity": 2
+    }
+  ],
+  "scanner": "Hot_Registry_Polling",
+  "warningCount": 0
+}

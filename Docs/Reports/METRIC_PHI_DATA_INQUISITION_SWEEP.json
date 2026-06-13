@@ -1,0 +1,11 @@
+{
+  "aligned16": true,
+  "atlasDomains": 85,
+  "binaries": 46,
+  "endianness": "<",
+  "hashCollisions": 0,
+  "manifests": 11,
+  "monteCarloSteps": 1000000,
+  "status": "DATA_INQUISITION_VERIFIED_STATIC_ONLY",
+  "structFormats": 273
+}

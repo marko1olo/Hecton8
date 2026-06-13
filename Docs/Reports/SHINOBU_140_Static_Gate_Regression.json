@@ -1,0 +1,24 @@
+{
+  "criticalCount": 2,
+  "filesScanned": 13,
+  "findings": [
+    {
+      "detail": "Compile_Wall critical count 154 exceeds baseline 120.",
+      "line": 1,
+      "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+      "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+      "scanner": "Static_Gate_Regression",
+      "severity": 2
+    },
+    {
+      "detail": "Hot_Registry_Polling critical count 4 exceeds baseline 0.",
+      "line": 1,
+      "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+      "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+      "scanner": "Static_Gate_Regression",
+      "severity": 2
+    }
+  ],
+  "scanner": "Static_Gate_Regression",
+  "warningCount": 0
+}

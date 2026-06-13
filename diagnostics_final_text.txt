@@ -1,0 +1,72 @@
+--- MAP MAGIC ---
+tileSize: (1000.0, 1000.0)
+tileResolution: _129
+draftsInEditor: True
+graphName: HECTON_PROCEDURAL_GEOLOGY_GRAPH
+graphPath: Assets/_Project/Data/World/Sandbox/HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset
+--- NODES ---
+Node: HectonSandboxAbyssalShelfMapMagicNode
+{"enabled":true,"id":10556397944137842689,"version":0,"guiPosition":{"x":0.0,"y":0.0},"guiSize":{"x":0.0,"y":0.0},"guiPreview":false,"guiAdvanced":false,"guiDebug":false,"highWorldY":2000.0,"lowWorldY":-10000.0,"descentRadiusMeters":15000.0,"macroExponentialFalloff":3.0999999046325685,"shelfRunMeters":15000.0,"shelfTargetSlopeDegrees":30.0,"plateCellSizeMeters":4200.0,"ridgeHeightMeters":700.0,"ridgeMultiplier":0.07999999821186066,"ridgeWidthMeters":1450.0,"junctionWidthMeters":2800.0,"plateUniformity":0.7799999713897705,"domainWarpMeters":1450.0,"domainWarpFrequency":0.00011000000085914508,"slopeNoiseFrequency":0.00003125000148429535,"trenchDepthMeters":5000.0,"trenchWidthMeters":780.0,"trenchSharpness":2.4000000953674318,"islandCenterRadiusMeters":2600.0,"islandJunctionThreshold":0.5799999833106995,"seed":42,"enableSlopeQuantization":false,"plateauSourceAngleDegrees":8.0,"plateauTargetAngleDegrees":2.5,"cliffSourceAngleDegrees":45.0,"cliffTargetAngleDegrees":52.0,"slopeQuantizationStrength":1.0}
+Node: HectonBiomeMatrixMapMagicPostProcessNode
+{"enabled":true,"id":10556397944137842690,"version":1,"guiPosition":{"x":300.0,"y":0.0},"guiSize":{"x":0.0,"y":0.0},"guiPreview":false,"guiAdvanced":false,"guiDebug":false,"enableThermalWeathering":true,"thermalIterations":1,"talusAngleDegrees":32.0,"thermalStrength":0.18000000715255738,"enableTectonicSpineDisplacement":true,"requireTectonicSpineFamily":true,"biomeFamilyId":"biome.family.tectonic_spine","tectonicStrength":0.11999999731779099,"tectonicFrequency":0.006500000134110451,"tectonicRidgeSharpness":3.25,"tectonicSeed":83117}
+Node: HeightOutput200
+{"enabled":true,"id":10556399043649470467,"version":1,"guiPosition":{"x":600.0,"y":0.0},"guiSize":{"x":0.0,"y":0.0},"guiPreview":false,"guiAdvanced":false,"guiDebug":false,"outputLevel":3,"guiApplyType":false}
+Node: TexturesOutput200
+{"enabled":true,"id":10556399043649470468,"version":8,"guiPosition":{"x":600.0,"y":200.0},"guiSize":{"x":0.0,"y":0.0},"guiPreview":false,"guiAdvanced":false,"guiDebug":false,"outputLevel":3,"guiExpanded":0}
+Node: HectonTerrainSurfaceMaterialMapMagicNode
+{"enabled":true,"id":10556758583951753221,"version":0,"guiPosition":{"x":180.0,"y":360.0},"guiSize":{"x":0.0,"y":0.0},"guiPreview":false,"guiAdvanced":false,"guiDebug":false,"macroSeed":880031,"waterSurfaceY":0.0,"maskContrast":1.0}
+--- TERRAINS ---
+TerrainCount: 49
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, 0.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, 2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-3000.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (1000.00, 0.00, -3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (0.00, 0.00, 3000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-1000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, 1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-4000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, -2000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (-2000.00, 0.00, -1000.00)
+Terrain: Main Terrain, size: (1000.00, 250.00, 1000.00), heightmapRes: 129, alphamapRes: 129, pos: (2000.00, 0.00, 3000.00)
+HeightMap: min=0.5702252, max=0.887719, avg=0.7702402, samples=4225
+--- SHADERS ---
+SunDirection: (0.00, 0.00, 0.00, 0.00)
+HectonTimeOfDay01: 0

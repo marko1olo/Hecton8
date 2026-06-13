@@ -1,0 +1,46 @@
+<SELF_AUDIT agent="SHINOBU_140" role="CORE_INTEGRATION_WARDEN" date="2026-06-12" taskCount="20">
+  <Hygiene totalCritical="776" totalWarnings="44" scannerCount="14" regressionCritical="2" />
+  <TaskReconciliation>
+    <Task id="01" criticalDebt="77" warningDebt="0">Task 01 description</Task>
+    <Task id="02" criticalDebt="0" warningDebt="0">Task 02 description</Task>
+    <Task id="03" criticalDebt="0" warningDebt="0">Task 03 description</Task>
+    <Task id="04" criticalDebt="0" warningDebt="0">Task 04 description</Task>
+    <Task id="05" criticalDebt="0" warningDebt="0">Task 05 description</Task>
+    <Task id="06" criticalDebt="0" warningDebt="0">Task 06 description</Task>
+    <Task id="07" criticalDebt="48" warningDebt="0">Task 07 description</Task>
+    <Task id="08" criticalDebt="0" warningDebt="0">Task 08 description</Task>
+    <Task id="09" criticalDebt="0" warningDebt="0">Task 09 description</Task>
+    <Task id="10" criticalDebt="0" warningDebt="0">Task 10 description</Task>
+    <Task id="11" criticalDebt="0" warningDebt="0">Task 11 description</Task>
+    <Task id="12" criticalDebt="22" warningDebt="0">Task 12 description</Task>
+    <Task id="13" criticalDebt="0" warningDebt="0">Task 13 description</Task>
+    <Task id="14" criticalDebt="154" warningDebt="0">Task 14 description</Task>
+    <Task id="15" criticalDebt="0" warningDebt="0">Task 15 description</Task>
+    <Task id="16" criticalDebt="0" warningDebt="0">Task 16 description</Task>
+    <Task id="17" criticalDebt="0" warningDebt="0">Task 17 description</Task>
+    <Task id="18" criticalDebt="0" warningDebt="0">Task 18 description</Task>
+    <Task id="19" criticalDebt="0" warningDebt="0">Task 19 description</Task>
+    <Task id="20" criticalDebt="0" warningDebt="0">Task 20 description</Task>
+  </TaskReconciliation>
+  <RegressionBudget critical="2" warning="0">
+    One or more scanners exceed the frozen red-debt baseline; see Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json for owner routing. New helper-reachability scanner rows are seeded at their first measured debt and are not counted as existing-scanner regressions.
+  </RegressionBudget>
+  <StructLayoutVerification>
+    
+  </StructLayoutVerification>
+  <ScalabilityCurve>
+    
+  </ScalabilityCurve>
+  <HPhiVaultStatus>
+    
+  </HPhiVaultStatus>
+  <PointerAliasingAndDependencyGraph>
+    
+  </PointerAliasingAndDependencyGraph>
+  <CompileGuard>
+    
+  </CompileGuard>
+  <DearLieConfirmation>
+    
+  </DearLieConfirmation>
+</SELF_AUDIT>

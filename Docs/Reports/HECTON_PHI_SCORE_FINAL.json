@@ -1,0 +1,62 @@
+{
+  "all_source": {
+    "counters": {
+      "files": 5554,
+      "lines": 2835047
+    }
+  },
+  "domain_index_count": 85,
+  "generated_at": "2026-06-12T16:36:54",
+  "h_phi_audit": {
+    "observability_increased_by_this_pass": true,
+    "runtime_data_sovereignty_increased_by_this_pass": false
+  },
+  "master_integration_static_gates": {
+    "evidence_class": "STATIC_SOURCE/PY_TOOL",
+    "gate_passed": false,
+    "owner_map": {
+      "present": false,
+      "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_OWNER_MAP.json",
+      "top_owner_totals": []
+    },
+    "regression": {
+      "critical_count": -1,
+      "findings": [],
+      "present": false,
+      "source": "Docs/Reports/SHINOBU_140_Static_Gate_Regression.json",
+      "warning_count": -1
+    },
+    "regression_attribution": {
+      "present": false,
+      "regressions": [],
+      "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json"
+    },
+    "scanner_count": 0,
+    "scanner_self_tests": {
+      "present": false,
+      "source": "Docs/Reports/SHINOBU_140_SCANNER_SELF_TESTS.json",
+      "status": "MISSING",
+      "test_count": 0
+    },
+    "scanners": [],
+    "self_audit": {
+      "present": false,
+      "source": "Docs/Reports/SHINOBU_140_SELF_AUDIT.xml",
+      "status": "MISSING",
+      "task_count": 0
+    },
+    "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_SUMMARY.json",
+    "status": "PENDING VERIFICATION",
+    "total_critical": -1,
+    "total_warnings": -1,
+    "unity_invoked": false
+  },
+  "omega_polish_status": "VERIFIED MASTER GRADE STATIC_SOURCE ONLY",
+  "runtime_source": {
+    "scores": {
+      "HPhiStatic": 6.7481e-05
+    },
+    "top_lowest_purity_files": []
+  },
+  "status": "PHI CALCULATED"
+}

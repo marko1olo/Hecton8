@@ -1,0 +1,37 @@
+﻿{
+    "success": true,
+    "partialSuccess": false,
+    "abortReason": "",
+    "unityVersion": "6000.4.10f1",
+    "activeScene": "02_HECTON_WORLD",
+    "mode": "EditMode",
+    "timestamp": "2026-06-13 14:26:19",
+    "outputPath": "C:\\hades\\Hecton8\\AI_Diagnostics\\Hecton8_Blackbox_2026-06-13_14-26-19",
+    "errorCount": 22,
+    "warningCount": 5,
+    "criticalCount": 3,
+    "outputFiles": [
+        "run_summary.json",
+        "snapshot_editmode.json",
+        "findings.md",
+        "report.md",
+        "compact_handoff_for_claude.md",
+        "next_steps_for_agent.md",
+        "hierarchy_editmode.txt",
+        "raw_console_log.txt"
+    ],
+    "topFindings": [
+        "[Bootstrap] Bootstrap has not started — registry phase is 0 and this is not the bootstrap scene",
+        "[Bootstrap] 02_HECTON_WORLD is active but bootstrap did not complete",
+        "[Registry] GlobalRegistry phase is 0 and all service slots are null",
+        "[Atmosphere] CelestialEngine not found in scene",
+        "[Atmosphere] AtmosphereManager not found in scene",
+        "[Crest] OceanKinematics is not registered in GlobalRegistry",
+        "[Crest] OceanRenderer._primaryLight is null",
+        "[Crest] OceanRenderer._viewCamera is null",
+        "[Registry] TickManager or Dispatcher slot is null — game loop may not run",
+        "[Registry] Registry slot 'Dispatcher' is null"
+    ],
+    "errors": [],
+    "warnings": []
+}

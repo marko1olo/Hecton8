@@ -1,0 +1,592 @@
+{
+  "criticalCount": 73,
+  "filesScanned": 1854,
+  "findings": [
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLateFrame at line 820; helper reads GlobalRegistry.",
+      "line": 257,
+      "path": "Assets/_Project/Scripts/AmbientWaterMotionManager.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 1149; helper reads GlobalRegistry.",
+      "line": 1116,
+      "path": "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method ScheduleSimulation calls helper ScheduleVocalWarningFrame at line 1330; helper reads GlobalRegistry.",
+      "line": 3359,
+      "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 589; helper reads GlobalRegistry.",
+      "line": 405,
+      "path": "Assets/_Project/Scripts/BuilderTool.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTick at line 306; helper reads GlobalRegistry.",
+      "line": 184,
+      "path": "Assets/_Project/Scripts/Construction/ValveWheelInteractable.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTick at line 306; helper reads GlobalRegistry.",
+      "line": 203,
+      "path": "Assets/_Project/Scripts/Construction/ValveWheelInteractable.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterFixedIfNeeded at line 544; helper reads GlobalRegistry.",
+      "line": 389,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterUpdateWhenDormant at line 587; helper reads GlobalRegistry.",
+      "line": 396,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterUpdateWhenDormant at line 587; helper reads GlobalRegistry.",
+      "line": 413,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method FixedTick calls helper TryUnregisterFixedWhenDormant at line 596; helper reads GlobalRegistry.",
+      "line": 432,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method FixedTick calls helper TryUnregisterFixedWhenDormant at line 596; helper reads GlobalRegistry.",
+      "line": 438,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameWhenDormant at line 605; helper reads GlobalRegistry.",
+      "line": 444,
+      "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 450; helper reads GlobalRegistry.",
+      "line": 433,
+      "path": "Assets/_Project/Scripts/FlashlightTool.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method ScheduleSimulation calls helper TryRegisterHotSwapListener at line 168; helper reads GlobalRegistry.",
+      "line": 244,
+      "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper PublishPressurizationSnapshot at line 1308; helper reads GlobalRegistry.",
+      "line": 541,
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper PublishPressurizationSnapshot at line 1308; helper reads GlobalRegistry.",
+      "line": 549,
+      "path": "Assets/_Project/Scripts/Gameplay/BaseAirlock.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 202; helper reads GlobalRegistry.",
+      "line": 132,
+      "path": "Assets/_Project/Scripts/Gameplay/CelestialCataclysmSystem.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterUpdatableWhenNoBlink at line 599; helper reads GlobalRegistry.",
+      "line": 289,
+      "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameWhenDormant at line 608; helper reads GlobalRegistry.",
+      "line": 326,
+      "path": "Assets/_Project/Scripts/Gameplay/DeployableBeacon.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 1042; helper reads GlobalRegistry.",
+      "line": 1012,
+      "path": "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 238; helper reads GlobalRegistry.",
+      "line": 95,
+      "path": "Assets/_Project/Scripts/Gameplay/Hazards/LightCullingProxy.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 204; helper reads GlobalRegistry.",
+      "line": 93,
+      "path": "Assets/_Project/Scripts/Gameplay/Hazards/ThermalVentRuntime.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 365; helper reads GlobalRegistry.",
+      "line": 201,
+      "path": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterFromLateFrame at line 2524; helper reads GlobalRegistry.",
+      "line": 693,
+      "path": "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper StopLateFrameTicking at line 684; helper reads GlobalRegistry.",
+      "line": 649,
+      "path": "Assets/_Project/Scripts/Gameplay/SealedDoor.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTickWhenDormant at line 259; helper reads GlobalRegistry.",
+      "line": 144,
+      "path": "Assets/_Project/Scripts/Gameplay/TransportChargingStation.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameWhenDormant at line 268; helper reads GlobalRegistry.",
+      "line": 183,
+      "path": "Assets/_Project/Scripts/Gameplay/TransportChargingStation.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper RegisterLateFrameTick at line 476; helper reads GlobalRegistry.",
+      "line": 164,
+      "path": "Assets/_Project/Scripts/HectonScanMarkerSystem.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameRefresh at line 527; helper reads GlobalRegistry.",
+      "line": 208,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionUI.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameRefresh at line 527; helper reads GlobalRegistry.",
+      "line": 214,
+      "path": "Assets/_Project/Scripts/Interaction/InteractionUI.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method FixedTick calls helper TryUnregisterFixedTick at line 538; helper reads GlobalRegistry.",
+      "line": 272,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method FixedTick calls helper TryUnregisterFixedTick at line 538; helper reads GlobalRegistry.",
+      "line": 278,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 560; helper reads GlobalRegistry.",
+      "line": 332,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 560; helper reads GlobalRegistry.",
+      "line": 339,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapCoordinator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTick at line 447; helper reads GlobalRegistry.",
+      "line": 248,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapLatch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTick at line 447; helper reads GlobalRegistry.",
+      "line": 254,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapLatch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterTick at line 447; helper reads GlobalRegistry.",
+      "line": 279,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapLatch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 468; helper reads GlobalRegistry.",
+      "line": 342,
+      "path": "Assets/_Project/Scripts/Interaction/LifePodSeatStrapLatch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLateFrameTick at line 340; helper reads GlobalRegistry.",
+      "line": 233,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLateFrameTick at line 340; helper reads GlobalRegistry.",
+      "line": 243,
+      "path": "Assets/_Project/Scripts/Interaction/PhysicalSnapSwitch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLateFrameTick at line 477; helper reads GlobalRegistry.",
+      "line": 192,
+      "path": "Assets/_Project/Scripts/Interaction/VRValveWheelHandle.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLateFrameTick at line 477; helper reads GlobalRegistry.",
+      "line": 203,
+      "path": "Assets/_Project/Scripts/Interaction/VRValveWheelHandle.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterMomentumTick at line 467; helper reads GlobalRegistry.",
+      "line": 275,
+      "path": "Assets/_Project/Scripts/Interaction/VRValveWheelHandle.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 485; helper reads GlobalRegistry.",
+      "line": 277,
+      "path": "Assets/_Project/Scripts/Interaction/VRValveWheelHandle.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper StopLateFrameTicking at line 420; helper reads GlobalRegistry.",
+      "line": 398,
+      "path": "Assets/_Project/Scripts/InteractionHighlighter.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper StopTicking at line 380; helper reads GlobalRegistry.",
+      "line": 400,
+      "path": "Assets/_Project/Scripts/InteractionHighlighter.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 2458; helper reads GlobalRegistry.",
+      "line": 1392,
+      "path": "Assets/_Project/Scripts/LaserCutter.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameLane at line 909; helper reads GlobalRegistry.",
+      "line": 349,
+      "path": "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameLane at line 909; helper reads GlobalRegistry.",
+      "line": 355,
+      "path": "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 4469; helper reads GlobalRegistry.",
+      "line": 834,
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 1131; helper reads GlobalRegistry.",
+      "line": 622,
+      "path": "Assets/_Project/Scripts/PlayerFlashlight.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 710; helper reads GlobalRegistry.",
+      "line": 332,
+      "path": "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrame at line 710; helper reads GlobalRegistry.",
+      "line": 347,
+      "path": "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper ReleaseRuntimeAuthority at line 376; helper reads GlobalRegistry.",
+      "line": 492,
+      "path": "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLateFrame at line 446; helper reads GlobalRegistry.",
+      "line": 320,
+      "path": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 1069; helper reads GlobalRegistry.",
+      "line": 1051,
+      "path": "Assets/_Project/Scripts/RepairTool.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper RefreshCelestialLightReadabilityBinding at line 655; helper reads GlobalRegistry.",
+      "line": 231,
+      "path": "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLate at line 514; helper reads GlobalRegistry.",
+      "line": 224,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodAirlockController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLate at line 356; helper reads GlobalRegistry.",
+      "line": 162,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodDashboardToggleSwitch.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method FixedTick calls helper UnregisterFixed at line 749; helper reads GlobalRegistry.",
+      "line": 190,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLate at line 758; helper reads GlobalRegistry.",
+      "line": 204,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLate at line 758; helper reads GlobalRegistry.",
+      "line": 212,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper UnregisterLate at line 758; helper reads GlobalRegistry.",
+      "line": 222,
+      "path": "Assets/_Project/Scripts/Vehicles/DropPod/DropPodSeatController.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 402; helper reads GlobalRegistry.",
+      "line": 381,
+      "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTick at line 402; helper reads GlobalRegistry.",
+      "line": 391,
+      "path": "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper GetCurrentPlayTimeSeconds at line 1354; helper reads GlobalRegistry.",
+      "line": 828,
+      "path": "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryUnregisterLootTick at line 3650; helper reads GlobalRegistry.",
+      "line": 1840,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method Tick calls helper TryRegisterLootTick at line 3665; helper reads GlobalRegistry.",
+      "line": 1844,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLootTick at line 3650; helper reads GlobalRegistry.",
+      "line": 1851,
+      "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTickable at line 375; helper reads GlobalRegistry.",
+      "line": 188,
+      "path": "Assets/_Project/Scripts/World/VoxelCarveVolume.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTickable at line 375; helper reads GlobalRegistry.",
+      "line": 196,
+      "path": "Assets/_Project/Scripts/World/VoxelCarveVolume.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTickable at line 375; helper reads GlobalRegistry.",
+      "line": 206,
+      "path": "Assets/_Project/Scripts/World/VoxelCarveVolume.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    },
+    {
+      "detail": "Hot method LateFrameTick calls helper TryUnregisterLateFrameTickable at line 132; helper reads GlobalRegistry.",
+      "line": 51,
+      "path": "Assets/_Project/Scripts/World/WreckageScatterManager.cs",
+      "rule": "HOT_HELPER_REGISTRY_POLL",
+      "scanner": "Hot_Helper_Registry_Polling",
+      "severity": 2
+    }
+  ],
+  "scanner": "Hot_Helper_Registry_Polling",
+  "warningCount": 0
+}
