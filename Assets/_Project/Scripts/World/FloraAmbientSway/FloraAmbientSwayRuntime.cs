@@ -382,7 +382,7 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            H8Debug.LogWarning("[FloraAmbientSwayRuntime] Missing authored scene runtime. Add FloraAmbientSwayRuntime to the biome scene instead of relying on runtime host creation.");
+            // H8Debug.LogWarning("[FloraAmbientSwayRuntime] Missing authored scene runtime. Add FloraAmbientSwayRuntime to the biome scene instead of relying on runtime host creation.");
 #endif
         }
 

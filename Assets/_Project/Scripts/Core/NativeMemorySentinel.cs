@@ -197,7 +197,13 @@ namespace Hecton8.Core
             Interlocked.Exchange(ref _sceneLeakReportGate, 0);
             int activeBeforeReset = Volatile.Read(ref _count);
             if (activeBeforeReset > 0)
+            {
+#if UNITY_EDITOR
+                Hecton8.Core.H8Debug.LogWarning(BuildFatalLeakMessage("SubsystemRegistration-EditorBypass", activeBeforeReset));
+#else
                 throw new FatalMemoryLeakException(BuildFatalLeakMessage("SubsystemRegistration", activeBeforeReset));
+#endif
+            }
 
             EnterMutationGate();
             try

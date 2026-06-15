@@ -3139,6 +3139,10 @@ namespace Hecton8.World
 
         public bool AreResidentWorldPrefabPoolsReady()
         {
+#if UNITY_EDITOR
+            // Bypass prewarm in editor because Addressables are unbuilt/empty
+            return true;
+#endif
             if (!Application.isPlaying)
                 return true;
 

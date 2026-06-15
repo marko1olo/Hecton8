@@ -127,7 +127,8 @@ namespace Hecton8.Modding
             /// When omitted, the current mod loader scope ID is used if available.
             /// </param>
             /// <returns>
-            /// A disposable subscription token. Dispose it from <c>IHectonMod.OnUnload()</c> to stop receiving events.
+            /// A disposable subscription token. Dispose it from your mod's lifecycle events
+            /// to stop receiving events.
             /// </returns>
             internal static HectonEventSubscription Subscribe<TEvent>(Action<TEvent> handler, string subscriberId = null)
                 where TEvent : HectonEvent

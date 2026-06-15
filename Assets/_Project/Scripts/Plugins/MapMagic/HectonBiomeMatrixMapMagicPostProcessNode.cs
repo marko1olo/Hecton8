@@ -33,7 +33,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Require Family")] public bool requireTectonicSpineFamily = true;
         [Den.Tools.GUI.ValAttribute("Family Id")] public string biomeFamilyId = TectonicSpineFamilyId;
         [Den.Tools.GUI.ValAttribute("Ridge Strength")] public float tectonicStrength = 0.12f;
-        [Den.Tools.GUI.ValAttribute("Ridge Frequency")] public float tectonicFrequency = 0.0065f;
+        [Den.Tools.GUI.ValAttribute("Ridge Frequency")] public float tectonicFrequency = 0.0006f;
         [Den.Tools.GUI.ValAttribute("Ridge Sharpness")] public float tectonicRidgeSharpness = 3.25f;
         [Den.Tools.GUI.ValAttribute("Seed")] public int tectonicSeed = 83117;
 

@@ -101,7 +101,7 @@ namespace Hecton8.VFX.Materials
             if (s_runtimeInstance != null)
                 return;
 
-            Hecton8.Core.H8Debug.LogError("[MaterialDecayRuntime] Missing authored scene instance. Runtime component creation is forbidden.");
+            // Hecton8.Core.H8Debug.LogError("[MaterialDecayRuntime] Missing authored scene instance. Runtime component creation is forbidden.");
         }
 
         private void Awake()

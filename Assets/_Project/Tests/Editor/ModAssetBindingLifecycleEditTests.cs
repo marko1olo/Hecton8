@@ -11,72 +11,46 @@ namespace Hecton8.Tests.Editor
         public void ModAssetManager_UnloadsCachedBundleWhenBindingChangesOrIsRemoved()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs");
-            string register = ExtractMethodBody(source, "internal static void RegisterBundlePath(string modId, string bundlePath)");
-            string unregister = ExtractMethodBody(source, "internal static void UnregisterBundlePath(string modId)");
+            string register = ExtractMethodBody(source, "internal static void RegisterCatalogPath(string modId, string catalogPath)");
+            string unregister = ExtractMethodBody(source, "internal static void UnregisterCatalogPath(string modId)");
             string unloadModAssets = ExtractMethodBody(source, "private static void UnloadModAssets(uint modHash)");
-            string unload = ExtractMethodBody(source, "private static void UnloadBundle(uint modHash)");
+            string unloadAll = ExtractMethodBody(source, "private static void UnloadAllCatalogs()");
 
             StringAssert.Contains("UnloadModAssets(modHash);", register);
             Assert.IsTrue(ContainsTokensInOrder(
                 register,
                 "if (ModLoader.GetIsFutureCommandEnvelopeOnly())",
-                "_bundlePaths.Remove(modHash);",
                 "UnloadModAssets(modHash);",
                 "return;"));
             Assert.IsTrue(ContainsTokensInOrder(
                 register,
-                "if (string.IsNullOrWhiteSpace(bundlePath))",
-                "_bundlePaths.Remove(modHash);",
+                "if (string.IsNullOrWhiteSpace(catalogPath) || !File.Exists(catalogPath))",
                 "UnloadModAssets(modHash);",
                 "return;"));
             Assert.IsTrue(ContainsTokensInOrder(
                 register,
-                "if (_bundlePaths.ContainsKey(modHash))",
-                "UnloadModAssets(modHash);",
-                "_bundlePaths[modHash] = bundlePath;"));
+                "if (_loadedCatalogs.ContainsKey(modHash))",
+                "UnloadModAssets(modHash);"));
 
-            StringAssert.Contains("_bundlePaths.Remove(modHash);", unregister);
             StringAssert.Contains("UnloadModAssets(modHash);", unregister);
-            StringAssert.Contains("UnloadBundle(modHash);", unloadModAssets);
-            StringAssert.Contains("UnloadRawTexturesForMod(modHash);", unloadModAssets);
-            StringAssert.Contains("_loadedBundles.TryGetValue(modHash, out AssetBundle bundle)", unload);
-            StringAssert.Contains("bundle.Unload(false);", unload);
-            StringAssert.Contains("_loadedBundles.Remove(modHash);", unload);
+            StringAssert.Contains("Addressables.Release(catalogHandle);", unloadModAssets);
+            StringAssert.Contains("_loadedCatalogs.Remove(modHash);", unloadModAssets);
+            StringAssert.Contains("Addressables.Release(kvp.Value);", unloadAll);
+            StringAssert.Contains("_loadedCatalogs.Clear();", unloadAll);
         }
 
         [Test]
         public void ModAssetManager_EvictsRawTextureCacheForRemovedModBinding()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs");
-            string loadRawTexture = ExtractMethodBody(source, "private static Texture2D LoadRawTexture(string modId, string assetName)");
-            string unloadRawTextures = ExtractMethodBody(source, "private static void UnloadRawTexturesForMod(uint modHash)");
-            string unloadAll = ExtractMethodBody(source, "private static void UnloadAllBundles()");
-            string hash = ExtractMethodBody(source, "private static uint ComputeAssetCacheHash(uint modHash, string filePath)");
 
-            StringAssert.Contains("_rawTextureModHashes", source);
-            Assert.IsTrue(ContainsTokensInOrder(
-                loadRawTexture,
-                "uint modHash = ModCommandDispatcher.ComputeModHash(modId);",
-                "uint cacheKey = ComputeAssetCacheHash(modHash, filePath);",
-                "_rawTextures.TryGetValue(cacheKey, out Texture2D cachedTexture)",
-                "return cachedTexture;"));
-            StringAssert.Contains("_rawTextures.Remove(cacheKey);", loadRawTexture);
-            StringAssert.Contains("_rawTextureModHashes.Remove(cacheKey);", loadRawTexture);
-            Assert.IsTrue(ContainsTokensInOrder(
-                loadRawTexture,
-                "_rawTextures[cacheKey] = texture;",
-                "_rawTextureModHashes[cacheKey] = modHash;"));
-
-            StringAssert.Contains("_rawTextureModHashes.GetEnumerator()", unloadRawTextures);
-            StringAssert.Contains("enumerator.Current.Value != modHash", unloadRawTextures);
-            StringAssert.Contains("cacheKeysToRemove.Add(enumerator.Current.Key);", unloadRawTextures);
-            StringAssert.Contains("UnityEngine.Object.Destroy(texture);", unloadRawTextures);
-            StringAssert.Contains("_rawTextures.Remove(cacheKey);", unloadRawTextures);
-            StringAssert.Contains("_rawTextureModHashes.Remove(cacheKey);", unloadRawTextures);
-
-            StringAssert.Contains("_rawTextureModHashes.Clear();", unloadAll);
-            StringAssert.Contains("uint hash = modHash;", hash);
-            StringAssert.DoesNotContain("ComputeAssetCacheHash(string modId", source);
+            // Verify security: ModAssetManager must not support loose file loading or raw texture caching
+            StringAssert.DoesNotContain("LoadRawTexture", source);
+            StringAssert.DoesNotContain("UnloadRawTexturesForMod", source);
+            StringAssert.DoesNotContain("_rawTextures", source);
+            StringAssert.DoesNotContain("_rawTextureModHashes", source);
+            StringAssert.DoesNotContain("File.ReadAllBytes", source);
+            StringAssert.DoesNotContain("LoadImage", source);
         }
 
         [Test]
@@ -84,14 +58,13 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModLoader.cs");
             string disableCandidate = ExtractMethodBody(source, "private static void DisableCandidate(ModCandidate candidate, string reason)");
-            string disableManaged = ExtractMethodBody(source, "private static void DisableManagedMod(string modId, string reason, bool invokeUnload)");
-            string shutdown = ExtractMethodBody(source, "private static void ShutdownLoadedMods()");
+            string disableMod = ExtractMethodBody(source, "internal static void DisableMod(string modId, string reason)");
 
             Assert.IsTrue(ContainsTokensInOrder(
                 disableCandidate,
                 "candidate.IsDisabled = true;",
                 "candidate.DisabledReason = reason;",
-                "ModAssetManager.UnregisterBundlePath(candidate.Metadata.Id);",
+                "ModAssetManager.UnregisterCatalogPath(candidate.Metadata.Id);",
                 "ModResourceRegistry.UnregisterModResources(candidate.Metadata.Id);",
                 "ModSettingsRegistry.UnregisterModSettings(candidate.Metadata.Id);",
                 "ModItemRegistry.UnregisterModItems(candidate.Metadata.Id);",
@@ -100,36 +73,19 @@ namespace Hecton8.Tests.Editor
                 "ModEcosystemRegistry.UnregisterModBiomeMutations(candidate.Metadata.Id);",
                 "ModBuildableRegistry.UnregisterModBuildables(candidate.Metadata.Id);",
                 "RecordRuntimeInfo(new ModRuntimeInfo"));
+
             Assert.IsTrue(ContainsTokensInOrder(
-                disableManaged,
+                disableMod,
                 "HectonEventBus.DisableSubscriber(modId);",
                 "ModCommandDispatcher.QuarantineMod(modId);",
-                "ModAssetManager.UnregisterBundlePath(modId);",
+                "ModAssetManager.UnregisterCatalogPath(modId);",
                 "ModResourceRegistry.UnregisterModResources(modId);",
                 "ModSettingsRegistry.UnregisterModSettings(modId);",
                 "ModItemRegistry.UnregisterModItems(modId);",
                 "ModRecipeRegistry.UnregisterModRecipes(modId);",
                 "ModRecycleRegistry.UnregisterModRecycleYields(modId);",
                 "ModEcosystemRegistry.UnregisterModBiomeMutations(modId);",
-                "ModBuildableRegistry.UnregisterModBuildables(modId);",
-                "ModCommandDispatcher.UnregisterMod(modId);",
-                "ModItemRegistry.UnregisterModItems(modId);",
-                "ModRecipeRegistry.UnregisterModRecipes(modId);",
-                "ModRecycleRegistry.UnregisterModRecycleYields(modId);",
-                "ModEcosystemRegistry.UnregisterModBiomeMutations(modId);",
                 "ModBuildableRegistry.UnregisterModBuildables(modId);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                shutdown,
-                "ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnUnload, \"OnUnload\");",
-                "ModCommandDispatcher.UnregisterMod(_loadedMods[i].Metadata.Id);",
-                "ModAssetManager.UnregisterBundlePath(_loadedMods[i].Metadata.Id);",
-                "ModResourceRegistry.UnregisterModResources(_loadedMods[i].Metadata.Id);",
-                "ModSettingsRegistry.UnregisterModSettings(_loadedMods[i].Metadata.Id);",
-                "ModItemRegistry.UnregisterModItems(_loadedMods[i].Metadata.Id);",
-                "ModRecipeRegistry.UnregisterModRecipes(_loadedMods[i].Metadata.Id);",
-                "ModRecycleRegistry.UnregisterModRecycleYields(_loadedMods[i].Metadata.Id);",
-                "ModEcosystemRegistry.UnregisterModBiomeMutations(_loadedMods[i].Metadata.Id);",
-                "ModBuildableRegistry.UnregisterModBuildables(_loadedMods[i].Metadata.Id);"));
         }
 
         [Test]

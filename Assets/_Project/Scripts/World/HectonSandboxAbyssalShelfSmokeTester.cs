@@ -258,7 +258,8 @@ namespace Hecton8.World
                 TrenchSharpness = 2.4f,
                 IslandCenterRadiusMeters = 2600f,
                 IslandJunctionThreshold = 0.58f,
-                Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
+                Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0),
+                MacroGeologyArtifactVersion = WorldMacroGeologyFields.ArtifactVersion
             };
         }
 

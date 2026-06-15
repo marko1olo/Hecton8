@@ -639,7 +639,7 @@ namespace Hecton8.Modding
                 EnqueueMemoryEvictionEvent(modHash, state.FrameHeapBytes, ModHeapFrameQuotaBytes);
                 QuarantineMod(modHash);
                 if (TryGetModId(modHash, out string modIdForFrameQuota))
-                    ModLoader.DisableManagedMod(modIdForFrameQuota, "CRITICAL_MEMORY_EVICTION: managed allocation frame quota exceeded.");
+                    ModLoader.DisableMod(modIdForFrameQuota, "CRITICAL_MEMORY_EVICTION: managed allocation frame quota exceeded.");
                 return;
             }
 
@@ -650,7 +650,7 @@ namespace Hecton8.Modding
             EnqueueMemoryEvictionEvent(modHash, state.TrackedHeapBytes, ModHeapQuotaBytes);
             QuarantineMod(modHash);
             if (TryGetModId(modHash, out string modId))
-                ModLoader.DisableManagedMod(modId, "CRITICAL_MEMORY_EVICTION: tracked managed allocation quota exceeded.");
+                ModLoader.DisableMod(modId, "CRITICAL_MEMORY_EVICTION: tracked managed allocation quota exceeded.");
         }
 
         [System.Obsolete("Legacy managed command kernel registration is quarantined. Use FutureCommandEnvelope kernel opcodes.", false)]

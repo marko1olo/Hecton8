@@ -1,4 +1,4 @@
-﻿
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -2413,7 +2413,8 @@ namespace Hecton8.World
                 TrenchSharpness = 2.4f,
                 IslandCenterRadiusMeters = parameters.IslandCenterRadiusMeters,
                 IslandJunctionThreshold = parameters.IslandJunctionThreshold,
-                Seed = parameters.Seed
+                Seed = parameters.Seed,
+                MacroGeologyArtifactVersion = WorldMacroGeologyFields.ArtifactVersion
             };
         }
 

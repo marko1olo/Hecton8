@@ -446,7 +446,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26200000000000000000000000000004, type: 3}
   m_Name: HectonSinglePassOceanFeature
   m_EditorClassIdentifier: Hecton8.Rendering.OceanSinglePass::Hecton8.Rendering.OceanSinglePass.HectonSinglePassOceanFeature
-  m_Active: 1
+  m_Active: 0
   settings:
     depthFoamShader: {fileID: 4800000, guid: 26200000000000000000000000000006, type: 3}
     wakeCompute: {fileID: 7200000, guid: 26200000000000000000000000000007, type: 3}

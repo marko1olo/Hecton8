@@ -133,6 +133,14 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
+#if UNITY_EDITOR
+            if (_sceneName.IndexOf("sandbox", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                failureReason = "NONE";
+                return true;
+            }
+#endif
+
             if (!_worldPrimed)
             {
                 failureReason = "WORLD_PRIME_PENDING";

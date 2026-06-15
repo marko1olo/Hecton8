@@ -41,12 +41,11 @@ namespace Hecton8.Modding
         private const string MaxDiscoveredManifestCountLabel = "64";
         private const int MaxTopLevelManagedAssemblyCount = 32;
         private const string MaxTopLevelManagedAssemblyCountLabel = "32";
-        private const int MaxTopLevelBundleCount = 4;
-        private const string MaxTopLevelBundleCountLabel = "4";
+
         private const int MaxLocalizationFileCount = 16;
         private const string MaxLocalizationFileCountLabel = "16";
         private const string DefaultAssemblyExtension = ".dll";
-        private const string DefaultBundleExtension = ".bundle";
+
         private const string ReservedAssemblyNamePrefix = "Hecton8.";
         private const string ReservedUnityAssemblyNamePrefix = "Unity";
         private const string ReservedAssemblyNameAssemblyCSharp = "Assembly-CSharp";
@@ -54,16 +53,10 @@ namespace Hecton8.Modding
         private const string ReservedAssemblyNameMscorlib = "mscorlib";
         private const string ReservedAssemblyNameNetstandard = "netstandard";
         internal const int CurrentAPIVersion = 2;
-
-        // COLD ALLOC: List<LoadedMod>[16] — successfully instantiated managed mods — owner: ModLoader
-        private static readonly List<LoadedMod> _loadedMods = new List<LoadedMod>(16);
         // COLD ALLOC: List<ModRuntimeInfo>[32] — discovered runtime info descriptors for UI and diagnostics — owner: ModLoader
         private static readonly List<ModRuntimeInfo> _runtimeInfos = new List<ModRuntimeInfo>(32);
         // COLD ALLOC: Dictionary<string,int>[32] — modId to runtime info index lookup — owner: ModLoader
         private static readonly Dictionary<uint, int> _runtimeInfoIndexByHash = new Dictionary<uint, int>(32);
-        // COLD ALLOC: Dictionary<string,Func<IHectonMod>>[16] — explicit boot-registered managed mod factories — owner: ModLoader
-        private static readonly Dictionary<uint, Func<IHectonMod>> _managedModFactories =
-            new Dictionary<uint, Func<IHectonMod>>(16);
         // COLD ALLOC: SaveEventListener[1] — static save-event bridge for mod runtime hooks — owner: ModLoader
         private static readonly SaveEventListener _saveEventListener = new SaveEventListener();
         private static readonly BootstrapEventListener _bootstrapEventListener = new BootstrapEventListener();
@@ -77,10 +70,8 @@ namespace Hecton8.Modding
         internal static void ResetStaticState()
         {
             ShutdownRuntimeForLifecycleReset();
-            _loadedMods.Clear();
             _runtimeInfos.Clear();
             _runtimeInfoIndexByHash.Clear();
-            _managedModFactories.Clear();
             _bootstrapped = false;
             _modsInitialized = false;
             _hooksInstalled = false;
@@ -158,35 +149,6 @@ namespace Hecton8.Modding
 
             directoryPath = _runtimeInfos[index].DirectoryPath;
             return !string.IsNullOrWhiteSpace(directoryPath);
-        }
-
-        internal static bool RegisterManagedFactory(string modId, Func<IHectonMod> factory)
-        {
-            if (ShouldForceFutureCommandEnvelopeOnly())
-                return false;
-
-            if (string.IsNullOrWhiteSpace(modId) || factory == null)
-                return false;
-
-            if (IsReservedFactoryLoadedFromModsRoot(factory))
-                return false;
-
-            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            if (modHash == 0u)
-                return false;
-
-            _managedModFactories[modHash] = factory;
-            return true;
-        }
-
-        internal static void UnregisterManagedFactory(string modId)
-        {
-            if (string.IsNullOrWhiteSpace(modId))
-                return;
-
-            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            if (modHash != 0u)
-                _managedModFactories.Remove(modHash);
         }
 
         private static void InstallHooks()
@@ -274,7 +236,7 @@ namespace Hecton8.Modding
                     Status = ModLoadStatus.Disabled,
                     DirectoryPath = candidate.ModDirectory,
                     StatusMessage = candidate.DisabledReason ?? "Disabled.",
-                    AssetBundlePath = candidate.BundlePath,
+                    CatalogPath = candidate.CatalogPath,
                     HasManagedEntry = candidate.HasManagedEntry,
                     HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
                 });
@@ -370,12 +332,10 @@ namespace Hecton8.Modding
                     managedAssemblyIdentityScanPaths.Length > 0 ||
                     (!envelopeOnly && !string.IsNullOrWhiteSpace(assemblyPath));
 
-                string bundlePath = envelopeOnly
+                string catalogPath = envelopeOnly
                     ? string.Empty
-                    : ResolveBundlePath(modDirectory, manifest.Id);
-                string[] localizationFiles = envelopeOnly
-                    ? Array.Empty<string>()
-                    : ResolveLocalizationFiles(modDirectory);
+                    : ResolveCatalogPath(modDirectory, manifest.Id);
+                string[] localizationFiles = ResolveLocalizationFiles(modDirectory);
 
                 candidate = BuildCandidate(
                     manifest,
@@ -385,7 +345,7 @@ namespace Hecton8.Modding
                     managedAssemblyIdentityScanPaths,
                     manifestContractError,
                     hasManagedEntry,
-                    bundlePath,
+                    catalogPath,
                     localizationFiles);
                 return true;
             }
@@ -404,7 +364,7 @@ namespace Hecton8.Modding
             string[] managedAssemblyIdentityScanPaths,
             string manifestContractError,
             bool hasManagedEntry,
-            string bundlePath,
+            string catalogPath,
             string[] localizationFiles)
         {
             ModCandidate candidate = new ModCandidate
@@ -424,7 +384,7 @@ namespace Hecton8.Modding
                 EntryTypeName = manifest.EntryType ?? string.Empty,
                 ManifestPath = manifestPath,
                 ModDirectory = modDirectory,
-                BundlePath = bundlePath ?? string.Empty,
+                CatalogPath = catalogPath ?? string.Empty,
                 LocalizationFiles = localizationFiles ?? Array.Empty<string>(),
                 HasManagedEntry = hasManagedEntry
             };
@@ -768,42 +728,6 @@ namespace Hecton8.Modding
                    string.Equals(assemblyName, ReservedAssemblyNameNetstandard, StringComparison.Ordinal);
         }
 
-        private static bool IsReservedFactoryLoadedFromModsRoot(Func<IHectonMod> factory)
-        {
-            MethodInfo method = factory.Method;
-            Assembly assembly = method != null ? method.DeclaringType?.Assembly : null;
-            AssemblyName assemblyName = assembly != null ? assembly.GetName() : null;
-            if (assemblyName == null || !IsReservedManagedAssemblyName(assemblyName.Name))
-                return false;
-
-            try
-            {
-                string location = assembly.Location;
-                if (string.IsNullOrWhiteSpace(location))
-                    return false;
-
-                string modsRoot = ResolveModsRoot();
-                if (string.IsNullOrWhiteSpace(modsRoot))
-                    return false;
-
-                string normalizedLocation = Path.GetFullPath(location)
-                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                string normalizedModsRoot = Path.GetFullPath(modsRoot)
-                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                return normalizedLocation.StartsWith(
-                    normalizedModsRoot + Path.DirectorySeparatorChar,
-                    StringComparison.OrdinalIgnoreCase);
-            }
-            catch (Exception ex) when (
-                ex is ArgumentException ||
-                ex is IOException ||
-                ex is NotSupportedException ||
-                ex is UnauthorizedAccessException)
-            {
-                return true;
-            }
-        }
-
         private static string ResolveAssemblyPath(string modDirectory, ModManifest manifest)
         {
             if (string.IsNullOrWhiteSpace(modDirectory))
@@ -830,24 +754,17 @@ namespace Hecton8.Modding
             return dllFiles != null && dllFiles.Length == 1 ? dllFiles[0] : null;
         }
 
-        private static string ResolveBundlePath(string modDirectory, string modId)
+        private static string ResolveCatalogPath(string modDirectory, string modId)
         {
             if (string.IsNullOrWhiteSpace(modDirectory))
                 return null;
 
-            string conventionalPath = Path.Combine(modDirectory, modId + DefaultBundleExtension);
+            // Addressables content catalogs are typically named 'catalog.json'
+            string conventionalPath = Path.Combine(modDirectory, "catalog.json");
             if (File.Exists(conventionalPath))
                 return conventionalPath;
 
-            string[] bundleFiles = CollectTopLevelFiles(
-                modDirectory,
-                "*" + DefaultBundleExtension,
-                MaxTopLevelBundleCount,
-                MaxTopLevelBundleCountLabel,
-                "asset bundle",
-                out _,
-                out _);
-            return bundleFiles != null && bundleFiles.Length == 1 ? bundleFiles[0] : null;
+            return null;
         }
 
         private static string[] ResolveLocalizationFiles(string modDirectory)
@@ -1052,23 +969,12 @@ namespace Hecton8.Modding
 
             return true;
         }
-
         private static void TryLoadCandidate(ModCandidate candidate)
         {
             if (candidate.IsDisabled)
                 return;
 
-            if (ShouldForceFutureCommandEnvelopeOnly())
-            {
-                DisableCandidate(
-                    candidate,
-                    candidate.HasManagedEntry
-                        ? "Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets."
-                        : "Filesystem content ingestion disabled. UGC assets must be approved by CRC and referenced by 64-byte FutureCommandEnvelope packets.");
-                return;
-            }
-
-            ModAssetManager.RegisterBundlePath(candidate.Metadata.Id, candidate.BundlePath);
+            ModAssetManager.RegisterCatalogPath(candidate.Metadata.Id, candidate.CatalogPath);
             ModLocalizationBridge.RegisterLocalizationFiles(candidate.Metadata.Id, candidate.LocalizationFiles);
 
             if (!candidate.HasManagedEntry)
@@ -1078,80 +984,15 @@ namespace Hecton8.Modding
                     Metadata = candidate.Metadata,
                     Status = ModLoadStatus.Active,
                     DirectoryPath = candidate.ModDirectory,
-                    StatusMessage = "Content-only mod loaded in legacy non-envelope mode.",
-                    AssetBundlePath = candidate.BundlePath,
+                    StatusMessage = "Data-driven mod loaded.",
+                    CatalogPath = candidate.CatalogPath,
                     HasManagedEntry = false,
                     HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
                 });
                 return;
             }
 
-            try
-            {
-                if (!TryCreateRegisteredManagedMod(candidate.Metadata.Id, out IHectonMod modInstance, out string failureReason))
-                {
-                    DisableCandidate(candidate, failureReason);
-                    return;
-                }
-
-                int requiredApiVersion = ResolveRequiredApiVersion(candidate.Metadata.RequiredAPIVersion, modInstance);
-                if (requiredApiVersion <= 0)
-                {
-                    DisableCandidate(candidate, "Missing RequiredAPIVersion.");
-                    return;
-                }
-
-                if (requiredApiVersion > CurrentAPIVersion)
-                {
-                    DisableCandidate(candidate, "RequiredAPIVersion exceeds engine API version.");
-                    return;
-                }
-
-                LoadedMod loadedMod = new LoadedMod
-                {
-                    Metadata = candidate.Metadata,
-                    Instance = modInstance
-                };
-                loadedMod.Metadata.RequiredAPIVersion = requiredApiVersion;
-
-                ModCommandDispatcher.RegisterMod(loadedMod.Metadata.Id, requiredApiVersion, loadedMod.Metadata.ModPriority);
-
-                if (!ExecuteModCallback(loadedMod.Metadata.Id, loadedMod.Instance.OnLoad, "OnLoad"))
-                {
-                    ModCommandDispatcher.UnregisterMod(loadedMod.Metadata.Id);
-                    DisableCandidate(candidate, "OnLoad failed.");
-                    return;
-                }
-
-                _loadedMods.Add(loadedMod);
-
-                RecordRuntimeInfo(new ModRuntimeInfo
-                {
-                    Metadata = loadedMod.Metadata,
-                    Status = ModLoadStatus.Active,
-                    DirectoryPath = candidate.ModDirectory,
-                    StatusMessage = string.Empty,
-                    AssetBundlePath = candidate.BundlePath,
-                    HasManagedEntry = true,
-                    HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
-                });
-            }
-            catch (Exception ex)
-            {
-                DisableCandidate(candidate, string.Concat("Load failure '", ex.Message, "'."));
-            }
-        }
-
-        private static int ResolveRequiredApiVersion(int manifestApiVersion, IHectonMod modInstance)
-        {
-            int requiredApiVersion = manifestApiVersion;
-            if (modInstance is IHectonVersionedMod versionedMod &&
-                versionedMod.RequiredAPIVersion > requiredApiVersion)
-            {
-                requiredApiVersion = versionedMod.RequiredAPIVersion;
-            }
-
-            return requiredApiVersion;
+            DisableCandidate(candidate, "Managed DLL mods are strictly banned by envelope-only runtime policy.");
         }
 
         private static bool ShouldForceFutureCommandEnvelopeOnly()
@@ -1168,7 +1009,7 @@ namespace Hecton8.Modding
         {
             candidate.IsDisabled = true;
             candidate.DisabledReason = reason;
-            ModAssetManager.UnregisterBundlePath(candidate.Metadata.Id);
+            ModAssetManager.UnregisterCatalogPath(candidate.Metadata.Id);
             ModResourceRegistry.UnregisterModResources(candidate.Metadata.Id);
             ModSettingsRegistry.UnregisterModSettings(candidate.Metadata.Id);
             ModItemRegistry.UnregisterModItems(candidate.Metadata.Id);
@@ -1184,115 +1025,10 @@ namespace Hecton8.Modding
                 Status = ModLoadStatus.Disabled,
                 DirectoryPath = candidate.ModDirectory,
                 StatusMessage = reason,
-                AssetBundlePath = candidate.BundlePath,
+                CatalogPath = candidate.CatalogPath,
                 HasManagedEntry = candidate.HasManagedEntry,
                 HasLocalizationFiles = candidate.LocalizationFiles != null && candidate.LocalizationFiles.Length > 0
             });
-        }
-
-        internal static void DisableManagedMod(string modId, string reason)
-        {
-            DisableManagedMod(modId, reason, true);
-        }
-
-        private static void DisableManagedMod(string modId, string reason, bool invokeUnload)
-        {
-            if (string.IsNullOrWhiteSpace(modId))
-                return;
-
-            HectonEventBus.DisableSubscriber(modId);
-            ModCommandDispatcher.QuarantineMod(modId);
-            ModAssetManager.UnregisterBundlePath(modId);
-            ModResourceRegistry.UnregisterModResources(modId);
-            ModSettingsRegistry.UnregisterModSettings(modId);
-            ModItemRegistry.UnregisterModItems(modId);
-            ModRecipeRegistry.UnregisterModRecipes(modId);
-            ModRecycleRegistry.UnregisterModRecycleYields(modId);
-            ModEcosystemRegistry.UnregisterModBiomeMutations(modId);
-            ModBuildableRegistry.UnregisterModBuildables(modId);
-
-            for (int i = _loadedMods.Count - 1; i >= 0; i--)
-            {
-                LoadedMod loadedMod = _loadedMods[i];
-                if (loadedMod == null || loadedMod.Metadata.Id != modId)
-                    continue;
-
-                if (invokeUnload && loadedMod.Instance != null)
-                {
-                    try
-                    {
-                        using (ModExecutionScope.Enter(modId))
-                        {
-                            loadedMod.Instance.OnUnload();
-                        }
-                    }
-                    catch (Exception unloadException)
-                    {
-                        Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "' threw during isolation unload: ", unloadException));
-                    }
-                }
-
-                _loadedMods.RemoveAt(i);
-                ModCommandDispatcher.UnregisterMod(modId);
-                ModItemRegistry.UnregisterModItems(modId);
-                ModRecipeRegistry.UnregisterModRecipes(modId);
-                ModRecycleRegistry.UnregisterModRecycleYields(modId);
-                ModEcosystemRegistry.UnregisterModBiomeMutations(modId);
-                ModBuildableRegistry.UnregisterModBuildables(modId);
-                ModRuntimeInfo info = new ModRuntimeInfo
-                {
-                    Metadata = loadedMod.Metadata,
-                    Status = ModLoadStatus.Disabled,
-                    DirectoryPath = TryGetModDirectory(modId, out string directoryPath) ? directoryPath : string.Empty,
-                    StatusMessage = reason ?? "Disabled after managed callback failure.",
-                    AssetBundlePath = string.Empty,
-                    HasManagedEntry = true,
-                    HasLocalizationFiles = false
-                };
-                RecordRuntimeInfo(info);
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "': ", info.StatusMessage));
-                return;
-            }
-        }
-
-        private static bool TryCreateRegisteredManagedMod(
-            string modId,
-            out IHectonMod modInstance,
-            out string failureReason)
-        {
-            modInstance = null;
-            failureReason = null;
-
-            if (ShouldForceFutureCommandEnvelopeOnly())
-            {
-                failureReason = "Managed mod factories are quarantined. UGC commands must use 64-byte FutureCommandEnvelope packets.";
-                return false;
-            }
-
-            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            if (modHash == 0u || !_managedModFactories.TryGetValue(modHash, out Func<IHectonMod> factory) || factory == null)
-            {
-                failureReason =
-                    "Managed code entry requires explicit boot registration. Runtime assembly reflection loading is disabled for IL2CPP compliance.";
-                return false;
-            }
-
-            try
-            {
-                modInstance = factory();
-                if (modInstance == null)
-                {
-                    failureReason = "Managed mod factory returned null.";
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                failureReason = string.Concat("Managed mod factory threw '", ex.Message, "'.");
-                return false;
-            }
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -1338,12 +1074,8 @@ namespace Hecton8.Modding
             ModBuildableRegistry.FlushPendingRegistrations();
             ModLocalizationBridge.FlushPendingInjections();
             GlobalRegistry.ModWorldPersistence?.InitializeService();
-
             if (!_modsInitialized)
             {
-                for (int i = _loadedMods.Count - 1; i >= 0; i--)
-                    ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnInitialize, "OnInitialize");
-
                 _modsInitialized = true;
             }
 
@@ -1371,7 +1103,6 @@ namespace Hecton8.Modding
 
         private static void ShutdownRuntimeForLifecycleReset()
         {
-            ShutdownLoadedMods();
             UninstallHooks();
             ModCommandDispatcher.Shutdown();
             if (!ShouldForceFutureCommandEnvelopeOnly())
@@ -1382,52 +1113,31 @@ namespace Hecton8.Modding
             _shutdownInvoked = false;
         }
 
-        private static void ShutdownLoadedMods()
+
+        internal static void DisableMod(string modId, string reason)
         {
-            if (_shutdownInvoked)
+            if (string.IsNullOrWhiteSpace(modId))
                 return;
 
-            _shutdownInvoked = true;
+            HectonEventBus.DisableSubscriber(modId);
+            ModCommandDispatcher.QuarantineMod(modId);
+            ModAssetManager.UnregisterCatalogPath(modId);
+            ModResourceRegistry.UnregisterModResources(modId);
+            ModSettingsRegistry.UnregisterModSettings(modId);
+            ModItemRegistry.UnregisterModItems(modId);
+            ModRecipeRegistry.UnregisterModRecipes(modId);
+            ModRecycleRegistry.UnregisterModRecycleYields(modId);
+            ModEcosystemRegistry.UnregisterModBiomeMutations(modId);
+            ModBuildableRegistry.UnregisterModBuildables(modId);
 
-            for (int i = _loadedMods.Count - 1; i >= 0; i--)
+            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
+            if (modHash != 0u && _runtimeInfoIndexByHash.TryGetValue(modHash, out int index))
             {
-                ExecuteModCallback(_loadedMods[i].Metadata.Id, _loadedMods[i].Instance.OnUnload, "OnUnload");
-                ModCommandDispatcher.UnregisterMod(_loadedMods[i].Metadata.Id);
-                ModAssetManager.UnregisterBundlePath(_loadedMods[i].Metadata.Id);
-                ModResourceRegistry.UnregisterModResources(_loadedMods[i].Metadata.Id);
-                ModSettingsRegistry.UnregisterModSettings(_loadedMods[i].Metadata.Id);
-                ModItemRegistry.UnregisterModItems(_loadedMods[i].Metadata.Id);
-                ModRecipeRegistry.UnregisterModRecipes(_loadedMods[i].Metadata.Id);
-                ModRecycleRegistry.UnregisterModRecycleYields(_loadedMods[i].Metadata.Id);
-                ModEcosystemRegistry.UnregisterModBiomeMutations(_loadedMods[i].Metadata.Id);
-                ModBuildableRegistry.UnregisterModBuildables(_loadedMods[i].Metadata.Id);
-            }
-
-            _loadedMods.Clear();
-        }
-
-        private static bool ExecuteModCallback(string modId, Action callback, string callbackName)
-        {
-            if (callback == null)
-                return true;
-
-            try
-            {
-                long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
-                using (ModExecutionScope.Enter(modId))
-                {
-                    callback();
-                }
-
-                long allocatedDelta = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
-                ModCommandDispatcher.ReportModManagedAllocation(modId, allocatedDelta);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Mod '", modId, "' failed during ", callbackName, ": ", ex));
-                DisableManagedMod(modId, string.Concat(callbackName, " threw '", ex.Message, "'."), false);
-                return false;
+                ModRuntimeInfo info = _runtimeInfos[index];
+                info.Status = ModLoadStatus.Disabled;
+                info.StatusMessage = reason ?? "Disabled manually or due to fatal error.";
+                _runtimeInfos[index] = info;
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "': ", info.StatusMessage));
             }
         }
 
@@ -1505,18 +1215,12 @@ namespace Hecton8.Modding
             public string EntryTypeName;
             public string ManifestPath;
             public string ModDirectory;
-            public string BundlePath;
+            public string CatalogPath;
             public string[] LocalizationFiles;
             public bool HasManagedEntry;
             public bool IsDisabled;
             public bool IsProcessed;
             public string DisabledReason;
-        }
-
-        private sealed class LoadedMod
-        {
-            public ModMetadata Metadata;
-            public IHectonMod Instance;
         }
     }
 }

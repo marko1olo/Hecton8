@@ -47,10 +47,10 @@ namespace Hecton8.Modding
         internal string StatusMessage;
 
         /// <summary>
-        /// Absolute path to the primary AssetBundle discovered for the mod package.
-        /// Empty when the package has no supported AssetBundle.
+        /// Absolute path to the Addressables catalog.json discovered for the mod package.
+        /// Empty when the package has no supported Addressables catalog.
         /// </summary>
-        internal string AssetBundlePath;
+        internal string CatalogPath;
 
         /// <summary>
         /// True when the mod package exposed a managed entry assembly and loader entry point.

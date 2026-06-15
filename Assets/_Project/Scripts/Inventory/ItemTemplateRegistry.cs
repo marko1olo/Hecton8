@@ -210,6 +210,43 @@ namespace Hecton8.Inventory
             s_questSystem = questSystem;
         }
 
+        public static void ApplyModOverrides(Hecton8.Modding.ModItemTemplateOverride[] overrides)
+        {
+            if (overrides == null || overrides.Length == 0 || s_templates == null || s_templates.Length == 0)
+                return;
+
+            for (int i = 0; i < overrides.Length; i++)
+            {
+                var over = overrides[i];
+                if (string.IsNullOrWhiteSpace(over.TargetItemHashOrName)) continue;
+                
+                // For now, expect the direct numeric HashID string from modders
+                if (!uint.TryParse(over.TargetItemHashOrName, out uint targetHash))
+                    continue;
+
+                if (TryGetIndex(targetHash, out int index))
+                {
+                    ItemTemplate old = s_templates[index];
+                    s_templates[index] = new ItemTemplate(
+                        old.HashID,
+                        old.CategoryMask,
+                        over.OverrideDurability ? over.BaseDurability : old.BaseDurability,
+                        old.WearMultiplier,
+                        over.OverrideMaxStackSize ? over.MaxStackSize : old.MaxStackSize,
+                        old.ProxyMeshIndex,
+                        old.IconAtlasIndex,
+                        old.HlodSilhouetteIndex,
+                        old.VulnerabilityMask,
+                        old.AudioMaterialId,
+                        old.PhysicsMaterialTag,
+                        over.OverrideMassKg ? over.MassKg : old.MassKg,
+                        over.OverrideVolumeM3 ? over.VolumeM3 : old.VolumeM3,
+                        old.BlueprintQuestFlagId
+                    );
+                }
+            }
+        }
+
         public static bool TryGetIndex(uint hashID, out int index)
         {
             index = -1;

@@ -1,51 +1,48 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Hecton.Localization;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.AddressableAssets.ResourceLocators;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceLocations;
 
 namespace Hecton8.Modding
 {
     /// <summary>
-    /// Legacy owner for mod content assets loaded from on-disk AssetBundles and selected raw file fallbacks.
+    /// Addressables-based owner for mod content assets.
     /// Envelope-only UGC mode disables registration and loading; active assets must pass the FutureCommandEnvelope CRC gate.
     /// </summary>
     internal static class ModAssetManager
     {
-        // COLD ALLOC: Dictionary<uint,string>[32] - mod hash to bundle path lookup - owner: ModAssetManager
-        private static readonly Dictionary<uint, string> _bundlePaths = new Dictionary<uint, string>(32);
-        // COLD ALLOC: Dictionary<uint,AssetBundle>[32] - cached loaded mod bundles by mod hash - owner: ModAssetManager
-        private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
-        // COLD ALLOC: Dictionary<uint,Texture2D>[32] - legacy cached raw PNG textures by asset hash - owner: ModAssetManager
-        private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
-        // COLD ALLOC: Dictionary<uint,uint>[32] - raw PNG cache key to owning mod hash - owner: ModAssetManager
-        private static readonly Dictionary<uint, uint> _rawTextureModHashes = new Dictionary<uint, uint>(32);
+        // COLD ALLOC: Dictionary<uint, AsyncOperationHandle>[32] - mod hash to loaded catalog handle - owner: ModAssetManager
+        private static readonly Dictionary<uint, AsyncOperationHandle<IResourceLocator>> _loadedCatalogs = new Dictionary<uint, AsyncOperationHandle<IResourceLocator>>(32);
+        
+        // COLD ALLOC: Dictionary<uint, List<AsyncOperationHandle>>[32] - mod hash to loaded asset handles - owner: ModAssetManager
+        private static readonly Dictionary<uint, List<AsyncOperationHandle>> _loadedAssetHandles = new Dictionary<uint, List<AsyncOperationHandle>>(32);
+
         // COLD ALLOC: HashSet<uint>[128] - FNV-hashed MOD_COMPATIBLE ledger prefab references - owner: ModAssetManager
         private static readonly HashSet<uint> _modCompatibleAssetHashes = new HashSet<uint>(128);
         private const string ModCompatibleLedgerTag = "MOD_COMPATIBLE";
-        private const long MaxRawTextureBytes = 8L * 1024L * 1024L;
-        private const int MaxRawTextureDimension = 2048;
-        private const string MaxRawTextureBytesLabel = "8388608";
-        private const string MaxRawTextureDimensionLabel = "2048";
         private static readonly Encoding LedgerEncoding = new UTF8Encoding(false);
         private static bool _modCompatibleLedgerLoaded;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            UnloadAllBundles();
-            _bundlePaths.Clear();
-            _rawTextures.Clear();
+            UnloadAllCatalogs();
+            _loadedCatalogs.Clear();
+            _loadedAssetHandles.Clear();
             _modCompatibleAssetHashes.Clear();
             _modCompatibleLedgerLoaded = false;
         }
 
         /// <summary>
-        /// Registers the primary AssetBundle path resolved for a mod package.
+        /// Registers the Addressables catalog resolved for a mod package and loads it synchronously.
         /// </summary>
         /// <param name="modId">Stable mod identifier.</param>
-        /// <param name="bundlePath">Absolute bundle path or an empty value when no bundle exists.</param>
-        internal static void RegisterBundlePath(string modId, string bundlePath)
+        /// <param name="catalogPath">Absolute catalog.json path or an empty value when no catalog exists.</param>
+        internal static void RegisterCatalogPath(string modId, string catalogPath)
         {
             if (string.IsNullOrWhiteSpace(modId))
                 return;
@@ -53,64 +50,66 @@ namespace Hecton8.Modding
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
             if (ModLoader.GetIsFutureCommandEnvelopeOnly())
             {
-                _bundlePaths.Remove(modHash);
                 UnloadModAssets(modHash);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(bundlePath))
+            if (string.IsNullOrWhiteSpace(catalogPath) || !File.Exists(catalogPath))
             {
-                _bundlePaths.Remove(modHash);
                 UnloadModAssets(modHash);
                 return;
             }
 
-            if (_bundlePaths.ContainsKey(modHash))
+            if (_loadedCatalogs.ContainsKey(modHash))
                 UnloadModAssets(modHash);
 
-            _bundlePaths[modHash] = bundlePath;
+            try
+            {
+                AsyncOperationHandle<IResourceLocator> handle = Addressables.LoadContentCatalogAsync(catalogPath);
+                handle.WaitForCompletion();
+                
+                if (handle.Status == AsyncOperationStatus.Succeeded)
+                {
+                    _loadedCatalogs[modHash] = handle;
+                }
+                else
+                {
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to load catalog '", catalogPath, "' for mod '", modId, "'."));
+                    Addressables.Release(handle);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Exception loading catalog '", catalogPath, "' for mod '", modId, "': ", ex.Message));
+            }
         }
 
         /// <summary>
-        /// Removes the AssetBundle binding for a mod and releases its cached bundle.
+        /// Removes the Catalog binding for a mod and releases its cached catalog and assets.
         /// </summary>
         /// <param name="modId">Stable mod identifier.</param>
-        internal static void UnregisterBundlePath(string modId)
+        internal static void UnregisterCatalogPath(string modId)
         {
             if (string.IsNullOrWhiteSpace(modId))
                 return;
 
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            _bundlePaths.Remove(modHash);
             UnloadModAssets(modHash);
         }
 
-        /// <summary>
-        /// Legacy load from a registered AssetBundle; returns null while envelope-only UGC is enforced.
-        /// </summary>
         internal static GameObject LoadPrefab(string modId, string assetName)
         {
             return LoadAsset<GameObject>(modId, assetName);
         }
 
-        /// <summary>
-        /// Legacy load from a registered AssetBundle; returns null while envelope-only UGC is enforced.
-        /// </summary>
         internal static AudioClip LoadAudioClip(string modId, string assetName)
         {
             return LoadAsset<AudioClip>(modId, assetName);
         }
 
-        /// <summary>
-        /// Legacy load from a registered AssetBundle or dev-only raw PNG fallback; returns null while envelope-only UGC is enforced.
-        /// </summary>
         internal static Texture2D LoadTexture(string modId, string assetName)
         {
-            Texture2D texture = LoadAsset<Texture2D>(modId, assetName);
-            if (texture != null)
-                return texture;
-
-            return LoadRawTexture(modId, assetName);
+            return LoadAsset<Texture2D>(modId, assetName);
         }
 
         private static TAsset LoadAsset<TAsset>(string modId, string assetName)
@@ -131,222 +130,77 @@ namespace Hecton8.Modding
             }
 
             uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            if (!TryGetLoadedBundle(modHash, modId, out AssetBundle bundle))
+            if (!_loadedCatalogs.ContainsKey(modHash))
                 return null;
 
-            TAsset asset = bundle.LoadAsset<TAsset>(assetName);
-            if (asset != null)
-                return asset;
-
-            Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Asset '", assetName, "' was not found in bundle for mod '", modId, "'."));
-            return null;
-        }
-
-        private static bool TryGetLoadedBundle(uint modHash, string modId, out AssetBundle bundle)
-        {
-            if (_loadedBundles.TryGetValue(modHash, out bundle) && bundle != null)
-                return true;
-
-            bundle = null;
-            if (!_bundlePaths.TryGetValue(modHash, out string bundlePath) ||
-                string.IsNullOrWhiteSpace(bundlePath) ||
-                !File.Exists(bundlePath))
-            {
-                return false;
-            }
-
-            bundle = AssetBundle.LoadFromFile(bundlePath);
-            if (bundle == null)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to load AssetBundle '", bundlePath, "' for mod '", modId, "'."));
-                return false;
-            }
-
-            _loadedBundles[modHash] = bundle;
-            return true;
-        }
-
-        private static Texture2D LoadRawTexture(string modId, string assetName)
-        {
-#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
-            return null;
-#else
-            if (ModLoader.GetIsFutureCommandEnvelopeOnly())
-                return null;
-
-            if (string.IsNullOrWhiteSpace(assetName) || !assetName.EndsWith(".png", System.StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            if (!ModLoader.TryGetModDirectory(modId, out string modDirectory) || string.IsNullOrWhiteSpace(modDirectory))
-                return null;
-
-            if (!TryBuildModRelativeFilePath(modDirectory, assetName, out string filePath))
-                return null;
-
-            if (!File.Exists(filePath))
-                return null;
-
-            if (!TryValidateRawTextureFile(filePath))
-                return null;
-
-            uint modHash = ModCommandDispatcher.ComputeModHash(modId);
-            uint cacheKey = ComputeAssetCacheHash(modHash, filePath);
-            if (_rawTextures.TryGetValue(cacheKey, out Texture2D cachedTexture) && cachedTexture != null)
-                return cachedTexture;
-
-            _rawTextures.Remove(cacheKey);
-            _rawTextureModHashes.Remove(cacheKey);
-
-            byte[] pngBytes;
             try
             {
-                pngBytes = File.ReadAllBytes(filePath);
-            }
-            catch (System.UnauthorizedAccessException exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected inaccessible raw texture '", filePath, "': ", exception.Message));
-                return null;
-            }
-            catch (IOException exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to read raw texture '", filePath, "': ", exception.Message));
-                return null;
-            }
-            catch (System.Exception exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture read '", filePath, "': ", exception.Message));
-                return null;
-            }
+                AsyncOperationHandle<TAsset> handle = Addressables.LoadAssetAsync<TAsset>(assetName);
+                handle.WaitForCompletion();
 
-            Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, true, false)
-            {
-                name = Path.GetFileNameWithoutExtension(filePath)
-            }; // COLD ALLOC: Texture2D[1] - legacy raw PNG fallback for mod texture loading - owner: ModAssetManager
-
-            if (!ImageConversion.LoadImage(texture, pngBytes, false))
-            {
-                UnityEngine.Object.Destroy(texture);
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] PNG decode failed for '", filePath, "'."));
-                return null;
-            }
-
-            if (texture.width > MaxRawTextureDimension || texture.height > MaxRawTextureDimension)
-            {
-                UnityEngine.Object.Destroy(texture);
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureDimensionLabel, "px dimension cap."));
-                return null;
-            }
-
-            _rawTextures[cacheKey] = texture;
-            _rawTextureModHashes[cacheKey] = modHash;
-            return texture;
-#endif
-        }
-
-        private static bool TryValidateRawTextureFile(string filePath)
-        {
-            try
-            {
-                // COLD ALLOC: FileInfo[1] — raw texture size gate — owner: ModAssetManager
-                var fileInfo = new FileInfo(filePath);
-                if (!fileInfo.Exists || fileInfo.Length <= 0L)
-                    return false;
-
-                if (fileInfo.Length > MaxRawTextureBytes)
+                if (handle.Status == AsyncOperationStatus.Succeeded && handle.Result != null)
                 {
-                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureBytesLabel, " byte cap."));
-                    return false;
+                    if (!_loadedAssetHandles.TryGetValue(modHash, out List<AsyncOperationHandle> handles))
+                    {
+                        handles = new List<AsyncOperationHandle>(16);
+                        _loadedAssetHandles[modHash] = handles;
+                    }
+                    handles.Add(handle);
+                    return handle.Result;
+                }
+                else
+                {
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Asset '", assetName, "' was not found in Addressables for mod '", modId, "'."));
+                    if (handle.IsValid())
+                        Addressables.Release(handle);
+                    return null;
                 }
             }
-            catch (IOException exception)
+            catch (System.Exception ex)
             {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to inspect raw texture '", filePath, "': ", exception.Message));
-                return false;
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to load Addressable asset '", assetName, "' for mod '", modId, "': ", ex.Message));
+                return null;
             }
-            catch (System.Exception exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture '", filePath, "': ", exception.Message));
-                return false;
-            }
-
-            return true;
         }
 
-        private static void UnloadAllBundles()
+        private static void UnloadAllCatalogs()
         {
-            Dictionary<uint, AssetBundle>.Enumerator enumerator = _loadedBundles.GetEnumerator();
-            while (enumerator.MoveNext())
+            foreach (var kvp in _loadedAssetHandles)
             {
-                AssetBundle bundle = enumerator.Current.Value;
-                if (bundle != null)
-                    bundle.Unload(false);
+                if (kvp.Value == null) continue;
+                for (int i = 0; i < kvp.Value.Count; i++)
+                {
+                    if (kvp.Value[i].IsValid())
+                        Addressables.Release(kvp.Value[i]);
+                }
             }
+            _loadedAssetHandles.Clear();
 
-            _loadedBundles.Clear();
-
-            Dictionary<uint, Texture2D>.Enumerator textureEnumerator = _rawTextures.GetEnumerator();
-            while (textureEnumerator.MoveNext())
+            foreach (var kvp in _loadedCatalogs)
             {
-                Texture2D texture = textureEnumerator.Current.Value;
-                if (texture != null)
-                    UnityEngine.Object.Destroy(texture);
+                if (kvp.Value.IsValid())
+                    Addressables.Release(kvp.Value);
             }
-
-            _rawTextures.Clear();
-            _rawTextureModHashes.Clear();
+            _loadedCatalogs.Clear();
         }
 
         private static void UnloadModAssets(uint modHash)
         {
-            UnloadBundle(modHash);
-            UnloadRawTexturesForMod(modHash);
-        }
-
-        private static void UnloadBundle(uint modHash)
-        {
-            if (!_loadedBundles.TryGetValue(modHash, out AssetBundle bundle))
-                return;
-
-            if (bundle != null)
-                bundle.Unload(false);
-
-            _loadedBundles.Remove(modHash);
-        }
-
-        private static void UnloadRawTexturesForMod(uint modHash)
-        {
-            List<uint> cacheKeysToRemove = null;
-            Dictionary<uint, uint>.Enumerator enumerator = _rawTextureModHashes.GetEnumerator();
-            while (enumerator.MoveNext())
+            if (_loadedAssetHandles.TryGetValue(modHash, out List<AsyncOperationHandle> handles) && handles != null)
             {
-                if (enumerator.Current.Value != modHash)
-                    continue;
-
-                cacheKeysToRemove ??= new List<uint>(4); // COLD ALLOC: List<uint>[4] - raw texture cache eviction keys - owner: ModAssetManager
-                cacheKeysToRemove.Add(enumerator.Current.Key);
+                for (int i = 0; i < handles.Count; i++)
+                {
+                    if (handles[i].IsValid())
+                        Addressables.Release(handles[i]);
+                }
+                _loadedAssetHandles.Remove(modHash);
             }
 
-            if (cacheKeysToRemove == null)
-                return;
-
-            for (int i = 0; i < cacheKeysToRemove.Count; i++)
+            if (_loadedCatalogs.TryGetValue(modHash, out AsyncOperationHandle<IResourceLocator> catalogHandle))
             {
-                uint cacheKey = cacheKeysToRemove[i];
-                if (_rawTextures.TryGetValue(cacheKey, out Texture2D texture) && texture != null)
-                    UnityEngine.Object.Destroy(texture);
-
-                _rawTextures.Remove(cacheKey);
-                _rawTextureModHashes.Remove(cacheKey);
-            }
-        }
-
-        private static uint ComputeAssetCacheHash(uint modHash, string filePath)
-        {
-            unchecked
-            {
-                uint hash = modHash;
-                hash ^= ModCommandDispatcher.ComputeModHash(filePath) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
-                return hash;
+                if (catalogHandle.IsValid())
+                    Addressables.Release(catalogHandle);
+                _loadedCatalogs.Remove(modHash);
             }
         }
 
@@ -376,7 +230,6 @@ namespace Hecton8.Modding
 
             try
             {
-                // COLD ALLOC: StreamReader[1] - sequential project content ledger scan for mod prefab allowlist - owner: ModAssetManager
                 using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))
                 {
                     string line;
@@ -400,184 +253,81 @@ namespace Hecton8.Modding
             int assetStart = line.IndexOf("Assets/", System.StringComparison.OrdinalIgnoreCase);
             if (assetStart >= 0)
             {
-                int assetEnd = assetStart;
-                while (assetEnd < line.Length)
+                int assetEnd = line.IndexOf(".prefab", assetStart, System.StringComparison.OrdinalIgnoreCase);
+                if (assetEnd > assetStart)
                 {
-                    char c = line[assetEnd];
-                    if (char.IsWhiteSpace(c) || c == '|' || c == ')' || c == ']' || c == '`' || c == '"')
-                        break;
+                    string assetPath = line.Substring(assetStart, assetEnd - assetStart + 7);
+                    uint assetHash = ModCommandDispatcher.ComputeModHash(assetPath);
+                    if (assetHash != 0u)
+                        _modCompatibleAssetHashes.Add(assetHash);
+                }
+            }
 
-                    assetEnd++;
+            int guidStart = line.IndexOf("guid:", System.StringComparison.OrdinalIgnoreCase);
+            if (guidStart >= 0)
+            {
+                guidStart += 5;
+                int guidEnd = guidStart;
+                while (guidEnd < line.Length)
+                {
+                    char c = line[guidEnd];
+                    if ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || (c >= '0' && c <= '9'))
+                        guidEnd++;
+                    else
+                        break;
                 }
 
-                if (assetEnd > assetStart)
-                    RegisterLedgerAssetReference(line, assetStart, assetEnd - assetStart);
+                if (guidEnd - guidStart == 32)
+                {
+                    string guidString = line.Substring(guidStart, 32);
+                    uint guidHash = ModCommandDispatcher.ComputeModHash(guidString);
+                    if (guidHash != 0u)
+                        _modCompatibleAssetHashes.Add(guidHash);
+                }
             }
-
-            for (int i = 0; i <= line.Length - 32; i++)
-            {
-                if (IsGuidLike(line, i, 32))
-                    RegisterLedgerAssetReference(line, i, 32);
-            }
-        }
-
-        private static void RegisterLedgerAssetReference(string source, int start, int length)
-        {
-            uint assetHash = ComputeNormalizedAssetReferenceHash(source, start, length);
-            if (assetHash != 0u)
-                _modCompatibleAssetHashes.Add(assetHash);
         }
 
         private static uint ComputeNormalizedAssetReferenceHash(string assetName)
         {
-            return string.IsNullOrWhiteSpace(assetName)
-                ? 0u
-                : ComputeNormalizedAssetReferenceHash(assetName, 0, assetName.Length);
-        }
-
-        private static uint ComputeNormalizedAssetReferenceHash(string source, int start, int length)
-        {
-            if (string.IsNullOrEmpty(source) || length <= 0 || start < 0 || start + length > source.Length)
+            if (string.IsNullOrWhiteSpace(assetName))
                 return 0u;
 
-            unchecked
+            if (IsGuidLike(assetName))
+                return ModCommandDispatcher.ComputeModHash(assetName.ToLowerInvariant());
+
+            string normalizedPath = assetName.Replace('\\', '/');
+            if (normalizedPath.StartsWith("assets/", System.StringComparison.OrdinalIgnoreCase))
+                return ModCommandDispatcher.ComputeModHash(normalizedPath);
+
+            return 0u;
+        }
+
+        private static bool StartsWithAssetsPrefix(string assetName)
+        {
+            if (string.IsNullOrWhiteSpace(assetName) || assetName.Length < 7)
+                return false;
+
+            return (assetName[0] == 'A' || assetName[0] == 'a') &&
+                   (assetName[1] == 'S' || assetName[1] == 's') &&
+                   (assetName[2] == 'S' || assetName[2] == 's') &&
+                   (assetName[3] == 'E' || assetName[3] == 'e') &&
+                   (assetName[4] == 'T' || assetName[4] == 't') &&
+                   (assetName[5] == 'S' || assetName[5] == 's') &&
+                   (assetName[6] == '/' || assetName[6] == '\\');
+        }
+
+        private static bool IsGuidLike(string assetName)
+        {
+            if (string.IsNullOrWhiteSpace(assetName) || assetName.Length != 32)
+                return false;
+
+            for (int i = 0; i < 32; i++)
             {
-                uint hash = LocHash.FnvOffsetBasis;
-                for (int i = 0; i < length; i++)
-                {
-                    char current = NormalizeAssetPathChar(source[start + i]);
-                    hash ^= (byte)current;
-                    hash *= LocHash.FnvPrime;
-                    hash ^= (byte)(current >> 8);
-                    hash *= LocHash.FnvPrime;
-                }
+                char c = assetName[i];
+                if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+                    continue;
 
-                return hash;
-            }
-        }
-
-        private static bool StartsWithAssetsPrefix(string value)
-        {
-            if (string.IsNullOrEmpty(value) || value.Length < 7)
                 return false;
-
-            return NormalizeAssetPathChar(value[0]) == 'a' &&
-                   NormalizeAssetPathChar(value[1]) == 's' &&
-                   NormalizeAssetPathChar(value[2]) == 's' &&
-                   NormalizeAssetPathChar(value[3]) == 'e' &&
-                   NormalizeAssetPathChar(value[4]) == 't' &&
-                   NormalizeAssetPathChar(value[5]) == 's' &&
-                   NormalizeAssetPathChar(value[6]) == '/';
-        }
-
-        private static char NormalizeAssetPathChar(char value)
-        {
-            if (value == '\\')
-                return '/';
-
-            return ToAsciiLower(value);
-        }
-
-        private static char ToAsciiLower(char value)
-        {
-            return value >= 'A' && value <= 'Z' ? (char)(value + 32) : value;
-        }
-
-        private static bool TryBuildModRelativeFilePath(string modDirectory, string relativePath, out string filePath)
-        {
-            filePath = null;
-            if (string.IsNullOrWhiteSpace(modDirectory) ||
-                string.IsNullOrWhiteSpace(relativePath) ||
-                Path.IsPathRooted(relativePath))
-            {
-                return false;
-            }
-
-            string fullDirectory;
-            string candidatePath;
-            try
-            {
-                fullDirectory = Path.GetFullPath(modDirectory);
-                candidatePath = Path.GetFullPath(Path.Combine(fullDirectory, relativePath));
-            }
-            catch (System.Exception exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture path '", relativePath, "': ", exception.Message));
-                return false;
-            }
-
-            if (!IsSameOrChildPath(candidatePath, fullDirectory))
-                return false;
-
-            filePath = candidatePath;
-            return true;
-        }
-
-        private static bool IsSameOrChildPath(string candidatePath, string directoryPath)
-        {
-            if (string.IsNullOrEmpty(candidatePath) || string.IsNullOrEmpty(directoryPath))
-                return false;
-
-            int directoryLength = directoryPath.Length;
-            while (directoryLength > 0 && IsDirectorySeparator(directoryPath[directoryLength - 1]))
-                directoryLength--;
-
-            if (directoryLength <= 0 || candidatePath.Length < directoryLength)
-                return false;
-
-            for (int i = 0; i < directoryLength; i++)
-            {
-                if (NormalizeFileSystemPathChar(candidatePath[i]) != NormalizeFileSystemPathChar(directoryPath[i]))
-                    return false;
-            }
-
-            return candidatePath.Length == directoryLength || IsDirectorySeparator(candidatePath[directoryLength]);
-        }
-
-        private static char NormalizeFileSystemPathChar(char value)
-        {
-            if (value == '\\')
-                return '/';
-
-            return ToAsciiLower(value);
-        }
-
-        private static bool IsDirectorySeparator(char value)
-        {
-            return value == '/' || value == '\\';
-        }
-
-        private static bool IsGuidLike(string value)
-        {
-            if (value.Length != 32)
-                return false;
-
-            for (int i = 0; i < value.Length; i++)
-            {
-                char c = value[i];
-                bool isHex = (c >= '0' && c <= '9') ||
-                             (c >= 'a' && c <= 'f') ||
-                             (c >= 'A' && c <= 'F');
-                if (!isHex)
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsGuidLike(string value, int start, int length)
-        {
-            if (string.IsNullOrEmpty(value) || length != 32 || start < 0 || start + length > value.Length)
-                return false;
-
-            for (int i = 0; i < length; i++)
-            {
-                char c = value[start + i];
-                bool isHex = (c >= '0' && c <= '9') ||
-                             (c >= 'a' && c <= 'f') ||
-                             (c >= 'A' && c <= 'F');
-                if (!isHex)
-                    return false;
             }
 
             return true;

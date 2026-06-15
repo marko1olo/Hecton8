@@ -155,7 +155,6 @@ namespace Hecton.UI.MainMenu
         private DiegeticMenuRaycastReceiver _diegeticRaycastReceiver;
         private MenuCameraController _menuCameraController;
         private MainMenuAtmosphereController _menuAtmosphereController;
-        private ReadableMainMenuOverlay1428 _readableOverlay;
         private Canvas _diegeticCanvas;
         private RectTransform _diegeticCanvasRoot;
         private BoxCollider _diegeticPanelCollider;
@@ -467,7 +466,6 @@ namespace Hecton.UI.MainMenu
             ConfigureDecorativeRaycastTargetsCold(transform);
             BindButtons();
             ConfigureDiegeticMenuRuntimeCold();
-            ConfigureReadableOverlayCold();
             RebuildVisualStyleCacheCold();
             RebuildVisualConceptCacheCold();
 
@@ -545,66 +543,6 @@ namespace Hecton.UI.MainMenu
                 _menuAtmosphereController.Configure(mainMenuCamera);
         }
 
-        private void ConfigureReadableOverlayCold()
-        {
-            if (_readableOverlay == null && !TryGetComponent(out _readableOverlay))
-                TryFindReadableOverlayInSceneCold(out _readableOverlay);
-
-            if (_readableOverlay == null)
-                return;
-
-            _readableOverlay.Configure(
-                this,
-                mainMenuGroup,
-                settingsGroup,
-                saveLoadGroup,
-                loadingGroup,
-                settingsPanel);
-        }
-
-        private bool TryFindReadableOverlayInSceneCold(out ReadableMainMenuOverlay1428 overlay)
-        {
-            overlay = null;
-            UnityEngine.SceneManagement.Scene scene = gameObject.scene;
-            if (!scene.IsValid() || !scene.isLoaded)
-                return false;
-
-            _cameraRootSearchBuffer.Clear();
-            scene.GetRootGameObjects(_cameraRootSearchBuffer);
-            for (int i = 0; i < _cameraRootSearchBuffer.Count; i++)
-            {
-                GameObject root = _cameraRootSearchBuffer[i];
-                if (root == null)
-                    continue;
-
-                if (TryFindReadableOverlayInHierarchyCold(root.transform, out overlay))
-                {
-                    _cameraRootSearchBuffer.Clear();
-                    return true;
-                }
-            }
-
-            _cameraRootSearchBuffer.Clear();
-            return false;
-        }
-
-        private static bool TryFindReadableOverlayInHierarchyCold(Transform root, out ReadableMainMenuOverlay1428 overlay)
-        {
-            overlay = null;
-            if (root == null)
-                return false;
-
-            if (root.TryGetComponent(out overlay))
-                return true;
-
-            for (int i = 0; i < root.childCount; i++)
-            {
-                if (TryFindReadableOverlayInHierarchyCold(root.GetChild(i), out overlay))
-                    return true;
-            }
-
-            return false;
-        }
 
         internal bool TryGetReadableOverlayCamera(out Camera camera)
         {
@@ -1618,7 +1556,6 @@ namespace Hecton.UI.MainMenu
                 ResolveMenuVisualQualityWeight(),
                 visualStyle,
                 visualConcept);
-            _readableOverlay?.SyncLateFrame();
             RefreshSelectionIfNeeded();
             _diegeticRaycastReceiver?.FlushPendingSelection();
         }
@@ -1928,7 +1865,6 @@ namespace Hecton.UI.MainMenu
         private void RequestSelectionRefresh()
         {
             _refreshSelectionRequested = true;
-            _readableOverlay?.InvalidateContent();
         }
 
         private Button ResolveDefaultSelectionButton()

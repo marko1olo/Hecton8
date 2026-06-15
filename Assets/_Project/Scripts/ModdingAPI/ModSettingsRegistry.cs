@@ -571,7 +571,7 @@ namespace Hecton8.Modding
         {
             PublishPerformanceWarningBestEffort(ModSettingCallbackExceptionWarningHash, modHash, 1f);
             Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Callback failed for mod '{modId}': {exception}");
-            ModLoader.DisableManagedMod(modId, ModSettingCallbackExceptionDisableReason);
+            ModLoader.DisableMod(modId, ModSettingCallbackExceptionDisableReason);
         }
 
         private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)

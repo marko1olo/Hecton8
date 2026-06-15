@@ -2,16 +2,17 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 
-[InitializeOnLoad]
+// [InitializeOnLoad]
 public class ScreenshotGrabber {
     static float timer = 0f;
     static bool taken = false;
 
     static ScreenshotGrabber() {
-        EditorApplication.update += OnUpdate;
+        // EditorApplication.update += OnUpdate;
     }
 
     static void OnUpdate() {
+        if (Application.isBatchMode) return;
         if (taken) return;
         timer += Time.unscaledDeltaTime;
         

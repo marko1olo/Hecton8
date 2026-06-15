@@ -62,8 +62,8 @@ namespace Hecton8.Modding
     }
 
     /// <summary>
-    /// Disposable subscription token returned by the first-party event bridge behind <see cref="HectonAPI.Events"/>.
-    /// Dispose this token from <c>IHectonMod.OnUnload()</c> to remove the handler safely.
+    /// Token returned by `Subscribe` methods.
+    /// Dispose this token from your mod's lifecycle events to remove the handler safely.
     /// </summary>
     public sealed class HectonEventSubscription : IDisposable
     {
@@ -396,7 +396,7 @@ namespace Hecton8.Modding
                 {
                     string currentModId = ModExecutionScope.CurrentModId;
                     ModCommandDispatcher.QuarantineMod(currentModId);
-                    ModLoader.DisableManagedMod(currentModId, "Dispatch recursion depth exceeded.");
+                    ModLoader.DisableMod(currentModId, "Dispatch recursion depth exceeded.");
                 }
 
                 ReportRecursiveCascadeCritical(eventHash);
@@ -468,7 +468,7 @@ namespace Hecton8.Modding
             if (consecutiveStallFrames < 3)
                 return false;
 
-            ModLoader.DisableManagedMod(subscriberId, ModStallDisableReason);
+            ModLoader.DisableMod(subscriberId, ModStallDisableReason);
             return true;
         }
 
@@ -596,7 +596,7 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+                            ModLoader.DisableMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                             Hecton8.Core.H8Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
 #endif
@@ -759,7 +759,7 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+                            ModLoader.DisableMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                             Hecton8.Core.H8Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
 #endif
@@ -931,7 +931,7 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+                            ModLoader.DisableMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                             Hecton8.Core.H8Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
 #endif

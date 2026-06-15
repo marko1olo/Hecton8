@@ -124,7 +124,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _AddPrecomputedVelocity: 0
-    - _AegirGlowIntensity: 0
+    - _AegirGlowIntensity: 1.5
     - _AegirHaloIntensity: 0.58
     - _AegirHaloPower: 2.9
     - _AegirLensingEdgeWidth: 0.07

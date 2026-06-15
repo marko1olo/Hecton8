@@ -109,7 +109,7 @@ namespace Hecton8.Modding
             RollbackLoadApplyIfPending();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
-            if (_serviceRegistered && !_serviceShuttingDown)
+            if (_serviceRegistered && _serviceShuttingDown)
             {
                 if (ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
                     GlobalRegistry.UnregisterModWorldPersistenceRuntime(this);
@@ -165,9 +165,8 @@ namespace Hecton8.Modding
         {
             bool usable = manager != null &&
                    manager._serviceRegistered &&
-                   !manager._serviceShuttingDown &&
-                   manager.isActiveAndEnabled;
-            Debug.Log($"[ModWorldPersistenceManager] IsModWorldPersistenceRuntimeUsable: manager={manager?.GetHashCode()}, usable={usable} (manager!=null={manager!=null}, _serviceRegistered={manager?._serviceRegistered}, !_serviceShuttingDown={manager != null && !manager._serviceShuttingDown}, isActiveAndEnabled={manager != null && manager.isActiveAndEnabled})");
+                   !manager._serviceShuttingDown;
+            Debug.Log($"[ModWorldPersistenceManager] IsModWorldPersistenceRuntimeUsable: manager={manager?.GetHashCode()}, usable={usable} (manager!=null={manager!=null}, _serviceRegistered={manager?._serviceRegistered}, !_serviceShuttingDown={manager != null && !manager._serviceShuttingDown})");
             return usable;
         }
 

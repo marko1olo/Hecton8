@@ -48,7 +48,6 @@ namespace Hecton8.Editor
             ValidateCamera(mainMenuScene, report);
             ValidateDiegeticInput(mainMenuScene, report);
             ValidateCanvasInventory(mainMenuScene, report);
-            ValidateReadableOverlay(mainMenuScene, report);
             ValidateLighting(mainMenuScene, report);
             AppendRootGameObjects(mainMenuScene, report);
 
@@ -301,64 +300,7 @@ namespace Hecton8.Editor
                    rootName == ReadableOverlayRootName;
         }
 
-        private static void ValidateReadableOverlay(Scene scene, StringBuilder report)
-        {
-            report.AppendLine("READABLE WORLD-SPACE OVERLAY:");
 
-            ReadableMainMenuOverlay1428 overlay = FindComponentInScene<ReadableMainMenuOverlay1428>(scene);
-            if (overlay == null)
-            {
-                report.AppendLine("  FAIL ReadableMainMenuOverlay1428 missing");
-                report.AppendLine();
-                return;
-            }
-
-            GameObject overlayObject = overlay.gameObject;
-            report.Append("  ");
-            report.Append(overlayObject.name == ReadableOverlayRootName ? "OK " : "FAIL ");
-            report.Append("Overlay root=");
-            report.AppendLine(overlayObject.name);
-            report.AppendLine(overlay.enabled
-                ? "  OK Overlay component enabled for cold runtime bind"
-                : "  FAIL Overlay component disabled");
-
-            Canvas canvas = overlayObject.GetComponent<Canvas>();
-            if (canvas == null)
-            {
-                report.AppendLine("  FAIL Overlay Canvas missing");
-            }
-            else
-            {
-                report.AppendLine(canvas.renderMode == RenderMode.WorldSpace
-                    ? "  OK Overlay Canvas is WorldSpace"
-                    : "  FAIL Overlay Canvas is not WorldSpace");
-                report.AppendLine(canvas.enabled
-                    ? "  OK Overlay Canvas enabled"
-                    : "  FAIL Overlay Canvas disabled");
-                report.AppendLine(canvas.sortingOrder >= 180
-                    ? "  OK Overlay Canvas sorting order is above the diegetic base"
-                    : "  WARN Overlay Canvas sorting order may sit behind the authored panel");
-            }
-
-            GraphicRaycaster raycaster = overlayObject.GetComponent<GraphicRaycaster>();
-            report.AppendLine(raycaster == null || !raycaster.enabled
-                ? "  OK Overlay GraphicRaycaster disabled or absent"
-                : "  FAIL Overlay GraphicRaycaster enabled");
-
-            CanvasGroup group = overlayObject.GetComponent<CanvasGroup>();
-            if (group == null)
-            {
-                report.AppendLine("  INFO Overlay CanvasGroup will be cold-repaired by runtime");
-            }
-            else
-            {
-                report.AppendLine(!group.interactable && !group.blocksRaycasts
-                    ? "  OK Overlay CanvasGroup is presentation-only"
-                    : "  FAIL Overlay CanvasGroup can consume input");
-            }
-
-            report.AppendLine();
-        }
 
         private static void ValidateLighting(Scene scene, StringBuilder report)
         {

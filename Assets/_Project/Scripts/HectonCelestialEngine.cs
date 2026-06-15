@@ -988,23 +988,7 @@ namespace Hecton8.Celestial
             [FieldOffset(184)] private ulong _pad7;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 64)]
-        private struct CelestialBlackBoxEntry
-        {
-            [FieldOffset(0)] public uint FrameIndex;
-            [FieldOffset(4)] public uint Sequence;
-            [FieldOffset(8)] public uint Flags;
-            [FieldOffset(12)] public float TimeOfDay01;
-            [FieldOffset(16)] public float EclipseState01;
-            [FieldOffset(20)] public float SunDirectionY;
-            [FieldOffset(24)] public float AegirDirectionY;
-            [FieldOffset(28)] public float StormCloudDensity01;
-            [FieldOffset(32)] public float LightningFlash01;
-            [FieldOffset(36)] public float DepthMeters;
-            [FieldOffset(40)] private ulong _pad0;
-            [FieldOffset(48)] private ulong _pad1;
-            [FieldOffset(56)] private ulong _pad2;
-        }
+
 
         private enum CelestialTruthReadFailure : byte
         {
@@ -1394,7 +1378,7 @@ namespace Hecton8.Celestial
         private IDataVault _celestialTruthVault;
         private VaultGenerationHandle<CelestialStateDTO> _celestialTruthStateRead;
         private VaultGenerationHandle<EnvironmentStateDTO> _celestialTruthEnvironmentRead;
-        private VaultGenerationHandle<CelestialBlackBoxEntry> _celestialBlackBoxHandle;
+
         private VaultGenerationHandle<float4> _dayAtmosphereGradientSamplesHandle;
         private VaultGenerationHandle<float4> _sunsetAtmosphereGradientSamplesHandle;
         private VaultGenerationHandle<float4> _nightAtmosphereGradientSamplesHandle;
@@ -1537,7 +1521,6 @@ namespace Hecton8.Celestial
         private const int BestVisualDefaultsVersion = 6;
         private const float NightAtmosphereInscatterFloor = 0.001f;
         private const int AtmosphereGradientSampleCount = 8;
-        private const int CelestialBlackBoxFrameCount = 300;
         private const float AbyssalCelestialCullY = -200f;
         private const float LightningFlashDecayLerpPerLateFrame = 0.42f;
         private const float ShaderScalarEpsilon = 0.0001f;
@@ -1545,13 +1528,6 @@ namespace Hecton8.Celestial
         private const float EclipseBiolumMultiplier = 1.65f;
         private const uint Shinobu345CelestialEventFlagValid = 1u << 0;
         private const uint Shinobu345CelestialEventFlagEclipseActive = 1u << 1;
-        private const uint CelestialBlackBoxFlagAbyssalCulled = 1u << 25;
-        private const uint CelestialBlackBoxFlagStorm = 1u << 26;
-        private const uint CelestialBlackBoxFlagSavePhaseRestored = 1u << 27;
-        private const uint CelestialBlackBoxFlagSavePhaseFallback = 1u << 28;
-        private const uint CelestialBlackBoxFlagSavePhaseRejected = 1u << 29;
-        private const uint CelestialBlackBoxFlagSavePhaseNonFinite = 1u << 30;
-        private const string CelestialBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_CELESTIAL_MECHANICS.bin";
         private static readonly double StopwatchTickToMilliseconds =
             1000.0d * math.rcp((double)System.Diagnostics.Stopwatch.Frequency);
 #if UNITY_EDITOR
@@ -1580,9 +1556,7 @@ namespace Hecton8.Celestial
         private bool _orbitJobPrimed;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
-        private int _celestialBlackBoxCursor;
-        private int _celestialBlackBoxCount;
-        private bool _celestialBlackBoxDumped;
+
         private bool _atmosphereGradientSamplesDirty = true;
         private bool _ambientProbeEclipseActive;
         private float _stormCloudDensity01;
@@ -2168,14 +2142,12 @@ namespace Hecton8.Celestial
 
         private void CacheCelestialTruthVault(IDataVault vault)
         {
-            if (ReferenceEquals(_celestialTruthVault, vault) &&
-                IsCelestialVaultHandle(in _celestialBlackBoxHandle, BufferID.Shinobu345CelestialPresentationBlackBox))
+            if (ReferenceEquals(_celestialTruthVault, vault))
                 return;
 
             _celestialTruthVault = vault;
             _celestialTruthStateRead = default;
             _celestialTruthEnvironmentRead = default;
-            _celestialBlackBoxHandle = default;
             _dayAtmosphereGradientSamplesHandle = default;
             _sunsetAtmosphereGradientSamplesHandle = default;
             _nightAtmosphereGradientSamplesHandle = default;
@@ -2209,12 +2181,7 @@ namespace Hecton8.Celestial
             if (vault == null)
                 return;
 
-            bool blackBoxHandleChanged = EnsureColdCelestialPresentationHandle(
-                vault,
-                BufferID.Shinobu345CelestialPresentationBlackBox,
-                CelestialBlackBoxFrameCount,
-                NativeArrayOptions.ClearMemory,
-                ref _celestialBlackBoxHandle);
+
 
             bool gradientsChanged = EnsureColdCelestialPresentationHandle(
                 vault,
@@ -2253,19 +2220,7 @@ namespace Hecton8.Celestial
                 RefreshAtmosphereGradientSamplesIfDirty();
             }
 
-            if (blackBoxHandleChanged)
-            {
-                if (_celestialPresentationViews.TryReadBlackBox(
-                        vault,
-                        out NativeArray<CelestialBlackBoxEntry> blackBox))
-                {
-                    ResetCelestialBlackBoxState(blackBox);
-                }
-                else
-                {
-                    ResetCelestialBlackBoxState(default);
-                }
-            }
+
         }
 
         private static bool EnsureColdCelestialPresentationHandle<T>(
@@ -2301,14 +2256,7 @@ namespace Hecton8.Celestial
 
             _celestialPresentationViews.Begin(vault, vault.VaultGenerationID);
 
-            if (TryResolveExistingCelestialPresentationBuffer(
-                    BufferID.Shinobu345CelestialPresentationBlackBox,
-                    CelestialBlackBoxFrameCount,
-                    ref _celestialBlackBoxHandle,
-                    out NativeArray<CelestialBlackBoxEntry> blackBox))
-            {
-                _celestialPresentationViews.SetBlackBox(blackBox);
-            }
+
 
             if (TryResolveExistingCelestialPresentationBuffer(
                     BufferID.Shinobu345CelestialGradientDay,
@@ -2632,11 +2580,7 @@ namespace Hecton8.Celestial
 
             if (ShouldCullCelestialForAbyss(out float abyssDepthMeters))
             {
-                WriteCelestialBlackBoxTelemetry(
-                    ResolveTimeOfDay01(),
-                    _smoothedOcclusionFactor,
-                    CelestialBlackBoxFlagAbyssalCulled,
-                    abyssDepthMeters);
+
                 PublishCelestialLightReadabilitySnapshot(abyssDepthMeters);
                 _lightningFlash01 = 0f;
                 QueueLightningFlashShaderGlobal(0f, forceUpload: false);
@@ -2830,7 +2774,6 @@ namespace Hecton8.Celestial
             QueueCelestialVisualSync(sunElevation, celestialDeltaTime);
             PublishCelestialRuntimeSnapshot(!usingPublishedCelestialSnapshot);
             PublishCelestialLightReadabilitySnapshot(_currentDepthMeters);
-            WriteCelestialBlackBoxTelemetry(ResolveTimeOfDay01(), _smoothedOcclusionFactor, ResolveCelestialBlackBoxRuntimeFlags(), _currentDepthMeters);
 
             if (Application.isPlaying)
                 TryRaiseCelestialSunAngleChanged(_currentSunAngle);
@@ -4012,27 +3955,6 @@ namespace Hecton8.Celestial
             if (enableAnalyticalOrbitSolver)
                 TryResolveOrbitJobOutput(out _);
 
-            TryResolveCelestialBlackBoxBuffer(out _);
-        }
-
-        private bool TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox)
-        {
-            blackBox = default;
-            return _celestialPresentationViews.TryReadBlackBox(_celestialTruthVault, out blackBox);
-        }
-
-        private void ResetCelestialBlackBoxState(NativeArray<CelestialBlackBoxEntry> blackBox)
-        {
-            if (blackBox.IsCreated)
-            {
-                int count = math.min(blackBox.Length, CelestialBlackBoxFrameCount);
-                for (int i = 0; i < count; i++)
-                    blackBox[i] = default;
-            }
-
-            _celestialBlackBoxCursor = 0;
-            _celestialBlackBoxCount = 0;
-            _celestialBlackBoxDumped = false;
         }
 
         private void DisposeCelestialRuntimeBuffers(bool forceCompleteOrbitJob)
@@ -4045,14 +3967,12 @@ namespace Hecton8.Celestial
 
             ReleaseOrbitOutputBufferPin();
             ReleaseCelestialPresentationBuffer(ref _orbitJobOutputHandle);
-            ReleaseCelestialPresentationBuffer(ref _celestialBlackBoxHandle);
             ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _sunsetAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _nightAtmosphereGradientSamplesHandle);
             _celestialPresentationViews.Clear();
 
             _orbitJobPrimed = false;
-            ResetCelestialBlackBoxState(default);
         }
 
         private void MarkAtmosphereGradientSamplesDirty()
@@ -5493,7 +5413,6 @@ namespace Hecton8.Celestial
         {
             private IDataVault _vault;
             private uint _vaultGenerationId;
-            private NativeArray<CelestialBlackBoxEntry> _blackBox;
             private NativeArray<float4> _dayGradient;
             private NativeArray<float4> _sunsetGradient;
             private NativeArray<float4> _nightGradient;
@@ -5503,7 +5422,6 @@ namespace Hecton8.Celestial
             {
                 _vault = null;
                 _vaultGenerationId = 0u;
-                _blackBox = default;
                 _dayGradient = default;
                 _sunsetGradient = default;
                 _nightGradient = default;
@@ -5514,16 +5432,10 @@ namespace Hecton8.Celestial
             {
                 _vault = vault;
                 _vaultGenerationId = vaultGenerationId;
-                _blackBox = default;
                 _dayGradient = default;
                 _sunsetGradient = default;
                 _nightGradient = default;
                 _orbitOutput = default;
-            }
-
-            public void SetBlackBox(NativeArray<CelestialBlackBoxEntry> blackBox)
-            {
-                _blackBox = blackBox;
             }
 
             public void SetGradients(
@@ -5539,20 +5451,6 @@ namespace Hecton8.Celestial
             public void SetOrbitOutput(NativeArray<CelestialOrbitJobOutput> orbitOutput)
             {
                 _orbitOutput = orbitOutput;
-            }
-
-            public bool TryReadBlackBox(IDataVault vault, out NativeArray<CelestialBlackBoxEntry> blackBox)
-            {
-                blackBox = default;
-                if (!IsCurrent(vault) ||
-                    !_blackBox.IsCreated ||
-                    _blackBox.Length < CelestialBlackBoxFrameCount)
-                {
-                    return false;
-                }
-
-                blackBox = _blackBox;
-                return true;
             }
 
             public bool TryReadGradients(
@@ -5861,8 +5759,6 @@ namespace Hecton8.Celestial
             _orbitJobScheduled = false;
             if (TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> orbitOutput))
                 CommitOrbitMathOutput(orbitOutput[0]);
-            else
-                DumpCelestialBlackBox();
             ReleaseOrbitOutputBufferPin();
         }
 
@@ -5877,8 +5773,6 @@ namespace Hecton8.Celestial
             _orbitJobScheduled = false;
             if (TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> orbitOutput))
                 CommitOrbitMathOutput(orbitOutput[0]);
-            else
-                DumpCelestialBlackBox();
             ReleaseOrbitOutputBufferPin();
         }
 
@@ -5890,7 +5784,6 @@ namespace Hecton8.Celestial
             CelestialRuntimeSnapshot snapshot = output.Snapshot;
             if (!IsCelestialSnapshotFinite(in snapshot))
             {
-                DumpCelestialBlackBox();
                 BuildFallbackCelestialRuntimeSnapshot();
                 return;
             }
@@ -8170,155 +8063,7 @@ namespace Hecton8.Celestial
                 : Mathf.Repeat(_rotationPhase, 1f);
         }
 
-        private uint ResolveCelestialBlackBoxRuntimeFlags()
-        {
-            uint flags = _celestialRuntimeSnapshot.Flags;
-            if (_stormCloudDensity01 > 0.001f)
-                flags |= CelestialBlackBoxFlagStorm;
 
-            return flags;
-        }
-
-        private void WriteCelestialBlackBoxTelemetry(float timeOfDay01, float eclipseState01, uint extraFlags, float depthMeters)
-        {
-            if (!Application.isPlaying)
-                return;
-
-            if (!TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox))
-                return;
-
-            float lightningFlash01 = math.max(_lightningFlash01, math.max(0f, _lastUploadedLightningFlash01));
-            float aegirY = (_celestialRuntimeSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
-                ? _celestialRuntimeSnapshot.GasGiantDirection.y
-                : 0f;
-
-            CelestialBlackBoxEntry entry = new CelestialBlackBoxEntry
-            {
-                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Sequence = _celestialRuntimeSequence,
-                Flags = _celestialRuntimeSnapshot.Flags | extraFlags,
-                TimeOfDay01 = math.saturate(timeOfDay01),
-                EclipseState01 = math.saturate(eclipseState01),
-                SunDirectionY = _resolvedSunDirection.y,
-                AegirDirectionY = aegirY,
-                StormCloudDensity01 = math.saturate(_stormCloudDensity01),
-                LightningFlash01 = math.saturate(lightningFlash01),
-                DepthMeters = math.max(0f, depthMeters)
-            };
-
-            blackBox[_celestialBlackBoxCursor] = entry;
-            _celestialBlackBoxCursor = (_celestialBlackBoxCursor + 1) % CelestialBlackBoxFrameCount;
-            _celestialBlackBoxCount = math.min(_celestialBlackBoxCount + 1, CelestialBlackBoxFrameCount);
-
-            if (!IsCelestialBlackBoxEntryFinite(in entry))
-                DumpCelestialBlackBox();
-        }
-
-        private static bool IsCelestialBlackBoxEntryFinite(in CelestialBlackBoxEntry entry)
-        {
-            return math.isfinite(entry.TimeOfDay01) &&
-                   math.isfinite(entry.EclipseState01) &&
-                   math.isfinite(entry.SunDirectionY) &&
-                   math.isfinite(entry.AegirDirectionY) &&
-                   math.isfinite(entry.StormCloudDensity01) &&
-                   math.isfinite(entry.LightningFlash01) &&
-                   math.isfinite(entry.DepthMeters);
-        }
-
-        private void DumpCelestialBlackBox()
-        {
-            if (_celestialBlackBoxDumped ||
-                !TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox))
-            {
-                return;
-            }
-
-            try
-            {
-                _celestialBlackBoxDumped = TryWriteCelestialBlackBoxDump(CelestialBlackBoxDumpRelativePath, blackBox);
-            }
-            catch (Exception exception)
-            {
-                Hecton8.Core.H8Debug.LogException(exception);
-            }
-        }
-
-        private bool TryWriteCelestialBlackBoxDump(string dumpPath, NativeArray<CelestialBlackBoxEntry> blackBox)
-        {
-            const int HeaderBytes = 16;
-            const int RowBytes = 40;
-            if (!blackBox.IsCreated || blackBox.Length <= 0)
-                return false;
-
-            int rowCount = math.clamp(_celestialBlackBoxCount, 0, math.min(CelestialBlackBoxFrameCount, blackBox.Length));
-            if (rowCount <= 0)
-                return false;
-
-            NativeArray<byte> payload = default;
-            try
-            {
-                int byteCount = HeaderBytes + rowCount * RowBytes;
-                const string dumpPayloadLabel = "CelestialBlackBoxDumpPayload";
-                payload = NativeFaultDumpWriter.CreateTransientPayload(
-                    byteCount,
-                    nameof(HectonCelestialEngine),
-                    dumpPayloadLabel,
-                    NativeArrayOptions.ClearMemory);
-                int offset = 0;
-
-                WriteUInt32LittleEndian(payload, ref offset, 0x43454C42u);
-                WriteInt32LittleEndian(payload, ref offset, CelestialBlackBoxFrameCount);
-                WriteInt32LittleEndian(payload, ref offset, rowCount);
-                WriteInt32LittleEndian(payload, ref offset, _celestialBlackBoxCursor);
-
-                int start = rowCount == CelestialBlackBoxFrameCount
-                    ? _celestialBlackBoxCursor
-                    : 0;
-
-                for (int i = 0; i < rowCount; i++)
-                {
-                    CelestialBlackBoxEntry entry = blackBox[(start + i) % CelestialBlackBoxFrameCount];
-                    WriteUInt32LittleEndian(payload, ref offset, entry.FrameIndex);
-                    WriteUInt32LittleEndian(payload, ref offset, entry.Sequence);
-                    WriteUInt32LittleEndian(payload, ref offset, entry.Flags);
-                    WriteFloatLittleEndian(payload, ref offset, entry.TimeOfDay01);
-                    WriteFloatLittleEndian(payload, ref offset, entry.EclipseState01);
-                    WriteFloatLittleEndian(payload, ref offset, entry.SunDirectionY);
-                    WriteFloatLittleEndian(payload, ref offset, entry.AegirDirectionY);
-                    WriteFloatLittleEndian(payload, ref offset, entry.StormCloudDensity01);
-                    WriteFloatLittleEndian(payload, ref offset, entry.LightningFlash01);
-                    WriteFloatLittleEndian(payload, ref offset, entry.DepthMeters);
-                }
-
-                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
-            }
-            finally
-            {
-                const string dumpPayloadLabel = "CelestialBlackBoxDumpPayload";
-                NativeFaultDumpWriter.DisposeTransientPayload(
-                    ref payload,
-                    nameof(HectonCelestialEngine),
-                    dumpPayloadLabel);
-            }
-        }
-
-        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int offset, int value)
-        {
-            WriteUInt32LittleEndian(payload, ref offset, unchecked((uint)value));
-        }
-
-        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int offset, uint value)
-        {
-            payload[offset++] = (byte)value;
-            payload[offset++] = (byte)(value >> 8);
-            payload[offset++] = (byte)(value >> 16);
-            payload[offset++] = (byte)(value >> 24);
-        }
-
-        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int offset, float value)
-        {
-            WriteUInt32LittleEndian(payload, ref offset, math.asuint(value));
-        }
 
         // ─────────────────────────────────────────────
         // PUBLIC API
@@ -8417,7 +8162,6 @@ namespace Hecton8.Celestial
         {
             if (!math.isfinite(timeOfDay01))
             {
-                WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseNonFinite);
                 return false;
             }
 
@@ -8425,12 +8169,10 @@ namespace Hecton8.Celestial
             HectonAtmosphereManager atmosphereManager = ResolveAtmosphereManagerForRead();
             if (atmosphereManager == null || !atmosphereManager.TrySetTimeOfDay(normalizedTimeOfDay01))
             {
-                WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRejected);
                 return false;
             }
 
             RefreshCelestialRuntimeAfterTimeOfDayRestore();
-            WriteCelestialLightPhasePersistenceBlackBox(normalizedTimeOfDay01, CelestialBlackBoxFlagSavePhaseRestored);
             return true;
         }
 
@@ -8473,30 +8215,14 @@ namespace Hecton8.Celestial
 
         internal void RecordCelestialLightPhaseLoadFallback(float timeOfDay01)
         {
-            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseFallback);
         }
 
         internal void RecordCelestialLightPhaseLoadRejected(float timeOfDay01)
         {
-            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseRejected);
         }
 
         internal void RecordCelestialLightPhaseLoadNonFinite(float timeOfDay01)
         {
-            WriteCelestialLightPhasePersistenceBlackBox(timeOfDay01, CelestialBlackBoxFlagSavePhaseNonFinite);
-        }
-
-        private void WriteCelestialLightPhasePersistenceBlackBox(float timeOfDay01, uint persistenceFlag)
-        {
-            float recordedTimeOfDay01 = math.isfinite(timeOfDay01)
-                ? math.saturate(timeOfDay01)
-                : ResolveTimeOfDay01();
-
-            WriteCelestialBlackBoxTelemetry(
-                recordedTimeOfDay01,
-                _smoothedOcclusionFactor,
-                persistenceFlag,
-                _currentDepthMeters);
         }
 
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)

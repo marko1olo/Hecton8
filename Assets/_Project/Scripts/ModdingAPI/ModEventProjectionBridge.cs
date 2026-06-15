@@ -656,7 +656,7 @@ namespace Hecton8.Modding
 
             string subscriberId = entry.SubscriberId;
             DisableEntry(index, ref entry);
-            ModLoader.DisableManagedMod(subscriberId, disableReason);
+            ModLoader.DisableMod(subscriberId, disableReason);
         }
 
         private void DisableEntry(int index, ref SubscriptionEntry entry)
