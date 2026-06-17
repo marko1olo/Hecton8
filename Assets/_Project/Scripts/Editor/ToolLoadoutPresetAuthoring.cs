@@ -4,13 +4,13 @@ using UnityEditor;
 using UnityEngine;
 using Hecton8.Core;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class ToolLoadoutPresetAuthoring
     {
         private const string Root = "Assets/_Project/Data/Tools/Presets";
 
-        [MenuItem("Hecton/Authoring/Rebuild Tool Loadout Presets")]
+        [MenuItem("Hecton8/Authoring/Rebuild Tool Loadout Presets")]
         private static void Rebuild()
         {
             EnsureFolder("Assets/_Project/Data", "Tools");

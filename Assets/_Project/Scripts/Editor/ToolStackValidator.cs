@@ -12,7 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ToolStackValidator
     {
@@ -21,7 +21,7 @@ namespace Hecton8.EditorTools
         private const string HeldPrefabRoot = "Assets/_Project/Prefabs/Tools/Held";
         private const string ItemCatalogPath = "Assets/_Project/Data/Items/ItemCatalog.asset";
 
-        [MenuItem("Hecton/Validation/Validate Tool Stack", priority = 241)]
+        [MenuItem("Hecton8/Validation/Validate Tool Stack", priority = 241)]
         public static void ValidateToolStack()
         {
             int errorCount = 0;
@@ -181,7 +181,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        [MenuItem("Hecton/Validation/Validate Tool Operational HUD", priority = 242)]
+        [MenuItem("Hecton8/Validation/Validate Tool Operational HUD", priority = 242)]
         public static void ValidateToolOperationalHud()
         {
             int errorCount = 0;

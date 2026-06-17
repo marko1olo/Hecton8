@@ -3,14 +3,14 @@ using UnityEditor;
 using UnityEngine;
 using Hecton8.Core;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldChunkStreamingAuthoring
     {
         private const string ProfileFolder = "Assets/_Project/Data/World/Streaming";
         private const string ProfilePath = ProfileFolder + "/WorldChunkStreamingProfile.asset";
 
-        [MenuItem("Hecton/Authoring/Build World Chunk Streaming Profile", priority = 43)]
+        [MenuItem("Hecton8/Authoring/Build World Chunk Streaming Profile", priority = 43)]
         public static void BuildWorldChunkStreamingProfile()
         {
             EnsureFolder("Assets/_Project/Data");

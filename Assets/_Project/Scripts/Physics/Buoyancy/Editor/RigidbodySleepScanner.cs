@@ -29,7 +29,7 @@ namespace Hecton8.Physics.Editor
             .WithPreprocessorSymbols("UNITY_EDITOR");
 
         /// <summary>Runs the sleep scanner from the Unity menu.</summary>
-        [MenuItem("HECTON-8/Physics/Run Rigidbody Sleep Scanner")]
+        [MenuItem("Hecton8/Physics/Run Rigidbody Sleep Scanner")]
         public static void RunFromMenu()
         {
             Run();

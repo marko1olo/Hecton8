@@ -18,14 +18,14 @@ namespace Hecton8.Core.Editor
             SceneView.duringSceneGui += OnSceneGui;
         }
 
-        [MenuItem("HECTON-8/Diagnostics/Haptic Rumble Gizmo")]
+        [MenuItem("Hecton8/Diagnostics/Haptic Rumble Gizmo")]
         private static void Toggle()
         {
             s_enabled = !s_enabled;
             SceneView.RepaintAll();
         }
 
-        [MenuItem("HECTON-8/Diagnostics/Haptic Rumble Gizmo", true)]
+        [MenuItem("Hecton8/Diagnostics/Haptic Rumble Gizmo", true)]
         private static bool ValidateToggle()
         {
             Menu.SetChecked("HECTON-8/Diagnostics/Haptic Rumble Gizmo", s_enabled);

@@ -344,10 +344,19 @@ namespace Hecton8.World
                 float cx = math.lerp(-half * 0.88f, half * 0.88f, HashToUnitFloat(h));
                 float phase = HashToUnitFloat(h ^ 0x9E3779B9u) * 6.283185f;
                 float width = math.lerp(620f, 1850f, HashToUnitFloat(h ^ 0x27D4EB2Fu));
-                float centerX = cx + math.sin(absoluteZ * 0.00034f + phase) * 860f + lowWarp * 0.08f + midWarp * 0.04f;
+                
+                // Add high frequency fractal noise to the canyon path so it's not a perfect sine wave
+                float canyonWarp = (FractalNoise01(pos * 0.00015f + new float2(13.4f, -7.2f), h ^ 0x12345678u) * 2f - 1f) * 650f;
+                float centerX = cx + math.sin(absoluteZ * 0.00034f + phase) * 860f + lowWarp * 0.08f + midWarp * 0.04f + canyonWarp;
+                
                 float gate = math.smoothstep(-p.ShelfBreakWidthMeters * 0.95f, p.ShelfBreakWidthMeters * 0.18f, shelfDistance);
                 gate *= 1f - math.smoothstep(p.ShelfBreakWidthMeters * 2.50f, p.ShelfBreakWidthMeters * 5.40f, shelfDistance);
+                
+                // Warp the shape of the canyon so it's not a perfect V-cut
+                float depthWarp = FractalNoise01(pos * 0.00028f + new float2(-9.1f, 22.3f), h ^ 0x87654321u);
                 float cut = 1f - math.smoothstep(width * 0.34f, width * 1.95f, math.abs(absoluteX - centerX));
+                cut *= (0.6f + depthWarp * 0.4f);
+                
                 canyon = math.max(canyon, cut * gate);
             }
 
@@ -363,7 +372,8 @@ namespace Hecton8.World
             float acrossFault = math.dot(pos, faultNormal);
             float faultWander = math.sin(alongFault * 0.00031f + HashToUnitFloat(p.Seed ^ 0x9E3779B9u) * 6.283185f) * 980f +
                 (FractalNoise01(new float2(alongFault * 0.00014f, 3.71f), p.Seed ^ 0xC2B2AE35u) * 2f - 1f) * 1420f;
-            float trenchDistance = math.abs(acrossFault - faultWander + 1700f + highWarp * 0.42f);
+            float trenchWarp = FractalNoise01(pos * 0.00018f, p.Seed ^ 0x12345678u);
+            float trenchDistance = math.abs(acrossFault - faultWander + 1700f + highWarp * 0.42f) * (0.6f + trenchWarp * 0.4f);
             float trenchMask = 1f - math.smoothstep(p.TrenchWidthMeters * 0.62f, p.TrenchWidthMeters * 2.05f, trenchDistance);
             float faultMask = 1f - math.smoothstep(p.TrenchWidthMeters * 0.95f, p.TrenchWidthMeters * 4.20f, trenchDistance);
 
@@ -373,13 +383,16 @@ namespace Hecton8.World
             float acrossSecondary = math.dot(pos, secondaryFaultNormal);
             float secondaryWander = math.sin(alongSecondary * 0.00026f + HashToUnitFloat(p.Seed ^ 0x51ED270Bu) * 6.283185f) * 1450f +
                 (FractalNoise01(new float2(alongSecondary * 0.00011f, -9.37f), p.Seed ^ 0xA24BAED5u) * 2f - 1f) * 1180f;
-            float secondaryDistance = math.abs(acrossSecondary - secondaryWander - 900f + midWarp * 0.35f);
+            float secondaryWarp = FractalNoise01(pos * 0.00018f, p.Seed ^ 0x87654321u);
+            float secondaryDistance = math.abs(acrossSecondary - secondaryWander - 900f + midWarp * 0.35f) * (0.6f + secondaryWarp * 0.4f);
             float secondaryFaultMask = 1f - math.smoothstep(p.TrenchWidthMeters * 1.10f, p.TrenchWidthMeters * 4.60f, secondaryDistance);
-            float secondaryDepression = 1f - math.smoothstep(p.TrenchWidthMeters * 0.55f, p.TrenchWidthMeters * 2.70f, math.abs(acrossSecondary - secondaryWander + 3100f));
+            float secondaryDepressionWarp = (FractalNoise01(pos * 0.00016f + new float2(11.2f, 44.9f), p.Seed ^ 0xDECADEEFu) * 2f - 1f) * 850f;
+            float secondaryDepression = 1f - math.smoothstep(p.TrenchWidthMeters * 0.55f, p.TrenchWidthMeters * 2.70f, math.abs(acrossSecondary - secondaryWander + 3100f + secondaryDepressionWarp));
 
-            float ridgeDistanceA = math.abs(acrossFault - faultWander - 4300f);
-            float ridgeDistanceB = math.abs(acrossFault - faultWander + 6900f);
-            float ridgeDistanceC = math.abs(acrossSecondary - secondaryWander - 2600f);
+            float ridgeWarp = FractalNoise01(pos * 0.0002f, p.Seed ^ 0xABCDEF12u);
+            float ridgeDistanceA = math.abs(acrossFault - faultWander - 4300f) * (0.5f + ridgeWarp * 0.5f);
+            float ridgeDistanceB = math.abs(acrossFault - faultWander + 6900f) * (0.5f + ridgeWarp * 0.5f);
+            float ridgeDistanceC = math.abs(acrossSecondary - secondaryWander - 2600f) * (0.5f + ridgeWarp * 0.5f);
             float ridgeA = 1f - math.smoothstep(p.RidgeWidthMeters * 0.34f, p.RidgeWidthMeters * 2.35f, ridgeDistanceA);
             float ridgeB = 1f - math.smoothstep(p.RidgeWidthMeters * 0.38f, p.RidgeWidthMeters * 2.45f, ridgeDistanceB);
             float ridgeC = 1f - math.smoothstep(p.RidgeWidthMeters * 0.45f, p.RidgeWidthMeters * 2.80f, ridgeDistanceC);
@@ -409,21 +422,20 @@ namespace Hecton8.World
                 ridgeChainHills = math.max(ridgeChainHills, band * intermittent);
             }
 
-            float provinceEdge = CellularEdge01(pos * 0.000075f + new float2(-42.6f, 18.4f), p.Seed ^ 0x8B4C2F91u);
+            // TECTONIC NETWORK RESTORED: Using Ridge Noise (1 - 2*abs(noise - 0.5)) instead of glitchy Voronoi CellularEdge.
+            float provinceEdge = 1f - 2f * math.abs(FractalNoise01(pos * 0.000075f + new float2(-42.6f, 18.4f), p.Seed ^ 0x8B4C2F91u) - 0.5f);
             float provinceTexture = FractalNoise01(pos * 0.000061f + new float2(-3.4f, 15.1f), p.Seed ^ 0x21DA7F47u);
             float provinceRelief = math.smoothstep(0.36f, 0.92f, provinceEdge * 0.72f + provinceTexture * 0.28f);
-            float regionalWarpA = (FractalNoise01(pos * 0.000026f + new float2(8.1f, -5.3f), p.Seed ^ 0xD8E4C2A7u) * 2f - 1f) * 5200f;
-            float regionalWarpB = (FractalNoise01(pos * 0.000019f + new float2(-14.4f, 22.8f), p.Seed ^ 0xA1B35F19u) * 2f - 1f) * 6800f;
-            float networkWarpX = (FractalNoise01(pos * 0.000041f + new float2(27.2f, -11.8f), p.Seed ^ 0xB77A91C3u) * 2f - 1f) * 4300f;
-            float networkWarpZ = (FractalNoise01(pos * 0.000037f + new float2(-9.6f, 33.1f), p.Seed ^ 0x69D4F2A5u) * 2f - 1f) * 3900f;
+            float regionalWarpA = (FractalNoise01(pos * 0.000050f + new float2(8.1f, -5.3f), p.Seed ^ 0xD8E4C2A7u) * 2f - 1f) * 3500f;
+            float regionalWarpB = (FractalNoise01(pos * 0.000033f + new float2(-14.4f, 22.8f), p.Seed ^ 0xA1B35F19u) * 2f - 1f) * 4500f;
+            float networkWarpX = (FractalNoise01(pos * 0.000085f + new float2(27.2f, -11.8f), p.Seed ^ 0xB77A91C3u) * 2f - 1f) * 2500f;
+            float networkWarpZ = (FractalNoise01(pos * 0.000095f + new float2(-9.6f, 33.1f), p.Seed ^ 0x69D4F2A5u) * 2f - 1f) * 2500f;
             float networkX = absoluteX + regionalWarpA * 0.48f + networkWarpX;
             float networkZ = absoluteZ + regionalWarpB * 0.38f + networkWarpZ;
-            float networkEdgeA = CellularEdge01(new float2(networkX * 0.000052f + 3.2f, networkZ * 0.000052f - 8.7f), p.Seed ^ 0xC35F19ABu);
-            float networkEdgeB = CellularEdge01(
-                new float2(
-                    (networkX * 0.72f + networkZ * 0.20f) * 0.000044f - 16.4f,
-                    (networkZ * 0.88f - networkX * 0.12f) * 0.000044f + 5.9f),
-                p.Seed ^ 0x7E2C4D55u);
+            float networkEdgeA = 1f - 2f * math.abs(FractalNoise01(new float2(networkX, networkZ) * 0.000052f + new float2(3.2f, -8.7f), p.Seed ^ 0xC35F19ABu) - 0.5f);
+            float networkEdgeB = 1f - 2f * math.abs(FractalNoise01(
+                new float2(networkX * 0.72f + networkZ * 0.20f, networkZ * 0.88f - networkX * 0.12f) * 0.000044f + new float2(-16.4f, 5.9f),
+                p.Seed ^ 0x7E2C4D55u) - 0.5f);
             float networkActivity = math.smoothstep(0.26f, 0.78f, FractalNoise01(new float2(networkX * 0.000082f + 4.4f, networkZ * 0.000082f - 19.1f), p.Seed ^ 0x92E4B77Du));
             float braidedNetwork = math.max(
                 math.smoothstep(0.28f, 0.86f, networkEdgeA),
@@ -435,15 +447,17 @@ namespace Hecton8.World
                 (0.78f + networkTexture * 0.22f) +
                 provinceRelief * 0.06f);
             float networkNode = math.smoothstep(0.72f, 0.96f, networkEdgeA) * math.smoothstep(0.52f, 0.90f, networkEdgeB) * networkActivity;
-            float highlandPlate = math.smoothstep(0.56f, 0.84f, FractalNoise01(pos * 0.000047f + new float2(-31.6f, 7.3f), p.Seed ^ 0xE35A9217u));
-            float shallowProvince = math.smoothstep(
-                0.50f,
-                0.80f,
-                FractalNoise01(
+            
+            float highlandNoise = FractalNoise01(pos * 0.000047f + new float2(-31.6f, 7.3f), p.Seed ^ 0xE35A9217u);
+            // Retain slope inside the plateaus so they aren't perfectly flat islands
+            float highlandPlate = math.smoothstep(0.56f, 0.84f, highlandNoise) * (0.8f + highlandNoise * 0.2f);
+            
+            float shallowNoise = FractalNoise01(
                     new float2(
                         absoluteX * 0.000030f + regionalWarpA * 0.000010f + 44.0f,
                         absoluteZ * 0.000030f + regionalWarpB * 0.000010f - 28.0f),
-                    p.Seed ^ 0x4B6D13F7u));
+                    p.Seed ^ 0x4B6D13F7u);
+            float shallowProvince = math.smoothstep(0.50f, 0.80f, shallowNoise) * (0.75f + shallowNoise * 0.25f);
             float riseWaveA = 0.5f + 0.5f * math.sin((absoluteX * 0.34f + absoluteZ * 0.94f + regionalWarpA) * 0.00019f + HashToUnitFloat(p.Seed ^ 0x6E624EB7u) * 6.283185f);
             float riseWaveB = 0.5f + 0.5f * math.sin((absoluteX * -0.87f + absoluteZ * 0.49f + regionalWarpB) * 0.000145f + HashToUnitFloat(p.Seed ^ 0xC7425A31u) * 6.283185f);
             float directedUplift = math.max(math.smoothstep(0.64f, 0.96f, riseWaveA) * 0.38f, math.smoothstep(0.68f, 0.97f, riseWaveB) * 0.30f);
@@ -458,9 +472,11 @@ namespace Hecton8.World
                 math.smoothstep(0.70f, 0.96f, distributedHighsWave) * 0.72f) *
                 (0.54f + networkActivity * 0.32f + provinceRelief * 0.18f);
             float upliftNetwork = math.saturate(math.max(math.max(math.max(math.max(tectonicNetwork * 0.62f, highlandPlate * 0.48f), shallowProvince * 0.58f), directedUplift), distributedHighs * 0.58f) + provinceRelief * 0.04f + ridgeChainHills * 0.12f + networkNode * 0.12f);
-            float basinWave = 0.5f + 0.5f * math.sin((absoluteX * 0.68f - absoluteZ * 0.74f + regionalWarpB * 0.72f) * 0.00012f + HashToUnitFloat(p.Seed ^ 0x53C9E2B1u) * 6.283185f);
+            float basinWarp = FractalNoise01(pos * 0.0001f, p.Seed ^ 0x8F2C3A1Du) * 0.6f;
+            float basinWave = 0.5f + 0.5f * math.sin((absoluteX * 0.68f - absoluteZ * 0.74f + regionalWarpB * 0.72f) * 0.00012f + basinWarp + HashToUnitFloat(p.Seed ^ 0x53C9E2B1u) * 6.283185f);
             float recurringBasin = math.saturate(math.smoothstep(0.72f, 0.98f, basinWave) * (1f - upliftNetwork * 0.62f));
-            float fractureNoise = CellularEdge01(pos * 0.00018f + new float2(19.3f, -7.1f), p.Seed ^ 0x51633E2Du);
+            float fractureBase = 1f - 2f * math.abs(FractalNoise01(pos * 0.00018f + new float2(19.3f, -7.1f), p.Seed ^ 0x51633E2Du) - 0.5f);
+            float fractureNoise = math.saturate(math.pow(fractureBase, 2.5f));
             float fractureMask = math.saturate(fractureNoise * 0.09f + tectonicNetwork * 0.16f + networkNode * 0.10f + provinceRelief * 0.06f + faultMask * 0.48f + secondaryFaultMask * 0.24f + canyon * 0.04f);
             depth += trenchMask * p.TrenchDepthMeters * math.smoothstep(0.24f, 1f, descent01);
             depth += secondaryDepression * 520f * math.smoothstep(0.18f, 0.95f, descent01);
@@ -468,9 +484,10 @@ namespace Hecton8.World
             ridgeMask = math.max(ridgeMask, math.max(upliftNetwork * 0.38f, tectonicNetwork * 0.48f));
             depth += basinMask * p.BasinDepthMeters;
             depth -= ridgeMask * p.RidgeHeightMeters * math.smoothstep(0.16f, 0.90f, descent01);
-            depth -= ridgeChainHills * math.lerp(260f, 980f, math.saturate(shelfMask * 0.18f + shelfBreakMask * 0.24f + ridgeMask * 0.58f));
+            depth -= ridgeChainHills * math.lerp(350f, 1800f, math.saturate(shelfMask * 0.18f + shelfBreakMask * 0.24f + ridgeMask * 0.58f));
             float regionalBreakup = FractalNoise01(norm * 5.5f + new float2(-4.2f, 12.9f), p.Seed ^ 0x41C64E6Du) * 2f - 1f;
-            float regionalSwell = math.sin(norm.x * 11.3f + norm.y * 5.7f + HashToUnitFloat(p.Seed ^ 0xDEADBEEFu) * 6.283185f);
+            float swellWarp = FractalNoise01(pos * 0.0001f, p.Seed ^ 0x3B8C1D2Eu) * 1.5f;
+            float regionalSwell = math.sin(norm.x * 11.3f + norm.y * 5.7f + swellWarp + HashToUnitFloat(p.Seed ^ 0xDEADBEEFu) * 6.283185f);
             depth += regionalBreakup * 320f * math.saturate(0.25f + descent01 * 0.65f + shelfBreakMask * 0.12f);
             depth += regionalSwell * 170f * math.saturate(0.20f + shelfMask * 0.35f + descent01 * 0.45f);
             depth += provinceRelief * 145f * math.saturate(0.18f + descent01 * 0.50f + shelfBreakMask * 0.18f + ridgeMask * 0.18f);
@@ -480,11 +497,35 @@ namespace Hecton8.World
             depth -= distributedHighs * math.lerp(180f, 1150f, math.saturate(descent01 * 0.90f + shelfBreakMask * 0.08f + ridgeMask * 0.08f));
             depth += recurringBasin * 430f * math.saturate(0.24f + descent01 * 0.56f);
             float reliefGate = math.saturate(0.22f + shelfBreakMask * 0.24f + ridgeMask * 0.28f + faultMask * 0.24f + canyon * 0.18f + basinMask * 0.08f);
-            float macroBreakup = FractalNoise01(norm * 18.0f + new float2(7.7f, 41.3f), p.Seed ^ 0x91E83B37u) * 2f - 1f;
-            float mesoBreakup = FractalNoise01(norm * 48.0f + new float2(-23.1f, 5.6f), p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
-            depth += macroBreakup * 210f * reliefGate;
-            depth += mesoBreakup * 82f * math.saturate(reliefGate + shelfMask * 0.12f + shelfBreakMask * 0.16f);
-            depth += fractureMask * 84f;
+            
+            // DOMAIN WARPING: To break the "plastic" value noise look, we perturb the coordinates for high-frequency noise.
+            float warpX = (FractalNoise01(norm * 35.0f, p.Seed ^ 0x8A1F3C4Du) * 2f - 1f) * 0.015f;
+            float warpZ = (FractalNoise01(norm * 35.0f, p.Seed ^ 0x3B8E1D2Fu) * 2f - 1f) * 0.015f;
+            float2 warpedNorm = norm + new float2(warpX, warpZ);
+
+            float macroBreakup = FractalNoise01(warpedNorm * 18.0f + new float2(7.7f, 41.3f), p.Seed ^ 0x91E83B37u) * 2f - 1f;
+            float mesoBreakup = FractalNoise01(warpedNorm * 48.0f + new float2(-23.1f, 5.6f), p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
+            float microBreakup = FractalNoise01(warpedNorm * 220.0f + new float2(33.1f, -14.6f), p.Seed ^ 0x1A2B3C4Du) * 2f - 1f;
+            
+            depth += macroBreakup * 350f * reliefGate;
+            depth += mesoBreakup * 180f * math.saturate(reliefGate + shelfMask * 0.12f + shelfBreakMask * 0.16f);
+            float microBreakupWeight = math.saturate(ridgeMask * 0.8f + faultMask * 0.5f + reliefGate * 0.3f);
+            depth += microBreakup * math.lerp(15f, 95f, microBreakupWeight);
+            depth += fractureMask * 120f;
+
+            // MESO/MICRO DETAIL PASS
+            // Add sharp, high-frequency noise (scales ~60m down to ~4m) specifically to hard rock to break up "plastic" look.
+            // Frequency 150.0/extent = 150/30000 = 0.005 (200m base scale). High octaves will reach ~12m.
+            float rockDetailNoise = (FractalNoise01(warpedNorm * 150.0f + new float2(-44.2f, 88.1f), p.Seed ^ 0x7B9C1A2Fu) * 2f - 1f);
+            // Add a sharper ridge-like noise for rocky outcrops
+            float rockyRidgeDetail = 1f - 2f * math.abs(FractalNoise01(warpedNorm * 320.0f + new float2(11.4f, -99.3f), p.Seed ^ 0x5E8A9C1Du) - 0.5f);
+            
+            float hardRockExposure = math.saturate(ridgeMask * 0.45f + faultMask * 0.28f + math.saturate(descent01 * 1.5f) * 0.30f);
+            float mesoDetailWeight = math.saturate(hardRockExposure * 0.8f + reliefGate * 0.3f);
+            
+            depth += rockDetailNoise * 70f * mesoDetailWeight;
+            depth -= rockyRidgeDetail * 60f * mesoDetailWeight * math.saturate(descent01); // Sharp extrusions on ridges
+
             if (depth < -260f)
                 depth = -260f + (depth + 260f) * 0.42f;
             depth = math.clamp(depth, -620f, p.HadalDepthMeters);

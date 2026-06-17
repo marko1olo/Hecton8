@@ -52,7 +52,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             public uint WarningFlags;
         }
 
-        [MenuItem("HECTON-8/Hydraulic Erosion Forge/Bake Mock Sector", false, 190)]
+        [MenuItem("Hecton8/Hydraulic Erosion Forge/Bake Mock Sector", false, 190)]
         public static void BakeMockSectorMenu()
         {
             if (!StartMockSectorBake(DefaultSettings(), null))

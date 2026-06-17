@@ -10,7 +10,7 @@ namespace Hecton8.AI.Editor
         private const string ArchetypeRoot = "Assets/_Project/Data/AI/CreatureArchetypes";
         private const string TemplateRoot = "Assets/_Project/Data/Fauna";
 
-        [MenuItem("Hecton/Authoring/Build Fauna Data Templates", priority = 183)]
+        [MenuItem("Hecton8/Authoring/Build Fauna Data Templates", priority = 183)]
         public static void BuildFaunaDataTemplates()
         {
             EnsureFolder("Assets/_Project/Data");

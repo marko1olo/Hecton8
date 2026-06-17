@@ -20,7 +20,7 @@ namespace Hecton8.Audio.Editor
             ValidateLayoutsOrThrow();
         }
 
-        [MenuItem("HECTON-8/Audio/Run Memory Sovereignty Validator 1320")]
+        [MenuItem("Hecton8/Audio/Run Memory Sovereignty Validator 1320")]
         public static void RunMenu()
         {
             ValidateLayoutsOrThrow();

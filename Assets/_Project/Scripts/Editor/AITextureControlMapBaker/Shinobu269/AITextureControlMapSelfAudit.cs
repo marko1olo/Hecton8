@@ -12,7 +12,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         private const string SourceRoot = "Assets/_Project/Scripts/Editor/AITextureControlMapBaker/Shinobu269";
         private const string ShaderRoot = "Assets/_Project/Shaders/Editor/AITextureControlMapBaker";
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Run Self Audit", false, 2691)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Run Self Audit", false, 2691)]
         internal static void RunSelfAuditMenu()
         {
             WriteSelfAuditReport();

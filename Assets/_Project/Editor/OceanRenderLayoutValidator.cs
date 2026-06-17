@@ -17,7 +17,7 @@ namespace Hecton8.EditorTools
             ValidateLayouts();
         }
 
-        [MenuItem("HECTON-8/Rendering/Validate Single-Pass Ocean Layouts")]
+        [MenuItem("Hecton8/Rendering/Validate Single-Pass Ocean Layouts")]
         public static void ValidateLayouts()
         {
             AssertSize<OceanVisualOverridesDTO>(OceanSinglePassConstants.VisualOverridesStrideBytes);
@@ -33,7 +33,7 @@ namespace Hecton8.EditorTools
             AssertOffset<OceanRenderTelemetryEntry>(nameof(OceanRenderTelemetryEntry.StateHash), 48);
         }
 
-        [MenuItem("HECTON-8/Rendering/Validate Crest Guillotine Source")]
+        [MenuItem("Hecton8/Rendering/Validate Crest Guillotine Source")]
         public static void ValidateCrestGuillotineSource()
         {
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;

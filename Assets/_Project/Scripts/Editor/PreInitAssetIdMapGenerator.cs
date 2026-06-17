@@ -5,7 +5,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     internal static class PreInitAssetIdMapGenerator
     {

@@ -19,7 +19,7 @@ namespace Hecton8.Editor
         private const byte ExpectedBiome42VisualFamilyId = 5; // Volcanic
         private const byte ExpectedBiome43VisualFamilyId = 1; // Rock
 
-        [MenuItem("HECTON-8/World/Run Planetary Canvas Smoke Test")]
+        [MenuItem("Hecton8/World/Run Planetary Canvas Smoke Test")]
         public static void RunMenu()
         {
             if (!RunBiomeBorderBlendSmokeTest(out float blend01, out byte blend255, out uint packedInfluence))

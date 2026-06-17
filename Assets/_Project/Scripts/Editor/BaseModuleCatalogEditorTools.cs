@@ -26,7 +26,7 @@ namespace Hecton8.Editor
             EditorApplication.delayCall += ValidateFromEditorLoad;
         }
 
-        [MenuItem("HECTON-8/Construction/Validate Base Module Catalog Layout")]
+        [MenuItem("Hecton8/Construction/Validate Base Module Catalog Layout")]
         internal static void ValidateFromMenu()
         {
             ValidateLayout(true);
@@ -94,7 +94,7 @@ namespace Hecton8.Editor
         private ScrollView _scroll;
         private Label _summaryLabel;
 
-        [MenuItem("HECTON-8/Construction/Base Module Catalog")]
+        [MenuItem("Hecton8/Construction/Base Module Catalog")]
         private static void Open()
         {
             GetWindow<BaseModuleCatalogEditorWindow>("Base Module Catalog");
@@ -512,7 +512,7 @@ namespace Hecton8.Editor
     {
         private const string ReportPath = "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Construction/Write Hierarchy Data Scanner Report")]
+        [MenuItem("Hecton8/Construction/Write Hierarchy Data Scanner Report")]
         internal static void WriteReport()
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab");

@@ -67,7 +67,7 @@ namespace Hecton8.Editor.Assembly
         private Vector2 scroll;
         private FactoryReport lastReport;
 
-        [MenuItem("HECTON-8/Assembly/Drone Prefab Factory 1738")]
+        [MenuItem("Hecton8/Assembly/Drone Prefab Factory 1738")]
         public static void OpenWindow()
         {
             DronePrefabFactory window = GetWindow<DronePrefabFactory>("Drone Factory 1738");
@@ -75,7 +75,7 @@ namespace Hecton8.Editor.Assembly
             window.Show();
         }
 
-        [MenuItem("HECTON-8/Assembly/Dry Run Drone Prefab Factory 1738")]
+        [MenuItem("Hecton8/Assembly/Dry Run Drone Prefab Factory 1738")]
         public static void DryRunDefault()
         {
             FactorySettings settings = FactorySettings.Default;
@@ -83,7 +83,7 @@ namespace Hecton8.Editor.Assembly
             Run(settings);
         }
 
-        [MenuItem("HECTON-8/Assembly/Run Drone Prefab Factory 1738")]
+        [MenuItem("Hecton8/Assembly/Run Drone Prefab Factory 1738")]
         public static void RunDefault()
         {
             FactorySettings settings = FactorySettings.Default;

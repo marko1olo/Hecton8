@@ -140,13 +140,13 @@ namespace Hecton8.EditorTools.Generators.Flora
         private const float Lod1Threshold = 0.22f;
         private const float Lod2Threshold = 0.06f;
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Open Studio", priority = 184)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Open Studio", priority = 184)]
         public static void OpenStudio()
         {
             FloraTopologyStudioWindow1604.Open();
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Generate Seed Pack", priority = 185)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Generate Seed Pack", priority = 185)]
         public static void GenerateSeedPack()
         {
             EnsureFolder(MeshOutputRoot);
@@ -168,7 +168,7 @@ namespace Hecton8.EditorTools.Generators.Flora
             Debug.Log("[FloraTopology1604] Seed pack generated successfully.");
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Run Determinism Self Test", priority = 186)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Run Determinism Self Test", priority = 186)]
         public static void RunDeterminismSelfTest()
         {
             bool passed = true;
@@ -180,7 +180,7 @@ namespace Hecton8.EditorTools.Generators.Flora
                 Debug.Log("[FloraTopology1604] Determinism self test passed. STATUS=PENDING UNITY IMPORT/PROFILER VERIFICATION.");
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Run 100K Fuzzer", priority = 187)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Run 100K Fuzzer", priority = 187)]
         public static void RunFuzzer()
         {
             FloraGenomeDTO genome = CreateGenome(FloraTopologyPreset.AbyssalBrainCoral, 16049999u, 1f, 100000);
@@ -211,7 +211,7 @@ namespace Hecton8.EditorTools.Generators.Flora
             Debug.Log("[FloraTopology1604] 100K fuzzer completed. Vertices=" + metrics.Lod0Vertices + ", Tris=" + metrics.Lod0Triangles + ", ms=" + metrics.Lod0Milliseconds.ToString("F3"));
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Run LOD Silhouette Audit", priority = 188)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Run LOD Silhouette Audit", priority = 188)]
         public static void RunSilhouetteAudit()
         {
             bool passed = true;
@@ -1749,7 +1749,7 @@ namespace Hecton8.EditorTools.Generators.Flora
             "GetData("
         };
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1604/Run Apex Integrator Verification", priority = 189)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1604/Run Apex Integrator Verification", priority = 189)]
         public static void RunApexIntegratorVerification()
         {
             int fileCount = 0;

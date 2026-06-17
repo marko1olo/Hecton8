@@ -25,9 +25,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string BufferBLabel = "heightB";
 
         [Den.Tools.GUI.ValAttribute("Thermal")] public bool enableThermalWeathering = true;
-        [Den.Tools.GUI.ValAttribute("Thermal Iterations")] public int thermalIterations = 1;
+        [Den.Tools.GUI.ValAttribute("Thermal Iterations")] public int thermalIterations = 3;
         [Den.Tools.GUI.ValAttribute("Talus Angle")] public float talusAngleDegrees = 32f;
-        [Den.Tools.GUI.ValAttribute("Thermal Strength")] public float thermalStrength = 0.18f;
+        [Den.Tools.GUI.ValAttribute("Thermal Strength")] public float thermalStrength = 0.45f;
 
         [Den.Tools.GUI.ValAttribute("Tectonic Spine")] public bool enableTectonicSpineDisplacement = true;
         [Den.Tools.GUI.ValAttribute("Require Family")] public bool requireTectonicSpineFamily = true;
@@ -70,8 +70,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             int bufferBRegistrationId = 0;
             try
             {
-                bufferA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                bufferB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                bufferA = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                bufferB = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 RegisterTempJobBuffers(bufferA, bufferB, out bufferARegistrationId, out bufferBRegistrationId);
 
                 for (int i = 0; i < cellCount; i++)
@@ -171,7 +171,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static int RegisterTempJobArray<T>(NativeArray<T> array, string label)
             where T : struct
         {
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TransientArena);
             if (registrationId <= 0)
                 throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
 
@@ -225,11 +225,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         private bool ShouldApplyTectonicDisplacement()
         {
-            if (!enableTectonicSpineDisplacement)
-                return false;
-
-            return !requireTectonicSpineFamily ||
-                   string.Equals(biomeFamilyId, TectonicSpineFamilyId, System.StringComparison.OrdinalIgnoreCase);
+            // Voronoi is only used as a mask, not for direct ridge displacement.
+            // Python preview tool does not have this post-process.
+            return false;
         }
 
         private static float ResolveCellSizeMeters(MatrixWorld matrix)

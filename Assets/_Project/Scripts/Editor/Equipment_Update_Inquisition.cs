@@ -18,7 +18,7 @@ namespace Hecton8.Tools.Editor
         private static readonly Regex ForbiddenUpdateRegex = new Regex(@"\b(?:public|private|protected|internal)?\s*(?:virtual|override|sealed|static)?\s*void\s+(Update|FixedUpdate|LateUpdate)\s*\(", RegexOptions.Compiled);
         private static readonly Regex ForbiddenCoroutineRegex = new Regex(@"\b(IEnumerator\s+\w+\s*\(|StartCoroutine\s*\()", RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Tools/Equipment Update Inquisition")]
+        [MenuItem("Hecton8/Tools/Equipment Update Inquisition")]
         public static void Run()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

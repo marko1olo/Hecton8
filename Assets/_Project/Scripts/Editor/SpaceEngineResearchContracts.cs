@@ -6,7 +6,7 @@
 
 using System.Collections.Generic;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal sealed class SpaceEngineResearchAuditResult
     {

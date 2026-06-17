@@ -28,7 +28,7 @@ namespace Hecton8.Ecosystem.Editor
             @"\bVector3\s*\.\s*Distance\s*\(",
             RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Ecosystem/Run OOP Boid Scanner")]
+        [MenuItem("Hecton8/Ecosystem/Run OOP Boid Scanner")]
         public static void RunMenu()
         {
             string report = RunScan();

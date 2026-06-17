@@ -55,7 +55,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             EditorApplication.quitting += ForceUnlockReloadGuard;
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Bake Selected Meshes", false, 2671)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Bake Selected Meshes", false, 2671)]
         internal static void BakeSelectedMeshesFromMenu()
         {
             AITextureBakeSettings settings = DefaultSettings();

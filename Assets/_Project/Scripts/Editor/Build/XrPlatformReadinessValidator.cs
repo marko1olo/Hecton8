@@ -51,7 +51,7 @@ namespace Hecton8.Editor.Build
             Validate(target, hardFail: true);
         }
 
-        [MenuItem("HECTON-8/Platform/Validate XR Platform Readiness")]
+        [MenuItem("Hecton8/Platform/Validate XR Platform Readiness")]
         private static void ValidateActiveBuildTarget()
         {
             Validate(EditorUserBuildSettings.activeBuildTarget, hardFail: false);

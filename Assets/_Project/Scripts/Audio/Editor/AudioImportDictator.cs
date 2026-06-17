@@ -356,7 +356,7 @@ namespace Hecton8.Audio.Editor
             return paths;
         }
 
-        [MenuItem("Hecton/Audio/Apply Import Policy To All Audio Assets", priority = 409)]
+        [MenuItem("Hecton8/Audio/Apply Import Policy To All Audio Assets", priority = 409)]
         internal static void ApplyPolicyToAllAudioAssetsMenu()
         {
             int changedCount = ApplyPolicyToAllAudioAssets();
@@ -609,7 +609,7 @@ namespace Hecton8.Audio.Editor
             EnvironmentAudioSourcePurgeGate.ValidateEnvironmentPrefabsNoAudioSources(true);
         }
 
-        [MenuItem("Hecton/Validation/Audio/Validate Import Policy Drift", priority = 409)]
+        [MenuItem("Hecton8/Validation/Audio/Validate Import Policy Drift", priority = 409)]
         internal static void ValidateImportPolicyDriftMenu()
         {
             ValidateImportPolicyDrift(false);
@@ -646,7 +646,7 @@ namespace Hecton8.Audio.Editor
                 throw new BuildFailedException(reportText);
         }
 
-        [MenuItem("Hecton/Validation/Audio/Validate Preloaded Audio Budget", priority = 410)]
+        [MenuItem("Hecton8/Validation/Audio/Validate Preloaded Audio Budget", priority = 410)]
         internal static void ValidatePreloadedAudioBudgetMenu()
         {
             ValidatePreloadedAudioBudget(false);
@@ -743,7 +743,7 @@ namespace Hecton8.Audio.Editor
             public AudioClipLoadType LoadType;
         }
 
-        [MenuItem("Hecton/Validation/Audio/Validate Prefab AudioSource Residency", priority = 413)]
+        [MenuItem("Hecton8/Validation/Audio/Validate Prefab AudioSource Residency", priority = 413)]
         internal static void ValidatePrefabAudioSourceResidencyMenu()
         {
             ValidatePrefabAudioSourceResidency(false);
@@ -871,13 +871,13 @@ namespace Hecton8.Audio.Editor
             public int Count;
         }
 
-        [MenuItem("Hecton/Audio/Purge Environment Prefab AudioSources", priority = 411)]
+        [MenuItem("Hecton8/Audio/Purge Environment Prefab AudioSources", priority = 411)]
         internal static void PurgeEnvironmentAudioSourcesMenu()
         {
             PurgeEnvironmentAudioSources();
         }
 
-        [MenuItem("Hecton/Validation/Audio/Validate Environment Prefabs No AudioSources", priority = 412)]
+        [MenuItem("Hecton8/Validation/Audio/Validate Environment Prefabs No AudioSources", priority = 412)]
         internal static void ValidateEnvironmentPrefabsNoAudioSourcesMenu()
         {
             ValidateEnvironmentPrefabsNoAudioSources(false);

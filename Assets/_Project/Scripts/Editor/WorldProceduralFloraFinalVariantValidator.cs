@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.World;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralFloraFinalVariantValidator
     {
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         private const float RequiredLod1Threshold = 0.15f;
         private const float RequiredLod2Threshold = 0.04f;
 
-        [MenuItem("Hecton/Validation/Validate Procedural Flora Final Variants", priority = 240)]
+        [MenuItem("Hecton8/Validation/Validate Procedural Flora Final Variants", priority = 240)]
         public static void Validate()
         {
             string rootFolder = WorldProceduralFloraFinalVariantAuthoring.FloraFinalRootFolder;

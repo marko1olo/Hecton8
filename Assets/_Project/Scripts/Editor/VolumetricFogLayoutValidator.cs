@@ -7,7 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class VolumetricFogLayoutValidator
     {

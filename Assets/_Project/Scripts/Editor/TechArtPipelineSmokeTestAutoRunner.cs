@@ -4,7 +4,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// File-flagged editor runner for tech-art smoke validation under batchmode lock contention.

@@ -27,7 +27,7 @@ namespace Hecton8.Core.Editor
             "Assets/_Project/Scripts/Gameplay"
         };
 
-        [MenuItem("HECTON-8/Diagnostics/OOP Gamepad Scanner")]
+        [MenuItem("Hecton8/Diagnostics/OOP Gamepad Scanner")]
         public static void Run()
         {
             string projectRoot = ResolveProjectRoot();

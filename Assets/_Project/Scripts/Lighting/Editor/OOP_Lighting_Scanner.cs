@@ -12,7 +12,7 @@ namespace Hecton8.Lighting.Editor
         private const string DedicatedReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT_13KRA.json";
         private const string SharedReportKey = "agent_13kra_day_night_gi_relay";
 
-        [MenuItem("HECTON-8/Lighting/Run OOP Lighting Scanner")]
+        [MenuItem("Hecton8/Lighting/Run OOP Lighting Scanner")]
         public static void Run()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

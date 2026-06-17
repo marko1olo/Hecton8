@@ -15,7 +15,7 @@ namespace Hecton8.Editor
         private const string ArtifactPath = "CodexArtifacts/planetary-canvas-graph-integration-2026-05-05.json";
         private static readonly Encoding ArtifactEncoding = new UTF8Encoding(false);
 
-        [MenuItem("HECTON-8/World/Integrate Planetary Canvas Graph")]
+        [MenuItem("Hecton8/World/Integrate Planetary Canvas Graph")]
         public static void RunMenu()
         {
             RunBatchmode();

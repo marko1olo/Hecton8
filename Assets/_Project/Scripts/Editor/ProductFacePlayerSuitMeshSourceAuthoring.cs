@@ -116,7 +116,7 @@ namespace Hecton8.Editor.ProductFace
                 "VIS_VisorGlassRim,VIS_GasketLip,VIS_CyanInstrumentRim,VIS_AmberSealTabs,VIS_ScratchGuideTrim")
         };
 
-        [MenuItem("HECTON-8/Product Face/Author Player Suit Mesh Sources 1877", false, 1877)]
+        [MenuItem("Hecton8/Product Face/Author Player Suit Mesh Sources 1877", false, 1877)]
         public static void AuthorAllFromMenu()
         {
             AuthorAll(DefaultGlobalQualityWeight);

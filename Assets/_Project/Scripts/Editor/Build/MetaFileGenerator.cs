@@ -25,7 +25,7 @@ namespace Hecton8.Editor.Build
             EditorApplication.delayCall += GenerateMissingMetas;
         }
 
-        [MenuItem("Hecton-8/Build/Generate Missing Script Metas")]
+        [MenuItem("Hecton8/Build/Generate Missing Script Metas")]
         public static void GenerateMissingMetas()
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating || !Directory.Exists(ScriptRoot))

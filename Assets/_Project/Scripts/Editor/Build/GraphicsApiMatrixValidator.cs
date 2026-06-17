@@ -24,7 +24,7 @@ namespace Hecton8.Editor.Build
             Validate(report.summary.platform, HasStrictDefine(report.summary.platform));
         }
 
-        [MenuItem("HECTON-8/Platform/Validate Graphics API Matrix")]
+        [MenuItem("Hecton8/Platform/Validate Graphics API Matrix")]
         private static void ValidateFromMenu()
         {
             Validate(EditorUserBuildSettings.activeBuildTarget, strictBuild: false);

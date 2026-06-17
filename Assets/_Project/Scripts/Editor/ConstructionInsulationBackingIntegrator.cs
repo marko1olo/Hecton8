@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Binds the Batch34 damp insulation source to visible opened/backing panels on construction ruin prefabs.

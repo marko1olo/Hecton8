@@ -33,7 +33,7 @@ namespace Hecton8.EditorTools
 
         private Vector2 _scroll;
 
-        [MenuItem("HECTON-8/Mod API Sandbox Tuner")]
+        [MenuItem("Hecton8/Mod API Sandbox Tuner")]
         public static void Open()
         {
             GetWindow<ModApiSandboxTunerWindow>("Mod API Sandbox Tuner");

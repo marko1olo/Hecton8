@@ -33,7 +33,7 @@ namespace Hecton8.Editor
             EditorApplication.delayCall += ScanAfterReload;
         }
 
-        [MenuItem("Hecton-8/Compliance/Scan Unity API Traps")]
+        [MenuItem("Hecton8/Compliance/Scan Unity API Traps")]
         private static void ScanFromMenu()
         {
             int violations = Scan(reportToConsole: true);

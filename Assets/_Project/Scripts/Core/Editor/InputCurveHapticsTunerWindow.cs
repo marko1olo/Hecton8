@@ -10,7 +10,7 @@ namespace Hecton8.Core.Editor
     {
         private const float GridSize = 180f;
 
-        [MenuItem("HECTON-8/Input Curve & Haptics Tuner")]
+        [MenuItem("Hecton8/Input Curve & Haptics Tuner")]
         private static void Open()
         {
             GetWindow<InputCurveHapticsTunerWindow>("Input Curve & Haptics Tuner");

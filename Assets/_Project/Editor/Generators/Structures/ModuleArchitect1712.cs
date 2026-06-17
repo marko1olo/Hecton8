@@ -77,7 +77,7 @@ namespace Hecton8.Editor.Structures
         [SerializeField, Range(0f, 1f)] private float globalQualityWeight = 0.75f;
         [SerializeField] private uint seed = 1712u;
 
-        [MenuItem("Hecton/Structures/Agent 1712/Fabricate Hard Surface Module Set")]
+        [MenuItem("Hecton8/Structures/Agent 1712/Fabricate Hard Surface Module Set")]
         public static void FabricateDefaultMenu()
         {
             GetWindow<ModuleArchitect1712>("Module Architect 1712").Show();
@@ -107,7 +107,7 @@ namespace Hecton8.Editor.Structures
             }
         }
 
-        [MenuItem("Hecton/Structures/Agent 1712/Fabricate Default Module Set Now")]
+        [MenuItem("Hecton8/Structures/Agent 1712/Fabricate Default Module Set Now")]
         public static void FabricateDefaultSetFromMenu()
         {
             if (FabricateDefaultSet(ModuleArchitect1712Settings.Default, out ModuleArchitect1712Result result))

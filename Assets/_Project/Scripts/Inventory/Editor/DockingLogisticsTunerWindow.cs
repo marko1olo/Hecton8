@@ -20,7 +20,7 @@ namespace Hecton8.Inventory.Editor
         private Label _stateLabel;
         private CargoTelemetryHistogramElement _histogram;
 
-        [MenuItem("HECTON-8/Inventory/Docking Logistics Tuner")]
+        [MenuItem("Hecton8/Inventory/Docking Logistics Tuner")]
         private static void Open()
         {
             GetWindow<DockingLogisticsTunerWindow>("Docking Logistics");

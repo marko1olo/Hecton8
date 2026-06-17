@@ -17,7 +17,7 @@ namespace Hecton8.AI.Pathfinding.Editor
             SceneView.duringSceneGui += OnSceneGui;
         }
 
-        [MenuItem("HECTON-8/AI/Toggle Voxel A* Debug Gizmo")]
+        [MenuItem("Hecton8/AI/Toggle Voxel A* Debug Gizmo")]
         private static void Toggle()
         {
             _enabled = !_enabled;

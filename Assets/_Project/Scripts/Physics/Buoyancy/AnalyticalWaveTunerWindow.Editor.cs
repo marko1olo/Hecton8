@@ -29,7 +29,7 @@ namespace Hecton8.Physics
         private IDataVault _cachedVault;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Physics/Analytical Gerstner Wave Tuner")]
+        [MenuItem("Hecton8/Physics/Analytical Gerstner Wave Tuner")]
         public static void Open()
         {
             GetWindow<AnalyticalWaveTunerWindow>("Analytical Waves");

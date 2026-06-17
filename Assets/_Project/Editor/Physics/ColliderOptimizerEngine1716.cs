@@ -216,7 +216,7 @@ namespace Hecton8.Editor.ColliderOptimization1716
                 throw new InvalidOperationException("[ColliderOptimizer1716] " + label + " size " + size + " is not 8-byte aligned.");
         }
 
-        [MenuItem("HECTON-8/Physics/1716 Audit Collider Topology", false, 1716)]
+        [MenuItem("Hecton8/Physics/1716 Audit Collider Topology", false, 1716)]
         public static void AuditDefaultFolderMenu()
         {
             ColliderOptimizerReport1716 report = AuditPrefabs(PrefabRoot, true);
@@ -226,7 +226,7 @@ namespace Hecton8.Editor.ColliderOptimization1716
                       " RuntimeBakeCalls=" + report.RuntimeBakeCallsitesFound);
         }
 
-        [MenuItem("HECTON-8/Physics/1716 Optimize Collider Proxies", false, 1717)]
+        [MenuItem("Hecton8/Physics/1716 Optimize Collider Proxies", false, 1717)]
         public static void OptimizeDefaultFolderMenu()
         {
             ColliderOptimizerReport1716 report = OptimizeFolder(PrefabRoot, ColliderOptimizerMode1716.Auto, ColliderOptimizerSettings1716.FromGlobalQualityWeight(DefaultGlobalQualityWeight), false);

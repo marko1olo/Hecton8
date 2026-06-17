@@ -38,7 +38,7 @@ namespace Hecton8.Editor.GeologyForge
             ".material"
         };
 
-        [MenuItem("HECTON-8/Geology Forge/Scan Runtime Mesh Generation", false, 181)]
+        [MenuItem("Hecton8/Geology Forge/Scan Runtime Mesh Generation", false, 181)]
         public static void ScanAndWriteReport()
         {
             if (!Application.isBatchMode && StartAsyncScan())
@@ -49,7 +49,7 @@ namespace Hecton8.Editor.GeologyForge
             Debug.Log("[SHINOBU_208] Runtime mesh generation scan wrote " + GeologyForgeConstants.ScannerReportPath + " with " + findings.Count + " findings.");
         }
 
-        [MenuItem("HECTON-8/Geology Forge/Cancel Runtime Mesh Scan", false, 182)]
+        [MenuItem("Hecton8/Geology Forge/Cancel Runtime Mesh Scan", false, 182)]
         public static void CancelAsyncScan()
         {
             if (!_asyncScanActive)

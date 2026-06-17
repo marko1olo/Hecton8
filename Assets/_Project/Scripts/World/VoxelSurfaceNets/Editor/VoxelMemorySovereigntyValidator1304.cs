@@ -31,7 +31,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
             ValidateLayoutsOrThrow();
         }
 
-        [MenuItem("HECTON-8/Voxel/Run Memory Sovereignty Validator 1304")]
+        [MenuItem("Hecton8/Voxel/Run Memory Sovereignty Validator 1304")]
         public static void RunMenu()
         {
             ValidateLayoutsOrThrow();

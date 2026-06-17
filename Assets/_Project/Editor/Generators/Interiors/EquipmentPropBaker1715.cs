@@ -60,7 +60,7 @@ namespace Hecton8.Editor.Interiors
         private int _seed = 1715;
         private float _globalQualityWeight = 0.72f;
 
-        [MenuItem("Hecton/Interiors/Equipment Prop Baker 1715")]
+        [MenuItem("Hecton8/Interiors/Equipment Prop Baker 1715")]
         public static void ShowWindow()
         {
             var window = GetWindow<EquipmentPropBaker1715>();
@@ -68,7 +68,7 @@ namespace Hecton8.Editor.Interiors
             window.minSize = new Vector2(420f, 260f);
         }
 
-        [MenuItem("Hecton/Interiors/Bake Equipment Prop 1715 Now")]
+        [MenuItem("Hecton8/Interiors/Bake Equipment Prop 1715 Now")]
         public static void BakeDefaultMenu()
         {
             EquipmentBakeSettings1715 settings = EquipmentBakeSettings1715.Default;

@@ -42,7 +42,7 @@ namespace Hecton8.Editor
         private bool _refreshing;
         private bool _drawSlice = true;
 
-        [MenuItem("HECTON-8/Ecosystem/Nutrient Drift Tuner")]
+        [MenuItem("Hecton8/Ecosystem/Nutrient Drift Tuner")]
         public static void Open()
         {
             GetWindow<NutrientDriftTunerWindow>("Nutrient Drift");

@@ -174,7 +174,7 @@ namespace Hecton8.Editor.Generators.World
             "unsafe "
         };
 
-        [MenuItem("HECTON-8/World Scatter/1614 APEX Integrator Verify Source")]
+        [MenuItem("Hecton8/World Scatter/1614 APEX Integrator Verify Source")]
         public static void RunMenuVerification()
         {
             if (!RunSourceVerification(out AbyssalScatterApexVerificationResult1614 result))

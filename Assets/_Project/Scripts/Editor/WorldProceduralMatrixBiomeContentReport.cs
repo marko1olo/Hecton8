@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralMatrixBiomeContentReport
     {
@@ -21,7 +21,7 @@ namespace Hecton8.EditorTools
             _activeRepresentativeSignatures = new HashSet<string>(16, StringComparer.OrdinalIgnoreCase);
         }
 
-        [MenuItem("Hecton/Validation/Generate Procedural Matrix Biome Content Report", priority = 239)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Matrix Biome Content Report", priority = 239)]
         public static void GenerateReport()
         {
             Scene activeScene = SceneManager.GetActiveScene();

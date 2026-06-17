@@ -5,7 +5,7 @@ using System.Globalization;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Estimates compressed VRAM usage for first-party art textures under Assets/_Project/Art.

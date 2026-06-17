@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralPatternBalanceReport
     {
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         private static readonly List<WorldProceduralFieldSampler> s_fieldSamplers = new List<WorldProceduralFieldSampler>(2);
         private static readonly List<WorldProceduralScatterDirector> s_scatterDirectors = new List<WorldProceduralScatterDirector>(2);
 
-        [MenuItem("Hecton/Validation/Generate Procedural Water Pattern Report", priority = 237)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Water Pattern Report", priority = 237)]
         public static void GenerateReport()
         {
             Scene activeScene = SceneManager.GetActiveScene();

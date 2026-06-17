@@ -22,7 +22,7 @@ namespace Hecton8.Editor
         private const uint KeplerSmokeSeed = 0x00C0FFEEu;
         private const float KeplerPositionEpsilonSq = 0.000001f;
 
-        [MenuItem("Hecton/Smoke/Celestial Sync 24h")]
+        [MenuItem("Hecton8/Smoke/Celestial Sync 24h")]
         public static void RunFromMenu()
         {
             Run24HourFastForward();

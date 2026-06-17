@@ -45,7 +45,7 @@ namespace Hecton8.AI.Pathfinding.Editor
             @"\b[A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)?\s*\(",
             RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/AI/Run OOP NavMesh Scanner")]
+        [MenuItem("Hecton8/AI/Run OOP NavMesh Scanner")]
         private static void Run()
         {
             string report = RunAndWriteReport();

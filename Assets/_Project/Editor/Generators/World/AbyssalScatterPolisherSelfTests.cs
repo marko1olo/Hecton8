@@ -9,7 +9,7 @@ namespace Hecton8.Editor.Generators.World
 {
     internal static class AbyssalScatterPolisherSelfTests
     {
-        [MenuItem("HECTON-8/World Scatter/1614 Run Self Tests")]
+        [MenuItem("Hecton8/World Scatter/1614 Run Self Tests")]
         public static void RunSelfTestsMenu()
         {
             bool passed = RunSelfTests(out string report);

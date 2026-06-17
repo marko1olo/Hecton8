@@ -18,7 +18,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         private const int ContextKeywordCount = 7;
         private static readonly Encoding TextEncoding = new UTF8Encoding(false);
 
-        [MenuItem("HECTON-8/Voxel Terrain Seam Binder/Scan Runtime Seam Mutation")]
+        [MenuItem("Hecton8/Voxel Terrain Seam Binder/Scan Runtime Seam Mutation")]
         public static void ScanMenu()
         {
             ScanAndWriteReport(ProjectRoot());

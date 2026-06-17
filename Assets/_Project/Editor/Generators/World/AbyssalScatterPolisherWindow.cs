@@ -17,7 +17,7 @@ namespace Hecton8.Editor.Generators.World
         private bool _hasScan;
         private bool _hasResult;
 
-        [MenuItem("HECTON-8/World Scatter/Abyssal Scatter Polisher", priority = 1614)]
+        [MenuItem("Hecton8/World Scatter/Abyssal Scatter Polisher", priority = 1614)]
         public static void Open()
         {
             AbyssalScatterPolisherWindow window = GetWindow<AbyssalScatterPolisherWindow>();

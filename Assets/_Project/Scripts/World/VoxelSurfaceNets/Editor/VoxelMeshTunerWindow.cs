@@ -16,7 +16,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
         private double _nextCsvPollTime;
         private Vector2 _scroll;
 
-        [MenuItem("HECTON-8/Voxel Mesh Tuner")]
+        [MenuItem("Hecton8/Voxel Mesh Tuner")]
         public static void Open()
         {
             GetWindow<VoxelMeshTunerWindow>("Voxel Mesh Tuner");

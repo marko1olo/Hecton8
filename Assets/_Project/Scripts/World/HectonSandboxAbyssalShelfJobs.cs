@@ -158,29 +158,15 @@ namespace Hecton8.World
             in HectonSandboxAbyssalShelfParams parameters)
         {
             float highWorldY = ResolveSlopeLockedHighWorldY(in parameters);
-            float heightRange = math.max(0.001f, highWorldY - parameters.LowWorldY);
-            float macro01 = EvaluateGreatDescent01(
-                aupXZ,
-                parameters.DescentRadiusMeters,
-                parameters.MacroExponentialFalloff);
-            float baseY = math.lerp(highWorldY, parameters.LowWorldY, macro01);
-            float base01 = math.saturate((baseY - parameters.LowWorldY) / heightRange);
-
-            EvaluateVoronoiRidgeData(aupXZ, in parameters, out HectonSandboxAbyssalShelfRidgeData ridge);
-            float ridgeMask = ridge.RidgeMask;
-            float ridgeAttenuation = math.smoothstep(0.04f, 0.42f, base01);
-            float ridgeLift01 = math.saturate(parameters.RidgeHeightMeters / heightRange) * ridgeMask * ridgeAttenuation;
-            float multiplied01 = base01 * (1f + math.max(0f, parameters.RidgeMultiplier) * ridgeMask * ridgeAttenuation);
-            float ridged01 = math.saturate(multiplied01 + ridgeLift01);
-            float heightMeters = parameters.LowWorldY + ridged01 * heightRange;
-            float trenchMask = FastTrenchSharpness01(ridge.TrenchMask, parameters.TrenchSharpness);
-            float trenchDepth = math.max(0f, parameters.TrenchDepthMeters);
-            float trenchDescentBias = math.smoothstep(0.18f, 0.96f, macro01);
-            heightMeters -= trenchDepth * trenchMask * trenchDescentBias;
-
-            if (heightMeters > 0f)
-                heightMeters *= ridge.IslandMask;
-
+            WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(parameters.Seed);
+            macroParams.WaterSurfaceY = 0f;
+            macroParams.DetailProbeMeters = math.max(64f, (float)math.max(1.0, parameters.AupCellSizeMeters));
+            macroParams.RidgeHeightMeters = parameters.RidgeHeightMeters;
+            macroParams.RidgeWidthMeters = parameters.RidgeWidthMeters;
+            macroParams.TrenchDepthMeters = parameters.TrenchDepthMeters;
+            macroParams.TrenchWidthMeters = parameters.TrenchWidthMeters;
+            
+            float heightMeters = WorldMacroGeologyFields.EvaluateHeightMeters((float)aupXZ.x, (float)aupXZ.y, in macroParams);
             return math.clamp(heightMeters, parameters.LowWorldY, highWorldY);
         }
 

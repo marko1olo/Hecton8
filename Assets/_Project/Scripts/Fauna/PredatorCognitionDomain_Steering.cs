@@ -1996,7 +1996,7 @@ namespace Hecton8.AI
         private bool _stateReady;
         private uint _lastTelemetryFrame = uint.MaxValue;
 
-        [MenuItem("HECTON-8/AI/Leviathan Kinematics Tuner")]
+        [MenuItem("Hecton8/AI/Leviathan Kinematics Tuner")]
         private static void Open()
         {
             GetWindow<LeviathanKinematicsTunerWindow>("Leviathan Kinematics");
@@ -2171,7 +2171,7 @@ namespace Hecton8.AI
             SceneView.duringSceneGui += OnSceneGui;
         }
 
-        [MenuItem("HECTON-8/AI/Toggle Leviathan Steering Whiskers")]
+        [MenuItem("Hecton8/AI/Toggle Leviathan Steering Whiskers")]
         private static void Toggle()
         {
             _enabled = !_enabled;
@@ -2212,7 +2212,7 @@ namespace Hecton8.AI
 
     internal static class OOP_Movement_Scanner
     {
-        [MenuItem("HECTON-8/AI/Run OOP Movement Scanner")]
+        [MenuItem("Hecton8/AI/Run OOP Movement Scanner")]
         private static void Run()
         {
             string root = Directory.GetCurrentDirectory();

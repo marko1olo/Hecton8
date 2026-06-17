@@ -12,7 +12,7 @@ namespace Hecton8.Editor.ProceduralGen
         private int _seed = 12648430;
         private string _nameOverride = string.Empty;
 
-        [MenuItem("HECTON-8/Bio-Forge", false, 170)]
+        [MenuItem("Hecton8/Bio-Forge", false, 170)]
         private static void Open()
         {
             var window = GetWindow<BioForgeWindow>("Bio-Forge");
@@ -20,7 +20,7 @@ namespace Hecton8.Editor.ProceduralGen
             window.TryAdoptSelection();
         }
 
-        [MenuItem("HECTON-8/Bio-Forge/Create Default Rule", false, 171)]
+        [MenuItem("Hecton8/Bio-Forge/Create Default Rule", false, 171)]
         private static void CreateDefaultRule()
         {
             BioForgeGenerator.CreateDefaultRuleAsset();

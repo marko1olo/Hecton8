@@ -58,7 +58,7 @@ namespace Hecton8.Editor.Assembly
         private Vector2 scroll;
         private FactoryReport lastReport;
 
-        [MenuItem("HECTON-8/Assembly/Hazard Prefab Factory 1736")]
+        [MenuItem("Hecton8/Assembly/Hazard Prefab Factory 1736")]
         public static void OpenWindow()
         {
             HazardPrefabFactory window = GetWindow<HazardPrefabFactory>("Hazard Factory 1736");
@@ -66,7 +66,7 @@ namespace Hecton8.Editor.Assembly
             window.Show();
         }
 
-        [MenuItem("HECTON-8/Assembly/Dry Run Hazard Prefab Factory 1736")]
+        [MenuItem("Hecton8/Assembly/Dry Run Hazard Prefab Factory 1736")]
         public static void RunDefaultDryRun()
         {
             FactorySettings settings = FactorySettings.Default;
@@ -74,7 +74,7 @@ namespace Hecton8.Editor.Assembly
             Run(settings);
         }
 
-        [MenuItem("HECTON-8/Assembly/Run Hazard Prefab Factory 1736")]
+        [MenuItem("Hecton8/Assembly/Run Hazard Prefab Factory 1736")]
         public static void RunDefault()
         {
             FactorySettings settings = FactorySettings.Default;

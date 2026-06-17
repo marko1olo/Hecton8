@@ -12,7 +12,7 @@ namespace Hecton8.Editor.Bakers
         private const string NeutralCaveSdfAssetName1728 = "TX_MarineSnow_EmptyCaveSdf_1x1x1.asset";
         private const string NeutralAbyssalFlowAssetName1728 = "TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset";
 
-        [MenuItem("HECTON-8/Bakers/1728/Bake Required Silt Snow Cavitation Flipbooks", false, 1728)]
+        [MenuItem("Hecton8/Bakers/1728/Bake Required Silt Snow Cavitation Flipbooks", false, 1728)]
         public static void BakeRequiredParticulateFlipbooks1728()
         {
             if (!TryBakeParticulateFlipbooks1728(1f, DefaultParticleFlipbookOutputFolder1728, out string failure))

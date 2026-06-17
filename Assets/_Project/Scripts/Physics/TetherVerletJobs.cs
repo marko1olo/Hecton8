@@ -615,7 +615,7 @@ namespace Hecton8.Physics
             (1UL << (((int)BufferID.TetherVerletSolverFlags) & 63)) |
             (1UL << (((int)BufferID.TetherVerletNodeFaultFlags) & 63));
 
-        [UnityEditor.MenuItem("HECTON-8/Physics/Run Tether Memory Sovereignty Validator 1303")]
+        [UnityEditor.MenuItem("Hecton8/Physics/Run Tether Memory Sovereignty Validator 1303")]
         public static void RunMenu()
         {
             bool passed = RunDefragRaceFuzzer(out uint failureFlags);

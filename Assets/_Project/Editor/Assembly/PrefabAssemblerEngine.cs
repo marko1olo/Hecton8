@@ -56,7 +56,7 @@ namespace Hecton8.Editor.Assembly
         private Vector2 scroll;
         private AssemblerReport lastReport;
 
-        [MenuItem("HECTON-8/Assembly/Prefab Assembler Engine 1731")]
+        [MenuItem("Hecton8/Assembly/Prefab Assembler Engine 1731")]
         public static void OpenWindow()
         {
             PrefabAssemblerEngine window = GetWindow<PrefabAssemblerEngine>("Prefab Assembler 1731");
@@ -64,7 +64,7 @@ namespace Hecton8.Editor.Assembly
             window.Show();
         }
 
-        [MenuItem("HECTON-8/Assembly/Run Prefab Assembler 1731")]
+        [MenuItem("Hecton8/Assembly/Run Prefab Assembler 1731")]
         public static void RunDefaultAssembly()
         {
             AssemblerSettings settings = AssemblerSettings.Default;
@@ -72,7 +72,7 @@ namespace Hecton8.Editor.Assembly
             Run(settings);
         }
 
-        [MenuItem("HECTON-8/Assembly/Dry Run Prefab Assembler 1731")]
+        [MenuItem("Hecton8/Assembly/Dry Run Prefab Assembler 1731")]
         public static void RunDefaultDryRun()
         {
             AssemblerSettings settings = AssemblerSettings.Default;

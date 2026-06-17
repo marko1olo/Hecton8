@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates geological procedural families, their geology profiles, and linked final prefabs.
@@ -18,7 +18,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Validates geological family/profile/final contracts.
         /// </summary>
-        [MenuItem("Hecton/Validation/Validate Procedural Geology Families", priority = 245)]
+        [MenuItem("Hecton8/Validation/Validate Procedural Geology Families", priority = 245)]
         public static void ValidateGeologyFamilies()
         {
             List<FamilyRecord> records = LoadGeologyFamilies();

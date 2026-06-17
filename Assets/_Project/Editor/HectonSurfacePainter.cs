@@ -70,7 +70,7 @@ public sealed class HectonSurfacePainter : EditorWindow
         public int triangleIndex;
     }
 
-    [MenuItem("Hecton/Building/Surface Painter")]
+    [MenuItem("Hecton8/Building/Surface Painter")]
     public static void OpenWindow()
     {
         HectonSurfacePainter window = GetWindow<HectonSurfacePainter>();

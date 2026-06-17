@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     public sealed unsafe class H8DataMonolithCompilerWindow : EditorWindow
     {

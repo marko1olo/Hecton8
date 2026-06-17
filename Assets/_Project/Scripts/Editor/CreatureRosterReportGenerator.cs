@@ -10,7 +10,7 @@ namespace Hecton8.AI.Editor
     {
         private const string ReportPath = "C:/hades/Hecton8/AI_CREATURE_ROSTER_REPORT.md";
 
-        [MenuItem("Hecton/Validation/Generate AI Creature Roster Report", priority = 246)]
+        [MenuItem("Hecton8/Validation/Generate AI Creature Roster Report", priority = 246)]
         public static void Generate()
         {
             string[] guids = AssetDatabase.FindAssets("t:CreatureArchetypeData");

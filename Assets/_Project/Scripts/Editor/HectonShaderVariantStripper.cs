@@ -10,7 +10,7 @@ using UnityEditor.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Strips shader variants for URP features that are disabled across the authored HECTON-8 pipeline assets.

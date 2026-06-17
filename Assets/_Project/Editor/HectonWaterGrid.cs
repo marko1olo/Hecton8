@@ -4,7 +4,7 @@ using UnityEditor;
 
 public class HectonWaterGrid : EditorWindow
 {
-    [MenuItem("Hecton/Generate Water Mesh")]
+    [MenuItem("Hecton8/Generate Water Mesh")]
     static void Init()
     {
         // Nastroyki setki

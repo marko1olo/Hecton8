@@ -19,7 +19,7 @@ namespace Hecton8.Lighting.Editor
         private float _emergencyIntensity = 2.4f;
         private float _waterAbsorption = 0.8f;
 
-        [MenuItem("HECTON-8/Lighting/Interior GI Tuner")]
+        [MenuItem("Hecton8/Lighting/Interior GI Tuner")]
         private static void Open()
         {
             GetWindow<InteriorGITunerWindow>("Interior GI Tuner");

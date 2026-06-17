@@ -35,7 +35,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
         private bool _csvProfileLoaded;
         private bool _bakeInFlight;
 
-        [MenuItem("HECTON-8/Biome Splatmap Forge/Open Forge")]
+        [MenuItem("Hecton8/Biome Splatmap Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<BiomeSplatmapForgeWindow>("Biome Splatmap Forge");

@@ -26,7 +26,7 @@ namespace Hecton8.Editor
         private int _lastRuntimeMatrixCount = -1;
         private int _lastRuntimeQualityMilli = -1;
 
-        [MenuItem("HECTON-8/Animation/Procedural Animation Tuner")]
+        [MenuItem("Hecton8/Animation/Procedural Animation Tuner")]
         private static void Open()
         {
             GetWindow<KineticCharacterAnimationTunerWindow>("Procedural Animation Tuner");

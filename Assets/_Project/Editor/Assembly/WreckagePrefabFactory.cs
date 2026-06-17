@@ -18,7 +18,7 @@ namespace Hecton8.Editor.Assembly
     public sealed class WreckagePrefabFactory : EditorWindow
     {
         private const string AgentId = "1735";
-        private const string MenuRoot = "HECTON-8/Assembly/1735/";
+        private const string MenuRoot = "Hecton8/Assembly/1735/";
         private const string DefaultSourceDirectory = "Assets/_Project/BakedGeometry/Wreckage";
         private const string DefaultMaterialDirectory = "Assets/_Project/Art/Materials";
         private const string DefaultGeneratedMeshDirectory = "Assets/_Project/BakedGeometry/Wreckage/PrefabFactory1735";

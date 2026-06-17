@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Authors interior-decor and colony-part procedural finals on top of the shared construction material stack.
@@ -17,7 +17,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Rebuilds procedural interior-decor and colony-part finals.
         /// </summary>
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Interior And Colony Finals", priority = 180)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Interior And Colony Finals", priority = 180)]
         public static void RebuildInteriorAndColonyFinals()
         {
             if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(

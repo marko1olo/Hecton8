@@ -82,7 +82,7 @@ public class HectonMeshCleaner : EditorWindow
         public float pctRemoved;
     }
 
-    [MenuItem("Hecton/Mesh Cleaner v4")]
+    [MenuItem("Hecton8/Mesh Cleaner v4")]
     public static void ShowWindow()
     {
         var w = GetWindow<HectonMeshCleaner>("Mesh Cleaner v4");

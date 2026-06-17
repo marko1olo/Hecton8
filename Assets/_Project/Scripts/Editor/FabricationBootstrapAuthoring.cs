@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class FabricationBootstrapAuthoring
     {
@@ -57,7 +57,7 @@ namespace Hecton8.EditorTools
         private const string OutpostFabricatorName = "Forward_Fabricator";
         private const float DefaultSurfaceWaterLevelY = 14.02f;
 
-        [MenuItem("Hecton/Authoring/Rebuild Starter Fabrication Kit", priority = 170)]
+        [MenuItem("Hecton8/Authoring/Rebuild Starter Fabrication Kit", priority = 170)]
         public static void RebuildStarterFabricationKit()
         {
             EnsureFolder("Assets/_Project/Data");
@@ -241,7 +241,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[FabricationBootstrap] Starter fabrication recipes and fabricator stations rebuilt.");
         }
 
-        [MenuItem("Hecton/Validation/Validate Starter Fabrication Kit", priority = 171)]
+        [MenuItem("Hecton8/Validation/Validate Starter Fabrication Kit", priority = 171)]
         public static void ValidateStarterFabricationKit()
         {
             int errors = 0;

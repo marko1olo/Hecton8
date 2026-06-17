@@ -10,7 +10,7 @@ namespace Hecton8.Crafting.Editor
 {
     internal static class FabricatorMemorySovereigntyValidator1329
     {
-        [MenuItem("HECTON-8/Validation/Fabricator Memory Sovereignty 1329")]
+        [MenuItem("Hecton8/Validation/Fabricator Memory Sovereignty 1329")]
         private static void ValidateFromMenu()
         {
             if (!Validate())

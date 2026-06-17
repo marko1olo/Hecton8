@@ -5,7 +5,7 @@ using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class FloraThumbnailGenerator
     {
@@ -13,7 +13,7 @@ namespace Hecton8.EditorTools
         private const string ThumbnailRoot = "Assets/_Project/Art/Sprites/FloraThumbnails";
         private const int ThumbnailSize = 128;
 
-        [MenuItem("Hecton/Authoring/Generate Flora Template Thumbnails", priority = 219)]
+        [MenuItem("Hecton8/Authoring/Generate Flora Template Thumbnails", priority = 219)]
         public static void GenerateThumbnails()
         {
             EnsureFolder("Assets/_Project/Art", "Sprites");

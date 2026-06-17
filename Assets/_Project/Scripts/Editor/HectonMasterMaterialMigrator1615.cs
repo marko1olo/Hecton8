@@ -3,12 +3,12 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class HectonMasterMaterialMigrator1615
     {
         private const string MasterShaderName = "Hecton8/Rendering/Hecton_Master_Lit";
-        private const string MenuRoot = "Hecton/Rendering/1615/";
+        private const string MenuRoot = "Hecton8/Rendering/1615/";
 
         private static readonly string[] BaseTextureNames =
         {

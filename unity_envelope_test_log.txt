@@ -1,0 +1,707 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.10f1 (feeafc12a938) revision 16706300'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Channel LicenseClient-danat doesn't exist
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 32407 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-06-15T10:12:02Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 14220)
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe
+-projectPath
+C:\hades\Hecton8
+-batchmode
+-nographics
+-executeMethod
+Hecton8.Editor.ModLoaderEnvelopeTest.RunTest
+-logFile
+C:\hades\Hecton8\unity_envelope_test_log.txt
+-quit
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [22680]  Target information:
+
+Player connection [22680]  * "[IP] 192.168.1.130 [Port] 55504 [Flags] 2 [Guid] 659070015 [EditorId] 659070015 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [22680]  * "[IP] 172.18.0.1 [Port] 55504 [Flags] 2 [Guid] 659070015 [EditorId] 659070015 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [22680] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [22680] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat" at "2026-06-15T10:12:02.6284082Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 14220, path: "C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Package Manager] Connected to IPC stream "Upm-26632" after 0.5 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              8185104524b24ca59280ca13c1d6ee30
+  Correlation Id:          e8c3df90952cdffaa29b9069e2a791af
+  External correlation Id: 7435912936124414026
+  Machine Id:              KXBg4HkLZwVfPhjJrzyzSmUVWFw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-danat" (connect: 0.57s, validation: 0.50s, handshake: 0.07s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-notifications" at "2026-06-15T10:12:03.1952922Z"
+[Licensing::Module] Connected to LicensingClient (PId: 14220, launch time: 0.00, total connection time: 1.14s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 1.19s
+[Licensing::Module] Licensing is initialized (took 0.18s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 225.78 ms, found 25 plugins.
+Initialize engine version: 6000.4.10f1 (feeafc12a938)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56632
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MetroSupport/UnityEditor.UWP.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
+Registered in 0.008129 seconds.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+[Licensing::Client] Successfully resolved entitlement details
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 17.743 seconds
+Domain Reload Profiling: 18241ms
+	BeginReloadAssembly (129ms)
+		CreateAndSetChildDomain (6ms)
+	RebuildCommonClasses (42ms)
+	RebuildNativeTypeToScriptingClass (17ms)
+	initialDomainReloadingComplete (68ms)
+	LoadAllAssembliesAndSetupDomain (239ms)
+		LoadAssemblies (122ms)
+		AnalyzeDomain (227ms)
+			TypeCache.Refresh (226ms)
+				TypeCache.ScanAssembly (212ms)
+	FinalizeReload (17746ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (66ms)
+			BeforeProcessingInitializeOnLoad (102ms)
+			ProcessInitializeOnLoadAttributes (132ms)
+			ProcessInitializeOnLoadMethodAttributes (17360ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 75 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.addressables@2.9.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.addressables@8460f1c9c927)
+    com.unity.ai.navigation@2.0.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591)
+    com.unity.cinemachine@3.1.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.cinemachine@285f38545487)
+    com.unity.collab-proxy@2.12.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collab-proxy@0b1559bcd34e)
+    com.unity.inputsystem@1.19.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.memoryprofiler@1.1.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.memoryprofiler@485b5ba42ef5)
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.probuilder@6.0.9 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.probuilder@1f279ab829b7)
+    com.unity.sharp-zip-lib@1.4.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.sharp-zip-lib@f6e4ef34e4d8)
+    com.unity.timeline@1.8.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.timeline@8cd8509afae5)
+    com.unity.visualscripting@1.9.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.xr.meta-openxr@2.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c)
+    com.unity.xr.openxr@1.17.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b)
+    com.unity.searcher@4.9.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.xr.core-utils@2.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.core-utils@a8b900321199)
+    com.unity.xr.legacyinputhelpers@3.0.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.legacyinputhelpers@3f62d634f63b)
+    com.unity.xr.arfoundation@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b)
+    com.unity.xr.compositionlayers@2.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.compositionlayers@461024b1d757)
+    com.unity.settings-manager@2.1.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.burst@1.8.29 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.mathematics@1.3.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.profiling.core@1.0.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.editorcoroutines@1.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.editorcoroutines@87a15ed012c2)
+    com.unity.splines@2.8.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.splines@9b00833aca09)
+    com.unity.scriptablebuildpipeline@2.6.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.scriptablebuildpipeline@36e3b5898ee2)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.2d.sprite@b95cc7beb645)
+    com.unity.render-pipelines.universal@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal@cdf909593d80)
+    com.unity.ugui@2.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ugui@1f2d1ab0d950)
+    com.unity.modules.accessibility@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@5aab14b68499)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@5b6ebd78ccc0)
+    com.unity.test-framework@1.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@996f223345ba)
+    com.unity.ext.nunit@2.0.5 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+  Embedded packages:
+    com.unity.xr.management@file:C:\hades\Hecton8\Packages\com.unity.xr.management (location: C:\hades\Hecton8\Packages\com.unity.xr.management)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+  Git packages:
+    com.coplaydev.unity-mcp@https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta (location: C:\hades\Hecton8\Library\PackageCache\com.coplaydev.unity-mcp@edb7113971fc)
+[Subsystems] Looking for new subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  inputs in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Package Manager] Done registering packages in 0.02 seconds
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 7s881ms
+[2740/3781  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[3773/3781  3s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll (+2 others)
+Assets\_Project\Scripts\Editor\UpdateSandboxSceneTask.cs(26,42): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+[3774/3781  2s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.EditModeTests.dll (+2 others)
+[3775/3781  1s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.EditModeTests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.EditModeTests.dll, with 152 defines and 334 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3776/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.EditModeTests.pdb
+[3777/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.EditModeTests.dll
+[3778/3781  3s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll, with 153 defines and 339 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3779/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.pdb
+[3780/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.dll
+*** Tundra build success (7.84 seconds), 9 items updated, 3781 evaluated
+Assets\_Project\Scripts\Editor\UpdateSandboxSceneTask.cs(26,42): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+AssetDatabase: script compilation time: 8.722623s
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Editor.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ResourceManager.Tests.dll at Library/ScriptAssemblies/Unity.ResourceManager.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARSubsystems.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARSubsystems.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Ubuntu.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Ubuntu.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.TestTooling.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.TestTooling.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.XR.LegacyInputHelpers.Tests.dll at Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.SpatialTracking.Tests.dll at Library/ScriptAssemblies/UnityEngine.SpatialTracking.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 8.86 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Refreshing native plugins compatible for Editor in 10.99 ms, found 37 plugins.
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Hecton8
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 17.917 seconds
+Domain Reload Profiling: 20326ms
+	BeginReloadAssembly (419ms)
+		DisableScriptedObjects (55ms)
+		CreateAndSetChildDomain (169ms)
+	RebuildCommonClasses (52ms)
+	RebuildNativeTypeToScriptingClass (19ms)
+	initialDomainReloadingComplete (118ms)
+	LoadAllAssembliesAndSetupDomain (1799ms)
+		LoadAssemblies (945ms)
+		AnalyzeDomain (965ms)
+			TypeCache.Refresh (731ms)
+				TypeCache.ScanAssembly (681ms)
+			BuildScriptInfoCaches (189ms)
+			ResolveRequiredComponents (39ms)
+	FinalizeReload (17918ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (40ms)
+			BeforeProcessingInitializeOnLoad (433ms)
+			ProcessInitializeOnLoadAttributes (11012ms)
+			ProcessInitializeOnLoadMethodAttributes (1107ms)
+			AfterProcessingInitializeOnLoad (7ms)
+			EditorAssembliesLoaded (3ms)
+		AwakeInstancesAfterBackupRestoration (26ms)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0109089 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 11.02 ms, found 37 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=a4820bfa2c17ed84ab0844c8ca5af003): Total: 31.432 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=3 ms, native=19417 ms
+		Asset DB Callback time: managed=533 ms, native=45 ms
+		Scripting: domain reloads=1, domain reload time=2421 ms, compile time=8724 ms, other=285 ms
+		Project Asset Count: scripts=3798, non-scripts=11846
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 27.002ms
+	ApplyChangesToAssetFolders: 1.858ms
+	Scan: 354.913ms
+	OnSourceAssetsModified: 0.834ms
+	CategorizeScriptCompilationAssets: 103.924ms
+	ProcessAssetsWithTransientArtifactChanges: 283.278ms
+	CategorizeAssets: 251.512ms
+	CompileScripts: 8724.199ms
+	ImportOutOfDateAssets: 17975.344ms (17951.988ms without children)
+		ImportManagerImport: 14.456ms (2.754ms without children)
+		ReloadNativeAssets: 0.083ms
+		UnloadImportedAssets: 3.251ms
+		ReloadImportedAssets: 0.231ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 3.451ms
+		OnDemandSchedulerStart: 2.070ms
+	PostProcessAllAssets: 538.399ms
+		XRBuildSystem.XRAssetImported 3.926ms
+		MonoPostProcessAllAssets: 533.169ms
+			AssetPostprocessor.OnPostprocessAllAssets 323.481ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 96.750ms
+			AssetCallbacks.OnPostprocessAllAssets 28.235ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 16.376ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 5.721ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 3.847ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 3.442ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 2.992ms
+			TemplatePostProcessor.OnPostprocessAllAssets 2.204ms
+			SyncVS.PostprocessSyncProject 2.131ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 1.886ms
+			AssetChangedListener.OnPostprocessAllAssets 1.770ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.660ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 1.521ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 1.467ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 1.182ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.138ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 1.055ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 1.028ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.987ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.914ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.709ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.698ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.642ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.589ms
+			CinemachineSettings.OnPostprocessAllAssets 0.586ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.562ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.528ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.507ms
+			PostProcessor.OnPostprocessAllAssets 0.460ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.458ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.439ms
+			AssetEvents.OnPostprocessAllAssets 0.401ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.401ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.380ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.354ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.283ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.273ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.272ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.269ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.218ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.109ms
+	PostAssetChangesProfiler: 16.686ms
+	UnloadStreamsBegin: 4.693ms
+	PersistCurrentRevisions: 0.819ms
+	GenerateScriptTypeHashes: 18.174ms
+	GenerateScriptTypeSerializationHashes: 22.976ms
+	Untracked: 3142.552ms
+
+Application.AssetDatabase Initial Refresh End
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Scanning for USB devices : 0.568ms
+Initializing Unity extensions:
+Cannot add menu item 'Window/Hecton-8/SpaceEngine 0.9.8 Preview' for method 'Hecton8.Editor.Generators.SpaceEngineTerrainPreviewWindow.ShowWindow' because a menu item with the same name already exists.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEditor.MenuItemScriptCommand:Update (UnityEditor.MenuItem,System.Reflection.MethodInfo)
+UnityEditor.MenuService:ExtractMenuItemsFromAttributes ()
+UnityEditor.MenuService:GetMenuItemsFromAttributesById (string)
+UnityEditor.MenuService:GetMenuItemsFromAttributes ()
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Unloading 483 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 14947 unused Assets / (65.6 MB). Loaded Objects now: 15630.
+Memory consumption went from 0.60 GB to 0.54 GB.
+Total: 88.769500 ms (FindLiveObjects: 1.519800 ms CreateObjectMapping: 1.501100 ms MarkObjects: 49.325200 ms  DeleteObjects: 36.419100 ms)
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+[EnvelopeTest] Setup complete with manifest declaring DLL. Running ModLoader...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:34)
+
+(Filename: Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs Line: 34)
+
+[ModLoader] Disabled mod 'test.envelope.mod': Managed DLL mods are strictly banned by envelope-only runtime policy.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.Core.H8Debug:LogWarning (string) (at Assets/_Project/Scripts/Core/H8Debug.cs:44)
+Hecton8.Modding.ModLoader:DisableCandidate (Hecton8.Modding.ModLoader/ModCandidate,string) (at Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:1030)
+Hecton8.Modding.ModLoader:TryLoadCandidate (Hecton8.Modding.ModLoader/ModCandidate) (at Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:1005)
+Hecton8.Modding.ModLoader:DiscoverAndLoadMods () (at Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:226)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+Hecton8.Editor.ModLoaderEnvelopeTest:ResetAndBootstrap () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:96)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:36)
+
+(Filename: Assets/_Project/Scripts/Core/H8Debug.cs Line: 44)
+
+[EnvelopeTest] CollectRuntimeInfo returned 1 items.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:43)
+
+(Filename: Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs Line: 43)
+
+[EnvelopeTest] Found mod: ID='test.envelope.mod', Status=Disabled, Message='Managed DLL mods are strictly banned by envelope-only runtime policy.'
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:46)
+
+(Filename: Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs Line: 46)
+
+[EnvelopeTest] Phase 1 PASS: DLL mod was rejected.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:63)
+
+(Filename: Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs Line: 63)
+
+[EnvelopeTest] SUCCESS! Envelope Policy works perfectly!
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ModLoaderEnvelopeTest:RunTest () (at Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs:64)
+
+(Filename: Assets/_Project/Scripts/Editor/ModLoaderEnvelopeTest.cs Line: 64)
+
+Batchmode quit successfully invoked - shutting down!
+Curl error 42: Callback aborted
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: No process found listening on port 8088
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MCPForUnity.Editor.Helpers.McpLog:Info (string,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs:40)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServerInternal (bool,System.Nullable`1<int>,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:712)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServer () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:349)
+MCPForUnity.Editor.Services.McpEditorShutdownCleanup:OnEditorQuitting () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/McpEditorShutdownCleanup.cs:60)
+UnityEditor.EditorApplication:Internal_EditorApplicationQuit ()
+
+(Filename: ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs Line: 40)
+
+Killing ADB server in 2.0602051 seconds.
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-danat-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-danat channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Leak Detected : Persistent allocates 5 individual allocations. To find out more please enable 'Preferences > Jobs > Leak Detection Level > Enabled With Stack Trace' and reproduce the leak again.
+Exiting batchmode successfully now!
+Exiting without the bug reporter. Application will terminate with return code 0

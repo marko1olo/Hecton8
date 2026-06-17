@@ -16,7 +16,7 @@ namespace Hecton8.Editor
         private Slider _scavengerAttractionRadius;
         private bool _updatingControls;
 
-        [MenuItem("HECTON-8/Ecosystem/Biomass Decay Tuner")]
+        [MenuItem("Hecton8/Ecosystem/Biomass Decay Tuner")]
         public static void Open()
         {
             GetWindow<BiomassDecayTunerWindow>("Biomass Decay");

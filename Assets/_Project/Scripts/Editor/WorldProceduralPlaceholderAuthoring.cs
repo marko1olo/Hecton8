@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralPlaceholderAuthoring
     {
@@ -12,7 +12,7 @@ namespace Hecton8.EditorTools
         private const string PlaceholderPrefabRoot = "Assets/_Project/Prefabs/WorldRuntime/ProceduralPlaceholders";
         private const string PlaceholderMaterialRoot = "Assets/_Project/Materials/WorldRuntime/ProceduralPlaceholders";
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Placeholder Proxy Variants", priority = 179)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Placeholder Proxy Variants", priority = 179)]
         public static void RebuildPlaceholderProxyVariants()
         {
             EnsureFolder("Assets/_Project/Prefabs");

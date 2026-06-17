@@ -19,7 +19,7 @@ namespace Hecton8.AI.Editor
         private static readonly int s_colorPropertyId = Shader.PropertyToID("_Color");
         private static readonly int s_emissionColorPropertyId = Shader.PropertyToID("_EmissionColor");
 
-        [MenuItem("Hecton/Authoring/Build AI Creature Proxies", priority = 181)]
+        [MenuItem("Hecton8/Authoring/Build AI Creature Proxies", priority = 181)]
         public static void BuildCreatureProxies()
         {
             EnsureProxyAssets();

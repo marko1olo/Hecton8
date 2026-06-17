@@ -19,20 +19,20 @@ namespace Hecton8.Core.Bridge.EditorTools
         private static long s_sectorY;
         private static long s_sectorZ;
 
-        [MenuItem("Hecton-8/Bridge/AUP Visualizer")]
+        [MenuItem("Hecton8/Bridge/AUP Visualizer")]
         public static void Open()
         {
             GetWindow<H8AupVisualizerWindow>("AUP Visualizer");
         }
 
-        [MenuItem("Hecton-8/Bridge/AUP Visualizer/Toggle Grid")]
+        [MenuItem("Hecton8/Bridge/AUP Visualizer/Toggle Grid")]
         public static void Toggle()
         {
             EnsurePrefsLoaded();
             SetEnabledAndRepaint(!s_enabled);
         }
 
-        [MenuItem("Hecton-8/Bridge/AUP Visualizer/Zero Camera To Sector")]
+        [MenuItem("Hecton8/Bridge/AUP Visualizer/Zero Camera To Sector")]
         public static void ZeroCameraMenu()
         {
             ZeroSceneCamera();

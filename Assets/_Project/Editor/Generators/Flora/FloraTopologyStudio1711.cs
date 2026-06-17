@@ -65,13 +65,13 @@ namespace Hecton8.EditorTools.Generators.Flora
         private const float NormalLengthSqTolerance = 0.06f;
         private const float BoundsExtentEpsilonSq = 0.000001f;
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1711/Open Studio", priority = 191)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1711/Open Studio", priority = 191)]
         public static void OpenStudio()
         {
             FloraTopologyStudioWindow1711.Open();
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1711/Generate Static Seed Pack", priority = 192)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1711/Generate Static Seed Pack", priority = 192)]
         public static void GenerateStaticSeedPack()
         {
             if (!ValidateUnmanagedLayouts())
@@ -94,7 +94,7 @@ namespace Hecton8.EditorTools.Generators.Flora
             Debug.Log("[FloraTopology1711] Static seed pack generated under Topology1711.");
         }
 
-        [MenuItem("Hecton/Authoring/Flora Topology 1711/Run Dry Verification", priority = 193)]
+        [MenuItem("Hecton8/Authoring/Flora Topology 1711/Run Dry Verification", priority = 193)]
         public static void RunDryVerification()
         {
             if (!ValidateUnmanagedLayouts())

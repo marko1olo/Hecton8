@@ -20,7 +20,7 @@ namespace Hecton8.Core.Bridge.EditorTools
         private Label vramLabel;
         private Label validationLabel;
 
-        [MenuItem("Hecton-8/Bridge/Prefab Registry Binder")]
+        [MenuItem("Hecton8/Bridge/Prefab Registry Binder")]
         public static void Open()
         {
             GetWindow<H8PrefabRegistryWindow>("Prefab Binder");

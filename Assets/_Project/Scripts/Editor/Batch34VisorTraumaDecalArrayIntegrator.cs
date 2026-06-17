@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Bakes promoted Batch34 alpha candidates into the Texture2DArray consumed by DeferredDecalPass.

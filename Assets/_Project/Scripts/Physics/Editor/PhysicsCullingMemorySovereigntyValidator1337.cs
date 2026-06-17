@@ -13,7 +13,7 @@ namespace Hecton8.Physics.Editor
             PhysicsCullingLayout1337.ValidateForEditor();
         }
 
-        [MenuItem("HECTON-8/Physics/Run Physics Culling Memory Sovereignty Validator 1337")]
+        [MenuItem("Hecton8/Physics/Run Physics Culling Memory Sovereignty Validator 1337")]
         public static void RunMenu()
         {
             if (!PhysicsCullingLayout1337.ValidateForEditor())
@@ -22,7 +22,7 @@ namespace Hecton8.Physics.Editor
             H8Debug.Log("[1337] Physics culling memory sovereignty validator passed.");
         }
 
-        [MenuItem("HECTON-8/Physics/Run Physics Culling Mock Spam Fuzzer 1337")]
+        [MenuItem("Hecton8/Physics/Run Physics Culling Mock Spam Fuzzer 1337")]
         public static void RunMockSpamFuzzerMenu()
         {
             if (!PhysicsCullingLayout1337.ValidateForEditor())

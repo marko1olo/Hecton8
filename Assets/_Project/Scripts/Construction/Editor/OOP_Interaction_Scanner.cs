@@ -35,7 +35,7 @@ namespace Hecton8.Construction.Editor
             "UNITY_EVENT"
         };
 
-        [MenuItem("HECTON-8/Logistics/Run OOP Interaction Scanner")]
+        [MenuItem("Hecton8/Logistics/Run OOP Interaction Scanner")]
         private static void RunMenu()
         {
             Hecton8.Core.H8Debug.Log(RunAndWriteReport());

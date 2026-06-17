@@ -18,7 +18,7 @@ namespace Hecton8.Editor
         private double _nextCsvPollTime;
         private bool _loaded;
 
-        [MenuItem("Hecton/World/Residency & Streaming Tuner")]
+        [MenuItem("Hecton8/World/Residency & Streaming Tuner")]
         public static void Open()
         {
             GetWindow<ResidencyStreamingTunerWindow>("Residency & Streaming Tuner");

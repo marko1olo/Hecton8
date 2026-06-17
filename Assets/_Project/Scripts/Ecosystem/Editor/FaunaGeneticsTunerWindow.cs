@@ -27,7 +27,7 @@ namespace Hecton8.Editor
         private FaunaGeneticsHistogramElement _histogram;
         private bool _updatingControls;
 
-        [MenuItem("HECTON-8/Ecosystem/Fauna Genetics Tuner")]
+        [MenuItem("Hecton8/Ecosystem/Fauna Genetics Tuner")]
         public static void Open()
         {
             GetWindow<FaunaGeneticsTunerWindow>("Fauna Genetics");

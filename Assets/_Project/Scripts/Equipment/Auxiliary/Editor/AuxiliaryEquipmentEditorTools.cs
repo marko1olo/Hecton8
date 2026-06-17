@@ -13,7 +13,7 @@ namespace Hecton8.Equipment.Auxiliary.Editor
 {
     public static class AuxiliaryEquipmentLayoutValidator
     {
-        [MenuItem("HECTON-8/Auxiliary/Validate Auxiliary ABI")]
+        [MenuItem("Hecton8/Auxiliary/Validate Auxiliary ABI")]
         public static void ValidateLayoutMenu()
         {
             ValidateLayout();
@@ -52,7 +52,7 @@ namespace Hecton8.Equipment.Auxiliary.Editor
         private Slider _pingRateSlider;
         private bool _slidersBound;
 
-        [MenuItem("HECTON-8/Auxiliary/Auxiliary Systems X-Ray")]
+        [MenuItem("Hecton8/Auxiliary/Auxiliary Systems X-Ray")]
         public static void Open()
         {
             GetWindow<AuxiliarySystemsXRayWindow>("Auxiliary Systems X-Ray");
@@ -191,7 +191,7 @@ namespace Hecton8.Equipment.Auxiliary.Editor
             "OverlapSphere"
         };
 
-        [MenuItem("HECTON-8/Auxiliary/Run OOP Scanner")]
+        [MenuItem("Hecton8/Auxiliary/Run OOP Scanner")]
         public static void RunScan()
         {
             int findings = 0;

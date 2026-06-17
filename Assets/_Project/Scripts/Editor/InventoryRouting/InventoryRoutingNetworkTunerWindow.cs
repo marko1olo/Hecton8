@@ -9,7 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.EditorTools.InventoryRouting
+namespace Hecton8.Editor.InventoryRouting
 {
     public sealed class InventoryRoutingNetworkTunerWindow : EditorWindow
     {
@@ -25,7 +25,7 @@ namespace Hecton8.EditorTools.InventoryRouting
         private Label _fragmentationLabel;
         private VisualElement _heatmap;
 
-        [MenuItem("Hecton/Inventory/SOA Routing Tuner")]
+        [MenuItem("Hecton8/Inventory/SOA Routing Tuner")]
         public static void Open()
         {
             GetWindow<InventoryRoutingNetworkTunerWindow>("SOA Inventory");

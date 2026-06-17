@@ -12,7 +12,7 @@ namespace Hecton8.Editor.OfflineGeometry
     {
         internal const string ReportPath = "Docs/Reports/SHINOBU_213_SELF_AUDIT.xml";
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Write SHINOBU_213 Self Audit", false, 255)]
+        [MenuItem("Hecton8/LOD Collider Forge/Write SHINOBU_213 Self Audit", false, 255)]
         public static void WriteSelfAuditReportMenu()
         {
             WriteSelfAuditReport();

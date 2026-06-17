@@ -30,7 +30,7 @@ namespace Hecton8.Lighting.Editor
         private IntegerField _gpuSizeField;
         private IntegerField _telemetrySizeField;
 
-        [MenuItem("HECTON-8/Lighting/Abyssal Light Culling Tuner")]
+        [MenuItem("Hecton8/Lighting/Abyssal Light Culling Tuner")]
         private static void Open()
         {
             GetWindow<AbyssalLightCullingTunerWindow>("Abyssal Light Culling Tuner");

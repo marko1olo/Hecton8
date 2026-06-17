@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralFloraFinalVariantAuthoring
     {
@@ -27,7 +27,7 @@ namespace Hecton8.EditorTools
 
         private static readonly HashSet<string> FloraFamilies = new HashSet<string>(FloraFamilyOrder, StringComparer.Ordinal);
 
-        [MenuItem("Hecton/Authoring/Apply Procedural Flora Final Variants", priority = 179)]
+        [MenuItem("Hecton8/Authoring/Apply Procedural Flora Final Variants", priority = 179)]
         public static void ApplyBakedFloraFinals()
         {
             EnsureFolder("Assets/_Project/Prefabs/Nature");

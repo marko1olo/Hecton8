@@ -70,7 +70,7 @@ namespace Hecton8.Editor.Structures
             new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.UInt32, 1)
         };
 
-        [MenuItem("Hecton/Structures/Fabricate Deep Reach Station Seed 8421")]
+        [MenuItem("Hecton8/Structures/Fabricate Deep Reach Station Seed 8421")]
         public static void FabricateMenu()
         {
             StationFabricationSettings settings = StationFabricationSettings.Default;

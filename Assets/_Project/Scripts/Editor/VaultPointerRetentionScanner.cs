@@ -23,7 +23,7 @@ namespace Hecton8.Core.Memory.Editor
                 throw new InvalidOperationException("SHINOBU_202 vault pointer retention audit failed. See Docs/AgentLogs/VaultPointerAudit_SHINOBU_202.md.");
         }
 
-        [MenuItem("HECTON-8/Memory/Run Vault Pointer Retention Audit")]
+        [MenuItem("Hecton8/Memory/Run Vault Pointer Retention Audit")]
         private static void RunMenuAudit()
         {
             bool clean = RunAudit(writeReport: true);

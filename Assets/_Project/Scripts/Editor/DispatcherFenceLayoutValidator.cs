@@ -25,7 +25,7 @@ namespace Hecton8.Editor
             Validate();
         }
 
-        [MenuItem("Hecton/Diagnostics/Validate Dispatcher Fence Layouts")]
+        [MenuItem("Hecton8/Diagnostics/Validate Dispatcher Fence Layouts")]
         public static void Validate()
         {
             bool valid =

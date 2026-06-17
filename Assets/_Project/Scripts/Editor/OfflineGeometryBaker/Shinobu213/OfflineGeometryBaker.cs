@@ -47,7 +47,7 @@ namespace Hecton8.Editor.OfflineGeometry
         private static readonly ProfilerMarker _ColliderPrimitiveFitJobMarker = new ProfilerMarker("SHINOBU_213.ColliderPrimitiveFitJobFence");
         private static readonly ProfilerMarker _ColliderHullJobMarker = new ProfilerMarker("SHINOBU_213.ColliderHullJobFence");
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Bake Selected Optimized Prefabs", false, 250)]
+        [MenuItem("Hecton8/LOD Collider Forge/Bake Selected Optimized Prefabs", false, 250)]
         private static void BakeSelectedMenu()
         {
             List<OfflineBakeSettings> profiles = OfflineOptimizationProfileCsv.LoadProfiles();
@@ -57,7 +57,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Debug.Log("[SHINOBU_213] Offline geometry bake finished. Assets=" + metrics.Count + ".");
         }
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Run Concave MeshCollider Inquisition", false, 251)]
+        [MenuItem("Hecton8/LOD Collider Forge/Run Concave MeshCollider Inquisition", false, 251)]
         private static void InquisitionMenu()
         {
             List<UnoptimizedMeshFinding> findings = Unoptimized_Mesh_Scanner.ScanProject();
@@ -65,7 +65,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Debug.Log("[SHINOBU_213] Physics optimization scan wrote " + OfflineGeometryBakerConstants.PhysicsReportPath + " findings=" + findings.Count + ".");
         }
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Generate Mock High Poly Benchmark Mesh", false, 252)]
+        [MenuItem("Hecton8/LOD Collider Forge/Generate Mock High Poly Benchmark Mesh", false, 252)]
         private static void GenerateMockBenchmarkMenu()
         {
             GenerateMockBenchmarkMesh(96, 192, OfflineOptimizationProfileCsv.DefaultSettings());

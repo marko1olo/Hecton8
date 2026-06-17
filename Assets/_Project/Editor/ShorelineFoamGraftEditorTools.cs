@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
             ValidateLayouts();
         }
 
-        [MenuItem("HECTON-8/Rendering/Validate SHINOBU 277 Shoreline Foam Layouts")]
+        [MenuItem("Hecton8/Rendering/Validate SHINOBU 277 Shoreline Foam Layouts")]
         public static void ValidateLayouts()
         {
             AssertSize<ShorelineFoamParamsDTO>(ShorelineFoamConstants.ParamsStrideBytes);
@@ -60,7 +60,7 @@ namespace Hecton8.EditorTools
         private float _decayRate = 1f / ShorelineFoamConstants.DefaultLifetimeSeconds;
         private float _normalPerturbation = 0.075f;
 
-        [MenuItem("HECTON-8/Rendering/SHINOBU 277 Shoreline Foam Tuner")]
+        [MenuItem("Hecton8/Rendering/SHINOBU 277 Shoreline Foam Tuner")]
         public static void Open()
         {
             GetWindow<ShorelineFoamTunerWindow>("Shoreline Foam");
@@ -101,7 +101,7 @@ namespace Hecton8.EditorTools
 
     internal static class ShorelineFoamDecalProjectorInquisition
     {
-        [MenuItem("HECTON-8/Rendering/Write SHINOBU 277 Decal Projector Inquisition")]
+        [MenuItem("Hecton8/Rendering/Write SHINOBU 277 Decal Projector Inquisition")]
         public static void WriteReport()
         {
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;

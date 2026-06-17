@@ -4122,7 +4122,7 @@ namespace Hecton8.Visor
                 Hecton8.Core.H8Debug.LogError("DynamicDecalVaultRuntime visor trauma ABI layout mismatch: explicit shader/Vault DTO sizes or offsets changed.");
         }
 
-        [UnityEditor.MenuItem("HECTON-8/Rendering/Validate Visor Trauma Layout")]
+        [UnityEditor.MenuItem("Hecton8/Rendering/Validate Visor Trauma Layout")]
         private static void ValidateMenu()
         {
             if (DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())

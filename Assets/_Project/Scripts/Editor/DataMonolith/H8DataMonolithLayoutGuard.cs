@@ -7,7 +7,7 @@ using Hecton8.Data;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     [InitializeOnLoad]
     internal static class H8DataMonolithLayoutGuard

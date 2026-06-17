@@ -60,7 +60,7 @@ namespace Hecton8.Editor
             "Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_VoidGlassMeteorite.asset"
         };
 
-        [MenuItem("HECTON-8/World/Install Resource Distribution Director", priority = 230)]
+        [MenuItem("Hecton8/World/Install Resource Distribution Director", priority = 230)]
         private static void Install()
         {
             if (!EnsureProductionWorldSceneLoaded())

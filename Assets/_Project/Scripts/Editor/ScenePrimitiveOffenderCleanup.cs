@@ -25,7 +25,7 @@ namespace Hecton8.Editor
             "NOIR_RIGHT_VIGNETTE_SLAB"
         };
 
-        [MenuItem("HECTON-8/Perform Primitive Offender Cleanup")]
+        [MenuItem("Hecton8/Perform Primitive Offender Cleanup")]
         public static void RunMenu()
         {
             RunCleanup();

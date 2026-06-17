@@ -12,20 +12,20 @@ namespace Hecton8.Editor.ColliderOptimization1609
         private float globalQualityWeight = ColliderOptimizationEngine1609.DefaultGlobalQualityWeight;
         private Vector2 scroll;
 
-        [MenuItem("HECTON-8/Physics/Collider Optimization Engine 1609", false, 180)]
+        [MenuItem("Hecton8/Physics/Collider Optimization Engine 1609", false, 180)]
         public static void Open()
         {
             GetWindow<ColliderOptimizationWindow1609>("Collider Optimization Engine");
         }
 
-        [MenuItem("HECTON-8/Physics/1609 Audit Prefab MeshColliders", false, 181)]
+        [MenuItem("Hecton8/Physics/1609 Audit Prefab MeshColliders", false, 181)]
         public static void AuditDefaultPrefabs()
         {
             ColliderOptimizationReport1609 report = ColliderOptimizationEngine1609.AuditPrefabs(ColliderOptimizationEngine1609.PrefabRoot, true);
             Debug.Log("[ColliderOptimization1609] Audit complete. High-poly MeshColliders=" + report.HighPolyMeshColliders + ", meshCollidersFound=" + report.MeshCollidersFound + ", executionMs=" + report.ExecutionMilliseconds);
         }
 
-        [MenuItem("HECTON-8/Physics/1609 Purge Flora Colliders", false, 182)]
+        [MenuItem("Hecton8/Physics/1609 Purge Flora Colliders", false, 182)]
         public static void PurgeFlora()
         {
             ColliderOptimizationReport1609 report = ColliderOptimizationEngine1609.PurgeFloraColliders();

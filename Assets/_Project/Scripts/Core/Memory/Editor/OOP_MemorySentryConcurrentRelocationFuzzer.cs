@@ -85,7 +85,7 @@ namespace Hecton8.Core.Memory.Editor
 
         private delegate bool CompactionSliceInvoker(uint activeBurstLockMask);
 
-        [MenuItem("HECTON-8/Memory/Run DataVault Compaction Stress Fuzzer 1412")]
+        [MenuItem("Hecton8/Memory/Run DataVault Compaction Stress Fuzzer 1412")]
         private static void RunDefaultFromMenu()
         {
             bool passed = RunDefault(out MemorySentryFuzzerResult result);
@@ -95,7 +95,7 @@ namespace Hecton8.Core.Memory.Editor
             Debug.Log("DataVault compaction fuzzer completed. Iterations=" + result.TotalOperations + " Report=" + ReportPath);
         }
 
-        [MenuItem("HECTON-8/Memory/Run DataVault False Positive Probe 1412")]
+        [MenuItem("Hecton8/Memory/Run DataVault False Positive Probe 1412")]
         private static void RunFalsePositiveFromMenu()
         {
             bool caught = RunFalsePositiveProbe(out MemorySentryFuzzerResult result);

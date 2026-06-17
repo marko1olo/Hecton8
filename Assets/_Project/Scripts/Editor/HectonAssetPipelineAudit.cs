@@ -7,7 +7,7 @@ using Hecton8.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Runs the HECTON-8 asset pipeline enforcement pass and emits the tech-art markdown log.

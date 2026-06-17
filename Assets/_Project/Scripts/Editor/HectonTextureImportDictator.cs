@@ -8,7 +8,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 using UnityEngine.ResourceManagement.ResourceProviders;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Enforces MX350 texture import policy on first-party art assets at import time.

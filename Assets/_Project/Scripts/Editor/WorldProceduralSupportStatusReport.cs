@@ -6,7 +6,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Writes a world-support readiness report for pockets, creature spawns, and large-threat ownership zones.
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string ReportFileName = "PROCEDURAL_WORLD_SUPPORT_STATUS_REPORT.md";
 
-        [MenuItem("Hecton/Validation/Generate Procedural World Support Status Report", priority = 250)]
+        [MenuItem("Hecton8/Validation/Generate Procedural World Support Status Report", priority = 250)]
         public static void GenerateReport()
         {
             List<FamilyStatus> statuses = LoadStatuses();

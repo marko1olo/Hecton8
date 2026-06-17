@@ -41,13 +41,13 @@ namespace Hecton8.Editor
         private IDataVault _powerTelemetryVault;
         private bool _suppressSliderEvents;
 
-        [MenuItem("Hecton-8/Base Logistics Tuner")]
+        [MenuItem("Hecton8/Base Logistics Tuner")]
         private static void Open()
         {
             GetWindow<GridArchitectTunerWindow>("Base Logistics Tuner");
         }
 
-        [MenuItem("Hecton-8/Base Power Tuner")]
+        [MenuItem("Hecton8/Base Power Tuner")]
         private static void OpenPowerAlias()
         {
             GetWindow<GridArchitectTunerWindow>("Base Power Tuner");

@@ -26,7 +26,7 @@ namespace Hecton8.Editor
         private bool _summaryShowsUnavailable;
         private bool _summaryShowsEmpty = true;
 
-        [MenuItem("Hecton/Power/Photovoltaic Thermodynamics Tuner")]
+        [MenuItem("Hecton8/Power/Photovoltaic Thermodynamics Tuner")]
         public static void Open()
         {
             GetWindow<PhotovoltaicThermodynamicsTunerWindow>("PV Thermodynamics");

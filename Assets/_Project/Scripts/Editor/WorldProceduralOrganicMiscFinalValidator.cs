@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates organic misc procedural families and linked real-final prefabs.
@@ -13,7 +13,7 @@ namespace Hecton8.EditorTools
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
 
-        [MenuItem("Hecton/Validation/Validate Procedural Organic Misc Families", priority = 241)]
+        [MenuItem("Hecton8/Validation/Validate Procedural Organic Misc Families", priority = 241)]
         public static void ValidateOrganicMiscFamilies()
         {
             List<FamilyRecord> records = LoadOrganicMiscFamilies();

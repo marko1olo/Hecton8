@@ -40,7 +40,7 @@ namespace Hecton8.Data.Editor
         private const string H8binValidationMetricPhiPath = "Docs/Reports/METRIC_PHI_ANDROID_PAL_1504_DATA_TRUTH_AUDIT.json";
         private const string FileReadAllBytesToken = "File.Read" + "AllBytes";
 
-        [MenuItem("HECTON-8/Data Monolith/Run Android Asset Bridge 1504 Static Audit")]
+        [MenuItem("Hecton8/Data Monolith/Run Android Asset Bridge 1504 Static Audit")]
         private static void RunFromMenu()
         {
             string projectRoot = Directory.GetParent(UnityEngine.Application.dataPath)?.FullName;

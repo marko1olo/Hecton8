@@ -28,7 +28,7 @@ namespace Hecton8.Editor.GeologyForge
         private ProgressBar _progress;
         private int _selectedProfileIndex;
 
-        [MenuItem("HECTON-8/Geology Forge/Geology Forge", false, 179)]
+        [MenuItem("Hecton8/Geology Forge/Geology Forge", false, 179)]
         public static void Open()
         {
             GeologyForgeWindow window = GetWindow<GeologyForgeWindow>("Geology Forge");

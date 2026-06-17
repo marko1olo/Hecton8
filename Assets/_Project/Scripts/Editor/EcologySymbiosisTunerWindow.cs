@@ -43,7 +43,7 @@ namespace Hecton8.Editor
         private Label _overflowLabel;
         private bool _refreshing;
 
-        [MenuItem("HECTON-8/Ecology Symbiosis Tuner")]
+        [MenuItem("Hecton8/Ecology Symbiosis Tuner")]
         public static void Open()
         {
             GetWindow<EcologySymbiosisTunerWindow>("Ecology Symbiosis Tuner");

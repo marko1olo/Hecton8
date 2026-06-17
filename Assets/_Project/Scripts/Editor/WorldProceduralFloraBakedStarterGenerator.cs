@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Generates editor-only baked flora starter prefabs as optimized combined-mesh assets.
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
         private const float Lod2Threshold = 0.04f;
         private static readonly List<MeshFilter> s_MeshFilterScratch = new List<MeshFilter>(64);
 
-        [MenuItem("Hecton/Authoring/Generate Procedural Flora Baked Starters", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Generate Procedural Flora Baked Starters", priority = 178)]
         public static void Generate()
         {
             EnsureFolder("Assets/_Project/Prefabs/Nature");

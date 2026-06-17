@@ -114,7 +114,7 @@ namespace Hecton8.Ecosystem
         }
 
 #if UNITY_EDITOR
-        [UnityEditor.MenuItem("HECTON-8/Ecosystem/Run Macro Ecosystem Self Audit")]
+        [UnityEditor.MenuItem("Hecton8/Ecosystem/Run Macro Ecosystem Self Audit")]
         private static void RunShinobu300SelfAuditMenu()
         {
             if (RunShinobu300SelfAudit(out string failure))

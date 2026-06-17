@@ -2076,7 +2076,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             Validate(false);
         }
 
-        [MenuItem("Hecton-8/Habitat/Validate Damage Bake Layouts")]
+        [MenuItem("Hecton8/Habitat/Validate Damage Bake Layouts")]
         public static void ValidateMenu()
         {
             Validate(true);
@@ -2148,7 +2148,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         private Vector3[] _previewVertices = Array.Empty<Vector3>();
         private uint[] _previewIndices = Array.Empty<uint>();
 
-        [MenuItem("Hecton-8/Habitat/Habitat Crush Forge")]
+        [MenuItem("Hecton8/Habitat/Habitat Crush Forge")]
         public static void Open()
         {
             HabitatCrushForgeWindow window = GetWindow<HabitatCrushForgeWindow>();
@@ -2332,7 +2332,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             "StateRingBuffer"
         };
 
-        [MenuItem("Hecton-8/Habitat/Runtime Habitat Destruction Scanner")]
+        [MenuItem("Hecton8/Habitat/Runtime Habitat Destruction Scanner")]
         public static void ScanMenu()
         {
             Scan(ProjectRoot());

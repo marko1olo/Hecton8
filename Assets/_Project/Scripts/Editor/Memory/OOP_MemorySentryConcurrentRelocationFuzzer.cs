@@ -13,7 +13,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     public static class OOP_MemorySentryConcurrentRelocationFuzzer
     {

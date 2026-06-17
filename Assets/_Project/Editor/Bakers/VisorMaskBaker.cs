@@ -13,7 +13,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class VisorMaskBaker : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1726/";
+        private const string MenuRoot = "Hecton8/Bakers/1726/";
         private const string DefaultComputePath = "Assets/_Project/Art/Shaders/Include/VisorMaskBaker.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/UI";
         private const string DefaultVisorMaterialPath = "Assets/_Project/Art/Materials/Mat_Visor_Glass.mat";

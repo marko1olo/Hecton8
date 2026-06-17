@@ -1102,7 +1102,7 @@ namespace Hecton8.Narrative
         }
 
 #if UNITY_EDITOR
-        [MenuItem("Hecton-8/Rebake Lore Hashes")]
+        [MenuItem("Hecton8/Rebake Lore Hashes")]
         private static void RebakeLoreHashes()
         {
             List<string> sourcePaths = ResolveSourceFilePaths();

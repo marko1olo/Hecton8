@@ -139,7 +139,7 @@ namespace Hecton8.Editor.AITextureControlMaps
     {
         private const string NativeMemoryOwner = nameof(AITextureMockMeshBenchmark);
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Generate Mock Complex Mesh Benchmark", false, 2670)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Generate Mock Complex Mesh Benchmark", false, 2670)]
         internal static void GenerateMockComplexMeshAsset()
         {
             EnsureAssetFolder("Assets/_Project");

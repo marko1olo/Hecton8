@@ -27,7 +27,7 @@ namespace Hecton8.Gameplay
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Combat/Validate Ballistics Layout")]
+        [MenuItem("Hecton8/Combat/Validate Ballistics Layout")]
         public static void ValidateFromMenu()
         {
             Validate(logSuccess: true);
@@ -93,7 +93,7 @@ namespace Hecton8.Gameplay
         private FloatField _microsecondField;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Combat/Abyssal Ballistics Tuner")]
+        [MenuItem("Hecton8/Combat/Abyssal Ballistics Tuner")]
         public static void Open()
         {
             AbyssalBallisticsTunerWindow window = GetWindow<AbyssalBallisticsTunerWindow>();

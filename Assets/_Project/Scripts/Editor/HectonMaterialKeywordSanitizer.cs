@@ -5,7 +5,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Strips blank and duplicate shader keywords from first-party materials.
@@ -18,7 +18,7 @@ namespace Hecton8.EditorTools
             "Assets/_Project/Art/Materials"
         };
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Sanitize Material Keywords", priority = 197)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Sanitize Material Keywords", priority = 197)]
         private static void SanitizeKeywords()
         {
             string[] guids = AssetDatabase.FindAssets("t:Material", MaterialRoots);

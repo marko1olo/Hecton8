@@ -2303,7 +2303,7 @@ namespace Hecton8.World
             ValidateLayoutsOrThrow();
         }
 
-        [UnityEditor.MenuItem("HECTON-8/World/Run Memory Sovereignty Validator 1325")]
+        [UnityEditor.MenuItem("Hecton8/World/Run Memory Sovereignty Validator 1325")]
         public static void RunMenu()
         {
             ValidateLayoutsOrThrow();

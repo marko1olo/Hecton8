@@ -1,0 +1,1 @@
+"C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod "Hecton8.Editor.TerrainRenderTestGoal.Execute" -batchmode -logFile "C:\hades\Hecton8\batchmode.log"

@@ -39,7 +39,7 @@ namespace Hecton8.World.ShinobuBiomimetic.Editor
         private Label _bakeFenceLabel;
         private Label _placementLabel;
 
-        [MenuItem("HECTON-8/World/POI Topology Tuner")]
+        [MenuItem("Hecton8/World/POI Topology Tuner")]
         public static void Open()
         {
             GetWindow<ShinobuPoiTopologyTunerWindow>("POI Topology Tuner");

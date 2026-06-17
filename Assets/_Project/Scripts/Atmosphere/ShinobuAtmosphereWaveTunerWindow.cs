@@ -26,7 +26,7 @@ namespace Hecton8.Atmosphere.Editor
         private Label _statusLabel;
         private bool _suppressUiCallbacks;
 
-        [MenuItem("HECTON-8/Atmosphere & Wave Tuner")]
+        [MenuItem("Hecton8/Atmosphere & Wave Tuner")]
         public static void Open()
         {
             ShinobuAtmosphereWaveTunerWindow window = GetWindow<ShinobuAtmosphereWaveTunerWindow>();

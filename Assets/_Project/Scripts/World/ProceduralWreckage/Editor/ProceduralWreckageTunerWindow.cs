@@ -22,7 +22,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
         private Label _telemetryLabel;
         private double _nextCsvPollTime;
 
-        [MenuItem("HECTON-8/Procedural Wreckage/Procedural Wreckage Tuner")]
+        [MenuItem("Hecton8/Procedural Wreckage/Procedural Wreckage Tuner")]
         public static void Open()
         {
             GetWindow<ProceduralWreckageTunerWindow>("Procedural Wreckage Tuner");

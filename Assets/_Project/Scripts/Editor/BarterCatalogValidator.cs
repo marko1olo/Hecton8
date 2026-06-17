@@ -4,13 +4,13 @@ using Hecton8.Items;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class BarterCatalogValidator
     {
         private const string CatalogRoot = "Assets/_Project/Data/Barter";
 
-        [MenuItem("Hecton/Validation/Validate Barter Catalog", priority = 242)]
+        [MenuItem("Hecton8/Validation/Validate Barter Catalog", priority = 242)]
         public static void ValidateBarterCatalog()
         {
             int errors = 0;

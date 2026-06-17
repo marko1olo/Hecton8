@@ -1804,7 +1804,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
         private float _globalQualityWeight = 0.75f;
         private string _lastStatus = "No bake run in this editor session.";
 
-        [MenuItem("HECTON-8/Fauna/Abyssal Anatomy Studio 1610")]
+        [MenuItem("Hecton8/Fauna/Abyssal Anatomy Studio 1610")]
         public static void Open()
         {
             AbyssalAnatomyStudioWindow1610 window = GetWindow<AbyssalAnatomyStudioWindow1610>("Abyssal Anatomy Studio");
@@ -1812,25 +1812,25 @@ namespace Hecton8.EditorTools.Generators.Fauna
             window.Show();
         }
 
-        [MenuItem("HECTON-8/Fauna/1610 Analyze Raw Meshes")]
+        [MenuItem("Hecton8/Fauna/1610 Analyze Raw Meshes")]
         public static void AnalyzeRawMeshesMenu()
         {
             FaunaOfflineRigger1610.AnalyzeRawFaunaMeshes();
         }
 
-        [MenuItem("HECTON-8/Fauna/1610 Run 1M Skinning Fuzzer")]
+        [MenuItem("Hecton8/Fauna/1610 Run 1M Skinning Fuzzer")]
         public static void RunFuzzerMenu()
         {
             FaunaOfflineRigger1610.RunMockMillionVertexSkinningFuzzer();
         }
 
-        [MenuItem("HECTON-8/Fauna/1610 Run VAT Precision Assertion")]
+        [MenuItem("Hecton8/Fauna/1610 Run VAT Precision Assertion")]
         public static void RunVatPrecisionMenu()
         {
             FaunaOfflineRigger1610.RunVatPrecisionAssertion();
         }
 
-        [MenuItem("HECTON-8/Fauna/1610 Audit Generated Bone Limits")]
+        [MenuItem("Hecton8/Fauna/1610 Audit Generated Bone Limits")]
         public static void AuditBoneLimitsMenu()
         {
             FaunaOfflineRigger1610.RunBoneLimitComplianceAudit();

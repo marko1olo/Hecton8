@@ -11,7 +11,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools.SaveSystem
+namespace Hecton8.Editor.SaveSystem
 {
     internal static class WorldPickupStateAuthoringValidator
     {
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools.SaveSystem
         private const string PersistWorldStateProperty = "persistWorldState";
         private const int MaxStableIdRepairAttempts = 8;
 
-        [MenuItem("Hecton/Validation/Validate World Pickup Stable IDs")]
+        [MenuItem("Hecton8/Validation/Validate World Pickup Stable IDs")]
         private static void ValidateOpenScenePickupStableIds()
         {
             WorldPickupStableIdScanResult result = ScanOpenScenePickupStableIds(repair: false);
@@ -29,7 +29,7 @@ namespace Hecton8.EditorTools.SaveSystem
                 Debug.LogError($"[WorldPickupStateAuthoringValidator] FAIL issues={result.IssueCount}. Run Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes to repair open-scene IDs.");
         }
 
-        [MenuItem("Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes")]
+        [MenuItem("Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes")]
         private static void SeedOpenScenePickupStableIds()
         {
             WorldPickupStableIdScanResult result = ScanOpenScenePickupStableIds(repair: true);

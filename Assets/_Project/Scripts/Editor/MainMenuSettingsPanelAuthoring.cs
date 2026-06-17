@@ -30,7 +30,7 @@ namespace Hecton8.Editor
         private static readonly List<GameObject> SceneRootScratch = new List<GameObject>(16);
         private static readonly List<Component> ComponentScratch = new List<Component>(8);
 
-        [MenuItem("Hecton/UI/Rebuild Main Menu Settings Panel", priority = 231)]
+        [MenuItem("Hecton8/UI/Rebuild Main Menu Settings Panel", priority = 231)]
         private static void RebuildMainMenuSettingsPanel()
         {
             Scene scene = SceneManager.GetActiveScene();

@@ -19,7 +19,7 @@ namespace Hecton8.Lighting.Editor
         private VisualElement _directionalBlock;
         private DayNightTelemetryGraphElement _graph;
 
-        [MenuItem("HECTON-8/Lighting/Abyssal Lighting Tuner/Day-Night GI Relay")]
+        [MenuItem("Hecton8/Lighting/Abyssal Lighting Tuner/Day-Night GI Relay")]
         private static void Open()
         {
             GetWindow<DayNightGIRelayTunerWindow>("Day-Night GI Relay");

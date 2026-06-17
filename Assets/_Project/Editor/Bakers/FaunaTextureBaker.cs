@@ -12,7 +12,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class FaunaTextureBaker : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1725/";
+        private const string MenuRoot = "Hecton8/Bakers/1725/";
         private const string DefaultComputeShaderPath = "Assets/_Project/Art/Shaders/Include/FaunaTextureBaker.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Creatures/Fauna1725";
         private const string DefaultAssetName = "AbyssalPredator_1725";

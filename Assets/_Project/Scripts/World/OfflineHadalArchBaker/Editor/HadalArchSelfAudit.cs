@@ -12,7 +12,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
     {
         private const string AuditPath = "Docs/Reports/SHINOBU_215_SELF_AUDIT.xml";
 
-        [MenuItem("HECTON-8/Hadal Structure Forge/Write Self Audit")]
+        [MenuItem("Hecton8/Hadal Structure Forge/Write Self Audit")]
         public static void WriteMenuAudit()
         {
             HadalArchBakeConfigDTO config = new HadalArchBakeConfigDTO

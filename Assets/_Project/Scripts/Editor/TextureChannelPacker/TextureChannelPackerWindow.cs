@@ -15,7 +15,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class TextureChannelPackerWindow : EditorWindow
     {

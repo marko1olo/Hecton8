@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Legacy entrypoint kept for menu/search compatibility. The old M.A.S.K. layout is forbidden for UberNoir.

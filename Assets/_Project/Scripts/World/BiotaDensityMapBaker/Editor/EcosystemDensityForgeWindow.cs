@@ -30,7 +30,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         private bool _csvLoaded;
         private bool _bakeInFlight;
 
-        [MenuItem("HECTON-8/Ecosystem Density Forge/Open Forge")]
+        [MenuItem("Hecton8/Ecosystem Density Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<EcosystemDensityForgeWindow>("Ecosystem Density Forge");

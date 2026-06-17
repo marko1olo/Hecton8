@@ -12,7 +12,7 @@ namespace Hecton8.Editor
     {
         private const string ScriptsRoot = "Assets/_Project/Scripts";
         private const string ReportPath = "Docs/Reports/DISPATCHER_OPTIMIZATION_REPORT.json";
-        [MenuItem("Hecton/Diagnostics/Run Stall Eradication Scanner")]
+        [MenuItem("Hecton8/Diagnostics/Run Stall Eradication Scanner")]
         public static void Run()
         {
             Directory.CreateDirectory("Docs/Reports");

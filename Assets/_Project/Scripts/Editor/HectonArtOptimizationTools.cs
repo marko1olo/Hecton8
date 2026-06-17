@@ -10,7 +10,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor-only production tools for mesh proxies, normal-map repairs, vertex-color bakes, pivot audits, and atlas generation.

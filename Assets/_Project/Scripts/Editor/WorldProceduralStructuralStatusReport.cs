@@ -6,7 +6,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Writes a structural readiness report for debris, ruins, power routes, and service scars.
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Generates the structural status report.
         /// </summary>
-        [MenuItem("Hecton/Validation/Generate Procedural Structural Status Report", priority = 248)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Structural Status Report", priority = 248)]
         public static void GenerateReport()
         {
             List<FamilyStatus> statuses = LoadStatuses();

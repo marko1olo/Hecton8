@@ -24,7 +24,7 @@ namespace Hecton8.Physics.KCC.Editor
         private EnvironmentGraphElement _graph;
         private double _nextGraphRepaintTime;
 
-        [MenuItem("HECTON-8/Kinematics/Hydrodynamic KCC Tuner")]
+        [MenuItem("Hecton8/Kinematics/Hydrodynamic KCC Tuner")]
         public static void Open()
         {
             GetWindow<HydrodynamicKccTunerWindow>("Hydro KCC");

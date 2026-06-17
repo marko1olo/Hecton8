@@ -83,7 +83,7 @@ namespace Hecton8.Editor
             EditorApplication.delayCall += ValidateAfterAssemblyReload;
         }
 
-        [MenuItem("Hecton-8/Compliance/Validate Burst Contracts")]
+        [MenuItem("Hecton8/Compliance/Validate Burst Contracts")]
         private static void ValidateBurstFromMenu()
         {
             ComplianceReport report = new ComplianceReport();
@@ -91,7 +91,7 @@ namespace Hecton8.Editor
             FailIfRequired(report, throwOnFailure: true, reportToConsole: true);
         }
 
-        [MenuItem("Hecton-8/Compliance/Validate CI Gates")]
+        [MenuItem("Hecton8/Compliance/Validate CI Gates")]
         private static void ValidateAllFromMenu()
         {
             ValidateAllContracts(throwOnFailure: true, reportToConsole: true);

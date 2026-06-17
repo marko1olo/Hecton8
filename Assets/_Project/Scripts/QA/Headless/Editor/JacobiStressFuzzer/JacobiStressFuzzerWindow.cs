@@ -26,7 +26,7 @@ namespace Hecton8.QA.Headless.Editor
         private ResidualGraphElement _graphElement;
         private PowerJacobiStressFuzzer.ScheduledRun _pendingRun;
 
-        [MenuItem("Hecton/Power/Solver Fuzzer")]
+        [MenuItem("Hecton8/Power/Solver Fuzzer")]
         public static void Open()
         {
             JacobiStressFuzzerWindow window = GetWindow<JacobiStressFuzzerWindow>();
@@ -277,7 +277,7 @@ namespace Hecton8.QA.Headless.Editor
         private const string AgentReportRelativePath = "Docs/Reports/QA_OPTIMIZATION_REPORT_SHINOBU_356_SCANNER.json";
         private const string ReportSectionKey = "shinobu356JacobiPowerFuzzer";
 
-        [MenuItem("Hecton/Power/Run OOP Fuzz Scanner")]
+        [MenuItem("Hecton8/Power/Run OOP Fuzz Scanner")]
         public static void RunMenu()
         {
             Debug.Log("OOP Fuzz scanner wrote " + RunScan());

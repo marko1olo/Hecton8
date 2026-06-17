@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class SpaceEngineResearchJsonWriter
     {

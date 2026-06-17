@@ -41,7 +41,7 @@ namespace Hecton8.Visor.Editor
         private bool _lastCsvValid;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Rendering/Screen-Space Trauma Tuner")]
+        [MenuItem("Hecton8/Rendering/Screen-Space Trauma Tuner")]
         public static void Open()
         {
             GetWindow<ScreenSpaceDecalTunerWindow>("Visor Trauma");

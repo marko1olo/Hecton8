@@ -19,25 +19,25 @@ namespace Hecton8.Editor
         private const string ProjectRootMarker = "Assets";
         private static readonly List<Renderer> s_RendererScratch = new List<Renderer>(64);
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Validate Layouts", false, 2520)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Validate Layouts", false, 2520)]
         public static void ValidateLayoutsMenu()
         {
             ValidateLayouts(true);
         }
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Run Static Archaeology", false, 2521)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Run Static Archaeology", false, 2521)]
         public static void RunStaticArchaeologyMenu()
         {
             RunStaticArchaeology(true);
         }
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Scan LOD Distances", false, 2522)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Scan LOD Distances", false, 2522)]
         public static void ScanLodDistancesMenu()
         {
             ScanLodDistances(true);
         }
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Validate Rollback Fence", false, 2523)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Validate Rollback Fence", false, 2523)]
         public static void ValidateRollbackFenceMenu()
         {
             ValidateRollbackFence(true);

@@ -25,7 +25,7 @@ namespace Hecton8.Editor
     {
         private const string kDataPath = "Assets/_Project/Data/Lore";
 
-        [MenuItem("HECTON-8/Generate Lore Content/All", false, 100)]
+        [MenuItem("Hecton8/Generate Lore Content/All", false, 100)]
         public static void GenerateAll()
         {
             GenerateSuitUpgrades();
@@ -37,7 +37,7 @@ namespace Hecton8.Editor
             H8Debug.Log("[LoreContentGenerator] All content generated.");
         }
 
-        [MenuItem("HECTON-8/Generate Lore Content/Suit Upgrades (5)", false, 101)]
+        [MenuItem("Hecton8/Generate Lore Content/Suit Upgrades (5)", false, 101)]
         public static void GenerateSuitUpgrades()
         {
             string path = $"{kDataPath}/SuitUpgrades";
@@ -71,7 +71,7 @@ namespace Hecton8.Editor
             H8Debug.Log("[LoreContentGenerator] Suit upgrades generated.");
         }
 
-        [MenuItem("HECTON-8/Generate Lore Content/Depth Zones (7)", false, 102)]
+        [MenuItem("Hecton8/Generate Lore Content/Depth Zones (7)", false, 102)]
         public static void GenerateDepthZones()
         {
             string path = $"{kDataPath}/DepthZones";
@@ -115,7 +115,7 @@ namespace Hecton8.Editor
             H8Debug.Log("[LoreContentGenerator] Depth zones generated.");
         }
 
-        [MenuItem("HECTON-8/Generate Lore Content/Quests", false, 103)]
+        [MenuItem("Hecton8/Generate Lore Content/Quests", false, 103)]
         public static void GenerateQuests()
         {
             string path = $"{kDataPath}/Quests";
@@ -145,7 +145,7 @@ namespace Hecton8.Editor
             H8Debug.Log("[LoreContentGenerator] Quests generated.");
         }
 
-        [MenuItem("HECTON-8/Generate Lore Content/Audio Logs", false, 104)]
+        [MenuItem("Hecton8/Generate Lore Content/Audio Logs", false, 104)]
         public static void GenerateAudioLogs()
         {
             string path = $"{kDataPath}/AudioLogs";

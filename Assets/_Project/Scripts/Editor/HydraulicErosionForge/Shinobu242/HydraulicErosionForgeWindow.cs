@@ -26,7 +26,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
         private int _selectedProfileIndex;
         private bool _previewQueued;
 
-        [MenuItem("HECTON-8/Hydraulic Erosion Forge/Hydraulic Erosion Forge", false, 189)]
+        [MenuItem("Hecton8/Hydraulic Erosion Forge/Hydraulic Erosion Forge", false, 189)]
         public static void Open()
         {
             HydraulicErosionForgeWindow window = GetWindow<HydraulicErosionForgeWindow>("Hydraulic Erosion Forge");

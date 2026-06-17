@@ -112,6 +112,13 @@ namespace Hecton8.World
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct WorldTerrainControlMapSplats
+    {
+        public float4 Control1;
+        public float4 Control2;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct WorldTerrainDetailRuntimeSample
     {
         public WorldMacroGeologySample Macro;
@@ -119,7 +126,8 @@ namespace Hecton8.World
         public WorldTerrainSurfaceMaterialWeights MaterialWeights;
         public WorldTerrainSurfaceMaterialClass DominantMaterial;
         public WorldTerrainDetailEligibilityFlags EligibilityFlags;
-        public float4 PackedMaterialControl;
+        public float4 Control1;
+        public float4 Control2;
         public uint MacroArtifactVersion;
         public uint SurfaceMaterialContractVersion;
         public uint MesoDetailContractVersion;
@@ -206,28 +214,26 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float4 ResolvePackedControlRgba(in WorldTerrainSurfaceMaterialWeights weights)
+        public static WorldTerrainControlMapSplats ResolveControlSplats(in WorldTerrainSurfaceMaterialWeights weights)
         {
-            float rock = math.saturate(
-                weights.HardRock +
-                weights.LimestoneShelf * 0.78f +
-                weights.ReefRubble * 0.30f +
-                weights.SeepCrust * 0.34f);
-            float sand = math.saturate(
-                weights.ShellSand +
-                weights.ReefRubble * 0.52f +
-                weights.LimestoneShelf * 0.18f);
-            float silt = math.saturate(
-                weights.ClaySilt +
-                weights.ManganeseNodulePlain * 0.62f +
-                weights.BrineSaltCrust * 0.22f);
-            float deposition = math.saturate(
-                weights.BrineSaltCrust * 0.62f +
-                weights.SeepCrust * 0.46f +
-                weights.ManganeseNodulePlain * 0.22f);
-
-            float total = math.max(0.0001f, rock + sand + silt + deposition);
-            return new float4(rock, sand, silt, deposition) / total;
+            float total = math.max(0.0001f, 
+                weights.ShellSand + weights.LimestoneShelf + weights.ClaySilt + weights.HardRock + 
+                weights.BrineSaltCrust + weights.ManganeseNodulePlain + weights.ReefRubble + weights.SeepCrust);
+            
+            float invTotal = 1f / total;
+            return new WorldTerrainControlMapSplats
+            {
+                Control1 = new float4(
+                    weights.ShellSand * invTotal,
+                    weights.LimestoneShelf * invTotal,
+                    weights.ClaySilt * invTotal,
+                    weights.HardRock * invTotal),
+                Control2 = new float4(
+                    weights.BrineSaltCrust * invTotal,
+                    weights.ManganeseNodulePlain * invTotal,
+                    weights.ReefRubble * invTotal,
+                    weights.SeepCrust * invTotal)
+            };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -104,7 +104,7 @@ namespace Hecton8.Editor.ProceduralGen
             "_TipTint"
         };
 
-        [MenuItem("HECTON-8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
+        [MenuItem("Hecton8/Bio-Forge/Bake Safe Shallows Assets", false, 172)]
         public static void BakeSafeShallowsAssets()
         {
             EnsureFolder(RuleFolder);
@@ -141,7 +141,7 @@ namespace Hecton8.Editor.ProceduralGen
             AssetDatabase.Refresh();
         }
 
-        [MenuItem("HECTON-8/Bio-Forge/Validate Safe Shallows Assets", false, 173)]
+        [MenuItem("Hecton8/Bio-Forge/Validate Safe Shallows Assets", false, 173)]
         public static void ValidateSafeShallowsAssets()
         {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(MaterialPath);

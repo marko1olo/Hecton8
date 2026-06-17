@@ -29,7 +29,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             "Texture2D.EncodeToPNG"
         };
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Run Legacy Capture Archaeology", false, 2660)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Run Legacy Capture Archaeology", false, 2660)]
         internal static void RunFromMenu()
         {
             List<LegacyCaptureFinding> findings = Scan();

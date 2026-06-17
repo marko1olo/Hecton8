@@ -12,7 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     public static unsafe class H8DataMonolithGlobalDataVaultStressProbe
     {

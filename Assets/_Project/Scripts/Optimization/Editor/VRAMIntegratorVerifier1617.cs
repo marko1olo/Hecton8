@@ -38,7 +38,7 @@ namespace Hecton8.Optimization.Editor
             "Execute"
         };
 
-        [MenuItem("HECTON-8/Optimization/Agent 1617 APEX Integrator Verify")]
+        [MenuItem("Hecton8/Optimization/Agent 1617 APEX Integrator Verify")]
         private static void RunMenu()
         {
             Verify();

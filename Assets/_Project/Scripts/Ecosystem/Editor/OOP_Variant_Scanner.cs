@@ -14,7 +14,7 @@ namespace Hecton8.Editor
         private const string ReportRelativePath = "Docs/Reports/SHINOBU_306_OOP_VARIANT_SCANNER.json";
         private const string RenderingReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Ecosystem/Run Fauna OOP Variant Scanner")]
+        [MenuItem("Hecton8/Ecosystem/Run Fauna OOP Variant Scanner")]
         public static void RunMenu()
         {
             RunAndWriteReport();

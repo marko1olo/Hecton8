@@ -21,7 +21,7 @@ namespace Hecton8.EditorTools
         private uint _lastShedTotal;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Mod Kernel Inspector")]
+        [MenuItem("Hecton8/Mod Kernel Inspector")]
         public static void Open()
         {
             GetWindow<ModKernelInspectorWindow>("Mod Kernel Inspector");

@@ -15,7 +15,7 @@ namespace Hecton8.Core.Editor
         private Slider _rumbleSlider;
         private Slider _maxAmplitudeSlider;
 
-        [MenuItem("HECTON-8/Tactile Synthesis Tuner")]
+        [MenuItem("Hecton8/Tactile Synthesis Tuner")]
         private static void Open()
         {
             GetWindow<TactileSynthesisTunerWindow>("Tactile Synthesis");

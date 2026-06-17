@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class BarterBootstrapAuthoring
     {
@@ -14,7 +14,7 @@ namespace Hecton8.EditorTools
         private const string CatalogPath = DataFolder + "/BarterOfferCatalog_Starter.asset";
         private static readonly List<GameObject> RootScratch = new List<GameObject>(32);
 
-        [MenuItem("Hecton/Authoring/Rebuild Starter Barter Relay", priority = 216)]
+        [MenuItem("Hecton8/Authoring/Rebuild Starter Barter Relay", priority = 216)]
         public static void RebuildStarterBarterRelay()
         {
             EnsureFolder("Assets/_Project/Data");

@@ -47,7 +47,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             "Instantiate("
         };
 
-        [MenuItem("HECTON-8/Wreckage Forge/Scan Runtime Destruction")]
+        [MenuItem("Hecton8/Wreckage Forge/Scan Runtime Destruction")]
         public static void ScanMenu()
         {
             int findings = ScanFindings(Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length));

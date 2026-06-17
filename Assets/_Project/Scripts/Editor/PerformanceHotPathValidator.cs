@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class PerformanceHotPathValidator
     {
@@ -101,7 +101,7 @@ namespace Hecton8.EditorTools
         private static readonly HashSet<string> _AllowedNativeUpdates =
             new HashSet<string>(_AllowedNativeUpdatePaths, StringComparer.OrdinalIgnoreCase);
 
-        [MenuItem("Hecton/Validation/Validate Performance Hot Paths")]
+        [MenuItem("Hecton8/Validation/Validate Performance Hot Paths")]
         private static void Validate()
         {
             if (!Directory.Exists(ScriptsRoot))

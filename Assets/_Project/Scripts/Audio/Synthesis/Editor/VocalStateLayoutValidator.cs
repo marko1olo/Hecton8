@@ -18,7 +18,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         private const int VocalDecodeCountersStrideBytes = 64;
         private const int VocalCueSignalStrideBytes = 64;
 
-        [MenuItem("HECTON-8/Audio/Validate Vocal Bank ABI")]
+        [MenuItem("Hecton8/Audio/Validate Vocal Bank ABI")]
         public static void ValidateMenu()
         {
             ValidateOrThrow();

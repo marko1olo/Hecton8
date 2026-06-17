@@ -70,13 +70,13 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
         private bool _batchActive;
         private BakeStatsAccumulator _bakeStats;
 
-        [MenuItem("HECTON-8/Wreckage Forge/Open Forge")]
+        [MenuItem("Hecton8/Wreckage Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<WreckageForgeWindow>("Wreckage Forge");
         }
 
-        [MenuItem("HECTON-8/Wreckage Forge/Bake Selected Assets")]
+        [MenuItem("Hecton8/Wreckage Forge/Bake Selected Assets")]
         public static void BakeSelectedAssets()
         {
             if (!HasValidSelectedBakeSources())
@@ -90,7 +90,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             EditorApplication.delayCall += window.BeginBakeSelected;
         }
 
-        [MenuItem("HECTON-8/Wreckage Forge/Validate Selected Source Assets")]
+        [MenuItem("Hecton8/Wreckage Forge/Validate Selected Source Assets")]
         public static void ValidateSelectedSourceAssets()
         {
             if (HasValidSelectedBakeSources())

@@ -10,7 +10,7 @@ namespace Hecton8.AI.Editor
     {
         private const string ReportPath = "C:/hades/Hecton8/AI_FAUNA_ARCHETYPE_REPORT.md";
 
-        [MenuItem("Hecton/Validation/Generate AI Fauna Archetype Report")]
+        [MenuItem("Hecton8/Validation/Generate AI Fauna Archetype Report")]
         public static void Generate()
         {
             string[] guids = AssetDatabase.FindAssets("t:FaunaBiomeData");

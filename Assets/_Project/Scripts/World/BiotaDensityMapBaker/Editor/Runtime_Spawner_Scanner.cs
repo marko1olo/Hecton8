@@ -18,7 +18,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         private const int ReportLockAttempts = 20;
         private const int ReportLockBackoffMs = 25;
 
-        [MenuItem("HECTON-8/Ecosystem Density Forge/Run Runtime Spawner Scanner")]
+        [MenuItem("Hecton8/Ecosystem Density Forge/Run Runtime Spawner Scanner")]
         public static void RunAndWriteReport()
         {
             ScanResult result = Scan();

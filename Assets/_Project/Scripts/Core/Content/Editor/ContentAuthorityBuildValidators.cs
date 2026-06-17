@@ -75,7 +75,7 @@ namespace Hecton8.Core.Content.Editor
             "^\\s*#\\s*endif\\b",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        [MenuItem("HECTON-8/Content/Validate Content Authority")]
+        [MenuItem("Hecton8/Content/Validate Content Authority")]
         public static void ValidateFromMenu()
         {
             RunAllBuildValidators();

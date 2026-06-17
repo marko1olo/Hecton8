@@ -24,7 +24,7 @@ namespace Hecton8.Power.Editor
             public int LegacySlotFacades;
         }
 
-        [MenuItem("Hecton/Power/Run Charger OOP Scanner")]
+        [MenuItem("Hecton8/Power/Run Charger OOP Scanner")]
         public static void RunMenu()
         {
             string reportPath = RunScan();

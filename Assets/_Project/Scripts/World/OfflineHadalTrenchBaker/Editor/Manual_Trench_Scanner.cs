@@ -15,13 +15,13 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         private const string SharedReportPath = "Docs/Reports/WORLD_OPTIMIZATION_REPORT.json";
         private const string AgentReportPath = "Docs/Reports/WORLD_OPTIMIZATION_REPORT_SHINOBU_241.json";
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Scan Manual Trench Geometry")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Scan Manual Trench Geometry")]
         public static void ScanAndReportMenu()
         {
             Scan(deleteForbiddenAssets: false, logToConsole: true);
         }
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Scan And Delete Manual Trench Geometry")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Scan And Delete Manual Trench Geometry")]
         public static void ScanAndDeleteMenu()
         {
             Scan(deleteForbiddenAssets: true, logToConsole: true);

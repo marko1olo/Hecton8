@@ -8,7 +8,7 @@
 // Batch34 pickup atlases remain UV/mesh source assets, not cube material maps.
 // ============================================================================
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using System;
     using UnityEditor;

@@ -23,7 +23,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
             ValidateLayouts(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Procedural Wreckage/Validate Layouts")]
+        [MenuItem("Hecton8/Procedural Wreckage/Validate Layouts")]
         public static void ValidateLayoutsMenu()
         {
             ValidateLayouts(logSuccess: true);

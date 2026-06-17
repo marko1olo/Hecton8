@@ -4,7 +4,7 @@ using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Owns editor-only procedural texture generation for flora starter and baked-final materials.
@@ -48,7 +48,7 @@ namespace Hecton8.EditorTools
         private static readonly string[] RequiredMapTokens = { "albedo", "detail", "normal", "mask" };
         private const double TextureMemoryRedThresholdMb = 900.0;
 
-        [MenuItem("Hecton/Authoring/Generate Procedural Flora Textures", priority = 175)]
+        [MenuItem("Hecton8/Authoring/Generate Procedural Flora Textures", priority = 175)]
         public static void Apply()
         {
             EnsureFolder("Assets/_Project/Art");
@@ -99,7 +99,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Applied flora textures. TouchedTextures={touchedTextures}.");
         }
 
-        [MenuItem("Hecton/Validation/Fix Imported Flora Texture Import Settings", priority = 272)]
+        [MenuItem("Hecton8/Validation/Fix Imported Flora Texture Import Settings", priority = 272)]
         public static void FixImportedTextureImportSettings()
         {
             int updated = 0;
@@ -186,7 +186,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Fixed imported texture import settings. Updated={updated}, Skipped={skipped}.");
         }
 
-        [MenuItem("Hecton/Validation/Build Sea-Grass 1024 BC7 Atlas", priority = 274)]
+        [MenuItem("Hecton8/Validation/Build Sea-Grass 1024 BC7 Atlas", priority = 274)]
         public static void BuildSeaGrassBc7Atlas()
         {
             EnsureFolder("Assets/_Project/Art");
@@ -275,7 +275,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        [MenuItem("Hecton/Validation/Scaffold Missing Flora Texture Import Folders", priority = 269)]
+        [MenuItem("Hecton8/Validation/Scaffold Missing Flora Texture Import Folders", priority = 269)]
         public static void ScaffoldMissingImportedTextureFolders()
         {
             EnsureFolder("Assets/_Project/Art");
@@ -307,7 +307,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Scaffolded missing imported flora texture folders. CreatedFolders={createdFolders}, MissingFamilies={missingFamilies}.");
         }
 
-        [MenuItem("Hecton/Validation/Generate Missing Flora Texture Request Packet", priority = 270)]
+        [MenuItem("Hecton8/Validation/Generate Missing Flora Texture Request Packet", priority = 270)]
         public static void GenerateMissingTextureRequestPacket()
         {
             StringBuilder markdown = new StringBuilder(8192);
@@ -386,7 +386,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Wrote missing flora texture request packet to '{reportPath}'. MissingFamilies={missingFamilyCount}.");
         }
 
-        [MenuItem("Hecton/Validation/Report Imported Flora Texture Library", priority = 271)]
+        [MenuItem("Hecton8/Validation/Report Imported Flora Texture Library", priority = 271)]
         public static void ReportImportedTextureLibrary()
         {
             StringBuilder markdown = new StringBuilder(4096);
@@ -456,7 +456,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldProceduralFloraTextureAuthoring] Wrote imported flora texture report to '{reportPath}'.");
         }
 
-        [MenuItem("Hecton/Validation/Reconcile Imported Flora Coverage", priority = 273)]
+        [MenuItem("Hecton8/Validation/Reconcile Imported Flora Coverage", priority = 273)]
         public static void ReconcileImportedCoverage()
         {
             ScaffoldMissingImportedTextureFolders();

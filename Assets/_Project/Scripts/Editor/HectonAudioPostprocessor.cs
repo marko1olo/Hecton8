@@ -50,7 +50,7 @@ namespace Hecton8.Editor
         private static readonly List<string> s_deferredReimportPaths = new List<string>(128);
         private static bool s_deferredReimportScheduled;
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed SFX", priority = 183)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Reimport Managed SFX", priority = 183)]
         private static void ReimportManagedSfx()
         {
             List<string> clipPaths = CollectManagedSfxPaths();
@@ -75,7 +75,7 @@ namespace Hecton8.Editor
             Debug.Log(LogReimportedManagedSfx);
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Reimport Managed Audio", priority = 185)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Reimport Managed Audio", priority = 185)]
         private static void ReimportManagedAudio()
         {
             List<string> clipPaths = CollectManagedAudioPaths();
@@ -100,7 +100,7 @@ namespace Hecton8.Editor
             Debug.Log(LogReimportedManagedAudio);
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Validate Managed SFX", priority = 184)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Validate Managed SFX", priority = 184)]
         private static void ValidateManagedSfx()
         {
             List<string> clipPaths = CollectManagedSfxPaths();
@@ -125,7 +125,7 @@ namespace Hecton8.Editor
             Debug.LogError(LogManagedSfxDriftFound);
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Validate Managed Audio", priority = 186)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Validate Managed Audio", priority = 186)]
         private static void ValidateManagedAudio()
         {
             List<string> clipPaths = CollectManagedAudioPaths();

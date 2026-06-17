@@ -7,7 +7,7 @@ using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Audits and enforces packed-mask authoring for first-party materials.

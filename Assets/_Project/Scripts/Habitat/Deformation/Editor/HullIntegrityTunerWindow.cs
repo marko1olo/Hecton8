@@ -22,7 +22,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         private Label _histogramLabel;
         private int _suppressWrite;
 
-        [MenuItem("Hecton-8/Habitat/Hull Deformation Tuner")]
+        [MenuItem("Hecton8/Habitat/Hull Deformation Tuner")]
         public static void Open()
         {
             HullIntegrityTunerWindow window = GetWindow<HullIntegrityTunerWindow>();

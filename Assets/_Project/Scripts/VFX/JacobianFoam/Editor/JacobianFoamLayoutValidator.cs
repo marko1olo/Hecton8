@@ -27,7 +27,7 @@ namespace Hecton8.EditorTools
             Validate();
         }
 
-        [MenuItem("HECTON-8/Rendering/Validate Jacobian Foam GPU Layouts")]
+        [MenuItem("Hecton8/Rendering/Validate Jacobian Foam GPU Layouts")]
         public static void Validate()
         {
             if (!JacobianFoamContracts.ValidateRuntimeLayouts())

@@ -60,7 +60,7 @@ public sealed class FlowFieldVisualizerEditor : Editor
 
 public static class FlowFieldVisualizerMenu
 {
-    [MenuItem("Hecton/Tools/Create Flow Field Visualizer", false, 100)]
+    [MenuItem("Hecton8/Tools/Create Flow Field Visualizer", false, 100)]
     private static void CreateVisualizer()
     {
         GameObject go = new GameObject("FlowFieldVisualizer");
@@ -71,7 +71,7 @@ public static class FlowFieldVisualizerMenu
         Undo.RegisterCreatedObjectUndo(go, "Create Flow Field Visualizer");
     }
 
-    [MenuItem("Hecton/Tools/Create Flow Field Profile", false, 101)]
+    [MenuItem("Hecton8/Tools/Create Flow Field Profile", false, 101)]
     private static void CreateProfile()
     {
         FlowFieldProfile profile = ScriptableObject.CreateInstance<FlowFieldProfile>();

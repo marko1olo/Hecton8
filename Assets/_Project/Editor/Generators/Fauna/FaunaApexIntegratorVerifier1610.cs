@@ -74,7 +74,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
             ".material"
         };
 
-        [MenuItem("HECTON-8/Fauna/1610 APEX Integrator Verify Source")]
+        [MenuItem("Hecton8/Fauna/1610 APEX Integrator Verify Source")]
         public static void RunMenu()
         {
             SourceAuditResult result = RunInMemorySourceAudit();

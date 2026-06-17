@@ -12,7 +12,7 @@ namespace Hecton8.Editor.Validation
     {
         private const string ToolItemRoot = "Assets/_Project/Data/Items/Tools";
 
-        [MenuItem("Hecton/Validation/Validate Tool World Authoring", priority = 231)]
+        [MenuItem("Hecton8/Validation/Validate Tool World Authoring", priority = 231)]
         public static void Validate()
         {
             string[] guids = AssetDatabase.FindAssets("t:ItemData", new[] { ToolItemRoot });

@@ -52,7 +52,7 @@ namespace Hecton8.Building.Editor
         //  MENU ITEM
         // ----------------------------------------------------------
 
-        [MenuItem("Hecton/Building/Rock Data Baker", false, 100)]
+        [MenuItem("Hecton8/Building/Rock Data Baker", false, 100)]
         public static void ShowWindow()
         {
             var window = GetWindow<RockDataBakerWindow>();

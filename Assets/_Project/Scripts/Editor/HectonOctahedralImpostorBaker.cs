@@ -101,7 +101,7 @@ namespace Hecton8.Editor
         private static readonly int ImpostorDepthScaleId = Shader.PropertyToID("_HectonImpostorDepthScaleMeters");
         private static readonly int GlobalQualityWeightId = Shader.PropertyToID("_HectonGlobalQualityWeight");
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Bake Selected", false, 2500)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Bake Selected", false, 2500)]
         public static void BakeSelected()
         {
             GameObject source = Selection.activeGameObject;
@@ -114,13 +114,13 @@ namespace Hecton8.Editor
             BakeGameObject(source, HlodImpostorBakeSettings.CreateDefault(), null);
         }
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Bake Selected", true)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Bake Selected", true)]
         private static bool ValidateBakeSelected()
         {
             return Selection.activeGameObject != null;
         }
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor/Mock Capture Benchmark", false, 2501)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor/Mock Capture Benchmark", false, 2501)]
         public static void RunMockCaptureBenchmark()
         {
             const int pointCount = 65536;

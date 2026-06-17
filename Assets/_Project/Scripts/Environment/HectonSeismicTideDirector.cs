@@ -5398,13 +5398,13 @@ namespace Hecton8.Environment
         private Label _statusLabel;
         private bool _suppressUiCallbacks;
 
-        [MenuItem("Hecton/Environment/Cataclysmic Event Tuner")]
+        [MenuItem("Hecton8/Environment/Cataclysmic Event Tuner")]
         public static void Open()
         {
             GetWindow<TectonicEventTunerWindow>("Cataclysmic Event Tuner");
         }
 
-        [MenuItem("Hecton/Environment/Orbital Mechanics Tuner")]
+        [MenuItem("Hecton8/Environment/Orbital Mechanics Tuner")]
         public static void OpenOrbitalMechanicsTuner()
         {
             GetWindow<TectonicEventTunerWindow>("Orbital Mechanics Tuner");

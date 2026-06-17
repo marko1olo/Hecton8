@@ -25,7 +25,7 @@ namespace Hecton8.World.Editor
             ValidateLayouts(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/World/Procedural Geology/Validate Layouts")]
+        [MenuItem("Hecton8/World/Procedural Geology/Validate Layouts")]
         public static void ValidateLayoutsMenu()
         {
             ValidateLayouts(logSuccess: true);

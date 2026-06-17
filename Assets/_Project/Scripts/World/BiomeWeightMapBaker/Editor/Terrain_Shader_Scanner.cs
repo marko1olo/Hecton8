@@ -9,7 +9,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
     {
         private const string ReportPath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Biome Splatmap Forge/Run Terrain Shader Scanner")]
+        [MenuItem("Hecton8/Biome Splatmap Forge/Run Terrain Shader Scanner")]
         public static void RunAndWriteReport()
         {
             Directory.CreateDirectory("Docs/Reports");

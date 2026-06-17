@@ -18,7 +18,7 @@ using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor-only ARM packer configuration. Layout is ABI-stable for Burst and ARM64.

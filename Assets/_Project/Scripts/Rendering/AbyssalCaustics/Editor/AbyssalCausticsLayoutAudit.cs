@@ -8,7 +8,7 @@ namespace Hecton8.Rendering.Editor
 {
     internal static class AbyssalCausticsLayoutAudit
     {
-        [MenuItem("HECTON-8/Rendering/Validate Abyssal Caustics Layout")]
+        [MenuItem("Hecton8/Rendering/Validate Abyssal Caustics Layout")]
         private static void ValidateMenu()
         {
             bool valid = ValidateAll();

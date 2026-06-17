@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralProxyAuthoring
     {
@@ -600,7 +600,7 @@ namespace Hecton8.EditorTools
             }
         };
 
-        [MenuItem("Hecton/Authoring/Build Procedural Fill Foundations", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Build Procedural Fill Foundations", priority = 178)]
         public static void BuildProceduralFillFoundations()
         {
             EnsureFolder("Assets/_Project/Data");

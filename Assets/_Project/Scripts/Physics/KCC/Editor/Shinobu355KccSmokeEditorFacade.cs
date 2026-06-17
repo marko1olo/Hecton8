@@ -1442,7 +1442,7 @@ namespace Hecton8.Physics.KCC.Editor
         private Shinobu355KccSmokeRunner.ScheduledRun _scheduledRun;
         private Shinobu355KccSmokeSummary _lastSummary;
 
-        [MenuItem("HECTON-8/Kinematics/Headless Smoke Tester")]
+        [MenuItem("Hecton8/Kinematics/Headless Smoke Tester")]
         public static void Open()
         {
             GetWindow<HeadlessKccSmokeTesterWindow>("Headless Smoke Tester");

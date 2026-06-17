@@ -6,7 +6,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Writes a focused readiness report for egg-cluster and giant-plant families.
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
         private const string ReportFileName = "PROCEDURAL_ORGANIC_MISC_STATUS_REPORT.md";
 
-        [MenuItem("Hecton/Validation/Generate Procedural Organic Misc Status Report", priority = 242)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Organic Misc Status Report", priority = 242)]
         public static void GenerateReport()
         {
             List<FamilyStatus> statuses = LoadStatuses();

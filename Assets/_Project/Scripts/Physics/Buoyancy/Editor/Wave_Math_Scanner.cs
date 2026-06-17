@@ -18,7 +18,7 @@ namespace Hecton8.Physics.Buoyancy.Editor
         private const string AgentReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_263.json";
         private const string SharedReportSection = "shinobu263WaveMathScanner";
 
-        [MenuItem("HECTON-8/Physics/Wave Math Scanner")]
+        [MenuItem("Hecton8/Physics/Wave Math Scanner")]
         public static void Run()
         {
             string projectRoot = ProjectRoot();

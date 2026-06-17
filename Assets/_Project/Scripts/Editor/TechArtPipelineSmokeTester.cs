@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor-only smoke test for the HECTON-8 tech-art hardening pass.

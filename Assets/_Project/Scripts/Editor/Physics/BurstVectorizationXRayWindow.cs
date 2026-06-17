@@ -24,7 +24,7 @@ namespace Hecton8.Editor.Physics
         private bool _runtimeUnavailableStatusShown;
         private bool _telemetryStatusShown;
 
-        [MenuItem("HECTON-8/Physics/Burst Vectorization X-Ray")]
+        [MenuItem("Hecton8/Physics/Burst Vectorization X-Ray")]
         public static void Open()
         {
             GetWindow<BurstVectorizationXRayWindow>("Burst SIMD X-Ray");

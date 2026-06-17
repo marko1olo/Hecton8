@@ -39,7 +39,7 @@ namespace Hecton8.Rendering.Editor
         private int _lastDepthTenths = UnsetReadout;
         private int _lastQualityMillis = UnsetReadout;
 
-        [MenuItem("HECTON-8/Rendering/Abyssal Caustics Tuner")]
+        [MenuItem("Hecton8/Rendering/Abyssal Caustics Tuner")]
         private static void Open()
         {
             AbyssalCausticsTunerWindow window = GetWindow<AbyssalCausticsTunerWindow>();

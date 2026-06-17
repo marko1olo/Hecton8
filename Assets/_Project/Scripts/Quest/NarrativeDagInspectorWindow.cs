@@ -24,7 +24,7 @@ namespace Hecton8.Quest
         private bool _autoCsv;
         private double _nextCsvPollTime;
 
-        [MenuItem("Hecton/Narrative/Narrative DAG Inspector")]
+        [MenuItem("Hecton8/Narrative/Narrative DAG Inspector")]
         private static void Open()
         {
             NarrativeDagInspectorWindow window = GetWindow<NarrativeDagInspectorWindow>();

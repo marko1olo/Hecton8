@@ -16,7 +16,7 @@ namespace Hecton8.AI.Editor
         private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(16);
         private static readonly List<FaunaDirector> s_faunaDirectorScratch = new List<FaunaDirector>(4);
 
-        [MenuItem("Hecton/Authoring/Build Fauna Biome Datasets", priority = 183)]
+        [MenuItem("Hecton8/Authoring/Build Fauna Biome Datasets", priority = 183)]
         public static void BuildFaunaBiomeDatasets()
         {
             CreatureArchetypeAuthoring.BuildCreatureArchetypes();

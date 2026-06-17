@@ -6,14 +6,14 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class PhysicsCullingTunerWindow : EditorWindow
     {
         private const float GizmoCubeSizeMeters = 1.5f;
         private bool _drawGizmos = true;
 
-        [MenuItem("HECTON-8/Physics/Physics Culling Tuner")]
+        [MenuItem("Hecton8/Physics/Physics Culling Tuner")]
         public static void Open()
         {
             GetWindow<PhysicsCullingTunerWindow>("Physics Culling Tuner");

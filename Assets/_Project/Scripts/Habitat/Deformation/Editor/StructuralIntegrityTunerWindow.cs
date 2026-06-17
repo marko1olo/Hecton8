@@ -23,7 +23,7 @@ namespace Hecton8.Habitat.Deformation.Editor
         private int _lastStatusNodeCount = -1;
         private int _lastStatusQualityMilli = -1;
 
-        [MenuItem("Hecton-8/Habitat/Structural Integrity Calculator")]
+        [MenuItem("Hecton8/Habitat/Structural Integrity Calculator")]
         public static void Open()
         {
             StructuralIntegrityTunerWindow window = GetWindow<StructuralIntegrityTunerWindow>();
@@ -31,7 +31,7 @@ namespace Hecton8.Habitat.Deformation.Editor
             window.minSize = new Vector2(420f, 320f);
         }
 
-        [MenuItem("Hecton-8/Habitat/Hull Integrity Tuner")]
+        [MenuItem("Hecton8/Habitat/Hull Integrity Tuner")]
         public static void OpenHullIntegrityTuner()
         {
             Open();

@@ -24,7 +24,7 @@ namespace Hecton8.Physics.Editor
         private double _nextReadTime;
 
         /// <summary>Opens the sleep-state telemetry window.</summary>
-        [MenuItem("HECTON-8/Physics/Physics Sleep State X-Ray")]
+        [MenuItem("Hecton8/Physics/Physics Sleep State X-Ray")]
         public static void Open()
         {
             GetWindow<PhysicsSleepStateXRayWindow>("Sleep X-Ray");

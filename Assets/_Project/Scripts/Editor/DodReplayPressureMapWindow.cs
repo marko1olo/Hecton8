@@ -6,7 +6,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor-only 2D pressure/gas grid view fed by the replay atmosphere sidecar.

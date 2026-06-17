@@ -116,7 +116,7 @@ namespace Hecton8.Editor.Generators.World
             };
         }
 
-        [MenuItem("HECTON-8/World Scatter/1614 Bake Mock BRG Scatter")]
+        [MenuItem("Hecton8/World Scatter/1614 Bake Mock BRG Scatter")]
         public static void BakeMockMenu()
         {
             if (!BakeMockScatterChunk(DefaultMockInstanceCount, DefaultMockBoundsCount, 1f, DefaultAssetName, out AbyssalScatterBakeResult result))
@@ -130,7 +130,7 @@ namespace Hecton8.Editor.Generators.World
             Debug.Log("[1614] BRG scatter bake complete. path=" + result.OutputPath + " instances=" + result.InstanceCount + " culled=" + result.CulledCount + " bytes=" + result.FileBytes);
         }
 
-        [MenuItem("HECTON-8/World Scatter/1614 Scan Scatter Sources")]
+        [MenuItem("Hecton8/World Scatter/1614 Scan Scatter Sources")]
         public static void ScanSourcesMenu()
         {
             AbyssalScatterBakeResult result = default;

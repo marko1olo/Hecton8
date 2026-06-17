@@ -12,7 +12,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
     {
         private const string AuditPath = "Docs/Reports/SHINOBU_241_SELF_AUDIT.xml";
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Write Self Audit")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Write Self Audit")]
         public static void WriteMenuAudit()
         {
             HadalTrenchBakeConfigDTO config = HadalTrenchBakePipeline.DefaultConfig();

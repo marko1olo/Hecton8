@@ -20,7 +20,7 @@ namespace Hecton8.Power.Editor
         private Slider _exponentSlider;
         private Slider _qualityOverrideSlider;
 
-        [MenuItem("Hecton/Power/Battery Logistics X-Ray")]
+        [MenuItem("Hecton8/Power/Battery Logistics X-Ray")]
         public static void Open()
         {
             BatteryLogisticsXRayWindow window = GetWindow<BatteryLogisticsXRayWindow>();

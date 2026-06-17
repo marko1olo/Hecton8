@@ -39,7 +39,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         private const string DefaultPath = "Assets/StreamingAssets/Hecton8/HadalTrenches/hadal_trench_sector_0000.h8bin";
         private const int StreamHashBufferBytes = 131072;
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Validate Last Payload")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Validate Last Payload")]
         public static void ValidateDefaultMenu()
         {
             bool ok = ValidateFile(DefaultPath, out HadalTrenchPayloadValidationResult result);

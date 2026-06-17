@@ -29,7 +29,7 @@ namespace Hecton8.World.ProceduralCoral.Editor
             ValidateLayouts(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Procedural Coral/Validate Layouts")]
+        [MenuItem("Hecton8/Procedural Coral/Validate Layouts")]
         public static void ValidateLayoutsMenu()
         {
             ValidateLayouts(logSuccess: true);

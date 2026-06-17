@@ -44,7 +44,7 @@ namespace Hecton8.Editor.ModdingSDK
         /// <summary>
         /// Opens the HECTON modding SDK hub window.
         /// </summary>
-        [MenuItem("Hecton/Modding/SDK Hub")]
+        [MenuItem("Hecton8/Modding/SDK Hub")]
         public static void ShowWindow()
         {
             ModdingSdkHubWindow window = GetWindow<ModdingSdkHubWindow>("HECTON SDK Hub");

@@ -8,7 +8,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     /// <summary>
     /// Release-player gate that blocks static-data text/config parser residue outside Editor/Development lanes.

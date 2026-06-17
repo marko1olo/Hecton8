@@ -10,7 +10,7 @@ namespace Hecton8.Editor
     {
         private const string GraphPath = "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset";
 
-        [MenuItem("HECTON-8/World/MapMagic/Integrate Macro Geology Base")]
+        [MenuItem("Hecton8/World/MapMagic/Integrate Macro Geology Base")]
         public static void RunIntegration()
         {
             Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(GraphPath);

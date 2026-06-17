@@ -36,13 +36,13 @@ namespace Hecton8.Core.Diagnostics.Visuals.Editor
         private string _loadedPath = DefaultDumpPath;
         private int _selectedFrame;
 
-        [MenuItem("HECTON-8/Diagnostics/Architect Eye/BlackBox Timeline")]
+        [MenuItem("Hecton8/Diagnostics/Architect Eye/BlackBox Timeline")]
         private static void Open()
         {
             GetWindow<ArchitectEyeBlackBoxTimelineViewer>("Architect Eye");
         }
 
-        [MenuItem("HECTON-8/Diagnostics/Architect Eye/Toggle POI Breadcrumb Capture")]
+        [MenuItem("Hecton8/Diagnostics/Architect Eye/Toggle POI Breadcrumb Capture")]
         private static void ToggleBreadcrumbCapture()
         {
             _capturePois = !_capturePois;

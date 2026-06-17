@@ -22,7 +22,7 @@ namespace Hecton8.Editor.Localization
     /// </summary>
     public sealed class SdfFontAtlasBaker : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1729/";
+        private const string MenuRoot = "Hecton8/Bakers/1729/";
         private const string ComputeShaderPath = "Assets/_Project/Art/Shaders/Include/SdfFontAtlasBaker1729.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Generated/SdfFontAtlas1729";
         private const string NotoSansPath = "Assets/_Project/Art/Fonts/NotoSans-Regular.ttf";

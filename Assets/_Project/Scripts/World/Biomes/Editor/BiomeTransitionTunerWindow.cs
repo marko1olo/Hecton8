@@ -22,7 +22,7 @@ namespace Hecton8.World.Biomes.Editor
         private Label _readout;
         private double _nextReadoutTime;
 
-        [MenuItem("HECTON-8/Biomes/Biome Transition Tuner")]
+        [MenuItem("Hecton8/Biomes/Biome Transition Tuner")]
         public static void Open()
         {
             GetWindow<BiomeTransitionTunerWindow>("Biome Transition Tuner");

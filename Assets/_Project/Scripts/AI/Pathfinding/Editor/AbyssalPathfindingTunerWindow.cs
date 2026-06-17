@@ -24,7 +24,7 @@ namespace Hecton8.AI.Pathfinding.Editor
         private Label _stateLabel;
         private TelemetryGraphElement _telemetryGraph;
 
-        [MenuItem("HECTON-8/AI/Abyssal Voxel Pathfinding Tuner")]
+        [MenuItem("Hecton8/AI/Abyssal Voxel Pathfinding Tuner")]
         private static void Open()
         {
             GetWindow<AbyssalPathfindingTunerWindow>("Voxel Pathfinding");

@@ -34,7 +34,7 @@ namespace Hecton8.Environment.Editor
             "tremor"
         };
 
-        [MenuItem("HECTON-8/Environment/Run OOP Explosion Scanner")]
+        [MenuItem("Hecton8/Environment/Run OOP Explosion Scanner")]
         private static void RunMenu()
         {
             RunAndWriteReport();

@@ -7,7 +7,7 @@
 // source atlas alpha candidates while keeping prefab authoring deterministic.
 // ============================================================================
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using System;
     using UnityEditor;

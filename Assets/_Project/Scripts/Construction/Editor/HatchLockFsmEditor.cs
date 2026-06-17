@@ -33,7 +33,7 @@ namespace Hecton8.Construction.Editor
         private float _lastAveragePressure = float.NaN;
         private float _lastScheduleUs = float.NaN;
 
-        [MenuItem("HECTON-8/Construction/Containment Lock FSM Tuner")]
+        [MenuItem("Hecton8/Construction/Containment Lock FSM Tuner")]
         public static void Open()
         {
             GetWindow<ContainmentLockFsmTunerWindow>("Containment Lock FSM");
@@ -224,7 +224,7 @@ namespace Hecton8.Construction.Editor
         private const string MarkdownReportPath = "Docs/Reports/OOP_Door_Scanner_SHINOBU_343.md";
         private const string AggregateKey = "shinobu_343_hatch_lock_fsm";
 
-        [MenuItem("HECTON-8/Construction/OOP Door Scanner")]
+        [MenuItem("Hecton8/Construction/OOP Door Scanner")]
         public static void Run()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

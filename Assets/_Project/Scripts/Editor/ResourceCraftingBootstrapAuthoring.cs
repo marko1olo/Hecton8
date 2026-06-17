@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using Hecton8.Core;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ResourceCraftingBootstrapAuthoring
     {
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         private const string ComponentsFolder = "Assets/_Project/Data/Items/Resources/Components";
         private const string RecipesFolder = "Assets/_Project/Data/Crafting/Recipes";
 
-        [MenuItem("Hecton/Authoring/Rebuild Core Resource Kit", priority = 168)]
+        [MenuItem("Hecton8/Authoring/Rebuild Core Resource Kit", priority = 168)]
         public static void RebuildCoreResourceKit()
         {
             EnsureFolder("Assets/_Project/Data");
@@ -262,7 +262,7 @@ namespace Hecton8.EditorTools
             H8Debug.Log("[ResourceBootstrap] Core resource kit rebuilt.");
         }
 
-        [MenuItem("Hecton/Validation/Validate Core Resource Kit", priority = 169)]
+        [MenuItem("Hecton8/Validation/Validate Core Resource Kit", priority = 169)]
         public static void ValidateCoreResourceKit()
         {
             int errors = 0;

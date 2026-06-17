@@ -21,7 +21,7 @@ using UnityEngine;
 using Hecton8.Editor.ColliderOptimization1716;
 using Hecton8.World;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralGeologyFinalAuthoring
     {
@@ -32,7 +32,7 @@ namespace Hecton8.EditorTools
 
         // ── Menyu ─────────────────────────────────────────────────
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Geology Finals", priority = 179)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Geology Finals", priority = 179)]
         public static void RebuildGeologyFinals()
         {
             EnsureFolder(FinalPrefabFolder);

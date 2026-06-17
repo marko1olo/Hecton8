@@ -63,7 +63,7 @@ namespace Hecton8.Editor.ModdingSDK
         /// <summary>
         /// Opens the internal legacy HECTON mod builder window.
         /// </summary>
-        [MenuItem("Hecton/Modding/Internal/Legacy Mod Builder")]
+        [MenuItem("Hecton8/Modding/Internal/Legacy Mod Builder")]
         public static void ShowWindow()
         {
             ModBuilderWindow window = GetWindow<ModBuilderWindow>("Hecton Legacy Mod Builder");

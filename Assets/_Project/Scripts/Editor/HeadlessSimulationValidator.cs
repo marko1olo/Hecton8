@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor-only validator that disables scene render/audio presentation and executes simulation interfaces directly.
@@ -42,13 +42,13 @@ namespace Hecton8.EditorTools
             }
         }
 
-        [MenuItem("Hecton/Validation/Headless Simulation Validator")]
+        [MenuItem("Hecton8/Validation/Headless Simulation Validator")]
         private static void RunFromMenu()
         {
             RunHeadlessSimulationTicks(DefaultTickCount);
         }
 
-        [MenuItem("Hecton/Validation/Headless Scatter Refresh Validator")]
+        [MenuItem("Hecton8/Validation/Headless Scatter Refresh Validator")]
         private static void RunScatterRefreshFromMenu()
         {
             RunHeadlessScatterRefresh();

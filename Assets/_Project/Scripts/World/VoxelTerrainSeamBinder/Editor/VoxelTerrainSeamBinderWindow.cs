@@ -45,7 +45,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
         private int _profileCount;
         private bool _previewRefreshQueued;
 
-        [MenuItem("HECTON-8/Voxel Terrain Seam Binder/Open Forge")]
+        [MenuItem("Hecton8/Voxel Terrain Seam Binder/Open Forge")]
         public static void Open()
         {
             GetWindow<VoxelTerrainSeamBinderWindow>("Voxel-Terrain Seam Binder");

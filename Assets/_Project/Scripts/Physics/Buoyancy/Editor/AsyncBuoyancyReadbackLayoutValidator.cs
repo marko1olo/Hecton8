@@ -12,7 +12,7 @@ namespace Hecton8.Physics.Editor
     {
         private const int RequiredAlignmentBytes = 16;
 
-        [MenuItem("HECTON-8/Physics/Validate Async Buoyancy Readback Layout")]
+        [MenuItem("Hecton8/Physics/Validate Async Buoyancy Readback Layout")]
         public static void ValidateFromMenu()
         {
             bool valid = Validate();

@@ -37,7 +37,7 @@ namespace Hecton8.Editor.Build
             Validate(report.summary.platform, strictBuild: true);
         }
 
-        [MenuItem("HECTON-8/Platform/Validate Native Plugin Matrix")]
+        [MenuItem("Hecton8/Platform/Validate Native Plugin Matrix")]
         private static void ValidateFromMenu()
         {
             Validate(EditorUserBuildSettings.activeBuildTarget, strictBuild: false);

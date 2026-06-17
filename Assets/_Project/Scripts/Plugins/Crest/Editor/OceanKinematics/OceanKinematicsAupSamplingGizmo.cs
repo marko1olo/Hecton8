@@ -24,7 +24,7 @@ namespace Hecton8.Physics.Editor
             SceneView.duringSceneGui += OnSceneGui;
         }
 
-        [MenuItem("Hecton/Physics/Toggle Ocean AUP Sampling Gizmo")]
+        [MenuItem("Hecton8/Physics/Toggle Ocean AUP Sampling Gizmo")]
         public static void Toggle()
         {
             _enabled = !_enabled;
@@ -32,7 +32,7 @@ namespace Hecton8.Physics.Editor
             SceneView.RepaintAll();
         }
 
-        [MenuItem("Hecton/Physics/Toggle Ocean AUP Sampling Gizmo", true)]
+        [MenuItem("Hecton8/Physics/Toggle Ocean AUP Sampling Gizmo", true)]
         private static bool ToggleValidate()
         {
             Menu.SetChecked("Hecton/Physics/Toggle Ocean AUP Sampling Gizmo", _enabled);

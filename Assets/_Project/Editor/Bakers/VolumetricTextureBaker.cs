@@ -21,7 +21,7 @@ namespace Hecton8.Editor.Bakers
     {
         public const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Volumes";
 
-        private const string MenuRoot = "HECTON-8/Bakers/1720/";
+        private const string MenuRoot = "Hecton8/Bakers/1720/";
         private const int MinimumResolution = 32;
         private const int MaximumResolution = 128;
         private const int ResolutionStep = 16;

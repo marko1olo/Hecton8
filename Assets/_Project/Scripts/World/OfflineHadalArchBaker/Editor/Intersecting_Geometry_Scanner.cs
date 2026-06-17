@@ -11,13 +11,13 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
         private const string RenderingReportPath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const string RuntimeCsgReportPath = "Docs/Reports/HADAL_RUNTIME_CSG_INQUISITION.json";
 
-        [MenuItem("HECTON-8/Hadal Structure Forge/Scan Intersecting Geometry")]
+        [MenuItem("Hecton8/Hadal Structure Forge/Scan Intersecting Geometry")]
         public static void ScanIntersectingGeometryMenu()
         {
             ScanIntersectingGeometry();
         }
 
-        [MenuItem("HECTON-8/Hadal Structure Forge/Runtime CSG Inquisition")]
+        [MenuItem("Hecton8/Hadal Structure Forge/Runtime CSG Inquisition")]
         public static void RuntimeCsgInquisitionMenu()
         {
             RuntimeCsgInquisition();

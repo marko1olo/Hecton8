@@ -15,15 +15,15 @@ namespace Hecton8.Editor.Structures
         private const string ProceduralLayoutMenuPath = "HECTON-8/Procedural Wreckage/Validate Layouts";
         private const string MockBenchmarkMenuPath = "HECTON-8/Wreckage Forge/Run Mock Benchmark";
 
-        [MenuItem("Hecton/Structures/Wreckage Fracture Engine 1717")]
-        [MenuItem("HECTON-8/Wreckage Forge/Open Fracture Engine 1717")]
+        [MenuItem("Hecton8/Structures/Wreckage Fracture Engine 1717")]
+        [MenuItem("Hecton8/Wreckage Forge/Open Fracture Engine 1717")]
         public static void Open()
         {
             if (!EditorApplication.ExecuteMenuItem(ForgeMenuPath))
                 GetWindow<WreckageFractureEngine1717>("Wreckage 1717");
         }
 
-        [MenuItem("HECTON-8/Wreckage Forge/Validate Fracture Engine 1717")]
+        [MenuItem("Hecton8/Wreckage Forge/Validate Fracture Engine 1717")]
         public static void ValidateAllColdGates()
         {
             ExecuteColdGate(OfflineLayoutMenuPath);

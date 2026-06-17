@@ -23,7 +23,7 @@ namespace Hecton8.Editor.Build
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/Platform/Validate Case-Sensitive Asset Paths")]
+        [MenuItem("Hecton8/Platform/Validate Case-Sensitive Asset Paths")]
         private static void ValidateFromMenu()
         {
             ValidateOrThrow();

@@ -20,7 +20,7 @@ namespace Hecton8.Cartography.Editor
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/PDA/Run Cartography Memory Sovereignty Validator 1321")]
+        [MenuItem("Hecton8/PDA/Run Cartography Memory Sovereignty Validator 1321")]
         private static void ValidateFromMenu()
         {
             ValidateOrThrow();

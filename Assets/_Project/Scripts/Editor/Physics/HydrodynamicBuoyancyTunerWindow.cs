@@ -28,7 +28,7 @@ namespace Hecton8.Editor.Physics
         private int _lastDepthCentis = int.MinValue;
         private int _lastQualityCentis = int.MinValue;
 
-        [MenuItem("HECTON-8/Physics/Hydrodynamic Buoyancy Tuner")]
+        [MenuItem("Hecton8/Physics/Hydrodynamic Buoyancy Tuner")]
         public static void Open()
         {
             GetWindow<HydrodynamicBuoyancyTunerWindow>("Hydrodynamic Buoyancy");

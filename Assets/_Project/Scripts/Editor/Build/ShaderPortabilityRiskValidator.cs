@@ -32,13 +32,13 @@ namespace Hecton8.Editor.Build
             Scan(strict, throwOnStrict: strict);
         }
 
-        [MenuItem("HECTON-8/Platform/Scan Shader Portability Risks")]
+        [MenuItem("Hecton8/Platform/Scan Shader Portability Risks")]
         private static void ScanFromMenu()
         {
             Scan(strict: false, throwOnStrict: false);
         }
 
-        [MenuItem("HECTON-8/Platform/Scan Shader Portability Risks Strict")]
+        [MenuItem("Hecton8/Platform/Scan Shader Portability Risks Strict")]
         private static void ScanStrictFromMenu()
         {
             Scan(strict: true, throwOnStrict: true);

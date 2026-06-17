@@ -4,14 +4,14 @@ using Hecton8.Building;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class AbandonedHabitatModuleAuthoring
     {
         private const string TemplateFolder = "Assets/_Project/Data/Construction/AbandonedModuleTemplates";
         private const string LedgerPath = "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/PROJECT_CONTENT_LEDGER.md";
 
-        [MenuItem("Hecton/Authoring/Rebuild Abandoned Habitat Module Templates", priority = 217)]
+        [MenuItem("Hecton8/Authoring/Rebuild Abandoned Habitat Module Templates", priority = 217)]
         public static void RebuildAbandonedHabitatModuleTemplates()
         {
             EnsureFolder("Assets/_Project/Data");

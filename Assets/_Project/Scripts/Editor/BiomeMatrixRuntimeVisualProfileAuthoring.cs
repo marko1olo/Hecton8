@@ -28,7 +28,7 @@ namespace Hecton8.Environment.Editor
             }
         }
 
-        [MenuItem("HECTON/Environment/Rebuild Matrix Runtime Visual Profiles")]
+        [MenuItem("Hecton8/Environment/Rebuild Matrix Runtime Visual Profiles")]
         private static void RebuildMatrixRuntimeVisualProfiles()
         {
             HectonBiomeMatrixCatalog catalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(CatalogPath);

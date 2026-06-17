@@ -33,7 +33,7 @@ namespace Hecton8.Editor
         private Label _jobHeaderLabel;
         private double _nextRefreshTime;
 
-        [MenuItem("Hecton/Diagnostics/Execution Pipeline X-Ray")]
+        [MenuItem("Hecton8/Diagnostics/Execution Pipeline X-Ray")]
         public static void Open()
         {
             ExecutionPipelineXRayWindow window = GetWindow<ExecutionPipelineXRayWindow>();

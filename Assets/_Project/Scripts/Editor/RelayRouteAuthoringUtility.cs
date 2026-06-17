@@ -38,19 +38,19 @@ namespace Hecton8.Editor
             return VerifyRelayHudRouteInternal();
         }
 
-        [MenuItem("HECTON8/Onboarding/Create Test Relay Route")]
+        [MenuItem("Hecton8/Onboarding/Create Test Relay Route")]
         private static void CreateTestRelayRoute()
         {
             CreateTestRelayRouteInternal();
         }
 
-        [MenuItem("HECTON8/Onboarding/Verify Relay HUD Route")]
+        [MenuItem("Hecton8/Onboarding/Verify Relay HUD Route")]
         private static void VerifyRelayHudRoute()
         {
             VerifyRelayHudRouteInternal();
         }
 
-        [MenuItem("HECTON8/Onboarding/Author Relay Runtime Owners")]
+        [MenuItem("Hecton8/Onboarding/Author Relay Runtime Owners")]
         private static void AuthorRelayRuntimeOwners()
         {
             AuthorRelayRuntimeOwnersInternal();

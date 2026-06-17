@@ -34,7 +34,7 @@ namespace Hecton8.Editor.Generators.Graphics
         private const int ReservedConflictStart = 71670;
         private const int ReservedConflictEnd = 71675;
 
-        [MenuItem("HECTON-8/Graphics/1628 Run Biome Transition Polish")]
+        [MenuItem("Hecton8/Graphics/1628 Run Biome Transition Polish")]
         public static void RunBiomeTransitionPolishMenu()
         {
             if (!RunOfflinePolish(out BiomeTransitionPolishReport report))
@@ -46,7 +46,7 @@ namespace Hecton8.Editor.Generators.Graphics
             Debug.Log("1628 biome transition polish report: " + ReportPath);
         }
 
-        [MenuItem("HECTON-8/Graphics/1628 Validate Atmospheric Cleanliness")]
+        [MenuItem("Hecton8/Graphics/1628 Validate Atmospheric Cleanliness")]
         public static void ValidateAtmosphericCleanlinessMenu()
         {
             if (!ValidateAtmosphericCleanliness(out string reason))

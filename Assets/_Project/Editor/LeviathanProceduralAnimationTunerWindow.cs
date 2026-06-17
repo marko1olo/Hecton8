@@ -26,7 +26,7 @@ namespace Hecton8.EditorTools
         private Label _runtimeLabel;
         private static readonly List<MonoBehaviour> s_BehaviourScratch = new List<MonoBehaviour>(16);
 
-        [MenuItem("HECTON-8/Animation/Leviathan Procedural Animation Tuner")]
+        [MenuItem("Hecton8/Animation/Leviathan Procedural Animation Tuner")]
         public static void Open()
         {
             GetWindow<LeviathanProceduralAnimationTunerWindow>("Leviathan IK");

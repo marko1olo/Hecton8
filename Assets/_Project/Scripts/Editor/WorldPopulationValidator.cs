@@ -7,7 +7,7 @@ namespace Hecton8.Editor.Validation
 {
     public static class WorldPopulationValidator
     {
-        [MenuItem("Hecton/Validation/Validate World Population", priority = 242)]
+        [MenuItem("Hecton8/Validation/Validate World Population", priority = 242)]
         public static void Validate()
         {
             List<string> issues = new List<string>(128);

@@ -2498,7 +2498,7 @@ namespace Hecton8.Editor.Interiors
         private Label _metricsLabel;
         private InteriorFinisherResult1608 _lastResult;
 
-        [MenuItem("Hecton/Interiors/Interior Finisher Studio")]
+        [MenuItem("Hecton8/Interiors/Interior Finisher Studio")]
         public static void Open()
         {
             GetWindow<InteriorFinisherStudio1608>("Interior Finisher Studio");

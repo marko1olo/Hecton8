@@ -3,11 +3,11 @@ using Hecton8.Gameplay;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class FieldOperationsValidator
     {
-        [MenuItem("Hecton/Validation/Validate Field Operations Stack")]
+        [MenuItem("Hecton8/Validation/Validate Field Operations Stack")]
         private static void Validate()
         {
             List<string> issues = new List<string>(16);

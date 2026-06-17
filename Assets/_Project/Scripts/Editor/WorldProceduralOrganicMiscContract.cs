@@ -2,7 +2,7 @@ using System.Globalization;
 using Hecton8.World;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Shared validation contract for organic misc families outside the main kelp/coral baked pipeline.

@@ -27,7 +27,7 @@ namespace Hecton8.Editor
             new CanonicalTerrainLayerSpec("L_B34_3409_LimestoneCaveCeilingMineralDrip.terrainlayer", false),
         };
 
-        [MenuItem("HECTON-8/World/MapMagic/Apply Clean Terrain Material Route")]
+        [MenuItem("Hecton8/World/MapMagic/Apply Clean Terrain Material Route")]
         public static void ApplyActiveSandboxGraphMenu()
         {
             IntegrationResult result = ApplyMaterialRoute(ActiveSandboxGraphPath);
@@ -42,7 +42,7 @@ namespace Hecton8.Editor
                 $"unmatchedLayers={result.UnmatchedTextureLayers}, staleTextureLinksRemoved={result.StaleTextureLinksRemoved}");
         }
 
-        [MenuItem("HECTON-8/World/MapMagic/Validate Clean Terrain Material Route")]
+        [MenuItem("Hecton8/World/MapMagic/Validate Clean Terrain Material Route")]
         public static void ValidateActiveSandboxGraphMenu()
         {
             ValidationResult result = ValidateActiveSandboxGraph();
@@ -352,14 +352,14 @@ namespace Hecton8.Editor
                 return nameof(materialNode.reefRubbleOut);
             if (ReferenceEquals(outlet, materialNode.seepCrustOut))
                 return nameof(materialNode.seepCrustOut);
-            if (ReferenceEquals(outlet, materialNode.packedRockOut))
-                return nameof(materialNode.packedRockOut);
-            if (ReferenceEquals(outlet, materialNode.packedSandOut))
-                return nameof(materialNode.packedSandOut);
-            if (ReferenceEquals(outlet, materialNode.packedSiltOut))
-                return nameof(materialNode.packedSiltOut);
-            if (ReferenceEquals(outlet, materialNode.packedDepositionOut))
-                return nameof(materialNode.packedDepositionOut);
+            if (ReferenceEquals(outlet, materialNode.control1XOut))
+                return nameof(materialNode.control1XOut);
+            if (ReferenceEquals(outlet, materialNode.control1YOut))
+                return nameof(materialNode.control1YOut);
+            if (ReferenceEquals(outlet, materialNode.control1ZOut))
+                return nameof(materialNode.control1ZOut);
+            if (ReferenceEquals(outlet, materialNode.control1WOut))
+                return nameof(materialNode.control1WOut);
 
             return "unknownMaterialOutlet";
         }
@@ -369,16 +369,16 @@ namespace Hecton8.Editor
             TexturesOutput200.TextureLayer layer)
         {
             if (HasAnyToken(layer, "rock", "cliff", "brittle", "hard"))
-                return materialNode.packedRockOut;
+                return materialNode.control1XOut;
 
             if (HasAnyToken(layer, "sand", "gravel", "shell"))
-                return materialNode.packedSandOut;
+                return materialNode.control1YOut;
 
             if (HasAnyToken(layer, "silt", "mud", "sediment"))
-                return materialNode.packedSiltOut;
+                return materialNode.control1ZOut;
 
             if (HasAnyToken(layer, "deposition", "cavity", "brine", "salt"))
-                return materialNode.packedDepositionOut;
+                return materialNode.control1WOut;
 
             return null;
         }

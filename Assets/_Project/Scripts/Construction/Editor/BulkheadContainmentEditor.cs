@@ -34,7 +34,7 @@ namespace Hecton8.Construction.Editor
         private uint _lastIntentOverflowDroppedTotal = uint.MaxValue;
         private int _lastShaderUploadCount = int.MinValue;
 
-        [MenuItem("HECTON-8/Construction/SHINOBU 220 Bulkhead Tuner")]
+        [MenuItem("Hecton8/Construction/SHINOBU 220 Bulkhead Tuner")]
         public static void Open()
         {
             GetWindow<BulkheadContainmentTunerWindow>("SHINOBU 220 Bulkheads");
@@ -184,7 +184,7 @@ namespace Hecton8.Construction.Editor
         private const string MarkdownReportPath = "Docs/Reports/Door_Physics_Inquisition_SHINOBU_220.md";
         private const string AggregateKey = "shinobu_220_bulkhead_dod";
 
-        [MenuItem("HECTON-8/Construction/Door Physics Inquisition")]
+        [MenuItem("Hecton8/Construction/Door Physics Inquisition")]
         public static void Run()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, "_Project/Scripts"));

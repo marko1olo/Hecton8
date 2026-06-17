@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class OOP_Sun_Scanner
     {
@@ -22,7 +22,7 @@ namespace Hecton8.EditorTools
             "Assets/_Project/Scripts/Lighting"
         };
 
-        [MenuItem("Hecton/Environment/OOP Sun Scanner")]
+        [MenuItem("Hecton8/Environment/OOP Sun Scanner")]
         public static void RunFromMenu()
         {
             SunScanReport report = RunAndWriteReport();

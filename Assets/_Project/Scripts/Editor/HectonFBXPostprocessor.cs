@@ -1,7 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
-using Hecton8.EditorTools;
+using Hecton8.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -38,28 +38,28 @@ namespace Hecton8.Editor
         private static readonly List<Vector3> EmptyVertices = new List<Vector3>(0);
         private static readonly List<Vector4> EmptyTangents = new List<Vector4>(0);
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Reimport FBX - Assets Project Art", priority = 180)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Reimport FBX - Assets Project Art", priority = 180)]
         private static void ReimportProjectArtFbx()
         {
             List<string> reimportedPaths = ReimportFbxAssets(new[] { ProjectArtRoot });
             Debug.Log($"[HectonFBXPostprocessor] Reimported {reimportedPaths.Count} FBX assets under '{ProjectArtRoot}'.");
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Reimport FBX - ScifiFacility", priority = 181)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Reimport FBX - ScifiFacility", priority = 181)]
         private static void ReimportScifiFacilityFbx()
         {
             List<string> reimportedPaths = ReimportFbxAssets(new[] { ScifiFacilityRoot });
             Debug.Log($"[HectonFBXPostprocessor] Reimported {reimportedPaths.Count} FBX assets under '{ScifiFacilityRoot}'.");
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Reimport FBX - Managed Roots", priority = 182)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Reimport FBX - Managed Roots", priority = 182)]
         private static void ReimportManagedRootsFbx()
         {
             List<string> reimportedPaths = ReimportFbxAssets(ManagedFbxRoots);
             Debug.Log($"[HectonFBXPostprocessor] Reimported {reimportedPaths.Count} FBX assets under the managed roots.");
         }
 
-        [MenuItem("Hecton/Validation/Asset Pipeline/Validate FBX - ScifiFacility", priority = 183)]
+        [MenuItem("Hecton8/Validation/Asset Pipeline/Validate FBX - ScifiFacility", priority = 183)]
         private static void ValidateScifiFacilityFbxPolicy()
         {
             List<string> fbxPaths = CollectFbxPaths(new[] { ScifiFacilityRoot });

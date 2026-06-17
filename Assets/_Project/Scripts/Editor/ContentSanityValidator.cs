@@ -9,7 +9,7 @@ using Hecton8.Building;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Dev;
-using Hecton8.EditorTools;
+using Hecton8.Editor;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Inventory;

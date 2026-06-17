@@ -24,7 +24,7 @@ namespace Hecton8.Editor.OfflineGeometry
         private IntegerField _hullLimit;
         private ProgressBar _progress;
 
-        [MenuItem("HECTON-8/LOD Collider Forge/LOD & Collider Forge", false, 249)]
+        [MenuItem("Hecton8/LOD Collider Forge/LOD & Collider Forge", false, 249)]
         public static void Open()
         {
             OfflineGeometryForgeWindow window = GetWindow<OfflineGeometryForgeWindow>("LOD & Collider Forge");

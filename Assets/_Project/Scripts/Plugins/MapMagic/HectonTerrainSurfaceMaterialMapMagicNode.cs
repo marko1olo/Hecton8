@@ -21,7 +21,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string NativeMemoryOwner = nameof(HectonTerrainSurfaceMaterialMapMagicNode);
         private const string PrimaryLabel = "primaryMaterials";
         private const string SecondaryLabel = "secondaryMaterials";
-        private const string PackedLabel = "packedControls";
+        private const string Control1Label = "control1";
+        private const string Control2Label = "control2";
 
         [Den.Tools.GUI.ValAttribute("Shell Sand", "Outlet")]
         public readonly Outlet<MatrixWorld> shellSandOut = new Outlet<MatrixWorld>();
@@ -47,17 +48,29 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Seep Crust", "Outlet")]
         public readonly Outlet<MatrixWorld> seepCrustOut = new Outlet<MatrixWorld>();
 
-        [Den.Tools.GUI.ValAttribute("Packed Rock", "Outlet")]
-        public readonly Outlet<MatrixWorld> packedRockOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Control 1 X", "Outlet")]
+        public readonly Outlet<MatrixWorld> control1XOut = new Outlet<MatrixWorld>();
 
-        [Den.Tools.GUI.ValAttribute("Packed Sand", "Outlet")]
-        public readonly Outlet<MatrixWorld> packedSandOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Control 1 Y", "Outlet")]
+        public readonly Outlet<MatrixWorld> control1YOut = new Outlet<MatrixWorld>();
 
-        [Den.Tools.GUI.ValAttribute("Packed Silt", "Outlet")]
-        public readonly Outlet<MatrixWorld> packedSiltOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Control 1 Z", "Outlet")]
+        public readonly Outlet<MatrixWorld> control1ZOut = new Outlet<MatrixWorld>();
 
-        [Den.Tools.GUI.ValAttribute("Packed Deposition", "Outlet")]
-        public readonly Outlet<MatrixWorld> packedDepositionOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Control 1 W", "Outlet")]
+        public readonly Outlet<MatrixWorld> control1WOut = new Outlet<MatrixWorld>();
+
+        [Den.Tools.GUI.ValAttribute("Control 2 X", "Outlet")]
+        public readonly Outlet<MatrixWorld> control2XOut = new Outlet<MatrixWorld>();
+
+        [Den.Tools.GUI.ValAttribute("Control 2 Y", "Outlet")]
+        public readonly Outlet<MatrixWorld> control2YOut = new Outlet<MatrixWorld>();
+
+        [Den.Tools.GUI.ValAttribute("Control 2 Z", "Outlet")]
+        public readonly Outlet<MatrixWorld> control2ZOut = new Outlet<MatrixWorld>();
+
+        [Den.Tools.GUI.ValAttribute("Control 2 W", "Outlet")]
+        public readonly Outlet<MatrixWorld> control2WOut = new Outlet<MatrixWorld>();
 
         [System.NonSerialized] private IOutlet<object>[] _outletCache;
 
@@ -78,8 +91,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         {
             if (_outletCache == null)
             {
-                // COLD ALLOC: IOutlet<object>[12] - MapMagic surface material port enumeration cache - owner: HectonTerrainSurfaceMaterialMapMagicNode
-                _outletCache = new IOutlet<object>[12];
+                // COLD ALLOC: IOutlet<object>[16] - MapMagic surface material port enumeration cache - owner: HectonTerrainSurfaceMaterialMapMagicNode
+                _outletCache = new IOutlet<object>[16];
                 _outletCache[0] = shellSandOut;
                 _outletCache[1] = limestoneShelfOut;
                 _outletCache[2] = claySiltOut;
@@ -88,10 +101,14 @@ namespace MapMagic.Nodes.MatrixGenerators
                 _outletCache[5] = manganeseNodulePlainOut;
                 _outletCache[6] = reefRubbleOut;
                 _outletCache[7] = seepCrustOut;
-                _outletCache[8] = packedRockOut;
-                _outletCache[9] = packedSandOut;
-                _outletCache[10] = packedSiltOut;
-                _outletCache[11] = packedDepositionOut;
+                _outletCache[8] = control1XOut;
+                _outletCache[9] = control1YOut;
+                _outletCache[10] = control1ZOut;
+                _outletCache[11] = control1WOut;
+                _outletCache[12] = control2XOut;
+                _outletCache[13] = control2YOut;
+                _outletCache[14] = control2ZOut;
+                _outletCache[15] = control2WOut;
             }
 
             return _outletCache;
@@ -112,25 +129,31 @@ namespace MapMagic.Nodes.MatrixGenerators
             MatrixWorld nodulePlain = CreateMatrix(data);
             MatrixWorld reefRubble = CreateMatrix(data);
             MatrixWorld seepCrust = CreateMatrix(data);
-            MatrixWorld packedRock = CreateMatrix(data);
-            MatrixWorld packedSand = CreateMatrix(data);
-            MatrixWorld packedSilt = CreateMatrix(data);
-            MatrixWorld packedDeposition = CreateMatrix(data);
+            MatrixWorld control1X = CreateMatrix(data);
+            MatrixWorld control1Y = CreateMatrix(data);
+            MatrixWorld control1Z = CreateMatrix(data);
+            MatrixWorld control1W = CreateMatrix(data);
+            MatrixWorld control2X = CreateMatrix(data);
+            MatrixWorld control2Y = CreateMatrix(data);
+            MatrixWorld control2Z = CreateMatrix(data);
+            MatrixWorld control2W = CreateMatrix(data);
 
             int cellCount = ResolveCellCount(shellSand, out int width, out int height);
             if (!enabled || cellCount <= 0)
             {
-                FillFallback(shellSand.arr, packedSand.arr);
-                StoreOutputs(data, shellSand, limestoneShelf, claySilt, hardRock, brineSalt, nodulePlain, reefRubble, seepCrust, packedRock, packedSand, packedSilt, packedDeposition);
+                FillFallback(shellSand.arr, control1X.arr);
+                StoreOutputs(data, shellSand, limestoneShelf, claySilt, hardRock, brineSalt, nodulePlain, reefRubble, seepCrust, control1X, control1Y, control1Z, control1W, control2X, control2Y, control2Z, control2W);
                 return;
             }
 
             NativeArray<float4> primary = default;
             NativeArray<float4> secondary = default;
-            NativeArray<float4> packed = default;
+            NativeArray<float4> control1 = default;
+            NativeArray<float4> control2 = default;
             int primaryRegistrationId = 0;
             int secondaryRegistrationId = 0;
-            int packedRegistrationId = 0;
+            int control1RegistrationId = 0;
+            int control2RegistrationId = 0;
             JobHandle handle = default;
             bool scheduled = false;
 
@@ -138,16 +161,19 @@ namespace MapMagic.Nodes.MatrixGenerators
             {
                 primary = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 secondary = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                packed = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                control1 = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                control2 = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 primaryRegistrationId = RegisterPersistentArray(primary, PrimaryLabel);
                 secondaryRegistrationId = RegisterPersistentArray(secondary, SecondaryLabel);
-                packedRegistrationId = RegisterPersistentArray(packed, PackedLabel);
+                control1RegistrationId = RegisterPersistentArray(control1, Control1Label);
+                control2RegistrationId = RegisterPersistentArray(control2, Control2Label);
 
                 var job = new WorldTerrainSurfaceMaterialMaskJob
                 {
                     Primary = primary,
                     Secondary = secondary,
-                    PackedControl = packed,
+                    Control1 = control1,
+                    Control2 = control2,
                     Width = width,
                     Height = height,
                     CellSizeMeters = ResolveCellSizeMeters(shellSand),
@@ -169,7 +195,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 CopyMaterialMasksToMatrices(
                     primary,
                     secondary,
-                    packed,
+                    control1,
+                    control2,
                     shellSand.arr,
                     limestoneShelf.arr,
                     claySilt.arr,
@@ -178,13 +205,17 @@ namespace MapMagic.Nodes.MatrixGenerators
                     nodulePlain.arr,
                     reefRubble.arr,
                     seepCrust.arr,
-                    packedRock.arr,
-                    packedSand.arr,
-                    packedSilt.arr,
-                    packedDeposition.arr);
+                    control1X.arr,
+                    control1Y.arr,
+                    control1Z.arr,
+                    control1W.arr,
+                    control2X.arr,
+                    control2Y.arr,
+                    control2Z.arr,
+                    control2W.arr);
 
                 data.SetProgress(this, Complexity);
-                StoreOutputs(data, shellSand, limestoneShelf, claySilt, hardRock, brineSalt, nodulePlain, reefRubble, seepCrust, packedRock, packedSand, packedSilt, packedDeposition);
+                StoreOutputs(data, shellSand, limestoneShelf, claySilt, hardRock, brineSalt, nodulePlain, reefRubble, seepCrust, control1X, control1Y, control1Z, control1W, control2X, control2Y, control2Z, control2W);
             }
             finally
             {
@@ -193,7 +224,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 DisposeTracked(ref primary, ref primaryRegistrationId);
                 DisposeTracked(ref secondary, ref secondaryRegistrationId);
-                DisposeTracked(ref packed, ref packedRegistrationId);
+                DisposeTracked(ref control1, ref control1RegistrationId);
+                DisposeTracked(ref control2, ref control2RegistrationId);
             }
         }
 
@@ -308,7 +340,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static void CopyMaterialMasksToMatrices(
             NativeArray<float4> primary,
             NativeArray<float4> secondary,
-            NativeArray<float4> packed,
+            NativeArray<float4> control1,
+            NativeArray<float4> control2,
             float[] shellSand,
             float[] limestoneShelf,
             float[] claySilt,
@@ -317,44 +350,43 @@ namespace MapMagic.Nodes.MatrixGenerators
             float[] nodulePlain,
             float[] reefRubble,
             float[] seepCrust,
-            float[] packedRock,
-            float[] packedSand,
-            float[] packedSilt,
-            float[] packedDeposition)
+            float[] c1x,
+            float[] c1y,
+            float[] c1z,
+            float[] c1w,
+            float[] c2x,
+            float[] c2y,
+            float[] c2z,
+            float[] c2w)
         {
             int count = primary.Length;
             count = math.min(count, secondary.Length);
-            count = math.min(count, packed.Length);
+            count = math.min(count, control1.Length);
+            count = math.min(count, control2.Length);
             count = math.min(count, shellSand != null ? shellSand.Length : 0);
-            count = math.min(count, limestoneShelf != null ? limestoneShelf.Length : 0);
-            count = math.min(count, claySilt != null ? claySilt.Length : 0);
-            count = math.min(count, hardRock != null ? hardRock.Length : 0);
-            count = math.min(count, brineSalt != null ? brineSalt.Length : 0);
-            count = math.min(count, nodulePlain != null ? nodulePlain.Length : 0);
-            count = math.min(count, reefRubble != null ? reefRubble.Length : 0);
-            count = math.min(count, seepCrust != null ? seepCrust.Length : 0);
-            count = math.min(count, packedRock != null ? packedRock.Length : 0);
-            count = math.min(count, packedSand != null ? packedSand.Length : 0);
-            count = math.min(count, packedSilt != null ? packedSilt.Length : 0);
-            count = math.min(count, packedDeposition != null ? packedDeposition.Length : 0);
-
+            
             for (int i = 0; i < count; i++)
             {
                 float4 primaryValue = math.saturate(primary[i]);
                 float4 secondaryValue = math.saturate(secondary[i]);
-                float4 packedValue = math.saturate(packed[i]);
-                shellSand[i] = primaryValue.x;
-                limestoneShelf[i] = primaryValue.y;
-                claySilt[i] = primaryValue.z;
-                hardRock[i] = primaryValue.w;
-                brineSalt[i] = secondaryValue.x;
-                nodulePlain[i] = secondaryValue.y;
-                reefRubble[i] = secondaryValue.z;
-                seepCrust[i] = secondaryValue.w;
-                packedRock[i] = packedValue.x;
-                packedSand[i] = packedValue.y;
-                packedSilt[i] = packedValue.z;
-                packedDeposition[i] = packedValue.w;
+                float4 c1Value = math.saturate(control1[i]);
+                float4 c2Value = math.saturate(control2[i]);
+                if (shellSand != null) shellSand[i] = primaryValue.x;
+                if (limestoneShelf != null) limestoneShelf[i] = primaryValue.y;
+                if (claySilt != null) claySilt[i] = primaryValue.z;
+                if (hardRock != null) hardRock[i] = primaryValue.w;
+                if (brineSalt != null) brineSalt[i] = secondaryValue.x;
+                if (nodulePlain != null) nodulePlain[i] = secondaryValue.y;
+                if (reefRubble != null) reefRubble[i] = secondaryValue.z;
+                if (seepCrust != null) seepCrust[i] = secondaryValue.w;
+                if (c1x != null) c1x[i] = c1Value.x;
+                if (c1y != null) c1y[i] = c1Value.y;
+                if (c1z != null) c1z[i] = c1Value.z;
+                if (c1w != null) c1w[i] = c1Value.w;
+                if (c2x != null) c2x[i] = c2Value.x;
+                if (c2y != null) c2y[i] = c2Value.y;
+                if (c2z != null) c2z[i] = c2Value.z;
+                if (c2w != null) c2w[i] = c2Value.w;
             }
         }
 
@@ -378,10 +410,14 @@ namespace MapMagic.Nodes.MatrixGenerators
             MatrixWorld nodulePlain,
             MatrixWorld reefRubble,
             MatrixWorld seepCrust,
-            MatrixWorld packedRock,
-            MatrixWorld packedSand,
-            MatrixWorld packedSilt,
-            MatrixWorld packedDeposition)
+            MatrixWorld c1x,
+            MatrixWorld c1y,
+            MatrixWorld c1z,
+            MatrixWorld c1w,
+            MatrixWorld c2x,
+            MatrixWorld c2y,
+            MatrixWorld c2z,
+            MatrixWorld c2w)
         {
             data.StoreProduct(shellSandOut, shellSand);
             data.StoreProduct(limestoneShelfOut, limestoneShelf);
@@ -391,10 +427,14 @@ namespace MapMagic.Nodes.MatrixGenerators
             data.StoreProduct(manganeseNodulePlainOut, nodulePlain);
             data.StoreProduct(reefRubbleOut, reefRubble);
             data.StoreProduct(seepCrustOut, seepCrust);
-            data.StoreProduct(packedRockOut, packedRock);
-            data.StoreProduct(packedSandOut, packedSand);
-            data.StoreProduct(packedSiltOut, packedSilt);
-            data.StoreProduct(packedDepositionOut, packedDeposition);
+            data.StoreProduct(control1XOut, c1x);
+            data.StoreProduct(control1YOut, c1y);
+            data.StoreProduct(control1ZOut, c1z);
+            data.StoreProduct(control1WOut, c1w);
+            data.StoreProduct(control2XOut, c2x);
+            data.StoreProduct(control2YOut, c2y);
+            data.StoreProduct(control2ZOut, c2z);
+            data.StoreProduct(control2WOut, c2w);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
             "HydraulicErosionJob"
         };
 
-        [MenuItem("HECTON-8/Hydraulic Erosion Forge/Scan Runtime Erosion", false, 191)]
+        [MenuItem("Hecton8/Hydraulic Erosion Forge/Scan Runtime Erosion", false, 191)]
         public static void ScanMenu()
         {
             ScanAndWriteReport(out int hitCount);

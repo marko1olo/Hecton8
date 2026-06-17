@@ -55,7 +55,7 @@ namespace Hecton8.Editor.Assembly
         private Vector2 scroll;
         private FactoryReport lastReport;
 
-        [MenuItem("HECTON-8/Assembly/Flora Prefab Factory 1732")]
+        [MenuItem("Hecton8/Assembly/Flora Prefab Factory 1732")]
         public static void OpenWindow()
         {
             FloraPrefabFactory window = GetWindow<FloraPrefabFactory>("Flora Factory 1732");
@@ -63,7 +63,7 @@ namespace Hecton8.Editor.Assembly
             window.Show();
         }
 
-        [MenuItem("HECTON-8/Assembly/Dry Run Flora Prefab Factory 1732")]
+        [MenuItem("Hecton8/Assembly/Dry Run Flora Prefab Factory 1732")]
         public static void RunDefaultDryRun()
         {
             FactorySettings settings = FactorySettings.Default;
@@ -71,7 +71,7 @@ namespace Hecton8.Editor.Assembly
             Run(settings);
         }
 
-        [MenuItem("HECTON-8/Assembly/Run Flora Prefab Factory 1732")]
+        [MenuItem("Hecton8/Assembly/Run Flora Prefab Factory 1732")]
         public static void RunDefault()
         {
             FactorySettings settings = FactorySettings.Default;

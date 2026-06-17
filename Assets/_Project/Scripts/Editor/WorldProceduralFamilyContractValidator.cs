@@ -6,7 +6,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates shared procedural family contracts across flora, geology, structure, and future verticals.
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Validates all procedural family profiles under the managed family root.
         /// </summary>
-        [MenuItem("Hecton/Validation/Validate Procedural Family Contracts", priority = 243)]
+        [MenuItem("Hecton8/Validation/Validate Procedural Family Contracts", priority = 243)]
         public static void ValidateContracts()
         {
             List<FamilyRecord> records = LoadFamilyRecords();
@@ -60,7 +60,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Generates a shared family readiness report for all procedural verticals.
         /// </summary>
-        [MenuItem("Hecton/Validation/Generate Procedural World Family Status Report", priority = 244)]
+        [MenuItem("Hecton8/Validation/Generate Procedural World Family Status Report", priority = 244)]
         public static void GenerateStatusReport()
         {
             List<FamilyRecord> records = LoadFamilyRecords();

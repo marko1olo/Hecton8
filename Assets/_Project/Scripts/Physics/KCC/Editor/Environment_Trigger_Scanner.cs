@@ -24,7 +24,7 @@ namespace Hecton8.Physics.KCC.Editor
             "Vector3.down"
         };
 
-        [MenuItem("HECTON-8/Kinematics/Scan Environment Physics Debt")]
+        [MenuItem("Hecton8/Kinematics/Scan Environment Physics Debt")]
         public static void Scan()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

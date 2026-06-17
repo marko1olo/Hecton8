@@ -35,7 +35,7 @@ namespace Hecton8.Construction.Editor
         private uint _lastFlags = uint.MaxValue;
         private uint _lastHash = uint.MaxValue;
 
-        [MenuItem("HECTON-8/Construction/Base Grounding Tuner")]
+        [MenuItem("Hecton8/Construction/Base Grounding Tuner")]
         public static void Open()
         {
             GetWindow<BaseGroundingTunerWindow>("Base Grounding");
@@ -169,7 +169,7 @@ namespace Hecton8.Construction.Editor
 
     public static class FoundationPylonLayoutValidator
     {
-        [MenuItem("HECTON-8/Construction/Validate Foundation Pylon Layout")]
+        [MenuItem("Hecton8/Construction/Validate Foundation Pylon Layout")]
         public static void Run()
         {
             bool pass = FoundationSnappingCalculatorRuntime.ValidateStructLayout() &&
@@ -197,7 +197,7 @@ namespace Hecton8.Construction.Editor
     {
         private const string ReportPath = "Docs/Reports/CONSTRUCTION_OPTIMIZATION_REPORT_SHINOBU_252.json";
 
-        [MenuItem("HECTON-8/Construction/Foundation Physics Inquisition")]
+        [MenuItem("Hecton8/Construction/Foundation Physics Inquisition")]
         public static void Run()
         {
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

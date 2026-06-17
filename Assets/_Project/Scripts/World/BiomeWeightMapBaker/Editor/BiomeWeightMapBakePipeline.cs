@@ -41,7 +41,7 @@ namespace Hecton8.World.BiomeWeightMapBaker.Editor
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_243.bin";
         private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false);
 
-        [MenuItem("HECTON-8/Biome Splatmap Forge/Bake Mock 2048 BC7")]
+        [MenuItem("Hecton8/Biome Splatmap Forge/Bake Mock 2048 BC7")]
         public static void BakeDefaultMockSectorMenu()
         {
             BiomeSplatmapBakeConfigDTO config = DefaultConfig(BiomeWeightMapBakeConstants.DefaultResolution);

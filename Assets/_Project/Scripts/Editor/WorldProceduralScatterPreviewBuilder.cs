@@ -5,14 +5,14 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralScatterPreviewBuilder
     {
         private static readonly List<GameObject> s_sceneRoots = new List<GameObject>(8);
         private static readonly List<WorldProceduralScatterDirector> s_scatterDirectors = new List<WorldProceduralScatterDirector>(2);
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Scatter Preview", priority = 180)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Scatter Preview", priority = 180)]
         public static void RebuildProceduralScatterPreview()
         {
             Scene activeScene = SceneManager.GetActiveScene();
@@ -34,7 +34,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[WorldProceduralScatterPreviewBuilder] Procedural scatter preview rebuilt.");
         }
 
-        [MenuItem("Hecton/Authoring/Clear Procedural Scatter Preview", priority = 181)]
+        [MenuItem("Hecton8/Authoring/Clear Procedural Scatter Preview", priority = 181)]
         public static void ClearProceduralScatterPreview()
         {
             Scene activeScene = SceneManager.GetActiveScene();

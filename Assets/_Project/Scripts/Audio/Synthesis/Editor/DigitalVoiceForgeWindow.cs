@@ -40,7 +40,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             pcm16
         }
 
-        [MenuItem("HECTON-8/Audio/Digital Voice Forge")]
+        [MenuItem("Hecton8/Audio/Digital Voice Forge")]
         public static void Open()
         {
             DigitalVoiceForgeWindow window = GetWindow<DigitalVoiceForgeWindow>();

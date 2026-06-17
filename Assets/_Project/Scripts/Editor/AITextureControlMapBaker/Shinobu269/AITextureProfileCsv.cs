@@ -462,7 +462,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             return value == ' ' || value == '\t';
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Create Default AI Texture Profile CSV", false, 2693)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Create Default AI Texture Profile CSV", false, 2693)]
         internal static void CreateDefaultCsvFromMenu()
         {
             WriteDefaultCsvIfMissing(true);

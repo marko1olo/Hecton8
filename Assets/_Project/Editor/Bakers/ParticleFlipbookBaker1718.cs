@@ -349,7 +349,7 @@ namespace Hecton8.Editor.Bakers
             }
         }
 
-        [MenuItem("HECTON-8/Bakers/1718/Bake Default Silt And Marine Snow Flipbooks", false, 207)]
+        [MenuItem("Hecton8/Bakers/1718/Bake Default Silt And Marine Snow Flipbooks", false, 207)]
         public static void BakeDefaultSiltAndMarineSnowFlipbooks()
         {
             if (!ValidateUnmanagedLayouts1718(out string layoutFailure))

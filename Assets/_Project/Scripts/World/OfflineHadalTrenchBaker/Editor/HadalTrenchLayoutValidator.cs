@@ -24,7 +24,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Validate DTO Layouts")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Validate DTO Layouts")]
         public static void ValidateMenu()
         {
             Validate(logSuccess: true);

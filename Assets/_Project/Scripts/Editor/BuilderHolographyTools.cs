@@ -12,7 +12,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class BuilderHolographyTunerWindow : EditorWindow
     {
@@ -25,7 +25,7 @@ namespace Hecton8.EditorTools
         private Slider _gridTolerance;
         private Slider _qualityOverride;
 
-        [MenuItem("HECTON-8/Construction/Builder Tool X-Ray")]
+        [MenuItem("Hecton8/Construction/Builder Tool X-Ray")]
         public static void Open()
         {
             BuilderHolographyTunerWindow window = GetWindow<BuilderHolographyTunerWindow>();
@@ -33,7 +33,7 @@ namespace Hecton8.EditorTools
             window.minSize = new Vector2(420f, 300f);
         }
 
-        [MenuItem("HECTON-8/Construction/Builder Holography/Run Static Audit")]
+        [MenuItem("Hecton8/Construction/Builder Holography/Run Static Audit")]
         public static void RunStaticAuditMenu()
         {
             BuilderHolographyStaticAudit.WriteReport();

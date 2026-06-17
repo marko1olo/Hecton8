@@ -13,7 +13,7 @@ namespace Hecton8.Editor
         private static readonly Color LineColor = new Color(1f, 0.1f, 0.05f, 0.95f);
         private static readonly Color HitColor = new Color(0.15f, 0.45f, 1f, 0.9f);
 
-        [MenuItem("Hecton-8/Scanner/Data Mining Tuner")]
+        [MenuItem("Hecton8/Scanner/Data Mining Tuner")]
         public static void Open()
         {
             GetWindow<DataMiningTunerWindow>(WindowTitle);

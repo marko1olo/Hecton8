@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Owns editor-only shader/material assignment for procedural flora starter and baked-final materials.
@@ -36,7 +36,7 @@ namespace Hecton8.EditorTools
         private const string CoralPlateMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_plate.mat";
         private const string CoralBrittleMaterialPath = "Assets/_Project/Art/Materials/WorldProceduralProxy/MAT_family_coral_brittle.mat";
 
-        [MenuItem("Hecton/Authoring/Apply Procedural Flora Materials", priority = 176)]
+        [MenuItem("Hecton8/Authoring/Apply Procedural Flora Materials", priority = 176)]
         public static void Apply()
         {
             Shader kelpShader = ResolvePreferredFloraShader(

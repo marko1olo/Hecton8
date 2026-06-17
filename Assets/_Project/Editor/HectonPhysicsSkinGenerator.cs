@@ -103,7 +103,7 @@ public class HectonPhysicsSkinGenerator : EditorWindow
     // COLD ALLOC: List<Transform>[64] - editor existing physics skin removal scratch - owner: HectonPhysicsSkinGenerator
     private readonly List<Transform> _oldPhysicsSkinChildren = new List<Transform>(64);
 
-    [MenuItem("Hecton/Physics Skin Generator")]
+    [MenuItem("Hecton8/Physics Skin Generator")]
     public static void ShowWindow()
     {
         var w = GetWindow<HectonPhysicsSkinGenerator>("⛏ Physics Skin");

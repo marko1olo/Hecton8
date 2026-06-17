@@ -6,7 +6,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Writes a geology-specific readiness report for rock and landmark families.
@@ -21,7 +21,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Generates a focused geology status report.
         /// </summary>
-        [MenuItem("Hecton/Validation/Generate Procedural Geology Status Report", priority = 246)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Geology Status Report", priority = 246)]
         public static void GenerateReport()
         {
             List<FamilyStatus> statuses = LoadStatuses();

@@ -27,7 +27,7 @@ namespace Hecton8.EditorTools
         private Image _previewImage;
         private TelemetryGraphElement _telemetryGraph;
 
-        [MenuItem("HECTON-8/Rendering/Jacobian Foam Tuner")]
+        [MenuItem("Hecton8/Rendering/Jacobian Foam Tuner")]
         public static void Open()
         {
             GetWindow<JacobianFoamTunerWindow>("Jacobian Foam");

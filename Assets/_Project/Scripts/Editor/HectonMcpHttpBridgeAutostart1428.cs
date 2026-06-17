@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     [InitializeOnLoad]
     internal static class HectonMcpHttpBridgeAutostart1428

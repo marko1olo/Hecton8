@@ -30,7 +30,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
         private Label _readout;
         private AirlockTelemetryLineGraph _graph;
 
-        [MenuItem("HECTON-8/Airlock/Pressurization Cycle Tuner")]
+        [MenuItem("Hecton8/Airlock/Pressurization Cycle Tuner")]
         public static void Open()
         {
             PressurizationCycleTunerWindow window = GetWindow<PressurizationCycleTunerWindow>();
@@ -289,7 +289,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
             SceneView.duringSceneGui += OnSceneGui;
         }
 
-        [MenuItem("HECTON-8/Airlock/Toggle Live Exchange Gizmo")]
+        [MenuItem("Hecton8/Airlock/Toggle Live Exchange Gizmo")]
         public static void Toggle()
         {
             s_enabled = !s_enabled;
@@ -337,7 +337,7 @@ namespace Hecton8.Gameplay.AirlockPressurization.Editor
         private const string ReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
         private const string ReportSectionKey = "\"shinobu338AirlockPressurizationScanner\"";
 
-        [MenuItem("HECTON-8/Airlock/Run OOP Airlock Scanner")]
+        [MenuItem("Hecton8/Airlock/Run OOP Airlock Scanner")]
         public static void RunAndWriteReport()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

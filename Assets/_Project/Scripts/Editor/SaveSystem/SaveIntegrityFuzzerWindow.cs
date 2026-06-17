@@ -15,7 +15,7 @@ namespace Hecton8.SaveSystem.Editor
         private WalFuzzerResultDTO _lastResult;
         private string _failureSectorLabel = "SHINOBU_256 WAL FAIL sector 0x0000000000000000";
 
-        [MenuItem("HECTON-8/Save/Save Integrity Fuzzer")]
+        [MenuItem("Hecton8/Save/Save Integrity Fuzzer")]
         public static void Open()
         {
             GetWindow<SaveIntegrityFuzzerWindow>("Save Integrity Fuzzer");

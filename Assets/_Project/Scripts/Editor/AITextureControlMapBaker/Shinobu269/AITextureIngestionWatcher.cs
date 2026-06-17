@@ -30,7 +30,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             EditorApplication.quitting += Release;
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Start AI Texture Inbox Watcher", false, 2680)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Start AI Texture Inbox Watcher", false, 2680)]
         internal static void StartWatcher()
         {
             StopWatcher();
@@ -46,7 +46,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             EnsureDrainRegistered();
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Stop AI Texture Inbox Watcher", false, 2681)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Stop AI Texture Inbox Watcher", false, 2681)]
         internal static void StopWatcher()
         {
             if (_watcher == null)
@@ -57,7 +57,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             StopInboxWatcherNoThrow(watcher);
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Process AI Texture Inbox Now", false, 2682)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Process AI Texture Inbox Now", false, 2682)]
         internal static void ProcessInboxNow()
         {
             string absoluteInbox = Path.Combine(Directory.GetCurrentDirectory(), AITextureControlMapConstants.InboxFolder.Replace('/', Path.DirectorySeparatorChar));

@@ -112,7 +112,7 @@ namespace Hecton8.Core.Content.Editor
         private const string GeneratedHullName = "COL_ContentProxyHull_1716";
         private const float MinPhysicsProxyAxisMeters = 0.01f;
 
-        [MenuItem("HECTON-8/Content/Bake Selected Physics Proxy")]
+        [MenuItem("Hecton8/Content/Bake Selected Physics Proxy")]
         public static void BakeSelected()
         {
             GameObject[] selection = Selection.gameObjects;

@@ -116,7 +116,7 @@ namespace Hecton8.Editor.ProductFace
                 "ANCHOR_Grip_R,ANCHOR_Muzzle,ANCHOR_ElectrodeTips,ANCHOR_CapacitorLatch,ANCHOR_Pickup,ANCHOR_AUP_LocalOrigin")
         };
 
-        [MenuItem("HECTON-8/Product Face/Author Tool Mesh Sources 1874", false, 1874)]
+        [MenuItem("Hecton8/Product Face/Author Tool Mesh Sources 1874", false, 1874)]
         public static void AuthorAllFromMenu()
         {
             AuthorAll(0.72f);

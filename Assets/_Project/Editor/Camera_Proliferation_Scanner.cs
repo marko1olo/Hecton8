@@ -11,7 +11,7 @@ namespace Hecton8.EditorTools
     {
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Rendering/Run Camera Proliferation Scanner")]
+        [MenuItem("Hecton8/Rendering/Run Camera Proliferation Scanner")]
         public static void RunMenu()
         {
             RunAndWriteReport();

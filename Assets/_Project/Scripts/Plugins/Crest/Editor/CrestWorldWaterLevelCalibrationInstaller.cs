@@ -20,7 +20,7 @@ namespace Hecton8.Editor
             "Docs/GeneratedAssets/Terrain/MacroGeology/WorldWaterLevelCalibration_Extent30000m_Res192.json";
         private const string WaterLevelRegexSuffix = "\\s*:\\s*\\[\\s*\\{[\\s\\S]*?\"waterLevelMeters\"\\s*:\\s*(-?[0-9]+(?:\\.[0-9]+)?)";
 
-        [MenuItem("HECTON-8/Water/Install Crest Water-Level Calibration Prefab")]
+        [MenuItem("Hecton8/Water/Install Crest Water-Level Calibration Prefab")]
         internal static void InstallPrefabCalibration()
         {
             if (!CanMutateEditorAssets(out string failure))
@@ -41,7 +41,7 @@ namespace Hecton8.Editor
             AssetDatabase.SaveAssets();
         }
 
-        [MenuItem("HECTON-8/Water/Install Crest Ocean In World Scene")]
+        [MenuItem("Hecton8/Water/Install Crest Ocean In World Scene")]
         internal static void InstallWorldSceneCalibration()
         {
             if (!CanMutateEditorAssets(out string failure))
@@ -73,7 +73,7 @@ namespace Hecton8.Editor
             AssetDatabase.SaveAssets();
         }
 
-        [MenuItem("HECTON-8/Water/Validate Crest Water-Level Calibration")]
+        [MenuItem("Hecton8/Water/Validate Crest Water-Level Calibration")]
         internal static void ValidatePrefabCalibrationMenu()
         {
             if (!VerifyPrefabCalibration(out string failure))

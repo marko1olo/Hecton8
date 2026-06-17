@@ -45,13 +45,13 @@ namespace Hecton8.Editor
         private Label _uiStatus;
         private bool _suppressUiCallbacks;
 
-        [MenuItem("HECTON-8/Abyssal Swarm Tuner")]
+        [MenuItem("Hecton8/Abyssal Swarm Tuner")]
         public static void OpenAbyssal()
         {
             GetWindow<AbyssalSwarmTunerWindow>("Abyssal Swarm Tuner");
         }
 
-        [MenuItem("HECTON-8/Swarm Kinematics Tuner")]
+        [MenuItem("Hecton8/Swarm Kinematics Tuner")]
         public static void OpenSwarmKinematics()
         {
             GetWindow<AbyssalSwarmTunerWindow>("Swarm Kinematics Tuner");

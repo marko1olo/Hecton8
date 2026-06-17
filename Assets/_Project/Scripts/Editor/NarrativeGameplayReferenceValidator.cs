@@ -9,7 +9,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates authored mission and quest string references that are expected to resolve through runtime content catalogs.
@@ -22,7 +22,7 @@ namespace Hecton8.EditorTools
         private const string LoreRegistryRoot = "Assets/_Project/Data/Lore/Registries";
         private const string DepthZoneRoot = "Assets/_Project/Data/Lore/DepthZones";
 
-        [MenuItem("Hecton/Validation/Validate Narrative Gameplay References", priority = 243)]
+        [MenuItem("Hecton8/Validation/Validate Narrative Gameplay References", priority = 243)]
         public static void Validate()
         {
             int errorCount = 0;

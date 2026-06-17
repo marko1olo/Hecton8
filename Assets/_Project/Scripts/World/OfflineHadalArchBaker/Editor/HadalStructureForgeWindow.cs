@@ -29,7 +29,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
         private ScrollView _shapeList;
         private bool _bakeInFlight;
 
-        [MenuItem("HECTON-8/Hadal Structure Forge/Open Forge")]
+        [MenuItem("Hecton8/Hadal Structure Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<HadalStructureForgeWindow>("Hadal Structure Forge");

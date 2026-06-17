@@ -10,7 +10,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
 {
     public static class OfflineWreckageMockBenchmark
     {
-        [MenuItem("HECTON-8/Wreckage Forge/Run Mock Benchmark")]
+        [MenuItem("Hecton8/Wreckage Forge/Run Mock Benchmark")]
         public static void RunMenu()
         {
             bool passed = RunBenchmark();

@@ -24,7 +24,7 @@ namespace Hecton8.Tools.Editor
         private static readonly Regex HotEvaluateBranchToken = new Regex(@"\b(?:if|else|switch)\b|\?", RegexOptions.Compiled);
         private static readonly Regex HotEvaluateAupDowncast = new Regex(@"\bAupPrecisionMath\s*\.\s*DowncastLocalDelta\s*\(", RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Tools/Polymorphic Modifier Scanner")]
+        [MenuItem("Hecton8/Tools/Polymorphic Modifier Scanner")]
         public static void Run()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

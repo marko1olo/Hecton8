@@ -22,7 +22,7 @@ namespace Hecton8.EditorTools
         private Label _statusLabel;
         private TelemetryWaterfallElement _waterfall;
 
-        [MenuItem("HECTON-8/Rendering/Propwash GPU Tuner")]
+        [MenuItem("Hecton8/Rendering/Propwash GPU Tuner")]
         public static void Open()
         {
             GetWindow<PropwashGpuTunerWindow>("Propwash GPU");

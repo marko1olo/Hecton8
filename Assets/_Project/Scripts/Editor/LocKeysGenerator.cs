@@ -16,7 +16,7 @@ namespace Hecton8.Editor
         private const string DefaultOutputPath = "Assets/_Project/Scripts/LocKeys.Generated.cs";
         private const string DefaultEnglishJsonPath = "Assets/_Project/Scripts/English.json";
 
-        [MenuItem("Hecton/Localization/Generate LocKeys From English JSON")]
+        [MenuItem("Hecton8/Localization/Generate LocKeys From English JSON")]
         public static void GenerateFromEnglishJson()
         {
             WriteGeneratedFileFromJson(DefaultEnglishJsonPath, DefaultOutputPath);
@@ -61,7 +61,7 @@ namespace Hecton8.Editor
 
             StringBuilder builder = new StringBuilder(Math.Max(1024, keys.Count * 96));
             builder.AppendLine("// AUTO-GENERATED. DO NOT EDIT.");
-            builder.AppendLine("namespace Hecton.Localization");
+            builder.AppendLine("namespace Hecton8.Localization");
             builder.AppendLine("{");
             builder.AppendLine("    public static class LocKeys");
             builder.AppendLine("    {");

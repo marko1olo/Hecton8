@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class WorldProceduralFloraProxyShapeBuilder
     {

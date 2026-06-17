@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 public class GeminiWorldBuilder
 {
-    [MenuItem("Hecton/Gemini World Builder/Build Master-Grade World")]
+    [MenuItem("Hecton8/Gemini World Builder/Build Master-Grade World")]
     public static void BuildMasterGradeWorld()
     {
         Debug.Log("Gemini: Building Optimized Master-Grade World v3...");

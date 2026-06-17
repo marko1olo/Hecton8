@@ -80,7 +80,7 @@ namespace Hecton8.Editor.ProductFace
                 "Bent cut titanium salvage plate with torn edges, bolt holes, paint mask, salt/oil wear; canonical route for Item_Titanium if retained.")
         };
 
-        [MenuItem("HECTON-8/Product Face/Author Resource Pickup Source Meshes", false, 1875)]
+        [MenuItem("Hecton8/Product Face/Author Resource Pickup Source Meshes", false, 1875)]
         private static void AuthorAllMeshes()
         {
             EnsureAssetFolder(OutputFolder);
@@ -101,7 +101,7 @@ namespace Hecton8.Editor.ProductFace
             Debug.Log("[1875 ResourcePickupMeshSourceAuthoring] Authored source meshes only. Meshes=" + saved + ", Output=" + OutputFolder + ", Unity proof still requires import/capture/prefab relink.");
         }
 
-        [MenuItem("HECTON-8/Product Face/Author Resource Pickup Source Meshes", true)]
+        [MenuItem("Hecton8/Product Face/Author Resource Pickup Source Meshes", true)]
         private static bool ValidateAuthorAllMeshes()
         {
             return true;

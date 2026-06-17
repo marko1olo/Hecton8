@@ -16,7 +16,7 @@ namespace Hecton8.Physics.Editor
         private const string SharedReportRelativePath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
         private const string AgentReportRelativePath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_264.json";
 
-        [MenuItem("HECTON-8/Physics/Run Sync GPU Readback Scanner")]
+        [MenuItem("Hecton8/Physics/Run Sync GPU Readback Scanner")]
         public static void RunFromMenu()
         {
             bool clean = Run();

@@ -25,7 +25,7 @@ namespace Hecton8.Editor.OfflineGeometry
             "Assets/_Project/Prefabs/Interactables"
         };
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Write Physics Optimization Report", false, 253)]
+        [MenuItem("Hecton8/LOD Collider Forge/Write Physics Optimization Report", false, 253)]
         public static void ScanAndWriteReportMenu()
         {
             List<UnoptimizedMeshFinding> findings = ScanProject();
@@ -34,7 +34,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Debug.Log("[SHINOBU_213] PHYSICS_OPTIMIZATION_REPORT findings=" + findings.Count + ".");
         }
 
-        [MenuItem("HECTON-8/LOD Collider Forge/Repair High Poly Concave MeshColliders", false, 254)]
+        [MenuItem("Hecton8/LOD Collider Forge/Repair High Poly Concave MeshColliders", false, 254)]
         public static void RepairHighPolyConcaveMeshCollidersMenu()
         {
             int repaired = RepairHighPolyConcaveMeshColliders();

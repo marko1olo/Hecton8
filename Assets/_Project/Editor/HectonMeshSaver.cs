@@ -10,7 +10,7 @@ public static class HectonMeshSaver
     private const string ModelsFolder = "Assets/_Project/Art/Models";
     private const string BakedFolder = "Assets/_Project/Art/Models/Baked";
 
-    [MenuItem("Hecton/Save Selected Mesh", priority = 200)]
+    [MenuItem("Hecton8/Save Selected Mesh", priority = 200)]
     private static void SaveSelectedMesh()
     {
         GameObject selectedObject = Selection.activeGameObject;
@@ -104,7 +104,7 @@ public static class HectonMeshSaver
         EditorGUIUtility.PingObject(savedAssetMesh);
     }
 
-    [MenuItem("Hecton/Save Selected Mesh", true)]
+    [MenuItem("Hecton8/Save Selected Mesh", true)]
     private static bool ValidateSaveSelectedMesh()
     {
         GameObject selectedObject = Selection.activeGameObject;

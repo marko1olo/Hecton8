@@ -2,7 +2,7 @@ using Hecton8.Visor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class DiegeticVisorTunerWindow : EditorWindow
     {

@@ -24,7 +24,7 @@ namespace Hecton8.SaveSystem.Editor
         private HistogramElement _histogram;
         private bool _suppressCallbacks;
 
-        [MenuItem("HECTON-8/Save/Voxel Save Tuner")]
+        [MenuItem("Hecton8/Save/Voxel Save Tuner")]
         public static void Open()
         {
             GetWindow<VoxelSaveTunerWindow>("Voxel Save Tuner");

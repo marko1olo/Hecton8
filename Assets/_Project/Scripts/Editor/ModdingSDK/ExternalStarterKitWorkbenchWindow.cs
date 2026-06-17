@@ -202,7 +202,7 @@ namespace Hecton8.Editor.ModdingSDK
         private bool _runningToolCompleted;
         private int _runningToolExitCode;
 
-        [MenuItem("Hecton/Modding/External Starter Kit Workbench")]
+        [MenuItem("Hecton8/Modding/External Starter Kit Workbench")]
         public static void ShowWindow()
         {
             ExternalStarterKitWorkbenchWindow window = GetWindow<ExternalStarterKitWorkbenchWindow>("HECTON Starter Workbench");

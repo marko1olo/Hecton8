@@ -26,7 +26,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             EditorApplication.quitting += Release;
         }
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Dump Bake Black Box", false, 2692)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Dump Bake Black Box", false, 2692)]
         internal static void DumpMenu()
         {
             Dump(AITextureControlMapConstants.BakeBlackBoxDumpPath);

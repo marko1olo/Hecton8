@@ -25,7 +25,7 @@ namespace Hecton8.EditorTools
             Validate();
         }
 
-        [MenuItem("HECTON-8/Rendering/Validate Propwash GPU Layouts")]
+        [MenuItem("Hecton8/Rendering/Validate Propwash GPU Layouts")]
         public static void Validate()
         {
             if (!PropwashGpuContracts.ValidateRuntimeLayouts())

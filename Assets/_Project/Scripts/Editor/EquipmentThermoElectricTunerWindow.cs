@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using Hecton8.Core;
     using Hecton8.Tools;
@@ -23,7 +23,7 @@ namespace Hecton8.EditorTools
         private TelemetryGraphElement _graph;
         private bool _drawGizmos = true;
 
-        [MenuItem("HECTON-8/Tools/Illumination Thermodynamics Tuner")]
+        [MenuItem("Hecton8/Tools/Illumination Thermodynamics Tuner")]
         public static void Open()
         {
             GetWindow<EquipmentThermoElectricTunerWindow>("Illumination Thermodynamics");

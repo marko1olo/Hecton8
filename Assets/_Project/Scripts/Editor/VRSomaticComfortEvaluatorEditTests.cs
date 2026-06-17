@@ -8,7 +8,7 @@ using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
-namespace Hecton8.EditorTests
+namespace Hecton8.Editor.Tests
 {
     public sealed class VRSomaticComfortEvaluatorEditTests
     {

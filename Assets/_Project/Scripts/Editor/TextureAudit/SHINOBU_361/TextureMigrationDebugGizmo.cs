@@ -26,7 +26,7 @@ namespace Hecton8.Editor.TextureAudit
             SceneView.duringSceneGui += OnSceneGUI;
         }
 
-        [MenuItem("HECTON-8/Texture Audit/Toggle Migration Debug Gizmo", false, 3610)]
+        [MenuItem("Hecton8/Texture Audit/Toggle Migration Debug Gizmo", false, 3610)]
         private static void Toggle()
         {
             _enabled = !_enabled;
@@ -34,7 +34,7 @@ namespace Hecton8.Editor.TextureAudit
             SceneView.RepaintAll();
         }
 
-        [MenuItem("HECTON-8/Texture Audit/Refresh Migration Debug Gizmo", false, 3611)]
+        [MenuItem("Hecton8/Texture Audit/Refresh Migration Debug Gizmo", false, 3611)]
         private static void Refresh()
         {
             _dirty = true;

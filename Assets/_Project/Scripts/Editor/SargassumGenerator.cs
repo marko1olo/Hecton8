@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Builds the standalone procedural Type 2 sargassum gameplay prefab, meshes, and material.
@@ -24,7 +24,7 @@ namespace Hecton8.EditorTools
         private const float Lod1Threshold = 0.16f;
         private const float Lod2Threshold = 0.025f;
 
-        [MenuItem("Hecton/Authoring/Build Type 2 Sargassum", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Build Type 2 Sargassum", priority = 178)]
         public static void BuildType2Sargassum()
         {
             EnsureFolders();

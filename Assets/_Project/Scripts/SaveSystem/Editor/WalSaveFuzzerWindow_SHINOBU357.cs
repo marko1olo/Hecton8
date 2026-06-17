@@ -58,7 +58,7 @@ namespace Hecton8.SaveSystem.Editor
         private IDataVault _dataVault;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Save/WAL Save Fuzzer")]
+        [MenuItem("Hecton8/Save/WAL Save Fuzzer")]
         public static void Open()
         {
             GetWindow<WalSaveFuzzerWindow>("WAL Save Fuzzer");

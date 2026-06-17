@@ -11,7 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class SomaticTunerWindow : EditorWindow
     {
@@ -31,13 +31,13 @@ namespace Hecton8.EditorTools
         private static readonly VrComfortProfileLookupSlotDTO[] s_comfortProfileLookupScratch = new VrComfortProfileLookupSlotDTO[ComfortProfileLookupScratchCapacity];
         private IMGUIContainer _uiToolkitComfortPanel;
 
-        [MenuItem("HECTON-8/Somatic Tuner")]
+        [MenuItem("Hecton8/Somatic Tuner")]
         private static void Open()
         {
             GetWindow<SomaticTunerWindow>("Somatic Tuner");
         }
 
-        [MenuItem("HECTON-8/Somatic Comfort Tuner")]
+        [MenuItem("Hecton8/Somatic Comfort Tuner")]
         private static void OpenComfort()
         {
             GetWindow<SomaticTunerWindow>("Somatic Comfort Tuner");

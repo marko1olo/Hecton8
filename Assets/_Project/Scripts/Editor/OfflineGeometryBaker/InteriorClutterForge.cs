@@ -89,7 +89,7 @@ namespace Hecton8.Editor.OfflineGeometry
         private ProgressBar _progress;
         private List<InteriorAtlasProfile> _profiles;
 
-        [MenuItem("HECTON-8/Interior Consolidation Forge/Open", false, 240)]
+        [MenuItem("Hecton8/Interior Consolidation Forge/Open", false, 240)]
         private static void Open()
         {
             GetWindow<InteriorClutterForgeWindow>("Interior Consolidation Forge");
@@ -246,7 +246,7 @@ namespace Hecton8.Editor.OfflineGeometry
 
         private static readonly Stopwatch _Stopwatch = new Stopwatch();
 
-        [MenuItem("HECTON-8/Interior Consolidation Forge/Bake Selected", false, 241)]
+        [MenuItem("Hecton8/Interior Consolidation Forge/Bake Selected", false, 241)]
         private static void BakeSelectedMenu()
         {
             InteriorAtlasProfile profile = InteriorAtlasProfileCsv.DefaultProfile();
@@ -266,7 +266,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Debug.Log("[SHINOBU_211] Interior clutter bake pass ended. Rooms=" + metrics.Count + ".");
         }
 
-        [MenuItem("HECTON-8/Interior Consolidation Forge/Run Hierarchy Bloat Scanner", false, 242)]
+        [MenuItem("Hecton8/Interior Consolidation Forge/Run Hierarchy Bloat Scanner", false, 242)]
         private static void ScanMenu()
         {
             InteriorClutterExcludeFilter filter = InteriorClutterExcludeFilter.Default();
@@ -275,7 +275,7 @@ namespace Hecton8.Editor.OfflineGeometry
             Debug.Log("[SHINOBU_211] Hierarchy bloat scan wrote " + InteriorClutterForgeConstants.RenderingOptimizationReportPath + " findings=" + findings.Count + ".");
         }
 
-        [MenuItem("HECTON-8/Interior Consolidation Forge/Generate Mock Clutter Benchmark", false, 243)]
+        [MenuItem("Hecton8/Interior Consolidation Forge/Generate Mock Clutter Benchmark", false, 243)]
         private static void MockBenchmarkMenu()
         {
             InteriorAtlasProfile profile = InteriorAtlasProfileCsv.DefaultProfile();

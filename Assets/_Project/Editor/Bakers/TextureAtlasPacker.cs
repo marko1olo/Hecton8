@@ -292,7 +292,7 @@ namespace Hecton8.Editor.Bakers
             }
         }
 
-        [MenuItem("HECTON-8/Bakers/1605/Pack Selected Readable Textures", false, 206)]
+        [MenuItem("Hecton8/Bakers/1605/Pack Selected Readable Textures", false, 206)]
         public static void PackSelectedReadableTextures()
         {
             UnityEngine.Object[] selected = Selection.objects;

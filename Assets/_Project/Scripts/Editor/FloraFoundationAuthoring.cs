@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class FloraFoundationAuthoring
     {
@@ -68,7 +68,7 @@ namespace Hecton8.EditorTools
             public float MatureSporeAcousticVolume;
         }
 
-        [MenuItem("Hecton/Authoring/Rebuild Flora Foundation", priority = 183)]
+        [MenuItem("Hecton8/Authoring/Rebuild Flora Foundation", priority = 183)]
         public static void RebuildFloraFoundation()
         {
             EnsureFolder("Assets/_Project/Data");
@@ -106,7 +106,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[FloraFoundationAuthoring] Templates={templates.Count} Scene='{ScenePath}' synced.");
         }
 
-        [MenuItem("Hecton/Authoring/Auto Fit Selected Flora Colliders", priority = 184)]
+        [MenuItem("Hecton8/Authoring/Auto Fit Selected Flora Colliders", priority = 184)]
         public static void AutoFitSelectedFloraColliders()
         {
             GameObject[] selectedObjects = Selection.gameObjects;

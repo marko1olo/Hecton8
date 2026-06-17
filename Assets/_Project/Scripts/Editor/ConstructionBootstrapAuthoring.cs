@@ -11,7 +11,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using Hecton8.Items;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ConstructionBootstrapAuthoring
     {
@@ -36,7 +36,7 @@ namespace Hecton8.EditorTools
         private const string RuinClusterMediumPrefabName = "PFB_Ruin_ClusterMedium.prefab";
         private const string RuinMegastructurePrefabName = "PFB_Ruin_Megastructure.prefab";
 
-        [MenuItem("Hecton/Authoring/Rebuild Starter Construction Kit", priority = 215)]
+        [MenuItem("Hecton8/Authoring/Rebuild Starter Construction Kit", priority = 215)]
         public static void RebuildStarterConstructionKit()
         {
             if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(ConstructionBootstrapAuthoring), FinalPrefabFolder))
@@ -320,7 +320,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[ConstructionBootstrapAuthoring] Starter construction kit rebuilt.");
         }
 
-        [MenuItem("Hecton/Authoring/Rebuild Tool Trial Range", priority = 216)]
+        [MenuItem("Hecton8/Authoring/Rebuild Tool Trial Range", priority = 216)]
         public static void RebuildToolTrialRange()
         {
             Scene activeScene = SceneManager.GetActiveScene();
@@ -532,7 +532,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[ConstructionBootstrapAuthoring] Tool trial range rebuilt.");
         }
 
-        [MenuItem("Hecton/Validation/Validate Tool Trial Range", priority = 217)]
+        [MenuItem("Hecton8/Validation/Validate Tool Trial Range", priority = 217)]
         public static void ValidateToolTrialRange()
         {
             int errorCount = 0;

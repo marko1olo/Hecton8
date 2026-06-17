@@ -18,7 +18,7 @@ namespace Hecton8.World.Editor
             ValidateLayoutsOrThrow();
         }
 
-        [MenuItem("HECTON-8/Vegetation/Run Memory Sovereignty Validator 1316")]
+        [MenuItem("Hecton8/Vegetation/Run Memory Sovereignty Validator 1316")]
         public static void RunMenu()
         {
             ValidateLayoutsOrThrow();

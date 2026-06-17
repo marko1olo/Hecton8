@@ -115,13 +115,15 @@ namespace Hecton8.World
                 absoluteZ,
                 in mesoParams);
             materialWeights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(materialWeights, in meso);
-            float4 control = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in materialWeights);
+            WorldTerrainControlMapSplats splats = WorldTerrainSurfaceMaterialResolver.ResolveControlSplats(in materialWeights);
+            float4 control1 = splats.Control1;
+            float4 control2 = splats.Control2;
 
             const float geologyBlend = 0.78f;
-            rock = math.saturate(math.lerp(rock, control.x, geologyBlend));
-            sand = math.saturate(math.lerp(sand, control.y, geologyBlend));
-            silt = math.saturate(math.lerp(silt, control.z, geologyBlend));
-            cavity = math.saturate(math.max(cavity, math.max(control.w, meso.TributaryCanyonMask * 0.30f + meso.SlumpScarMask * 0.22f)));
+            rock = math.saturate(math.lerp(rock, control1.w, geologyBlend));
+            sand = math.saturate(math.lerp(sand, control1.x, geologyBlend));
+            silt = math.saturate(math.lerp(silt, control1.z, geologyBlend));
+            cavity = math.saturate(math.max(cavity, math.max(control2.y, meso.TributaryCanyonMask * 0.30f + meso.SlumpScarMask * 0.22f)));
         }
 
         private WorldTerrainMesoDetailParams ResolveMesoDetailParams(float cellSizeMeters)
@@ -147,7 +149,8 @@ namespace Hecton8.World
     {
         [WriteOnly, NoAlias] public NativeArray<float4> Primary;
         [WriteOnly, NoAlias] public NativeArray<float4> Secondary;
-        [WriteOnly, NoAlias] public NativeArray<float4> PackedControl;
+        [WriteOnly, NoAlias] public NativeArray<float4> Control1;
+        [WriteOnly, NoAlias] public NativeArray<float4> Control2;
 
         public int Width;
         public int Height;
@@ -160,7 +163,8 @@ namespace Hecton8.World
         {
             if ((uint)index >= (uint)Primary.Length ||
                 (uint)index >= (uint)Secondary.Length ||
-                (uint)index >= (uint)PackedControl.Length)
+                (uint)index >= (uint)Control1.Length ||
+                (uint)index >= (uint)Control2.Length)
             {
                 return;
             }
@@ -199,7 +203,9 @@ namespace Hecton8.World
                 weights.ReefRubble,
                 weights.SeepCrust);
 
-            PackedControl[index] = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in weights);
+            WorldTerrainControlMapSplats splats = WorldTerrainSurfaceMaterialResolver.ResolveControlSplats(in weights);
+            Control1[index] = splats.Control1;
+            Control2[index] = splats.Control2;
         }
 
         private WorldTerrainMesoDetailParams ResolveMesoDetailParams(float cellSizeMeters)

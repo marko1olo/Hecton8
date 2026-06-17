@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class BiomeMatrixBootstrapAuthoring
     {
@@ -33,7 +33,7 @@ namespace Hecton8.EditorTools
             _worldFamilyLookup = null;
         }
 
-        [MenuItem("Hecton/Authoring/Rebuild 108 Biome Matrix", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Rebuild 108 Biome Matrix", priority = 178)]
         public static void Rebuild108BiomeMatrix()
         {
             _worldFamilyLookup = null;
@@ -127,7 +127,7 @@ namespace Hecton8.EditorTools
             Hecton8.Core.H8Debug.Log("[BiomeMatrixBootstrap] 108-biome matrix rebuilt.");
         }
 
-        [MenuItem("Hecton/Validation/Validate 108 Biome Matrix", priority = 237)]
+        [MenuItem("Hecton8/Validation/Validate 108 Biome Matrix", priority = 237)]
         public static void Validate108BiomeMatrix()
         {
             int errorCount = 0;

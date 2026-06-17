@@ -13,7 +13,7 @@ namespace Hecton8.EditorTools
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
         private const string ReportPropertyName = "jacobianFoam";
 
-        [MenuItem("HECTON-8/Rendering/CPU Foam Scanner")]
+        [MenuItem("Hecton8/Rendering/CPU Foam Scanner")]
         public static void Run()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

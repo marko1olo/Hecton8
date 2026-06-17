@@ -8,7 +8,7 @@ namespace Hecton8.Optimization.Editor
 {
     public static class VRAMStreamingStaticAssertions1617
     {
-        [MenuItem("HECTON-8/Validation/Agent 1617/Run VRAM Streaming Assertions")]
+        [MenuItem("Hecton8/Validation/Agent 1617/Run VRAM Streaming Assertions")]
         public static void RunAssertions()
         {
             AssertMipBiasCurve();

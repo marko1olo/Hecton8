@@ -22,7 +22,7 @@ namespace Hecton8.Gameplay
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Combat/Validate Status Effect FSM Layout")]
+        [MenuItem("Hecton8/Combat/Validate Status Effect FSM Layout")]
         public static void ValidateFromMenu()
         {
             Validate(logSuccess: true);
@@ -82,7 +82,7 @@ namespace Hecton8.Gameplay
         private double _nextRefresh;
         private CombatDamageRuntime.CombatStatusEffectTelemetryEntry _lastTelemetry;
 
-        [MenuItem("HECTON-8/Combat/FSM Status Effect Tuner")]
+        [MenuItem("Hecton8/Combat/FSM Status Effect Tuner")]
         public static void Open()
         {
             FsmStatusEffectTunerWindow window = GetWindow<FsmStatusEffectTunerWindow>();
@@ -290,7 +290,7 @@ namespace Hecton8.Gameplay
         private const string DedicatedReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT_SHINOBU_319.json";
         private const string SharedReportKey = "shinobu319StatusEffectsScanner";
 
-        [MenuItem("HECTON-8/Combat/Scan OOP Status Effects")]
+        [MenuItem("Hecton8/Combat/Scan OOP Status Effects")]
         public static void RunFromMenu()
         {
             ScanAndWriteReport();

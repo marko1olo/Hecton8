@@ -21,7 +21,7 @@ namespace Hecton8.Editor.GeologyForge
             "Assets/MapMagic/Map_Graph"
         };
 
-        [MenuItem("HECTON-8/Geology Forge/Topography Forge/Scan Legacy MapMagic Graphs", false, 186)]
+        [MenuItem("Hecton8/Geology Forge/Topography Forge/Scan Legacy MapMagic Graphs", false, 186)]
         public static void ScanAndWriteReport()
         {
             Directory.CreateDirectory("Docs/Reports");
@@ -170,7 +170,7 @@ namespace Hecton8.Editor.GeologyForge
             "TerrainSeamHeightmap"
         };
 
-        [MenuItem("HECTON-8/Geology Forge/Topography Forge/Scan Runtime Terrain Debt", false, 187)]
+        [MenuItem("Hecton8/Geology Forge/Topography Forge/Scan Runtime Terrain Debt", false, 187)]
         public static void ScanAndWriteReport()
         {
             Directory.CreateDirectory("Docs/Reports");

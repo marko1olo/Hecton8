@@ -2953,7 +2953,7 @@ namespace Hecton8.World
         private long _csvLastWriteTicks;
         private double _nextCsvPollTime;
 
-        [MenuItem("HECTON-8/World/Math-Terrain Probe", priority = 238)]
+        [MenuItem("Hecton8/World/Math-Terrain Probe", priority = 238)]
         public static void Open()
         {
             GetWindow<MathTerrainProbeWindow>("Math-Terrain Probe");

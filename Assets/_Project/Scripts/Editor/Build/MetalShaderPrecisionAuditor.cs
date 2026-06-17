@@ -29,7 +29,7 @@ namespace Hecton8.Editor.Build
                 throw new BuildFailedException(violation);
         }
 
-        [MenuItem("HECTON-8/Platform/Audit Metal Shader Precision")]
+        [MenuItem("Hecton8/Platform/Audit Metal Shader Precision")]
         private static void AuditFromMenu()
         {
             string violation = FindFirstHalfPrecisionViolation();

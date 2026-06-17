@@ -21,7 +21,7 @@ namespace Hecton8.Data.Editor
         private const string NativePluginMatrixValidatorPath = "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs";
         private const string ProjectSettingsPath = "ProjectSettings/ProjectSettings.asset";
 
-        [MenuItem("HECTON-8/Data Monolith/Run Android Asset Bridge Static Audit")]
+        [MenuItem("Hecton8/Data Monolith/Run Android Asset Bridge Static Audit")]
         private static void RunFromMenu()
         {
             string projectRoot = Directory.GetParent(UnityEngine.Application.dataPath)?.FullName;

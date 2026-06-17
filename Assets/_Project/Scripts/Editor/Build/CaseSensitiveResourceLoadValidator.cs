@@ -28,7 +28,7 @@ namespace Hecton8.Editor.Build
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/Platform/Validate Legacy Resources Case")]
+        [MenuItem("Hecton8/Platform/Validate Legacy Resources Case")]
         private static void ValidateFromMenu()
         {
             ValidateOrThrow();

@@ -9,7 +9,7 @@ namespace Hecton8.AI.Editor
         private const string SearchRoot = "Assets/_Project";
         private const float CapsuleThreshold = 1.2f;
 
-        [MenuItem("Hecton/Validation/Fauna Collider Validator", priority = 241)]
+        [MenuItem("Hecton8/Validation/Fauna Collider Validator", priority = 241)]
         public static void ValidateFaunaPrefabs()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { SearchRoot });

@@ -20,7 +20,7 @@ namespace Hecton8.World.OfflineHadalArchBaker.Editor
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Hadal Structure Forge/Validate DTO Layouts")]
+        [MenuItem("Hecton8/Hadal Structure Forge/Validate DTO Layouts")]
         public static void ValidateMenu()
         {
             Validate(logSuccess: true);

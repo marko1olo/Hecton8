@@ -1945,7 +1945,7 @@ namespace Hecton8.World
             Hecton8.World.HectonCompoundColliderAutoFitter.BakeSelectionRoot(gameObject);
         }
 
-        [MenuItem("Hecton/Physics/Bake Compound Colliders From Selection", priority = 217)]
+        [MenuItem("Hecton8/Physics/Bake Compound Colliders From Selection", priority = 217)]
         private static void BakeSelectedCompoundColliders()
         {
             GameObject[] selected = Selection.gameObjects;

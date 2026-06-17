@@ -11,7 +11,7 @@ namespace Hecton8.AI.Editor
         private const string BiomeCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string ReportPath = "C:/hades/Hecton8/AI_FAUNA_WORLD_INTEGRATION_REPORT.md";
 
-        [MenuItem("Hecton/Validation/Generate AI Fauna World Integration Report", priority = 247)]
+        [MenuItem("Hecton8/Validation/Generate AI Fauna World Integration Report", priority = 247)]
         public static void Generate()
         {
             HectonBiomeMatrixCatalog catalog = AssetDatabase.LoadAssetAtPath<HectonBiomeMatrixCatalog>(BiomeCatalogPath);

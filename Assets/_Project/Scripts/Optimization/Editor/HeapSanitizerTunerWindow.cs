@@ -47,7 +47,7 @@ namespace Hecton8.Optimization.Editor
         private int[] _rowTtlTenths;
         private byte[] _rowFlags;
 
-        [MenuItem("HECTON-8/Optimization/Heap Sanitizer Tuner")]
+        [MenuItem("Hecton8/Optimization/Heap Sanitizer Tuner")]
         private static void Open()
         {
             GetWindow<HeapSanitizerTunerWindow>("Heap Sanitizer Tuner");

@@ -39,7 +39,7 @@ namespace Hecton8.Construction.Editor
             "MANAGED_VECTOR3_PATH_LIST"
         };
 
-        [MenuItem("HECTON-8/AI/Run OOP Drone Nav Scanner")]
+        [MenuItem("Hecton8/AI/Run OOP Drone Nav Scanner")]
         private static void RunMenu()
         {
             string report = RunAndWriteReport();

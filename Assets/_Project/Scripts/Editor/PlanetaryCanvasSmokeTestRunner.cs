@@ -10,7 +10,7 @@ namespace Hecton8.Editor
     {
         private const string ArtifactPath = "CodexArtifacts/planetary-canvas-smoke-2026-05-05.json";
 
-        [MenuItem("HECTON-8/World/Run Planetary Canvas Smoke")]
+        [MenuItem("Hecton8/World/Run Planetary Canvas Smoke")]
         public static void RunMenu()
         {
             RunPlanetaryCanvasSmoke();

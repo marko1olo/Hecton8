@@ -8,7 +8,7 @@
 // stable across rebuilds.
 // ============================================================================
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using System;
     using UnityEditor;

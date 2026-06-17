@@ -17,7 +17,7 @@ namespace Hecton8.Tools.Editor
         private Label _statsLabel;
         private ulong _mask;
 
-        [MenuItem("HECTON-8/Tools/Stat Compilation X-Ray")]
+        [MenuItem("Hecton8/Tools/Stat Compilation X-Ray")]
         public static void Open()
         {
             UpgradeMatrixXRayWindow window = GetWindow<UpgradeMatrixXRayWindow>();

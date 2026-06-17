@@ -38,7 +38,7 @@ namespace Hecton8.Physics.KCC.Editor
 
     public static class OOP_Test_Scanner
     {
-        [MenuItem("HECTON-8/Kinematics/Run OOP Test Scanner")]
+        [MenuItem("Hecton8/Kinematics/Run OOP Test Scanner")]
         public static void RunMenu()
         {
             ScanAndWriteReport();

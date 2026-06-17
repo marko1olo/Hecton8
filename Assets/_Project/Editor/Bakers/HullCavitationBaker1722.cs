@@ -11,7 +11,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class HullCavitationBaker1722 : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1722/";
+        private const string MenuRoot = "Hecton8/Bakers/1722/";
         private const string DefaultComputeShaderPath = "Assets/_Project/Art/Shaders/Include/HullCavitationBaker1722.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Vehicles/Hull1722";
         private const string DefaultAssetName = "SubmarineHull_1722";

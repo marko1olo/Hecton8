@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Authors real procedural finals for organic families that are outside the baked kelp/coral pipeline.
@@ -18,7 +18,7 @@ namespace Hecton8.EditorTools
         private const float Lod1Threshold = 0.15f;
         private const float Lod2Threshold = 0.04f;
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Organic Misc Finals", priority = 180)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Organic Misc Finals", priority = 180)]
         public static void RebuildOrganicMiscFinals()
         {
             if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(WorldProceduralOrganicMiscFinalAuthoring), FinalPrefabFolder))

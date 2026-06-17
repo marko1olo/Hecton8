@@ -5,7 +5,7 @@ using Hecton8.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Audits model UV2/lightmap readiness for Bakery and enables importer auto-unwrap when Unity can repair it.

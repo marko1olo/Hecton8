@@ -30,7 +30,7 @@ namespace Hecton8.Audio.Editor
             ValidateLayoutsOrThrow();
         }
 
-        [MenuItem("HECTON-8/Audio/Run Acoustic Portal Memory Sovereignty Validator 1307")]
+        [MenuItem("Hecton8/Audio/Run Acoustic Portal Memory Sovereignty Validator 1307")]
         public static void RunMenu()
         {
             ValidateLayoutsOrThrow();

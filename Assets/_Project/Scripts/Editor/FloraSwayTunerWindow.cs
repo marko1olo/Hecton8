@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Hecton8.Core;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class FloraSwayTunerWindow : EditorWindow
     {

@@ -4,11 +4,11 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ScanIntelValidator
     {
-        [MenuItem("Hecton/Validation/Validate Scan Intel", priority = 132)]
+        [MenuItem("Hecton8/Validation/Validate Scan Intel", priority = 132)]
         public static void Validate()
         {
             List<string> issues = new List<string>(16);

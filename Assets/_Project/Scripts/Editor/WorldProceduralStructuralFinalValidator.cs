@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates structural procedural families and linked structural finals.
@@ -16,7 +16,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Validates structural procedural family contracts.
         /// </summary>
-        [MenuItem("Hecton/Validation/Validate Procedural Structural Families", priority = 247)]
+        [MenuItem("Hecton8/Validation/Validate Procedural Structural Families", priority = 247)]
         public static void ValidateStructuralFamilies()
         {
             List<FamilyRecord> records = LoadStructuralFamilies();

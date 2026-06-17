@@ -27,7 +27,7 @@ namespace Hecton8.Physics.Editor
             "IWaterSurface"
         };
 
-        [MenuItem("Hecton/Physics/Water Interface Scanner")]
+        [MenuItem("Hecton8/Physics/Water Interface Scanner")]
         public static void Run()
         {
             ScanAndWriteReport();

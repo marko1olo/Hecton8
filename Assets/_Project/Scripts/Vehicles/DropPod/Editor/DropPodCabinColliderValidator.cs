@@ -11,7 +11,7 @@ namespace Hecton8.Vehicles.DropPod.Editor
         // COLD ALLOC: List<MeshCollider>[16] - editor-only cabin collider validation scratch - owner: DropPodCabinColliderValidator
         private static readonly List<MeshCollider> s_meshColliderScratch = new List<MeshCollider>(16);
 
-        [MenuItem("HECTON-8/Drop Pod/Validate Cabin Colliders")]
+        [MenuItem("Hecton8/Drop Pod/Validate Cabin Colliders")]
         public static void ValidateSelection()
         {
             GameObject root = Selection.activeGameObject;

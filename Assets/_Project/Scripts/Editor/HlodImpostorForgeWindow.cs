@@ -42,7 +42,7 @@ namespace Hecton8.Editor
         private GameObject _previewTarget;
         private int _previewCount;
 
-        [MenuItem("HECTON-8/Rendering/HLOD Impostor Forge", false, 2499)]
+        [MenuItem("Hecton8/Rendering/HLOD Impostor Forge", false, 2499)]
         public static void Open()
         {
             GetWindow<HlodImpostorForgeWindow>("HLOD Impostor Forge");

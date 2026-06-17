@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using System;
     using System.IO;
@@ -12,7 +12,7 @@ namespace Hecton8.EditorTools
         private const string ScriptsRoot = "Assets/_Project/Scripts";
         private const string ReportPath = "Docs/Reports/EQUIPMENT_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Tools/OOP Battery Scanner")]
+        [MenuItem("Hecton8/Tools/OOP Battery Scanner")]
         public static void RunScannerFromMenu()
         {
             int findings = RunScan();

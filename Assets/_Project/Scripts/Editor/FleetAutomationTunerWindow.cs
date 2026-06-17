@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class FleetAutomationTunerWindow : EditorWindow
     {

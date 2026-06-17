@@ -42,7 +42,7 @@ namespace Hecton8.EditorTools
             new HookPattern("SceneView.duringSceneGui", "SceneView.duringSceneGui"),
         };
 
-        [MenuItem("Hecton/Validation/Generate Unity Reload Audit Report")]
+        [MenuItem("Hecton8/Validation/Generate Unity Reload Audit Report")]
         public static void GenerateReport()
         {
             string[] guids = AssetDatabase.FindAssets("t:MonoScript", new[] { "Assets/_Project" });

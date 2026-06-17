@@ -56,7 +56,7 @@ namespace Hecton8.Editor
             "todo"
         };
 
-        [MenuItem("HECTON-8/Validate World Scene Cleanup", priority = 100)]
+        [MenuItem("Hecton8/Validate World Scene Cleanup", priority = 100)]
         public static void ValidateWorldSceneCleanup()
         {
             Scene currentScene = SceneManager.GetActiveScene();
@@ -167,7 +167,7 @@ namespace Hecton8.Editor
             }
         }
 
-        [MenuItem("HECTON-8/Select All Temp Objects in Scene", priority = 101)]
+        [MenuItem("Hecton8/Select All Temp Objects in Scene", priority = 101)]
         public static void SelectAllTempObjects()
         {
             List<GameObject> tempObjects = new List<GameObject>(64); // COLD ALLOC: temp object collection for selection

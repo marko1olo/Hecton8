@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityObject = UnityEngine.Object;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralFloraFinalStatusReport
     {
@@ -97,7 +97,7 @@ namespace Hecton8.EditorTools
             _automationBridgeRegistered = false;
         }
 
-        [MenuItem("Hecton/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
+        [MenuItem("Hecton8/Validation/Generate Procedural Flora Final Status Report", priority = 241)]
         public static void GenerateReport()
         {
             string rootFolder = WorldProceduralFloraFinalVariantAuthoring.FloraFinalRootFolder;

@@ -1,4 +1,4 @@
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     using System;
     using System.Collections.Generic;
@@ -20,7 +20,7 @@ namespace Hecton8.EditorTools
         private const string AtlasManifestPath = "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Atlas/TX_B30_InventoryGenerated_CandidateAtlas_Manifest.json";
         private const string BindingMapPath = "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/InventoryIconCandidateBindingMap.json";
 
-        [MenuItem("HECTON-8/Art/Inventory Icons/Prepare Batch30 Candidate Sprites")]
+        [MenuItem("Hecton8/Art/Inventory Icons/Prepare Batch30 Candidate Sprites")]
         public static void PrepareBatch30CandidateSprites()
         {
             int changed = PrepareSpritesUnder(CandidateRoot, maxTextureSize: 512, spriteMode: SpriteImportMode.Single);
@@ -31,7 +31,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[InventoryIconCandidateImporter] Prepared generated inventory sprite candidates. changed={changed}");
         }
 
-        [MenuItem("HECTON-8/Art/Inventory Icons/Validate Batch30 Candidate Sprite Paths")]
+        [MenuItem("Hecton8/Art/Inventory Icons/Validate Batch30 Candidate Sprite Paths")]
         public static void ValidateBatch30CandidateSpritePaths()
         {
             int errors = ValidateBatch30CandidateSpritePathsCore(out int warnings, out int pngCount, out int rootPngCount);
@@ -70,7 +70,7 @@ namespace Hecton8.EditorTools
                 Debug.Log(summary);
         }
 
-        [MenuItem("HECTON-8/Art/Inventory Icons/Bind Batch30 Mapped Item Icons")]
+        [MenuItem("Hecton8/Art/Inventory Icons/Bind Batch30 Mapped Item Icons")]
         public static void BindBatch30MappedItemIcons()
         {
             PrepareBatch30CandidateSprites();
@@ -102,7 +102,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[InventoryIconCandidateImporter] Bound Batch30 mapped item icons. changed={changed}, skipped={skipped}");
         }
 
-        [MenuItem("HECTON-8/Art/Inventory Icons/Validate Batch30 Bound Item Icons")]
+        [MenuItem("Hecton8/Art/Inventory Icons/Validate Batch30 Bound Item Icons")]
         public static void ValidateBatch30BoundItemIcons()
         {
             int errors = ValidateBoundIconMap(out int checkedCount, out int skipped);

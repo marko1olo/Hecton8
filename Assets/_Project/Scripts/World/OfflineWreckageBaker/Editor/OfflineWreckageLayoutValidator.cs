@@ -21,7 +21,7 @@ namespace Hecton8.World.OfflineWreckageBaker.Editor
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Wreckage Forge/Validate Offline Wreckage Layouts")]
+        [MenuItem("Hecton8/Wreckage Forge/Validate Offline Wreckage Layouts")]
         public static void ValidateMenu()
         {
             Validate(logSuccess: true);

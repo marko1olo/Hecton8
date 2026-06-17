@@ -12,7 +12,7 @@ namespace Hecton8.Physics.Editor
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/Physics/Run Fluid Memory Sovereignty Validator 1322")]
+        [MenuItem("Hecton8/Physics/Run Fluid Memory Sovereignty Validator 1322")]
         public static void RunMenu()
         {
             ValidateOrThrow();

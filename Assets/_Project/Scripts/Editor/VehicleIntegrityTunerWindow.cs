@@ -27,7 +27,7 @@ namespace Hecton8.Editor
         private SerializedObject _serializedRuntime;
         private int _lastRuntimeInstanceId;
 
-        [MenuItem("Hecton/Vehicles/Vehicle Integrity Tuner")]
+        [MenuItem("Hecton8/Vehicles/Vehicle Integrity Tuner")]
         public static void Open()
         {
             GetWindow<VehicleIntegrityTunerWindow>("Vehicle Integrity Tuner");

@@ -4,13 +4,13 @@ using Hecton8.Gameplay;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class BaseModulePrefabIntegrityEnforcer
     {
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
 
-        [MenuItem("Hecton/Validation/Enforce Base Module Prefab Integrity", priority = 216)]
+        [MenuItem("Hecton8/Validation/Enforce Base Module Prefab Integrity", priority = 216)]
         public static void EnforceBaseModulePrefabIntegrity()
         {
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab", new[] { FinalPrefabFolder });

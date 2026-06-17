@@ -1,4 +1,4 @@
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static class WorldProceduralFloraFinalBudgetCatalog
     {

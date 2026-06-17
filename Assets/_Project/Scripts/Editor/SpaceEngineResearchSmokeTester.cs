@@ -12,7 +12,7 @@ using Hecton8.Core;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class SpaceEngineResearchSmokeTester
     {

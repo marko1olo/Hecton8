@@ -20,7 +20,7 @@ namespace Hecton8.Editor.Bakers
     public sealed class CausticOpticsBaker1719 : EditorWindow
     {
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Lighting";
-        private const string MenuRoot = "HECTON-8/Bakers/1719/";
+        private const string MenuRoot = "Hecton8/Bakers/1719/";
         private const int RendererAssetPathCount = 4;
         private const string PcRendererAssetPath = "Assets/_Project/Data/PC_Renderer.asset";
         private const string PcHighRendererAssetPath = "Assets/_Project/Data/PC_High_Renderer.asset";

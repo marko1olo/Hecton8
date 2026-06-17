@@ -11,7 +11,7 @@ using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralProxySceneBuilder
     {
@@ -23,7 +23,7 @@ namespace Hecton8.EditorTools
         private const float ProxySnapMinimumNormalUpDot = 0.2f;
         private const string NativeMemoryOwner = nameof(WorldProceduralProxySceneBuilder);
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural Proxy Scene", priority = 179)]
         public static void RebuildProceduralProxyScene()
         {
             Scene activeScene = SceneManager.GetActiveScene();

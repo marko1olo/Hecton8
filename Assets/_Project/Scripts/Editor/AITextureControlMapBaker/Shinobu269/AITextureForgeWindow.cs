@@ -25,7 +25,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         private ProgressBar _progressBar;
         private Label _statusLabel;
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/AI Control Map Forge", false, 2670)]
+        [MenuItem("Hecton8/AI Texture Control Maps/AI Control Map Forge", false, 2670)]
         private static void Open()
         {
             GetWindow<AITextureForgeWindow>("AI Control Map Forge");

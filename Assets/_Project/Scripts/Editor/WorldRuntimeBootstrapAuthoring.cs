@@ -14,7 +14,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldRuntimeBootstrapAuthoring
     {
@@ -52,7 +52,7 @@ namespace Hecton8.EditorTools
         private const string RelayRouteMarkerName = "RelayRouteMarker";
         private const float DefaultSurfaceWaterLevelY = 14.02f;
 
-        [MenuItem("Hecton/Authoring/Rebuild World Runtime Stack", priority = 177)]
+        [MenuItem("Hecton8/Authoring/Rebuild World Runtime Stack", priority = 177)]
         public static void RebuildWorldRuntimeStack()
         {
             EnsureFolder("Assets/_Project/Prefabs");

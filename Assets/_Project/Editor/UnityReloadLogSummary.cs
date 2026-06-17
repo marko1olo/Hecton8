@@ -44,7 +44,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        [MenuItem("Hecton/Validation/Log Unity Reload Summary")]
+        [MenuItem("Hecton8/Validation/Log Unity Reload Summary")]
         public static void LogSummary()
         {
             string logPath = Application.consoleLogPath;

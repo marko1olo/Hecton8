@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using Hecton8.Core;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     [InitializeOnLoad]
     internal static class BootstrapStaticConstructorAuditor

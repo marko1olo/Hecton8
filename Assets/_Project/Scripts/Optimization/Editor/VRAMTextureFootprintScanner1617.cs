@@ -19,7 +19,7 @@ namespace Hecton8.Optimization.Editor
 
         private static readonly string[] s_projectRoots = { ProjectAssetRoot };
 
-        [MenuItem("HECTON-8/Validation/Agent 1617/Scan Texture VRAM Footprint")]
+        [MenuItem("Hecton8/Validation/Agent 1617/Scan Texture VRAM Footprint")]
         public static void ScanTextureFootprint()
         {
             TextureScanSummary summary = ScanTextures(out StringBuilder report);

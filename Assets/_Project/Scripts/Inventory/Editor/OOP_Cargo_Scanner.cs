@@ -20,7 +20,7 @@ namespace Hecton8.Inventory.Editor
             "Assets/_Project/Scripts/Vehicles"
         };
 
-        [MenuItem("HECTON-8/Inventory/Run OOP Cargo Scanner")]
+        [MenuItem("Hecton8/Inventory/Run OOP Cargo Scanner")]
         private static void RunMenu()
         {
             ScanToReport();

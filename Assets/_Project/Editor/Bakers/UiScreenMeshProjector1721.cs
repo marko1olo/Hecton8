@@ -16,7 +16,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class UiScreenMeshProjector1721 : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1721/";
+        private const string MenuRoot = "Hecton8/Bakers/1721/";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/UI";
         private const string ComputePath = "Assets/_Project/Art/Shaders/Include/UiScreenMeshProjector1721.compute";
         private const string DefaultScreenMeshPath = "Assets/_Project/Art/Meshes/M_Diegetic_HUD_V4_CurvedPanel.asset";

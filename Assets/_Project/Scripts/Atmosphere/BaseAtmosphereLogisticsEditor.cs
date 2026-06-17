@@ -42,7 +42,7 @@ namespace Hecton8.Atmosphere.Editor
         private Label _status;
         private bool _suppressCallbacks;
 
-        [MenuItem("HECTON-8/Base Atmosphere Logistics Tuner")]
+        [MenuItem("Hecton8/Base Atmosphere Logistics Tuner")]
         public static void Open()
         {
             BaseAtmosphereLogisticsTunerWindow window = GetWindow<BaseAtmosphereLogisticsTunerWindow>();

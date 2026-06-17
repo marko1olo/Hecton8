@@ -4,13 +4,13 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldProceduralFinalVariantAuthoring
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
 
-        [MenuItem("Hecton/Authoring/Apply Procedural Final Variant First Wave", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Apply Procedural Final Variant First Wave", priority = 178)]
         public static void ApplyFirstWave()
         {
             Dictionary<string, VariantSpec[]> specsByFamily = BuildFirstWaveSpecs();

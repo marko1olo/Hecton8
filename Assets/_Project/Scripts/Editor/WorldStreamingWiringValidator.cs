@@ -7,7 +7,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class WorldStreamingWiringValidator
     {
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
         private const string WorldProceduralRuleFolder =
             "Assets/_Project/Data/World/ProceduralPlacementRules";
 
-        [MenuItem("Hecton/Validation/Validate World Streaming Wiring", priority = 235)]
+        [MenuItem("Hecton8/Validation/Validate World Streaming Wiring", priority = 235)]
         public static void ValidateWorldStreamingWiring()
         {
             int errorCount = 0;
@@ -296,7 +296,7 @@ namespace Hecton8.EditorTools
             Debug.Log($"[WorldStreamingWiring] Validation complete. Errors={errorCount}, Warnings={warningCount}.");
         }
 
-        [MenuItem("Hecton/Validation/Fix World Streaming Wiring", priority = 236)]
+        [MenuItem("Hecton8/Validation/Fix World Streaming Wiring", priority = 236)]
         public static void FixWorldStreamingWiring()
         {
             Scene activeScene = SceneManager.GetActiveScene();

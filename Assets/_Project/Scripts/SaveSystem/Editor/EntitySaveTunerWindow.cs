@@ -42,7 +42,7 @@ namespace Hecton8.SaveSystem.Editor
         private EventCallback<ChangeEvent<float>> _sliderChangedCallback;
         private EventCallback<ChangeEvent<int>> _integerChangedCallback;
 
-        [MenuItem("HECTON-8/Save/Entity Save Tuner")]
+        [MenuItem("Hecton8/Save/Entity Save Tuner")]
         public static void Open()
         {
             GetWindow<EntitySaveTunerWindow>("Entity Save Tuner");

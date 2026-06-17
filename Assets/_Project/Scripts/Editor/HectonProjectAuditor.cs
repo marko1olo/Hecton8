@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using Hecton8.EditorTools;
+using Hecton8.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,7 +23,7 @@ namespace Hecton8.Editor
         private const string RequiredShaderName = "Hecton8/CoreLit";
         private const int MaxConsoleEntriesPerSection = 24;
 
-        [MenuItem("Hecton/Audit/Run Full Integrity Check")]
+        [MenuItem("Hecton8/Audit/Run Full Integrity Check")]
         public static void RunFullAudit()
         {
             Debug.Log("<color=cyan>[HECTON-8 AUDITOR] Starting Full Integrity Check...</color>");

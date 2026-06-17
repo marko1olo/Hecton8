@@ -25,7 +25,7 @@ namespace Hecton8.Gameplay
             Validate(logSuccess: false);
         }
 
-        [MenuItem("HECTON-8/Combat/Validate Armor LUT Layout")]
+        [MenuItem("Hecton8/Combat/Validate Armor LUT Layout")]
         public static void ValidateFromMenu()
         {
             Validate(logSuccess: true);
@@ -83,7 +83,7 @@ namespace Hecton8.Gameplay
         private Label _state;
         private double _nextRefresh;
 
-        [MenuItem("HECTON-8/Combat/Ballistic Armor X-Ray")]
+        [MenuItem("Hecton8/Combat/Ballistic Armor X-Ray")]
         public static void Open()
         {
             BallisticArmorXRayWindow window = GetWindow<BallisticArmorXRayWindow>();
@@ -591,7 +591,7 @@ namespace Hecton8.Gameplay
     {
         private const string ReportPath = "Docs/Reports/PHYSICS_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Combat/Scan OOP Hitboxes")]
+        [MenuItem("Hecton8/Combat/Scan OOP Hitboxes")]
         public static void RunFromMenu()
         {
             ScanAndWriteReport();

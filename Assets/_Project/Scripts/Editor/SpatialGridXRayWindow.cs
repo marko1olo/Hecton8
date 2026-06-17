@@ -57,7 +57,7 @@ namespace Hecton8.Editor
             public int Occupancy;
         }
 
-        [MenuItem("HECTON-8/AI/Spatial Grid X-Ray")]
+        [MenuItem("Hecton8/AI/Spatial Grid X-Ray")]
         public static void Open()
         {
             GetWindow<SpatialGridXRayWindow>("Spatial Grid X-Ray");

@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     public static class H8DataMonolithBatchAudit
     {

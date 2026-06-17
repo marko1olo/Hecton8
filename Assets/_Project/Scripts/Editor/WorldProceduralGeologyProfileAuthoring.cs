@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Creates and assigns explicit geology profiles for large-form geological families.
@@ -17,7 +17,7 @@ namespace Hecton8.EditorTools
         /// <summary>
         /// Creates or refreshes explicit geology profiles for key geological families.
         /// </summary>
-        [MenuItem("Hecton/Authoring/Ensure Procedural Geology Profiles", priority = 180)]
+        [MenuItem("Hecton8/Authoring/Ensure Procedural Geology Profiles", priority = 180)]
         public static void EnsureProfiles()
         {
             EnsureFolder("Assets/_Project/Data");

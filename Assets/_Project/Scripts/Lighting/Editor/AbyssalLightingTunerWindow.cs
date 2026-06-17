@@ -19,7 +19,7 @@ namespace Hecton8.Lighting.Editor
 
         private const double RefreshIntervalSeconds = 0.25;
 
-        [MenuItem("HECTON-8/Lighting/Abyssal Lighting Tuner")]
+        [MenuItem("Hecton8/Lighting/Abyssal Lighting Tuner")]
         private static void Open()
         {
             GetWindow<AbyssalLightingTunerWindow>("Abyssal Lighting Tuner");

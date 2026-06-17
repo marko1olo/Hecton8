@@ -4,7 +4,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Validates world-support procedural families and linked final prefabs.
@@ -13,7 +13,7 @@ namespace Hecton8.EditorTools
     {
         private const string ProceduralFamilyFolder = "Assets/_Project/Data/World/ProceduralFamilies";
 
-        [MenuItem("Hecton/Validation/Validate Procedural World Support Families", priority = 249)]
+        [MenuItem("Hecton8/Validation/Validate Procedural World Support Families", priority = 249)]
         public static void ValidateSupportFamilies()
         {
             List<FamilyRecord> records = LoadSupportFamilies();

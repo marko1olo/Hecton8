@@ -24,7 +24,7 @@ namespace Hecton8.Physics.Editor
         private Slider _amplitudeSlider;
         private VisualElement _histogram;
 
-        [MenuItem("Hecton/Physics/Ocean Physics Tuner")]
+        [MenuItem("Hecton8/Physics/Ocean Physics Tuner")]
         public static void Open()
         {
             GetWindow<OceanPhysicsTunerWindow>("Ocean Physics Tuner");

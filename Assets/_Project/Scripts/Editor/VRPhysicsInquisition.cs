@@ -33,7 +33,7 @@ namespace Hecton8.Editor
         private const string RuntimeProofLimit =
             "Unity import, Unity Console, Play Mode GCMonitor, profiler captures, player-build, Quest/Steam Deck runtime, and live VR device proof remain pending.";
 
-        [MenuItem("HECTON-8/VR/Run Physics Inquisition")]
+        [MenuItem("Hecton8/VR/Run Physics Inquisition")]
         public static void Run()
         {
             Directory.CreateDirectory("Docs/Reports");
@@ -105,7 +105,7 @@ namespace Hecton8.Editor
                 " DefaultBridgePurged=" + bridgePurgedDefault);
         }
 
-        [MenuItem("HECTON-8/VR/Validate Kinematic Bridge Layout")]
+        [MenuItem("Hecton8/VR/Validate Kinematic Bridge Layout")]
         public static void ValidateLayoutMenu()
         {
             bool valid = VRInteractionKinematicBridgeLayout.Validate();
@@ -115,7 +115,7 @@ namespace Hecton8.Editor
                 Debug.Log("[SHINOBU_271] VRHandStateDTO layout fence passed.");
         }
 
-        [MenuItem("HECTON-8/VR/Write SHINOBU 271 Self Audit")]
+        [MenuItem("Hecton8/VR/Write SHINOBU 271 Self Audit")]
         public static void WriteSelfAudit()
         {
             Directory.CreateDirectory("Docs/Reports");
@@ -166,7 +166,7 @@ namespace Hecton8.Editor
             File.WriteAllText(SelfAuditPath, builder.ToString());
         }
 
-        [MenuItem("HECTON-8/VR/Import Interaction Sockets CSV")]
+        [MenuItem("Hecton8/VR/Import Interaction Sockets CSV")]
         public static void ImportSocketsCsv()
         {
             string path = EditorUtility.OpenFilePanel("Import VR interaction sockets CSV", Application.dataPath, "csv");
@@ -313,7 +313,7 @@ namespace Hecton8.Editor
         private Label _rightReadout;
         private Label _telemetryReadout;
 
-        [MenuItem("HECTON-8/VR/Open Kinematic Hand Tuner")]
+        [MenuItem("Hecton8/VR/Open Kinematic Hand Tuner")]
         public static void Open()
         {
             GetWindow<VRInteractionKinematicTunerWindow>("VR Hand Bridge");

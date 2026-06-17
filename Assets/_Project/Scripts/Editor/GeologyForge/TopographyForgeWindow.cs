@@ -29,7 +29,7 @@ namespace Hecton8.Editor.GeologyForge
             TopographyForgePreview.Shutdown();
         }
 
-        [MenuItem("HECTON-8/Geology Forge/Global Topography Forge", false, 185)]
+        [MenuItem("Hecton8/Geology Forge/Global Topography Forge", false, 185)]
         public static void Open()
         {
             TopographyForgeWindow window = GetWindow<TopographyForgeWindow>("Global Topography Forge");

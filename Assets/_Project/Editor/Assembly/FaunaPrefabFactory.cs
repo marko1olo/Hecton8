@@ -103,13 +103,13 @@ namespace Hecton8.Editor.Assembly
         private Vector2 scroll;
         private FaunaAssemblerReport lastReport;
 
-        [MenuItem("HECTON-8/Assembly/Fauna Prefab Factory 1733")]
+        [MenuItem("Hecton8/Assembly/Fauna Prefab Factory 1733")]
         public static void OpenWindow()
         {
             GetWindow<FaunaPrefabFactory>("Fauna Factory 1733");
         }
 
-        [MenuItem("HECTON-8/Assembly/Dry Run Fauna Prefab Factory 1733")]
+        [MenuItem("Hecton8/Assembly/Dry Run Fauna Prefab Factory 1733")]
         public static void DryRunMenu()
         {
             FaunaPrefabFactory window = CreateInstance<FaunaPrefabFactory>();
@@ -118,7 +118,7 @@ namespace Hecton8.Editor.Assembly
             DestroyImmediate(window);
         }
 
-        [MenuItem("HECTON-8/Assembly/Run Fauna Prefab Factory 1733")]
+        [MenuItem("Hecton8/Assembly/Run Fauna Prefab Factory 1733")]
         public static void RunMenu()
         {
             FaunaPrefabFactory window = CreateInstance<FaunaPrefabFactory>();

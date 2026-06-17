@@ -38,7 +38,7 @@ namespace Hecton8.Editor.Structures
         private Label _triangleCountLabel;
         private Label _faultMaskLabel;
 
-        [MenuItem("Hecton/Structures/Deep Reach Station Architect")]
+        [MenuItem("Hecton8/Structures/Deep Reach Station Architect")]
         public static void Open()
         {
             GetWindow<DeepReachStationArchitectWindow>("Station Architect");

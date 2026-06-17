@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Authors real procedural support finals for pockets, creature spawns, and large-threat ownership zones.
@@ -18,7 +18,7 @@ namespace Hecton8.EditorTools
         private const string RuinApexScuffBaseChildName = "RuinApexScuff_Base";
         private const string RuinApexViewportGlassEdgeChildName = "RuinApexGlassEdge_ViewportRim";
 
-        [MenuItem("Hecton/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
+        [MenuItem("Hecton8/Authoring/Rebuild Procedural World Support Finals", priority = 179)]
         public static void RebuildWorldSupportFinals()
         {
             if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveFinalAuthoring(nameof(WorldProceduralSupportFinalAuthoring), FinalPrefabFolder))

@@ -19,7 +19,7 @@ namespace Hecton8.Editor.Assembly
     public sealed class LogisticsPrefabFactory : EditorWindow
     {
         private const string AgentId = "1737";
-        private const string MenuRoot = "HECTON-8/Assembly/1737/";
+        private const string MenuRoot = "Hecton8/Assembly/1737/";
         private const string DefaultSourceDirectory = "Assets/_Project/BakedGeometry/Logistics";
         private const string DefaultMetadataDirectory = "Assets/_Project/BakedGeometry/Logistics/Metadata";
         private const string DefaultCollisionDirectory = "Assets/_Project/BakedGeometry/Logistics/Collision";

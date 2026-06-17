@@ -66,7 +66,7 @@ namespace Hecton8.Editor.Generators.Geology
         [SerializeField] private float _globalQualityWeight = 0.6f;
         [SerializeField] private Material _triplanarMaterial;
 
-        [MenuItem("HECTON-8/Geology Forge/Rock Sculptor Engine 1713", false, 179)]
+        [MenuItem("Hecton8/Geology Forge/Rock Sculptor Engine 1713", false, 179)]
         public static void Open()
         {
             GetWindow<RockSculptorEngine1713>("Rock Sculptor 1713");

@@ -8,7 +8,7 @@ namespace Hecton8.Physiology.Editor
     /// </summary>
     public sealed class DcsPhysiologyTunerWindow : EditorWindow
     {
-        [MenuItem("Hecton/Physiology/DCS Physiology Tuner")]
+        [MenuItem("Hecton8/Physiology/DCS Physiology Tuner")]
         public static void Open()
         {
             HaldaneanDecompressionTunerWindow.Open();

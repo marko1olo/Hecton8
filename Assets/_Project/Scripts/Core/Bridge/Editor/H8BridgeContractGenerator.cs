@@ -12,7 +12,7 @@ namespace Hecton8.Core.Bridge.EditorTools
     {
         private const string OutputPath = "Assets/_Project/Scripts/Core/Bridge/Generated/H8DesignFacadeContracts.generated.cs";
 
-        [MenuItem("Hecton-8/Bridge/Generate Design Facade Contracts")]
+        [MenuItem("Hecton8/Bridge/Generate Design Facade Contracts")]
         public static void GenerateAllContracts()
         {
             string[] guids = AssetDatabase.FindAssets("t:H8DesignDataFacade");

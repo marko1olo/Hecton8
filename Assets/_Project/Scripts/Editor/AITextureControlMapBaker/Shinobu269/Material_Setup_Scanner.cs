@@ -23,7 +23,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             "Assets/_Project"
         };
 
-        [MenuItem("HECTON-8/AI Texture Control Maps/Scan Material Setup", false, 2690)]
+        [MenuItem("Hecton8/AI Texture Control Maps/Scan Material Setup", false, 2690)]
         internal static void RunScan()
         {
             string[] folders = BuildFolderFilter();

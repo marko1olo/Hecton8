@@ -41,7 +41,7 @@ namespace Hecton8.Ecosystem.Editor
             @"\b[A-Za-z_][A-Za-z0-9_]*(?:\s*\.\s*[A-Za-z_][A-Za-z0-9_]*)?\s*\(",
             RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Ecosystem/Run OOP Spawner Scanner")]
+        [MenuItem("Hecton8/Ecosystem/Run OOP Spawner Scanner")]
         public static void RunMenu()
         {
             string report = RunScan();

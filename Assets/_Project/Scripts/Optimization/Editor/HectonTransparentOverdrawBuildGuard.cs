@@ -43,7 +43,7 @@ namespace Hecton8.Optimization.Editor
             ValidateOrThrow();
         }
 
-        [MenuItem("HECTON-8/Validation/Run 02_HECTON_WORLD Transparent Overdraw Gate")]
+        [MenuItem("Hecton8/Validation/Run 02_HECTON_WORLD Transparent Overdraw Gate")]
         public static void RunFromMenu()
         {
             TransparentOverdrawResult result = ValidateOrThrow();

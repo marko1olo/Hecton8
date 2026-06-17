@@ -21,7 +21,7 @@ namespace Hecton8.EditorTools
         private Label _statusLabel;
         private OceanTelemetryGraphElement _telemetryGraph;
 
-        [MenuItem("HECTON-8/Rendering/Single-Pass Ocean Tuner")]
+        [MenuItem("Hecton8/Rendering/Single-Pass Ocean Tuner")]
         public static void Open()
         {
             GetWindow<SinglePassOceanTunerWindow>("Single-Pass Ocean");

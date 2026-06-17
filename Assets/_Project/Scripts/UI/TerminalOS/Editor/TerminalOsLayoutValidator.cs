@@ -16,7 +16,7 @@ namespace Hecton8.UI.Editor
             ValidateLayouts(false);
         }
 
-        [MenuItem("HECTON-8/Terminal OS/Validate DTO Layouts")]
+        [MenuItem("Hecton8/Terminal OS/Validate DTO Layouts")]
         public static void ValidateLayoutsMenu()
         {
             ValidateLayouts(true);

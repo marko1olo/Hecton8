@@ -24,7 +24,7 @@ namespace Hecton8.World.Editor
             Validate();
         }
 
-        [MenuItem("HECTON-8/AI/Validate Spawn SDF Layout")]
+        [MenuItem("Hecton8/AI/Validate Spawn SDF Layout")]
         private static void ValidateMenu()
         {
             Validate();
@@ -81,7 +81,7 @@ namespace Hecton8.World.Editor
         private uint _lastFrame = uint.MaxValue;
         private bool _registered;
 
-        [MenuItem("HECTON-8/AI/Spawn Integrity X-Ray")]
+        [MenuItem("Hecton8/AI/Spawn Integrity X-Ray")]
         public static void Open()
         {
             GetWindow<SpawnIntegrityXRayWindow>("Spawn Integrity X-Ray");
@@ -323,7 +323,7 @@ namespace Hecton8.World.Editor
             "NavMesh.SamplePosition"
         };
 
-        [MenuItem("HECTON-8/AI/OOP Spawn Query Scanner")]
+        [MenuItem("Hecton8/AI/OOP Spawn Query Scanner")]
         public static void RunMenu()
         {
             Debug.Log(RunScan());

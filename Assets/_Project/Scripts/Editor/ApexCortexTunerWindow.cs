@@ -3,7 +3,7 @@ using Hecton8.AI;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class ApexCortexTunerWindow : EditorWindow
     {

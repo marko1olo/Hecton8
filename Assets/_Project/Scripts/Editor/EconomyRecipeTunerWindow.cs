@@ -11,7 +11,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public sealed class EconomyRecipeTunerWindow : EditorWindow
     {
@@ -35,7 +35,7 @@ namespace Hecton8.EditorTools
         private double _nextCsvPollTime;
         private int _vaultRecipeIndex;
 
-        [MenuItem("Hecton/Debug/Economy Recipe Tuner", priority = 260)]
+        [MenuItem("Hecton8/Debug/Economy Recipe Tuner", priority = 260)]
         public static void Open()
         {
             GetWindow<EconomyRecipeTunerWindow>("Economy Tuner");

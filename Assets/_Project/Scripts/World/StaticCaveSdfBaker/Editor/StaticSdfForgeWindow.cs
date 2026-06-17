@@ -33,7 +33,7 @@ namespace Hecton8.World.StaticCaveSdfBaker.Editor
         private StaticCaveSdfProfileCache _profiles;
         private int _profileCount;
 
-        [MenuItem("HECTON-8/Static SDF Forge/Open Forge")]
+        [MenuItem("Hecton8/Static SDF Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<StaticSdfForgeWindow>("Static SDF Forge");

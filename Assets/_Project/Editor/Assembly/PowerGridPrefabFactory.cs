@@ -63,13 +63,13 @@ namespace Hecton8.Editor.Assembly
         private Vector2 _scroll;
         private FactoryReport _lastReport;
 
-        [MenuItem("HECTON-8/Assembly/1740/Power Grid Prefab Factory")]
+        [MenuItem("Hecton8/Assembly/1740/Power Grid Prefab Factory")]
         public static void Open()
         {
             GetWindow<PowerGridPrefabFactory>("Power Grid Factory 1740");
         }
 
-        [MenuItem("HECTON-8/Assembly/1740/Assemble Power Grid Prefabs")]
+        [MenuItem("Hecton8/Assembly/1740/Assemble Power Grid Prefabs")]
         public static void AssembleFromMenu()
         {
             FactoryReport report = RunFactory();

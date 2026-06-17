@@ -28,7 +28,7 @@ namespace Hecton8.World.ProceduralCoral.Editor
         private double _nextCsvPollTime;
         private string _projectRoot;
 
-        [MenuItem("HECTON-8/Procedural Coral/Procedural Coral Tuner")]
+        [MenuItem("Hecton8/Procedural Coral/Procedural Coral Tuner")]
         public static void Open()
         {
             GetWindow<ProceduralCoralTunerWindow>("Procedural Coral Tuner");

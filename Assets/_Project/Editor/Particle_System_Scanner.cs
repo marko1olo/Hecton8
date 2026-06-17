@@ -12,7 +12,7 @@ namespace Hecton8.EditorTools
     {
         private const string ReportRelativePath = "Docs/Reports/RENDERING_OPTIMIZATION_REPORT.json";
 
-        [MenuItem("HECTON-8/Rendering/Particle System Scanner")]
+        [MenuItem("Hecton8/Rendering/Particle System Scanner")]
         public static void Run()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));

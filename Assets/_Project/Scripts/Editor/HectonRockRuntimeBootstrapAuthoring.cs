@@ -8,7 +8,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class HectonRockRuntimeBootstrapAuthoring
     {
@@ -29,7 +29,7 @@ namespace Hecton8.EditorTools
             "Assets/_Project/Prefabs/Nature/Rocks/Rock_Skala.prefab"
         };
 
-        [MenuItem("Hecton/Authoring/Rebuild Rock Runtime Stack", priority = 178)]
+        [MenuItem("Hecton8/Authoring/Rebuild Rock Runtime Stack", priority = 178)]
         public static void RebuildRockRuntimeStack()
         {
             Scene activeScene = SceneManager.GetActiveScene();

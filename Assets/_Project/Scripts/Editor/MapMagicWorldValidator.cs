@@ -9,7 +9,7 @@ using GPUInstancer;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class MapMagicWorldValidator
     {
@@ -24,7 +24,7 @@ namespace Hecton8.EditorTools
             "MapMagic.Nodes.MatrixGenerators.HectonHydraulicErosionMapMagicNode"
         };
 
-        [MenuItem("Hecton/Validation/Validate MapMagic World Stack", priority = 236)]
+        [MenuItem("Hecton8/Validation/Validate MapMagic World Stack", priority = 236)]
         public static void ValidateMapMagicWorldStack()
         {
             int errorCount = 0;

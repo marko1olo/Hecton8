@@ -26,7 +26,7 @@ namespace Hecton8.Physics.Editor
 
         private const int MaxVisibleBars = 64;
 
-        [MenuItem("HECTON-8/Flood Control Tuner")]
+        [MenuItem("Hecton8/Flood Control Tuner")]
         public static void Open()
         {
             HabitatFluidIncursionTunerWindow window = GetWindow<HabitatFluidIncursionTunerWindow>();

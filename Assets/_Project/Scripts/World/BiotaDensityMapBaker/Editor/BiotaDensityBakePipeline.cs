@@ -49,7 +49,7 @@ namespace Hecton8.World.BiotaDensityMapBaker.Editor
         private const double MaxAcceptedAupMagnitude = 1000000000.0d;
         private const string NativeMemoryOwner = nameof(BiotaDensityBakePipeline);
 
-        [MenuItem("HECTON-8/Ecosystem Density Forge/Bake Mock Biota Density")]
+        [MenuItem("Hecton8/Ecosystem Density Forge/Bake Mock Biota Density")]
         public static void BakeDefaultMenu()
         {
             FixedList4096Bytes<BiotaSpawnRuleDTO> rules = default;

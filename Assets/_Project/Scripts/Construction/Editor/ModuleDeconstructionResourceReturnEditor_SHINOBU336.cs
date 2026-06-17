@@ -21,7 +21,7 @@ namespace Hecton8.Construction.Editor
         private Toggle _drawGizmo;
         private Slider _qualityPreview;
 
-        [MenuItem("HECTON-8/Construction/SHINOBU 336 Deconstruction")]
+        [MenuItem("Hecton8/Construction/SHINOBU 336 Deconstruction")]
         public static void Open()
         {
             GetWindow<ModuleDeconstructionResourceReturnWindowSHINOBU336>("SHINOBU 336 Deconstruction");
@@ -317,7 +317,7 @@ namespace Hecton8.Construction.Editor
 
         private static readonly Regex DestroyCall = new Regex(@"\bDestroy\s*\(", RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Construction/Run SHINOBU 336 Scanner")]
+        [MenuItem("Hecton8/Construction/Run SHINOBU 336 Scanner")]
         private static void RunMenu()
         {
             Hecton8.Core.H8Debug.Log("SHINOBU_336 scanner wrote " + RunAndWriteReport());

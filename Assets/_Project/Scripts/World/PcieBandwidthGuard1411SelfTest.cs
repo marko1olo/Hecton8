@@ -17,7 +17,7 @@ namespace Hecton8.World
         private const int FuzzerInstanceCount = 8192;
         private const int FuzzerFrames = 512;
 
-        [MenuItem("HECTON-8/Agent 1411/Run PCIe Bandwidth Guard Self Test")]
+        [MenuItem("Hecton8/Agent 1411/Run PCIe Bandwidth Guard Self Test")]
         private static void RunMenu()
         {
             RunAll();

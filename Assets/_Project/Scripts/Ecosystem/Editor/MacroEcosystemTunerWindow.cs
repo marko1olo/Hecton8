@@ -23,7 +23,7 @@ namespace Hecton8.Editor
         private Slider _starvationRate;
         private Label _status;
 
-        [MenuItem("HECTON-8/Ecosystem/Macro Ecosystem Tuner")]
+        [MenuItem("Hecton8/Ecosystem/Macro Ecosystem Tuner")]
         private static void Open()
         {
             GetWindow<MacroEcosystemTunerWindow>("Macro Ecosystem");

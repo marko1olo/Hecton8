@@ -12,7 +12,7 @@ namespace Hecton8.Editor.HydraulicErosionForge
 {
     internal static unsafe class HydraulicErosionForgeSelfAudit
     {
-        [MenuItem("HECTON-8/Hydraulic Erosion Forge/Run Self Audit", false, 192)]
+        [MenuItem("Hecton8/Hydraulic Erosion Forge/Run Self Audit", false, 192)]
         public static void RunAndWriteReport()
         {
             bool layoutPass = ValidateDropletLayout(out string layoutReason);

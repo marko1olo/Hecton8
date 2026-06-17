@@ -20,14 +20,14 @@ namespace Hecton8.Editor
             SceneView.duringSceneGui += DrawScene;
         }
 
-        [MenuItem("HECTON-8/Ecosystem/Toggle Live Rot Debug Gizmo")]
+        [MenuItem("Hecton8/Ecosystem/Toggle Live Rot Debug Gizmo")]
         public static void Toggle()
         {
             s_enabled = !s_enabled;
             SceneView.RepaintAll();
         }
 
-        [MenuItem("HECTON-8/Ecosystem/Toggle Live Rot Debug Gizmo", true)]
+        [MenuItem("Hecton8/Ecosystem/Toggle Live Rot Debug Gizmo", true)]
         public static bool ValidateToggle()
         {
             Menu.SetChecked("HECTON-8/Ecosystem/Toggle Live Rot Debug Gizmo", s_enabled);

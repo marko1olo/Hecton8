@@ -532,7 +532,8 @@ namespace Hecton8.World
             public WorldTerrainSurfaceMaterialWeights terrainSurfaceMaterialWeights;
             public WorldTerrainSurfaceMaterialClass terrainSurfaceMaterialClass;
             public WorldTerrainDetailEligibilityFlags terrainDetailEligibilityFlags;
-            public float4 terrainMaterialPackedControl;
+            public float4 terrainMaterialControl1;
+            public float4 terrainMaterialControl2;
             public int verticalDomainIndex;
             public float verticalDomainWeight;
             public byte isSecondaryDomain;
@@ -3378,7 +3379,8 @@ namespace Hecton8.World
             sample.terrainSurfaceMaterialWeights = terrainDetailSample.MaterialWeights;
             sample.terrainSurfaceMaterialClass = terrainDetailSample.DominantMaterial;
             sample.terrainDetailEligibilityFlags = terrainDetailSample.EligibilityFlags;
-            sample.terrainMaterialPackedControl = terrainDetailSample.PackedMaterialControl;
+            sample.terrainMaterialControl1 = terrainDetailSample.Control1;
+            sample.terrainMaterialControl2 = terrainDetailSample.Control2;
             sample.hasTerrainDetailSample = terrainDetailSample.IsValid ? (byte)1 : (byte)0;
         }
 
@@ -4169,6 +4171,7 @@ namespace Hecton8.World
             weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
             WorldTerrainDetailEligibilityFlags eligibility =
                 WorldTerrainMesoDetailFields.ResolveEligibilityFlags(in macro, in meso, in weights);
+            var splats = WorldTerrainSurfaceMaterialResolver.ResolveControlSplats(in weights);
 
             sample = new WorldTerrainDetailRuntimeSample
             {
@@ -4177,7 +4180,8 @@ namespace Hecton8.World
                 MaterialWeights = weights,
                 DominantMaterial = WorldTerrainSurfaceMaterialResolver.ResolveDominant(in weights),
                 EligibilityFlags = eligibility,
-                PackedMaterialControl = WorldTerrainSurfaceMaterialResolver.ResolvePackedControlRgba(in weights),
+                Control1 = splats.Control1,
+                Control2 = splats.Control2,
                 MacroArtifactVersion = WorldMacroGeologyFields.ArtifactVersion,
                 SurfaceMaterialContractVersion = WorldTerrainSurfaceMaterialResolver.ContractVersion,
                 MesoDetailContractVersion = WorldTerrainMesoDetailFields.ContractVersion,

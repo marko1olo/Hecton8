@@ -15,7 +15,7 @@ namespace Hecton8.AI.Editor
         private const string RosterDocPath = "C:/hades/Hecton8/AI_CREATURE_ROSTER_ENTERPRISE.md";
         private static readonly Encoding RosterEncoding = new UTF8Encoding(false);
 
-        [MenuItem("Hecton/Authoring/Build AI Creature Archetypes", priority = 182)]
+        [MenuItem("Hecton8/Authoring/Build AI Creature Archetypes", priority = 182)]
         public static void BuildCreatureArchetypes()
         {
             EnsureFolder("Assets/_Project/Data");

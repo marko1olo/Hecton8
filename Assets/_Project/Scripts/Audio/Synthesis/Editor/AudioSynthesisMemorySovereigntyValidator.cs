@@ -29,7 +29,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         private const string ReportPath = "Docs/Reports/AUDIO_SYNTHESIS_MEMORY_SOVEREIGNTY_1308.json";
         private const string FailureMessage = "Audio synthesis memory sovereignty validation failed; see Docs/Reports/AUDIO_SYNTHESIS_MEMORY_SOVEREIGNTY_1308.json";
 
-        [MenuItem("HECTON-8/Audio/Run Memory Sovereignty Validator 1308")]
+        [MenuItem("Hecton8/Audio/Run Memory Sovereignty Validator 1308")]
         public static void RunMenu()
         {
             bool passed = Run(out AudioSynthesisMemorySovereigntyResult result);

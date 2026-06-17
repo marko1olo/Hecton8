@@ -25,7 +25,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
         private bool _bakeInFlight;
         private bool _hasActiveProfile;
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Open Forge")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Open Forge")]
         public static void Open()
         {
             GetWindow<HadalTrenchForgeWindow>("Hadal Trench Forge");

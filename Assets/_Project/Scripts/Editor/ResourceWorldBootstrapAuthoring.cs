@@ -6,7 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ResourceWorldBootstrapAuthoring
     {
@@ -15,7 +15,7 @@ namespace Hecton8.EditorTools
         private const string RootPath = "--- WORLD ---/Resource_FieldSources";
         private const float DefaultSurfaceWaterLevelY = 14.02f;
 
-        [MenuItem("Hecton/Authoring/Rebuild Starter Resource Sources", priority = 172)]
+        [MenuItem("Hecton8/Authoring/Rebuild Starter Resource Sources", priority = 172)]
         public static void RebuildStarterResourceSources()
         {
             if (!WorldProceduralFinalPrefabQualityGate.AllowLegacyPrimitiveProductionAuthoring(
@@ -107,7 +107,7 @@ namespace Hecton8.EditorTools
             Debug.Log("[ResourceWorldBootstrap] Starter resource sources rebuilt.");
         }
 
-        [MenuItem("Hecton/Validation/Validate Starter Resource Sources", priority = 173)]
+        [MenuItem("Hecton8/Validation/Validate Starter Resource Sources", priority = 173)]
         public static void ValidateStarterResourceSources()
         {
             int errors = 0;

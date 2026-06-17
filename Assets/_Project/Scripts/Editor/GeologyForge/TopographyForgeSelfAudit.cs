@@ -13,7 +13,7 @@ namespace Hecton8.Editor.GeologyForge
 {
     internal static unsafe class TopographyForgeSelfAudit
     {
-        [MenuItem("HECTON-8/Geology Forge/Topography Forge/Self Audit", false, 188)]
+        [MenuItem("Hecton8/Geology Forge/Topography Forge/Self Audit", false, 188)]
         public static void RunAndWriteReport()
         {
             bool layoutValid = ValidateLayouts(out string layoutMessage);

@@ -30,7 +30,7 @@ namespace Hecton8.Ecosystem.Editor
             @"\b(?:public|private|protected|internal|static|sealed|override|virtual|partial|unsafe|async|extern|\s)+[A-Za-z_][A-Za-z0-9_<>\[\]\.,\s]*\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^;{}]*\)\s*(?:where\s+[^{]+)?\{",
             RegexOptions.Compiled);
 
-        [MenuItem("HECTON-8/Ecosystem/Run OOP Destroy Scanner")]
+        [MenuItem("Hecton8/Ecosystem/Run OOP Destroy Scanner")]
         public static void RunMenu()
         {
             string report = RunScan();

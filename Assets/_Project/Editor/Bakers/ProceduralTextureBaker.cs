@@ -90,7 +90,7 @@ namespace Hecton8.Editor.Bakers
             }
         }
 
-        [MenuItem("HECTON-8/Bakers/1605/Bake Default PBR Seed Pack", false, 205)]
+        [MenuItem("Hecton8/Bakers/1605/Bake Default PBR Seed Pack", false, 205)]
         public static void BakeDefaultPbrSeedPack()
         {
             BakeProfileDTO[] profiles =

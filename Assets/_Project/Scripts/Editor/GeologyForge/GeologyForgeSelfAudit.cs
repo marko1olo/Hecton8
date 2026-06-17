@@ -11,7 +11,7 @@ namespace Hecton8.Editor.GeologyForge
 {
     internal static unsafe class GeologyForgeSelfAudit
     {
-        [MenuItem("HECTON-8/Geology Forge/Run Layout Self Audit", false, 182)]
+        [MenuItem("Hecton8/Geology Forge/Run Layout Self Audit", false, 182)]
         public static void RunAndWriteReport()
         {
             GeologyVertexLayoutValidator.ValidateStruct();

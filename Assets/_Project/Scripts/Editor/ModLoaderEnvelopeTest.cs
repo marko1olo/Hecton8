@@ -8,7 +8,7 @@ namespace Hecton8.Editor
 {
     public static class ModLoaderEnvelopeTest
     {
-        [MenuItem("Hecton/Verification/Test Envelope Policy")]
+        [MenuItem("Hecton8/Verification/Test Envelope Policy")]
         public static void RunTest()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);

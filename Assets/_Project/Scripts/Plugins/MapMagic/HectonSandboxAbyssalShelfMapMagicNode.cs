@@ -102,8 +102,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             bool generationHandleScheduled = false;
             try
             {
-                rawHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                quantizedHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                rawHeights = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                quantizedHeights = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 rawHeightsRegistrationId = RegisterTempJobArray(rawHeights, nameof(rawHeights));
                 quantizedHeightsRegistrationId = RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
 
@@ -231,7 +231,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 array,
                 NativeMemoryOwner,
                 label,
-                NativeAllocationLifetime.TempJob);
+                NativeAllocationLifetime.TransientArena);
             if (registrationId <= 0)
                 throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
 

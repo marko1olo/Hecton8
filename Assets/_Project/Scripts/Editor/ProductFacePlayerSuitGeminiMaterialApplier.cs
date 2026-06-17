@@ -83,7 +83,7 @@ namespace Hecton8.Editor.ProductFace
         public static PlayerSuitGeminiMaterialApplyReport Apply(bool importFirst)
         {
             if (importFirst)
-                Hecton8.EditorTools.ExternalPbrTexturePackImporter.ImportExternalPbrTexturePacks();
+                Hecton8.Editor.ExternalPbrTexturePackImporter.ImportExternalPbrTexturePacks();
 
             ValidateSourceMaterials();
             EnsureFolder(OutputFolder);

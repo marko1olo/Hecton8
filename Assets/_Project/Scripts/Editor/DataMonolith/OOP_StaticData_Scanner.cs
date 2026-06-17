@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     public static class OOP_StaticData_Scanner
     {

@@ -39,7 +39,7 @@ namespace Hecton8.Editor
             "Assets/_Project/Scripts/Construction"
         };
 
-        [MenuItem("Hecton/Power/Run OOP Solar Scanner")]
+        [MenuItem("Hecton8/Power/Run OOP Solar Scanner")]
         public static void RunScanner()
         {
             ScanResult result = ScanProject();

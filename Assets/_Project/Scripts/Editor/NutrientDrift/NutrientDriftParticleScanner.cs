@@ -32,7 +32,7 @@ namespace Hecton8.Editor
             "Rigidbody"
         };
 
-        [MenuItem("HECTON-8/Ecosystem/Scan Nutrient Particle Authority")]
+        [MenuItem("Hecton8/Ecosystem/Scan Nutrient Particle Authority")]
         public static void RunMenuScan()
         {
             ScanResult result = ScanProject();
@@ -500,7 +500,7 @@ namespace Hecton8.Editor
 
     public static class Fluid_Particle_Scanner
     {
-        [MenuItem("HECTON-8/Ecosystem/Fluid Particle Scanner")]
+        [MenuItem("Hecton8/Ecosystem/Fluid Particle Scanner")]
         public static void RunMenuScan()
         {
             NutrientDriftParticleScanner.RunMenuScan();

@@ -14,7 +14,7 @@ namespace Hecton8.World.OfflineHadalTrenchBaker.Editor
     {
         private const string ReportPath = "Docs/Reports/TRENCH_MOCK_BENCHMARK_SHINOBU_241.json";
 
-        [MenuItem("HECTON-8/Hadal Trench Forge/Run 256 Mock Benchmark")]
+        [MenuItem("Hecton8/Hadal Trench Forge/Run 256 Mock Benchmark")]
         public static void RunMenu()
         {
             Run(HadalTrenchBakeConstants.DefaultVoxelResolution);

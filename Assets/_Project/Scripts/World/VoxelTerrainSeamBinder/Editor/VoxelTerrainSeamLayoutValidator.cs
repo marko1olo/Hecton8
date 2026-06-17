@@ -30,7 +30,7 @@ namespace Hecton8.World.VoxelTerrainSeamBinder.Editor
                 throw new InvalidOperationException("[SHINOBU_246] Voxel terrain seam layout validation failed.");
         }
 
-        [MenuItem("HECTON-8/Voxel Terrain Seam Binder/Validate Layouts")]
+        [MenuItem("Hecton8/Voxel Terrain Seam Binder/Validate Layouts")]
         public static void ValidateMenu()
         {
             Validate(logSuccess: true);

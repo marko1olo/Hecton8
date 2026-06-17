@@ -12,7 +12,7 @@ namespace Hecton8.Animation.FaunaProcedural.Editor
     {
         private const string DefaultCsvRelativePath = "Assets/_Project/Data/skeletal_profiles.csv";
 
-        [MenuItem("HECTON-8/Animation/Procedural Rig Tuner")]
+        [MenuItem("Hecton8/Animation/Procedural Rig Tuner")]
         private static void Open()
         {
             GetWindow<ProceduralRigTunerWindow>("Procedural Rig Tuner");

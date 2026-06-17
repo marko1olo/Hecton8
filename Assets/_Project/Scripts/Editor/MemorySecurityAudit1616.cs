@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Hecton8.Core;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     internal static unsafe class MemorySecurityAudit1616
     {

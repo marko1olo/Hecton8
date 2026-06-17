@@ -20,7 +20,7 @@ namespace Hecton8.Editor
             "Collider.ClosestPoint"
         };
 
-        [MenuItem("HECTON-8/AI/OOP Proximity Query Scanner")]
+        [MenuItem("Hecton8/AI/OOP Proximity Query Scanner")]
         public static void RunMenu()
         {
             string report = RunScan();

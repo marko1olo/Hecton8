@@ -1,0 +1,1 @@
+Cam Main Camera clearFlags=SolidColor bg=RGBA(0.035, 0.130, 0.170, 1.000)

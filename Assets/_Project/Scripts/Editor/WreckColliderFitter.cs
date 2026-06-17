@@ -2,7 +2,7 @@ using Hecton8.World;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Editor entrypoint for wreck primitive-collider fitting.
@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
             return HectonCompoundColliderAutoFitter.BakeSelectionRoot(root);
         }
 
-        [MenuItem("Hecton/Physics/Fit Wreck Colliders From Selection", priority = 216)]
+        [MenuItem("Hecton8/Physics/Fit Wreck Colliders From Selection", priority = 216)]
         private static void FitSelectedWreckColliders()
         {
             GameObject[] selected = Selection.gameObjects;

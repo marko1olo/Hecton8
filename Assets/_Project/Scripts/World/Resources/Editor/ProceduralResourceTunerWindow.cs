@@ -25,7 +25,7 @@ namespace Hecton8.World.Editor
         private bool _reportedVaultInactive;
         private bool _updateRegistered;
 
-        [MenuItem("HECTON-8/World/Procedural Resource Tuner")]
+        [MenuItem("Hecton8/World/Procedural Resource Tuner")]
         public static void Open()
         {
             GetWindow<ProceduralResourceTunerWindow>("Procedural Resource Tuner");

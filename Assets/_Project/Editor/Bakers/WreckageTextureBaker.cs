@@ -14,7 +14,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class WreckageTextureBaker : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1727/";
+        private const string MenuRoot = "Hecton8/Bakers/1727/";
         private const string ComputeShaderPath = "Assets/_Project/Art/Shaders/Include/WreckageCarbonizationBaker1727.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Wreckage";
         private const int MinimumAlbedoSize = 1024;

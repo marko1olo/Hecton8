@@ -58,7 +58,7 @@ namespace Hecton8.Editor.GeologyForge
             public Mesh Lod2;
         }
 
-        [MenuItem("HECTON-8/Geology Forge/Bake CSV Profiles", false, 180)]
+        [MenuItem("Hecton8/Geology Forge/Bake CSV Profiles", false, 180)]
         public static void BakeCsvProfilesMenu()
         {
             if (!TryLoadCsvProfiles(_menuProfiles, "bake request rejected"))
@@ -68,7 +68,7 @@ namespace Hecton8.Editor.GeologyForge
                 Debug.LogWarning("Geology Forge async bake request ignored: no profiles loaded or a bake is already running.");
         }
 
-        [MenuItem("HECTON-8/Geology Forge/Bake 1606 Abyssal Validation Set", false, 181)]
+        [MenuItem("Hecton8/Geology Forge/Bake 1606 Abyssal Validation Set", false, 181)]
         public static void BakeAgent1606ValidationSetMenu()
         {
             _menuProfiles.Clear();

@@ -1,0 +1,1 @@
+Cube pixel: R=8 G=3 B=14

@@ -2,7 +2,7 @@ using System.Globalization;
 using Hecton8.World;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
     /// Shared support-family validation contract for world support materials, routing, and LOD rules.

@@ -13,7 +13,7 @@ namespace Hecton8.Editor
         private static int _waitFrames = 0;
         private static float _stateTimer = 0f;
 
-        [MenuItem("Hecton/Verification/Run PlayMode Smoke Test")]
+        [MenuItem("Hecton8/Verification/Run PlayMode Smoke Test")]
         public static void RunTest()
         {
             Debug.Log("[PlayModeSmokeTester] Starting automated verification...");

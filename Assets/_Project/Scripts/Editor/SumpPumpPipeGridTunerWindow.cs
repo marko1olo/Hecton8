@@ -56,7 +56,7 @@ namespace Hecton8.Editor
         private string _binaryOutputPath;
         private double _nextReadoutRefresh;
 
-        [MenuItem("HECTON-8/Hydraulic Sump Tuner")]
+        [MenuItem("Hecton8/Hydraulic Sump Tuner")]
         public static void Open()
         {
             SumpPumpPipeGridTunerWindow window = GetWindow<SumpPumpPipeGridTunerWindow>();

@@ -184,7 +184,7 @@ namespace Hecton8.Editor.ModdingSDK
             "TryGetLatestCreated"
         };
 
-        [MenuItem("Hecton/Modding/Run APEX Source Guard")]
+        [MenuItem("Hecton8/Modding/Run APEX Source Guard")]
         private static void RunFromMenu()
         {
             ApexIntegratorSourceGuardResult result = RunDefaultScope();
@@ -194,7 +194,7 @@ namespace Hecton8.Editor.ModdingSDK
                 Debug.Log(result.Summary);
         }
 
-        [MenuItem("Hecton/Diagnostics/Run APEX Core Runtime Source Guard")]
+        [MenuItem("Hecton8/Diagnostics/Run APEX Core Runtime Source Guard")]
         private static void RunCoreRuntimeFromMenu()
         {
             ApexIntegratorSourceGuardResult result = RunCoreRuntimeScope();

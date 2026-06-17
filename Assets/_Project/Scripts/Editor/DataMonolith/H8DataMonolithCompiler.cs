@@ -20,7 +20,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Hecton8.EditorValidation
+namespace Hecton8.Editor.Validation
 {
     /// <summary>
     /// Editor compiler that bakes authored CSV/JSON source data into one Data Monolith blob.

@@ -115,7 +115,7 @@ namespace Hecton8.Editor.Bakers
             "TryCaptureAssetFileRollbackSnapshots(albedoPath, normalPath, maskPath, materialPath"
         };
 
-        [MenuItem("HECTON-8/Bakers/1605/Run Apex Source Verification", false, 207)]
+        [MenuItem("Hecton8/Bakers/1605/Run Apex Source Verification", false, 207)]
         public static void RunMenuVerification()
         {
             if (!RunSourceVerification(out ApexVerificationResult1605 result))

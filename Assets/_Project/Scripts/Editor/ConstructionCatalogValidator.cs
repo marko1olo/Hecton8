@@ -4,13 +4,13 @@ using Hecton8.Construction;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     public static class ConstructionCatalogValidator
     {
         private const string ConstructionDataRoot = "Assets/_Project/Data/Construction";
 
-        [MenuItem("Hecton/Validation/Validate Construction Catalog", priority = 240)]
+        [MenuItem("Hecton8/Validation/Validate Construction Catalog", priority = 240)]
         public static void ValidateConstructionCatalog()
         {
             string[] buildableGuids = AssetDatabase.FindAssets("t:BuildableData", new[] { ConstructionDataRoot });

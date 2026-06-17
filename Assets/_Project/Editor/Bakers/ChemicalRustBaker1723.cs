@@ -13,7 +13,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class ChemicalRustBaker1723 : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1723/";
+        private const string MenuRoot = "Hecton8/Bakers/1723/";
         private const string ComputeShaderPath = "Assets/_Project/Art/Shaders/Include/ChemicalRustBaker1723.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Generated/ChemicalRust1723";
         private const int MinimumAlbedoSize = 1024;

@@ -15,7 +15,7 @@ namespace Hecton8.Editor.Bakers
 {
     public sealed class GeologicalStrataBaker1724 : EditorWindow
     {
-        private const string MenuRoot = "HECTON-8/Bakers/1724/";
+        private const string MenuRoot = "Hecton8/Bakers/1724/";
         private const string ComputePath = "Assets/_Project/Art/Shaders/Include/GeologicalStrataBaker1724.compute";
         private const string DefaultOutputFolder = "Assets/_Project/Art/Textures/Geology";
         private const string FirstPartyOutputRoot = "Assets/_Project/";

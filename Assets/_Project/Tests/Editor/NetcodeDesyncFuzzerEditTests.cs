@@ -2148,7 +2148,7 @@ namespace Hecton8.Tests.Editor
         private Label _hashLabel;
         private Label _metricsLabel;
 
-        [MenuItem("HECTON-8/Networking/Netcode Desync Fuzzer")]
+        [MenuItem("Hecton8/Networking/Netcode Desync Fuzzer")]
         public static void Open()
         {
             GetWindow<NetcodeDesyncFuzzerWindow>("Netcode Desync Fuzzer");

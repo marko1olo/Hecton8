@@ -38,7 +38,7 @@ namespace Hecton8.Physics.Editor
         private bool _updatingControls;
         private double _nextRefreshTime;
 
-        [MenuItem("HECTON-8/Physics/Async Buoyancy GPU Readback XRay")]
+        [MenuItem("Hecton8/Physics/Async Buoyancy GPU Readback XRay")]
         public static void Open()
         {
             GetWindow<AsyncGpuReadbackXRayWindow>("Async Buoyancy XRay");
