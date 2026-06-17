@@ -200,21 +200,26 @@ namespace Hecton8.EditorTools
 
         private static GameObject EnsureWorldRoot(string path)
         {
-            string[] parts = path.Split('/');
-            GameObject current = null;
-            string currentPath = string.Empty;
+            if (string.IsNullOrEmpty(path)) return null;
 
-            for (int i = 0; i < parts.Length; i++)
+            string[] parts = path.Split('/');
+            if (parts.Length == 0) return null;
+
+            GameObject current = GameObject.Find(parts[0]);
+            if (current == null)
             {
-                currentPath = string.IsNullOrEmpty(currentPath) ? parts[i] : currentPath + "/" + parts[i];
-                GameObject found = GameObject.Find(currentPath);
+                current = new GameObject(parts[0]);
+            }
+
+            for (int i = 1; i < parts.Length; i++)
+            {
+                Transform childTransform = current.transform.Find(parts[i]);
+                GameObject found = childTransform != null ? childTransform.gameObject : null;
+
                 if (found == null)
                 {
                     found = new GameObject(parts[i]);
-                    if (current != null)
-                    {
-                        found.transform.SetParent(current.transform, false);
-                    }
+                    found.transform.SetParent(current.transform, false);
                 }
 
                 current = found;
