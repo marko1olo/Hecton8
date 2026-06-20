@@ -1,41 +1,48 @@
-#if UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS
+﻿#if UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Hecton8.Core;
+using System.Collections.Generic;
 
 namespace Hecton8.Tests.Core
 {
+    [TestFixture]
     public class GameTickManagerTests
     {
-        private GameTickManager _gameTickManager;
+        private GameTickManager _manager;
+        private GameObject _managerGameObject;
 
         private class StubTickable : ITickable
         {
-            public void Tick(float deltaTime) {}
+            public int TickCount { get; private set; }
+
+            public void Tick(float deltaTime)
+            {
+                TickCount++;
+            }
             public void Tick() {}
         }
 
         [SetUp]
         public void Setup()
         {
-            var go = new GameObject("GameTickManager");
-            _gameTickManager = go.AddComponent<GameTickManager>();
+            _managerGameObject = new GameObject("GameTickManager");
+            _manager = _managerGameObject.AddComponent<GameTickManager>();
 
-            // Force initialization to populate internal lists
-            var method = typeof(GameTickManager).GetMethod("EnsureInitialized", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (method != null)
+            var ensureInit = typeof(GameTickManager).GetMethod("EnsureInitialized", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (ensureInit != null)
             {
-                method.Invoke(_gameTickManager, null);
+                ensureInit.Invoke(_manager, null);
             }
         }
 
         [TearDown]
         public void Teardown()
         {
-            if (_gameTickManager != null)
+            if (_managerGameObject != null)
             {
-                Object.DestroyImmediate(_gameTickManager.gameObject);
+                Object.DestroyImmediate(_managerGameObject);
             }
         }
 
@@ -48,10 +55,10 @@ namespace Hecton8.Tests.Core
             Assert.IsNotNull(fieldInfo, "_tickables field not found");
 
             // Act
-            _gameTickManager.Register(stub);
+            _manager.Register(stub);
 
             // Assert
-            var tickListObj = fieldInfo.GetValue(_gameTickManager);
+            var tickListObj = fieldInfo.GetValue(_manager);
             Assert.IsNotNull(tickListObj, "TickList is null");
 
             var countProp = tickListObj.GetType().GetProperty("Count");
@@ -59,6 +66,35 @@ namespace Hecton8.Tests.Core
 
             int count = (int)countProp.GetValue(tickListObj);
             Assert.AreEqual(1, count, "Item was not added to the tickables list");
+        }
+
+        [Test]
+        public void Unregister_ITickable_RemovesFromCollection()
+        {
+            // Arrange
+            var tickable = new StubTickable();
+            _manager.Register(tickable);
+
+            // Act
+            _manager.Unregister(tickable);
+
+            // Assert
+            var tickablesField = typeof(GameTickManager).GetField("_tickables", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(tickablesField, "Could not find _tickables field");
+
+            var tickablesList = tickablesField.GetValue(_manager);
+            var countProp = tickablesList.GetType().GetProperty("Count");
+            Assert.IsNotNull(countProp, "Could not find Count property");
+
+            int count = (int)countProp.GetValue(tickablesList);
+            Assert.AreEqual(0, count, "Tickable was not removed from the collection.");
+        }
+
+        [Test]
+        public void Unregister_ITickable_DoesNotThrowOnNull()
+        {
+            // Act & Assert
+            Assert.DoesNotThrow(() => _manager.Unregister((ITickable)null));
         }
     }
 }
