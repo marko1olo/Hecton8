@@ -42,11 +42,12 @@ namespace Shapes {
 
 		void OnValidate() => UpdateChildShapes();
 
+		static List<ShapeRenderer> tempShapes = new List<ShapeRenderer>();
+
 		void UpdateChildShapes() {
-			ShapeRenderer[] shapes = GetComponentsInChildren<ShapeRenderer>();
-			if( shapes != null )
-				foreach( ShapeRenderer shape in shapes )
-					shape.UpdateAllMaterialProperties();
+			GetComponentsInChildren<ShapeRenderer>( false, tempShapes );
+			foreach( ShapeRenderer shape in tempShapes )
+				shape.UpdateAllMaterialProperties();
 		}
 	}
 
