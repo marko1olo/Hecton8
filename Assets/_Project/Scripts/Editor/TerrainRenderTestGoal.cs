@@ -12,7 +12,7 @@ namespace Hecton8.Editor
 {
     public static class TerrainRenderTestGoal
     {
-        private static string ArtifactDir = "C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/";
+        private static string ArtifactDir = "./";
         private static MapMagicObject mmObject;
 
         [MenuItem("Hecton8/Tests/Terrain Render Test")]
