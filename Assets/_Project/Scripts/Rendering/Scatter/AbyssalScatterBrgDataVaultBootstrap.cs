@@ -339,10 +339,10 @@ namespace Hecton8.Rendering.Scatter
                 if (File.Exists(path))
                     File.Delete(path);
             }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
-            catch (ArgumentException) { }
-            catch (NotSupportedException) { }
+            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is ArgumentException || exception is NotSupportedException)
+            {
+                LogWarningCold(null, "[1614] BRG scatter bootstrap failed to delete file: " + exception.GetType().Name);
+            }
         }
 
         private static void CommitUriCacheCold(string tempPath, string cachePath)
