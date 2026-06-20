@@ -129,13 +129,28 @@ namespace Hecton8.VFX
         private bool _gpuStateRebuildRequested;
         private readonly FoamWakeImpactDTO[] _wakeUploadSnapshot = new FoamWakeImpactDTO[JacobianFoamContracts.WakeImpactCapacity];
 
+        private struct RenderGraphAcknowledgement
+        {
+            public int OwnerId;
+            public uint Sequence;
+            public byte HistoryWriteIndex;
+
+            public bool TryConsume(int instanceId, uint lastConsumedAckSequence, out byte historyWriteIndex)
+            {
+                historyWriteIndex = default;
+                if (OwnerId != instanceId || Sequence == 0u || Sequence == lastConsumedAckSequence)
+                    return false;
+
+                historyWriteIndex = HistoryWriteIndex;
+                return true;
+            }
+        }
+
         private static FoamRenderGraphPayload s_publishedPayload;
         private static bool s_hasPublishedPayload;
         private static int s_publishedOwnerId;
         private static RenderTexture s_publishedFoamTexture;
-        private static uint s_renderGraphAckSequence;
-        private static int s_renderGraphAckOwnerId;
-        private static byte s_renderGraphAckHistoryWriteIndex;
+        private static RenderGraphAcknowledgement s_renderGraphAck;
 
         public void ColdBindDataVault(IDataVault vault)
         {
@@ -460,9 +475,12 @@ namespace Hecton8.VFX
             if (ownerId == 0 || sequence == 0u || foamTexture == null)
                 return;
 
-            s_renderGraphAckOwnerId = ownerId;
-            s_renderGraphAckSequence = sequence;
-            s_renderGraphAckHistoryWriteIndex = (byte)(historyWriteIndex & 1);
+            s_renderGraphAck = new RenderGraphAcknowledgement
+            {
+                OwnerId = ownerId,
+                Sequence = sequence,
+                HistoryWriteIndex = (byte)(historyWriteIndex & 1)
+            };
             s_publishedFoamTexture = foamTexture;
         }
 
@@ -1260,28 +1278,22 @@ namespace Hecton8.VFX
                 s_publishedFoamTexture = null;
             }
 
-            if (s_renderGraphAckOwnerId == _instanceId)
+            if (s_renderGraphAck.OwnerId == _instanceId)
             {
-                s_renderGraphAckOwnerId = 0;
-                s_renderGraphAckSequence = 0u;
-                s_renderGraphAckHistoryWriteIndex = 0;
+                s_renderGraphAck = default;
             }
         }
 
         private void ConsumeRenderGraphAcknowledgement()
         {
-            if (s_renderGraphAckOwnerId != _instanceId ||
-                s_renderGraphAckSequence == 0u ||
-                s_renderGraphAckSequence == _lastConsumedAckSequence)
-            {
+            if (!s_renderGraphAck.TryConsume(_instanceId, _lastConsumedAckSequence, out byte historyWriteIndex))
                 return;
-            }
 
-            _readHistoryIndex = s_renderGraphAckHistoryWriteIndex == 0 ? 0 : 1;
+            _readHistoryIndex = historyWriteIndex == 0 ? 0 : 1;
             RTHandle read = _readHistoryIndex == 0 ? _foamHistoryA : _foamHistoryB;
             _activeFoamTexture = read != null ? read.rt : null;
             _clearHistoryNextDispatch = false;
-            _lastConsumedAckSequence = s_renderGraphAckSequence;
+            _lastConsumedAckSequence = s_renderGraphAck.Sequence;
         }
 
         private static float ResolveWrappedTime(float timeSeconds)
