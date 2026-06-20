@@ -462,29 +462,35 @@ namespace Shapes {
 		}
 
 
-		static void Text_Internal( TextMeshPro tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
+		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
 			// todo: something fucky happens sometimes when fallback fonts are the only things in town
 			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
 				// will draw on dispose
 			}
 
 			// ensure child renderers are disabled
-			for( int i = 0; i < tmp.transform.childCount; i++ ) {
-				// todo: optimize by caching some refs fam
-				TMP_SubMesh sm = tmp.transform.GetChild( i ).GetComponent<TMP_SubMesh>();
-				sm.renderer.enabled = false; // :>
+			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
+			if( submeshes != null ) {
+				for( int i = 0; i < submeshes.Length; i++ ) {
+					if( submeshes[i] != null && submeshes[i].renderer != null )
+						submeshes[i].renderer.enabled = false; // :>
+				}
 			}
 
 			// ;-;
 			if( tmp.textInfo.materialCount > 1 ) {
 				// we have fallback fonts so GreaT!! let's just draw everything because fuck me
-				for( int i = 0; i < tmp.transform.childCount; i++ ) {
-					TMP_SubMesh sm = tmp.transform.GetChild( i ).GetComponent<TMP_SubMesh>();
-					sm.renderer.enabled = false; // :>
-					if( sm.sharedMaterial == null )
-						continue; // cursed but ok
-					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
-						// will draw on dispose
+				if( submeshes != null ) {
+					for( int i = 0; i < submeshes.Length; i++ ) {
+						TMP_SubMesh sm = submeshes[i];
+						if( sm == null ) continue;
+						if( sm.renderer != null )
+							sm.renderer.enabled = false; // :>
+						if( sm.sharedMaterial == null )
+							continue; // cursed but ok
+						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
+							// will draw on dispose
+						}
 					}
 				}
 			}
