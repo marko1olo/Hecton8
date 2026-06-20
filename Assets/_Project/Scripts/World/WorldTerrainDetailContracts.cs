@@ -174,16 +174,26 @@ namespace Hecton8.World
             float provinceJitter = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x51A7E531u, 900f);
             float localPatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0xB34ACE21u, 240f);
 
+            float steepSlope = math.smoothstep(0.35f, 0.55f, sample.Slope01);
+            float verySteep = math.smoothstep(0.55f, 0.85f, sample.Slope01);
+            
+            // Hard rock dominates completely on steep walls
+            float rockBase = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f));
+            float finalRock = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
+
+            // Add high contrast to sand vs silt patches using noise
+            float patchContrast = math.smoothstep(0.3f, 0.7f, localPatch);
+
             WorldTerrainSurfaceMaterialWeights weights = new WorldTerrainSurfaceMaterialWeights
             {
-                ShellSand = math.saturate((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + (localPatch - 0.42f) * 0.08f),
-                LimestoneShelf = math.saturate((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)),
-                ClaySilt = math.saturate((sediment * (0.58f + basin * 0.30f) * (1f - hardRock * 0.42f)) + (slump * 0.18f) + (flat * abyss * 0.16f)),
-                HardRock = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (slope * 0.36f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f) - (reef * 0.12f) - (seep * 0.16f)),
-                BrineSaltCrust = math.saturate((trench * (0.46f + abyss * 0.34f)) + (sample.DepthMeters > 2500f ? basin * 0.12f : 0f)),
-                ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f)),
-                ReefRubble = math.saturate(reef * shallow * upperWater * (0.82f + localPatch * 0.38f) * (1f - trench * 0.72f)),
-                SeepCrust = math.saturate(seep * (0.72f + tributary * 0.32f + erosion * 0.24f) * (1f - shelf * 0.24f))
+                ShellSand = math.saturate(((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + patchContrast * 0.4f) * (1f - finalRock)),
+                LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)) * (1f - finalRock)),
+                ClaySilt = math.saturate(((sediment * (0.58f + basin * 0.30f)) + (slump * 0.18f) + (flat * abyss * 0.16f) + (1f - patchContrast) * 0.4f) * (1f - finalRock)),
+                HardRock = finalRock,
+                BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (sample.DepthMeters > 2500f ? basin * 0.12f : 0f)) * (1f - finalRock)),
+                ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f) * (1f - finalRock)),
+                ReefRubble = math.saturate(reef * shallow * upperWater * (0.82f + localPatch * 0.38f) * (1f - trench * 0.72f) * (1f - finalRock)),
+                SeepCrust = math.saturate(seep * (0.72f + tributary * 0.32f + erosion * 0.24f) * (1f - shelf * 0.24f) * (1f - finalRock))
             };
 
             return NormalizeOrFallback(weights, in sample);

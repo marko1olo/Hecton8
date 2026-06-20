@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -101,7 +101,8 @@ namespace Hecton8.Tests.PlayMode
 
             Assert.IsTrue(_mockListener.WasEventReceived, "Event should have been received.");
             Assert.AreEqual((ushort)FlashlightEventType.Toggled, _mockListener.LastPayload.EventType, "Event type should be Toggled.");
-            Assert.IsFalse(FlashlightEventPayload.IsOn(in _mockListener.LastPayload), "Payload should indicate flashlight is off.");
+            var payload = _mockListener.LastPayload;
+            Assert.IsFalse(FlashlightEventPayload.IsOn(in payload), "Payload should indicate flashlight is off.");
         }
 
         [Test]

@@ -526,6 +526,17 @@ namespace Hecton8.World
             depth += rockDetailNoise * 70f * mesoDetailWeight;
             depth -= rockyRidgeDetail * 60f * mesoDetailWeight * math.saturate(descent01); // Sharp extrusions on ridges
 
+            // SEDIMENT DUNE/RIPPLE DETAIL PASS
+            // Adds organic low-frequency undulations (scales ~30m down to ~5m) to flat abyssal plains.
+            // Using a softer simplex noise mix to simulate sediment accumulation and deep sea currents.
+            float sedimentDuneNoise = (FractalSimplexNoise01(warpedNorm * 210.0f + new float2(31.5f, -12.1f), p.Seed ^ 0x8A9B1C2Du) * 2f - 1f);
+            float sedimentRippleNoise = (FractalSimplexNoise01(warpedNorm * 650.0f + new float2(-55.2f, 77.4f), p.Seed ^ 0x3F2E1D4Cu) * 2f - 1f);
+            
+            float sedimentExposure = math.saturate(basinMask * 0.7f + (1f - math.saturate(hardRockExposure * 1.5f)) * 0.5f);
+            
+            depth += sedimentDuneNoise * 18f * sedimentExposure;
+            depth += sedimentRippleNoise * 4.5f * sedimentExposure;
+
             if (depth < -260f)
                 depth = -260f + (depth + 260f) * 0.42f;
             depth = math.clamp(depth, -620f, p.HadalDepthMeters);
@@ -595,6 +606,29 @@ namespace Hecton8.World
             }
 
             return total / math.max(0.0001f, norm);
+        }
+
+        public static float FractalSimplexNoise01(float2 sample, uint seed)
+        {
+            float amplitude = 0.5f;
+            float frequency = 1f;
+            float total = 0f;
+            float norm = 0f;
+            for (int octave = 0; octave < 5; octave++)
+            {
+                total += SimplexNoise01(sample * frequency, seed + (uint)octave * 0x9E3779B9u) * amplitude;
+                norm += amplitude;
+                amplitude *= 0.5f;
+                frequency *= 2.02f;
+            }
+
+            return total / math.max(0.0001f, norm);
+        }
+
+        private static float SimplexNoise01(float2 sample, uint seed)
+        {
+            float2 seedOffset = new float2(HashToUnitFloat(seed) * 1000f, HashToUnitFloat(seed ^ 0x9E3779B9u) * 1000f);
+            return Unity.Mathematics.noise.snoise(sample + seedOffset) * 0.5f + 0.5f;
         }
 
         private static float ValueNoise01(float2 sample, uint seed)

@@ -812,7 +812,7 @@ namespace Hecton8.World
             terrainDraftRange = Mathf.Max(terrainMainRange, terrainDraftRange);
             terrainMainTeardownRange = Mathf.Max(terrainMainRange + 1, terrainMainTeardownRange);
             terrainMainPixelError = Mathf.Clamp(terrainMainPixelError, 1, 3);
-            terrainMainBaseMapDistance = Mathf.Clamp(terrainMainBaseMapDistance, 512, 2000);
+            terrainMainBaseMapDistance = Mathf.Clamp(terrainMainBaseMapDistance, 512, 12000);
             terrainDraftPixelError = Mathf.Clamp(terrainDraftPixelError, terrainMainPixelError + 1, 12);
             terrainDraftBaseMapDistance = Mathf.Clamp(terrainDraftBaseMapDistance, 256, terrainMainBaseMapDistance);
             terrainHeightmapMaximumLod = Mathf.Clamp(terrainHeightmapMaximumLod, 0, 3);
@@ -892,7 +892,7 @@ namespace Hecton8.World
             profile.nearSliceScale = Mathf.Clamp(profile.nearSliceScale, 0.6f, 1.4f);
             profile.midSliceScale = Mathf.Clamp(profile.midSliceScale, 0.6f, 1.5f);
             profile.terrainPixelError = Mathf.Clamp(profile.terrainPixelError <= 0 ? 4 : profile.terrainPixelError, 1, 12);
-            profile.terrainBaseMapDistance = Mathf.Clamp(profile.terrainBaseMapDistance <= 0 ? 1600 : profile.terrainBaseMapDistance, 512, 4000);
+            profile.terrainBaseMapDistance = Mathf.Clamp(profile.terrainBaseMapDistance <= 0 ? 1600 : profile.terrainBaseMapDistance, 512, 12000);
             profile.terrainDetailDistance = Mathf.Clamp(profile.terrainDetailDistance <= 0f ? 96f : profile.terrainDetailDistance, 0f, 160f);
             profile.terrainDetailDensity = Mathf.Clamp(profile.terrainDetailDensity <= 0f ? 1f : profile.terrainDetailDensity, 0.4f, 1.2f);
             return profile;
