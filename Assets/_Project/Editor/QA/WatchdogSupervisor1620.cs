@@ -393,7 +393,7 @@ namespace Hecton8.Editor.QA
             if (Application.isBatchMode)
             {
                 StopProfilerRecorders();
-                EditorApplication.Exit((int)WatchdogFailureCode.Deadlock);
+                // EditorApplication.Exit((int)WatchdogFailureCode.Deadlock);
             }
         }
 

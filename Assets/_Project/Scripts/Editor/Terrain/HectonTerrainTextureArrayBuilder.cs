@@ -101,7 +101,8 @@ namespace Hecton8.Editor.Terrain
                 }
 
                 // 1. ALBEDO (sRGB = true)
-                Texture2D albedoRead = GetReadableTexture(layer.diffuseTexture, _resolution, false);
+                Texture2D albedoRead = GetReadableTexture(layer.diffuseTexture, _resolution, false, layer.diffuseRemapMin, layer.diffuseRemapMax);
+                if (layer.diffuseTexture == null) Debug.LogError("Diffuse Texture is NULL for layer " + layer.name);
                 if (albedoRead != null)
                 {
                     EditorUtility.CompressTexture(albedoRead, _formatAlbedo, UnityEditor.TextureCompressionQuality.Best);
@@ -115,7 +116,7 @@ namespace Hecton8.Editor.Terrain
                     for (int c = 0; c < colors.Length; c++) colors[c] = new Color32(128, 128, 128, 255);
                     flatAlbedo.SetPixels32(colors);
                     flatAlbedo.Apply();
-                    Texture2D albedoFallback = GetReadableTexture(flatAlbedo, _resolution, false);
+                    Texture2D albedoFallback = GetReadableTexture(flatAlbedo, _resolution, false, layer.diffuseRemapMin, layer.diffuseRemapMax);
                     EditorUtility.CompressTexture(albedoFallback, _formatAlbedo, UnityEditor.TextureCompressionQuality.Best);
                     UnityEngine.Graphics.CopyTexture(albedoFallback, 0, albedoArray, i);
                     DestroyImmediate(flatAlbedo);
@@ -125,7 +126,7 @@ namespace Hecton8.Editor.Terrain
                 // 2. NORMAL (Linear = true)
                 if (layer.normalMapTexture != null)
                 {
-                    Texture2D normalRead = GetReadableTexture(layer.normalMapTexture, _resolution, true);
+                    Texture2D normalRead = GetReadableTexture(layer.normalMapTexture, _resolution, true, Vector4.zero, Vector4.one);
                     if (normalRead != null)
                     {
                         EditorUtility.CompressTexture(normalRead, _formatNormal, UnityEditor.TextureCompressionQuality.Best);
@@ -142,7 +143,7 @@ namespace Hecton8.Editor.Terrain
                     for (int c = 0; c < colors.Length; c++) colors[c] = flatColor;
                     flatNormal.SetPixels32(colors);
                     flatNormal.Apply();
-                    Texture2D normalRead = GetReadableTexture(flatNormal, _resolution, true);
+                    Texture2D normalRead = GetReadableTexture(flatNormal, _resolution, true, Vector4.zero, Vector4.one);
                     EditorUtility.CompressTexture(normalRead, _formatNormal, UnityEditor.TextureCompressionQuality.Best);
                     UnityEngine.Graphics.CopyTexture(normalRead, 0, normalArray, i);
                     DestroyImmediate(flatNormal);
@@ -152,7 +153,7 @@ namespace Hecton8.Editor.Terrain
                 // 3. MASK / HEIGHT (Linear = true)
                 if (_formatMask != TextureFormat.Alpha8 && layer.maskMapTexture != null)
                 {
-                    Texture2D maskRead = GetReadableTexture(layer.maskMapTexture, _resolution, true);
+                    Texture2D maskRead = GetReadableTexture(layer.maskMapTexture, _resolution, true, Vector4.zero, Vector4.one);
                     if (maskRead != null)
                     {
                         EditorUtility.CompressTexture(maskRead, _formatMask, UnityEditor.TextureCompressionQuality.Best);
@@ -168,7 +169,7 @@ namespace Hecton8.Editor.Terrain
                     for (int j = 0; j < 16; j++) colors[j] = new Color32(0, 0, 128, 0); // Neutral height in B
                     flatMask.SetPixels32(colors);
                     flatMask.Apply();
-                    Texture2D maskRead = GetReadableTexture(flatMask, _resolution, true);
+                    Texture2D maskRead = GetReadableTexture(flatMask, _resolution, true, Vector4.zero, Vector4.one);
                     EditorUtility.CompressTexture(maskRead, _formatMask, UnityEditor.TextureCompressionQuality.Best);
                     UnityEngine.Graphics.CopyTexture(maskRead, 0, maskArray, i);
                     DestroyImmediate(flatMask);
@@ -203,31 +204,30 @@ namespace Hecton8.Editor.Terrain
             }
         }
 
-        private Texture2D GetReadableTexture(Texture2D source, int targetResolution, bool isLinear)
+        private Texture2D GetReadableTexture(Texture2D source, int targetRes, bool isLinear, Vector4 remapMin, Vector4 remapMax)
         {
-            if (source == null) return null;
-            
-            RenderTextureReadWrite rw = isLinear ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.sRGB;
-            RenderTexture renderTex = RenderTexture.GetTemporary(targetResolution, targetResolution, 0, RenderTextureFormat.ARGB32, rw);
-            
-            RenderTexture previous = RenderTexture.active;
-            Texture2D readableText = null;
-            try
+            if (source == null)
             {
-                UnityEngine.Graphics.Blit(source, renderTex);
-                RenderTexture.active = renderTex;
-                
-                readableText = new Texture2D(targetResolution, targetResolution, TextureFormat.RGBA32, true, isLinear);
-                readableText.ReadPixels(new Rect(0, 0, targetResolution, targetResolution), 0, 0);
-                readableText.Apply();
+                Texture2D fallback = new Texture2D(targetRes, targetRes, TextureFormat.RGBA32, true, isLinear);
+                Color[] colors = new Color[targetRes * targetRes];
+                for (int i = 0; i < colors.Length; i++) colors[i] = Color.Lerp(remapMin, remapMax, 0.5f);
+                fallback.SetPixels(colors);
+                fallback.Apply();
+                return fallback;
             }
-            finally
-            {
-                RenderTexture.active = previous;
-                RenderTexture.ReleaseTemporary(renderTex);
-            }
+
+            RenderTexture rt = RenderTexture.GetTemporary(targetRes, targetRes, 0, RenderTextureFormat.ARGB32, isLinear ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.sRGB);
+            UnityEngine.Graphics.Blit(source, rt);
             
+            Texture2D readableText = new Texture2D(targetRes, targetRes, TextureFormat.RGBA32, true, isLinear);
+            RenderTexture.active = rt;
+            readableText.ReadPixels(new Rect(0, 0, targetRes, targetRes), 0, 0);
+            readableText.Apply();
+            RenderTexture.active = null;
+            RenderTexture.ReleaseTemporary(rt);
+
             return readableText;
         }
     }
 }
+

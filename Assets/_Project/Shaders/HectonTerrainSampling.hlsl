@@ -1,54 +1,81 @@
 #ifndef HECTON_TERRAIN_SAMPLING_HLSL
 #define HECTON_TERRAIN_SAMPLING_HLSL
 
-// _Control / sampler_Control are declared by TerrainLitInput.hlsl — do NOT redeclare.
+#define HECTON_UV_SCALE 5.0
+#define HECTON_TRIPLANAR_BLEND 4.0
+
+// _Control / sampler_Control are declared by TerrainLitInput.hlsl - do NOT redeclare.
+TEXTURE2D(_Control1);
 
 // Our custom texture arrays (set via AssignTex.cs on the material)
 TEXTURE2D_ARRAY(_AlbedoArray);
 TEXTURE2D_ARRAY(_NormalArray);
 TEXTURE2D_ARRAY(_MaskArray);
-SAMPLER(sampler_AlbedoArray);
-
-// No custom CBUFFER — UVScale/TriplanarBlend are hardcoded for now
-// to avoid SRP Batcher CBUFFER conflict with UnityPerMaterial from TerrainLitInput.hlsl.
-// TODO: move these into UnityPerMaterial or use material property overrides.
-#define HECTON_UV_SCALE 1.0
-#define HECTON_TRIPLANAR_BLEND 2.0
+// SAMPLER(sampler_LinearRepeat); // Declared by URP internals
 
 struct TerrainSample
 {
-    float3 albedo;
-    float3 normalTS;
-    float  smoothness;
-    float  metallic;
-    float  ao;
+    half3 albedo;
+    half3 normalTS;
+    half  metallic;
+    half  smoothness;
+    float ao;
 };
 
-// 4 layers from _Control: R=ShellSand, G=LimestoneShelf, B=ClaySilt, A=HardRock
+// 8 layers from _Control and _Control1
 TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worldPos, float3 worldNormal, float3 viewDirTS)
 {
     float4 ctrl = SAMPLE_TEXTURE2D(_Control, sampler_Control, controlUV);
+    float4 ctrl1 = SAMPLE_TEXTURE2D(_Control1, sampler_Control, controlUV);
 
-    float weights[4];
+    float weights[8];
     weights[0] = ctrl.r;
     weights[1] = ctrl.g;
     weights[2] = ctrl.b;
     weights[3] = ctrl.a;
+    weights[4] = ctrl1.r;
+    weights[5] = ctrl1.g;
+    weights[6] = ctrl1.b;
+    weights[7] = ctrl1.a;
+
+    float uvScale = HECTON_UV_SCALE;
+    float2 uv  = detailUV * uvScale;
+
+    // --- HEIGHT BLENDING ---
+    // Sample height for all present layers to sharpen transitions and avoid mud
+    float blend[8];
+    float maxBlend = 0.0;
+    [unroll]
+    for (int h = 0; h < 8; h++)
+    {
+        if (weights[h] > 0.001)
+        {
+            float height = SAMPLE_TEXTURE2D_ARRAY(_MaskArray, sampler_LinearRepeat, uv, (float)h).b;
+            blend[h] = weights[h] + height;
+            maxBlend = max(maxBlend, blend[h]);
+        }
+        else
+        {
+            blend[h] = 0.0;
+        }
+    }
+
+    float heightTransition = 0.15; // Lower means sharper transitions
+    float totalW = 0.001;
+    [unroll]
+    for (int w = 0; w < 8; w++)
+    {
+        if (weights[w] > 0.001)
+        {
+            weights[w] = max(0.0, blend[w] - maxBlend + heightTransition);
+            totalW += weights[w];
+        }
+    }
 
     // Normalize
-    float totalW = weights[0] + weights[1] + weights[2] + weights[3];
-    if (totalW > 0.001)
-    {
-        float invW = 1.0 / totalW;
-        weights[0] *= invW;
-        weights[1] *= invW;
-        weights[2] *= invW;
-        weights[3] *= invW;
-    }
-    else
-    {
-        weights[0] = 1.0;
-    }
+    float invW = 1.0 / totalW;
+    [unroll]
+    for (int i = 0; i < 8; i++) weights[i] *= invW;
 
     float3 albedo    = (float3)0;
     float3 normalTS  = (float3)0;
@@ -56,48 +83,26 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     float  metallic   = 0;
     float  ao         = 0;
 
-    float uvScale = HECTON_UV_SCALE;
-    float2 uv  = detailUV * uvScale;
-    float2 dx  = ddx(uv);
-    float2 dy  = ddy(uv);
-
-    float2 uvX  = worldPos.zy * uvScale;
-    float2 dxX  = ddx(uvX);
-    float2 dyX  = ddy(uvX);
-
-    float2 uvZ  = worldPos.xy * uvScale;
-    float2 dxZ  = ddx(uvZ);
-    float2 dyZ  = ddy(uvZ);
-
     [unroll]
-    for (int k = 0; k < 4; k++)
+    for (int k = 0; k < 8; k++)
     {
         [branch]
         if (weights[k] > 0.001)
         {
             float2 curUV = uv;
 
-            // Parallax on rocky layers (1=Limestone, 3=HardRock)
-            if (k == 1 || k == 3)
-            {
-                float h = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray, sampler_AlbedoArray, curUV, (float)k, dx, dy).b;
-                curUV += viewDirTS.xy * (h - 0.5) * 0.01 / max(0.2, viewDirTS.z);
-            }
+            float3 a = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, curUV, (float)k).rgb;
+            float3 n = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, curUV, (float)k).rgb;
+            float4 m = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, curUV, (float)k);
 
-            float3 a = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, curUV, (float)k, dx, dy).rgb;
-            float3 n = SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, curUV, (float)k, dx, dy).rgb;
-            float4 m = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray,   sampler_AlbedoArray, curUV, (float)k, dx, dy);
-
-            // Stochastic macro-variation on flat sediment (0=Sand, 2=Clay)
-            if (k == 0 || k == 2)
+            // Stochastic macro-variation on flat sediment (0, 2, 5)
+            if (k == 0 || k == 2 || k == 5)
             {
                 float2 uv2  = curUV * 0.41 + 0.3;
-                float2 dx2  = dx * 0.41;
-                float2 dy2  = dy * 0.41;
 
-                float3 a2 = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, uv2, (float)k, dx2, dy2).rgb;
-                float3 n2 = SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, uv2, (float)k, dx2, dy2).rgb;
-                float4 m2 = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray,   sampler_AlbedoArray, uv2, (float)k, dx2, dy2);
+                float3 a2 = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uv2, (float)k).rgb;
+                float3 n2 = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uv2, (float)k).rgb;
+                float4 m2 = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uv2, (float)k);
 
                 float noise = saturate(sin(worldPos.x * 0.05) * cos(worldPos.z * 0.07)
                             + sin(worldPos.x * 0.13 + worldPos.z * 0.09)) * 0.5 + 0.5;
@@ -107,40 +112,41 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
                 m = lerp(m, m2, noise);
             }
 
-            // Decode BC5 normal (RG -> XYZ)
+            // Decode BC5 normal
             float3 nd;
             nd.xy = n.rg * 2.0 - 1.0;
             nd.z  = sqrt(max(1e-6, 1.0 - dot(nd.xy, nd.xy)));
 
-            // Triplanar on steep hard rock (layer 3)
-            if (k == 3)
+            float slope = abs(worldNormal.y);
+            // Universal Triplanar on ALL layers on steep slopes to prevent vertical stretching
+            if (slope < 0.7)
             {
-                float slope = abs(worldNormal.y);
-                if (slope < 0.7)
-                {
-                    float3 aX = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, uvX, 3.0, dxX, dyX).rgb;
-                    float3 nX = SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, uvX, 3.0, dxX, dyX).rgb;
-                    float4 mX = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray,   sampler_AlbedoArray, uvX, 3.0, dxX, dyX);
+                float triplanarScale = 0.05; // 20m per tile
+                float2 uvX  = worldPos.zy * triplanarScale;
+                float2 uvZ  = worldPos.xy * triplanarScale;
 
-                    float3 aZ = SAMPLE_TEXTURE2D_ARRAY_GRAD(_AlbedoArray, sampler_AlbedoArray, uvZ, 3.0, dxZ, dyZ).rgb;
-                    float3 nZ = SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, uvZ, 3.0, dxZ, dyZ).rgb;
-                    float4 mZ = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray,   sampler_AlbedoArray, uvZ, 3.0, dxZ, dyZ);
+                float3 aX = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uvX, (float)k).rgb;
+                float3 nX = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uvX, (float)k).rgb;
+                float4 mX = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uvX, (float)k);
 
-                    float bF     = pow(1.0 - saturate(slope / 0.7), HECTON_TRIPLANAR_BLEND);
-                    float normX  = abs(worldNormal.x);
-                    float normZ  = abs(worldNormal.z);
-                    float triTot = max(0.001, normX + normZ);
+                float3 aZ = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uvZ, (float)k).rgb;
+                float3 nZ = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uvZ, (float)k).rgb;
+                float4 mZ = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uvZ, (float)k);
 
-                    float3 nXd; nXd.xy = nX.rg * 2.0 - 1.0; nXd.z = sqrt(max(1e-6, 1.0 - dot(nXd.xy, nXd.xy)));
-                    float3 nZd; nZd.xy = nZ.rg * 2.0 - 1.0; nZd.z = sqrt(max(1e-6, 1.0 - dot(nZd.xy, nZd.xy)));
+                float bF     = pow(1.0 - saturate(slope / 0.7), HECTON_TRIPLANAR_BLEND);
+                float normX  = abs(worldNormal.x);
+                float normZ  = abs(worldNormal.z);
+                float triTot = max(0.001, normX + normZ);
 
-                    float3 tsX = float3(nXd.z * sign(worldNormal.x), nXd.x, nXd.y);
-                    float3 tsZ = float3(nZd.x, nZd.z * sign(worldNormal.z), nZd.y);
+                float3 nXd; nXd.xy = nX.rg * 2.0 - 1.0; nXd.z = sqrt(max(1e-6, 1.0 - dot(nXd.xy, nXd.xy)));
+                float3 nZd; nZd.xy = nZ.rg * 2.0 - 1.0; nZd.z = sqrt(max(1e-6, 1.0 - dot(nZd.xy, nZd.xy)));
 
-                    a  = lerp(a,  (aX * normX + aZ * normZ) / triTot, bF);
-                    nd = lerp(nd, (tsX * normX + tsZ * normZ) / triTot, bF);
-                    m  = lerp(m,  (mX * normX + mZ * normZ)  / triTot, bF);
-                }
+                float3 tsX = float3(nXd.z * sign(worldNormal.x), nXd.x, nXd.y);
+                float3 tsZ = float3(nZd.x, nZd.z * sign(worldNormal.z), nZd.y);
+
+                a  = lerp(a,  (aX * normX + aZ * normZ) / triTot, bF);
+                nd = lerp(nd, (tsX * normX + tsZ * normZ) / triTot, bF);
+                m  = lerp(m,  (mX * normX + mZ * normZ)  / triTot, bF);
             }
 
             albedo    += a    * weights[k];

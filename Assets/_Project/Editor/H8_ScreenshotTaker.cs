@@ -3,21 +3,27 @@ using UnityEngine;
 
 namespace Hecton8.EditorTools
 {
-    public class ScreenshotBehaviour : MonoBehaviour
+    public static class H8_ScreenshotTaker
     {
-        private float _startTime;
-        private int _state = 0;
+        private static float _startTime;
+        private static int _state = 0;
 
-        void Start()
+        public static void TakeScreenshotAndExit()
         {
+            Debug.Log("[ScreenshotTaker] Opening 02_HECTON_WORLD in Editor mode...");
+            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
+            
             _startTime = Time.realtimeSinceStartup;
+            _state = 0;
+            EditorApplication.update += EditorUpdate;
+            Debug.Log("[ScreenshotTaker] Hooked EditorApplication.update. Waiting for MapMagic generation...");
         }
 
-        void Update()
+        private static void EditorUpdate()
         {
             if (_state == 0)
             {
-                if (Time.realtimeSinceStartup - _startTime < 5.0f)
+                if (Time.realtimeSinceStartup - _startTime < 45.0f)
                     return;
                 
                 _state = 1;
@@ -28,7 +34,7 @@ namespace Hecton8.EditorTools
             }
             else if (_state == 1)
             {
-                if (Time.realtimeSinceStartup - _startTime < 1.0f)
+                if (Time.realtimeSinceStartup - _startTime < 2.0f)
                     return;
 
                 _state = 2;
@@ -39,16 +45,16 @@ namespace Hecton8.EditorTools
             }
             else if (_state == 2)
             {
-                if (Time.realtimeSinceStartup - _startTime < 1.0f)
+                if (Time.realtimeSinceStartup - _startTime < 2.0f)
                     return;
 
                 Debug.Log("[ScreenshotTaker] Done. Exiting.");
-                EditorPrefs.SetBool("H8_ScreenshotTaker_Active", false);
+                EditorApplication.update -= EditorUpdate;
                 EditorApplication.Exit(0);
             }
         }
 
-        private void CaptureScreenshot(string filename, Vector3 pos, Quaternion rot)
+        private static void CaptureScreenshot(string filename, Vector3 pos, Quaternion rot)
         {
             Camera cam = Camera.main;
             if (cam == null) cam = GameObject.FindObjectOfType<Camera>();
@@ -75,34 +81,12 @@ namespace Hecton8.EditorTools
             screenShot.Apply();
             cam.targetTexture = null;
             RenderTexture.active = null; 
-            Destroy(rt);
+            Object.DestroyImmediate(rt);
 
             byte[] bytes = screenShot.EncodeToPNG();
             string path = System.IO.Path.Combine(Application.dataPath, "../" + filename);
             System.IO.File.WriteAllBytes(path, bytes);
             Debug.Log($"[ScreenshotTaker] Saved {bytes.Length} bytes to {path}");
-        }
-    }
-
-    public static class H8_ScreenshotTaker
-    {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        public static void OnRuntimeLoad()
-        {
-            if (EditorPrefs.GetBool("H8_ScreenshotTaker_Active", false))
-            {
-                Debug.Log("[ScreenshotTaker] Runtime detected. Creating behaviour.");
-                GameObject go = new GameObject("ScreenshotTakerObj");
-                go.AddComponent<ScreenshotBehaviour>();
-            }
-        }
-
-        public static void TakeScreenshotAndExit()
-        {
-            EditorPrefs.SetBool("H8_ScreenshotTaker_Active", true);
-            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
-            Debug.Log("[ScreenshotTaker] Entering PlayMode...");
-            EditorApplication.isPlaying = true;
         }
     }
 }

@@ -39,11 +39,16 @@ namespace Hecton8.World
                 {
                     Texture2D[] alphamaps = _terrain.terrainData.alphamapTextures;
                     if (alphamaps.Length > 0 && alphamaps[0] != null)
-                        _instancedMaterial.SetTexture("_Control1", alphamaps[0]);
+                        _instancedMaterial.SetTexture("_Control", alphamaps[0]);
                     
                     if (alphamaps.Length > 1 && alphamaps[1] != null)
-                        _instancedMaterial.SetTexture("_Control2", alphamaps[1]);
+                        _instancedMaterial.SetTexture("_Control1", alphamaps[1]);
+
+                    if (alphamaps.Length > 2 && alphamaps[2] != null)
+                        _instancedMaterial.SetTexture("_Control2", alphamaps[2]);
                         
+                    _instancedMaterial.SetFloat("_NumLayersCount", _terrain.terrainData.alphamapLayers);
+
                     // Update terrain size for triplanar scaling
                     _instancedMaterial.SetVector("_TerrainSize", new Vector4(_terrain.terrainData.size.x, _terrain.terrainData.size.y, _terrain.terrainData.size.z, 0));
                 }

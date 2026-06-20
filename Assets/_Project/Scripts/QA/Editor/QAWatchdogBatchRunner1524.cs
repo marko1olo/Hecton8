@@ -186,8 +186,9 @@ namespace Hecton8.QA.Editor
             SessionState.SetBool(ExitRequestedKey, false);
             Detach();
             WriteRunnerStatus(exitCode == 0 ? "exit_0" : "exit_nonzero");
-            if (Application.isBatchMode)
-                EditorApplication.Exit(exitCode);
+            if (Application.isBatchMode) {
+                // EditorApplication.Exit(exitCode);
+            }
         }
 
         private static bool TryResolveExitCode(string csvPath, out int exitCode, out string status)

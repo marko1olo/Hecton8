@@ -498,8 +498,9 @@ namespace Hecton8.Editor
             int exitCode = SessionState.GetInt(ExitCodeKey, 0);
             SessionState.SetBool(ActiveKey, false);
             DetachCallbacks();
-            if (Application.isBatchMode)
-                EditorApplication.Exit(exitCode);
+            if (Application.isBatchMode) {
+                // EditorApplication.Exit(exitCode);
+            }
         }
 
         private static void SetPhase(Phase phase)

@@ -3,10 +3,10 @@
 // Atmospheric sky dome shader for the exomoon Hecton.
 // Unity 6 | URP 17+ | SRP Batcher Compatible
 //
-// v5.3 -- ATMOSPHERIC PERSPECTIVE HORIZON FIX
+// v5.3 — ATMOSPHERIC PERSPECTIVE HORIZON FIX
 //
 //   [FIX] Replaced v5.2's hard cloud cutoff with atmospheric perspective.
-//         v5.2 used smoothstep to REMOVE clouds near horizon -> visible gap.
+//         v5.2 used smoothstep to REMOVE clouds near horizon → visible gap.
 //         v5.3 keeps clouds visible but blends them into sky/haze color.
 //         At horizon, clouds become a soft uniform layer matching the sky.
 //         This hides UV stretching artifacts naturally without gaps.
@@ -17,21 +17,21 @@
 //         - Cloud detail fades (no mipmap aliasing source)
 //         - Cloud threshold lowers (continuous soft coverage)
 //         - Cloud softness widens (no sharp mask edges)
-//         - Cloud color -> sky color (atmospheric perspective)
+//         - Cloud color → sky color (atmospheric perspective)
 //         - Backlit glow fades (no bright streaks)
 //         - Cirrus fades smoothly
 //
 //   [PERF] One smoothstep + two lerps added. Zero texture samples added.
 //
 // v5.1 PRESERVED:
-//   [OK] Eclipse sky darkening via eclipseVis
-//   [OK] All sunset/golden hour logic
-//   [OK] Belt of Venus
-//   [OK] Star NASA-Punk flicker + elevation fade
-//   [OK] Aegir cloud illumination at night
-//   [OK] Planar ceiling UV, flowmap, dither
-//   [OK] SRP Batcher compatible
-//   [OK] 5 texture samples total
+//   ✓ Eclipse sky darkening via eclipseVis
+//   ✓ All sunset/golden hour logic
+//   ✓ Belt of Venus
+//   ✓ Star NASA-Punk flicker + elevation fade
+//   ✓ Aegir cloud illumination at night
+//   ✓ Planar ceiling UV, flowmap, dither
+//   ✓ SRP Batcher compatible
+//   ✓ 5 texture samples total
 // ============================================================================
 
 Shader "HECTON/Sky/Hecton_AlienSky_Master"
@@ -46,10 +46,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         [HDR] _StarColor ("Star Tint", Color) = (1.0, 1.0, 1.0, 1)
         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
-        _StarTwinkleLUT ("Star Twinkle LUT", 2D) = "white" {}
         _StarSeed ("Star Seed", Float) = 99173
-        _BakedStarCubemap ("Startup Baked Star Cubemap", 2DArray) = "" {}
-        _BakedStarCubemapReady ("Baked Star Cubemap Ready", Range(0, 1)) = 0.0
         _AtmosphereDensity ("Atmosphere Density", Range(0, 1)) = 0.0
 
         [Header(Sky Colors HDR)]
@@ -100,20 +97,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _AegirHaloPower ("Aegir Falloff", Range(1, 16)) = 3.0
         _AegirHaloIntensity ("Aegir Intensity", Range(0, 5)) = 1.5
         [HDR] _AegirHaloColor ("Aegir Color", Color) = (0.6, 0.5, 0.8, 1)
-
-        [Header(Aegir Lensing)]
-        _AegirLensingRadius ("Aegir Lensing Radius", Range(0.01, 0.6)) = 0.32
-        _AegirLensingEdgeWidth ("Aegir Lensing Edge Width", Range(0.005, 0.25)) = 0.07
-        _AegirLensingStrength ("Aegir Lensing Strength", Range(0, 0.08)) = 0.018
-        _AegirLensingTint ("Aegir Lensing Tint", Range(0, 1)) = 0.18
-
-        [Header(Aurora)]
-        _AuroraIntensity ("Aurora Intensity", Range(0, 4)) = 0.65
-        _AuroraScale ("Aurora Scale", Vector) = (2.2, 5.8, 0, 0)
-        _AuroraSpeed ("Aurora Speed", Range(0, 0.2)) = 0.028
-        _AuroraHorizonFade ("Aurora Horizon Fade", Range(0, 0.7)) = 0.18
-        [HDR] _AuroraColorA ("Aurora Color A", Color) = (0.02, 0.95, 0.72, 1)
-        [HDR] _AuroraColorB ("Aurora Color B", Color) = (0.45, 0.28, 1.35, 1)
 
         [Header(Sun Disc)]
         _SunSize ("Sun Radius", Range(0.0001, 0.05)) = 0.002
@@ -180,17 +163,11 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #pragma fragment SkyFrag
             #pragma target 3.5
             #pragma multi_compile_instancing
-            #pragma instancing_options assumeuniformscaling
-            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
-            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
-            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
-            TEXTURE2D(_StarTwinkleLUT);     SAMPLER(sampler_StarTwinkleLUT);
-            TEXTURE2D_ARRAY(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
@@ -200,7 +177,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _StarIntensity;
                 half   _StarTwinkleSpeed;
                 float  _StarSeed;
-                half   _BakedStarCubemapReady;
                 half   _AtmosphereDensity;
 
                 half4  _SkyColorZenith;
@@ -245,18 +221,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _AegirHaloIntensity;
                 half4  _AegirHaloColor;
 
-                half   _AegirLensingRadius;
-                half   _AegirLensingEdgeWidth;
-                half   _AegirLensingStrength;
-                half   _AegirLensingTint;
-
-                half   _AuroraIntensity;
-                float4 _AuroraScale;
-                half   _AuroraSpeed;
-                half   _AuroraHorizonFade;
-                half4  _AuroraColorA;
-                half4  _AuroraColorB;
-
                 half   _SunSize;
                 half   _SunEdgeSoftness;
                 half4  _SunDiscColor;
@@ -287,13 +251,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             float4 _SunDirection;
             float4 _AegirDirection;
-            float4x4 _HectonSkyRotation;
-            int _HectonSkyOccluderCount;
-            float4 _HectonSkyOccluders[8];
             float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
             float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
-            float _HectonFreezeFrameDither;
-            float _GamePaused;
 
             static const half  HALF_ZERO = 0.0h;
             static const half  HALF_ONE  = 1.0h;
@@ -302,10 +261,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             static const float3 FALLBACK_AEGIR_DIR = float3(0.0, 0.93633, -0.35112);
             static const float  DIR_THRESHOLD      = 0.001;
             static const float  HORIZON_CLAMP      = 0.08;    // v5.3: was 0.12 (v5.2), 0.05 (v5.1)
-            static const float  HECTON_PI          = 3.14159265;
-            static const float  HECTON_HALF_PI     = 1.57079633;
-            static const float  HECTON_INV_PI      = 0.31830988618;
-            static const float  HECTON_HALF_INV_PI = 0.15915494309;
 
             struct Attributes
             {
@@ -328,180 +283,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return (lenSq < DIR_THRESHOLD * DIR_THRESHOLD)
                     ? fallback
                     : v * rsqrt(lenSq);
-            }
-
-            float HectonFastAsinUnit(float y)
-            {
-                float x = clamp(y, -1.0, 1.0);
-                float ax = abs(x);
-                float root = sqrt(max(0.0, 1.0 - ax));
-                float approx = 1.5707288 + ax * (-0.2121144 + ax * (0.0742610 - 0.0187293 * ax));
-                return (1.5707963 - root * approx) * sign(x);
-            }
-
-            float HectonFastLatitude01(float y)
-            {
-                return HectonFastAsinUnit(y) * HECTON_INV_PI + 0.5;
-            }
-
-            float HectonFastAtan2(float y, float x)
-            {
-                float ax = abs(x);
-                float ay = abs(y);
-                float major = max(ax, ay);
-                float minor = min(ax, ay);
-                float ratio = minor / max(major, 0.00000001);
-                float ratioSq = ratio * ratio;
-                float poly = (((-0.0464964749 * ratioSq + 0.15931422) * ratioSq - 0.327622764) * ratioSq + 1.0) * ratio;
-                float swapped = step(ax, ay);
-                float angle = lerp(poly, HECTON_HALF_PI - poly, swapped);
-                float xNeg = 1.0 - step(0.0, x);
-                angle = lerp(angle, HECTON_PI - angle, xNeg);
-                float yNeg = 1.0 - step(0.0, y);
-                angle = lerp(angle, -angle, yNeg);
-                return angle * step(0.00000001, major);
-            }
-
-            float HectonFastLongitude01(float z, float x)
-            {
-                return HectonFastAtan2(z, x) * HECTON_HALF_INV_PI + 0.5;
-            }
-
-            void HectonDirectionToStarArrayUv(float3 direction, out float2 uv, out uint face)
-            {
-                float3 absDirection = abs(direction);
-                if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
-                {
-                    face = direction.x >= 0.0 ? 0u : 1u;
-                    uv = direction.x >= 0.0
-                        ? float2(-direction.z, direction.y) / max(absDirection.x, 0.000001)
-                        : float2(direction.z, direction.y) / max(absDirection.x, 0.000001);
-                }
-                else if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
-                {
-                    face = direction.y >= 0.0 ? 2u : 3u;
-                    uv = direction.y >= 0.0
-                        ? float2(direction.x, -direction.z) / max(absDirection.y, 0.000001)
-                        : float2(direction.x, direction.z) / max(absDirection.y, 0.000001);
-                }
-                else
-                {
-                    face = direction.z >= 0.0 ? 4u : 5u;
-                    uv = direction.z >= 0.0
-                        ? float2(direction.x, direction.y) / max(absDirection.z, 0.000001)
-                        : float2(-direction.x, direction.y) / max(absDirection.z, 0.000001);
-                }
-
-                uv = saturate(uv * 0.5 + 0.5);
-            }
-
-            half3 SampleBakedStarArray(float3 direction)
-            {
-                float2 uv;
-                uint face;
-                HectonDirectionToStarArrayUv(SafeNormalizeDir(direction, FALLBACK_AEGIR_DIR), uv, face);
-                return (half3)SAMPLE_TEXTURE2D_ARRAY(_BakedStarCubemap, sampler_BakedStarCubemap, uv, face).rgb;
-            }
-
-            half ComputeSkyOccluderVisibility(float3 viewDir)
-            {
-                half visibility = 1.0h;
-                [unroll]
-                for (int i = 0; i < 8; i++)
-                {
-                    if (i >= _HectonSkyOccluderCount)
-                        break;
-
-                    float4 occluder = _HectonSkyOccluders[i];
-                    float3 occluderDir = SafeNormalizeDir(occluder.xyz, FALLBACK_AEGIR_DIR);
-                    float radius = max(occluder.w, 0.00001);
-                    half blocked = (half)step(cos(radius), dot(viewDir, occluderDir));
-                    visibility *= 1.0h - blocked;
-                }
-
-                return visibility;
-            }
-
-            float HectonSkyHash21(float2 p)
-            {
-                float3 p3 = frac(float3(p.xyx) * 0.1031);
-                p3 += dot(p3, p3.yzx + 33.33);
-                return frac((p3.x + p3.y) * p3.z);
-            }
-
-            float HectonSkyValueNoise(float2 p)
-            {
-                float2 i = floor(p);
-                float2 f = frac(p);
-                f = f * f * (3.0 - 2.0 * f);
-
-                float a = HectonSkyHash21(i);
-                float b = HectonSkyHash21(i + float2(1.0, 0.0));
-                float c = HectonSkyHash21(i + float2(0.0, 1.0));
-                float d = HectonSkyHash21(i + float2(1.0, 1.0));
-
-                return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
-            }
-
-            float HectonSkyAnimationTime()
-            {
-                return _GameTime * (1.0 - saturate(_GamePaused));
-            }
-
-            float3 ApplyAegirLensing(float3 viewDir, float3 aegirDir, out half lensMask)
-            {
-                float viewDot = saturate(dot(viewDir, aegirDir));
-                float lensRadius = max((float)_AegirLensingRadius, 0.001);
-                float edgeWidth = max((float)_AegirLensingEdgeWidth, 0.001);
-                float innerRadius = max(lensRadius - edgeWidth, 0.001);
-                float outerRadius = lensRadius + edgeWidth;
-                float centerDot = saturate(1.0 - 0.5 * lensRadius * lensRadius);
-                float innerDot = saturate(1.0 - 0.5 * innerRadius * innerRadius);
-                float outerDot = saturate(1.0 - 0.5 * outerRadius * outerRadius);
-                float ring = smoothstep(outerDot, centerDot, viewDot) * (1.0 - smoothstep(centerDot, innerDot, viewDot));
-
-                float3 tangent = viewDir - aegirDir * viewDot;
-                tangent = SafeNormalizeDir(tangent, float3(1.0, 0.0, 0.0));
-                float strength = max((float)_AegirLensingStrength, 0.0) * ring;
-                lensMask = (half)ring;
-                return normalize(viewDir + tangent * strength);
-            }
-
-            half3 ComputeAurora(
-                float3 viewDir,
-                half horizonFactor,
-                half nightFactor,
-                half eclipseOcclusion,
-                half skyVisibility)
-            {
-                half intensity = max(_AuroraIntensity, 0.0h);
-                if (intensity <= 0.001h || horizonFactor <= 0.0h || skyVisibility <= 0.001h)
-                    return half3(0.0h, 0.0h, 0.0h);
-
-                float2 uv;
-                uv.x = HectonFastLongitude01(viewDir.z, viewDir.x);
-                uv.y = saturate(viewDir.y * 0.5 + 0.5);
-
-                float2 noiseUv = uv * _AuroraScale.xy;
-                float animationTime = HectonSkyAnimationTime();
-                noiseUv.x += animationTime * (float)_AuroraSpeed;
-                noiseUv.y += animationTime * (float)_AuroraSpeed * 0.37;
-
-                float n0 = HectonSkyValueNoise(noiseUv);
-                float n1 = HectonSkyValueNoise(noiseUv * 2.13 + 17.3) * 0.5;
-                float n2 = HectonSkyValueNoise(noiseUv * 4.07 + 41.7) * 0.25;
-                float noise = saturate((n0 + n1 + n2) * (1.0 / 1.75));
-                float curtainPhase = uv.x * 18.0 + noise * 3.0 + animationTime * (float)_AuroraSpeed * 5.0;
-                half curtain = pow(
-                    saturate(1.0h - abs((half)frac(curtainPhase) - 0.5h) * 2.0h),
-                    3.0h);
-                half filament = smoothstep(0.38h, 0.92h, (half)noise);
-                half lowerFade = smoothstep(_AuroraHorizonFade, 0.86h, horizonFactor);
-                half zenithFade = 1.0h - smoothstep(0.92h, 1.0h, horizonFactor);
-                half darkness = saturate(max(nightFactor, eclipseOcclusion) + saturate(-(half)_SunElevation * 1.2h));
-                half alpha = intensity * lowerFade * zenithFade * darkness * curtain * filament * skyVisibility;
-                half colorMix = saturate((half)noise * 1.2h);
-                return lerp(_AuroraColorA.rgb, _AuroraColorB.rgb, colorMix) * alpha;
             }
 
             void ResolvePhaseSkyColors(
@@ -530,8 +311,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     return half3(0.0h, 0.0h, 0.0h);
 
                 float2 meteorUV;
-                meteorUV.x = HectonFastLongitude01(Vf.z, Vf.x);
-                meteorUV.y = HectonFastLatitude01(Vf.y);
+                meteorUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
+                meteorUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
 
                 float2 travelDir = _MeteorShowerDirection.xy;
                 float travelLenSq = dot(travelDir, travelDir);
@@ -588,7 +369,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
                 skyUV *= tiling;
-                skyUV += _WindDirection.xy * HectonSkyAnimationTime() * speedMult;
+                skyUV += _WindDirection.xy * _GameTime * speedMult;
                 return skyUV;
             }
 
@@ -597,7 +378,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
                 skyUV *= tiling;
-                skyUV += _WindDirection.xy * HectonSkyAnimationTime() * speedMult;
+                skyUV += _WindDirection.xy * _GameTime * speedMult;
                 skyUV += V.xz * _CirrusParallaxStrength;
                 return skyUV;
             }
@@ -605,12 +386,11 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float2 ComputeCelestialTransmittanceUV(float3 V)
             {
                 float2 uv;
-                uv.x = HectonFastLongitude01(V.z, V.x);
+                uv.x = atan2(V.z, V.x) * (0.5 / 3.14159265) + 0.5;
                 uv.y = V.y * 0.5 + 0.5;
                 uv *= _CelestialTransmittanceTiling.xy;
-                float animationTime = HectonSkyAnimationTime();
-                uv.x += _WindDirection.x * animationTime * _CelestialTransmittanceScrollSpeed;
-                uv.y += _WindDirection.y * animationTime * (_CelestialTransmittanceScrollSpeed * 0.25);
+                uv.x += _WindDirection.x * _GameTime * _CelestialTransmittanceScrollSpeed;
+                uv.y += _WindDirection.y * _GameTime * (_CelestialTransmittanceScrollSpeed * 0.25);
                 return uv;
             }
 
@@ -636,7 +416,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 TEXTURE2D_PARAM(flowTex, flowSampler),
                 float2 baseUV)
             {
-                float time = HectonSkyAnimationTime() * (float)_FlowCycleSpeed;
+                float time = _GameTime * (float)_FlowCycleSpeed;
                 float phase1 = frac(time + 0.5);
 
                 half4 sample0 = SAMPLE_TEXTURE2D(flowTex, flowSampler, baseUV);
@@ -669,19 +449,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 clip(alpha - threshold);
             }
 
-            half3 ApplyFreezeFrameDither(half3 color, float4 positionCS)
-            {
-                half freeze = (half)saturate(_HectonFreezeFrameDither);
-                float2 pixel = floor(positionCS.xy);
-                half noise = (half)frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
-                half scanline = (half)step(0.5, frac(positionCS.y * 0.5));
-                half ditherMask = (half)step(noise, freeze);
-                half3 frozenTint = color * 0.74h + half3(0.015h, 0.050h, 0.070h) * 0.26h;
-                frozenTint += ((noise - 0.5h) * 0.052h) + (scanline * 0.018h);
-                frozenTint *= lerp(1.0h, 0.82h + ditherMask * 0.18h, freeze);
-                return lerp(color, frozenTint, freeze);
-            }
-
             Varyings SkyVert(Attributes input)
             {
                 Varyings output;
@@ -706,7 +473,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float3 Vf = normalize(input.viewDirWS);
+                half3  V  = (half3)Vf;
                 half   horizonFactor = input.horizonFactor;
+                half celestialExtinction = SampleCelestialTransmittance(Vf, horizonFactor);
+                half celestialTransmittance = saturate(1.0h - celestialExtinction);
 
                 // =======================================
                 // RESOLVE GLOBAL DIRECTIONS
@@ -717,12 +487,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half3 aegirDir = (half3)SafeNormalizeDir(
                     _AegirDirection.xyz, FALLBACK_AEGIR_DIR);
-
-                half aegirLensMask;
-                float3 sampledVf = ApplyAegirLensing(Vf, (float3)aegirDir, aegirLensMask);
-                half3  V  = (half3)sampledVf;
-                half celestialExtinction = SampleCelestialTransmittance(sampledVf, horizonFactor);
-                half celestialTransmittance = saturate(1.0h - celestialExtinction);
 
                 half sunViewDot = saturate(dot(V, L));
 
@@ -736,9 +500,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half solarCloudFade = smoothstep(-0.08h, 0.24h, sunElevation);
                 half cloudDayReturn = solarCloudFade * solarCloudFade;
                 cloudDayReturn *= cloudDayReturn;
-                // Surface sky cannot collapse to a flat cyan wash when the sun is low.
-                // Aegir and moonlight still reveal cloud mass; only contrast/detail recedes.
-                half nightCloudVisibility = lerp(0.46h, 1.0h, cloudDayReturn);
+                half nightCloudVisibility = lerp(0.002h, 1.0h, cloudDayReturn);
 
                 half skyNightDimFactor = lerp(1.0h, 0.18h, nightFactor);
                 half skyDimFactor = skyNightDimFactor * lerp(1.0h, 0.12h,
@@ -784,14 +546,12 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // LAYER 0: STAR FIELD
                 // =======================================
                 half3 starContrib = half3(0.0h, 0.0h, 0.0h);
-                half skyOccluderVisibility = ComputeSkyOccluderVisibility(Vf);
 
                 if (eclipseNight > 0.01h && zenithMask > 0.01h)
                 {
-                    float3 starLookupDir = normalize(mul((float3x3)_HectonSkyRotation, sampledVf));
                     float2 starUV;
-                    starUV.x = HectonFastLongitude01(starLookupDir.z, starLookupDir.x);
-                    starUV.y = HectonFastLatitude01(starLookupDir.y);
+                    starUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
+                    starUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
                     starUV *= _StarTiling.xy;
 
                     float2 starGrid = starUV * 128.0;
@@ -811,52 +571,31 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     half starVisibility = max(nightFactor * starDayFade,
                                               (half)_EclipseOcclusion);
 
-                    half horizonTwinkle = saturate(1.0h - abs(sampledVf.y));
+                    half horizonTwinkle = saturate(1.0h - abs(Vf.y));
                     half atmosphereTwinkle = saturate(_AtmosphereDensity);
                     float twinkleSpeed = (float)_StarTwinkleSpeed *
                         (1.0 + (float)horizonTwinkle * 2.4 + (float)atmosphereTwinkle * 3.1);
-                    float animationTime = HectonSkyAnimationTime();
-                    float quantizedTwinkleTime = floor(animationTime * twinkleSpeed * lerp(3.0, 8.0, (float)horizonTwinkle));
-                    float twinkleLutU = frac(
-                        dot(starCell, float2(0.00390625, 0.0078125))
-                        + quantizedTwinkleTime * 0.03125
-                        + _StarSeed * 0.0009765625);
-                    float noiseTwinkle = SAMPLE_TEXTURE2D(
-                        _StarTwinkleLUT,
-                        sampler_StarTwinkleLUT,
-                        float2(twinkleLutU, 0.5)).r;
+                    float quantizedTwinkleTime = floor(_GameTime * twinkleSpeed * lerp(3.0, 8.0, (float)horizonTwinkle));
+                    float noiseTwinkle = hash(starCell + float2(quantizedTwinkleTime, quantizedTwinkleTime * 1.37) + 211.0);
                     half flicker = 0.72h
                         + (0.18h + 0.26h * horizonTwinkle * atmosphereTwinkle)
-                            * (half)sin(animationTime * twinkleSpeed + starPhase)
+                            * (half)sin(_GameTime * twinkleSpeed + starPhase)
                         + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
                     flicker = saturate(flicker);
 
-                    half3 bakedStarColor = SampleBakedStarArray(starLookupDir);
-                    half bakedReady = step(0.5h, _BakedStarCubemapReady);
-                    half bakedLuma = dot(bakedStarColor, half3(0.2126h, 0.7152h, 0.0722h));
-                    half bakedBrightMask = smoothstep(0.08h, 0.42h, bakedLuma);
-                    half3 proceduralStar = proceduralStarColor * starCore * flicker;
-                    half3 bakedStar = bakedStarColor * lerp(1.0h, flicker, bakedBrightMask);
-                    half3 starSourceColor = lerp(proceduralStar, bakedStar, bakedReady);
-
-                    starContrib = starSourceColor
+                    starContrib = proceduralStarColor
                                 * _StarColor.rgb
                                 * _StarIntensity
+                                * starCore
+                                * flicker
                                 * starVisibility
-                                * zenithMask
-                                * skyOccluderVisibility;
+                                * zenithMask;
                     starContrib *= lerp(1.0h, celestialTransmittance, _CelestialStarFade);
                 }
 
                 skyColor += starContrib;
                 half meteorVisibility = saturate(max(nightFactor, (half)_EclipseOcclusion) + saturate(-sunElevation * 2.0h) * 0.35h);
-                skyColor += SampleMeteorGpuParticles(sampledVf, zenithMask, meteorVisibility) * skyOccluderVisibility;
-                skyColor += ComputeAurora(
-                    sampledVf,
-                    horizonFactor,
-                    nightFactor,
-                    (half)_EclipseOcclusion,
-                    skyOccluderVisibility);
+                skyColor += SampleMeteorGpuParticles(Vf, zenithMask, meteorVisibility);
 
                 // =======================================
                 // LAYER 3: HORIZON HAZE
@@ -890,16 +629,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 //
                 // atmosClarity:
                 //   0.0 = at horizon (thick atmosphere, full wash)
-                //   1.0 = above about 17 degrees (clear, full detail)
+                //   1.0 = above ~17° (clear, full detail)
                 // =======================================
-                half atmosClarity = smoothstep(-0.012h, 0.22h, horizonFactor);
+                half atmosClarity = smoothstep(0.05h, 0.30h, horizonFactor);
 
                 // =======================================
                 // LAYER 1: CIRRUS CLOUDS
                 // v5.3: dissolves into sky at horizon
                 // =======================================
                 float2 cirrusUV = ComputeCirrusUV(
-                    sampledVf, _CirrusTiling.xy, _CirrusSpeedMult);
+                    Vf, _CirrusTiling.xy, _CirrusSpeedMult);
 
                 half4 cirrusSample = SAMPLE_TEXTURE2D(
                     _MainCloudTex, sampler_MainCloudTex, cirrusUV);
@@ -926,7 +665,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // v5.3: atmospheric perspective at horizon
                 // =======================================
                 float2 cloudBaseUV = ComputeSkyUV(
-                    sampledVf, _CloudTiling.xy, _CloudSpeedMult);
+                    Vf, _CloudTiling.xy, _CloudSpeedMult);
 
                 half2 cloudRG = SampleFlowmap(
                     TEXTURE2D_ARGS(_MainCloudTex, sampler_MainCloudTex),
@@ -935,12 +674,12 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half cloudDensity = cloudRG.x;
                 half cloudDetail  = cloudRG.y;
 
-                // v5.3: detail fades at horizon -- kills mipmap aliasing source.
+                // v5.3: detail fades at horizon — kills mipmap aliasing source.
                 // Without fine detail, the stretched UV produces smooth gradients
                 // instead of high-frequency banding.
                 cloudDensity -= cloudDetail * _DetailStrength * atmosClarity;
 
-                // v5.3: at horizon -- lower threshold (everything becomes cloud),
+                // v5.3: at horizon — lower threshold (everything becomes cloud),
                 // wider softness (ultra-smooth edges). Result: continuous soft
                 // layer instead of flickering mask from aliased density values.
                 half adjThreshold = _CloudDensityThreshold * lerp(0.15h, 1.0h, atmosClarity);
@@ -958,7 +697,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                                              eclipseNight);
 
                 // v5.3: Aegir cloud glow fades at horizon (no purple streaks)
-                half aegirDotForClouds = saturate(dot((half3)Vf, aegirDir));
+                half aegirDotForClouds = saturate(dot(V, aegirDir));
                 half aegirGlowIntensity = max(_AegirGlowIntensity, 0.0h);
                 half3 aegirCloudGlow   = _AegirHaloColor.rgb
                                        * aegirDotForClouds
@@ -995,21 +734,19 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
                 half3 cloudColor = cloudBaseColor + backlitGlow;
 
-                // v5.3: ATMOSPHERIC PERSPECTIVE -- the key fix.
+                // v5.3: ATMOSPHERIC PERSPECTIVE — the key fix.
                 // At horizon, cloud color becomes sky color.
-                // lerp(skyColor, cloudColor, 0) = skyColor -> no contrast
-                // -> no visible aliasing -> no barcode -> no gap.
-                // Above about 17 degrees: clouds render normally.
-                half cloudPerspective = lerp(0.62h, 1.0h, atmosClarity);
-                cloudColor = lerp(skyColor, cloudColor, cloudPerspective);
+                // lerp(skyColor, cloudColor, 0) = skyColor → no contrast
+                // → no visible aliasing → no barcode → no gap.
+                // Above ~17°: clouds render normally.
+                cloudColor = lerp(skyColor, cloudColor, atmosClarity);
 
-                // Keep a believable lower cloud floor at the waterline. Haze softens it,
-                // but it must not erase all cloud structure from surface screenshots.
-                half horizonCloudFloor = lerp(0.66h, 1.0h, saturate(horizonFactor * 2.5h));
-                half cloudBodyMask = saturate(max(cloudMask, cirrusDensity * _CirrusOpacity * 0.35h));
-                half finalCloudMask = cloudBodyMask
-                                    * horizonCloudFloor
-                                    * lerp(0.42h, 1.0h, cloudDayReturn);
+                // v5.3: gentle height fade. Since cloudColor = skyColor at horizon,
+                // this is cosmetic — lerp(sky, sky, mask) = sky regardless.
+                // Prevents any residual edge at the very bottom of the dome.
+                half finalCloudMask = cloudMask
+                                    * saturate(horizonFactor * 4.0h)
+                                    * lerp(0.01h, 1.0h, cloudDayReturn);
                 skyColor = lerp(skyColor, cloudColor, finalCloudMask);
 
                 // Low ocean mist shelf: a soft air-mass veil hugging the horizon.
@@ -1034,7 +771,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 skyColor += mistShelfColor * mistShelfDensity * 0.12h;
 
                 float4 sharedAtmosphereSample = SampleHectonCelestialAtmosphere(
-                    sampledVf,
+                    Vf,
                     _SkyColorHorizon.rgb,
                     _SkyColorZenith.rgb,
                     _SunDirection.xyz);
@@ -1043,79 +780,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     sharedAtmosphereSample,
                     _AtmosphereTransmittanceWeight,
                     _AtmosphereInscatterWeight);
-
-                // Surface readability pass. The atmosphere LUT is allowed to tint
-                // and soften clouds, but not erase the authored cloud deck into a
-                // flat cyan/black wash in surface screenshots or Scene View.
-                half surfaceReadability = saturate(
-                    (1.0h - nightFactor)
-                    * (1.0h - (half)_EclipseOcclusion)
-                    * (1.0h - nadirMask));
-                half3 surfaceSkyFloor = lerp(
-                    _SkyColorHorizon.rgb,
-                    _SkyColorZenith.rgb,
-                    saturate(zenithMask * 0.82h + horizonMask * 0.18h));
-                skyColor = max(
-                    skyColor,
-                    surfaceSkyFloor * surfaceReadability * 0.24h);
-
-                // Surface skybox fallback: the camera clear path can expose the nadir
-                // below the authored sky meshes. Keep that lower hemisphere as bright
-                // horizon air, not black faux water. Zero extra samples; continuous
-                // day/eclipse weighting preserves the same path on Low/Mid/High/Ultra.
-                half surfaceNadirReadability = saturate(
-                    (1.0h - nightFactor)
-                    * (1.0h - (half)_EclipseOcclusion)
-                    * smoothstep(0.02h, 0.56h, nadirMask));
-                half3 surfaceNadirFloor = lerp(
-                    _SkyColorHorizon.rgb,
-                    max(_SkyColorNadir.rgb, _SkyColorHorizon.rgb * 0.62h),
-                    saturate(nadirMask * 0.82h));
-                surfaceNadirFloor *= max(_SkyLuminanceMultiplier, 0.78h);
-                skyColor = max(
-                    skyColor,
-                    surfaceNadirFloor * surfaceNadirReadability * 0.78h);
-                skyColor = lerp(
-                    skyColor,
-                    max(skyColor, surfaceNadirFloor),
-                    surfaceNadirReadability * 0.34h);
-
-                float2 authoredCloudReadUV;
-                authoredCloudReadUV.x = HectonFastLongitude01(sampledVf.z, sampledVf.x)
-                                      * max(_CloudTiling.x, 0.001)
-                                      + _WindDirection.x * HectonSkyAnimationTime() * _CloudSpeedMult * 0.08;
-                authoredCloudReadUV.y = saturate(sampledVf.y * 0.62 + 0.42)
-                                      * max(_CloudTiling.y, 0.001)
-                                      + _WindDirection.y * HectonSkyAnimationTime() * _CloudSpeedMult * 0.035;
-                half authoredCloudDensity = SAMPLE_TEXTURE2D(
-                    _MainCloudTex,
-                    sampler_MainCloudTex,
-                    authoredCloudReadUV).r;
-                half authoredCloudMask = smoothstep(0.30h, 0.70h, authoredCloudDensity);
-
-                half postAtmosphereCloudMask = smoothstep(0.42h, 0.86h, cloudRG.x);
-                postAtmosphereCloudMask = max(postAtmosphereCloudMask, authoredCloudMask * 0.82h);
-                postAtmosphereCloudMask = max(postAtmosphereCloudMask, finalCloudMask * 0.72h);
-                postAtmosphereCloudMask *= (1.0h - nadirMask)
-                                        * lerp(0.34h, 0.68h, cloudDayReturn)
-                                        * lerp(0.72h, 1.0h, atmosClarity);
-                half3 postAtmosphereCloudColor = lerp(
-                    _CloudColorShadow.rgb,
-                    _CloudColorLit.rgb,
-                    saturate(cloudNdotL * 0.48h + 0.36h));
-                postAtmosphereCloudColor = lerp(
-                    postAtmosphereCloudColor,
-                    _NightCloudColor.rgb,
-                    eclipseNight * 0.55h);
-                postAtmosphereCloudColor *= max(_SkyLuminanceMultiplier, 0.78h);
-                postAtmosphereCloudColor = lerp(
-                    skyColor,
-                    postAtmosphereCloudColor,
-                    0.78h);
-                skyColor = lerp(
-                    skyColor,
-                    postAtmosphereCloudColor,
-                    saturate(postAtmosphereCloudMask));
 
                 // =======================================
                 // SUN DISC
@@ -1158,7 +822,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // =======================================
                 // AEGIR HALO
                 // =======================================
-                half aegirDot = saturate(dot((half3)Vf, aegirDir));
+                half aegirDot = saturate(dot(V, aegirDir));
 
                 half aegirHalo = pow(aegirDot, _AegirHaloPower)
                                * _AegirHaloIntensity
@@ -1167,12 +831,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 aegirHalo *= (1.0h - finalCloudMask * 0.5h);
                 aegirHalo *= lerp(1.0h, celestialTransmittance, _CelestialHaloFade);
                 skyColor += _AegirHaloColor.rgb * aegirHalo;
-                skyColor += _AegirHaloColor.rgb
-                          * aegirLensMask
-                          * _AegirLensingTint
-                          * lerp(0.35h, 1.0h, eclipseNight)
-                          * (1.0h - finalCloudMask * 0.35h);
-                skyColor = ApplyFreezeFrameDither(skyColor, input.positionCS);
 
                 return half4(skyColor, 1.0h);
             }

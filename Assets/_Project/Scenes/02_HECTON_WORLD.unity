@@ -3794,7 +3794,7 @@ MonoBehaviour:
   _debugPlayerMovementSource: Unresolved
   _debugSunVisualActive: 0
   _debugSunScatter: 0
-  _debugEditorDriven: 0
+  _debugEditorDriven: 1
 --- !u!4 &101536744
 Transform:
   m_ObjectHideFlags: 0
@@ -27092,7 +27092,7 @@ MonoBehaviour:
     reflectionProbeUsage: 1
     editorRenderFlags: 7
     heightmapMaximumLOD: 0
-    material: {fileID: 2100000, guid: 3d0eae0538ca3ef40bf13fcd5a586ead, type: 2}
+    material: {fileID: 2100000, guid: dc4b4402eb416f644be1827dac54e3f1, type: 2}
     detailDraw: 0
     detailDistance: 128
     detailDensity: 1
@@ -29101,14 +29101,9 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0f6bce861507514438034ae0ebadea15, type: 3}
---- !u!4 &906742592 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5398098224501907262, guid: 0f6bce861507514438034ae0ebadea15, type: 3}
-  m_PrefabInstance: {fileID: 906742591}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &908078135
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35232,7 +35227,7 @@ MonoBehaviour:
   _debugPlaceholder: 0
   _debugSurfaceLevelY: 0
   _debugDepthSource: SurfaceOffset
-  _debugEvaluationSource: SceneView
+  _debugEvaluationSource: Player
   _debugFamilyId: biome.family.littoral_karst
   _debugFamilyLabel: Littoral Karst
   _debugResolutionMode: Exact
@@ -46324,7 +46319,7 @@ Terrain:
   m_StaticShadowCaster: 0
   m_IgnoreQualitySettings: 0
   m_ReflectionProbeUsage: 0
-  m_MaterialTemplate: {fileID: 2100000, guid: 3d0eae0538ca3ef40bf13fcd5a586ead, type: 2}
+  m_MaterialTemplate: {fileID: 2100000, guid: dc4b4402eb416f644be1827dac54e3f1, type: 2}
   m_BakeLightProbesForTrees: 1
   m_PreserveTreePrototypeLayers: 0
   m_DeringLightProbesForTrees: 1

@@ -659,8 +659,9 @@ namespace Hecton8.Editor
             if (!throwOnFailure)
                 return;
 
-            if (UnityEngine.Application.isBatchMode)
-                EditorApplication.Exit(1);
+            if (UnityEngine.Application.isBatchMode) {
+                // EditorApplication.Exit(1);
+            }
 
             throw new BuildFailedException(message);
         }

@@ -6,12 +6,19 @@ Shader "Hecton8/URP/Terrain_TextureArray"
         _HeightTransition("Height Transition", Range(0, 1.0)) = 0.0
         [HideInInspector] [PerRendererData] _NumLayersCount ("Total Layer Count", Float) = 1.0
 
-        // Texture2DArray properties set via C# script (AssignTex.cs), not declared in Properties
-        // to avoid SRP/Terrain shader validation issues.
+        // Texture2DArray properties set via C# script
+        [HideInInspector] [NoScaleOffset] _AlbedoArray("Albedo Array", 2DArray) = "" {}
+        [HideInInspector] [NoScaleOffset] _NormalArray("Normal Array", 2DArray) = "" {}
+        [HideInInspector] [NoScaleOffset] _MaskArray("Mask Array", 2DArray) = "" {}
 
         [HideInInspector] _Control("Control (RGBA)", 2D) = "red" {}
-        [HideInInspector] _Control1("Control 1 (RGBA)", 2D) = "red" {}
-        [HideInInspector] _Control2("Control 2 (RGBA)", 2D) = "red" {}
+        [HideInInspector] _Control1("Control 1 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control2("Control 2 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control3("Control 3 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control4("Control 4 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control5("Control 5 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control6("Control 6 (RGBA)", 2D) = "black" {}
+        [HideInInspector] _Control7("Control 7 (RGBA)", 2D) = "black" {}
         [HideInInspector] _Splat3("Layer 3 (A)", 2D) = "grey" {}
         [HideInInspector] _Splat2("Layer 2 (B)", 2D) = "grey" {}
         [HideInInspector] _Splat1("Layer 1 (G)", 2D) = "grey" {}

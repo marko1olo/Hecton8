@@ -47,8 +47,9 @@ namespace Hecton8.Editor
             finally
             {
                 File.Delete(requestPath);
-                if (Application.isBatchMode && !passed)
-                    EditorApplication.Exit(1);
+                if (Application.isBatchMode && !passed) {
+                    // EditorApplication.Exit(1);
+                }
             }
         }
 

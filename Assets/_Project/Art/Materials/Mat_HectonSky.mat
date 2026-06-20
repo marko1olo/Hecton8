@@ -37,10 +37,6 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _BakedStarCubemap:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _BaseMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -105,10 +101,6 @@ Material:
         m_Texture: {fileID: 2800000, guid: 13a5b68ec75a4bc4b804b409e2ddcfe2, type: 3}
         m_Scale: {x: 0.2, y: 0.2}
         m_Offset: {x: 0, y: 0}
-    - _StarTwinkleLUT:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -127,21 +119,13 @@ Material:
     - _AegirGlowIntensity: 0
     - _AegirHaloIntensity: 0.58
     - _AegirHaloPower: 2.9
-    - _AegirLensingEdgeWidth: 0.07
-    - _AegirLensingRadius: 0.32
-    - _AegirLensingStrength: 0.018
-    - _AegirLensingTint: 0.18
     - _AlphaClip: 0
     - _AlphaToMask: 0
-    - _AtmosphereDensity: 0.08
+    - _AtmosphereDensity: 0
     - _AtmosphereInscatterWeight: 0.78
     - _AtmosphereTransmittanceWeight: 0.92
-    - _AuroraHorizonFade: 0.18
-    - _AuroraIntensity: 0.08
-    - _AuroraSpeed: 0.028
-    - _BacklitIntensity: 1.08
+    - _BacklitIntensity: 1.25
     - _BacklitPower: 4
-    - _BakedStarCubemapReady: 0
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
@@ -152,28 +136,28 @@ Material:
     - _CelestialTransmittanceSoftness: 0.24
     - _CelestialTransmittanceStrength: 0.4
     - _CelestialTransmittanceThreshold: 0.52
-    - _CirrusOpacity: 0.72
-    - _CirrusParallaxStrength: 0.11
-    - _CirrusSpeedMult: 0.035
+    - _CirrusOpacity: 0.55
+    - _CirrusParallaxStrength: 0.5
+    - _CirrusSpeedMult: 0.008
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CloudDensityThreshold: 0.2
+    - _CloudDensityThreshold: 0
     - _CloudOverlayMode: 0
-    - _CloudSoftness: 0.32
-    - _CloudSpeedMult: 0.035
+    - _CloudSoftness: 0.01
+    - _CloudSpeedMult: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailStrength: 0.36
+    - _DetailStrength: 0.66
     - _DitherScale: 4
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EclipseOcclusion: 0
     - _EnvironmentReflections: 1
-    - _FlowCycleSpeed: 0.18
-    - _FlowStrength: 0.2
-    - _GameTime: 0.8399993
+    - _FlowCycleSpeed: 0.05
+    - _FlowStrength: 0
+    - _GameTime: 0
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
@@ -207,9 +191,9 @@ Material:
     - _StarSeed: 99173
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
-    - _StarTwinkleSpeed: 1.8
+    - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.0035
-    - _SunElevation: 0.29254407
+    - _SunElevation: 0.5960179
     - _SunScatterIntensity: 1.1
     - _SunScatterPower: 10.4
     - _SunSize: 0.0065
@@ -219,17 +203,14 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _AegirHaloColor: {r: 0.52, g: 0.6, b: 0.78, a: 1}
-    - _AuroraColorA: {r: 0.2, g: 0.62, b: 0.82, a: 1}
-    - _AuroraColorB: {r: 0.58, g: 0.48, b: 1.05, a: 1}
-    - _AuroraScale: {r: 2.2, g: 5.8, b: 0, a: 0}
-    - _BacklitColor: {r: 0.72, g: 0.86, b: 1, a: 1}
+    - _BacklitColor: {r: 0.39999998, g: 0.90006435, b: 1, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _CelestialTransmittanceTiling: {r: 0.04, g: 0.06, b: 0, a: 0}
-    - _CirrusColor: {r: 0.88, g: 0.91, b: 0.98, a: 1}
-    - _CirrusTiling: {r: 3.8, g: 1.6, b: 0, a: 0}
-    - _CloudColorLit: {r: 0.92, g: 0.97, b: 1, a: 1}
-    - _CloudColorShadow: {r: 0.5, g: 0.58, b: 0.7, a: 1}
-    - _CloudTiling: {r: 1.55, g: 0.86, b: 0, a: 0}
+    - _CirrusColor: {r: 0.82, g: 0.84, b: 0.9, a: 1}
+    - _CirrusTiling: {r: 0.1, g: 0.1, b: 0, a: 0}
+    - _CloudColorLit: {r: 0, g: 0, b: 0, a: 0}
+    - _CloudColorShadow: {r: 0, g: 0, b: 0, a: 0}
+    - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HazeColor: {r: 0.5402711, g: 0.53269815, b: 0.65191215, a: 1}
