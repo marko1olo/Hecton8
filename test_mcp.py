@@ -1,6 +1,5 @@
 import urllib.request
 import json
-import sys
 
 data = json.dumps({"code": "Hecton8.Editor.TerrainRenderTestGoal.Execute();"}).encode('utf-8')
 req = urllib.request.Request("http://localhost:8088/execute", data=data, headers={"Content-Type": "application/json"})
