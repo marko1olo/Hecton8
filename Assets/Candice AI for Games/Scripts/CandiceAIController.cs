@@ -572,7 +572,11 @@ namespace CandiceAIforGames.AI
         /// <returns></returns>
         private void SetLookPointY(Vector3 lookPoint)
         {
-            LookPoint = new Vector3(lookPoint.x, transform.position.y, lookPoint.z);
+            Vector3 temp = LookPoint;
+            temp.x = lookPoint.x;
+            temp.y = transform.position.y;
+            temp.z = lookPoint.z;
+            LookPoint = temp;
         }
         /// <summary>
         /// Function to follow a given path.
