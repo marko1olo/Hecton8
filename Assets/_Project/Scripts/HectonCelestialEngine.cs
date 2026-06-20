@@ -275,22 +275,10 @@ namespace Hecton8.Celestial
             return Enqueue(EclipseStartedEventType);
         }
 
-        [Obsolete("Celestial event producers must use TryRaiseEclipseStarted and handle bounded enqueue failure.", true)]
-        public static void RaiseEclipseStarted()
-        {
-            TryRaiseEclipseStarted();
-        }
-
         /// <summary>Queues an eclipse-end signal.</summary>
         public static bool TryRaiseEclipseEnded()
         {
             return Enqueue(EclipseEndedEventType);
-        }
-
-        [Obsolete("Celestial event producers must use TryRaiseEclipseEnded and handle bounded enqueue failure.", true)]
-        public static void RaiseEclipseEnded()
-        {
-            TryRaiseEclipseEnded();
         }
 
         /// <summary>Queues or coalesces a sun-angle signal.</summary>
@@ -312,12 +300,6 @@ namespace Hecton8.Celestial
             return false;
         }
 
-        [Obsolete("Celestial event producers must use TryRaiseSunAngleChanged and handle bounded enqueue failure.", true)]
-        public static void RaiseSunAngleChanged(float angleDegrees)
-        {
-            TryRaiseSunAngleChanged(angleDegrees);
-        }
-
         /// <summary>Queues or coalesces a planet-phase signal.</summary>
         public static bool TryRaisePlanetPhaseChanged(float phase)
         {
@@ -335,12 +317,6 @@ namespace Hecton8.Celestial
             }
 
             return false;
-        }
-
-        [Obsolete("Celestial event producers must use TryRaisePlanetPhaseChanged and handle bounded enqueue failure.", true)]
-        public static void RaisePlanetPhaseChanged(float phase)
-        {
-            TryRaisePlanetPhaseChanged(phase);
         }
 
         /// <summary>
