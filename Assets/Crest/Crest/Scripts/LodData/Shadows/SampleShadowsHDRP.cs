@@ -52,8 +52,8 @@ namespace Crest
 
             // Custom passes execute for every camera. We only support one camera for now.
             if (!ReferenceEquals(camera, ocean.ViewCamera)) return;
-            // TODO: bail when not executing for main light or when no main light exists?
-            // if (renderingData.lightData.mainLightIndex == -1) return;
+            // Bail when no main light exists.
+            if (ocean._primaryLight == null || !ocean._primaryLight.isActiveAndEnabled) return;
 
             if (!ReferenceEquals(camera, _cameraDataCamera))
             {
