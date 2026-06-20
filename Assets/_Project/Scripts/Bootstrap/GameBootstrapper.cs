@@ -1967,7 +1967,7 @@ namespace Hecton8.Bootstrap
             camera.allowMSAA = false;
             camera.useOcclusionCulling = false;
             try { cameraObject.tag = "MainCamera"; }
-            catch (UnityException) { }
+            catch (UnityException ex) { Debug.LogWarning($"[GameBootstrapper] Failed to set MainCamera tag on presentation camera: {ex.Message}"); }
 
             GameObject keyLight = new GameObject("BOOT_PRESENTATION_CYAN_KEY", typeof(Light)); // COLD ALLOC: one bootstrap key light; no runtime polling.
             keyLight.transform.SetParent(rootTransform, false);
