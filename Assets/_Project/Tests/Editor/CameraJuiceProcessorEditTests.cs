@@ -10,6 +10,7 @@ namespace Hecton8.Tests.Editor
     public class CameraJuiceProcessorEditTests
     {
         [Test]
+<<<<<<< HEAD
         public void RegisterEntanglementStrain_ZeroIntensity_DoesNotApplyStrain()
         {
             var processor = new CameraJuiceProcessor();
@@ -172,6 +173,25 @@ namespace Hecton8.Tests.Editor
             // Assert
             float storedValue = (float)fieldInfo.GetValue(processor);
             Assert.AreEqual(-15.2f, storedValue, "TrackVerticalVelocity should set the internal _preLandingVerticalVelocity field.");
+        }
+
+        [Test]
+        public void ClearActionBob_SetsActionBobIntensityToZero()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+
+            // Use reflection to set the private field _actionBobIntensity to a non-zero value
+            var fieldInfo = typeof(CameraJuiceProcessor).GetField("_actionBobIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
+            fieldInfo.SetValue(processor, 5.0f);
+
+            Assert.AreEqual(5.0f, (float)fieldInfo.GetValue(processor), "Failed to set initial value");
+
+            // Act
+            processor.ClearActionBob();
+
+            // Assert
+            Assert.AreEqual(0.0f, (float)fieldInfo.GetValue(processor), "ClearActionBob should reset _actionBobIntensity to 0");
         }
     }
 }
