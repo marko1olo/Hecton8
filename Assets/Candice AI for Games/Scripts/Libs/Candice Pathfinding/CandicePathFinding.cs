@@ -43,24 +43,12 @@ namespace CandiceAIforGames.AI.Pathfinding
         /// </remarks>
         public void ComputeAdjacencyList(float jumpHeight, CandiceTile target)
         {
-            // Find all game objects in the scene with the "CandiceTile" tag
-            GameObject[] tiles;
-            try
-            {
-                tiles = GameObject.FindGameObjectsWithTag("CandiceTile");
-            }
-            catch
-            {
-                // If no game objects are found, use an empty array instead.
-                tiles = EmptyTiles;
-            }
-
+            var tiles = CandiceTile.AllTiles;
+            int tileCount = tiles.Count;
             // Compute the adjacency list for each CandiceTile in the scene
-            for (int i = 0; i < tiles.Length; i++)
+            for (int i = 0; i < tileCount; i++)
             {
-                GameObject tile = tiles[i];
-                // Get the CandiceTile component of the current game object
-                CandiceTile t = tile.GetComponent<CandiceTile>();
+                CandiceTile t = tiles[i];
                 if (t == null)
                 {
                     continue;
