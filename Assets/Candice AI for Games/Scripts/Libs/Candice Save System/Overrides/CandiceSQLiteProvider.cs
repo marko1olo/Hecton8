@@ -456,7 +456,8 @@ namespace CandiceAIforGames.Data
 
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                string selectQuery = "PRAGMA table_info(" + tableName + "); ";
+                string safeTableName = tableName.Replace("'", "''");
+                string selectQuery = "PRAGMA table_info('" + safeTableName + "'); ";
                 sqlCmd = new SqliteCommand(selectQuery, sqlCon);
                 sqlDr = sqlCmd.ExecuteReader();
                 while (sqlDr.Read())
