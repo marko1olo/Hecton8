@@ -64,6 +64,18 @@ namespace Shapes {
 			this.OnPreRenderText -= ApplyDeformation;
 		}
 
+		TMP_SubMesh[] cachedSubmeshes;
+		int lastSubmeshChildCount = -1;
+
+		public TMP_SubMesh[] GetSubmeshes() {
+			int cc = transform.childCount;
+			if( cc != lastSubmeshChildCount ) {
+				cachedSubmeshes = GetComponentsInChildren<TMP_SubMesh>( true );
+				lastSubmeshChildCount = cc;
+			}
+			return cachedSubmeshes;
+		}
+
 		void ApplyDeformation( TMP_TextInfo obj ) {
 			if( curvature == 0 )
 				return; // no deformation
