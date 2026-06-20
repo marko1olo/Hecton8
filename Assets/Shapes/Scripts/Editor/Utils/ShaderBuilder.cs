@@ -104,8 +104,19 @@ namespace Shapes {
 				// culling/blend mode etc
 				if( pass == ShaderPassType.Render ) {
 					AppendLines( blendMode.GetPassRenderStates() );
-				} else
-					AppendLine( "Cull Off" ); // todo: might be incorrect for DepthOnly
+				} else {
+					bool hasCullProperty = shader.Contains( "_Cull" );
+					AppendLine( hasCullProperty ? "Cull [_Cull]" : "Cull Off" );
+
+					AppendLine( "ZTest [_ZTest]" );
+					AppendLine( "Offset [_ZOffsetFactor], [_ZOffsetUnits]" );
+					if( blendMode.AlphaToMask() )
+						AppendLine( "AlphaToMask On" );
+					if( pass == ShaderPassType.DepthOnly ) {
+						AppendLine( "ColorMask 0" );
+						AppendLine( "ZWrite On" );
+					}
+				}
 
 				// hlsl program
 				AppendHlslProgram( pass, rp );
