@@ -14,14 +14,15 @@ namespace Hecton8.EditorTools
             Debug.Log($"[SceneCleaner] Opening scene: {scenePath}");
             Scene scene = EditorSceneManager.OpenScene(scenePath);
             
-            GameObject deprecatedParent = GameObject.Find("DEPRECATED_STUFF");
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+
+            GameObject deprecatedParent = rootObjects.FirstOrDefault(go => go.name == "DEPRECATED_STUFF");
             if (deprecatedParent == null)
             {
                 deprecatedParent = new GameObject("DEPRECATED_STUFF");
+                SceneManager.MoveGameObjectToScene(deprecatedParent, scene);
                 deprecatedParent.SetActive(false);
             }
-            
-            GameObject[] rootObjects = scene.GetRootGameObjects();
             int movedCount = 0;
             foreach (var go in rootObjects)
             {
