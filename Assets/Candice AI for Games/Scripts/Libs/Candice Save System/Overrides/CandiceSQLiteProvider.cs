@@ -12,6 +12,7 @@ namespace CandiceAIforGames.Data
     public class CandiceSQLiteProvider : CandiceProviderBase
     {
         private string query = "";
+        private Dictionary<object, object> queryParameters = null;
         private string conStr = "";
         //private int OBJECT_TYPE = ObjectTypes.OBJECT_NONE;
 
@@ -44,9 +45,16 @@ namespace CandiceAIforGames.Data
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
                     //deleteQuery = string.Format("DELETE FROM Objects WHERE [serialNr] = '{0}'", serialNr);
-                    deleteQuery = string.Format(query);
+                    deleteQuery = query;
                     sqlCmd = sqlCon.CreateCommand();
                     sqlCmd.CommandText = deleteQuery;
+                    if (queryParameters != null)
+                    {
+                        foreach (KeyValuePair<object, object> p in queryParameters)
+                        {
+                            sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
+                        }
+                    }
                     rc = sqlCmd.ExecuteNonQuery();
                     if (rc == 0)
                     {
@@ -168,6 +176,13 @@ namespace CandiceAIforGames.Data
                     sqlCon.Open();
                     //string selectQuery = "SELECT * FROM Objects";
                     sqlCmd = new SqliteCommand(query, sqlCon);
+                    if (queryParameters != null)
+                    {
+                        foreach (KeyValuePair<object, object> p in queryParameters)
+                        {
+                            sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
+                        }
+                    }
                     sqlDr = sqlCmd.ExecuteReader();
                     while (sqlDr.Read())
                     {
@@ -223,6 +238,13 @@ namespace CandiceAIforGames.Data
                     sqlCon.Open();
                     //string selectQuery = string.Format("SELECT * FROM Objects WHERE [serialNr] = '{0}'", serialNr);
                     sqlCmd = new SqliteCommand(query, sqlCon);
+                    if (queryParameters != null)
+                    {
+                        foreach (KeyValuePair<object, object> p in queryParameters)
+                        {
+                            sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
+                        }
+                    }
                     sqlDr = sqlCmd.ExecuteReader();
                     bFound = sqlDr.Read();
                     if (bFound)
@@ -305,9 +327,10 @@ namespace CandiceAIforGames.Data
         } // end method
         #endregion
         #region HELPER/PREREQUISITE METHODS
-        public void SetQuery(string query)
+        public void SetQuery(string query, Dictionary<object, object> parameters = null)
         {
             this.query = query;
+            this.queryParameters = parameters;
         }
 
         
@@ -571,7 +594,7 @@ namespace CandiceAIforGames.Data
             return ProviderUnavailable;
         }
 
-        public void SetQuery(string query)
+        public void SetQuery(string query, Dictionary<object, object> parameters = null)
         {
         }
 
