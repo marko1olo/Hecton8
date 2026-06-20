@@ -27,7 +27,7 @@ namespace Hecton8.Gameplay
             Grapple = 3
         }
 
-        private readonly struct HarpoonTextSegment
+        public readonly struct HarpoonTextSegment
         {
             public const byte HasStringArg0 = 1 << 0;
             public const byte HasFloatArg1 = 1 << 1;
