@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+using System;
+using NUnit.Framework;
 using UnityEngine;
 using Unity.Mathematics;
 using System.Reflection;
@@ -39,17 +40,12 @@ namespace Hecton8.Tests.Editor
             float intensity = 1.0f;
             processor.RegisterEntanglementStrain(intensity);
 
-            // Expected values
-            // float signX = NextCinematicShakeSign(); // which will be -1f because it flips from 1f
-            // float signP = -signX; // 1f
-            // float amplitude = intensity * 0.0035f; // 0.0035f
-
-            float expectedShakeY = math.min(0f, -0.0035f); // -0.0035f
-            float expectedShakeYVel = math.max(0f, 0.0035f * 24f); // 0.084f
-            float expectedShakeX = -1f * 0.0035f * 0.8f; // -0.0028f
-            float expectedShakeXVel = -(-1f) * 0.0035f * 18f; // 0.063f
-            float expectedShakePitch = 1f * 1.0f * 0.18f; // 0.18f
-            float expectedShakePitchVel = -1f * 1.0f * 2.4f; // -2.4f
+            float expectedShakeY = math.min(0f, -0.0035f);
+            float expectedShakeYVel = math.max(0f, 0.0035f * 24f);
+            float expectedShakeX = -1f * 0.0035f * 0.8f;
+            float expectedShakeXVel = -(-1f) * 0.0035f * 18f;
+            float expectedShakePitch = 1f * 1.0f * 0.18f;
+            float expectedShakePitchVel = -1f * 1.0f * 2.4f;
 
             Assert.AreEqual(expectedShakeY, GetField<float>(processor, "_collisionShakeY"), 0.0001f);
             Assert.AreEqual(expectedShakeYVel, GetField<float>(processor, "_collisionShakeYVel"), 0.0001f);
@@ -161,6 +157,21 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(expectedX, (float)fieldX.GetValue(processor));
             Assert.AreEqual(expectedXVel, (float)fieldXVel.GetValue(processor));
             Assert.AreEqual(expectedIntensity, (float)fieldIntensity.GetValue(processor));
+        }
+
+        [Test]
+        public void TrackVerticalVelocity_SetsInternalField()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+            var fieldInfo = typeof(CameraJuiceProcessor).GetField("_preLandingVerticalVelocity", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Act
+            processor.TrackVerticalVelocity(-15.2f);
+
+            // Assert
+            float storedValue = (float)fieldInfo.GetValue(processor);
+            Assert.AreEqual(-15.2f, storedValue, "TrackVerticalVelocity should set the internal _preLandingVerticalVelocity field.");
         }
     }
 }
