@@ -261,7 +261,6 @@ namespace Shapes {
 					SetColor( ShapesMaterialUtils.propColorD, colorC );
 					break;
 				case QuadColorMode.Vertical:
-					SetColor( ShapesMaterialUtils.propColor, colorD ); // todo: this is a double-assign, it's already set before this, but to the wrong value :c
 					SetColor( ShapesMaterialUtils.propColorB, colorB );
 					SetColor( ShapesMaterialUtils.propColorC, colorB );
 					SetColor( ShapesMaterialUtils.propColorD, colorD );
