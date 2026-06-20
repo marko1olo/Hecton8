@@ -140,10 +140,9 @@ namespace Hecton8.World
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregister();
-                    if (isActiveAndEnabled)
+                    if (isActiveAndEnabled && currentService != null)
                     {
-                        if (currentService != null)
-                            TryRegister();
+                        TryRegister();
                     }
                     break;
                 case GlobalRegistryServiceSlot.MapMagicRuntime:
