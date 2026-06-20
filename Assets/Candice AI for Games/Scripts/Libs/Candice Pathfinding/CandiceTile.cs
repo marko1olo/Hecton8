@@ -31,6 +31,18 @@ namespace CandiceAIforGames.AI
         private Color _lastColor;
         private bool _hasLastColor;
 
+        public static readonly List<CandiceTile> AllTiles = new List<CandiceTile>(128);
+
+        private void OnEnable()
+        {
+            AllTiles.Add(this);
+        }
+
+        private void OnDisable()
+        {
+            AllTiles.Remove(this);
+        }
+
         private void Awake()
         {
             _cachedRenderer = GetComponent<Renderer>();
