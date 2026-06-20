@@ -220,25 +220,35 @@ namespace MapMagic.Nodes.GUI
 			List<TL> newLayers = null;
 			lock (layers) //SyncInlets may change inputs
 			{
-				//gathering all internal portals by name
+				//gathering all internal portals by id and name
+				Dictionary<ulong,TP> idsPortals = new Dictionary<ulong,TP>();
 				Dictionary<string,TP> namesPortals = new Dictionary<string,TP>();
 				foreach (TP portal in subGraph.GeneratorsOfType<TP>())
 				{
-					HashSet<TP> portalSet = new HashSet<TP>();
-					namesPortals.Add(portal.Name, portal);
+					if (portal is Generator portalGen)
+						idsPortals.Add(portalGen.id, portal);
+					if (!namesPortals.ContainsKey(portal.Name))
+						namesPortals.Add(portal.Name, portal);
 				}
 			
 
 				//skipping if there is no change
 				bool noChange = true;
 
-				if (namesPortals.Count != layers.Length)
+				if (idsPortals.Count != layers.Length)
 					noChange = false;
 
 				foreach (IFnLayer<object> layer in layers)
 				{
-					if (!namesPortals.ContainsKey(layer.Name))
-						{ noChange = false; break; }
+					if (!idsPortals.ContainsKey(layer.PortalId))
+					{
+						// Fallback to name check
+						if (!namesPortals.ContainsKey(layer.Name))
+						{
+							noChange = false;
+							break;
+						}
+					}
 				}
 
 				if (noChange)
@@ -250,8 +260,21 @@ namespace MapMagic.Nodes.GUI
 
 				foreach (TL layer in layers)
 				{
-					string name = layer.Name;
-					if (!namesPortals.TryGetValue(name, out TP portal))
+					TP portal = default(TP);
+					bool found = false;
+
+					if (layer.PortalId != 0 && idsPortals.TryGetValue(layer.PortalId, out portal))
+					{
+						found = true;
+					}
+					else if (namesPortals.TryGetValue(layer.Name, out portal))
+					{
+						found = true;
+						if (portal is Generator portalGen)
+							layer.PortalId = portalGen.id; // Assign ID if it was missing
+					}
+
+					if (!found)
 					{
 						//unlinking removed inlet from graph
 						if (layer is IInlet<object> inlet) parentGraph.UnlinkInlet(inlet);
@@ -261,12 +284,13 @@ namespace MapMagic.Nodes.GUI
 					}
 
 					newLayers.Add(layer);
-					namesPortals.Remove(name);
+					if (portal is Generator portalGen2)
+						idsPortals.Remove(portalGen2.id);
 				}
 
 
 				//creating layers for portals left
-				foreach (TP portal in namesPortals.Values)
+				foreach (TP portal in idsPortals.Values)
 				{
 					//Type genericType = portal.GetType().BaseType.GetGenericArguments()[0]; //might have IFNPortal not the only interface
 					Type genericType = null;
@@ -279,6 +303,8 @@ namespace MapMagic.Nodes.GUI
 					TL layer = CreateLayer<TL>(gen, genericType);
 
 					layer.Name = portal.Name;
+					if (portal is Generator portalGen)
+						layer.PortalId = portalGen.id;
 					newLayers.Add(layer);
 				}
 			}

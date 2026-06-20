@@ -14,7 +14,7 @@ namespace MapMagic.Nodes.Biomes
 	public interface IFnLayer<out T> : IUnit where T:class
 	{
 		string Name { get; set; }
-		ulong PortalId { get; set; } //fn portal node id in internal graph. TODO: switch to it instead of names
+		ulong PortalId { get; set; } //fn portal node id in internal graph.
 		IFnPortal<T> GetInternalPortal (Graph graph);
 	}
 
@@ -48,6 +48,14 @@ namespace MapMagic.Nodes.Biomes
 
 		public IFnPortal<T> GetInternalPortal (Graph graph)
 		{
+			if (PortalId != 0)
+			{
+				Generator gen = graph.GetGeneratorById(PortalId);
+				if (gen is IFnEnter<T> fnInput)
+					return fnInput;
+			}
+
+			// Fallback to name if PortalId is not set
 			foreach (IFnEnter<T> fnInput in graph.GeneratorsOfType<IFnEnter<T>>())
 				if (fnInput.Name == Name) 
 					return fnInput;
@@ -79,6 +87,14 @@ namespace MapMagic.Nodes.Biomes
 
 		public IFnPortal<T> GetInternalPortal (Graph graph)
 		{
+			if (PortalId != 0)
+			{
+				Generator gen = graph.GetGeneratorById(PortalId);
+				if (gen is IFnExit<T> fnInput)
+					return fnInput;
+			}
+
+			// Fallback to name if PortalId is not set
 			foreach (IFnExit<T> fnInput in graph.GeneratorsOfType<IFnExit<T>>())
 				if (fnInput.Name == Name) 
 					return fnInput;
