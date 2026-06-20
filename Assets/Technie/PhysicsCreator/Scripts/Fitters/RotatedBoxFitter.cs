@@ -106,28 +106,29 @@ namespace Technie.PhysicsCreator
 		}
 	}
 
-	// Sorts rotated boxes so that the tightest (ie. smallest volume) comes first in the list
-	public class VolumeSorter : IComparer<RotatedBox>
-	{
-		public int Compare(RotatedBox lhs, RotatedBox rhs)
-		{
-			if (Mathf.Approximately(lhs.volume, rhs.volume))
-			{
-				return 0;
-			}
-			else if (lhs.volume > rhs.volume)
-			{
-				return 1;
-			}
-			else
-			{
-				return -1;
-			}
-		}
-	}
-
 	public class RotatedBoxFitter
 	{
+		private static RotatedBox GetBestBox(List<RotatedBox> boxes)
+		{
+			if (boxes.Count == 0)
+				return null;
+
+			RotatedBox best = boxes[0];
+			float bestVolume = best.volume;
+
+			for (int i = 1; i < boxes.Count; i++)
+			{
+				float vol = boxes[i].volume;
+				if (vol < bestVolume)
+				{
+					bestVolume = vol;
+					best = boxes[i];
+				}
+			}
+
+			return best;
+		}
+
 		public RotatedBoxFitter()
 		{
 
@@ -200,22 +201,18 @@ namespace Technie.PhysicsCreator
 			}
 			
 			// Find the tightest boxes for the initial planes and get the best initial box from them (based on smallest volume)
-			// TODO: If we're only taking the single best we don't need to sort here but can replace with a linear scan
 			List<RotatedBox> initialBoxes = FindTightestBoxes(planes, hullVertices);
 			if (initialBoxes.Count > 0)
 			{
-				initialBoxes.Sort(new VolumeSorter());
-				RotatedBox initialBest = initialBoxes[0];
+				RotatedBox initialBest = GetBestBox(initialBoxes);
 
 				// Create a another set of planes based around the best box but with finer rotations
 				List<ConstructionPlane> refiniedPlanes = new List<ConstructionPlane>();
-				GeneratePlaneVariants(initialBoxes[0].plane, refineNumVariants, refineAngleRange, refiniedPlanes);
+				GeneratePlaneVariants(initialBest.plane, refineNumVariants, refineAngleRange, refiniedPlanes);
 
 				// Try and find even tighter boxes using the refined planes from our initial guess
-				// TODO: If we're only taking the single best we don't need to sort here but can replace with a linear scan
 				List<RotatedBox> refinedBoxes = FindTightestBoxes(refiniedPlanes, hullVertices);
-				refinedBoxes.Sort(new VolumeSorter());
-				RotatedBox refinedBest = refinedBoxes[0];
+				RotatedBox refinedBest = GetBestBox(refinedBoxes);
 
 				// Take the smallest and apply it's data to the hull
 				//	ApplyToHull(refinedBest, hull);			// FIXME: Not sure this is needed - looks like calling code will do this itself as well (using the returned result of this func)
