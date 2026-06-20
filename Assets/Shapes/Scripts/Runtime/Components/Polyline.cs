@@ -197,22 +197,23 @@ namespace Shapes {
 				mats[1] = ShapesMaterialUtils.GetPolylineJoinsMat( joins )[BlendMode];
 		}
 
-		// todo: this doesn't take point thickness or thickness space into account
 		private protected override Bounds GetUnpaddedLocalBounds_Internal() {
 			if( points.Count < 2 )
 				return default;
 			Vector3 min = Vector3.one * float.MaxValue;
 			Vector3 max = Vector3.one * float.MinValue;
-			foreach( Vector3 pt in points.Select( p => p.point ) ) {
-				min = Vector3.Min( min, pt );
-				max = Vector3.Max( max, pt );
+			float maxPointThickness = 0f;
+			foreach( PolylinePoint pt in points ) {
+				min = Vector3.Min( min, pt.point );
+				max = Vector3.Max( max, pt.point );
+				maxPointThickness = Mathf.Max( maxPointThickness, pt.thickness );
 			}
 
 			if( geometry == PolylineGeometry.Flat2D )
 				min.z = max.z = 0;
 
 			float extraScale = joins == PolylineJoins.Miter ? 2.41421356237f : 1f;
-			float thickSize = thicknessSpace == ThicknessSpace.Meters ? thickness * extraScale : 0f;
+			float thickSize = thicknessSpace == ThicknessSpace.Meters ? thickness * maxPointThickness * extraScale : 0f;
 			return new Bounds( ( max + min ) * 0.5f, ( max - min ) + Vector3.one * thickSize );
 		}
 
