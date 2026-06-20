@@ -209,8 +209,8 @@ namespace Shapes {
 
 		public virtual void OnValidate() {
 			// OnValidate can get called before awake in editor, so make sure the required things are initialized
-			if( rnd == null ) rnd = GetComponent<MeshRenderer>(); // Needed for ApplyProperties
-			if( mf == null ) mf = GetComponent<MeshFilter>(); // Needed for UpdateMesh
+			if( rnd == null ) TryGetComponent( out rnd ); // Needed for ApplyProperties
+			if( mf == null ) TryGetComponent( out mf ); // Needed for UpdateMesh
 			ShapeClampRanges();
 			UpdateAllMaterialProperties();
 			ApplyProperties();
@@ -230,8 +230,7 @@ namespace Shapes {
 
 		T MakeSureComponentExists<T>( ref T field, out bool created ) where T : Component {
 			if( field == null ) {
-				field = GetComponent<T>();
-				if( field == null ) {
+				if( TryGetComponent( out field ) == false ) {
 					field = gameObject.AddComponent<T>();
 					created = true;
 				}
@@ -603,12 +602,15 @@ namespace Shapes {
 		}
 
 
+		static System.Collections.Generic.List<ShapeGroup> tempGroups = new System.Collections.Generic.List<ShapeGroup>();
+
 		private protected void SetColor( int prop, Color value ) {
 			if( ShapeGroup.shapeGroupsInScene > 0 ) { // if color tint groups exist, see if we have any
-				ShapeGroup[] groups = GetComponentsInParent<ShapeGroup>();
-				if( groups != null )
-					foreach( ShapeGroup shapeGroup in groups.Where( g => g.IsEnabled ) )
+				GetComponentsInParent<ShapeGroup>( false, tempGroups );
+				foreach( ShapeGroup shapeGroup in tempGroups ) {
+					if( shapeGroup.IsEnabled )
 						value *= shapeGroup.Color;
+				}
 			}
 
 			Mpb.SetColor( prop, value );
