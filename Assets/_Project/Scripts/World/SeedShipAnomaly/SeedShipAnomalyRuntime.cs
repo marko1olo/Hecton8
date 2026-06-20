@@ -412,6 +412,9 @@ namespace Hecton8.World.SeedShipAnomaly
 
         public void InjectCoreHack(uint codeHash, float validity01)
         {
+            UnityEngine.Assertions.Assert.IsTrue(codeHash != 0, "codeHash must not be 0.");
+            UnityEngine.Assertions.Assert.IsTrue(validity01 >= 0f && validity01 <= 1f, "validity01 must be between 0 and 1.");
+
             SignalBus<CoreHackedSignal>.TryPushTracked(new CoreHackedSignal
             {
                 Frame = _simulationFrameCounter,
