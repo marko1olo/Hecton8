@@ -1,7 +1,7 @@
-import pygetwindow as gw
 import pyautogui
 import time
 import psutil
+from pywinauto import Application
 
 unity_pid = None
 for p in psutil.process_iter(['name', 'pid']):
@@ -10,10 +10,6 @@ for p in psutil.process_iter(['name', 'pid']):
         break
 
 if unity_pid:
-    wins = [w for w in gw.getAllWindows() if getattr(w, '_hWnd', None)]
-    # Match pid via win32api or just activate all empty title windows?
-    # Better: just use pywinauto
-    from pywinauto import Application
     try:
         app = Application().connect(process=unity_pid)
         app.top_window().set_focus()
