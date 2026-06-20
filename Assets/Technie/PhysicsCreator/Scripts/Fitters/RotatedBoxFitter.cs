@@ -65,7 +65,7 @@ namespace Technie.PhysicsCreator
 
 		private void Init()
 		{
-			if (normal.magnitude < 0.01f)
+			if (normal.sqrMagnitude < 0.0001f)
 				Debug.LogError("!");
 
 			this.rotation = Quaternion.LookRotation(normal, tangent);
