@@ -12,8 +12,11 @@ SAMPLER(sampler_AlbedoArray);
 // No custom CBUFFER — UVScale/TriplanarBlend are hardcoded for now
 // to avoid SRP Batcher CBUFFER conflict with UnityPerMaterial from TerrainLitInput.hlsl.
 // TODO: move these into UnityPerMaterial or use material property overrides.
-#define HECTON_UV_SCALE 1.0
-#define HECTON_TRIPLANAR_BLEND 2.0
+
+CBUFFER_START(UnityPerMaterial)
+    float _HectonUVScale;
+    float _HectonTriplanarBlend;
+CBUFFER_END
 
 struct TerrainSample
 {
@@ -56,7 +59,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     float  metallic   = 0;
     float  ao         = 0;
 
-    float uvScale = HECTON_UV_SCALE;
+    float uvScale = _HectonUVScale;
     float2 uv  = detailUV * uvScale;
     float2 dx  = ddx(uv);
     float2 dy  = ddy(uv);
@@ -126,7 +129,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
                     float3 nZ = SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, uvZ, 3.0, dxZ, dyZ).rgb;
                     float4 mZ = SAMPLE_TEXTURE2D_ARRAY_GRAD(_MaskArray,   sampler_AlbedoArray, uvZ, 3.0, dxZ, dyZ);
 
-                    float bF     = pow(1.0 - saturate(slope / 0.7), HECTON_TRIPLANAR_BLEND);
+                    float bF     = pow(1.0 - saturate(slope / 0.7), _HectonTriplanarBlend);
                     float normX  = abs(worldNormal.x);
                     float normZ  = abs(worldNormal.z);
                     float triTot = max(0.001, normX + normZ);

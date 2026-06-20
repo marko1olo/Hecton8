@@ -36,6 +36,9 @@ Shader "Hecton8/URP/Terrain_TextureArray"
         [HideInInspector] _TerrainHolesTexture("Holes Map (RGB)", 2D) = "white" {}
 
         [ToggleUI] _EnableInstancedPerPixelNormal("Enable Instanced per-pixel normal", Float) = 1.0
+
+        _HectonUVScale("Hecton UV Scale", Float) = 1.0
+        _HectonTriplanarBlend("Hecton Triplanar Blend", Float) = 2.0
     }
 
     HLSLINCLUDE
