@@ -337,11 +337,16 @@ namespace CandiceAIforGames.Data
         #endregion
 
         #region DATABASE MANIPULATION HELPER METHODS
-
         private bool IsValidIdentifier(string identifier)
         {
             if (string.IsNullOrEmpty(identifier)) return false;
             return System.Text.RegularExpressions.Regex.IsMatch(identifier, @"^[a-zA-Z0-9_]+$");
+        }
+
+        private string EscapeIdentifier(string identifier)
+        {
+            if (string.IsNullOrEmpty(identifier)) return identifier;
+            return "\"" + identifier.Replace("\"", "\"\"") + "\"";
         }
 
         public int CreateTable(string tableName, string columnParameters)
@@ -351,6 +356,11 @@ namespace CandiceAIforGames.Data
                 Debug.LogError("Invalid table name provided: " + tableName);
                 return -1;
             }
+            if (columnParameters != null && columnParameters.Contains(";"))
+            {
+                Debug.Log("Datastore Creator_Error: columnParameters cannot contain semicolons.");
+                return -1;
+            }
 
             int rc = -1;
             SqliteConnection sqlCon = null;
@@ -358,7 +368,7 @@ namespace CandiceAIforGames.Data
             string createQuery = "";
             sqlCon = new SqliteConnection(conStr);
             sqlCon.Open();
-            createQuery = "CREATE TABLE IF NOT EXISTS " + tableName + columnParameters;
+            createQuery = "CREATE TABLE IF NOT EXISTS " + EscapeIdentifier(tableName) + columnParameters;
             Debug.Log(createQuery);
 
             sqlCmd = new SqliteCommand(createQuery, sqlCon);
@@ -396,8 +406,7 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                string safeTableName = "\"" + tableName.Replace("\"", "\"\"") + "\"";
-                createQuery = "DROP TABLE IF EXISTS " + safeTableName + ";";
+                createQuery = "DROP TABLE IF EXISTS " + EscapeIdentifier(tableName) + ";";
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();
@@ -417,6 +426,11 @@ namespace CandiceAIforGames.Data
                 Debug.LogError("Invalid table name provided: " + tableName);
                 return -1;
             }
+            if (columnParameters != null && columnParameters.Contains(";"))
+            {
+                Debug.Log("Datastore Creator_Error: columnParameters cannot contain semicolons.");
+                return -1;
+            }
 
             int rc = 0;
             SqliteConnection sqlCon = null;
@@ -427,7 +441,7 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                createQuery = "ALTER TABLE " + tableName + " ADD " + columnParameters;
+                createQuery = "ALTER TABLE " + EscapeIdentifier(tableName) + " ADD " + columnParameters;
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();
@@ -510,8 +524,7 @@ namespace CandiceAIforGames.Data
 
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                string safeTableName = tableName.Replace("'", "''");
-                string selectQuery = "PRAGMA table_info('" + safeTableName + "'); ";
+                string selectQuery = "PRAGMA table_info(" + EscapeIdentifier(tableName) + "); ";
                 sqlCmd = new SqliteCommand(selectQuery, sqlCon);
                 sqlDr = sqlCmd.ExecuteReader();
                 while (sqlDr.Read())
