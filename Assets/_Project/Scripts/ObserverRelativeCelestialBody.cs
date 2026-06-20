@@ -135,6 +135,11 @@ namespace Hecton8.Celestial
         /// </summary>
         public bool UsesFixedDirection => placementMode == CelestialPlacementMode.FixedDirection;
 
+        /// <summary>
+        /// The primary renderer used for this body.
+        /// </summary>
+        public Renderer BodyRenderer => bodyRenderer;
+
         private void Awake()
         {
             CacheAuthoringReferences();

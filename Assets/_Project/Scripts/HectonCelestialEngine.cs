@@ -4969,7 +4969,8 @@ namespace Hecton8.Celestial
                 if (body == null || body == aegirObserverRelativeBody)
                     continue;
 
-                if (!body.TryGetComponent(out Renderer renderer) || renderer == null || renderer == aegirRenderer)
+                Renderer renderer = body.BodyRenderer;
+                if (renderer == null || renderer == aegirRenderer)
                     continue;
 
                 Material sharedMaterial = renderer.sharedMaterial;
