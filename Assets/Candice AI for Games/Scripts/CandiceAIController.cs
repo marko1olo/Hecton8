@@ -235,6 +235,8 @@ namespace CandiceAIforGames.AI
         public CandiceModuleDetection detectionModule;
         public CandiceModuleCombat combatModule;
 
+        private CandiceDetectionRequest detectionRequest;
+
 
         /*
          * Properties
@@ -481,16 +483,26 @@ namespace CandiceAIforGames.AI
         /// </summary>
         public void ScanForObjects()
         {
-            CandiceDetectionRequest req = new CandiceDetectionRequest(sensorType, objectTags, DetectionRadius, DetectionHeight, LineOfSight, Is3D);
-            detectionModule.ScanForObjects(req);
+            detectionRequest.type = sensorType;
+            detectionRequest.detectionTags = objectTags;
+            detectionRequest.radius = DetectionRadius;
+            detectionRequest.height = DetectionHeight;
+            detectionRequest.lineOfSight = LineOfSight;
+            detectionRequest.is3D = Is3D;
+            detectionModule.ScanForObjects(detectionRequest);
         }
         /// <summary>
         /// Use the detection module to scan for objects ina 2D space.
         /// </summary>
         public void ScanForObjects2D()
         {
-            CandiceDetectionRequest req = new CandiceDetectionRequest(sensorType, objectTags, DetectionRadius, DetectionHeight, LineOfSight, Is3D);
-            detectionModule.ScanForObjects2D(req);
+            detectionRequest.type = sensorType;
+            detectionRequest.detectionTags = objectTags;
+            detectionRequest.radius = DetectionRadius;
+            detectionRequest.height = DetectionHeight;
+            detectionRequest.lineOfSight = LineOfSight;
+            detectionRequest.is3D = Is3D;
+            detectionModule.ScanForObjects2D(detectionRequest);
         }
 
         /// <summary>
