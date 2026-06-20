@@ -337,8 +337,21 @@ namespace CandiceAIforGames.Data
         #endregion
 
         #region DATABASE MANIPULATION HELPER METHODS
+
+        private bool IsValidIdentifier(string identifier)
+        {
+            if (string.IsNullOrEmpty(identifier)) return false;
+            return System.Text.RegularExpressions.Regex.IsMatch(identifier, @"^[a-zA-Z0-9_]+$");
+        }
+
         public int CreateTable(string tableName, string columnParameters)
         {
+            if (!IsValidIdentifier(tableName))
+            {
+                Debug.LogError("Invalid table name provided: " + tableName);
+                return -1;
+            }
+
             int rc = -1;
             SqliteConnection sqlCon = null;
             SqliteCommand sqlCmd = null;
@@ -368,6 +381,12 @@ namespace CandiceAIforGames.Data
         }
         public int DeleteTable(string tableName)
         {
+            if (!IsValidIdentifier(tableName))
+            {
+                Debug.LogError("Invalid table name provided: " + tableName);
+                return -1;
+            }
+
             int rc = 0;
             SqliteConnection sqlCon = null;
             SqliteCommand sqlCmd = null;
@@ -392,6 +411,12 @@ namespace CandiceAIforGames.Data
         }
         public int AddColumn(string tableName, string columnParameters)
         {
+            if (!IsValidIdentifier(tableName))
+            {
+                Debug.LogError("Invalid table name provided: " + tableName);
+                return -1;
+            }
+
             int rc = 0;
             SqliteConnection sqlCon = null;
             SqliteCommand sqlCmd = null;
@@ -459,6 +484,11 @@ namespace CandiceAIforGames.Data
 
         public List<CandiceColumnInfo> GetColumnInfo(string tableName)
         {
+            if (!IsValidIdentifier(tableName))
+            {
+                Debug.LogError("Invalid table name provided: " + tableName);
+                return new List<CandiceColumnInfo>();
+            }
 
             //
             //Name            : List<ColumnInfo> GetColumnInfo()
