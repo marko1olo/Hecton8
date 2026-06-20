@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 for i in range(3):
-    path = f'C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/Terrain_View_{i}.png'
+    path = f'Terrain_View_{i}.png'
     img = cv2.imread(path)
     if img is None:
         print(f'{path} not found.')
