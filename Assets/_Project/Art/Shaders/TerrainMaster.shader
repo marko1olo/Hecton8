@@ -877,6 +877,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma fragment DNFrag
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
+            #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
             // Only Core.hlsl is included via HLSLINCLUDE - minimal dependencies
 
@@ -921,8 +922,14 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float3 finalN = HectonDominantAxisDirection(IN.normalWS);
 
                 // Encode for URP DepthNormals texture
-                // Safe fallback that works across URP versions:
-                return half4(finalN * 0.5 + 0.5, 0.0);
+                #if defined(_GBUFFER_NORMALS_OCT)
+                    float2 octNormalWS = PackNormalOctQuadEncode(finalN);           // values between [-1, +1]
+                    float2 remappedOctNormalWS = saturate(octNormalWS * 0.5 + 0.5); // values between [ 0,  1]
+                    half3 packedNormalWS = PackFloat2To888(remappedOctNormalWS);    // values between [ 0,  1]
+                    return half4(packedNormalWS, 0.0);
+                #else
+                    return half4(finalN, 0.0);
+                #endif
             }
 
             ENDHLSL
