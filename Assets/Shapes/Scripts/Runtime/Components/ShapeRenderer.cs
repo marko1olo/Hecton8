@@ -562,7 +562,7 @@ namespace Shapes {
 					instancedMaterial.renderQueue = renderQueue;
 				}
 
-			SetColor( ShapesMaterialUtils.propColor, color );
+			SetColor( ShapesMaterialUtils.propColor, Color );
 			if( HasScaleModes )
 				SetInt( ShapesMaterialUtils.propScaleMode, (int)scaleMode );
 			SetAllMaterialProperties();

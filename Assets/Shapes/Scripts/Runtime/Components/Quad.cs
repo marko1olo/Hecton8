@@ -174,7 +174,7 @@ namespace Shapes {
 
 		/// <summary>The color of this shape. The alpha channel is used for opacity/intensity in all blend modes</summary>
 		public override Color Color {
-			get => color;
+			get => colorMode == QuadColorMode.Vertical ? colorD : color;
 			set {
 				SetColor( ShapesMaterialUtils.propColor, color = value );
 				SetColor( ShapesMaterialUtils.propColorB, colorB = value );
