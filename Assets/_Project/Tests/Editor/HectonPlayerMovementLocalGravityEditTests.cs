@@ -3,6 +3,7 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Mathematics;
+using Hecton8.Gameplay;
 
 namespace Hecton8.Tests.Editor
 {

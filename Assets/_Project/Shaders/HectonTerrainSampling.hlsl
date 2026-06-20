@@ -1,4 +1,4 @@
-﻿#ifndef HECTON_TERRAIN_SAMPLING_HLSL
+#ifndef HECTON_TERRAIN_SAMPLING_HLSL
 #define HECTON_TERRAIN_SAMPLING_HLSL
 
 // _Control / sampler_Control are declared by TerrainLitInput.hlsl - do NOT redeclare.
@@ -106,8 +106,12 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
                 float3 n2 = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uv2, (float)k).rgb;
                 float4 m2 = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uv2, (float)k);
 
-                float noise = saturate(sin(worldPos.x * 0.05) * cos(worldPos.z * 0.07)
-                            + sin(worldPos.x * 0.13 + worldPos.z * 0.09)) * 0.5 + 0.5;
+                // Multi-scale stochastic variation to completely hide tiling from a distance
+                float noiseLarge = sin(worldPos.x * 0.002) * cos(worldPos.z * 0.0031);
+                float noiseMedium = sin(worldPos.x * 0.013 + worldPos.z * 0.009) * cos(worldPos.x * 0.011 - worldPos.z * 0.017);
+                float noiseSmall = sin(worldPos.x * 0.05) * cos(worldPos.z * 0.07);
+                
+                float noise = saturate((noiseLarge * 0.5 + noiseMedium * 0.35 + noiseSmall * 0.15) * 0.5 + 0.5);
 
                 a = lerp(a, a2, noise);
                 n = lerp(n, n2, noise);

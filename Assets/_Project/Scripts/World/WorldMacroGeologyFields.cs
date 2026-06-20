@@ -82,6 +82,7 @@ namespace Hecton8.World
         public float ReefEligibilityMask;
         public float HardRockExposureMask;
         public float VoxelSeamMask;
+        public float CraterMask;
         public WorldMacroGeologyZone PrimaryZone;
     }
 
@@ -184,7 +185,8 @@ namespace Hecton8.World
                 NodulePlainMask = math.saturate(sediment * 0.52f + (1f - slope01) * 0.28f + deepPlain01 * 0.20f - masks.Ridge * 0.35f - masks.Trench * 0.20f),
                 ReefEligibilityMask = math.saturate(masks.Shelf * 0.52f + shallowReefBand01 * 0.34f + (1f - slope01) * 0.18f - masks.Trench * 0.25f),
                 HardRockExposureMask = math.saturate(masks.Ridge * 0.45f + masks.Fault * 0.28f + slope01 * 0.30f - sediment * 0.24f),
-                VoxelSeamMask = math.saturate(masks.Fault * 0.35f + curvature01 * 0.40f + slope01 * 0.22f + masks.Trench * 0.16f)
+                VoxelSeamMask = math.saturate(masks.Fault * 0.35f + curvature01 * 0.40f + slope01 * 0.22f + masks.Trench * 0.16f),
+                CraterMask = masks.Crater
             };
             sample.PrimaryZone = ResolveZone(in sample);
             return sample;
@@ -312,230 +314,272 @@ namespace Hecton8.World
             float midWarp = (FractalNoise01(norm * 4.4f + new float2(-2.1f, 8.6f), p.Seed ^ 0x4CF5AD43u) * 2f - 1f) * 520f;
             float highWarp = (FractalNoise01(norm * 7.2f + new float2(-17.2f, 29.3f), p.Seed ^ 0x68E31DA4u) * 2f - 1f) * 240f;
 
-            float shelfCurve = -half * 0.30f +
-                math.sin(norm.x * 6.0f + HashToUnitFloat(p.Seed) * 6.283185f) * 1150f +
-                math.sin(norm.x * 13.5f + HashToUnitFloat(p.Seed ^ 0xBADC0FFEu) * 6.283185f) * 420f +
-                lowWarp * 0.62f +
-                midWarp * 0.18f;
-            float shelfDistance = absoluteZ - shelfCurve;
-            float shelfMask = 1f - math.smoothstep(-p.ShelfBreakWidthMeters * 0.45f, p.ShelfBreakWidthMeters * 1.70f, shelfDistance);
-            float shelfBreakMask = 1f - math.smoothstep(0f, p.ShelfBreakWidthMeters * 0.85f, math.abs(shelfDistance));
-            float descent01 = math.smoothstep(-p.ShelfBreakWidthMeters * 0.65f, p.ShelfBreakWidthMeters * 2.45f, shelfDistance);
-
-            float depth = math.lerp(p.ShelfDepthMeters, p.AbyssDepthMeters, descent01);
-            depth += math.saturate((absoluteZ - shelfCurve) / math.max(1f, half)) * 820f;
-
-            float terraceScale = 260f;
-            float terraceLocal = depth / terraceScale;
-            float terraceBase = math.floor(terraceLocal);
-            float terraceFrac = terraceLocal - terraceBase;
-            // Organic soft-stepping instead of primitive math.round
-            float terraceSoft = terraceBase + math.smoothstep(0.2f, 0.8f, terraceFrac);
-            float terraceTarget = terraceSoft * terraceScale;
+            // 1. TECTONIC PLATES (Voronoi)
+            float plateScale = 14000f; // 14km avg plate size
+            float2 cell = math.floor(pos / plateScale);
             
-            float terraceNoise = (FractalNoise01(norm * 16.5f + new float2(-4f, 9f), p.Seed ^ 0xD1B54A32u) * 2f - 1f) * 58f;
-            float terraceWeight = math.saturate(shelfMask * 0.08f + shelfBreakMask * 0.22f);
-            depth = math.lerp(depth, terraceTarget + terraceNoise, terraceWeight);
+            float minDist1 = 10f; // normalized
+            float minDist2 = 10f;
+            float2 bestNode1 = 0;
+            float2 bestNode2 = 0;
+            uint bestHash1 = 0;
+            uint bestHash2 = 0;
 
-            float canyon = 0f;
-            for (int i = 0; i < 5; i++)
+            for (int y = -2; y <= 2; y++) // Search radius 2 for voronoi
             {
-                uint h = Hash((int)p.Seed, i, unchecked((int)0xBA5EBA11u));
-                float cx = math.lerp(-half * 0.88f, half * 0.88f, HashToUnitFloat(h));
-                float phase = HashToUnitFloat(h ^ 0x9E3779B9u) * 6.283185f;
-                float width = math.lerp(620f, 1850f, HashToUnitFloat(h ^ 0x27D4EB2Fu));
-                
-                // Add high frequency fractal noise to the canyon path so it's not a perfect sine wave
-                float canyonWarp = (FractalNoise01(pos * 0.00015f + new float2(13.4f, -7.2f), h ^ 0x12345678u) * 2f - 1f) * 650f;
-                float centerX = cx + math.sin(absoluteZ * 0.00034f + phase) * 860f + lowWarp * 0.08f + midWarp * 0.04f + canyonWarp;
-                
-                float gate = math.smoothstep(-p.ShelfBreakWidthMeters * 0.95f, p.ShelfBreakWidthMeters * 0.18f, shelfDistance);
-                gate *= 1f - math.smoothstep(p.ShelfBreakWidthMeters * 2.50f, p.ShelfBreakWidthMeters * 5.40f, shelfDistance);
-                
-                // Warp the shape of the canyon so it's not a perfect V-cut
-                float depthWarp = FractalNoise01(pos * 0.00028f + new float2(-9.1f, 22.3f), h ^ 0x87654321u);
-                float cut = 1f - math.smoothstep(width * 0.34f, width * 1.95f, math.abs(absoluteX - centerX));
-                cut *= (0.6f + depthWarp * 0.4f);
-                
-                canyon = math.max(canyon, cut * gate);
+                for (int x = -2; x <= 2; x++)
+                {
+                    float2 neighborCell = cell + new float2(x, y);
+                    uint h = Hash((int)neighborCell.x, (int)neighborCell.y, unchecked((int)(p.Seed ^ 0x6A91B3E2u)));
+                    float2 node = neighborCell + new float2(HashToUnitFloat(h ^ 0x11223344u), HashToUnitFloat(h ^ 0x55667788u));
+                    
+                    float dist = math.length((pos / plateScale) - node);
+                    if (dist < minDist1)
+                    {
+                        minDist2 = minDist1;
+                        bestNode2 = bestNode1;
+                        bestHash2 = bestHash1;
+                        minDist1 = dist;
+                        bestNode1 = node;
+                        bestHash1 = h;
+                    }
+                    else if (dist < minDist2)
+                    {
+                        minDist2 = dist;
+                        bestNode2 = node;
+                        bestHash2 = h;
+                    }
+                }
             }
 
-            depth += canyon * math.lerp(150f, 560f, descent01);
-            shelfBreakMask = math.max(shelfBreakMask, canyon * 0.36f);
+            // Plate boundary (Distance to edge)
+            float2 diff = bestNode2 - bestNode1;
+            float2 diffNorm = math.normalize(diff);
+            float edgeDistNorm = math.abs(math.dot((pos / plateScale) - (bestNode1 + bestNode2) * 0.5f, diffNorm));
+            float distanceToBoundary = edgeDistNorm * plateScale;
+            
+            // Domain Warping for the boundary so it's not perfectly straight
+            float boundaryWarp = (FractalNoise01(pos * 0.0001f, p.Seed ^ 0x98765432u) * 2f - 1f) * 1200f;
+            distanceToBoundary = math.max(0f, distanceToBoundary + boundaryWarp);
 
-            float rollingHills = FractalNoise01(norm * 9.0f + new float2(31.1f, -12.2f), p.Seed ^ 0xA53F9E21u) * 2f - 1f;
-            depth += rollingHills * 175f * math.saturate(shelfMask * 0.45f + shelfBreakMask * 0.40f + (1f - descent01) * 0.18f);
-
-            float2 faultNormal = math.normalize(new float2(0.72f, -0.69f));
-            float2 faultTangent = new float2(-faultNormal.y, faultNormal.x);
-            float alongFault = math.dot(pos, faultTangent);
-            float acrossFault = math.dot(pos, faultNormal);
-            float faultWander = math.sin(alongFault * 0.00031f + HashToUnitFloat(p.Seed ^ 0x9E3779B9u) * 6.283185f) * 980f +
-                (FractalNoise01(new float2(alongFault * 0.00014f, 3.71f), p.Seed ^ 0xC2B2AE35u) * 2f - 1f) * 1420f;
-            float trenchWarp = FractalNoise01(pos * 0.00018f, p.Seed ^ 0x12345678u);
-            float trenchDistance = math.abs(acrossFault - faultWander + 1700f + highWarp * 0.42f) * (0.6f + trenchWarp * 0.4f);
-            float trenchMask = 1f - math.smoothstep(p.TrenchWidthMeters * 0.62f, p.TrenchWidthMeters * 2.05f, trenchDistance);
-            float faultMask = 1f - math.smoothstep(p.TrenchWidthMeters * 0.95f, p.TrenchWidthMeters * 4.20f, trenchDistance);
-
-            float2 secondaryFaultNormal = math.normalize(new float2(-0.38f, -0.925f));
-            float2 secondaryFaultTangent = new float2(-secondaryFaultNormal.y, secondaryFaultNormal.x);
-            float alongSecondary = math.dot(pos, secondaryFaultTangent);
-            float acrossSecondary = math.dot(pos, secondaryFaultNormal);
-            float secondaryWander = math.sin(alongSecondary * 0.00026f + HashToUnitFloat(p.Seed ^ 0x51ED270Bu) * 6.283185f) * 1450f +
-                (FractalNoise01(new float2(alongSecondary * 0.00011f, -9.37f), p.Seed ^ 0xA24BAED5u) * 2f - 1f) * 1180f;
-            float secondaryWarp = FractalNoise01(pos * 0.00018f, p.Seed ^ 0x87654321u);
-            float secondaryDistance = math.abs(acrossSecondary - secondaryWander - 900f + midWarp * 0.35f) * (0.6f + secondaryWarp * 0.4f);
-            float secondaryFaultMask = 1f - math.smoothstep(p.TrenchWidthMeters * 1.10f, p.TrenchWidthMeters * 4.60f, secondaryDistance);
-            float secondaryDepressionWarp = (FractalNoise01(pos * 0.00016f + new float2(11.2f, 44.9f), p.Seed ^ 0xDECADEEFu) * 2f - 1f) * 850f;
-            float secondaryDepression = 1f - math.smoothstep(p.TrenchWidthMeters * 0.55f, p.TrenchWidthMeters * 2.70f, math.abs(acrossSecondary - secondaryWander + 3100f + secondaryDepressionWarp));
-
-            float ridgeWarp = FractalNoise01(pos * 0.0002f, p.Seed ^ 0xABCDEF12u);
-            float ridgeDistanceA = math.abs(acrossFault - faultWander - 4300f) * (0.5f + ridgeWarp * 0.5f);
-            float ridgeDistanceB = math.abs(acrossFault - faultWander + 6900f) * (0.5f + ridgeWarp * 0.5f);
-            float ridgeDistanceC = math.abs(acrossSecondary - secondaryWander - 2600f) * (0.5f + ridgeWarp * 0.5f);
-            float ridgeA = 1f - math.smoothstep(p.RidgeWidthMeters * 0.34f, p.RidgeWidthMeters * 2.35f, ridgeDistanceA);
-            float ridgeB = 1f - math.smoothstep(p.RidgeWidthMeters * 0.38f, p.RidgeWidthMeters * 2.45f, ridgeDistanceB);
-            float ridgeC = 1f - math.smoothstep(p.RidgeWidthMeters * 0.45f, p.RidgeWidthMeters * 2.80f, ridgeDistanceC);
-            float ridgeMask = math.saturate(math.max(ridgeA, math.max(ridgeB, ridgeC)) + faultMask * 0.04f + secondaryFaultMask * 0.05f);
-
-            float basinA = EllipseMask(pos, new float2(-7400f, 6500f), new float2(6900f, 4300f), 0.34f);
-            float basinB = EllipseMask(pos, new float2(8400f, -5600f), new float2(5600f, 8200f), -0.58f);
-            float basinC = EllipseMask(pos, new float2(1400f, 9800f), new float2(8500f, 4800f), -0.18f);
-            float basinMask = math.max(basinA, math.max(basinB, basinC));
-
-            float ridgeChainHills = 0f;
-            for (int i = 0; i < 4; i++)
+            // Determine Plate Types
+            float plate1Type = HashToUnitFloat(bestHash1 ^ 0xDDCCBBAAu);
+            float plate2Type = HashToUnitFloat(bestHash2 ^ 0xDDCCBBAAu);
+            
+            // Continent vs Abyss
+            bool isContinent = plate1Type > 0.6f; // 40% of plates are continents
+            float plateBaseDepth = isContinent ? p.ShelfDepthMeters : p.AbyssDepthMeters;
+            
+            // 2. BOUNDARY FEATURES (Ridges & Trenches)
+            uint boundaryHash = (uint)math.min(bestHash1, bestHash2) ^ (uint)math.max(bestHash1, bestHash2) ^ 0x99AABBCCu;
+            float boundaryType = HashToUnitFloat(boundaryHash);
+            
+            float shelfMask = 0f;
+            float shelfBreakMask = 0f;
+            float trenchMask = 0f;
+            float ridgeMask = 0f;
+            float faultMask = 0f;
+            float basinMask = 0f;
+            float depth = plateBaseDepth;
+            
+            bool isContinent2 = plate2Type > 0.6f;
+            bool subduction = (isContinent && !isContinent2) || (!isContinent && isContinent2);
+            
+            if (subduction)
             {
-                uint h = Hash((int)p.Seed, i, unchecked((int)0x7FEB352Du));
-                float angle = math.lerp(-1.05f, 0.85f, HashToUnitFloat(h ^ 0x846CA68Bu));
-                float2 chainNormal = new float2(math.cos(angle), math.sin(angle));
-                float2 chainTangent = new float2(-chainNormal.y, chainNormal.x);
-                float chainAlong = math.dot(pos, chainTangent);
-                float chainAcross = math.dot(pos, chainNormal);
-                float center = math.lerp(-half * 0.62f, half * 0.62f, HashToUnitFloat(h ^ 0x27D4EB2Fu));
-                float width = math.lerp(760f, 2100f, HashToUnitFloat(h ^ 0xC2B2AE35u));
-                float wander = math.sin(chainAlong * 0.00031f + HashToUnitFloat(h ^ 0xB5297A4Du) * 6.283185f) *
-                    math.lerp(520f, 1450f, HashToUnitFloat(h ^ 0xA53F9E21u));
-                float band = 1f - math.smoothstep(width * 0.34f, width * 1.86f, math.abs(chainAcross - center - wander));
-                float bead = FractalNoise01(new float2(chainAlong * 0.00042f + 17f, chainAcross * 0.00020f - 6f), h ^ 0x735A2D97u);
-                float intermittent = math.smoothstep(0.42f, 0.86f, bead);
-                ridgeChainHills = math.max(ridgeChainHills, band * intermittent);
+                // Subduction creates a trench on the oceanic side, and mountains (ridge) on the continental side.
+                float trenchProfile = 1f - math.smoothstep(p.TrenchWidthMeters * 0.1f, p.TrenchWidthMeters * 1.5f, distanceToBoundary);
+                trenchMask = trenchProfile;
+                faultMask = 1f - math.smoothstep(0f, p.TrenchWidthMeters * 3.0f, distanceToBoundary);
+                
+                // Continental Shelf Dropoff (ShelfBreak)
+                shelfBreakMask = 1f - math.smoothstep(0f, p.ShelfBreakWidthMeters * 2.0f, distanceToBoundary);
+                shelfMask = isContinent ? math.saturate(distanceToBoundary / (p.ShelfBreakWidthMeters * 2.0f)) : 0f;
+                
+                // Transition depth across the boundary (smoothstep over 3km)
+                // If we are on the continent side, edgeDistNorm is positive away from the ocean.
+                // We fake the transition by blending based on distance.
+                float blendDist = 2000f;
+                float blendSign = isContinent ? 1f : -1f;
+                float edgeVal = distanceToBoundary * blendSign;
+                float blendWeight = math.smoothstep(-blendDist, blendDist, edgeVal);
+                depth = math.lerp(p.AbyssDepthMeters, p.ShelfDepthMeters, blendWeight);
+                
+                // Add trench depth
+                depth += trenchProfile * p.TrenchDepthMeters;
+            }
+            else if (!isContinent && !isContinent2)
+            {
+                // Divergent or Transform Ocean boundary
+                if (boundaryType > 0.5f)
+                {
+                    // Mid-Ocean Ridge (Divergent)
+                    float ridgeProfile = 1f - math.smoothstep(p.RidgeWidthMeters * 0.2f, p.RidgeWidthMeters * 1.8f, distanceToBoundary);
+                    ridgeMask = ridgeProfile;
+                    faultMask = 1f - math.smoothstep(0f, p.RidgeWidthMeters * 3.0f, distanceToBoundary);
+                    
+                    depth -= ridgeProfile * p.RidgeHeightMeters;
+                }
+                else
+                {
+                    // Transform Fault (Oceanic)
+                    faultMask = 1f - math.smoothstep(0f, p.RidgeWidthMeters * 1.5f, distanceToBoundary);
+                    float faultDepression = 1f - math.smoothstep(0f, p.RidgeWidthMeters * 0.8f, distanceToBoundary);
+                    depth += faultDepression * 400f; // Small trench
+                }
+                
+                // Basin is the deep center of oceanic plates
+                // minDist1 is distance to cell center in normalized space (0 to ~0.707)
+                basinMask = math.smoothstep(0.2f, 0.45f, minDist1);
+                depth += basinMask * p.BasinDepthMeters;
+            }
+            else // Continent vs Continent
+            {
+                // Continental Collision (Himalayas equivalent)
+                float ridgeProfile = 1f - math.smoothstep(p.RidgeWidthMeters * 0.3f, p.RidgeWidthMeters * 2.5f, distanceToBoundary);
+                ridgeMask = ridgeProfile;
+                faultMask = 1f - math.smoothstep(0f, p.RidgeWidthMeters * 4.0f, distanceToBoundary);
+                
+                depth -= ridgeProfile * (p.RidgeHeightMeters * 1.5f); // Massive mountains
+                shelfMask = 1f; // All shelf
             }
 
-            // TECTONIC NETWORK RESTORED: Using Ridge Noise (1 - 2*abs(noise - 0.5)) instead of glitchy Voronoi CellularEdge.
-            float provinceEdge = 1f - 2f * math.abs(FractalNoise01(pos * 0.000075f + new float2(-42.6f, 18.4f), p.Seed ^ 0x8B4C2F91u) - 0.5f);
-            float provinceTexture = FractalNoise01(pos * 0.000061f + new float2(-3.4f, 15.1f), p.Seed ^ 0x21DA7F47u);
-            float provinceRelief = math.smoothstep(0.36f, 0.92f, provinceEdge * 0.72f + provinceTexture * 0.28f);
-            float regionalWarpA = (FractalNoise01(pos * 0.000050f + new float2(8.1f, -5.3f), p.Seed ^ 0xD8E4C2A7u) * 2f - 1f) * 3500f;
-            float regionalWarpB = (FractalNoise01(pos * 0.000033f + new float2(-14.4f, 22.8f), p.Seed ^ 0xA1B35F19u) * 2f - 1f) * 4500f;
-            float networkWarpX = (FractalNoise01(pos * 0.000085f + new float2(27.2f, -11.8f), p.Seed ^ 0xB77A91C3u) * 2f - 1f) * 2500f;
-            float networkWarpZ = (FractalNoise01(pos * 0.000095f + new float2(-9.6f, 33.1f), p.Seed ^ 0x69D4F2A5u) * 2f - 1f) * 2500f;
-            float networkX = absoluteX + regionalWarpA * 0.48f + networkWarpX;
-            float networkZ = absoluteZ + regionalWarpB * 0.38f + networkWarpZ;
-            float networkEdgeA = 1f - 2f * math.abs(FractalNoise01(new float2(networkX, networkZ) * 0.000052f + new float2(3.2f, -8.7f), p.Seed ^ 0xC35F19ABu) - 0.5f);
-            float networkEdgeB = 1f - 2f * math.abs(FractalNoise01(
-                new float2(networkX * 0.72f + networkZ * 0.20f, networkZ * 0.88f - networkX * 0.12f) * 0.000044f + new float2(-16.4f, 5.9f),
-                p.Seed ^ 0x7E2C4D55u) - 0.5f);
-            float networkActivity = math.smoothstep(0.26f, 0.78f, FractalNoise01(new float2(networkX * 0.000082f + 4.4f, networkZ * 0.000082f - 19.1f), p.Seed ^ 0x92E4B77Du));
-            float braidedNetwork = math.max(
-                math.smoothstep(0.28f, 0.86f, networkEdgeA),
-                math.smoothstep(0.34f, 0.90f, networkEdgeB) * 0.74f);
-            float networkTexture = FractalNoise01(new float2(networkX * 0.000115f - 2.7f, networkZ * 0.000115f + 8.9f), p.Seed ^ 0xCA97D1F3u);
-            float tectonicNetwork = math.saturate(
-                braidedNetwork *
-                (0.44f + networkActivity * 0.50f) *
-                (0.78f + networkTexture * 0.22f) +
-                provinceRelief * 0.06f);
-            float networkNode = math.smoothstep(0.72f, 0.96f, networkEdgeA) * math.smoothstep(0.52f, 0.90f, networkEdgeB) * networkActivity;
-            
-            float highlandNoise = FractalNoise01(pos * 0.000047f + new float2(-31.6f, 7.3f), p.Seed ^ 0xE35A9217u);
-            // Retain slope inside the plateaus so they aren't perfectly flat islands
-            float highlandPlate = math.smoothstep(0.56f, 0.84f, highlandNoise) * (0.8f + highlandNoise * 0.2f);
-            
-            float shallowNoise = FractalNoise01(
-                    new float2(
-                        absoluteX * 0.000030f + regionalWarpA * 0.000010f + 44.0f,
-                        absoluteZ * 0.000030f + regionalWarpB * 0.000010f - 28.0f),
-                    p.Seed ^ 0x4B6D13F7u);
-            float shallowProvince = math.smoothstep(0.50f, 0.80f, shallowNoise) * (0.75f + shallowNoise * 0.25f);
-            float riseWaveA = 0.5f + 0.5f * math.sin((absoluteX * 0.34f + absoluteZ * 0.94f + regionalWarpA) * 0.00019f + HashToUnitFloat(p.Seed ^ 0x6E624EB7u) * 6.283185f);
-            float riseWaveB = 0.5f + 0.5f * math.sin((absoluteX * -0.87f + absoluteZ * 0.49f + regionalWarpB) * 0.000145f + HashToUnitFloat(p.Seed ^ 0xC7425A31u) * 6.283185f);
-            float directedUplift = math.max(math.smoothstep(0.64f, 0.96f, riseWaveA) * 0.38f, math.smoothstep(0.68f, 0.97f, riseWaveB) * 0.30f);
-            float distributedHighsNoise = FractalNoise01(
-                new float2(
-                    absoluteX * 0.000033f + regionalWarpA * 0.000006f - 71.0f,
-                    absoluteZ * 0.000033f + regionalWarpB * 0.000006f + 39.0f),
-                p.Seed ^ 0x18F3A9C5u);
-            float distributedHighsWave = riseWaveA * 0.58f + riseWaveB * 0.42f;
-            float distributedHighs = math.max(
-                math.smoothstep(0.52f, 0.82f, distributedHighsNoise),
-                math.smoothstep(0.70f, 0.96f, distributedHighsWave) * 0.72f) *
-                (0.54f + networkActivity * 0.32f + provinceRelief * 0.18f);
-            float upliftNetwork = math.saturate(math.max(math.max(math.max(math.max(tectonicNetwork * 0.62f, highlandPlate * 0.48f), shallowProvince * 0.58f), directedUplift), distributedHighs * 0.58f) + provinceRelief * 0.04f + ridgeChainHills * 0.12f + networkNode * 0.12f);
-            float basinWarp = FractalNoise01(pos * 0.0001f, p.Seed ^ 0x8F2C3A1Du) * 0.6f;
-            float basinWave = 0.5f + 0.5f * math.sin((absoluteX * 0.68f - absoluteZ * 0.74f + regionalWarpB * 0.72f) * 0.00012f + basinWarp + HashToUnitFloat(p.Seed ^ 0x53C9E2B1u) * 6.283185f);
-            float recurringBasin = math.saturate(math.smoothstep(0.72f, 0.98f, basinWave) * (1f - upliftNetwork * 0.62f));
-            float fractureBase = 1f - 2f * math.abs(FractalNoise01(pos * 0.00018f + new float2(19.3f, -7.1f), p.Seed ^ 0x51633E2Du) - 0.5f);
-            float fractureNoise = math.saturate(math.pow(fractureBase, 2.5f));
-            float fractureMask = math.saturate(fractureNoise * 0.09f + tectonicNetwork * 0.16f + networkNode * 0.10f + provinceRelief * 0.06f + faultMask * 0.48f + secondaryFaultMask * 0.24f + canyon * 0.04f);
-            depth += trenchMask * p.TrenchDepthMeters * math.smoothstep(0.24f, 1f, descent01);
-            depth += secondaryDepression * 520f * math.smoothstep(0.18f, 0.95f, descent01);
-            basinMask = math.max(basinMask, recurringBasin * 0.34f);
-            ridgeMask = math.max(ridgeMask, math.max(upliftNetwork * 0.38f, tectonicNetwork * 0.48f));
-            depth += basinMask * p.BasinDepthMeters;
-            depth -= ridgeMask * p.RidgeHeightMeters * math.smoothstep(0.16f, 0.90f, descent01);
-            depth -= ridgeChainHills * math.lerp(350f, 1800f, math.saturate(shelfMask * 0.18f + shelfBreakMask * 0.24f + ridgeMask * 0.58f));
-            float regionalBreakup = FractalNoise01(norm * 5.5f + new float2(-4.2f, 12.9f), p.Seed ^ 0x41C64E6Du) * 2f - 1f;
-            float swellWarp = FractalNoise01(pos * 0.0001f, p.Seed ^ 0x3B8C1D2Eu) * 1.5f;
-            float regionalSwell = math.sin(norm.x * 11.3f + norm.y * 5.7f + swellWarp + HashToUnitFloat(p.Seed ^ 0xDEADBEEFu) * 6.283185f);
-            depth += regionalBreakup * 320f * math.saturate(0.25f + descent01 * 0.65f + shelfBreakMask * 0.12f);
-            depth += regionalSwell * 170f * math.saturate(0.20f + shelfMask * 0.35f + descent01 * 0.45f);
-            depth += provinceRelief * 145f * math.saturate(0.18f + descent01 * 0.50f + shelfBreakMask * 0.18f + ridgeMask * 0.18f);
-            depth -= upliftNetwork * math.lerp(260f, 1480f, math.saturate(descent01 * 0.82f + ridgeMask * 0.16f + shelfBreakMask * 0.10f));
-            depth -= highlandPlate * math.lerp(120f, 720f, math.saturate(descent01 * 0.75f + shelfBreakMask * 0.12f));
-            depth -= shallowProvince * math.lerp(220f, 1850f, math.saturate(descent01 * 0.88f + shelfBreakMask * 0.10f));
-            depth -= distributedHighs * math.lerp(180f, 1150f, math.saturate(descent01 * 0.90f + shelfBreakMask * 0.08f + ridgeMask * 0.08f));
-            depth += recurringBasin * 430f * math.saturate(0.24f + descent01 * 0.56f);
-            float reliefGate = math.saturate(0.22f + shelfBreakMask * 0.24f + ridgeMask * 0.28f + faultMask * 0.24f + canyon * 0.18f + basinMask * 0.08f);
-            
+            // 3. INTERNAL PLATE FEATURES (Highlands & Warps)
+            float provinceRelief = math.smoothstep(0.36f, 0.92f, FractalNoise01(pos * 0.00006f, p.Seed ^ 0x21DA7F47u));
+            depth += provinceRelief * 145f * math.saturate(shelfMask + basinMask);
+
+            // Tectonic Network (Internal smaller faults)
+            float internalNetwork = 1f - 2f * math.abs(FractalNoise01(pos * 0.00015f, p.Seed ^ 0xCA97D1F3u) - 0.5f);
+            internalNetwork = math.smoothstep(0.85f, 0.98f, internalNetwork); // Tighter faults
+            float fractureMask = math.max(faultMask, internalNetwork * 0.5f);
+            depth += internalNetwork * 80f; // Reduced from 150f
+
+            float descent01 = 1f - shelfMask;
+            // Relief gate controls where chaotic noise is allowed. Keep it near 0 on flat shelves and basins.
+            float reliefGate = math.saturate(shelfBreakMask * 0.6f + ridgeMask * 0.8f + faultMask * 0.4f);
+
             // DOMAIN WARPING: To break the "plastic" value noise look, we perturb the coordinates for high-frequency noise.
-            float warpX = (FractalNoise01(norm * 35.0f, p.Seed ^ 0x8A1F3C4Du) * 2f - 1f) * 0.015f;
-            float warpZ = (FractalNoise01(norm * 35.0f, p.Seed ^ 0x3B8E1D2Fu) * 2f - 1f) * 0.015f;
+            float warpX = (FractalNoise01(norm * 12.0f, p.Seed ^ 0x8A1F3C4Du) * 2f - 1f) * 0.005f; // Reduced warp
+            float warpZ = (FractalNoise01(norm * 12.0f, p.Seed ^ 0x3B8E1D2Fu) * 2f - 1f) * 0.005f;
             float2 warpedNorm = norm + new float2(warpX, warpZ);
 
             float macroBreakup = FractalNoise01(warpedNorm * 18.0f + new float2(7.7f, 41.3f), p.Seed ^ 0x91E83B37u) * 2f - 1f;
             float mesoBreakup = FractalNoise01(warpedNorm * 48.0f + new float2(-23.1f, 5.6f), p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
             float microBreakup = FractalNoise01(warpedNorm * 220.0f + new float2(33.1f, -14.6f), p.Seed ^ 0x1A2B3C4Du) * 2f - 1f;
             
-            depth += macroBreakup * 350f * reliefGate;
-            depth += mesoBreakup * 180f * math.saturate(reliefGate + shelfMask * 0.12f + shelfBreakMask * 0.16f);
-            float microBreakupWeight = math.saturate(ridgeMask * 0.8f + faultMask * 0.5f + reliefGate * 0.3f);
-            depth += microBreakup * math.lerp(15f, 95f, microBreakupWeight);
-            depth += fractureMask * 120f;
+            // Substantially lower amplitudes. The geology should be driven by plates, not noise.
+            depth += macroBreakup * 120f * reliefGate;
+            depth += mesoBreakup * 60f * math.saturate(reliefGate + shelfBreakMask * 0.2f);
+            float microBreakupWeight = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + reliefGate * 0.5f);
+            depth += microBreakup * math.lerp(5f, 45f, microBreakupWeight);
+            depth += fractureMask * 60f; // Reduced from 120f
 
             // MESO/MICRO DETAIL PASS
-            // Add sharp, high-frequency noise (scales ~60m down to ~4m) specifically to hard rock to break up "plastic" look.
-            // Frequency 150.0/extent = 150/30000 = 0.005 (200m base scale). High octaves will reach ~12m.
             float rockDetailNoise = (FractalNoise01(warpedNorm * 150.0f + new float2(-44.2f, 88.1f), p.Seed ^ 0x7B9C1A2Fu) * 2f - 1f);
-            // Add a sharper ridge-like noise for rocky outcrops
             float rockyRidgeDetail = 1f - 2f * math.abs(FractalNoise01(warpedNorm * 320.0f + new float2(11.4f, -99.3f), p.Seed ^ 0x5E8A9C1Du) - 0.5f);
             
-            float hardRockExposure = math.saturate(ridgeMask * 0.45f + faultMask * 0.28f + math.saturate(descent01 * 1.5f) * 0.30f);
+            float hardRockExposure = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + math.saturate(descent01 * 1.5f) * 0.20f);
             float mesoDetailWeight = math.saturate(hardRockExposure * 0.8f + reliefGate * 0.3f);
             
-            depth += rockDetailNoise * 70f * mesoDetailWeight;
-            depth -= rockyRidgeDetail * 60f * mesoDetailWeight * math.saturate(descent01); // Sharp extrusions on ridges
+            depth += rockDetailNoise * 35f * mesoDetailWeight;
+            depth -= rockyRidgeDetail * 30f * mesoDetailWeight * math.saturate(descent01); 
+
 
             // SEDIMENT DUNE/RIPPLE DETAIL PASS
-            // Adds organic low-frequency undulations (scales ~30m down to ~5m) to flat abyssal plains.
-            // Using a softer simplex noise mix to simulate sediment accumulation and deep sea currents.
-            float sedimentDuneNoise = (FractalSimplexNoise01(warpedNorm * 210.0f + new float2(31.5f, -12.1f), p.Seed ^ 0x8A9B1C2Du) * 2f - 1f);
-            float sedimentRippleNoise = (FractalSimplexNoise01(warpedNorm * 650.0f + new float2(-55.2f, 77.4f), p.Seed ^ 0x3F2E1D4Cu) * 2f - 1f);
+            // Dune frequency: 0.05 (20m wide dunes) for better mesh density compatibility
+            float duneSample = FractalSimplexNoise01(pos * 0.05f, p.Seed ^ 0xD11EBA5Eu);
+            duneSample = 1f - math.abs(duneSample); // Create sharp ridges and wide valleys
+            duneSample = math.pow(duneSample, 1.8f); // Pin the valleys flatter
             
-            float sedimentExposure = math.saturate(basinMask * 0.7f + (1f - math.saturate(hardRockExposure * 1.5f)) * 0.5f);
+            // Patch masking: dunes only appear in specific fields
+            float duneFieldMask = FractalNoise01(pos * 0.0015f, p.Seed ^ 0xA8B2C41Eu);
+            duneFieldMask = math.smoothstep(0.4f, 0.6f, duneFieldMask); // Sharp transition into dune fields
             
-            depth += sedimentDuneNoise * 18f * sedimentExposure;
-            depth += sedimentRippleNoise * 4.5f * sedimentExposure;
+            float sedimentDepth = math.saturate(1f - math.saturate(hardRockExposure * 1.5f));
+            
+            float duneAmplitude = math.lerp(4f, 1f, depth / 6000f);
+            float addedHeight = duneSample * duneAmplitude * sedimentDepth * duneFieldMask;
+            
+            // CELLULAR PITS PASS (Craters / Pockmarks / Subsidence)
+            // Frequency 0.012 -> ~80m cells. We extract the distance to the center.
+            float2 cellHash;
+            float cellDist = CellularDistance01(pos * 0.012f, p.Seed ^ 0xF131A21Eu, out cellHash);
+            
+            // We want deep pits at the center (cellDist near 0).
+            // A pit is formed if cellDist is small. We invert it: 1 - cellDist.
+            float pitProfile = math.saturate(1f - cellDist * 3f); // Only the central 33% of the cell
+            pitProfile = math.pow(pitProfile, 2.5f); // Make it a bowl shape
+            
+            // Pits appear in clusters
+            float pitFieldMask = FractalNoise01(pos * 0.0008f, p.Seed ^ 0x99BBE211u);
+            pitFieldMask = math.smoothstep(0.5f, 0.7f, pitFieldMask);
+            
+            // Pits subtract from sediment depth. Max pit depth is 6m.
+            float pitDepth = pitProfile * pitFieldMask * sedimentDepth * 6f;
+            
+            // METEOR CRATERS PASS
+            float craterDepthDelta = 0f;
+            float craterMask = 0f;
+            
+            float craterGridSize = 8000f;
+            int2 craterCell = new int2((int)math.floor(absoluteX / craterGridSize), (int)math.floor(absoluteZ / craterGridSize));
+            
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int2 craterNeighborCell = craterCell + new int2(dx, dz);
+                    uint h = Hash(craterNeighborCell.x, craterNeighborCell.y, unchecked((int)(p.Seed ^ 0x9B3A21EFu)));
+                    
+                    // ~15% chance of a crater in this 8km cell
+                    float probability = HashToUnitFloat(h ^ 0x12345678u);
+                    if (probability > 0.15f) continue;
+                    
+                    float cx = (craterNeighborCell.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
+                    float cz = (craterNeighborCell.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
+                    
+                    // Radius between 400m and 2500m
+                    float radius = math.lerp(400f, 2500f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.5f)); 
+                    
+                    float dist = math.length(new float2(absoluteX - cx, absoluteZ - cz));
+                    if (dist > radius * 2.0f) continue;
+                    
+                    float normalizedDist = dist / radius;
+                    
+                    // Crater Cavity
+                    float bowl = 1f - math.smoothstep(0f, 1f, normalizedDist); 
+                    bowl = math.pow(bowl, 1.5f); // Flatten the center due to sedimentation
+                    
+                    // Crater Rim
+                    float rimProfile = math.max(0f, 1f - math.abs(normalizedDist - 1f) * 2.5f);
+                    rimProfile = math.smoothstep(0f, 1f, rimProfile);
+                    
+                    // Central Peak (only in large craters)
+                    float peak = 0f;
+                    if (radius > 1200f) {
+                        float peakRadius = radius * 0.15f;
+                        peak = 1f - math.smoothstep(0f, peakRadius, dist);
+                        peak = math.smoothstep(0f, 1f, peak) * 0.4f;
+                    }
+                    
+                    // Rim Erosion Noise
+                    float angle = math.atan2(absoluteZ - cz, absoluteX - cx);
+                    float rimErosion = FractalNoise01(new float2(angle * 4.0f, radius), h ^ 0xDEADBEEFu);
+                    rimProfile *= (0.4f + rimErosion * 0.6f);
+                    
+                    float maxDepth = radius * 0.18f;
+                    float maxRimHeight = radius * 0.08f;
+                    
+                    craterDepthDelta += bowl * maxDepth;     // Depress (add to depth)
+                    craterDepthDelta -= peak * maxDepth;     // Raise peak (subtract from depth)
+                    craterDepthDelta -= rimProfile * maxRimHeight; // Raise rim
+                    
+                    craterMask = math.max(craterMask, bowl);
+                }
+            }
+            depth += craterDepthDelta;
+            
+            depth -= (addedHeight - pitDepth);
 
             if (depth < -260f)
                 depth = -260f + (depth + 260f) * 0.42f;
@@ -548,7 +592,8 @@ namespace Hecton8.World
                 Ridge = math.saturate(ridgeMask),
                 Trench = math.saturate(trenchMask),
                 Basin = math.saturate(basinMask),
-                Fault = math.saturate(fractureMask)
+                Fault = math.saturate(fractureMask),
+                Crater = math.saturate(craterMask)
             };
             return p.WaterSurfaceY - depth;
         }
@@ -562,6 +607,35 @@ namespace Hecton8.World
             float2 r = new float2(d.x * c - d.y * s, d.x * s + d.y * c) / math.max(new float2(1f, 1f), radii);
             float distance = math.length(r);
             return 1f - math.smoothstep(0.28f, 1f, distance);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float CellularDistance01(float2 pos, uint seed, out float2 cellHash)
+        {
+            float2 cell = math.floor(pos);
+            float2 frac = pos - cell;
+            
+            float minDist = 8.0f;
+            cellHash = new float2(0, 0);
+
+            for (int y = -1; y <= 1; y++)
+            {
+                for (int x = -1; x <= 1; x++)
+                {
+                    float2 neighbor = new float2(x, y);
+                    float2 pointHash = Hash2( (int)(cell.x + neighbor.x), (int)(cell.y + neighbor.y), seed);
+                    float2 diff = neighbor + pointHash - frac;
+                    float dist = math.length(diff);
+
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        cellHash = pointHash;
+                    }
+                }
+            }
+
+            return math.saturate(minDist);
         }
 
         private static float CellularEdge01(float2 sample, uint seed)
@@ -627,8 +701,24 @@ namespace Hecton8.World
 
         private static float SimplexNoise01(float2 sample, uint seed)
         {
-            float2 seedOffset = new float2(HashToUnitFloat(seed) * 1000f, HashToUnitFloat(seed ^ 0x9E3779B9u) * 1000f);
-            return Unity.Mathematics.noise.snoise(sample + seedOffset) * 0.5f + 0.5f;
+            float2 p = math.floor(sample);
+            float2 f = sample - p;
+            float2 w = f * f * (3f - 2f * f);
+
+            float a = math.dot(HashGradient(p, seed), f);
+            float b = math.dot(HashGradient(p + new float2(1f, 0f), seed), f - new float2(1f, 0f));
+            float c = math.dot(HashGradient(p + new float2(0f, 1f), seed), f - new float2(0f, 1f));
+            float d = math.dot(HashGradient(p + new float2(1f, 1f), seed), f - new float2(1f, 1f));
+
+            return math.lerp(math.lerp(a, b, w.x), math.lerp(c, d, w.x), w.y) * 0.5f + 0.5f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 HashGradient(float2 p, uint seed)
+        {
+            uint h = Hash((int)p.x, (int)p.y, (int)seed);
+            float angle = HashToUnitFloat(h) * 6.283185f;
+            return new float2(math.cos(angle), math.sin(angle));
         }
 
         private static float ValueNoise01(float2 sample, uint seed)
@@ -719,6 +809,7 @@ namespace Hecton8.World
             public float Trench;
             public float Basin;
             public float Fault;
+            public float Crater;
         }
     }
 }

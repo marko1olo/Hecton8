@@ -230,7 +230,6 @@ namespace Hecton8.Tests.Editor
 
             // Movement multiplier uses clamped explicitly. 0.1f is less than 0.5f so clamped to 0.5f.
             Assert.AreEqual(0.5f, _loadMovementMultiplierField.GetValue(_movement));
->>>>>>> origin/pr/148
         }
     }
 }

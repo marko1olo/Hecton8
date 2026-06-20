@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using UnityEngine;
+using Hecton8.Core;
 
 namespace Hecton8.Tests.Editor
 {

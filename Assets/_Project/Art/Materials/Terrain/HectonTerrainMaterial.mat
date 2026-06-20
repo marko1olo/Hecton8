@@ -123,6 +123,8 @@ Material:
     m_Floats:
     - _EnableHeightBlend: 0
     - _EnableInstancedPerPixelNormal: 1
+    - _HectonTriplanarBlend: 2
+    - _HectonUVScale: 1
     - _HeightTransition: 0
     - _Metallic0: 0
     - _Metallic1: 0

@@ -212,8 +212,7 @@ namespace Hecton8.Tests.Editor
             // Assert
             Assert.AreEqual(0.0f, (float)fieldInfo.GetValue(processor), "ClearActionBob should reset _actionBobIntensity to 0");
         }
-    }
-}
+
         [Test]
         public void RegisterSplash_WithNullSuit_DoesNothing()
         {
@@ -272,6 +271,8 @@ namespace Hecton8.Tests.Editor
 
             // Clean up
             UnityEngine.Object.DestroyImmediate(mockSuit);
+        }
+
         [Test]
         public void RegisterWaterEntryFovImpulse_NegativeOrZeroDuration_NoStateChange()
         {

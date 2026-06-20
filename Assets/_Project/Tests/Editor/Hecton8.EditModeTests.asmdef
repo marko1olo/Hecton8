@@ -5,6 +5,8 @@
                        "Hecton8.World.Contracts",
                        "Hecton8.Core.Contracts",
                        "Hecton8.Core",
+                       "Hecton8.Gameplay",
+                       "Hecton8.Gameplay.Contracts",
                        "Hecton8.Core.Scheduling",
                        "Hecton8.Bootstrap.Contracts",
                        "Hecton8.Core.Memory",

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 // Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
@@ -7,15 +7,15 @@ namespace Shapes {
 
 	public static class ShapesBlendModeExtensions {
 
-		static bool ZWrite( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque;
-		static bool AlphaToMask( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque;
-		static string RenderType( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque ? "TransparentCutout" : "Transparent";
-		static string Queue( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque ? "AlphaTest" : "Transparent";
-		static bool HasSpecialBlendMode( this ShapesBlendMode blendMode ) => blendMode != ShapesBlendMode.Opaque;
+		public static bool ZWrite( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque;
+		public static bool AlphaToMask( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque;
+		public static string RenderType( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque ? "TransparentCutout" : "Transparent";
+		public static string Queue( this ShapesBlendMode blendMode ) => blendMode == ShapesBlendMode.Opaque ? "AlphaTest" : "Transparent";
+		public static bool HasSpecialBlendMode( this ShapesBlendMode blendMode ) => blendMode != ShapesBlendMode.Opaque;
 
 		public static string BlendShaderDefine( this ShapesBlendMode blendMode ) => blendMode.ToString().ToUpperInvariant();
 
-		static string GetShaderBlendMode( this ShapesBlendMode blendMode ) {
+		public static string GetShaderBlendMode( this ShapesBlendMode blendMode ) {
 			switch( blendMode ) {
 				case ShapesBlendMode.Opaque:         return "One Zero";
 				case ShapesBlendMode.Transparent:    return "SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha";

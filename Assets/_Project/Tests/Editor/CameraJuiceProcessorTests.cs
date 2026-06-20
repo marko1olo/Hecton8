@@ -150,7 +150,7 @@ namespace Hecton8.Tests.Editor
             var input = new CameraJuiceInput
             {
                 deltaTime = 0.1f,
-                locomotionMode = PlayerLocomotionMode.Swim,
+                locomotionMode = PlayerLocomotionMode.UnderwaterSwim,
                 hasMovementInput = 1,
                 swimSpeed = 5f
             };
@@ -161,6 +161,8 @@ namespace Hecton8.Tests.Editor
 
             // We expect some non-zero offsets from swim bob
             Assert.AreNotEqual(0f, output.localPositionOffset.y);
+        }
+
         [Test]
         public void ClearActionBob_ResetsActionBobIntensityToZero()
         {

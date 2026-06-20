@@ -177,18 +177,25 @@ namespace Hecton8.World
             float steepSlope = math.smoothstep(0.35f, 0.55f, sample.Slope01);
             float verySteep = math.smoothstep(0.55f, 0.85f, sample.Slope01);
             
-            // Hard rock dominates completely on steep walls
-            float rockBase = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f));
-            float finalRock = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
+            // Craters collect deep sediment in the very center
+            float craterCenter = math.smoothstep(0.6f, 1.0f, sample.CraterMask);
+            float craterRimSlopes = math.smoothstep(0.1f, 0.5f, sample.CraterMask) * math.saturate(1f - craterCenter);
+            
+            // Hard rock dominates completely on steep walls, but ridges shouldn't force 100% rock on flat spots
+            float rockBase = math.saturate((hardRock * 0.62f) + (ridge * 0.15f) + (sample.FaultMask * 0.15f) - (sediment * 0.35f));
+            float finalRock = math.saturate(math.max(rockBase, steepSlope * 1.5f) + verySteep * 2f + craterRimSlopes * 0.5f);
+            
+            // Wipe out rock in the deep center of the crater
+            finalRock *= (1f - craterCenter);
 
             // Add high contrast to sand vs silt patches using noise
             float patchContrast = math.smoothstep(0.3f, 0.7f, localPatch);
 
             WorldTerrainSurfaceMaterialWeights weights = new WorldTerrainSurfaceMaterialWeights
             {
-                ShellSand = math.saturate(((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + patchContrast * 0.4f) * (1f - finalRock)),
+                ShellSand = math.saturate(((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + patchContrast * 0.5f) * (1f - finalRock)),
                 LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)) * (1f - finalRock)),
-                ClaySilt = math.saturate(((sediment * (0.58f + basin * 0.30f)) + (slump * 0.18f) + (flat * abyss * 0.16f) + (1f - patchContrast) * 0.4f) * (1f - finalRock)),
+                ClaySilt = math.saturate(((sediment * (0.75f + basin * 0.40f)) + (slump * 0.18f) + (flat * abyss * 0.26f) + (1f - patchContrast) * 0.5f + craterCenter * 1.5f) * (1f - finalRock)),
                 HardRock = finalRock,
                 BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (sample.DepthMeters > 2500f ? basin * 0.12f : 0f)) * (1f - finalRock)),
                 ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f) * (1f - finalRock)),

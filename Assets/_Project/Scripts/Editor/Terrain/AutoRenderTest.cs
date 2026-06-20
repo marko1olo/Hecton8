@@ -43,7 +43,16 @@ namespace Hecton8.Editor.Terrain
             var mmObject = Object.FindObjectOfType<MapMagic.Core.MapMagicObject>();
             if (mmObject != null)
             {
-                mmObject.StartGenerate();
+                // Change seed to force a completely fresh evaluation
+                foreach (var gen in mmObject.graph.generators)
+                {
+                    if (gen is MapMagic.Nodes.MatrixGenerators.HectonSandboxAbyssalShelfMapMagicNode node)
+                    {
+                        node.seed += 1;
+                    }
+                }
+                
+                mmObject.Refresh(true);
             }
 
             // Let's use Coroutine to wait for generation, but since we're in Editor, we can't easily wait.
@@ -71,9 +80,9 @@ namespace Hecton8.Editor.Terrain
                 }
             }
 
-            if (hasTerrain && EditorApplication.timeSinceStartup - startTime > 40.0)
+            if (hasTerrain && EditorApplication.timeSinceStartup - startTime > 100.0)
             {
-                // Wait an extra 40 seconds after first terrain to let it finish
+                // Wait an extra 100 seconds after first terrain to let it finish
                 Debug.Log("[AutoRenderTest] Terrain generated! Injecting material and taking screenshots.");
                 
                 Material customMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/MATERIALS/Terrain/HectonTerrainMaterial.mat");
@@ -139,7 +148,7 @@ namespace Hecton8.Editor.Terrain
                 TakeScreenshots();
                 EditorApplication.Exit(0);
             }
-            else if (EditorApplication.timeSinceStartup - startTime > 45.0)
+            else if (EditorApplication.timeSinceStartup - startTime > 120.0)
             {
                 Debug.Log("[AutoRenderTest] Timeout waiting for Terrain.");
                 EditorApplication.update -= CheckGeneration;
