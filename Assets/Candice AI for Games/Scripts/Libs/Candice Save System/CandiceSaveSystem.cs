@@ -131,11 +131,11 @@ namespace CandiceAIforGames.Data
         }
 
 
-        public void SetQuery(string query)
+        public void SetQuery(string query, Dictionary<object, object> parameters = null)
         {
             if (providerBase is CandiceSQLiteProvider)
             {
-                (providerBase as CandiceSQLiteProvider).SetQuery(query);
+                (providerBase as CandiceSQLiteProvider).SetQuery(query, parameters);
             }
         }
         public void ChangeDatabaseName(string dbName)
