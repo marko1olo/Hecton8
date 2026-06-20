@@ -713,8 +713,8 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            float distance = Vector3.Distance(wanderTarget.transform.position, transform.position);
-            if (distance < 5f)
+            float sqrDistance = (wanderTarget.transform.position - transform.position).sqrMagnitude;
+            if (sqrDistance < 25f)
             {
                 switchWanderTarget = true;
             }
