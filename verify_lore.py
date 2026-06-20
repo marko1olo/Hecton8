@@ -1,5 +1,4 @@
 import os
-import re
 
 base_dir = r"Docs/Lore/AppliedContent"
 rs_dir = os.path.join(base_dir, "release_sets")
