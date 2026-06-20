@@ -43,10 +43,9 @@ namespace CandiceAIforGames.Data
 
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
-                    //deleteQuery = string.Format("DELETE FROM Objects WHERE [serialNr] = '{0}'", serialNr);
-                    deleteQuery = string.Format(query);
                     sqlCmd = sqlCon.CreateCommand();
-                    sqlCmd.CommandText = deleteQuery;
+                    sqlCmd.CommandText = query;
+                    sqlCmd.Parameters.AddWithValue("@serialNr", serialNr);
                     rc = sqlCmd.ExecuteNonQuery();
                     if (rc == 0)
                     {
@@ -221,8 +220,8 @@ namespace CandiceAIforGames.Data
                 {
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
-                    //string selectQuery = string.Format("SELECT * FROM Objects WHERE [serialNr] = '{0}'", serialNr);
                     sqlCmd = new SqliteCommand(query, sqlCon);
+                    sqlCmd.Parameters.AddWithValue("@serialNr", serialNr);
                     sqlDr = sqlCmd.ExecuteReader();
                     bFound = sqlDr.Read();
                     if (bFound)
