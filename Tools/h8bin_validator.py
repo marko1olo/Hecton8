@@ -9,6 +9,7 @@ It deliberately does not import Unity or compiled C# assemblies.
 from __future__ import annotations
 
 import argparse
+import ast
 import concurrent.futures
 import csv
 import itertools
@@ -524,8 +525,42 @@ def sanitize_int_expr(expr: str, constants: dict[str, int]) -> str:
 
 def eval_int_expr(expr: str, constants: dict[str, int]) -> int:
     sanitized = sanitize_int_expr(expr, constants)
-    value = eval(sanitized, {"__builtins__": {}}, {})  # noqa: S307 - sanitized arithmetic only.
-    return int(value)
+
+    def _eval(node: ast.AST) -> int:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        elif isinstance(node, ast.Constant):
+            return int(node.value)
+        elif isinstance(node, ast.UnaryOp):
+            operand = _eval(node.operand)
+            if isinstance(node.op, ast.UAdd): return +operand
+            elif isinstance(node.op, ast.USub): return -operand
+            elif isinstance(node.op, ast.Invert): return ~operand
+            raise ValueError(f"unsupported unary op: {node.op}")
+        elif isinstance(node, ast.BinOp):
+            left, right = _eval(node.left), _eval(node.right)
+            if isinstance(node.op, ast.Add): return left + right
+            elif isinstance(node.op, ast.Sub): return left - right
+            elif isinstance(node.op, ast.Mult): return left * right
+            elif isinstance(node.op, ast.Div): return left // right
+            elif isinstance(node.op, ast.FloorDiv): return left // right
+            elif isinstance(node.op, ast.Mod): return left % right
+            elif isinstance(node.op, ast.LShift): return left << right
+            elif isinstance(node.op, ast.RShift): return left >> right
+            elif isinstance(node.op, ast.BitOr): return left | right
+            elif isinstance(node.op, ast.BitXor): return left ^ right
+            elif isinstance(node.op, ast.BitAnd): return left & right
+            raise ValueError(f"unsupported binary op: {node.op}")
+        elif isinstance(node, ast.Compare):
+            left = _eval(node.left)
+            if len(node.ops) != 1: raise ValueError("multiple comparisons not supported")
+            op, right = node.ops[0], _eval(node.comparators[0])
+            if isinstance(op, ast.Lt): return int(left < right)
+            elif isinstance(op, ast.Gt): return int(left > right)
+            raise ValueError(f"unsupported comparison op: {op}")
+        raise ValueError(f"unsupported node: {node}")
+
+    return int(_eval(ast.parse(sanitized, mode='eval')))
 
 
 def collect_csharp_files(paths: Iterable[Path]) -> list[Path]:
