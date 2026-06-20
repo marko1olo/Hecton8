@@ -396,7 +396,8 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                createQuery = "DROP TABLE IF EXISTS " + tableName + ";";
+                string safeTableName = "\"" + tableName.Replace("\"", "\"\"") + "\"";
+                createQuery = "DROP TABLE IF EXISTS " + safeTableName + ";";
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();
