@@ -65,7 +65,7 @@ namespace Technie.PhysicsCreator
 
 		private void Init()
 		{
-			if (normal.magnitude < 0.01f)
+			if (normal.sqrMagnitude < 0.0001f)
 				Debug.LogError("!");
 
 			this.rotation = Quaternion.LookRotation(normal, tangent);
@@ -184,7 +184,7 @@ namespace Technie.PhysicsCreator
 				Vector3 tangent = Vector3.Cross(normal, tmp);
 
 				// Degenerate triangles create zero-length normals - skip these
-				if (normal.magnitude > 0.0001f)
+				if (normal.sqrMagnitude > 0.00000001f)
 				{
 					ConstructionPlane basePlane = new ConstructionPlane(center, normal, tangent);
 
