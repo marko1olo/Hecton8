@@ -1,6 +1,6 @@
 import re
 
-with open('C:/hades/Hecton8/Assets/_Project/Shaders/HectonTerrainLitPasses.hlsl', 'r') as f:
+with open('Assets/_Project/Shaders/HectonTerrainLitPasses.hlsl', 'r') as f:
     content = f.read()
 
 # Replace the SplatmapFragment definition up to ENDHLSL or end of file
@@ -73,5 +73,5 @@ new_func = '''void SplatmapFragment(
 
 content = re.sub(old_func_regex, new_func, content, flags=re.MULTILINE|re.DOTALL)
 
-with open('C:/hades/Hecton8/Assets/_Project/Shaders/HectonTerrainLitPasses.hlsl', 'w') as f:
+with open('Assets/_Project/Shaders/HectonTerrainLitPasses.hlsl', 'w') as f:
     f.write(content)
