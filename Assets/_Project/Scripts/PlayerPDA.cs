@@ -1690,7 +1690,7 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Allows runtime-generated UI to wire the PDA shell without reflection hacks.
+        /// Allows runtime-generated UI to wire the PDA shell.
         /// </summary>
         public void ConfigureUI(GameObject panelRoot, CanvasGroup panelCanvasGroup, GameObject[] configuredTabs)
         {
