@@ -2254,122 +2254,14 @@ namespace Hecton8.SaveSystem
             for (int sectorIndex = 0; sectorIndex < dirtySectorCount; sectorIndex++)
             {
                 ulong dirtySectorHash = dirtySectors[sectorIndex];
-                bool hasHydration = false;
-                ulong hydratedPayloadHash = 0UL;
-                int hydratedPayloadBytes = 0;
-                uint hydratedCacheFlags = 0u;
-                uint hydratedCacheFrame = 0u;
-                if (_wfcOutpostMutableGridSectorHash != dirtySectorHash)
-                {
-                    hasHydration = TryStageWfcOutpostStateOverrideFromHydration(
+                if (!ProcessWfcOutpostDirtySector(
                         dirtySectorHash,
-                        out hydratedPayloadHash,
-                        out hydratedPayloadBytes,
-                        out hydratedCacheFlags,
-                        out hydratedCacheFrame);
-                }
-
-                int dirtyCellWriteCount = CollectWfcOutpostSignalWrites(
-                    signals,
-                    dirtySectorHash,
-                    dirtyCellIndices,
-                    dirtyCellFlags,
-                    out uint dirtyFrame,
-                    out _);
-                if (dirtyCellWriteCount <= 0)
-                    continue;
-
-                if (!TryAcquireWfcOutpostGridWrite(
-                        out NativeArray<byte> wfcGrid,
-                        out VaultGenerationHandle<byte> wfcGridHandle,
-                        out IDataVault wfcGridVault))
+                        signals,
+                        dirtyCellIndices,
+                        dirtyCellFlags,
+                        isStormMode: false))
                 {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationPersist,
-                        WfcOutpostPersistenceStatus.InvalidGrid,
-                        dirtySectorHash);
                     return;
-                }
-
-                bool stageSucceeded = false;
-                bool needsCommit = false;
-                bool publishWriteFailure = false;
-                ulong packedHash = 0UL;
-                int payloadBytes = 0;
-                WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
-                bool copiedGridSnapshot = false;
-                bool appliedHydration = false;
-                try
-                {
-                    appliedHydration = PrepareWfcOutpostMutableGridForSector(
-                        dirtySectorHash,
-                        wfcGrid,
-                        hasHydration,
-                        hydratedPayloadHash,
-                        hydratedPayloadBytes,
-                        hydratedCacheFlags,
-                        hydratedCacheFrame);
-
-                    for (int writeIndex = 0; writeIndex < dirtyCellWriteCount; writeIndex++)
-                        wfcGrid[dirtyCellIndices[writeIndex]] = dirtyCellFlags[writeIndex];
-
-                    if (!TryCopyWfcOutpostGridToSnapshotScratch(wfcGrid))
-                    {
-                        status = WfcOutpostPersistenceStatus.InvalidGrid;
-                        publishWriteFailure = true;
-                    }
-                    else
-                    {
-                        copiedGridSnapshot = true;
-                    }
-                }
-                finally
-                {
-                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
-                }
-
-                if (appliedHydration)
-                {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationHydration,
-                        WfcOutpostPersistenceStatus.Ready,
-                        dirtySectorHash,
-                        hydratedPayloadHash,
-                        hydratedPayloadBytes);
-                }
-
-                if (copiedGridSnapshot)
-                {
-                    stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
-                        dirtySectorHash,
-                        _wfcOutpostGridSnapshotScratch,
-                        dirtyFrame,
-                        out status,
-                        out packedHash,
-                        out payloadBytes,
-                        out needsCommit,
-                        out publishWriteFailure);
-                }
-                else if (status != WfcOutpostPersistenceStatus.None)
-                {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationPersist,
-                        status,
-                        dirtySectorHash,
-                        frame: dirtyFrame);
-                }
-
-                if (publishWriteFailure)
-                    PublishWfcWriteFailureWarning();
-
-                if (stageSucceeded && needsCommit)
-                {
-                    TryCommitWfcOutpostStateSnapshotPayload(
-                        dirtySectorHash,
-                        dirtyFrame,
-                        packedHash,
-                        payloadBytes,
-                        out _);
                 }
             }
         }
@@ -2419,137 +2311,157 @@ namespace Hecton8.SaveSystem
             {
                 ulong dirtySectorHash = dirtySectors[sectorIndex];
 
-                bool hasHydration = false;
-                ulong hydratedPayloadHash = 0UL;
-                int hydratedPayloadBytes = 0;
-                uint hydratedCacheFlags = 0u;
-                uint hydratedCacheFrame = 0u;
-                if (_wfcOutpostMutableGridSectorHash != dirtySectorHash)
-                {
-                    hasHydration = TryStageWfcOutpostStateOverrideFromHydration(
+                if (!ProcessWfcOutpostDirtySector(
                         dirtySectorHash,
-                        out hydratedPayloadHash,
-                        out hydratedPayloadBytes,
-                        out hydratedCacheFlags,
-                        out hydratedCacheFrame);
-                }
-
-                int dirtyCellWriteCount = CollectWfcOutpostSignalWrites(
-                    signals,
-                    dirtySectorHash,
-                    dirtyCellIndices,
-                    dirtyCellFlags,
-                    out uint dirtyFrame,
-                    out bool writeOverflow);
-                if (dirtyCellWriteCount <= 0)
-                    continue;
-
-                if (writeOverflow)
+                        signals,
+                        dirtyCellIndices,
+                        dirtyCellFlags,
+                        isStormMode: true))
                 {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationSignal,
-                        WfcOutpostPersistenceStatus.Rejected,
-                        dirtySectorHash,
-                        signalSourceHash: WfcOutpostPersistenceSourceHash,
-                        flags: WfcOutpostBlackBoxSignalFlagOverflow,
-                        frame: dirtyFrame);
-                    PublishWfcWriteFailureWarning();
-                    continue;
-                }
-
-                if (!TryAcquireWfcOutpostGridWrite(
-                        out NativeArray<byte> wfcGrid,
-                        out VaultGenerationHandle<byte> wfcGridHandle,
-                        out IDataVault wfcGridVault))
-                {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationPersist,
-                        WfcOutpostPersistenceStatus.InvalidGrid,
-                        dirtySectorHash);
                     return;
                 }
+            }
+        }
 
-                bool stageSucceeded = false;
-                bool needsCommit = false;
-                bool publishWriteFailure = false;
-                ulong packedHash = 0UL;
-                int payloadBytes = 0;
-                WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
-                bool copiedGridSnapshot = false;
-                bool appliedHydration = false;
-                try
+        private bool ProcessWfcOutpostDirtySector(
+            ulong dirtySectorHash,
+            ReadOnlySpan<WfcOutpostStateChangedSignal> signals,
+            Span<ushort> dirtyCellIndices,
+            Span<byte> dirtyCellFlags,
+            bool isStormMode)
+        {
+            bool hasHydration = false;
+            ulong hydratedPayloadHash = 0UL;
+            int hydratedPayloadBytes = 0;
+            uint hydratedCacheFlags = 0u;
+            uint hydratedCacheFrame = 0u;
+            if (_wfcOutpostMutableGridSectorHash != dirtySectorHash)
+            {
+                hasHydration = TryStageWfcOutpostStateOverrideFromHydration(
+                    dirtySectorHash,
+                    out hydratedPayloadHash,
+                    out hydratedPayloadBytes,
+                    out hydratedCacheFlags,
+                    out hydratedCacheFrame);
+            }
+
+            int dirtyCellWriteCount = CollectWfcOutpostSignalWrites(
+                signals,
+                dirtySectorHash,
+                dirtyCellIndices,
+                dirtyCellFlags,
+                out uint dirtyFrame,
+                out bool writeOverflow);
+            if (dirtyCellWriteCount <= 0)
+                return true;
+
+            if (isStormMode && writeOverflow)
+            {
+                RecordWfcOutpostEventBlackBox(
+                    WfcOutpostBlackBoxOperationSignal,
+                    WfcOutpostPersistenceStatus.Rejected,
+                    dirtySectorHash,
+                    signalSourceHash: WfcOutpostPersistenceSourceHash,
+                    flags: WfcOutpostBlackBoxSignalFlagOverflow,
+                    frame: dirtyFrame);
+                PublishWfcWriteFailureWarning();
+                return true;
+            }
+
+            if (!TryAcquireWfcOutpostGridWrite(
+                    out NativeArray<byte> wfcGrid,
+                    out VaultGenerationHandle<byte> wfcGridHandle,
+                    out IDataVault wfcGridVault))
+            {
+                RecordWfcOutpostEventBlackBox(
+                    WfcOutpostBlackBoxOperationPersist,
+                    WfcOutpostPersistenceStatus.InvalidGrid,
+                    dirtySectorHash);
+                return false;
+            }
+
+            bool stageSucceeded = false;
+            bool needsCommit = false;
+            bool publishWriteFailure = false;
+            ulong packedHash = 0UL;
+            int payloadBytes = 0;
+            WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
+            bool copiedGridSnapshot = false;
+            bool appliedHydration = false;
+            try
+            {
+                appliedHydration = PrepareWfcOutpostMutableGridForSector(
+                    dirtySectorHash,
+                    wfcGrid,
+                    hasHydration,
+                    hydratedPayloadHash,
+                    hydratedPayloadBytes,
+                    hydratedCacheFlags,
+                    hydratedCacheFrame);
+
+                for (int writeIndex = 0; writeIndex < dirtyCellWriteCount; writeIndex++)
+                    wfcGrid[dirtyCellIndices[writeIndex]] = dirtyCellFlags[writeIndex];
+
+                if (!TryCopyWfcOutpostGridToSnapshotScratch(wfcGrid))
                 {
-                    appliedHydration = PrepareWfcOutpostMutableGridForSector(
-                        dirtySectorHash,
-                        wfcGrid,
-                        hasHydration,
-                        hydratedPayloadHash,
-                        hydratedPayloadBytes,
-                        hydratedCacheFlags,
-                        hydratedCacheFrame);
-
-                    for (int writeIndex = 0; writeIndex < dirtyCellWriteCount; writeIndex++)
-                        wfcGrid[dirtyCellIndices[writeIndex]] = dirtyCellFlags[writeIndex];
-
-                    if (!TryCopyWfcOutpostGridToSnapshotScratch(wfcGrid))
-                    {
-                        status = WfcOutpostPersistenceStatus.InvalidGrid;
-                        publishWriteFailure = true;
-                    }
-                    else
-                    {
-                        copiedGridSnapshot = true;
-                    }
+                    status = WfcOutpostPersistenceStatus.InvalidGrid;
+                    publishWriteFailure = true;
                 }
-                finally
+                else
                 {
-                    wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
-                }
-
-                if (appliedHydration)
-                {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationHydration,
-                        WfcOutpostPersistenceStatus.Ready,
-                        dirtySectorHash,
-                        hydratedPayloadHash,
-                        hydratedPayloadBytes);
-                }
-
-                if (copiedGridSnapshot)
-                {
-                    stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
-                        dirtySectorHash,
-                        _wfcOutpostGridSnapshotScratch,
-                        dirtyFrame,
-                        out status,
-                        out packedHash,
-                        out payloadBytes,
-                        out needsCommit,
-                        out publishWriteFailure);
-                }
-                else if (status != WfcOutpostPersistenceStatus.None)
-                {
-                    RecordWfcOutpostEventBlackBox(
-                        WfcOutpostBlackBoxOperationPersist,
-                        status,
-                        dirtySectorHash,
-                        frame: dirtyFrame);
-                }
-
-                if (publishWriteFailure)
-                    PublishWfcWriteFailureWarning();
-
-                if (stageSucceeded && needsCommit)
-                {
-                    TryCommitWfcOutpostStateSnapshotPayload(
-                        dirtySectorHash,
-                        dirtyFrame,
-                        packedHash,
-                        payloadBytes,
-                        out _);
+                    copiedGridSnapshot = true;
                 }
             }
+            finally
+            {
+                wfcGridVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
+            }
+
+            if (appliedHydration)
+            {
+                RecordWfcOutpostEventBlackBox(
+                    WfcOutpostBlackBoxOperationHydration,
+                    WfcOutpostPersistenceStatus.Ready,
+                    dirtySectorHash,
+                    hydratedPayloadHash,
+                    hydratedPayloadBytes);
+            }
+
+            if (copiedGridSnapshot)
+            {
+                stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
+                    dirtySectorHash,
+                    _wfcOutpostGridSnapshotScratch,
+                    dirtyFrame,
+                    out status,
+                    out packedHash,
+                    out payloadBytes,
+                    out needsCommit,
+                    out publishWriteFailure);
+            }
+            else if (status != WfcOutpostPersistenceStatus.None)
+            {
+                RecordWfcOutpostEventBlackBox(
+                    WfcOutpostBlackBoxOperationPersist,
+                    status,
+                    dirtySectorHash,
+                    frame: dirtyFrame);
+            }
+
+            if (publishWriteFailure)
+                PublishWfcWriteFailureWarning();
+
+            if (stageSucceeded && needsCommit)
+            {
+                TryCommitWfcOutpostStateSnapshotPayload(
+                    dirtySectorHash,
+                    dirtyFrame,
+                    packedHash,
+                    payloadBytes,
+                    out _);
+            }
+
+            return true;
         }
 
         private void RecordWfcOutpostStateChangedSignalEvent(in WfcOutpostStateChangedSignal signal)
