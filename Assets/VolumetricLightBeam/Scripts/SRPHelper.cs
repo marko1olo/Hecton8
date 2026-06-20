@@ -77,8 +77,7 @@ namespace VLB
 #if VLB_SRP_SUPPORT
     public static bool IsUsingCustomRenderPipeline()
     {
-        // TODO: optimize and use renderPipelineType
-        return AliasCurrentPipeline.currentPipeline != null || UnityEngine.Rendering.GraphicsSettings.defaultRenderPipeline != null;
+        return projectRenderPipeline != RenderPipeline.BuiltIn;
     }
 
     public static void RegisterOnBeginCameraRendering(CallbackType cb)
