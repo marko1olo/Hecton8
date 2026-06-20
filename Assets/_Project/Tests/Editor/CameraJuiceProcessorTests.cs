@@ -1,9 +1,10 @@
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 
-namespace Hecton8.Tests
+namespace Hecton8.Tests.Editor
 {
     [TestFixture]
     public class CameraJuiceProcessorTests
@@ -160,6 +161,28 @@ namespace Hecton8.Tests
 
             // We expect some non-zero offsets from swim bob
             Assert.AreNotEqual(0f, output.localPositionOffset.y);
+        [Test]
+        public void ClearActionBob_ResetsActionBobIntensityToZero()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+
+            // Set up initial state where action bob intensity is non-zero
+            processor.RegisterActionBob(1.0f);
+
+            // Get private field using reflection
+            var fieldInfo = typeof(CameraJuiceProcessor).GetField("_actionBobIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Verify our setup worked
+            float initialIntensity = (float)fieldInfo.GetValue(processor);
+            Assert.AreEqual(1.0f, initialIntensity, "Setup failed: _actionBobIntensity was not set correctly.");
+
+            // Act
+            processor.ClearActionBob();
+
+            // Assert
+            float clearedIntensity = (float)fieldInfo.GetValue(processor);
+            Assert.AreEqual(0f, clearedIntensity, "ClearActionBob did not reset _actionBobIntensity to 0.");
         }
     }
 }
