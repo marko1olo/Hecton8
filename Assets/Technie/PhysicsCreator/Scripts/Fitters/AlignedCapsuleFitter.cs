@@ -35,7 +35,8 @@ namespace Technie.PhysicsCreator
 			ConstructionPlane basePlane = new ConstructionPlane(Vector3.zero);
 			RotatedBox tightestBox = RotatedBoxFitter.FindTightestBox(basePlane, hullVertices);
 
-			// TODO: Check for tightestBox being null (can happen if input points are colinear)
+			if (tightestBox == null)
+				return new CapsuleDef();
 
 			// Find the longest axis to put the primary capsule axis along
 
