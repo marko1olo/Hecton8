@@ -442,31 +442,6 @@ public class HectonPlayerSpawner : MonoBehaviour
 
         // ══════════════════════════════════════════════════════════
         //  FAZA 2: Poisk melkovodya po Arhimedovoy spirali
-        //
-        //  v3.1 Patch: Per-point retry counter.
-        //
-        //  BYLO (v3.0, DEDLOK):
-        //    if (!GroundProbe) { await delay; continue; }
-        //    // continue propuskaet spiralIndex++ → vechnyy tsikl.
-        //
-        //  STALO (v3.1, BEZOPASNO):
-        //    if (!GroundProbe) {
-        //        retryCount++;
-        //        if (retryCount >= maxRetriesPerPoint) {
-        //            retryCount = 0;
-        //            → AdvanceSpiral() (spiralIndex++ guaranteed)
-        //        } else {
-        //            await delay;
-        //        }
-        //        continue;
-        //    }
-        //    retryCount = 0;  // reset on successful ground probe
-        //    → evaluate point
-        //    → AdvanceSpiral()
-        //
-        //  Maksimalnoe vremya na odnu tochku:
-        //    maxRetriesPerPoint × retryDelay = 10 × 0.5 = 5 sekund.
-        //  Posle etogo — garantirovannyy perehod k sleduyuschey tochke.
         // ══════════════════════════════════════════════════════════
 
         // Snachala proveryaem tsentralnuyu tochku
