@@ -97,7 +97,7 @@ namespace Hecton8.Editor
                     else outStr += $"Terrain {t.name}: Material='{mat.name}', Shader='{mat.shader.name}'\n";
                 }
                 File.WriteAllText(ArtifactDir + "terrain_mat_dump.txt", outStr);
-            } catch {}
+            } catch (System.Exception ex) { Debug.LogException(ex); }
 
             Camera cam = Camera.main;
             if (cam == null)
