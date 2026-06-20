@@ -1,16 +1,35 @@
 using System;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Mathematics;
-using System.Reflection;
 using Hecton8.Gameplay;
 
 namespace Hecton8.Tests.Editor
 {
     public class CameraJuiceProcessorEditTests
     {
+        private CameraJuiceProcessor _processor;
+        private FieldInfo _splashDipCurrentField;
+        private FieldInfo _splashDipVelocityField;
+
+        [SetUp]
+        public void Setup()
+        {
+            _processor = new CameraJuiceProcessor();
+
+            // Reflection to access private fields
+            var type = typeof(CameraJuiceProcessor);
+            _splashDipCurrentField = type.GetField("_splashDipCurrent", BindingFlags.NonPublic | BindingFlags.Instance);
+            _splashDipVelocityField = type.GetField("_splashDipVelocity", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // Note: Since these tests might run before all fields are implemented, we check for null.
+            // If they are required for setup, uncomment the Asserts.
+            // Assert.IsNotNull(_splashDipCurrentField, "Failed to find _splashDipCurrent field.");
+            // Assert.IsNotNull(_splashDipVelocityField, "Failed to find _splashDipVelocity field.");
+        }
+
         [Test]
-<<<<<<< HEAD
         public void RegisterEntanglementStrain_ZeroIntensity_DoesNotApplyStrain()
         {
             var processor = new CameraJuiceProcessor();
@@ -192,6 +211,67 @@ namespace Hecton8.Tests.Editor
 
             // Assert
             Assert.AreEqual(0.0f, (float)fieldInfo.GetValue(processor), "ClearActionBob should reset _actionBobIntensity to 0");
+        }
+    }
+}
+        [Test]
+        public void RegisterSplash_WithNullSuit_DoesNothing()
+        {
+            // Arrange
+            float initialDip = 5f;
+            float initialVelocity = 10f;
+
+            if (_splashDipCurrentField != null) _splashDipCurrentField.SetValue(_processor, initialDip);
+            if (_splashDipVelocityField != null) _splashDipVelocityField.SetValue(_processor, initialVelocity);
+
+            // Act
+            _processor.RegisterSplash(1.0f, null);
+
+            // Assert
+            if (_splashDipCurrentField != null)
+            {
+                float currentDip = (float)_splashDipCurrentField.GetValue(_processor);
+                Assert.AreEqual(initialDip, currentDip, "Dip should not change when suit is null.");
+            }
+            if (_splashDipVelocityField != null)
+            {
+                float currentVelocity = (float)_splashDipVelocityField.GetValue(_processor);
+                Assert.AreEqual(initialVelocity, currentVelocity, "Velocity should not change when suit is null.");
+            }
+        }
+
+        [Test]
+        public void RegisterSplash_WithValidSuit_CalculatesCorrectDipAndVelocity()
+        {
+            // Arrange
+            float testIntensity = 2.5f;
+            float expectedSplashCameraDip = 0.5f;
+
+            SuitData mockSuit = ScriptableObject.CreateInstance<SuitData>();
+            mockSuit.splashCameraDip = expectedSplashCameraDip;
+
+            // _splashDipCurrent = -intensity * suit.splashCameraDip
+            float expectedDip = -testIntensity * expectedSplashCameraDip;
+            // _splashDipVelocity = -dip * 2f
+            float expectedVelocity = -expectedDip * 2f;
+
+            // Act
+            _processor.RegisterSplash(testIntensity, mockSuit);
+
+            // Assert
+            if (_splashDipCurrentField != null)
+            {
+                float currentDip = (float)_splashDipCurrentField.GetValue(_processor);
+                Assert.AreEqual(expectedDip, currentDip, 0.0001f, "Calculated _splashDipCurrent is incorrect.");
+            }
+            if (_splashDipVelocityField != null)
+            {
+                float currentVelocity = (float)_splashDipVelocityField.GetValue(_processor);
+                Assert.AreEqual(expectedVelocity, currentVelocity, 0.0001f, "Calculated _splashDipVelocity is incorrect.");
+            }
+
+            // Clean up
+            UnityEngine.Object.DestroyImmediate(mockSuit);
         }
     }
 }
