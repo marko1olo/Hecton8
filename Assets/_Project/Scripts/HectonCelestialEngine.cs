@@ -275,22 +275,10 @@ namespace Hecton8.Celestial
             return Enqueue(EclipseStartedEventType);
         }
 
-        [Obsolete("Celestial event producers must use TryRaiseEclipseStarted and handle bounded enqueue failure.", true)]
-        public static void RaiseEclipseStarted()
-        {
-            TryRaiseEclipseStarted();
-        }
-
         /// <summary>Queues an eclipse-end signal.</summary>
         public static bool TryRaiseEclipseEnded()
         {
             return Enqueue(EclipseEndedEventType);
-        }
-
-        [Obsolete("Celestial event producers must use TryRaiseEclipseEnded and handle bounded enqueue failure.", true)]
-        public static void RaiseEclipseEnded()
-        {
-            TryRaiseEclipseEnded();
         }
 
         /// <summary>Queues or coalesces a sun-angle signal.</summary>
@@ -312,12 +300,6 @@ namespace Hecton8.Celestial
             return false;
         }
 
-        [Obsolete("Celestial event producers must use TryRaiseSunAngleChanged and handle bounded enqueue failure.", true)]
-        public static void RaiseSunAngleChanged(float angleDegrees)
-        {
-            TryRaiseSunAngleChanged(angleDegrees);
-        }
-
         /// <summary>Queues or coalesces a planet-phase signal.</summary>
         public static bool TryRaisePlanetPhaseChanged(float phase)
         {
@@ -335,12 +317,6 @@ namespace Hecton8.Celestial
             }
 
             return false;
-        }
-
-        [Obsolete("Celestial event producers must use TryRaisePlanetPhaseChanged and handle bounded enqueue failure.", true)]
-        public static void RaisePlanetPhaseChanged(float phase)
-        {
-            TryRaisePlanetPhaseChanged(phase);
         }
 
         /// <summary>
@@ -987,8 +963,6 @@ namespace Hecton8.Celestial
             [FieldOffset(176)] private ulong _pad6;
             [FieldOffset(184)] private ulong _pad7;
         }
-
-
 
         private enum CelestialTruthReadFailure : byte
         {
@@ -2181,8 +2155,6 @@ namespace Hecton8.Celestial
             if (vault == null)
                 return;
 
-
-
             bool gradientsChanged = EnsureColdCelestialPresentationHandle(
                 vault,
                 BufferID.Shinobu345CelestialGradientDay,
@@ -2220,7 +2192,6 @@ namespace Hecton8.Celestial
                 RefreshAtmosphereGradientSamplesIfDirty();
             }
 
-
         }
 
         private static bool EnsureColdCelestialPresentationHandle<T>(
@@ -2255,8 +2226,6 @@ namespace Hecton8.Celestial
                 return;
 
             _celestialPresentationViews.Begin(vault, vault.VaultGenerationID);
-
-
 
             if (TryResolveExistingCelestialPresentationBuffer(
                     BufferID.Shinobu345CelestialGradientDay,
@@ -8062,8 +8031,6 @@ namespace Hecton8.Celestial
                 ? Mathf.Repeat(atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
         }
-
-
 
         // ─────────────────────────────────────────────
         // PUBLIC API
