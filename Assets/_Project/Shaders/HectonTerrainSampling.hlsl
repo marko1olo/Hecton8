@@ -1,8 +1,5 @@
-#ifndef HECTON_TERRAIN_SAMPLING_HLSL
+﻿#ifndef HECTON_TERRAIN_SAMPLING_HLSL
 #define HECTON_TERRAIN_SAMPLING_HLSL
-
-#define HECTON_UV_SCALE 5.0
-#define HECTON_TRIPLANAR_BLEND 4.0
 
 // _Control / sampler_Control are declared by TerrainLitInput.hlsl - do NOT redeclare.
 TEXTURE2D(_Control1);
@@ -12,6 +9,11 @@ TEXTURE2D_ARRAY(_AlbedoArray);
 TEXTURE2D_ARRAY(_NormalArray);
 TEXTURE2D_ARRAY(_MaskArray);
 // SAMPLER(sampler_LinearRepeat); // Declared by URP internals
+
+CBUFFER_START(UnityPerMaterial)
+    float _HectonUVScale;
+    float _HectonTriplanarBlend;
+CBUFFER_END
 
 struct TerrainSample
 {
@@ -38,7 +40,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     weights[6] = ctrl1.b;
     weights[7] = ctrl1.a;
 
-    float uvScale = HECTON_UV_SCALE;
+    float uvScale = _HectonUVScale;
     float2 uv  = detailUV * uvScale;
 
     // --- HEIGHT BLENDING ---
@@ -133,7 +135,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
                 float3 nZ = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uvZ, (float)k).rgb;
                 float4 mZ = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uvZ, (float)k);
 
-                float bF     = pow(1.0 - saturate(slope / 0.7), HECTON_TRIPLANAR_BLEND);
+                float bF     = pow(1.0 - saturate(slope / 0.7), _HectonTriplanarBlend);
                 float normX  = abs(worldNormal.x);
                 float normZ  = abs(worldNormal.z);
                 float triTot = max(0.001, normX + normZ);
