@@ -14,8 +14,7 @@ namespace Hecton8.Editor
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Quarantine Fundamentally Broken Assets";
         private const string UnreferencedMenuPath = "Hecton/Validation/Asset Pipeline/Move Unreferenced Textures And Meshes";
-        private const string QuarantineRoot = "Assets/_Isolated";
-        private const string DeprecatedTrashRoot = "Assets/DEPRECATED_TRASH";
+
 
         internal sealed class QuarantineResult
         {
@@ -64,7 +63,7 @@ namespace Hecton8.Editor
         internal static QuarantineResult RunUnreferencedReferenceMonitorAndMove()
         {
             List<string> candidates = CollectUnreferencedTextureAndMeshAssets();
-            return MoveAssetsToRoot(candidates, DeprecatedTrashRoot);
+            return MoveAssetsToRoot(candidates, HectonEditorPaths.DeprecatedTrashRoot);
         }
 
         internal static QuarantineResult PreviewQuarantine(params List<string>[] candidateSets)
@@ -87,7 +86,7 @@ namespace Hecton8.Editor
             if (uniquePaths.Count <= 0)
                 return result;
 
-            EnsureFolder(QuarantineRoot);
+            EnsureFolder(HectonEditorPaths.QuarantineRoot);
             foreach (string assetPath in uniquePaths)
             {
                 string absolutePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
@@ -201,8 +200,8 @@ namespace Hecton8.Editor
 
         private static bool IsDeprecatedOrIsolated(string assetPath)
         {
-            return assetPath.StartsWith(DeprecatedTrashRoot + "/", StringComparison.Ordinal)
-                || assetPath.StartsWith(QuarantineRoot + "/", StringComparison.Ordinal);
+            return assetPath.StartsWith(HectonEditorPaths.DeprecatedTrashRoot + "/", StringComparison.Ordinal)
+                || assetPath.StartsWith(HectonEditorPaths.QuarantineRoot + "/", StringComparison.Ordinal);
         }
 
         private static HashSet<string> CollectUniquePaths(List<string>[] candidateSets)
@@ -229,7 +228,7 @@ namespace Hecton8.Editor
 
         private static string BuildDestinationPath(string assetPath)
         {
-            return BuildDestinationPath(assetPath, QuarantineRoot);
+            return BuildDestinationPath(assetPath, HectonEditorPaths.QuarantineRoot);
         }
 
         private static string BuildDestinationPath(string assetPath, string rootPath)
