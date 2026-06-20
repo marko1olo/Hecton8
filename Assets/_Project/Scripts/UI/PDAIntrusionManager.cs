@@ -920,11 +920,17 @@ namespace Hecton8.UI
             if (!TryResolveRuntimePosition(in originAup, out Vector3 origin))
                 return;
 
-            if (ShouldTriggerAbyssalHack(origin))
+            if (ShouldTriggerHack(origin))
             {
                 TriggerHack();
                 return;
             }
+        }
+
+        private bool ShouldTriggerHack(Vector3 origin)
+        {
+            if (ShouldTriggerAbyssalHack(origin))
+                return true;
 
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 origin,
@@ -935,15 +941,11 @@ namespace Hecton8.UI
             for (int i = 0; i < contactCount; i++)
             {
                 IFaunaSpatialContact faunaContact = _bioformContacts[i].Owner as IFaunaSpatialContact;
-                if (faunaContact == null || faunaContact.IsDead)
-                    continue;
-
-                if (!faunaContact.IsLeviathanContact)
-                    continue;
-
-                TriggerHack();
-                return;
+                if (faunaContact != null && !faunaContact.IsDead && faunaContact.IsLeviathanContact)
+                    return true;
             }
+
+            return false;
         }
 
         private bool TryResolveIntrusionOriginAup(out AbsoluteUniversePosition originAup)
