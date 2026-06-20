@@ -964,8 +964,6 @@ namespace Hecton8.Celestial
             [FieldOffset(184)] private ulong _pad7;
         }
 
-
-
         private enum CelestialTruthReadFailure : byte
         {
             None = 0,
@@ -2157,8 +2155,6 @@ namespace Hecton8.Celestial
             if (vault == null)
                 return;
 
-
-
             bool gradientsChanged = EnsureColdCelestialPresentationHandle(
                 vault,
                 BufferID.Shinobu345CelestialGradientDay,
@@ -2196,7 +2192,6 @@ namespace Hecton8.Celestial
                 RefreshAtmosphereGradientSamplesIfDirty();
             }
 
-
         }
 
         private static bool EnsureColdCelestialPresentationHandle<T>(
@@ -2231,8 +2226,6 @@ namespace Hecton8.Celestial
                 return;
 
             _celestialPresentationViews.Begin(vault, vault.VaultGenerationID);
-
-
 
             if (TryResolveExistingCelestialPresentationBuffer(
                     BufferID.Shinobu345CelestialGradientDay,
@@ -8039,8 +8032,6 @@ namespace Hecton8.Celestial
                 ? Mathf.Repeat(atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
         }
-
-
 
         // ─────────────────────────────────────────────
         // PUBLIC API
