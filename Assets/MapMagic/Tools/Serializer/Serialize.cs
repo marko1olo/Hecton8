@@ -225,14 +225,31 @@ namespace Den.Tools.Serialization
 		}
 
 
+		private static Dictionary<Type, MemberInfo[]> fieldsCache = new Dictionary<Type, MemberInfo[]>();
+
 		private static IEnumerable<MemberInfo> Fields (Type type, object val)
+		{
+			if (fieldsCache.TryGetValue(type, out MemberInfo[] cached))
+				return cached;
+
+			lock (fieldsCache)
+			{
+				if (fieldsCache.TryGetValue(type, out cached))
+					return cached;
+
+				cached = new System.Collections.Generic.List<MemberInfo>(FieldsGenerator(type, val)).ToArray();
+				fieldsCache.Add(type, cached);
+				return cached;
+			}
+		}
+
+		private static IEnumerable<MemberInfo> FieldsGenerator (Type type, object val)
 		/// Iterates proper fields for an object depending on it's type
 		/// For most cases it will be type.GetFields (BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-		/// TODO: cache fields by type
 		{
 			Type baseType = type.BaseType;
 			if (baseType != typeof(object)  &&  baseType != typeof(ValueType))
-				foreach (FieldInfo field3 in Fields(baseType, val))
+				foreach (FieldInfo field3 in FieldsGenerator(baseType, val))
 					yield return field3;
 
 			BindingFlags bind = 
@@ -332,11 +349,33 @@ namespace Den.Tools.Serialization
 		}
 
 
+		private static Dictionary<Type, string> typeNamesCache = new Dictionary<Type, string>();
+
 		private static string TypeName (Type type, char div=',', bool withAssembly=true)
+		{
+			if (div == ',' && withAssembly == true)
+			{
+				if (typeNamesCache.TryGetValue(type, out string cached))
+					return cached;
+
+				lock (typeNamesCache)
+				{
+					if (typeNamesCache.TryGetValue(type, out cached))
+						return cached;
+
+					cached = GenerateTypeName(type, div, withAssembly);
+					typeNamesCache.Add(type, cached);
+					return cached;
+				}
+			}
+
+			return GenerateTypeName(type, div, withAssembly);
+		}
+
+		private static string GenerateTypeName (Type type, char div=',', bool withAssembly=true)
 		/// Returns properly formated type
 		/// Generics non-asm qualified aw well - without culture, version, etc
 		/// Using custom char div instead of comma
-		/// TODO: cache type names
 		{
 			/*string declaringTypeName = "";
 			Type declaringType = type.DeclaringType;
