@@ -26,17 +26,6 @@
 //   Or instantiate via singleton factory.
 //   Events: PerformanceEvents NativeQueue lane for frame, GC, and job alerts.
 //
-// USAGE:
-//   // Get current metrics (zero alloc)
-//   var stats = PerformanceMonitor.CurrentStats;
-//   if (stats.frameTimeMs > 16.67f)
-//       Debug.LogWarning("Frame budget exceeded!");
-//
-//   // Register IPerformanceEventListener during OnEnable and unregister in OnDisable.
-//
-//   // Periodic reporting (1 sec sampling)
-//   string report = PerformanceMonitor.GetReport(); // text report
-//
 // ============================================================================
 
 using System;
