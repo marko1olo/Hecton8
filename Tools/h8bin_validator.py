@@ -2308,6 +2308,37 @@ def build_artifact_remediation(path: Path) -> tuple[str, list[str]]:
     return remediation, []
 
 
+def _safe_eval_bool_expr(node: ast.AST, env: dict[str, bool]) -> bool:
+    if isinstance(node, ast.Expression):
+        return _safe_eval_bool_expr(node.body, env)
+    elif isinstance(node, ast.BoolOp):
+        if isinstance(node.op, ast.And):
+            return all(_safe_eval_bool_expr(v, env) for v in node.values)
+        elif isinstance(node.op, ast.Or):
+            return any(_safe_eval_bool_expr(v, env) for v in node.values)
+    elif isinstance(node, ast.UnaryOp):
+        if isinstance(node.op, ast.Not):
+            return not _safe_eval_bool_expr(node.operand, env)
+    elif isinstance(node, ast.Compare):
+        if len(node.ops) == 1 and len(node.comparators) == 1:
+            left = _safe_eval_bool_expr(node.left, env)
+            right = _safe_eval_bool_expr(node.comparators[0], env)
+            if isinstance(node.ops[0], ast.Eq):
+                return left == right
+            elif isinstance(node.ops[0], ast.NotEq):
+                return left != right
+    elif isinstance(node, ast.Name):
+        if node.id in env:
+            return env[node.id]
+        elif node.id == 'True':
+            return True
+        elif node.id == 'False':
+            return False
+    elif isinstance(node, ast.Constant):
+        return bool(node.value)
+    raise ValueError(f"Unsupported AST node: {type(node)}")
+
+
 def release_expression_can_be_true(expression: str) -> bool:
     """Return True when a C# preprocessor expression can be active in a player release."""
     # Replace defined(SYMBOL) with SYMBOL without re
@@ -2372,11 +2403,16 @@ def release_expression_can_be_true(expression: str) -> bool:
             i += 1
     python_expr = "".join(new_parts)
 
+    try:
+        tree = ast.parse(python_expr, mode='eval')
+    except Exception:
+        return True
+
     for values in itertools.product((False, True), repeat=len(variable_symbols)):
         env = dict(fixed)
         env.update(zip(variable_symbols, values))
         try:
-            if bool(eval(python_expr, {"__builtins__": {}}, env)):
+            if _safe_eval_bool_expr(tree, env):
                 return True
         except Exception:
             return True

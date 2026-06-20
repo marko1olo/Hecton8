@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Corruption tests for Tools/h8bin_validator.py."""
 
-from H8VerifyCore import parse_xml_safe
+
 from __future__ import annotations
+from H8VerifyCore import parse_xml_safe
 
 import json
 import math
