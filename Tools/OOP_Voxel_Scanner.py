@@ -164,7 +164,6 @@ def _safe_eval(expr_str):
         ast.Div: operator.truediv,
         ast.FloorDiv: operator.floordiv,
         ast.Mod: operator.mod,
-        ast.Pow: operator.pow,
         ast.LShift: operator.lshift,
         ast.RShift: operator.rshift,
         ast.BitOr: operator.or_,
@@ -183,6 +182,8 @@ def _safe_eval(expr_str):
             right = _eval(node.right)
             if type(node.op) not in operators:
                 raise ValueError(f"Unsupported operator {type(node.op)}")
+            if type(node.op) in (ast.LShift, ast.RShift) and right > 256:
+                raise ValueError("Shift count too large")
             return operators[type(node.op)](left, right)
         elif isinstance(node, ast.UnaryOp):
             operand = _eval(node.operand)
