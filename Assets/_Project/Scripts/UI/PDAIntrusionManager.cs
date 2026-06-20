@@ -614,6 +614,9 @@ namespace Hecton8.UI
         [Tooltip("Minimum director glitch intensity required before the intrusion owner treats the event as a hostile EMI strike.")]
         [SerializeField, Range(0f, 1f)] private float equipmentGlitchThreshold = EquipmentGlitchHackThreshold;
 
+        [Tooltip("Hull stress threshold above which the PDA is treated as compromised.")]
+        [SerializeField, Range(0f, 1f)] private float hullStressThreshold = HullStressHackThreshold;
+
         [Tooltip("How often to scan the spatial grid for leviathan proximity while the PDA remains nominal.")]
         [SerializeField, Min(0.05f)] private float leviathanScanInterval = LeviathanCheckInterval;
 
@@ -980,7 +983,7 @@ namespace Hecton8.UI
         {
             if (_playerMovement != null &&
                 math.isfinite(_playerMovement.CurrentHullStress01) &&
-                _playerMovement.CurrentHullStress01 > HullStressHackThreshold)
+                _playerMovement.CurrentHullStress01 > hullStressThreshold)
             {
                 return true;
             }
@@ -1406,6 +1409,7 @@ namespace Hecton8.UI
         private void OnValidate()
         {
             equipmentGlitchThreshold = ResolveEquipmentGlitchThreshold01(equipmentGlitchThreshold);
+            hullStressThreshold = ResolveHullStressThreshold01(hullStressThreshold);
             leviathanScanInterval = ResolveLeviathanScanIntervalSeconds(leviathanScanInterval);
             leviathanHackRadius = ResolveLeviathanHackRadiusMeters(leviathanHackRadius);
             visualPhaseDuration = ResolveVisualPhaseDurationSeconds(visualPhaseDuration);
@@ -1421,6 +1425,11 @@ namespace Hecton8.UI
         private static float SanitizeNonNegativeSeconds(float seconds)
         {
             return math.isfinite(seconds) ? math.max(0f, seconds) : 0f;
+        }
+
+        private static float ResolveHullStressThreshold01(float threshold)
+        {
+            return math.isfinite(threshold) ? math.saturate(threshold) : HullStressHackThreshold;
         }
 
         private static float ResolveEquipmentGlitchThreshold01(float threshold)
