@@ -929,7 +929,14 @@ namespace Hecton8.UI
 
         private bool ShouldTriggerHack(Vector3 origin)
         {
-            if (ShouldTriggerAbyssalHack(origin))
+            if (_playerMovement != null &&
+                math.isfinite(_playerMovement.CurrentHullStress01) &&
+                _playerMovement.CurrentHullStress01 > hullStressThreshold)
+            {
+                return true;
+            }
+
+            if (IsFinite(origin) && IsInsideDeadZone(origin))
                 return true;
 
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
@@ -979,18 +986,6 @@ namespace Hecton8.UI
 
             originAup = playerMovement.CurrentAup;
             return originAup.IsFinite();
-        }
-
-        private bool ShouldTriggerAbyssalHack(Vector3 origin)
-        {
-            if (_playerMovement != null &&
-                math.isfinite(_playerMovement.CurrentHullStress01) &&
-                _playerMovement.CurrentHullStress01 > hullStressThreshold)
-            {
-                return true;
-            }
-
-            return IsFinite(origin) && IsInsideDeadZone(origin);
         }
 
         private bool IsInsideDeadZone(Vector3 origin)
