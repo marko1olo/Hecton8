@@ -329,22 +329,10 @@ namespace Hecton8.Narrative
             return data != null;
         }
 
-        [Obsolete("Use TryRaiseLogDiscovered(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseLogDiscovered(uint logHash, AudioLogData data = null)
-        {
-            TryRaiseLogDiscovered(logHash, data);
-        }
-
         public static bool TryRaiseLogDiscovered(uint logHash, AudioLogData data = null)
         {
             AudioGlitchParametersDTO glitch = default;
             return Enqueue(AudioLogEventType.Discovered, logHash, 0f, in glitch, data);
-        }
-
-        [Obsolete("Use TryRaisePlaybackStarted(uint,float,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
-        {
-            TryRaisePlaybackStarted(logHash, durationSeconds, data);
         }
 
         public static bool TryRaisePlaybackStarted(uint logHash, float durationSeconds, AudioLogData data = null)
@@ -362,22 +350,10 @@ namespace Hecton8.Narrative
             return Enqueue(AudioLogEventType.PlaybackStarted, logHash, durationSeconds, in glitch, data);
         }
 
-        [Obsolete("Use TryRaisePlaybackStopped(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePlaybackStopped(uint logHash, AudioLogData data = null)
-        {
-            TryRaisePlaybackStopped(logHash, data);
-        }
-
         public static bool TryRaisePlaybackStopped(uint logHash, AudioLogData data = null)
         {
             AudioGlitchParametersDTO glitch = default;
             return Enqueue(AudioLogEventType.PlaybackStopped, logHash, 0f, in glitch, data);
-        }
-
-        [Obsolete("Use TryRaisePlaybackCompleted(uint,AudioLogData) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePlaybackCompleted(uint logHash, AudioLogData data = null)
-        {
-            TryRaisePlaybackCompleted(logHash, data);
         }
 
         public static bool TryRaisePlaybackCompleted(uint logHash, AudioLogData data = null)
