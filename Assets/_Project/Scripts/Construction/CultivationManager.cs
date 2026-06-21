@@ -659,7 +659,7 @@ namespace Hecton8.Construction
                 ulong geneticsMask = SanitizeGeneticsMask(slot.GeneticsMask);
                 ushort qualityMilli = ResolveCultivationQualityMilli(slot.Quality01);
                 if (inventory != null &&
-                    inventory.TryAddItemWithState(slot.SeedItemHashId, geneticsMask, qualityMilli))
+                    inventory.TryAddItemWithState(slot.SeedItemHashId, new PlayerInventory.ItemState(geneticsMask, qualityMilli)))
                 {
                     _slots[i] = default;
                     continue;

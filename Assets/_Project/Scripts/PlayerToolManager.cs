@@ -2213,7 +2213,7 @@ namespace Hecton8.Gameplay
             ItemData removedBattery = batteryTool.HasBattery ? batteryTool.RemoveBattery() : null;
             if (!batteryTool.InsertBattery(batteryItem, 1f))
             {
-                playerInventory.TryAddItemWithState(batteryHashId, geneticsMask, qualityMilli, 1);
+                playerInventory.TryAddItemWithState(batteryHashId, new PlayerInventory.ItemState(geneticsMask, qualityMilli), 1);
                 if (removedBattery != null)
                     batteryTool.InsertBattery(removedBattery, 0f);
             }
