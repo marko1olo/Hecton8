@@ -478,7 +478,15 @@ namespace Hecton8.Tools
                 nextState.Durability = math.saturate(tool.DurabilityNormalized);
                 nextState.UpgradeBitmask = upgradeMask;
                 nextState.UpgradeBitmask64 = upgradeMask64;
-                nextState.StatusMask = ResolveStatusMask(0u, in nextState, in compiledStats, ResolveDepthMeters(), false);
+                nextState.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = 0u,
+                    State = nextState,
+                    Stats = compiledStats,
+                    DepthMeters = ResolveDepthMeters(),
+                    Active = false,
+                    GridPowered = false
+                });
                 nextState.ToolTypeId = ResolveToolTypeId(profile.ToolId);
                 nextState.ModuleSlotCount = (byte)math.clamp(moduleSlotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
                 nextState.Reserved0 = 0;
@@ -738,12 +746,15 @@ namespace Hecton8.Tools
                     ? math.max(state.InternalHeat, sanitizedHeat)
                     : sanitizedHeat;
                 ToolRuntimeStats stats = views.ToolStats[slotIndex];
-                state.StatusMask = ResolveStatusMask(
-                    state.StatusMask,
-                    in state,
-                    in stats,
-                    ResolveDepthMeters(),
-                    (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = stats,
+                    DepthMeters = ResolveDepthMeters(),
+                    Active = (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u,
+                    GridPowered = false
+                });
                 views.ToolStates[slotIndex] = state;
                 WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
                 WriteSlotMirrors(ref views, slotIndex, in state);
@@ -1053,12 +1064,15 @@ namespace Hecton8.Tools
                 ToolState state = views.ToolStates[slotIndex];
                 state.Durability = math.saturate(normalizedDurability);
                 ToolRuntimeStats stats = views.ToolStats[slotIndex];
-                state.StatusMask = ResolveStatusMask(
-                    state.StatusMask,
-                    in state,
-                    in stats,
-                    ResolveDepthMeters(),
-                    (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = stats,
+                    DepthMeters = ResolveDepthMeters(),
+                    Active = (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u,
+                    GridPowered = false
+                });
                 views.ToolStates[slotIndex] = state;
                 WriteActiveEquipmentSlot(ref views, slotIndex, in state, in stats);
                 WriteSlotMirrors(ref views, slotIndex, in state);
@@ -1875,12 +1889,15 @@ namespace Hecton8.Tools
             ToolState state = views.ToolStates[slotIndex];
             state.CurrentBattery = math.max(0f, absoluteBattery);
             ToolRuntimeStats stats = views.ToolStats[slotIndex];
-            state.StatusMask = ResolveStatusMask(
-                state.StatusMask,
-                in state,
-                in stats,
-                ResolveDepthMeters(),
-                (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
+            state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+            {
+                CurrentStatus = state.StatusMask,
+                State = state,
+                Stats = stats,
+                DepthMeters = ResolveDepthMeters(),
+                Active = (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u,
+                GridPowered = false
+            });
             views.ToolStates[slotIndex] = state;
             WriteSlotMirrors(ref views, slotIndex, in state);
         }
@@ -1917,12 +1934,15 @@ namespace Hecton8.Tools
                 state.UpgradeBitmask64 = upgradeMask64;
                 state.ToolTypeId = ResolveToolTypeId(profile.ToolId);
                 state.ModuleSlotCount = (byte)math.clamp(slotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
-                state.StatusMask = ResolveStatusMask(
-                    state.StatusMask,
-                    in state,
-                    in compiledStats,
-                    ResolveDepthMeters(),
-                    (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = compiledStats,
+                    DepthMeters = ResolveDepthMeters(),
+                    Active = (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u,
+                    GridPowered = false
+                });
                 if (!TryWriteUpgradeMatrixStaging(ref views, slotIndex, in profile, moduleRules, slotCount, upgradeMask64))
                     return false;
 
@@ -2159,12 +2179,28 @@ namespace Hecton8.Tools
                 state.Durability = !requestedActive && owner != null
                     ? math.saturate(owner.DurabilityNormalized)
                     : math.saturate(math.isfinite(state.Durability) ? state.Durability : 0f);
-                state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, requestedActive, gridPowered);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = stats,
+                    DepthMeters = depthMeters,
+                    Active = requestedActive,
+                    GridPowered = gridPowered
+                });
                 bool active = requestedActive && (state.StatusMask & ToolRuntimeStatusMasks.Disabled) == 0u;
                 if (active)
                     _lastTelemetryActiveMask |= slotBit;
 
-                state.StatusMask = ResolveStatusMask(state.StatusMask, in state, in stats, depthMeters, active, gridPowered);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = stats,
+                    DepthMeters = depthMeters,
+                    Active = active,
+                    GridPowered = gridPowered
+                });
                 views.ToolStates[i] = state;
 
                 float capacity = math.max(0.1f, stats.BatteryCapacity);
@@ -2632,13 +2668,15 @@ namespace Hecton8.Tools
                 state.CurrentBattery = math.max(0f, dto.CurrentBattery);
                 state.InternalHeat = math.max(0f, dto.ThermalLoad);
                 state.Durability = math.saturate(state.Durability);
-                state.StatusMask = ResolveStatusMask(
-                    state.StatusMask,
-                    in state,
-                    in stats,
-                    depthMeters,
-                    active,
-                    gridPowered);
+                state.StatusMask = ResolveStatusMask(new ResolveStatusMaskContext
+                {
+                    CurrentStatus = state.StatusMask,
+                    State = state,
+                    Stats = stats,
+                    DepthMeters = depthMeters,
+                    Active = active,
+                    GridPowered = gridPowered
+                });
                 state.StatusMask = ApplyHeatWarningHapticGate(state.StatusMask, state.InternalHeat);
                 views.ToolStates[i] = state;
 
@@ -3068,26 +3106,36 @@ namespace Hecton8.Tools
             buffer[offset + 3] = (byte)(value >> 24);
         }
 
-        private static uint ResolveStatusMask(uint currentStatus, in ToolState state, in ToolRuntimeStats stats, float depthMeters, bool active, bool gridPowered = false)
+        private struct ResolveStatusMaskContext
         {
-            uint status = currentStatus & ToolRuntimeStatusMasks.HeatWarningHapticQueued;
-            if (active)
+            public uint CurrentStatus;
+            public ToolState State;
+            public ToolRuntimeStats Stats;
+            public float DepthMeters;
+            public bool Active;
+            public bool GridPowered;
+        }
+
+        private static uint ResolveStatusMask(in ResolveStatusMaskContext context)
+        {
+            uint status = context.CurrentStatus & ToolRuntimeStatusMasks.HeatWarningHapticQueued;
+            if (context.Active)
                 status |= ToolRuntimeStatusMasks.Active;
 
-            if (!gridPowered && (state.CurrentBattery <= 0.0001f || stats.BatteryCapacity <= 0.0001f))
+            if (!context.GridPowered && (context.State.CurrentBattery <= 0.0001f || context.Stats.BatteryCapacity <= 0.0001f))
                 status |= ToolRuntimeStatusMasks.LowPower;
 
-            if (state.InternalHeat >= 1f ||
-                ((currentStatus & ToolRuntimeStatusMasks.Overheated) != 0u && state.InternalHeat > OverheatRecoveryThreshold))
+            if (context.State.InternalHeat >= 1f ||
+                ((context.CurrentStatus & ToolRuntimeStatusMasks.Overheated) != 0u && context.State.InternalHeat > OverheatRecoveryThreshold))
             {
                 status |= ToolRuntimeStatusMasks.Overheated;
             }
 
-            if (state.Durability <= 0.0001f)
+            if (context.State.Durability <= 0.0001f)
                 status |= ToolRuntimeStatusMasks.Broken;
 
-            bool standardToolBelowLimit = depthMeters > StandardDepthFailureMeters &&
-                (state.UpgradeBitmask64 & ((ulong)ToolUpgradeBits.DepthHardened | (ulong)ToolUpgradeBits.ThermalShield)) == 0UL;
+            bool standardToolBelowLimit = context.DepthMeters > StandardDepthFailureMeters &&
+                (context.State.UpgradeBitmask64 & ((ulong)ToolUpgradeBits.DepthHardened | (ulong)ToolUpgradeBits.ThermalShield)) == 0UL;
             if (standardToolBelowLimit)
                 status |= ToolRuntimeStatusMasks.DepthFailed;
 
