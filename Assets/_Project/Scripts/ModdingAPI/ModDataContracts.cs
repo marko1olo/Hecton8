@@ -11,9 +11,6 @@ namespace Hecton8.Modding
     public class ModDataOverrideFile
     {
         public ModItemTemplateOverride[] ItemOverrides;
-        // Expandable in the future for other systems:
-        // public ModFaunaOverride[] FaunaOverrides;
-        // public ModCraftingRecipeOverride[] RecipeOverrides;
     }
 
     [Serializable]
