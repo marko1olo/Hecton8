@@ -41,20 +41,21 @@ namespace CandiceAIforGames.AI
 			m_SizeOfSegment = m_RectTransform.sizeDelta.x / m_NumberOfSegments;
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-				GameObject currentSegment = Instantiate(m_Image.gameObject, transform.position, Quaternion.identity, transform);
-				currentSegment.SetActive(true);
+				Image segmentImage = Instantiate(m_Image, transform.position, Quaternion.identity, transform);
+				segmentImage.gameObject.SetActive(true);
 
-				Image segmentImage = currentSegment.GetComponent<Image>();
 				segmentImage.fillAmount = m_SizeOfSegment;
 
-				RectTransform segmentRectTransform = segmentImage.GetComponent<RectTransform>();
+				RectTransform segmentRectTransform = segmentImage.rectTransform;
 				segmentRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentRectTransform.sizeDelta.y);
 				segmentRectTransform.position += (Vector3.right * i * m_SizeOfSegment) - (Vector3.right * m_SizeOfSegment * (m_NumberOfSegments / 2)) + (Vector3.right * i * m_SizeOfNotch);
 
 				Image segmentFillImage = segmentImage.transform.GetChild(0).GetComponent<Image>();
 				segmentFillImage.color = m_FillColor;
 				m_ProgressToFill.Add(segmentFillImage);
-				segmentFillImage.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(m_SizeOfSegment, segmentFillImage.GetComponent<RectTransform>().sizeDelta.y);
+
+				RectTransform fillRectTransform = segmentFillImage.rectTransform;
+				fillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, fillRectTransform.sizeDelta.y);
 			}
 		}
 
