@@ -1,4 +1,4 @@
-﻿// Crest Ocean System
+// Crest Ocean System
 
 // Copyright 2021 Wave Harmonic Ltd
 
@@ -29,12 +29,7 @@ namespace Crest.EditorHelpers
                 // Populate list with decorators.
                 if (_decorators == null)
                 {
-                    var attributes = fieldInfo.GetCustomAttributes(typeof(DecoratorAttribute), false);
-                    _decorators = new List<object>(attributes.Length);
-                    foreach (var attribute in attributes)
-                    {
-                        _decorators.Add(attribute);
-                    }
+                    _decorators = new List<object>(fieldInfo.GetCustomAttributes(typeof(DecoratorAttribute), false));
                     _decorators.Sort((a, b) => ((DecoratorAttribute)a).order.CompareTo(((DecoratorAttribute)b).order));
                 }
 
@@ -51,9 +46,9 @@ namespace Crest.EditorHelpers
                 {
                     var attributes = fieldInfo.GetCustomAttributes(typeof(OnChangeAttribute), false);
                     _onChangeAttributes = new List<OnChangeAttribute>(attributes.Length);
-                    foreach (var attribute in attributes)
+                    for (int i = 0; i < attributes.Length; i++)
                     {
-                        _onChangeAttributes.Add((OnChangeAttribute)attribute);
+                        _onChangeAttributes.Add((OnChangeAttribute)attributes[i]);
                     }
                 }
 
