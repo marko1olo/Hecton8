@@ -32,21 +32,11 @@ namespace Shapes {
 			return $"{shaderName} {blendModeSuffix}{keywordsSuffix}";
 		}
 
-		public static void ApplyDefaultGlobalProperties( Material mat ) {
-			// set default properties
-			// todo: this seeeems unnecessary, not sure why this exists
-			mat.SetInt_Shapes( ShapesMaterialUtils.propZTest, (int)ShapeRenderer.DEFAULT_ZTEST );
-			mat.SetFloat( ShapesMaterialUtils.propZOffsetFactor, ShapeRenderer.DEFAULT_ZOFS_FACTOR );
-			mat.SetInt_Shapes( ShapesMaterialUtils.propZOffsetUnits, ShapeRenderer.DEFAULT_ZOFS_UNITS );
-			mat.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)ShapeRenderer.DEFAULT_COLOR_MASK );
-		}
-
 		static Material CreateShapesMaterial( Shader shader, HideFlags hideFlags, params string[] keywords ) {
 			Material mat = new Material( shader ) { hideFlags = hideFlags, enableInstancing = USE_INSTANCING };
 			if( keywords != null )
 				foreach( string keyword in keywords )
 					mat.EnableKeyword( keyword );
-			ApplyDefaultGlobalProperties( mat );
 			return mat;
 		}
 
