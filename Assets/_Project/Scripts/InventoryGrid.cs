@@ -17,6 +17,27 @@ namespace Hecton8.Inventory
     public sealed class InventoryGrid
     {
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        public readonly struct CheckFitArgs
+        {
+            public readonly int StartX;
+            public readonly int StartY;
+            public readonly int Width;
+            public readonly int Height;
+            public readonly int IgnoredAnchorA;
+            public readonly int IgnoredAnchorB;
+
+            public CheckFitArgs(int startX, int startY, int width, int height, int ignoredAnchorA, int ignoredAnchorB)
+            {
+                StartX = startX;
+                StartY = startY;
+                Width = width;
+                Height = height;
+                IgnoredAnchorA = ignoredAnchorA;
+                IgnoredAnchorB = ignoredAnchorB;
+            }
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public readonly struct InventoryItemDescriptor
         {
             public readonly int HashId;
@@ -386,11 +407,25 @@ namespace Hecton8.Inventory
             targetAnchorX = targetAnchorX < 0 ? 0 : (targetAnchorX >= _columns ? _columns - 1 : targetAnchorX);
             targetAnchorY = targetAnchorY < 0 ? 0 : (targetAnchorY >= _rows ? _rows - 1 : targetAnchorY);
 
-            if (!CheckFitExcludingAnchors(targetAnchorX, targetAnchorY, sourceDescriptor.Width, sourceDescriptor.Height, sourceAnchorIndex, targetAnchorIndex))
+            if (!CheckFitExcludingAnchors(in new CheckFitArgs(
+                startX: targetAnchorX,
+                startY: targetAnchorY,
+                width: sourceDescriptor.Width,
+                height: sourceDescriptor.Height,
+                ignoredAnchorA: sourceAnchorIndex,
+                ignoredAnchorB: targetAnchorIndex)))
+            {
                 return false;
+            }
 
             if (hasTargetAnchor &&
-                !CheckFitExcludingAnchors(sourceAnchorX, sourceAnchorY, targetDescriptor.Width, targetDescriptor.Height, sourceAnchorIndex, targetAnchorIndex))
+                !CheckFitExcludingAnchors(in new CheckFitArgs(
+                    startX: sourceAnchorX,
+                    startY: sourceAnchorY,
+                    width: targetDescriptor.Width,
+                    height: targetDescriptor.Height,
+                    ignoredAnchorA: sourceAnchorIndex,
+                    ignoredAnchorB: targetAnchorIndex)))
             {
                 return false;
             }
@@ -519,26 +554,26 @@ namespace Hecton8.Inventory
             _singleCellFreeMask &= ~(1UL << cellIndex);
         }
 
-        private bool CheckFitExcludingAnchors(int startX, int startY, int width, int height, int ignoredAnchorA, int ignoredAnchorB)
+        private bool CheckFitExcludingAnchors(in CheckFitArgs args)
         {
-            if (startX < 0 || startY < 0 || width <= 0 || height <= 0)
+            if (args.StartX < 0 || args.StartY < 0 || args.Width <= 0 || args.Height <= 0)
                 return false;
 
-            int endX = startX + width;
-            int endY = startY + height;
+            int endX = args.StartX + args.Width;
+            int endY = args.StartY + args.Height;
             if (endX > _columns || endY > _rows)
                 return false;
 
-            for (int y = startY; y < endY; y++)
+            for (int y = args.StartY; y < endY; y++)
             {
-                for (int x = startX; x < endX; x++)
+                for (int x = args.StartX; x < endX; x++)
                 {
                     int encodedAnchorIndex = _cellAnchorIndices[CellIndex(x, y)];
                     if (encodedAnchorIndex == 0)
                         continue;
 
                     int anchorIndex = encodedAnchorIndex - 1;
-                    if (anchorIndex == ignoredAnchorA || anchorIndex == ignoredAnchorB)
+                    if (anchorIndex == args.IgnoredAnchorA || anchorIndex == args.IgnoredAnchorB)
                         continue;
 
                     return false;
