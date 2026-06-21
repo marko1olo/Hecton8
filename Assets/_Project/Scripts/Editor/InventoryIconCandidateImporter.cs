@@ -20,6 +20,8 @@ namespace Hecton8.Editor
         private const string AtlasManifestPath = "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/Atlas/TX_B30_InventoryGenerated_CandidateAtlas_Manifest.json";
         private const string BindingMapPath = "Assets/_Project/Art/Sprites/ui/InventoryGenerated/Batch30/InventoryIconCandidateBindingMap.json";
 
+        private const long MaxManifestBytes = 5242880L; // 5MB limit for JSON files
+
         [MenuItem("Hecton8/Art/Inventory Icons/Prepare Batch30 Candidate Sprites")]
         public static void PrepareBatch30CandidateSprites()
         {
@@ -289,7 +291,7 @@ namespace Hecton8.Editor
 
             try
             {
-                return JsonUtility.FromJson<AtlasManifest>(ReadProjectText(AtlasManifestPath));
+                return ReadJsonFileCapped<AtlasManifest>(AtlasManifestPath, MaxManifestBytes, "Atlas Manifest");
             }
             catch (Exception exception)
             {
@@ -318,7 +320,7 @@ namespace Hecton8.Editor
             string manifestPath = NormalizeAssetPath(manifests[0]);
             try
             {
-                AtlasManifest manifest = JsonUtility.FromJson<AtlasManifest>(ReadProjectText(manifestPath));
+                AtlasManifest manifest = ReadJsonFileCapped<AtlasManifest>(manifestPath, MaxManifestBytes, "Generic Atlas Manifest");
                 if (manifest == null)
                 {
                     RecordError(ref errors, $"Invalid generic atlas manifest JSON: {manifestPath}");
@@ -419,7 +421,7 @@ namespace Hecton8.Editor
             SourceBakeManifest sourceManifest;
             try
             {
-                sourceManifest = JsonUtility.FromJson<SourceBakeManifest>(ReadProjectText(sourceBakeManifestPath));
+                sourceManifest = ReadJsonFileCapped<SourceBakeManifest>(sourceBakeManifestPath, MaxManifestBytes, "Source Bake Manifest");
             }
             catch (Exception exception)
             {
@@ -615,7 +617,7 @@ namespace Hecton8.Editor
             IconBindingMap map;
             try
             {
-                map = JsonUtility.FromJson<IconBindingMap>(ReadProjectText(BindingMapPath));
+                map = ReadJsonFileCapped<IconBindingMap>(BindingMapPath, MaxManifestBytes, "Binding Map");
             }
             catch (Exception exception)
             {
@@ -779,7 +781,7 @@ namespace Hecton8.Editor
 
             try
             {
-                map = JsonUtility.FromJson<IconBindingMap>(ReadProjectText(bindingMapPath));
+                map = ReadJsonFileCapped<IconBindingMap>(bindingMapPath, MaxManifestBytes, "Binding Map");
             }
             catch (Exception exception)
             {
@@ -1120,6 +1122,27 @@ namespace Hecton8.Editor
         private static bool ProjectFileExists(string path)
         {
             return File.Exists(ToProjectFilePath(path));
+        }
+
+        private static string ReadTextFileCapped(string path, long maxBytes, string label)
+        {
+            string physicalPath = ToProjectFilePath(path);
+            FileInfo info = new FileInfo(physicalPath);
+            if (!info.Exists)
+                throw new FileNotFoundException(label + " is missing.", physicalPath);
+
+            if (maxBytes <= 0L || maxBytes > int.MaxValue - 1L)
+                throw new InvalidDataException(label + " has invalid byte cap " + maxBytes + ".");
+
+            if (info.Length > maxBytes)
+                throw new InvalidDataException(label + " exceeds byte cap " + maxBytes + ".");
+
+            return File.ReadAllText(physicalPath, System.Text.Encoding.UTF8);
+        }
+
+        private static T ReadJsonFileCapped<T>(string path, long maxBytes, string label)
+        {
+            return JsonUtility.FromJson<T>(ReadTextFileCapped(path, maxBytes, label));
         }
 
         private static string ReadProjectText(string path)
