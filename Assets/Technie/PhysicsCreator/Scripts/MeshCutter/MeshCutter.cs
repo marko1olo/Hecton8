@@ -31,18 +31,18 @@ namespace Technie.PhysicsCreator
 
 			// Transform cut plane from world space to local space
 
-			Plane localPlane;
+			Plane3d localPlane;
 
 			Transform space = inputMesh.GetTransform();
 			if (space != null)
 			{
 				Vector3 localPlaneOrigin = space.InverseTransformPoint(ClosestPointOnPlane(worldCutPlane, Vector3.zero));
 				Vector3 localPlaneNormal = space.InverseTransformDirection(worldCutPlane.normal);
-				localPlane = new Plane(localPlaneNormal, localPlaneOrigin);
+				localPlane = new Plane3d(localPlaneNormal, localPlaneOrigin);
 			}
 			else
 			{
-				localPlane = worldCutPlane;
+				localPlane = new Plane3d(worldCutPlane);
 			}
 
 			foreach (CuttableSubMesh inputSubMesh in input.GetSubMeshes())
@@ -80,7 +80,7 @@ namespace Technie.PhysicsCreator
 			return newMesh;
 		}
 
-		private void Cut(CuttableSubMesh inputSubMesh, Plane cutPlane)
+		private void Cut(CuttableSubMesh inputSubMesh, Plane3d cutPlane)
 		{
 			bool hasNormals = inputSubMesh.HasNormals();
 			bool hasColours = inputSubMesh.HasColours();
@@ -221,11 +221,10 @@ namespace Technie.PhysicsCreator
 			outputBackSubMeshes.Add(backSubMesh);
 		}
 
-		private VertexClassification Classify(Vector3 vertex, Plane cutPlane)
+		private VertexClassification Classify(Vector3 vertex, Plane3d cutPlane)
 		{
-			// TODO: Need to swap out and use a Plane3d for better precision here
 			Vector3 tmp = new Vector3((float)vertex.x, (float)vertex.y, (float)vertex.z);
-			float dist = cutPlane.GetDistanceToPoint(tmp);
+			double dist = cutPlane.GetDistanceToPoint(tmp);
 
 			double tolerance = 0.00001f;
 
@@ -253,7 +252,7 @@ namespace Technie.PhysicsCreator
 		}
 
 		// Single vertex on +ve side (i0), other two on -ve side
-		private void SplitA(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
+		private void SplitA(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane3d cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
 		{
 			// Calculate intersection points along edges i0->i1 and i2->i0
 
@@ -287,7 +286,7 @@ namespace Technie.PhysicsCreator
 		}
 
 		// Triangle split with one vertex exactly on the plane in order: front->plane->back
-		private void SplitB(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
+		private void SplitB(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane3d cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
 		{
 			Vector3 v0 = inputSubMesh.GetVertex(i0);
 			Vector3 v2 = inputSubMesh.GetVertex(i2);
@@ -309,7 +308,7 @@ namespace Technie.PhysicsCreator
 		}
 
 		// Triangle split with one vertex exactly on the plane in order: front->back->plane
-		private void SplitBFlipped(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
+		private void SplitBFlipped(int i0, int i1, int i2, CuttableSubMesh inputSubMesh, Plane3d cutPlane, CuttableSubMesh frontSubMesh, CuttableSubMesh backSubMesh)
 		{
 			Vector3 v0 = inputSubMesh.GetVertex(i0);
 			Vector3 v1 = inputSubMesh.GetVertex(i1);
@@ -330,7 +329,7 @@ namespace Technie.PhysicsCreator
 			backSubMesh.AddInterpolatedVertex(i0, i1, weightA, inputSubMesh);
 		}
 
-		private Vector3 CalcIntersection(Vector3 v0, Vector3 v1, Plane plane, out float weight)
+		private Vector3 CalcIntersection(Vector3 v0, Vector3 v1, Plane3d plane, out float weight)
 		{
 			// Calculate length between vertices and create ray from v0 to v1
 			Vector3 deltaA = v1 - v0;
