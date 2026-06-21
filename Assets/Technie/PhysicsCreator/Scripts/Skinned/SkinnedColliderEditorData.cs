@@ -34,9 +34,8 @@ namespace Technie.PhysicsCreator.Skinned
 		Custom
 	}
 
-	// TODO: Think of a better name for this which is clearer separated from BoneHullData?
 	[System.Serializable]
-	public class BoneData
+	public class BonePhysicsData
 	{
 		public string targetBoneName;
 
@@ -69,7 +68,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public float linearDamping = 0.0f;
 		public float angularDamping = 0.0f;
 		
-		public BoneData(Transform src)
+		public BonePhysicsData(Transform src)
 		{
 			this.targetBoneName = src.name;
 		}
@@ -119,7 +118,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public PhysicsMaterial defaultMaterial;
 		public ColliderType defaultColliderType = ColliderType.Convex;
 
-		public List<BoneData> boneData = new List<BoneData>();
+		public List<BonePhysicsData> boneData = new List<BonePhysicsData>();
 		public List<BoneHullData> boneHullData = new List<BoneHullData>();
 
 		// Current selection - one of these will be valid (or neither)
@@ -170,7 +169,7 @@ namespace Technie.PhysicsCreator.Skinned
 
 		// Methods
 
-		public void SetSelection(BoneData bone)
+		public void SetSelection(BonePhysicsData bone)
 		{
 			for (int i=0; i<boneData.Count; i++)
 			{
@@ -208,7 +207,7 @@ namespace Technie.PhysicsCreator.Skinned
 			MarkDirty();
 		}
 
-		public BoneData GetSelectedBone()
+		public BonePhysicsData GetSelectedBone()
 		{
 			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneData.Count)
 				return boneData[selectedBoneIndex];
@@ -226,16 +225,16 @@ namespace Technie.PhysicsCreator.Skinned
 
 
 
-		public BoneData GetBoneData(Transform bone)
+		public BonePhysicsData GetBonePhysicsData(Transform bone)
 		{
 			if (bone == null)
 				return null;
-			return GetBoneData(bone.name);
+			return GetBonePhysicsData(bone.name);
 		}
 
-		public BoneData GetBoneData(string boneName)
+		public BonePhysicsData GetBonePhysicsData(string boneName)
 		{
-			foreach (BoneData data in boneData)
+			foreach (BonePhysicsData data in boneData)
 			{
 				if (data.targetBoneName == boneName)
 					return data;
@@ -306,14 +305,14 @@ namespace Technie.PhysicsCreator.Skinned
 			return lastModifiedFrame;
 		}
 
-		public void Add(BoneData data)
+		public void Add(BonePhysicsData data)
 		{
 			boneData.Add(data);
 
 			MarkDirty();
 		}
 
-		public void Remove(BoneData data)
+		public void Remove(BonePhysicsData data)
 		{
 			boneData.Remove(data);
 
