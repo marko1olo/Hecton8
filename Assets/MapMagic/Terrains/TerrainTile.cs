@@ -16,7 +16,6 @@ namespace MapMagic.Terrains
 
 	//[System.Serializable]
 	public class TerrainTile : MonoBehaviour, ITile, ISerializationCallbackReceiver
-	// TODO: when using Voxeland, use an area or a special VoxelandTile with the same interface
 	{
 		public MapMagicObject mapMagic;  //each tile belongs to only one mm object, it could not be changed or copied, both monobehs so no problem with serialization
 
