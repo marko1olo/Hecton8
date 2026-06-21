@@ -21,7 +21,6 @@ namespace Crest
         const string k_ShaderPath = "Hidden/Crest/Underwater/Underwater Effect HDRP";
 
         PropertyWrapperMaterial _underwaterEffectMaterial;
-        RTHandle _colorTexture;
         RTHandle _depthTexture;
         RenderTargetIdentifier _depthTarget;
         bool _firstRender = true;
@@ -78,18 +77,6 @@ namespace Crest
                 _underwaterEffectMaterial = new PropertyWrapperMaterial(k_ShaderPath);
             }
 
-            // TODO: Use a temporary RT if possible.
-            _colorTexture = RTHandles.Alloc
-            (
-                Vector2.one,
-                TextureXR.slices,
-                dimension: TextureXR.dimension,
-                colorFormat: UnityEngine.Experimental.Rendering.GraphicsFormat.B10G11R11_UFloatPack32,
-                useDynamicScale: true,
-                wrapMode: TextureWrapMode.Clamp,
-                name: "Crest Camera Color Texture"
-            );
-
             SetUpVolumes();
         }
 
@@ -99,8 +86,6 @@ namespace Crest
             {
                 CoreUtils.Destroy(_underwaterEffectMaterial.material);
             }
-
-            _colorTexture?.Release();
 
             CleanUpVolumes();
         }
@@ -216,8 +201,24 @@ namespace Crest
             }
 
             // Copy color buffer.
-            HDUtils.BlitCameraTexture(context.cmd, context.cameraColorBuffer, _colorTexture);
-            context.propertyBlock.SetTexture(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, _colorTexture);
+            var descriptor = context.cameraColorBuffer.rt.descriptor;
+            descriptor.msaaSamples = 1;
+            descriptor.depthBufferBits = 0;
+            context.cmd.GetTemporaryRT(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, descriptor);
+            var colorTarget = new RenderTargetIdentifier(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, 0, CubemapFace.Unknown, -1);
+
+            bool msaaEnabled = Helpers.IsMSAAEnabled(context.hdCamera.camera);
+            if (msaaEnabled)
+            {
+                context.cmd.SetGlobalTexture(Shader.PropertyToID("_CameraColorTexture"), context.cameraColorBuffer);
+                Helpers.Blit(context.cmd, colorTarget, Helpers.UtilityMaterial, (int)Helpers.UtilityPass.CopyColor, context.propertyBlock);
+            }
+            else
+            {
+                context.cmd.CopyTexture(context.cameraColorBuffer, colorTarget);
+            }
+
+            context.cmd.SetGlobalTexture(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture, colorTarget);
 
             if (_renderer.UseStencilBufferOnEffect)
             {
@@ -269,6 +270,8 @@ namespace Crest
 #endif
                 context.cmd.DisableShaderKeyword("CREST_UNDERWATER_OBJECTS_PASS");
             }
+
+            context.cmd.ReleaseTemporaryRT(UnderwaterRenderer.ShaderIDs.s_CrestCameraColorTexture);
 
             _firstRender = false;
         }
