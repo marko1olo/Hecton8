@@ -376,6 +376,13 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
+			MeshFilter[] cachedMeshFilters = new MeshFilter[ Renderers.Length ];
+			for( int i = 0; i < Renderers.Length; i++ )
+			{
+				if( Renderers[ i ] != null )
+					cachedMeshFilters[ i ] = Renderers[ i ].GetComponent<MeshFilter>();
+			}
+
 			for( int x = 0; x < hframes; x++ )
 			{
 				for( int y = 0; y <= vframes; y++ )
@@ -388,7 +395,7 @@ namespace AmplifyImpostors
 						if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 							continue;
 
-						MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
+						MeshFilter mf = cachedMeshFilters[ i ];
 						if( mf == null || mf.sharedMesh == null )
 							continue;
 
