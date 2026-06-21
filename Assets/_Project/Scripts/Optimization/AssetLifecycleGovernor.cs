@@ -4625,6 +4625,7 @@ namespace Hecton8.Optimization
 #else
         private void DrainDetachedAddressableReleaseHandles()
         {
+            // No operation required when Addressables are not present in the project.
         }
 #endif
 
