@@ -41,6 +41,14 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
+		public Vector3[] BoneSpaceVertices
+		{
+			get
+			{
+				return boneSpaceVertices;
+			}
+		}
+
 		public BoneWeight[] BoneWeights
 		{
 			get { return weights; }
@@ -75,7 +83,7 @@ namespace Technie.PhysicsCreator
 		private Vector3[] modelSpaceVertices;
 
 		//private Vector3[] worldSpaceVertices; // transformed by the renderer's location (and the bindPose + bones if skinned)
-		// TODO: add BoneSpace vertices?
+		private Vector3[] boneSpaceVertices;
 
 		public static UnpackedMesh Create(Renderer renderer)
 		{
@@ -105,6 +113,7 @@ namespace Technie.PhysicsCreator
 				weights = null;
 
 				modelSpaceVertices = srcMesh.vertices; // Vertices are always model space for rigid meshes
+				boneSpaceVertices = srcMesh.vertices;
 			}
 		}
 
@@ -126,9 +135,11 @@ namespace Technie.PhysicsCreator
 			Matrix4x4[] bindPose = srcMesh.bindposes;
 
 			this.modelSpaceVertices = new Vector3[vertices.Length];
+			this.boneSpaceVertices = new Vector3[vertices.Length];
 			for (int i = 0; i < vertices.Length; i++)
 			{
 				modelSpaceVertices[i] = ApplyBindPoseWeighted(vertices[i], weights[i], bindPose, bones, outputLocalSpace);
+				boneSpaceVertices[i] = bindPose[weights[i].boneIndex0].MultiplyPoint(vertices[i]);
 			}
 		}
 
