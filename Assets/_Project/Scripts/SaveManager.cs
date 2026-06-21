@@ -3454,46 +3454,40 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void PublishSaveCompleted(byte slotIndex, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
+        public readonly struct PublishSaveCompletedArgs
         {
-            try
+            public readonly uint OperationId;
+            public readonly long DurationMs;
+            public readonly long CompressedSizeBytes;
+            public readonly bool Succeeded;
+
+            public PublishSaveCompletedArgs(uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
             {
-                SaveCompletedSignal completed = new SaveCompletedSignal
-                {
-                    SlotHash = ResolveSlotHash(slotIndex),
-                    OperationId = operationId,
-                    DurationMilliseconds = SaturateToUInt(durationMs),
-                    CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Result = succeeded ? (byte)1 : (byte)0,
-                    Flags = succeeded ? (byte)0 : (byte)1
-                };
-                TryPushSignalTrackedBestEffort(in completed);
-            }
-            catch (Exception exception)
-            {
-                ReportPersistenceSignalBridgeFailure(exception);
+                OperationId = operationId;
+                DurationMs = durationMs;
+                CompressedSizeBytes = compressedSizeBytes;
+                Succeeded = succeeded;
             }
         }
 
-        private static void PublishSaveCompletedForSlotName(byte slotIndex, string slotName, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
+        private static void PublishSaveCompletedForSlotName(byte slotIndex, string slotName, in PublishSaveCompletedArgs args)
         {
-            PublishSaveCompleted(ResolveSlotHash(slotIndex, slotName), operationId, durationMs, compressedSizeBytes, succeeded);
+            PublishSaveCompleted(ResolveSlotHash(slotIndex, slotName), in args);
         }
 
-        private static void PublishSaveCompleted(uint slotHash, uint operationId, long durationMs, long compressedSizeBytes, bool succeeded)
+        private static void PublishSaveCompleted(uint slotHash, in PublishSaveCompletedArgs args)
         {
             try
             {
                 SaveCompletedSignal completed = new SaveCompletedSignal
                 {
                     SlotHash = slotHash,
-                    OperationId = operationId,
-                    DurationMilliseconds = SaturateToUInt(durationMs),
-                    CompressedSizeBytes = SaturateToUInt(compressedSizeBytes),
+                    OperationId = args.OperationId,
+                    DurationMilliseconds = SaturateToUInt(args.DurationMs),
+                    CompressedSizeBytes = SaturateToUInt(args.CompressedSizeBytes),
                     Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Result = succeeded ? (byte)1 : (byte)0,
-                    Flags = succeeded ? (byte)0 : (byte)1
+                    Result = args.Succeeded ? (byte)1 : (byte)0,
+                    Flags = args.Succeeded ? (byte)0 : (byte)1
                 };
                 TryPushSignalTrackedBestEffort(in completed);
             }
@@ -4529,7 +4523,7 @@ namespace Hecton8.SaveSystem
             if (activeSaveStarted)
             {
                 RecordAsyncPersistenceTelemetry(operationId, LastOperationSlot, elapsedMs, 0L, 0, 0, 1u);
-                PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, elapsedMs, 0L, succeeded: false);
+                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: elapsedMs, compressedSizeBytes: 0L, succeeded: false));
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, 1u);
             }
             else
@@ -4749,7 +4743,7 @@ namespace Hecton8.SaveSystem
 
                                 ReportPersistenceCleanupFailure("save", cleanupException);
                                 RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                                PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
                                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
                                 DumpSaveBlackBox();
                                 RecordFailure(slotName, "save", reason);
@@ -4791,7 +4785,7 @@ namespace Hecton8.SaveSystem
 
                         ReportPersistenceCleanupFailure("save", cleanupException);
                         RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                        PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                        PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
                         PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
                         DumpSaveBlackBox();
                         RecordFailure(slotName, "save", reason);
@@ -4828,7 +4822,7 @@ namespace Hecton8.SaveSystem
 
                             ReportPersistenceCleanupFailure("save", cleanupException);
                             RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                            PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                            PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
                             PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
                             DumpSaveBlackBox();
                             RecordFailure(slotName, "save", reason);
@@ -4961,7 +4955,7 @@ namespace Hecton8.SaveSystem
                         ? "Verified save pipeline failed."
                         : savePipelineError;
                     RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                    PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                    PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
                     PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
                     DumpSaveBlackBox();
                     RecordFailure(slotName, "save", failureMessage);
@@ -4984,7 +4978,7 @@ namespace Hecton8.SaveSystem
                     rawPayloadLength,
                     thumbnailCompletion.ByteLength,
                     thumbnailCompletion.Succeeded != 0 ? 0u : 2u);
-                PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);
+                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: compressedSizeBytes, succeeded: true));
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, 0u);
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
@@ -5010,7 +5004,7 @@ namespace Hecton8.SaveSystem
                 }
 
                 RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, 1u);
-                PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);
+                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, 1u);
                 DumpSaveBlackBox();
                 RecordFailure(slotName, "save", ex.Message);
@@ -6324,7 +6318,7 @@ namespace Hecton8.SaveSystem
                     : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : (appliedSafeAupSnap ? " and snapped player to safe terrain." : "."));
                 ReportLoadPipelineStage(LoadingPipelineStage.Completed, 1f);
                 LogInfo($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}");
-                PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: true);
+                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: true));
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags);
                 RaiseLoadCompletedWithBackpressureRecovery(SaveEvents.ComputeSlotHash(slotName));
             }
