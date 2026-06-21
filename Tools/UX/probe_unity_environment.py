@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 
@@ -42,6 +43,14 @@ def infer_unity_version_from_path(path: Path) -> str:
     for part in reversed(path.parts):
         if UNITY_VERSION_PATTERN.match(part):
             return part
+
+    exe = str(path)
+    try:
+        output = subprocess.check_output([exe, "-version"], text=True)
+        return output.strip()
+    except Exception:
+        pass
+
     return ""
 
 
