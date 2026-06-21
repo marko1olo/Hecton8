@@ -434,6 +434,40 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(expectedShakePitchVel, GetPrivateField<float>("_collisionShakePitchVel"));
         }
 
+        [Test]
+        public void RegisterSplash_WithNullSuit_DoesNothing()
+        {
+            // Arrange
+            float initialDip = GetPrivateField<float>("_splashDipCurrent");
+            float initialVelocity = GetPrivateField<float>("_splashDipVelocity");
+
+            // Act
+            _processor.RegisterSplash(1.0f, null);
+
+            // Assert
+            Assert.AreEqual(initialDip, GetPrivateField<float>("_splashDipCurrent"));
+            Assert.AreEqual(initialVelocity, GetPrivateField<float>("_splashDipVelocity"));
+        }
+
+        [Test]
+        public void RegisterSplash_WithValidSuit_CalculatesCorrectDipAndVelocity()
+        {
+            // Arrange
+            float testIntensity = 2.5f;
+            float expectedSplashCameraDip = 0.5f;
+            _suitData.splashCameraDip = expectedSplashCameraDip;
+
+            float expectedDip = -testIntensity * expectedSplashCameraDip;
+            float expectedVelocity = -expectedDip * 2f;
+
+            // Act
+            _processor.RegisterSplash(testIntensity, _suitData);
+
+            // Assert
+            Assert.AreEqual(expectedDip, GetPrivateField<float>("_splashDipCurrent"));
+            Assert.AreEqual(expectedVelocity, GetPrivateField<float>("_splashDipVelocity"));
+        }
+
         private T GetPrivateField<T>(string fieldName)
         {
             var fieldInfo = typeof(CameraJuiceProcessor).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
