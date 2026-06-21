@@ -114,6 +114,33 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TryGetAvailableCountForPooledInstance_NullInstance_ReturnsFalse()
+        {
+            // Act
+            bool result = _poolManager.TryGetAvailableCountForPooledInstance(null, out int count);
+
+            // Assert
+            Assert.IsFalse(result, "Expected to return false for null instance.");
+            Assert.AreEqual(0, count, "Expected count to be 0 for null instance.");
+        }
+
+        [Test]
+        public void TryGetAvailableCountForPooledInstance_UnpooledInstance_ReturnsFalse()
+        {
+            // Arrange
+            GameObject unpooledGo = new GameObject("Unpooled");
+
+            // Act
+            bool result = _poolManager.TryGetAvailableCountForPooledInstance(unpooledGo, out int count);
+
+            // Assert
+            Assert.IsFalse(result, "Expected to return false for unpooled instance.");
+            Assert.AreEqual(0, count, "Expected count to be 0 for unpooled instance.");
+
+            Object.DestroyImmediate(unpooledGo);
+        }
+
+        [Test]
         public void HasPool_WithComponent_ReturnsFalseIfNoPoolExists()
         {
             // Arrange
@@ -137,6 +164,38 @@ namespace Hecton8.Tests.Editor
 
             // Assert
             Assert.IsFalse(hasPool, "HasPool should return false when passed a null component.");
+        }
+
+        [Test]
+        public void TryGetAvailableCountForPooledInstance_PooledInstance_ReturnsTrueAndCount()
+        {
+            // Arrange
+            GameObject prefabGo = new GameObject("TestPrefab");
+            var testComponent = prefabGo.AddComponent<BoxCollider>();
+
+            // Allow pool expansion since there's no pre-warmed pool here
+            GameObject spawned1 = _poolManager.Spawn(prefabGo, Vector3.zero, Quaternion.identity, true);
+            GameObject spawned2 = _poolManager.Spawn(prefabGo, Vector3.zero, Quaternion.identity, true);
+
+            // Ensure count is currently 0 since both are spawned
+            bool initialResult = _poolManager.TryGetAvailableCountForPooledInstance(spawned1, out int initialCount);
+            Assert.IsTrue(initialResult, "Expected to successfully query count for pooled instance.");
+            Assert.AreEqual(0, initialCount, "Expected count to be 0 when all objects are spawned out of the pool.");
+
+            // Despawn spawned2 so that there is 1 available in the pool
+            _poolManager.Despawn(spawned2);
+
+            // Act
+            // Now query available count using spawned1
+            bool result = _poolManager.TryGetAvailableCountForPooledInstance(spawned1, out int count);
+
+            // Assert
+            Assert.IsTrue(result, "Expected to return true for pooled instance.");
+            Assert.AreEqual(1, count, "Expected count to be 1 since spawned2 was despawned to the pool.");
+
+            Object.DestroyImmediate(prefabGo);
+            if (spawned1 != null) Object.DestroyImmediate(spawned1);
+            if (spawned2 != null) Object.DestroyImmediate(spawned2);
         }
     }
 }
