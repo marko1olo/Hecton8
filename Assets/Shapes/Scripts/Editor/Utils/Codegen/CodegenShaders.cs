@@ -45,11 +45,11 @@ namespace Shapes {
 					EditorUtility.SetDirty( mat );
 					mat.shader = shader;
 					mat.hideFlags = HideFlags.HideInInspector;
-					TrySetKeywordsAndDefaultProperties( keywords, mat );
+					TrySetKeywords( keywords, mat );
 				} else {
 					Debug.Log( "creating material " + path );
 					mat = new Material( shader ) { enableInstancing = true, hideFlags = HideFlags.HideInInspector };
-					TrySetKeywordsAndDefaultProperties( keywords, mat );
+					TrySetKeywords( keywords, mat );
 					AssetDatabase.CreateAsset( mat, path );
 				}
 			}
@@ -140,7 +140,7 @@ namespace Shapes {
 			return new PathMaterial( savePath, mat, shader, keywords );
 		}
 
-		static void TrySetKeywordsAndDefaultProperties( IEnumerable<string> keywords, Material mat ) {
+		static void TrySetKeywords( IEnumerable<string> keywords, Material mat ) {
 			if( keywords != null )
 				foreach( string keyword in keywords )
 					mat.EnableKeyword( keyword );
