@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MapMagic.Core;
-using Den.Types;
+using Den.Tools;
 
 namespace Hecton8.Editor
 {
@@ -56,6 +56,8 @@ namespace Hecton8.Editor
                 mm.StartGenerate();
                 
                 int loops = 0;
+                int stableCount = 0;
+                int lastTerrainCount = 0;
                 while (loops < TimeoutLoops)
                 {
                     mm.Update();
@@ -66,17 +68,35 @@ namespace Hecton8.Editor
                     int terrainCount = UnityEngine.Terrain.activeTerrains.Length;
 
                     if (loops % LogEveryN == 0)
-                        Debug.Log($"[TRT] Waiting... loop={loops}  terrains={terrainCount}  generating={mm.IsGenerating()}");
+                        Debug.Log($"[TRT] Waiting... loop={loops}  terrains={terrainCount}  generating={mm.IsGenerating()}  stable={stableCount}");
 
-                    // Done when: generation is complete AND we have the expected tile count
-                    if (!mm.IsGenerating() && terrainCount >= ExpectedTerrains)
+                    // Track stability: count how many consecutive checks we have >= expected
+                    if (terrainCount >= ExpectedTerrains)
                     {
-                        Debug.Log($"[TRT] Generation complete. Terrains={terrainCount}. Taking screenshots...");
+                        if (terrainCount == lastTerrainCount)
+                            stableCount++;
+                        else
+                        {
+                            stableCount = 1;
+                            lastTerrainCount = terrainCount;
+                        }
+                    }
+                    else
+                    {
+                        stableCount = 0;
+                        lastTerrainCount = terrainCount;
+                    }
+
+                    // Done when not generating AND stable, OR when we've had 100 stable loops (5s) at >= 9 terrains
+                    bool generationDone = (!mm.IsGenerating() && terrainCount >= ExpectedTerrains) || stableCount >= 100;
+                    if (generationDone)
+                    {
+                        Debug.Log($"[TRT] Proceeding. Terrains={terrainCount}  stable={stableCount}  generating={mm.IsGenerating()}");
                         break;
                     }
                 }
 
-                if (loops >= TimeoutLoops)
+                if (loops >= TimeoutLoops && stableCount < 100)
                 {
                     Fail($"TIMEOUT after {TimeoutLoops * 50 / 1000}s. Terrains={UnityEngine.Terrain.activeTerrains.Length}  generating={mm.IsGenerating()}");
                     return;
