@@ -2580,9 +2580,6 @@ namespace Hecton8.Atmosphere
 
             if (!math.isfinite(data.celestialLightTimeOfDay01))
             {
-                if (IsCelestialEngineUsable(celestial))
-                    celestial.RecordCelestialLightPhaseLoadNonFinite(data.celestialLightTimeOfDay01);
-
                 ReportCelestialLightPhaseLoadWarning(
                     "ignored: non-finite time-of-day",
                     _CelestialLightPhaseLoadNonFiniteContextHash);
@@ -2598,17 +2595,11 @@ namespace Hecton8.Atmosphere
 
             if (TrySetTimeOfDay(timeOfDay01))
             {
-                if (IsCelestialEngineUsable(celestial))
-                    celestial.RecordCelestialLightPhaseLoadFallback(timeOfDay01);
-
                 ReportCelestialLightPhaseLoadWarning(
                     "restored through atmosphere fallback: celestial owner unavailable",
                     _CelestialLightPhaseLoadOwnerFallbackContextHash);
                 return;
             }
-
-            if (IsCelestialEngineUsable(celestial))
-                celestial.RecordCelestialLightPhaseLoadRejected(timeOfDay01);
 
             ReportCelestialLightPhaseLoadWarning(
                 "ignored: runtime owner rejected phase",

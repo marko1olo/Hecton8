@@ -8181,17 +8181,6 @@ namespace Hecton8.Celestial
             _celestialRuntimeSequence = snapshot.Sequence;
         }
 
-        internal void RecordCelestialLightPhaseLoadFallback(float timeOfDay01)
-        {
-        }
-
-        internal void RecordCelestialLightPhaseLoadRejected(float timeOfDay01)
-        {
-        }
-
-        internal void RecordCelestialLightPhaseLoadNonFinite(float timeOfDay01)
-        {
-        }
 
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {
