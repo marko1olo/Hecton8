@@ -162,7 +162,8 @@
   "rootTextDocCount": 76,
   "missingRootTextDocs": [],
   "unexpectedRootTextDocs": [
-    "ARCHITECTURE_AUDIT.md"
+    "ARCHITECTURE_AUDIT.md",
+    "plan.md"
   ],
   "rootTextDocPolicyPass": false,
   "duplicateHeaderFiles": [],
