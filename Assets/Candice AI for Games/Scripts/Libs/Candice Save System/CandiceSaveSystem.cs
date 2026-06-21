@@ -302,7 +302,7 @@ namespace CandiceAIforGames.Data
             int rc = 0;
             if (providerBase is CandiceSQLiteProvider)
             {
-                string columnParameters = " (";
+                string columnParameters = "";
                 string nonNull = "";
                 string autoincrement = "";
                 string pk = "";
@@ -318,8 +318,8 @@ namespace CandiceAIforGames.Data
                 {
                     nonNull = " NOT NULL";
                 }
-                columnParameters += info.Name + " " + info.Type + pk + autoincrement + nonNull + ")";
-                rc = (providerBase as CandiceSQLiteProvider).CreateTable(tableName, columnParameters);
+                columnParameters += info.Name + " " + info.Type + pk + autoincrement + nonNull;
+                rc = (providerBase as CandiceSQLiteProvider).AddColumn(tableName, columnParameters);
             }
             else
             {
