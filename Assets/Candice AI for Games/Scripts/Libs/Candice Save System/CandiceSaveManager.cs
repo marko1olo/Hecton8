@@ -114,8 +114,9 @@ namespace CandiceAIforGames.Data
                 GameObject obj = Instantiate(saveObject, pos, Quaternion.identity);
                 obj.transform.SetParent(container.transform, false);
                 string[] names = file.Split('/');
-                obj.GetComponent<CandiceSaveItem>().text.text = names[names.Length - 1].Split('.')[0];
-                obj.GetComponent<CandiceSaveItem>().path = folderName + "/" + names[names.Length - 1];
+                CandiceSaveItem item = obj.GetComponent<CandiceSaveItem>();
+                item.text.text = names[names.Length - 1].Split('.')[0];
+                item.path = folderName + "/" + names[names.Length - 1];
                 pos.y -= 35f;
             }
         }
