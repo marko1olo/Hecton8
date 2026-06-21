@@ -23,9 +23,6 @@
 //   sb.Append(" ");
 //   sb.Append("World");
 //
-//   // Get the string
-//   string result = sb.ToString();
-//
 //   // Return to pool for reuse
 //   StringBuilderPool.Return(sb);
 //
