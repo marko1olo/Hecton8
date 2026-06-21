@@ -1413,15 +1413,24 @@ namespace AmplifyImpostors
 			bool isPer = EditorUtility.IsPersistent( m_instance ); // needs better solution
 
 			var renderers = new List<Renderer>();
+			var tempRenderers = searchChildren ? new List<Renderer>() : null;
 			foreach( var go in selectedGameObjects )
 			{
 				if( isPer && !EditorUtility.IsPersistent( go ) )
 					continue;
 
 				if( searchChildren )
-					renderers.AddRange( go.GetComponentsInChildren<Renderer>() );
+				{
+					go.GetComponentsInChildren<Renderer>( false, tempRenderers );
+					renderers.AddRange( tempRenderers );
+				}
 				else
-					renderers.Add( go.GetComponent<Renderer>() );
+				{
+					if( go.TryGetComponent<Renderer>( out var renderer ) )
+					{
+						renderers.Add( renderer );
+					}
+				}
 			}
 
 			var selectedRenderers = from go in DragAndDrop.objectReferences
