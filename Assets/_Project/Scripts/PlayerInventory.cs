@@ -548,6 +548,38 @@ namespace Hecton8.Inventory
             }
         }
 
+        public readonly struct ItemState
+        {
+            public readonly ulong GeneticsMask;
+            public readonly ushort QualityMilli;
+            public readonly ushort Flags;
+            public readonly bool HasExplicitFlags;
+
+            public ItemState(ulong geneticsMask, ushort qualityMilli, ushort flags)
+            {
+                GeneticsMask = geneticsMask;
+                QualityMilli = qualityMilli;
+                Flags = flags;
+                HasExplicitFlags = true;
+            }
+
+            public ItemState(ulong geneticsMask, ushort qualityMilli)
+            {
+                GeneticsMask = geneticsMask;
+                QualityMilli = qualityMilli;
+                Flags = 0;
+                HasExplicitFlags = false;
+            }
+
+            public ItemState(ulong geneticsMask)
+            {
+                GeneticsMask = geneticsMask;
+                QualityMilli = DefaultQualityMilli;
+                Flags = 0;
+                HasExplicitFlags = false;
+            }
+        }
+
         public struct ItemPlacement
         {
             public int itemHashId;
@@ -1733,7 +1765,7 @@ namespace Hecton8.Inventory
             ItemData droppedItem = itemCatalog != null ? itemCatalog.FindByHash(itemHashId) : null;
             if (droppedItem == null)
             {
-                TryAddItemWithState(itemHashId, geneticsMask, qualityMilli);
+                TryAddItemWithState(itemHashId, new ItemState(geneticsMask, qualityMilli));
                 return false;
             }
 
@@ -1741,7 +1773,7 @@ namespace Hecton8.Inventory
             if (persistentWorldRegistry == null ||
                 !persistentWorldRegistry.TryRegisterDroppedItemWithState(droppedItem, 1, runtimePosition, geneticsMask, qualityMilli))
             {
-                TryAddItemWithState(itemHashId, geneticsMask, qualityMilli);
+                TryAddItemWithState(itemHashId, new ItemState(geneticsMask, qualityMilli));
                 return false;
             }
 
@@ -2010,44 +2042,19 @@ namespace Hecton8.Inventory
             return CanAcceptQuantityWithStateBatch(itemHashIds, geneticsMasks, qualityMillis, count);
         }
 
-        public bool TryAddItemWithGenetics(int itemHashId, uint geneticsMask, int quantity = 1)
-        {
-            return TryAddItemWithGenetics(itemHashId, (ulong)geneticsMask, quantity);
-        }
-
         public bool TryAddItemWithGenetics(int itemHashId, ulong geneticsMask, int quantity = 1)
         {
-            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, DefaultQualityMilli, out _);
+            return TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(geneticsMask), out _);
         }
 
-        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, int quantity = 1)
+        public bool TryAddItemWithState(int itemHashId, in ItemState state, int quantity = 1)
         {
-            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, quantity);
+            return TryAddItemWithStateInternal(itemHashId, quantity, in state, out _);
         }
 
-        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, int quantity = 1)
+        public bool TryAddItemWithState(int itemHashId, in ItemState state, int quantity, out int addedQuantity)
         {
-            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out _);
-        }
-
-        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity = 1)
-        {
-            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, itemStateFlags, quantity);
-        }
-
-        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity = 1)
-        {
-            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, itemStateFlags, out _);
-        }
-
-        public bool TryAddItemWithState(int itemHashId, uint geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity, out int addedQuantity)
-        {
-            return TryAddItemWithState(itemHashId, (ulong)geneticsMask, qualityMilli, itemStateFlags, quantity, out addedQuantity);
-        }
-
-        public bool TryAddItemWithState(int itemHashId, ulong geneticsMask, ushort qualityMilli, ushort itemStateFlags, int quantity, out int addedQuantity)
-        {
-            return TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, itemStateFlags, out addedQuantity);
+            return TryAddItemWithStateInternal(itemHashId, quantity, in state, out addedQuantity);
         }
 
         public void SlowTick()
@@ -2304,7 +2311,7 @@ namespace Hecton8.Inventory
             if (itemHashId == 0 || quantity <= 0)
                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
 
-            TryAddItemWithStateInternal(itemHashId, quantity, geneticsMask, qualityMilli, out int addedQuantity);
+            TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(geneticsMask, qualityMilli), out int addedQuantity);
             return new ScavengeAttemptResult(quantity, addedQuantity);
         }
 
@@ -4369,46 +4376,13 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
-            return TryAddItemWithStateInternal(itemHashId, quantity, 0UL, DefaultQualityMilli, out addedQuantity);
-        }
-
-        private bool TryAddItemWithStateInternal(int itemHashId, int quantity, ulong geneticsMask, ushort qualityMilli, out int addedQuantity)
-        {
-            return TryAddItemWithStateInternal(
-                itemHashId,
-                quantity,
-                geneticsMask,
-                qualityMilli,
-                0,
-                hasExplicitStateFlags: false,
-                out addedQuantity);
+            return TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(0UL), out addedQuantity);
         }
 
         private bool TryAddItemWithStateInternal(
             int itemHashId,
             int quantity,
-            ulong geneticsMask,
-            ushort qualityMilli,
-            ushort itemStateFlags,
-            out int addedQuantity)
-        {
-            return TryAddItemWithStateInternal(
-                itemHashId,
-                quantity,
-                geneticsMask,
-                qualityMilli,
-                itemStateFlags,
-                hasExplicitStateFlags: true,
-                out addedQuantity);
-        }
-
-        private bool TryAddItemWithStateInternal(
-            int itemHashId,
-            int quantity,
-            ulong geneticsMask,
-            ushort qualityMilli,
-            ushort itemStateFlags,
-            bool hasExplicitStateFlags,
+            in ItemState state,
             out int addedQuantity)
         {
             addedQuantity = 0;
@@ -4422,9 +4396,9 @@ namespace Hecton8.Inventory
             }
 
             uint timestampNow = ResolveCurrentUnixTimestamp();
-            ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMilli);
-            ushort resolvedStateFlags = hasExplicitStateFlags ? itemStateFlags : runtimeDescriptor.StateFlags;
-            byte compressedGenetics = CompressItemGenetics(geneticsMask);
+            ushort resolvedQualityMilli = NormalizeQualityMilli(state.QualityMilli);
+            ushort resolvedStateFlags = state.HasExplicitFlags ? state.Flags : runtimeDescriptor.StateFlags;
+            byte compressedGenetics = CompressItemGenetics(state.GeneticsMask);
 
             int requestedQuantity = quantity;
             if (!TryResolveCapacityLimitedQuantity(in runtimeDescriptor, requestedQuantity, out quantity))
@@ -5514,8 +5488,7 @@ namespace Hecton8.Inventory
                 TryAddItemWithStateInternal(
                     unchecked((int)signal.ItemHash),
                     requestedQuantity,
-                    0UL,
-                    DefaultQualityMilli,
+                    new ItemState(0UL, DefaultQualityMilli),
                     out int addedQuantity);
 
                 int clampedAddedQuantity = math.clamp(addedQuantity, 0, requestedQuantity);

@@ -306,7 +306,7 @@ namespace Hecton8.Inventory
             signal.StateFlags = stateFlags;
             if (!SignalBus<InventoryDeathLootCacheSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_PlayerInventory_SoaQuery))
             {
-                TryAddItemWithState(itemHashId, geneticsMask, qualityMilli, stateFlags);
+                TryAddItemWithState(itemHashId, new ItemState(geneticsMask, qualityMilli, stateFlags));
                 return false;
             }
 

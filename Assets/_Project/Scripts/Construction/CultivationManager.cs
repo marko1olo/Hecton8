@@ -250,7 +250,7 @@ namespace Hecton8.Construction
 
             if (!inventory.TryConsumeFirstMatchingItemByHash(seedItemHashIdB, out _, out _, out ulong geneticsMaskB))
             {
-                inventory.TryAddItemWithGenetics(seedItemHashIdA, ResolveEffectiveGeneticsMask(seedItemHashIdA, geneticsMaskA));
+                inventory.TryAddItemWithGenetics(seedItemHashIdA, (ulong)ResolveEffectiveGeneticsMask(seedItemHashIdA, geneticsMaskA));
                 return false;
             }
 
@@ -659,7 +659,7 @@ namespace Hecton8.Construction
                 ulong geneticsMask = SanitizeGeneticsMask(slot.GeneticsMask);
                 ushort qualityMilli = ResolveCultivationQualityMilli(slot.Quality01);
                 if (inventory != null &&
-                    inventory.TryAddItemWithState(slot.SeedItemHashId, geneticsMask, qualityMilli))
+                    inventory.TryAddItemWithState(slot.SeedItemHashId, new PlayerInventory.ItemState(geneticsMask, qualityMilli)))
                 {
                     _slots[i] = default;
                     continue;
