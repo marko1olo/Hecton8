@@ -165,15 +165,6 @@ namespace AmplifyImpostors
 		private Bounds m_originalBound = new Bounds();
 
 		[NonSerialized]
-		private Vector3 m_oriPos = Vector3.zero;
-
-		[NonSerialized]
-		private Quaternion m_oriRot = Quaternion.identity;
-
-		[NonSerialized]
-		private Vector3 m_oriSca = Vector3.one;
-
-		[NonSerialized]
 		private const int BlockSize = 65536;
 #if UNITY_EDITOR
 		[NonSerialized]
@@ -497,23 +488,6 @@ namespace AmplifyImpostors
 			}
 		}
 
-		private void CopyTransform()
-		{
-			m_oriPos = RootTransform.position;
-			m_oriRot = RootTransform.rotation;
-			m_oriSca = RootTransform.localScale;
-			RootTransform.position = Vector3.zero;
-			RootTransform.rotation = Quaternion.identity;
-			RootTransform.localScale = Vector3.one;
-		}
-
-		private void PasteTransform()
-		{
-			RootTransform.position = m_oriPos;
-			RootTransform.rotation = m_oriRot;
-			RootTransform.localScale = m_oriSca;
-		}
-
 		public void CalculatePixelBounds( int targetAmount )
 		{
 			bool sRGBcache = GL.sRGBWrite;
@@ -525,16 +499,12 @@ namespace AmplifyImpostors
 
 			m_pixelOffset = Vector2.zero;
 
-			// TODO: remove this temporary solution
-			CopyTransform();
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
-				PasteTransform();
 			}
 			catch( Exception e )
 			{
-				PasteTransform();
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
@@ -547,7 +517,6 @@ namespace AmplifyImpostors
 				alphaIndex = 3;
 			else if( standardRendering )
 				alphaIndex = 2;
-
 
 			Shader packerShader = AssetDatabase.LoadAssetAtPath<Shader>( AssetDatabase.GUIDToAssetPath( PackerGUID ) );
 			Material packerMat = new Material( packerShader );
@@ -639,16 +608,12 @@ namespace AmplifyImpostors
 			bool sRGBcache = GL.sRGBWrite;
 			GL.sRGBWrite = true;
 
-			// TODO: remove this temporary solution
-			CopyTransform();
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
-				PasteTransform();
 			}
 			catch( Exception e )
 			{
-				PasteTransform();
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
@@ -679,7 +644,6 @@ namespace AmplifyImpostors
 					m_trueDepth = null;
 				}
 			}
-
 
 			RenderTexture combinedAlphaTexture = RenderTexture.GetTemporary( MinAlphaResolution, MinAlphaResolution, m_alphaGBuffers[ alphaIndex ].depth, m_alphaGBuffers[ alphaIndex ].format );
 			PackingRemapping( ref m_alphaGBuffers[ alphaIndex ], ref combinedAlphaTexture, 8, packerMat );
@@ -895,24 +859,18 @@ namespace AmplifyImpostors
 			else
 				guid = m_data.ImpostorType == ImpostorType.Spherical ? Shader : ShaderOcta;
 
-
 			CalculatePixelBounds( outputList.Count );
 			DisplayProgress( 0.1f, "Please Wait... Allocating Resources" );
 
 			GenerateTextures( outputList, standardRendering );
 			DisplayProgress( 0.2f, "Please Wait... Baking" );
 
-			// TODO: remove this temporary solution
-			CopyTransform();
-
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
-				PasteTransform();
 			}
 			catch( Exception e )
 			{
-				PasteTransform();
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
@@ -1186,7 +1144,6 @@ namespace AmplifyImpostors
 			UnityEngine.Object targetPrefab = null;
 			GameObject tempGO = null;
 
-
 			Mesh mesh = m_data.Mesh;
 			if( mesh == null )
 			{
@@ -1383,7 +1340,6 @@ namespace AmplifyImpostors
 				impostorObject.transform.SetParent( par, true );
 				impostorObject.transform.SetSiblingIndex( sibIndex );
 			}
-
 
 			EditorUtility.SetDirty( m_data );
 			if( m_lastImpostor == null )
