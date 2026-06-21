@@ -246,23 +246,19 @@ namespace VLB
         /// </summary>
         public void ForceUpdateFadeOutCamera()
         {
-            var gaos = GameObject.FindGameObjectsWithTag(fadeOutCameraTag);
-            if (gaos != null)
+            var cameras = Camera.allCameras;
+            if (cameras != null)
             {
-                foreach (GameObject gao in gaos)
+                for (int i = 0; i < cameras.Length; i++)
                 {
-                    if (gao)
+                    var cam = cameras[i];
+                    if (cam && cam.gameObject.CompareTag(fadeOutCameraTag) && cam.isActiveAndEnabled)
                     {
-                        var cam = gao.GetComponent<Camera>();
-                        if (cam && cam.isActiveAndEnabled) // look for the first active camera with the proper tag
-                        {
-                            m_CachedFadeOutCamera = cam;
-                            return;
-                        }
+                        m_CachedFadeOutCamera = cam;
+                        return;
                     }
                 }
             }
-
         }
 
         /// <summary>
