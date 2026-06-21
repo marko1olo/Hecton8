@@ -57,6 +57,24 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
+    public readonly struct QueueForceArgs
+    {
+        public readonly Vector3 Force;
+        public readonly ForceMode Mode;
+        public readonly ForcePacketPriority Priority;
+        public readonly bool Wake;
+        public readonly ForcePacketFlags ExtraFlags;
+
+        public QueueForceArgs(Vector3 force, ForceMode mode, ForcePacketPriority priority, bool wake, ForcePacketFlags extraFlags = ForcePacketFlags.None)
+        {
+            Force = force;
+            Mode = mode;
+            Priority = priority;
+            Wake = wake;
+            ExtraFlags = extraFlags;
+        }
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ForcePacket
     {
@@ -1744,19 +1762,19 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
-            return QueueForce(body, force, mode, ForcePacketPriority.Critical, wake);
+            return QueueForce(body, new QueueForceArgs(force: force, mode: mode, priority: ForcePacketPriority.Critical, wake: wake));
         }
 
-        internal bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, ForcePacketPriority priority, bool wake = true, ForcePacketFlags extraFlags = ForcePacketFlags.None)
+        internal bool QueueForce(Rigidbody body, in QueueForceArgs args)
         {
-            if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
+            if (!TrySanitizeVector(args.Force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 VectorLengthSq(sanitizedForce) <= MinMagnitudeSq ||
                 body == null)
             {
                 return false;
             }
 
-            if (TryRouteToCachedPlayerForceSink(body, sanitizedForce, mode))
+            if (TryRouteToCachedPlayerForceSink(body, sanitizedForce, args.Mode))
                 return true;
 
             if (body.isKinematic)
@@ -1773,9 +1791,9 @@ namespace Hecton8.Physics
                 Force = sanitizedForce,
                 Torque = Vector3.zero,
                 PointOffset = Vector3.zero,
-                Mode = mode,
-                Flags = (byte)(ForcePacketFlags.HasForce | extraFlags | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
-                Priority = priority,
+                Mode = args.Mode,
+                Flags = (byte)(ForcePacketFlags.HasForce | args.ExtraFlags | (args.Wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Priority = args.Priority,
                 RigidbodyIndex = rigidbodyIndex
             };
             return TryEnqueueBackPacket(in packet, "[PhysicsApplySystem] Force packet queue saturated.");
@@ -1994,7 +2012,7 @@ namespace Hecton8.Physics
             if (TryRouteToCachedPlayerForceSink(body, routeForce, mode))
                 return true;
 
-            return QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake, extraFlags);
+            return QueueForce(body, new QueueForceArgs(force: safeForce, mode: mode, priority: ForcePacketPriority.Ambient, wake: wake, extraFlags: extraFlags));
         }
 
         /// <inheritdoc />
@@ -4575,7 +4593,7 @@ namespace Hecton8.Physics
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system != null && system.QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake, extraFlags);
+            return system != null && system.QueueForce(body, new QueueForceArgs(force: safeForce, mode: mode, priority: ForcePacketPriority.Ambient, wake: wake, extraFlags: extraFlags));
         }
 
         /// <summary>
