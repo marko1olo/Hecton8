@@ -1684,7 +1684,9 @@ namespace Hecton8.UI
             Gizmos.color = new Color(1f, 0.82f, 0.1f, 0.9f);
             Gizmos.DrawLine(cameraPosition, worldCenter);
         }
+#endif
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void PdaProjectorOnValidate()
         {
             pdaProjectionWidthMeters = math.clamp(pdaProjectionWidthMeters, 0.08f, 0.34f);
@@ -1694,11 +1696,6 @@ namespace Hecton8.UI
             pdaProjectionQualityOverride01 = math.clamp(pdaProjectionQualityOverride01, -1f, 1f);
             pdaProjectionBootRate = math.clamp(pdaProjectionBootRate, 0.1f, 16f);
         }
-#else
-        private void PdaProjectorOnValidate()
-        {
-        }
-#endif
 
         private static void CompilePdaProjectionMatrices(
             ReadOnlySpan<PdaProjectionInputDTO> inputs,
