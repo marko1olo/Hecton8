@@ -77,7 +77,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn</summary>
 		public void BezierTo( Vector3 startTangent, Vector3 endTangent, Vector3 end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end, pointsPerTurn );
+			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -94,7 +94,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn. Color and thickness etc. will blend toward the end point values</summary>
 		public void BezierTo( Vector3 startTangent, Vector3 endTangent, PolylinePoint end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end.point, pointsPerTurn );
+			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end.point, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -115,7 +115,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn. Color and thickness etc. will blend across the point values</summary>
 		public void BezierTo( PolylinePoint startTangent, PolylinePoint endTangent, PolylinePoint end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = CalcBezierPointCount( LastPoint.point, startTangent.point, endTangent.point, end.point, pointsPerTurn );
+			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent.point, endTangent.point, end.point, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -123,13 +123,6 @@ namespace Shapes {
 		public void BezierTo( PolylinePoint startTangent, PolylinePoint endTangent, PolylinePoint end, int pointCount ) {
 			if( CheckCanAddContinuePoint() ) return;
 			AddPoints( ShapesMath.CubicBezierPointsSkipFirst( LastPoint, startTangent, endTangent, end, pointCount ) );
-		}
-
-		static int CalcBezierPointCount( Vector3 a, Vector3 b, Vector3 c, Vector3 d, float pointsPerTurn ) {
-			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
-			float curveSumDeg = ShapesMath.GetApproximateAngularCurveSumDegrees( a, b, c, d, sampleCount );
-			float angSpanTurns = curveSumDeg / 360f;
-			return Mathf.Max( 2, Mathf.RoundToInt( angSpanTurns * pointsPerTurn ) );
 		}
 
 		/// <summary>Adds points of an arc wedged into the corner defined by the previous point, corner, and next, with the given point count</summary>
@@ -162,11 +155,11 @@ namespace Shapes {
 
 			PolylinePoint prev = LastPoint;
 
-			Vector3 tangentA = ( corner - prev.point ).normalized;
-			Vector3 tangentB = ( next.point - corner ).normalized;
-			Vector3 cross = Vector3.Cross( tangentA, tangentB );
-
-			if( cross.TaxicabMagnitude() <= 0.001f ) {
+			if( ShapesMath.GetArcParameters( prev.point, corner, next.point, radius, out Vector3 center, out Vector3 normA, out Vector3 normB, out float angTurn ) ) {
+				if( useDensity )
+					targetPointCount = Mathf.RoundToInt( angTurn * pointsPerTurn );
+				AddPoints( ShapesMath.GetArcPoints( prev, next, -normA, -normB, center, radius, targetPointCount ) );
+			} else {
 				// this means it's a straight line, a few things happen:
 				// 1. there's a sharp color change where the corner would project onto the line from start to end
 				// 2. we need to include two points there to have continuity with how the colors are applied
@@ -179,23 +172,7 @@ namespace Shapes {
 				ppB.point = Vector3.Lerp( prev.point, next.point, tB );
 				AddPoint( ppA );
 				AddPoint( ppB );
-				return; // pretty much just a straight line. only add the corner point
 			}
-
-			Vector3 axis = cross.normalized;
-			Vector3 normA = Vector3.Cross( axis, tangentA ); // normalized
-			Vector3 normB = Vector3.Cross( axis, tangentB );
-			Vector3 cornerDir = ( normA + normB ).normalized;
-			float cornerBDot = Vector3.Dot( cornerDir, normB );
-			radius = Mathf.Max( radius, 0.0001f ); // make sure radius isn't degenerate
-			Vector3 center = corner + cornerDir * ( ( radius / cornerBDot ) );
-			// calc count here if density based
-			if( useDensity ) {
-				float angTurn = Vector3.Angle( normA, normB ) / 360f;
-				targetPointCount = Mathf.RoundToInt( angTurn * pointsPerTurn );
-			}
-
-			AddPoints( ShapesMath.GetArcPoints( prev, next, -normA, -normB, center, radius, targetPointCount ) );
 		}
 
 		#endregion
