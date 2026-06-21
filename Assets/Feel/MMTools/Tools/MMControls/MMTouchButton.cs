@@ -126,6 +126,8 @@ namespace MoreMountains.Tools
 		protected CanvasGroup _canvasGroup;
 		protected float _initialOpacity;
 		protected Animator _animator;
+		/// The image targeted by this touch button
+		public Image TargetImage => _image;
 		protected Image _image;
 		protected Sprite _initialSprite;
 		protected Color _initialColor;

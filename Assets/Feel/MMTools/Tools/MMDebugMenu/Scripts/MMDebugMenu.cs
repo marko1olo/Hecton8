@@ -146,7 +146,7 @@ namespace MoreMountains.Tools
 				// create tab contents
 				MMDebugMenuTabContents contents = Instantiate(Data.TabContentsPrefab);
 				contents.transform.SetParent(TabContainer);
-				RectTransform rectTransform = contents.GetComponent<RectTransform>();
+				RectTransform rectTransform = (RectTransform)contents.transform;
 				rectTransform.MMSetLeft(0f);
 				rectTransform.MMSetRight(0f);
 				rectTransform.MMSetTop(0f);
@@ -197,7 +197,7 @@ namespace MoreMountains.Tools
 				MMDebugMenuTabContents debugTabContents = debugTab.GetComponent<MMDebugMenuTabContents>();
 				debugTabContents.Index = tabCounter;
 				TabManager.TabsContents.Add(debugTabContents);
-				RectTransform rectTransform = debugTabContents.GetComponent<RectTransform>();
+				RectTransform rectTransform = (RectTransform)debugTabContents.transform;
 				rectTransform.MMSetLeft(0f);
 				rectTransform.MMSetRight(0f);
 				rectTransform.MMSetTop(0f);
@@ -272,7 +272,7 @@ namespace MoreMountains.Tools
 						}
 						checkbox.CheckboxEventName = item.CheckboxEventName;
 						checkbox.transform.SetParent(parent);
-						checkbox.Switch.GetComponent<Image>().color = Data.AccentColor;
+						checkbox.Switch.TargetImage.color = Data.AccentColor;
 						checkbox.SwitchText.color = Data.TextColor;
 						checkbox.SwitchText.font = Data.RegularFont;
 						break;
