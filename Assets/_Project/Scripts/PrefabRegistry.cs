@@ -14,11 +14,6 @@
 //   â€¢ Uses EntityId where available, stable hash fallback otherwise.
 //   â€¢ Conditional compilation: #if UNITY_6000_4_OR_NEWER
 //
-// USAGE:
-//   PrefabRegistry registry = null;
-//   if (PrefabRegistry.TryResolveActiveRuntime(ref registry))
-//       int id = registry.GetOrRegisterPrefab(myPrefab);
-//
 // ZERO GC:
 //   â€¢ Dictionary lookups â€” O(1), no allocations.
 //   â€¢ No string operations in hot paths.
