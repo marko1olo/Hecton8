@@ -342,6 +342,10 @@ class GooglePhotosBackup:
 
             results = response.json().get('newMediaItemResults', [])
             
+            success_updates = []
+            failed_updates = []
+            now = datetime.now().isoformat()
+
             # Match results back to paths
             for i, result in enumerate(results):
                 filepath, token = batch[i]
@@ -351,19 +355,24 @@ class GooglePhotosBackup:
                 if code == 0:
                     media_item = result.get('mediaItem', {})
                     media_id = media_item.get('id')
-                    cursor.execute(
-                        "UPDATE uploads SET status = 'uploaded', uploaded_at = ?, google_media_id = ?, error_message = NULL WHERE filepath = ?",
-                        (datetime.now().isoformat(), media_id, filepath)
-                    )
+                    success_updates.append((now, media_id, filepath))
                     logging.info(f"Successfully finalized: {os.path.basename(filepath)}")
                 else:
                     msg = status_obj.get('message', 'Unknown creation error')
-                    cursor.execute(
-                        "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
-                        (f"Creation failed (code {code}): {msg}", filepath)
-                    )
+                    failed_updates.append((f"Creation failed (code {code}): {msg}", filepath))
                     logging.error(f"Failed to finalize {os.path.basename(filepath)}: {msg}")
             
+            if success_updates:
+                cursor.executemany(
+                    "UPDATE uploads SET status = 'uploaded', uploaded_at = ?, google_media_id = ?, error_message = NULL WHERE filepath = ?",
+                    success_updates
+                )
+            if failed_updates:
+                cursor.executemany(
+                    "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
+                    failed_updates
+                )
+
             conn.commit()
         except Exception as e:
             logging.error(f"Error finalizing batch: {e}")
