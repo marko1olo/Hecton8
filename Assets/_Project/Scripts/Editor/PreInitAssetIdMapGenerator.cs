@@ -57,6 +57,11 @@ namespace Hecton8.Editor.Validation
                 previousHash = record.GuidHash;
             }
 
+            if (copyBody.Length == 0)
+            {
+                copyBody.AppendLine("            // No records to copy.");
+            }
+
             StringBuilder builder = new StringBuilder(Mathf.Max(1024, copyBody.Length + 256));
             builder.AppendLine("namespace Hecton8.Optimization");
             builder.AppendLine("{");

@@ -7,6 +7,7 @@ namespace Hecton8.Optimization
 
         internal static void CopyTo(Unity.Collections.NativeArray<AssetGuidIdRecord> records)
         {
+            // No records to copy.
         }
     }
 }
