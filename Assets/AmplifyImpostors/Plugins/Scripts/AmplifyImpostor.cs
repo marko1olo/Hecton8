@@ -1273,7 +1273,10 @@ namespace AmplifyImpostors
 			}
 			m_lastImpostor = impostorObject;
 			impostorObject.transform.localScale = Vector3.one;
-			impostorObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+			if( impostorObject.TryGetComponent<MeshFilter>( out MeshFilter meshFilter ) )
+			{
+				meshFilter.sharedMesh = mesh;
+			}
 
 			if( justCreated )
 			{

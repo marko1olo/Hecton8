@@ -154,8 +154,7 @@ namespace AmplifyImpostors
 						{
 							if( rend[ i ] != null )
 							{
-								MeshFilter mf = rend[ i ].GetComponent<MeshFilter>();
-								if( mf != null && mf.sharedMesh != null )
+								if( rend[ i ].TryGetComponent<MeshFilter>( out MeshFilter mf ) && mf.sharedMesh != null )
 									vertexCount += mf.sharedMesh.vertexCount;
 							}
 						}
@@ -1289,8 +1288,7 @@ namespace AmplifyImpostors
 					{
 						GUIContent content;
 
-						var filter = renderer.GetComponent<MeshFilter>();
-						if( filter != null && filter.sharedMesh != null )
+						if( renderer.TryGetComponent<MeshFilter>( out var filter ) && filter.sharedMesh != null )
 							content = new GUIContent( AssetPreview.GetAssetPreview( filter.sharedMesh ), renderer.gameObject.name );
 						else if( renderer is SkinnedMeshRenderer )
 							content = new GUIContent( AssetPreview.GetAssetPreview( ( renderer as SkinnedMeshRenderer ).sharedMesh ), renderer.gameObject.name );
