@@ -99,8 +99,8 @@ namespace Hecton8.Tests.Editor
             _suitData.bobTransitionSpeed = 10f;
             _suitData.bobVerticalAmplitude = 0.1f;
             _suitData.bobHorizontalAmplitude = 0.05f;
-            _suitData.surfaceBobFrequency = 2f;
-            _suitData.surfaceBobAmplitude = 0.1f;
+            // _suitData.surfaceBobFrequency = 2f;
+            // _suitData.surfaceBobAmplitude = 0.1f;
 
             var input = new CameraJuiceInput
             {
@@ -151,9 +151,9 @@ namespace Hecton8.Tests.Editor
             _suitData.maxSwimSpeed = 5f;
             _suitData.swimBobTransitionSpeed = 10f;
             _suitData.swimBobVerticalAmplitude = 0.1f;
-            _suitData.surfaceBobFrequency = 2f;
-            _suitData.surfaceBobAmplitude = 0.1f;
-            _suitData.swimRollAmplitude = 5f;
+            // _suitData.surfaceBobFrequency = 2f;
+            // _suitData.surfaceBobAmplitude = 0.1f;
+            _suitData.swimBobRollAmplitude = 5f;
 
             var input = new CameraJuiceInput
             {
@@ -177,8 +177,8 @@ namespace Hecton8.Tests.Editor
             _suitData.maxSwimSpeed = 5f;
             _suitData.swimBobTransitionSpeed = 10f;
             _suitData.swimBobVerticalAmplitude = 0.1f;
-            _suitData.swimRollAmplitude = 5f;
-            _suitData.idleSwayAmplitude = 0.05f;
+            _suitData.swimBobRollAmplitude = 5f;
+            _suitData.idleSwayAmplitudeY = 0.05f;
 
             var input = new CameraJuiceInput
             {

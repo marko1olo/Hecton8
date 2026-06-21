@@ -57,7 +57,7 @@ namespace Hecton8.Physics
     /// <summary>
     /// Deferred main-thread force application payload.
     /// </summary>
-    public readonly struct QueueForceArgs
+    internal readonly struct QueueForceArgs
     {
         public readonly Vector3 Force;
         public readonly ForceMode Mode;
@@ -1443,7 +1443,7 @@ namespace Hecton8.Physics
     }
 
     [System.Flags]
-    internal enum ForcePacketFlags : byte
+    public enum ForcePacketFlags : byte
     {
         None = 0,
         HasForce = 1 << 0,

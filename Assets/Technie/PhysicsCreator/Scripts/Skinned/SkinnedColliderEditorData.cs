@@ -263,7 +263,7 @@ namespace Technie.PhysicsCreator.Skinned
 		}
 
 
-		public float CalculateMass(BoneData boneData)
+		public float CalculateMass(BonePhysicsData boneData)
 		{
 			if (boneData == null)
 				return 0.0f;

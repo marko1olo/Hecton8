@@ -1,159 +1,190 @@
-using System.Collections;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MapMagic.Core;
-using MapMagic.Nodes;
-using MapMagic.Nodes.MatrixGenerators;
-using Hecton8.World;
+using Den.Types;
 
 namespace Hecton8.Editor
 {
     public static class TerrainRenderTestGoal
     {
-        private static string ArtifactDir = "C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/";
-        private static MapMagicObject mmObject;
+        private const string ArtifactDir = "C:/Users/danat/.gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/";
+        private const string ScenePath   = "Assets/_Project/Scenes/020_RENDER_SANDBOX.unity";
+        private const int    ExpectedTerrains = 9;        // 3x3 grid
+        private const int    TimeoutLoops     = 72000;    // 72000 * 50ms = 60 min hard cap
+        private const int    LogEveryN        = 600;      // log every 30s
 
         [MenuItem("Hecton8/Tests/Terrain Render Test")]
         public static void Execute()
         {
+            string errorPath   = ArtifactDir + "mcp_error.txt";
+            string successPath = ArtifactDir + "mcp_success.txt";
+
+            if (File.Exists(errorPath))   File.Delete(errorPath);
+            if (File.Exists(successPath)) File.Delete(successPath);
+
             try
             {
-                Debug.Log("Starting Terrain Render Test...");
-                EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity");
+                Debug.Log("[TRT] Opening scene: " + ScenePath);
+                EditorSceneManager.OpenScene(ScenePath);
 
-                mmObject = Object.FindAnyObjectByType<MapMagicObject>();
-                if (mmObject == null)
+                MapMagicObject mm = Object.FindAnyObjectByType<MapMagicObject>();
+                if (mm == null)
                 {
-                    Debug.LogError("No MapMagicObject found in the scene.");
-                    File.WriteAllText(ArtifactDir + "mcp_error.txt", "No MapMagicObject found.");
-                    if (Application.isBatchMode) EditorApplication.Exit(1);
+                    Fail("No MapMagicObject in scene.");
                     return;
                 }
 
-                Debug.Log("MapMagicObject found. Forcing generation...");
-                mmObject.StartGenerate();
-                
-                int safetyTimeout = 0;
-                while ((mmObject.IsGenerating() || mmObject.tiles.grid.Count == 0) && safetyTimeout < 36000) // 30 minutes max
+                Debug.Log($"[TRT] MapMagicObject found: '{mm.gameObject.name}'");
+
+                // Pin 3x3 grid
+                mm.tiles.generateRange = 0; // Disable automatic viewer-based generation
+                for (int x = -1; x <= 1; x++)
                 {
-                    mmObject.Update();
+                    for (int z = -1; z <= 1; z++)
+                    {
+                        mm.tiles.Pin(new Coord(x, z), false, mm);
+                    }
+                }
+
+                // Save scene as instructed
+                EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+                Debug.Log("[TRT] Pinned 3x3 chunks and saved scene.");
+
+                // Force generation
+                mm.StartGenerate();
+                
+                int loops = 0;
+                while (loops < TimeoutLoops)
+                {
+                    mm.Update();
                     Den.Tools.Tasks.CoroutineManager.Update();
                     System.Threading.Thread.Sleep(50);
-                    safetyTimeout++;
+                    loops++;
+
+                    int terrainCount = UnityEngine.Terrain.activeTerrains.Length;
+
+                    if (loops % LogEveryN == 0)
+                        Debug.Log($"[TRT] Waiting... loop={loops}  terrains={terrainCount}  generating={mm.IsGenerating()}");
+
+                    // Done when: generation is complete AND we have the expected tile count
+                    if (!mm.IsGenerating() && terrainCount >= ExpectedTerrains)
+                    {
+                        Debug.Log($"[TRT] Generation complete. Terrains={terrainCount}. Taking screenshots...");
+                        break;
+                    }
                 }
 
-                if (safetyTimeout >= 36000)
+                if (loops >= TimeoutLoops)
                 {
-                    Debug.LogError("TIMEOUT: MapMagic failed to finish generation within 30 minutes.");
-                    File.WriteAllText(ArtifactDir + "mcp_error.txt", "TIMEOUT: MapMagic generation stuck.");
-                    if (Application.isBatchMode) EditorApplication.Exit(1);
+                    Fail($"TIMEOUT after {TimeoutLoops * 50 / 1000}s. Terrains={UnityEngine.Terrain.activeTerrains.Length}  generating={mm.IsGenerating()}");
                     return;
                 }
 
-                Debug.Log("MapMagic Generation Complete. Taking screenshots...");
-
-                try
-                {
-                    CaptureScreenshots();
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogError("Screenshot failed: " + ex);
-                    File.WriteAllText(ArtifactDir + "mcp_error.txt", ex.ToString());
-                    if (Application.isBatchMode) EditorApplication.Exit(1);
-                }
+                CaptureScreenshots();
             }
             catch (System.Exception ex)
             {
-                Debug.LogError("Exception in TerrainRenderTestGoal: " + ex);
-                File.WriteAllText(ArtifactDir + "mcp_error.txt", ex.ToString());
-                if (Application.isBatchMode) EditorApplication.Exit(1);
+                Fail("Exception: " + ex);
             }
         }
 
         private static void CaptureScreenshots()
         {
-            UnityEngine.Terrain[] terrains = UnityEngine.Object.FindObjectsByType<UnityEngine.Terrain>(UnityEngine.FindObjectsSortMode.None);
-            try {
+            UnityEngine.Terrain[] terrains = UnityEngine.Object.FindObjectsByType<UnityEngine.Terrain>(FindObjectsSortMode.None);
+
+            // ── Apply custom material ──
+            try
+            {
                 Material baseMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
                 Texture2DArray albedo = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset");
                 Texture2DArray normal = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset");
                 Texture2DArray mask = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
-                
-                string outStr = $"Found {terrains.Length} terrains. BaseMat: {baseMat != null}\n";
-                foreach(var t in terrains) {
+
+                foreach (var t in terrains)
+                {
                     var inj = t.GetComponent<Hecton8.World.HectonTerrainMaterialInjector>();
                     if (inj != null) inj.enabled = false;
 
-                    // Force our custom terrain material instead of whatever default MapMagic assigned
-                    Material instanced = new Material(baseMat);
-                    t.materialTemplate = instanced;
-
-                    if (albedo != null) instanced.SetTexture("_AlbedoArray", albedo);
-                    if (normal != null) instanced.SetTexture("_NormalArray", normal);
-                    if (mask != null) instanced.SetTexture("_MaskArray", mask);
-
-                    instanced.SetFloat("_UVScale", 4.0f);
-                    instanced.SetFloat("_TriplanarBlend", 4.0f);
-                    instanced.SetFloat("_MinDepth", -4600f);
-                    instanced.SetFloat("_MaxDepth", 500f);
-                    
-                    if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0) {
-                        Texture2D[] alphamaps = t.terrainData.alphamapTextures;
-                        if (alphamaps.Length > 0 && alphamaps[0] != null) instanced.SetTexture("_Control", alphamaps[0]);
-                        if (alphamaps.Length > 1 && alphamaps[1] != null) instanced.SetTexture("_Control1", alphamaps[1]);
-                        instanced.SetVector("_TerrainSize", new Vector4(t.terrainData.size.x, t.terrainData.size.y, t.terrainData.size.z, 0));
+                    if (baseMat != null)
+                    {
+                        Material inst = new Material(baseMat);
+                        t.materialTemplate = inst;
+                        if (albedo != null) inst.SetTexture("_AlbedoArray", albedo);
+                        if (normal != null) inst.SetTexture("_NormalArray", normal);
+                        if (mask   != null) inst.SetTexture("_MaskArray",   mask);
+                        inst.SetFloat("_UVScale",       4.0f);
+                        inst.SetFloat("_TriplanarBlend", 4.0f);
+                        inst.SetFloat("_MinDepth",  -4600f);
+                        inst.SetFloat("_MaxDepth",    500f);
+                        if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0)
+                        {
+                            Texture2D[] alphas = t.terrainData.alphamapTextures;
+                            if (alphas.Length > 0 && alphas[0] != null) inst.SetTexture("_Control",  alphas[0]);
+                            if (alphas.Length > 1 && alphas[1] != null) inst.SetTexture("_Control1", alphas[1]);
+                            inst.SetVector("_TerrainSize", new Vector4(t.terrainData.size.x, t.terrainData.size.y, t.terrainData.size.z, 0));
+                        }
                     }
-
-                    var mat = t.materialTemplate;
-                    if (mat == null) outStr += $"Terrain {t.name}: NULL Material!\n";
-                    else outStr += $"Terrain {t.name}: Material='{mat.name}', Shader='{mat.shader.name}'\n";
                 }
-                File.WriteAllText(ArtifactDir + "terrain_mat_dump.txt", outStr);
-            } catch (System.Exception ex) { Debug.LogException(ex); }
+            }
+            catch (System.Exception ex) { Debug.LogException(ex); }
+
+            // Calculate center
+            Vector3 boundsCenter = Vector3.zero;
+            float boundsHalf = 0f;
+            if (terrains.Length > 0 && terrains[0].terrainData != null)
+            {
+                Bounds b = new Bounds(terrains[0].transform.position + terrains[0].terrainData.size * 0.5f, terrains[0].terrainData.size);
+                foreach (var t in terrains)
+                    b.Encapsulate(new Bounds(t.transform.position + t.terrainData.size * 0.5f, t.terrainData.size));
+                boundsCenter = b.center;
+                boundsHalf = Mathf.Max(b.size.x, b.size.z) * 0.5f;
+            }
+
+            // Find central terrain to sample height properly
+            float groundY = 0f;
+            foreach (var t in terrains)
+            {
+                Vector3 tPos = t.transform.position;
+                Vector3 tSize = t.terrainData.size;
+                if (boundsCenter.x >= tPos.x && boundsCenter.x <= tPos.x + tSize.x &&
+                    boundsCenter.z >= tPos.z && boundsCenter.z <= tPos.z + tSize.z)
+                {
+                    groundY = tPos.y + t.SampleHeight(boundsCenter);
+                    break;
+                }
+            }
 
             Camera cam = Camera.main;
             if (cam == null)
             {
-                GameObject camObj = new GameObject("TestCamera");
-                cam = camObj.AddComponent<Camera>();
+                var go = new GameObject("TRT_Camera");
+                cam = go.AddComponent<Camera>();
             }
-            cam.backgroundColor = new Color(0.1f, 0.2f, 0.3f);
+            cam.backgroundColor = new Color(0.05f, 0.15f, 0.25f);
             cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.farClipPlane = 50000f;
+            cam.farClipPlane = 60000f;
 
-            Vector3 center = Vector3.zero;
-            if (terrains.Length > 0 && terrains[0].terrainData != null) {
-                center = terrains[0].transform.position + new Vector3(terrains[0].terrainData.size.x / 2, 0, terrains[0].terrainData.size.z / 2);
-                center.y = terrains[0].SampleHeight(center);
-            }
+            // Take Macro Shot (Orthographic)
+            cam.orthographic = true;
+            cam.orthographicSize = boundsHalf;
+            cam.transform.position = boundsCenter + new Vector3(0, 10000f, 0);
+            cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            TakeScreenshot(cam, ArtifactDir + "Macro_Direct.png");
 
-            Vector3[] positions = new Vector3[]
-            {
-                center + new Vector3(0, 5000, -2000), // Macro Sky View
-                center + new Vector3(500, 1000, 500), // Mid View
-                center + new Vector3(100, 15, 100),   // Ground view 1
-                center + new Vector3(-200, 5, -50),   // Ground view 2 (very low)
-            };
+            // Take Ground Level Shot (Perspective)
+            cam.orthographic = false;
+            cam.fieldOfView = 60f;
+            Vector3 groundPos = new Vector3(boundsCenter.x, groundY + 2.0f, boundsCenter.z);
+            cam.transform.position = groundPos;
+            // Look North, keeping Y the same so we look ALONG the surface
+            cam.transform.LookAt(groundPos + new Vector3(0, 0, 500f));
+            TakeScreenshot(cam, ArtifactDir + "Ground_Level.png");
 
-            for (int i = 0; i < positions.Length; i++)
-            {
-                cam.transform.position = positions[i];
-                if (i == 0 || i == 1) {
-                    cam.transform.LookAt(center); // Look at center from sky
-                } else {
-                    // For ground shots, look horizontally across the landscape
-                    Vector3 lookTarget = positions[i] + new Vector3(100, 0, 100);
-                    lookTarget.y = terrains[0].SampleHeight(lookTarget);
-                    cam.transform.LookAt(lookTarget);
-                }
-                TakeScreenshot(cam, ArtifactDir + "Terrain_View_" + i + ".png");
-            }
+            Debug.Log("[TRT] All screenshots captured.");
+            File.WriteAllText(ArtifactDir + "mcp_success.txt", $"DONE at {System.DateTime.UtcNow:O}\nTerrains={terrains.Length}");
 
-            Debug.Log("Screenshots captured!");
-            File.WriteAllText(ArtifactDir + "mcp_success.txt", "DONE");
             if (Application.isBatchMode) EditorApplication.Exit(0);
         }
 
@@ -161,15 +192,23 @@ namespace Hecton8.Editor
         {
             RenderTexture rt = new RenderTexture(1920, 1080, 24);
             cam.targetTexture = rt;
-            Texture2D screenShot = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
+            Texture2D tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
             cam.Render();
             RenderTexture.active = rt;
-            screenShot.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
+            tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
+            tex.Apply();
             cam.targetTexture = null;
             RenderTexture.active = null;
             Object.DestroyImmediate(rt);
-            byte[] bytes = screenShot.EncodeToPNG();
-            File.WriteAllBytes(filename, bytes);
+            File.WriteAllBytes(filename, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+        }
+
+        private static void Fail(string msg)
+        {
+            Debug.LogError("[TRT] FAIL: " + msg);
+            File.WriteAllText(ArtifactDir + "mcp_error.txt", msg);
+            if (Application.isBatchMode) EditorApplication.Exit(1);
         }
     }
 }

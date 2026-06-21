@@ -28,7 +28,7 @@ public static class BenchmarkRunner
         }
 
         impostor.Renderers = renderers;
-        impostor.m_rootTransform = go.transform;
+        impostor.RootTransform = go.transform;
 
         // Setup some data
         AmplifyImpostorAsset asset = ScriptableObject.CreateInstance<AmplifyImpostorAsset>();
@@ -61,3 +61,4 @@ public static class BenchmarkRunner
     }
 }
 #endif
+

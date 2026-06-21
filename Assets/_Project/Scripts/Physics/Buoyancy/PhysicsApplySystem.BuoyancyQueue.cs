@@ -71,13 +71,7 @@ namespace Hecton8.Physics
                 }
 
                 Vector3 force = new Vector3(packet.NetForce.x, packet.NetForce.y, packet.NetForce.z);
-                if (system.QueueForce(
-                        body,
-                        force,
-                        ForceMode.Force,
-                        ForcePacketPriority.Ambient,
-                        wake: true,
-                        extraFlags: ForcePacketFlags.None))
+                if (system.QueueForce(body, new QueueForceArgs(force, ForceMode.Force, ForcePacketPriority.Ambient, true, ForcePacketFlags.None)))
                 {
                     accepted++;
                 }
@@ -140,3 +134,4 @@ namespace Hecton8.Physics
         }
     }
 }
+

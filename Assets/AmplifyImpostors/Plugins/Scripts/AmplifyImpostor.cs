@@ -1820,7 +1820,7 @@ namespace AmplifyImpostors
 			if ( combinedAlphas )
 				Graphics.ExecuteCommandBuffer( commandAlphaBuffer );
 
-			validMeshes.Clear();
+			Array.Clear(validMeshes, 0, validMeshes.Length);
 
 			foreach( var pair in bakeMats )
 			{
@@ -2005,3 +2005,4 @@ namespace AmplifyImpostors
 		}
 	}
 }
+

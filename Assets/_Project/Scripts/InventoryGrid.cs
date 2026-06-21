@@ -407,25 +407,12 @@ namespace Hecton8.Inventory
             targetAnchorX = targetAnchorX < 0 ? 0 : (targetAnchorX >= _columns ? _columns - 1 : targetAnchorX);
             targetAnchorY = targetAnchorY < 0 ? 0 : (targetAnchorY >= _rows ? _rows - 1 : targetAnchorY);
 
-            if (!CheckFitExcludingAnchors(in new CheckFitArgs(
-                startX: targetAnchorX,
-                startY: targetAnchorY,
-                width: sourceDescriptor.Width,
-                height: sourceDescriptor.Height,
-                ignoredAnchorA: sourceAnchorIndex,
-                ignoredAnchorB: targetAnchorIndex)))
+            CheckFitArgs args1 = new CheckFitArgs(startX: targetAnchorX, startY: targetAnchorY, width: sourceDescriptor.Width, height: sourceDescriptor.Height, ignoredAnchorA: sourceAnchorIndex, ignoredAnchorB: targetAnchorIndex); if (!CheckFitExcludingAnchors(in args1))
             {
                 return false;
             }
 
-            if (hasTargetAnchor &&
-                !CheckFitExcludingAnchors(in new CheckFitArgs(
-                    startX: sourceAnchorX,
-                    startY: sourceAnchorY,
-                    width: targetDescriptor.Width,
-                    height: targetDescriptor.Height,
-                    ignoredAnchorA: sourceAnchorIndex,
-                    ignoredAnchorB: targetAnchorIndex)))
+            CheckFitArgs args2 = new CheckFitArgs(startX: sourceAnchorX, startY: sourceAnchorY, width: targetDescriptor.Width, height: targetDescriptor.Height, ignoredAnchorA: sourceAnchorIndex, ignoredAnchorB: targetAnchorIndex); if (hasTargetAnchor && !CheckFitExcludingAnchors(in args2))
             {
                 return false;
             }
@@ -659,3 +646,4 @@ namespace Hecton8.Inventory
         }
     }
 }
+

@@ -478,10 +478,10 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 			public virtual void Apply (Terrain terrain)
 			{
-				if (textureColors==null) return;
-				int numTextures = textureColors.Length;
+				if (textureBytes==null) return;
+				int numTextures = textureBytes.Length;
 				if (numTextures==0) return;
-				int resolution = (int)Mathf.Sqrt(textureColors[0].Length);
+				int resolution = (int)Mathf.Sqrt(textureBytes[0].Length / 4);
 
 				//MaterialPropertyBlock matProps = new MaterialPropertyBlock();
 
@@ -491,9 +491,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					matPropSerializer = terrain.gameObject.AddComponent<MaterialPropertySerializer>();
 
 
-				for (int i=0; i<textureColors.Length; i++)
+				for (int i=0; i<textureBytes.Length; i++)
 				{
-					if (textureColors[i] == null) continue;
+					if (textureBytes[i] == null) continue;
 
 					string texName = null;
 					if (i<textureNames.Length) texName = textureNames[i];
@@ -533,14 +533,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public static ApplyData Empty
 			{get{
 				return new ApplyData() { 
-					textureColors = new Color[0][],
+					textureBytes = new byte[0][],
 					textureNames = new string[0]  };
 			}}
 
 			public int Resolution
 			{get{
-				if (textureColors.Length==0) return 0;
-				else return (int)Mathf.Sqrt(textureColors[0].Length);
+				if (textureBytes.Length==0) return 0;
+				else return (int)Mathf.Sqrt(textureBytes[0].Length / 4);
 			}}
 		}
 
@@ -640,8 +640,23 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
+						//convert colors to bytes
+			byte[][] textureBytes = new byte[colors.Length][];
+			for (int i = 0; i < colors.Length; i++)
+			{
+				if (colors[i] == null) continue;
+				textureBytes[i] = new byte[colors[i].Length * 4];
+				for (int p = 0; p < colors[i].Length; p++)
+				{
+					textureBytes[i][p*4] = (byte)(colors[i][p].r * 255f);
+					textureBytes[i][p*4+1] = (byte)(colors[i][p].g * 255f);
+					textureBytes[i][p*4+2] = (byte)(colors[i][p].b * 255f);
+					textureBytes[i][p*4+3] = (byte)(colors[i][p].a * 255f);
+				}
+			}
+
 			var controlTexturesData = new ApplyData() {
-				textureColors = colors,
+				textureBytes = textureBytes,
 				textureNames = colorNames,
 				textureFormat = TextureFormat.RGBA32 };
 
@@ -652,14 +667,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 		public class ApplyData : IApplyData
 		{
-			public Color[][] textureColors;
+			public byte[][] textureBytes;
 			public string[] textureNames;
 			public TextureFormat textureFormat;
 
 			public virtual void Apply (Terrain terrain)
 			{
-				if (textureColors==null  ||  textureColors.Length==0  ||  textureColors.AllNull()) return;
-				int resolution = (int)Mathf.Sqrt(textureColors.Any().Length);
+				if (textureBytes==null  ||  textureBytes.Length==0  ||  textureBytes.AllNull()) return;
+				int resolution = (int)Mathf.Sqrt(textureBytes.Any().Length / 4);
 
 				DirectTexturesHolder holder = terrain.GetComponent<DirectTexturesHolder>();
 				if (holder == null)
@@ -669,9 +684,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				DictionaryOrdered<string,Texture2D> newDict = new DictionaryOrdered<string,Texture2D>(textureNames);
 				newDict.TakeMatchingValuesFrom(holder.textures);
 
-				for (int i=0; i<textureColors.Length; i++)
+				for (int i=0; i<textureBytes.Length; i++)
 				{
-					if (textureColors[i] == null) continue;
+					if (textureBytes[i] == null) continue;
 					
 					string texName = textureNames[i];
 					Texture2D tex = newDict[texName];
@@ -680,7 +695,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					tex.name = textureNames[i];
 					tex.wrapMode = TextureWrapMode.Mirror; //to avoid border seams
 
-					tex.SetPixels(0,0,tex.width,tex.height,textureColors[i]);
+					tex.SetPixelData(textureBytes[i], 0);
 					tex.Apply();
 
 					newDict[texName] = tex; //it could be created from null
@@ -716,14 +731,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public static ApplyData Empty
 			{get{
 				return new ApplyData() { 
-					textureColors = new Color[0][],
+					textureBytes = new byte[0][],
 					textureNames = new string[0]  };
 			}}
 
 			public int Resolution
 			{get{
-				if (textureColors.Length==0) return 0;
-				else return (int)Mathf.Sqrt(textureColors[0].Length);
+				if (textureBytes.Length==0) return 0;
+				else return (int)Mathf.Sqrt(textureBytes[0].Length / 4);
 			}}
 		}
 
@@ -858,3 +873,4 @@ namespace MapMagic.Nodes.MatrixGenerators {
 	}
 
 }
+

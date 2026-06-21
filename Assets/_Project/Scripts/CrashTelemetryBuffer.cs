@@ -407,28 +407,6 @@ namespace Hecton8.Core
         // COLD ALLOC: List<ProfilerRecorderHandle>[256] - profiler recorder resolution scratch - owner: CrashTelemetryBuffer
         private readonly List<ProfilerRecorderHandle> _availableProfilerHandles = new List<ProfilerRecorderHandle>(ProfilerRecorderHandleScratchCapacity);
 
-        /// <summary>
-        /// Encapsulates job admission telemetry state variables for bounded export routing.
-        /// </summary>
-        public readonly struct JobAdmissionTelemetryArgs
-        {
-            public readonly byte Lane;
-            public readonly uint JobHash;
-            public readonly float EstimatedCostMs;
-            public readonly float RemainingBudgetMs;
-            public readonly int CriticalDebtFrames;
-            public readonly byte Flags;
-
-            public JobAdmissionTelemetryArgs(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
-            {
-                Lane = lane;
-                JobHash = jobHash;
-                EstimatedCostMs = estimatedCostMs;
-                RemainingBudgetMs = remainingBudgetMs;
-                CriticalDebtFrames = criticalDebtFrames;
-                Flags = flags;
-            }
-        }
 
 #if UNITY_EDITOR
         /// <summary>

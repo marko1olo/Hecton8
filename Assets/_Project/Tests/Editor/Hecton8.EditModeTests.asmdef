@@ -30,7 +30,8 @@
                        "Unity.InputSystem",
                        "Unity.Jobs",
                        "UnityEngine.TestRunner",
-                       "UnityEditor.TestRunner"
+                       "UnityEditor.TestRunner",
+                       "ShapesRuntime"
                    ],
     "includePlatforms":  [
                              "Editor"
