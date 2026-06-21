@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
@@ -25,9 +25,10 @@ namespace VLB
                 {
                     // otherwise get access from the current MonoBehaviour, in case the current MonoBehaviour is not the type wanted as target
                     var behaviour = entity as MonoBehaviour;
-                    var comp = behaviour.GetComponent<T>();
-                    if (comp)
+                    if (behaviour != null && behaviour.TryGetComponent<T>(out var comp))
+                    {
                         m_Targets.Add(comp);
+                    }
                 }
             }
             Debug.Assert(m_Targets.Count > 0);
@@ -88,4 +89,3 @@ namespace VLB
     }
 }
 #endif
-
