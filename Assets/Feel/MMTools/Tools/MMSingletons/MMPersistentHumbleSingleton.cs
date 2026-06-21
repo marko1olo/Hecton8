@@ -69,9 +69,19 @@ namespace MoreMountains.Tools
 				if (searched!=this)
 				{
 					// if we find another object of the same type (not this), and if it's older than our current object, we destroy it.
-					if (searched.GetComponent<MMPersistentHumbleSingleton<T>>().InitializationTime < InitializationTime)
+					if (searched is MMPersistentHumbleSingleton<T> searchedSingleton)
 					{
-						Destroy (searched.gameObject);
+						if (searchedSingleton.InitializationTime < InitializationTime)
+						{
+							Destroy (searched.gameObject);
+						}
+					}
+					else if (searched.TryGetComponent(out MMPersistentHumbleSingleton<T> componentSingleton))
+					{
+						if (componentSingleton.InitializationTime < InitializationTime)
+						{
+							Destroy (searched.gameObject);
+						}
 					}
 				}
 			}
