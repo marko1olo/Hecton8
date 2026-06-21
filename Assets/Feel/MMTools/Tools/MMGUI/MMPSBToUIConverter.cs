@@ -44,8 +44,7 @@ namespace MoreMountains.Tools
 			}
 
 			// force size on canvas scaler
-			CanvasScaler canvasScaler = TargetCanvas.GetComponent<CanvasScaler>();
-			if (canvasScaler != null)
+			if (TargetCanvas.TryGetComponent<CanvasScaler>(out CanvasScaler canvasScaler))
 			{
 				canvasScaler.referenceResolution = new Vector2(TargetWidth, TargetHeight);
 			}
@@ -53,7 +52,7 @@ namespace MoreMountains.Tools
 			// create a parent in the target canvas
 			GameObject newRoot = new GameObject(this.name, typeof(RectTransform));
 			newRoot.transform.SetParent(TargetCanvas.transform);
-			RectTransform newRootRect = newRoot.GetComponent<RectTransform>();
+			RectTransform newRootRect = (RectTransform)newRoot.transform;
 			SetupForStretch(newRootRect);
 
 			_topLevel = newRoot.transform;
@@ -76,28 +75,28 @@ namespace MoreMountains.Tools
 			foreach (Transform child in root)
 			{
 				GameObject imageGO = new GameObject(child.name, typeof(RectTransform));
-				imageGO.transform.localPosition = ScaleFactor * child.transform.localPosition;
+				RectTransform imageGoRect = (RectTransform)imageGO.transform;
+
+				imageGoRect.localPosition = ScaleFactor * child.localPosition;
 				if (ReplicateNesting)
 				{
-					imageGO.transform.SetParent(parent);
+					imageGoRect.SetParent(parent);
 				}
 				else
 				{
-					imageGO.transform.SetParent(_topLevel);
-					Vector3 newLocalPosition = imageGO.transform.localPosition;
+					imageGoRect.SetParent(_topLevel);
+					Vector3 newLocalPosition = imageGoRect.localPosition;
 					newLocalPosition.x = newLocalPosition.x + TargetWidth / 2f;
-					imageGO.transform.localPosition = newLocalPosition;
+					imageGoRect.localPosition = newLocalPosition;
 				}
 
-				SpriteRenderer spriteRenderer = child.gameObject.GetComponent<SpriteRenderer>();
-				if (spriteRenderer != null)
+				if (child.TryGetComponent<SpriteRenderer>(out SpriteRenderer spriteRenderer))
 				{
 					Image image = imageGO.AddComponent<Image>();
 					image.sprite = spriteRenderer.sprite;
 					_sortingOrders.Add(image.transform, spriteRenderer.sortingOrder);
 					image.SetNativeSize();
 
-					RectTransform imageGoRect = imageGO.GetComponent<RectTransform>();
 					Vector3 newPosition = imageGoRect.localPosition;
 					newPosition += ChildImageOffset;
 					newPosition.z = 0f;
@@ -106,12 +105,11 @@ namespace MoreMountains.Tools
 				else
 				{
 					imageGO.name += " - NODE";
-					RectTransform imageGoRect = imageGO.GetComponent<RectTransform>();
 					imageGoRect.sizeDelta = new Vector2(TargetWidth, TargetHeight);
 					imageGoRect.localPosition = Vector3.zero;
 				}
-				imageGO.GetComponent<RectTransform>().localScale = Vector3.one;
-				CreateImageForChildren(child, imageGO.transform);
+				imageGoRect.localScale = Vector3.one;
+				CreateImageForChildren(child, imageGoRect);
 			}
 		}
 
