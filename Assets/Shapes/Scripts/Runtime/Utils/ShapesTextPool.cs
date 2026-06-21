@@ -39,7 +39,7 @@ namespace Shapes {
 			if( Application.isPlaying )
 				DontDestroyOnLoad( holder ); // might be a lil gross, not sure
 			P text = holder.AddComponent<P>();
-			holder.hideFlags = HideFlags.HideAndDontSave; // todo: debug
+			holder.hideFlags = HideFlags.DontSave; // todo: debug
 			return text;
 		}
 
@@ -104,7 +104,7 @@ namespace Shapes {
 			GameObject elem = new GameObject( id == -1 ? $"Immediate Mode {PoolTypeName}" : id.ToString() );
 			elem.transform.SetParent( transform, false );
 			elem.transform.localPosition = Vector3.zero;
-			elem.hideFlags = HideFlags.HideAndDontSave;
+			elem.hideFlags = HideFlags.DontSave;
 
 			T tmp = elem.AddComponent<T>();
 			OnCreatedNewComponent( tmp );
