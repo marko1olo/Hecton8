@@ -1150,22 +1150,11 @@ namespace Hecton8.VFX
         public void PopulateSaveData(SaveData data)
         {
             if (_runtimeOwnerAborted || data == null) return;
-
-            // CameraJuiceSystem settings stored as public fields in SaveData
-            // Note: SaveData uses public fields, not Set/Get methods
-            // Add fields to SaveData.cs if not present:
-            // public float cameraJuiceShakeIntensity = 1.0f;
-            // public float cameraJuiceFOVIntensity = 1.0f;
-            // public bool cameraJuiceMotionBlur = false;
-            // public bool cameraJuiceDepthOfField = true;
         }
 
         public void LoadFromSaveData(SaveData data)
         {
             if (_runtimeOwnerAborted || data == null) return;
-
-            // Load settings from SaveData public fields
-            // Implementation pending SaveData field additions
         }
 
         // ═══ PUBLIC API ═══
