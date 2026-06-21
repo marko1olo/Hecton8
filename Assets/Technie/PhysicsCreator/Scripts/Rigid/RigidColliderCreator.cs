@@ -388,12 +388,13 @@ namespace Technie.PhysicsCreator
 				if (!h.isChildCollider)
 					continue;
 
+				bool matchedHull = false;
 				for (int j = orphanedChilds.Count - 1; j >= 0; j--)
 				{
 					RigidColliderCreatorChild child = orphanedChilds[j];
 					HullMapping mapping = FindMapping(child);
 
-					if (mapping != null && mapping.sourceHull != null)
+					if (mapping != null && mapping.sourceHull == h)
 					{
 						// Found a match for hull-mapping-child
 
@@ -405,16 +406,24 @@ namespace Technie.PhysicsCreator
 							RecreateChildCollider(mapping);
 						}
 
-						orphanedHulls.RemoveAt(i);
 						orphanedChilds.RemoveAt(j);
-						break;
+						matchedHull = true;
+
+						if (h.type != HullType.Auto)
+						{
+							break;
+						}
 					}
+				}
+
+				if (matchedHull)
+				{
+					orphanedHulls.RemoveAt(i);
 				}
 			}
 
 			// Try and match up orphaned auto childs with hulls
 			// These will be ones without a collider (those will be picked up earlier)
-			// FIXME: Not working atm. Fix and see if we actually need it
 			
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
@@ -428,8 +437,10 @@ namespace Technie.PhysicsCreator
 				{
 					RigidColliderCreatorChild child = orphanedChilds[j];
 
-
-					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name))
+					// Strict string match: Auto hull childs will be named "HullName.1", "HullName.2", etc.
+					// Use h.name + "." to ensure we only match exact auto children from this hull,
+					// rather than matching "HullName" against "HullNameExtra"
+					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name + "."))
 					{
 						HullMapping mapping = FindMapping(h);
 						if (mapping == null)
