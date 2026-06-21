@@ -635,8 +635,8 @@ namespace Hecton8.UI
         private readonly TextMeshProUGUI[] _driftTargets = new TextMeshProUGUI[MaxDriftTargets];
         // COLD ALLOC: RectTransform[96] - cached rect owners for hacked-line drift - owner: PDAIntrusionManager
         private readonly RectTransform[] _driftRects = new RectTransform[MaxDriftTargets];
-        // COLD ALLOC: Vector2[96] - cached pre-hack anchored positions for text drift restore - owner: PDAIntrusionManager
-        private readonly Vector2[] _driftBaseAnchoredPositions = new Vector2[MaxDriftTargets];
+        // COLD ALLOC: Vector3[96] - cached pre-hack anchored positions for text drift restore - owner: PDAIntrusionManager
+        private readonly Vector3[] _driftBaseAnchoredPositions = new Vector3[MaxDriftTargets];
         // COLD ALLOC: float[96] - deterministic phase offsets for hacked-line drift - owner: PDAIntrusionManager
         private readonly float[] _driftPhaseOffsets = new float[MaxDriftTargets];
 
@@ -1103,9 +1103,9 @@ namespace Hecton8.UI
                 float amplitude = math.lerp(TextDriftAmplitudeMin, TextDriftAmplitudeMax, normalizedIndex) * glyphScale;
                 float frequency = math.lerp(TextDriftFrequencyMin, TextDriftFrequencyMax, 1f - normalizedIndex);
                 float offsetX = EvaluateCheapDriftWaveSigned((_textDriftWaveTime * frequency) + _driftPhaseOffsets[i]) * amplitude;
-                Vector2 basePosition = _driftBaseAnchoredPositions[i];
+                Vector3 basePosition = _driftBaseAnchoredPositions[i];
                 basePosition.x += offsetX;
-                rect.anchoredPosition = basePosition;
+                rect.anchoredPosition3D = basePosition;
             }
         }
 
@@ -1144,7 +1144,7 @@ namespace Hecton8.UI
                         int slot = _driftTargetCount;
                         _driftTargets[slot] = text;
                         _driftRects[slot] = rect;
-                        _driftBaseAnchoredPositions[slot] = rect.anchoredPosition;
+                        _driftBaseAnchoredPositions[slot] = rect.anchoredPosition3D;
                         _driftPhaseOffsets[slot] = (slot * 0.73f) + (text.fontSize * 0.013f);
                         _driftTargetCount++;
                     }
@@ -1181,7 +1181,7 @@ namespace Hecton8.UI
             {
                 RectTransform rect = _driftRects[i];
                 if (rect != null)
-                    rect.anchoredPosition = _driftBaseAnchoredPositions[i];
+                    rect.anchoredPosition3D = _driftBaseAnchoredPositions[i];
 
                 _driftTargets[i] = null;
                 _driftRects[i] = null;
