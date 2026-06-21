@@ -119,7 +119,28 @@ namespace AmplifyImpostors
 
 		[SerializeField]
 		private Renderer[] m_renderers;
-		public Renderer[] Renderers { get { return m_renderers; } set { m_renderers = value; } }
+		private MeshFilter[] m_meshFilters;
+		public Renderer[] Renderers
+		{
+			get { return m_renderers; }
+			set
+			{
+				m_renderers = value;
+				if (m_renderers != null)
+				{
+					m_meshFilters = new MeshFilter[m_renderers.Length];
+					for (int i = 0; i < m_renderers.Length; i++)
+					{
+						if (m_renderers[i] != null)
+							m_meshFilters[i] = m_renderers[i].GetComponent<MeshFilter>();
+					}
+				}
+				else
+				{
+					m_meshFilters = null;
+				}
+			}
+		}
 
 		public LODReplacement m_lodReplacement = LODReplacement.ReplaceLast;
 
@@ -376,6 +397,19 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
+			MeshFilter[] validMeshes = new MeshFilter[ Renderers.Length ];
+			for( int i = 0; i < Renderers.Length; i++ )
+			{
+				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
+					continue;
+
+				MeshFilter mf = (m_meshFilters != null && i < m_meshFilters.Length) ? m_meshFilters[ i ] : Renderers[ i ].GetComponent<MeshFilter>();
+				if( mf == null || mf.sharedMesh == null )
+					continue;
+
+				validMeshes[ i ] = mf;
+			}
+
 			for( int x = 0; x < hframes; x++ )
 			{
 				for( int y = 0; y <= vframes; y++ )
@@ -385,11 +419,8 @@ namespace AmplifyImpostors
 
 					for( int i = 0; i < Renderers.Length; i++ )
 					{
-						if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
-							continue;
-
-						MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
-						if( mf == null || mf.sharedMesh == null )
+						MeshFilter mf = validMeshes[ i ];
+						if( mf == null )
 							continue;
 
 						if( frameBounds.size == Vector3.zero )
@@ -1578,28 +1609,26 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
-			List<MeshFilter> validMeshes = new List<MeshFilter>();
+			MeshFilter[] validMeshes = new MeshFilter[Renderers.Length];
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
 				// only allow for renderers that are enabled and not marked as shadow only
 				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 				{
-					validMeshes.Add( null );
 					continue;
 				}
 
 				// skip non-meshes, for now
-				MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
+				MeshFilter mf = (m_meshFilters != null && i < m_meshFilters.Length) ? m_meshFilters[ i ] : Renderers[ i ].GetComponent<MeshFilter>();
 				if( mf == null || mf.sharedMesh == null )
 				{
-					validMeshes.Add( null );
 					continue;
 				}
 
-				validMeshes.Add( mf );
+				validMeshes[ i ] = mf;
 			}
 
-			int validMeshesCount = validMeshes.Count;
+			int validMeshesCount = validMeshes.Length;
 
 			for( int x = 0; x < hframes; x++ )
 			{
