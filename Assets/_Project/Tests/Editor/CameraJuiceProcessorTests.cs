@@ -251,6 +251,26 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RegisterSplash_UpdatesSplashDipFieldsAndRecoversOverTime()
+        {
+            _suitData.splashCameraDip = 0.5f;
+
+            _processor.RegisterSplash(10f, _suitData);
+
+            var input = new CameraJuiceInput { deltaTime = 0.1f };
+
+            // First frame after splash should have high offsets
+            var initialOutput = _processor.Process(in input, _suitData);
+
+            // After 1 second of recovery, offsets should be smaller or zero
+            input.deltaTime = 1.0f;
+            var finalOutput = _processor.Process(in input, _suitData);
+
+            Assert.Less(initialOutput.localPositionOffset.y, 0f); // initial dip should be negative Y
+            Assert.Less(Mathf.Abs(finalOutput.localPositionOffset.y), Mathf.Abs(initialOutput.localPositionOffset.y));
+        }
+
+        [Test]
         public void Process_DepthFovCompression_NarrowsFov()
         {
             _suitData.enableDepthFovCompression = true;
