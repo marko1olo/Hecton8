@@ -20,7 +20,21 @@ namespace CandiceAIforGames.AI
 		[Header("General")]
 		[SerializeField] private int m_NumberOfSegments = 5;
 		[SerializeField] private float m_SizeOfNotch = 5;
-		[Range(0, 1f)] [SerializeField] public float m_FillAmount = 0.0f;
+		[Range(0, 1f)] [SerializeField] [UnityEngine.Serialization.FormerlySerializedAs("m_FillAmount")]
+		private float _fillAmount = 0.0f;
+
+		public float m_FillAmount
+		{
+			get { return _fillAmount; }
+			set
+			{
+				if (_fillAmount != value)
+				{
+					_fillAmount = value;
+					UpdateSegments();
+				}
+			}
+		}
 
 		private RectTransform m_RectTransform;
 		private Image m_Image;
@@ -57,13 +71,18 @@ namespace CandiceAIforGames.AI
 				RectTransform segmentFillRectTransform = segmentFillImage.rectTransform;
 				segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 			}
+
+			UpdateSegments();
 		}
 
-		public void Update()
+		private void UpdateSegments()
 		{
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-				m_ProgressToFill[i].fillAmount = m_NumberOfSegments * m_FillAmount - i;
+				if (i < m_ProgressToFill.Count)
+				{
+					m_ProgressToFill[i].fillAmount = m_NumberOfSegments * _fillAmount - i;
+				}
 			}
 		}
 
