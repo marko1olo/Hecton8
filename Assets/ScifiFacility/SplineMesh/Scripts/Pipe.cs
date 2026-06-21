@@ -57,15 +57,19 @@ public class Pipe : MonoBehaviour {
 
         int i = 0;
         foreach (CubicBezierCurve curve in spline.GetCurves()) {
-            GameObject go = new GameObject("SplineMesh" + i++, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshBender), typeof(MeshCollider));
+            GameObject go = new GameObject("SplineMesh" + i++);
+            go.AddComponent<MeshFilter>();
+            MeshRenderer mr = go.AddComponent<MeshRenderer>();
+            MeshBender mb = go.AddComponent<MeshBender>();
+            go.AddComponent<MeshCollider>();
+
             go.transform.parent = transform;
             go.transform.localRotation = Quaternion.identity;
             go.transform.localPosition = Vector3.zero;
             go.transform.localScale = Vector3.one;
             //go.hideFlags = HideFlags.NotEditable;
 
-            go.GetComponent<MeshRenderer>().material = material;
-            MeshBender mb = go.GetComponent<MeshBender>();
+            mr.material = material;
             mb.SetSourceMesh(mesh, false);
             mb.SetRotation(Quaternion.Euler(rotation), false);
             mb.SetCurve(curve, false);
