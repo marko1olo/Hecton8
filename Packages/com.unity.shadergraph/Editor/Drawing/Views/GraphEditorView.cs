@@ -320,8 +320,8 @@ namespace UnityEditor.ShaderGraph.Drawing
                 // This takes care of when a property is dragged from BB and then the drag is ended by the Escape key, hides the scroll boundary regions and drag indicator if so
                 m_GraphView.RegisterCallback<DragExitedEvent>(evt =>
                 {
-                    blackboardController.blackboard.OnDragExitedEvent(evt);
-                    blackboardController.blackboard.hideDragIndicatorAction?.Invoke();
+                    blackboardController?.blackboard?.OnDragExitedEvent(evt);
+                    blackboardController?.blackboard?.hideDragIndicatorAction?.Invoke();
                 });
 
                 RegisterGraphViewCallbacks();
@@ -479,9 +479,9 @@ namespace UnityEditor.ShaderGraph.Drawing
         {
             // Blackboard needs to be effectively removed when hidden to avoid bugs.
             if (m_UserViewSettings.isBlackboardVisible)
-                blackboardController.blackboard.ShowWindow();
+                blackboardController?.blackboard?.ShowWindow();
             else
-                blackboardController.blackboard.HideWindow();
+                blackboardController?.blackboard?.HideWindow();
 
             // Same for the inspector
             if (m_UserViewSettings.isInspectorVisible)
@@ -1506,9 +1506,9 @@ namespace UnityEditor.ShaderGraph.Drawing
             m_FloatingWindowsLayout.previewLayout.CalculateDockingCornerAndOffset(m_MasterPreviewView.layout, m_GraphView.layout);
             m_FloatingWindowsLayout.previewLayout.ClampToParentWindow(m_GraphView.layout);
 
-            blackboardController.blackboard.ClampToParentLayout(m_GraphView.layout);
+            blackboardController?.blackboard?.ClampToParentLayout(m_GraphView.layout);
 
-            m_InspectorView.ClampToParentLayout(m_GraphView.layout);
+            m_InspectorView?.ClampToParentLayout(m_GraphView.layout);
 
             if (m_MasterPreviewView.visible)
             {

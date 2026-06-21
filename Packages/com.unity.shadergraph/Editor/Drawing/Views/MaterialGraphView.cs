@@ -1346,10 +1346,10 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             bool dropdownsDirty = false;
 
-            var blackboardController = graphView.GetFirstAncestorOfType<GraphEditorView>().blackboardController;
+            var blackboardController = graphView.GetFirstAncestorOfType<GraphEditorView>()?.blackboardController;
 
             // Get the position to insert the new shader inputs per category
-            int insertionIndex = blackboardController.GetInsertionIndexForPaste();
+            int insertionIndex = blackboardController != null ? blackboardController.GetInsertionIndexForPaste() : -1;
 
             // Any child of the categories need to be removed from selection as well (there's a Graphview issue where these don't get properly added to selection before the duplication sometimes, have to do it manually)
             foreach (var selectable in graphView.selection)
