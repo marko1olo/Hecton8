@@ -88,6 +88,21 @@ namespace Shapes {
 		[MethodImpl( INLINE )] public static Vector2 Lerp( Rect r, Vector2 t ) => new Vector2( Mathf.Lerp( r.xMin, r.xMax, t.x ), Mathf.Lerp( r.yMin, r.yMax, t.y ) );
 		[MethodImpl( INLINE )] static Vector2 InverseLerp( Vector2 a, Vector2 b, Vector2 v ) => ( v - a ) / ( b - a );
 		[MethodImpl( INLINE )] public static Vector2 InverseLerp( Rect r, Vector2 pt ) => new Vector2( Mathf.InverseLerp( r.xMin, r.xMax, pt.x ), Mathf.InverseLerp( r.yMin, r.yMax, pt.y ) );
+
+		public static Vector2 Slerp( Vector2 a, Vector2 b, float t ) {
+			t = Mathf.Clamp01( t );
+			float magA = a.magnitude;
+			float magB = b.magnitude;
+			if( magA < 0.00001f || magB < 0.00001f )
+				return Vector2.LerpUnclamped( a, b, t ); // fallback, already clamped t
+
+			float angA = DirToAng( a );
+			float angB = DirToAng( b );
+			float angInterpolated = angA + DeltaAngleRad( angA, angB ) * t;
+			float magInterpolated = Mathf.LerpUnclamped( magA, magB, t );
+
+			return AngToDir( angInterpolated ) * magInterpolated;
+		}
 		[MethodImpl( INLINE )] static Vector2 Remap( Vector2 iMin, Vector2 iMax, Vector2 oMin, Vector2 oMax, Vector2 value ) => Lerp( oMin, oMax, InverseLerp( iMin, iMax, value ) );
 		[MethodImpl( INLINE )] public static Vector2 Remap( Rect iRect, Rect oRect, Vector2 iPos ) => Remap( iRect.min, iRect.max, oRect.min, oRect.max, iPos );
 
@@ -154,7 +169,7 @@ namespace Shapes {
 			yield return DirToPt( normA );
 			for( int i = 1; i < count - 1; i++ ) {
 				float t = i / ( count - 1f );
-				yield return DirToPt( Vector3.Slerp( normA, normB, t ) ); // todo: vec2 slerp?
+				yield return DirToPt( ShapesMath.Slerp( normA, normB, t ) );
 			}
 
 			yield return DirToPt( normB );
