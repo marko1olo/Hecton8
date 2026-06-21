@@ -34,9 +34,8 @@ namespace Technie.PhysicsCreator.Skinned
 		Custom
 	}
 
-	// TODO: Think of a better name for this which is clearer separated from BoneHullData?
 	[System.Serializable]
-	public class BoneData
+	public class BoneJointData
 	{
 		public string targetBoneName;
 
@@ -67,7 +66,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public float linearDamping = 0.0f;
 		public float angularDamping = 0.0f;
 		
-		public BoneData(Transform src)
+		public BoneJointData(Transform src)
 		{
 			this.targetBoneName = src.name;
 		}
@@ -115,7 +114,8 @@ namespace Technie.PhysicsCreator.Skinned
 		public PhysicsMaterial defaultMaterial;
 		public ColliderType defaultColliderType = ColliderType.Convex;
 
-		public List<BoneData> boneData = new List<BoneData>();
+		[UnityEngine.Serialization.FormerlySerializedAs("boneData")]
+		public List<BoneJointData> boneJointData = new List<BoneJointData>();
 		public List<BoneHullData> boneHullData = new List<BoneHullData>();
 
 		// Current selection - one of these will be valid (or neither)
@@ -166,11 +166,11 @@ namespace Technie.PhysicsCreator.Skinned
 
 		// Methods
 
-		public void SetSelection(BoneData bone)
+		public void SetSelection(BoneJointData bone)
 		{
-			for (int i=0; i<boneData.Count; i++)
+			for (int i=0; i<boneJointData.Count; i++)
 			{
-				if (boneData[i] == bone)
+				if (boneJointData[i] == bone)
 				{
 					selectedBoneIndex = i;
 					selectedHullIndex = INVALID_INDEX;
@@ -204,10 +204,10 @@ namespace Technie.PhysicsCreator.Skinned
 			MarkDirty();
 		}
 
-		public BoneData GetSelectedBone()
+		public BoneJointData GetSelectedBone()
 		{
-			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneData.Count)
-				return boneData[selectedBoneIndex];
+			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneJointData.Count)
+				return boneJointData[selectedBoneIndex];
 			else
 				return null;
 		}
@@ -222,16 +222,16 @@ namespace Technie.PhysicsCreator.Skinned
 
 
 
-		public BoneData GetBoneData(Transform bone)
+		public BoneJointData GetBoneJointData(Transform bone)
 		{
 			if (bone == null)
 				return null;
-			return GetBoneData(bone.name);
+			return GetBoneJointData(bone.name);
 		}
 
-		public BoneData GetBoneData(string boneName)
+		public BoneJointData GetBoneJointData(string boneName)
 		{
-			foreach (BoneData data in boneData)
+			foreach (BoneJointData data in boneJointData)
 			{
 				if (data.targetBoneName == boneName)
 					return data;
@@ -278,16 +278,16 @@ namespace Technie.PhysicsCreator.Skinned
 			return lastModifiedFrame;
 		}
 
-		public void Add(BoneData data)
+		public void Add(BoneJointData data)
 		{
-			boneData.Add(data);
+			boneJointData.Add(data);
 
 			MarkDirty();
 		}
 
-		public void Remove(BoneData data)
+		public void Remove(BoneJointData data)
 		{
-			boneData.Remove(data);
+			boneJointData.Remove(data);
 
 			MarkDirty();
 		}

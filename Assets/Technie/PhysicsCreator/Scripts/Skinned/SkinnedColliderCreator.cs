@@ -36,12 +36,12 @@ namespace Technie.PhysicsCreator.Skinned
 			return editorData;
 		}
 
-		public Transform FindBone(BoneData boneData)
+		public Transform FindBone(BoneJointData boneJointData)
 		{
-			if (boneData == null)
+			if (boneJointData == null)
 				return null;
 
-			return FindBone(targetSkinnedRenderer, boneData.targetBoneName);
+			return FindBone(targetSkinnedRenderer, boneJointData.targetBoneName);
 		}
 
 		public Transform FindBone(BoneHullData hullData)
