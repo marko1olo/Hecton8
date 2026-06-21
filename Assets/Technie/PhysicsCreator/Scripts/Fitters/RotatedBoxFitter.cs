@@ -214,9 +214,6 @@ namespace Technie.PhysicsCreator
 				List<RotatedBox> refinedBoxes = FindTightestBoxes(refiniedPlanes, hullVertices);
 				RotatedBox refinedBest = GetBestBox(refinedBoxes);
 
-				// Take the smallest and apply it's data to the hull
-				//	ApplyToHull(refinedBest, hull);			// FIXME: Not sure this is needed - looks like calling code will do this itself as well (using the returned result of this func)
-
 				//	Console.output.Log("Initial best volume: " + initialBest.VolumeCm3.ToString("0.00") + " cm3");
 				//	Console.output.Log("Refinied best volume: " + refinedBest.VolumeCm3.ToString("0.00") + " cm3");
 
