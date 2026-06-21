@@ -60,6 +60,23 @@ class CompileWallX003AuditTests(unittest.TestCase):
         self.assertEqual("PlayerRuntimeContextService", findings[0]["type"])
         self.assertTrue(findings[0]["directPlayerCoupling"])
 
+    def test_rel_inside_repo(self):
+        repo_root = compile_wall.REPO_ROOT
+        target_path = repo_root / "Assets" / "_Project" / "Scripts" / "Player.cs"
+        result = compile_wall.rel(target_path)
+        self.assertEqual("Assets/_Project/Scripts/Player.cs", result)
+
+    def test_rel_outside_repo(self):
+        # Paths that are not relative to the repo root will raise a ValueError
+        # in path.relative_to(REPO_ROOT). In that case, we should get the absolute posix path.
+        if sys.platform == "win32":
+            target_path = Path("C:\\Temp\\NotRepo\\File.txt")
+        else:
+            target_path = Path("/tmp/NotRepo/File.txt")
+
+        result = compile_wall.rel(target_path)
+        self.assertEqual(target_path.as_posix(), result)
+
 
 if __name__ == "__main__":
     unittest.main()
