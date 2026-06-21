@@ -606,7 +606,7 @@ namespace Hecton.Localization
             EnsureTelemetryState();
             _activeLanguage = activeLanguage;
             RebuildUtf8LookupFromBinaryOrMock();
-            RecordTelemetry(0u, _utf8ByteLength, _utf8IndexLength, BabelTelemetryFlags.Reload);
+            RecordTelemetry(new TelemetryEvent(0u, _utf8ByteLength, _utf8IndexLength, BabelTelemetryFlags.Reload));
             PublishLanguageChangedSignal(activeLanguage);
         }
 
@@ -628,20 +628,20 @@ namespace Hecton.Localization
                 paddedByteLength > MaxBabelDictionaryBytes ||
                 _stagedLocaleLocked)
             {
-                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                RecordTelemetry(new TelemetryEvent(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected));
                 return false;
             }
 
             if (!TryResolveBabelVault(out IDataVault vault))
             {
-                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                RecordTelemetry(new TelemetryEvent(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected));
                 return false;
             }
 
             H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
             if (_stagedLocaleBytes.IsCreated)
             {
-                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                RecordTelemetry(new TelemetryEvent(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected));
                 return false;
             }
 
@@ -653,7 +653,7 @@ namespace Hecton.Localization
             if (!_stagedLocaleBytes.IsCreated || _stagedLocaleBytes.Length < paddedByteLength)
             {
                 H8Memory.Release(ref _stagedLocaleBytes, SystemID.UI);
-                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                RecordTelemetry(new TelemetryEvent(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected));
                 return false;
             }
 
@@ -663,7 +663,7 @@ namespace Hecton.Localization
                 void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(_stagedLocaleBytes);
                 if (destination == null)
                 {
-                    RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                    RecordTelemetry(new TelemetryEvent(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected));
                     return false;
                 }
 
@@ -674,7 +674,7 @@ namespace Hecton.Localization
                 stage.BufferId = (int)BabelStagedLocaleBufferId;
                 stage.Language = (ushort)language;
                 stage.SourceByteLength = sourceByteLength;
-                RecordTelemetry(0u, paddedByteLength, sourceByteLength, BabelTelemetryFlags.AsyncStageBegin);
+                RecordTelemetry(new TelemetryEvent(0u, paddedByteLength, sourceByteLength, BabelTelemetryFlags.AsyncStageBegin));
 
                 _stagedLocaleVault = vault;
                 _stagedLocaleByteLength = paddedByteLength;
@@ -724,7 +724,7 @@ namespace Hecton.Localization
                 stage.SourceByteLength != _stagedLocaleSourceByteLength ||
                 stage.BufferId != (int)BabelStagedLocaleBufferId)
             {
-                RecordTelemetry(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected);
+                RecordTelemetry(new TelemetryEvent(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected));
                 return false;
             }
 
@@ -733,7 +733,7 @@ namespace Hecton.Localization
                 NativeArray<byte> staged = _stagedLocaleBytes;
                 if (!staged.IsCreated || staged.Length < _stagedLocaleByteLength)
                 {
-                    RecordTelemetry(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected);
+                    RecordTelemetry(new TelemetryEvent(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected));
                     return false;
                 }
 
@@ -804,7 +804,7 @@ namespace Hecton.Localization
                 _utf8IndexLength = entryCount;
                 _utf8ByteLength = dataBytes;
                 _activeLanguage = (GameLanguage)stage.Language;
-                RecordTelemetry(0u, dataBytes, entryCount, BabelTelemetryFlags.AsyncBinarySwap);
+                RecordTelemetry(new TelemetryEvent(0u, dataBytes, entryCount, BabelTelemetryFlags.AsyncBinarySwap));
                 PublishLanguageChangedSignal(_activeLanguage);
                 return true;
             }
@@ -933,7 +933,7 @@ namespace Hecton.Localization
                 return false;
 
             uint missingBits = requiredKeyMask & ~collectedKeyMask;
-            RecordTelemetry(loreSaltHash, (int)missingBits, 16, BabelTelemetryFlags.Hit);
+            RecordTelemetry(new TelemetryEvent(loreSaltHash, (int)missingBits, 16, BabelTelemetryFlags.Hit));
             return true;
         }
 
@@ -956,7 +956,7 @@ namespace Hecton.Localization
 
             if (!outputBytes.IsCreated || !_utf8Bytes.IsCreated || _utf8IndexLength <= 0)
             {
-                RecordTelemetry(keyHash, -1, 0, BabelTelemetryFlags.Miss);
+                RecordTelemetry(new TelemetryEvent(keyHash, -1, 0, BabelTelemetryFlags.Miss));
                 return false;
             }
 
@@ -965,7 +965,7 @@ namespace Hecton.Localization
             {
                 LogMissingKeyOnce(unchecked((int)keyHash));
                 _missingHashCountThisFrame++;
-                RecordTelemetry(keyHash, -1, ErrorUtf8Length, BabelTelemetryFlags.Miss, searchNs);
+                RecordTelemetry(new TelemetryEvent(keyHash, -1, ErrorUtf8Length, BabelTelemetryFlags.Miss, searchComputeTimeNs: searchNs));
                 return false;
             }
 
@@ -977,14 +977,14 @@ namespace Hecton.Localization
 
             if (slice.y == 0)
             {
-                RecordTelemetry(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchNs);
+                RecordTelemetry(new TelemetryEvent(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchComputeTimeNs: searchNs));
                 return true;
             }
 
             EnsureDecryptionMaskBuffer();
             if (!_decryptionMask.IsCreated)
             {
-                RecordTelemetry(keyHash, slice.x, slice.y, BabelTelemetryFlags.Miss, searchNs);
+                RecordTelemetry(new TelemetryEvent(keyHash, slice.x, slice.y, BabelTelemetryFlags.Miss, searchComputeTimeNs: searchNs));
                 return false;
             }
 
@@ -1000,7 +1000,7 @@ namespace Hecton.Localization
             byteLength = slice.y;
             handle = job.Schedule(slice.y, 64, dependency);
             RegisterUtf8ReaderHandle(handle);
-            RecordTelemetry(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchNs);
+            RecordTelemetry(new TelemetryEvent(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchComputeTimeNs: searchNs));
             return true;
         }
 
@@ -1024,7 +1024,7 @@ namespace Hecton.Localization
                 {
                     byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_utf8Bytes);
                     ReadOnlySpan<byte> utf8Bytes = new ReadOnlySpan<byte>(basePtr + utf8Slice.x, utf8Slice.y);
-                    RecordTelemetry(unchecked((uint)keyHash), utf8Slice.x, utf8Slice.y, BabelTelemetryFlags.Hit);
+                    RecordTelemetry(new TelemetryEvent(unchecked((uint)keyHash), utf8Slice.x, utf8Slice.y, BabelTelemetryFlags.Hit));
                     return DecodeUtf8VisualBuffer(unchecked((uint)keyHash), true, utf8Bytes, out buffer, out length);
                 }
             }
@@ -1155,7 +1155,7 @@ namespace Hecton.Localization
                 {
                     byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_utf8Bytes);
                     ReadOnlySpan<byte> utf8Bytes = new ReadOnlySpan<byte>(basePtr + utf8Slice.x, utf8Slice.y);
-                    RecordTelemetry(keyHash, utf8Slice.x, utf8Slice.y, BabelTelemetryFlags.Hit);
+                    RecordTelemetry(new TelemetryEvent(keyHash, utf8Slice.x, utf8Slice.y, BabelTelemetryFlags.Hit));
                     return DecodeUtf8VisualSpan(keyHash, true, utf8Bytes, destination, out length, formatArgs, stripRichText);
                 }
             }
@@ -1186,7 +1186,7 @@ namespace Hecton.Localization
                 if (slice.y == 0)
                 {
                     utf8Bytes = ReadOnlySpan<byte>.Empty;
-                    RecordTelemetry(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchNs);
+                    RecordTelemetry(new TelemetryEvent(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchComputeTimeNs: searchNs));
                     return true;
                 }
 
@@ -1198,7 +1198,7 @@ namespace Hecton.Localization
                         utf8Bytes = new ReadOnlySpan<byte>(basePtr + slice.x, slice.y);
                     }
 
-                    RecordTelemetry(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchNs);
+                    RecordTelemetry(new TelemetryEvent(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchComputeTimeNs: searchNs));
                     return true;
                 }
 
@@ -1208,7 +1208,7 @@ namespace Hecton.Localization
             LogMissingKeyOnce(unchecked((int)keyHash));
             utf8Bytes = GetErrorUtf8SpanIfReady();
             _missingHashCountThisFrame++;
-            RecordTelemetry(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Miss, searchNs);
+            RecordTelemetry(new TelemetryEvent(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Miss, searchComputeTimeNs: searchNs));
             return false;
         }
 
@@ -1243,7 +1243,7 @@ namespace Hecton.Localization
             length = 0;
             if (destination.Length <= 0)
             {
-                RecordTelemetry(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Truncated);
+                RecordTelemetry(new TelemetryEvent(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Truncated));
                 Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
                     keyHash,
                     Hecton8.UI.UIOptimizationFailureCode.TextBufferOverflow,
@@ -1371,7 +1371,7 @@ namespace Hecton.Localization
                 flags = (ushort)(flags | BabelTelemetryFlags.VariableInjected);
 
             float spanConversionTimeMs = math.max(0f, (float)((Stopwatch.GetTimestamp() - decodeStartTicks) * 1000.0 / Stopwatch.Frequency));
-            RecordTelemetry(keyHash, found ? 0 : -1, length, flags, spanConversionTimeMs);
+            RecordTelemetry(new TelemetryEvent(keyHash, found ? 0 : -1, length, flags, spanConversionTimeMs));
             if (!found)
             {
                 Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
@@ -1790,7 +1790,7 @@ namespace Hecton.Localization
                 RefreshLookupTelemetryFrame();
                 _csvOverrideAppliedThisFrame += (uint)math.max(0, applied);
                 _csvOverrideRejectedThisFrame += (uint)math.max(0, rejected);
-                RecordTelemetry(0u, applied, rejected, BabelTelemetryFlags.CsvOverride);
+                RecordTelemetry(new TelemetryEvent(0u, applied, rejected, BabelTelemetryFlags.CsvOverride));
             }
 
             return true;
@@ -1896,7 +1896,7 @@ namespace Hecton.Localization
             TryWriteUtf8Index(0, _emergencyMockErrorHash, 0, ErrorUtf8Length);
             _utf8IndexLength = 1;
             _utf8ByteLength = ErrorUtf8Length;
-            RecordTelemetry(_emergencyMockErrorHash, 0, _utf8ByteLength, BabelTelemetryFlags.EmergencyMock);
+            RecordTelemetry(new TelemetryEvent(_emergencyMockErrorHash, 0, _utf8ByteLength, BabelTelemetryFlags.EmergencyMock));
         }
 
         private static void EnsureErrorUtf8()
@@ -3211,22 +3211,27 @@ namespace Hecton.Localization
             return true;
         }
 
-        private static void RecordTelemetry(uint keyHash, int offset, int length, ushort flags)
+        private readonly struct TelemetryEvent
         {
-            RecordTelemetry(keyHash, offset, length, flags, 0f, 0u);
+            public readonly uint KeyHash;
+            public readonly int Offset;
+            public readonly int Length;
+            public readonly ushort Flags;
+            public readonly float SpanConversionTimeMs;
+            public readonly uint SearchComputeTimeNs;
+
+            public TelemetryEvent(uint keyHash, int offset, int length, ushort flags, float spanConversionTimeMs = 0f, uint searchComputeTimeNs = 0u)
+            {
+                KeyHash = keyHash;
+                Offset = offset;
+                Length = length;
+                Flags = flags;
+                SpanConversionTimeMs = spanConversionTimeMs;
+                SearchComputeTimeNs = searchComputeTimeNs;
+            }
         }
 
-        private static void RecordTelemetry(uint keyHash, int offset, int length, ushort flags, float spanConversionTimeMs)
-        {
-            RecordTelemetry(keyHash, offset, length, flags, spanConversionTimeMs, 0u);
-        }
-
-        private static void RecordTelemetry(uint keyHash, int offset, int length, ushort flags, uint searchComputeTimeNs)
-        {
-            RecordTelemetry(keyHash, offset, length, flags, 0f, searchComputeTimeNs);
-        }
-
-        private static void RecordTelemetry(uint keyHash, int offset, int length, ushort flags, float spanConversionTimeMs, uint searchComputeTimeNs)
+        private static void RecordTelemetry(in TelemetryEvent evt)
         {
             if (_telemetryVaultBacked)
             {
@@ -3267,22 +3272,22 @@ namespace Hecton.Localization
             _telemetryFrames[slot] = new BabelTelemetryEntry
             {
                 Frame = frame,
-                KeyHash = keyHash,
-                Offset = offset,
-                Length = length,
+                KeyHash = evt.KeyHash,
+                Offset = evt.Offset,
+                Length = evt.Length,
                 TranslationsPerFrame = _translationsThisFrame,
                 BufferPoolLeasesActive = _bufferPoolLeasesActive,
-                SpanConversionTimeMs = spanConversionTimeMs,
+                SpanConversionTimeMs = evt.SpanConversionTimeMs,
                 DictionaryLookupsPerFrame = (uint)math.max(0, _translationsThisFrame),
                 MissingHashCount = _missingHashCountThisFrame,
-                SearchComputeTimeNs = searchComputeTimeNs != 0u ? searchComputeTimeNs : _lookupSearchNsThisFrame,
+                SearchComputeTimeNs = evt.SearchComputeTimeNs != 0u ? evt.SearchComputeTimeNs : _lookupSearchNsThisFrame,
                 Language = (ushort)_activeLanguage,
-                Flags = flags,
+                Flags = evt.Flags,
                 CsvOverrideAppliedCount = _csvOverrideAppliedThisFrame,
                 CsvOverrideRejectedCount = _csvOverrideRejectedThisFrame
             };
 
-            uint effectiveSearchNs = searchComputeTimeNs != 0u ? searchComputeTimeNs : _lookupSearchNsThisFrame;
+            uint effectiveSearchNs = evt.SearchComputeTimeNs != 0u ? evt.SearchComputeTimeNs : _lookupSearchNsThisFrame;
             if (effectiveSearchNs > SlowSearchDumpThresholdNs)
                 WriteTelemetryDumpFiles();
         }
@@ -3300,13 +3305,13 @@ namespace Hecton.Localization
 
         private static void DumpTelemetryForSlowDecode(uint keyHash, int length, float spanConversionTimeMs)
         {
-            RecordTelemetry(keyHash, -1, length, BabelTelemetryFlags.SlowDecode, spanConversionTimeMs);
+            RecordTelemetry(new TelemetryEvent(keyHash, -1, length, BabelTelemetryFlags.SlowDecode, spanConversionTimeMs));
             WriteTelemetryDumpFiles();
         }
 
         private static unsafe void DumpTelemetryForCorruption(uint keyHash, int2 badSlice)
         {
-            RecordTelemetry(keyHash, badSlice.x, badSlice.y, BabelTelemetryFlags.CorruptSlice);
+            RecordTelemetry(new TelemetryEvent(keyHash, badSlice.x, badSlice.y, BabelTelemetryFlags.CorruptSlice));
             WriteTelemetryDumpFiles();
         }
 
