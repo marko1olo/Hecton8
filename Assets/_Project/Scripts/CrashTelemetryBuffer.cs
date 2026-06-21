@@ -24,6 +24,26 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9500)] // Runs after GameTickManager singleton bootstrap and before most gameplay systems.
     public sealed class CrashTelemetryBuffer : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, IGlobalRegistryHotSwapListener
     {
+        public readonly struct JobAdmissionTelemetryArgs
+        {
+            public readonly byte Lane;
+            public readonly uint JobHash;
+            public readonly float EstimatedCostMs;
+            public readonly float RemainingBudgetMs;
+            public readonly int CriticalDebtFrames;
+            public readonly byte Flags;
+
+            public JobAdmissionTelemetryArgs(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+            {
+                Lane = lane;
+                JobHash = jobHash;
+                EstimatedCostMs = estimatedCostMs;
+                RemainingBudgetMs = remainingBudgetMs;
+                CriticalDebtFrames = criticalDebtFrames;
+                Flags = flags;
+            }
+        }
+
         private const int RingCapacity = 1024;
         private const int RingCapacityMask = RingCapacity - 1;
         private const int ExportSnapshotEntries = 1000;
@@ -716,14 +736,14 @@ namespace Hecton8.Core
         /// <summary>
         /// Records one denied job admission into the scheduler black-box lane.
         /// </summary>
-        public static void ReportJobAdmissionState(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+        public static void ReportJobAdmissionState(in JobAdmissionTelemetryArgs args)
         {
             OrRuntimeFaultFlags(unchecked((int)ErrorBits.JobAdmissionStarvation));
             CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
-            instance.WriteJobAdmissionTelemetry(lane, jobHash, estimatedCostMs, remainingBudgetMs, criticalDebtFrames, flags);
+            instance.WriteJobAdmissionTelemetry(in args);
         }
 
         /// <summary>
@@ -762,7 +782,15 @@ namespace Hecton8.Core
                 return;
 
             byte nonFiniteFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite);
-            instance.WriteJobAdmissionTelemetry(lane, jobHash, 0f, value, 0, nonFiniteFlags);
+            JobAdmissionTelemetryArgs args = new JobAdmissionTelemetryArgs(
+                lane: lane,
+                jobHash: jobHash,
+                estimatedCostMs: 0f,
+                remainingBudgetMs: value,
+                criticalDebtFrames: 0,
+                flags: nonFiniteFlags
+            );
+            instance.WriteJobAdmissionTelemetry(in args);
             instance.TryExportSnapshot(ExportReason.JobAdmissionStarvation, flags, bypassCooldown: true);
         }
 
@@ -1537,7 +1565,7 @@ namespace Hecton8.Core
             return count | (mask << 10) | (debt << 20) | barrier;
         }
 
-        private void WriteJobAdmissionTelemetry(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+        private void WriteJobAdmissionTelemetry(in JobAdmissionTelemetryArgs args)
         {
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
@@ -1547,16 +1575,16 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Scheduler;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.LatencyMs = estimatedCostMs;
-            entry.GpuFrameTime = remainingBudgetMs;
+            entry.LatencyMs = args.EstimatedCostMs;
+            entry.GpuFrameTime = args.RemainingBudgetMs;
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
-            entry.ActiveChunkCount = lane;
+            entry.ActiveChunkCount = args.Lane;
             entry.ErrorFlags = (uint)ErrorBits.JobAdmissionStarvation;
             entry.ExportReason = (uint)ExportReason.JobAdmissionStarvation;
             entry.AupShiftSequence = shiftEvent.Sequence;
-            entry.AiStatePacked = jobHash;
-            entry.SubsystemHeatPacked = PackJobAdmissionState(criticalDebtFrames, flags);
+            entry.AiStatePacked = args.JobHash;
+            entry.SubsystemHeatPacked = PackJobAdmissionState(args.CriticalDebtFrames, args.Flags);
             entry.LastOriginShiftFrame = unchecked((uint)Math.Max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
         }
