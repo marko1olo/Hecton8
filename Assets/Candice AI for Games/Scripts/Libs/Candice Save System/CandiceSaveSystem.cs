@@ -243,7 +243,7 @@ namespace CandiceAIforGames.Data
                 string columnParameters = "";
                 if (columnInfos != null)
                 {
-                    columnParameters = " (";
+                    System.Text.StringBuilder sb = new System.Text.StringBuilder(" (");
 
                     for (int i = 0; i < columnInfos.Count; i++)
                     {
@@ -264,21 +264,14 @@ namespace CandiceAIforGames.Data
                             nonNull = " NOT NULL";
                         }
 
-                        string fragment = info.Name + " " + info.Type + pk + autoincrement + nonNull;
+                        sb.Append(info.Name).Append(" ").Append(info.Type).Append(pk).Append(autoincrement).Append(nonNull);
                         if (i != columnInfos.Count - 1)
                         {
-                            fragment += ",";
-                            columnParameters += fragment;
-                            columnParameters += " ";
+                            sb.Append(", ");
                         }
-                        else
-                        {
-                            columnParameters += fragment;
-                        }
-
-
                     }
-                    columnParameters += ")";
+                    sb.Append(")");
+                    columnParameters = sb.ToString();
                 }
                 rc = (providerBase as CandiceSQLiteProvider).CreateTable(tableName, columnParameters);
             }
