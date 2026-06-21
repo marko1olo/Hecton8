@@ -265,6 +265,17 @@ class AssemblyDependencyAuditTests(unittest.TestCase):
         self.assertGreaterEqual(payload["physicsApiHits"], 1)
         self.assertGreaterEqual(payload["gameObjectInstantiationHits"], 1)
 
+    def test_normalize_path(self) -> None:
+        root = audit.REPO_ROOT
+
+        # Test relative path
+        child_path = root / "Tools" / "AssemblyDependencyAudit.py"
+        self.assertEqual(audit.normalize_path(child_path, repo_root=root), "Tools/AssemblyDependencyAudit.py")
+
+        # Test absolute path when not relative
+        tmp_path = Path("/tmp/h8_asm_audit_out_of_root/external_file.txt")
+        self.assertEqual(audit.normalize_path(tmp_path, repo_root=root), tmp_path.as_posix())
+
     def test_using_boundary_detects_cross_domain_import(self) -> None:
         with temporary_directory(prefix="h8_asm_audit_using_") as tmp:
             root = Path(tmp)
