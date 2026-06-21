@@ -598,15 +598,10 @@ namespace Crest
                     LodDataMgrSeaFloorDepth.Bind(_renderMaterial[lodIdx]);
 
                     Helpers.Blit(buffer, _targets.Current, _renderMaterial[lodIdx].material, depthSlice: lodIdx);
-                }
 
-                // Process registered inputs.
-                for (var lodIdx = lt.LodCount - 1; lodIdx >= 0; lodIdx--)
-                {
+                    // Process registered inputs.
                     buffer.SetGlobalInt(sp_LD_SliceIndex, lodIdx);
                     buffer.SetRenderTarget(_targets.Current, _targets.Current.depthBuffer, 0, CubemapFace.Unknown, lodIdx);
-                    // BUG: These draw calls will "leak" and be duplicated before the above blit. They are executed at
-                    // the beginning of this CB before any commands are applied.
                     SubmitDraws(lodIdx, buffer);
                 }
 
