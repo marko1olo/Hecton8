@@ -124,6 +124,20 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private readonly struct NativeSegmentWriteRequest
+        {
+            public readonly void* Source;
+            public readonly int ByteCount;
+            public readonly bool PaceWrites;
+
+            public NativeSegmentWriteRequest(void* source, int byteCount, bool paceWrites)
+            {
+                Source = source;
+                ByteCount = byteCount;
+                PaceWrites = paceWrites;
+            }
+        }
+
         private struct CachedReadWindow
         {
             public string AbsolutePath;
@@ -1280,10 +1294,10 @@ namespace Hecton8.SaveSystem
                     if (!TrySeekWindowsHandle(handle, 0L, out error))
                         return false;
 
-                    if (!TryWriteWindowsSegment(handle, firstBuffer, math.max(firstByteCount, 0), ref cursor, paceWrites, out error))
+                    if (!TryWriteWindowsSegment(handle, new NativeSegmentWriteRequest(firstBuffer, math.max(firstByteCount, 0), paceWrites), ref cursor, out error))
                         return false;
 
-                    if (!TryWriteWindowsSegment(handle, secondBuffer, math.max(secondByteCount, 0), ref cursor, paceWrites, out error))
+                    if (!TryWriteWindowsSegment(handle, new NativeSegmentWriteRequest(secondBuffer, math.max(secondByteCount, 0), paceWrites), ref cursor, out error))
                         return false;
 
                     if (!TrySeekWindowsHandle(handle, totalBytes, out error) || !SetEndOfFileNative(handle))
@@ -1313,23 +1327,23 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryWriteWindowsSegment(IntPtr handle, void* source, int byteCount, ref long cursor, bool paceWrites, out string error)
+        private static bool TryWriteWindowsSegment(IntPtr handle, in NativeSegmentWriteRequest request, ref long cursor, out string error)
         {
             error = string.Empty;
-            if (byteCount <= 0)
+            if (request.ByteCount <= 0)
                 return true;
 
-            if (source == null)
+            if (request.Source == null)
             {
-                cursor += byteCount;
+                cursor += request.ByteCount;
                 return TrySeekWindowsHandle(handle, cursor, out error);
             }
 
-            byte* sourceBytes = (byte*)source;
+            byte* sourceBytes = (byte*)request.Source;
             int offset = 0;
-            while (offset < byteCount)
+            while (offset < request.ByteCount)
             {
-                int chunkBytes = math.min(NativeWriteChunkBytes, byteCount - offset);
+                int chunkBytes = math.min(NativeWriteChunkBytes, request.ByteCount - offset);
                 if (!WriteFileNative(handle, sourceBytes + offset, (uint)chunkBytes, out uint bytesWritten, IntPtr.Zero))
                 {
                     error = "Native write failed.";
@@ -1344,8 +1358,8 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
-                if (paceWrites)
-                    PaceAfterNativeWritePage((int)bytesWritten, byteCount - offset);
+                if (request.PaceWrites)
+                    PaceAfterNativeWritePage((int)bytesWritten, request.ByteCount - offset);
             }
 
             return true;
@@ -1458,10 +1472,10 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                if (!TryWriteUnixSegment(fd, firstBuffer, math.max(firstByteCount, 0), ref cursor, paceWrites, out error))
+                if (!TryWriteUnixSegment(fd, new NativeSegmentWriteRequest(firstBuffer, math.max(firstByteCount, 0), paceWrites), ref cursor, out error))
                     return false;
 
-                if (!TryWriteUnixSegment(fd, secondBuffer, math.max(secondByteCount, 0), ref cursor, paceWrites, out error))
+                if (!TryWriteUnixSegment(fd, new NativeSegmentWriteRequest(secondBuffer, math.max(secondByteCount, 0), paceWrites), ref cursor, out error))
                     return false;
 
                 if (FTruncateUnix(fd, totalBytes) != 0)
@@ -1478,15 +1492,15 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool TryWriteUnixSegment(int fd, void* source, int byteCount, ref long cursor, bool paceWrites, out string error)
+        private static bool TryWriteUnixSegment(int fd, in NativeSegmentWriteRequest request, ref long cursor, out string error)
         {
             error = string.Empty;
-            if (byteCount <= 0)
+            if (request.ByteCount <= 0)
                 return true;
 
-            if (source == null)
+            if (request.Source == null)
             {
-                cursor += byteCount;
+                cursor += request.ByteCount;
                 if (LSeekUnix(fd, cursor, NativeUnixSeekSet) < 0L)
                 {
                     error = "Native write seek failed.";
@@ -1496,11 +1510,11 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            byte* sourceBytes = (byte*)source;
+            byte* sourceBytes = (byte*)request.Source;
             int offset = 0;
-            while (offset < byteCount)
+            while (offset < request.ByteCount)
             {
-                int chunkBytes = math.min(NativeWriteChunkBytes, byteCount - offset);
+                int chunkBytes = math.min(NativeWriteChunkBytes, request.ByteCount - offset);
                 long bytesWritten = WriteUnix(fd, sourceBytes + offset, (UIntPtr)chunkBytes).ToInt64();
                 if (bytesWritten < 0L)
                 {
@@ -1516,8 +1530,8 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
-                if (paceWrites)
-                    PaceAfterNativeWritePage((int)bytesWritten, byteCount - offset);
+                if (request.PaceWrites)
+                    PaceAfterNativeWritePage((int)bytesWritten, request.ByteCount - offset);
             }
 
             return true;
