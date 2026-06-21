@@ -141,13 +141,7 @@ namespace Technie.PhysicsCreator
 			Vector3[] hullVertices;
 			int[] hullIndices;
 
-			hull.FindConvexHull(meshVertices, meshIndices, out hullVertices, out hullIndices, false);
-
-			// If we can't generate a convex hull (maybe we have a single quad input) then just extract the selected triangles and use that as input
-			if (hullVertices == null || hullVertices.Length == 0)
-			{
-				hull.FindTriangles(meshVertices, meshIndices, out hullVertices, out hullIndices);
-			}
+			hull.GenerateFitterInput(meshVertices, meshIndices, out hullVertices, out hullIndices);
 
 			return Fit(hullVertices, hullIndices);
 		}

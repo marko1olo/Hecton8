@@ -173,6 +173,16 @@ namespace Technie.PhysicsCreator.Rigid
 			return result;
 		}
 
+		public void GenerateFitterInput(Vector3[] meshVertices, int[] meshIndices, out Vector3[] hullVertices, out int[] hullIndices)
+		{
+			FindConvexHull(meshVertices, meshIndices, out hullVertices, out hullIndices, false);
+
+			if (hullVertices == null || hullVertices.Length == 0)
+			{
+				FindTriangles(meshVertices, meshIndices, out hullVertices, out hullIndices);
+			}
+		}
+
 		public void FindTriangles(Vector3[] meshVertices, int[] meshIndices, out Vector3[] hullVertices, out int[] hullIndices)
 		{
 			List<Vector3> outVertices = new List<Vector3>();
