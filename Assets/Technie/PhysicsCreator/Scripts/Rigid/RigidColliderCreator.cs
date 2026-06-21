@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -296,6 +296,16 @@ namespace Technie.PhysicsCreator
 
 			// Try and connect orphaned hulls with orphaned colliders
 
+			Dictionary<Collider, RigidColliderCreatorChild> colliderChildCache = new Dictionary<Collider, RigidColliderCreatorChild>();
+			for (int j = orphanedColliders.Count - 1; j >= 0; j--)
+			{
+				Collider c = orphanedColliders[j];
+				if (c.transform.parent == this.transform)
+				{
+					colliderChildCache[c] = c.gameObject.GetComponent<RigidColliderCreatorChild>();
+				}
+			}
+
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
 				Hull h = orphanedHulls[i];
@@ -312,10 +322,7 @@ namespace Technie.PhysicsCreator
 
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
 					RigidColliderCreatorChild child = null;
-					if (c.transform.parent == this.transform)
-					{
-							c.gameObject.TryGetComponent<RigidColliderCreatorChild>(out child);
-					}
+						colliderChildCache.TryGetValue(c, out child);
 
 					// todo needs better handling
 					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
