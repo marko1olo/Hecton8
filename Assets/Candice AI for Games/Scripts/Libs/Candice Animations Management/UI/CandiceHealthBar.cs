@@ -54,7 +54,8 @@ namespace CandiceAIforGames.AI
 				Image segmentFillImage = segmentImage.transform.GetChild(0).GetComponent<Image>();
 				segmentFillImage.color = m_FillColor;
 				m_ProgressToFill.Add(segmentFillImage);
-				segmentFillImage.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(m_SizeOfSegment, segmentFillImage.GetComponent<RectTransform>().sizeDelta.y);
+				RectTransform segmentFillRectTransform = segmentFillImage.GetComponent<RectTransform>();
+				segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 			}
 		}
 
