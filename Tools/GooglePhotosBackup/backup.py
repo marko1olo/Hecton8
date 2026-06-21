@@ -332,17 +332,23 @@ class GooglePhotosBackup:
             if response.status_code != 200:
                 logging.error(f"Failed to commit batch. HTTP Status: {response.status_code}, Response: {response.text}")
                 # Mark all in batch as failed
-                for filepath, _ in batch:
-                    cursor.execute(
-                        "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
-                        (f"Batch create failed: {response.text[:200]}", filepath)
-                    )
+                error_msg = f"Batch create failed: {response.text[:200]}"
+                error_data = [(error_msg, filepath) for filepath, _ in batch]
+                cursor.executemany(
+                    "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
+                    error_data
+                )
                 conn.commit()
                 return
 
             results = response.json().get('newMediaItemResults', [])
             
             # Match results back to paths
+            success_data = []
+            failure_data = []
+
+            now_iso = datetime.now().isoformat()
+
             for i, result in enumerate(results):
                 filepath, token = batch[i]
                 status_obj = result.get('status', {})
@@ -351,27 +357,34 @@ class GooglePhotosBackup:
                 if code == 0:
                     media_item = result.get('mediaItem', {})
                     media_id = media_item.get('id')
-                    cursor.execute(
-                        "UPDATE uploads SET status = 'uploaded', uploaded_at = ?, google_media_id = ?, error_message = NULL WHERE filepath = ?",
-                        (datetime.now().isoformat(), media_id, filepath)
-                    )
+                    success_data.append((now_iso, media_id, filepath))
                     logging.info(f"Successfully finalized: {os.path.basename(filepath)}")
                 else:
                     msg = status_obj.get('message', 'Unknown creation error')
-                    cursor.execute(
-                        "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
-                        (f"Creation failed (code {code}): {msg}", filepath)
-                    )
+                    failure_data.append((f"Creation failed (code {code}): {msg}", filepath))
                     logging.error(f"Failed to finalize {os.path.basename(filepath)}: {msg}")
             
+            if success_data:
+                cursor.executemany(
+                    "UPDATE uploads SET status = 'uploaded', uploaded_at = ?, google_media_id = ?, error_message = NULL WHERE filepath = ?",
+                    success_data
+                )
+
+            if failure_data:
+                cursor.executemany(
+                    "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
+                    failure_data
+                )
+
             conn.commit()
         except Exception as e:
             logging.error(f"Error finalizing batch: {e}")
-            for filepath, _ in batch:
-                cursor.execute(
-                    "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
-                    (f"Finalize exception: {str(e)[:200]}", filepath)
-                )
+            error_msg = f"Finalize exception: {str(e)[:200]}"
+            error_data = [(error_msg, filepath) for filepath, _ in batch]
+            cursor.executemany(
+                "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
+                error_data
+            )
             conn.commit()
         finally:
             conn.close()
