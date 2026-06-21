@@ -6,12 +6,13 @@ namespace Technie.PhysicsCreator
 {
 	// Normalised, high-precision mesh stored in a format suitable to actually apply the cutting algorithm to
 	//
-	// Todo: need to implement other optional vertex attributes: tangents, uv2, uv3, etc.
+	// Todo: need to implement other optional vertex attributes: uv2, uv3, etc.
 	// 
 	public class CuttableMesh
 	{
 		private MeshRenderer inputMeshRenderer;
 
+		private bool hasTangents;
 		private bool hasUvs;
 		private bool hasUv1s;
 		private bool hasColours;
@@ -41,10 +42,12 @@ namespace Technie.PhysicsCreator
 			{
 				Vector3[] vertices = inputMesh.vertices;
 				Vector3[] normals = inputMesh.normals;
+				Vector4[] tangents = inputMesh.tangents;
 				Vector2[] uvs = inputMesh.uv;
 				Vector2[] uv1 = inputMesh.uv2;
 				Color32[] colours = inputMesh.colors32;
 
+				this.hasTangents = tangents != null && tangents.Length > 0;
 				this.hasUvs = uvs != null && uvs.Length > 0;
 				this.hasUv1s = uv1 != null && uv1.Length > 0;
 				this.hasColours = colours != null && colours.Length > 0;
@@ -53,7 +56,7 @@ namespace Technie.PhysicsCreator
 				{
 					int[] indices = inputMesh.GetIndices(i);
 
-					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, colours, uvs, uv1);
+					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, tangents, colours, uvs, uv1);
 					this.subMeshes.Add(subMesh);
 				}
 			}
@@ -67,6 +70,7 @@ namespace Technie.PhysicsCreator
 		{
 			this.inputMeshRenderer = inputMesh.inputMeshRenderer;
 
+			this.hasTangents = inputMesh.hasTangents;
 			this.hasUvs = inputMesh.hasUvs;
 			this.hasUv1s = inputMesh.hasUv1s;
 			this.hasColours = inputMesh.hasColours;
@@ -159,6 +163,7 @@ namespace Technie.PhysicsCreator
 
 			List<Vector3> outputVertices = new List<Vector3>();
 			List<Vector3> outputNormals = new List<Vector3>();
+			List<Vector4> outputTangents = hasTangents ? new List<Vector4>() : null;
 			List<Color32> outputColours = hasColours ? new List<Color32>() : null;
 			List<Vector2> outputUvs = hasUvs ? new List<Vector2>() : null;
 			List<Vector2> outputUv1s = hasUv1s ? new List<Vector2>() : null;
@@ -169,11 +174,12 @@ namespace Technie.PhysicsCreator
 			{
 				baseSubMeshVertex.Add(outputVertices.Count);
 
-				sub.AddTo(outputVertices, outputNormals, outputColours, outputUvs, outputUv1s);
+				sub.AddTo(outputVertices, outputNormals, outputTangents, outputColours, outputUvs, outputUv1s);
 			}
 
 			newMesh.vertices = outputVertices.ToArray();
 			newMesh.normals = outputNormals.ToArray();
+			newMesh.tangents = hasTangents ? outputTangents.ToArray() : null;
 			newMesh.colors32 = hasColours ? outputColours.ToArray() : null;
 			newMesh.uv = hasUvs ? outputUvs.ToArray() : null;
 			newMesh.uv2 = hasUv1s ? outputUv1s.ToArray() : null;
