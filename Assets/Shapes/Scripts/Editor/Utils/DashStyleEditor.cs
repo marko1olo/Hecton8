@@ -59,11 +59,18 @@ namespace Shapes {
 				using( var chChk = new EditorGUI.ChangeCheckScope() ) {
 					EditorGUILayout.PropertyField( propSpace, new GUIContent( "Length Space" ) );
 					if( chChk.changed && propSpace.enumValueIndex == DashSpace.FixedCount.GetIndex() ) {
-						// todo: might want to do per-instance fixup of this, it's a lil wonky
-						// but you know what, the world is wonky
 						// converts from dash+space to count + space ratio
-						float period = propSpacing.floatValue + propSize.floatValue;
-						propSpacing.floatValue = propSpacing.floatValue / period;
+						propSpace.serializedObject.ApplyModifiedProperties();
+						foreach( Object target in propSpace.serializedObject.targetObjects ) {
+							using( SerializedObject so = new SerializedObject( target ) ) {
+								SerializedProperty pSize = so.FindProperty( propSize.propertyPath );
+								SerializedProperty pSpacing = so.FindProperty( propSpacing.propertyPath );
+								float period = pSpacing.floatValue + pSize.floatValue;
+								pSpacing.floatValue = pSpacing.floatValue / period;
+								so.ApplyModifiedProperties();
+							}
+						}
+						propSpace.serializedObject.Update();
 					}
 				}
 
