@@ -28,13 +28,14 @@ namespace Hecton8.Core
             };
 
             SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
-            CrashTelemetryBuffer.ReportJobAdmissionState(
+            CrashTelemetryBuffer.JobAdmissionTelemetryArgs args = new CrashTelemetryBuffer.JobAdmissionTelemetryArgs(
                 signal.Lane,
                 signal.JobHash,
                 signal.EstimatedCostMs,
                 signal.RemainingBudgetMs,
                 signal.CriticalDebtFrames,
                 signal.Flags);
+            CrashTelemetryBuffer.ReportJobAdmissionState(in args);
         }
 
         /// <inheritdoc />

@@ -149,7 +149,7 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("return debt | ((uint)flags << 24);"));
             Assert.That(source, Does.Contain("byte nonFiniteFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite);"));
-            Assert.That(source, Does.Contain("WriteJobAdmissionTelemetry(lane, jobHash, 0f, value, 0, nonFiniteFlags);"));
+            Assert.That(source, Does.Contain("instance.WriteJobAdmissionTelemetry(in args);"));
             Assert.That(source, Does.Contain("using Hecton8.Core.Contracts;"));
         }
 
