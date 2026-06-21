@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -269,7 +269,7 @@ namespace Shapes {
 			);
 		}
 
-		public static int CalcBezierPointCount( Vector3 a, Vector3 b, Vector3 c, Vector3 d, float pointsPerTurn ) {
+		public static int GetBezierPointCount( Vector3 a, Vector3 b, Vector3 c, Vector3 d, float pointsPerTurn ) {
 			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
 			float curveSumDeg = GetApproximateAngularCurveSumDegrees( a, b, c, d, sampleCount );
 			float angSpanTurns = curveSumDeg / 360f;
@@ -322,7 +322,6 @@ namespace Shapes {
 			angTurn = Vector2.Angle( normA, normB ) / 360f;
 			return true;
 		}
-
 		public static float GetApproximateAngularCurveSumDegrees( Vector3 a, Vector3 b, Vector3 c, Vector3 d, int vertCount ) {
 			float angSum = 0f;
 

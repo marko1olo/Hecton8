@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -77,7 +77,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn</summary>
 		public void BezierTo( Vector3 startTangent, Vector3 endTangent, Vector3 end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end, pointsPerTurn );
+			int pointCount = ShapesMath.GetBezierPointCount( LastPoint.point, startTangent, endTangent, end, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -94,7 +94,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn. Color and thickness etc. will blend toward the end point values</summary>
 		public void BezierTo( Vector3 startTangent, Vector3 endTangent, PolylinePoint end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent, endTangent, end.point, pointsPerTurn );
+			int pointCount = ShapesMath.GetBezierPointCount( LastPoint.point, startTangent, endTangent, end.point, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -115,7 +115,7 @@ namespace Shapes {
 		/// <summary>A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn. Color and thickness etc. will blend across the point values</summary>
 		public void BezierTo( PolylinePoint startTangent, PolylinePoint endTangent, PolylinePoint end, float pointsPerTurn ) {
 			if( CheckCanAddContinuePoint() ) return;
-			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint.point, startTangent.point, endTangent.point, end.point, pointsPerTurn );
+			int pointCount = ShapesMath.GetBezierPointCount( LastPoint.point, startTangent.point, endTangent.point, end.point, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
