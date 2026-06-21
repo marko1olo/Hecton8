@@ -230,6 +230,19 @@ class GooglePhotosBackup:
         
         pending_uploads = []
         
+        # Eager load existing uploads in batches to avoid N+1 query problem
+        chunk_size = 900
+        existing_uploads = {}
+        for i in range(0, len(found_files), chunk_size):
+            chunk = found_files[i:i+chunk_size]
+            placeholders = ','.join('?' * len(chunk))
+            cursor.execute(f"SELECT filepath, file_size, mtime, status FROM uploads WHERE filepath IN ({placeholders})", chunk)
+            for row in cursor.fetchall():
+                existing_uploads[row[0]] = (row[1], row[2], row[3])
+
+        new_records = []
+        update_records = []
+
         for filepath in found_files:
             try:
                 stat = os.stat(filepath)
@@ -239,26 +252,30 @@ class GooglePhotosBackup:
                 logging.warning(f"Could not read file stats for {filepath}: {e}")
                 continue
 
-            cursor.execute("SELECT file_size, mtime, status FROM uploads WHERE filepath = ?", (filepath,))
-            row = cursor.fetchone()
+            row = existing_uploads.get(filepath)
             
             if row is None:
                 # New file
-                cursor.execute(
-                    "INSERT INTO uploads (filepath, file_size, mtime, status) VALUES (?, ?, ?, 'pending')",
-                    (filepath, file_size, mtime)
-                )
+                new_records.append((filepath, file_size, mtime, 'pending'))
                 pending_uploads.append((filepath, file_size))
             else:
                 db_size, db_mtime, status = row
                 # Check if file has changed or was not successfully uploaded
                 if status != 'uploaded' or db_size != file_size or abs(db_mtime - mtime) > 1.0:
-                    cursor.execute(
-                        "UPDATE uploads SET file_size = ?, mtime = ?, status = 'pending', error_message = NULL WHERE filepath = ?",
-                        (file_size, mtime, filepath)
-                    )
+                    update_records.append((file_size, mtime, filepath))
                     pending_uploads.append((filepath, file_size))
         
+        if new_records:
+            cursor.executemany(
+                "INSERT INTO uploads (filepath, file_size, mtime, status) VALUES (?, ?, ?, ?)",
+                new_records
+            )
+        if update_records:
+            cursor.executemany(
+                "UPDATE uploads SET file_size = ?, mtime = ?, status = 'pending', error_message = NULL WHERE filepath = ?",
+                update_records
+            )
+
         conn.commit()
         conn.close()
         
