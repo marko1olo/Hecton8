@@ -1,6 +1,7 @@
 ﻿
 using UnityEngine;
 using UnityEditor;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -36,35 +37,48 @@ namespace Den.Tools
 
 			Cell.EmptyLinePx(5);
 
-			if (matrixAsset.matrix != null  &&  matrixAsset.preview == null)
-				matrixAsset.RefreshPreview();
+			DrawPreviewAndImport(
+				matrixAsset, matrixAsset.matrix, matrixAsset.preview, () => matrixAsset.RefreshPreview(),
+				ref matrixAsset.source, ref matrixAsset.rawPath, ref matrixAsset.textureSource, ref matrixAsset.channelSource,
+				() => matrixAsset.Reload(), ref colorize, ref relief);
 
-			if (matrixAsset.preview != null)
+			DrawReloadButton(
+				matrixAsset, matrixAsset.source, matrixAsset.rawPath, matrixAsset.textureSource, () => matrixAsset.Reload());
+		}
+
+		public static void DrawPreviewAndImport (
+			UnityEngine.Object targetObj, Matrix matrix, Texture2D preview, Action refreshPreview,
+			ref MatrixAsset.Source source, ref string rawPath, ref Texture2D textureSource, ref MatrixAsset.Channel channelSource,
+			Action reload, ref bool colorize, ref bool relief)
+		{
+			if (matrix != null  &&  preview == null)
+				refreshPreview();
+
+			if (preview != null)
 			{
 				using (Cell.LinePx(256))
 				{
 					Cell.EmptyRowRel(1);
 					using (Cell.RowPx(256)) 
 					{
-						//Draw.Texture(matrixAsset.preview);
-						Draw.MatrixPreviewTexture(matrixAsset.preview, colorize:colorize, relief:relief, min:0, max:1);
+						Draw.MatrixPreviewTexture(preview, colorize:colorize, relief:relief, min:0, max:1);
 						Draw.MatrixPreviewReliefSwitch(ref colorize, ref relief);
 					}
 					Cell.EmptyRowRel(1);
 				}
 
-				if (matrixAsset.rawPath != null)
-					using (Cell.LineStd) Draw.Label(matrixAsset.rawPath);
+				if (rawPath != null)
+					using (Cell.LineStd) Draw.Label(rawPath);
 
-				if (matrixAsset.matrix != null)
-					using (Cell.LineStd) Draw.Label(matrixAsset.matrix.rect.size.x + ", " + matrixAsset.matrix.rect.size.z);
+				if (matrix != null)
+					using (Cell.LineStd) Draw.Label(matrix.rect.size.x + ", " + matrix.rect.size.z);
 			}
 
 			Cell.EmptyLinePx(5);
 
-			using (Cell.LineStd) Draw.Field(ref matrixAsset.source, "Map Source");
+			using (Cell.LineStd) Draw.Field(ref source, "Map Source");
 
-			if (matrixAsset.source == MatrixAsset.Source.Raw)
+			if (source == MatrixAsset.Source.Raw)
 			{
 				using (Cell.LinePx(22)) Draw.Label("Square gray 16bit RAW, PC byte order", style:UI.current.styles.helpBox);
 
@@ -74,35 +88,39 @@ namespace Den.Tools
 
 					if (newPath!=null && newPath.Length!=0)
 					{
-						UnityEditor.Undo.RecordObject(this, "Import RAW");
-						matrixAsset.rawPath = newPath;
+						UnityEditor.Undo.RecordObject(targetObj, "Import RAW");
+						rawPath = newPath;
 
-						matrixAsset.Reload();
+						reload();
 
-						EditorUtility.SetDirty(matrixAsset);
+						EditorUtility.SetDirty(targetObj);
 					}
 				}
 			}
 
-			else //texture
+			else if (source == MatrixAsset.Source.Texture)
 				using (Cell.LinePx(0))
 				{
-					using (Cell.LineStd) Draw.ObjectField(ref matrixAsset.textureSource, "Texture"); //
-					using (Cell.LineStd) Draw.Field(ref matrixAsset.channelSource, "Channel"); //
+					using (Cell.LineStd) Draw.ObjectField(ref textureSource, "Texture"); //
+					using (Cell.LineStd) Draw.Field(ref channelSource, "Channel"); //
 
 					if (Cell.current.valChanged)
-						matrixAsset.Reload();
+						reload();
 				}
+		}
 
+		public static void DrawReloadButton (
+			UnityEngine.Object targetObj, MatrixAsset.Source source, string rawPath, Texture2D textureSource, Action reload)
+		{
 			using (Cell.LineStd)
 			{
 				Cell.current.disabled = 
-					(matrixAsset.source == MatrixAsset.Source.Raw && matrixAsset.rawPath == null) ||
-					(matrixAsset.source == MatrixAsset.Source.Texture && matrixAsset.textureSource == null);
+					(source == MatrixAsset.Source.Raw && rawPath == null) ||
+					(source == MatrixAsset.Source.Texture && textureSource == null);
 				if (Draw.Button("Reload"))
 				{
-					matrixAsset.Reload();
-					EditorUtility.SetDirty(matrixAsset);
+					reload();
+					EditorUtility.SetDirty(targetObj);
 				}
 			}
 		}
