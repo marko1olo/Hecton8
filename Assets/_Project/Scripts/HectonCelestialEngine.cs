@@ -8181,7 +8181,6 @@ namespace Hecton8.Celestial
             _celestialRuntimeSequence = snapshot.Sequence;
         }
 
-
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {
             return ComputeCheapPenumbraOverlapFromSeparation(sunRadiusDeg, occluderRadiusDeg, separationDeg);
