@@ -119,10 +119,10 @@ namespace Technie.PhysicsCreator.Skinned
 		public List<BoneHullData> boneHullData = new List<BoneHullData>();
 
 		// Current selection - one of these will be valid (or neither)
-		// TODO: Should these be serialised?
-		//	pro: serializing them means selection is saved and restored between sessions
-		//  con: serializing this means the asset file changes just by using the UI and not actually changing any data
+		[SerializeField]
 		private int selectedBoneIndex = INVALID_INDEX;
+
+		[SerializeField]
 		private int selectedHullIndex = INVALID_INDEX;
 
 		private int lastModifiedFrame = 0;
