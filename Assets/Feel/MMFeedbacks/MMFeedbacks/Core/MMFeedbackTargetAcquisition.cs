@@ -97,9 +97,9 @@ namespace MoreMountains.Feedbacks
 				case Modes.AnyChild:
 					for (int i = 0; i < owner.transform.childCount; i++) 
 					{
-						if (owner.transform.GetChild(i).GetComponent<T>() != null)
+						if (owner.transform.GetChild(i).TryGetComponent<T>(out var comp))
 						{
-							return owner.transform.GetChild(i).GetComponent<T>();
+							return comp;
 						}
 					}
 					return owner.GetComponentInChildren<T>();
