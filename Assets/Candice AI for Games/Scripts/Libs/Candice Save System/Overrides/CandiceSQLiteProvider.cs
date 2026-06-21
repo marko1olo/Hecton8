@@ -349,43 +349,81 @@ namespace CandiceAIforGames.Data
             return "\"" + identifier.Replace("\"", "\"\"") + "\"";
         }
 
-        public int CreateTable(string tableName, string columnParameters)
+        public int CreateTable(string tableName, List<CandiceColumnInfo> columnInfos)
         {
             if (!IsValidIdentifier(tableName))
             {
                 Debug.LogError("Invalid table name provided: " + tableName);
                 return -1;
             }
-            if (columnParameters != null && columnParameters.Contains(";"))
+
+            string columnParameters = "";
+            if (columnInfos != null)
             {
-                Debug.Log("Datastore Creator_Error: columnParameters cannot contain semicolons.");
-                return -1;
+                columnParameters = " (";
+
+                for (int i = 0; i < columnInfos.Count; i++)
+                {
+                    CandiceColumnInfo info = columnInfos[i];
+                    if (!IsValidIdentifier(info.Name))
+                    {
+                        Debug.LogError("Invalid column name provided: " + info.Name);
+                        return -1;
+                    }
+                    if (!IsValidIdentifier(info.Type))
+                    {
+                        Debug.LogError("Invalid column type provided: " + info.Type);
+                        return -1;
+                    }
+
+                    string nonNull = "";
+                    string autoincrement = "";
+                    string pk = "";
+                    if (info.Pk)
+                    {
+                        pk = " PRIMARY KEY";
+                    }
+                    if (info.Ai)
+                    {
+                        autoincrement = " AUTOINCREMENT";
+                    }
+                    if (info.NotNull)
+                    {
+                        nonNull = " NOT NULL";
+                    }
+
+                    string fragment = EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull;
+                    if (i != columnInfos.Count - 1)
+                    {
+                        fragment += ", ";
+                    }
+                    columnParameters += fragment;
+                }
+                columnParameters += ")";
             }
 
             int rc = -1;
             SqliteConnection sqlCon = null;
             SqliteCommand sqlCmd = null;
             string createQuery = "";
-            sqlCon = new SqliteConnection(conStr);
-            sqlCon.Open();
-            createQuery = "CREATE TABLE IF NOT EXISTS " + EscapeIdentifier(tableName) + columnParameters;
-            Debug.Log(createQuery);
 
-            sqlCmd = new SqliteCommand(createQuery, sqlCon);
-            rc = sqlCmd.ExecuteNonQuery();
-            sqlCmd.Dispose();
-            sqlCon.Dispose();
             try
             {
-                
+                sqlCon = new SqliteConnection(conStr);
+                sqlCon.Open();
+                createQuery = "CREATE TABLE IF NOT EXISTS " + EscapeIdentifier(tableName) + columnParameters;
+                Debug.Log(createQuery);
+
+                sqlCmd = new SqliteCommand(createQuery, sqlCon);
+                rc = sqlCmd.ExecuteNonQuery();
+                sqlCmd.Dispose();
+                sqlCon.Dispose();
             }//end try
             catch (Exception ex)
             {
                 //throw ex;
                 Debug.Log("Datastore Creator_Error: " + ex.Message);
             } // end catch
-
-
 
             return rc;
         }
@@ -419,35 +457,42 @@ namespace CandiceAIforGames.Data
             } // end catch
             return rc;
         }
-        public int AddColumn(string tableName, string columnParameters)
+        public int AddColumn(string tableName, CandiceColumnInfo info)
         {
             if (!IsValidIdentifier(tableName))
             {
                 Debug.LogError("Invalid table name provided: " + tableName);
                 return -1;
             }
-            if (string.IsNullOrEmpty(columnParameters))
+            if (!IsValidIdentifier(info.Name))
             {
-                Debug.LogError("Invalid column parameters provided.");
+                Debug.LogError("Invalid column name provided: " + info.Name);
+                return -1;
+            }
+            if (!IsValidIdentifier(info.Type))
+            {
+                Debug.LogError("Invalid column type provided: " + info.Type);
                 return -1;
             }
 
-            string columnParametersTrimmed = columnParameters.Trim();
-            int firstSpace = columnParametersTrimmed.IndexOf(' ');
-            string colName = firstSpace > 0 ? columnParametersTrimmed.Substring(0, firstSpace) : columnParametersTrimmed;
-            string colDef = firstSpace > 0 ? columnParametersTrimmed.Substring(firstSpace).Trim() : "";
-
-            if (!IsValidIdentifier(colName))
+            string columnParameters = " ";
+            string nonNull = "";
+            string autoincrement = "";
+            string pk = "";
+            if (info.Pk)
             {
-                Debug.LogError("Invalid column name provided: " + colName);
-                return -1;
+                pk = " PRIMARY KEY";
             }
-
-            if (!string.IsNullOrEmpty(colDef) && !System.Text.RegularExpressions.Regex.IsMatch(colDef, @"^[a-zA-Z0-9_ \(\)\[\]\.\,\'\""\-]+$"))
+            if (info.Ai)
             {
-                Debug.LogError("Invalid characters in column definition.");
-                return -1;
+                autoincrement = " AUTOINCREMENT";
             }
+            if (info.NotNull)
+            {
+                nonNull = " NOT NULL";
+            }
+            columnParameters += EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull;
+
 
             int rc = 0;
             SqliteConnection sqlCon = null;
@@ -458,7 +503,7 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                createQuery = "ALTER TABLE " + EscapeIdentifier(tableName) + " ADD " + EscapeIdentifier(colName) + (string.IsNullOrEmpty(colDef) ? "" : " " + colDef);
+                createQuery = "ALTER TABLE " + EscapeIdentifier(tableName) + " ADD COLUMN" + columnParameters;
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();
@@ -660,7 +705,7 @@ namespace CandiceAIforGames.Data
         {
         }
 
-        public int CreateTable(string tableName, string columnParameters)
+        public int CreateTable(string tableName, List<CandiceColumnInfo> columnInfos)
         {
             LogDisabledOnce();
             return ProviderUnavailable;
@@ -672,7 +717,7 @@ namespace CandiceAIforGames.Data
             return ProviderUnavailable;
         }
 
-        public int AddColumn(string tableName, string columnParameters)
+        public int AddColumn(string tableName, CandiceColumnInfo info)
         {
             LogDisabledOnce();
             return ProviderUnavailable;

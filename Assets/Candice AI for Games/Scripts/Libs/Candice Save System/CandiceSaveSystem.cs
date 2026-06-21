@@ -240,47 +240,7 @@ namespace CandiceAIforGames.Data
             int rc = 0;
             if (providerBase is CandiceSQLiteProvider)
             {
-                string columnParameters = "";
-                if (columnInfos != null)
-                {
-                    columnParameters = " (";
-
-                    for (int i = 0; i < columnInfos.Count; i++)
-                    {
-                        CandiceColumnInfo info = columnInfos[i];
-                        string nonNull = "";
-                        string autoincrement = "";
-                        string pk = "";
-                        if (info.Pk)
-                        {
-                            pk = " PRIMARY KEY";
-                        }
-                        if (info.Ai)
-                        {
-                            autoincrement = " AUTOINCREMENT";
-                        }
-                        if (info.NotNull)
-                        {
-                            nonNull = " NOT NULL";
-                        }
-
-                        string fragment = info.Name + " " + info.Type + pk + autoincrement + nonNull;
-                        if (i != columnInfos.Count - 1)
-                        {
-                            fragment += ",";
-                            columnParameters += fragment;
-                            columnParameters += " ";
-                        }
-                        else
-                        {
-                            columnParameters += fragment;
-                        }
-
-
-                    }
-                    columnParameters += ")";
-                }
-                rc = (providerBase as CandiceSQLiteProvider).CreateTable(tableName, columnParameters);
+                rc = (providerBase as CandiceSQLiteProvider).CreateTable(tableName, columnInfos);
             }
             else
             {
@@ -302,24 +262,7 @@ namespace CandiceAIforGames.Data
             int rc = 0;
             if (providerBase is CandiceSQLiteProvider)
             {
-                string columnParameters = "";
-                string nonNull = "";
-                string autoincrement = "";
-                string pk = "";
-                if (info.Pk)
-                {
-                    pk = " PRIMARY KEY";
-                }
-                if (info.Ai)
-                {
-                    autoincrement = " AUTOINCREMENT";
-                }
-                if (info.NotNull)
-                {
-                    nonNull = " NOT NULL";
-                }
-                columnParameters += info.Name + " " + info.Type + pk + autoincrement + nonNull;
-                rc = (providerBase as CandiceSQLiteProvider).AddColumn(tableName, columnParameters);
+                rc = (providerBase as CandiceSQLiteProvider).AddColumn(tableName, info);
             }
             else
             {
