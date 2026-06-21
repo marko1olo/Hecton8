@@ -86,9 +86,10 @@ namespace Technie.PhysicsCreator
 			bool hasColours = inputSubMesh.HasColours();
 			bool hasUvs = inputSubMesh.HasUvs();
 			bool hasUv1 = inputSubMesh.HasUv1();
+			bool hasTangents = inputSubMesh.HasTangents();
 
-			CuttableSubMesh frontSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1);
-			CuttableSubMesh backSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1);
+			CuttableSubMesh frontSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasTangents);
+			CuttableSubMesh backSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasTangents);
 
 			for (int i = 0; i < inputSubMesh.NumVertices(); i += 3)
 			{
