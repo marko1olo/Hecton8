@@ -1894,26 +1894,41 @@ namespace Hecton8.Editor.Validation
             if (string.IsNullOrWhiteSpace(ownerBlock) || string.IsNullOrWhiteSpace(propertyName))
                 return false;
 
+            int valueStartIndex = FindFileIdValueStartIndex(ownerBlock, propertyName);
+            if (valueStartIndex < 0)
+                return false;
+
+            return TryParseFileIdValue(ownerBlock, valueStartIndex, out fileId);
+        }
+
+        private static int FindFileIdValueStartIndex(string ownerBlock, string propertyName)
+        {
             string marker = propertyName + ": {fileID:";
             int markerIndex = ownerBlock.IndexOf(marker, StringComparison.Ordinal);
             if (markerIndex < 0)
-                return false;
+                return -1;
 
             int cursor = markerIndex + marker.Length;
             while (cursor < ownerBlock.Length && ownerBlock[cursor] == ' ')
                 cursor++;
 
-            int start = cursor;
+            return cursor;
+        }
+
+        private static bool TryParseFileIdValue(string ownerBlock, int startIndex, out string fileId)
+        {
+            fileId = string.Empty;
+            int cursor = startIndex;
             while (cursor < ownerBlock.Length &&
                    (ownerBlock[cursor] == '-' || char.IsDigit(ownerBlock[cursor])))
             {
                 cursor++;
             }
 
-            if (cursor <= start)
+            if (cursor <= startIndex)
                 return false;
 
-            fileId = ownerBlock.Substring(start, cursor - start);
+            fileId = ownerBlock.Substring(startIndex, cursor - startIndex);
             return true;
         }
 
