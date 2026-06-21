@@ -204,15 +204,6 @@ namespace Hecton8.Bootstrap
             _listeners.TryUnregister(listener);
         }
 
-        /// <summary>
-        /// Enqueues the bootstrap-complete event.
-        /// </summary>
-        [Obsolete("Use TryNotifyBootstrapComplete() so bounded queue rejection stays visible at the producer.", true)]
-        public static void NotifyBootstrapComplete()
-        {
-            TryNotifyBootstrapComplete();
-        }
-
         public static bool TryNotifyBootstrapComplete()
         {
             EnsureInitialized();
