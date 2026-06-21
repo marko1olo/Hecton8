@@ -2894,15 +2894,17 @@ namespace Hecton8.Construction
                         : 0f;
                     bool loadedInteriorReefInfestationActive = data.version >= 49 && moduleDto.interiorReefInfestationActive;
 
-                    restoredBaseModule.SetState(
-                        loadedIntegrity,
-                        moduleDto.isFlooded,
-                        (BaseModuleFailureMode)moduleDto.failureMode,
-                        loadedRepairCap,
-                        loadedAirReserveNormalized,
-                        loadedCo2Normalized,
-                        loadedFloodedReefFloodSeconds,
-                        loadedInteriorReefInfestationActive);
+                    restoredBaseModule.SetState(new BaseModuleSaveState
+                    {
+                        Integrity = loadedIntegrity,
+                        Flooded = moduleDto.isFlooded,
+                        CascadeFailure = (BaseModuleFailureMode)moduleDto.failureMode,
+                        RepairIntegrityCap = loadedRepairCap,
+                        AirReserveNormalized = loadedAirReserveNormalized,
+                        Co2Normalized = loadedCo2Normalized,
+                        FloodedReefFloodSeconds = loadedFloodedReefFloodSeconds,
+                        InteriorReefInfestationActive = loadedInteriorReefInfestationActive
+                    });
                 }
 
                 if (hasLegacyModuleState &&

@@ -665,7 +665,17 @@ namespace Hecton8.Editor
             if (module == null)
                 return;
 
-            module.SetState(integrity, flooded);
+            module.SetState(new BaseModuleSaveState
+            {
+                Integrity = integrity,
+                Flooded = flooded,
+                CascadeFailure = BaseModuleFailureMode.None,
+                RepairIntegrityCap = module.MaxIntegrity,
+                AirReserveNormalized = 1f,
+                Co2Normalized = 0f,
+                FloodedReefFloodSeconds = 0f,
+                InteriorReefInfestationActive = false
+            });
         }
 
         private static void CreateMarker(Transform parent, string name, Vector3 localPosition, Material material, FieldTargetRole role, string note)

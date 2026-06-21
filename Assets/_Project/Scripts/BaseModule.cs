@@ -77,6 +77,18 @@ using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
+    public struct BaseModuleSaveState
+    {
+        public float Integrity;
+        public bool Flooded;
+        public BaseModuleFailureMode CascadeFailure;
+        public float RepairIntegrityCap;
+        public float AirReserveNormalized;
+        public float Co2Normalized;
+        public float FloodedReefFloodSeconds;
+        public bool InteriorReefInfestationActive;
+    }
+
     public enum BaseModuleFailureMode : byte
     {
         None = 0,
@@ -2284,13 +2296,17 @@ namespace Hecton8.Gameplay
                     break;
             }
 
-            SetState(
-                normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity),
-                flooded,
-                BaseModuleFailureMode.None,
-                maxIntegrity,
-                integrityState == BaseModuleIntegrityState.Pristine ? 1f : Mathf.Clamp01(normalizedIntegrity),
-                0f);
+            SetState(new BaseModuleSaveState
+            {
+                Integrity = normalizedIntegrity * Mathf.Max(0f, _integrityComponent.MaxIntegrity),
+                Flooded = flooded,
+                CascadeFailure = BaseModuleFailureMode.None,
+                RepairIntegrityCap = maxIntegrity,
+                AirReserveNormalized = integrityState == BaseModuleIntegrityState.Pristine ? 1f : Mathf.Clamp01(normalizedIntegrity),
+                Co2Normalized = 0f,
+                FloodedReefFloodSeconds = 0f,
+                InteriorReefInfestationActive = false
+            });
         }
 
         /// <summary>
@@ -2311,79 +2327,22 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Ustanavlivaet sostoyanie modulya pri zagruzke sohraneniya.
-        /// Vyzyvaetsya ConstructionManager.LoadFromSaveData().
-        /// </summary>
-        public void SetState(float integrity, bool flooded)
-        {
-            SetState(integrity, flooded, BaseModuleFailureMode.None, maxIntegrity);
-        }
-
-        /// <summary>
-        /// Ustanavlivaet sostoyanie modulya pri zagruzke sohraneniya, vklyuchaya avariynyy status.
-        /// </summary>
-        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure)
-        {
-            SetState(integrity, flooded, cascadeFailure, maxIntegrity);
-        }
-
-        /// <summary>
-        /// Restores module state from save, including the reduced repair ceiling caused by previous failures.
-        /// </summary>
-        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure, float repairIntegrityCap)
-        {
-            SetState(integrity, flooded, cascadeFailure, repairIntegrityCap, 1f);
-        }
-
-        /// <summary>
-        /// Restores module state from save, including reduced repair ceiling and breathable reserve state.
-        /// </summary>
-        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure, float repairIntegrityCap, float airReserveNormalized)
-        {
-            SetState(integrity, flooded, cascadeFailure, repairIntegrityCap, airReserveNormalized, 0f);
-        }
-
-        /// <summary>
-        /// Restores module state from save, including reduced repair ceiling, breathable reserve, and CO2 saturation.
-        /// </summary>
-        public void SetState(float integrity, bool flooded, BaseModuleFailureMode cascadeFailure, float repairIntegrityCap, float airReserveNormalized, float co2Normalized)
-        {
-            SetState(
-                integrity,
-                flooded,
-                cascadeFailure,
-                repairIntegrityCap,
-                airReserveNormalized,
-                co2Normalized,
-                0f,
-                false);
-        }
-
-        /// <summary>
         /// Restores module state from save, including flooded reef maturation state.
         /// </summary>
-        public void SetState(
-            float integrity,
-            bool flooded,
-            BaseModuleFailureMode cascadeFailure,
-            float repairIntegrityCap,
-            float airReserveNormalized,
-            float co2Normalized,
-            float floodedReefFloodSeconds,
-            bool interiorReefInfestationActive)
+        public void SetState(in BaseModuleSaveState state)
         {
             ConfigureRuntimeComponentsFromSerializedState();
-            _integrityComponent.RestoreState(integrity, flooded, cascadeFailure, repairIntegrityCap);
-            SyncWaterVolumeToFloodFlag(flooded);
-            _lifeSupportComponent.RestoreState(airReserveNormalized, co2Normalized);
-            _floodedReefFloodSeconds = Mathf.Max(0f, floodedReefFloodSeconds);
-            _interiorReefInfestationActive = interiorReefInfestationActive;
+            _integrityComponent.RestoreState(state.Integrity, state.Flooded, state.CascadeFailure, state.RepairIntegrityCap);
+            SyncWaterVolumeToFloodFlag(state.Flooded);
+            _lifeSupportComponent.RestoreState(state.AirReserveNormalized, state.Co2Normalized);
+            _floodedReefFloodSeconds = Mathf.Max(0f, state.FloodedReefFloodSeconds);
+            _interiorReefInfestationActive = state.InteriorReefInfestationActive;
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
             if (_interiorReefInfestationActive)
                 RegisterFloodedReefFaunaAnchor();
             else
                 UnregisterFloodedReefFaunaAnchor();
-            if (!flooded)
+            if (!state.Flooded)
                 ResetBulkheadFloodStress();
             RefreshVisualStateImmediate();
             SyncTrackedObjectsFloodState();
