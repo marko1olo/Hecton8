@@ -4003,7 +4003,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     internal sealed class GridPointerHandler : MonoBehaviour,
         IPointerMoveHandler, IPointerClickHandler, IPointerExitHandler,
-        IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
+        IPointerDownHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private PDAInventoryTab _tab;
         private bool _suppressClick;
@@ -4036,10 +4036,6 @@ namespace Hecton8.UI
             if (_tab == null || !TryResolveLocalPoint(eventData, out Vector2 localPoint))
                 return;
             _tab.HandlePointerClick(localPoint);
-        }
-
-        public void OnPointerUp(PointerEventData eventData)
-        {
         }
 
         public void OnBeginDrag(PointerEventData eventData)
