@@ -28,24 +28,13 @@ namespace Shapes {
 
 		protected void DrawPanels() {
 			using( Draw.Scope ) {
-				if( Canvas.renderMode == RenderMode.ScreenSpaceOverlay )
-					Draw.Matrix *= canvasContext.worldToCanvas; // X = C_w2l * P_l2w
 				foreach( ImmediateModePanel panel in panels ) {
 					#if UNITY_EDITOR
 					if( canvasContext.camera.cameraType is CameraType.SceneView && UnityEditor.SceneVisibilityManager.instance.IsHidden( panel.gameObject ) )
 						continue; // don't draw hidden panels in the scene view
 					#endif
 					using( Draw.Scope ) {
-						// todo: I think this is ultimately kinda messy only because
-						// shapes currently assumes you want to always draw in world space, using the current VP matrix,
-						// so we have to construct and compensate in weird ways with the camera when in overlay mode.
-						// The proper way to do this is to allow Shapes to be drawn in camera space, or using a custom VP matrix. I think!
-						// It should also be possible to cache these instead of recalculating on every draw, if there's some
-						// event to detect when both size and position has changed, relative to the canvas
-						if( Canvas.renderMode == RenderMode.ScreenSpaceOverlay )
-							Draw.Matrix = ShapesMath.AffineMtxMul( Draw.Matrix, panel.transform.localToWorldMatrix );
-						else
-							Draw.Matrix = panel.transform.localToWorldMatrix;
+						Draw.Matrix = panel.transform.localToWorldMatrix;
 						panel.DrawPanel( canvasContext );
 					}
 				}
@@ -72,43 +61,36 @@ namespace Shapes {
 				return;
 			if( CameraShouldRenderUI( cam ) == false )
 				return;
-			using( Draw.Command( cam ) ) {
+
+			bool isOverlay = Canvas.renderMode == RenderMode.ScreenSpaceOverlay && !DisplayAsWorldSpacePanel( cam );
+			RectTransform cnvTf = CanvasRectTf;
+
+			DrawCommand drawCmd;
+			if( isOverlay ) {
+				Rect rect = cnvTf.rect;
+				Matrix4x4 projMatrix = Matrix4x4.Ortho( rect.xMin, rect.xMax, rect.yMin, rect.yMax, -1000f, 1000f );
+
+				// Unity's projection matrices handle the platform differences (e.g., upside down on D3D)
+				// It handles view space differently too when setting manually
+				// However, standard GL.GetGPUProjectionMatrix is typically used for this
+				projMatrix = GL.GetGPUProjectionMatrix( projMatrix, true );
+
+				// The view matrix must transform from world space into the canvas's local space
+				Matrix4x4 viewMatrix = cnvTf.worldToLocalMatrix;
+				drawCmd = Draw.Command( cam, viewMatrix, projMatrix );
+			} else {
+				drawCmd = Draw.Command( cam );
+			}
+
+			using( drawCmd ) {
 				Draw.ZTest = CompareFunction.Always;
-				RectTransform cnvTf = CanvasRectTf;
-				canvasContext.UpdateParams( Canvas, cam, cnvTf, DisplayAsWorldSpacePanel( cam ) ? cnvTf.localToWorldMatrix : GetOverlayToWorldMatrix( cam ) );
-				// canvasContext.UpdateParams( Canvas, cam, cnvTf, cnvTf.localToWorldMatrix );
+				canvasContext.UpdateParams( Canvas, cam, cnvTf, cnvTf.localToWorldMatrix );
 				Draw.Matrix = canvasContext.canvasToWorldNet;
 				DrawCanvasShapes( canvasContext );
 			}
 		}
 
 		bool DisplayAsWorldSpacePanel( Camera cam ) => cam.cameraType == CameraType.SceneView || ( IsCameraBasedUI && cam == Canvas.worldCamera );
-
-		Matrix4x4 GetOverlayToWorldMatrix( Camera cam ) {
-			// overlay cameras are a little more complicated,
-			// we have to construct a canvasToWorld matrix
-			float planeDistance = ( cam.nearClipPlane + cam.farClipPlane ) / 2;
-			Transform camTf = cam.transform;
-			Vector3 forward = camTf.forward;
-			Vector3 origin = camTf.TransformPoint( 0, 0, planeDistance );
-
-			float scale = 1;
-			RectTransform rtf = (RectTransform)Canvas.transform;
-			// if perspective, then
-			if( cam.orthographic ) {
-				scale = 2 * cam.orthographicSize / rtf.sizeDelta.y;
-			} else {
-				// some of this trig could actually be skipped both: A. by caching, and B. by reading the projection matrix slope instead
-				double vFovHalfRad = ( cam.fieldOfView * ShapesMath.DEG_TO_RAD ) / 2.0;
-				double halfYSize = (float)( planeDistance * Math.Tan( vFovHalfRad ) );
-				scale = (float)( ( 2 * halfYSize ) / rtf.sizeDelta.y );
-			}
-
-			Vector3 rightScale = camTf.right * scale;
-			Vector3 upScale = camTf.up * scale;
-			Vector3 frwScale = forward * scale; // todo
-			return new Matrix4x4( rightScale, upScale, frwScale, new Vector4( origin.x, origin.y, origin.z, 1 ) );
-		}
 
 		/// <summary>The method to override in order to draw immediate mode shapes.
 		/// Note: This is called from an existing Draw.Command context</summary>
