@@ -318,16 +318,11 @@ namespace Shapes {
 		public bool HasFrameBounds() => true;
 
 		public Bounds OnGetFrameBounds() {
-			if( serializedObject.isEditingMultipleObjects ) {
-				// this only works for multiselecting shapes of the same type
-				// todo: might be able to make a solution using Editor.CreateEditor shenanigans
-				Bounds bounds = ( (ShapeRenderer)serializedObject.targetObjects[0] ).GetWorldBounds();
-				for( int i = 1; i < serializedObject.targetObjects.Length; i++ )
-					bounds.Encapsulate( ( (ShapeRenderer)serializedObject.targetObjects[i] ).GetWorldBounds() );
-				return bounds;
-			} else {
-				return ( (ShapeRenderer)target ).GetWorldBounds();
-			}
+			UnityEngine.Object[] meshRenderers = targets.Select( t => (UnityEngine.Object)( (Component)t ).GetComponent<MeshRenderer>() ).ToArray();
+			Editor editor = Editor.CreateEditor( meshRenderers );
+			Bounds bounds = editor.OnGetFrameBounds();
+			DestroyImmediate( editor );
+			return bounds;
 		}
 
 	}
