@@ -68,6 +68,137 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void Process_DryInteriorWalk_WithMovement_AppliesScaledHeadBob()
+        {
+            _suitData.maxWalkSpeed = 5f;
+            _suitData.bobTransitionSpeed = 10f;
+            _suitData.bobVerticalAmplitude = 0.1f;
+            _suitData.bobHorizontalAmplitude = 0.05f;
+
+            var input = new CameraJuiceInput
+            {
+                deltaTime = 0.1f,
+                locomotionMode = PlayerLocomotionMode.DryInteriorWalk,
+                isGrounded = 1,
+                hasMovementInput = 1,
+                horizontalSpeed = 5f,
+                heavyCarryLoad = 0f
+            };
+
+            // Process a few frames to let the spring/bob timer accumulate
+            _processor.Process(in input, _suitData);
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreNotEqual(Vector3.zero, output.localPositionOffset);
+        }
+
+        [Test]
+        public void Process_ShallowWadeWalk_WithMovement_AppliesBobAndSurfaceBob()
+        {
+            _suitData.maxWalkSpeed = 5f;
+            _suitData.bobTransitionSpeed = 10f;
+            _suitData.bobVerticalAmplitude = 0.1f;
+            _suitData.bobHorizontalAmplitude = 0.05f;
+            _suitData.surfaceBobFrequency = 2f;
+            _suitData.surfaceBobAmplitude = 0.1f;
+
+            var input = new CameraJuiceInput
+            {
+                deltaTime = 0.1f,
+                locomotionMode = PlayerLocomotionMode.ShallowWadeWalk,
+                isGrounded = 1,
+                hasMovementInput = 1,
+                horizontalSpeed = 5f,
+                immersionRatio = 0.5f,
+                heavyCarryLoad = 0f
+            };
+
+            // Process a few frames to let the spring/bob timer accumulate
+            _processor.Process(in input, _suitData);
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreNotEqual(Vector3.zero, output.localPositionOffset);
+        }
+
+        [Test]
+        public void Process_ExosuitLocomotion_WithMovement_AppliesScaledHeadBob()
+        {
+            _suitData.maxWalkSpeed = 5f;
+            _suitData.bobTransitionSpeed = 10f;
+            _suitData.bobVerticalAmplitude = 0.1f;
+            _suitData.bobHorizontalAmplitude = 0.05f;
+
+            var input = new CameraJuiceInput
+            {
+                deltaTime = 0.1f,
+                locomotionMode = PlayerLocomotionMode.ExosuitLocomotion,
+                isGrounded = 1,
+                hasMovementInput = 1,
+                horizontalSpeed = 5f,
+                heavyCarryLoad = 0f
+            };
+
+            // Process a few frames to let the spring/bob timer accumulate
+            _processor.Process(in input, _suitData);
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreNotEqual(Vector3.zero, output.localPositionOffset);
+        }
+
+        [Test]
+        public void Process_SurfaceSwim_AppliesSwimAndSurfaceBob()
+        {
+            _suitData.maxSwimSpeed = 5f;
+            _suitData.swimBobTransitionSpeed = 10f;
+            _suitData.swimBobVerticalAmplitude = 0.1f;
+            _suitData.surfaceBobFrequency = 2f;
+            _suitData.surfaceBobAmplitude = 0.1f;
+            _suitData.swimRollAmplitude = 5f;
+
+            var input = new CameraJuiceInput
+            {
+                deltaTime = 0.1f,
+                locomotionMode = PlayerLocomotionMode.SurfaceSwim,
+                hasMovementInput = 1,
+                swimSpeed = 5f
+            };
+
+            // Process a few frames to let the spring/bob timer accumulate
+            _processor.Process(in input, _suitData);
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreNotEqual(0f, output.localPositionOffset.y);
+            Assert.AreNotEqual(0f, output.rollOffset);
+        }
+
+        [Test]
+        public void Process_DeepSwim_AppliesDeepSwimEffects()
+        {
+            _suitData.maxSwimSpeed = 5f;
+            _suitData.swimBobTransitionSpeed = 10f;
+            _suitData.swimBobVerticalAmplitude = 0.1f;
+            _suitData.swimRollAmplitude = 5f;
+            _suitData.idleSwayAmplitude = 0.05f;
+
+            var input = new CameraJuiceInput
+            {
+                deltaTime = 0.1f,
+                locomotionMode = PlayerLocomotionMode.UnderwaterSwim,
+                hasMovementInput = 1,
+                swimSpeed = 5f,
+                immersionRatio = 1.0f,
+                depth = 50f
+            };
+
+            // Process a few frames to let the spring/bob timer accumulate
+            _processor.Process(in input, _suitData);
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreNotEqual(0f, output.localPositionOffset.y);
+            Assert.AreNotEqual(0f, output.rollOffset);
+        }
+
+        [Test]
         public void Process_SubmergeChange_RegistersSplashDip()
         {
             _suitData.submergeThreshold = 0.85f;
