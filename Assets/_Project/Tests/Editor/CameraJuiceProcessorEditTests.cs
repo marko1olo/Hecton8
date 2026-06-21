@@ -149,6 +149,30 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void RegisterActionBob_WithValidIntensity_UpdatesInternalFields()
+        {
+            var processor = new CameraJuiceProcessor();
+
+            var type = typeof(CameraJuiceProcessor);
+            type.GetField("_cinematicShakeSign", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(processor, 1f);
+
+            float intensity = 0.5f;
+            processor.RegisterActionBob(intensity);
+
+            float expectedY = intensity * 0.008f;
+            float expectedYVel = intensity * 0.015f;
+            float signX = -1f;
+            float expectedX = signX * intensity * 0.004f;
+            float expectedXVel = -signX * intensity * 0.008f;
+
+            Assert.AreEqual(intensity, (float)type.GetField("_actionBobIntensity", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor), 0.0001f);
+            Assert.AreEqual(expectedY, (float)type.GetField("_actionBobY", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor), 0.0001f);
+            Assert.AreEqual(expectedYVel, (float)type.GetField("_actionBobYVel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor), 0.0001f);
+            Assert.AreEqual(expectedX, (float)type.GetField("_actionBobX", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor), 0.0001f);
+            Assert.AreEqual(expectedXVel, (float)type.GetField("_actionBobXVel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor), 0.0001f);
+        }
+
+        [Test]
         public void RegisterActionBob_WithNegativeIntensity_DoesNotUpdateInternalFields()
         {
             var processor = new CameraJuiceProcessor();
