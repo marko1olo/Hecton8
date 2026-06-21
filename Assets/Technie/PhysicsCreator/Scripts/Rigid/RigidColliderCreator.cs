@@ -422,7 +422,6 @@ namespace Technie.PhysicsCreator
 
 			// Try and match up orphaned auto childs with hulls
 			// These will be ones without a collider (those will be picked up earlier)
-			// FIXME: Not working atm. Fix and see if we actually need it
 			
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
@@ -437,7 +436,7 @@ namespace Technie.PhysicsCreator
 					RigidColliderCreatorChild child = orphanedChilds[j];
 
 
-					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name))
+					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name + "."))
 					{
 						HullMapping mapping = FindMapping(h);
 						if (mapping == null)
