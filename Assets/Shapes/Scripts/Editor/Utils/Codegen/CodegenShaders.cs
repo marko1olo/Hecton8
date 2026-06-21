@@ -144,8 +144,6 @@ namespace Shapes {
 			if( keywords != null )
 				foreach( string keyword in keywords )
 					mat.EnableKeyword( keyword );
-
-			ShapesMaterials.ApplyDefaultGlobalProperties( mat );
 		}
 
 		// magic wand wau ✨
