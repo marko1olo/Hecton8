@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -292,6 +292,16 @@ namespace Technie.PhysicsCreator
 			}
 
 			// Try and connect orphaned hulls with orphaned colliders
+			List<RigidColliderCreatorChild> orphanedColliderChildren = new List<RigidColliderCreatorChild>(orphanedColliders.Count);
+			for (int i = 0; i < orphanedColliders.Count; i++)
+			{
+				RigidColliderCreatorChild child = null;
+				if (orphanedColliders[i].transform.parent == this.transform)
+				{
+					orphanedColliders[i].TryGetComponent<RigidColliderCreatorChild>(out child);
+				}
+				orphanedColliderChildren.Add(child);
+			}
 
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
@@ -308,11 +318,7 @@ namespace Technie.PhysicsCreator
 					SphereCollider sphereCol = c as SphereCollider;
 
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
-					RigidColliderCreatorChild child = null;
-					if (c.transform.parent == this.transform)
-					{
-						c.gameObject.TryGetComponent<RigidColliderCreatorChild>(out child);
-					}
+					RigidColliderCreatorChild child = orphanedColliderChildren[j];
 
 					// todo needs better handling
 					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
@@ -333,6 +339,7 @@ namespace Technie.PhysicsCreator
 
 						// These are no longer orphaned, so remove them from these lists
 						orphanedColliders.RemoveAt(j);
+						orphanedColliderChildren.RemoveAt(j);
 						orphanedChilds.Remove(child);
 
 						// Hull no longer orphaned, so flag to remove it once we've finished trying other colliders
@@ -355,6 +362,7 @@ namespace Technie.PhysicsCreator
 							// These are no longer orphaned, so remove them from these lists
 							orphanedHulls.RemoveAt(i);
 							orphanedColliders.RemoveAt(j);
+							orphanedColliderChildren.RemoveAt(j);
 							
 							// Remove the no-longer orphaned child
 							for (int k=0; k<orphanedChilds.Count; k++)
