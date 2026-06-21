@@ -380,16 +380,6 @@ namespace Hecton8.Inventory
             return true;
         }
 
-        /// <summary>
-        /// Enqueues an item pickup failure caused by full inventory.
-        /// </summary>
-        /// <param name="item">Rejected item data.</param>
-        [Obsolete("Use TryNotifyInventoryFull(ItemData) so bounded queue refusal stays visible at the producer.", true)]
-        public static void NotifyInventoryFull(ItemData item)
-        {
-            TryNotifyInventoryFull(item);
-        }
-
         public static bool TryNotifyInventoryFull(ItemData item)
         {
             uint sourceId = item != null
@@ -398,30 +388,9 @@ namespace Hecton8.Inventory
             return TryNotifyInventoryFull(0u, sourceId, item);
         }
 
-        /// <summary>
-        /// Enqueues an item pickup failure caused by full inventory.
-        /// </summary>
-        /// <param name="itemHashId">Rejected item numeric hash.</param>
-        [Obsolete("Use TryNotifyInventoryFull(int) so bounded queue refusal stays visible at the producer.", true)]
-        public static void NotifyInventoryFull(int itemHashId)
-        {
-            TryNotifyInventoryFull(itemHashId);
-        }
-
         public static bool TryNotifyInventoryFull(int itemHashId)
         {
             return TryNotifyInventoryFull(unchecked((uint)itemHashId), unchecked((uint)itemHashId), null);
-        }
-
-        /// <summary>
-        /// Enqueues an item pickup failure caused by full inventory.
-        /// </summary>
-        /// <param name="itemHashId">Rejected item numeric hash.</param>
-        /// <param name="item">Rejected item data.</param>
-        [Obsolete("Use TryNotifyInventoryFull(uint,ItemData) so bounded queue refusal stays visible at the producer.", true)]
-        public static void NotifyInventoryFull(uint itemHashId, ItemData item)
-        {
-            TryNotifyInventoryFull(itemHashId, item);
         }
 
         public static bool TryNotifyInventoryFull(uint itemHashId, ItemData item)
@@ -464,15 +433,6 @@ namespace Hecton8.Inventory
             });
         }
 
-        /// <summary>
-        /// Enqueues a coarse inventory contents changed event.
-        /// </summary>
-        [Obsolete("Use TryNotifyInventoryChanged() so bounded queue refusal stays visible at the producer.", true)]
-        public static void NotifyInventoryChanged()
-        {
-            TryNotifyInventoryChanged();
-        }
-
         public static bool TryNotifyInventoryChanged()
         {
             if (_listeners.Count <= 0)
@@ -494,16 +454,6 @@ namespace Hecton8.Inventory
                 EventType = (ushort)InventoryEventType.InventoryChanged,
                 Reserved = 0
             });
-        }
-
-        /// <summary>
-        /// Enqueues a derived carry-load change.
-        /// </summary>
-        /// <param name="payload">Managed producer payload.</param>
-        [Obsolete("Use TryNotifyEncumbranceChanged(EncumbranceChangedEvent) so bounded queue refusal stays visible at the producer.", true)]
-        public static void NotifyEncumbranceChanged(EncumbranceChangedEvent payload)
-        {
-            TryNotifyEncumbranceChanged(payload);
         }
 
         public static bool TryNotifyEncumbranceChanged(EncumbranceChangedEvent payload)
