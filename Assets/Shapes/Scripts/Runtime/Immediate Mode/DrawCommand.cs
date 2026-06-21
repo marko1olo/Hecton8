@@ -115,6 +115,9 @@ namespace Shapes {
 		internal int id;
 		bool pushPopState;
 		Camera cam;
+		bool useCustomViewProjMatrix;
+		Matrix4x4 customViewMatrix;
+		Matrix4x4 customProjectionMatrix;
 		internal readonly List<int> cachedTextIds = new List<int>();
 		internal readonly List<Object> cachedAssets = new List<Object>();
 		internal readonly List<DisposableMesh> cachedMeshes = new List<DisposableMesh>();
@@ -129,15 +132,18 @@ namespace Shapes {
 
 
 		#if SHAPES_URP
-		internal DrawCommand Initialize( Camera cam, RenderPassEvent cameraEvent = RenderPassEvent.BeforeRenderingPostProcessing ) {
+		internal DrawCommand Initialize( Camera cam, RenderPassEvent cameraEvent = RenderPassEvent.BeforeRenderingPostProcessing, bool useCustomViewProjMatrix = false, Matrix4x4 customViewMatrix = default, Matrix4x4 customProjectionMatrix = default ) {
 		#elif SHAPES_HDRP
-		internal DrawCommand Initialize( Camera cam, CustomPassInjectionPoint cameraEvent = CustomPassInjectionPoint.BeforePostProcess ) {
+		internal DrawCommand Initialize( Camera cam, CustomPassInjectionPoint cameraEvent = CustomPassInjectionPoint.BeforePostProcess, bool useCustomViewProjMatrix = false, Matrix4x4 customViewMatrix = default, Matrix4x4 customProjectionMatrix = default ) {
 		#else
-		internal DrawCommand Initialize( Camera cam, CameraEvent cameraEvent = CameraEvent.BeforeImageEffects ) {
+		internal DrawCommand Initialize( Camera cam, CameraEvent cameraEvent = CameraEvent.BeforeImageEffects, bool useCustomViewProjMatrix = false, Matrix4x4 customViewMatrix = default, Matrix4x4 customProjectionMatrix = default ) {
 		#endif
 			this.cam = cam;
 			this.id = bufferID++;
 			hasValidCamera = cam != null;
+			this.useCustomViewProjMatrix = useCustomViewProjMatrix;
+			this.customViewMatrix = customViewMatrix;
+			this.customProjectionMatrix = customProjectionMatrix;
 			if( hasValidCamera == false )
 				Debug.LogWarning( $"null camera passed into {nameof(DrawCommand)}, nothing will be drawn" );
 			this.camEvt = cameraEvent;
@@ -150,11 +156,15 @@ namespace Shapes {
 		}
 #if SHAPES_URP && UNITY_6000_0_OR_NEWER
 		internal void AppendToBuffer( RasterCommandBuffer cmd ) {
+			if( useCustomViewProjMatrix )
+				cmd.SetViewProjectionMatrices( customViewMatrix, customProjectionMatrix );
 			foreach( ShapeDrawCall draw in drawCalls )
 				draw.AddToCommandBuffer( cmd );
 		}
 #endif
 		internal void AppendToBuffer( CommandBuffer cmd ) {
+			if( useCustomViewProjMatrix )
+				cmd.SetViewProjectionMatrices( customViewMatrix, customProjectionMatrix );
 			foreach( ShapeDrawCall draw in drawCalls )
 				draw.AddToCommandBuffer( cmd );
 		}

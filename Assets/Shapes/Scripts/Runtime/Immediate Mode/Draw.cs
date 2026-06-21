@@ -29,10 +29,13 @@ namespace Shapes {
 		/// <param name="cameraEvent">When during the render this command should execute</param>
 		#if SHAPES_URP
 		public static DrawCommand Command( Camera cam, RenderPassEvent cameraEvent = RenderPassEvent.BeforeRenderingPostProcessing ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent );
+		public static DrawCommand Command( Camera cam, Matrix4x4 viewMatrix, Matrix4x4 projMatrix, RenderPassEvent cameraEvent = RenderPassEvent.BeforeRenderingPostProcessing ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent, true, viewMatrix, projMatrix );
 		#elif SHAPES_HDRP
 		public static DrawCommand Command( Camera cam, CustomPassInjectionPoint cameraEvent = CustomPassInjectionPoint.BeforePostProcess ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent );
+		public static DrawCommand Command( Camera cam, Matrix4x4 viewMatrix, Matrix4x4 projMatrix, CustomPassInjectionPoint cameraEvent = CustomPassInjectionPoint.BeforePostProcess ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent, true, viewMatrix, projMatrix );
 		#else
 		public static DrawCommand Command( Camera cam, CameraEvent cameraEvent = CameraEvent.BeforeImageEffects ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent );
+		public static DrawCommand Command( Camera cam, Matrix4x4 viewMatrix, Matrix4x4 projMatrix, CameraEvent cameraEvent = CameraEvent.BeforeImageEffects ) => ObjectPool<DrawCommand>.Alloc().Initialize( cam, cameraEvent, true, viewMatrix, projMatrix );
 		#endif
 
 		/// <summary>Prepares Shapes to draw in IMGUI Repaint events,
