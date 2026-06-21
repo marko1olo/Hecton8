@@ -2227,15 +2227,17 @@ namespace Hecton8.Construction
                 if (!PassDeterministicAnalyticalBreachGate(baseIdHash, timeSeconds, threshold))
                     continue;
 
-                baseModule.SetState(
-                    baseModule.CurrentIntegrity,
-                    baseModule.IsFlooded,
-                    BaseModuleFailureMode.OxygenLeak,
-                    baseModule.MaxRecoverableIntegrity,
-                    baseModule.AirReserveNormalized,
-                    baseModule.Co2Normalized,
-                    baseModule.FloodedReefFloodSeconds,
-                    baseModule.InteriorReefInfestationActive);
+                baseModule.SetState(new BaseModuleSaveState
+                {
+                    Integrity = baseModule.CurrentIntegrity,
+                    Flooded = baseModule.IsFlooded,
+                    CascadeFailure = BaseModuleFailureMode.OxygenLeak,
+                    RepairIntegrityCap = baseModule.MaxRecoverableIntegrity,
+                    AirReserveNormalized = baseModule.AirReserveNormalized,
+                    Co2Normalized = baseModule.Co2Normalized,
+                    FloodedReefFloodSeconds = baseModule.FloodedReefFloodSeconds,
+                    InteriorReefInfestationActive = baseModule.InteriorReefInfestationActive
+                });
                 _analyticalBreachNodeId = ResolveAnalyticalNodeKey(nodeIndex, module.NodeId);
                 return;
             }
