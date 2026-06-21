@@ -188,6 +188,55 @@ namespace Technie.PhysicsCreator.Skinned
 			}
 		}
 
+
+
+
+
+
+
+
+		public float CalculateVolume()
+		{
+			if (this.cachedTriangleVertices == null || this.cachedTriangleVertices.Count == 0)
+				return 0.001f;
+
+			Vector3 min = this.cachedTriangleVertices[0];
+			Vector3 max = this.cachedTriangleVertices[0];
+
+			for (int i = 1; i < this.cachedTriangleVertices.Count; i++)
+			{
+				Vector3 v = this.cachedTriangleVertices[i];
+				min = Vector3.Min(min, v);
+				max = Vector3.Max(max, v);
+			}
+
+			Vector3 size = max - min;
+
+			if (colliderType == ColliderType.Box)
+			{
+				return size.x * size.y * size.z;
+			}
+			else if (colliderType == ColliderType.Sphere)
+			{
+				float radius = Mathf.Max(size.x, Mathf.Max(size.y, size.z)) * 0.5f;
+				return (4.0f / 3.0f) * Mathf.PI * radius * radius * radius;
+			}
+			else if (colliderType == ColliderType.Capsule)
+			{
+				float radius = Mathf.Max(size.x, size.z) * 0.5f;
+				float height = size.y;
+				float internalLength = Mathf.Max(height - (radius * 2), 0.0f);
+				return Mathf.PI * (radius * radius) * internalLength + (4.0f / 3.0f) * Mathf.PI * radius * radius * radius;
+			}
+			else if (colliderType == ColliderType.Convex)
+			{
+				// Approximation of convex hull volume via bounding box
+				return size.x * size.y * size.z * 0.5f;
+			}
+
+			return 0.001f;
+		}
+
 		public Vector3[] GetCachedTriangleVertices()
 		{
 			return cachedTriangleVertices.ToArray();
