@@ -15,6 +15,7 @@ namespace Technie.PhysicsCreator
 		private bool hasUvs;
 		private bool hasUv1s;
 		private bool hasColours;
+		private bool hasTangents;
 
 		private List<CuttableSubMesh> subMeshes;
 
@@ -44,16 +45,18 @@ namespace Technie.PhysicsCreator
 				Vector2[] uvs = inputMesh.uv;
 				Vector2[] uv1 = inputMesh.uv2;
 				Color32[] colours = inputMesh.colors32;
+				Vector4[] tangents = inputMesh.tangents;
 
 				this.hasUvs = uvs != null && uvs.Length > 0;
 				this.hasUv1s = uv1 != null && uv1.Length > 0;
 				this.hasColours = colours != null && colours.Length > 0;
+				this.hasTangents = tangents != null && tangents.Length > 0;
 
 				for (int i = 0; i < inputMesh.subMeshCount; i++)
 				{
 					int[] indices = inputMesh.GetIndices(i);
 
-					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, colours, uvs, uv1);
+					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, colours, uvs, uv1, tangents);
 					this.subMeshes.Add(subMesh);
 				}
 			}
@@ -70,6 +73,7 @@ namespace Technie.PhysicsCreator
 			this.hasUvs = inputMesh.hasUvs;
 			this.hasUv1s = inputMesh.hasUv1s;
 			this.hasColours = inputMesh.hasColours;
+			this.hasTangents = inputMesh.hasTangents;
 
 			this.subMeshes = new List<CuttableSubMesh>();
 			this.subMeshes.AddRange(newSubMeshes);
@@ -162,6 +166,7 @@ namespace Technie.PhysicsCreator
 			List<Color32> outputColours = hasColours ? new List<Color32>() : null;
 			List<Vector2> outputUvs = hasUvs ? new List<Vector2>() : null;
 			List<Vector2> outputUv1s = hasUv1s ? new List<Vector2>() : null;
+			List<Vector4> outputTangents = hasTangents ? new List<Vector4>() : null;
 
 			List<int> baseSubMeshVertex = new List<int>();
 
@@ -169,7 +174,7 @@ namespace Technie.PhysicsCreator
 			{
 				baseSubMeshVertex.Add(outputVertices.Count);
 
-				sub.AddTo(outputVertices, outputNormals, outputColours, outputUvs, outputUv1s);
+				sub.AddTo(outputVertices, outputNormals, outputColours, outputUvs, outputUv1s, outputTangents);
 			}
 
 			newMesh.vertices = outputVertices.ToArray();
@@ -177,6 +182,7 @@ namespace Technie.PhysicsCreator
 			newMesh.colors32 = hasColours ? outputColours.ToArray() : null;
 			newMesh.uv = hasUvs ? outputUvs.ToArray() : null;
 			newMesh.uv2 = hasUv1s ? outputUv1s.ToArray() : null;
+			newMesh.tangents = hasTangents ? outputTangents.ToArray() : null;
 
 			newMesh.subMeshCount = subMeshes.Count;
 
