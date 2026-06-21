@@ -169,12 +169,6 @@ namespace Hecton8.Environment
             ActiveRuntimeInstance = null;
         }
 
-        [Obsolete("Use TryPublishHudAverageLuminance(float) so inactive visual-owner refusal is visible.", true)]
-        internal static void PublishHudAverageLuminance(float luminance01)
-        {
-            TryPublishHudAverageLuminance(luminance01);
-        }
-
         internal static bool TryPublishHudAverageLuminance(float luminance01)
         {
             if (ActiveRuntimeInstance == null)
