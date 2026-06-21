@@ -27,6 +27,22 @@ namespace MoreMountains.Tools
 		protected Tilemap _tilemap;
 
 		/// <summary>
+		/// On awake we initialize our class
+		/// </summary>
+		protected virtual void Awake()
+		{
+			Initialization();
+		}
+
+		/// <summary>
+		/// Caches the required components
+		/// </summary>
+		protected virtual void Initialization()
+		{
+			_tilemap = this.gameObject.GetComponent<Tilemap>();
+		}
+
+		/// <summary>
 		/// This method will copy the reference tilemap into the one on this gameobject
 		/// </summary>
 		public virtual void UpdateShadows()
@@ -36,7 +52,10 @@ namespace MoreMountains.Tools
 				return;
 			}
 
-			_tilemap = this.gameObject.GetComponent<Tilemap>();
+			if (_tilemap == null)
+			{
+				_tilemap = this.gameObject.GetComponent<Tilemap>();
+			}
            
 			Copy(ReferenceTilemap, _tilemap);
 		}
