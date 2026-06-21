@@ -1507,9 +1507,7 @@ namespace Hecton8.Gameplay.Loot
                     : DefaultRecoveredItemQualityMilli;
                 bool allAdded = _inventory.TryAddItemWithState(
                     unchecked((int)itemHash),
-                    cacheSignal.GeneticsMask,
-                    qualityMilli,
-                    cacheSignal.StateFlags,
+                    new PlayerInventory.ItemState(cacheSignal.GeneticsMask, qualityMilli, cacheSignal.StateFlags),
                     quantity,
                     out int addedQuantity);
                 if (addedQuantity <= 0)
