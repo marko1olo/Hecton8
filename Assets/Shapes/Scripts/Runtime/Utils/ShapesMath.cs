@@ -254,6 +254,13 @@ namespace Shapes {
 			);
 		}
 
+		public static int GetBezierPointCount( Vector3 a, Vector3 b, Vector3 c, Vector3 d, float pointsPerTurn ) {
+			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
+			float curveSumDeg = GetApproximateAngularCurveSumDegrees( a, b, c, d, sampleCount );
+			float angSpanTurns = curveSumDeg / 360f;
+			return Mathf.Max( 2, Mathf.RoundToInt( angSpanTurns * pointsPerTurn ) );
+		}
+
 		public static float GetApproximateAngularCurveSumDegrees( Vector3 a, Vector3 b, Vector3 c, Vector3 d, int vertCount ) {
 			float angSum = 0f;
 
