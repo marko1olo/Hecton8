@@ -42,6 +42,8 @@ namespace Technie.PhysicsCreator.Skinned
 
 		public bool addRigidbody;
 		public float mass = 1.0f;
+		public float density = 1000.0f;
+		public bool useDensity = false;
 		public float linearDrag = 0.0f;
 		public float angularDrag = 0.05f;
 		public bool isKinematic;
@@ -103,7 +105,9 @@ namespace Technie.PhysicsCreator.Skinned
 		public SkinnedColliderRuntimeData runtimeData;
 
 		// Rigidbody defaults
-		public float defaultMass = 1.0f; // TODO: Would be nice to have default density (eg. 10 kg/m^3) and the final mass is calculated by taking the collider volume into account
+		public float defaultMass = 1.0f;
+		public float defaultDensity = 1000.0f; // Density in kg/m^3
+		public bool defaultUseDensity = false;
 		public float defaultLinearDrag = 0.0f;
 		public float defaultAngularDrag = 0.05f;
 
@@ -257,6 +261,30 @@ namespace Technie.PhysicsCreator.Skinned
 			}
 
 			return allHulls.ToArray();
+		}
+
+
+		public float CalculateMass(BoneData boneData)
+		{
+			if (boneData == null)
+				return 0.0f;
+
+			if (!boneData.useDensity)
+			{
+				return boneData.mass;
+			}
+
+			float totalVolume = 0.0f;
+			BoneHullData[] hulls = GetBoneHullData(boneData.targetBoneName);
+			if (hulls != null)
+			{
+				foreach (var hull in hulls)
+				{
+					totalVolume += hull.CalculateVolume();
+				}
+			}
+
+			return totalVolume * boneData.density;
 		}
 
 		public void SetAssetDirty()
