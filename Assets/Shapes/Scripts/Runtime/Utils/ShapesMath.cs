@@ -254,6 +254,60 @@ namespace Shapes {
 			);
 		}
 
+		public static int CalcBezierPointCount( Vector3 a, Vector3 b, Vector3 c, Vector3 d, float pointsPerTurn ) {
+			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
+			float curveSumDeg = GetApproximateAngularCurveSumDegrees( a, b, c, d, sampleCount );
+			float angSpanTurns = curveSumDeg / 360f;
+			return Mathf.Max( 2, Mathf.RoundToInt( angSpanTurns * pointsPerTurn ) );
+		}
+
+		public static bool GetArcParameters( Vector3 prev, Vector3 corner, Vector3 next, float radius, out Vector3 center, out Vector3 normA, out Vector3 normB, out float angTurn ) {
+			Vector3 tangentA = ( corner - prev ).normalized;
+			Vector3 tangentB = ( next - corner ).normalized;
+			Vector3 cross = Vector3.Cross( tangentA, tangentB );
+
+			if( cross.TaxicabMagnitude() <= 0.001f ) {
+				center = default;
+				normA = default;
+				normB = default;
+				angTurn = default;
+				return false; // Straight line
+			}
+
+			Vector3 axis = cross.normalized;
+			normA = Vector3.Cross( axis, tangentA ); // normalized
+			normB = Vector3.Cross( axis, tangentB );
+			Vector3 cornerDir = ( normA + normB ).normalized;
+			float cornerBDot = Vector3.Dot( cornerDir, normB );
+			radius = Mathf.Max( radius, 0.0001f ); // make sure radius isn't degenerate
+			center = corner + cornerDir * ( ( radius / cornerBDot ) );
+			angTurn = Vector3.Angle( normA, normB ) / 360f;
+			return true;
+		}
+
+		public static bool GetArcParameters( Vector2 prev, Vector2 corner, Vector2 next, float radius, out Vector2 center, out Vector2 normA, out Vector2 normB, out float angTurn ) {
+			Vector2 tangentA = ( corner - prev ).normalized;
+			Vector2 tangentB = ( next - corner ).normalized;
+			float dot = Vector2.Dot( tangentA, tangentB );
+
+			if( dot > 0.999f ) {
+				center = default;
+				normA = default;
+				normB = default;
+				angTurn = default;
+				return false; // Straight line
+			}
+
+			normA = Rotate90CW( tangentA ); // normalized
+			normB = Rotate90CW( tangentB );
+			Vector2 cornerDir = ( normA + normB ).normalized;
+			float cornerBDot = Vector2.Dot( cornerDir, normB );
+			radius = Mathf.Max( radius, 0.0001f ); // make sure radius isn't degenerate
+			center = corner + cornerDir * ( ( radius / cornerBDot ) );
+			angTurn = Vector2.Angle( normA, normB ) / 360f;
+			return true;
+		}
+
 		public static float GetApproximateAngularCurveSumDegrees( Vector3 a, Vector3 b, Vector3 c, Vector3 d, int vertCount ) {
 			float angSum = 0f;
 

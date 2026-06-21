@@ -30,10 +30,8 @@ namespace Shapes {
 		/// A cubic bezier curve, using the previous point as the starting point. Number of points is given by density in number of points per full 360° turn
 		/// </summary>
 		public void BezierTo( Vector2 startTangent, Vector2 endTangent, Vector2 end, float pointsPerTurn ) {
-			int sampleCount = ShapesConfig.Instance.polylineBezierAngularSumAccuracy * 2 + 1;
-			float curveSumDeg = ShapesMath.GetApproximateAngularCurveSumDegrees( LastPoint, startTangent, endTangent, end, sampleCount );
-			float angSpanTurns = curveSumDeg / 360f;
-			int pointCount = Mathf.Max( 2, Mathf.RoundToInt( angSpanTurns * ShapesConfig.Instance.polylineDefaultPointsPerTurn ) );
+			if( CheckCanAddContinuePoint() ) return;
+			int pointCount = ShapesMath.CalcBezierPointCount( LastPoint, startTangent, endTangent, end, pointsPerTurn );
 			BezierTo( startTangent, endTangent, end, pointCount );
 		}
 
@@ -70,33 +68,13 @@ namespace Shapes {
 		}
 
 		void AddArcPoints( Vector2 corner, Vector2 next, float radius, bool useDensity, int targetPointCount, float pointsPerTurn ) {
-			if( radius <= 0.0001f ) {
-				// radius is super small, just add the corner point
+			if( ShapesMath.GetArcParameters( LastPoint, corner, next, radius, out Vector2 center, out Vector2 normA, out Vector2 normB, out float angTurn ) ) {
+				if( useDensity )
+					targetPointCount = Mathf.RoundToInt( angTurn * pointsPerTurn );
+				AddPoints( ShapesMath.GetArcPoints( -normA, -normB, center, radius, targetPointCount ) );
+			} else {
 				AddPoint( corner );
-				return; // pretty much just a straight line. only add the corner point
 			}
-
-			Vector2 tangentA = ( corner - LastPoint ).normalized;
-			Vector2 tangentB = ( next - corner ).normalized;
-			float dot = Vector2.Dot( tangentA, tangentB );
-
-			if( dot > 0.999f ) {
-				AddPoint( corner );
-				return; // pretty much just a straight line. only add the corner point
-			}
-
-			Vector2 normA = ShapesMath.Rotate90CW( tangentA ); // normalized
-			Vector2 normB = ShapesMath.Rotate90CW( tangentB );
-			Vector2 cornerDir = ( normA + normB ).normalized;
-			float cornerBDot = Vector2.Dot( cornerDir, normB );
-			Vector2 center = corner + cornerDir * ( ( radius / cornerBDot ) );
-			// calc count here if density based
-			if( useDensity ) {
-				float angTurn = Vector2.Angle( normA, normB ) / 360f;
-				targetPointCount = Mathf.RoundToInt( angTurn * pointsPerTurn );
-			}
-
-			AddPoints( ShapesMath.GetArcPoints( -normA, -normB, center, radius, targetPointCount ) );
 		}
 
 		#endregion
