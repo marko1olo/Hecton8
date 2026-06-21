@@ -382,6 +382,47 @@ namespace MapMagic.Terrains
 				}
 			}
 
+
+			public void ReadBytes (byte[] bytes, int ch)
+			{
+				int res = (int)Mathf.Sqrt(bytes.Length / 4);
+
+				if (arr_x.Length != res) arr_x = new float[res];
+				if (arr_X.Length != res) arr_X = new float[res];
+				if (arr_z.Length != res) arr_z = new float[res];
+				if (arr_Z.Length != res) arr_Z = new float[res];
+
+				for (int x=0; x<res; x++)
+				{
+					arr_x[x] = bytes[x*4 + ch] / 255f;
+					arr_X[x] = bytes[(x + res*(res-1))*4 + ch] / 255f;
+				}
+
+				for (int z=0; z<res; z++)
+				{
+					arr_z[z] = bytes[z*res*4 + ch] / 255f;
+					arr_Z[z] = bytes[(z*res + res-1)*4 + ch] / 255f;
+				}
+			}
+
+
+			public void WriteBytes (byte[] bytes, int ch)
+			{
+				int res = (int)Mathf.Sqrt(bytes.Length / 4);
+
+				for (int x=0; x<res; x++)
+				{
+					bytes[x*4 + ch] = (byte)(arr_x[x] * 255.0f);
+					bytes[(x + res*(res-1))*4 + ch] = (byte)(arr_X[x] * 255.0f);
+				}
+
+				for (int z=0; z<res; z++)
+				{
+					bytes[z*res*4 + ch] = (byte)(arr_z[z] * 255.0f);
+					bytes[(z*res + res-1)*4 + ch] = (byte)(arr_Z[z] * 255.0f);
+				}
+			}
+
 		#endregion
 	}
 
