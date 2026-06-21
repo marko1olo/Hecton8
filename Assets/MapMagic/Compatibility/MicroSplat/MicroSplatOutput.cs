@@ -102,8 +102,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 				data.globals.microSplatApplyType==Core.Globals.MicroSplatApplyType.Both)
 			{
 				if (stop!=null && stop.stop) return;
-				Color[][] colors = CustomShaderOutput200.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
-				string[] names = new string[colors.Length];
+				byte[][] bytes = CustomShaderOutput200.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
+				string[] names = new string[bytes.Length];
 				for (int i=0; i<names.Length; i++)
 					names[i] = (data.globals.useCustomControlTextures ? "_CustomControl" : "_Control") + i.ToString();
 				
@@ -111,16 +111,16 @@ namespace MapMagic.Nodes.MatrixGenerators
 				if (data.globals.microSplatNormals)
 				{
 					(Matrix r, Matrix g, Matrix b) = MatrixOps.NormalsSet(data.heights, data.area.PixelSize.x, data.globals.height);
-					Color[] normColors = CustomShaderOutput200.MatricesToColors(data.area.active.rect, r, g, b, null);
+					byte[] normBytes = CustomShaderOutput200.MatricesToBytes(data.area.active.rect, r, g, b, null);
 
-					ArrayTools.Add(ref colors, normColors);
+					ArrayTools.Add(ref bytes, normBytes);
 					ArrayTools.Add(ref names, "_PerPixelNormal");
 				}
 
 				if (stop!=null && stop.stop) return;
 				applyData = new ApplyCustomData()
 				{
-					textureColors = colors,
+					textureBytes = bytes,
 					textureNames = names,
 					textureFormat = TextureFormat.RGBA32,
 					assignComponent = data.globals.assignComponent,
@@ -257,13 +257,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 			public static void ReadEdges (TileData thisData, MapMagic.Terrains.EdgesSet thisEdges)
 			{
 				ApplyCustomData texturesData = thisData.ApplyOfType<ApplyCustomData>();
-				if (texturesData != null && texturesData.textureColors!=null)
+				if (texturesData != null && texturesData.textureBytes!=null)
 				{
-					int numChs = texturesData.textureColors.Length * 4;
+					int numChs = texturesData.textureBytes.Length * 4;
 					if (thisEdges.controlEdges==null || thisEdges.controlEdges.Length != numChs)
 						Array.Resize(ref thisEdges.controlEdges, numChs);
 
-					for (int t=0; t<texturesData.textureColors.Length; t++)
+					for (int t=0; t<texturesData.textureBytes.Length; t++)
 						for (int i=0; i<4; i++)
 					{
 						int ch = t*4 + i;
@@ -271,7 +271,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 						if (thisEdges.controlEdges[ch] == null) 
 							thisEdges.controlEdges[ch] = new MapMagic.Terrains.Edges(0,0);
 
-						thisEdges.controlEdges[ch].ReadColors(texturesData.textureColors[t], i);
+						thisEdges.controlEdges[ch].ReadBytes(texturesData.textureBytes[t], i);
 					}
 				}
 			}
@@ -279,17 +279,17 @@ namespace MapMagic.Nodes.MatrixGenerators
 			public static void WriteEdges (TileData thisData, MapMagic.Terrains.EdgesSet thisEdges)
 			{
 				ApplyCustomData texturesData = thisData.ApplyOfType<ApplyCustomData>();
-				if (texturesData != null && texturesData.textureColors!=null)
+				if (texturesData != null && texturesData.textureBytes!=null)
 				{
-					int numChs = texturesData.textureColors.Length * 4;
+					int numChs = texturesData.textureBytes.Length * 4;
 					if (thisEdges.controlEdges==null || thisEdges.controlEdges.Length != numChs)
 						Array.Resize(ref thisEdges.controlEdges, numChs);
 					
-					for (int t=0; t<texturesData.textureColors.Length; t++)
+					for (int t=0; t<texturesData.textureBytes.Length; t++)
 						for (int i=0; i<4; i++)
 					{
 						int ch = t*4 + i;
-						thisEdges.controlEdges[ch].WriteColors(texturesData.textureColors[t], i);
+						thisEdges.controlEdges[ch].WriteBytes(texturesData.textureBytes[t], i);
 					}
 				}
 			}
@@ -328,7 +328,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 		{
 			#if __MICROSPLAT__
 
-			public Color[][] colors; // TODO: use raw texture bytes
+			public byte[][] bytes; // TODO: use raw texture bytes
 
 			public void Read (Terrain terrain) { throw new System.NotImplementedException(); }
 
@@ -341,13 +341,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 				mso.templateMaterial = terrain.materialTemplate;
 				
 
-				int numTextures = colors.Length;
+				int numTextures = bytes.Length;
 				if (numTextures==0) return;
-				int resolution = (int)Mathf.Sqrt(colors[0].Length);
+				int resolution = (int)Mathf.Sqrt(bytes[0].Length/4);
 
 				for (int t=0; t<numTextures; t++)
 				{
-					if (colors[t] == null) continue;
+					if (bytes[t] == null) continue;
 
 					Texture2D tex = GetTex(mso, t);
 					if (tex==null || tex.width!=resolution || tex.height!=resolution || tex.format!=TextureFormat.RGBA32)
@@ -406,12 +406,12 @@ namespace MapMagic.Nodes.MatrixGenerators
 				}
 			}
 
-			public static TmpApplyData Empty {get{ return new TmpApplyData() { colors = new Color[0][] }; }}
+			public static TmpApplyData Empty {get{ return new TmpApplyData() { bytes = new byte[0][] }; }}
 
 			public int Resolution
 			{get{
-				if (colors.Length==0) return 0;
-				else return (int)Mathf.Sqrt(colors[0].Length);
+				if (bytes.Length==0) return 0;
+				else return (int)Mathf.Sqrt(bytes[0].Length/4);
 			}}
 
 			#endif

@@ -341,12 +341,12 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			}
 
 			//creating control textures contents
-			Color[][] colors = BlendMatrices(data.area.active.rect, matrices, masks, opacities, chNums, normalize:true);
+			byte[][] bytes = BlendMatrices(data.area.active.rect, matrices, masks, opacities, chNums, normalize:true);
 
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			var controlTexturesData = new ApplyData() {
-				textureColors = colors,
+				textureBytes = bytes,
 				textureFormat = TextureFormat.RGBA32,
 				textureBaseMapDistance = 10000000, //no base map
 				textureNames = (string[])controlTextureNames.Clone() };
@@ -356,9 +356,8 @@ namespace MapMagic.Nodes.MatrixGenerators {
 		}
 
 
-		public static Color[][] BlendMatrices (CoordRect colorsRect, IList<Matrix> matrices, IList<Matrix> biomeMasks, IList<float> opacities, IList<int> channelNums, bool normalize=false)
-		/// Reads matrices and fills normalized values to colors using masks
-		/// TODO: use raw texture bytes
+		public static byte[][] BlendMatrices (CoordRect colorsRect, IList<Matrix> matrices, IList<Matrix> biomeMasks, IList<float> opacities, IList<int> channelNums, bool normalize=false)
+		/// Reads matrices and fills normalized values to bytes using masks
 		/// TODO: bring to matrix
 		{
 			int texturesCount;
@@ -367,7 +366,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				if (chNum > maxChannelNum) maxChannelNum=chNum;
 			texturesCount = maxChannelNum/4 + 1;
 
-			Color[][] colors = new Color[texturesCount][];
+			byte[][] bytes = new byte[texturesCount][];
 
 			int matrixCount = matrices.Count;
 
@@ -424,38 +423,32 @@ namespace MapMagic.Nodes.MatrixGenerators {
 						values[channelNums[m]] += val;
 					}
 
-					//normalizing and writing to colors
+					//normalizing and writing to bytes
 					for (int m=0; m<values.Length; m++)
 					{
 						float val = values[m];
 
 						if (normalize) val = sum!=0 ? val/sum : 0;
+						if (val < 0) val = 0; if (val > 1) val = 1;
 						
 						int texNum = m / 4;
 						int chNum = m % 4;
 
-						if (colors[texNum] == null) colors[texNum] = new Color[colorsRect.size.x*colorsRect.size.z];
+						if (bytes[texNum] == null) bytes[texNum] = new byte[colorsRect.size.x*colorsRect.size.z*4];
 
-						switch (chNum)
-						{
-							case 0: colors[texNum][colorsPos].r += val; break;
-							case 1: colors[texNum][colorsPos].g += val; break;
-							case 2: colors[texNum][colorsPos].b += val; break;
-							case 3: colors[texNum][colorsPos].a += val; break;
-						}
+						bytes[texNum][colorsPos*4 + chNum] = (byte)(val * 255f);
 					}
 				}
 			
-			return colors;
+			return bytes;
 		}
 
 
-		public static Color[] MatricesToColors (CoordRect colorsRect, Matrix rMatrix, Matrix gMatrix, Matrix bMatrix, Matrix aMatrix)
+		public static byte[] MatricesToBytes (CoordRect colorsRect, Matrix rMatrix, Matrix gMatrix, Matrix bMatrix, Matrix aMatrix)
 		/// Just creates a texture from matrices without blending
 		{
 			CoordRect matrixRect = rMatrix.rect;
-			Color[] colors = new Color[colorsRect.size.x*colorsRect.size.z];
-			Color color = new Color();
+			byte[] bytes = new byte[colorsRect.size.x*colorsRect.size.z*4];
 
 			Coord min = colorsRect.Min; Coord max = colorsRect.Max;
 
@@ -465,21 +458,33 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				int matrixPos = (z-matrixRect.offset.z)*matrixRect.size.x + x - matrixRect.offset.x;
 				int colorsPos =  (z-colorsRect.offset.z)*colorsRect.size.x + x - colorsRect.offset.x;
 				
-				color.r = rMatrix.arr[matrixPos];
-				if (gMatrix != null) color.g = gMatrix.arr[matrixPos];
-				if (bMatrix != null) color.b = bMatrix.arr[matrixPos];
-				if (aMatrix != null) color.a = aMatrix.arr[matrixPos];
+				float r = rMatrix.arr[matrixPos]; if (r<0) r=0; if(r>1) r=1;
+				bytes[colorsPos*4] = (byte)(r * 255f);
 
-				colors[colorsPos] = color;
+				if (gMatrix != null)
+				{
+				    float g = gMatrix.arr[matrixPos]; if (g<0) g=0; if (g>1) g=1;
+				    bytes[colorsPos*4+1] = (byte)(g * 255f);
+				}
+				if (bMatrix != null)
+				{
+				    float b = bMatrix.arr[matrixPos]; if (b<0) b=0; if (b>1) b=1;
+				    bytes[colorsPos*4+2] = (byte)(b * 255f);
+				}
+				if (aMatrix != null)
+				{
+				    float a = aMatrix.arr[matrixPos]; if (a<0) a=0; if (a>1) a=1;
+				    bytes[colorsPos*4+3] = (byte)(a * 255f);
+				}
 			}
 
-			return colors;
+			return bytes;
 		}
 
 
 		public class ApplyData : IApplyData
 		{
-			public Color[][] textureColors; // TODO: use raw texture bytes
+			public byte[][] textureBytes;
 			public string[] textureNames;
 			public string[] altTextureNames= null; //to let MicroSplat work with _Control0 and _CustomControl0
 			public TextureFormat textureFormat;
@@ -488,10 +493,10 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 			public virtual void Apply (Terrain terrain)
 			{
-				if (textureColors==null) return;
-				int numTextures = textureColors.Length;
+				if (textureBytes==null) return;
+				int numTextures = textureBytes.Length;
 				if (numTextures==0) return;
-				int resolution = (int)Mathf.Sqrt(textureColors[0].Length);
+				int resolution = (int)Mathf.Sqrt(textureBytes[0].Length/4);
 
 				//MaterialPropertyBlock matProps = new MaterialPropertyBlock();
 
@@ -501,9 +506,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					matPropSerializer = terrain.gameObject.AddComponent<MaterialPropertySerializer>();
 
 
-				for (int i=0; i<textureColors.Length; i++)
+				for (int i=0; i<textureBytes.Length; i++)
 				{
-					if (textureColors[i] == null) continue;
+					if (textureBytes[i] == null) continue;
 
 					string texName = null;
 					if (i<textureNames.Length) texName = textureNames[i];
@@ -528,7 +533,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 						matPropSerializer.SetTexture(textureNames[i], tex);
 					}
 
-					tex.SetPixels(0,0,tex.width,tex.height,textureColors[i]);
+					tex.LoadRawTextureData(textureBytes[i]);
 					tex.Apply();
 
 					//if (texName != null) matPropSerializer.SetTexture(texName, tex);
@@ -543,14 +548,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public static ApplyData Empty
 			{get{
 				return new ApplyData() { 
-					textureColors = new Color[0][],
+					textureBytes = new byte[0][],
 					textureNames = new string[0]  };
 			}}
 
 			public int Resolution
 			{get{
-				if (textureColors.Length==0) return 0;
-				else return (int)Mathf.Sqrt(textureColors[0].Length);
+				if (textureBytes.Length==0) return 0;
+				else return (int)Mathf.Sqrt(textureBytes[0].Length/4);
 			}}
 		}
 
@@ -631,8 +636,8 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					nameToNum.Add(name, nameToNum.Count);
 
 			//creating control textures contents
-			Color[][] colors = new Color[nameToNum.Count][];
-			string[] colorNames = new string[nameToNum.Count]; //texture names, in order corresponding to colors
+			byte[][] bytes = new byte[nameToNum.Count][];
+			string[] colorNames = new string[nameToNum.Count]; //texture names, in order corresponding to bytes
 			for (int m=0; m<matrices.Length; m++)
 			{
 				int textureNum = nameToNum[names[m]];
@@ -641,17 +646,30 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 				if (matrices[m] != null)
 				{
-					if (colors[textureNum] == null)
-						colors[textureNum] = new Color[data.area.active.rect.size.x * data.area.active.rect.size.z];
+					if (bytes[textureNum] == null)
+						bytes[textureNum] = new byte[data.area.active.rect.size.x * data.area.active.rect.size.z * 4];
 
-					matrices[m].ExportColors(colors[textureNum], data.area.active.rect.offset, data.area.active.rect.size, chIndexes[m], markOutrange:false, mask:masks[m]);
+					// TODO: Support exporting masks to byte array channels directly, for now filling using Matrix byte export and then copying if necessary. Actually we can just write custom logic here.
+					int resX = data.area.active.rect.size.x;
+					int resZ = data.area.active.rect.size.z;
+					CoordRect activeRect = data.area.active.rect;
+					for (int x=0; x<resX; x++)
+					    for (int z=0; z<resZ; z++)
+					    {
+					        int matrixPos = (z+activeRect.offset.z-matrices[m].rect.offset.z)*matrices[m].rect.size.x + x+activeRect.offset.x - matrices[m].rect.offset.x;
+					        int bytesPos = (z*resX + x)*4 + chIndexes[m];
+					        float val = matrices[m].arr[matrixPos];
+					        if (masks[m] != null) val *= masks[m].arr[matrixPos];
+					        if (val < 0) val = 0; if (val > 1) val = 1;
+					        bytes[textureNum][bytesPos] = (byte)(val * 255f);
+					    }
 				}
 			}
 			
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			var controlTexturesData = new ApplyData() {
-				textureColors = colors,
+				textureBytes = bytes,
 				textureNames = colorNames,
 				textureFormat = TextureFormat.RGBA32 };
 
@@ -662,14 +680,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 		public class ApplyData : IApplyData
 		{
-			public Color[][] textureColors;
+			public byte[][] textureBytes;
 			public string[] textureNames;
 			public TextureFormat textureFormat;
 
 			public virtual void Apply (Terrain terrain)
 			{
-				if (textureColors==null  ||  textureColors.Length==0  ||  textureColors.AllNull()) return;
-				int resolution = (int)Mathf.Sqrt(textureColors.Any().Length);
+				if (textureBytes==null  ||  textureBytes.Length==0  ||  textureBytes.AllNull()) return;
+				int resolution = (int)Mathf.Sqrt(textureBytes.Any().Length/4);
 
 				DirectTexturesHolder holder = terrain.GetComponent<DirectTexturesHolder>();
 				if (holder == null)
@@ -679,9 +697,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				DictionaryOrdered<string,Texture2D> newDict = new DictionaryOrdered<string,Texture2D>(textureNames);
 				newDict.TakeMatchingValuesFrom(holder.textures);
 
-				for (int i=0; i<textureColors.Length; i++)
+				for (int i=0; i<textureBytes.Length; i++)
 				{
-					if (textureColors[i] == null) continue;
+					if (textureBytes[i] == null) continue;
 					
 					string texName = textureNames[i];
 					Texture2D tex = newDict[texName];
@@ -690,7 +708,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					tex.name = textureNames[i];
 					tex.wrapMode = TextureWrapMode.Mirror; //to avoid border seams
 
-					tex.SetPixels(0,0,tex.width,tex.height,textureColors[i]);
+					tex.LoadRawTextureData(textureBytes[i]);
 					tex.Apply();
 
 					newDict[texName] = tex; //it could be created from null
@@ -726,14 +744,14 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public static ApplyData Empty
 			{get{
 				return new ApplyData() { 
-					textureColors = new Color[0][],
+					textureBytes = new byte[0][],
 					textureNames = new string[0]  };
 			}}
 
 			public int Resolution
 			{get{
-				if (textureColors.Length==0) return 0;
-				else return (int)Mathf.Sqrt(textureColors[0].Length);
+				if (textureBytes.Length==0) return 0;
+				else return (int)Mathf.Sqrt(textureBytes[0].Length/4);
 			}}
 		}
 
