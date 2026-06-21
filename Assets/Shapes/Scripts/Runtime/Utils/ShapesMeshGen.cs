@@ -244,9 +244,11 @@ namespace Shapes {
 			}
 
 			// assign to segments mesh
-			mesh.Clear(); // todo maybe not always do this you know?
+			int targetSubMeshCount = separateJoinMesh ? 2 : 1;
+			if( mesh.vertexCount != meshVertices.list.Count || mesh.subMeshCount != targetSubMeshCount )
+				mesh.Clear();
 			mesh.SetVertices( meshVertices.list );
-			mesh.subMeshCount = separateJoinMesh ? 2 : 1;
+			mesh.subMeshCount = targetSubMeshCount;
 			mesh.SetTriangles( meshTriangles.list, 0 );
 			if( separateJoinMesh )
 				mesh.SetTriangles( meshJoinsTriangles.list, 1 );
@@ -303,10 +305,14 @@ namespace Shapes {
 			debugString.Add( "Polygon creation process:" );
 			#endif
 
-			mesh.Clear(); // todo maybe not always do this you know?
 			int pointCount = path.Count;
-			if( pointCount < 2 )
+			if( pointCount < 2 ) {
+				mesh.Clear();
 				return;
+			}
+
+			if( mesh.vertexCount != pointCount )
+				mesh.Clear();
 
 			int triangleCount = pointCount - 2;
 			int triangleIndexCount = triangleCount * 3;
