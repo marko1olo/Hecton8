@@ -1,4 +1,4 @@
-﻿// Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
+// Shapes © Freya Holmér - https://twitter.com/FreyaHolmer/
 // Website & Documentation - https://acegikmo.com/shapes/
 
 // Uncomment this below if you want more detailed breakdowns over what exactly fails in polygon creation.
@@ -297,7 +297,7 @@ namespace Shapes {
 
 		static bool generatingClockwisePolygon; // assigned in GenPolygonMesh, used by EarClipPoint
 
-		public static void GenPolygonMesh( Mesh mesh, List<Vector2> path, PolygonTriangulation triangulation ) {
+		public static void GenPolygonMesh( Mesh mesh, List<Vector2> path, PolygonTriangulation triangulation, bool clearMesh = true ) {
 			// kinda have to do this, the algorithm relies on knowing this
 			generatingClockwisePolygon = ShapesMath.PolygonSignedArea( path ) > 0;
 			float clockwiseSign = generatingClockwisePolygon ? 1f : -1f;
@@ -309,8 +309,7 @@ namespace Shapes {
 
 			int pointCount = path.Count;
 
-			bool clearMesh = mesh.vertexCount != pointCount;
-			if( clearMesh )
+			if( clearMesh || mesh.vertexCount != pointCount )
 				mesh.Clear();
 			if( pointCount < 2 )
 				return;
