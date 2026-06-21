@@ -12,19 +12,6 @@
 //   - Glavnyy kontent gap
 //   - Blocker: da/net
 //
-// ISPOLZOVANIE:
-//   var entry = new BuildPlaytestEntry(
-//     version: "2026-04-07-main-#847",
-//     fpsMean: 58f,
-//     fpsWorst: 32f,
-//     mainIrritant: "Surface transition hitch when rotating camera",
-//     mainVisualFlaw: "Gas giant reads as flat overlay",
-//     mainUXFlaw: "Pause menu needs better button labeling",
-//     mainContentGap: "Underwater flora density too low",
-//     isBlocker: true
-//   );
-//   BuildPlaytestLog.RecordEntry(entry);
-//
 // ZOLOTOY STANDART:
 //   • Kazhdyy build = odna zapis
 //   • Zapisyvaetsya PERED otpravkoy na playtest
