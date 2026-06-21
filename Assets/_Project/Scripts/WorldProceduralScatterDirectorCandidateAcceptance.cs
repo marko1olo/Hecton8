@@ -1485,7 +1485,7 @@ namespace Hecton8.World
             if (layer == WorldPrefabFamilyProfile.ScatterLayer.Ground ||
                 layer == WorldPrefabFamilyProfile.ScatterLayer.Cluster)
             {
-                long cellKey = ComposeWindowKey(placement.CellX, placement.CellZ, 1, placement.HeightLayerIndex);
+                long cellKey = ComposeWindowKey(new ScatterWindowCoordinate(placement.CellX, placement.CellZ, 1, placement.HeightLayerIndex));
                 return _occupiedCellBuffer.Contains(cellKey);
             }
 
@@ -1495,7 +1495,7 @@ namespace Hecton8.World
             Dictionary<long, int> windowCounts = layer == WorldPrefabFamilyProfile.ScatterLayer.Structure
                 ? _structureWindowCounts
                 : _spawnWindowCounts;
-            long windowKey = ComposeWindowKey(placement.CellX, placement.CellZ, stride, placement.HeightLayerIndex);
+            long windowKey = ComposeWindowKey(new ScatterWindowCoordinate(placement.CellX, placement.CellZ, stride, placement.HeightLayerIndex));
             return GetWindowPlacementCount(windowKey, windowCounts) >= perWindowBudget;
         }
 
@@ -1765,28 +1765,16 @@ namespace Hecton8.World
                 return;
 
             structureWindowCountPrimary = GetWindowPlacementCount(
-                placement.CellX,
-                placement.CellZ,
-                acceptanceContext.StructureStride,
-                0,
+                new ScatterWindowCoordinate(placement.CellX, placement.CellZ, acceptanceContext.StructureStride, 0),
                 _structureWindowCounts);
             structureWindowCountSecondary = GetWindowPlacementCount(
-                placement.CellX,
-                placement.CellZ,
-                acceptanceContext.StructureStride,
-                1,
+                new ScatterWindowCoordinate(placement.CellX, placement.CellZ, acceptanceContext.StructureStride, 1),
                 _structureWindowCounts);
             spawnWindowCountPrimary = GetWindowPlacementCount(
-                placement.CellX,
-                placement.CellZ,
-                acceptanceContext.SpawnStride,
-                0,
+                new ScatterWindowCoordinate(placement.CellX, placement.CellZ, acceptanceContext.SpawnStride, 0),
                 _spawnWindowCounts);
             spawnWindowCountSecondary = GetWindowPlacementCount(
-                placement.CellX,
-                placement.CellZ,
-                acceptanceContext.SpawnStride,
-                1,
+                new ScatterWindowCoordinate(placement.CellX, placement.CellZ, acceptanceContext.SpawnStride, 1),
                 _spawnWindowCounts);
         }
 
