@@ -220,8 +220,6 @@ namespace Technie.PhysicsCreator
 				//	Console.output.Log("Initial best volume: " + initialBest.VolumeCm3.ToString("0.00") + " cm3");
 				//	Console.output.Log("Refinied best volume: " + refinedBest.VolumeCm3.ToString("0.00") + " cm3");
 
-				UnifyOffsets(refinedBest);
-
 				return ToBoxDef(refinedBest);
 			}
 			else
@@ -244,23 +242,13 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
-		private static void UnifyOffsets(RotatedBox inputBox)
-		{
-			// Resolve the box.localCenter and box.plane.center so that localCenter is zero
-
-			Vector3 offset = inputBox.plane.rotation * inputBox.localCenter;
-			inputBox.plane.center += offset;
-			inputBox.localCenter = Vector3.zero;
-		}
-
 		public static BoxDef ToBoxDef(RotatedBox computedBox)
 		{
-			// TODO: Collapse plane.center and computedBox.localCenter into a single, pre-rotation offset?
-
 			BoxDef result = new BoxDef();
-			result.boxPosition = computedBox.plane.center;
+			Vector3 offset = computedBox.plane.rotation * computedBox.localCenter;
+			result.boxPosition = computedBox.plane.center + offset;
 			result.boxRotation = computedBox.plane.rotation;
-			result.collisionBox.center = computedBox.localCenter;
+			result.collisionBox.center = Vector3.zero;
 			result.collisionBox.size = computedBox.size;
 			return result;
 		}
