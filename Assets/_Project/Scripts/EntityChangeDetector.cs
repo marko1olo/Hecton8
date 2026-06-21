@@ -14,8 +14,6 @@
 //   • Reduces O(N) polling loops to event-driven notifications.
 //
 // USAGE:
-//   // Create detector for an entity
-//   var detector = new EntityChangeDetector("Robot_001");
 //
 //   // Mark position as changed
 //   detector.MarkDirty(EntityChangeFlag.Position);
