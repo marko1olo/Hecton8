@@ -78,7 +78,6 @@ namespace Crest
                 _underwaterEffectMaterial = new PropertyWrapperMaterial(k_ShaderPath);
             }
 
-            // TODO: Use a temporary RT if possible.
             _colorTexture = RTHandles.Alloc
             (
                 Vector2.one,
