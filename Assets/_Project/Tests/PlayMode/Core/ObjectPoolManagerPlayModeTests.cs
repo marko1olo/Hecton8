@@ -84,5 +84,84 @@ namespace Hecton8.Tests.PlayMode
             Assert.IsTrue(spawnedInstance == null, "Instance with missing pool should be destroyed.");
             Object.Destroy(prefab);
         }
+        [UnityTest]
+        public IEnumerator ClearPool_ValidPrefab_DestroysInactiveInstancesAndRemovesPool()
+        {
+            GameObject prefab = new GameObject("MockPrefab");
+            _poolManager.Warmup(prefab, 2);
+
+            Assert.IsTrue(_poolManager.HasPool(prefab), "Pool should exist after warmup.");
+            int availableBefore = _poolManager.GetAvailableCount(prefab);
+            Assert.AreEqual(2, availableBefore, "Should have 2 available instances.");
+
+            // Spawn one to make it active, then despawn to return it to the pool
+            GameObject spawnedInstance = _poolManager.Spawn(prefab, Vector3.zero);
+            _poolManager.Despawn(spawnedInstance);
+
+            _poolManager.ClearPool(prefab);
+
+            yield return null; // Wait for Destroy to complete
+
+            Assert.IsFalse(_poolManager.HasPool(prefab), "Pool should be removed after ClearPool.");
+            Assert.IsTrue(spawnedInstance == null, "Inactive instance should be destroyed by ClearPool.");
+
+            Object.Destroy(prefab);
+        }
+
+        [UnityTest]
+        public IEnumerator ClearPool_NullPrefab_DoesNothing()
+        {
+            Assert.DoesNotThrow(() => _poolManager.ClearPool((GameObject)null));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ClearPool_MissingPrefab_DoesNothing()
+        {
+            GameObject prefab = new GameObject("MissingPrefab");
+            Assert.DoesNotThrow(() => _poolManager.ClearPool(prefab));
+            yield return null;
+            Object.Destroy(prefab);
+        }
+
+        [UnityTest]
+        public IEnumerator ClearPool_ComponentOverload_CallsGameObjectOverload()
+        {
+            GameObject prefabGo = new GameObject("MockComponentPrefab");
+            BoxCollider testComponent = prefabGo.AddComponent<BoxCollider>();
+
+            _poolManager.Warmup(testComponent, 1);
+            Assert.IsTrue(_poolManager.HasPool(testComponent), "Pool should exist for component.");
+
+            _poolManager.ClearPool(testComponent);
+
+            yield return null;
+
+            Assert.IsFalse(_poolManager.HasPool(testComponent), "Pool should be removed after ClearPool using component overload.");
+
+            Object.Destroy(prefabGo);
+        }
+
+        [UnityTest]
+        public IEnumerator ClearPool_DoesNotDestroyActiveInstances()
+        {
+            GameObject prefab = new GameObject("MockPrefab");
+            _poolManager.Warmup(prefab, 1);
+
+            // Spawn an instance so it is removed from the available queue
+            GameObject spawnedInstance = _poolManager.Spawn(prefab, Vector3.zero);
+
+            _poolManager.ClearPool(prefab);
+
+            yield return null; // Wait for any Destroy to complete
+
+            Assert.IsFalse(_poolManager.HasPool(prefab), "Pool should be removed.");
+            Assert.IsTrue(spawnedInstance != null, "Active instance should NOT be destroyed by ClearPool.");
+
+            // Cleanup the spawned instance since the manager won't track it anymore
+            Object.Destroy(spawnedInstance);
+            Object.Destroy(prefab);
+        }
+
     }
 }
