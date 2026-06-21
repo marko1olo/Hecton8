@@ -23,10 +23,6 @@
 //   var stats = ObjectPoolDiagnostics.GetPoolStats("RobotDronePrefab");
 //   Hecton8.Core.H8Debug.Log(stats.peakConcurrentCount);
 //
-//   // Get comprehensive report
-//   string report = ObjectPoolDiagnostics.GenerateReport();
-//   Hecton8.Core.H8Debug.Log(report);
-//
 // ZERO-GC DESIGN:
 //   • PoolStatSnapshot is struct (stack allocation only).
 //   • All tracking via int counters and NativeQueue payloads.
