@@ -11,7 +11,6 @@
 //
 // USAGE:
 //   RuntimeInstanceId id = RuntimeInstanceId.Create(prefabId);
-//   if (id.IsValid) { ... }
 //   long serialized = id.Value; // For save systems
 //
 // ZERO GC:
