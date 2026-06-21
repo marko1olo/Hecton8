@@ -28,19 +28,19 @@ namespace Shapes {
 
 		DashStyleEditor dashEditor;
 		SceneFillEditor fillEditor;
-		SceneDiscEditor discEditor; // todo: polygonal version
+		ScenePolygonEditor polyEditor;
 
 		public override void OnEnable() {
 			base.OnEnable();
 			dashEditor = DashStyleEditor.GetDashEditor( propDashStyle, propMatchDashSpacingToSize, propDashed );
 			fillEditor = new SceneFillEditor( this, propFill, propUseFill );
-			discEditor = new SceneDiscEditor( this );
+			polyEditor = new ScenePolygonEditor( this );
 		}
 
 		void OnSceneGUI() {
 			RegularPolygon rp = target as RegularPolygon;
 			GradientFill fill = rp.Fill;
-			bool changed = discEditor.DoSceneHandles( rp );
+			bool changed = polyEditor.DoSceneHandles( rp );
 			changed |= fillEditor.DoSceneHandles( rp.UseFill, rp, ref fill, rp.transform );
 			if( changed ) {
 				rp.Fill = fill;
@@ -81,7 +81,7 @@ namespace Shapes {
 
 			bool canEditInSceneView = propRadiusSpace.hasMultipleDifferentValues || propRadiusSpace.enumValueIndex == (int)ThicknessSpace.Meters;
 			using( new EditorGUI.DisabledScope( canEditInSceneView == false ) )
-				discEditor.GUIEditButton();
+				polyEditor.GUIEditButton();
 			
 			
 			using( new ShapesUI.GroupScope() )
