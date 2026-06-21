@@ -13,7 +13,6 @@
 namespace Crest.EditorHelpers
 {
     using System.Collections.Generic;
-    using System.Linq;
     using UnityEditor;
     using UnityEngine;
 
@@ -30,10 +29,8 @@ namespace Crest.EditorHelpers
                 // Populate list with decorators.
                 if (_decorators == null)
                 {
-                    // TODO: Use something other than Linq.
-                    _decorators = fieldInfo
-                        .GetCustomAttributes(typeof(DecoratorAttribute), false)
-                        .OrderBy(x => ((DecoratorAttribute) x).order).ToList();
+                    _decorators = new List<object>(fieldInfo.GetCustomAttributes(typeof(DecoratorAttribute), false));
+                    _decorators.Sort((a, b) => ((DecoratorAttribute)a).order.CompareTo(((DecoratorAttribute)b).order));
                 }
 
                 return _decorators;
@@ -47,11 +44,12 @@ namespace Crest.EditorHelpers
             {
                 if (_onChangeAttributes == null)
                 {
-                    // TODO: Use something other than Linq.
-                    _onChangeAttributes = fieldInfo
-                        .GetCustomAttributes(typeof(OnChangeAttribute), false)
-                        .Cast<OnChangeAttribute>()
-                        .ToList();
+                    var attributes = fieldInfo.GetCustomAttributes(typeof(OnChangeAttribute), false);
+                    _onChangeAttributes = new List<OnChangeAttribute>(attributes.Length);
+                    for (int i = 0; i < attributes.Length; i++)
+                    {
+                        _onChangeAttributes.Add((OnChangeAttribute)attributes[i]);
+                    }
                 }
 
                 return _onChangeAttributes;
