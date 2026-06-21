@@ -27,7 +27,11 @@ public class EnemySpawners : MonoBehaviour
     void Start()
     {
         parentLayerTransform = parentLayer == null ? null : parentLayer.transform;
+        StartCoroutine(InitializePoolsRoutine());
+    }
 
+    private System.Collections.IEnumerator InitializePoolsRoutine()
+    {
         for (int i = 0; i < enemyPool.Length; i++)
         {
             if (enemyPrefab == null)
@@ -38,6 +42,7 @@ public class EnemySpawners : MonoBehaviour
             GameObject enemy = Instantiate(enemyPrefab, transform.position, transform.rotation, parentLayerTransform);
             enemy.SetActive(false);
             enemyPool[i] = enemy;
+            yield return null;
         }
 
         for (int i = 0; i < spawnFxPool.Length; i++)
@@ -50,8 +55,8 @@ public class EnemySpawners : MonoBehaviour
             GameObject spawnFx = Instantiate(SpawnFx, transform.position, transform.rotation);
             spawnFx.SetActive(false);
             spawnFxPool[i] = spawnFx;
+            yield return null;
         }
-
     }
 
     // Update is called once per frame
