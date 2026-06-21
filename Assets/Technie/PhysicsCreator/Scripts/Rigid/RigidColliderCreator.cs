@@ -265,6 +265,7 @@ namespace Technie.PhysicsCreator
 
 			List<Hull> orphanedHulls = new List<Hull>();
 			List<Collider> orphanedColliders = new List<Collider>();
+			List<RigidColliderCreatorChild> orphanedColliderChilds = new List<RigidColliderCreatorChild>();
 			List<RigidColliderCreatorChild> orphanedChilds = new List<RigidColliderCreatorChild>();
 
 			foreach (Hull h in paintingData.hulls)
@@ -280,6 +281,13 @@ namespace Technie.PhysicsCreator
 				if (!IsMapped(c))
 				{
 					orphanedColliders.Add(c);
+
+					RigidColliderCreatorChild adjChild = null;
+					if (c.transform.parent == this.transform)
+					{
+						adjChild = c.gameObject.GetComponent<RigidColliderCreatorChild>();
+					}
+					orphanedColliderChilds.Add(adjChild);
 				}
 			}
 
@@ -308,11 +316,7 @@ namespace Technie.PhysicsCreator
 					SphereCollider sphereCol = c as SphereCollider;
 
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
-					RigidColliderCreatorChild child = null;
-					if (c.transform.parent == this.transform)
-					{
-						child = c.gameObject.GetComponent<RigidColliderCreatorChild>();
-					}
+					RigidColliderCreatorChild child = orphanedColliderChilds[j];
 
 					// todo needs better handling
 					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
@@ -333,7 +337,8 @@ namespace Technie.PhysicsCreator
 
 						// These are no longer orphaned, so remove them from these lists
 						orphanedColliders.RemoveAt(j);
-						orphanedChilds.Remove(child);
+						orphanedColliderChilds.RemoveAt(j);
+						if (child != null) orphanedChilds.Remove(child);
 
 						// Hull no longer orphaned, so flag to remove it once we've finished trying other colliders
 						matchedHull = true;
@@ -355,6 +360,7 @@ namespace Technie.PhysicsCreator
 							// These are no longer orphaned, so remove them from these lists
 							orphanedHulls.RemoveAt(i);
 							orphanedColliders.RemoveAt(j);
+							orphanedColliderChilds.RemoveAt(j);
 							
 							// Remove the no-longer orphaned child
 							for (int k=0; k<orphanedChilds.Count; k++)
@@ -503,8 +509,9 @@ namespace Technie.PhysicsCreator
 			// Delete any left over colliders
 			// TODO: This probably isn't properly undo-aware
 
-			foreach (Collider c in orphanedColliders)
+			for (int i = 0; i < orphanedColliders.Count; i++)
 			{
+				Collider c = orphanedColliders[i];
 				if (c == null)
 					continue;
 
@@ -517,8 +524,9 @@ namespace Technie.PhysicsCreator
 					// Child collider - delete collider, RigidColliderCreatorChild (if any) and GameObject (if empty)
 
 					GameObject go = c.gameObject;
+					RigidColliderCreatorChild childComp = orphanedColliderChilds[i];
 					DestroyImmediateWithUndo(c);
-					DestroyImmediateWithUndo(go.GetComponent<RigidColliderCreatorChild>());
+					DestroyImmediateWithUndo(childComp);
 					if (IsDeletable(go))
 					{
 						DestroyImmediateWithUndo(go);
