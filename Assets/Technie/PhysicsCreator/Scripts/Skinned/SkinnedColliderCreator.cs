@@ -36,7 +36,7 @@ namespace Technie.PhysicsCreator.Skinned
 			return editorData;
 		}
 
-		public Transform FindBone(BoneData boneData)
+		public Transform FindBone(BonePhysicsData boneData)
 		{
 			if (boneData == null)
 				return null;
