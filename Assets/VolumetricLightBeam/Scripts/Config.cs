@@ -253,8 +253,7 @@ namespace VLB
                 {
                     if (gao)
                     {
-                        var cam = gao.GetComponent<Camera>();
-                        if (cam && cam.isActiveAndEnabled) // look for the first active camera with the proper tag
+                        if (gao.TryGetComponent<Camera>(out var cam) && cam.isActiveAndEnabled) // look for the first active camera with the proper tag
                         {
                             m_CachedFadeOutCamera = cam;
                             return;
