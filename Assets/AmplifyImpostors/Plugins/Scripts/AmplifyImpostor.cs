@@ -388,8 +388,7 @@ namespace AmplifyImpostors
 						if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 							continue;
 
-						MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
-						if( mf == null || mf.sharedMesh == null )
+						if( !Renderers[ i ].TryGetComponent<MeshFilter>( out MeshFilter mf ) || mf.sharedMesh == null )
 							continue;
 
 						if( frameBounds.size == Vector3.zero )
@@ -1242,7 +1241,10 @@ namespace AmplifyImpostors
 			}
 			m_lastImpostor = impostorObject;
 			impostorObject.transform.localScale = Vector3.one;
-			impostorObject.GetComponent<MeshFilter>().sharedMesh = mesh;
+			if( impostorObject.TryGetComponent<MeshFilter>( out MeshFilter meshFilter ) )
+			{
+				meshFilter.sharedMesh = mesh;
+			}
 
 			if( justCreated )
 			{
@@ -1589,8 +1591,7 @@ namespace AmplifyImpostors
 				}
 
 				// skip non-meshes, for now
-				MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
-				if( mf == null || mf.sharedMesh == null )
+				if( !Renderers[ i ].TryGetComponent<MeshFilter>( out MeshFilter mf ) || mf.sharedMesh == null )
 				{
 					validMeshes.Add( null );
 					continue;
