@@ -138,7 +138,7 @@ namespace Hecton8.SaveSystem
                     || !reader.ReadFloat(out float playerPosY)
                     || !reader.ReadFloat(out float playerPosZ)
                     || !reader.ReadString(out loaded.Checksum)
-                    || !FinalizeMetadata(ref loaded, playerPosX, playerPosY, playerPosZ, reader, out error))
+                    || !FinalizeMetadata(ref loaded, new Vector3(playerPosX, playerPosY, playerPosZ), reader, out error))
                 {
                     if (string.IsNullOrEmpty(error))
                         error = reader.Error;
@@ -475,9 +475,9 @@ namespace Hecton8.SaveSystem
                 throw new InvalidOperationException($"{NativeMemoryReleaseFailureMessage} Label={label}.");
         }
 
-        private static bool FinalizeMetadata(ref SaveMetadata metadata, float posX, float posY, float posZ, SidecarReader reader, out string error)
+        private static bool FinalizeMetadata(ref SaveMetadata metadata, Vector3 playerPosition, SidecarReader reader, out string error)
         {
-            metadata.PlayerPosition = new Vector3(posX, posY, posZ);
+            metadata.PlayerPosition = playerPosition;
 
             int remainingBytes = reader.TotalLength - reader.BytesRead;
             if (remainingBytes >= sizeof(int) * 2)
