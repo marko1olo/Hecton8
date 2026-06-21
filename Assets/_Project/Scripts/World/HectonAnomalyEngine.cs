@@ -392,11 +392,39 @@ namespace Hecton8.World
                 SnapHysteresisMeters = TerrainSdfSnapHysteresisMeters
             };
 
-            return Unity.Jobs.IJobParallelForExtensions.Schedule(
+            JobHandle topCellHandle = Unity.Jobs.IJobParallelForExtensions.Schedule(
                 topCellJob,
                 safeSdfWidth * safeSdfDepth,
                 64,
                 densityHandle);
+
+            // Carve 3D Volumetric Procedural Caves into the SDF
+            // Uses a Swiss Cheese model with strata shelving for geologically plausible tunnels
+            var caveJob = new ProceduralCaveSdfCarveJob
+            {
+                Sdf = sdf,
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = safeVoxelSize,
+                SdfOriginAup = sdfOriginAup,
+                
+                PrimaryFrequency = 0.012f,
+                SecondaryFrequency = 0.017f, // Slightly higher frequency for intersection
+                CarveStrengthMeters = 20.0f, // More aggressive carve
+                CaveThreshold = 0.65f,       // Higher threshold for Swiss Cheese intersection
+                MaxCrustDepthMeters = 400.0f,
+                SurfaceProtectionMeters = 15.0f, // 15m protection zone to prevent surface breakup
+                StrataLayerThicknessMeters = 24.0f, // Shelves every 24m vertically
+                StrataShelvingStrength = 0.4f,   // Moderate shelf flattening
+                
+                // We use a global fixed seed here since HectonAnomalyEngine doesn't receive a WorldSeed.
+                // In a production call, this should be wired up to the Map/World seed.
+                // For now, this static seed guarantees continuous cave networks across chunks.
+                WorldSeed = 0x98BE7A1Eu
+            };
+
+            return caveJob.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, topCellHandle);
         }
 
         /// <summary>

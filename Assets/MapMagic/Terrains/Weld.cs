@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -685,6 +685,7 @@ namespace MapMagic.Terrains
 			private static void RestoreDraftWeld (TerrainTile welded, Coord weldDir)
 			/// Restoring height edges if they were lowered by welding with main
 			{
+				if (welded?.draft?.terrain == null || welded.draft.terrain.Equals(null) || welded.draft.terrain.terrainData == null) return;
 				EdgesSet edges = welded.draft.edges;
 				float[] arr = edges.heightEdges.GetArr(weldDir);
 				Weld.ApplyToTerrain(welded.draft.terrain.terrainData, arr, weldDir);
@@ -694,6 +695,7 @@ namespace MapMagic.Terrains
 			private static void WeldDraftToMain (TerrainTile reference, TerrainTile welded, Coord weldDir)
 			/// Lowers edges on welding to main tile
 			{
+				if (welded?.draft?.terrain == null || welded.draft.terrain.Equals(null) || welded.draft.terrain.terrainData == null) return;
 				if (welded.draft.edges.heightEdges.IsEmpty)
 					welded.draft.edges.heightEdges.ReadFloats2D(welded.draft.terrain.terrainData.GetHeights(0,0,welded.draft.terrain.terrainData.heightmapResolution,welded.draft.terrain.terrainData.heightmapResolution));
 					//for an unknown reason ready chunks in scene do not have their edges (generated or saved). Leads to "Empty weld array" error. Forcing to read from terrain.

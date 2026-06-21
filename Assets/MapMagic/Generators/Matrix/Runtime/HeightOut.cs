@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -281,9 +281,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 			public void Apply (Terrain terrain)
 			{
-				Profiler.BeginSample("Apply Height Splits " + terrain.transform.parent.name);
-
 				if (terrain==null || terrain.Equals(null) || terrain.terrainData==null) return; //chunk removed during apply
+				
+				Profiler.BeginSample("Apply Height Splits " + (terrain.transform.parent != null ? terrain.transform.parent.name : "null"));
 				TerrainData data = terrain.terrainData;
 
 				FastHeightmapResize(terrain, heights2DSplits[0].GetLength(1), new Vector3(data.size.x, height, data.size.z));
@@ -304,9 +304,10 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 			public IEnumerator ApplyRoutine (Terrain terrain)
 			{
+				if (terrain==null || terrain.Equals(null) || terrain.terrainData==null) yield break;
 				TerrainData data = terrain.terrainData;
 				{
-					Profiler.BeginSample("Apply ResizeHeightmap " + terrain.transform.parent.name);
+					Profiler.BeginSample("Apply ResizeHeightmap " + (terrain.transform.parent != null ? terrain.transform.parent.name : "null"));
 					FastHeightmapResize(terrain, heights2DSplits[0].GetLength(1), new Vector3(data.size.x, height, data.size.z));
 					terrain.groupingID = data.heightmapResolution;
 					Profiler.EndSample();
@@ -316,7 +317,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				int offset = 0;
 				for (int i=0; i<heights2DSplits.Length; i++)
 				{
-					Profiler.BeginSample("Apply HeightAddStrip " + offset + " " + terrain.transform.parent.name);
+					Profiler.BeginSample("Apply HeightAddStrip " + offset + " " + (terrain.transform.parent != null ? terrain.transform.parent.name : "null"));
 
 					data.SetHeightsDelayLOD(0, offset, heights2DSplits[i]);
 					offset += heights2DSplits[i].GetLength(0);
@@ -328,7 +329,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 
 				{
-					Profiler.BeginSample("Apply ApplyDelayedHeightmapModification " + terrain.transform.parent.name);
+					Profiler.BeginSample("Apply ApplyDelayedHeightmapModification " + (terrain.transform.parent != null ? terrain.transform.parent.name : "null"));
 					#if UNITY_2019_1_OR_NEWER
 					terrain.terrainData.SyncHeightmap();
 					#else
@@ -339,7 +340,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				yield return null;
 
 				{
-					Profiler.BeginSample("Apply Flush " + terrain.transform.parent.name);
+					Profiler.BeginSample("Apply Flush " + (terrain.transform.parent != null ? terrain.transform.parent.name : "null"));
 					terrain.Flush();
 					terrain.terrainData.size = terrain.terrainData.size; //this will recalculate terrain bounding box in 2017.1
 					Profiler.EndSample();

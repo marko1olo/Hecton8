@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -137,7 +137,7 @@ namespace Den.Tools.Tasks
 					catch(Exception e)
 					{
 						#if UNITY_EDITOR || DEVELOPMENT_BUILD
-						Debug.LogError("Routine error: " + e.Message);
+						Debug.LogError("Routine error: " + e.ToString());
 						#endif
 						active = null;
 						break;

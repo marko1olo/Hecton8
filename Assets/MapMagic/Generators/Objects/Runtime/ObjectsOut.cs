@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -212,12 +212,14 @@ namespace MapMagic.Nodes.ObjectsGenerators
 
 			public void Apply(Terrain terrain)
 			{
+				if (terrain == null || terrain.Equals(null)) return;
 				ObjectsPool pool = terrain.transform.parent.GetComponent<TerrainTile>().objectsPool;
 				pool.Reposition(prototypes, transitions);
 			}
 
 			public IEnumerator ApplyRoutine (Terrain terrain)
 			{
+				if (terrain == null || terrain.Equals(null)) yield break;
 				ObjectsPool pool = terrain.transform.parent.GetComponent<TerrainTile>().objectsPool;
 		
 				IEnumerator e = pool.RepositionRoutine(prototypes, transitions, objsPerIteration);
@@ -427,6 +429,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 
 			public void Apply (Terrain terrain)
 			{
+				if (terrain == null || terrain.Equals(null) || terrain.terrainData == null) return;
 				if (treePrototypes.Contains( p=>p.prefab==null ))
 					RemoveNullPrototypes(ref treePrototypes, ref treeInstances);
 
@@ -436,8 +439,11 @@ namespace MapMagic.Nodes.ObjectsGenerators
 					terrain.terrainData.treePrototypes = new TreePrototype[0];
 				}
 
-				terrain.terrainData.treePrototypes = treePrototypes;
-				terrain.terrainData.treeInstances = treeInstances;
+				else if (treePrototypes.Length != 0)
+				{
+					terrain.terrainData.treePrototypes = treePrototypes;
+					terrain.terrainData.treeInstances = treeInstances;
+				}
 			}
 
 			public int Resolution {get{ return 0; }}

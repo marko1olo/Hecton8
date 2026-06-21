@@ -12,7 +12,7 @@ namespace Hecton8.Editor
 {
     public static class TerrainRenderTestGoal
     {
-        private static string ArtifactDir = "./";
+        private static string ArtifactDir = "C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/";
         private static MapMagicObject mmObject;
 
         [MenuItem("Hecton8/Tests/Terrain Render Test")]
@@ -34,40 +34,40 @@ namespace Hecton8.Editor
 
                 Debug.Log("MapMagicObject found. Forcing generation...");
                 mmObject.StartGenerate();
+                
+                int safetyTimeout = 0;
+                while ((mmObject.IsGenerating() || mmObject.tiles.grid.Count == 0) && safetyTimeout < 36000) // 30 minutes max
+                {
+                    mmObject.Update();
+                    Den.Tools.Tasks.CoroutineManager.Update();
+                    System.Threading.Thread.Sleep(50);
+                    safetyTimeout++;
+                }
 
-                EditorApplication.update += CheckGenerationComplete;
+                if (safetyTimeout >= 36000)
+                {
+                    Debug.LogError("TIMEOUT: MapMagic failed to finish generation within 30 minutes.");
+                    File.WriteAllText(ArtifactDir + "mcp_error.txt", "TIMEOUT: MapMagic generation stuck.");
+                    if (Application.isBatchMode) EditorApplication.Exit(1);
+                    return;
+                }
+
+                Debug.Log("MapMagic Generation Complete. Taking screenshots...");
+
+                try
+                {
+                    CaptureScreenshots();
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError("Screenshot failed: " + ex);
+                    File.WriteAllText(ArtifactDir + "mcp_error.txt", ex.ToString());
+                    if (Application.isBatchMode) EditorApplication.Exit(1);
+                }
             }
             catch (System.Exception ex)
             {
                 Debug.LogError("Exception in TerrainRenderTestGoal: " + ex);
-                File.WriteAllText(ArtifactDir + "mcp_error.txt", ex.ToString());
-                if (Application.isBatchMode) EditorApplication.Exit(1);
-            }
-        }
-
-        private static void CheckGenerationComplete()
-        {
-            if (mmObject == null)
-            {
-                EditorApplication.update -= CheckGenerationComplete;
-                return;
-            }
-
-            if (mmObject.IsGenerating())
-            {
-                return;
-            }
-
-            EditorApplication.update -= CheckGenerationComplete;
-            Debug.Log("MapMagic Generation Complete. Taking screenshots...");
-
-            try
-            {
-                CaptureScreenshots();
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError("Screenshot failed: " + ex);
                 File.WriteAllText(ArtifactDir + "mcp_error.txt", ex.ToString());
                 if (Application.isBatchMode) EditorApplication.Exit(1);
             }
@@ -87,11 +87,9 @@ namespace Hecton8.Editor
                     var inj = t.GetComponent<Hecton8.World.HectonTerrainMaterialInjector>();
                     if (inj != null) inj.enabled = false;
 
-                    Material instanced = t.materialTemplate;
-                    if (instanced == null) {
-                        instanced = new Material(baseMat);
-                        t.materialTemplate = instanced;
-                    }
+                    // Force our custom terrain material instead of whatever default MapMagic assigned
+                    Material instanced = new Material(baseMat);
+                    t.materialTemplate = instanced;
 
                     if (albedo != null) instanced.SetTexture("_AlbedoArray", albedo);
                     if (normal != null) instanced.SetTexture("_NormalArray", normal);
@@ -134,15 +132,23 @@ namespace Hecton8.Editor
 
             Vector3[] positions = new Vector3[]
             {
-                center + new Vector3(0, 50, 0),
-                center + new Vector3(100, 20, 100),
-                center + new Vector3(-100, 80, -100)
+                center + new Vector3(0, 5000, -2000), // Macro Sky View
+                center + new Vector3(500, 1000, 500), // Mid View
+                center + new Vector3(100, 15, 100),   // Ground view 1
+                center + new Vector3(-200, 5, -50),   // Ground view 2 (very low)
             };
 
             for (int i = 0; i < positions.Length; i++)
             {
                 cam.transform.position = positions[i];
-                cam.transform.LookAt(new Vector3(positions[i].x, center.y, positions[i].z));
+                if (i == 0 || i == 1) {
+                    cam.transform.LookAt(center); // Look at center from sky
+                } else {
+                    // For ground shots, look horizontally across the landscape
+                    Vector3 lookTarget = positions[i] + new Vector3(100, 0, 100);
+                    lookTarget.y = terrains[0].SampleHeight(lookTarget);
+                    cam.transform.LookAt(lookTarget);
+                }
                 TakeScreenshot(cam, ArtifactDir + "Terrain_View_" + i + ".png");
             }
 

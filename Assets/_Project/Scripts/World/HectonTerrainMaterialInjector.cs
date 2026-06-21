@@ -17,9 +17,16 @@ namespace Hecton8.World
             ApplyMaterial();
         }
 
+        private float _lastUpdateTime;
+
         private void Update()
         {
-            ForceUpdate();
+            // Throttle to avoid GC allocation every frame (terrainData.alphamapTextures allocates)
+            if (Time.time - _lastUpdateTime > 1.0f || !Application.isPlaying)
+            {
+                _lastUpdateTime = Time.time;
+                ForceUpdate();
+            }
         }
 
         public void ForceUpdate()

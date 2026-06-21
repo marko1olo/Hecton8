@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -87,6 +87,7 @@ namespace MapMagic.Nodes.SplinesGenerators
 
 			public void Apply(Terrain terrain)
 			{
+				if (terrain == null || terrain.Equals(null)) return;
 				//finding holder
 				SplineObject splineObj = terrain.GetComponent<SplineObject>(); 
 				if (splineObj == null) splineObj = terrain.transform.parent.GetComponentInChildren<SplineObject>();

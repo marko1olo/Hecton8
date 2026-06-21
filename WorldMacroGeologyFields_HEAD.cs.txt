@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
@@ -353,12 +353,13 @@ namespace Hecton8.World
             }
 
             // Plate boundary (Distance to edge)
-            // distanceToBoundary based on difference between 2 closest nodes guarantees C0 continuity!
-            float distanceToBoundary = (minDist2 - minDist1) * plateScale;
-            float edgeDistNorm = distanceToBoundary / plateScale; // For shelf generation blending
+            float2 diff = bestNode2 - bestNode1;
+            float2 diffNorm = math.normalize(diff);
+            float edgeDistNorm = math.abs(math.dot((pos / plateScale) - (bestNode1 + bestNode2) * 0.5f, diffNorm));
+            float distanceToBoundary = edgeDistNorm * plateScale;
             
             // Domain Warping for the boundary so it's not perfectly straight
-            float boundaryWarp = (FractalSimplexNoise01(pos * 0.0001f, p.Seed ^ 0x98765432u) * 2f - 1f) * 1200f;
+            float boundaryWarp = (FractalNoise01(pos * 0.0001f, p.Seed ^ 0x98765432u) * 2f - 1f) * 1200f;
             distanceToBoundary = math.max(0f, distanceToBoundary + boundaryWarp);
 
             // Determine Plate Types
@@ -509,17 +510,15 @@ namespace Hecton8.World
                     
                     volProfile -= gullyProfile * flankMask * 0.15f;
                     
-                    float seamountHeight = math.saturate(volProfile) * basinMask;
-                    depth -= seamountHeight * 3500f;
-                    ridgeMask = math.max(ridgeMask, seamountHeight * 0.8f); // Make seamounts rocky
+                    depth -= math.saturate(volProfile) * basinMask * 3500f;
                 }
             }
             else // Continent vs Continent
             {
                 // Continental Collision (Himalayas equivalent)
                 float ridgeProfile = 1f - math.smoothstep(p.RidgeWidthMeters * 0.3f, p.RidgeWidthMeters * 2.5f, distanceToBoundary);
-                ridgeMask = math.max(ridgeMask, ridgeProfile);
-                faultMask = math.max(faultMask, 1f - math.smoothstep(0f, p.RidgeWidthMeters * 4.0f, distanceToBoundary));
+                ridgeMask = ridgeProfile;
+                faultMask = 1f - math.smoothstep(0f, p.RidgeWidthMeters * 4.0f, distanceToBoundary);
                 
                 depth -= ridgeProfile * (p.RidgeHeightMeters * 1.5f); // Massive mountains
                 shelfMask = 1f; // All shelf
@@ -537,7 +536,7 @@ namespace Hecton8.World
 
             float descent01 = 1f - shelfMask;
             // Relief gate controls where chaotic noise is allowed. Keep it near 0 on flat shelves and basins.
-            float reliefGate = math.saturate(shelfBreakMask * 0.8f + ridgeMask * 1.0f + faultMask * 0.6f + 0.1f);
+            float reliefGate = math.saturate(shelfBreakMask * 0.6f + ridgeMask * 0.8f + faultMask * 0.4f);
 
             // DOMAIN WARPING: To break the "plastic" value noise look, we perturb the coordinates for high-frequency noise.
             float warpX = (FractalSimplexNoise01(norm * 12.0f, p.Seed ^ 0x8A1F3C4Du) * 2f - 1f) * 0.005f; 
@@ -545,35 +544,29 @@ namespace Hecton8.World
             float2 warpedNorm = norm + new float2(warpX, warpZ);
 
             // REALISTIC TECTONIC BREAKUP:
+            // Macro uses RidgedMultifractal to create sharp, eroded-looking mountain peaks instead of rounded value noise hills.
+            // Meso and Micro use Simplex for natural organic surface roughness without grid artifacts.
             float macroBreakup = RidgedMultifractal01(warpedNorm * 18.0f + new float2(7.7f, 41.3f), p.Seed ^ 0x91E83B37u, 5);
             float mesoBreakup = FractalSimplexNoise01(warpedNorm * 48.0f + new float2(-23.1f, 5.6f), p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
             float microBreakup = FractalSimplexNoise01(warpedNorm * 220.0f + new float2(33.1f, -14.6f), p.Seed ^ 0x1A2B3C4Du) * 2f - 1f;
             
-            // Abyssal Plain / Basin rolling hills (gives depth and texture to the ocean floor)
-            float basinHills = FractalSimplexNoise01(warpedNorm * 12.0f, p.Seed ^ 0x55AA1122u) * 2f - 1f;
-            depth += basinHills * 120f * math.saturate(basinMask + shelfMask);
-
             // Apply macro breakup as sharp peaks (subtracting depth) where relief is allowed
-            depth -= macroBreakup * 180f * reliefGate; 
-            depth += mesoBreakup * 80f * math.saturate(reliefGate + shelfBreakMask * 0.4f + basinMask * 0.2f);
-            float microBreakupWeight = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + reliefGate * 0.5f + basinMask * 0.3f);
-            depth += microBreakup * math.lerp(10f, 65f, microBreakupWeight);
+            depth -= macroBreakup * 140f * reliefGate; 
+            depth += mesoBreakup * 60f * math.saturate(reliefGate + shelfBreakMask * 0.2f);
+            float microBreakupWeight = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + reliefGate * 0.5f);
+            depth += microBreakup * math.lerp(5f, 45f, microBreakupWeight);
             depth += fractureMask * 60f;
 
             // MESO/MICRO DETAIL PASS
             float rockDetailNoise = (FractalNoise01(warpedNorm * 150.0f + new float2(-44.2f, 88.1f), p.Seed ^ 0x7B9C1A2Fu) * 2f - 1f);
             float rockyRidgeDetail = 1f - 2f * math.abs(FractalNoise01(warpedNorm * 320.0f + new float2(11.4f, -99.3f), p.Seed ^ 0x5E8A9C1Du) - 0.5f);
             
-            // INCREASE HARD ROCK EXPOSURE IN BASINS! This prevents the "белый ебаный песок" (fucking white sand) problem!
-            float hardRockExposure = math.saturate(ridgeMask * 0.8f + faultMask * 0.5f + math.saturate(descent01 * 1.5f) * 0.20f + basinMask * 0.4f);
-            float mesoDetailWeight = math.saturate(hardRockExposure * 0.8f + reliefGate * 0.4f + basinMask * 0.3f);
+            float hardRockExposure = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + math.saturate(descent01 * 1.5f) * 0.20f);
+            float mesoDetailWeight = math.saturate(hardRockExposure * 0.8f + reliefGate * 0.3f);
             
-            depth += rockDetailNoise * 45f * mesoDetailWeight;
-            depth -= rockyRidgeDetail * 40f * mesoDetailWeight * math.saturate(descent01); 
+            depth += rockDetailNoise * 35f * mesoDetailWeight;
+            depth -= rockyRidgeDetail * 30f * mesoDetailWeight * math.saturate(descent01); 
 
-            // Add ultra-high frequency micro noise (10m wavelength) to trigger MapMagic's Cavity node for texturing!
-            float microRockDetail = SimplexNoise01(warpedNorm * 2000.0f, p.Seed ^ 0x12345678u) * 2f - 1f;
-            depth += microRockDetail * 5f * mesoDetailWeight; // +/- 5m micro differential
 
             // SEDIMENT DUNE/RIPPLE DETAIL PASS
             // Dune frequency: 0.05 (20m wide dunes) for better mesh density compatibility
@@ -665,7 +658,6 @@ namespace Hecton8.World
                     craterDepthDelta -= rimProfile * maxRimHeight; // Raise rim
                     
                     craterMask = math.max(craterMask, bowl);
-                    ridgeMask = math.max(ridgeMask, rimProfile * 0.8f); // Make crater rims rocky!
                 }
             }
             depth += craterDepthDelta;

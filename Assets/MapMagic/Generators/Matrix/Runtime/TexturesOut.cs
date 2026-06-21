@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -236,9 +236,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 			public virtual void Apply (Terrain terrain)
 			{
-				Profiler.BeginSample("Apply Textures " + terrain.transform.name);
-
 				if (terrain==null || terrain.Equals(null) || terrain.terrainData==null) return; //chunk removed during apply
+
+				Profiler.BeginSample("Apply Textures " + terrain.transform.name);
 				TerrainData data = terrain.terrainData;
 
 				//setting resolution

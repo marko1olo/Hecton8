@@ -44,6 +44,30 @@ namespace Hecton8.Editor.Terrain
                 RenderScale(p, -250f, -250f, 500f, "500m");
                 Debug.Log("[RenderDirectTextures] Generated 500m scale.");
 
+                // FIND A CRATER TO PROVE THEY EXIST
+                float craterGridSize = 8000f;
+                bool foundCrater = false;
+                for (int cx = -10; cx <= 10 && !foundCrater; cx++)
+                {
+                    for (int cz = -10; cz <= 10 && !foundCrater; cz++)
+                    {
+                        uint h = Hecton8.World.WorldMacroGeologyFields.Hash(cx, cz, unchecked((int)(p.Seed ^ 0x9B3A21EFu)));
+                        float probability = Hecton8.World.WorldMacroGeologyFields.HashToUnitFloat(h ^ 0x12345678u);
+                        if (probability <= 0.15f)
+                        {
+                            float actualX = (cx + Hecton8.World.WorldMacroGeologyFields.HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
+                            float actualZ = (cz + Hecton8.World.WorldMacroGeologyFields.HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
+                            float radius = math.lerp(400f, 2500f, math.pow(Hecton8.World.WorldMacroGeologyFields.HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.5f)); 
+                            
+                            // Render a view perfectly centered on this crater!
+                            float viewExtent = math.max(radius * 3f, 4000f);
+                            RenderScale(p, actualX - viewExtent * 0.5f, actualZ - viewExtent * 0.5f, viewExtent, "CraterCenter");
+                            Debug.Log($"[RenderDirectTextures] Generated CraterCenter scale at {actualX}, {actualZ} (Radius: {radius}m).");
+                            foundCrater = true;
+                        }
+                    }
+                }
+
                 Debug.Log("[RenderDirectTextures] Generated all multi-scale textures.");
                 EditorApplication.Exit(0);
             }
