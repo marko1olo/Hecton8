@@ -11,6 +11,9 @@ namespace CandiceAIforGames.AI
         // COLD ALLOC: RaycastHit[1] - vertical occupancy probe scratch - owner: CandiceTile
         private static readonly RaycastHit[] OccupancyHits = new RaycastHit[1];
 
+        // STATIC CACHE: Dictionary mapping Colliders to their owning CandiceTile to avoid runtime GetComponent calls
+        private static readonly Dictionary<Collider, CandiceTile> ColliderRegistry = new Dictionary<Collider, CandiceTile>(128);
+
         public bool walkable = true;
         public bool current = false;
         public bool target = false;
@@ -32,15 +35,31 @@ namespace CandiceAIforGames.AI
         private bool _hasLastColor;
 
         public static readonly List<CandiceTile> AllTiles = new List<CandiceTile>(128);
+        private Collider[] _colliders;
 
         private void OnEnable()
         {
             AllTiles.Add(this);
+            _colliders = GetComponents<Collider>();
+            if (_colliders != null)
+            {
+                foreach (var col in _colliders)
+                {
+                    ColliderRegistry[col] = this;
+                }
+            }
         }
 
         private void OnDisable()
         {
             AllTiles.Remove(this);
+            if (_colliders != null)
+            {
+                foreach (var col in _colliders)
+                {
+                    ColliderRegistry.Remove(col);
+                }
+            }
         }
 
         private void Awake()
@@ -114,7 +133,7 @@ namespace CandiceAIforGames.AI
             for (int i = 0; i < colliderCount; i++)
             {
                 Collider item = NeighborColliders[i];
-                if (item == null || !item.TryGetComponent(out CandiceTile candiceTile))
+                if (item == null || !ColliderRegistry.TryGetValue(item, out CandiceTile candiceTile))
                 {
                     continue;
                 }
