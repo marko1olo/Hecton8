@@ -134,16 +134,15 @@ namespace Technie.PhysicsCreator.Skinned
 			this.minThreshold = newMinThreshold;
 			this.maxThreshold = newMaxThreshold;
 
-			// TODO: Regen selected face indices
-			// ..
-
-			/*
 			SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
 			BoneWeight[] weights = targetMesh.boneWeights;
 			int[] triangles = targetMesh.triangles;
 			int numTris = triangles.Length / 3;
 
-			thresholdSelectedFaces.Clear();
+			selectedFaces.Clear();
+
+			Transform bone = SkinnedColliderCreator.FindBone(skinnedRenderer, targetBoneName);
+			int ownBoneIndex = Utils.FindBoneIndex(skinnedRenderer, bone);
 
 			for (int i = 0; i< numTris; i++)
 			{
@@ -156,16 +155,15 @@ namespace Technie.PhysicsCreator.Skinned
 				BoneWeight w1 = weights[i1];
 				BoneWeight w2 = weights[i2];
 
-				Transform bone = SkinnedColliderCreator.FindBone(skinnedRenderer, targetBoneName);
-				int ownBoneIndex = Utils.FindBoneIndex(skinnedRenderer, bone);
 				if (Utils.IsWeightAboveThreshold(w0, ownBoneIndex, minThreshold, maxThreshold)
 					&& Utils.IsWeightAboveThreshold(w1, ownBoneIndex, minThreshold, maxThreshold)
 					&& Utils.IsWeightAboveThreshold(w2, ownBoneIndex, minThreshold, maxThreshold))
 				{
-					thresholdSelectedFaces.Add(triIndex);
+					selectedFaces.Add(triIndex);
 				}
 			}
-			*/
+
+			Utils.UpdateCachedVertices(this, targetMesh);
 		}
 
 		public void ClearSelectedFaces()
