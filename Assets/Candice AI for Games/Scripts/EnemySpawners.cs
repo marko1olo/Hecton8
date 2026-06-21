@@ -23,35 +23,66 @@ public class EnemySpawners : MonoBehaviour
     private int enemyCursor;
     private int spawnFxCursor;
 
+    // COLD ALLOC: System.Action caches for InstantiateAsync - owner: EnemySpawners
+    private System.Action<AsyncOperation> onEnemyInstantiated;
+    private System.Action<AsyncOperation> onSpawnFxInstantiated;
+
+    private void Awake()
+    {
+        onEnemyInstantiated = OnEnemyInstantiated;
+        onSpawnFxInstantiated = OnSpawnFxInstantiated;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         parentLayerTransform = parentLayer == null ? null : parentLayer.transform;
 
-        for (int i = 0; i < enemyPool.Length; i++)
+        if (enemyPrefab != null)
         {
-            if (enemyPrefab == null)
-            {
-                break;
-            }
-
-            GameObject enemy = Instantiate(enemyPrefab, transform.position, transform.rotation, parentLayerTransform);
-            enemy.SetActive(false);
-            enemyPool[i] = enemy;
+            var op = InstantiateAsync(enemyPrefab, enemyPool.Length, parentLayerTransform, transform.position, transform.rotation);
+            op.completed += onEnemyInstantiated;
         }
 
-        for (int i = 0; i < spawnFxPool.Length; i++)
+        if (SpawnFx != null)
         {
-            if (SpawnFx == null)
-            {
-                break;
-            }
-
-            GameObject spawnFx = Instantiate(SpawnFx, transform.position, transform.rotation);
-            spawnFx.SetActive(false);
-            spawnFxPool[i] = spawnFx;
+            var op = InstantiateAsync(SpawnFx, spawnFxPool.Length, transform.position, transform.rotation);
+            op.completed += onSpawnFxInstantiated;
         }
+    }
 
+    private void OnEnemyInstantiated(AsyncOperation op)
+    {
+        if (op is AsyncInstantiateOperation<GameObject> instantiateOp)
+        {
+            var result = instantiateOp.Result;
+            for (int i = 0; i < result.Length && i < enemyPool.Length; i++)
+            {
+                GameObject enemy = result[i];
+                if (enemy != null)
+                {
+                    enemy.SetActive(false);
+                    enemyPool[i] = enemy;
+                }
+            }
+        }
+    }
+
+    private void OnSpawnFxInstantiated(AsyncOperation op)
+    {
+        if (op is AsyncInstantiateOperation<GameObject> instantiateOp)
+        {
+            var result = instantiateOp.Result;
+            for (int i = 0; i < result.Length && i < spawnFxPool.Length; i++)
+            {
+                GameObject spawnFx = result[i];
+                if (spawnFx != null)
+                {
+                    spawnFx.SetActive(false);
+                    spawnFxPool[i] = spawnFx;
+                }
+            }
+        }
     }
 
     // Update is called once per frame
