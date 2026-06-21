@@ -1754,29 +1754,6 @@ namespace Hecton8.Systems.AI
             _externalPeakHoldSeconds = math.max(math.select(0f, _externalPeakHoldSeconds, math.isfinite(_externalPeakHoldSeconds)), safeHoldSeconds);
         }
 
-        /// <summary>
-        /// Legacy predator registration hook retained for compatibility.
-        /// </summary>
-        /// <param name="collider">Predator collider.</param>
-        public static void RegisterPredator(Collider collider)
-        {
-        }
-
-        /// <summary>
-        /// Legacy predator unregistration hook retained for compatibility.
-        /// </summary>
-        /// <param name="collider">Predator collider.</param>
-        public static void UnregisterPredator(Collider collider)
-        {
-        }
-
-        /// <summary>
-        /// Legacy global predator registration clear retained for compatibility.
-        /// </summary>
-        public static void ClearAllPredatorRegistrations()
-        {
-        }
-
         internal void HandleEncounterPhaseChanged(EncounterPhase previousPhase, EncounterPhase newPhase)
         {
             PublishPredatorPressure(newPhase != EncounterPhase.Relax);
