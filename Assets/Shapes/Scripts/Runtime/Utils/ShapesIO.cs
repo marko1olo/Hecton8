@@ -51,26 +51,14 @@ namespace Shapes {
 		static bool TryMakeAssetsEditableByObject( Object[] assets ) {
 			if( AssetsCanBeEdited( assets ) )
 				return true;
-			#if UNITY_2019_3_OR_NEWER
 			string[] paths = assets.Select( AssetDatabase.GetAssetPath ).ToArray();
 			return AssetDatabase.MakeEditable( paths, null );
-			#else
-			Task checkoutTask = Provider.Checkout( assets, CheckoutMode.Asset );
-			checkoutTask.Wait();
-			return checkoutTask.success;
-			#endif
 		}
 
 		static bool TryMakeAssetsEditableByPath( string[] paths ) {
 			if( AssetsCanBeEdited( paths ) )
 				return true;
-			#if UNITY_2019_3_OR_NEWER
 			return AssetDatabase.MakeEditable( paths, null );
-			#else
-			Task checkoutTask = Provider.Checkout( paths, CheckoutMode.Asset );
-			checkoutTask.Wait();
-			return checkoutTask.success;
-			#endif
 		}
 
 		internal static bool TryMakeAssetsEditable( params Object[] assets ) {
