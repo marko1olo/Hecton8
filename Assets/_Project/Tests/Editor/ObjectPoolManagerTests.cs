@@ -41,5 +41,57 @@ namespace Hecton8.Tests.Editor
             Object.DestroyImmediate(prefabGo);
             Object.DestroyImmediate(spawned);
         }
+
+        [Test]
+        public void TryGetPooledRootRenderer_WithValidPooledInstance_ReturnsTrueAndRenderer()
+        {
+            // Arrange
+            GameObject prefabGo = new GameObject("TestPrefabWithRenderer");
+            var renderer = prefabGo.AddComponent<MeshRenderer>();
+            GameObject spawned = _poolManager.Spawn(prefabGo, Vector3.zero, Quaternion.identity, true);
+
+            // Act
+            bool success = _poolManager.TryGetPooledRootRenderer(spawned, out Renderer outRenderer);
+
+            // Assert
+            Assert.IsTrue(success, "Expected TryGetPooledRootRenderer to return true for a valid pooled instance.");
+            Assert.IsNotNull(outRenderer, "Expected the output renderer to be non-null.");
+            Assert.AreEqual(spawned.GetComponent<MeshRenderer>(), outRenderer, "Expected the output renderer to match the spawned object's renderer.");
+
+            // Cleanup
+            _poolManager.Despawn(spawned);
+            Object.DestroyImmediate(prefabGo);
+            Object.DestroyImmediate(spawned);
+        }
+
+        [Test]
+        public void TryGetPooledRootRenderer_WithNullInstance_ReturnsFalse()
+        {
+            // Act
+            bool success = _poolManager.TryGetPooledRootRenderer(null, out Renderer outRenderer);
+
+            // Assert
+            Assert.IsFalse(success, "Expected TryGetPooledRootRenderer to return false for a null instance.");
+            Assert.IsNull(outRenderer, "Expected the output renderer to be null.");
+        }
+
+        [Test]
+        public void TryGetPooledRootRenderer_WithUnpooledInstance_ReturnsFalse()
+        {
+            // Arrange
+            GameObject unpooledGo = new GameObject("UnpooledObject");
+            unpooledGo.AddComponent<MeshRenderer>();
+
+            // Act
+            bool success = _poolManager.TryGetPooledRootRenderer(unpooledGo, out Renderer outRenderer);
+
+            // Assert
+            Assert.IsFalse(success, "Expected TryGetPooledRootRenderer to return false for an unpooled instance.");
+            Assert.IsNull(outRenderer, "Expected the output renderer to be null.");
+
+            // Cleanup
+            Object.DestroyImmediate(unpooledGo);
+        }
+
     }
 }
