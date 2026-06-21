@@ -3551,10 +3551,13 @@ namespace Hecton8.Caves
                 ResolveStep(localDirection.z));
             float3 start = new float3(localStart.x, localStart.y, localStart.z);
             float3 dir = new float3(localDirection.x, localDirection.y, localDirection.z);
+            BoundaryDistanceArgs xArgs = new BoundaryDistanceArgs { Min = localBounds.min.x, Start = start.x, Direction = dir.x, VoxelIndex = voxel.x, Step = step.x, VoxelSize = _voxelSize };
+            BoundaryDistanceArgs yArgs = new BoundaryDistanceArgs { Min = localBounds.min.y, Start = start.y, Direction = dir.y, VoxelIndex = voxel.y, Step = step.y, VoxelSize = _voxelSize };
+            BoundaryDistanceArgs zArgs = new BoundaryDistanceArgs { Min = localBounds.min.z, Start = start.z, Direction = dir.z, VoxelIndex = voxel.z, Step = step.z, VoxelSize = _voxelSize };
             float3 tMax = new float3(
-                ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),
-                ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),
-                ResolveBoundaryDistance(localBounds.min.z, start.z, dir.z, voxel.z, step.z, _voxelSize));
+                ResolveBoundaryDistance(in xArgs),
+                ResolveBoundaryDistance(in yArgs),
+                ResolveBoundaryDistance(in zArgs));
             float3 tDelta = new float3(
                 ResolveDeltaDistance(dir.x, _voxelSize),
                 ResolveDeltaDistance(dir.y, _voxelSize),
@@ -3685,10 +3688,13 @@ namespace Hecton8.Caves
                 ResolveStep(localDirection.z));
             float3 start = new float3(localStart.x, localStart.y, localStart.z);
             float3 dir = new float3(localDirection.x, localDirection.y, localDirection.z);
+            BoundaryDistanceArgs xArgs = new BoundaryDistanceArgs { Min = localBounds.min.x, Start = start.x, Direction = dir.x, VoxelIndex = voxel.x, Step = step.x, VoxelSize = _voxelSize };
+            BoundaryDistanceArgs yArgs = new BoundaryDistanceArgs { Min = localBounds.min.y, Start = start.y, Direction = dir.y, VoxelIndex = voxel.y, Step = step.y, VoxelSize = _voxelSize };
+            BoundaryDistanceArgs zArgs = new BoundaryDistanceArgs { Min = localBounds.min.z, Start = start.z, Direction = dir.z, VoxelIndex = voxel.z, Step = step.z, VoxelSize = _voxelSize };
             float3 tMax = new float3(
-                ResolveBoundaryDistance(localBounds.min.x, start.x, dir.x, voxel.x, step.x, _voxelSize),
-                ResolveBoundaryDistance(localBounds.min.y, start.y, dir.y, voxel.y, step.y, _voxelSize),
-                ResolveBoundaryDistance(localBounds.min.z, start.z, dir.z, voxel.z, step.z, _voxelSize));
+                ResolveBoundaryDistance(in xArgs),
+                ResolveBoundaryDistance(in yArgs),
+                ResolveBoundaryDistance(in zArgs));
             float3 tDelta = new float3(
                 ResolveDeltaDistance(dir.x, _voxelSize),
                 ResolveDeltaDistance(dir.y, _voxelSize),
@@ -4274,13 +4280,23 @@ namespace Hecton8.Caves
             return axis < -0.0001f ? -1 : 0;
         }
 
-        private static float ResolveBoundaryDistance(float min, float start, float direction, int voxelIndex, int step, float voxelSize)
+        private struct BoundaryDistanceArgs
         {
-            if (step == 0 || Mathf.Abs(direction) < 0.0001f)
+            public float Min;
+            public float Start;
+            public float Direction;
+            public int VoxelIndex;
+            public int Step;
+            public float VoxelSize;
+        }
+
+        private static float ResolveBoundaryDistance(in BoundaryDistanceArgs args)
+        {
+            if (args.Step == 0 || Mathf.Abs(args.Direction) < 0.0001f)
                 return float.PositiveInfinity;
 
-            float nextBoundary = min + ((step > 0 ? voxelIndex + 1 : voxelIndex) * voxelSize);
-            return (nextBoundary - start) / direction;
+            float nextBoundary = args.Min + ((args.Step > 0 ? args.VoxelIndex + 1 : args.VoxelIndex) * args.VoxelSize);
+            return (nextBoundary - args.Start) / args.Direction;
         }
 
         private static float ResolveDeltaDistance(float direction, float voxelSize)
