@@ -37,7 +37,8 @@ namespace Shapes {
 
 			int pointCount = path.Count;
 			if( pointCount < 2 ) {
-				mesh.Clear(); // fixes 628-polyline-does-not-clear-mesh-when-point-count-2, 604-polyline-rendering-after-all-points-have-been-removed
+				if( mesh.vertexCount > 0 )
+					mesh.Clear(); // fixes 628-polyline-does-not-clear-mesh-when-point-count-2, 604-polyline-rendering-after-all-points-have-been-removed
 				return;
 			}
 			if( pointCount == 2 && closed )
@@ -244,7 +245,10 @@ namespace Shapes {
 			}
 
 			// assign to segments mesh
-			mesh.Clear(); // todo maybe not always do this you know?
+			bool clearMesh = mesh.vertexCount != meshVertices.list.Count || mesh.subMeshCount != ( separateJoinMesh ? 2 : 1 );
+			if( clearMesh )
+				mesh.Clear();
+
 			mesh.SetVertices( meshVertices.list );
 			mesh.subMeshCount = separateJoinMesh ? 2 : 1;
 			mesh.SetTriangles( meshTriangles.list, 0 );
@@ -303,8 +307,11 @@ namespace Shapes {
 			debugString.Add( "Polygon creation process:" );
 			#endif
 
-			mesh.Clear(); // todo maybe not always do this you know?
 			int pointCount = path.Count;
+
+			bool clearMesh = mesh.vertexCount != pointCount;
+			if( clearMesh )
+				mesh.Clear();
 			if( pointCount < 2 )
 				return;
 
