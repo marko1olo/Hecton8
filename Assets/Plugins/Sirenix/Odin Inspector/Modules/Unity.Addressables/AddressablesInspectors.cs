@@ -1120,7 +1120,7 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
     public class AssetReferencePropertyResolver<T> : OdinPropertyResolver<T>
         where T : AssetReference
     {
-        private static readonly Type[] attributesToForward;
+        internal static readonly Type[] attributesToForward;
 
         static AssetReferencePropertyResolver()
         {
@@ -1224,7 +1224,14 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
         {
             attributes.Add(new DoNotDrawAsReferenceAttribute());
             attributes.Add(new HideReferenceObjectPickerAttribute());
-            attributes.Add(new SuppressInvalidAttributeErrorAttribute()); // TODO: Remove this with proper attribute forwarding support.
+
+            for (int i = attributes.Count - 1; i >= 0; i--)
+            {
+                if (AssetReferencePropertyResolver<T>.attributesToForward.Contains(attributes[i].GetType()))
+                {
+                    attributes.RemoveAt(i);
+                }
+            }
         }
     }
 
