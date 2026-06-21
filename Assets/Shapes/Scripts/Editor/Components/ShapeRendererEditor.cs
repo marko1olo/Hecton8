@@ -40,6 +40,7 @@ namespace Shapes {
 		SerializedObject soRnd;
 		SerializedProperty propSortingOrder;
 		SerializedProperty propSortingLayer;
+		Renderer[] renderers;
 
 		static GUIContent blendModeGuiContent = new GUIContent(
 			"Blend Mode",
@@ -105,7 +106,8 @@ namespace Shapes {
 		static GUIContent boundsPaddingContent = new GUIContent( "Padding", "Amount of local space padding in meters, to add to the bounds used for culling, when using CalculatedLocal culling" );
 
 		public virtual void OnEnable() {
-			soRnd = new SerializedObject( targets.Select( t => ( (Component)t ).GetComponent<MeshRenderer>() as Object ).ToArray() );
+			renderers = targets.Select( t => ( (Component)t ).GetComponent<MeshRenderer>() as Renderer ).ToArray();
+			soRnd = new SerializedObject( renderers.Cast<Object>().ToArray() );
 			propSortingOrder = soRnd.FindProperty( "m_SortingOrder" );
 			propSortingLayer = soRnd.FindProperty( "m_SortingLayerID" );
 
@@ -126,10 +128,13 @@ namespace Shapes {
 		void SceneViewOnduringSceneGui( SceneView obj ) {
 			if( showCulling == false )
 				return;
-			foreach( ShapeRenderer shape in targets.OfType<ShapeRenderer>() ) {
-				Renderer r = shape.GetComponent<Renderer>();
+			for( int i = 0; i < targets.Length; i++ ) {
+				ShapeRenderer shape = targets[i] as ShapeRenderer;
+				if( shape == null )
+					continue;
+				Renderer r = renderers[i];
 				if( r == null )
-					return;
+					continue;
 				Bounds bounds = r.localBounds;
 				Handles.matrix = shape.transform.localToWorldMatrix;
 				Handles.color = Color.white;
