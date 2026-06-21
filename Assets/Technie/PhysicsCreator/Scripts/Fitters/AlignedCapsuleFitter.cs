@@ -8,18 +8,9 @@ namespace Technie.PhysicsCreator
 	{
 		public CapsuleDef Fit(Hull hull, Vector3[] meshVertices, int[] meshIndices)
 		{
-			// TODO: Should have this as a common pre-processing step for all collider gen - both simplifies and reduces all input verts into only the selected triangle verts
-			// But also need a backup that just falls back to the selected verts (for cases where all the verts lie on a single plane)
 			Vector3[] hullVertices;
 			int[] hullIndices;
-			hull.FindConvexHull(meshVertices, meshIndices, out hullVertices, out hullIndices, false);
-
-			// If we can't generate a convex hull (maybe we have a single quad input) then what????
-			if (hullVertices == null || hullVertices.Length == 0)
-			{
-				// ??
-				return new CapsuleDef();
-			}
+			hull.GenerateFitterInput(meshVertices, meshIndices, out hullVertices, out hullIndices);
 
 			return Fit(hullVertices, hullIndices);
 		}
