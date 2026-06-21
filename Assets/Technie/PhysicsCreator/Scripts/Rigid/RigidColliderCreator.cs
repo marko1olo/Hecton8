@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -7,7 +7,6 @@ using Technie.PhysicsCreator.Rigid;
 
 namespace Technie.PhysicsCreator
 {
-	[System.Serializable]
 	public class HullMapping
 	{
 		public Hull sourceHull;
@@ -54,7 +53,6 @@ namespace Technie.PhysicsCreator
 		public PaintingData paintingData;
 		public HullData hullData;
 
-		[SerializeField]
 		private List<HullMapping> hullMapping;
 
 		void OnDestroy()
@@ -158,23 +156,20 @@ namespace Technie.PhysicsCreator
 						DestroyImmediateWithUndo(child);
 
 						// If the child has no children and is now empty, destroy the object as well
-						childObj.GetComponents(s_ComponentCache);
-						if (childObj.transform.childCount == 0 && s_ComponentCache.Count == 1) // length=1 means only transform left
+						if (childObj.transform.childCount == 0 && childObj.GetComponents<Component>().Length == 1) // length=1 means only transform left
 							DestroyImmediateWithUndo(childObj);
 					}
 				}
 			}
 		}
 
-		private static readonly System.Collections.Generic.List<Component> s_ComponentCache = new System.Collections.Generic.List<Component>();
-
 		private static bool IsDeletable(GameObject obj)
 		{
-			obj.GetComponents(s_ComponentCache);
+			Component[] allComps = obj.GetComponents<Component>();
 
 			int numIgnorable = 0;
 
-			foreach (Component comp in s_ComponentCache)
+			foreach (Component comp in allComps)
 			{
 				if (comp is Transform
 					|| comp is Collider
@@ -185,7 +180,7 @@ namespace Technie.PhysicsCreator
 				}
 			}
 
-			return s_ComponentCache.Count == numIgnorable;
+			return allComps.Length == numIgnorable;
 		}
 
 		private static void DestroyImmediateWithUndo(Object obj)
@@ -270,7 +265,6 @@ namespace Technie.PhysicsCreator
 
 			List<Hull> orphanedHulls = new List<Hull>();
 			List<Collider> orphanedColliders = new List<Collider>();
-			List<RigidColliderCreatorChild> orphanedColliderChilds = new List<RigidColliderCreatorChild>();
 			List<RigidColliderCreatorChild> orphanedChilds = new List<RigidColliderCreatorChild>();
 
 			foreach (Hull h in paintingData.hulls)
@@ -286,13 +280,6 @@ namespace Technie.PhysicsCreator
 				if (!IsMapped(c))
 				{
 					orphanedColliders.Add(c);
-
-					RigidColliderCreatorChild adjChild = null;
-					if (c.transform.parent == this.transform)
-					{
-						adjChild = c.gameObject.GetComponent<RigidColliderCreatorChild>();
-					}
-					orphanedColliderChilds.Add(adjChild);
 				}
 			}
 
@@ -305,8 +292,6 @@ namespace Technie.PhysicsCreator
 			}
 
 			// Try and connect orphaned hulls with orphaned colliders
-
-
 
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
@@ -323,7 +308,11 @@ namespace Technie.PhysicsCreator
 					SphereCollider sphereCol = c as SphereCollider;
 
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
-					RigidColliderCreatorChild child = orphanedColliderChilds[j];
+					RigidColliderCreatorChild child = null;
+					if (c.transform.parent == this.transform)
+					{
+						c.gameObject.TryGetComponent<RigidColliderCreatorChild>(out child);
+					}
 
 					// todo needs better handling
 					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
@@ -344,8 +333,7 @@ namespace Technie.PhysicsCreator
 
 						// These are no longer orphaned, so remove them from these lists
 						orphanedColliders.RemoveAt(j);
-						orphanedColliderChilds.RemoveAt(j);
-						if (child != null) orphanedChilds.Remove(child);
+						orphanedChilds.Remove(child);
 
 						// Hull no longer orphaned, so flag to remove it once we've finished trying other colliders
 						matchedHull = true;
@@ -367,7 +355,6 @@ namespace Technie.PhysicsCreator
 							// These are no longer orphaned, so remove them from these lists
 							orphanedHulls.RemoveAt(i);
 							orphanedColliders.RemoveAt(j);
-							orphanedColliderChilds.RemoveAt(j);
 							
 							// Remove the no-longer orphaned child
 							for (int k=0; k<orphanedChilds.Count; k++)
@@ -401,13 +388,12 @@ namespace Technie.PhysicsCreator
 				if (!h.isChildCollider)
 					continue;
 
-				bool matchedHull = false;
 				for (int j = orphanedChilds.Count - 1; j >= 0; j--)
 				{
 					RigidColliderCreatorChild child = orphanedChilds[j];
 					HullMapping mapping = FindMapping(child);
 
-					if (mapping != null && mapping.sourceHull == h)
+					if (mapping != null && mapping.sourceHull != null)
 					{
 						// Found a match for hull-mapping-child
 
@@ -419,24 +405,16 @@ namespace Technie.PhysicsCreator
 							RecreateChildCollider(mapping);
 						}
 
+						orphanedHulls.RemoveAt(i);
 						orphanedChilds.RemoveAt(j);
-						matchedHull = true;
-
-						if (h.type != HullType.Auto)
-						{
-							break;
-						}
+						break;
 					}
-				}
-
-				if (matchedHull)
-				{
-					orphanedHulls.RemoveAt(i);
 				}
 			}
 
 			// Try and match up orphaned auto childs with hulls
 			// These will be ones without a collider (those will be picked up earlier)
+			// FIXME: Not working atm. Fix and see if we actually need it
 			
 			for (int i = orphanedHulls.Count - 1; i >= 0; i--)
 			{
@@ -450,10 +428,8 @@ namespace Technie.PhysicsCreator
 				{
 					RigidColliderCreatorChild child = orphanedChilds[j];
 
-					// Strict string match: Auto hull childs will be named "HullName.1", "HullName.2", etc.
-					// Use h.name + "." to ensure we only match exact auto children from this hull,
-					// rather than matching "HullName" against "HullNameExtra"
-					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name + "."))
+
+					if (child.isAutoHull && child.gameObject.name.StartsWith(h.name))
 					{
 						HullMapping mapping = FindMapping(h);
 						if (mapping == null)
@@ -527,9 +503,8 @@ namespace Technie.PhysicsCreator
 			// Delete any left over colliders
 			// TODO: This probably isn't properly undo-aware
 
-			for (int i = 0; i < orphanedColliders.Count; i++)
+			foreach (Collider c in orphanedColliders)
 			{
-				Collider c = orphanedColliders[i];
 				if (c == null)
 					continue;
 
@@ -542,12 +517,8 @@ namespace Technie.PhysicsCreator
 					// Child collider - delete collider, RigidColliderCreatorChild (if any) and GameObject (if empty)
 
 					GameObject go = c.gameObject;
-					RigidColliderCreatorChild childComp = orphanedColliderChilds[i];
 					DestroyImmediateWithUndo(c);
-					if (childComp != null)
-					{
-						DestroyImmediateWithUndo(childComp);
-					}
+					if (go.TryGetComponent<RigidColliderCreatorChild>(out var comp)) DestroyImmediateWithUndo(comp);
 					if (IsDeletable(go))
 					{
 						DestroyImmediateWithUndo(go);
@@ -566,10 +537,7 @@ namespace Technie.PhysicsCreator
 				// Delete child, collider (if any) and GameObject (if empty)
 				GameObject go = child.gameObject;
 				DestroyImmediateWithUndo(child);
-				if (go.TryGetComponent<Collider>(out var collider))
-				{
-					DestroyImmediateWithUndo(collider);
-				}
+				if (go.TryGetComponent<Collider>(out var colComp)) DestroyImmediateWithUndo(colComp);
 				if (IsDeletable(go))
 				{
 					DestroyImmediateWithUndo(go);
@@ -786,22 +754,15 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
-		private static class ListCache<T>
-		{
-			public static readonly System.Collections.Generic.List<T> List = new System.Collections.Generic.List<T>();
-		}
-
 		private List<T> FindLocal<T>() where T : Component
 		{
 			List<T> localComps = new List<T>();
 
-			this.gameObject.GetComponents<T>(ListCache<T>.List);
-			localComps.AddRange(ListCache<T>.List);
+			localComps.AddRange(this.gameObject.GetComponents<T>());
 
 			for (int i=0; i<transform.childCount; i++)
 			{
-				transform.GetChild(i).GetComponents<T>(ListCache<T>.List);
-				localComps.AddRange(ListCache<T>.List);
+				localComps.AddRange(transform.GetChild(i).GetComponents<T>());
 			}
 
 			return localComps;
@@ -900,6 +861,8 @@ namespace Technie.PhysicsCreator
 		{
 			if (hullMapping == null)
 			{
+				// TODO: Hull mapping should be serialised, when it is remove this message as it'll only exist to catch un-upgraded assets
+			//	Debug.LogError("No hull mapping present!");
 				return null;
 			}
 
@@ -954,7 +917,6 @@ namespace Technie.PhysicsCreator
 			// Ensure we have as many collider components as we need
 
 			List<MeshCollider> autoColliders = new List<MeshCollider>();
-			List<RigidColliderCreatorChild> autoChildMarkers = new List<RigidColliderCreatorChild>();
 
 			// Resize the colliders array to match
 			/*
@@ -982,14 +944,12 @@ namespace Technie.PhysicsCreator
 					if (mapping.autoGeneratedColliders != null && i < mapping.autoGeneratedColliders.Length)
 					{
 						autoColliders.Add(mapping.autoGeneratedColliders[i]);
-						autoChildMarkers.Add(mapping.targetAutoGeneratedChilds[i]);
 					}
 					else
 					{
 						MeshCollider newMeshCol = mapping.targetAutoGeneratedChilds[i].gameObject.AddComponent<MeshCollider>();
 						newMeshCol.convex = true;
 						autoColliders.Add(newMeshCol);
-						autoChildMarkers.Add(mapping.targetAutoGeneratedChilds[i]);
 					}
 				}
 			}
@@ -1005,14 +965,10 @@ namespace Technie.PhysicsCreator
 					else
 						GameObject.DestroyImmediate(autoColliders[i]);
 					autoColliders.RemoveAt(i);
-					autoChildMarkers.RemoveAt(i);
 				}
 			}
 
 			// Create collider components and apply the clipped hulls to them
-
-			RigidColliderCreatorChild thisChild = null;
-			bool hasSearchedThisChild = false;
 
 			for (int i=0; i< clippedHulls.Length; i++)
 			{
@@ -1036,20 +992,12 @@ namespace Technie.PhysicsCreator
 					colliderToUse = child.AddComponent<MeshCollider>();
 
 					autoColliders.Add(colliderToUse);
-					autoChildMarkers.Add(painterChild);
 				}
 				else
 				{
 					colliderToUse = this.gameObject.AddComponent<MeshCollider>();
 
 					autoColliders.Add(colliderToUse);
-
-					if (!hasSearchedThisChild)
-					{
-						thisChild = this.gameObject.GetComponent<RigidColliderCreatorChild>();
-						hasSearchedThisChild = true;
-					}
-					autoChildMarkers.Add(thisChild);
 				}
 
 			//	mapping.autoGeneratedColliders[i] = colliderToUse;
@@ -1080,8 +1028,9 @@ namespace Technie.PhysicsCreator
 			RigidColliderCreatorChild[] childMarkers = new RigidColliderCreatorChild[autoColliderCount];
 			for (int i = 0; i < autoColliderCount; i++)
 			{
-				generatedColliders[i] = autoColliders[i];
-				childMarkers[i] = autoChildMarkers[i];
+				MeshCollider col = autoColliders[i];
+				generatedColliders[i] = col;
+				col.TryGetComponent<RigidColliderCreatorChild>(out childMarkers[i]);
 			}
 
 			mapping.autoGeneratedColliders = generatedColliders;
