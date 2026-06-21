@@ -19,10 +19,6 @@
 //   // Unsubscribe during component disable.
 //   ObjectPoolDiagnostics.Unregister(listener);
 //
-//   // Query current stats
-//   var stats = ObjectPoolDiagnostics.GetPoolStats("RobotDronePrefab");
-//   Hecton8.Core.H8Debug.Log(stats.peakConcurrentCount);
-//
 //   // Get comprehensive report
 //   string report = ObjectPoolDiagnostics.GenerateReport();
 //   Hecton8.Core.H8Debug.Log(report);
