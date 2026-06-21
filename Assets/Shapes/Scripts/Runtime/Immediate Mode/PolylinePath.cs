@@ -213,7 +213,6 @@ namespace Shapes {
 		void TryUpdateMesh( bool closed, PolylineJoins joins ) {
 			lastUsedClosed = closed;
 			lastUsedJoins = joins;
-			// todo: be smarter about this, maybe don't mesh.clear but check point count and whatnot
 			ShapesMeshGen.GenPolylineMesh( base.mesh, path, closed, joins, flattenZ: false, useColors: true );
 		}
 
