@@ -136,18 +136,10 @@ namespace Technie.PhysicsCreator
 
 		public BoxDef Fit(Hull hull, Vector3[] meshVertices, int[] meshIndices)
 		{
-			// Find find the convex hull - the tightest fitting box will always contain the hull, and this lets us simplify the input data
-
 			Vector3[] hullVertices;
 			int[] hullIndices;
 
-			hull.FindConvexHull(meshVertices, meshIndices, out hullVertices, out hullIndices, false);
-
-			// If we can't generate a convex hull (maybe we have a single quad input) then just extract the selected triangles and use that as input
-			if (hullVertices == null || hullVertices.Length == 0)
-			{
-				hull.FindTriangles(meshVertices, meshIndices, out hullVertices, out hullIndices);
-			}
+			hull.GenerateMathHull(meshVertices, meshIndices, out hullVertices, out hullIndices);
 
 			return Fit(hullVertices, hullIndices);
 		}
