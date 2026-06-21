@@ -2508,6 +2508,16 @@ public struct VoxelChunkBoundsContentJob : IJob
     }
 }
 
+public readonly struct CubeDensities
+{
+    public readonly float d0, d1, d2, d3, d4, d5, d6, d7;
+    public CubeDensities(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
+    {
+        this.d0 = d0; this.d1 = d1; this.d2 = d2; this.d3 = d3;
+        this.d4 = d4; this.d5 = d5; this.d6 = d6; this.d7 = d7;
+    }
+}
+
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2555,7 +2565,8 @@ public struct VoxelMCCountJob : IJobParallelFor
         float d6 = D(cx + 1, cy + 1, cz + 1);
         float d7 = D(cx, cy + 1, cz + 1);
 
-        int cubeIndex = ResolveCubeIndex(d0, d1, d2, d3, d4, d5, d6, d7);
+        CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
+        int cubeIndex = ResolveCubeIndex(in densities);
 
         int triBase = cubeIndex * 16;
         int triCount =
@@ -2590,17 +2601,17 @@ public struct VoxelMCCountJob : IJobParallelFor
             densityFaultFlags[slot] = 1;
     }
 
-    static int ResolveCubeIndex(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
+    static int ResolveCubeIndex(in CubeDensities densities)
     {
         return
-            math.select(0, 1, d0 < 0f) |
-            math.select(0, 2, d1 < 0f) |
-            math.select(0, 4, d2 < 0f) |
-            math.select(0, 8, d3 < 0f) |
-            math.select(0, 16, d4 < 0f) |
-            math.select(0, 32, d5 < 0f) |
-            math.select(0, 64, d6 < 0f) |
-            math.select(0, 128, d7 < 0f);
+            math.select(0, 1, densities.d0 < 0f) |
+            math.select(0, 2, densities.d1 < 0f) |
+            math.select(0, 4, densities.d2 < 0f) |
+            math.select(0, 8, densities.d3 < 0f) |
+            math.select(0, 16, densities.d4 < 0f) |
+            math.select(0, 32, densities.d5 < 0f) |
+            math.select(0, 64, densities.d6 < 0f) |
+            math.select(0, 128, densities.d7 < 0f);
     }
 }
 
@@ -2713,7 +2724,8 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         float d6 = D(cx+1, cy+1, cz+1);
         float d7 = D(cx, cy+1, cz+1);
 
-        int cubeIndex = ResolveCubeIndex(d0, d1, d2, d3, d4, d5, d6, d7);
+        CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
+        int cubeIndex = ResolveCubeIndex(in densities);
 
         int edgeBits = edgeTable[cubeIndex];
         if (edgeBits == 0) return;
@@ -2833,17 +2845,17 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         return math.select(float3.zero, result, IsFinite(result));
     }
 
-    static int ResolveCubeIndex(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
+    static int ResolveCubeIndex(in CubeDensities densities)
     {
         return
-            math.select(0, 1, d0 < 0f) |
-            math.select(0, 2, d1 < 0f) |
-            math.select(0, 4, d2 < 0f) |
-            math.select(0, 8, d3 < 0f) |
-            math.select(0, 16, d4 < 0f) |
-            math.select(0, 32, d5 < 0f) |
-            math.select(0, 64, d6 < 0f) |
-            math.select(0, 128, d7 < 0f);
+            math.select(0, 1, densities.d0 < 0f) |
+            math.select(0, 2, densities.d1 < 0f) |
+            math.select(0, 4, densities.d2 < 0f) |
+            math.select(0, 8, densities.d3 < 0f) |
+            math.select(0, 16, densities.d4 < 0f) |
+            math.select(0, 32, densities.d5 < 0f) |
+            math.select(0, 64, densities.d6 < 0f) |
+            math.select(0, 128, densities.d7 < 0f);
     }
 
     static long PackEdge(int gA,int gB)
