@@ -5336,42 +5336,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
     }
 
-    struct VoxelMeshBakeJob : IJob
-    {
-        public EntityId MeshId;
-
-        public void Execute()
-        {
-        }
-    }
-
     // ╔═══════════════════════════════════════════════╗
     // ║              LIFECYCLE                        ║
     // ╚═══════════════════════════════════════════════╝
-
-    static bool TryScheduleVoxelPhysicsBake(in VoxelMeshBakeJob job, out JobHandle handle)
-    {
-        handle = default;
-        return false;
-    }
-
-    private static bool CanScheduleVoxelPhysicsBake()
-    {
-        if (!EnsureDeferredVoxelPhysicsBakeTeardownRegistered())
-            return false;
-
-        if (DeferredVoxelPhysicsBakePendingCount < DeferredVoxelPhysicsBakeBackpressureThreshold)
-            return true;
-
-        UpdateDeferredVoxelPhysicsBakeBackpressure();
-        return false;
-    }
-
-    static void ReportVoxelPhysicsBakeCompletion(long scheduleTimestamp)
-    {
-        float measuredMs = (float)((Stopwatch.GetTimestamp() - scheduleTimestamp) * _JobAdmissionStopwatchMillisecondsPerTick);
-        JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<VoxelMeshBakeJob>(JobAdmissionLane.Lane2_Voxel, measuredMs);
-    }
 
     void OnEnable()
     {

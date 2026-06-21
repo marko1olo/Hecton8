@@ -560,7 +560,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(engine.Contains("UnityEngine.Physics." + "BakeMesh", StringComparison.Ordinal));
             Assert.IsFalse(engine.Contains("Physics." + "BakeMesh", StringComparison.Ordinal));
             Assert.IsFalse(engine.Contains("job.TryScheduleAdmitted(JobAdmissionLane.Lane2_Voxel", StringComparison.Ordinal));
-            Assert.AreEqual(1, CountOccurrences(engine, "TryScheduleVoxelPhysicsBake("));
+            Assert.AreEqual(0, CountOccurrences(engine, "TryScheduleVoxelPhysicsBake("));
             Assert.IsFalse(engine.Contains("PublishColliderChunkMesh(0)", StringComparison.Ordinal));
             Assert.IsFalse(engine.Contains("PublishColliderChunkMesh(chunkIndex)", StringComparison.Ordinal));
             StringAssert.Contains("EnableColliderChunkProxy(chunkIndex)", engine);
