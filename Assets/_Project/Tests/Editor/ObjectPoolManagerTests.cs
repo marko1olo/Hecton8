@@ -41,5 +41,51 @@ namespace Hecton8.Tests.Editor
             Object.DestroyImmediate(prefabGo);
             Object.DestroyImmediate(spawned);
         }
+
+        [Test]
+        public void HasPool_WithComponent_ReturnsTrueIfPoolExists()
+        {
+            // Arrange
+            GameObject prefabGo = new GameObject("TestPrefab");
+            var testComponent = prefabGo.AddComponent<BoxCollider>();
+
+            // Implicitly create pool by spawning
+            GameObject spawned = _poolManager.Spawn(testComponent, Vector3.zero, Quaternion.identity);
+
+            // Act
+            bool hasPool = _poolManager.HasPool(testComponent);
+
+            // Assert
+            Assert.IsTrue(hasPool, "HasPool should return true for a component whose pool exists.");
+
+            Object.DestroyImmediate(prefabGo);
+            Object.DestroyImmediate(spawned);
+        }
+
+        [Test]
+        public void HasPool_WithComponent_ReturnsFalseIfNoPoolExists()
+        {
+            // Arrange
+            GameObject prefabGo = new GameObject("TestPrefab");
+            var testComponent = prefabGo.AddComponent<BoxCollider>();
+
+            // Act
+            bool hasPool = _poolManager.HasPool(testComponent);
+
+            // Assert
+            Assert.IsFalse(hasPool, "HasPool should return false for a component without a pool.");
+
+            Object.DestroyImmediate(prefabGo);
+        }
+
+        [Test]
+        public void HasPool_NullComponent_ReturnsFalse()
+        {
+            // Act
+            bool hasPool = _poolManager.HasPool((Component)null);
+
+            // Assert
+            Assert.IsFalse(hasPool, "HasPool should return false when passed a null component.");
+        }
     }
 }
