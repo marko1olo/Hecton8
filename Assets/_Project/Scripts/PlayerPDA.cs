@@ -861,8 +861,22 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player PDA")]
-    public sealed class PlayerPDA : MonoBehaviour, ITickable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerPDA : MonoBehaviour, ITickable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, ISerializationCallbackReceiver
     {
+        public void OnBeforeSerialize() {}
+        public void OnAfterDeserialize()
+        {
+            if (!_migratedSettings)
+            {
+                settings.defaultTab = defaultTab;
+                settings.fadeSpeed = fadeSpeed;
+                settings.enableBatteryDrain = enableBatteryDrain;
+                settings.batteryDrainRate = batteryDrainRate;
+                settings.lowBatteryThreshold = lowBatteryThreshold;
+                settings.enableTabHistory = enableTabHistory;
+                _migratedSettings = true;
+            }
+        }
         private const int PendingPdaSoundCapacity = 4;
         private const float CraftStartedClickPitch = 0.92f;
         private const float CraftCompletedClickPitch = 1.08f;
@@ -904,24 +918,48 @@ namespace Hecton8.UI
         //  INSPECTOR — SETTINGS
         // ══════════════════════════════════════════════════════════
 
+        [System.Serializable]
+        public struct PDASettings
+        {
+            [Tooltip("Vkladka po umolchaniyu pri otkrytii (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics).")]
+            public int defaultTab;
+
+            [Tooltip("Skorost fade-animatsii (alpha/sec). 0 = mgnovenno.")]
+            [Range(0f, 10f)] public float fadeSpeed;
+
+            [Tooltip("Vklyuchit battery drain. PDA potreblyaet energiyu pri otkrytii.")]
+            public bool enableBatteryDrain;
+
+            [Tooltip("Energiya/sek pri otkrytom PDA. 0.5 = 2 sekundy na 1%.")]
+            [Range(0f, 5f)] public float batteryDrainRate;
+
+            [Tooltip("Kriticheskiy uroven energii (%). Nizhe — PDA avtozakryvaetsya.")]
+            [Range(0f, 20f)] public float lowBatteryThreshold;
+
+            [Tooltip("Vklyuchit tab history (Backspace = nazad).")]
+            public bool enableTabHistory;
+        }
+
         [Header("── Settings ────────────────────────────────")]
-        [Tooltip("Vkladka po umolchaniyu pri otkrytii (0=Inventory, 1=Loadout, 2=Construction, 3=Barter, 4=Data Log, 5=Spectrum, 6=Atlas Signal, 7=Diagnostics).")]
-        [SerializeField] private int defaultTab = 0;
+        [SerializeField] private PDASettings settings = new PDASettings
+        {
+            defaultTab = 0,
+            fadeSpeed = 5f,
+            enableBatteryDrain = true,
+            batteryDrainRate = 0.5f,
+            lowBatteryThreshold = 5f,
+            enableTabHistory = true
+        };
 
-        [Tooltip("Skorost fade-animatsii (alpha/sec). 0 = mgnovenno.")]
-        [SerializeField, Range(0f, 10f)] private float fadeSpeed = 5f;
+        [SerializeField, HideInInspector] private bool _migratedSettings = false;
 
-        [Tooltip("Vklyuchit battery drain. PDA potreblyaet energiyu pri otkrytii.")]
-        [SerializeField] private bool enableBatteryDrain = true;
-
-        [Tooltip("Energiya/sek pri otkrytom PDA. 0.5 = 2 sekundy na 1%.")]
-        [SerializeField, Range(0f, 5f)] private float batteryDrainRate = 0.5f;
-
-        [Tooltip("Kriticheskiy uroven energii (%). Nizhe — PDA avtozakryvaetsya.")]
-        [SerializeField, Range(0f, 20f)] private float lowBatteryThreshold = 5f;
-
-        [Tooltip("Vklyuchit tab history (Backspace = nazad).")]
-        [SerializeField] private bool enableTabHistory = true;
+        // Legacy fields for migration
+        [SerializeField, HideInInspector] private int defaultTab = 0;
+        [SerializeField, HideInInspector] private float fadeSpeed = 5f;
+        [SerializeField, HideInInspector] private bool enableBatteryDrain = true;
+        [SerializeField, HideInInspector] private float batteryDrainRate = 0.5f;
+        [SerializeField, HideInInspector] private float lowBatteryThreshold = 5f;
+        [SerializeField, HideInInspector] private bool enableTabHistory = true;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — AUDIO
@@ -1486,7 +1524,7 @@ namespace Hecton8.UI
             ConsumePlayerInputSignals();
 
             // ── Battery drain ──
-            if (IsOpen && enableBatteryDrain)
+            if (IsOpen && settings.enableBatteryDrain)
             {
                 if (survivalSystem != null)
                     ProcessBatteryDrain(deltaTime);
@@ -1588,7 +1626,7 @@ namespace Hecton8.UI
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
-            int targetTab = tab >= 0 ? tab : defaultTab;
+            int targetTab = tab >= 0 ? tab : settings.defaultTab;
             SetActiveTab(targetTab);
 
             // Start fade-in animation
@@ -1648,7 +1686,7 @@ namespace Hecton8.UI
             int oldTab = _activeTab;
 
             // Push old tab to history (if valid and history enabled)
-            if (enableTabHistory && oldTab >= 0)
+            if (settings.enableTabHistory && oldTab >= 0)
                 PushTabHistory(oldTab);
 
             _activeTab = newTab;
@@ -1806,7 +1844,7 @@ namespace Hecton8.UI
 
         private void ProcessFadeAnimation(float deltaTime)
         {
-            if (pdaCanvasGroup == null || fadeSpeed <= 0f)
+            if (pdaCanvasGroup == null || settings.fadeSpeed <= 0f)
             {
                 // No CanvasGroup or instant mode — snap to target
                 _currentAlpha = _targetAlpha;
@@ -1814,7 +1852,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float fadeStep = Mathf.Max(0f, fadeSpeed * deltaTime);
+            float fadeStep = Mathf.Max(0f, settings.fadeSpeed * deltaTime);
             float t = fadeStep / (1f + fadeStep);
             _currentAlpha = math.lerp(_currentAlpha, _targetAlpha, t);
 
@@ -1913,7 +1951,7 @@ namespace Hecton8.UI
 
         private void ProcessBatteryDrain(float deltaTime)
         {
-            _batteryDrainAccumulator += batteryDrainRate * deltaTime;
+            _batteryDrainAccumulator += settings.batteryDrainRate * deltaTime;
 
             // Drain energy every 1.0 accumulated units
             if (_batteryDrainAccumulator >= 1f)
@@ -1927,7 +1965,7 @@ namespace Hecton8.UI
             // Check low battery
             float energyPercent = survivalSystem.EnergyPercent;
 
-            if (energyPercent <= lowBatteryThreshold)
+            if (energyPercent <= settings.lowBatteryThreshold)
             {
                 if (!_lowBatteryWarningPlayed)
                 {
@@ -2147,7 +2185,7 @@ namespace Hecton8.UI
             // the UI map might also have a toggle or the Player map is disabled.
             // In our case, Open() switches to UI, but UI map might not have "PDA" action.
             // If InputManager handles "PDA" in both maps or if we stay in Player map for toggle:
-            EnqueuePDAStateCommand(IsOpen ? -1 : defaultTab);
+            EnqueuePDAStateCommand(IsOpen ? -1 : settings.defaultTab);
         }
 
         private void HandleInventoryInput()
@@ -2163,7 +2201,7 @@ namespace Hecton8.UI
 
         private void HandleBackInput()
         {
-            if (IsOpen && enableTabHistory && TryPopTabHistory(out int previousTab))
+            if (IsOpen && settings.enableTabHistory && TryPopTabHistory(out int previousTab))
                 EnqueuePDAStateCommand(previousTab);
         }
         private void HandleTabNextInput()
