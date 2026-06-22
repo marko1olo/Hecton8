@@ -581,13 +581,17 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(5.0f, (float)fieldIntensity.GetValue(_processor));
             Assert.IsTrue((bool)fieldWasInLowPhase.GetValue(_processor));
 
-            // Call the method
-            _processor.RegisterLandJumpLaunch();
+            // Call the method using reflection
+            var methodInfo = typeof(CameraJuiceProcessor).GetMethod("RegisterLandJumpLaunch", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (methodInfo == null)
+                throw new System.Exception("Method RegisterLandJumpLaunch not found.");
+            methodInfo.Invoke(_processor, null);
 
             // Assert they were reset
             Assert.AreEqual(0f, (float)fieldIntensity.GetValue(_processor));
             Assert.IsFalse((bool)fieldWasInLowPhase.GetValue(_processor));
         }
+
 
         [Test]
         public void RegisterCollisionImpulse_UpdatesCollisionShakeFieldsAndRecoversOverTime()
