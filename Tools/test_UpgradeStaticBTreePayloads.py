@@ -16,6 +16,13 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
+    def test_make_internal_meta(self):
+        self.assertEqual(tool.make_internal_meta(0), 0)
+        self.assertEqual(tool.make_internal_meta(5), 5)
+        self.assertEqual(tool.make_internal_meta(7), 7)
+        self.assertEqual(tool.make_internal_meta(8), 0)
+        self.assertEqual(tool.make_internal_meta(15), 7)
+
     def test_align_up(self):
         self.assertEqual(tool.align_up(10, 16), 16)
         self.assertEqual(tool.align_up(16, 16), 16)
