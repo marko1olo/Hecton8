@@ -22,8 +22,12 @@ RLE_RUN_BYTES = 8
 DENSE_FALLBACK_BYTES = (VOXEL_CELLS // 8) + (VOXEL_CELLS * (2 + 1 + 1))
 
 
+class ScanError(Exception):
+    pass
+
+
 def read(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="replace")
+    return path.read_text(encoding="utf-8")
 
 
 def extract_method(source: str, signature: str) -> str:
