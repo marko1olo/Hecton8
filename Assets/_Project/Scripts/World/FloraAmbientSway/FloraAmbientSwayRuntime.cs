@@ -650,10 +650,6 @@ namespace Hecton8.World.FloraAmbientSway
             return dependsOn;
         }
 
-        public void PostSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
         public void VisualSyncTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = _vault;
@@ -1644,9 +1640,7 @@ namespace Hecton8.World.FloraAmbientSway
             public byte GetBucketId() => 0;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
-            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
-            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
                 _owner?.VisualSyncTick(in timing);

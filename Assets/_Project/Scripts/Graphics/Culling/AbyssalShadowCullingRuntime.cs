@@ -1444,10 +1444,6 @@ namespace Hecton8.Graphics.Culling
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -1458,13 +1454,6 @@ namespace Hecton8.Graphics.Culling
                     : dependsOn;
             }
 
-            public void PostSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
-            public void VisualSyncTick(in DispatcherTimingDTO timing)
-            {
-            }
         }
 
         private sealed class VisualSyncPhaseSystem : IDispatcherSystem
@@ -1486,20 +1475,12 @@ namespace Hecton8.Graphics.Culling
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
                 JobHandle dependsOn)
             {
                 return dependsOn;
-            }
-
-            public void PostSimulationTick(in DispatcherTimingDTO timing)
-            {
             }
 
             public void VisualSyncTick(in DispatcherTimingDTO timing)

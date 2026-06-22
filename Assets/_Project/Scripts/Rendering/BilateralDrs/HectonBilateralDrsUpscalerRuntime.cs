@@ -48,10 +48,6 @@ namespace Hecton8.Rendering
 
             public DispatcherFenceDomain GetFenceDomain() => DispatcherFenceDomain.Simulation;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -62,13 +58,6 @@ namespace Hecton8.Rendering
                     : dependsOn;
             }
 
-            public void PostSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
-            public void VisualSyncTick(in DispatcherTimingDTO timing)
-            {
-            }
         }
 
         private sealed class PostSimulationPublishBridge : IDispatcherSystem
@@ -90,10 +79,6 @@ namespace Hecton8.Rendering
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -107,9 +92,6 @@ namespace Hecton8.Rendering
                 _owner?.RunOwnerPostSimulation();
             }
 
-            public void VisualSyncTick(in DispatcherTimingDTO timing)
-            {
-            }
         }
 
         private sealed class VisualSyncUploadBridge : IDispatcherSystem
@@ -131,20 +113,12 @@ namespace Hecton8.Rendering
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
                 JobHandle dependsOn)
             {
                 return dependsOn;
-            }
-
-            public void PostSimulationTick(in DispatcherTimingDTO timing)
-            {
             }
 
             public void VisualSyncTick(in DispatcherTimingDTO timing)
@@ -444,14 +418,6 @@ namespace Hecton8.Rendering
             JobHandle dependsOn)
         {
             return dependsOn;
-        }
-
-        public void PostSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
-        public void VisualSyncTick(in DispatcherTimingDTO timing)
-        {
         }
 
         public void SlowTick()

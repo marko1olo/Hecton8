@@ -1474,10 +1474,6 @@ namespace Hecton8.UI
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
