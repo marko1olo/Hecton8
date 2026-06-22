@@ -6,8 +6,9 @@ uses .asmdef files as source-of-truth and writes deterministic SDK projects
 only for projects already referenced by the solution.
 """
 
-from H8VerifyCore import fromstring_xml_safe
+
 from __future__ import annotations
+from H8VerifyCore import fromstring_xml_safe
 
 import hashlib
 import json
