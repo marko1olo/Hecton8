@@ -7079,6 +7079,79 @@ namespace Hecton8.SaveSystem
                 : GetPrimarySaveFilePath(slotName);
         }
 
+        private struct RepairCandidateResult
+        {
+            public SaveData Data;
+            public QuestSaveHeader PackedQuestHeader;
+            public uint[] PackedQuestStateWords;
+            public PersistentWorldDeltaRecord[] PersistentWorldItems;
+            public EcosystemSectorSaveRecord[] EcosystemSectorStates;
+            public NativeArray<byte> VoxelDeltaSnapshot;
+            public SaveMetadata Metadata;
+            public SaveLoadCandidate Candidate;
+            public bool UsedLegacyFormat;
+            public ushort PlayerDialogueChoiceFlags;
+            public string ErrorMessage;
+        }
+
+        private static bool TryFindValidRepairCandidate(string slotName, out RepairCandidateResult result)
+        {
+            result = new RepairCandidateResult();
+            bool foundValid = false;
+
+            int candidateCount = 0;
+            lock (SaveLoadCandidateScratchSync)
+            {
+                EnsureStaticLoadCandidateScratch();
+                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
+                try
+                {
+                    candidateCount = BuildLoadCandidates(slotName, candidates);
+                    for (int i = 0; i < candidateCount; i++)
+                    {
+                        SaveLoadCandidate candidate = candidates[i];
+                        if (TryLoadCandidate(
+                            slotName,
+                            candidate,
+                            out SaveData candidateData,
+                            out QuestSaveHeader candidateQuestHeader,
+                            out uint[] candidatePackedQuestStateWords,
+                            out PersistentWorldDeltaRecord[] candidateWorldItems,
+                            out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
+                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out ushort candidatePlayerDialogueChoiceFlags,
+                            out SaveMetadata loadedCandidateMetadata,
+                            out _,
+                            out _,
+                            out bool candidateUsedLegacyFormat,
+                            out _,
+                            out string candidateError))
+                        {
+                            result.Data = candidateData;
+                            result.PackedQuestHeader = candidateQuestHeader;
+                            result.PackedQuestStateWords = candidatePackedQuestStateWords;
+                            result.PersistentWorldItems = candidateWorldItems;
+                            result.EcosystemSectorStates = candidateEcosystemSectorStates;
+                            result.VoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
+                            result.Metadata = loadedCandidateMetadata;
+                            result.Candidate = candidate;
+                            result.UsedLegacyFormat = candidateUsedLegacyFormat;
+                            result.PlayerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
+                            foundValid = true;
+                            break;
+                        }
+
+                        result.ErrorMessage = candidateError;
+                    }
+                }
+                finally
+                {
+                    ClearLoadCandidates(candidates, candidateCount);
+                }
+            }
+            return foundValid;
+        }
+
         private static bool TryRepairSaveSlotInternal(string slotName, out SaveSlotRepairResult result)
         {
             if (!TryResolveSafeSlotName(slotName, out slotName))
@@ -7111,97 +7184,39 @@ namespace Hecton8.SaveSystem
 
             result.IntegrityBefore = beforeInfo.IntegrityState;
 
-            SaveData repairedData = null;
-            QuestSaveHeader packedQuestHeader = default;
-            uint[] packedQuestStateWords = null;
-            PersistentWorldDeltaRecord[] persistentWorldItems = null;
-            EcosystemSectorSaveRecord[] ecosystemSectorStates = null;
-            NativeArray<byte> voxelDeltaSnapshot = default;
-            SaveMetadata metadataSource = beforeInfo.Metadata;
-            SaveLoadCandidate selectedCandidate = default;
-            bool usedLegacyFormat = false;
-            ushort playerDialogueChoiceFlags = 0;
-            string errorMessage = string.Empty;
+            TryFindValidRepairCandidate(slotName, out RepairCandidateResult candidateResult);
 
-            int candidateCount = 0;
-            lock (SaveLoadCandidateScratchSync)
+            SaveMetadata metadataSource = candidateResult.Metadata ?? beforeInfo.Metadata;
+
+            if (candidateResult.Data == null)
             {
-                EnsureStaticLoadCandidateScratch();
-                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
-                try
-                {
-                    candidateCount = BuildLoadCandidates(slotName, candidates);
-                    for (int i = 0; i < candidateCount; i++)
-                    {
-                        SaveLoadCandidate candidate = candidates[i];
-                        if (TryLoadCandidate(
-                            slotName,
-                            candidate,
-                            out SaveData candidateData,
-                            out QuestSaveHeader candidateQuestHeader,
-                            out uint[] candidatePackedQuestStateWords,
-                            out PersistentWorldDeltaRecord[] candidateWorldItems,
-                            out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
-                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
-                            out ushort candidatePlayerDialogueChoiceFlags,
-                            out SaveMetadata candidateMetadata,
-                            out _,
-                            out _,
-                            out bool candidateUsedLegacyFormat,
-                            out _,
-                            out string candidateError))
-                        {
-                            repairedData = candidateData;
-                            packedQuestHeader = candidateQuestHeader;
-                            packedQuestStateWords = candidatePackedQuestStateWords;
-                            persistentWorldItems = candidateWorldItems;
-                            ecosystemSectorStates = candidateEcosystemSectorStates;
-                            voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
-                            metadataSource = candidateMetadata ?? beforeInfo.Metadata;
-                            selectedCandidate = candidate;
-                            usedLegacyFormat = candidateUsedLegacyFormat;
-                            playerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
-                            break;
-                        }
+                if (candidateResult.VoxelDeltaSnapshot.IsCreated)
+                    DisposeTransientNativeArrayBestEffortAndReport(ref candidateResult.VoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
 
-                        errorMessage = candidateError;
-                    }
-                }
-                finally
-                {
-                    ClearLoadCandidates(candidates, candidateCount);
-                }
-            }
-
-            if (repairedData == null)
-            {
-                if (voxelDeltaSnapshot.IsCreated)
-                    DisposeTransientNativeArrayBestEffortAndReport(ref voxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                result.Message = string.IsNullOrEmpty(errorMessage)
+                result.Message = string.IsNullOrEmpty(candidateResult.ErrorMessage)
                     ? "No valid save candidate could be repaired."
-                    : errorMessage;
+                    : candidateResult.ErrorMessage;
                 result.IntegrityAfter = beforeInfo.IntegrityState;
                 return false;
             }
 
-            bool shouldRewritePrimarySave = selectedCandidate.IsBackup
+            bool shouldRewritePrimarySave = candidateResult.Candidate.IsBackup
                 || !FileExists(GetPrimarySaveFilePath(slotName))
-                || usedLegacyFormat;
+                || candidateResult.UsedLegacyFormat;
 
             bool shouldRewritePrimaryMetadata = shouldRewritePrimarySave
                 || metadataSource == null;
 
             bool changedAnything = RepairPrimaryArtifacts(
                 slotName,
-                repairedData,
+                candidateResult.Data,
                 metadataSource,
-                packedQuestHeader,
-                packedQuestStateWords,
-                playerDialogueChoiceFlags,
-                persistentWorldItems,
-                ecosystemSectorStates,
-                voxelDeltaSnapshot,
+                candidateResult.PackedQuestHeader,
+                candidateResult.PackedQuestStateWords,
+                candidateResult.PlayerDialogueChoiceFlags,
+                candidateResult.PersistentWorldItems,
+                candidateResult.EcosystemSectorStates,
+                candidateResult.VoxelDeltaSnapshot,
                 GetBackupRetentionCountStatic(slotName),
                 shouldRewritePrimarySave);
 
@@ -7209,19 +7224,19 @@ namespace Hecton8.SaveSystem
 
             result.Success = true;
             result.ChangedAnything = changedAnything;
-            result.UsedBackupSource = selectedCandidate.IsBackup;
-            result.SourceBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
-            result.UsedLegacyCompression = usedLegacyFormat;
+            result.UsedBackupSource = candidateResult.Candidate.IsBackup;
+            result.SourceBackupGeneration = candidateResult.Candidate.IsBackup ? candidateResult.Candidate.BackupGeneration : 0;
+            result.UsedLegacyCompression = candidateResult.UsedLegacyFormat;
             result.RewrotePrimarySave = shouldRewritePrimarySave;
             result.RewrotePrimaryMetadata = shouldRewritePrimaryMetadata;
             result.IntegrityAfter = afterInfo != null ? afterInfo.IntegrityState : beforeInfo.IntegrityState;
             result.Message = changedAnything
                 ? "Slot repaired and normalized."
                 : "Slot already healthy.";
-            RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
+            RecordRepairResult(result, candidateResult.Data != null ? candidateResult.Data.version : 0);
 
-            if (voxelDeltaSnapshot.IsCreated)
-                DisposeTransientNativeArrayBestEffortAndReport(ref voxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+            if (candidateResult.VoxelDeltaSnapshot.IsCreated)
+                DisposeTransientNativeArrayBestEffortAndReport(ref candidateResult.VoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
 
             return true;
         }
