@@ -506,6 +506,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(expectedVelocity, GetPrivateField<float>("_splashDipVelocity"));
         }
 
+
+
         private T GetPrivateField<T>(string fieldName)
         {
             var fieldInfo = typeof(CameraJuiceProcessor).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
@@ -534,6 +536,89 @@ namespace Hecton8.Tests.Editor
             // Assert they were reset
             Assert.AreEqual(0f, (float)fieldIntensity.GetValue(_processor));
             Assert.IsFalse((bool)fieldWasInLowPhase.GetValue(_processor));
+        }
+
+        [Test]
+        public void RegisterCollisionImpulse_UpdatesCollisionShakeFieldsAndRecoversOverTime()
+        {
+            _suitData.enableCollisionShake = true;
+            _suitData.collisionShakeThreshold = 2f;
+            _suitData.collisionShakeMaxVelocity = 10f;
+            _suitData.collisionShakeMaxAmplitude = 0.5f;
+            _suitData.collisionShakeMaxPitch = 2f;
+
+            _processor.RegisterCollisionImpulse(15f, _suitData);
+
+            var input = new CameraJuiceInput { deltaTime = 0.1f };
+
+            // First frame after impact should have high offsets
+            var initialOutput = _processor.Process(in input, _suitData);
+
+            // After 1 second of recovery, offsets should be smaller or zero
+            input.deltaTime = 1.0f;
+            var finalOutput = _processor.Process(in input, _suitData);
+
+            Assert.Less(initialOutput.localPositionOffset.y, 0f); // initial shake should be negative Y
+            Assert.Less(Mathf.Abs(finalOutput.localPositionOffset.y), Mathf.Abs(initialOutput.localPositionOffset.y));
+            Assert.AreNotEqual(0f, initialOutput.localPositionOffset.x); // X displacement is expected
+            Assert.Less(Mathf.Abs(finalOutput.localPositionOffset.x), Mathf.Abs(initialOutput.localPositionOffset.x));
+        }
+
+        [Test]
+        public void RegisterCollisionImpulse_SpeedBelowThreshold_DoesNotUpdateFields()
+        {
+            _suitData.enableCollisionShake = true;
+            _suitData.collisionShakeThreshold = 5f;
+
+            _processor.RegisterCollisionImpulse(2f, _suitData);
+
+            var input = new CameraJuiceInput { deltaTime = 0.1f };
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreEqual(0f, output.localPositionOffset.y);
+            Assert.AreEqual(0f, output.localPositionOffset.x);
+            Assert.AreEqual(0f, output.pitchOffset);
+        }
+
+        [Test]
+        public void RegisterCollisionImpulse_CollisionShakeDisabled_DoesNotUpdateFields()
+        {
+            _suitData.enableCollisionShake = false;
+            _suitData.collisionShakeThreshold = 0f;
+
+            _processor.RegisterCollisionImpulse(10f, _suitData);
+
+            var input = new CameraJuiceInput { deltaTime = 0.1f };
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreEqual(0f, output.localPositionOffset.y);
+            Assert.AreEqual(0f, output.localPositionOffset.x);
+            Assert.AreEqual(0f, output.pitchOffset);
+        }
+
+        [Test]
+        public void RegisterCollisionImpulse_AlternatesSignsSubsequentCalls()
+        {
+            _suitData.enableCollisionShake = true;
+            _suitData.collisionShakeThreshold = 0f;
+            _suitData.collisionShakeMaxVelocity = 10f;
+            _suitData.collisionShakeMaxAmplitude = 0.5f;
+
+            // First impulse
+            _processor.RegisterCollisionImpulse(15f, _suitData);
+
+            var input = new CameraJuiceInput { deltaTime = 0.0f }; // Process with 0 dt so no recovery
+            var firstOutput = _processor.Process(in input, _suitData);
+
+            var processor2 = new CameraJuiceProcessor();
+
+            processor2.RegisterCollisionImpulse(15f, _suitData); // Sets to next sign
+            processor2.RegisterCollisionImpulse(15f, _suitData); // Sets back to alternating sign compared to initial
+
+            var secondOutput = processor2.Process(in input, _suitData);
+
+            Assert.AreNotEqual(Mathf.Sign(firstOutput.localPositionOffset.x), Mathf.Sign(secondOutput.localPositionOffset.x), "X displacement signs should alternate");
+            Assert.AreNotEqual(Mathf.Sign(firstOutput.pitchOffset), Mathf.Sign(secondOutput.pitchOffset), "Pitch displacement signs should alternate");
         }
     }
 }

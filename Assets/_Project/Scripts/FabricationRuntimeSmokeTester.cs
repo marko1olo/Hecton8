@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Interaction;
 using System.Threading;
 using Hecton8.Building;
 using Hecton8.Crafting;
@@ -72,7 +73,7 @@ namespace Hecton8.Debugging
 
                 int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(recipe.resultItem.PersistentHashId) : 0;
 
-                fabricator.Interact(transform);
+                ((IInteractable)fabricator).Interact(transform);
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested || this == null)
