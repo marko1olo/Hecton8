@@ -184,17 +184,7 @@ namespace AmplifyImpostors
 
 		[NonSerialized]
 		private Bounds m_originalBound = new Bounds();
-
-		[NonSerialized]
-		private Vector3 m_oriPos = Vector3.zero;
-
-		[NonSerialized]
-		private Quaternion m_oriRot = Quaternion.identity;
-
-		[NonSerialized]
-		private Vector3 m_oriSca = Vector3.one;
-
-		[NonSerialized]
+[NonSerialized]
 		private const int BlockSize = 65536;
 #if UNITY_EDITOR
 		[NonSerialized]
@@ -528,23 +518,6 @@ namespace AmplifyImpostors
 			}
 		}
 
-		private void CopyTransform()
-		{
-			m_oriPos = RootTransform.position;
-			m_oriRot = RootTransform.rotation;
-			m_oriSca = RootTransform.localScale;
-			RootTransform.position = Vector3.zero;
-			RootTransform.rotation = Quaternion.identity;
-			RootTransform.localScale = Vector3.one;
-		}
-
-		private void PasteTransform()
-		{
-			RootTransform.position = m_oriPos;
-			RootTransform.rotation = m_oriRot;
-			RootTransform.localScale = m_oriSca;
-		}
-
 		public void CalculatePixelBounds( int targetAmount )
 		{
 			bool sRGBcache = GL.sRGBWrite;
@@ -555,20 +528,7 @@ namespace AmplifyImpostors
 			GL.sRGBWrite = true;
 
 			m_pixelOffset = Vector2.zero;
-
-			// TODO: remove this temporary solution
-			CopyTransform();
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
-				PasteTransform();
-			}
-			catch( Exception e )
-			{
-				PasteTransform();
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
+			RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -669,20 +629,7 @@ namespace AmplifyImpostors
 
 			bool sRGBcache = GL.sRGBWrite;
 			GL.sRGBWrite = true;
-
-			// TODO: remove this temporary solution
-			CopyTransform();
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
-				PasteTransform();
-			}
-			catch( Exception e )
-			{
-				PasteTransform();
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
+			RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -932,21 +879,7 @@ namespace AmplifyImpostors
 
 			GenerateTextures( outputList, standardRendering );
 			DisplayProgress( 0.2f, "Please Wait... Baking" );
-
-			// TODO: remove this temporary solution
-			CopyTransform();
-
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
-				PasteTransform();
-			}
-			catch( Exception e )
-			{
-				PasteTransform();
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
+			RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
 
 			DisplayProgress( 0.5f, "Please Wait... Remapping" );
 
