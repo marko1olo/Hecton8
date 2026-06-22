@@ -131,13 +131,21 @@ namespace Hecton8.Editor
                     {
                         Material inst = new Material(baseMat);
                         t.materialTemplate = inst;
+                        
+                        // FIX: Enable PBR keywords so it's not mint plastic
+                        inst.EnableKeyword("_NORMALMAP");
+                        inst.EnableKeyword("_MASKMAP");
+                        inst.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
+
                         if (albedo != null) inst.SetTexture("_AlbedoArray", albedo);
                         if (normal != null) inst.SetTexture("_NormalArray", normal);
                         if (mask   != null) inst.SetTexture("_MaskArray",   mask);
+                        
                         inst.SetFloat("_UVScale",       4.0f);
                         inst.SetFloat("_TriplanarBlend", 4.0f);
                         inst.SetFloat("_MinDepth",  -4600f);
                         inst.SetFloat("_MaxDepth",    500f);
+                        
                         if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0)
                         {
                             Texture2D[] alphas = t.terrainData.alphamapTextures;
@@ -147,6 +155,11 @@ namespace Hecton8.Editor
                         }
                     }
                 }
+
+                // FIX: Generate procedural scatter
+                Debug.Log("[TRT] Generating procedural scatter...");
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
+
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
@@ -182,9 +195,26 @@ namespace Hecton8.Editor
                 var go = new GameObject("TRT_Camera");
                 cam = go.AddComponent<Camera>();
             }
-            cam.backgroundColor = new Color(0.05f, 0.15f, 0.25f);
+            cam.backgroundColor = new Color(0.02f, 0.05f, 0.1f); // Darker deep sea
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.farClipPlane = 60000f;
+
+            // FIX: Setup Directional Light to ensure shaders respond properly
+            Light dirLight = Object.FindAnyObjectByType<Light>();
+            if (dirLight == null || dirLight.type != LightType.Directional)
+            {
+                GameObject lightGo = new GameObject("TRT_DirectionalLight");
+                dirLight = lightGo.AddComponent<Light>();
+                dirLight.type = LightType.Directional;
+            }
+            dirLight.transform.rotation = Quaternion.Euler(50f, 30f, 0f);
+            dirLight.intensity = 1.2f;
+            dirLight.color = new Color(0.8f, 0.9f, 1.0f);
+            dirLight.shadows = LightShadows.Soft;
+
+            // RenderSettings setup for ambient
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
+            RenderSettings.ambientSkyColor = new Color(0.05f, 0.1f, 0.2f);
 
             // Take Macro Shot (Orthographic)
             cam.orthographic = true;

@@ -16,6 +16,20 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
+    def test_write_json(self):
+        from unittest.mock import patch
+
+        path = Path("dummy.json")
+        data = {"b": 2, "a": 1}
+
+        with patch.object(tool, 'atomic_write_bytes') as mock_atomic_write_bytes:
+            tool.write_json(path, data)
+
+            expected_json = json.dumps(data, indent=2, sort_keys=True) + "\n"
+            expected_bytes = expected_json.encode("utf-8")
+
+            mock_atomic_write_bytes.assert_called_once_with(path, expected_bytes)
+
     def test_make_leaf_meta(self):
         # make_leaf_meta(key_count) returns BTREE_LEAF_FLAG | (key_count & 0x7)
         # BTREE_LEAF_FLAG is 1 << 8 (256)
