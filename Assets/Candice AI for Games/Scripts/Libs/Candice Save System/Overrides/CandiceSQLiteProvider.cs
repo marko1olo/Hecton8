@@ -44,8 +44,11 @@ namespace CandiceAIforGames.Data
 
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
-                    //deleteQuery = string.Format("DELETE FROM Objects WHERE [serialNr] = '{0}'", serialNr);
-                    deleteQuery = query;
+                    string safeQuery = query;
+                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
+                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+
+                    deleteQuery = safeQuery;
                     sqlCmd = sqlCon.CreateCommand();
                     sqlCmd.CommandText = deleteQuery;
                     if (queryParameters != null)
@@ -54,6 +57,10 @@ namespace CandiceAIforGames.Data
                         {
                             sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
                         }
+                    }
+                    if (!string.IsNullOrEmpty(serialNr))
+                    {
+                        sqlCmd.Parameters.AddWithValue("@serialNr", serialNr);
                     }
                     rc = sqlCmd.ExecuteNonQuery();
                     if (rc == 0)
@@ -236,14 +243,21 @@ namespace CandiceAIforGames.Data
                 {
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
-                    //string selectQuery = string.Format("SELECT * FROM Objects WHERE [serialNr] = '{0}'", serialNr);
-                    sqlCmd = new SqliteCommand(query, sqlCon);
+                    string safeQuery = query;
+                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
+                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+
+                    sqlCmd = new SqliteCommand(safeQuery, sqlCon);
                     if (queryParameters != null)
                     {
                         foreach (KeyValuePair<object, object> p in queryParameters)
                         {
                             sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
                         }
+                    }
+                    if (!string.IsNullOrEmpty(serialNr))
+                    {
+                        sqlCmd.Parameters.AddWithValue("@serialNr", serialNr);
                     }
                     sqlDr = sqlCmd.ExecuteReader();
                     bFound = sqlDr.Read();
@@ -294,9 +308,13 @@ namespace CandiceAIforGames.Data
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
 
-                    //updateQuery = string.Format("UPDATE Objects SET [name] = @name, [faction] = @faction, " +
-                    //    "[experience] = @experience WHERE [serialNr] = '{0}'", obj.SerialNr);
-                    sqlCmd = new SqliteCommand(query, sqlCon);
+                    string safeQuery = query;
+                    // If caller expected a formatting placeholder for update logic, redirect it securely to a parameter
+                    // though typically Update is fully parameterized in Candice AI
+                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
+                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+
+                    sqlCmd = new SqliteCommand(safeQuery, sqlCon);
                     foreach (KeyValuePair<object, object> p in parameters)
                     {
                         sqlCmd.Parameters.AddWithValue(Convert.ToString(p.Key), p.Value);
