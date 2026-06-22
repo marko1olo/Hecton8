@@ -163,7 +163,7 @@
   },
   "endianness": {
     "failures": [],
-    "formatSites": 371
+    "formatSites": 375
   },
   "hashing": {
     "collisionCount": 0,
