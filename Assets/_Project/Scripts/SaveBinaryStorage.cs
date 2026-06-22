@@ -9255,61 +9255,9 @@ namespace Hecton8.SaveSystem
                 for (int i = 0; i < slotToGroupIndex.Length; i++)
                     slotToGroupIndex[i] = -1;
 
-                for (int i = 0; i < sourceLength; i++)
-                {
-                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                    if (!PersistentWorldDeltaRecord.IsValid(in record))
-                    {
-                        recordGroupIndex[i] = -1;
-                        continue;
-                    }
-
-                    long sectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
-                    if (sectorHash == long.MinValue)
-                    {
-                        recordGroupIndex[i] = -1;
-                        buffer.InvalidRecordCount++;
-                        continue;
-                    }
-
-                    int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
-                    if (groupIndex < 0)
-                    {
-                        recordGroupIndex[i] = -1;
-                        ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
-                        continue;
-                    }
-
-                    recordGroupIndex[i] = (short)groupIndex;
-                    IndexedSectorGroup group = buffer.Groups[groupIndex];
-                    group.Count++;
-                    buffer.Groups[groupIndex] = group;
-                }
-
-                int recordOffset = 0;
-                for (int i = 0; i < buffer.Groups.Length; i++)
-                {
-                    IndexedSectorGroup group = buffer.Groups[i];
-                    group.StartIndex = recordOffset;
-                    group.WriteCount = 0;
-                    buffer.Groups[i] = group;
-                    recordOffset += group.Count;
-                }
-
-                buffer.Records.ResizeUninitialized(recordOffset);
-                for (int i = 0; i < sourceLength; i++)
-                {
-                    int groupIndex = recordGroupIndex[i];
-                    if (groupIndex < 0)
-                        continue;
-
-                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                    IndexedSectorGroup group = buffer.Groups[groupIndex];
-                    int writeIndex = group.StartIndex + group.WriteCount;
-                    buffer.Records[writeIndex] = record;
-                    group.WriteCount++;
-                    buffer.Groups[groupIndex] = group;
-                }
+                PopulateIndexedSectorGroups(persistentWorldDeltas, sourceLength, chunkSizeMeters, ref buffer, slotToGroupIndex, recordGroupIndex);
+                int recordOffset = CalculateIndexedSectorGroupOffsets(ref buffer);
+                PopulateIndexedSectorRecords(persistentWorldDeltas, sourceLength, ref buffer, recordGroupIndex, recordOffset);
             }
             finally
             {
@@ -9318,6 +9266,83 @@ namespace Hecton8.SaveSystem
             }
 
             return buffer;
+        }
+
+        private static void PopulateIndexedSectorGroups(
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
+            int sourceLength,
+            int chunkSizeMeters,
+            ref IndexedSectorGroupBuffer buffer,
+            NativeArray<short> slotToGroupIndex,
+            NativeArray<short> recordGroupIndex)
+        {
+            for (int i = 0; i < sourceLength; i++)
+            {
+                PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                if (!PersistentWorldDeltaRecord.IsValid(in record))
+                {
+                    recordGroupIndex[i] = -1;
+                    continue;
+                }
+
+                long sectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
+                if (sectorHash == long.MinValue)
+                {
+                    recordGroupIndex[i] = -1;
+                    buffer.InvalidRecordCount++;
+                    continue;
+                }
+
+                int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
+                if (groupIndex < 0)
+                {
+                    recordGroupIndex[i] = -1;
+                    ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
+                    continue;
+                }
+
+                recordGroupIndex[i] = (short)groupIndex;
+                IndexedSectorGroup group = buffer.Groups[groupIndex];
+                group.Count++;
+                buffer.Groups[groupIndex] = group;
+            }
+        }
+
+        private static int CalculateIndexedSectorGroupOffsets(ref IndexedSectorGroupBuffer buffer)
+        {
+            int recordOffset = 0;
+            for (int i = 0; i < buffer.Groups.Length; i++)
+            {
+                IndexedSectorGroup group = buffer.Groups[i];
+                group.StartIndex = recordOffset;
+                group.WriteCount = 0;
+                buffer.Groups[i] = group;
+                recordOffset += group.Count;
+            }
+            return recordOffset;
+        }
+
+        private static void PopulateIndexedSectorRecords(
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
+            int sourceLength,
+            ref IndexedSectorGroupBuffer buffer,
+            NativeArray<short> recordGroupIndex,
+            int totalRecords)
+        {
+            buffer.Records.ResizeUninitialized(totalRecords);
+            for (int i = 0; i < sourceLength; i++)
+            {
+                int groupIndex = recordGroupIndex[i];
+                if (groupIndex < 0)
+                    continue;
+
+                PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                IndexedSectorGroup group = buffer.Groups[groupIndex];
+                int writeIndex = group.StartIndex + group.WriteCount;
+                buffer.Records[writeIndex] = record;
+                group.WriteCount++;
+                buffer.Groups[groupIndex] = group;
+            }
         }
 
         private static int FindOrCreateIndexedSectorGroup(
