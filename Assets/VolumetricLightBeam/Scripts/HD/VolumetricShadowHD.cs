@@ -274,8 +274,7 @@ namespace VLB
             }
 #endif
 
-            if (m_NeedToUpdateOcclusionNextFrame && m_Master && m_DepthCamera
-                && Time.frameCount > 1)  // fix NullReferenceException in UnityEngine.Rendering.Universal.Internal.CopyDepthPass.Execute when using SRP
+            if (m_NeedToUpdateOcclusionNextFrame && m_Master && m_DepthCamera)
             {
                 ProcessOcclusionInternal();
                 m_NeedToUpdateOcclusionNextFrame = false;
@@ -311,7 +310,7 @@ namespace VLB
 
                     UpdateDepthCameraProperties(); // set layerMask & useOcclusionCulling
                     m_DepthCamera.clearFlags = CameraClearFlags.Depth;
-                    m_DepthCamera.depthTextureMode = DepthTextureMode.Depth;
+                    m_DepthCamera.depthTextureMode = SRPHelper.IsUsingCustomRenderPipeline() ? DepthTextureMode.None : DepthTextureMode.Depth;
                     m_DepthCamera.renderingPath = RenderingPath.Forward; // RenderingPath.VertexLit is faster, but RenderingPath.Forward allows to catch alpha cutout
                     m_DepthCamera.gameObject.hideFlags = Consts.Internal.ProceduralObjectsHideFlags;
                     m_DepthCamera.transform.SetParent(transform, false);
