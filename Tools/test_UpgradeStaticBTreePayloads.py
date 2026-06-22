@@ -180,6 +180,27 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
 
         return bytes(blob)
 
+    def test_update_babel_manifest(self):
+        import tempfile
+        import hashlib
+        import json
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manifest_path = Path(tmpdir) / "manifest.json"
+            manifest_path.write_text(json.dumps({}), encoding="utf-8")
+
+            blob = b"test_blob_data"
+            # header needs 9 elements to satisfy up to header[8] (flags)
+            header = (0, 1, 2, 3, 4, 5, 6, 0x12345678, 0x0)
+
+            tool.update_babel_manifest(manifest_path, blob, header)
+
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(manifest["binaryBytes"], len(blob))
+            self.assertEqual(manifest["sha256"], hashlib.sha256(blob).hexdigest().upper())
+            self.assertEqual(manifest["payloadCrc32"], "0x12345678")
+
     def test_patch_babel(self):
         import tempfile
         import os
