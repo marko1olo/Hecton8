@@ -8842,107 +8842,115 @@ namespace Hecton8.SaveSystem
             string backupTempPath = backupPath + ".tmp";
             try
             {
-                string backupDirectory = Path.GetDirectoryName(backupPath);
-                if (!string.IsNullOrEmpty(backupDirectory))
-                    Directory.CreateDirectory(backupDirectory);
-
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                if (!TryDeleteFileIfExists(backupTempPath, out error))
-                    return false;
-
-                File.Copy(absolutePath, backupTempPath, true);
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                if (!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError))
+                if (!TryCreateIndexedSectorCommitTempBackup(absolutePath, backupPath, backupTempPath, sourceBytes, out error))
                 {
-                    error = string.IsNullOrEmpty(tempLengthError)
-                        ? "Indexed sector commit backup temp file length could not be resolved."
-                        : tempLengthError;
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
                     return false;
                 }
 
-                if (backupTempBytes != sourceBytes)
+                if (!TryFinalizeIndexedSectorCommitBackup(backupPath, backupTempPath, sourceBytes, out error))
                 {
-                    error = "Indexed sector commit backup temp file length did not match source.";
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError))
-                {
-                    error = string.IsNullOrEmpty(tempFlushError)
-                        ? "Indexed sector commit backup temp critical flush failed."
-                        : tempFlushError;
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
-                    return false;
-                }
-
-                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
-                if (File.Exists(backupPath))
-                {
-                    File.Replace(backupTempPath, backupPath, null);
-                }
-                else
-                {
-                    File.Move(backupTempPath, backupPath);
-                }
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
-
-                if (!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError))
-                {
-                    error = string.IsNullOrEmpty(lengthError)
-                        ? "Indexed sector commit backup file length could not be resolved."
-                        : lengthError;
-                    return false;
-                }
-
-                if (backupBytes != sourceBytes)
-                {
-                    error = "Indexed sector commit backup file length did not match source.";
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError))
-                {
-                    error = string.IsNullOrEmpty(flushError)
-                        ? "Indexed sector commit backup critical flush failed."
-                        : flushError;
                     return false;
                 }
 
                 return true;
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException or NotSupportedException)
             {
-                error = $"Indexed sector commit backup failed for '{absolutePath}': {ex.Message}";
+                string errorType = ex switch
+                {
+                    IOException => "failed",
+                    UnauthorizedAccessException => "unauthorized",
+                    System.Security.SecurityException => "security failed",
+                    ArgumentException => "path invalid",
+                    NotSupportedException => "path unsupported",
+                    _ => "failed"
+                };
+
+                error = $"Indexed sector commit backup {errorType} for '{absolutePath}': {ex.Message}";
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (UnauthorizedAccessException ex)
+        }
+
+        private static bool TryCreateIndexedSectorCommitTempBackup(string absolutePath, string backupPath, string backupTempPath, long sourceBytes, out string error)
+        {
+            string backupDirectory = Path.GetDirectoryName(backupPath);
+            if (!string.IsNullOrEmpty(backupDirectory))
+                Directory.CreateDirectory(backupDirectory);
+
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            if (!TryDeleteFileIfExists(backupTempPath, out error))
+                return false;
+
+            File.Copy(absolutePath, backupTempPath, true);
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            if (!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError))
             {
-                error = $"Indexed sector commit backup unauthorized for '{absolutePath}': {ex.Message}";
+                error = string.IsNullOrEmpty(tempLengthError)
+                    ? "Indexed sector commit backup temp file length could not be resolved."
+                    : tempLengthError;
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (System.Security.SecurityException ex)
+
+            if (backupTempBytes != sourceBytes)
             {
-                error = $"Indexed sector commit backup security failed for '{absolutePath}': {ex.Message}";
+                error = "Indexed sector commit backup temp file length did not match source.";
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (ArgumentException ex)
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError))
             {
-                error = $"Indexed sector commit backup path invalid for '{absolutePath}': {ex.Message}";
+                error = string.IsNullOrEmpty(tempFlushError)
+                    ? "Indexed sector commit backup temp critical flush failed."
+                    : tempFlushError;
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (NotSupportedException ex)
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryFinalizeIndexedSectorCommitBackup(string backupPath, string backupTempPath, long sourceBytes, out string error)
+        {
+            AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+            if (File.Exists(backupPath))
             {
-                error = $"Indexed sector commit backup path unsupported for '{absolutePath}': {ex.Message}";
-                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                File.Replace(backupTempPath, backupPath, null);
+            }
+            else
+            {
+                File.Move(backupTempPath, backupPath);
+            }
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+
+            if (!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError))
+            {
+                error = string.IsNullOrEmpty(lengthError)
+                    ? "Indexed sector commit backup file length could not be resolved."
+                    : lengthError;
                 return false;
             }
+
+            if (backupBytes != sourceBytes)
+            {
+                error = "Indexed sector commit backup file length did not match source.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError))
+            {
+                error = string.IsNullOrEmpty(flushError)
+                    ? "Indexed sector commit backup critical flush failed."
+                    : flushError;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         internal static bool IsIndexedBlockStorageRecoveryError(string error)
