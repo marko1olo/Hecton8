@@ -614,7 +614,7 @@ namespace Hecton8.Modding
         private void RebuildLiveEntityLookupFromScene()
         {
             _liveEntitiesByHash.Clear();
-            List<ModSpawnedEntity> entities = ModSpawnedEntity.AllInstances;
+            List<ModSpawnedEntity> entities = ModSpawnedEntity.AllEntities;
             for (int i = 0; i < entities.Count; i++)
             {
                 ModSpawnedEntity marker = entities[i];
@@ -869,8 +869,35 @@ namespace Hecton8.Modding
     [DisallowMultipleComponent]
     internal sealed class ModSpawnedEntity : MonoBehaviour
     {
-        // COLD ALLOC: List<ModSpawnedEntity>[128] - global live instance tracker - owner: ModWorldPersistenceManager
-        internal static readonly List<ModSpawnedEntity> AllInstances = new List<ModSpawnedEntity>(128);
+        // COLD ALLOC: List<ModSpawnedEntity>[128] — live spawned entity registry — owner: ModSpawnedEntity
+        internal static readonly List<ModSpawnedEntity> AllEntities = new List<ModSpawnedEntity>(128);
+
+        internal int AllEntitiesIndex = -1;
+
+        private void Awake()
+        {
+            if (AllEntitiesIndex == -1)
+            {
+                AllEntitiesIndex = AllEntities.Count;
+                AllEntities.Add(this);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (AllEntitiesIndex >= 0 && AllEntitiesIndex < AllEntities.Count)
+            {
+                int lastIndex = AllEntities.Count - 1;
+                if (AllEntitiesIndex != lastIndex)
+                {
+                    ModSpawnedEntity lastEntity = AllEntities[lastIndex];
+                    AllEntities[AllEntitiesIndex] = lastEntity;
+                    lastEntity.AllEntitiesIndex = AllEntitiesIndex;
+                }
+                AllEntities.RemoveAt(lastIndex);
+                AllEntitiesIndex = -1;
+            }
+        }
 
         /// <summary>
         /// Stable persistent spawn identifier.
@@ -904,25 +931,6 @@ namespace Hecton8.Modding
             ModId = modId;
             AssetName = assetName;
             SceneName = SaveMetadata.NormalizeSceneName(sceneName);
-        }
-
-        private void Awake()
-        {
-            AllInstances.Add(this);
-        }
-
-        private void OnDestroy()
-        {
-            int index = AllInstances.IndexOf(this);
-            if (index >= 0)
-            {
-                int lastIndex = AllInstances.Count - 1;
-                if (index < lastIndex)
-                {
-                    AllInstances[index] = AllInstances[lastIndex];
-                }
-                AllInstances.RemoveAt(lastIndex);
-            }
         }
     }
 }
