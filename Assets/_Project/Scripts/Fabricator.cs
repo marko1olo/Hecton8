@@ -657,11 +657,17 @@ namespace Hecton8.Crafting
         //  IInteractable
         // ----------------------------------------------------------
 
-        public void OnHoverStart() { }
+        void IInteractable.OnHoverStart()
+        {
+            // No hover start logic required for Fabricator.
+        }
 
-        public void OnHoverEnd() { }
+        void IInteractable.OnHoverEnd()
+        {
+            // No hover end logic required for Fabricator.
+        }
 
-        public void Interact(Transform interactor)
+        void IInteractable.Interact(Transform interactor)
         {
             _playerTransform = interactor;
             _playerMovement = null;
@@ -676,7 +682,7 @@ namespace Hecton8.Crafting
             InteractionEvents.TryRaiseInteractionStarted(this, interactor);
         }
 
-        public string GetInteractText()
+        string IInteractable.GetInteractText()
         {
             return LegacyInteractText;
         }
