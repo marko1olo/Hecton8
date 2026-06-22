@@ -2376,6 +2376,51 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
+            if (!TryApplyWfcOutpostGridWritesAndSnapshot(
+                    dirtySectorHash,
+                    dirtyCellIndices,
+                    dirtyCellFlags,
+                    dirtyCellWriteCount,
+                    hasHydration,
+                    hydratedPayloadHash,
+                    hydratedPayloadBytes,
+                    hydratedCacheFlags,
+                    hydratedCacheFrame,
+                    out bool copiedGridSnapshot,
+                    out WfcOutpostPersistenceStatus status,
+                    out bool publishWriteFailure))
+            {
+                return false;
+            }
+
+            StageAndCommitWfcOutpostGridSnapshot(
+                dirtySectorHash,
+                dirtyFrame,
+                copiedGridSnapshot,
+                status,
+                publishWriteFailure);
+
+            return true;
+        }
+
+        private bool TryApplyWfcOutpostGridWritesAndSnapshot(
+            ulong dirtySectorHash,
+            Span<ushort> dirtyCellIndices,
+            Span<byte> dirtyCellFlags,
+            int dirtyCellWriteCount,
+            bool hasHydration,
+            ulong hydratedPayloadHash,
+            int hydratedPayloadBytes,
+            uint hydratedCacheFlags,
+            uint hydratedCacheFrame,
+            out bool copiedGridSnapshot,
+            out WfcOutpostPersistenceStatus status,
+            out bool publishWriteFailure)
+        {
+            copiedGridSnapshot = false;
+            status = WfcOutpostPersistenceStatus.None;
+            publishWriteFailure = false;
+
             if (!TryAcquireWfcOutpostGridWrite(
                     out NativeArray<byte> wfcGrid,
                     out VaultGenerationHandle<byte> wfcGridHandle,
@@ -2388,13 +2433,6 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            bool stageSucceeded = false;
-            bool needsCommit = false;
-            bool publishWriteFailure = false;
-            ulong packedHash = 0UL;
-            int payloadBytes = 0;
-            WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
-            bool copiedGridSnapshot = false;
             bool appliedHydration = false;
             try
             {
@@ -2435,6 +2473,21 @@ namespace Hecton8.SaveSystem
                     hydratedPayloadBytes);
             }
 
+            return true;
+        }
+
+        private void StageAndCommitWfcOutpostGridSnapshot(
+            ulong dirtySectorHash,
+            uint dirtyFrame,
+            bool copiedGridSnapshot,
+            WfcOutpostPersistenceStatus status,
+            bool publishWriteFailure)
+        {
+            bool stageSucceeded = false;
+            bool needsCommit = false;
+            ulong packedHash = 0UL;
+            int payloadBytes = 0;
+
             if (copiedGridSnapshot)
             {
                 stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
@@ -2468,8 +2521,6 @@ namespace Hecton8.SaveSystem
                     payloadBytes,
                     out _);
             }
-
-            return true;
         }
 
         private void RecordWfcOutpostStateChangedSignalEvent(in WfcOutpostStateChangedSignal signal)
