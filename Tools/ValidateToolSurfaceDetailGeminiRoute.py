@@ -10,6 +10,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+ROOT_PATH = ROOT
 INTEGRATOR = ROOT / "Assets/_Project/Scripts/Editor/ToolSurfaceDetailGeminiIntegrator.cs"
 UNITY_APPLIER = ROOT / "Assets/_Project/Scripts/Editor/GeminiMaterialIntegrationApplier.cs"
 UNITY_APPLY_RUNNER = ROOT / "Tools/RunGeminiMaterialUnityApplyAll.ps1"
@@ -36,6 +37,10 @@ DETAIL_PATTERN = re.compile(
 CONST_PATTERN = re.compile(r'private\s+const\s+string\s+(?P<name>[A-Za-z0-9_]+)\s*=\s*"(?P<value>[^"]+)";')
 
 
+class ValidationError(Exception):
+    pass
+
+
 def display_path(path: Path) -> str:
     try:
         return path.resolve().relative_to(ROOT).as_posix()
@@ -44,14 +49,15 @@ def display_path(path: Path) -> str:
 
 
 def project_path(raw: str) -> Path:
-    path = Path(raw)
-    return path if path.is_absolute() else ROOT / path
+    if raw.startswith("Assets/"):
+        return ROOT_PATH / raw
+    return Path(raw).resolve()
 
 
 def read_guid(asset_path: Path) -> str:
-    meta_path = asset_path.with_suffix(asset_path.suffix + ".meta")
+    meta_path = asset_path.with_name(asset_path.name + ".meta")
     if not meta_path.exists():
-        return ""
+        raise ValidationError(f"Missing meta file: {display_path(asset_path)}")
     match = re.search(
         r"^guid:\s*([0-9a-fA-F]+)\s*$",
         meta_path.read_text(encoding="utf-8-sig"),
