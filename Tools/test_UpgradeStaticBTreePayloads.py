@@ -246,5 +246,37 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
             finally:
                 tool.STATIC_MANIFEST_PATH = old_manifest
 
+    def test_atomic_write_bytes(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_path = Path(tmpdir) / "test_file.bin"
+            temp_test_path = test_path.with_name(test_path.name + ".tmp")
+
+            # Test 1: Writing data to a new path
+            initial_data = b"Hello, World!"
+            tool.atomic_write_bytes(test_path, initial_data)
+            self.assertTrue(test_path.exists(), "Target file should exist after atomic_write_bytes")
+            self.assertEqual(test_path.read_bytes(), initial_data, "Target file should contain the written data")
+            self.assertFalse(temp_test_path.exists(), "Temporary file should not exist after successful write")
+
+            # Test 2: Idempotence (skipping write if content is identical)
+            # Modify the modified time of the target file to check if it gets updated
+            import time
+            import os
+            original_mtime = os.path.getmtime(test_path)
+            time.sleep(0.01) # Small sleep to ensure mtime change if overwritten
+
+            tool.atomic_write_bytes(test_path, initial_data)
+            self.assertEqual(os.path.getmtime(test_path), original_mtime, "File should not be overwritten if content is identical")
+
+            # Test 3: Overwriting when contents differ
+            new_data = b"Goodbye, World!"
+            tool.atomic_write_bytes(test_path, new_data)
+            self.assertTrue(test_path.exists(), "Target file should still exist")
+            self.assertEqual(test_path.read_bytes(), new_data, "Target file should contain the new data")
+            self.assertFalse(temp_test_path.exists(), "Temporary file should not exist after overwrite")
+
 if __name__ == "__main__":
     unittest.main()
