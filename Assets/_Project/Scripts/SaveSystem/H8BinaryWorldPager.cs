@@ -764,6 +764,7 @@ namespace Hecton8.Core.Persistence.Paging
             DisposeNativeState();
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _initializationFault.Value, 0);
+            _workerEvent.Dispose();
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
