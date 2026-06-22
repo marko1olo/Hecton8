@@ -191,14 +191,6 @@ namespace Hecton8.Gameplay
             }
         }
 
-        void IInteractable.OnHoverStart()
-        {
-        }
-
-        void IInteractable.OnHoverEnd()
-        {
-        }
-
         void IInteractable.Interact(Transform interactor)
         {
             if (_isTransitioning || interactor == null)

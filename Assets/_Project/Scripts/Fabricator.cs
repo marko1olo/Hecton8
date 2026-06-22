@@ -657,16 +657,6 @@ namespace Hecton8.Crafting
         //  IInteractable
         // ----------------------------------------------------------
 
-        void IInteractable.OnHoverStart()
-        {
-            // No hover start logic required for Fabricator.
-        }
-
-        void IInteractable.OnHoverEnd()
-        {
-            // No hover end logic required for Fabricator.
-        }
-
         void IInteractable.Interact(Transform interactor)
         {
             _playerTransform = interactor;

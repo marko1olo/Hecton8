@@ -185,14 +185,6 @@ namespace Hecton8.Economy
             NotifyGridBalanceChanged();
         }
 
-        void IInteractable.OnHoverStart()
-        {
-        }
-
-        void IInteractable.OnHoverEnd()
-        {
-        }
-
         void IInteractable.Interact(Transform interactor)
         {
             PlayerInventory inventory = EnsureCachedInventory();
