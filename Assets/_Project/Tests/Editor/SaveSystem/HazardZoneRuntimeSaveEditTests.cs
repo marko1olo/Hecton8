@@ -354,9 +354,14 @@ namespace Hecton8.Tests.Editor
 
             string indexedBackup = ExtractMethodBody(
                 saveBinaryStorage,
-                "private static bool TryPrepareIndexedSectorCommitBackup(");
+                "private static bool TryFinalizeIndexedSectorCommitBackup(");
             StringAssert.Contains("FlushCriticalSavePath(backupPath, backupBytes, out string flushError)", indexedBackup);
-            StringAssert.Contains("catch (System.Security.SecurityException ex)", indexedBackup);
+
+            string prepareBackup = ExtractMethodBody(
+                saveBinaryStorage,
+                "private static bool TryPrepareIndexedSectorCommitBackup(");
+            StringAssert.Contains("catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException or NotSupportedException)", prepareBackup);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", prepareBackup);
             StringAssert.DoesNotContain("QueueThrottledFlush(", indexedBackup);
 
             string primaryCommit = ExtractMethodBody(
@@ -500,11 +505,16 @@ namespace Hecton8.Tests.Editor
                 StringComparison.Ordinal);
             Assert.Greater(sourceLengthIndex, methodIndex, source);
 
+            int tempMethodIndex = source.IndexOf(
+                "private static bool TryCreateIndexedSectorCommitTempBackup(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(tempMethodIndex, 0, source);
+
             int tempInvalidationIndex = source.IndexOf(
                 "AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);",
-                sourceLengthIndex,
+                tempMethodIndex,
                 StringComparison.Ordinal);
-            Assert.Greater(tempInvalidationIndex, sourceLengthIndex, source);
+            Assert.Greater(tempInvalidationIndex, tempMethodIndex, source);
 
             int copyIndex = source.IndexOf(
                 "File.Copy(absolutePath, backupTempPath, true);",
