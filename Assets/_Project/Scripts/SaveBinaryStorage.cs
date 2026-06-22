@@ -7358,40 +7358,17 @@ namespace Hecton8.SaveSystem
                     if (!IsModPayloadSectorHash(entry.SectorHash))
                         continue;
 
-                    if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                    if (!TryProcessModPayloadSector(
+                            ref mapping,
+                            in entry,
+                            rawBlockBytes,
+                            payloadBytes,
+                            readHandler,
+                            collectResults,
+                            results))
                     {
                         skippedModSectorCount++;
-                        continue;
                     }
-
-                    if (payloadHeader.ModHash == 0u ||
-                        entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
-                        entry.SectorHash,
-                        payloadHeader.ModHash,
-                        payloadHeader.PagedSectorHash,
-                        payloadHeader.PayloadLength,
-                        payloadHeader.PayloadChecksum);
-
-                    if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out error))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out error))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    if (collectResults)
-                        results.Add(sectorInfo);
                 }
 
                 if (populatedCount != indexedSectorCount)
@@ -7409,6 +7386,43 @@ namespace Hecton8.SaveSystem
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
             }
+        }
+
+        private static bool TryProcessModPayloadSector(
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            in SectorEntry entry,
+            NativeArray<byte> rawBlockBytes,
+            NativeArray<byte> payloadBytes,
+            ModPayloadReadHandler readHandler,
+            bool collectResults,
+            List<ModPayloadSectorInfo> results)
+        {
+            if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                return false;
+
+            if (payloadHeader.ModHash == 0u ||
+                entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
+            {
+                return false;
+            }
+
+            ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
+                entry.SectorHash,
+                payloadHeader.ModHash,
+                payloadHeader.PagedSectorHash,
+                payloadHeader.PayloadLength,
+                payloadHeader.PayloadChecksum);
+
+            if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out _))
+                return false;
+
+            if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out _))
+                return false;
+
+            if (collectResults)
+                results.Add(sectorInfo);
+
+            return true;
         }
 
         internal static bool TryReadModPayloadSubSector(
