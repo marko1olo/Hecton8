@@ -614,9 +614,8 @@ namespace Hecton8.Modding
         private void RebuildLiveEntityLookupFromScene()
         {
             _liveEntitiesByHash.Clear();
-            ModSpawnedEntity[] entities = UnityEngine.Object.FindObjectsByType<ModSpawnedEntity>(
-                UnityEngine.FindObjectsInactive.Include);
-            for (int i = 0; i < entities.Length; i++)
+            List<ModSpawnedEntity> entities = ModSpawnedEntity.AllInstances;
+            for (int i = 0; i < entities.Count; i++)
             {
                 ModSpawnedEntity marker = entities[i];
                 if (marker == null)
@@ -870,6 +869,9 @@ namespace Hecton8.Modding
     [DisallowMultipleComponent]
     internal sealed class ModSpawnedEntity : MonoBehaviour
     {
+        // COLD ALLOC: List<ModSpawnedEntity>[128] - global live instance tracker - owner: ModWorldPersistenceManager
+        internal static readonly List<ModSpawnedEntity> AllInstances = new List<ModSpawnedEntity>(128);
+
         /// <summary>
         /// Stable persistent spawn identifier.
         /// </summary>
@@ -902,6 +904,25 @@ namespace Hecton8.Modding
             ModId = modId;
             AssetName = assetName;
             SceneName = SaveMetadata.NormalizeSceneName(sceneName);
+        }
+
+        private void Awake()
+        {
+            AllInstances.Add(this);
+        }
+
+        private void OnDestroy()
+        {
+            int index = AllInstances.IndexOf(this);
+            if (index >= 0)
+            {
+                int lastIndex = AllInstances.Count - 1;
+                if (index < lastIndex)
+                {
+                    AllInstances[index] = AllInstances[lastIndex];
+                }
+                AllInstances.RemoveAt(lastIndex);
+            }
         }
     }
 }
