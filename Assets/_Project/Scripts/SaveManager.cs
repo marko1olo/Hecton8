@@ -45,6 +45,7 @@ namespace Hecton8.SaveSystem
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
+        private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
         private static int s_criticalSectorCorruptionNotificationMissCount;
         private const long MainThreadSnapshotBudgetMs = 5L;
@@ -630,12 +631,14 @@ namespace Hecton8.SaveSystem
         private static void DisposeEditorNativeBuffersForLifecycle()
         {
             Exception firstException = null;
-            SaveManager[] managers = UnityEngine.Object.FindObjectsByType<SaveManager>(FindObjectsInactive.Include);
-            for (int i = 0; i < managers.Length; i++)
+            for (int i = s_KnownInstances.Count - 1; i >= 0; i--)
             {
-                SaveManager manager = managers[i];
+                SaveManager manager = s_KnownInstances[i];
                 if (manager == null)
+                {
+                    s_KnownInstances.RemoveAt(i);
                     continue;
+                }
 
                 try
                 {
@@ -1031,6 +1034,9 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
+            if (!s_KnownInstances.Contains(this))
+                s_KnownInstances.Add(this);
+
             if (TryDeactivateDuplicateRuntimeOwner())
                 return;
 
@@ -1163,6 +1169,8 @@ namespace Hecton8.SaveSystem
 
         private void OnDestroy()
         {
+            s_KnownInstances.Remove(this);
+
             if (_runtimeOwnerAborted)
                 return;
 
