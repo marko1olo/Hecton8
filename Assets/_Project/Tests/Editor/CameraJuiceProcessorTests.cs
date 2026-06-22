@@ -468,6 +468,59 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(expectedVelocity, GetPrivateField<float>("_splashDipVelocity"));
         }
 
+
+        [Test]
+        public void RegisterExternalRollImpulse_NearZero_ReturnsEarly()
+        {
+            // Arrange
+            float initialImpulse = GetPrivateField<float>("_externalRollImpulse");
+            float initialVelocity = GetPrivateField<float>("_externalRollImpulseVel");
+
+            // Act
+            _processor.RegisterExternalRollImpulse(0.0005f); // Less than 0.001f
+
+            // Assert
+            Assert.AreEqual(initialImpulse, GetPrivateField<float>("_externalRollImpulse"));
+            Assert.AreEqual(initialVelocity, GetPrivateField<float>("_externalRollImpulseVel"));
+        }
+
+        [Test]
+        public void RegisterExternalRollImpulse_ValidValue_UpdatesRollFields()
+        {
+            // Arrange
+            float testValue = 10f;
+            float expectedVelocity = -testValue * 3.6f;
+
+            // Act
+            _processor.RegisterExternalRollImpulse(testValue);
+
+            // Assert
+            Assert.AreEqual(testValue, GetPrivateField<float>("_externalRollImpulse"));
+            Assert.AreEqual(expectedVelocity, GetPrivateField<float>("_externalRollImpulseVel"));
+        }
+
+        [Test]
+        public void RegisterExternalRollImpulse_ExceedsLimits_ClampsCorrectly()
+        {
+            // Arrange
+            float testValueMax = 25f; // Exceeds 18f
+            float testValueMin = -25f; // Below -18f
+
+            // Act - Max
+            _processor.RegisterExternalRollImpulse(testValueMax);
+
+            // Assert - Max
+            Assert.AreEqual(18f, GetPrivateField<float>("_externalRollImpulse"));
+            Assert.AreEqual(-18f * 3.6f, GetPrivateField<float>("_externalRollImpulseVel"));
+
+            // Act - Min
+            _processor.RegisterExternalRollImpulse(testValueMin);
+
+            // Assert - Min
+            Assert.AreEqual(-18f, GetPrivateField<float>("_externalRollImpulse"));
+            Assert.AreEqual(18f * 3.6f, GetPrivateField<float>("_externalRollImpulseVel"));
+        }
+
         private T GetPrivateField<T>(string fieldName)
         {
             var fieldInfo = typeof(CameraJuiceProcessor).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
