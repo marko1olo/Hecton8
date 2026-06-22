@@ -498,12 +498,6 @@ namespace Hecton8.Gameplay
                 math.max(1, _listenerExceptionCount));
         }
 
-        [Obsolete("Use TryRaiseScanTriggered(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseScanTriggered(float3 center, float radius)
-        {
-            TryRaiseScanTriggered(center, radius);
-        }
-
         public static bool TryRaiseScanTriggered(float3 center, float radius)
         {
             return Enqueue(new ScanEventPayload
@@ -518,12 +512,6 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.Unknown,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseWreckSignalPing(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static bool RaiseWreckSignalPing(float3 center, float radius)
-        {
-            return TryRaiseWreckSignalPing(center, radius);
         }
 
         public static bool TryRaiseWreckSignalPing(float3 center, float radius)
@@ -550,12 +538,6 @@ namespace Hecton8.Gameplay
             return queued;
         }
 
-        [Obsolete("Use TryRaiseNodeFound(float3) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseNodeFound(float3 worldPos)
-        {
-            TryRaiseNodeFound(worldPos);
-        }
-
         public static bool TryRaiseNodeFound(float3 worldPos)
         {
             return Enqueue(new ScanEventPayload
@@ -570,17 +552,6 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.ResourceNode,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind). String ingress is not allowed on first-party event lanes.", true)]
-        public static void RaiseEntryDiscovered(
-            string entryId,
-            string title,
-            string category,
-            string summary,
-            ScanEntryKind kind = ScanEntryKind.Unknown)
-        {
-            TryRaiseEntryDiscoveredFromString(entryId, title, category, summary, kind);
         }
 
         private static bool TryRaiseEntryDiscoveredFromString(
@@ -615,17 +586,6 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind) so overflow/drop semantics stay visible at the producer.", true)]
-        public static bool RaiseEntryDiscovered(
-            uint entryHash,
-            uint titleHash,
-            uint categoryHash,
-            uint summaryHash,
-            ScanEntryKind kind = ScanEntryKind.Unknown)
-        {
-            return TryRaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind);
-        }
-
         public static bool TryRaiseEntryDiscovered(
             uint entryHash,
             uint titleHash,
@@ -650,12 +610,6 @@ namespace Hecton8.Gameplay
             });
         }
 
-        [Obsolete("Use TryRaiseFaunaFeedingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
-        {
-            TryRaiseFaunaFeedingObserved(entryHash, worldPos);
-        }
-
         public static bool TryRaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
         {
             if (entryHash == 0u)
@@ -673,12 +627,6 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.Scannable,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseFaunaMatingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
-        {
-            TryRaiseFaunaMatingObserved(entryHash, worldPos);
         }
 
         public static bool TryRaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
