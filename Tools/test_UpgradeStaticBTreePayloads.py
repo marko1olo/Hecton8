@@ -16,6 +16,33 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
+    def test_make_leaf_meta(self):
+        # make_leaf_meta(key_count) returns BTREE_LEAF_FLAG | (key_count & 0x7)
+        # BTREE_LEAF_FLAG is 1 << 8 (256)
+
+        # Test normal values
+        self.assertEqual(tool.make_leaf_meta(0), 256 | 0)
+        self.assertEqual(tool.make_leaf_meta(3), 256 | 3)
+        self.assertEqual(tool.make_leaf_meta(7), 256 | 7)
+
+        # Test bitwise AND masking (key_count & 0x7)
+        # Values >= 8 should wrap/mask down
+        self.assertEqual(tool.make_leaf_meta(8), 256 | 0)
+        self.assertEqual(tool.make_leaf_meta(10), 256 | 2)
+
+    def test_make_internal_meta(self):
+        # make_internal_meta(key_count) returns key_count & 0x7
+
+        # Test normal values
+        self.assertEqual(tool.make_internal_meta(0), 0)
+        self.assertEqual(tool.make_internal_meta(4), 4)
+        self.assertEqual(tool.make_internal_meta(7), 7)
+
+        # Test bitwise AND masking (key_count & 0x7)
+        # Values >= 8 should wrap/mask down
+        self.assertEqual(tool.make_internal_meta(8), 0)
+        self.assertEqual(tool.make_internal_meta(15), 7)
+
     def test_align_up(self):
         self.assertEqual(tool.align_up(10, 16), 16)
         self.assertEqual(tool.align_up(16, 16), 16)
