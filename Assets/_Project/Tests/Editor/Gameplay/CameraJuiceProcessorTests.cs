@@ -56,5 +56,77 @@ namespace Hecton8.Tests.Editor.Gameplay
             // Check roll sign was set based on leanIntoTurn
             Assert.AreEqual(-1f, type.GetField("_rollSign", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor));
         }
+
+        [Test]
+        public void RegisterSplash_WithValidSuit_SetsDipValues()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+            var suit = UnityEngine.ScriptableObject.CreateInstance<SuitData>();
+            suit.splashCameraDip = 0.05f;
+            float intensity = 0.5f;
+
+            // Act
+            processor.RegisterSplash(intensity, suit);
+
+            // Assert
+            var type = typeof(CameraJuiceProcessor);
+            float expectedDip = -intensity * suit.splashCameraDip;
+            float expectedVelocity = -expectedDip * 2f;
+
+            float actualDip = (float)type.GetField("_splashDipCurrent", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+            float actualVelocity = (float)type.GetField("_splashDipVelocity", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+
+            Assert.AreEqual(expectedDip, actualDip, 0.0001f);
+            Assert.AreEqual(expectedVelocity, actualVelocity, 0.0001f);
+
+            UnityEngine.Object.DestroyImmediate(suit);
+        }
+
+        [Test]
+        public void RegisterSplash_WithNullSuit_DoesNothing()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+            float intensity = 0.5f;
+
+            var type = typeof(CameraJuiceProcessor);
+            // Set some initial values
+            type.GetField("_splashDipCurrent", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(processor, 1f);
+            type.GetField("_splashDipVelocity", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(processor, 2f);
+
+            // Act
+            processor.RegisterSplash(intensity, null);
+
+            // Assert
+            float actualDip = (float)type.GetField("_splashDipCurrent", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+            float actualVelocity = (float)type.GetField("_splashDipVelocity", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+
+            Assert.AreEqual(1f, actualDip, "Current dip should not change when suit is null");
+            Assert.AreEqual(2f, actualVelocity, "Dip velocity should not change when suit is null");
+        }
+
+        [Test]
+        public void RegisterSplash_WithZeroIntensity_SetsZeroDip()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+            var suit = UnityEngine.ScriptableObject.CreateInstance<SuitData>();
+            suit.splashCameraDip = 0.05f;
+            float intensity = 0f;
+
+            // Act
+            processor.RegisterSplash(intensity, suit);
+
+            // Assert
+            var type = typeof(CameraJuiceProcessor);
+            float actualDip = (float)type.GetField("_splashDipCurrent", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+            float actualVelocity = (float)type.GetField("_splashDipVelocity", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor);
+
+            Assert.AreEqual(0f, actualDip, "Dip should be 0 when intensity is 0");
+            Assert.AreEqual(0f, actualVelocity, "Velocity should be 0 when intensity is 0");
+
+            UnityEngine.Object.DestroyImmediate(suit);
+        }
     }
 }
