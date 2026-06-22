@@ -38,8 +38,8 @@ namespace VLB
             base.OnEnable();
             RetrieveSerializedProperties("m_");
 
-            m_DrawerRenderQueue = new RenderQueueDrawer(geometryRenderQueue);
-            m_DrawerRenderQueueHD = new RenderQueueDrawer(geometryRenderQueueHD);
+            m_DrawerRenderQueue = new RenderQueueDrawer(geometryRenderQueue, VolumetricLightBeamSD._EditorSetAllBeamGeomDirty);
+            m_DrawerRenderQueueHD = new RenderQueueDrawer(geometryRenderQueueHD, VolumetricLightBeamHD._EditorSetAllBeamGeomDirty);
 
             Noise3D.LoadIfNeeded(); // Try to load Noise3D, maybe for the 1st time
 
