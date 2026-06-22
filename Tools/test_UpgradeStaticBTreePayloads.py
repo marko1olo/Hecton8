@@ -16,6 +16,20 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
+    def test_write_json(self):
+        from unittest.mock import patch
+
+        path = Path("dummy.json")
+        data = {"b": 2, "a": 1}
+
+        with patch.object(tool, 'atomic_write_bytes') as mock_atomic_write_bytes:
+            tool.write_json(path, data)
+
+            expected_json = json.dumps(data, indent=2, sort_keys=True) + "\n"
+            expected_bytes = expected_json.encode("utf-8")
+
+            mock_atomic_write_bytes.assert_called_once_with(path, expected_bytes)
+
     def test_align_up(self):
         self.assertEqual(tool.align_up(10, 16), 16)
         self.assertEqual(tool.align_up(16, 16), 16)
