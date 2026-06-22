@@ -10203,6 +10203,103 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool TryWritePersistentWorldTables(
+            byte* destination,
+            NativeList<int3> chunkTable,
+            NativeList<ulong> itemHashTable,
+            int sectionLength,
+            ref int cursor,
+            out string error)
+        {
+            error = string.Empty;
+
+            if (chunkTable.Length > 0)
+            {
+                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
+                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    error = "Persistent-world chunk table write exceeded section bounds.";
+                    return false;
+                }
+
+                cursor += chunkBytes;
+            }
+
+            if (itemHashTable.Length > 0)
+            {
+                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
+                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    error = "Persistent-world item hash table write exceeded section bounds.";
+                    return false;
+                }
+
+                cursor += itemBytes;
+            }
+
+            return true;
+        }
+
+        private static bool TryWritePersistentWorldRecord(
+            byte* destination,
+            in PersistentWorldDeltaRecord deltaRecord,
+            NativeParallelHashMap<int3, ushort> chunkLookup,
+            NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            ref int cursor,
+            out string error)
+        {
+            error = string.Empty;
+            PersistentWorldSaveRecord16 saveRecord = default;
+            bool wroteRecord = false;
+
+            if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
+                chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
+            {
+                saveRecord = new PersistentWorldSaveRecord16
+                {
+                    PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                    InstanceUid = deltaRecord.InstanceUid,
+                    Quantity = 1,
+                    ItemFlags = deltaRecord.ItemFlags,
+                    Reserved = 0,
+                    ChunkIndex = deletedChunkIndex,
+                    ItemHashIndex = PersistentWorldDeletedItemHashIndex
+                };
+                wroteRecord = true;
+            }
+            else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
+                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
+                     itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
+            {
+                saveRecord = new PersistentWorldSaveRecord16
+                {
+                    PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                    InstanceUid = deltaRecord.InstanceUid,
+                    Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
+                    ItemFlags = deltaRecord.ItemFlags,
+                    Reserved = 0,
+                    ChunkIndex = chunkIndex,
+                    ItemHashIndex = itemHashIndex
+                };
+                wroteRecord = true;
+            }
+
+            if (!wroteRecord)
+            {
+                error = "Persistent-world section record lookup failed.";
+                return false;
+            }
+
+            UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
+            cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
+
+            return true;
+        }
+
         private static bool WritePersistentWorldSection(
             byte* destination,
             NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
@@ -10237,79 +10334,14 @@ namespace Hecton8.SaveSystem
             WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
             int cursor = sectionHeaderSize;
 
-            if (chunkTable.Length > 0)
-            {
-                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
-                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world chunk table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += chunkBytes;
-            }
-
-            if (itemHashTable.Length > 0)
-            {
-                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
-                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world item hash table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += itemBytes;
-            }
+            if (!TryWritePersistentWorldTables(destination, chunkTable, itemHashTable, sectionLength, ref cursor, out error))
+                return false;
 
             for (int i = 0; i < recordCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                PersistentWorldSaveRecord16 saveRecord = default;
-                bool wroteRecord = false;
-                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
-                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = 1,
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = deletedChunkIndex,
-                        ItemHashIndex = PersistentWorldDeletedItemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
-                         chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
-                         itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = chunkIndex,
-                        ItemHashIndex = itemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-
-                if (!wroteRecord)
-                {
-                    error = "Persistent-world section record lookup failed.";
+                if (!TryWritePersistentWorldRecord(destination, in deltaRecord, chunkLookup, itemHashLookup, ref cursor, out error))
                     return false;
-                }
-
-                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
-                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
 
             return true;
@@ -10360,80 +10392,15 @@ namespace Hecton8.SaveSystem
             WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
             int cursor = sectionHeaderSize;
 
-            if (chunkTable.Length > 0)
-            {
-                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
-                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world chunk table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += chunkBytes;
-            }
-
-            if (itemHashTable.Length > 0)
-            {
-                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
-                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world item hash table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += itemBytes;
-            }
+            if (!TryWritePersistentWorldTables(destination, chunkTable, itemHashTable, sectionLength, ref cursor, out error))
+                return false;
 
             int endIndex = startIndex + safeRecordCount;
             for (int i = startIndex; i < endIndex; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                PersistentWorldSaveRecord16 saveRecord = default;
-                bool wroteRecord = false;
-                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
-                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = 1,
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = deletedChunkIndex,
-                        ItemHashIndex = PersistentWorldDeletedItemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
-                         chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
-                         itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = chunkIndex,
-                        ItemHashIndex = itemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-
-                if (!wroteRecord)
-                {
-                    error = "Persistent-world section record lookup failed.";
+                if (!TryWritePersistentWorldRecord(destination, in deltaRecord, chunkLookup, itemHashLookup, ref cursor, out error))
                     return false;
-                }
-
-                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
-                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
 
             return true;
