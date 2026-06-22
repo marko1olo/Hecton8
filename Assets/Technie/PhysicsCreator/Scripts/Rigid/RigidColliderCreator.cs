@@ -7,6 +7,7 @@ using Technie.PhysicsCreator.Rigid;
 
 namespace Technie.PhysicsCreator
 {
+	[System.Serializable]
 	public class HullMapping
 	{
 		public Hull sourceHull;
@@ -53,6 +54,7 @@ namespace Technie.PhysicsCreator
 		public PaintingData paintingData;
 		public HullData hullData;
 
+		[SerializeField]
 		private List<HullMapping> hullMapping;
 
 		void OnDestroy()
@@ -868,8 +870,6 @@ namespace Technie.PhysicsCreator
 		{
 			if (hullMapping == null)
 			{
-				// TODO: Hull mapping should be serialised, when it is remove this message as it'll only exist to catch un-upgraded assets
-			//	Debug.LogError("No hull mapping present!");
 				return null;
 			}
 
