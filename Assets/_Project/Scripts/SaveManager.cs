@@ -7868,42 +7868,13 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                if (voxelDeltaSnapshotBytes != voxelDeltaSnapshotByteLength)
-                {
-                    errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
-                    if (loadedVoxelDeltaSnapshot.IsCreated)
-                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                    return false;
-                }
-
-                if (voxelDeltaSnapshotBytes > 0 &&
-                    !VoxelDeltaProcessor.TryValidateNativeSnapshotForLoad(loadedVoxelDeltaSnapshot, out string voxelSnapshotValidationError))
-                {
-                    string fallbackReason = string.IsNullOrEmpty(voxelSnapshotValidationError)
-                        ? "Loaded voxel delta snapshot failed validation."
-                        : voxelSnapshotValidationError;
-                    if (HasLoadableVoxelDeltaDtoFallback(data))
-                    {
-                        LogWarning("[SaveManager] Loaded voxel delta native snapshot failed validation; falling back to binary voxel payload: " + fallbackReason);
-                        if (loadedVoxelDeltaSnapshot.IsCreated)
-                            DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                        errorMessage = string.Empty;
-                        voxelDeltaSnapshot = default;
-                        return true;
-                    }
-
-                    errorMessage = fallbackReason;
-                    if (loadedVoxelDeltaSnapshot.IsCreated)
-                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                    return false;
-                }
-
-                voxelDeltaSnapshot = loadedVoxelDeltaSnapshot;
-                loadedVoxelDeltaSnapshot = default;
-                return true;
+                return TryValidateLoadedVoxelSnapshot(
+                    data,
+                    voxelDeltaSnapshotBytes,
+                    voxelDeltaSnapshotByteLength,
+                    ref loadedVoxelDeltaSnapshot,
+                    out voxelDeltaSnapshot,
+                    out errorMessage);
             }
             finally
             {
@@ -7915,6 +7886,54 @@ namespace Hecton8.SaveSystem
                 ReleaseWriteBuffersBestEffort(readBuffer, ownsReadBuffer, compressedReadBuffer, ownsCompressedReadBuffer, ref cleanupException);
                 ReportPersistenceCleanupFailure("load", cleanupException);
             }
+        }
+
+        private static bool TryValidateLoadedVoxelSnapshot(
+            SaveData data,
+            int voxelDeltaSnapshotBytes,
+            int voxelDeltaSnapshotByteLength,
+            ref NativeArray<byte> loadedVoxelDeltaSnapshot,
+            out NativeArray<byte> finalVoxelDeltaSnapshot,
+            out string errorMessage)
+        {
+            finalVoxelDeltaSnapshot = default;
+            errorMessage = string.Empty;
+
+            if (voxelDeltaSnapshotBytes != voxelDeltaSnapshotByteLength)
+            {
+                errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
+                if (loadedVoxelDeltaSnapshot.IsCreated)
+                    DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                return false;
+            }
+
+            if (voxelDeltaSnapshotBytes > 0 &&
+                !VoxelDeltaProcessor.TryValidateNativeSnapshotForLoad(loadedVoxelDeltaSnapshot, out string voxelSnapshotValidationError))
+            {
+                string fallbackReason = string.IsNullOrEmpty(voxelSnapshotValidationError)
+                    ? "Loaded voxel delta snapshot failed validation."
+                    : voxelSnapshotValidationError;
+                if (HasLoadableVoxelDeltaDtoFallback(data))
+                {
+                    LogWarning("[SaveManager] Loaded voxel delta native snapshot failed validation; falling back to binary voxel payload: " + fallbackReason);
+                    if (loadedVoxelDeltaSnapshot.IsCreated)
+                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                    finalVoxelDeltaSnapshot = default;
+                    return true;
+                }
+
+                errorMessage = fallbackReason;
+                if (loadedVoxelDeltaSnapshot.IsCreated)
+                    DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                return false;
+            }
+
+            finalVoxelDeltaSnapshot = loadedVoxelDeltaSnapshot;
+            loadedVoxelDeltaSnapshot = default;
+            return true;
         }
 
         private static bool TryReadCandidateMetadata(
