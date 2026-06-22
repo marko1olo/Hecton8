@@ -6808,6 +6808,123 @@ namespace Hecton8.SaveSystem
             return writeHandle.DisposeDeferred(dependency);
         }
 
+        private static bool TryValidateSectorEntityStateHeader(
+            in AsyncWriteManager.ReadOnlyMapping mapping,
+            out SectorEntityStateFileHeader header,
+            out int headerSize,
+            out bool compact16,
+            out int recordCount,
+            out string error)
+        {
+            header = default;
+            compact16 = false;
+            recordCount = 0;
+            error = string.Empty;
+
+            headerSize = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>();
+            if (mapping.Length < headerSize + 8)
+            {
+                error = "Sector entity-state override file is truncated.";
+                return false;
+            }
+
+            header = UnsafeUtility.ReadArrayElement<SectorEntityStateFileHeader>((byte*)mapping.View, 0);
+            if (header.CompressedSize <= 0 ||
+                header.DecompressedSize <= 0 ||
+                header.RecordCount == 0 ||
+                mapping.Length < headerSize ||
+                header.CompressedSize > mapping.Length - headerSize)
+            {
+                error = "Sector entity-state override header is invalid.";
+                return false;
+            }
+
+            compact16 = header.Checksum == SectorEntityStateCompact16Magic;
+            if (header.Checksum != 0u && !compact16)
+            {
+                error = "Sector entity-state override format marker is unsupported.";
+                return false;
+            }
+
+            if (!TryConvertSectionCount(header.RecordCount, out recordCount))
+            {
+                error = "Sector entity-state override record count exceeds supported bounds.";
+                return false;
+            }
+
+            int recordStride = compact16
+                ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
+                : UnsafeUtility.SizeOf<EntityDataRecord>();
+            long expectedByteLength64 = (long)recordCount * recordStride;
+            if (expectedByteLength64 > int.MaxValue)
+            {
+                error = "Sector entity-state override byte count exceeds supported bounds.";
+                return false;
+            }
+
+            int expectedByteLength = (int)expectedByteLength64;
+            if (expectedByteLength != header.DecompressedSize)
+            {
+                error = "Sector entity-state override byte count does not match the record count.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryDecompressAndParseSectorEntityStates(
+            in AsyncWriteManager.ReadOnlyMapping mapping,
+            in SectorEntityStateFileHeader header,
+            int headerSize,
+            bool compact16,
+            int recordCount,
+            long sectorHash,
+            out EntityDataRecord[] entityStates,
+            out string error)
+        {
+            entityStates = null;
+            error = string.Empty;
+
+            using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                header.DecompressedSize,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorReadRawScratchLabel);
+            NativeArray<byte> rawBytes = rawBytesOwner.Array;
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBytes);
+            int decompressedLength = Lz4BlockDecompress(
+                (byte*)mapping.View + headerSize,
+                header.CompressedSize,
+                rawPtr,
+                header.DecompressedSize,
+                out _);
+            if (decompressedLength != header.DecompressedSize)
+            {
+                error = "Sector entity-state override decompression failed.";
+                return false;
+            }
+
+            entityStates = new EntityDataRecord[recordCount];
+            if (compact16)
+            {
+                SectorCompactEntityStateRecord16* compactPtr = (SectorCompactEntityStateRecord16*)rawPtr;
+                for (int i = 0; i < entityStates.Length; i++)
+                    entityStates[i] = UnpackCompactEntityState16(in compactPtr[i], sectorHash);
+            }
+            else
+            {
+                fixed (EntityDataRecord* destinationPtr = entityStates)
+                {
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
+                    {
+                        error = "Entity-state override copy exceeded destination bounds.";
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         internal static bool TryReadIndexedSectorEntityStateOverride(
             string absolutePath,
             out long sectorHash,
@@ -6829,91 +6946,13 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                int headerSize = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>();
-                if (mapping.Length < headerSize + 8)
-                {
-                    error = "Sector entity-state override file is truncated.";
+                if (!TryValidateSectorEntityStateHeader(in mapping, out SectorEntityStateFileHeader header, out int headerSize, out bool compact16, out int recordCount, out error))
                     return false;
-                }
 
-                SectorEntityStateFileHeader header = UnsafeUtility.ReadArrayElement<SectorEntityStateFileHeader>((byte*)mapping.View, 0);
                 sectorHash = header.SectorHash;
-                if (header.CompressedSize <= 0 ||
-                    header.DecompressedSize <= 0 ||
-                    header.RecordCount == 0 ||
-                    mapping.Length < headerSize ||
-                    header.CompressedSize > mapping.Length - headerSize)
-                {
-                    error = "Sector entity-state override header is invalid.";
-                    return false;
-                }
 
-                bool compact16 = header.Checksum == SectorEntityStateCompact16Magic;
-                if (header.Checksum != 0u && !compact16)
-                {
-                    error = "Sector entity-state override format marker is unsupported.";
+                if (!TryDecompressAndParseSectorEntityStates(in mapping, in header, headerSize, compact16, recordCount, sectorHash, out entityStates, out error))
                     return false;
-                }
-
-                if (!TryConvertSectionCount(header.RecordCount, out int recordCount))
-                {
-                    error = "Sector entity-state override record count exceeds supported bounds.";
-                    return false;
-                }
-
-                int recordStride = compact16
-                    ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
-                    : UnsafeUtility.SizeOf<EntityDataRecord>();
-                long expectedByteLength64 = (long)recordCount * recordStride;
-                if (expectedByteLength64 > int.MaxValue)
-                {
-                    error = "Sector entity-state override byte count exceeds supported bounds.";
-                    return false;
-                }
-
-                int expectedByteLength = (int)expectedByteLength64;
-                if (expectedByteLength != header.DecompressedSize)
-                {
-                    error = "Sector entity-state override byte count does not match the record count.";
-                    return false;
-                }
-
-                using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                    header.DecompressedSize,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorReadRawScratchLabel);
-                NativeArray<byte> rawBytes = rawBytesOwner.Array;
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBytes);
-                int decompressedLength = Lz4BlockDecompress(
-                    (byte*)mapping.View + headerSize,
-                    header.CompressedSize,
-                    rawPtr,
-                    header.DecompressedSize,
-                    out _);
-                if (decompressedLength != header.DecompressedSize)
-                {
-                    error = "Sector entity-state override decompression failed.";
-                    return false;
-                }
-
-                entityStates = new EntityDataRecord[recordCount];
-                if (compact16)
-                {
-                    SectorCompactEntityStateRecord16* compactPtr = (SectorCompactEntityStateRecord16*)rawPtr;
-                    for (int i = 0; i < entityStates.Length; i++)
-                        entityStates[i] = UnpackCompactEntityState16(in compactPtr[i], sectorHash);
-                }
-                else
-                {
-                    fixed (EntityDataRecord* destinationPtr = entityStates)
-                    {
-                        if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
-                        {
-                            error = "Entity-state override copy exceeded destination bounds.";
-                            return false;
-                        }
-                    }
-                }
 
                 return true;
             }
