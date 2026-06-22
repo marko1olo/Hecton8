@@ -267,10 +267,11 @@ namespace Hecton8.World
                     shiftingOrigin.SetOrigin(shiftOffset);
             }
 
-            foreach (var kvp in ShapeGerstnerBatched.Instances)
+            var gerstnerBatchedInstances = UnityEngine.Object.FindObjectsByType<ShapeGerstnerBatched>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None);
+            foreach (var instance in gerstnerBatchedInstances)
             {
-                if (kvp.Value != null)
-                    kvp.Value.SetOrigin(shiftOffset);
+                if (instance != null)
+                    instance.SetOrigin(shiftOffset);
             }
 
             // Clear persistent Crest simulation state so foam and dynamic waves do not integrate the 5000 m rebase as velocity.
