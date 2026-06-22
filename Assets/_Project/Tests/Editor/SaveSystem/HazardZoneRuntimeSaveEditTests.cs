@@ -322,7 +322,7 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(entityStateFlushIndex, entityStateWriteIndex, source);
 
             int modPayloadIndex = source.IndexOf(
-                "internal static bool TryCommitModPayloadSubSector(",
+                "private static unsafe bool TryWriteModPayloadOverrideTempFileToDisk(",
                 StringComparison.Ordinal);
             Assert.GreaterOrEqual(modPayloadIndex, 0, source);
             int modPayloadWriteIndex = source.IndexOf(

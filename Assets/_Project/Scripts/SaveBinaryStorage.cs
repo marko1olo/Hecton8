@@ -7074,11 +7074,10 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        internal static bool TryCommitModPayloadSubSector(
+        private static bool IsModPayloadCommitValid(
             string absoluteSavePath,
             string tempOverridePath,
             uint modHash,
-            long pagedSectorHash,
             NativeArray<byte> payloadBytes,
             int payloadLength,
             out string error)
@@ -7087,12 +7086,6 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(absoluteSavePath) || string.IsNullOrEmpty(tempOverridePath))
             {
                 error = "Mod payload commit paths are invalid.";
-                return false;
-            }
-
-            if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))
-            {
-                error = staleTempDeleteError;
                 return false;
             }
 
@@ -7114,21 +7107,20 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                ModPayloadSubBlockSizeBytes,
-                NativeArrayOptions.ClearMemory,
-                IndexedSectorModPayloadRawBlockScratchLabel);
-            NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
-            int compressedCapacity = ModPayloadSubBlockSizeBytes + (ModPayloadSubBlockSizeBytes / 255) + 16 + ProtectedCompressedBlockHeaderBytes + IndexedSectorBlockHeaderSize + 32;
-            int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
-            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                fileCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                IndexedSectorOverrideFileScratchLabel);
-            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+            return true;
+        }
 
+        private static unsafe bool TryFormatModPayloadRawBlock(
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            NativeArray<byte> rawBlockBytes,
+            out uint rawBlockChecksum,
+            out string error)
+        {
+            error = string.Empty;
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
-            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
             byte* payloadSource = payloadLength > 0
                 ? (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payloadBytes)
                 : null;
@@ -7138,6 +7130,7 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(rawPtr + ModPayloadHeaderSizeBytes, rawBlockBytes.Length - ModPayloadHeaderSizeBytes, payloadSource, payloadLength))
                 {
                     error = "Mod payload write exceeded sub-sector bounds.";
+                    rawBlockChecksum = 0;
                     return false;
                 }
             }
@@ -7158,9 +7151,23 @@ namespace Hecton8.SaveSystem
                 Reserved = 0u
             };
             UnsafeUtility.CopyStructureToPtr(ref payloadHeader, rawPtr);
-            uint rawBlockChecksum = Hash32(rawPtr, ModPayloadSubBlockSizeBytes);
+            rawBlockChecksum = Hash32(rawPtr, ModPayloadSubBlockSizeBytes);
+            return true;
+        }
 
+        private static unsafe bool TryWriteModPayloadOverrideTempFileToDisk(
+            string tempOverridePath,
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> rawBlockBytes,
+            uint rawBlockChecksum,
+            NativeArray<byte> fileBytes,
+            out string error)
+        {
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
             int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
+
             if (!TryWriteIndexedCompressedBlock(
                     rawPtr,
                     ModPayloadSubBlockSizeBytes,
@@ -7200,6 +7207,48 @@ namespace Hecton8.SaveSystem
                 _ = TryDeleteFileIfExists(tempOverridePath, out _);
                 return false;
             }
+
+            return true;
+        }
+
+        internal static bool TryCommitModPayloadSubSector(
+            string absoluteSavePath,
+            string tempOverridePath,
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            out string error)
+        {
+            if (!IsModPayloadCommitValid(absoluteSavePath, tempOverridePath, modHash, payloadBytes, payloadLength, out error))
+                return false;
+
+            if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))
+            {
+                error = staleTempDeleteError;
+                return false;
+            }
+
+            using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                ModPayloadSubBlockSizeBytes,
+                NativeArrayOptions.ClearMemory,
+                IndexedSectorModPayloadRawBlockScratchLabel);
+            NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
+
+            int compressedCapacity = ModPayloadSubBlockSizeBytes + (ModPayloadSubBlockSizeBytes / 255) + 16 + ProtectedCompressedBlockHeaderBytes + IndexedSectorBlockHeaderSize + 32;
+            int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
+
+            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                fileCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideFileScratchLabel);
+            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+
+            if (!TryFormatModPayloadRawBlock(modHash, pagedSectorHash, payloadBytes, payloadLength, rawBlockBytes, out uint rawBlockChecksum, out error))
+                return false;
+
+            if (!TryWriteModPayloadOverrideTempFileToDisk(tempOverridePath, modHash, pagedSectorHash, rawBlockBytes, rawBlockChecksum, fileBytes, out error))
+                return false;
 
             if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
                 return true;
