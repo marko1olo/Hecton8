@@ -657,10 +657,6 @@ namespace Hecton8.Crafting
         //  IInteractable
         // ----------------------------------------------------------
 
-        public void OnHoverStart() { }
-
-        public void OnHoverEnd() { }
-
         public void Interact(Transform interactor)
         {
             _playerTransform = interactor;
