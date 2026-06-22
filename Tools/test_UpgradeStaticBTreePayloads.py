@@ -176,6 +176,39 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
             finally:
                 tool.BABEL_MANIFEST_PATH = old_manifest
 
+    def test_update_static_manifest(self):
+        import tempfile
+        import hashlib
+
+        # Create mock data
+        blob = b"mock payload data"
+        # The tuple header contains crc32 at index 6
+        header = [0] * 14
+        header[6] = 0x12345678  # mock CRC32
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir) / "manifest.json"
+            # Write initial dummy JSON
+            initial_data = {"existingKey": "existingValue"}
+            tmp_path.write_text(json.dumps(initial_data), encoding="utf-8")
+
+            # Call function
+            tool.update_static_manifest(tmp_path, blob, tuple(header))
+
+            # Read mutated JSON
+            mutated_data = json.loads(tmp_path.read_text(encoding="utf-8"))
+
+            # Assert values
+            self.assertEqual(mutated_data["existingKey"], "existingValue")
+            self.assertEqual(mutated_data["binaryBytes"], len(blob))
+            self.assertEqual(mutated_data["sha256"], hashlib.sha256(blob).hexdigest().upper())
+            self.assertEqual(mutated_data["payloadCrc32"], "0x12345678")
+            self.assertEqual(mutated_data["babelCrc32"], "0x00000000")
+            self.assertEqual(mutated_data["flags"], "0x0")
+            self.assertTrue(mutated_data["cacheBTree"]["enabled"])
+            self.assertEqual(mutated_data["recordAlignmentBytes"], 64)
+            self.assertEqual(mutated_data["status"], "BALANCE_STATIC_BTREE_VERIFIED_PENDING_UNITY_PROOF")
+
     def test_patch_static(self):
         import tempfile
         import os
