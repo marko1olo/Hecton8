@@ -900,8 +900,6 @@ namespace Hecton8.Core.Diagnostics
 
         public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-        public void PreSimulationTick(in DispatcherTimingDTO timing) { }
-
         public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
 
         public void PostSimulationTick(in DispatcherTimingDTO timing)
@@ -925,8 +923,6 @@ namespace Hecton8.Core.Diagnostics
             ProcessQueue(timestampSeconds, frameId);
             WriteExporterTelemetry(timestampSeconds, frameId);
         }
-
-        public void VisualSyncTick(in DispatcherTimingDTO timing) { }
 
         private void OnEnable()
         {

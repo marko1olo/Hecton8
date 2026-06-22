@@ -467,20 +467,12 @@ namespace Hecton8.Rendering.OceanSinglePass
             return 0u;
         }
 
-        public void PreSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
         public JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
             return dependsOn;
-        }
-
-        public void PostSimulationTick(in DispatcherTimingDTO timing)
-        {
         }
 
         public void VisualSyncTick(in DispatcherTimingDTO timing)

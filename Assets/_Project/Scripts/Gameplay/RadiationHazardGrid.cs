@@ -3665,13 +3665,10 @@ namespace Hecton8.Gameplay
             public byte GetBucketId() => byte.MaxValue;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
-            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
             {
                 return _owner != null ? _owner.ScheduleRadiationSimulation(in timing, in context, dependsOn) : dependsOn;
             }
-            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
-            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class PostSimulationPhaseSystem : IDispatcherSystem
@@ -3689,14 +3686,12 @@ namespace Hecton8.Gameplay
             public byte GetBucketId() => byte.MaxValue;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
-            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
             public void PostSimulationTick(in DispatcherTimingDTO timing)
             {
                 if (_owner != null)
                     _owner.PostSimulationRadiation(in timing);
             }
-            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class VisualSyncPhaseSystem : IDispatcherSystem
@@ -3714,9 +3709,7 @@ namespace Hecton8.Gameplay
             public byte GetBucketId() => byte.MaxValue;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
-            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
-            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
                 if (_owner != null)

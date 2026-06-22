@@ -5315,10 +5315,6 @@ namespace Hecton8.Inventory
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -5332,9 +5328,6 @@ namespace Hecton8.Inventory
                 _owner?.PostSimulationTick(in timing);
             }
 
-            public void VisualSyncTick(in DispatcherTimingDTO timing)
-            {
-            }
         }
 
         private void DrainSalinityBiomeSignals()
