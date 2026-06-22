@@ -42,6 +42,44 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void Process_WithNegativeDeltaTime_ReturnsZeroOutput()
+        {
+            var input = new CameraJuiceInput { deltaTime = -1f };
+            var output = _processor.Process(in input, _suitData);
+
+            Assert.AreEqual(Vector3.zero, output.localPositionOffset);
+            Assert.AreEqual(0f, output.rollOffset);
+            Assert.AreEqual(0f, output.pitchOffset);
+            Assert.AreEqual(0f, output.fovOffset);
+            Assert.AreEqual(0, output.stepEvent);
+        }
+
+        [Test]
+        public void Process_ResetsFrameSpecificFlags()
+        {
+            // _splashThisFrame is initially set to false inside Process.
+            // Set some flags to true manually via reflection to simulate a state right before Process starts,
+            // or use methods that set them to true.
+            _processor.RegisterSplash(10f, _suitData);
+
+            var fieldSplashThisFrame = typeof(CameraJuiceProcessor).GetField("_splashThisFrame", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var fieldSubmergeChange = typeof(CameraJuiceProcessor).GetField("_submergeChangeThisFrame", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var fieldExhale = typeof(CameraJuiceProcessor).GetField("_exhaleThisFrame", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // We can manually set them to true
+            fieldSubmergeChange.SetValue(_processor, true);
+            fieldSplashThisFrame.SetValue(_processor, true);
+            fieldExhale.SetValue(_processor, true);
+
+            var input = new CameraJuiceInput { deltaTime = 0.1f };
+            _processor.Process(in input, _suitData);
+
+            Assert.IsFalse((bool)fieldSplashThisFrame.GetValue(_processor), "_splashThisFrame should be reset to false after Process() starts");
+            Assert.IsFalse((bool)fieldSubmergeChange.GetValue(_processor), "_submergeChangeThisFrame should be reset to false after Process() starts");
+            Assert.IsFalse((bool)fieldExhale.GetValue(_processor), "_exhaleThisFrame should be reset to false after Process() starts");
+        }
+
+        [Test]
         public void Process_DryGroundWalk_WithMovement_AppliesHeadBob()
         {
             _suitData.maxWalkSpeed = 5f;
@@ -474,6 +512,28 @@ namespace Hecton8.Tests.Editor
             if (fieldInfo == null)
                 throw new System.Exception($"Field '{fieldName}' not found.");
             return (T)fieldInfo.GetValue(_processor);
+        }
+
+        [Test]
+        public void RegisterLandJumpLaunch_ResetsBobFields()
+        {
+            var fieldIntensity = typeof(CameraJuiceProcessor).GetField("_bobIntensity", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var fieldWasInLowPhase = typeof(CameraJuiceProcessor).GetField("_wasInLowPhase", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            // Set to non-default values
+            fieldIntensity.SetValue(_processor, 5.0f);
+            fieldWasInLowPhase.SetValue(_processor, true);
+
+            // Verify they were set
+            Assert.AreEqual(5.0f, (float)fieldIntensity.GetValue(_processor));
+            Assert.IsTrue((bool)fieldWasInLowPhase.GetValue(_processor));
+
+            // Call the method
+            _processor.RegisterLandJumpLaunch();
+
+            // Assert they were reset
+            Assert.AreEqual(0f, (float)fieldIntensity.GetValue(_processor));
+            Assert.IsFalse((bool)fieldWasInLowPhase.GetValue(_processor));
         }
     }
 }
