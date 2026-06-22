@@ -883,7 +883,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EXHALE RHYTHM — dip only, no pitch (v7.0a fix)
+        //  EXHALE RHYTHM — dip only, no pitch (v7.0a)
         // ══════════════════════════════════════════════════════════
 
         private void ProcessExhaleRhythm(in CameraJuiceInput input, SuitData suit, float dt)
