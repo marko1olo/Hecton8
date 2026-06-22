@@ -52,7 +52,7 @@ namespace Technie.PhysicsCreator
 	public class RigidColliderCreator : MonoBehaviour, ICreatorComponent
 	{
 		public PaintingData paintingData;
-		public HullData hullData;
+		public HullMeshAsset hullData;
 
 		[SerializeField]
 		private List<HullMapping> hullMapping;
