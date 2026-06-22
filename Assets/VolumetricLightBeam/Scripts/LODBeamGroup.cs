@@ -216,7 +216,7 @@ namespace VLB
 #if UNITY_EDITOR
         public bool IsPropertlyLoaded()
         {
-            return m_LODGroup != null;
+            return m_LODGroup != null && m_LODGroup.enabled;
         }
 
         public bool GetLODFromLODGroup(int lodIdx, ref LOD lodData)
