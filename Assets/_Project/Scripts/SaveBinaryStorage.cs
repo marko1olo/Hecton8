@@ -3021,7 +3021,7 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct RadixSortSectorEntityStateEntriesJob : IJob
+        internal struct RadixSortSectorEntityStateEntriesJob : IJob
         {
             public NativeArray<SectorEntityStateSortEntry> Entries;
             public NativeArray<SectorEntityStateSortEntry> Scratch;
