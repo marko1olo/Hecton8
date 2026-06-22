@@ -274,8 +274,7 @@ namespace VLB
             }
 #endif
 
-            if (m_NeedToUpdateOcclusionNextFrame && m_Master && m_DepthCamera
-                && Time.frameCount > 1)  // fix NullReferenceException in UnityEngine.Rendering.Universal.Internal.CopyDepthPass.Execute when using SRP
+            if (m_NeedToUpdateOcclusionNextFrame && m_Master && m_DepthCamera)
             {
                 ProcessOcclusionInternal();
                 m_NeedToUpdateOcclusionNextFrame = false;
