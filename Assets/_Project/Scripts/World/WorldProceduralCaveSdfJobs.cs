@@ -146,6 +146,14 @@ namespace Hecton8.World
             // Final density modification
             float newDensity = currentDensity - carve + strataRestore;
 
+            // === CRITICAL SAFETY NET ===
+            // Guarantee that caves NEVER punch through the terrain surface (creating black holes).
+            // If we are anywhere near the protection zone, do not allow density to go below a solid positive value.
+            if (currentDensity < SurfaceProtectionMeters + 25.0f)
+            {
+                newDensity = math.max(newDensity, 0.5f);
+            }
+
             Sdf[index] = newDensity;
         }
 

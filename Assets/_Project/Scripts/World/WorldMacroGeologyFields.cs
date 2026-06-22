@@ -365,8 +365,9 @@ namespace Hecton8.World
             float plate1Type = HashToUnitFloat(bestHash1 ^ 0xDDCCBBAAu);
             float plate2Type = HashToUnitFloat(bestHash2 ^ 0xDDCCBBAAu);
             
-            // Continent vs Abyss
-            bool isContinent = plate1Type > 0.6f; // 40% of plates are continents
+            // Continent vs Abyss — soft classification for smooth biome blending
+            float continentality = math.smoothstep(0.45f, 0.75f, plate1Type);
+            bool isContinent = plate1Type > 0.6f; // binary for code path selection only
             float plateBaseDepth = isContinent ? p.ShelfDepthMeters : p.AbyssDepthMeters;
             
             // 2. BOUNDARY FEATURES (Ridges & Trenches)
@@ -393,23 +394,24 @@ namespace Hecton8.World
                 
                 // Continental Shelf Dropoff (ShelfBreak)
                 shelfBreakMask = 1f - math.smoothstep(0f, p.ShelfBreakWidthMeters * 2.0f, distanceToBoundary);
-                shelfMask = isContinent ? math.saturate(distanceToBoundary / (p.ShelfBreakWidthMeters * 2.0f)) : 0f;
+                // Soft continentality blend instead of hard bool for shelf mask
+                shelfMask = continentality * math.saturate(distanceToBoundary / (p.ShelfBreakWidthMeters * 2.0f));
                 
-                // Submarine Canyons (Deep cuts along the shelf break)
-                if (isContinent)
+                // Submarine Canyons — scaled by continentality instead of hard bool gate
                 {
                     float canyonNoise = FractalNoise01(new float2(pos.x * 0.0004f, pos.y * 0.0004f), p.Seed ^ 0x0CA14405u);
                     float canyonDepthProfile = math.pow(math.smoothstep(0.6f, 0.95f, canyonNoise), 3f);
                     float canyonMask = canyonDepthProfile * math.smoothstep(0.1f, 0.9f, shelfBreakMask);
-                    depth += canyonMask * 800f; // Cut deep into the shelf
+                    depth += canyonMask * 800f * continentality;
                 }
                 
-                // Transition depth across the boundary (smoothstep over 3km)
-                // If we are on the continent side, edgeDistNorm is positive away from the ocean.
-                // We fake the transition by blending based on distance.
-                float blendDist = 2000f;
+                // Wide depth blend with noise-warped boundary for organic biome transitions
+                float blendDist = 4000f;
                 float blendSign = isContinent ? 1f : -1f;
                 float edgeVal = distanceToBoundary * blendSign;
+                // Noise-warp the transition position so the biome boundary is jagged/organic
+                float transitionNoise = (FractalSimplexNoise01(pos * 0.00025f, p.Seed ^ 0xBE4D7A51u) * 2f - 1f) * 1800f;
+                edgeVal += transitionNoise;
                 float blendWeight = math.smoothstep(-blendDist, blendDist, edgeVal);
                 depth = math.lerp(p.AbyssDepthMeters, p.ShelfDepthMeters, blendWeight);
                 
@@ -680,26 +682,12 @@ namespace Hecton8.World
             float terraceStrength = math.saturate(shelfBreakMask + ridgeMask * 0.5f + faultMask * 0.6f);
             if (terraceStrength > 0.01f)
             {
-                // We use a 1D noise based on depth to determine the "hardness" of the geological strata layer.
-                // Hard strata = sharp cliff. Soft strata = wide sloped sediment terrace.
-                float strataNoise = FractalNoise01(new float2(depth * 0.02f, 0f), p.Seed ^ 0x578A7A5u);
+                // Replaced hard math.floor steps with organic noise blending to prevent terracing artifacts (staircase).
+                float strataNoise = FractalNoise01(new float2(absoluteX * 0.003f, absoluteZ * 0.003f), p.Seed ^ 0x578A7A5u) * 2f - 1f;
+                float secondaryNoise = FractalNoise01(new float2(absoluteX * 0.008f, absoluteZ * 0.008f), p.Seed ^ 0x4A8D4E5u) * 2f - 1f;
                 
-                float baseTerraceHeight = 40f; // Average layer thickness
-                // Warp the depth: where noise is high, depth compresses (cliff). where noise is low, depth stretches (shelf).
-                float warpedDepth = depth + strataNoise * 30f;
-                
-                float normalizedDepth = warpedDepth / baseTerraceHeight;
-                float baseStep = math.floor(normalizedDepth);
-                float frac = normalizedDepth - baseStep;
-                
-                // The easing sharpness depends on the hardness of the current step
-                float stepHardness = FractalNoise01(new float2(baseStep * 0.5f, 0f), p.Seed ^ 0x4A8D4E5u);
-                float edgeWidth = math.lerp(0.4f, 0.05f, stepHardness); // Soft = 0.4, Hard = 0.05
-                
-                float eased = math.smoothstep(0.5f - edgeWidth, 0.5f + edgeWidth, frac);
-                float terracedDepth = (baseStep + eased) * baseTerraceHeight;
-                
-                depth = math.lerp(depth, terracedDepth, terraceStrength * 0.85f);
+                float organicBump = (strataNoise * 35f + secondaryNoise * 15f) * terraceStrength;
+                depth = math.lerp(depth, depth + organicBump, terraceStrength * 0.85f);
             }
 
             masks = new MacroMasks
