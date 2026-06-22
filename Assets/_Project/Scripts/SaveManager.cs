@@ -7521,87 +7521,13 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                DeleteFileIfExists(tempSavePath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                File.Copy(absoluteBackupPath, absoluteTempPath, true);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-
-                if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError))
+                if (!TryCopyBackupToTempForPromotion(absoluteBackupPath, absoluteTempPath, tempSavePath, backupSourceBytes, out errorMessage))
                 {
-                    errorMessage = string.IsNullOrEmpty(tempLengthError)
-                        ? "Critical recovery temp promoted file length could not be resolved."
-                        : tempLengthError;
-                    DeleteFileIfExists(tempSavePath);
                     return false;
                 }
 
-                if (tempBytes != backupSourceBytes)
+                if (!TryCommitTempToPrimaryForPromotion(absoluteTempPath, absolutePrimaryPath, backupSourceBytes, out errorMessage))
                 {
-                    errorMessage = "Critical recovery temp promoted file length did not match backup source.";
-                    DeleteFileIfExists(tempSavePath);
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError))
-                {
-                    errorMessage = string.IsNullOrEmpty(tempFlushError)
-                        ? "Critical recovery temp promoted file flush failed."
-                        : tempFlushError;
-                    DeleteFileIfExists(tempSavePath);
-                    return false;
-                }
-
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
-                if (File.Exists(absolutePrimaryPath))
-                {
-                    File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);
-                }
-                else
-                {
-                    File.Move(absoluteTempPath, absolutePrimaryPath);
-                }
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
-
-                if (File.Exists(absoluteTempPath))
-                {
-                    try
-                    {
-                        File.Delete(absoluteTempPath);
-                    }
-                    finally
-                    {
-                        AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                    }
-                }
-
-                if (!File.Exists(absolutePrimaryPath))
-                {
-                    errorMessage = "Primary file was missing after atomic backup promotion.";
-                    return false;
-                }
-
-                if (!AsyncWriteManager.TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError))
-                {
-                    errorMessage = string.IsNullOrEmpty(lengthError)
-                        ? "Critical recovery promoted primary file length could not be resolved."
-                        : lengthError;
-                    return false;
-                }
-
-                if (promotedBytes != backupSourceBytes)
-                {
-                    errorMessage = "Critical recovery promoted primary length did not match backup source.";
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError))
-                {
-                    errorMessage = string.IsNullOrEmpty(flushError)
-                        ? "Critical recovery promoted primary flush failed."
-                        : flushError;
                     return false;
                 }
 
@@ -7621,6 +7547,113 @@ namespace Hecton8.SaveSystem
 
                 return false;
             }
+        }
+
+        private static bool TryCopyBackupToTempForPromotion(
+            string absoluteBackupPath,
+            string absoluteTempPath,
+            string tempSavePath,
+            long backupSourceBytes,
+            out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            DeleteFileIfExists(tempSavePath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            File.Copy(absoluteBackupPath, absoluteTempPath, true);
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+
+            if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError))
+            {
+                errorMessage = string.IsNullOrEmpty(tempLengthError)
+                    ? "Critical recovery temp promoted file length could not be resolved."
+                    : tempLengthError;
+                DeleteFileIfExists(tempSavePath);
+                return false;
+            }
+
+            if (tempBytes != backupSourceBytes)
+            {
+                errorMessage = "Critical recovery temp promoted file length did not match backup source.";
+                DeleteFileIfExists(tempSavePath);
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError))
+            {
+                errorMessage = string.IsNullOrEmpty(tempFlushError)
+                    ? "Critical recovery temp promoted file flush failed."
+                    : tempFlushError;
+                DeleteFileIfExists(tempSavePath);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryCommitTempToPrimaryForPromotion(
+            string absoluteTempPath,
+            string absolutePrimaryPath,
+            long backupSourceBytes,
+            out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
+            if (File.Exists(absolutePrimaryPath))
+            {
+                File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);
+            }
+            else
+            {
+                File.Move(absoluteTempPath, absolutePrimaryPath);
+            }
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
+
+            if (File.Exists(absoluteTempPath))
+            {
+                try
+                {
+                    File.Delete(absoluteTempPath);
+                }
+                finally
+                {
+                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                }
+            }
+
+            if (!File.Exists(absolutePrimaryPath))
+            {
+                errorMessage = "Primary file was missing after atomic backup promotion.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError))
+            {
+                errorMessage = string.IsNullOrEmpty(lengthError)
+                    ? "Critical recovery promoted primary file length could not be resolved."
+                    : lengthError;
+                return false;
+            }
+
+            if (promotedBytes != backupSourceBytes)
+            {
+                errorMessage = "Critical recovery promoted primary length did not match backup source.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError))
+            {
+                errorMessage = string.IsNullOrEmpty(flushError)
+                    ? "Critical recovery promoted primary flush failed."
+                    : flushError;
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryLoadCandidate(
