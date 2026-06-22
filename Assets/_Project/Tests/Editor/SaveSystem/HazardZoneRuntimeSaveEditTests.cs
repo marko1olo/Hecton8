@@ -292,7 +292,7 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(compactionWriteIndex, compactionIndex, source);
 
             int persistentOverrideIndex = source.IndexOf(
-                "internal static bool TryWriteIndexedPersistentWorldSectorOverride(",
+                "private static bool TryWriteAndCompressPersistentWorldSectorBlock(",
                 StringComparison.Ordinal);
             Assert.GreaterOrEqual(persistentOverrideIndex, 0, source);
             int persistentOverrideWriteIndex = source.IndexOf(

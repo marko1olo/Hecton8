@@ -6333,76 +6333,16 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
-                long compressedCapacityLong =
-                    (long)rawSectionLength +
-                    (rawSectionLength / 255) +
-                    16L +
-                    ((long)blockCount * ProtectedCompressedBlockHeaderBytes) +
-                    IndexedSectorBlockHeaderSize +
-                    32L;
-                long fileCapacityLong = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacityLong;
-                if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
-                {
-                    error = "Sector override compressed buffer exceeds supported bounds.";
-                    return false;
-                }
-
-                int fileCapacity = (int)fileCapacityLong;
-
-                using RegisteredTransientNativeArray<byte> rawSectionBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                return TryWriteAndCompressPersistentWorldSectorBlock(
+                    absolutePath,
+                    sectorHash,
                     rawSectionLength,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorOverrideRawSectionScratchLabel);
-                using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                    fileCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorOverrideFileScratchLabel);
-                NativeArray<byte> rawSectionBytes = rawSectionBytesOwner.Array;
-                NativeArray<byte> fileBytes = fileBytesOwner.Array;
-                byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
-                byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
-                if (!WritePersistentWorldSection(
-                        rawSectionPtr,
-                        sectorRecordsReadOnly,
-                        chunkLookup,
-                        chunkTable,
-                        itemHashLookup,
-                        itemHashTable,
-                        out error))
-                {
-                    return false;
-                }
-                uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
-
-                int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
-                if (!TryWriteIndexedCompressedBlock(
-                        rawSectionPtr,
-                        rawSectionLength,
-                        filePtr,
-                        fileBytes.Length,
-                        ref fileCursor,
-                        out int storedBlockLength,
-                        out uint blockFlags,
-                        out error))
-                {
-                    return false;
-                }
-
-                SectorOverrideFileHeader overrideHeader = new SectorOverrideFileHeader
-                {
-                    SectorHash = sectorHash,
-                    CompressedSize = storedBlockLength,
-                    DecompressedSize = rawSectionLength,
-                    Checksum = rawSectionChecksum,
-                    Flags = blockFlags
-                };
-
-                UnsafeUtility.CopyStructureToPtr(ref overrideHeader, filePtr);
-                if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
-                    return false;
-
-                return AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error);
+                    sectorRecordsReadOnly,
+                    chunkLookup,
+                    chunkTable,
+                    itemHashLookup,
+                    itemHashTable,
+                    out error);
             }
             finally
             {
@@ -6413,6 +6353,90 @@ namespace Hecton8.SaveSystem
                     ref itemHashTable,
                     ref tableSentinelIds);
             }
+        }
+
+        private static bool TryWriteAndCompressPersistentWorldSectorBlock(
+            string absolutePath,
+            long sectorHash,
+            int rawSectionLength,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly sectorRecordsReadOnly,
+            NativeParallelHashMap<int3, ushort> chunkLookup,
+            NativeList<int3> chunkTable,
+            NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            NativeList<ulong> itemHashTable,
+            out string error)
+        {
+            int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
+            long compressedCapacityLong =
+                (long)rawSectionLength +
+                (rawSectionLength / 255) +
+                16L +
+                ((long)blockCount * ProtectedCompressedBlockHeaderBytes) +
+                IndexedSectorBlockHeaderSize +
+                32L;
+            long fileCapacityLong = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacityLong;
+            if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
+            {
+                error = "Sector override compressed buffer exceeds supported bounds.";
+                return false;
+            }
+
+            int fileCapacity = (int)fileCapacityLong;
+
+            using RegisteredTransientNativeArray<byte> rawSectionBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                rawSectionLength,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideRawSectionScratchLabel);
+            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                fileCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideFileScratchLabel);
+            NativeArray<byte> rawSectionBytes = rawSectionBytesOwner.Array;
+            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+            byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
+
+            if (!WritePersistentWorldSection(
+                    rawSectionPtr,
+                    sectorRecordsReadOnly,
+                    chunkLookup,
+                    chunkTable,
+                    itemHashLookup,
+                    itemHashTable,
+                    out error))
+            {
+                return false;
+            }
+            uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
+
+            int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
+            if (!TryWriteIndexedCompressedBlock(
+                    rawSectionPtr,
+                    rawSectionLength,
+                    filePtr,
+                    fileBytes.Length,
+                    ref fileCursor,
+                    out int storedBlockLength,
+                    out uint blockFlags,
+                    out error))
+            {
+                return false;
+            }
+
+            SectorOverrideFileHeader overrideHeader = new SectorOverrideFileHeader
+            {
+                SectorHash = sectorHash,
+                CompressedSize = storedBlockLength,
+                DecompressedSize = rawSectionLength,
+                Checksum = rawSectionChecksum,
+                Flags = blockFlags
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref overrideHeader, filePtr);
+            if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
+                return false;
+
+            return AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error);
         }
 
         internal static bool TryReadIndexedPersistentWorldSectorOverride(
