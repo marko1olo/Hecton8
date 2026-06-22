@@ -7656,6 +7656,128 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool TryPrepareIndexedCompactionBuffer(
+            in SaveFileHeader header,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            out NativeArray<byte> compactBytes,
+            out int compactLength,
+            out bool requiresCompaction,
+            out string error)
+        {
+            compactBytes = default;
+            compactLength = 0;
+            requiresCompaction = false;
+
+            if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+                return false;
+
+            int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
+            long metadataOffset = header.PlayerOffset;
+            long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
+            if (metadataOffset < headerSizeBytes + directoryBytes ||
+                metadataEndOffset < metadataOffset ||
+                metadataEndOffset > mapping.Length)
+            {
+                error = "Indexed sector compaction metadata range is invalid.";
+                return false;
+            }
+
+            long compactLengthLong = metadataEndOffset;
+            if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                return false;
+            int populatedSectorCount = 0;
+            for (int i = 0; i < sectorEntries.Length; i++)
+            {
+                SectorEntry entry = sectorEntries[i];
+                if (!IsIndexedSectorEntryPopulated(in entry))
+                    continue;
+
+                populatedSectorCount++;
+                compactLengthLong += entry.CompressedSize;
+                if (compactLengthLong > int.MaxValue)
+                {
+                    error = "Indexed sector compaction exceeds the portable native buffer range.";
+                    return false;
+                }
+            }
+
+            if (populatedSectorCount != indexedSectorCount)
+            {
+                error = "Indexed sector compaction directory count mismatch.";
+                return false;
+            }
+
+            if (compactLengthLong >= mapping.Length)
+                return true;
+
+            byte* mappedFilePtr = (byte*)mapping.View;
+            byte* directoryPtr = mappedFilePtr + headerSizeBytes;
+            if (!TryRecoverCachedIndexedMetadataHashLow32(
+                    in header,
+                    directoryPtr,
+                    directoryBytes,
+                    sectorEntries,
+                    out ulong metadataHash64))
+            {
+                error = "Indexed sector compaction metadata hash recovery failed.";
+                return false;
+            }
+
+            compactLength = (int)compactLengthLong;
+            compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
+                compactLength,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorCompactionBufferLabel);
+            byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
+            {
+                error = "Indexed sector compaction metadata copy exceeded bounds.";
+                return false;
+            }
+
+            long writeCursor = metadataEndOffset;
+            int directoryEntryCursor = headerSizeBytes + IndexedSectorDirectoryHeaderSize;
+            for (int i = 0; i < sectorEntries.Length; i++)
+            {
+                SectorEntry entry = sectorEntries[i];
+                if (!IsIndexedSectorEntryPopulated(in entry))
+                {
+                    directoryEntryCursor += sectorEntrySize;
+                    continue;
+                }
+
+                if (!UnsafeMemoryCopyGuard.SafeCopy(
+                        compactPtr + writeCursor,
+                        compactLength - writeCursor,
+                        mappedFilePtr + entry.ByteOffset,
+                        entry.CompressedSize))
+                {
+                    error = "Indexed sector compaction sector copy exceeded bounds.";
+                    return false;
+                }
+
+                entry.ByteOffset = writeCursor;
+                sectorEntries[i] = entry;
+                WriteIndexedSectorEntry(compactPtr + directoryEntryCursor, sectorEntrySize, in entry);
+                directoryEntryCursor += sectorEntrySize;
+                writeCursor += entry.CompressedSize;
+            }
+
+            SaveFileHeader updatedHeader = ReadVersionedSaveFileHeader(compactPtr, header.Version);
+            ulong directoryHash64 = updatedHeader.PlayerOffset > headerSizeBytes
+                ? Hash64(compactPtr + headerSizeBytes, (int)(updatedHeader.PlayerOffset - headerSizeBytes))
+                : 0UL;
+            updatedHeader.HashPayload64 = metadataHash64 ^ directoryHash64;
+            updatedHeader.Checksum = ComputeIndexedChecksumRoot(unchecked((uint)metadataHash64), sectorEntries);
+            updatedHeader.HashHeader64 = 0UL;
+            updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
+            WriteVersionedSaveFileHeader(compactPtr, ref updatedHeader);
+            requiresCompaction = true;
+            return true;
+        }
+
         internal static bool TryCompactIndexedPersistentWorldSectors(string absolutePath, out string error)
         {
             error = string.Empty;
@@ -7670,123 +7792,24 @@ namespace Hecton8.SaveSystem
 
             NativeArray<byte> compactBytes = default;
             int compactLength = 0;
-            bool writePrepared = false;
+            bool success = false;
+            bool requiresCompaction = false;
             try
             {
-                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
-                    return false;
-
-                int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
-                int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
-                int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
-                long metadataOffset = header.PlayerOffset;
-                long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
-                if (metadataOffset < headerSizeBytes + directoryBytes ||
-                    metadataEndOffset < metadataOffset ||
-                    metadataEndOffset > mapping.Length)
-                {
-                    error = "Indexed sector compaction metadata range is invalid.";
-                    return false;
-                }
-
-                long compactLengthLong = metadataEndOffset;
-                if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
-                    return false;
-                int populatedSectorCount = 0;
-                for (int i = 0; i < sectorEntries.Length; i++)
-                {
-                    SectorEntry entry = sectorEntries[i];
-                    if (!IsIndexedSectorEntryPopulated(in entry))
-                        continue;
-
-                    populatedSectorCount++;
-                    compactLengthLong += entry.CompressedSize;
-                    if (compactLengthLong > int.MaxValue)
-                    {
-                        error = "Indexed sector compaction exceeds the portable native buffer range.";
-                        return false;
-                    }
-                }
-
-                if (populatedSectorCount != indexedSectorCount)
-                {
-                    error = "Indexed sector compaction directory count mismatch.";
-                    return false;
-                }
-
-                if (compactLengthLong >= mapping.Length)
-                    return true;
-
-                byte* mappedFilePtr = (byte*)mapping.View;
-                byte* directoryPtr = mappedFilePtr + headerSizeBytes;
-                if (!TryRecoverCachedIndexedMetadataHashLow32(
-                        in header,
-                        directoryPtr,
-                        directoryBytes,
-                        sectorEntries,
-                        out ulong metadataHash64))
-                {
-                    error = "Indexed sector compaction metadata hash recovery failed.";
-                    return false;
-                }
-
-                compactLength = (int)compactLengthLong;
-                compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
-                    compactLength,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorCompactionBufferLabel);
-                byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
-                {
-                    error = "Indexed sector compaction metadata copy exceeded bounds.";
-                    return false;
-                }
-
-                long writeCursor = metadataEndOffset;
-                int directoryEntryCursor = headerSizeBytes + IndexedSectorDirectoryHeaderSize;
-                for (int i = 0; i < sectorEntries.Length; i++)
-                {
-                    SectorEntry entry = sectorEntries[i];
-                    if (!IsIndexedSectorEntryPopulated(in entry))
-                    {
-                        directoryEntryCursor += sectorEntrySize;
-                        continue;
-                    }
-
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(
-                            compactPtr + writeCursor,
-                            compactLength - writeCursor,
-                            mappedFilePtr + entry.ByteOffset,
-                            entry.CompressedSize))
-                    {
-                        error = "Indexed sector compaction sector copy exceeded bounds.";
-                        return false;
-                    }
-
-                    entry.ByteOffset = writeCursor;
-                    sectorEntries[i] = entry;
-                    WriteIndexedSectorEntry(compactPtr + directoryEntryCursor, sectorEntrySize, in entry);
-                    directoryEntryCursor += sectorEntrySize;
-                    writeCursor += entry.CompressedSize;
-                }
-
-                SaveFileHeader updatedHeader = ReadVersionedSaveFileHeader(compactPtr, header.Version);
-                ulong directoryHash64 = updatedHeader.PlayerOffset > headerSizeBytes
-                    ? Hash64(compactPtr + headerSizeBytes, (int)(updatedHeader.PlayerOffset - headerSizeBytes))
-                    : 0UL;
-                updatedHeader.HashPayload64 = metadataHash64 ^ directoryHash64;
-                updatedHeader.Checksum = ComputeIndexedChecksumRoot(unchecked((uint)metadataHash64), sectorEntries);
-                updatedHeader.HashHeader64 = 0UL;
-                updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
-                WriteVersionedSaveFileHeader(compactPtr, ref updatedHeader);
-                writePrepared = true;
+                success = TryPrepareIndexedCompactionBuffer(in header, ref mapping, out compactBytes, out compactLength, out requiresCompaction, out error);
             }
             finally
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
-                if (!writePrepared && compactBytes.IsCreated)
+                if (!success && compactBytes.IsCreated)
                     DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel);
             }
+
+            if (!success)
+                return false;
+
+            if (!requiresCompaction)
+                return true;
 
             try
             {
