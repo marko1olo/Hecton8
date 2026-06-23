@@ -125,34 +125,23 @@ namespace Hecton8.Editor
                 foreach (var t in terrains)
                 {
                     var inj = t.GetComponent<Hecton8.World.HectonTerrainMaterialInjector>();
-                    if (inj != null) inj.enabled = false;
-
-                    if (baseMat != null)
+                    if (inj != null)
                     {
-                        Material inst = new Material(baseMat);
-                        t.materialTemplate = inst;
-                        
-                        // FIX: Enable PBR keywords so it's not mint plastic
-                        inst.EnableKeyword("_NORMALMAP");
-                        inst.EnableKeyword("_MASKMAP");
-                        inst.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
-
-                        if (albedo != null) inst.SetTexture("_AlbedoArray", albedo);
-                        if (normal != null) inst.SetTexture("_NormalArray", normal);
-                        if (mask   != null) inst.SetTexture("_MaskArray",   mask);
-                        
-                        inst.SetFloat("_UVScale",       4.0f);
-                        inst.SetFloat("_TriplanarBlend", 4.0f);
-                        inst.SetFloat("_MinDepth",  -4600f);
-                        inst.SetFloat("_MaxDepth",    500f);
-                        
-                        if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0)
+                        inj.enabled = true;
+                        if (inj.customTerrainMaterial != null)
                         {
-                            Texture2D[] alphas = t.terrainData.alphamapTextures;
-                            if (alphas.Length > 0 && alphas[0] != null) inst.SetTexture("_Control",  alphas[0]);
-                            if (alphas.Length > 1 && alphas[1] != null) inst.SetTexture("_Control1", alphas[1]);
-                            inst.SetVector("_TerrainSize", new Vector4(t.terrainData.size.x, t.terrainData.size.y, t.terrainData.size.z, 0));
+                            inj.customTerrainMaterial.EnableKeyword("_NORMALMAP");
+                            inj.customTerrainMaterial.EnableKeyword("_MASKMAP");
+                            inj.customTerrainMaterial.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
+
+                            if (albedo != null) inj.customTerrainMaterial.SetTexture("_AlbedoArray", albedo);
+                            if (normal != null) inj.customTerrainMaterial.SetTexture("_NormalArray", normal);
+                            if (mask   != null) inj.customTerrainMaterial.SetTexture("_MaskArray",   mask);
+                            
+                            inj.customTerrainMaterial.SetFloat("_HectonUVScale", 4.0f);
+                            inj.customTerrainMaterial.SetFloat("_HectonTriplanarBlend", 4.0f);
                         }
+                        inj.ForceUpdate();
                     }
                 }
 
@@ -216,21 +205,69 @@ namespace Hecton8.Editor
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientSkyColor = new Color(0.05f, 0.1f, 0.2f);
 
+            // Add a point light to illuminate the specific shot areas
+            GameObject pointGo = new GameObject("TRT_PointLight");
+            Light pLight = pointGo.AddComponent<Light>();
+            pLight.type = LightType.Point;
+            pLight.range = 50f;
+            pLight.intensity = 3f;
+            pLight.color = new Color(0.2f, 0.6f, 1.0f);
+
             // Take Macro Shot (Orthographic)
             cam.orthographic = true;
             cam.orthographicSize = boundsHalf;
-            cam.transform.position = boundsCenter + new Vector3(0, 10000f, 0);
+            cam.transform.position = boundsCenter + new Vector3(0, 1000f, 0);
             cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            TakeScreenshot(cam, ArtifactDir + "Macro_Direct.png");
+            pLight.transform.position = boundsCenter + new Vector3(0, 500f, 0);
+            TakeScreenshot(cam, ArtifactDir + "Macro_Top.png");
 
-            // Take Ground Level Shot (Perspective)
             cam.orthographic = false;
             cam.fieldOfView = 60f;
-            Vector3 groundPos = new Vector3(boundsCenter.x, groundY + 2.0f, boundsCenter.z);
-            cam.transform.position = groundPos;
-            // Look North, keeping Y the same so we look ALONG the surface
-            cam.transform.LookAt(groundPos + new Vector3(0, 0, 500f));
-            TakeScreenshot(cam, ArtifactDir + "Ground_Level.png");
+
+            // Find scatter positions
+            GameObject scatterRoot = GameObject.Find("TRT_ScatterRoot");
+            Vector3 kelpPos = boundsCenter;
+            Vector3 coralPos = boundsCenter;
+            if (scatterRoot != null)
+            {
+                foreach (Transform child in scatterRoot.transform)
+                {
+                    if (child.name.Contains("kelp")) kelpPos = child.position;
+                    if (child.name.Contains("coral")) coralPos = child.position;
+                }
+            }
+
+            Vector3 anomalyPos = boundsCenter;
+            var instancer = Object.FindAnyObjectByType<Hecton8.World.CaveAnomalyInstancedRenderer>();
+            if (instancer != null) 
+            {
+                // Retrieve instance matrix from private field using reflection
+                var field = instancer.GetType().GetField("_instances", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (field != null)
+                {
+                    var instances = field.GetValue(instancer) as System.Collections.Generic.List<Matrix4x4>;
+                    if (instances != null && instances.Count > 0)
+                        anomalyPos = new Vector3(instances[0].m03, instances[0].m13, instances[0].m23);
+                }
+            }
+
+            // Shot 1: Kelp Forest
+            cam.transform.position = kelpPos + new Vector3(10f, 5f, 10f);
+            cam.transform.LookAt(kelpPos + new Vector3(0, 5f, 0));
+            pLight.transform.position = cam.transform.position;
+            TakeScreenshot(cam, ArtifactDir + "Forest_Kelp.png");
+
+            // Shot 2: Corals
+            cam.transform.position = coralPos + new Vector3(-8f, 3f, -8f);
+            cam.transform.LookAt(coralPos + new Vector3(0, 2f, 0));
+            pLight.transform.position = cam.transform.position;
+            TakeScreenshot(cam, ArtifactDir + "Cliff_Corals.png");
+
+            // Shot 3: Cave Anomalies
+            cam.transform.position = anomalyPos + new Vector3(0, -2f, 15f);
+            cam.transform.LookAt(anomalyPos);
+            pLight.transform.position = cam.transform.position;
+            TakeScreenshot(cam, ArtifactDir + "Cave_Anomalies.png");
 
             Debug.Log("[TRT] All screenshots captured.");
             File.WriteAllText(ArtifactDir + "mcp_success.txt", $"DONE at {System.DateTime.UtcNow:O}\nTerrains={terrains.Length}");
