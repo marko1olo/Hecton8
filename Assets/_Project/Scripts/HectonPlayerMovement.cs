@@ -7791,23 +7791,7 @@ namespace Hecton8.Gameplay
 
                 if (IsGameplayInputBlockedByMenu())
                 {
-                    _currentInputState = default;
-                    _pendingLookInput = Vector2.zero;
-                    _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
-                    SetSprintingState(false);
-                    _inputCleared = true;
-                    _lastKinematicRepairProbe = default;
-                    _lastKinematicRepairSnapPoint = default;
-                    _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
-                    ResetKinematicRepairProbeReuseGate();
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                    UpdateRenderInterpolationState();
-                    BuildJuiceInput(deltaTime, suit);
-                    _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
-                    UpdateUnderwaterSomaticCameraOffsets(deltaTime);
-                    ApplyCameraState();
-                    UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+                    HandleMenuBlockedInput(deltaTime, suit);
                     return;
                 }
 
@@ -7818,128 +7802,162 @@ namespace Hecton8.Gameplay
                     _inputCleared = false;
                 }
 
-                if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
-                {
-                    _inputHandler.TryReadFrame(
-                        _inputManager,
-                        jumpBufferTime,
-                        out HectonPlayerInputFrame inputFrame,
-                        out bool jumpBuffered);
-                    _currentInputState = inputFrame.State;
-                    _cachedMoveInput = inputFrame.MoveInput;
-                    _cachedVerticalInput = inputFrame.VerticalInput;
-                    _pendingLookInput = inputFrame.LookInput;
-                    if (jumpBuffered)
-                    {
-                        _jumpRequested = true;
-                        _jumpBufferTimer = jumpBufferTime;
-                    }
-
-                    Vector2 lookDelta = _pendingLookInput;
-                    _pendingLookInput = Vector2.zero;
-                    ApplyLookInput(lookDelta);
-
-                    _inputH = _cachedMoveInput.x;
-                    _inputV = _cachedMoveInput.y;
-                    _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
-                    if (IsAuthoritativeVehicleTransportActive())
-                    {
-                        _inputH = 0f;
-                        _inputV = 0f;
-                        _inputVertical = 0f;
-                    }
-                    SetSprintingState(inputFrame.SprintHeld != 0);
-                }
-                else
-                {
-                    _currentInputState = default;
-                    _pendingLookInput = Vector2.zero;
-                    _inputH = 0f;
-                    _inputV = 0f;
-                    _inputVertical = 0f;
-                    SetSprintingState(false);
-                    _mouseXDelta = 0f;
-                }
-
-                if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
-                {
-                    _currentInputState = default;
-                    _pendingLookInput = Vector2.zero;
-                    _mouseXDelta = 0f;
-                    _inputH = 0f;
-                    _inputV = 0f;
-                    _inputVertical = 0f;
-                    SetSprintingState(false);
-                    _jumpRequested = false;
-                    _jumpBufferTimer = 0f;
-                }
-
-                ConsumeKinematicRepairTargetProbe();
-                ScheduleKinematicRepairTargetProbe();
-                UpdateRenderInterpolationState();
-                _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
-                _velocity = _feedbackVelocity;
-                float currentSpeed = ApproximateVectorMagnitude(_velocity);
-                float renderCameraYaw = CameraYaw;
-                float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
-                UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
-
-                if (_swimPresentationController != null)
-                {
-                    _swimPresentationController.SyncFromLocomotion(deltaTime, true);
-                    _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
-                }
-
-                BuildJuiceInput(deltaTime, suit);
-                _juiceInput.speedDelta = currentSpeed - _prevSpeed;
-                _juiceInput.yawDelta = yawDelta;
-                _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
-
-                _prevSpeed = currentSpeed;
-                _prevYawForMomentum = renderCameraYaw;
-
-                if (_juiceOutput.stepEvent != 0)
-                {
-                    PublishPlayerFootstepSignal();
-                    TryEmitSurfaceFootstepAudio();
-                    EmitExosuitFootstepSeismicPing();
-                    UpdateStepDiagnostics();
-                }
-
-                if (_juiceProcessor.SplashThisFrame)
-                {
-                    PublishPlayerWaterSplashSignal(
-                        _juiceProcessor.SplashIntensity,
-                        _juiceProcessor.IsSubmerged,
-                        EffectiveWaterSurfaceY,
-                        math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
-                    PublishWaterTransitionSignal(
-                        WaterTransitionKind.Splash,
-                        _juiceProcessor.IsSubmerged,
-                        _juiceProcessor.SplashIntensity,
-                        EffectiveWaterSurfaceY,
-                        math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
-                }
-
-                if (_juiceProcessor.SubmergeChangedThisFrame)
-                {
-                    PublishWaterTransitionSignal(
-                        WaterTransitionKind.SubmergeChanged,
-                        _juiceProcessor.IsSubmerged,
-                        _juiceProcessor.IsSubmerged ? 1f : 0.65f,
-                        EffectiveWaterSurfaceY,
-                        math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
-                }
-
-                if (_juiceProcessor.ExhaleThisFrame)
-                {
-                    PublishPlayerExhaleSignal();
-                }
-
-                UpdateUnderwaterSomaticCameraOffsets(deltaTime);
-                ApplyCameraState();
-                UpdateDiagnostics(currentSpeed);
+                ProcessPlayerInputFrame();
+                ProcessWipeoutInputOverride();
+                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
             }
+        }
+
+        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+        {
+            _currentInputState = default;
+            _pendingLookInput = Vector2.zero;
+            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+            SetSprintingState(false);
+            _inputCleared = true;
+            _lastKinematicRepairProbe = default;
+            _lastKinematicRepairSnapPoint = default;
+            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+            ResetKinematicRepairProbeReuseGate();
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            UpdateRenderInterpolationState();
+            BuildJuiceInput(deltaTime, suit);
+            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+            ApplyCameraState();
+            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+        }
+
+        private void ProcessPlayerInputFrame()
+        {
+            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+            {
+                _inputHandler.TryReadFrame(
+                    _inputManager,
+                    jumpBufferTime,
+                    out HectonPlayerInputFrame inputFrame,
+                    out bool jumpBuffered);
+                _currentInputState = inputFrame.State;
+                _cachedMoveInput = inputFrame.MoveInput;
+                _cachedVerticalInput = inputFrame.VerticalInput;
+                _pendingLookInput = inputFrame.LookInput;
+                if (jumpBuffered)
+                {
+                    _jumpRequested = true;
+                    _jumpBufferTimer = jumpBufferTime;
+                }
+
+                Vector2 lookDelta = _pendingLookInput;
+                _pendingLookInput = Vector2.zero;
+                ApplyLookInput(lookDelta);
+
+                _inputH = _cachedMoveInput.x;
+                _inputV = _cachedMoveInput.y;
+                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+                if (IsAuthoritativeVehicleTransportActive())
+                {
+                    _inputH = 0f;
+                    _inputV = 0f;
+                    _inputVertical = 0f;
+                }
+                SetSprintingState(inputFrame.SprintHeld != 0);
+            }
+            else
+            {
+                _currentInputState = default;
+                _pendingLookInput = Vector2.zero;
+                _inputH = 0f;
+                _inputV = 0f;
+                _inputVertical = 0f;
+                SetSprintingState(false);
+                _mouseXDelta = 0f;
+            }
+        }
+
+        private void ProcessWipeoutInputOverride()
+        {
+            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+            {
+                _currentInputState = default;
+                _pendingLookInput = Vector2.zero;
+                _mouseXDelta = 0f;
+                _inputH = 0f;
+                _inputV = 0f;
+                _inputVertical = 0f;
+                SetSprintingState(false);
+                _jumpRequested = false;
+                _jumpBufferTimer = 0f;
+            }
+        }
+
+        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+        {
+            ConsumeKinematicRepairTargetProbe();
+            ScheduleKinematicRepairTargetProbe();
+            UpdateRenderInterpolationState();
+            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+            _velocity = _feedbackVelocity;
+            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+            float renderCameraYaw = CameraYaw;
+            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+
+            if (_swimPresentationController != null)
+            {
+                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+            }
+
+            BuildJuiceInput(deltaTime, suit);
+            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+            _juiceInput.yawDelta = yawDelta;
+            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+
+            _prevSpeed = currentSpeed;
+            _prevYawForMomentum = renderCameraYaw;
+
+            if (_juiceOutput.stepEvent != 0)
+            {
+                PublishPlayerFootstepSignal();
+                TryEmitSurfaceFootstepAudio();
+                EmitExosuitFootstepSeismicPing();
+                UpdateStepDiagnostics();
+            }
+
+            if (_juiceProcessor.SplashThisFrame)
+            {
+                PublishPlayerWaterSplashSignal(
+                    _juiceProcessor.SplashIntensity,
+                    _juiceProcessor.IsSubmerged,
+                    EffectiveWaterSurfaceY,
+                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+                PublishWaterTransitionSignal(
+                    WaterTransitionKind.Splash,
+                    _juiceProcessor.IsSubmerged,
+                    _juiceProcessor.SplashIntensity,
+                    EffectiveWaterSurfaceY,
+                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+            }
+
+            if (_juiceProcessor.SubmergeChangedThisFrame)
+            {
+                PublishWaterTransitionSignal(
+                    WaterTransitionKind.SubmergeChanged,
+                    _juiceProcessor.IsSubmerged,
+                    _juiceProcessor.IsSubmerged ? 1f : 0.65f,
+                    EffectiveWaterSurfaceY,
+                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+            }
+
+            if (_juiceProcessor.ExhaleThisFrame)
+            {
+                PublishPlayerExhaleSignal();
+            }
+
+            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+            ApplyCameraState();
+            UpdateDiagnostics(currentSpeed);
         }
 
         public void LateFrameTick()
