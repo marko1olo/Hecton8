@@ -12013,33 +12013,8 @@ namespace Hecton8.Gameplay
             GroundCheck(_currentFixedDeltaTime);
         }
 
-        private void GroundCheck(float fixedDeltaTime)
+        private void FindBestStandardGroundHit(float requiredGroundNormalY, float maxGroundDistance, ref float bestDistance, ref float bestNormalY)
         {
-            bool exosuitActive = IsExosuitTransportActive();
-            bool exosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
-            bool dryInteriorActive = IsInDryInterior();
-            bool allowExosuitFootSlopeProbe = exosuitActive && !exosuitKinematicAuthority && ShouldRunExosuitFootProbes();
-            float requiredGroundNormalY = exosuitActive
-                ? math.min(_minGroundNormalY, exosuitMinGroundNormalY)
-                : _minGroundNormalY;
-            _groundCheckOrigin.x = _fixedFrameBodyPosition.x;
-            _groundCheckOrigin.y = _fixedFrameBodyBottomY + groundCheckRadius + GroundCheckSkin;
-            _groundCheckOrigin.z = _fixedFrameBodyPosition.z;
-
-            bool speculativeHoverAllowed = _aupSpeculativeHoverTicks > 0 && _isGrounded;
-            Vector3 speculativeHoverNormal = _smoothedGroundNormal;
-            float speculativeHoverHeight = speculativeHoverAllowed
-                ? math.max(
-                    GroundCheckSkin,
-                    ResolveSpeculativeHoverHeightMeters(
-                        math.max(_aupSpeculativeHoverHeightMeters, SpeculativeHoverBaseHeightMeters),
-                        _currentTimer))
-                : 0f;
-            _isGrounded = false;
-            float bestDistance = float.MaxValue;
-            float bestNormalY = requiredGroundNormalY;
-            float maxGroundDistance = groundCheckDistance + GroundCheckSkin + speculativeHoverHeight;
-
             for (int i = 0; i < _fixedGroundSweepHitCount; i++)
             {
                 PlayerMovementSurfaceHit hit = _groundProbeHitBuffer[i];
@@ -12062,8 +12037,10 @@ namespace Hecton8.Gameplay
                     _isGrounded = true;
                 }
             }
+        }
 
-            Vector3 resolvedGroundNormal = _groundHit.normal;
+        private void ResolveSpecialFooting(bool allowExosuitFootSlopeProbe, bool dryInteriorActive, float requiredGroundNormalY, ref float bestDistance, ref float bestNormalY, ref Vector3 resolvedGroundNormal)
+        {
             _exosuitFootingValid = false;
             _exosuitFootingNormal = Vector3.up;
             if (allowExosuitFootSlopeProbe &&
@@ -12097,6 +12074,39 @@ namespace Hecton8.Gameplay
                     _isGrounded = true;
                 }
             }
+        }
+
+        private void GroundCheck(float fixedDeltaTime)
+        {
+            bool exosuitActive = IsExosuitTransportActive();
+            bool exosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+            bool dryInteriorActive = IsInDryInterior();
+            bool allowExosuitFootSlopeProbe = exosuitActive && !exosuitKinematicAuthority && ShouldRunExosuitFootProbes();
+            float requiredGroundNormalY = exosuitActive
+                ? math.min(_minGroundNormalY, exosuitMinGroundNormalY)
+                : _minGroundNormalY;
+            _groundCheckOrigin.x = _fixedFrameBodyPosition.x;
+            _groundCheckOrigin.y = _fixedFrameBodyBottomY + groundCheckRadius + GroundCheckSkin;
+            _groundCheckOrigin.z = _fixedFrameBodyPosition.z;
+
+            bool speculativeHoverAllowed = _aupSpeculativeHoverTicks > 0 && _isGrounded;
+            Vector3 speculativeHoverNormal = _smoothedGroundNormal;
+            float speculativeHoverHeight = speculativeHoverAllowed
+                ? math.max(
+                    GroundCheckSkin,
+                    ResolveSpeculativeHoverHeightMeters(
+                        math.max(_aupSpeculativeHoverHeightMeters, SpeculativeHoverBaseHeightMeters),
+                        _currentTimer))
+                : 0f;
+            _isGrounded = false;
+            float bestDistance = float.MaxValue;
+            float bestNormalY = requiredGroundNormalY;
+            float maxGroundDistance = groundCheckDistance + GroundCheckSkin + speculativeHoverHeight;
+
+            FindBestStandardGroundHit(requiredGroundNormalY, maxGroundDistance, ref bestDistance, ref bestNormalY);
+
+            Vector3 resolvedGroundNormal = _groundHit.normal;
+            ResolveSpecialFooting(allowExosuitFootSlopeProbe, dryInteriorActive, requiredGroundNormalY, ref bestDistance, ref bestNormalY, ref resolvedGroundNormal);
 
             if (_isGrounded)
             {
