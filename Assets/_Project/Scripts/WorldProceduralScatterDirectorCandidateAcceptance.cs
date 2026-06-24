@@ -394,6 +394,27 @@ namespace Hecton8.World
             }
         }
 
+
+        private struct ScatterPlacementCounters
+        {
+            public int GlobalGroundCount;
+            public int GlobalClusterCount;
+            public int GlobalStructureCount;
+            public int GlobalSpawnCount;
+            public int GroundCount;
+            public int ClusterCount;
+            public int StructureCountPrimary;
+            public int StructureCountSecondary;
+            public int SpawnCountPrimary;
+            public int SpawnCountSecondary;
+            public int StructureWindowCountPrimary;
+            public int StructureWindowCountSecondary;
+            public int SpawnWindowCountPrimary;
+            public int SpawnWindowCountSecondary;
+            public int PassiveSpawnCount;
+            public int PredatorSpawnCount;
+        }
+
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct EvaluateScatterCellCandidateBatchJob : IJob
@@ -449,22 +470,26 @@ namespace Hecton8.World
                 for (int index = 0; index < Results.Length; index++)
                     Results[index] = 0;
 
-                int globalGroundCount = GlobalGroundCount;
-                int globalClusterCount = GlobalClusterCount;
-                int globalStructureCount = GlobalStructureCount;
-                int globalSpawnCount = GlobalSpawnCount;
-                int groundCount = GroundCount;
-                int clusterCount = ClusterCount;
-                int structureCountPrimary = StructureCountPrimary;
-                int structureCountSecondary = StructureCountSecondary;
-                int spawnCountPrimary = SpawnCountPrimary;
-                int spawnCountSecondary = SpawnCountSecondary;
-                int structureWindowCountPrimary = StructureWindowCountPrimary;
-                int structureWindowCountSecondary = StructureWindowCountSecondary;
-                int spawnWindowCountPrimary = SpawnWindowCountPrimary;
-                int spawnWindowCountSecondary = SpawnWindowCountSecondary;
-                int passiveSpawnCount = PassiveSpawnCount;
-                int predatorSpawnCount = PredatorSpawnCount;
+                ScatterPlacementCounters counts = new ScatterPlacementCounters
+                {
+                    GlobalGroundCount = GlobalGroundCount,
+                    GlobalClusterCount = GlobalClusterCount,
+                    GlobalStructureCount = GlobalStructureCount,
+                    GlobalSpawnCount = GlobalSpawnCount,
+                    GroundCount = GroundCount,
+                    ClusterCount = ClusterCount,
+                    StructureCountPrimary = StructureCountPrimary,
+                    StructureCountSecondary = StructureCountSecondary,
+                    SpawnCountPrimary = SpawnCountPrimary,
+                    SpawnCountSecondary = SpawnCountSecondary,
+                    StructureWindowCountPrimary = StructureWindowCountPrimary,
+                    StructureWindowCountSecondary = StructureWindowCountSecondary,
+                    SpawnWindowCountPrimary = SpawnWindowCountPrimary,
+                    SpawnWindowCountSecondary = SpawnWindowCountSecondary,
+                    PassiveSpawnCount = PassiveSpawnCount,
+                    PredatorSpawnCount = PredatorSpawnCount
+                };
+
                 int poissonRejectionAttempts = 0;
                 int maxPoissonRejectionAttempts = math.max(1, MaxPoissonRejectionAttempts);
 
@@ -474,125 +499,92 @@ namespace Hecton8.World
                     if (candidate.ExternalBlock != 0)
                         continue;
 
-                    if (!PassesFloraClusterPatch(in candidate, ChunkSize))
+                    if (IsCandidateValid(in candidate, in counts))
+                    {
+                        Results[candidateIndex] = 1;
+                        poissonRejectionAttempts = 0;
+                        RegisterAcceptedCandidate(in candidate, ref counts);
+                    }
+                    else
                     {
                         if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
                             break;
-
-                        continue;
                     }
-
-                    if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
-                        ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
-                    {
-                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
-                            break;
-
-                        continue;
-                    }
-
-                    if (!HasPatternLayerBudget(
-                            candidate.ScatterLayer,
-                            globalGroundCount,
-                            globalClusterCount,
-                            globalStructureCount,
-                            globalSpawnCount,
-                            GroundTargetMax,
-                            ClusterTargetMax,
-                            StructureTargetMax,
-                            SpawnTargetMax))
-                    {
-                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
-                            break;
-
-                        continue;
-                    }
-
-                    int localStructureCount = candidate.HeightLayerIndex == 0
-                        ? structureCountPrimary
-                        : structureCountSecondary;
-                    int localSpawnCount = candidate.HeightLayerIndex == 0
-                        ? spawnCountPrimary
-                        : spawnCountSecondary;
-                    int currentWindowCount = ResolveCurrentWindowCount(
-                        candidate.ScatterLayer,
-                        candidate.HeightLayerIndex,
-                        structureWindowCountPrimary,
-                        structureWindowCountSecondary,
-                        spawnWindowCountPrimary,
-                        spawnWindowCountSecondary);
-                    if (!HasLocalLayerBudget(
-                            in candidate,
-                            LocalGroundBudget,
-                            LocalClusterBudget,
-                            LocalStructureBudget,
-                            LocalSpawnBudget,
-                            groundCount,
-                            clusterCount,
-                            localStructureCount,
-                            localSpawnCount,
-                            currentWindowCount))
-                    {
-                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
-                            break;
-
-                        continue;
-                    }
-
-                    if (!CanAcceptPatternAccentBudget(
-                            in candidate,
-                            ClusterAccentCounts,
-                            StructureAccentCounts,
-                            UsesPatternAccentQuotas != 0,
-                            clusterCount,
-                            globalStructureCount,
-                            globalSpawnCount,
-                            ClusterTargetMax,
-                            StructureTargetMax,
-                            SpawnTargetMax,
-                            ClusterRatioStart,
-                            passiveSpawnCount,
-                            predatorSpawnCount,
-                            PassiveSpawnMax,
-                            PredatorSpawnMax,
-                            ClusterAccentRoleMaxRatios,
-                            StructureAccentRoleMaxCounts))
-                    {
-                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
-                            break;
-
-                        continue;
-                    }
-
-                    if (HasSpatialConflict(in candidate))
-                    {
-                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
-                            break;
-
-                        continue;
-                    }
-
-                    Results[candidateIndex] = 1;
-                    poissonRejectionAttempts = 0;
-                    RegisterAcceptedCandidate(
-                        in candidate,
-                        ref globalGroundCount,
-                        ref globalClusterCount,
-                        ref globalStructureCount,
-                        ref globalSpawnCount,
-                        ref groundCount,
-                        ref clusterCount,
-                        ref structureCountPrimary,
-                        ref structureCountSecondary,
-                        ref spawnCountPrimary,
-                        ref spawnCountSecondary,
-                        ref structureWindowCountPrimary,
-                        ref structureWindowCountSecondary,
-                        ref spawnWindowCountPrimary,
-                        ref spawnWindowCountSecondary,
-                        ref passiveSpawnCount,
-                        ref predatorSpawnCount);
                 }
+            }
+
+            private bool IsCandidateValid(in ScatterCellCandidateAcceptanceInput candidate, in ScatterPlacementCounters counts)
+            {
+                if (!PassesFloraClusterPatch(in candidate, ChunkSize))
+                    return false;
+
+                if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
+                    ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
+                    return false;
+
+                if (!HasPatternLayerBudget(
+                        candidate.ScatterLayer,
+                        counts.GlobalGroundCount,
+                        counts.GlobalClusterCount,
+                        counts.GlobalStructureCount,
+                        counts.GlobalSpawnCount,
+                        GroundTargetMax,
+                        ClusterTargetMax,
+                        StructureTargetMax,
+                        SpawnTargetMax))
+                    return false;
+
+                int localStructureCount = candidate.HeightLayerIndex == 0
+                    ? counts.StructureCountPrimary
+                    : counts.StructureCountSecondary;
+                int localSpawnCount = candidate.HeightLayerIndex == 0
+                    ? counts.SpawnCountPrimary
+                    : counts.SpawnCountSecondary;
+                int currentWindowCount = ResolveCurrentWindowCount(
+                    candidate.ScatterLayer,
+                    candidate.HeightLayerIndex,
+                    counts.StructureWindowCountPrimary,
+                    counts.StructureWindowCountSecondary,
+                    counts.SpawnWindowCountPrimary,
+                    counts.SpawnWindowCountSecondary);
+
+                if (!HasLocalLayerBudget(
+                        in candidate,
+                        LocalGroundBudget,
+                        LocalClusterBudget,
+                        LocalStructureBudget,
+                        LocalSpawnBudget,
+                        counts.GroundCount,
+                        counts.ClusterCount,
+                        localStructureCount,
+                        localSpawnCount,
+                        currentWindowCount))
+                    return false;
+
+                if (!CanAcceptPatternAccentBudget(
+                        in candidate,
+                        ClusterAccentCounts,
+                        StructureAccentCounts,
+                        UsesPatternAccentQuotas != 0,
+                        counts.ClusterCount,
+                        counts.GlobalStructureCount,
+                        counts.GlobalSpawnCount,
+                        ClusterTargetMax,
+                        StructureTargetMax,
+                        SpawnTargetMax,
+                        ClusterRatioStart,
+                        counts.PassiveSpawnCount,
+                        counts.PredatorSpawnCount,
+                        PassiveSpawnMax,
+                        PredatorSpawnMax,
+                        ClusterAccentRoleMaxRatios,
+                        StructureAccentRoleMaxCounts))
+                    return false;
+
+                if (HasSpatialConflict(in candidate))
+                    return false;
+
+                return true;
             }
 
             private bool HasSpatialConflict(in ScatterCellCandidateAcceptanceInput candidate)
@@ -689,22 +681,7 @@ namespace Hecton8.World
 
             private void RegisterAcceptedCandidate(
                 in ScatterCellCandidateAcceptanceInput candidate,
-                ref int globalGroundCount,
-                ref int globalClusterCount,
-                ref int globalStructureCount,
-                ref int globalSpawnCount,
-                ref int groundCount,
-                ref int clusterCount,
-                ref int structureCountPrimary,
-                ref int structureCountSecondary,
-                ref int spawnCountPrimary,
-                ref int spawnCountSecondary,
-                ref int structureWindowCountPrimary,
-                ref int structureWindowCountSecondary,
-                ref int spawnWindowCountPrimary,
-                ref int spawnWindowCountSecondary,
-                ref int passiveSpawnCount,
-                ref int predatorSpawnCount)
+                ref ScatterPlacementCounters counts)
             {
                 int metadataIndex = PendingSpatialMetadata.Length;
                 PendingSpatialMetadata.AddNoResize(new ScatterPlacementSpatialMetadata(
@@ -722,48 +699,48 @@ namespace Hecton8.World
                 switch ((WorldPrefabFamilyProfile.ScatterLayer)candidate.ScatterLayer)
                 {
                     case WorldPrefabFamilyProfile.ScatterLayer.Ground:
-                        globalGroundCount++;
-                        groundCount++;
+                        counts.GlobalGroundCount++;
+                        counts.GroundCount++;
                         break;
 
                     case WorldPrefabFamilyProfile.ScatterLayer.Cluster:
-                        globalClusterCount++;
-                        clusterCount++;
+                        counts.GlobalClusterCount++;
+                        counts.ClusterCount++;
                         IncrementCounter(ClusterAccentCounts, candidate.ClusterAccentRole);
                         break;
 
                     case WorldPrefabFamilyProfile.ScatterLayer.Structure:
-                        globalStructureCount++;
+                        counts.GlobalStructureCount++;
                         IncrementCounter(StructureAccentCounts, candidate.StructureAccentRole);
                         if (candidate.HeightLayerIndex == 0)
                         {
-                            structureCountPrimary++;
-                            structureWindowCountPrimary++;
+                            counts.StructureCountPrimary++;
+                            counts.StructureWindowCountPrimary++;
                         }
                         else
                         {
-                            structureCountSecondary++;
-                            structureWindowCountSecondary++;
+                            counts.StructureCountSecondary++;
+                            counts.StructureWindowCountSecondary++;
                         }
                         break;
 
                     case WorldPrefabFamilyProfile.ScatterLayer.Spawn:
-                        globalSpawnCount++;
+                        counts.GlobalSpawnCount++;
                         if (candidate.HeightLayerIndex == 0)
                         {
-                            spawnCountPrimary++;
-                            spawnWindowCountPrimary++;
+                            counts.SpawnCountPrimary++;
+                            counts.SpawnWindowCountPrimary++;
                         }
                         else
                         {
-                            spawnCountSecondary++;
-                            spawnWindowCountSecondary++;
+                            counts.SpawnCountSecondary++;
+                            counts.SpawnWindowCountSecondary++;
                         }
 
                         if (candidate.IsPassiveSpawnFamily != 0)
-                            passiveSpawnCount++;
+                            counts.PassiveSpawnCount++;
                         else if (candidate.IsPredatorSpawnFamily != 0)
-                            predatorSpawnCount++;
+                            counts.PredatorSpawnCount++;
                         break;
                 }
             }
