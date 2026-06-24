@@ -527,7 +527,10 @@ namespace Technie.PhysicsCreator
 
 					GameObject go = c.gameObject;
 					DestroyImmediateWithUndo(c);
-					if (go.TryGetComponent<RigidColliderCreatorChild>(out var comp)) DestroyImmediateWithUndo(comp);
+					if (go.TryGetComponent<RigidColliderCreatorChild>(out var rigidChild))
+					{
+						DestroyImmediateWithUndo(rigidChild);
+					}
 					if (IsDeletable(go))
 					{
 						DestroyImmediateWithUndo(go);
@@ -546,7 +549,10 @@ namespace Technie.PhysicsCreator
 				// Delete child, collider (if any) and GameObject (if empty)
 				GameObject go = child.gameObject;
 				DestroyImmediateWithUndo(child);
-				if (go.TryGetComponent<Collider>(out var colComp)) DestroyImmediateWithUndo(colComp);
+				if (go.TryGetComponent<Collider>(out var col))
+				{
+					DestroyImmediateWithUndo(col);
+				}
 				if (IsDeletable(go))
 				{
 					DestroyImmediateWithUndo(go);
