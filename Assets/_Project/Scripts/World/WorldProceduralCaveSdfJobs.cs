@@ -141,10 +141,11 @@ namespace Hecton8.World
             // Triangle wave: 0 at layer boundaries, 1 at layer centers.
             float strataFrac = math.abs(math.frac(strataPhase) * 2.0f - 1.0f);
             // Only push density back at layer boundaries (where strataFrac is low).
+            // DANGER: We must never push density HIGHER than currentDensity, otherwise we create giant spikes 
+            // shooting out of the terrain where caves intersect the surface.
             float strataRestore = (1.0f - strataFrac) * StrataShelvingStrength * caveMask * surfaceFade;
-
             // Final density modification
-            float newDensity = currentDensity - carve + strataRestore;
+            float newDensity = math.clamp(currentDensity - carve + strataRestore, -1f, 1f);
 
             // === CRITICAL SAFETY NET ===
             // Guarantee that caves NEVER punch through the terrain surface (creating black holes).

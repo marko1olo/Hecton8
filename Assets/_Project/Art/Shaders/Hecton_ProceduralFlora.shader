@@ -2,9 +2,13 @@ Shader "Hecton8/URP/ProceduralFlora"
 {
     Properties
     {
-        _BaseColor("Base Color", Color) = (0.1, 0.5, 0.2, 1)
-        _TipColor("Tip Color", Color) = (0.4, 0.8, 0.3, 1)
-        _EmissionColor("Emission Color", Color) = (0, 0, 0, 1)
+        _BaseMap("Albedo Map", 2D) = "white" {}
+        _NormalMap("Normal Map", 2D) = "bump" {}
+        _MaskMap("Mask Map (R=Met, G=AO, B=Emis, A=Smth)", 2D) = "white" {}
+        
+        _BaseColor("Base Color Tint", Color) = (1, 1, 1, 1)
+        _TipColor("Tip Color Tint", Color) = (1, 1, 1, 1)
+        [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 1)
         
         _SwaySpeed("Sway Speed", Float) = 1.0
         _SwayAmount("Sway Amount", Float) = 0.2
@@ -14,7 +18,7 @@ Shader "Hecton8/URP/ProceduralFlora"
     }
     SubShader
     {
-        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" }
+        Tags { "RenderType"="Opaque" "RenderPipeline"="UniversalPipeline" "Queue"="Geometry" "IgnoreProjector"="True" }
 
         Pass
         {
@@ -24,11 +28,13 @@ Shader "Hecton8/URP/ProceduralFlora"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            
             #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -37,6 +43,7 @@ Shader "Hecton8/URP/ProceduralFlora"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float4 tangentOS  : TANGENT;
                 float2 uv         : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -47,18 +54,26 @@ Shader "Hecton8/URP/ProceduralFlora"
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS   : TEXCOORD1;
                 float  heightFrac : TEXCOORD4;
+                float2 uv         : TEXCOORD5;
+                float3 tangentWS  : TEXCOORD6;
+                float3 bitangentWS: TEXCOORD7;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            CBUFFER_START(UnityPerMaterial)
-                half4 _BaseColor;
-                half4 _TipColor;
-                half4 _EmissionColor;
-                float _SwaySpeed;
-                float _SwayAmount;
-                float _HeightScale;
-                float _ColorHeightFalloff;
-            CBUFFER_END
+            TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+            TEXTURE2D(_NormalMap); SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_MaskMap); SAMPLER(sampler_MaskMap);
+
+            UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
+                UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _BaseColor)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _TipColor)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _EmissionColor)
+                UNITY_DEFINE_INSTANCED_PROP(float, _SwaySpeed)
+                UNITY_DEFINE_INSTANCED_PROP(float, _SwayAmount)
+                UNITY_DEFINE_INSTANCED_PROP(float, _HeightScale)
+                UNITY_DEFINE_INSTANCED_PROP(float, _ColorHeightFalloff)
+            UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
 
             float3 mod289(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             float2 mod289(float2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -96,18 +111,27 @@ Shader "Hecton8/URP/ProceduralFlora"
 
                 float3 posWS = TransformObjectToWorld(IN.positionOS.xyz);
                 
-                float heightFrac = saturate((IN.positionOS.y + _HeightScale*0.5) / max(_HeightScale, 0.001));
+                float heightScale = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _HeightScale);
+                float heightFrac = saturate((IN.positionOS.y + heightScale*0.5) / max(heightScale, 0.001));
                 
-                float time = _Time.y * _SwaySpeed;
+                float time = _Time.y * UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _SwaySpeed);
                 float noise = snoise(posWS.xz * 0.5 + time);
                 float noiseZ = snoise(posWS.xz * 0.5 + time + 13.37);
                 
-                float3 swayOffset = float3(noise, 0, noiseZ) * _SwayAmount * heightFrac * heightFrac;
+                float swayMask = IN.uv.y * IN.uv.y;
+                float3 swayOffset = float3(noise, 0, noiseZ) * UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _SwayAmount) * swayMask;
                 posWS += swayOffset;
 
                 OUT.positionCS = TransformWorldToHClip(posWS);
                 OUT.positionWS = posWS;
+                
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
+                OUT.tangentWS = TransformObjectToWorldDir(IN.tangentOS.xyz);
+                float tangentSign = IN.tangentOS.w * unity_WorldTransformParams.w;
+                OUT.bitangentWS = cross(OUT.normalWS, OUT.tangentWS) * tangentSign;
+                
+                float4 baseMapST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
+                OUT.uv = IN.uv * baseMapST.xy + baseMapST.zw;
                 OUT.heightFrac = heightFrac;
 
                 return OUT;
@@ -117,26 +141,66 @@ Shader "Hecton8/URP/ProceduralFlora"
             {
                 UNITY_SETUP_INSTANCE_ID(IN);
 
-                float colorFactor = saturate(pow(IN.heightFrac, _ColorHeightFalloff));
-                half3 albedo = lerp(_BaseColor.rgb, _TipColor.rgb, colorFactor);
-                half3 emission = _EmissionColor.rgb * colorFactor;
+                half4 albedoTex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+                
+                #if defined(_ALPHATEST_ON)
+                clip(albedoTex.a - 0.5);
+                #endif
+
+                half4 normalTex = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, IN.uv);
+                half4 maskTex = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, IN.uv);
+
+                float colorFalloff = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _ColorHeightFalloff);
+                float colorFactor = saturate(pow(IN.heightFrac, colorFalloff));
+                half3 baseColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseColor).rgb;
+                half3 tipColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _TipColor).rgb;
+                half3 tint = lerp(baseColor, tipColor, colorFactor);
+                half3 albedo = albedoTex.rgb * tint;
+                
+                half metallic = maskTex.r;
+                half ao = maskTex.g;
+                half emissionMask = maskTex.b;
+                half smoothness = maskTex.a * 0.8;
+
+                half3 emColorLocal = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _EmissionColor).rgb;
+                half3 emission = emColorLocal * emissionMask * colorFactor;
+
+                half3 normalTS = UnpackNormal(normalTex);
+                half3x3 tangentSpaceTransform = half3x3(IN.tangentWS.xyz, IN.bitangentWS.xyz, IN.normalWS.xyz);
+                half3 normalWS = normalize(mul(normalTS, tangentSpaceTransform));
 
                 InputData inputData = (InputData)0;
                 inputData.positionWS = IN.positionWS;
-                inputData.normalWS = normalize(IN.normalWS);
+                inputData.positionCS = IN.positionCS;
+                inputData.normalWS = normalWS;
                 inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
                 inputData.shadowCoord = TransformWorldToShadowCoord(IN.positionWS);
+                inputData.bakedGI = SampleSH(normalWS);
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);
+                inputData.shadowMask = half4(1, 1, 1, 1);
+                inputData.tangentToWorld = tangentSpaceTransform;
 
                 SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo = albedo;
-                surfaceData.alpha = 1.0;
-                surfaceData.emission = emission;
-                surfaceData.metallic = 0.0;
-                surfaceData.smoothness = 0.3;
+                surfaceData.alpha = albedoTex.a;
+                surfaceData.metallic = metallic;
+                surfaceData.smoothness = smoothness;
+                surfaceData.occlusion = ao;
+                
+                Light mainLight = GetMainLight(inputData.shadowCoord);
+                half sss = saturate(dot(inputData.viewDirectionWS, -mainLight.direction)) * 0.3 * albedoTex.a;
+                surfaceData.emission = emission + (albedo * sss * mainLight.color);
 
-                half4 color = UniversalFragmentPBR(inputData, surfaceData);
-                color.rgb = MixFog(color.rgb, ComputeFogFactor(IN.positionCS.z));
-                return color;
+                half4 c = UniversalFragmentPBR(inputData, surfaceData);
+                
+                half forcedEmissionMask = max(emissionMask, 0.5);
+                half3 emColor = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _EmissionColor).rgb;
+                half3 em = max(emColor, half3(0.0, 0.5, 0.5)) * forcedEmissionMask * 20.0;
+                c.rgb += em;
+
+                c.rgb = MixFog(c.rgb, ComputeFogFactor(IN.positionCS.z));
+                
+                return c;
             }
             ENDHLSL
         }
@@ -155,6 +219,7 @@ Shader "Hecton8/URP/ProceduralFlora"
             #pragma fragment frag
             #pragma multi_compile_instancing
             #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -164,20 +229,29 @@ Shader "Hecton8/URP/ProceduralFlora"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            CBUFFER_START(UnityPerMaterial)
-                float _SwaySpeed;
-                float _SwayAmount;
-                float _HeightScale;
-            CBUFFER_END
+            TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
+
+            UNITY_INSTANCING_BUFFER_START(UnityPerMaterial)
+                UNITY_DEFINE_INSTANCED_PROP(float4, _BaseMap_ST)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _BaseColor)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _TipColor)
+                UNITY_DEFINE_INSTANCED_PROP(half4, _EmissionColor)
+                UNITY_DEFINE_INSTANCED_PROP(float, _SwaySpeed)
+                UNITY_DEFINE_INSTANCED_PROP(float, _SwayAmount)
+                UNITY_DEFINE_INSTANCED_PROP(float, _HeightScale)
+                UNITY_DEFINE_INSTANCED_PROP(float, _ColorHeightFalloff)
+            UNITY_INSTANCING_BUFFER_END(UnityPerMaterial)
             
             float3 mod289(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
             float2 mod289(float2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -207,6 +281,9 @@ Shader "Hecton8/URP/ProceduralFlora"
                 return 130.0 * dot(m, g);
             }
 
+            float3 _LightDirection;
+            float3 _LightPosition;
+
             Varyings vert(Attributes IN)
             {
                 Varyings OUT = (Varyings)0;
@@ -216,11 +293,11 @@ Shader "Hecton8/URP/ProceduralFlora"
                 float3 posWS = TransformObjectToWorld(IN.positionOS.xyz);
                 float3 nrmWS = TransformObjectToWorldNormal(IN.normalOS);
                 
-                float heightFrac = saturate((IN.positionOS.y + _HeightScale*0.5) / max(_HeightScale, 0.001));
-                float time = _Time.y * _SwaySpeed;
+                float time = _Time.y * UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _SwaySpeed);
                 float noise = snoise(posWS.xz * 0.5 + time);
                 float noiseZ = snoise(posWS.xz * 0.5 + time + 13.37);
-                float3 swayOffset = float3(noise, 0, noiseZ) * _SwayAmount * heightFrac * heightFrac;
+                float swayMask = IN.uv.y * IN.uv.y; 
+                float3 swayOffset = float3(noise, 0, noiseZ) * UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _SwayAmount) * swayMask;
                 posWS += swayOffset;
 
                 float3 lightDirectionWS = _LightDirection;
@@ -236,11 +313,22 @@ Shader "Hecton8/URP/ProceduralFlora"
                 #endif
 
                 OUT.positionCS = positionCS;
+                
+                float4 baseMapST = UNITY_ACCESS_INSTANCED_PROP(UnityPerMaterial, _BaseMap_ST);
+                OUT.uv = IN.uv * baseMapST.xy + baseMapST.zw;
+                
                 return OUT;
             }
 
             half4 frag(Varyings IN) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(IN);
+                
+                #if defined(_ALPHATEST_ON)
+                half4 albedoTex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
+                clip(albedoTex.a - 0.5);
+                #endif
+                
                 return 0;
             }
             ENDHLSL
