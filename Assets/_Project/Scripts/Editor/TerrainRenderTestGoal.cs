@@ -189,13 +189,25 @@ namespace Hecton8.Editor
             cam.farClipPlane = 60000f;
 
             // FIX: Setup Directional Light to ensure shaders respond properly
-            Light dirLight = Object.FindAnyObjectByType<Light>();
-            if (dirLight == null || dirLight.type != LightType.Directional)
+            Light dirLight = null;
+            Light[] allLights = Object.FindObjectsByType<Light>(FindObjectsSortMode.None);
+            foreach (var light in allLights)
+            {
+                if (light.type == LightType.Directional)
+                {
+                    dirLight = light;
+                    break;
+                }
+            }
+
+            if (dirLight == null)
             {
                 GameObject lightGo = new GameObject("TRT_DirectionalLight");
                 dirLight = lightGo.AddComponent<Light>();
                 dirLight.type = LightType.Directional;
             }
+
+            RenderSettings.sun = dirLight;
             dirLight.transform.rotation = Quaternion.Euler(50f, 30f, 0f);
             dirLight.intensity = 1.2f;
             dirLight.color = new Color(0.8f, 0.9f, 1.0f);
