@@ -77,6 +77,7 @@ namespace Hecton8.Core.Persistence.Paging
         private readonly object _walLock = new object();
         private readonly object _hotStateLock = new object();
         private readonly object _workerStopLock = new object();
+        private readonly AutoResetEvent _workerEvent = new AutoResetEvent(false);
         private FileStream _stream;
         private FileStream _walStream;
         private string _path;
@@ -287,6 +288,7 @@ namespace Hecton8.Core.Persistence.Paging
 
                 int queued = Interlocked.Increment(ref _pendingWriteCount.Value);
                 SetQueueHighWatermark(queued);
+                _workerEvent.Set();
                 return true;
             }
             finally
@@ -392,6 +394,7 @@ namespace Hecton8.Core.Persistence.Paging
                 int queued = Interlocked.Increment(ref _pendingReadCount.Value);
                 SetQueueHighWatermark(queued + Volatile.Read(ref _pendingWriteCount.Value));
                 ticket.Status = H8WorldPageStatus.Queued;
+                _workerEvent.Set();
                 return true;
             }
             finally
@@ -728,11 +731,13 @@ namespace Hecton8.Core.Persistence.Paging
                 return;
 
             Interlocked.Exchange(ref _workerFlushRequestCount.Value, 1);
+            _workerEvent.Set();
         }
 
         public void Dispose()
         {
             Volatile.Write(ref _disposeRequested, 1);
+            _workerEvent.Set();
             bool workerStopped = WaitForWorkerExit();
 
             FileStream stream = _stream;
@@ -759,6 +764,7 @@ namespace Hecton8.Core.Persistence.Paging
             DisposeNativeState();
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _initializationFault.Value, 0);
+            _workerEvent.Dispose();
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
@@ -770,6 +776,7 @@ namespace Hecton8.Core.Persistence.Paging
                 return;
 
             Volatile.Write(ref _disposeRequested, 1);
+            _workerEvent.Set();
             bool workerStopped = WaitForWorkerExit();
             if (!workerStopped)
             {
@@ -816,6 +823,7 @@ namespace Hecton8.Core.Persistence.Paging
             _hotStateCrc32 = 0u;
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
+            _workerEvent.Set();
         }
 
         private void MarkInitializationFault(PagerInitializationFaultReason reason = PagerInitializationFaultReason.Unknown)
@@ -833,6 +841,7 @@ namespace Hecton8.Core.Persistence.Paging
             DisposeNativeState();
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
+            _workerEvent.Set();
             Volatile.Write(ref _initializationFault.Value, 1);
             Interlocked.Increment(ref _ioErrorCount.Value);
 
@@ -1311,7 +1320,9 @@ namespace Hecton8.Core.Persistence.Paging
                     }
 
                     if (!didWork)
-                        Thread.Sleep(WorkerIdleSleepMilliseconds);
+                    {
+                        _workerEvent.WaitOne(WorkerIdleSleepMilliseconds);
+                    }
                 }
             }
             catch (IOException)
@@ -1465,6 +1476,7 @@ namespace Hecton8.Core.Persistence.Paging
         {
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
+            _workerEvent.Set();
             Volatile.Write(ref _initializationFault.Value, 1);
             Volatile.Write(ref _pendingWriteCount.Value, 0);
             Volatile.Write(ref _pendingReadCount.Value, 0);
@@ -3157,6 +3169,7 @@ namespace Hecton8.Core.Persistence.Paging
                 Thread.CurrentThread.ManagedThreadId != Volatile.Read(ref _workerThreadId))
             {
                 Volatile.Write(ref _dumpRequestPending, 1);
+                _workerEvent.Set();
                 return;
             }
 

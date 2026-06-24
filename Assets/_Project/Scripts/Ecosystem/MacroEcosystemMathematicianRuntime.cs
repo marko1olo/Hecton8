@@ -931,10 +931,6 @@ namespace Hecton8.Ecosystem
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-            public void PreSimulationTick(in DispatcherTimingDTO timing)
-            {
-            }
-
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -948,9 +944,6 @@ namespace Hecton8.Ecosystem
                 _owner?.PostSimulationTick(in timing);
             }
 
-            public void VisualSyncTick(in DispatcherTimingDTO timing)
-            {
-            }
         }
 
         private unsafe void DumpTelemetry(IDataVault vault)

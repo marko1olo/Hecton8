@@ -31,6 +31,7 @@
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
         "GPUInstancer",
         "Den.Tools",
         "MapMagic",

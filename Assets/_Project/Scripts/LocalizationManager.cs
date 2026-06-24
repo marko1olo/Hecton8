@@ -775,10 +775,6 @@ namespace Hecton.Localization
             return 0u;
         }
 
-        public void PreSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
         public JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
@@ -793,10 +789,6 @@ namespace Hecton.Localization
 #if UNITY_EDITOR
             PollBabelOverrideCsv(timing.FrameDelta);
 #endif
-        }
-
-        public void VisualSyncTick(in DispatcherTimingDTO timing)
-        {
         }
 
         public void OnGlobalRegistryServiceReplaced(

@@ -37,6 +37,8 @@ namespace Hecton8.Rendering.OceanSinglePass
         private static Vector4 s_publishedWakeTextureParams;
         private static GraphicsBuffer s_mockConstantBuffer;
         private static int s_mockRenderFrameBudget;
+        private static Scene s_searchedScene;
+        private static OceanSinglePassRuntime s_cachedInactiveRuntime;
 
         [SerializeField] private Transform cameraAupReference;
         [SerializeField] private bool loadAestheticProfilesCsv = true;
@@ -83,6 +85,8 @@ namespace Hecton8.Rendering.OceanSinglePass
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_searchedScene = default;
+            s_cachedInactiveRuntime = null;
             s_supportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             if (s_mockConstantBuffer != null && s_mockConstantBuffer.IsValid())
@@ -127,7 +131,19 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (s_runtime != null || !ShouldBootstrapForScene(scene))
                 return;
 
-            OceanSinglePassRuntime authoredRuntime = UnityEngine.Object.FindAnyObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
+            OceanSinglePassRuntime authoredRuntime;
+
+            if (s_searchedScene == scene)
+            {
+                authoredRuntime = s_cachedInactiveRuntime;
+            }
+            else
+            {
+                authoredRuntime = UnityEngine.Object.FindAnyObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
+                s_searchedScene = scene;
+                s_cachedInactiveRuntime = authoredRuntime;
+            }
+
             if (authoredRuntime != null)
             {
                 authoredRuntime.gameObject.SetActive(true);
@@ -451,20 +467,12 @@ namespace Hecton8.Rendering.OceanSinglePass
             return 0u;
         }
 
-        public void PreSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
         public JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
             return dependsOn;
-        }
-
-        public void PostSimulationTick(in DispatcherTimingDTO timing)
-        {
         }
 
         public void VisualSyncTick(in DispatcherTimingDTO timing)

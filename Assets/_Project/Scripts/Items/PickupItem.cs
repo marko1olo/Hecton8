@@ -1069,14 +1069,24 @@ namespace Hecton8.Interaction
             }
         }
 
+        private static PickupItem[] s_validationPickupCache;
+        private static double s_validationCacheTime;
+
         private bool HasDuplicateStableWorldStateIdInOpenScenes(string normalizedStableId)
         {
             if (string.IsNullOrEmpty(normalizedStableId))
                 return false;
 
             string scenePath = gameObject.scene.path;
-            PickupItem[] pickups = UnityEngine.Object.FindObjectsByType<PickupItem>(
-                UnityEngine.FindObjectsInactive.Include);
+
+            double currentTime = UnityEngine.Time.realtimeSinceStartup;
+            if (s_validationPickupCache == null || currentTime - s_validationCacheTime > 0.05)
+            {
+                s_validationPickupCache = UnityEngine.Object.FindObjectsByType<PickupItem>(
+                    UnityEngine.FindObjectsInactive.Include);
+                s_validationCacheTime = currentTime;
+            }
+            PickupItem[] pickups = s_validationPickupCache;
 
             for (int i = 0; i < pickups.Length; i++)
             {
@@ -1091,14 +1101,17 @@ namespace Hecton8.Interaction
                     continue;
                 }
 
-                if (candidate.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
-                    continue;
-
                 string candidateStableId = string.IsNullOrWhiteSpace(candidate.stableWorldStateId)
                     ? string.Empty
                     : candidate.stableWorldStateId.Trim();
-                if (string.Equals(candidateStableId, normalizedStableId, StringComparison.Ordinal))
-                    return true;
+
+                if (!string.Equals(candidateStableId, normalizedStableId, StringComparison.Ordinal))
+                    continue;
+
+                if (candidate.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+                    continue;
+
+                return true;
             }
 
             return false;

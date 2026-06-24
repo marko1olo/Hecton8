@@ -292,7 +292,7 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(compactionWriteIndex, compactionIndex, source);
 
             int persistentOverrideIndex = source.IndexOf(
-                "internal static bool TryWriteIndexedPersistentWorldSectorOverride(",
+                "private static bool TryWriteAndCompressPersistentWorldSectorBlock(",
                 StringComparison.Ordinal);
             Assert.GreaterOrEqual(persistentOverrideIndex, 0, source);
             int persistentOverrideWriteIndex = source.IndexOf(
@@ -322,7 +322,7 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(entityStateFlushIndex, entityStateWriteIndex, source);
 
             int modPayloadIndex = source.IndexOf(
-                "internal static bool TryCommitModPayloadSubSector(",
+                "private static unsafe bool TryWriteModPayloadOverrideTempFileToDisk(",
                 StringComparison.Ordinal);
             Assert.GreaterOrEqual(modPayloadIndex, 0, source);
             int modPayloadWriteIndex = source.IndexOf(
@@ -354,9 +354,14 @@ namespace Hecton8.Tests.Editor
 
             string indexedBackup = ExtractMethodBody(
                 saveBinaryStorage,
-                "private static bool TryPrepareIndexedSectorCommitBackup(");
+                "private static bool TryFinalizeIndexedSectorCommitBackup(");
             StringAssert.Contains("FlushCriticalSavePath(backupPath, backupBytes, out string flushError)", indexedBackup);
-            StringAssert.Contains("catch (System.Security.SecurityException ex)", indexedBackup);
+
+            string prepareBackup = ExtractMethodBody(
+                saveBinaryStorage,
+                "private static bool TryPrepareIndexedSectorCommitBackup(");
+            StringAssert.Contains("catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException or NotSupportedException)", prepareBackup);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", prepareBackup);
             StringAssert.DoesNotContain("QueueThrottledFlush(", indexedBackup);
 
             string primaryCommit = ExtractMethodBody(
@@ -428,48 +433,58 @@ namespace Hecton8.Tests.Editor
             string criticalRecovery = ExtractMethodBody(
                 saveManager,
                 "private static bool TryPromoteBackupToPrimaryAfterCriticalRecovery(");
+            string criticalRecoveryCopy = ExtractMethodBody(
+                saveManager,
+                "private static bool TryCopyBackupToTempForPromotion(");
+            string criticalRecoveryCommit = ExtractMethodBody(
+                saveManager,
+                "private static bool TryCommitTempToPrimaryForPromotion(");
+
             StringAssert.Contains("TryGetFileLength(absoluteBackupPath, out long backupSourceBytes, out string backupLengthError)", criticalRecovery);
-            StringAssert.Contains("TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError)", criticalRecovery);
-            StringAssert.Contains("tempBytes != backupSourceBytes", criticalRecovery);
-            StringAssert.Contains("FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError)", criticalRecovery);
-            StringAssert.Contains("promotedBytes != backupSourceBytes", criticalRecovery);
-            StringAssert.Contains("FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)", criticalRecovery);
+            StringAssert.Contains("TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError)", criticalRecoveryCopy);
+            StringAssert.Contains("tempBytes != backupSourceBytes", criticalRecoveryCopy);
+            StringAssert.Contains("FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError)", criticalRecoveryCopy);
+            StringAssert.Contains("promotedBytes != backupSourceBytes", criticalRecoveryCommit);
+            StringAssert.Contains("FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)", criticalRecoveryCommit);
             StringAssert.DoesNotContain("QueueThrottledFlush(", criticalRecovery);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", criticalRecoveryCopy);
+            StringAssert.DoesNotContain("QueueThrottledFlush(", criticalRecoveryCommit);
 
             int backupSourceLengthIndex = criticalRecovery.IndexOf(
                 "TryGetFileLength(absoluteBackupPath, out long backupSourceBytes, out string backupLengthError)",
                 StringComparison.Ordinal);
-            int tempLengthIndex = criticalRecovery.IndexOf(
+
+            int tempLengthIndex = criticalRecoveryCopy.IndexOf(
                 "TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError)",
-                backupSourceLengthIndex,
                 StringComparison.Ordinal);
-            int tempFlushIndex = criticalRecovery.IndexOf(
+            int tempFlushIndex = criticalRecoveryCopy.IndexOf(
                 "FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError)",
                 tempLengthIndex,
                 StringComparison.Ordinal);
-            int promoteIndex = criticalRecovery.IndexOf(
+
+            int promoteIndex = criticalRecoveryCommit.IndexOf(
                 "File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);",
-                tempFlushIndex,
                 StringComparison.Ordinal);
-            int finalLengthIndex = criticalRecovery.IndexOf(
+            int finalLengthIndex = criticalRecoveryCommit.IndexOf(
                 "TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError)",
                 promoteIndex,
                 StringComparison.Ordinal);
-            int finalMismatchIndex = criticalRecovery.IndexOf(
+            int finalMismatchIndex = criticalRecoveryCommit.IndexOf(
                 "promotedBytes != backupSourceBytes",
                 finalLengthIndex,
                 StringComparison.Ordinal);
-            int finalFlushIndex = criticalRecovery.IndexOf(
+            int finalFlushIndex = criticalRecoveryCommit.IndexOf(
                 "FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError)",
                 finalMismatchIndex,
                 StringComparison.Ordinal);
+
             Assert.GreaterOrEqual(backupSourceLengthIndex, 0, criticalRecovery);
-            Assert.Greater(tempLengthIndex, backupSourceLengthIndex, criticalRecovery);
-            Assert.Greater(tempFlushIndex, tempLengthIndex, criticalRecovery);
-            Assert.Greater(promoteIndex, tempFlushIndex, criticalRecovery);
-            Assert.Greater(finalLengthIndex, promoteIndex, criticalRecovery);
-            Assert.Greater(finalMismatchIndex, finalLengthIndex, criticalRecovery);
-            Assert.Greater(finalFlushIndex, finalMismatchIndex, criticalRecovery);
+            Assert.GreaterOrEqual(tempLengthIndex, 0, criticalRecoveryCopy);
+            Assert.Greater(tempFlushIndex, tempLengthIndex, criticalRecoveryCopy);
+            Assert.GreaterOrEqual(promoteIndex, 0, criticalRecoveryCommit);
+            Assert.Greater(finalLengthIndex, promoteIndex, criticalRecoveryCommit);
+            Assert.Greater(finalMismatchIndex, finalLengthIndex, criticalRecoveryCommit);
+            Assert.Greater(finalFlushIndex, finalMismatchIndex, criticalRecoveryCommit);
         }
 
         [Test]
@@ -490,11 +505,16 @@ namespace Hecton8.Tests.Editor
                 StringComparison.Ordinal);
             Assert.Greater(sourceLengthIndex, methodIndex, source);
 
+            int tempMethodIndex = source.IndexOf(
+                "private static bool TryCreateIndexedSectorCommitTempBackup(",
+                StringComparison.Ordinal);
+            Assert.GreaterOrEqual(tempMethodIndex, 0, source);
+
             int tempInvalidationIndex = source.IndexOf(
                 "AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);",
-                sourceLengthIndex,
+                tempMethodIndex,
                 StringComparison.Ordinal);
-            Assert.Greater(tempInvalidationIndex, sourceLengthIndex, source);
+            Assert.Greater(tempInvalidationIndex, tempMethodIndex, source);
 
             int copyIndex = source.IndexOf(
                 "File.Copy(absolutePath, backupTempPath, true);",
@@ -1637,7 +1657,7 @@ namespace Hecton8.Tests.Editor
                 "Assets/_Project/Scripts/SaveManager.cs"));
 
             int methodIndex = source.IndexOf(
-                "private static bool TryPromoteBackupToPrimaryAfterCriticalRecovery(",
+                "private static bool TryCommitTempToPrimaryForPromotion(",
                 StringComparison.Ordinal);
             Assert.GreaterOrEqual(methodIndex, 0, source);
 

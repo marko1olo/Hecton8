@@ -3021,7 +3021,7 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct RadixSortSectorEntityStateEntriesJob : IJob
+        internal struct RadixSortSectorEntityStateEntriesJob : IJob
         {
             public NativeArray<SectorEntityStateSortEntry> Entries;
             public NativeArray<SectorEntityStateSortEntry> Scratch;
@@ -6333,76 +6333,16 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
-                long compressedCapacityLong =
-                    (long)rawSectionLength +
-                    (rawSectionLength / 255) +
-                    16L +
-                    ((long)blockCount * ProtectedCompressedBlockHeaderBytes) +
-                    IndexedSectorBlockHeaderSize +
-                    32L;
-                long fileCapacityLong = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacityLong;
-                if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
-                {
-                    error = "Sector override compressed buffer exceeds supported bounds.";
-                    return false;
-                }
-
-                int fileCapacity = (int)fileCapacityLong;
-
-                using RegisteredTransientNativeArray<byte> rawSectionBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                return TryWriteAndCompressPersistentWorldSectorBlock(
+                    absolutePath,
+                    sectorHash,
                     rawSectionLength,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorOverrideRawSectionScratchLabel);
-                using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                    fileCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorOverrideFileScratchLabel);
-                NativeArray<byte> rawSectionBytes = rawSectionBytesOwner.Array;
-                NativeArray<byte> fileBytes = fileBytesOwner.Array;
-                byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
-                byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
-                if (!WritePersistentWorldSection(
-                        rawSectionPtr,
-                        sectorRecordsReadOnly,
-                        chunkLookup,
-                        chunkTable,
-                        itemHashLookup,
-                        itemHashTable,
-                        out error))
-                {
-                    return false;
-                }
-                uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
-
-                int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
-                if (!TryWriteIndexedCompressedBlock(
-                        rawSectionPtr,
-                        rawSectionLength,
-                        filePtr,
-                        fileBytes.Length,
-                        ref fileCursor,
-                        out int storedBlockLength,
-                        out uint blockFlags,
-                        out error))
-                {
-                    return false;
-                }
-
-                SectorOverrideFileHeader overrideHeader = new SectorOverrideFileHeader
-                {
-                    SectorHash = sectorHash,
-                    CompressedSize = storedBlockLength,
-                    DecompressedSize = rawSectionLength,
-                    Checksum = rawSectionChecksum,
-                    Flags = blockFlags
-                };
-
-                UnsafeUtility.CopyStructureToPtr(ref overrideHeader, filePtr);
-                if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
-                    return false;
-
-                return AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error);
+                    sectorRecordsReadOnly,
+                    chunkLookup,
+                    chunkTable,
+                    itemHashLookup,
+                    itemHashTable,
+                    out error);
             }
             finally
             {
@@ -6413,6 +6353,90 @@ namespace Hecton8.SaveSystem
                     ref itemHashTable,
                     ref tableSentinelIds);
             }
+        }
+
+        private static bool TryWriteAndCompressPersistentWorldSectorBlock(
+            string absolutePath,
+            long sectorHash,
+            int rawSectionLength,
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly sectorRecordsReadOnly,
+            NativeParallelHashMap<int3, ushort> chunkLookup,
+            NativeList<int3> chunkTable,
+            NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            NativeList<ulong> itemHashTable,
+            out string error)
+        {
+            int blockCount = ResolveProtectedLz4BlockCount(rawSectionLength);
+            long compressedCapacityLong =
+                (long)rawSectionLength +
+                (rawSectionLength / 255) +
+                16L +
+                ((long)blockCount * ProtectedCompressedBlockHeaderBytes) +
+                IndexedSectorBlockHeaderSize +
+                32L;
+            long fileCapacityLong = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacityLong;
+            if (compressedCapacityLong <= 0L || fileCapacityLong > int.MaxValue)
+            {
+                error = "Sector override compressed buffer exceeds supported bounds.";
+                return false;
+            }
+
+            int fileCapacity = (int)fileCapacityLong;
+
+            using RegisteredTransientNativeArray<byte> rawSectionBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                rawSectionLength,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideRawSectionScratchLabel);
+            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                fileCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideFileScratchLabel);
+            NativeArray<byte> rawSectionBytes = rawSectionBytesOwner.Array;
+            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+            byte* rawSectionPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawSectionBytes);
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
+
+            if (!WritePersistentWorldSection(
+                    rawSectionPtr,
+                    sectorRecordsReadOnly,
+                    chunkLookup,
+                    chunkTable,
+                    itemHashLookup,
+                    itemHashTable,
+                    out error))
+            {
+                return false;
+            }
+            uint rawSectionChecksum = Hash32(rawSectionPtr, rawSectionLength);
+
+            int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
+            if (!TryWriteIndexedCompressedBlock(
+                    rawSectionPtr,
+                    rawSectionLength,
+                    filePtr,
+                    fileBytes.Length,
+                    ref fileCursor,
+                    out int storedBlockLength,
+                    out uint blockFlags,
+                    out error))
+            {
+                return false;
+            }
+
+            SectorOverrideFileHeader overrideHeader = new SectorOverrideFileHeader
+            {
+                SectorHash = sectorHash,
+                CompressedSize = storedBlockLength,
+                DecompressedSize = rawSectionLength,
+                Checksum = rawSectionChecksum,
+                Flags = blockFlags
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref overrideHeader, filePtr);
+            if (!AsyncWriteManager.WriteAll(absolutePath, filePtr, fileCursor, out error))
+                return false;
+
+            return AsyncWriteManager.FlushCriticalSavePath(absolutePath, fileCursor, out error);
         }
 
         internal static bool TryReadIndexedPersistentWorldSectorOverride(
@@ -6784,6 +6808,123 @@ namespace Hecton8.SaveSystem
             return writeHandle.DisposeDeferred(dependency);
         }
 
+        private static bool TryValidateSectorEntityStateHeader(
+            in AsyncWriteManager.ReadOnlyMapping mapping,
+            out SectorEntityStateFileHeader header,
+            out int headerSize,
+            out bool compact16,
+            out int recordCount,
+            out string error)
+        {
+            header = default;
+            compact16 = false;
+            recordCount = 0;
+            error = string.Empty;
+
+            headerSize = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>();
+            if (mapping.Length < headerSize + 8)
+            {
+                error = "Sector entity-state override file is truncated.";
+                return false;
+            }
+
+            header = UnsafeUtility.ReadArrayElement<SectorEntityStateFileHeader>((byte*)mapping.View, 0);
+            if (header.CompressedSize <= 0 ||
+                header.DecompressedSize <= 0 ||
+                header.RecordCount == 0 ||
+                mapping.Length < headerSize ||
+                header.CompressedSize > mapping.Length - headerSize)
+            {
+                error = "Sector entity-state override header is invalid.";
+                return false;
+            }
+
+            compact16 = header.Checksum == SectorEntityStateCompact16Magic;
+            if (header.Checksum != 0u && !compact16)
+            {
+                error = "Sector entity-state override format marker is unsupported.";
+                return false;
+            }
+
+            if (!TryConvertSectionCount(header.RecordCount, out recordCount))
+            {
+                error = "Sector entity-state override record count exceeds supported bounds.";
+                return false;
+            }
+
+            int recordStride = compact16
+                ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
+                : UnsafeUtility.SizeOf<EntityDataRecord>();
+            long expectedByteLength64 = (long)recordCount * recordStride;
+            if (expectedByteLength64 > int.MaxValue)
+            {
+                error = "Sector entity-state override byte count exceeds supported bounds.";
+                return false;
+            }
+
+            int expectedByteLength = (int)expectedByteLength64;
+            if (expectedByteLength != header.DecompressedSize)
+            {
+                error = "Sector entity-state override byte count does not match the record count.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryDecompressAndParseSectorEntityStates(
+            in AsyncWriteManager.ReadOnlyMapping mapping,
+            in SectorEntityStateFileHeader header,
+            int headerSize,
+            bool compact16,
+            int recordCount,
+            long sectorHash,
+            out EntityDataRecord[] entityStates,
+            out string error)
+        {
+            entityStates = null;
+            error = string.Empty;
+
+            using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                header.DecompressedSize,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorReadRawScratchLabel);
+            NativeArray<byte> rawBytes = rawBytesOwner.Array;
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBytes);
+            int decompressedLength = Lz4BlockDecompress(
+                (byte*)mapping.View + headerSize,
+                header.CompressedSize,
+                rawPtr,
+                header.DecompressedSize,
+                out _);
+            if (decompressedLength != header.DecompressedSize)
+            {
+                error = "Sector entity-state override decompression failed.";
+                return false;
+            }
+
+            entityStates = new EntityDataRecord[recordCount];
+            if (compact16)
+            {
+                SectorCompactEntityStateRecord16* compactPtr = (SectorCompactEntityStateRecord16*)rawPtr;
+                for (int i = 0; i < entityStates.Length; i++)
+                    entityStates[i] = UnpackCompactEntityState16(in compactPtr[i], sectorHash);
+            }
+            else
+            {
+                fixed (EntityDataRecord* destinationPtr = entityStates)
+                {
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
+                    {
+                        error = "Entity-state override copy exceeded destination bounds.";
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         internal static bool TryReadIndexedSectorEntityStateOverride(
             string absolutePath,
             out long sectorHash,
@@ -6805,91 +6946,13 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                int headerSize = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>();
-                if (mapping.Length < headerSize + 8)
-                {
-                    error = "Sector entity-state override file is truncated.";
+                if (!TryValidateSectorEntityStateHeader(in mapping, out SectorEntityStateFileHeader header, out int headerSize, out bool compact16, out int recordCount, out error))
                     return false;
-                }
 
-                SectorEntityStateFileHeader header = UnsafeUtility.ReadArrayElement<SectorEntityStateFileHeader>((byte*)mapping.View, 0);
                 sectorHash = header.SectorHash;
-                if (header.CompressedSize <= 0 ||
-                    header.DecompressedSize <= 0 ||
-                    header.RecordCount == 0 ||
-                    mapping.Length < headerSize ||
-                    header.CompressedSize > mapping.Length - headerSize)
-                {
-                    error = "Sector entity-state override header is invalid.";
-                    return false;
-                }
 
-                bool compact16 = header.Checksum == SectorEntityStateCompact16Magic;
-                if (header.Checksum != 0u && !compact16)
-                {
-                    error = "Sector entity-state override format marker is unsupported.";
+                if (!TryDecompressAndParseSectorEntityStates(in mapping, in header, headerSize, compact16, recordCount, sectorHash, out entityStates, out error))
                     return false;
-                }
-
-                if (!TryConvertSectionCount(header.RecordCount, out int recordCount))
-                {
-                    error = "Sector entity-state override record count exceeds supported bounds.";
-                    return false;
-                }
-
-                int recordStride = compact16
-                    ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
-                    : UnsafeUtility.SizeOf<EntityDataRecord>();
-                long expectedByteLength64 = (long)recordCount * recordStride;
-                if (expectedByteLength64 > int.MaxValue)
-                {
-                    error = "Sector entity-state override byte count exceeds supported bounds.";
-                    return false;
-                }
-
-                int expectedByteLength = (int)expectedByteLength64;
-                if (expectedByteLength != header.DecompressedSize)
-                {
-                    error = "Sector entity-state override byte count does not match the record count.";
-                    return false;
-                }
-
-                using RegisteredTransientNativeArray<byte> rawBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                    header.DecompressedSize,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorReadRawScratchLabel);
-                NativeArray<byte> rawBytes = rawBytesOwner.Array;
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBytes);
-                int decompressedLength = Lz4BlockDecompress(
-                    (byte*)mapping.View + headerSize,
-                    header.CompressedSize,
-                    rawPtr,
-                    header.DecompressedSize,
-                    out _);
-                if (decompressedLength != header.DecompressedSize)
-                {
-                    error = "Sector entity-state override decompression failed.";
-                    return false;
-                }
-
-                entityStates = new EntityDataRecord[recordCount];
-                if (compact16)
-                {
-                    SectorCompactEntityStateRecord16* compactPtr = (SectorCompactEntityStateRecord16*)rawPtr;
-                    for (int i = 0; i < entityStates.Length; i++)
-                        entityStates[i] = UnpackCompactEntityState16(in compactPtr[i], sectorHash);
-                }
-                else
-                {
-                    fixed (EntityDataRecord* destinationPtr = entityStates)
-                    {
-                        if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
-                        {
-                            error = "Entity-state override copy exceeded destination bounds.";
-                            return false;
-                        }
-                    }
-                }
 
                 return true;
             }
@@ -7074,11 +7137,10 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        internal static bool TryCommitModPayloadSubSector(
+        private static bool IsModPayloadCommitValid(
             string absoluteSavePath,
             string tempOverridePath,
             uint modHash,
-            long pagedSectorHash,
             NativeArray<byte> payloadBytes,
             int payloadLength,
             out string error)
@@ -7087,12 +7149,6 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(absoluteSavePath) || string.IsNullOrEmpty(tempOverridePath))
             {
                 error = "Mod payload commit paths are invalid.";
-                return false;
-            }
-
-            if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))
-            {
-                error = staleTempDeleteError;
                 return false;
             }
 
@@ -7114,21 +7170,20 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                ModPayloadSubBlockSizeBytes,
-                NativeArrayOptions.ClearMemory,
-                IndexedSectorModPayloadRawBlockScratchLabel);
-            NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
-            int compressedCapacity = ModPayloadSubBlockSizeBytes + (ModPayloadSubBlockSizeBytes / 255) + 16 + ProtectedCompressedBlockHeaderBytes + IndexedSectorBlockHeaderSize + 32;
-            int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
-            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
-                fileCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                IndexedSectorOverrideFileScratchLabel);
-            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+            return true;
+        }
 
+        private static unsafe bool TryFormatModPayloadRawBlock(
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            NativeArray<byte> rawBlockBytes,
+            out uint rawBlockChecksum,
+            out string error)
+        {
+            error = string.Empty;
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
-            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
             byte* payloadSource = payloadLength > 0
                 ? (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payloadBytes)
                 : null;
@@ -7138,6 +7193,7 @@ namespace Hecton8.SaveSystem
                 if (!UnsafeMemoryCopyGuard.SafeCopy(rawPtr + ModPayloadHeaderSizeBytes, rawBlockBytes.Length - ModPayloadHeaderSizeBytes, payloadSource, payloadLength))
                 {
                     error = "Mod payload write exceeded sub-sector bounds.";
+                    rawBlockChecksum = 0;
                     return false;
                 }
             }
@@ -7158,9 +7214,23 @@ namespace Hecton8.SaveSystem
                 Reserved = 0u
             };
             UnsafeUtility.CopyStructureToPtr(ref payloadHeader, rawPtr);
-            uint rawBlockChecksum = Hash32(rawPtr, ModPayloadSubBlockSizeBytes);
+            rawBlockChecksum = Hash32(rawPtr, ModPayloadSubBlockSizeBytes);
+            return true;
+        }
 
+        private static unsafe bool TryWriteModPayloadOverrideTempFileToDisk(
+            string tempOverridePath,
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> rawBlockBytes,
+            uint rawBlockChecksum,
+            NativeArray<byte> fileBytes,
+            out string error)
+        {
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
+            byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
             int fileCursor = UnsafeUtility.SizeOf<SectorOverrideFileHeader>();
+
             if (!TryWriteIndexedCompressedBlock(
                     rawPtr,
                     ModPayloadSubBlockSizeBytes,
@@ -7200,6 +7270,48 @@ namespace Hecton8.SaveSystem
                 _ = TryDeleteFileIfExists(tempOverridePath, out _);
                 return false;
             }
+
+            return true;
+        }
+
+        internal static bool TryCommitModPayloadSubSector(
+            string absoluteSavePath,
+            string tempOverridePath,
+            uint modHash,
+            long pagedSectorHash,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            out string error)
+        {
+            if (!IsModPayloadCommitValid(absoluteSavePath, tempOverridePath, modHash, payloadBytes, payloadLength, out error))
+                return false;
+
+            if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))
+            {
+                error = staleTempDeleteError;
+                return false;
+            }
+
+            using RegisteredTransientNativeArray<byte> rawBlockBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                ModPayloadSubBlockSizeBytes,
+                NativeArrayOptions.ClearMemory,
+                IndexedSectorModPayloadRawBlockScratchLabel);
+            NativeArray<byte> rawBlockBytes = rawBlockBytesOwner.Array;
+
+            int compressedCapacity = ModPayloadSubBlockSizeBytes + (ModPayloadSubBlockSizeBytes / 255) + 16 + ProtectedCompressedBlockHeaderBytes + IndexedSectorBlockHeaderSize + 32;
+            int fileCapacity = UnsafeUtility.SizeOf<SectorOverrideFileHeader>() + compressedCapacity;
+
+            using RegisteredTransientNativeArray<byte> fileBytesOwner = CreateRegisteredTransientNativeArray<byte>(
+                fileCapacity,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorOverrideFileScratchLabel);
+            NativeArray<byte> fileBytes = fileBytesOwner.Array;
+
+            if (!TryFormatModPayloadRawBlock(modHash, pagedSectorHash, payloadBytes, payloadLength, rawBlockBytes, out uint rawBlockChecksum, out error))
+                return false;
+
+            if (!TryWriteModPayloadOverrideTempFileToDisk(tempOverridePath, modHash, pagedSectorHash, rawBlockBytes, rawBlockChecksum, fileBytes, out error))
+                return false;
 
             if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
                 return true;
@@ -7358,40 +7470,17 @@ namespace Hecton8.SaveSystem
                     if (!IsModPayloadSectorHash(entry.SectorHash))
                         continue;
 
-                    if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                    if (!TryProcessModPayloadSector(
+                            ref mapping,
+                            in entry,
+                            rawBlockBytes,
+                            payloadBytes,
+                            readHandler,
+                            collectResults,
+                            results))
                     {
                         skippedModSectorCount++;
-                        continue;
                     }
-
-                    if (payloadHeader.ModHash == 0u ||
-                        entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
-                        entry.SectorHash,
-                        payloadHeader.ModHash,
-                        payloadHeader.PagedSectorHash,
-                        payloadHeader.PayloadLength,
-                        payloadHeader.PayloadChecksum);
-
-                    if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out error))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out error))
-                    {
-                        skippedModSectorCount++;
-                        continue;
-                    }
-
-                    if (collectResults)
-                        results.Add(sectorInfo);
                 }
 
                 if (populatedCount != indexedSectorCount)
@@ -7409,6 +7498,43 @@ namespace Hecton8.SaveSystem
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
             }
+        }
+
+        private static bool TryProcessModPayloadSector(
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            in SectorEntry entry,
+            NativeArray<byte> rawBlockBytes,
+            NativeArray<byte> payloadBytes,
+            ModPayloadReadHandler readHandler,
+            bool collectResults,
+            List<ModPayloadSectorInfo> results)
+        {
+            if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                return false;
+
+            if (payloadHeader.ModHash == 0u ||
+                entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
+            {
+                return false;
+            }
+
+            ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
+                entry.SectorHash,
+                payloadHeader.ModHash,
+                payloadHeader.PagedSectorHash,
+                payloadHeader.PayloadLength,
+                payloadHeader.PayloadChecksum);
+
+            if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out _))
+                return false;
+
+            if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out _))
+                return false;
+
+            if (collectResults)
+                results.Add(sectorInfo);
+
+            return true;
         }
 
         internal static bool TryReadModPayloadSubSector(
@@ -7656,6 +7782,128 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool TryPrepareIndexedCompactionBuffer(
+            in SaveFileHeader header,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            out NativeArray<byte> compactBytes,
+            out int compactLength,
+            out bool requiresCompaction,
+            out string error)
+        {
+            compactBytes = default;
+            compactLength = 0;
+            requiresCompaction = false;
+
+            if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+                return false;
+
+            int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
+            int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
+            long metadataOffset = header.PlayerOffset;
+            long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
+            if (metadataOffset < headerSizeBytes + directoryBytes ||
+                metadataEndOffset < metadataOffset ||
+                metadataEndOffset > mapping.Length)
+            {
+                error = "Indexed sector compaction metadata range is invalid.";
+                return false;
+            }
+
+            long compactLengthLong = metadataEndOffset;
+            if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
+                return false;
+            int populatedSectorCount = 0;
+            for (int i = 0; i < sectorEntries.Length; i++)
+            {
+                SectorEntry entry = sectorEntries[i];
+                if (!IsIndexedSectorEntryPopulated(in entry))
+                    continue;
+
+                populatedSectorCount++;
+                compactLengthLong += entry.CompressedSize;
+                if (compactLengthLong > int.MaxValue)
+                {
+                    error = "Indexed sector compaction exceeds the portable native buffer range.";
+                    return false;
+                }
+            }
+
+            if (populatedSectorCount != indexedSectorCount)
+            {
+                error = "Indexed sector compaction directory count mismatch.";
+                return false;
+            }
+
+            if (compactLengthLong >= mapping.Length)
+                return true;
+
+            byte* mappedFilePtr = (byte*)mapping.View;
+            byte* directoryPtr = mappedFilePtr + headerSizeBytes;
+            if (!TryRecoverCachedIndexedMetadataHashLow32(
+                    in header,
+                    directoryPtr,
+                    directoryBytes,
+                    sectorEntries,
+                    out ulong metadataHash64))
+            {
+                error = "Indexed sector compaction metadata hash recovery failed.";
+                return false;
+            }
+
+            compactLength = (int)compactLengthLong;
+            compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
+                compactLength,
+                NativeArrayOptions.UninitializedMemory,
+                IndexedSectorCompactionBufferLabel);
+            byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
+            {
+                error = "Indexed sector compaction metadata copy exceeded bounds.";
+                return false;
+            }
+
+            long writeCursor = metadataEndOffset;
+            int directoryEntryCursor = headerSizeBytes + IndexedSectorDirectoryHeaderSize;
+            for (int i = 0; i < sectorEntries.Length; i++)
+            {
+                SectorEntry entry = sectorEntries[i];
+                if (!IsIndexedSectorEntryPopulated(in entry))
+                {
+                    directoryEntryCursor += sectorEntrySize;
+                    continue;
+                }
+
+                if (!UnsafeMemoryCopyGuard.SafeCopy(
+                        compactPtr + writeCursor,
+                        compactLength - writeCursor,
+                        mappedFilePtr + entry.ByteOffset,
+                        entry.CompressedSize))
+                {
+                    error = "Indexed sector compaction sector copy exceeded bounds.";
+                    return false;
+                }
+
+                entry.ByteOffset = writeCursor;
+                sectorEntries[i] = entry;
+                WriteIndexedSectorEntry(compactPtr + directoryEntryCursor, sectorEntrySize, in entry);
+                directoryEntryCursor += sectorEntrySize;
+                writeCursor += entry.CompressedSize;
+            }
+
+            SaveFileHeader updatedHeader = ReadVersionedSaveFileHeader(compactPtr, header.Version);
+            ulong directoryHash64 = updatedHeader.PlayerOffset > headerSizeBytes
+                ? Hash64(compactPtr + headerSizeBytes, (int)(updatedHeader.PlayerOffset - headerSizeBytes))
+                : 0UL;
+            updatedHeader.HashPayload64 = metadataHash64 ^ directoryHash64;
+            updatedHeader.Checksum = ComputeIndexedChecksumRoot(unchecked((uint)metadataHash64), sectorEntries);
+            updatedHeader.HashHeader64 = 0UL;
+            updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
+            WriteVersionedSaveFileHeader(compactPtr, ref updatedHeader);
+            requiresCompaction = true;
+            return true;
+        }
+
         internal static bool TryCompactIndexedPersistentWorldSectors(string absolutePath, out string error)
         {
             error = string.Empty;
@@ -7670,123 +7918,24 @@ namespace Hecton8.SaveSystem
 
             NativeArray<byte> compactBytes = default;
             int compactLength = 0;
-            bool writePrepared = false;
+            bool success = false;
+            bool requiresCompaction = false;
             try
             {
-                if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
-                    return false;
-
-                int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
-                int sectorEntrySize = ResolveIndexedSectorEntrySize(header.Version);
-                int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * sectorEntrySize);
-                long metadataOffset = header.PlayerOffset;
-                long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
-                if (metadataOffset < headerSizeBytes + directoryBytes ||
-                    metadataEndOffset < metadataOffset ||
-                    metadataEndOffset > mapping.Length)
-                {
-                    error = "Indexed sector compaction metadata range is invalid.";
-                    return false;
-                }
-
-                long compactLengthLong = metadataEndOffset;
-                if (!TryDecodeIndexedSectorCount(in directoryHeader, out int indexedSectorCount, out error))
-                    return false;
-                int populatedSectorCount = 0;
-                for (int i = 0; i < sectorEntries.Length; i++)
-                {
-                    SectorEntry entry = sectorEntries[i];
-                    if (!IsIndexedSectorEntryPopulated(in entry))
-                        continue;
-
-                    populatedSectorCount++;
-                    compactLengthLong += entry.CompressedSize;
-                    if (compactLengthLong > int.MaxValue)
-                    {
-                        error = "Indexed sector compaction exceeds the portable native buffer range.";
-                        return false;
-                    }
-                }
-
-                if (populatedSectorCount != indexedSectorCount)
-                {
-                    error = "Indexed sector compaction directory count mismatch.";
-                    return false;
-                }
-
-                if (compactLengthLong >= mapping.Length)
-                    return true;
-
-                byte* mappedFilePtr = (byte*)mapping.View;
-                byte* directoryPtr = mappedFilePtr + headerSizeBytes;
-                if (!TryRecoverCachedIndexedMetadataHashLow32(
-                        in header,
-                        directoryPtr,
-                        directoryBytes,
-                        sectorEntries,
-                        out ulong metadataHash64))
-                {
-                    error = "Indexed sector compaction metadata hash recovery failed.";
-                    return false;
-                }
-
-                compactLength = (int)compactLengthLong;
-                compactBytes = AllocateRegisteredPersistentScratchNativeArray<byte>(
-                    compactLength,
-                    NativeArrayOptions.UninitializedMemory,
-                    IndexedSectorCompactionBufferLabel);
-                byte* compactPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(compactBytes);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(compactPtr, compactLength, mappedFilePtr, metadataEndOffset))
-                {
-                    error = "Indexed sector compaction metadata copy exceeded bounds.";
-                    return false;
-                }
-
-                long writeCursor = metadataEndOffset;
-                int directoryEntryCursor = headerSizeBytes + IndexedSectorDirectoryHeaderSize;
-                for (int i = 0; i < sectorEntries.Length; i++)
-                {
-                    SectorEntry entry = sectorEntries[i];
-                    if (!IsIndexedSectorEntryPopulated(in entry))
-                    {
-                        directoryEntryCursor += sectorEntrySize;
-                        continue;
-                    }
-
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(
-                            compactPtr + writeCursor,
-                            compactLength - writeCursor,
-                            mappedFilePtr + entry.ByteOffset,
-                            entry.CompressedSize))
-                    {
-                        error = "Indexed sector compaction sector copy exceeded bounds.";
-                        return false;
-                    }
-
-                    entry.ByteOffset = writeCursor;
-                    sectorEntries[i] = entry;
-                    WriteIndexedSectorEntry(compactPtr + directoryEntryCursor, sectorEntrySize, in entry);
-                    directoryEntryCursor += sectorEntrySize;
-                    writeCursor += entry.CompressedSize;
-                }
-
-                SaveFileHeader updatedHeader = ReadVersionedSaveFileHeader(compactPtr, header.Version);
-                ulong directoryHash64 = updatedHeader.PlayerOffset > headerSizeBytes
-                    ? Hash64(compactPtr + headerSizeBytes, (int)(updatedHeader.PlayerOffset - headerSizeBytes))
-                    : 0UL;
-                updatedHeader.HashPayload64 = metadataHash64 ^ directoryHash64;
-                updatedHeader.Checksum = ComputeIndexedChecksumRoot(unchecked((uint)metadataHash64), sectorEntries);
-                updatedHeader.HashHeader64 = 0UL;
-                updatedHeader.HashHeader64 = ComputeHeaderHash(ref updatedHeader);
-                WriteVersionedSaveFileHeader(compactPtr, ref updatedHeader);
-                writePrepared = true;
+                success = TryPrepareIndexedCompactionBuffer(in header, ref mapping, out compactBytes, out compactLength, out requiresCompaction, out error);
             }
             finally
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
-                if (!writePrepared && compactBytes.IsCreated)
+                if (!success && compactBytes.IsCreated)
                     DisposeRegisteredPersistentScratchNativeArray(ref compactBytes, IndexedSectorCompactionBufferLabel);
             }
+
+            if (!success)
+                return false;
+
+            if (!requiresCompaction)
+                return true;
 
             try
             {
@@ -8842,107 +8991,115 @@ namespace Hecton8.SaveSystem
             string backupTempPath = backupPath + ".tmp";
             try
             {
-                string backupDirectory = Path.GetDirectoryName(backupPath);
-                if (!string.IsNullOrEmpty(backupDirectory))
-                    Directory.CreateDirectory(backupDirectory);
-
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                if (!TryDeleteFileIfExists(backupTempPath, out error))
-                    return false;
-
-                File.Copy(absolutePath, backupTempPath, true);
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                if (!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError))
+                if (!TryCreateIndexedSectorCommitTempBackup(absolutePath, backupPath, backupTempPath, sourceBytes, out error))
                 {
-                    error = string.IsNullOrEmpty(tempLengthError)
-                        ? "Indexed sector commit backup temp file length could not be resolved."
-                        : tempLengthError;
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
                     return false;
                 }
 
-                if (backupTempBytes != sourceBytes)
+                if (!TryFinalizeIndexedSectorCommitBackup(backupPath, backupTempPath, sourceBytes, out error))
                 {
-                    error = "Indexed sector commit backup temp file length did not match source.";
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError))
-                {
-                    error = string.IsNullOrEmpty(tempFlushError)
-                        ? "Indexed sector commit backup temp critical flush failed."
-                        : tempFlushError;
-                    _ = TryDeleteFileIfExists(backupTempPath, out _);
-                    return false;
-                }
-
-                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
-                if (File.Exists(backupPath))
-                {
-                    File.Replace(backupTempPath, backupPath, null);
-                }
-                else
-                {
-                    File.Move(backupTempPath, backupPath);
-                }
-                AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
-
-                if (!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError))
-                {
-                    error = string.IsNullOrEmpty(lengthError)
-                        ? "Indexed sector commit backup file length could not be resolved."
-                        : lengthError;
-                    return false;
-                }
-
-                if (backupBytes != sourceBytes)
-                {
-                    error = "Indexed sector commit backup file length did not match source.";
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError))
-                {
-                    error = string.IsNullOrEmpty(flushError)
-                        ? "Indexed sector commit backup critical flush failed."
-                        : flushError;
                     return false;
                 }
 
                 return true;
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException or ArgumentException or NotSupportedException)
             {
-                error = $"Indexed sector commit backup failed for '{absolutePath}': {ex.Message}";
+                string errorType = ex switch
+                {
+                    IOException => "failed",
+                    UnauthorizedAccessException => "unauthorized",
+                    System.Security.SecurityException => "security failed",
+                    ArgumentException => "path invalid",
+                    NotSupportedException => "path unsupported",
+                    _ => "failed"
+                };
+
+                error = $"Indexed sector commit backup {errorType} for '{absolutePath}': {ex.Message}";
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (UnauthorizedAccessException ex)
+        }
+
+        private static bool TryCreateIndexedSectorCommitTempBackup(string absolutePath, string backupPath, string backupTempPath, long sourceBytes, out string error)
+        {
+            string backupDirectory = Path.GetDirectoryName(backupPath);
+            if (!string.IsNullOrEmpty(backupDirectory))
+                Directory.CreateDirectory(backupDirectory);
+
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            if (!TryDeleteFileIfExists(backupTempPath, out error))
+                return false;
+
+            File.Copy(absolutePath, backupTempPath, true);
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            if (!AsyncWriteManager.TryGetFileLength(backupTempPath, out long backupTempBytes, out string tempLengthError))
             {
-                error = $"Indexed sector commit backup unauthorized for '{absolutePath}': {ex.Message}";
+                error = string.IsNullOrEmpty(tempLengthError)
+                    ? "Indexed sector commit backup temp file length could not be resolved."
+                    : tempLengthError;
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (System.Security.SecurityException ex)
+
+            if (backupTempBytes != sourceBytes)
             {
-                error = $"Indexed sector commit backup security failed for '{absolutePath}': {ex.Message}";
+                error = "Indexed sector commit backup temp file length did not match source.";
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (ArgumentException ex)
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(backupTempPath, backupTempBytes, out string tempFlushError))
             {
-                error = $"Indexed sector commit backup path invalid for '{absolutePath}': {ex.Message}";
+                error = string.IsNullOrEmpty(tempFlushError)
+                    ? "Indexed sector commit backup temp critical flush failed."
+                    : tempFlushError;
                 _ = TryDeleteFileIfExists(backupTempPath, out _);
                 return false;
             }
-            catch (NotSupportedException ex)
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static bool TryFinalizeIndexedSectorCommitBackup(string backupPath, string backupTempPath, long sourceBytes, out string error)
+        {
+            AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+            if (File.Exists(backupPath))
             {
-                error = $"Indexed sector commit backup path unsupported for '{absolutePath}': {ex.Message}";
-                _ = TryDeleteFileIfExists(backupTempPath, out _);
+                File.Replace(backupTempPath, backupPath, null);
+            }
+            else
+            {
+                File.Move(backupTempPath, backupPath);
+            }
+            AsyncWriteManager.InvalidateCachedReadWindows(backupTempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(backupPath);
+
+            if (!AsyncWriteManager.TryGetFileLength(backupPath, out long backupBytes, out string lengthError))
+            {
+                error = string.IsNullOrEmpty(lengthError)
+                    ? "Indexed sector commit backup file length could not be resolved."
+                    : lengthError;
                 return false;
             }
+
+            if (backupBytes != sourceBytes)
+            {
+                error = "Indexed sector commit backup file length did not match source.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(backupPath, backupBytes, out string flushError))
+            {
+                error = string.IsNullOrEmpty(flushError)
+                    ? "Indexed sector commit backup critical flush failed."
+                    : flushError;
+                return false;
+            }
+
+            error = string.Empty;
+            return true;
         }
 
         internal static bool IsIndexedBlockStorageRecoveryError(string error)
@@ -9161,61 +9318,9 @@ namespace Hecton8.SaveSystem
                 for (int i = 0; i < slotToGroupIndex.Length; i++)
                     slotToGroupIndex[i] = -1;
 
-                for (int i = 0; i < sourceLength; i++)
-                {
-                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                    if (!PersistentWorldDeltaRecord.IsValid(in record))
-                    {
-                        recordGroupIndex[i] = -1;
-                        continue;
-                    }
-
-                    long sectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
-                    if (sectorHash == long.MinValue)
-                    {
-                        recordGroupIndex[i] = -1;
-                        buffer.InvalidRecordCount++;
-                        continue;
-                    }
-
-                    int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
-                    if (groupIndex < 0)
-                    {
-                        recordGroupIndex[i] = -1;
-                        ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
-                        continue;
-                    }
-
-                    recordGroupIndex[i] = (short)groupIndex;
-                    IndexedSectorGroup group = buffer.Groups[groupIndex];
-                    group.Count++;
-                    buffer.Groups[groupIndex] = group;
-                }
-
-                int recordOffset = 0;
-                for (int i = 0; i < buffer.Groups.Length; i++)
-                {
-                    IndexedSectorGroup group = buffer.Groups[i];
-                    group.StartIndex = recordOffset;
-                    group.WriteCount = 0;
-                    buffer.Groups[i] = group;
-                    recordOffset += group.Count;
-                }
-
-                buffer.Records.ResizeUninitialized(recordOffset);
-                for (int i = 0; i < sourceLength; i++)
-                {
-                    int groupIndex = recordGroupIndex[i];
-                    if (groupIndex < 0)
-                        continue;
-
-                    PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
-                    IndexedSectorGroup group = buffer.Groups[groupIndex];
-                    int writeIndex = group.StartIndex + group.WriteCount;
-                    buffer.Records[writeIndex] = record;
-                    group.WriteCount++;
-                    buffer.Groups[groupIndex] = group;
-                }
+                PopulateIndexedSectorGroups(persistentWorldDeltas, sourceLength, chunkSizeMeters, ref buffer, slotToGroupIndex, recordGroupIndex);
+                int recordOffset = CalculateIndexedSectorGroupOffsets(ref buffer);
+                PopulateIndexedSectorRecords(persistentWorldDeltas, sourceLength, ref buffer, recordGroupIndex, recordOffset);
             }
             finally
             {
@@ -9224,6 +9329,83 @@ namespace Hecton8.SaveSystem
             }
 
             return buffer;
+        }
+
+        private static void PopulateIndexedSectorGroups(
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
+            int sourceLength,
+            int chunkSizeMeters,
+            ref IndexedSectorGroupBuffer buffer,
+            NativeArray<short> slotToGroupIndex,
+            NativeArray<short> recordGroupIndex)
+        {
+            for (int i = 0; i < sourceLength; i++)
+            {
+                PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                if (!PersistentWorldDeltaRecord.IsValid(in record))
+                {
+                    recordGroupIndex[i] = -1;
+                    continue;
+                }
+
+                long sectorHash = ComputePersistentWorldSectorHash(in record, chunkSizeMeters);
+                if (sectorHash == long.MinValue)
+                {
+                    recordGroupIndex[i] = -1;
+                    buffer.InvalidRecordCount++;
+                    continue;
+                }
+
+                int groupIndex = FindOrCreateIndexedSectorGroup(sectorHash, slotToGroupIndex, buffer.Groups);
+                if (groupIndex < 0)
+                {
+                    recordGroupIndex[i] = -1;
+                    ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
+                    continue;
+                }
+
+                recordGroupIndex[i] = (short)groupIndex;
+                IndexedSectorGroup group = buffer.Groups[groupIndex];
+                group.Count++;
+                buffer.Groups[groupIndex] = group;
+            }
+        }
+
+        private static int CalculateIndexedSectorGroupOffsets(ref IndexedSectorGroupBuffer buffer)
+        {
+            int recordOffset = 0;
+            for (int i = 0; i < buffer.Groups.Length; i++)
+            {
+                IndexedSectorGroup group = buffer.Groups[i];
+                group.StartIndex = recordOffset;
+                group.WriteCount = 0;
+                buffer.Groups[i] = group;
+                recordOffset += group.Count;
+            }
+            return recordOffset;
+        }
+
+        private static void PopulateIndexedSectorRecords(
+            NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
+            int sourceLength,
+            ref IndexedSectorGroupBuffer buffer,
+            NativeArray<short> recordGroupIndex,
+            int totalRecords)
+        {
+            buffer.Records.ResizeUninitialized(totalRecords);
+            for (int i = 0; i < sourceLength; i++)
+            {
+                int groupIndex = recordGroupIndex[i];
+                if (groupIndex < 0)
+                    continue;
+
+                PersistentWorldDeltaRecord record = persistentWorldDeltas[i];
+                IndexedSectorGroup group = buffer.Groups[groupIndex];
+                int writeIndex = group.StartIndex + group.WriteCount;
+                buffer.Records[writeIndex] = record;
+                group.WriteCount++;
+                buffer.Groups[groupIndex] = group;
+            }
         }
 
         private static int FindOrCreateIndexedSectorGroup(
@@ -10203,6 +10385,103 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+        private static bool TryWritePersistentWorldTables(
+            byte* destination,
+            NativeList<int3> chunkTable,
+            NativeList<ulong> itemHashTable,
+            int sectionLength,
+            ref int cursor,
+            out string error)
+        {
+            error = string.Empty;
+
+            if (chunkTable.Length > 0)
+            {
+                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
+                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    error = "Persistent-world chunk table write exceeded section bounds.";
+                    return false;
+                }
+
+                cursor += chunkBytes;
+            }
+
+            if (itemHashTable.Length > 0)
+            {
+                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
+                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
+                {
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
+                    error = "Persistent-world item hash table write exceeded section bounds.";
+                    return false;
+                }
+
+                cursor += itemBytes;
+            }
+
+            return true;
+        }
+
+        private static bool TryWritePersistentWorldRecord(
+            byte* destination,
+            in PersistentWorldDeltaRecord deltaRecord,
+            NativeParallelHashMap<int3, ushort> chunkLookup,
+            NativeParallelHashMap<ulong, ushort> itemHashLookup,
+            ref int cursor,
+            out string error)
+        {
+            error = string.Empty;
+            PersistentWorldSaveRecord16 saveRecord = default;
+            bool wroteRecord = false;
+
+            if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
+                chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
+            {
+                saveRecord = new PersistentWorldSaveRecord16
+                {
+                    PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                    InstanceUid = deltaRecord.InstanceUid,
+                    Quantity = 1,
+                    ItemFlags = deltaRecord.ItemFlags,
+                    Reserved = 0,
+                    ChunkIndex = deletedChunkIndex,
+                    ItemHashIndex = PersistentWorldDeletedItemHashIndex
+                };
+                wroteRecord = true;
+            }
+            else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
+                     chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
+                     itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
+            {
+                saveRecord = new PersistentWorldSaveRecord16
+                {
+                    PackedLocalPosition = deltaRecord.PackedLocalPosition,
+                    InstanceUid = deltaRecord.InstanceUid,
+                    Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
+                    ItemFlags = deltaRecord.ItemFlags,
+                    Reserved = 0,
+                    ChunkIndex = chunkIndex,
+                    ItemHashIndex = itemHashIndex
+                };
+                wroteRecord = true;
+            }
+
+            if (!wroteRecord)
+            {
+                error = "Persistent-world section record lookup failed.";
+                return false;
+            }
+
+            UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
+            cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
+
+            return true;
+        }
+
         private static bool WritePersistentWorldSection(
             byte* destination,
             NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltas,
@@ -10237,79 +10516,14 @@ namespace Hecton8.SaveSystem
             WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
             int cursor = sectionHeaderSize;
 
-            if (chunkTable.Length > 0)
-            {
-                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
-                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world chunk table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += chunkBytes;
-            }
-
-            if (itemHashTable.Length > 0)
-            {
-                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
-                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world item hash table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += itemBytes;
-            }
+            if (!TryWritePersistentWorldTables(destination, chunkTable, itemHashTable, sectionLength, ref cursor, out error))
+                return false;
 
             for (int i = 0; i < recordCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                PersistentWorldSaveRecord16 saveRecord = default;
-                bool wroteRecord = false;
-                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
-                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = 1,
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = deletedChunkIndex,
-                        ItemHashIndex = PersistentWorldDeletedItemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
-                         chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
-                         itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = chunkIndex,
-                        ItemHashIndex = itemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-
-                if (!wroteRecord)
-                {
-                    error = "Persistent-world section record lookup failed.";
+                if (!TryWritePersistentWorldRecord(destination, in deltaRecord, chunkLookup, itemHashLookup, ref cursor, out error))
                     return false;
-                }
-
-                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
-                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
 
             return true;
@@ -10360,80 +10574,15 @@ namespace Hecton8.SaveSystem
             WritePersistentWorldSectionHeader(destination, sectionHeaderSize, in sectionHeader);
             int cursor = sectionHeaderSize;
 
-            if (chunkTable.Length > 0)
-            {
-                void* chunkSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(chunkTable.AsArray());
-                int chunkBytes = chunkTable.Length * UnsafeUtility.SizeOf<int3>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, chunkSourcePtr, chunkBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world chunk table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += chunkBytes;
-            }
-
-            if (itemHashTable.Length > 0)
-            {
-                void* itemSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(itemHashTable.AsArray());
-                int itemBytes = itemHashTable.Length * UnsafeUtility.SizeOf<ulong>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(destination, cursor), sectionLength - cursor, itemSourcePtr, itemBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryStorage));
-                    error = "Persistent-world item hash table write exceeded section bounds.";
-                    return false;
-                }
-
-                cursor += itemBytes;
-            }
+            if (!TryWritePersistentWorldTables(destination, chunkTable, itemHashTable, sectionLength, ref cursor, out error))
+                return false;
 
             int endIndex = startIndex + safeRecordCount;
             for (int i = startIndex; i < endIndex; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = persistentWorldDeltas[i];
-                PersistentWorldSaveRecord16 saveRecord = default;
-                bool wroteRecord = false;
-                if (PersistentWorldDeltaRecord.IsDeleted(in deltaRecord) &&
-                    chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort deletedChunkIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = 1,
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = deletedChunkIndex,
-                        ItemHashIndex = PersistentWorldDeletedItemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-                else if (PersistentWorldDeltaRecord.IsValid(in deltaRecord) &&
-                         chunkLookup.TryGetValue(deltaRecord.ChunkId, out ushort chunkIndex) &&
-                         itemHashLookup.TryGetValue(deltaRecord.ItemPersistentIdHash, out ushort itemHashIndex))
-                {
-                    saveRecord = new PersistentWorldSaveRecord16
-                    {
-                        PackedLocalPosition = deltaRecord.PackedLocalPosition,
-                        InstanceUid = deltaRecord.InstanceUid,
-                        Quantity = (ushort)math.clamp(deltaRecord.Quantity, 1, ushort.MaxValue),
-                        ItemFlags = deltaRecord.ItemFlags,
-                        Reserved = 0,
-                        ChunkIndex = chunkIndex,
-                        ItemHashIndex = itemHashIndex
-                    };
-                    wroteRecord = true;
-                }
-
-                if (!wroteRecord)
-                {
-                    error = "Persistent-world section record lookup failed.";
+                if (!TryWritePersistentWorldRecord(destination, in deltaRecord, chunkLookup, itemHashLookup, ref cursor, out error))
                     return false;
-                }
-
-                UnsafeUtility.CopyStructureToPtr(ref saveRecord, AddByteOffset(destination, cursor));
-                cursor += UnsafeUtility.SizeOf<PersistentWorldSaveRecord16>();
             }
 
             return true;
