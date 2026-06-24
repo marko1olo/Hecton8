@@ -1,7 +1,3 @@
-🧪 Add unit tests for RadixSortSectorEntityStateEntriesJob
+refactor: 🧹 refactor ReadModule to smaller helper methods
 
-🎯 What: The job RadixSortSectorEntityStateEntriesJob previously lacked test coverage, which left a gap in verifying correct behavior of the entity save state serialization logic. Added RadixSortSectorEntityStateEntriesJobEditTests and made the job internal to be accessible.
-
-📊 Coverage: Sort order by valid keys, identical keys, empty payload, array of 1 and proper assignment of secondary values (records).
-
-✨ Result: Coverage expanded on save system entity caching, improving stability and regression prevention when modifying struct/binary layout code or optimizing.
+This addresses the overly long method issue by breaking down ReadModule into logical helper functions, improving readability and code health.
