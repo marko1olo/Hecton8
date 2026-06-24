@@ -212,7 +212,7 @@ namespace Hecton8.Editor
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogDensity = 0.008f;
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.05f, 0.08f, 0.12f);
+            RenderSettings.ambientLight = new Color(0.12f, 0.18f, 0.25f);
 
             // Create Global Volume for PostProcessing
             GameObject volumeGo = new GameObject("TRT_GlobalVolume");
@@ -228,9 +228,9 @@ namespace Hecton8.Editor
             tonemapping.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.ACES);
             
             var bloom = profile.Add<UnityEngine.Rendering.Universal.Bloom>();
-            bloom.intensity.Override(2.0f);
-            bloom.threshold.Override(0.9f);
-            bloom.scatter.Override(0.7f);
+            bloom.intensity.Override(0.4f);
+            bloom.threshold.Override(1.1f);
+            bloom.scatter.Override(0.5f);
 
             // Add a point light to illuminate the specific shot areas
             GameObject pointGo = new GameObject("TRT_PointLight");
@@ -243,10 +243,12 @@ namespace Hecton8.Editor
             // 1. MacroView: 10km (Orthographic top-down)
             cam.orthographic = true;
             cam.orthographicSize = boundsHalf;
-            cam.transform.position = boundsCenter + new Vector3(0, 500f, 0);
+            cam.transform.position = new Vector3(boundsCenter.x, 15000f, boundsCenter.z);
             cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            pLight.transform.position = boundsCenter + new Vector3(0, 400f, 0);
+            // Point light is useless at 14km range=50 — disable it for MacroView, dirLight covers everything
+            pLight.enabled = false;
             TakeScreenshot(cam, ArtifactDir + "MacroView.png");
+            pLight.enabled = true;
 
             cam.orthographic = false;
             cam.fieldOfView = 60f;
@@ -302,22 +304,25 @@ namespace Hecton8.Editor
             TakeScreenshot(cam, ArtifactDir + "CanyonView.png");
             RenderSettings.fog = true;
 
-            // 3. CaveEntrance: 500m
-            cam.transform.position = cavePos + new Vector3(40f, 40f, -40f);
-            cam.transform.LookAt(cavePos);
+            // 3. CaveEntrance: camera hovers above cavePos looking down at the terrain surface
+            // cavePos is the lowest terrain point — we look AT the surface FROM above-side, not into the pit
+            cam.transform.position = cavePos + new Vector3(0f, 80f, -120f);
+            cam.transform.LookAt(cavePos + Vector3.up * 20f);
             pLight.enabled = true;
             pLight.transform.position = cam.transform.position;
-            pLight.intensity = 50f;
+            pLight.range = 300f;
+            pLight.intensity = 8f;
             TakeScreenshot(cam, ArtifactDir + "CaveEntrance.png");
 
             cam.backgroundColor = Color.black; // Ensure strict black background
 
-            // 4. CaveInterior: 10m
-            cam.transform.position = cavePos + new Vector3(2f, 2f, -2f);
-            cam.transform.LookAt(cavePos);
+            // 4. CaveInterior: closer, looking into the low terrain rift
+            cam.transform.position = cavePos + new Vector3(0f, 20f, -40f);
+            cam.transform.LookAt(cavePos + Vector3.up * 5f);
             pLight.enabled = true;
             pLight.transform.position = cam.transform.position;
-            pLight.intensity = 50f;
+            pLight.range = 100f;
+            pLight.intensity = 5f;
             TakeScreenshot(cam, ArtifactDir + "CaveInterior.png");
 
             // Ecosystem Screenshots with Collision Avoidance

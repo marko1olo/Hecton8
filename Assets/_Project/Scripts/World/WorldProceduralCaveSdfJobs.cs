@@ -134,27 +134,22 @@ namespace Hecton8.World
             float carve = caveMask * CarveStrengthMeters * depthFade * surfaceFade;
 
             // Strata shelving: periodic vertical density restoration.
-            // This creates flat floors in caves by pushing density back up at specific Y levels,
-            // simulating hard geological strata that resist erosion.
             float strataThickness = math.max(4.0f, StrataLayerThicknessMeters);
             float strataPhase = (float)absY / strataThickness;
-            // Triangle wave: 0 at layer boundaries, 1 at layer centers.
             float strataFrac = math.abs(math.frac(strataPhase) * 2.0f - 1.0f);
-            // Only push density back at layer boundaries (where strataFrac is low).
-            // DANGER: We must never push density HIGHER than currentDensity, otherwise we create giant spikes 
-            // shooting out of the terrain where caves intersect the surface.
+            
+            // Only push density back at layer boundaries. 
             float strataRestore = (1.0f - strataFrac) * StrataShelvingStrength * caveMask * surfaceFade;
-            // Final density modification
-            float newDensity = math.clamp(currentDensity - carve + strataRestore, -1f, 1f);
+            
+            // Final density modification. We MUST NEVER add more rock than the base terrain!
+            float newDensity = currentDensity - carve + strataRestore;
+            newDensity = math.min(newDensity, currentDensity);
 
             // === CRITICAL SAFETY NET ===
             // Guarantee that caves NEVER punch through the terrain surface (creating black holes).
-            // If we are anywhere near the protection zone, do not allow density to go below a solid positive value.
-            if (currentDensity < SurfaceProtectionMeters + 25.0f)
-            {
-                newDensity = math.max(newDensity, 0.5f);
-            }
-
+            // Instead of forcing to 0.5f (which breaks gradients), we smoothly fade the carve to 0
+            // near the surface. (This is already handled by surfaceFade).
+            
             Sdf[index] = newDensity;
         }
 
