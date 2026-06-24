@@ -508,30 +508,15 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
-            int narrativeDiscoverySourceCount = ClampCollectionCount(
-                data.narrativeDiscoveryCount,
-                data.narrativeDiscoveryIds,
-                SaveData.MaxNarrativeDiscoveries);
-            int narrativeDiscoveryCount = CountNonBlankStringArraySlice(
-                data.narrativeDiscoveryIds,
-                narrativeDiscoverySourceCount,
-                SaveData.MaxNarrativeDiscoveries);
-            int corporatePendingOrderSourceCount = ClampPairedListCount(
-                data.corporatePendingOrderIds,
-                data.corporatePendingOrderTimers,
-                SaveData.MaxCorporateOrderIds);
+            return WriteSaveDataCore(data, ref writer)
+                && WriteSaveDataWorld(data, ref writer)
+                && WriteSaveDataNarrativeAndMeta(data, ref writer)
+                && WriteSaveDataSettingsAndProcedural(data, ref writer);
+        }
+
+        private static bool WriteSaveDataCore(SaveData data, ref BufferWriter writer)
+        {
             double totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
-            float firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
-            int endingChoice = SanitizeEndingChoice(data.endingChoice);
-            bool endingComplete = data.endingComplete && endingChoice != 0;
-            if (!endingComplete)
-                endingChoice = 0;
-            bool endingConditionMet = data.endingConditionMet || endingComplete;
-            ulong suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
-            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
-                data.lastDiscoveredBiomeId,
-                data.discoveredBiomeIds,
-                data.discoveredBiomeBitWords);
 
             return writer.WriteInt(data.version)
                 && writer.WriteStruct(data.contractVersionHashLo)
@@ -553,8 +538,17 @@ namespace Hecton8.SaveSystem
                 && WritePdaAdvisories(ref writer, data.pdaAdvisories)
                 && WriteProceduralLore(ref writer, data.proceduralLore)
                 && WriteAchievementRegistry(ref writer, data.achievements)
-                && WriteRunModifiers(ref writer, data.runModifiers)
-                && WriteMetaCampaign(ref writer, data.metaCampaign)
+                && WriteRunModifiers(ref writer, data.runModifiers);
+        }
+
+        private static bool WriteSaveDataWorld(SaveData data, ref BufferWriter writer)
+        {
+            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
+                data.lastDiscoveredBiomeId,
+                data.discoveredBiomeIds,
+                data.discoveredBiomeBitWords);
+
+            return WriteMetaCampaign(ref writer, data.metaCampaign)
                 && WriteResourceScarcity(ref writer, data.resourceScarcity)
                 && WriteEnvironmentalStrain(ref writer, data.environmentalStrain)
                 && WriteEcosystemState(ref writer, data.ecosystemState)
@@ -564,8 +558,32 @@ namespace Hecton8.SaveSystem
                 && WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)
                 && WriteDiscoveredBiomeHashSet(ref writer, data.discoveredBiomeIds)
                 && WriteDiscoveredBiomeBitWords(ref writer, data.discoveredBiomeBitWords)
-                && writer.WriteInt(lastDiscoveredBiomeId)
-                && writer.WriteInt(narrativeDiscoveryCount)
+                && writer.WriteInt(lastDiscoveredBiomeId);
+        }
+
+        private static bool WriteSaveDataNarrativeAndMeta(SaveData data, ref BufferWriter writer)
+        {
+            int narrativeDiscoverySourceCount = ClampCollectionCount(
+                data.narrativeDiscoveryCount,
+                data.narrativeDiscoveryIds,
+                SaveData.MaxNarrativeDiscoveries);
+            int narrativeDiscoveryCount = CountNonBlankStringArraySlice(
+                data.narrativeDiscoveryIds,
+                narrativeDiscoverySourceCount,
+                SaveData.MaxNarrativeDiscoveries);
+            int corporatePendingOrderSourceCount = ClampPairedListCount(
+                data.corporatePendingOrderIds,
+                data.corporatePendingOrderTimers,
+                SaveData.MaxCorporateOrderIds);
+            float firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
+            int endingChoice = SanitizeEndingChoice(data.endingChoice);
+            bool endingComplete = data.endingComplete && endingChoice != 0;
+            if (!endingComplete)
+                endingChoice = 0;
+            bool endingConditionMet = data.endingConditionMet || endingComplete;
+            ulong suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
+
+            return writer.WriteInt(narrativeDiscoveryCount)
                 && WriteNonBlankStringArraySlice(
                     ref writer,
                     data.narrativeDiscoveryIds,
@@ -610,8 +628,12 @@ namespace Hecton8.SaveSystem
                 && writer.WriteBool(endingComplete)
                 && writer.WriteBool(endingConditionMet)
                 && WriteNonBlankStringList(ref writer, data.missionActiveIds, SaveData.MaxMissionIds)
-                && WriteNonBlankStringList(ref writer, data.missionCompletedIds, SaveData.MaxMissionIds)
-                && writer.WriteInt(SanitizeLodQualityPreset(data.LODQualityPreset))
+                && WriteNonBlankStringList(ref writer, data.missionCompletedIds, SaveData.MaxMissionIds);
+        }
+
+        private static bool WriteSaveDataSettingsAndProcedural(SaveData data, ref BufferWriter writer)
+        {
+            return writer.WriteInt(SanitizeLodQualityPreset(data.LODQualityPreset))
                 && writer.WriteBool(data.DynamicResolutionEnabled)
                 && WriteRadiationGrid(ref writer, data)
                 && WriteRtgDecay(ref writer, data)
@@ -650,154 +672,10 @@ namespace Hecton8.SaveSystem
                 data.contractVersionHashHi = HectonContractVersion.HashHi;
             }
 
-            if (!reader.ReadString(out data.timestamp)
-                || !ReadTotalPlayTime(ref reader, data.version, out data.totalPlayTime)
-                || !ReadPlayerStats(ref reader, data.version, out data.playerStats)
-                || !ReadInventory(ref reader, data.version, out data.inventory)
-                || !ReadWorldState(ref reader, out data.worldState)
-                || !ReadProceduralWorldState(ref reader, data.version, out data.proceduralWorldState)
-                || !ReadConstruction(ref reader, data.version, out data.construction)
-                || !ReadScanLog(ref reader, out data.scanLog)
-                || !ReadBarter(ref reader, out data.barter)
-                || !ReadFieldOperationLog(ref reader, out data.fieldOperations)
-                || !ReadBeaconNetwork(ref reader, out data.beaconNetwork)
-                || !ReadExplorationMap(ref reader, data.version, out data.explorationMap)
-                || !ReadPdaLogbook(ref reader, data.version, out data.pdaLogbook)
-                || !ReadPdaMarkers(ref reader, data.version, out data.pdaMarkers)
-                || !ReadPdaAdvisories(ref reader, out data.pdaAdvisories)
-                || !ReadProceduralLore(ref reader, out data.proceduralLore)
-                || !ReadAchievementRegistry(ref reader, out data.achievements)
-                || !ReadRunModifiers(ref reader, out data.runModifiers)
-                || !ReadMetaCampaign(ref reader, data.version, out data.metaCampaign)
-                || !ReadResourceScarcity(ref reader, data.version, out data.resourceScarcity)
-                || !ReadEnvironmentalStrain(ref reader, out data.environmentalStrain)
-                || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
-                || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
-                || !ReadHazardZoneRuntime(ref reader, data.version, out data.hazardZones)
-                || !ReadStringFloatDictionary(
-                    ref reader,
-                    out data.toolDurabilityMap,
-                    SaveData.MaxToolDurabilityRecords,
-                    nameof(data.toolDurabilityMap))
-                || !ReadStringBoolDictionary(
-                    ref reader,
-                    out data.toolBrokenMap,
-                    SaveData.MaxToolDurabilityRecords,
-                    nameof(data.toolBrokenMap))
-                || !ReadDiscoveredBiomeHashSet(
-                    ref reader,
-                    out data.discoveredBiomeIds,
-                    nameof(data.discoveredBiomeIds))
-                || !reader.ReadStructArrayBounded(
-                    out data.discoveredBiomeBitWords,
-                    BiomeDiscoveryBitMask.WordCount,
-                    nameof(data.discoveredBiomeBitWords))
-                || !reader.ReadInt(out data.lastDiscoveredBiomeId)
-                || !reader.ReadInt(out data.narrativeDiscoveryCount)
-                || !ReadStringArray(
-                    ref reader,
-                    out data.narrativeDiscoveryIds,
-                    SaveData.MaxNarrativeDiscoveries,
-                    nameof(data.narrativeDiscoveryIds))
-                || !reader.ReadInt(out data.narrativeDepthTier)
-                || !ReadNarrativeAupTriggeredMask(ref reader, data.version, out data.narrativeAupTriggeredMask)
-                || !ReadStringList(
-                    ref reader,
-                    out data.audioLogDiscoveredIds,
-                    SaveData.MaxLegacyAudioLogDiscoveredIds,
-                    nameof(data.audioLogDiscoveredIds))
-                || !ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
-                || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
-                || !reader.ReadStructArrayBounded(
-                    out data.industrialLoreUnlockWords,
-                    IndustrialLoreBitMask.WordCount,
-                    nameof(data.industrialLoreUnlockWords))
-                || !ReadDataArchaeology(ref reader, data.version, data)
-                || !ReadStringList(
-                    ref reader,
-                    out data.questActiveIds,
-                    SaveData.MaxLegacyQuestIds,
-                    nameof(data.questActiveIds))
-                || !ReadStringList(
-                    ref reader,
-                    out data.questCompletedIds,
-                    SaveData.MaxLegacyQuestIds,
-                    nameof(data.questCompletedIds))
-                || !reader.ReadBool(out data.atlasSignalDetected)
-                || !reader.ReadFloat(out data.atlasSignalPulseTimer)
-                || !reader.ReadInt(out data.atlasSignalRevealStage)
-                || !ReadSuitUpgradeMask(ref reader, data.version, out data.suitUpgradeMask)
-                || !ReadStringList(
-                    ref reader,
-                    out data.suitInstalledUpgradeIds,
-                    SaveData.MaxSuitUpgradeIds,
-                    nameof(data.suitInstalledUpgradeIds))
-                || !ReadStringList(
-                    ref reader,
-                    out data.suitUnlockedBlueprintIds,
-                    SaveData.MaxSuitUpgradeIds,
-                    nameof(data.suitUnlockedBlueprintIds))
-                || !ReadStringList(
-                    ref reader,
-                    out data.suitBrokenUpgradeIds,
-                    SaveData.MaxSuitUpgradeIds,
-                    nameof(data.suitBrokenUpgradeIds))
-                || !reader.ReadString(out data.playerExpressionProfileId)
-                || !reader.ReadInt(out data.atlas6PlayerStatus)
-                || !reader.ReadInt(out data.atlas6BarterCount)
-                || !reader.ReadBool(out data.atlas6DirectiveConflictTriggered)
-                || !ReadAtlas6Liability(ref reader, data.version, data)
-                || !ReadStringList(
-                    ref reader,
-                    out data.corporateReceivedOrderIds,
-                    SaveData.MaxCorporateOrderIds,
-                    nameof(data.corporateReceivedOrderIds))
-                || !ReadStringList(
-                    ref reader,
-                    out data.corporatePendingOrderIds,
-                    SaveData.MaxCorporateOrderIds,
-                    nameof(data.corporatePendingOrderIds))
-                || !ReadFloatList(
-                    ref reader,
-                    out data.corporatePendingOrderTimers,
-                    SaveData.MaxCorporateOrderIds,
-                    nameof(data.corporatePendingOrderTimers))
-                || !reader.ReadFloat(out data.firstHourSessionTime)
-                || !reader.ReadInt(out data.firstHourMilestones)
-                || !reader.ReadInt(out data.firstHourGuidanceFlags)
-                || !reader.ReadInt(out data.endingChoice)
-                || !reader.ReadBool(out data.endingComplete)
-                || !reader.ReadBool(out data.endingConditionMet)
-                || !ReadStringList(
-                    ref reader,
-                    out data.missionActiveIds,
-                    SaveData.MaxMissionIds,
-                    nameof(data.missionActiveIds))
-                || !ReadStringList(
-                    ref reader,
-                    out data.missionCompletedIds,
-                    SaveData.MaxMissionIds,
-                    nameof(data.missionCompletedIds))
-                || !reader.ReadInt(out data.LODQualityPreset)
-                || !reader.ReadBool(out data.DynamicResolutionEnabled)
-                || !ReadRadiationGrid(ref reader, data.version, data)
-                || !ReadRtgDecay(ref reader, data.version, data)
-                || !ReadStringStringDictionary(
-                    ref reader,
-                    out data.CustomModData,
-                    SaveData.MaxCustomModDataEntries,
-                    nameof(data.CustomModData))
-                || !ReadFirstHourLockedDtos(ref reader, data.version, data)
-                || !ReadVoxelDeltaPersistence(
-                    ref reader,
-                    data.version,
-                    preV77CellFlagsReadMode,
-                    out data.voxelDeltaPersistence)
-                || !ReadCelestialLightPhase(ref reader, data.version, data)
-                || !ReadProceduralTerrainIdentity(
-                    ref reader,
-                    data.version,
-                    out data.proceduralTerrainIdentity))
+            if (!ReadSaveDataCore(ref reader, data)
+                || !ReadSaveDataWorld(ref reader, data)
+                || !ReadSaveDataNarrativeAndMeta(ref reader, data)
+                || !ReadSaveDataSettingsAndProcedural(ref reader, data, preV77CellFlagsReadMode))
             {
                 return false;
             }
@@ -828,6 +706,170 @@ namespace Hecton8.SaveSystem
             ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             RefreshInventoryShadowMirror(data);
             return true;
+        }
+
+        private static bool ReadSaveDataCore(ref BufferReader reader, SaveData data)
+        {
+            return reader.ReadString(out data.timestamp)
+                && ReadTotalPlayTime(ref reader, data.version, out data.totalPlayTime)
+                && ReadPlayerStats(ref reader, data.version, out data.playerStats)
+                && ReadInventory(ref reader, data.version, out data.inventory)
+                && ReadWorldState(ref reader, out data.worldState)
+                && ReadProceduralWorldState(ref reader, data.version, out data.proceduralWorldState)
+                && ReadConstruction(ref reader, data.version, out data.construction)
+                && ReadScanLog(ref reader, out data.scanLog)
+                && ReadBarter(ref reader, out data.barter)
+                && ReadFieldOperationLog(ref reader, out data.fieldOperations)
+                && ReadBeaconNetwork(ref reader, out data.beaconNetwork)
+                && ReadExplorationMap(ref reader, data.version, out data.explorationMap)
+                && ReadPdaLogbook(ref reader, data.version, out data.pdaLogbook)
+                && ReadPdaMarkers(ref reader, data.version, out data.pdaMarkers)
+                && ReadPdaAdvisories(ref reader, out data.pdaAdvisories)
+                && ReadProceduralLore(ref reader, out data.proceduralLore)
+                && ReadAchievementRegistry(ref reader, out data.achievements)
+                && ReadRunModifiers(ref reader, out data.runModifiers);
+        }
+
+        private static bool ReadSaveDataWorld(ref BufferReader reader, SaveData data)
+        {
+            return ReadMetaCampaign(ref reader, data.version, out data.metaCampaign)
+                && ReadResourceScarcity(ref reader, data.version, out data.resourceScarcity)
+                && ReadEnvironmentalStrain(ref reader, out data.environmentalStrain)
+                && ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
+                && ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
+                && ReadHazardZoneRuntime(ref reader, data.version, out data.hazardZones)
+                && ReadStringFloatDictionary(
+                    ref reader,
+                    out data.toolDurabilityMap,
+                    SaveData.MaxToolDurabilityRecords,
+                    nameof(data.toolDurabilityMap))
+                && ReadStringBoolDictionary(
+                    ref reader,
+                    out data.toolBrokenMap,
+                    SaveData.MaxToolDurabilityRecords,
+                    nameof(data.toolBrokenMap))
+                && ReadDiscoveredBiomeHashSet(
+                    ref reader,
+                    out data.discoveredBiomeIds,
+                    nameof(data.discoveredBiomeIds))
+                && reader.ReadStructArrayBounded(
+                    out data.discoveredBiomeBitWords,
+                    BiomeDiscoveryBitMask.WordCount,
+                    nameof(data.discoveredBiomeBitWords))
+                && reader.ReadInt(out data.lastDiscoveredBiomeId);
+        }
+
+        private static bool ReadSaveDataNarrativeAndMeta(ref BufferReader reader, SaveData data)
+        {
+            return reader.ReadInt(out data.narrativeDiscoveryCount)
+                && ReadStringArray(
+                    ref reader,
+                    out data.narrativeDiscoveryIds,
+                    SaveData.MaxNarrativeDiscoveries,
+                    nameof(data.narrativeDiscoveryIds))
+                && reader.ReadInt(out data.narrativeDepthTier)
+                && ReadNarrativeAupTriggeredMask(ref reader, data.version, out data.narrativeAupTriggeredMask)
+                && ReadStringList(
+                    ref reader,
+                    out data.audioLogDiscoveredIds,
+                    SaveData.MaxLegacyAudioLogDiscoveredIds,
+                    nameof(data.audioLogDiscoveredIds))
+                && ReadAudioLogDiscoveryBitWords(ref reader, data.version, data)
+                && ReadEncryptedAudioLogFragments(ref reader, data.version, data)
+                && reader.ReadStructArrayBounded(
+                    out data.industrialLoreUnlockWords,
+                    IndustrialLoreBitMask.WordCount,
+                    nameof(data.industrialLoreUnlockWords))
+                && ReadDataArchaeology(ref reader, data.version, data)
+                && ReadStringList(
+                    ref reader,
+                    out data.questActiveIds,
+                    SaveData.MaxLegacyQuestIds,
+                    nameof(data.questActiveIds))
+                && ReadStringList(
+                    ref reader,
+                    out data.questCompletedIds,
+                    SaveData.MaxLegacyQuestIds,
+                    nameof(data.questCompletedIds))
+                && reader.ReadBool(out data.atlasSignalDetected)
+                && reader.ReadFloat(out data.atlasSignalPulseTimer)
+                && reader.ReadInt(out data.atlasSignalRevealStage)
+                && ReadSuitUpgradeMask(ref reader, data.version, out data.suitUpgradeMask)
+                && ReadStringList(
+                    ref reader,
+                    out data.suitInstalledUpgradeIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitInstalledUpgradeIds))
+                && ReadStringList(
+                    ref reader,
+                    out data.suitUnlockedBlueprintIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitUnlockedBlueprintIds))
+                && ReadStringList(
+                    ref reader,
+                    out data.suitBrokenUpgradeIds,
+                    SaveData.MaxSuitUpgradeIds,
+                    nameof(data.suitBrokenUpgradeIds))
+                && reader.ReadString(out data.playerExpressionProfileId)
+                && reader.ReadInt(out data.atlas6PlayerStatus)
+                && reader.ReadInt(out data.atlas6BarterCount)
+                && reader.ReadBool(out data.atlas6DirectiveConflictTriggered)
+                && ReadAtlas6Liability(ref reader, data.version, data)
+                && ReadStringList(
+                    ref reader,
+                    out data.corporateReceivedOrderIds,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporateReceivedOrderIds))
+                && ReadStringList(
+                    ref reader,
+                    out data.corporatePendingOrderIds,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporatePendingOrderIds))
+                && ReadFloatList(
+                    ref reader,
+                    out data.corporatePendingOrderTimers,
+                    SaveData.MaxCorporateOrderIds,
+                    nameof(data.corporatePendingOrderTimers))
+                && reader.ReadFloat(out data.firstHourSessionTime)
+                && reader.ReadInt(out data.firstHourMilestones)
+                && reader.ReadInt(out data.firstHourGuidanceFlags)
+                && reader.ReadInt(out data.endingChoice)
+                && reader.ReadBool(out data.endingComplete)
+                && reader.ReadBool(out data.endingConditionMet)
+                && ReadStringList(
+                    ref reader,
+                    out data.missionActiveIds,
+                    SaveData.MaxMissionIds,
+                    nameof(data.missionActiveIds))
+                && ReadStringList(
+                    ref reader,
+                    out data.missionCompletedIds,
+                    SaveData.MaxMissionIds,
+                    nameof(data.missionCompletedIds));
+        }
+
+        private static bool ReadSaveDataSettingsAndProcedural(ref BufferReader reader, SaveData data, VoxelDeltaCellFlagsReadMode preV77CellFlagsReadMode)
+        {
+            return reader.ReadInt(out data.LODQualityPreset)
+                && reader.ReadBool(out data.DynamicResolutionEnabled)
+                && ReadRadiationGrid(ref reader, data.version, data)
+                && ReadRtgDecay(ref reader, data.version, data)
+                && ReadStringStringDictionary(
+                    ref reader,
+                    out data.CustomModData,
+                    SaveData.MaxCustomModDataEntries,
+                    nameof(data.CustomModData))
+                && ReadFirstHourLockedDtos(ref reader, data.version, data)
+                && ReadVoxelDeltaPersistence(
+                    ref reader,
+                    data.version,
+                    preV77CellFlagsReadMode,
+                    out data.voxelDeltaPersistence)
+                && ReadCelestialLightPhase(ref reader, data.version, data)
+                && ReadProceduralTerrainIdentity(
+                    ref reader,
+                    data.version,
+                    out data.proceduralTerrainIdentity);
         }
 
         private static void SanitizeRootCollectionsAfterRead(SaveData data)
