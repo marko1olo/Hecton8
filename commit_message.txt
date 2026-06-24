@@ -1,3 +1,0 @@
-refactor: 🧹 refactor ReadModule to smaller helper methods
-
-This addresses the overly long method issue by breaking down ReadModule into logical helper functions, improving readability and code health.
