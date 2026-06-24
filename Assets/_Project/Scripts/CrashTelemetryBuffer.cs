@@ -1206,70 +1206,9 @@ namespace Hecton8.Core
                 uint gcAllocBytes = unchecked((uint)math.max(0, ReadIntValue(_gcAllocRecorder)));
                 uint errorFlags = BuildErrorFlags(dt, reservedMemoryMb, playerAup, hasPlayer);
                 float latencyMs = SanitizeMilliseconds(InputLatencyTracker.SampleCompletedLatencyMs());
-                int pendingAwaitableContinuations = AwaitableDebtMonitor.PendingNextFrameContinuations;
-                int peakAwaitableContinuations = AwaitableDebtMonitor.ConsumePeakNextFrameContinuations();
-                int awaitableDebtSample = math.max(pendingAwaitableContinuations, peakAwaitableContinuations);
-                if (awaitableDebtSample > AwaitableDebtMonitor.LatencyCrimeThreshold)
-                {
-                    errorFlags |= (uint)ErrorBits.LatencyCrime;
-                    systemMask |= (uint)SystemBits.Input;
-                }
-
-                AwaitableDebtMonitor.AuditLatencyDebt(awaitableDebtSample, latencyMs);
+                AuditAwaitableDebt(latencyMs, ref errorFlags, ref systemMask);
                 OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
-                uint threadedFaultFlags = unchecked((uint)Interlocked.Exchange(ref _threadedFaultFlags, 0));
-                uint runtimeFaultFlags = unchecked((uint)Interlocked.Exchange(ref _runtimeFaultFlags, 0));
-                if (threadedFaultFlags != 0u)
-                    errorFlags |= threadedFaultFlags;
-                if (runtimeFaultFlags != 0u)
-                    errorFlags |= runtimeFaultFlags;
-                if ((runtimeFaultFlags & ExportInternalFaultMask) != 0u)
-                    systemMask |= (uint)SystemBits.Memory;
-
-                int blackBoxExportFailureCount = Interlocked.Exchange(ref _pendingBlackBoxExportFailureCount, 0);
-                if (blackBoxExportFailureCount > 0)
-                {
-                    WriteBlackBoxExportFaultTelemetry(blackBoxExportFailureCount);
-                    errorFlags |= (uint)ErrorBits.BlackBoxExportFault;
-                    systemMask |= (uint)SystemBits.Memory;
-                }
-
-                int blackBoxExportDroppedCount = Interlocked.Exchange(ref _pendingBlackBoxExportDroppedCount, 0);
-                if (blackBoxExportDroppedCount > 0)
-                {
-                    WriteBlackBoxExportDroppedTelemetry(blackBoxExportDroppedCount);
-                    errorFlags |= (uint)ErrorBits.BlackBoxExportDropped;
-                    systemMask |= (uint)SystemBits.Memory;
-                }
-
-                int blackBoxExportSuppressedCount = Interlocked.Exchange(ref _pendingBlackBoxExportSuppressedCount, 0);
-                if (blackBoxExportSuppressedCount > 0)
-                {
-                    WriteBlackBoxExportSuppressedTelemetry(blackBoxExportSuppressedCount);
-                    errorFlags |= (uint)ErrorBits.BlackBoxExportSuppressed;
-                    systemMask |= (uint)SystemBits.Memory;
-                }
-
-                int audioOverflowDropCount = Interlocked.Exchange(ref _pendingAudioOverflowDropCount, 0);
-                if (audioOverflowDropCount > 0)
-                {
-                    WriteAudioOverflowDropTelemetry(
-                        audioOverflowDropCount,
-                        Volatile.Read(ref _pendingAudioOverflowBufferedFrames),
-                        Volatile.Read(ref _pendingAudioOverflowWritableFrames));
-                    PublishPerformanceWarningNoThrow(
-                        _audioOverflowDropWarningHash,
-                        _audioOverflowBufferContextHash,
-                        audioOverflowDropCount);
-                }
-
-                if (Interlocked.Exchange(ref _pendingAudioDspStats, 0) != 0)
-                {
-                    WriteAudioDspStatsTelemetry(
-                        Volatile.Read(ref _pendingActiveDspVoices),
-                        Volatile.Read(ref _pendingSdfSampleTimeMicroseconds),
-                        Volatile.Read(ref _pendingAudioBufferUnderruns));
-                }
+                AuditPendingFaults(ref errorFlags, ref systemMask);
 
                 uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                 int writeIndex = ReserveTelemetryWriteIndex();
@@ -1315,6 +1254,77 @@ namespace Hecton8.Core
                     ExportReason exportReason = SelectExportReason(exportableErrorFlags);
                     TryExportSnapshot(exportReason, errorFlags, bypassCooldown: false);
                 }
+            }
+        }
+
+        private void AuditAwaitableDebt(float latencyMs, ref uint errorFlags, ref uint systemMask)
+        {
+            int pendingAwaitableContinuations = AwaitableDebtMonitor.PendingNextFrameContinuations;
+            int peakAwaitableContinuations = AwaitableDebtMonitor.ConsumePeakNextFrameContinuations();
+            int awaitableDebtSample = math.max(pendingAwaitableContinuations, peakAwaitableContinuations);
+            if (awaitableDebtSample > AwaitableDebtMonitor.LatencyCrimeThreshold)
+            {
+                errorFlags |= (uint)ErrorBits.LatencyCrime;
+                systemMask |= (uint)SystemBits.Input;
+            }
+
+            AwaitableDebtMonitor.AuditLatencyDebt(awaitableDebtSample, latencyMs);
+        }
+
+        private void AuditPendingFaults(ref uint errorFlags, ref uint systemMask)
+        {
+            uint threadedFaultFlags = unchecked((uint)Interlocked.Exchange(ref _threadedFaultFlags, 0));
+            uint runtimeFaultFlags = unchecked((uint)Interlocked.Exchange(ref _runtimeFaultFlags, 0));
+            if (threadedFaultFlags != 0u)
+                errorFlags |= threadedFaultFlags;
+            if (runtimeFaultFlags != 0u)
+                errorFlags |= runtimeFaultFlags;
+            if ((runtimeFaultFlags & ExportInternalFaultMask) != 0u)
+                systemMask |= (uint)SystemBits.Memory;
+
+            int blackBoxExportFailureCount = Interlocked.Exchange(ref _pendingBlackBoxExportFailureCount, 0);
+            if (blackBoxExportFailureCount > 0)
+            {
+                WriteBlackBoxExportFaultTelemetry(blackBoxExportFailureCount);
+                errorFlags |= (uint)ErrorBits.BlackBoxExportFault;
+                systemMask |= (uint)SystemBits.Memory;
+            }
+
+            int blackBoxExportDroppedCount = Interlocked.Exchange(ref _pendingBlackBoxExportDroppedCount, 0);
+            if (blackBoxExportDroppedCount > 0)
+            {
+                WriteBlackBoxExportDroppedTelemetry(blackBoxExportDroppedCount);
+                errorFlags |= (uint)ErrorBits.BlackBoxExportDropped;
+                systemMask |= (uint)SystemBits.Memory;
+            }
+
+            int blackBoxExportSuppressedCount = Interlocked.Exchange(ref _pendingBlackBoxExportSuppressedCount, 0);
+            if (blackBoxExportSuppressedCount > 0)
+            {
+                WriteBlackBoxExportSuppressedTelemetry(blackBoxExportSuppressedCount);
+                errorFlags |= (uint)ErrorBits.BlackBoxExportSuppressed;
+                systemMask |= (uint)SystemBits.Memory;
+            }
+
+            int audioOverflowDropCount = Interlocked.Exchange(ref _pendingAudioOverflowDropCount, 0);
+            if (audioOverflowDropCount > 0)
+            {
+                WriteAudioOverflowDropTelemetry(
+                    audioOverflowDropCount,
+                    Volatile.Read(ref _pendingAudioOverflowBufferedFrames),
+                    Volatile.Read(ref _pendingAudioOverflowWritableFrames));
+                PublishPerformanceWarningNoThrow(
+                    _audioOverflowDropWarningHash,
+                    _audioOverflowBufferContextHash,
+                    audioOverflowDropCount);
+            }
+
+            if (Interlocked.Exchange(ref _pendingAudioDspStats, 0) != 0)
+            {
+                WriteAudioDspStatsTelemetry(
+                    Volatile.Read(ref _pendingActiveDspVoices),
+                    Volatile.Read(ref _pendingSdfSampleTimeMicroseconds),
+                    Volatile.Read(ref _pendingAudioBufferUnderruns));
             }
         }
 
