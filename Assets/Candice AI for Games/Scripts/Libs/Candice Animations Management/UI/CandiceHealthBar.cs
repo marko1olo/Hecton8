@@ -69,7 +69,8 @@ namespace CandiceAIforGames.AI
 				segmentRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentRectTransform.sizeDelta.y);
 				segmentRectTransform.position += (right * i * m_SizeOfSegment) - posOffsetBase + (right * i * m_SizeOfNotch);
 
-				Image segmentFillImage = segmentImage.transform.GetChild(0).GetComponent<Image>();
+				Transform childTransform = segmentImage.transform.GetChild(0);
+				Image segmentFillImage = childTransform.GetComponent<Image>();
 				segmentFillImage.color = m_FillColor;
 				m_ProgressToFill.Add(segmentFillImage);
 
