@@ -37,8 +37,8 @@ namespace Hecton8.Core
                 shiftOffset,
                 previousTotalOffset,
                 newTotalOffset,
-                ToDouble3(previousTotalOffset),
-                ToDouble3(newTotalOffset),
+                global::Hecton8.World.AUPMath.ToDouble3(previousTotalOffset),
+                global::Hecton8.World.AUPMath.ToDouble3(newTotalOffset),
                 sequence,
                 frame,
                 fixedInterpolationAlpha,
@@ -116,7 +116,7 @@ namespace Hecton8.Core
         /// <returns>Runtime-space position under <see cref="NewTotalOffset"/>.</returns>
         public Vector3 RebaseCapturedRuntimePosition(Vector3 capturedRuntimePosition, Vector3 capturedTotalOffset)
         {
-            return RebaseCapturedRuntimePosition(capturedRuntimePosition, ToDouble3(capturedTotalOffset));
+            return RebaseCapturedRuntimePosition(capturedRuntimePosition, global::Hecton8.World.AUPMath.ToDouble3(capturedTotalOffset));
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Hecton8.Core
         /// </summary>
         public Vector3 RebaseCapturedRuntimePosition(Vector3 capturedRuntimePosition, double3 capturedTotalOffset)
         {
-            double3 capturedRuntime = ToDouble3(capturedRuntimePosition);
+            double3 capturedRuntime = global::Hecton8.World.AUPMath.ToDouble3(capturedRuntimePosition);
             double3 runtime = capturedRuntime + capturedTotalOffset - NewTotalOffsetDouble;
             return ToVector3(runtime);
         }
@@ -137,7 +137,7 @@ namespace Hecton8.Core
         /// <returns>Runtime-space position under <see cref="NewTotalOffset"/>.</returns>
         public Vector3 ToRuntimePosition(Vector3 absoluteUniversePosition)
         {
-            return ToRuntimePosition(ToDouble3(absoluteUniversePosition));
+            return ToRuntimePosition(global::Hecton8.World.AUPMath.ToDouble3(absoluteUniversePosition));
         }
 
         /// <summary>
@@ -146,11 +146,6 @@ namespace Hecton8.Core
         public Vector3 ToRuntimePosition(double3 absoluteUniversePosition)
         {
             return ToVector3(absoluteUniversePosition - NewTotalOffsetDouble);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(double3 value)

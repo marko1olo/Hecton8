@@ -494,7 +494,7 @@ namespace Hecton8.Construction
             {
                 DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
                 ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-                dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+                dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : global::Hecton8.World.AUPMath.ToDouble3(drone.Position);
                 dto.Velocity = drone.Velocity;
                 dto.CurrentTargetHashID = ResolveCurrentTaskHash(index, in drone);
                 dto.TaskStateFlags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
@@ -587,8 +587,8 @@ namespace Hecton8.Construction
             drone.TargetModuleId = 0;
             drone.TargetPosition = ResolveFormationDestination(index, FormationMode);
             drone.TargetAup = IsFinite(drone.PositionAup)
-                ? drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position)
-                : ToDouble3(drone.TargetPosition);
+                ? drone.PositionAup + global::Hecton8.World.AUPMath.ToDouble3(drone.TargetPosition - drone.Position)
+                : global::Hecton8.World.AUPMath.ToDouble3(drone.TargetPosition);
             drone.State = FormationMode == (int)DroneFleetFormationMode.Escort
                 ? (byte)HeadlessDroneRuntimeState.Escort
                 : (byte)HeadlessDroneRuntimeState.SearchGrid;
@@ -822,7 +822,7 @@ namespace Hecton8.Construction
             drone.TargetPosition = drone.HubGridId != 0 ? drone.HomePosition : drone.Position + SafeNormalizeFallback;
             drone.TargetAup = drone.HubGridId != 0
                 ? drone.HomeAup
-                : drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position);
+                : drone.PositionAup + global::Hecton8.World.AUPMath.ToDouble3(drone.TargetPosition - drone.Position);
             drone.State = drone.HubGridId != 0
                 ? (byte)HeadlessDroneRuntimeState.Return
                 : (byte)HeadlessDroneRuntimeState.Wander;
@@ -890,10 +890,10 @@ namespace Hecton8.Construction
             float3 startForward = SafeNormalize(math.mul(startRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
             float3 airlockForward = SafeNormalize(math.mul(targetRotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
 
-            drone.DockControlP0 = ToDouble3(IsFinite(drone.DockStartPosition) ? drone.DockStartPosition : drone.Position);
-            drone.DockControlP1 = drone.DockControlP0 + (ToDouble3(startForward) * DockingStartForwardMeters);
-            drone.DockControlP2 = ToDouble3(drone.HomePosition) + (ToDouble3(airlockForward) * DockingAirlockForwardMeters);
-            drone.DockControlP3 = ToDouble3(drone.HomePosition);
+            drone.DockControlP0 = global::Hecton8.World.AUPMath.ToDouble3(IsFinite(drone.DockStartPosition) ? drone.DockStartPosition : drone.Position);
+            drone.DockControlP1 = drone.DockControlP0 + (global::Hecton8.World.AUPMath.ToDouble3(startForward) * DockingStartForwardMeters);
+            drone.DockControlP2 = global::Hecton8.World.AUPMath.ToDouble3(drone.HomePosition) + (global::Hecton8.World.AUPMath.ToDouble3(airlockForward) * DockingAirlockForwardMeters);
+            drone.DockControlP3 = global::Hecton8.World.AUPMath.ToDouble3(drone.HomePosition);
 
             float estimate =
                 DockingStartForwardMeters +
@@ -1165,16 +1165,16 @@ namespace Hecton8.Construction
         private static void SanitizeAupFields(ref HeadlessDroneState drone)
         {
             if (!IsFinite(drone.PositionAup))
-                drone.PositionAup = ToDouble3(drone.Position);
+                drone.PositionAup = global::Hecton8.World.AUPMath.ToDouble3(drone.Position);
 
             if (!IsFinite(drone.HomeAup))
-                drone.HomeAup = ToDouble3(IsFinite(drone.HomePosition) ? drone.HomePosition : drone.Position);
+                drone.HomeAup = global::Hecton8.World.AUPMath.ToDouble3(IsFinite(drone.HomePosition) ? drone.HomePosition : drone.Position);
 
             if (!IsFinite(drone.TargetAup))
-                drone.TargetAup = ToDouble3(IsFinite(drone.TargetPosition) ? drone.TargetPosition : drone.Position);
+                drone.TargetAup = global::Hecton8.World.AUPMath.ToDouble3(IsFinite(drone.TargetPosition) ? drone.TargetPosition : drone.Position);
 
             if (!IsFinite(drone.SupplyAup))
-                drone.SupplyAup = ToDouble3(IsFinite(drone.SupplyPosition) ? drone.SupplyPosition : drone.HomePosition);
+                drone.SupplyAup = global::Hecton8.World.AUPMath.ToDouble3(IsFinite(drone.SupplyPosition) ? drone.SupplyPosition : drone.HomePosition);
         }
 
         private static float3 ResolveAupDestination(double3 targetAup, double3 originAup, float3 originLocal, float3 fallbackLocal)
@@ -1192,9 +1192,9 @@ namespace Hecton8.Construction
 
         private static double3 OffsetAupMeters(double3 originAup, float3 deltaMeters, float3 fallbackLocalPosition)
         {
-            double3 delta = ToDouble3(deltaMeters);
+            double3 delta = global::Hecton8.World.AUPMath.ToDouble3(deltaMeters);
             double3 result = originAup + delta;
-            return IsFinite(result) ? result : ToDouble3(fallbackLocalPosition);
+            return IsFinite(result) ? result : global::Hecton8.World.AUPMath.ToDouble3(fallbackLocalPosition);
         }
 
         private static uint ResolveCurrentTaskHash(int index, in HeadlessDroneState drone)
@@ -1238,11 +1238,6 @@ namespace Hecton8.Construction
         private static bool IsFinite(double3 value)
         {
             return math.all(math.isfinite(value));
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static float3 ToFloat3(double3 value)

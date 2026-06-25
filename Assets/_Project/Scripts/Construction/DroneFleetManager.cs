@@ -5190,7 +5190,7 @@ namespace Hecton8.Construction
             drone.TargetTaskIndex = EmptyTaskIndex;
             drone.TargetModuleId = 0;
             drone.TargetPosition = ResolveOrphanWanderTarget(slot, drone.Position);
-            drone.TargetAup = drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position);
+            drone.TargetAup = drone.PositionAup + global::Hecton8.World.AUPMath.ToDouble3(drone.TargetPosition - drone.Position);
             drone.DockingElapsed = 0f;
             drone.DockingFlags = 0;
             drone.DockingPathLengthMeters = 0f;
@@ -5705,7 +5705,7 @@ namespace Hecton8.Construction
 
             drone.TargetTaskIndex = EmptyTaskIndex;
             drone.TargetPosition = ResolveOrphanWanderTarget(slot, drone.Position);
-            drone.TargetAup = drone.PositionAup + ToDouble3(drone.TargetPosition - drone.Position);
+            drone.TargetAup = drone.PositionAup + global::Hecton8.World.AUPMath.ToDouble3(drone.TargetPosition - drone.Position);
             drone.State = (byte)HeadlessDroneRuntimeState.Wander;
             drone.Velocity = float3.zero;
             return true;
@@ -6381,10 +6381,10 @@ namespace Hecton8.Construction
                     DockingPathLengthMeters = 0f,
                     DockingRequestId = 0u,
                     DockingFlags = 0,
-                    DockControlP0 = ToDouble3(launch.HomePosition),
-                    DockControlP1 = ToDouble3(launch.HomePosition),
-                    DockControlP2 = ToDouble3(launch.HomePosition),
-                    DockControlP3 = ToDouble3(launch.HomePosition),
+                    DockControlP0 = global::Hecton8.World.AUPMath.ToDouble3(launch.HomePosition),
+                    DockControlP1 = global::Hecton8.World.AUPMath.ToDouble3(launch.HomePosition),
+                    DockControlP2 = global::Hecton8.World.AUPMath.ToDouble3(launch.HomePosition),
+                    DockControlP3 = global::Hecton8.World.AUPMath.ToDouble3(launch.HomePosition),
                     PositionAup = homeAup,
                     HomeAup = homeAup,
                     TargetAup = targetAup,
@@ -9917,16 +9917,6 @@ namespace Hecton8.Construction
 
             runtimePosition = ToFloat3(localDelta);
             return IsFiniteFloat3(runtimePosition);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static bool IsFiniteVector(Vector3 value)

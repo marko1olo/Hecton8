@@ -156,7 +156,7 @@ namespace Hecton8.Audio.Synthesis
 
         /// <summary>Converts contract AUP to absolute double3 without float demotion.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double3 ToDouble3(in AcousticAup aup)
+        public static double3 global::Hecton8.World.AUPMath.ToDouble3(in AcousticAup aup)
         {
             double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
             return math.double3(
@@ -654,7 +654,7 @@ namespace Hecton8.Audio.Synthesis
                     stolen++;
 
                 ref GranularVoiceDTO voice = ref UnsafeUtility.AsRef<GranularVoiceDTO>(voicePtr + slot);
-                voice.EpicenterAUP = HullStressGranularDspMath.ToDouble3(in signal.EpicenterAup);
+                voice.EpicenterAUP = HullStressGranularDspMath.global::Hecton8.World.AUPMath.ToDouble3(in signal.EpicenterAup);
                 voice.AudioBankHashID = signal.BaseHash != 0u
                     ? signal.BaseHash
                     : (DefaultAudioBankHashID == 0u ? HullStressGranularDspMath.DefaultMetalBankHash : DefaultAudioBankHashID);

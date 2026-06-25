@@ -3505,7 +3505,7 @@ namespace Hecton8.Caves
             float normalizedPower,
             float maxDistance)
         {
-            return ApplyPlasmaCutDda(ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
+            return ApplyPlasmaCutDda(global::Hecton8.World.AUPMath.ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
         }
 
         public bool ApplyPlasmaCutDda(
@@ -3642,7 +3642,7 @@ namespace Hecton8.Caves
             float normalizedPower,
             float maxDistance)
         {
-            return ApplyRepairWeldDda(ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
+            return ApplyRepairWeldDda(global::Hecton8.World.AUPMath.ToDouble3(absoluteHitPoint), direction, normalizedPower, maxDistance);
         }
 
         public bool ApplyRepairWeldDda(
@@ -3820,7 +3820,7 @@ namespace Hecton8.Caves
                 float2 jitterDirection = ResolveSeismicScatterDirection(jitterOctant);
                 float radialScale = (Hash01(stableSeed, stampIndex, 53) * 2f) - 1f;
                 Vector3 jitter = (tangentA * jitterDirection.x + tangentB * jitterDirection.y) * (jitterAmplitude * radialScale);
-                double3 absoluteSample = ToDouble3(absoluteStart + direction * longitudinalOffset + jitter);
+                double3 absoluteSample = global::Hecton8.World.AUPMath.ToDouble3(absoluteStart + direction * longitudinalOffset + jitter);
                 Vector3 runtimeSample = HectonFloatingOrigin.ToRuntimePosition(absoluteSample);
                 Vector3 localSample = cachedTransform.InverseTransformPoint(runtimeSample);
                 if (!localBounds.Contains(localSample))
@@ -4505,11 +4505,6 @@ namespace Hecton8.Caves
         private static Vector3 ToVector3(double3 value)
         {
             return new Vector3((float)value.x, (float)value.y, (float)value.z);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static bool IsFiniteAup(in AbsoluteUniversePosition position)

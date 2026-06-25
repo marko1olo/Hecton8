@@ -3171,7 +3171,7 @@ namespace Hecton8.World
         /// <summary>Converts current runtime-local coordinates into stable universe coordinates without reducing the bridge offset to float first.</summary>
         public static double3 ToUniverseSpaceDouble3(Vector3 runtimePosition)
         {
-            return ToDouble3(runtimePosition) - GlobalTotalUniverseOffsetDouble;
+            return global::Hecton8.World.AUPMath.ToDouble3(runtimePosition) - GlobalTotalUniverseOffsetDouble;
         }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates.</summary>
@@ -3183,7 +3183,7 @@ namespace Hecton8.World
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
         public static double3 ToRuntimeSpaceDouble3(Vector3 stableUniversePosition)
         {
-            return ToRuntimeSpaceDouble3(ToDouble3(stableUniversePosition));
+            return ToRuntimeSpaceDouble3(global::Hecton8.World.AUPMath.ToDouble3(stableUniversePosition));
         }
 
         /// <summary>Converts stable universe coordinates into current runtime-local coordinates without reducing the bridge offset to float first.</summary>
@@ -5217,7 +5217,7 @@ namespace Hecton8.World
         /// </summary>
         public void ApplyWorldOffsetToAllChunks(Vector3 offset)
         {
-            TryApplyWorldOffsetToAllChunks(offset, _totalUniverseOffsetDouble - ToDouble3(offset), refreshResidency: true);
+            TryApplyWorldOffsetToAllChunks(offset, _totalUniverseOffsetDouble - global::Hecton8.World.AUPMath.ToDouble3(offset), refreshResidency: true);
         }
 
         private bool TryApplyWorldOffsetToAllChunks(Vector3 offset, double3 newTotalUniverseOffsetDouble, bool refreshResidency)
@@ -5670,11 +5670,6 @@ namespace Hecton8.World
         {
             double3 runtimePosition = new double3(matrix.m03, matrix.m13, matrix.m23) + _totalUniverseOffsetDouble;
             return ToVector3(runtimePosition);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(double3 value)
@@ -8495,7 +8490,6 @@ namespace Hecton8.World
         {
             if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
 
             bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             bool slowRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);

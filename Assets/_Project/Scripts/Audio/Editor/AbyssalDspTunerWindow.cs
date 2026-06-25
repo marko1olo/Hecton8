@@ -265,7 +265,7 @@ namespace Hecton8.Audio.Editor
                 if (!AcousticAup.IsFinite(in signal.EpicenterAup))
                     continue;
 
-                double3 absolute = ToDouble3(in signal.EpicenterAup);
+                double3 absolute = global::Hecton8.World.AUPMath.ToDouble3(in signal.EpicenterAup);
                 Vector3 position = HectonFloatingOrigin.ToRuntimePosition(absolute);
                 float stress = math.saturate(signal.HighestStress01);
                 float amplitude = math.saturate(signal.AudioIntensity01);
@@ -300,7 +300,7 @@ namespace Hecton8.Audio.Editor
             return requireReady ? renderer.IsPlayerCriticalAudioRuntimeReady : renderer.isActiveAndEnabled;
         }
 
-        private static double3 ToDouble3(in AcousticAup aup)
+        private static double3 global::Hecton8.World.AUPMath.ToDouble3(in AcousticAup aup)
         {
             double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
             return new double3(
