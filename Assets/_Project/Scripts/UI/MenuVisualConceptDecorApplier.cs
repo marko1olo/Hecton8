@@ -108,8 +108,8 @@ namespace Hecton8.UI
             slotObject.transform.SetParent(_root, false);
             slotObject.layer = _root.gameObject.layer;
 
-            RectTransform rect = slotObject.GetComponent<RectTransform>();
-            Image image = slotObject.GetComponent<Image>();
+            RectTransform rect = (RectTransform)slotObject.transform;
+            slotObject.TryGetComponent(out Image image);
             image.raycastTarget = false;
             image.color = Color.clear;
 
