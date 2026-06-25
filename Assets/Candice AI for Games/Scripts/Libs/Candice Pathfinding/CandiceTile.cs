@@ -64,8 +64,7 @@ namespace CandiceAIforGames.AI
 
         private void Awake()
         {
-            _cachedRenderer = GetComponent<Renderer>();
-            if (_cachedRenderer != null)
+            if (TryGetComponent<Renderer>(out _cachedRenderer))
             {
                 // COLD ALLOC: Material[1] - renderer-owned debug tile color instance - owner: CandiceTile
                 _tileMaterial = _cachedRenderer.material;
