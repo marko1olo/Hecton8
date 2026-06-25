@@ -2698,13 +2698,7 @@ namespace Hecton8.Visor
             {
                 ref readonly HighSpeedImpactSignal signal = ref highSpeed[i];
                 uint frame = signal.Frame;
-                double3 impactAup = ToDouble3(
-                    signal.PointAup.GridX,
-                    signal.PointAup.GridY,
-                    signal.PointAup.GridZ,
-                    signal.PointAup.LocalX,
-                    signal.PointAup.LocalY,
-                    signal.PointAup.LocalZ);
+                double3 impactAup = signal.PointAup.ToAbsoluteDouble3();
                 if (!math.all(math.isfinite(impactAup)))
                     continue;
 
@@ -2810,13 +2804,15 @@ namespace Hecton8.Visor
                 }
 
                 PlayerPresentationAup48 absolutePosition = signal.AbsolutePosition;
-                double3 impactAup = ToDouble3(
-                    absolutePosition.GridX,
-                    absolutePosition.GridY,
-                    absolutePosition.GridZ,
-                    absolutePosition.LocalX,
-                    absolutePosition.LocalY,
-                    absolutePosition.LocalZ);
+                double3 impactAup = new global::Hecton8.World.AbsoluteUniversePosition
+                {
+                    GridX = absolutePosition.GridX,
+                    GridY = absolutePosition.GridY,
+                    GridZ = absolutePosition.GridZ,
+                    LocalX = absolutePosition.LocalX,
+                    LocalY = absolutePosition.LocalY,
+                    LocalZ = absolutePosition.LocalZ
+                }.ToAbsoluteDouble3();
                 impactAup.y += SaltCrustVerticalOffsetMeters;
                 if (!math.all(math.isfinite(impactAup)))
                     continue;
@@ -2991,21 +2987,6 @@ namespace Hecton8.Visor
 
             int current = math.max(0, _droppedIngressThisFrame);
             _droppedIngressThisFrame = math.max(0, current - math.min(current, consumed));
-        }
-
-        private static double3 ToDouble3(
-            long gridX,
-            long gridY,
-            long gridZ,
-            float localX,
-            float localY,
-            float localZ)
-        {
-            const double cellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
-            return MakeDouble3(
-                (gridX * cellSizeMeters) + localX,
-                (gridY * cellSizeMeters) + localY,
-                (gridZ * cellSizeMeters) + localZ);
         }
 
         private static DecalRequestQueueStateDTO SanitizeRequestQueueState(DecalRequestQueueStateDTO state, int capacity)
