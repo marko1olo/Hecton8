@@ -1133,8 +1133,8 @@ namespace Hecton8.Gameplay
 
                 Vector3 authorityBodyPosition = _body.position;
                 Vector3 authorityBodyVelocity = _body.linearVelocity;
-                float3 rawAuthorityPosition = ToFloat3(authorityBodyPosition);
-                float3 rawAuthorityVelocity = ToFloat3(authorityBodyVelocity);
+                float3 rawAuthorityPosition = (float3)(authorityBodyPosition);
+                float3 rawAuthorityVelocity = (float3)(authorityBodyVelocity);
                 bool authorityInputInvalid =
                     !math.all(math.isfinite(rawAuthorityPosition)) ||
                     !math.all(math.isfinite(rawAuthorityVelocity));
@@ -1164,7 +1164,7 @@ namespace Hecton8.Gameplay
             HectonVoxelVolume sdfLeaseVolume = null;
             HectonVoxelVolume.PublishedSonarSdfReadLease sdfReadLease = default;
             bool sdfReadLeaseLocked = false;
-            float3 rawBodyPosition = ToFloat3(ResolveBodyRuntimePosition());
+            float3 rawBodyPosition = (float3)(ResolveBodyRuntimePosition());
             float3 rawBodyVelocity = ReadVelocitySnapshot(float3.zero);
             float3 bodyPosition = SanitizeFloat3(rawBodyPosition, ReadLastValidPosition());
             float3 bodyVelocity = SanitizeFloat3(rawBodyVelocity, float3.zero);
@@ -1450,7 +1450,7 @@ namespace Hecton8.Gameplay
             if (!HasMotionSoaStorage())
                 return;
 
-            float3 offset = ToFloat3(shiftData.ShiftOffset);
+            float3 offset = (float3)(shiftData.ShiftOffset);
             float offsetLengthSq = math.lengthsq(offset);
             if (!math.all(math.isfinite(offset)) ||
                 !math.isfinite(offsetLengthSq) ||
@@ -1653,7 +1653,7 @@ namespace Hecton8.Gameplay
             if (!HasKinematicsStorage() || !HasSyncStateWriteStorage())
                 return;
 
-            float3 start = ToFloat3(ResolveBodyRuntimePosition());
+            float3 start = (float3)(ResolveBodyRuntimePosition());
             start = SnapMillimeter(SanitizeFloat3(start, float3.zero));
             _positions[0] = start;
             _lastValidPositions[0] = start;
@@ -1822,7 +1822,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 runtimePosition = ResolveBodyRuntimePosition();
-            float3 position = SanitizeFloat3(ToFloat3(runtimePosition), ReadLastValidPosition());
+            float3 position = SanitizeFloat3((float3)(runtimePosition), ReadLastValidPosition());
             if (!math.all(math.isfinite(position)))
                 return;
             position = SnapMillimeter(position);
@@ -2004,8 +2004,8 @@ namespace Hecton8.Gameplay
             else if (planarSq > 1.0f)
                 planar *= math.rsqrt(math.max(planarSq, 0.000001f));
 
-            float3 forward = _cameraTransform != null ? ToFloat3(_cameraTransform.forward) : ToFloat3(_cachedTransform.forward);
-            float3 right = _cameraTransform != null ? ToFloat3(_cameraTransform.right) : ToFloat3(_cachedTransform.right);
+            float3 forward = _cameraTransform != null ? (float3)(_cameraTransform.forward) : (float3)(_cachedTransform.forward);
+            float3 right = _cameraTransform != null ? (float3)(_cameraTransform.right) : (float3)(_cachedTransform.right);
             forward.y = 0.0f;
             right.y = 0.0f;
             forward = SafeNormalize(forward, new float3(0.0f, 0.0f, 1.0f));
@@ -2062,7 +2062,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 position = ResolveBodyRuntimePosition();
-            float3 positionFloat = ToFloat3(position);
+            float3 positionFloat = (float3)(position);
             if (!math.all(math.isfinite(positionFloat)))
             {
                 density = 0.0f;
@@ -2137,8 +2137,8 @@ namespace Hecton8.Gameplay
 
                 sdfTexture3D = resolvedSdf;
                 gridDimensions = resolvedDimensions;
-                float3 safeOrigin = ToFloat3(publishedOrigin);
-                float3 safeCellSize = ToFloat3(publishedCellSize);
+                float3 safeOrigin = (float3)(publishedOrigin);
+                float3 safeCellSize = (float3)(publishedCellSize);
                 float safeRange = SanitizeNonNegative(publishedRange);
                 if (!math.all(math.isfinite(safeOrigin)) ||
                     !math.all(math.isfinite(safeCellSize)) ||
@@ -2398,7 +2398,7 @@ namespace Hecton8.Gameplay
                 LocalPosition = new float3(aup.LocalX, aup.LocalY, aup.LocalZ),
                 Velocity = SanitizeFloat3(velocity, float3.zero),
                 Forward = _cachedTransform != null
-                    ? SafeNormalize(ToFloat3(_cachedTransform.forward), new float3(0.0f, 0.0f, 1.0f))
+                    ? SafeNormalize((float3)(_cachedTransform.forward), new float3(0.0f, 0.0f, 1.0f))
                     : new float3(0.0f, 0.0f, 1.0f),
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Flags = BodyFlagSdfSqueezeIntervention,
@@ -2617,7 +2617,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float3 safePoint = ToFloat3(contactPoint);
+            float3 safePoint = (float3)(contactPoint);
             if (!math.all(math.isfinite(safePoint)))
                 return;
 
@@ -2680,7 +2680,7 @@ namespace Hecton8.Gameplay
                     out _))
             {
                 float speed01 = SanitizeUnit((blockedSpeed - WallImpactRollThreshold) * 0.2f);
-                float sideDot = math.dot(ToFloat3(normal), SafeRight());
+                float sideDot = math.dot((float3)(normal), SafeRight());
                 float side = math.sign(math.select(sideDot, 0.0f, !math.isfinite(sideDot)));
                 _rollPhaseRadians = DeterministicContractMath.WrapSignedPi(_rollPhaseRadians + SanitizeNonNegative(dt) * 28.0f);
                 rollPhaseAdvanced = true;
@@ -2730,7 +2730,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 safePosition = SanitizeFloat3(
-                ToFloat3(position),
+                (float3)(position),
                 ReadPositionSnapshot(float3.zero));
             if (!TryConvertRuntimePositionToAup(SnapMillimeter(safePosition), out AbsoluteUniversePosition positionAup))
                 return;
@@ -3043,7 +3043,7 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return;
 
-            float3 position = SnapMillimeter(SanitizeFloat3(ToFloat3(ResolveBodyRuntimePosition()), ReadLastValidPosition()));
+            float3 position = SnapMillimeter(SanitizeFloat3((float3)(ResolveBodyRuntimePosition()), ReadLastValidPosition()));
             float3 velocity = SnapMillimeter(ReadVelocitySnapshot(float3.zero));
             if (HasMotionSoaStorage())
             {
@@ -3274,8 +3274,8 @@ namespace Hecton8.Gameplay
 
             _telemetry[wrappedIndex] = new PlayerKinematicsRuntimeTelemetryEntry
             {
-                Position = SanitizeFloat3(ToFloat3(runtimePosition), float3.zero),
-                Velocity = SanitizeFloat3(ToFloat3(runtimeVelocity), float3.zero),
+                Position = SanitizeFloat3((float3)(runtimePosition), float3.zero),
+                Velocity = SanitizeFloat3((float3)(runtimeVelocity), float3.zero),
                 IntendedMovement = ReadIntendedMovementSnapshot(),
                 DragCoefficient = SanitizeNonNegative(dragCoefficient),
                 WaterDensity = ResolveRuntimeWaterDensityScale(),
@@ -3478,7 +3478,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            float3 pointFloat = ToFloat3(point);
+            float3 pointFloat = (float3)(point);
             if (!math.all(math.isfinite(pointFloat)))
                 return false;
 
@@ -3969,7 +3969,7 @@ namespace Hecton8.Gameplay
             bool hasReadableStateSnapshot = _hasAuthoritativePoseSnapshot && HasSyncStateReadStorage();
             float3 position = hasReadableStateSnapshot
                 ? _stateRead[0].Position
-                : SnapMillimeter(SanitizeFloat3(ToFloat3(ResolveBodyRuntimePosition()), ReadLastValidPosition()));
+                : SnapMillimeter(SanitizeFloat3((float3)(ResolveBodyRuntimePosition()), ReadLastValidPosition()));
             float3 velocity = hasReadableStateSnapshot
                 ? _stateRead[0].Velocity
                 : SnapMillimeter(ReadVelocitySnapshot(float3.zero));
@@ -4062,7 +4062,7 @@ namespace Hecton8.Gameplay
             if (_body == null)
                 return 0u;
 
-            float3 bodyPosition = SanitizeFloat3(ToFloat3(ResolveBodyRuntimePosition()), ReadLastValidPosition());
+            float3 bodyPosition = SanitizeFloat3((float3)(ResolveBodyRuntimePosition()), ReadLastValidPosition());
             float3 bodyVelocity = ReadVelocitySnapshot(float3.zero);
             if (!TryConvertRuntimePositionToAup(bodyPosition, out AbsoluteUniversePosition bodyAup))
                 return 0u;
@@ -4211,7 +4211,7 @@ namespace Hecton8.Gameplay
         private float3 SafeRight()
         {
             Transform source = _cameraTransform != null ? _cameraTransform : _cachedTransform;
-            return source != null ? SafeNormalize(ToFloat3(source.right), new float3(1.0f, 0.0f, 0.0f)) : new float3(1.0f, 0.0f, 0.0f);
+            return source != null ? SafeNormalize((float3)(source.right), new float3(1.0f, 0.0f, 0.0f)) : new float3(1.0f, 0.0f, 0.0f);
         }
 
         private static float3 SafeNormalize(float3 value, float3 fallback)
@@ -4354,11 +4354,6 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(value)) && math.lengthsq(value) > 0.000001f;
         }
 
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
-
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);
@@ -4371,7 +4366,7 @@ namespace Hecton8.Gameplay
 
         private static bool TryConvertRuntimePositionToAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
-            return TryConvertRuntimePositionToAup(ToFloat3(runtimePosition), out positionAup);
+            return TryConvertRuntimePositionToAup((float3)(runtimePosition), out positionAup);
         }
 
         private static bool TryConvertRuntimePositionToAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
@@ -4399,7 +4394,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 candidate = HectonFloatingOrigin.ToRuntimePosition(absolutePosition);
-            runtimePosition = ToFloat3(candidate);
+            runtimePosition = (float3)(candidate);
             return math.all(math.isfinite(runtimePosition));
         }
 

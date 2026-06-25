@@ -2729,11 +2729,6 @@ namespace Hecton8.World
                 (double)cell.z * cellSize);
         }
 
-        private static float3 ToFloat3(double3 value)
-        {
-            return new float3((float)value.x, (float)value.y, (float)value.z);
-        }
-
         private static double3 ToDouble3(Vector3 value)
         {
             return new double3(value.x, value.y, value.z);

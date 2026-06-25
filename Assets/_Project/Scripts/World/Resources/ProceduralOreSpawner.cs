@@ -2031,7 +2031,7 @@ namespace Hecton8.World
                 MapMagicBridge.QuantizedHeightmapPayload.IsValid(in payload))
             {
                 heightPayload.HeightSamples = payload.HeightSamples;
-                heightPayload.TerrainSize = ToFloat3(payload.TerrainSize);
+                heightPayload.TerrainSize = (float3)(payload.TerrainSize);
                 heightPayload.TerrainOriginAbsoluteXZ = new double2(
                     (double)payload.TerrainPosition.x + runtimeToAbsoluteOffset.x,
                     (double)payload.TerrainPosition.z + runtimeToAbsoluteOffset.z);
@@ -3458,11 +3458,6 @@ namespace Hecton8.World
         {
             BinaryPrimitives.WriteUInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(ulong)), value);
             cursor += sizeof(ulong);
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static bool IsFinite(Vector3 value)

@@ -626,7 +626,7 @@ namespace Hecton8.Animation.Locomotion
         private bool TryResolveEntryPointAup(Vector3 entryRuntimePosition, out AbsoluteUniversePosition entryAup)
         {
             entryAup = default;
-            float3 entryRuntime = ToFloat3(entryRuntimePosition);
+            float3 entryRuntime = (float3)(entryRuntimePosition);
             if (!IsFinite(entryRuntime))
                 return false;
 
@@ -932,7 +932,7 @@ namespace Hecton8.Animation.Locomotion
                 return;
             }
 
-            float3 playerRoot = SanitizeFinite(ToFloat3(_playerRoot.position), float3.zero);
+            float3 playerRoot = SanitizeFinite((float3)(_playerRoot.position), float3.zero);
             BuildShoulders(playerRoot, out float3 leftShoulder, out float3 rightShoulder, out float3 leftPole, out float3 rightPole);
             uint flags = LadderClimbIkConstants.FlagActive;
             if (_cameraSlidePresentationActive)
@@ -1167,13 +1167,13 @@ namespace Hecton8.Animation.Locomotion
 
             if (cameraSlideTarget != null)
             {
-                lookForward = ToFloat3(cameraSlideTarget.forward);
+                lookForward = (float3)(cameraSlideTarget.forward);
                 return IsFinite(lookForward);
             }
 
             if (_playerRoot != null)
             {
-                lookForward = ToFloat3(_playerRoot.forward);
+                lookForward = (float3)(_playerRoot.forward);
                 return IsFinite(lookForward);
             }
 
@@ -1379,13 +1379,13 @@ namespace Hecton8.Animation.Locomotion
 
         private void ResolveLadderFrame(Vector3 entryPosition, Vector3 exitPosition, Transform ladderTransform)
         {
-            float3 entry = ToFloat3(entryPosition);
-            float3 exit = ToFloat3(exitPosition);
+            float3 entry = (float3)(entryPosition);
+            float3 exit = (float3)(exitPosition);
             float3 axis = exit - entry;
             float lengthSq = math.lengthsq(axis);
             if (lengthSq <= 0.0001f || !math.isfinite(lengthSq))
             {
-                _ladderUp = NormalizeSafe(ToFloat3(ladderTransform.up), new float3(0f, 1f, 0f));
+                _ladderUp = NormalizeSafe((float3)(ladderTransform.up), new float3(0f, 1f, 0f));
                 _climbHeightMeters = 2f;
             }
             else
@@ -1394,7 +1394,7 @@ namespace Hecton8.Animation.Locomotion
                 _ladderUp = axis * math.rcp(math.max(_climbHeightMeters, 0.0001f));
             }
 
-            float3 forward = ToFloat3(ladderTransform.forward);
+            float3 forward = (float3)(ladderTransform.forward);
             forward -= _ladderUp * math.dot(forward, _ladderUp);
             _ladderForward = NormalizeSafe(forward, ResolvePerpendicular(_ladderUp));
         }
@@ -1602,11 +1602,6 @@ namespace Hecton8.Animation.Locomotion
         {
             float3 axis = math.abs(direction.y) < 0.9f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
             return NormalizeSafe(math.cross(direction, axis), new float3(1f, 0f, 0f));
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(float3 value)

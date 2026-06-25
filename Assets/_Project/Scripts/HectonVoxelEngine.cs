@@ -9269,11 +9269,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return new double3(value.x, value.y, value.z);
     }
 
-    private static float3 ToFloat3(double3 value)
-    {
-        return new float3((float)value.x, (float)value.y, (float)value.z);
-    }
-
     private static Vector3 ToVector3(float3 value)
     {
         return new Vector3(value.x, value.y, value.z);

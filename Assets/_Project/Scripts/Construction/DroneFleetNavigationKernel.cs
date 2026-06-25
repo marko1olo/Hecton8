@@ -1,4 +1,5 @@
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -720,14 +721,6 @@ namespace Hecton8.Construction
                 return quaternion.identity;
 
             return new quaternion(raw * math.rsqrt(lengthSq));
-        }
-
-        private static float3 ToFloat3(double3 value)
-        {
-            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
-                return new float3(float.NaN);
-
-            return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private static bool IsFinite(float3 value)
@@ -2078,15 +2071,6 @@ namespace Hecton8.Construction
         private static bool IsFinite(double3 value)
         {
             return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(double3 value)
-        {
-            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
-                return new float3(float.NaN);
-
-            return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

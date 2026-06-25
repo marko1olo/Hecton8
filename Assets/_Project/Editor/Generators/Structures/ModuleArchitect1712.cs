@@ -1250,9 +1250,9 @@ namespace Hecton8.Editor.Structures
                     throw new InvalidOperationException("Architect topology validation rejected out-of-range triangle index.");
                 }
 
-                float3 a = ToFloat3(vertices[ia]);
-                float3 b = ToFloat3(vertices[ib]);
-                float3 c = ToFloat3(vertices[ic]);
+                float3 a = (float3)(vertices[ia]);
+                float3 b = (float3)(vertices[ib]);
+                float3 c = (float3)(vertices[ic]);
                 float3 cross = math.cross(b - a, c - a);
                 float areaSq = math.lengthsq(cross);
                 if (!math.isfinite(areaSq) || areaSq <= 0.00000001f)
@@ -1260,7 +1260,7 @@ namespace Hecton8.Editor.Structures
 
                 float3 triangleNormal = math.normalize(cross);
                 float3 authoredNormal = math.normalizesafe(
-                    ToFloat3(normals[ia]) + ToFloat3(normals[ib]) + ToFloat3(normals[ic]),
+                    (float3)(normals[ia]) + (float3)(normals[ib]) + (float3)(normals[ic]),
                     triangleNormal);
                 if (math.dot(triangleNormal, authoredNormal) < 0.25f)
                     throw new InvalidOperationException("Architect topology validation rejected inverted triangle winding.");
@@ -1272,11 +1272,6 @@ namespace Hecton8.Editor.Structures
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static SerializedProperty RequireProperty(SerializedObject serializedObject, string propertyPath)

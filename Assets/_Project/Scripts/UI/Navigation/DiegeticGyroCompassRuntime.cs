@@ -1618,9 +1618,9 @@ namespace Hecton8.UI.Navigation
 
             presentation.DialMatrixWriteIndex = writeIndex ^ 1;
             _publishedDialMatrixBuffer = writeBuffer;
-            presentation.LastUploadedDialPosition = ToFloat3(position);
+            presentation.LastUploadedDialPosition = (float3)(position);
             presentation.LastUploadedDialRotation = ToFloat4(rotation);
-            presentation.LastUploadedDialScale = ToFloat3(scale);
+            presentation.LastUploadedDialScale = (float3)(scale);
             presentation.LastUploadedDialHeadingDegrees = heading;
             presentation.PresentationFlags |= PresentationFlagDialMatrixInitialized;
             presentation.PresentationFlags &= ~PresentationFlagDialMatrixDirty;
@@ -1637,9 +1637,9 @@ namespace Hecton8.UI.Navigation
         {
             return (presentation.PresentationFlags & PresentationFlagDialMatrixInitialized) == 0u ||
                    DeltaHeadingAbs(presentation.LastUploadedDialHeadingDegrees, heading) > HeadingEpsilon ||
-                   math.lengthsq(ToFloat3(position) - presentation.LastUploadedDialPosition) > DialPositionUploadEpsilon ||
+                   math.lengthsq((float3)(position) - presentation.LastUploadedDialPosition) > DialPositionUploadEpsilon ||
                    QuaternionChanged(ToFloat4(rotation), presentation.LastUploadedDialRotation) ||
-                   math.lengthsq(ToFloat3(scale) - presentation.LastUploadedDialScale) > DialScaleUploadEpsilon;
+                   math.lengthsq((float3)(scale) - presentation.LastUploadedDialScale) > DialScaleUploadEpsilon;
         }
 
         private static bool IsValidBuffer(GraphicsBuffer buffer)
@@ -1662,11 +1662,6 @@ namespace Hecton8.UI.Navigation
                    math.abs(current.y - previous.y) > DialRotationUploadEpsilon ||
                    math.abs(current.z - previous.z) > DialRotationUploadEpsilon ||
                    math.abs(current.w - previous.w) > DialRotationUploadEpsilon;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static float4 ToFloat4(Quaternion value)

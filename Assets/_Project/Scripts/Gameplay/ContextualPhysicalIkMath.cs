@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -454,11 +455,6 @@ namespace Hecton8.Gameplay
         {
             value = SanitizeFloat3(value, float3.zero);
             return new Vector3(value.x, value.y, value.z);
-        }
-
-        public static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static float ApproximateExpNegPositive(float value)

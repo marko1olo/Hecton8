@@ -897,9 +897,9 @@ namespace Hecton8.Visor
                     projectedTargets,
                     sourceCount,
                     cameraAup.ToAbsoluteDouble3(),
-                    ToFloat3(renderCamera.transform.right),
-                    ToFloat3(renderCamera.transform.up),
-                    ToFloat3(renderCamera.transform.forward),
+                    (float3)(renderCamera.transform.right),
+                    (float3)(renderCamera.transform.up),
+                    (float3)(renderCamera.transform.forward),
                     global::Hecton8.Core.MathLodApproximation.ApproxTanClamped(math.radians(math.max(1f, renderCamera.fieldOfView)) * 0.5f, 4096f),
                     math.max(0.01f, renderCamera.aspect),
                     math.max(ProjectionDepthEpsilon, renderCamera.nearClipPlane),
@@ -1722,11 +1722,6 @@ namespace Hecton8.Visor
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)SystemID.UI &&
                    handle.Generation != 0u;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

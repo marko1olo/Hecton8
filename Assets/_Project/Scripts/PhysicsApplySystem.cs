@@ -3778,8 +3778,8 @@ namespace Hecton8.Physics
                 if (VectorLengthSq(normal) <= MinMagnitudeSq)
                     normal = Vector3.up;
 
-                float3 hullVelocity = submarineIsBody ? ToFloat3(pair.bodyVelocity) : ToFloat3(pair.otherBodyVelocity);
-                float3 otherVelocity = submarineIsBody ? ToFloat3(pair.otherBodyVelocity) : ToFloat3(pair.bodyVelocity);
+                float3 hullVelocity = submarineIsBody ? (float3)(pair.bodyVelocity) : (float3)(pair.otherBodyVelocity);
+                float3 otherVelocity = submarineIsBody ? (float3)(pair.otherBodyVelocity) : (float3)(pair.bodyVelocity);
                 HectonContactJob.InelasticImpactResult impact = HectonContactJob.ResolveInelasticImpact(
                     hullMass,
                     hullVelocity,
@@ -3803,8 +3803,8 @@ namespace Hecton8.Physics
                 }
 
                 Vector3 impactNormalWorld = submarineIsBody ? normal : -normal;
-                float3 localPoint = ToFloat3(structuralGridWorldToLocal.MultiplyPoint3x4(point));
-                float3 localNormal = ToFloat3(ResolveDominantAxisDirection(
+                float3 localPoint = (float3)(structuralGridWorldToLocal.MultiplyPoint3x4(point));
+                float3 localNormal = (float3)(ResolveDominantAxisDirection(
                     structuralGridWorldToLocal.MultiplyVector(impactNormalWorld)));
                 structuralGrid.QueueImpactLocal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.IntegrityDelta);
                 structuralGrid.QueueHullImpactFeedbackLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
@@ -4076,10 +4076,6 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 ResolveDominantAxisDirection(Vector3 direction)

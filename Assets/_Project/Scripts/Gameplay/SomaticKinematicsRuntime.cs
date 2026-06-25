@@ -1341,7 +1341,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 localPosition = _cachedTransform != null
-                ? ToFloat3(_cachedTransform.position)
+                ? (float3)(_cachedTransform.position)
                 : float3.zero;
             double3 sector = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             PlayerKinematicState state = default;
@@ -1883,7 +1883,7 @@ namespace Hecton8.Gameplay
                 oxygen01 = math.isfinite(snapshot.Oxygen01) ? math.saturate(snapshot.Oxygen01) : 1.0f;
             }
 
-            float3 headLocal = SanitizeFinite(ToFloat3(headPosition), float3.zero);
+            float3 headLocal = SanitizeFinite((float3)(headPosition), float3.zero);
             float3 headForward = NormalizeSafe(Forward(headRotation), new float3(0f, 0f, 1f));
             float3 leftHand = headLocal + new float3(-0.22f, -0.18f, 0.32f);
             float3 rightHand = headLocal + new float3(0.22f, -0.18f, 0.32f);
@@ -1891,14 +1891,14 @@ namespace Hecton8.Gameplay
             byte rightTracked = 0;
             if (provider != null && provider.TryGetHandPose(0, out VRSomaticHandPose leftPose))
             {
-                float3 rawLeft = ToFloat3(leftPose.TargetRuntimePosition);
+                float3 rawLeft = (float3)(leftPose.TargetRuntimePosition);
                 bool finite = math.all(math.isfinite(rawLeft));
                 leftHand = finite ? rawLeft : leftHand;
                 leftTracked = leftPose.IsTracked && finite ? (byte)1 : (byte)0;
             }
             if (provider != null && provider.TryGetHandPose(1, out VRSomaticHandPose rightPose))
             {
-                float3 rawRight = ToFloat3(rightPose.TargetRuntimePosition);
+                float3 rawRight = (float3)(rightPose.TargetRuntimePosition);
                 bool finite = math.all(math.isfinite(rawRight));
                 rightHand = finite ? rawRight : rightHand;
                 rightTracked = rightPose.IsTracked && finite ? (byte)1 : (byte)0;
@@ -1968,7 +1968,7 @@ namespace Hecton8.Gameplay
             float3 flow = float3.zero;
             IWeatherService weather = _weatherService;
             if (weather != null && weather.IsInitialized)
-                flow = ToFloat3(weather.GlobalCurrentVector);
+                flow = (float3)(weather.GlobalCurrentVector);
 
             if (!math.all(math.isfinite(flow)) || math.lengthsq(flow) <= 0.0001f)
             {
@@ -2769,10 +2769,6 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 Forward(Quaternion rotation)

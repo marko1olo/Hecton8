@@ -234,8 +234,8 @@ namespace Hecton8.Construction
                     !IsFinite(descriptor.LocalPosition) ||
                     !IsFinite(descriptor.LocalForward) ||
                     !IsFinite(descriptor.LocalUp) ||
-                    math.lengthsq(ToFloat3(descriptor.LocalForward)) <= 0.000001f ||
-                    math.lengthsq(ToFloat3(descriptor.LocalUp)) <= 0.000001f ||
+                    math.lengthsq((float3)(descriptor.LocalForward)) <= 0.000001f ||
+                    math.lengthsq((float3)(descriptor.LocalUp)) <= 0.000001f ||
                     !math.isfinite(descriptor.MinQualityWeight) ||
                     descriptor.MinQualityWeight < 0f ||
                     descriptor.MinQualityWeight > 1f)
@@ -336,16 +336,11 @@ namespace Hecton8.Construction
             runtime.Kind = (byte)descriptor.Kind;
             runtime.TierMask = (byte)descriptor.TierMask;
             runtime.Flags = (byte)descriptor.Flags;
-            runtime.LocalPosition = ToFloat3(descriptor.LocalPosition);
-            runtime.LocalForward = math.normalizesafe(ToFloat3(descriptor.LocalForward), new float3(0f, 0f, 1f));
-            runtime.LocalUp = math.normalizesafe(ToFloat3(descriptor.LocalUp), new float3(0f, 1f, 0f));
+            runtime.LocalPosition = (float3)(descriptor.LocalPosition);
+            runtime.LocalForward = math.normalizesafe((float3)(descriptor.LocalForward), new float3(0f, 0f, 1f));
+            runtime.LocalUp = math.normalizesafe((float3)(descriptor.LocalUp), new float3(0f, 1f, 0f));
             runtime.MinQualityWeight = math.saturate(descriptor.MinQualityWeight);
             return runtime;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static bool IsFinite(Vector3 value)

@@ -675,7 +675,7 @@ namespace Hecton8.Gameplay
                             {
                                 Position = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
                                 Rotation = ToQuaternion(worldMatrix.rotation),
-                                Scale = ToFloat3(ExtractScale(worldMatrix)),
+                                Scale = (float3)(ExtractScale(worldMatrix)),
                                 Velocity = velocity,
                                 AngularVelocity = angularVelocity,
                                 Age = 0f,
@@ -1434,11 +1434,6 @@ namespace Hecton8.Gameplay
         private static float RefineMagnitudeEstimate(float valueSq, float estimate)
         {
             return 0.5f * (estimate + (valueSq * math.rcp(math.max(estimate, 0.000001f))));
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static quaternion ToQuaternion(Quaternion value)

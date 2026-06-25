@@ -3244,7 +3244,7 @@ namespace Hecton8.UI
                 {
                     if (TryResolveAupFromRuntimeOrigin(position, out originAup))
                     {
-                        forward = math.normalizesafe(ToFloat3(direction), new float3(0f, 0f, 1f));
+                        forward = math.normalizesafe((float3)(direction), new float3(0f, 0f, 1f));
                         return;
                     }
                 }
@@ -3258,7 +3258,7 @@ namespace Hecton8.UI
             if (!TryResolveAupFromRuntimeOrigin(safeFallbackPosition, out originAup))
                 originAup = default;
             forward = VectorFinite(fallbackForward)
-                ? math.normalizesafe(ToFloat3(fallbackForward), new float3(0f, 0f, 1f))
+                ? math.normalizesafe((float3)(fallbackForward), new float3(0f, 0f, 1f))
                 : new float3(0f, 0f, 1f);
         }
 
@@ -3967,10 +3967,6 @@ namespace Hecton8.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 ToVector3(float3 value)

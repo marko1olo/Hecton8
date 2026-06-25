@@ -1880,11 +1880,6 @@ namespace Hecton8.VFX.PlasmaBeam
             writeIndex++;
         }
 
-        private static float3 ToFloat3(double3 value)
-        {
-            return new float3((float)value.x, (float)value.y, (float)value.z);
-        }
-
         private static float3 SafeNormalize(float3 value, float3 fallback)
         {
             float lenSq = math.lengthsq(value);
@@ -2006,11 +2001,6 @@ namespace Hecton8.VFX.PlasmaBeam
             hash ^= value;
             hash *= 16777619u;
             return hash;
-        }
-
-        private static float3 ToFloat3(double3 value)
-        {
-            return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 
         private static float SmoothStep01(float value)

@@ -1064,9 +1064,9 @@ namespace Hecton8.Construction
                 ? OffsetAupByRuntimeDelta(in _dockingStartAup, startPosition, anchor.position)
                 : _dockingStartAup;
             float duration = ResolveSafeDockingDurationSeconds();
-            float3 startForward = ToFloat3(startRotation * Vector3.forward);
-            float3 targetForward = anchor != null ? ToFloat3(anchor.forward) : startForward;
-            float3 targetUp = anchor != null ? ToFloat3(anchor.up) : new float3(0f, 1f, 0f);
+            float3 startForward = (float3)(startRotation * Vector3.forward);
+            float3 targetForward = anchor != null ? (float3)(anchor.forward) : startForward;
+            float3 targetUp = anchor != null ? (float3)(anchor.up) : new float3(0f, 1f, 0f);
             unchecked
             {
                 _dockingSplineRequestId++;
@@ -1192,7 +1192,7 @@ namespace Hecton8.Construction
             Vector3 commandAngularVelocity = ResolveDockingCommandAngularVelocity(
                 evaluatedRotation,
                 safeFixedDeltaTime);
-            _lastDockingFlowVelocity = ToFloat3(flowVelocity);
+            _lastDockingFlowVelocity = (float3)(flowVelocity);
             _lastDockingCommandVelocity = commandVelocity;
             QueueDockingWakeSignals(evaluatedPosition, commandVelocity, safeFixedDeltaTime);
             TryPublishDockingCompleteSignal(splineProgress, anchorPosition, anchor.forward);
@@ -1564,8 +1564,8 @@ namespace Hecton8.Construction
                     SplineDeviationError = _lastSplineDeviationError,
                     FlowSpeed = FastMagnitudeFromSq(math.lengthsq(_lastDockingFlowVelocity)),
                     Position = new float3(position.x, position.y, position.z),
-                    SplineTargetPosition = ToFloat3(_lastDockingSplineTargetPosition),
-                    CommandVelocity = ToFloat3(_lastDockingCommandVelocity),
+                    SplineTargetPosition = (float3)(_lastDockingSplineTargetPosition),
+                    CommandVelocity = (float3)(_lastDockingCommandVelocity),
                     FlowVelocity = _lastDockingFlowVelocity,
                     Rotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w),
                     GridX = aup.GridX,
@@ -1997,7 +1997,7 @@ namespace Hecton8.Construction
             if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition positionAup))
                 return;
 
-            float3 velocity = ToFloat3(commandVelocity);
+            float3 velocity = (float3)(commandVelocity);
             WakeGeneratedSignal wakeSignal = new WakeGeneratedSignal
             {
                 PositionAup = positionAup,
@@ -2040,7 +2040,7 @@ namespace Hecton8.Construction
                 DroneId = unchecked((int)_dockingSplineOwnerHash),
                 HubGridId = ResolveDockingHubGridId(),
                 DockAup = AbsoluteUniversePositionBlit.FromAup(in dockAup),
-                DockForward = DockingAutopilotMath.NormalizeOrFallback(ToFloat3(dockForward), new float3(0f, 0f, 1f)),
+                DockForward = DockingAutopilotMath.NormalizeOrFallback((float3)(dockForward), new float3(0f, 0f, 1f)),
                 RequestId = _dockingSplineRequestId,
                 Flags = _activeDockingSpline.Flags,
                 SourceKind = DockingSignalSourceKinds.VehicleDockingModule,
@@ -2078,7 +2078,7 @@ namespace Hecton8.Construction
                 DroneId = unchecked((int)_dockingSplineOwnerHash),
                 HubGridId = ResolveDockingHubGridId(),
                 LastAup = AbsoluteUniversePositionBlit.FromAup(in lastAup),
-                FailureVector = ToFloat3(failureVector),
+                FailureVector = (float3)(failureVector),
                 RequestId = _dockingSplineRequestId,
                 Reason = (byte)reason,
                 Flags = _activeDockingSpline.Flags,
@@ -2259,11 +2259,6 @@ namespace Hecton8.Construction
 
             Quaternion rotation = Quaternion.LookRotation(forward, upVector);
             return IsFiniteQuaternion(rotation) ? rotation : fallbackRotation;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(float3 value)

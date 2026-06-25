@@ -377,7 +377,7 @@ namespace Hecton8.Gameplay
             {
                 return QueueResolvedTrajectoryNoMarker(
                     origin,
-                    ToFloat3(direction),
+                    (float3)(direction),
                     velocity,
                     mass,
                     weaponHash,
@@ -404,7 +404,7 @@ namespace Hecton8.Gameplay
             if (!IsFinite(velocity))
                 return false;
 
-            float3 velocity3 = ToFloat3(velocity);
+            float3 velocity3 = (float3)(velocity);
             float speedSq = math.lengthsq(velocity3);
             if (!math.isfinite(speedSq) || speedSq <= Epsilon)
                 return false;
@@ -546,7 +546,7 @@ namespace Hecton8.Gameplay
 
                 AABBPrimitiveDTO primitive = default;
                 primitive.CenterAUP = centerAup;
-                primitive.HalfExtents = math.max(math.abs(ToFloat3(halfExtents)), new float3(0.025f));
+                primitive.HalfExtents = math.max(math.abs((float3)(halfExtents)), new float3(0.025f));
                 primitive.TargetEntityID = targetEntityId;
                 primitive.Rotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));
                 primitive.MaterialHash = materialHash;
@@ -1626,10 +1626,6 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 NormalizeOrDefault(float3 value, float3 fallback)

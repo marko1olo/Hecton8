@@ -4345,8 +4345,8 @@ namespace Hecton8.World
                 if (!HasCompleteAStarWorkspace(nodeCount))
                     return;
 
-                if (!math.all(math.isfinite(ToFloat3(Nodes[StartNode]))) ||
-                    !math.all(math.isfinite(ToFloat3(Nodes[EndNode]))))
+                if (!math.all(math.isfinite((float3)(Nodes[StartNode]))) ||
+                    !math.all(math.isfinite((float3)(Nodes[EndNode]))))
                 {
                     return;
                 }
@@ -4392,7 +4392,7 @@ namespace Hecton8.World
                         break;
                     }
 
-                    float3 currentNode = ToFloat3(Nodes[current]);
+                    float3 currentNode = (float3)(Nodes[current]);
                     if (!math.all(math.isfinite(currentNode)))
                         continue;
                     float currentGScore = ReadGScore(current);
@@ -4404,7 +4404,7 @@ namespace Hecton8.World
                         if (neighbor == current || ReadClosedFlag(neighbor) != 0)
                             continue;
 
-                        float3 neighborNode = ToFloat3(Nodes[neighbor]);
+                        float3 neighborNode = (float3)(Nodes[neighbor]);
                         if (!math.all(math.isfinite(neighborNode)))
                             continue;
 
@@ -4464,7 +4464,7 @@ namespace Hecton8.World
                 while (nodeIndex >= 0 && pathIterations < reconstructionLimit)
                 {
                     pathIterations++;
-                    float3 node = ToFloat3(Nodes[nodeIndex]);
+                    float3 node = (float3)(Nodes[nodeIndex]);
                     if (!math.all(math.isfinite(node)))
                     {
                         ResetPath();
@@ -4697,8 +4697,8 @@ namespace Hecton8.World
 
             private float HeuristicCost(int nodeIndex)
             {
-                float3 node = ToFloat3(Nodes[nodeIndex]);
-                float3 goal = ToFloat3(Nodes[EndNode]);
+                float3 node = (float3)(Nodes[nodeIndex]);
+                float3 goal = (float3)(Nodes[EndNode]);
                 float horizontalDistance = EstimateLength2D(node.xz - goal.xz);
                 float verticalPenalty = math.abs(node.y - goal.y) * 1.85f;
                 return horizontalDistance + verticalPenalty;
@@ -4756,8 +4756,8 @@ namespace Hecton8.World
                 if (combinedStrength <= 0.0001f)
                     return 0f;
 
-                float3 currentConduit = ToFloat3(ConduitVectors[currentIndex]);
-                float3 neighborConduit = ToFloat3(ConduitVectors[neighborIndex]);
+                float3 currentConduit = (float3)(ConduitVectors[currentIndex]);
+                float3 neighborConduit = (float3)(ConduitVectors[neighborIndex]);
                 if (!math.all(math.isfinite(currentConduit)) ||
                     !math.all(math.isfinite(neighborConduit)))
                 {
@@ -5007,11 +5007,6 @@ namespace Hecton8.World
                 }
             }
 
-            private static float3 ToFloat3(Vector3 value)
-            {
-                return new float3(value.x, value.y, value.z);
-            }
-
             private static float EstimateLength2D(float2 value)
             {
                 float ax = math.abs(value.x);
@@ -5148,7 +5143,7 @@ namespace Hecton8.World
                 int apexIndex = 0;
                 int leftIndex = 0;
                 int rightIndex = 0;
-                float3 apex = ToFloat3(ReadRawPathPoint(0));
+                float3 apex = (float3)(ReadRawPathPoint(0));
                 float3 left = apex;
                 float3 right = apex;
                 float3 fallbackAxis = ResolvePortalAxis(0);
@@ -5184,7 +5179,7 @@ namespace Hecton8.World
                             }
 
                             apexIndex = emitIndex;
-                            apex = ToFloat3(ReadRawPathPoint(apexIndex));
+                            apex = (float3)(ReadRawPathPoint(apexIndex));
                             left = apex;
                             right = apex;
                             leftIndex = apexIndex;
@@ -5215,7 +5210,7 @@ namespace Hecton8.World
                             }
 
                             apexIndex = emitIndex;
-                            apex = ToFloat3(ReadRawPathPoint(apexIndex));
+                            apex = (float3)(ReadRawPathPoint(apexIndex));
                             left = apex;
                             right = apex;
                             leftIndex = apexIndex;
@@ -5251,7 +5246,7 @@ namespace Hecton8.World
 
                 for (int i = 0; i < pathCount; i++)
                 {
-                    if (!math.all(math.isfinite(ToFloat3(ReadRawPathPoint(i)))))
+                    if (!math.all(math.isfinite((float3)(ReadRawPathPoint(i)))))
                         return false;
                 }
 
@@ -5363,7 +5358,7 @@ namespace Hecton8.World
             private NavPortal BuildPortal(int index, out float3 portalAxis)
             {
                 Vector3 centerValue = ReadRawPathPoint(index);
-                float3 center = ToFloat3(centerValue);
+                float3 center = (float3)(centerValue);
                 int inputCount = GetInputPathCount();
                 if (index <= 0 || index >= inputCount - 1)
                 {
@@ -5371,8 +5366,8 @@ namespace Hecton8.World
                     return BuildNavPortal(center, center);
                 }
 
-                float3 previous = ToFloat3(ReadRawPathPoint(index - 1));
-                float3 next = ToFloat3(ReadRawPathPoint(index + 1));
+                float3 previous = (float3)(ReadRawPathPoint(index - 1));
+                float3 next = (float3)(ReadRawPathPoint(index + 1));
                 float3 prevDirection = NormalizeRsqrtOrFallback(center - previous, new float3(0f, 0f, 1f));
                 float3 nextDirection = NormalizeRsqrtOrFallback(next - center, prevDirection);
                 portalAxis = NormalizeRsqrtOrFallback(prevDirection + nextDirection, nextDirection);
@@ -5388,7 +5383,7 @@ namespace Hecton8.World
 
             private float SampleObstacle(Vector3 positionValue)
             {
-                float3 position = ToFloat3(positionValue);
+                float3 position = (float3)(positionValue);
                 if (IsInsideTerrainHoleStatic(position.x, position.z, TerrainHoles, TerrainHoleCount))
                     return 0f;
 
@@ -5509,7 +5504,7 @@ namespace Hecton8.World
                     int candidateLimit = math.min(lastIndex, anchorIndex + maxPortalLookAhead);
                     for (int candidateIndex = farthestVisibleIndex + 1; candidateIndex <= candidateLimit; candidateIndex++)
                     {
-                        if (!HasVoxelLineOfSight(ToFloat3(anchorPoint), ToFloat3(ReadResultPathPoint(candidateIndex))))
+                        if (!HasVoxelLineOfSight((float3)(anchorPoint), (float3)(ReadResultPathPoint(candidateIndex))))
                             break;
 
                         farthestVisibleIndex = candidateIndex;
@@ -5741,14 +5736,9 @@ namespace Hecton8.World
                 int clampedIndex = math.clamp(index, 0, math.max(0, inputCount - 1));
                 int previousIndex = math.max(0, clampedIndex - 1);
                 int nextIndex = math.min(math.max(0, inputCount - 1), clampedIndex + 1);
-                float3 previous = ToFloat3(ReadRawPathPoint(previousIndex));
-                float3 next = ToFloat3(ReadRawPathPoint(nextIndex));
+                float3 previous = (float3)(ReadRawPathPoint(previousIndex));
+                float3 next = (float3)(ReadRawPathPoint(nextIndex));
                 return NormalizeRsqrtOrFallback(next - previous, new float3(0f, 0f, 1f));
-            }
-
-            private static float3 ToFloat3(Vector3 value)
-            {
-                return new float3(value.x, value.y, value.z);
             }
 
             private static float3 ResolvePerpendicular(float3 axis)
@@ -5826,7 +5816,7 @@ namespace Hecton8.World
 
             private static bool Approximately(Vector3 a, Vector3 b)
             {
-                float3 delta = ToFloat3(a) - ToFloat3(b);
+                float3 delta = (float3)(a) - (float3)(b);
                 return math.lengthsq(delta) <= 0.0001f;
             }
         }
