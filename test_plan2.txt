@@ -1,0 +1,29 @@
+1. Read the feedback. `Hecton8.Core.ReflectionUtility` doesn't exist, I should implement `SetPrivateField` and `GetPrivateField` directly inside the test class using `System.Reflection.BindingFlags`.
+2. Update the tests to actually mock meaningful things and verify behavior instead of just using `Assert.Pass`.
+3. To test `LateFrameTick` when `_jobPending` is true: We can verify that it returns early by proving it didn't call something like `TryResolveBiotaBuffers`. A good way is to check the `_frameIndex` (which is updated inside the schedule method) or to see if `TryFinalizeActiveJobNoWait` was called. Wait, we can't easily mock private methods.
+4. Let's look closer at `LateFrameTick`:
+   ```csharp
+        public void LateFrameTick()
+        {
+            bool completedJob = _jobPending && TryFinalizeActiveJobNoWait();
+            try
+            {
+                if (_jobPending)
+                {
+                    WriteTelemetryHeartbeat();
+                    return; // Early return path
+                }
+                // ... main body
+            }
+            finally
+            {
+                if (completedJob)
+                    ReleaseBiotaJobBufferPins();
+            }
+        }
+   ```
+   If `_jobPending` is true, and `TryFinalizeActiveJobNoWait()` returns false (because the job isn't done, or handle is default and we mock it to not finish, or just leave handle as default which implies finished immediately), it will return early if `_jobPending` is STILL true. If we force `_jobPending = true` but the job completes, it sets `_jobPending = false` inside `TryFinalizeActiveJobNoWait()`. Wait, if we use a default JobHandle, `TryFinalizeActiveJobNoWait` will complete immediately and set `_jobPending = false`.
+
+   If we mock `_jobPending` to be true and `_activeJobHandle` is default, `TryFinalizeActiveJobNoWait` will return true and set `_jobPending` to false. Then `_jobPending` becomes false, and the main block executes.
+
+   To test the early return: we need a job that hasn't completed, or we can just mock `_jobPending` to true *and* not let `TryFinalizeActiveJobNoWait` complete it? But `TryFinalizeActiveJobNoWait` checks `_activeJobHandle.IsCompleted`. We can't mock JobHandle easily. However, `_jobPending` could be `true`, we can set `_activeJobHandle` to something that isn't completed... Or we can just set `_jobPending` to `false` directly to test the main path.
