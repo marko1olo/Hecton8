@@ -419,11 +419,10 @@ namespace GPUInstancer
                     if (GPUInstancerUtility.IsInLayer(layerMask, billboardRenderers[mr].gameObject.layer))
                         billboardRenderers[mr].enabled = enabled;
 
-            LODGroup lodGroup = prefabInstance.GetComponent<LODGroup>();
-            if (lodGroup != null)
+            if (prefabInstance.TryGetComponent<LODGroup>(out LODGroup lodGroup))
                 lodGroup.enabled = enabled;
 
-            Rigidbody rigidbody = prefabInstance.GetComponent<Rigidbody>();
+            prefabInstance.TryGetComponent<Rigidbody>(out Rigidbody rigidbody);
 
             if (enabled)
             {
