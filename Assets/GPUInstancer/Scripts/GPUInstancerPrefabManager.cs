@@ -1179,8 +1179,7 @@ namespace GPUInstancer
                 GPUInstancerPrefab prefabInstance;
                 foreach (GameObject instance in instances)
                 {
-                    prefabInstance = instance.GetComponent<GPUInstancerPrefab>();
-                    if (prefabInstance == null)
+                    if (!instance.TryGetComponent(out prefabInstance))
                     {
                         prefabInstance = instance.AddComponent<GPUInstancerPrefab>();
                         prefabInstance.prefabPrototype = prefabPrototype;
@@ -1215,8 +1214,7 @@ namespace GPUInstancer
                 GPUInstancerPrefab prefabInstance;
                 foreach (GameObject instance in instances)
                 {
-                    prefabInstance = instance.GetComponent<GPUInstancerPrefab>();
-                    if (prefabInstance == null)
+                    if (!instance.TryGetComponent(out prefabInstance))
                     {
                         prefabInstance = instance.AddComponent<GPUInstancerPrefab>();
                         prefabInstance.prefabPrototype = prefabPrototype;
