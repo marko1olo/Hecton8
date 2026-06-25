@@ -209,6 +209,7 @@ namespace Hecton8.Editor
             dirLight.intensity = 1.5f;
             dirLight.color = new Color(0.8f, 0.9f, 1.0f);
             dirLight.shadows = LightShadows.Soft;
+            RenderSettings.sun = dirLight;
 
             // RenderSettings setup for ambient
             RenderSettings.fog = true;
