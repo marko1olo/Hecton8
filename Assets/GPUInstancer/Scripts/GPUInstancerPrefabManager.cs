@@ -407,23 +407,23 @@ namespace GPUInstancer
             if (!prefabInstance || !prefabInstance.prefabPrototype || !prefabInstance.prefabPrototype.prefabObject)
                 return;
 
-            MeshRenderer[] meshRenderers = prefabInstance.GetComponentsInChildren<MeshRenderer>(true);
+            MeshRenderer[] meshRenderers = prefabInstance.GetCachedMeshRenderers();
             if (meshRenderers != null && meshRenderers.Length > 0)
                 for (int mr = 0; mr < meshRenderers.Length; mr++)
                     if (GPUInstancerUtility.IsInLayer(layerMask, meshRenderers[mr].gameObject.layer))
                         meshRenderers[mr].enabled = enabled;
 
-            BillboardRenderer[] billboardRenderers = prefabInstance.GetComponentsInChildren<BillboardRenderer>(true);
+            BillboardRenderer[] billboardRenderers = prefabInstance.GetCachedBillboardRenderers();
             if (billboardRenderers != null && billboardRenderers.Length > 0)
                 for (int mr = 0; mr < billboardRenderers.Length; mr++)
                     if (GPUInstancerUtility.IsInLayer(layerMask, billboardRenderers[mr].gameObject.layer))
                         billboardRenderers[mr].enabled = enabled;
 
-            LODGroup lodGroup = prefabInstance.GetComponent<LODGroup>();
+            LODGroup lodGroup = prefabInstance.GetCachedLODGroup();
             if (lodGroup != null)
                 lodGroup.enabled = enabled;
 
-            Rigidbody rigidbody = prefabInstance.GetComponent<Rigidbody>();
+            Rigidbody rigidbody = prefabInstance.GetCachedRigidbody();
 
             if (enabled)
             {
