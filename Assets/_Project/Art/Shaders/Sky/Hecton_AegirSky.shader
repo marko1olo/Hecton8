@@ -39,6 +39,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
             #pragma vertex Vert
             #pragma fragment Frag
 
+            #pragma multi_compile _ QUALITY_LOW QUALITY_MED QUALITY_HIGH
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             TEXTURE2D(_AegirBandTex);
@@ -121,6 +122,13 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 return frac(value);
             }
 
+            float Hash21(float2 p)
+            {
+                float3 p3 = frac(float3(p.xyx) * 0.1031);
+                p3 += dot(p3, p3.yzx + 33.33);
+                return frac((p3.x + p3.y) * p3.z);
+            }
+
             float H8AegirFastSqrt(float value)
             {
                 return value * rsqrt(max(value, 0.00000001));
@@ -137,6 +145,44 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 r = ay > ax ? 1.57079637 - r : r;
                 r = x < 0.0 ? 3.14159265 - r : r;
                 return y < 0.0 ? -r : r;
+            }
+
+            float Noise2D(float2 p)
+            {
+                float2 i = floor(p);
+                float2 f = frac(p);
+                float2 u = f * f * (3.0 - 2.0 * f);
+                float a = Hash21(i + float2(0.0, 0.0));
+                float b = Hash21(i + float2(1.0, 0.0));
+                float c = Hash21(i + float2(0.0, 1.0));
+                float d = Hash21(i + float2(1.0, 1.0));
+                return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
+            }
+
+            float FBM(float2 p)
+            {
+                float sum = 0.0;
+                float amp = 0.5;
+                float freq = 1.0;
+                
+                #if defined(QUALITY_HIGH)
+                [unroll(4)]
+                for(int i = 0; i < 4; i++)
+                #elif defined(QUALITY_LOW)
+                [unroll(2)]
+                for(int i = 0; i < 2; i++)
+                #else
+                [unroll(3)]
+                for(int i = 0; i < 3; i++)
+                #endif
+                {
+                    sum += amp * Noise2D(p * freq);
+                    freq *= 2.13;
+                    amp *= 0.48;
+                    // Keep rotation to break grid alignment
+                    p = float2(p.x * 0.866 - p.y * 0.5, p.x * 0.5 + p.y * 0.866);
+                }
+                return sum;
             }
 
             float2 AegirUv(float3 surfaceNormal)
@@ -272,32 +318,46 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float limb = saturate(1.0 - normalZ);
                 float latitude01 = saturate(normalXY.y * 0.5 + 0.5);
                 float longitude01 = frac(normalXY.x * 0.46 + 0.5);
-                float latShear = sin(latitude01 * 18.0 + normalXY.x * 3.2) * 0.014
-                               + sin(latitude01 * 43.0 - normalXY.x * 7.0) * 0.006;
+                
                 float flowPhase = AegirFlowPhase(flowSpeed);
-                float2 bandUv = float2(frac(longitude01 + latShear + flowPhase), latitude01);
-                float2 detailUv = float2(frac(longitude01 * 1.73 - latShear * 1.4 - flowPhase * 0.42),
-                                         saturate(latitude01 * 0.94 + 0.03));
+
+                // --- PROCEDURAL MASTERPIECE: FBM DOMAIN WARPING ---
+                float2 noiseCoords = float2(longitude01 * 6.0 + flowPhase * 0.5, latitude01 * 6.0);
+                float warpX = FBM(noiseCoords + float2(flowPhase * 0.2, 0.0));
+                float warpY = FBM(noiseCoords + float2(12.34, 56.78) - flowPhase * 0.15);
+                float2 warp = (float2(warpX, warpY) - 0.5) * 0.18; // Swirling turbulence
+                
+                // Zonal winds (bands moving at different speeds)
+                float windProfile = FBM(float2(latitude01 * 12.0, 0.0));
+                float zonalWind = (windProfile - 0.5) * 1.5 * flowPhase;
+
+                float2 bandUv = float2(frac(longitude01 + zonalWind + warp.x), saturate(latitude01 + warp.y));
+                float2 detailUv = float2(frac(longitude01 * 1.73 - zonalWind * 1.2 + warp.x * 1.5), saturate(latitude01 * 0.94 + warp.y * 1.2 + 0.03));
+                
                 float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, bandUv).rgb;
                 float3 detailBands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, detailUv).rgb;
                 float textureLuma = saturate(dot(bands, float3(0.3333, 0.3333, 0.3333)) * 2.10);
                 float detailLuma = saturate(dot(detailBands, float3(0.3333, 0.3333, 0.3333)) * 1.65);
                 float cloudTexture = saturate(textureLuma * 0.72 + detailLuma * 0.34);
                 float bandBreakup = 0.78 + Hash11(floor((latitude01 + normalXY.x * 0.17) * 89.0)) * 0.22;
-                float bandPhase = normalXY.y * lerp(11.0, 19.0, quality) + flowPhase * 1.7;
-                float wideBand = 0.5 + 0.5 * sin(bandPhase);
-                float stormBand = 0.5 + 0.5 * sin(bandPhase * 2.37 + normalXY.x * 5.0);
-                float shearBand = 0.5 + 0.5 * sin(bandPhase * 0.71 + normalXY.x * 10.5 + stormBand * 1.7);
+                
                 float3 coldGas = float3(0.020, 0.070, 0.082);
                 float3 deepTeal = float3(0.050, 0.220, 0.270);
                 float3 iceCloud = float3(0.255, 0.690, 0.760);
                 float3 stormCopper = float3(0.300, 0.185, 0.090);
                 float stormEmission = AegirStormEmission();
+                
                 float3 textureGas = lerp(deepTeal, iceCloud, cloudTexture);
-                float3 proceduralGas = lerp(deepTeal, iceCloud, wideBand * 0.26 + cloudTexture * 0.74);
+                
+                // Procedural mix driven by FBM and textures, completely eliminating raw sine stripes
+                float proceduralDetail = FBM(noiseCoords * 3.0 + warp * 5.0);
+                float3 proceduralGas = lerp(deepTeal, iceCloud, proceduralDetail * 0.4 + cloudTexture * 0.6);
                 proceduralGas = lerp(proceduralGas, textureGas, _DiscTextureWeight);
-                proceduralGas = lerp(proceduralGas, stormCopper, stormBand * cloudTexture * 0.15 * stormEmission * saturate(quality + 0.25));
-                proceduralGas = lerp(proceduralGas, proceduralGas * float3(1.10, 0.99, 0.82), shearBand * cloudTexture * 0.12);
+                
+                // Giant storms (Red spots / copper vortices)
+                float stormMask = FBM(noiseCoords * 1.5 - float2(flowPhase * 0.3, 0.0));
+                stormMask = smoothstep(0.65, 0.85, stormMask); // isolate vortices
+                proceduralGas = lerp(proceduralGas, stormCopper, stormMask * cloudTexture * 0.8 * stormEmission * saturate(quality + 0.25));
                 proceduralGas *= _AegirExposure * bandBreakup;
                 float nightFill = saturate(0.28 + limb * 0.45);
                 float3 gasColor = lerp(coldGas * nightFill, proceduralGas, light);
@@ -316,25 +376,60 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 float2 uv = AegirUv(hitNormal);
                 float flowWeight = saturate((quality - 0.08) * 1.2);
                 float flowPhase = AegirFlowPhase(flowSpeed);
-                float driftPhase = frac(uv.y * 19.0 + flowPhase);
-                float drift = (driftPhase - 0.5) * flowWeight;
-                uv.x += drift * 0.028;
-                uv.y += drift * 0.006;
 
-                float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, uv).rgb;
+                float2 noiseCoords = float2(uv.x * 6.0 + flowPhase * 0.5, uv.y * 6.0);
+                float warpX = FBM(noiseCoords + float2(flowPhase * 0.2, 0.0));
+                float warpY = FBM(noiseCoords + float2(12.34, 56.78) - flowPhase * 0.15);
+                float2 warp = (float2(warpX, warpY) - 0.5) * 0.18 * flowWeight;
+                
+                float windProfile = FBM(float2(uv.y * 12.0, 0.0));
+                float zonalWind = (windProfile - 0.5) * 1.5 * flowPhase * flowWeight;
+                
+                float2 bandUv = float2(frac(uv.x + zonalWind + warp.x), saturate(uv.y + warp.y));
+                float2 detailUv = float2(frac(uv.x * 1.73 - zonalWind * 1.2 + warp.x * 1.5), saturate(uv.y * 0.94 + warp.y * 1.2 + 0.03));
+
+                float3 bands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, bandUv).rgb;
+                float3 detailBands = SAMPLE_TEXTURE2D(_AegirBandTex, sampler_AegirBandTex, detailUv).rgb;
+                
+                float textureLuma = saturate(dot(bands, float3(0.3333, 0.3333, 0.3333)) * 2.10);
+                float detailLuma = saturate(dot(detailBands, float3(0.3333, 0.3333, 0.3333)) * 1.65);
+                float cloudTexture = saturate(textureLuma * 0.72 + detailLuma * 0.34);
+                float bandBreakup = 0.78 + Hash11(floor((uv.y + hitNormal.x * 0.17) * 89.0)) * 0.22;
+                
+                float3 coldGas = float3(0.020, 0.070, 0.082);
+                float3 deepTeal = float3(0.050, 0.220, 0.270);
+                float3 iceCloud = float3(0.255, 0.690, 0.760);
+                float3 stormCopper = float3(0.300, 0.185, 0.090);
                 float stormEmission = AegirStormEmission();
-                float stormSignal = saturate((bands.r - bands.b) * 1.35 + sin(uv.y * 48.0 + flowPhase * 5.0) * 0.12 + 0.08);
-                bands += float3(0.095, 0.052, 0.022) * stormSignal * stormEmission * saturate(quality + 0.18);
+                
+                // Procedural mix driven by FBM and textures
+                float proceduralDetail = FBM(noiseCoords * 3.0 + warp * 5.0);
+                float combinedDetail = lerp(proceduralDetail, cloudTexture, _DiscTextureWeight * 0.4); // Limit flat texture dominance
+                combinedDetail = smoothstep(0.2, 0.8, combinedDetail); // High contrast bands
+                
+                float3 proceduralGas = lerp(deepTeal, iceCloud, combinedDetail);
+                
+                // Giant storms (Red spots / copper vortices)
+                float stormMask = FBM(noiseCoords * 2.5 - float2(flowPhase * 0.4, 0.0) + warp * 2.0);
+                stormMask = smoothstep(0.60, 0.85, stormMask); // Isolate vortices
+                float stormIntensity = stormMask * stormEmission * saturate(quality + 0.25) * 1.5;
+                proceduralGas = lerp(proceduralGas, stormCopper, saturate(stormIntensity));
+                proceduralGas *= _AegirExposure * bandBreakup;
+
                 float ndotl = dot(hitNormal, lightDir);
                 float day = saturate(ndotl * 0.92 + 0.08);
                 float hardTerminator = smoothstep(-0.08, 0.18, ndotl);
-                float3 color = bands * lerp(0.055, 1.0, hardTerminator) * (0.22 + day * 0.78);
-
-                float shadow = RingShadow(hitPoint, lightDir, center, ringNormal, ringInnerSq, ringOuterSq);
-                color *= 1.0 - shadow * shadowStrength;
-
+                
                 float viewFacing = saturate(dot(hitNormal, -rayDir));
                 float rim = saturate(1.0 - viewFacing);
+                
+                float nightFill = saturate(0.28 + rim * 0.45);
+                float3 color = lerp(coldGas * nightFill, proceduralGas * lerp(0.055, 1.0, hardTerminator) * (0.22 + day * 0.78), saturate(ndotl + 0.1));
+
+                // Soften ring shadow slightly so it doesn't look like a bug
+                float shadow = RingShadow(hitPoint, lightDir, center, ringNormal, ringInnerSq, ringOuterSq);
+                color *= 1.0 - shadow * shadowStrength * 0.75;
+
                 float rim2 = rim * rim;
                 float rim4 = rim2 * rim2;
                 float limbDarken = lerp(1.0, 0.58, saturate(pow(rim, 1.35)));
@@ -342,7 +437,7 @@ Shader "HECTON/Sky/Hecton_AegirSky"
                 scatter *= saturate(ndotl * 0.65 + 0.35);
                 color *= limbDarken;
                 color += _AtmosphereTint.rgb * scatter;
-                return color * _AegirExposure;
+                return color;
             }
 
             float4 Frag(Varyings input) : SV_Target

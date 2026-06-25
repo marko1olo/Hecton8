@@ -13,7 +13,9 @@ namespace Hecton8.World
         None = 0,
         Visible = 1u << 0,
         Powered = 1u << 1,
-        UiPanel = 1u << 2
+        UiPanel = 1u << 2,
+        PlayerOwned = 1u << 3,
+        BioluminescentPulse = 1u << 4
     }
 
     internal enum ProxyLightType : byte

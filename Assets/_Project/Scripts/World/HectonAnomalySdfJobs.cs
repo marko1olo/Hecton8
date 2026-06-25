@@ -569,14 +569,17 @@ namespace Hecton8.World
             if (radialSq > maxRadiusSq)
                 return;
 
-            float radial = -math.max(VoxelSizeMeters, EdgeWarpMeters);
-            if (radialSq > innerRadiusSq)
+            float radialDistance = 0f;
+            float baseWarp = 0f;
+            float angle = 0f;
+            bool isBoundary = radialSq > innerRadiusSq;
+            
+            if (isBoundary)
             {
-                float radialDistance = AnomalySdfNoise.FastMagnitude(radialSq);
+                radialDistance = AnomalySdfNoise.FastMagnitude(radialSq);
                 float3 noisePosition = new float3((float)absXd, 0f, (float)absZd) * NoiseFrequency;
-                float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
-                float warpedRadius = math.max(0.001f, RadiusMeters + warp);
-                radial = radialDistance - warpedRadius;
+                baseWarp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * (EdgeWarpMeters * 0.45f);
+                angle = math.atan2(dx, dz);
             }
 
             int zOffset = z * SdfWidth * SdfHeight;
@@ -587,6 +590,25 @@ namespace Hecton8.World
                 float vertical = math.abs(localY) - halfHeight;
                 if (vertical > VoxelSizeMeters)
                     continue;
+
+                float radial = -math.max(VoxelSizeMeters, EdgeWarpMeters);
+                if (isBoundary)
+                {
+                    // Vertical Fluting: radial grooving around the pillar
+                    float flute = math.sin(angle * 14f + localY * 0.015f) * (EdgeWarpMeters * 0.25f);
+                    
+                    // Tectonic Terracing: creates climbable horizontal ledges as you descend
+                    float terraceStep = 24f;
+                    float terraceFract = localY - math.floor(localY / terraceStep) * terraceStep;
+                    float terraceWarp = math.smoothstep(0f, 8f, terraceFract) * (EdgeWarpMeters * 0.15f);
+
+                    // Stalactite / Overhang Noise: high frequency organic roughness
+                    float3 overhangPos = new float3((float)absXd, absY, (float)absZd) * (NoiseFrequency * 2.8f);
+                    float overhang = (AnomalySdfNoise.FastHashNoise3D(overhangPos) * 2f - 1f) * (EdgeWarpMeters * 0.15f);
+
+                    float warpedRadius = math.max(0.001f, RadiusMeters + baseWarp + flute + terraceWarp + overhang);
+                    radial = radialDistance - warpedRadius;
+                }
 
                 int sdfIndex = x + sampleY * SdfWidth + zOffset;
                 Sdf[sdfIndex] = math.max(Sdf[sdfIndex], -math.max(radial, vertical));
@@ -708,6 +730,56 @@ namespace Hecton8.World
 
             if (BiomeInfluencePacked.IsCreated && BiomeInfluencePacked.Length > index)
                 BiomeInfluencePacked[index] = FissureInfluencePacked;
+        }
+    }
+
+    /// <summary>
+    /// Burst kernel that carves vertical canyons into the SDF density array based on a 2D mask.
+    /// </summary>
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct CarveFissureMaskSDFJob : Unity.Jobs.IJobParallelFor
+    {
+        [NativeDisableParallelForRestriction, NoAlias]
+        [NativeDisableContainerSafetyRestriction]
+        public NativeArray<float> Sdf;
+
+        [ReadOnly, NoAlias] public NativeArray<byte> FissureMask;
+        [ReadOnly, NoAlias] public NativeArray<float> TerrainHeights;
+
+        public int SdfWidth;
+        public int SdfHeight;
+        public int SdfDepth;
+        public float VoxelSizeMeters;
+        public double3 SdfOriginAup;
+        public float DepthMeters;
+
+        public void Execute(int index)
+        {
+            if (FissureMask[index] == 0)
+                return;
+
+            int z = index / SdfWidth;
+            int x = index - z * SdfWidth;
+            
+            float terrainY = TerrainHeights[index];
+            float fissureTopY = terrainY + 15f; // Start carving slightly above the terrain
+
+            int slice = SdfWidth * SdfHeight;
+            int zOffset = z * slice;
+            
+            for (int y = 0; y < SdfHeight; y++)
+            {
+                float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
+                float depthBelowTop = fissureTopY - absY;
+                if (depthBelowTop < 0f || depthBelowTop > DepthMeters) continue;
+
+                int sdfIndex = x + y * SdfWidth + zOffset;
+                float verticalSignedDistance = math.max(-depthBelowTop, depthBelowTop - DepthMeters);
+                float depth01 = math.saturate(depthBelowTop / math.max(0.001f, DepthMeters));
+                float negativeDensity = -math.max(math.abs(verticalSignedDistance), DepthMeters * depth01);
+                Sdf[sdfIndex] = math.min(Sdf[sdfIndex], negativeDensity);
+            }
         }
     }
 

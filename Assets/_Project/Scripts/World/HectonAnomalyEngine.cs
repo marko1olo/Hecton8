@@ -610,6 +610,52 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Schedules injection of a canyon network based on a pre-computed 2D fissure mask.
+        /// </summary>
+        public static JobHandle InjectFissureNetworkSDF(
+            NativeArray<float> sdf,
+            NativeArray<byte> fissureMask,
+            NativeArray<float> terrainHeights,
+            int sdfWidth,
+            int sdfHeight,
+            int sdfDepth,
+            float voxelSizeMeters,
+            double3 sdfOriginAup,
+            float depthMeters = 500f,
+            JobHandle dependency = default)
+        {
+            ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+            if (!IsFiniteAup(sdfOriginAup))
+                return dependency;
+
+            int safeSdfWidth = math.max(1, sdfWidth);
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int safeSdfDepth = math.max(1, sdfDepth);
+            int cellCount = checked(safeSdfWidth * safeSdfDepth);
+            
+            if (fissureMask.Length < cellCount)
+                throw new ArgumentException("Fissure mask array is smaller than sdfWidth * sdfDepth.", nameof(fissureMask));
+            if (terrainHeights.Length < cellCount)
+                throw new ArgumentException("Terrain heights array is smaller than sdfWidth * sdfDepth.", nameof(terrainHeights));
+
+            var job = new CarveFissureMaskSDFJob
+            {
+                Sdf = sdf,
+                FissureMask = fissureMask,
+                TerrainHeights = terrainHeights,
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = ResolvePositiveFinite(voxelSizeMeters, 0.001f),
+                SdfOriginAup = sdfOriginAup,
+                DepthMeters = ResolvePositiveFinite(depthMeters, 0.001f)
+            };
+
+            int laneCount = cellCount;
+            return job.Schedule(laneCount, 64, dependency);
+        }
+
+        /// <summary>
         /// Schedules injection of a deep negative fissure trench and optional packed biome influence cells.
         /// </summary>
         public static JobHandle InjectDeepFissureSDF(

@@ -1,0 +1,1337 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.10f1 (feeafc12a938) revision 16706300'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'en' Physical Memory: 16023 MB
+[Licensing::IpcConnector] Channel LicenseClient-danat doesn't exist
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-06-24T16:41:49Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 13332)
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe
+-batchmode
+-projectPath
+C:\hades\Hecton8
+-executeMethod
+Hecton8.Editor.TerrainRenderTestGoal.Execute
+-logfile
+C:\hades\Hecton8\RenderLog.txt
+-quit
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [15660]  Target information:
+
+Player connection [15660]  * "[IP] 10.77.0.2 [Port] 55504 [Flags] 2 [Guid] 2764457189 [EditorId] 2764457189 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [15660]  * "[IP] 192.168.1.104 [Port] 55504 [Flags] 2 [Guid] 2764457189 [EditorId] 2764457189 [Version] 1048832 [Id] WindowsEditor(7,Shinobu) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [15660] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [15660] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat" at "2026-06-24T16:41:49.4560569Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 13332, path: "C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Package Manager] Connected to IPC stream "Upm-9088" after 0.3 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              ead765349952483fb7c0eb592b5534fa
+  Correlation Id:          fdc766f7946b31604eba3157c7d2a5f7
+  External correlation Id: 7965336579084361910
+  Machine Id:              KXBg4HkLZwVfPhjJrzyzSmUVWFw=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-danat" (connect: 0.37s, validation: 0.20s, handshake: 0.04s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-danat-notifications" at "2026-06-24T16:41:49.6945985Z"
+[Licensing::Module] Connected to LicensingClient (PId: 13332, launch time: 0.00, total connection time: 0.61s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.66s
+[Licensing::Module] Licensing is initialized (took 0.15s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Refreshing native plugins compatible for Editor in 195.37 ms, found 25 plugins.
+Initialize engine version: 6000.4.10f1 (feeafc12a938)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+d3d12: failed to query info queue interface (0x80004002).
+Direct3D:
+    Version:         Direct3D 12 [level 12.1]
+    Renderer:        NVIDIA GeForce MX350 (ID=0x1c94)
+    Vendor:          NVIDIA
+    VRAM:            1964 MB
+    App VRAM Budget: 1669 MB
+    Driver:          32.0.15.8183
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56088
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/MetroSupport/UnityEditor.UWP.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
+Registered in 0.005635 seconds.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+[Licensing::Client] Successfully resolved entitlement details
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  5.056 seconds
+Domain Reload Profiling: 5484ms
+	BeginReloadAssembly (111ms)
+		CreateAndSetChildDomain (5ms)
+	RebuildCommonClasses (43ms)
+	RebuildNativeTypeToScriptingClass (15ms)
+	initialDomainReloadingComplete (59ms)
+	LoadAllAssembliesAndSetupDomain (199ms)
+		LoadAssemblies (105ms)
+		AnalyzeDomain (188ms)
+			TypeCache.Refresh (186ms)
+				TypeCache.ScanAssembly (173ms)
+	FinalizeReload (5058ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (58ms)
+			BeforeProcessingInitializeOnLoad (87ms)
+			ProcessInitializeOnLoadAttributes (102ms)
+			ProcessInitializeOnLoadMethodAttributes (4744ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 75 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.addressables@2.9.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.addressables@8460f1c9c927)
+    com.unity.ai.navigation@2.0.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ai.navigation@734c2c4c5591)
+    com.unity.cinemachine@3.1.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.cinemachine@285f38545487)
+    com.unity.collab-proxy@2.12.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collab-proxy@0b1559bcd34e)
+    com.unity.inputsystem@1.19.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.memoryprofiler@1.1.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.memoryprofiler@485b5ba42ef5)
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.probuilder@6.0.9 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.probuilder@1f279ab829b7)
+    com.unity.sharp-zip-lib@1.4.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.sharp-zip-lib@f6e4ef34e4d8)
+    com.unity.timeline@1.8.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.timeline@8cd8509afae5)
+    com.unity.visualscripting@1.9.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.xr.meta-openxr@2.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c)
+    com.unity.xr.openxr@1.17.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b)
+    com.unity.searcher@4.9.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.xr.core-utils@2.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.core-utils@a8b900321199)
+    com.unity.xr.legacyinputhelpers@3.0.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.legacyinputhelpers@3f62d634f63b)
+    com.unity.xr.arfoundation@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b)
+    com.unity.xr.compositionlayers@2.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.compositionlayers@461024b1d757)
+    com.unity.settings-manager@2.1.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.burst@1.8.29 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.mathematics@1.3.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.profiling.core@1.0.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.editorcoroutines@1.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.editorcoroutines@87a15ed012c2)
+    com.unity.splines@2.8.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.splines@9b00833aca09)
+    com.unity.scriptablebuildpipeline@2.6.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.scriptablebuildpipeline@36e3b5898ee2)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework.performance@aa81a99c4a75)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.2d.sprite@b95cc7beb645)
+    com.unity.render-pipelines.universal@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal@cdf909593d80)
+    com.unity.ugui@2.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ugui@1f2d1ab0d950)
+    com.unity.modules.accessibility@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@5aab14b68499)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@5b6ebd78ccc0)
+    com.unity.test-framework@1.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@996f223345ba)
+    com.unity.ext.nunit@2.0.5 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+  Embedded packages:
+    com.unity.xr.management@file:C:\hades\Hecton8\Packages\com.unity.xr.management (location: C:\hades\Hecton8\Packages\com.unity.xr.management)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+  Git packages:
+    com.coplaydev.unity-mcp@https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta (location: C:\hades\Hecton8\Library\PackageCache\com.coplaydev.unity-mcp@edb7113971fc)
+[Subsystems] Looking for new subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.10f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  inputs in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@5dc08d6a3e5b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@5dc08d6a3e5b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Package Manager] Done registering packages in 0.02 seconds
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 9s909ms
+[2740/3781  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[BUSY       6s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll (+2 others)
+[3773/3781  7s] Csc Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll (+2 others)
+Assets\_Project\Scripts\Editor\BakeTerrainArrays.cs(8,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\BakeTerrainArrays.cs(8,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\AnalyzeSplatmaps.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\AnalyzeSplatmaps.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\CheckLayerSizes.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\CheckLayerSizes.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\CheckSceneMat.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\CheckSceneMat.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\CheckTerrainLayers.cs(5,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\CheckTerrainLayers.cs(5,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(29,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(29,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(35,72): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+
+Assets\_Project\Scripts\Editor\DebugTerrainAlphamaps.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\DebugTerrainAlphamaps.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\DumpSplatmaps.cs(8,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\DumpSplatmaps.cs(8,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\FixControlTexture.cs(12,87): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\FixControlTexture.cs(12,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\FixAndShoot.cs(18,32): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+
+Assets\_Project\Scripts\Editor\ForceSplatmaps.cs(5,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\ForceSplatmaps.cs(5,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\PrintTerrains.cs(6,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\PrintTerrains.cs(6,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\TerrainShaderVerify.cs(117,57): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+
+Assets\_Project\Scripts\Editor\TerrainShaderVerify.cs(117,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+
+Assets\_Project\Scripts\Editor\Terrain\AutoRenderTest.cs(43,28): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+
+Assets\_Project\Scripts\Editor\UpdateSandboxSceneTask.cs(26,42): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+[3775/3781  1s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.EditModeTests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.EditModeTests.dll, with 152 defines and 335 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3778/3781  1s] ILPostProcess Library/Bee/artifacts/1900b0aEDbg.dag/post-processed/Hecton8.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.dll, with 153 defines and 340 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3779/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.pdb
+[3780/3781  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Editor.dll
+*** Tundra build success (9.88 seconds), 6 items updated, 3781 evaluated
+Assets\_Project\Scripts\Editor\BakeTerrainArrays.cs(8,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\BakeTerrainArrays.cs(8,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\AnalyzeSplatmaps.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\AnalyzeSplatmaps.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\CheckLayerSizes.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\CheckLayerSizes.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\CheckSceneMat.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\CheckSceneMat.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\CheckTerrainLayers.cs(5,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\CheckTerrainLayers.cs(5,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(29,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(29,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\CheckGeneratedMat.cs(35,72): warning CS0618: 'Object.GetInstanceID()' is obsolete: 'GetInstanceID is deprecated. Use GetEntityId instead. This will be removed in a future version.'
+Assets\_Project\Scripts\Editor\DebugTerrainAlphamaps.cs(7,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\DebugTerrainAlphamaps.cs(7,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\DumpSplatmaps.cs(8,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\DumpSplatmaps.cs(8,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\FixControlTexture.cs(12,87): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\FixControlTexture.cs(12,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\FixAndShoot.cs(18,32): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets\_Project\Scripts\Editor\ForceSplatmaps.cs(5,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\ForceSplatmaps.cs(5,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\PrintTerrains.cs(6,58): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\PrintTerrains.cs(6,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\TerrainShaderVerify.cs(117,57): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets\_Project\Scripts\Editor\TerrainShaderVerify.cs(117,24): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets\_Project\Scripts\Editor\Terrain\AutoRenderTest.cs(43,28): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+Assets\_Project\Scripts\Editor\UpdateSandboxSceneTask.cs(26,42): warning CS0618: 'Object.FindObjectOfType<T>()' is obsolete: 'Object.FindObjectOfType has been deprecated. Use Object.FindAnyObjectByType instead.'
+AssetDatabase: script compilation time: 10.578731s
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Editor.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Addressables.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.Addressables.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ResourceManager.Tests.dll at Library/ScriptAssemblies/Unity.ResourceManager.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipeline.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipeline.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.ScriptableBuildPipelineTests.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Settings.Tests.dll at Library/ScriptAssemblies/Unity.Settings.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Editor.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.SharpZipLib.Tests.dll at Library/ScriptAssemblies/Unity.SharpZipLib.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.InternalUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARFoundation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARFoundation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.ARSubsystems.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.ARSubsystems.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CompositionLayers.Tests.dll at Library/ScriptAssemblies/Unity.XR.CompositionLayers.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.CoreUtils.Tests.dll at Library/ScriptAssemblies/Unity.XR.CoreUtils.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.CodeSamples.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.CodeSamples.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.MetaOpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.MetaOpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.OpenXR.Ubuntu.Tests.dll at Library/ScriptAssemblies/Unity.XR.OpenXR.Ubuntu.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.Simulation.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.XR.Simulation.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.XR.TestTooling.Editor.Tests.dll at Library/ScriptAssemblies/Unity.XR.TestTooling.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.XR.LegacyInputHelpers.Tests.dll at Library/ScriptAssemblies/UnityEditor.XR.LegacyInputHelpers.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.SpatialTracking.Tests.dll at Library/ScriptAssemblies/UnityEngine.SpatialTracking.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll at Library/ScriptAssemblies/UnityEngine.XR.OpenXR.CodeSamples.Editor.Tests.dll not valid. Loading of assembly skipped.
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 11.14 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for Android target not found
+Native extension for UWP target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Refreshing native plugins compatible for Editor in 8.97 ms, found 37 plugins.
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Hecton8
+[BiomeRuntimeDiagnostics] Starting Runtime Biome Audit...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.BiomeRuntimeDiagnostics:RunAudit () (at Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs:17)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+(Filename: Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs Line: 17)
+
+[BiomeRuntimeDiagnostics] Audit complete. Saved to C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/scratch/BiomeOutput.md
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.BiomeRuntimeDiagnostics:RunAudit () (at Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs:48)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+(Filename: Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs Line: 48)
+
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 14.556 seconds
+Domain Reload Profiling: 16537ms
+	BeginReloadAssembly (324ms)
+		DisableScriptedObjects (26ms)
+		CreateAndSetChildDomain (164ms)
+	RebuildCommonClasses (35ms)
+	RebuildNativeTypeToScriptingClass (14ms)
+	initialDomainReloadingComplete (86ms)
+	LoadAllAssembliesAndSetupDomain (1521ms)
+		LoadAssemblies (661ms)
+		AnalyzeDomain (934ms)
+			TypeCache.Refresh (648ms)
+				TypeCache.ScanAssembly (606ms)
+			BuildScriptInfoCaches (240ms)
+			ResolveRequiredComponents (39ms)
+	FinalizeReload (14556ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (37ms)
+			BeforeProcessingInitializeOnLoad (372ms)
+			ProcessInitializeOnLoadAttributes (7949ms)
+			ProcessInitializeOnLoadMethodAttributes (1095ms)
+			AfterProcessingInitializeOnLoad (5ms)
+			EditorAssembliesLoaded (3ms)
+		AwakeInstancesAfterBackupRestoration (22ms)
+Start importing Assets/XR/Settings/OpenXR Package Settings.asset using Guid(3f1a06542f0878947a6b0e0bbec9c860) (NativeFormatImporter) -> (Import Result ID: '9eded595e236dda0d4c4510cfcaf7d2b') in 0.0276965 seconds [static dependencies only]. Details - ImportResultOutputID=0e50445ae495e5de37fb5bf482dee99a DependenciesID=901adf22ef62651a97dff8d1a47ac1de StaticDependenciesID=b6c68ca70eb12292613730d4a56aaf02 
+Refreshing native plugins compatible for Editor in 10.67 ms, found 37 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=00de36f6cbdb46547896e9bfce5445d9): Total: 29.406 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=3 ms, native=15935 ms
+		Asset DB Callback time: managed=596 ms, native=37 ms
+		Scripting: domain reloads=1, domain reload time=1988 ms, compile time=10580 ms, other=263 ms
+		Project Asset Count: scripts=3810, non-scripts=11896
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 21.503ms
+	ApplyChangesToAssetFolders: 1.048ms
+	Scan: 230.912ms
+	OnSourceAssetsModified: 0.764ms
+	CategorizeScriptCompilationAssets: 95.013ms
+	ProcessAssetsWithTransientArtifactChanges: 340.329ms
+	CategorizeAssets: 247.244ms
+	CompileScripts: 10580.169ms
+	ImportOutOfDateAssets: 14637.809ms (14596.681ms without children)
+		ImportManagerImport: 31.395ms (2.828ms without children)
+		ReloadNativeAssets: 0.088ms
+		UnloadImportedAssets: 3.196ms
+		ReloadImportedAssets: 0.292ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 3.487ms
+		OnDemandSchedulerStart: 2.919ms
+	PostProcessAllAssets: 600.020ms
+		XRBuildSystem.XRAssetImported 2.998ms
+		MonoPostProcessAllAssets: 595.981ms
+			AssetPostprocessor.OnPostprocessAllAssets 358.644ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 72.268ms
+			SyncVS.PostprocessSyncProject 47.338ms
+			AssetCallbacks.OnPostprocessAllAssets 28.783ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 24.142ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 5.384ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 3.889ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 3.303ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 2.825ms
+			TemplatePostProcessor.OnPostprocessAllAssets 2.358ms
+			AssetChangedListener.OnPostprocessAllAssets 1.921ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 1.815ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.660ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 1.653ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 1.369ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.289ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 1.258ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.166ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 1.102ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.982ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.797ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.714ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.663ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.627ms
+			CinemachineSettings.OnPostprocessAllAssets 0.590ms
+			PostProcessor.OnPostprocessAllAssets 0.582ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.553ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.522ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.512ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.490ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.466ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.449ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.399ms
+			AssetEvents.OnPostprocessAllAssets 0.371ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.364ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.347ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.320ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.282ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.279ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.263ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.210ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.109ms
+	PostAssetChangesProfiler: 15.250ms
+	UnloadStreamsBegin: 3.896ms
+	PersistCurrentRevisions: 1.194ms
+	GenerateScriptTypeHashes: 17.312ms
+	GenerateScriptTypeSerializationHashes: 21.981ms
+	Untracked: 2624.621ms
+
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 2.036ms
+Initializing Unity extensions:
+Cannot add menu item 'Window/Hecton-8/SpaceEngine 0.9.8 Preview' for method 'Hecton8.Editor.Generators.SpaceEngineTerrainPreviewWindow.ShowWindow' because a menu item with the same name already exists.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEditor.MenuItemScriptCommand:Update (UnityEditor.MenuItem,System.Reflection.MethodInfo)
+UnityEditor.MenuService:ExtractMenuItemsFromAttributes ()
+UnityEditor.MenuService:GetMenuItemsFromAttributesById (string)
+UnityEditor.MenuService:GetMenuItemsFromAttributes ()
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Unloading 484 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 15071 unused Assets / (74.5 MB). Loaded Objects now: 15755.
+Memory consumption went from 0.64 GB to 0.56 GB.
+Total: 77.490500 ms (FindLiveObjects: 1.352500 ms CreateObjectMapping: 1.363900 ms MarkObjects: 42.655700 ms  DeleteObjects: 32.114900 ms)
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+[TRT] Opening scene: Assets/_Project/Scenes/020_RENDER_SANDBOX.unity
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:31)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 31)
+
+Opening scene 'Assets/_Project/Scenes/020_RENDER_SANDBOX.unity'
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Generator MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode outlet Gen is not assigned. Fixing.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MapMagic.Nodes.GraphSerializer200Beta:CheckInletsGensAssigned (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:111)
+MapMagic.Nodes.GraphSerializer200Beta:Deserialize (MapMagic.Nodes.Graph) (at Assets/MapMagic/Nodes/GraphSerializer.cs:86)
+MapMagic.Nodes.Graph:OnAfterDeserialize () (at Assets/MapMagic/Nodes/Graph.cs:1269)
+
+(Filename: Assets/MapMagic/Nodes/GraphSerializer.cs Line: 111)
+
+Loaded scene 'Assets/_Project/Scenes/020_RENDER_SANDBOX.unity'
+	Deserialize:            96.073 ms
+	Integration:            49.582 ms
+	Integration of assets:  22.881 ms
+	Thread Wait Time:       -22.812 ms
+	Total Operation Time:   145.725 ms
+[TRT] MapMagicObject found: 'MapMagic'
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:41)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 41)
+
+[DispatcherJobFence] Forced JobHandle.Complete outside dispatcher swap window.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.Core.DispatcherJobFence:WarnIllegalForcedCompletion () (at Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs:604)
+Hecton8.Core.DispatcherJobFence:TryComplete (Unity.Jobs.JobHandle&,bool) (at Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs:571)
+Hecton8.World.DispatcherJobSwap:TryComplete (Unity.Jobs.JobHandle&,bool) (at Assets/_Project/Scripts/World/DispatcherJobSwap.cs:84)
+MapMagic.Nodes.MatrixGenerators.HectonSandboxAbyssalShelfMapMagicNode:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken) (at Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs:197)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:994)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:951)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:951)
+MapMagic.Nodes.Graph:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken,MapMagic.Expose.Override) (at Assets/MapMagic/Nodes/Graph.cs:928)
+MapMagic.Terrains.TerrainTile:Generate (MapMagic.Nodes.Graph,MapMagic.Terrains.TerrainTile,MapMagic.Terrains.TerrainTile/DetailLevel,MapMagic.Products.StopToken) (at Assets/MapMagic/Terrains/TerrainTile.cs:820)
+MapMagic.Terrains.TerrainTile/<>c__DisplayClass52_0:<EnqueueDraftTask>b__0 () (at Assets/MapMagic/Terrains/TerrainTile.cs:683)
+Den.Tools.Tasks.ThreadManager:TaskThreadAction (Den.Tools.Tasks.ThreadManager/Task) (at Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs:221)
+System.Threading.ThreadHelper:ThreadStart_Context (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object)
+System.Threading.ThreadHelper:ThreadStart ()
+
+(Filename: Assets/_Project/Scripts/Core/Contracts/CoreLowLevelUtilities.cs Line: 604)
+
+Start importing Assets/_Project/Scenes/020_RENDER_SANDBOX.unity using Guid(a24fd464c837cbd4686b08c0f32e90e1) (DefaultImporter) -> (Import Result ID: 'ffa3e7e468d60a8930569de1598140a7') in 0.0023068 seconds [static dependencies only]. Details - ImportResultOutputID=bc83e4021b1ec6219686b036c826d39e DependenciesID=b4dee1e96ba62b6db9b30742fbad14a7 StaticDependenciesID=f8bb6e55d8d3ff464492c9561939eb94 
+Refreshing native plugins compatible for Editor in 21.04 ms, found 37 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=04a394f4952065e47ae4676d18d38d6e): Total: 0.483 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=411 ms
+		Asset DB Callback time: managed=7 ms, native=62 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=3810, non-scripts=11896
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 4
+	ApplyChangesToAssetFolders: 0.242ms
+	Scan: 21.012ms
+	ProcessAssetsWithTransientArtifactChanges: 0.176ms
+	CategorizeAssets: 339.602ms
+	ImportOutOfDateAssets: 20.756ms (8.873ms without children)
+		ImportManagerImport: 4.953ms (1.746ms without children)
+		ReloadNativeAssets: 0.176ms
+		UnloadImportedAssets: 0.495ms
+		ReloadImportedAssets: 0.230ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 4.658ms
+		OnDemandSchedulerStart: 1.580ms
+	PostProcessAllAssets: 45.676ms
+		XRBuildSystem.XRAssetImported 37.806ms
+		MonoPostProcessAllAssets: 7.642ms
+			AssetPostprocessor.OnPostprocessAllAssets 4.378ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 0.633ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 0.363ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.206ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.199ms
+			MaterialPostprocessor.OnPostprocessAllAssets 0.125ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.113ms
+			SyncVS.PostprocessSyncProject 0.090ms
+			PostProcessor.OnPostprocessAllAssets 0.088ms
+			TemplatePostProcessor.OnPostprocessAllAssets 0.061ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.058ms
+			AssetChangedListener.OnPostprocessAllAssets 0.054ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.050ms
+	PostAssetChangesProfiler: 24.172ms
+	GatherAllCurrentPrimaryImportResultRevisions: 3.471ms
+	UnloadStreamsBegin: 0.311ms
+	PersistCurrentRevisions: 2.276ms
+	Untracked: 24.962ms
+
+[TRT] Pinned 3x3 chunks and saved scene.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:55)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 55)
+
+[TRT] Waiting... loop=600  terrains=0  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=1200  terrains=0  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=1800  terrains=1  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=2400  terrains=2  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=3000  terrains=2  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=3600  terrains=3  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=4200  terrains=4  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=4800  terrains=5  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=5400  terrains=5  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=6000  terrains=6  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=6600  terrains=7  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=7200  terrains=8  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Waiting... loop=7800  terrains=8  generating=True  stable=0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:73)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 73)
+
+[TRT] Proceeding. Terrains=9  stable=100  generating=True
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:96)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 96)
+
+[TRT] Generating procedural scatter...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:155)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 155)
+
+[SCATTER VALIDATION] Terrain Height Range: 1311.1 to 2455.3
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ProceduralScatterRenderer:GenerateAndLogScatter (UnityEngine.Terrain[]) (at Assets/_Project/Scripts/Editor/ProceduralScatterRenderer.cs:231)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:156)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+(Filename: Assets/_Project/Scripts/Editor/ProceduralScatterRenderer.cs Line: 231)
+
+[SCATTER VALIDATION] SUCCESS! Total spawned BRG instances: 171556
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.ProceduralScatterRenderer:GenerateAndLogScatter (UnityEngine.Terrain[]) (at Assets/_Project/Scripts/Editor/ProceduralScatterRenderer.cs:235)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:156)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+(Filename: Assets/_Project/Scripts/Editor/ProceduralScatterRenderer.cs Line: 235)
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__halo_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__candelabra_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__crown_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__wreath_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__thicket_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__lace_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+A BatchDrawCommand is using the pass "ForwardLit" from the shader "Hecton8/URP/ProceduralFlora" which does not define a DOTS_INSTANCING_ON variant. This is not supported when rendering with a BatchRendererGroup or anything based on it like GPU Resident Drawer or Entities Graphics.
+MaterialID: 1 ("MAT_CaveAnomaly"), MeshID: 1 ("family_coral_brittle__cathedral_Mesh"), BatchID: 1.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.Rendering.ScriptableRenderContext:Submit ()
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderSingleCamera (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Rendering.Universal.UniversalCameraData) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:875)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:RenderCameraStack (UnityEngine.Rendering.ScriptableRenderContext,UnityEngine.Camera,bool) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:1078)
+UnityEngine.Rendering.Universal.UniversalRenderPipeline:Render (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>) (at ./Library/PackageCache/com.unity.render-pipelines.universal@cdf909593d80/Runtime/UniversalRenderPipeline.cs:483)
+UnityEngine.Rendering.RenderPipeline:InternalRender (UnityEngine.Rendering.ScriptableRenderContext,System.Collections.Generic.List`1<UnityEngine.Camera>)
+UnityEngine.Rendering.RenderPipelineManager:DoRenderLoop_Internal (UnityEngine.Rendering.RenderPipelineAsset,intptr,object,Unity.Collections.LowLevel.Unsafe.AtomicSafetyHandle)
+UnityEngine.Camera:Render ()
+Hecton8.Editor.TerrainRenderTestGoal:TakeScreenshot (UnityEngine.Camera,string) (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:392)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:249)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+[Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs line 249]
+
+[TRT] All screenshots captured.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:328)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+(Filename: Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs Line: 328)
+
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: No process found listening on port 8088
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MCPForUnity.Editor.Helpers.McpLog:Info (string,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs:40)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServerInternal (bool,System.Nullable`1<int>,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:712)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServer () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:349)
+MCPForUnity.Editor.Services.McpEditorShutdownCleanup:OnEditorQuitting () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/McpEditorShutdownCleanup.cs:60)
+UnityEditor.EditorApplication:Internal_EditorApplicationQuit ()
+Hecton8.Editor.TerrainRenderTestGoal:CaptureScreenshots () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:331)
+Hecton8.Editor.TerrainRenderTestGoal:Execute () (at Assets/_Project/Scripts/Editor/TerrainRenderTestGoal.cs:107)
+
+(Filename: ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs Line: 40)
+
+Killing ADB server in 2.2800539 seconds.
+Start importing Assets/_Project/Art/Materials/Terrain/MAT_CaveAnomaly.mat using Guid(743790dd7b8af0642b50389993547901) (NativeFormatImporter) -> (Import Result ID: '100be529dc3a9599f25058fb0be55669') in 0.0921995 seconds [static dependencies only]. Details - ImportResultOutputID=23baa9c32eaae337f515b5dbfc27505b DependenciesID=823d94a552d9adccd1aa59c993f96f50 StaticDependenciesID=436a9f00c2fd99d9704386172332d59d 
+Refreshing native plugins compatible for Editor in 93.25 ms, found 37 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=6e243da2fbb9d08499029e9e8bf4dae8): Total: 0.456 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=326 ms
+		Asset DB Callback time: managed=23 ms, native=104 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=3810, non-scripts=11896
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 6
+	ApplyChangesToAssetFolders: 0.476ms
+	Scan: 69.500ms
+	ProcessAssetsWithTransientArtifactChanges: 0.740ms
+	CategorizeAssets: 44.740ms
+	ImportOutOfDateAssets: 174.252ms (41.935ms without children)
+		ImportManagerImport: 97.972ms (4.389ms without children)
+			UpdateCategorizedAssets: 0.080ms
+		ReloadNativeAssets: 0.656ms
+		UnloadImportedAssets: 0.710ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 8.004ms
+		OnDemandSchedulerStart: 24.928ms
+	PostProcessAllAssets: 32.547ms
+		XRBuildSystem.XRAssetImported 8.022ms
+		ObjectImages.AssetImported 0.172ms
+		MonoPostProcessAllAssets: 23.700ms
+			AssetChangedListener.OnPostprocessAllAssets 17.473ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 0.590ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.481ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 0.388ms
+			AssetPostprocessor.OnPostprocessAllAssets 0.275ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.270ms
+			MaterialPostprocessor.OnPostprocessAllAssets 0.210ms
+			PostProcessor.OnPostprocessAllAssets 0.187ms
+			SyncVS.PostprocessSyncProject 0.186ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 0.149ms
+			TemplatePostProcessor.OnPostprocessAllAssets 0.111ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.073ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.065ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 0.062ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 0.062ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 0.055ms
+	PostAssetChangesProfiler: 95.284ms
+	GatherAllCurrentPrimaryImportResultRevisions: 3.989ms
+	UnloadStreamsBegin: 2.747ms
+	PersistCurrentRevisions: 1.999ms
+	UnloadStreamsEnd: 0.176ms
+	Untracked: 29.474ms
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-danat-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-danat channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Leak Detected : Persistent allocates 88 individual allocations. To find out more please enable 'Preferences > Jobs > Leak Detection Level > Enabled With Stack Trace' and reproduce the leak again.
+There are unreleased allocations left in a heap that is released!
+There are unreleased allocations left in a heap that is released!
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+[Package Manager] Server process was shutdown
+Internal: There are remaining Allocations on the JobTempAlloc. This is a leak, and will impact performance
+To Debug, run app with -diag-job-temp-memory-leak-validation cmd line argument. This will output the callstacks of the leaked allocations.
+Internal: There are remaining Allocations on the JobTempAlloc. This is a leak, and will impact performance
+To Debug, run app with -diag-job-temp-memory-leak-validation cmd line argument. This will output the callstacks of the leaked allocations.
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1782320029653,"processId":9088,"allocatedMemory":38247390,"memoryLabels":[{"Default":603275},{"Permanent":15276},{"NewDelete":66347},{"Thread":4237552},{"Manager":830093},{"VertexData":3126372},{"Geometry":816},{"Texture":24},{"Shader":886445},{"Material":13050},{"GfxDevice":666504},{"GfxThread":2856},{"Animation":392},{"Audio":3008},{"FreeType":8},{"FontEngine":736},{"Physics":2090},{"Physics2D":16},{"Serialization":1134384},{"Input":9880},{"JobScheduler":1802496},{"TextLib":216},{"Mono":32},{"MonoCode":64},{"ScriptingNativeRuntime":155052},{"BaseObject":1620624},{"Resource":1184},{"Renderer":679584},{"Transform":4685},{"File":12784},{"WebCam":616},{"Culling":32},{"Terrain":11394},{"Wind":24},{"STL":40},{"String":16851},{"StaticString":6718},{"Utility":2672230},{"Curl":2559},{"PoolAlloc":4472},{"AI":80},{"TypeTree":26245},{"ScriptManager":448},{"RuntimeInitializeOnLoadManager":64},{"SpriteAtlas":120},{"GI":7792},{"Director":8320},{"CloudService":8720},{"WebRequest":845},{"VR":48482},{"SceneManager":504},{"Video":64},{"LazyScriptCache":32},{"Camera":17},{"Secure":2377},{"SerializationCache":1576},{"APIUpdating":10320},{"VirtualTexturing":57888},{"StaticSafetyDebugInfo":278528},{"Analytics":472},{"Hierarchy":608},{"CoreStats":13112},{"Identifiers":12960},{"Gui":128},{"EditorUtility":242944},{"VersionControl":4},{"Undo":931},{"AssetDatabase":18878491},{"EditorGi":328},{"UnityConnect":37753},{"Upm":1912},{"UpmDiagnostics":8},{"AssetCompliance":64},{"DrivenProperties":72},{"LocalIPC":211},{"ProfilerEditor":9746},{"CoreBusinessMetrics":2891},{"Windowing":456},{"Licensing":1232},{"AssetReference":32},{"IPCStream":32}]}

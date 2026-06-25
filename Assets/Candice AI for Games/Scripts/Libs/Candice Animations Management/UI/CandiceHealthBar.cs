@@ -60,11 +60,7 @@ namespace CandiceAIforGames.AI
 
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-<<<<<<< HEAD
 				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
-=======
-				Image segmentImage = Instantiate(m_Image, transform.position, Quaternion.identity, transform);
->>>>>>> pr-166
 				segmentImage.gameObject.SetActive(true);
 
 				segmentImage.fillAmount = m_SizeOfSegment;
@@ -77,14 +73,9 @@ namespace CandiceAIforGames.AI
 				Image segmentFillImage = childTransform.GetComponent<Image>();
 				segmentFillImage.color = m_FillColor;
 				m_ProgressToFill.Add(segmentFillImage);
-<<<<<<< HEAD
 
 				RectTransform segmentFillRectTransform = segmentFillImage.rectTransform;
 				segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
-=======
-				RectTransform fillRectTransform = segmentFillImage.rectTransform;
-				fillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, fillRectTransform.sizeDelta.y);
->>>>>>> pr-166
 			}
 
 			UpdateSegments();

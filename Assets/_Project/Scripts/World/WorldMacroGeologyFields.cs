@@ -408,11 +408,19 @@ namespace Hecton8.World
                 
                 // Submarine Dendritic Canyons (Ridged Multifractal inversion)
                 {
-                    // RidgedMultifractal returns sharp peaks near 1.0. We add this to depth to carve deep V-shaped canyons.
                     float canyonNoise = RidgedMultifractal01(pos * 0.001f + new float2(3.1f, -9.5f), p.Seed ^ 0x0CA14405u, 5);
-                    float canyonDepthProfile = math.pow(canyonNoise, 3f);
+                    
+                    // Ultra-smooth profile to prevent voxel tearing
+                    float canyonDepthProfile = math.smoothstep(0.6f, 1.0f, canyonNoise);
+                    // Soften the edges to prevent vertical drops
+                    canyonDepthProfile = canyonDepthProfile * canyonDepthProfile * (3f - 2f * canyonDepthProfile);
+                    
                     float canyonMask = canyonDepthProfile * math.saturate(shelfBreakMask + descentMask * 0.8f);
-                    depth += canyonMask * 1500f * continentality;
+                    // Reduced depth from 1200f to 250f to prevent breaking chunk bounds
+                    depth += canyonMask * 250f * continentality;
+                    
+                    // On steep canyon walls, expose hard rock by pumping the faultMask
+                    faultMask = math.max(faultMask, canyonMask * 0.9f);
                 }
                 
                 // Wide depth blend with noise-warped boundary for organic biome transitions

@@ -141,14 +141,20 @@ namespace Hecton8.World
             // Only push density back at layer boundaries. 
             float strataRestore = (1.0f - strataFrac) * StrataShelvingStrength * caveMask * surfaceFade;
             
-            // Final density modification. We MUST NEVER add more rock than the base terrain!
-            float newDensity = currentDensity - carve + strataRestore;
-            newDensity = math.min(newDensity, currentDensity);
+            // Final density modification.
+            float targetDensity = currentDensity - carve + strataRestore;
 
-            // === CRITICAL SAFETY NET ===
-            // Guarantee that caves NEVER punch through the terrain surface (creating black holes).
-            // Instead of forcing to 0.5f (which breaks gradients), we smoothly fade the carve to 0
-            // near the surface. (This is already handled by surfaceFade).
+            // === CRITICAL SAFETY NET & ORGANIC BLENDING ===
+            // Use Polynomial Smooth Minimum (smin) to organically blend the cave SDF with the base terrain SDF.
+            float smoothedDensity = Smin(currentDensity, targetDensity, 5.0f);
+            
+            // PREVENT CHUNK BOUNDARY TEARS: Smin(A,A) shifts density by -k/4. 
+            // We must mask out this shift in solid/air chunks where carve is zero to perfectly align with skipped chunks.
+            float caveInfluence = math.saturate(caveMask * surfaceFade * 100.0f);
+            float newDensity = math.lerp(currentDensity, smoothedDensity, caveInfluence);
+            
+            // We also must clamp to currentDensity to NEVER add rock that didn't exist in the base terrain
+            newDensity = math.min(newDensity, currentDensity);
             
             Sdf[index] = newDensity;
         }
@@ -190,6 +196,16 @@ namespace Hecton8.World
 
             // Normalize to approximately 0..1
             return total / 1.75f;
+        }
+
+        /// <summary>
+        /// Polynomial Smooth Minimum (smin) for organic SDF composition.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smin(float a, float b, float k)
+        {
+            float h = math.saturate(0.5f + 0.5f * (b - a) / k);
+            return math.lerp(b, a, h) - k * h * (1.0f - h);
         }
 
         /// <summary>

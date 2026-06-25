@@ -193,6 +193,10 @@ namespace Hecton8.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.farClipPlane = 60000f;
 
+            var urpCam = cam.gameObject.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            if (urpCam == null) urpCam = cam.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            urpCam.renderShadows = true;
+
             // FIX: Setup Directional Light to ensure shaders respond properly
             Light dirLight = Object.FindAnyObjectByType<Light>();
             if (dirLight == null || dirLight.type != LightType.Directional)
@@ -243,7 +247,7 @@ namespace Hecton8.Editor
             // 1. MacroView: 10km (Orthographic top-down)
             cam.orthographic = true;
             cam.orthographicSize = boundsHalf;
-            cam.transform.position = new Vector3(boundsCenter.x, 15000f, boundsCenter.z);
+            cam.transform.position = new Vector3(boundsCenter.x, 2000f, boundsCenter.z);
             cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             // Point light is useless at 14km range=50 — disable it for MacroView, dirLight covers everything
             pLight.enabled = false;

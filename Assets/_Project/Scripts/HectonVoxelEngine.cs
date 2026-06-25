@@ -8877,6 +8877,18 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         if (resolvedFlags != 0u)
             DumpVoxelMeshPipelineBlackBoxOnce(resolvedFlags);
+            
+        if (UnityEngine.Time.frameCount >= 300)
+            DumpVoxelMeshPipelineBlackBoxOnce(0xDEADBEEF);
+            
+        if (UnityEngine.Time.frameCount >= 310)
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            UnityEngine.Application.Quit();
+#endif
+        }
 #endif
     }
 
@@ -10098,7 +10110,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 OriginAup = terrainOriginAup,
                 MinimumPillarProminenceMeters = ChthonicPillarMinimumProminenceMeters,
                 MinimumPillarRidgeArms = 3,
-                MinimumFissureDepthMeters = float.MaxValue,
+                MinimumFissureDepthMeters = 15f,
                 EqualHeightEpsilon = 0.001f,
                 FissureInfluencePacked = 0u,
                 RequireTectonicBoundary = 1,
@@ -10118,19 +10130,26 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         if (ShouldApplyCameraFacingOverhangNoise(data))
         {
-            densityHandle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
-                densityField,
-                overhangDensityField,
-                data.PtsX,
-                data.PtsY,
-                data.PtsZ,
-                data.VoxelStep,
-                CliffOverhangSlopeThreshold,
-                CliffOverhangLateralAmplitudeMeters,
-                CliffOverhangNoiseFrequency,
-                CliffOverhangBlendStrength,
-                densityHandle);
-            densityField = overhangDensityField;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            if (quality > 0.05f)
+            {
+                float scaledAmplitude = CliffOverhangLateralAmplitudeMeters * math.saturate(quality + 0.2f);
+                float scaledStrength = CliffOverhangBlendStrength * math.saturate(quality * 1.5f);
+
+                densityHandle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
+                    densityField,
+                    overhangDensityField,
+                    data.PtsX,
+                    data.PtsY,
+                    data.PtsZ,
+                    data.VoxelStep,
+                    CliffOverhangSlopeThreshold,
+                    scaledAmplitude,
+                    CliffOverhangNoiseFrequency,
+                    scaledStrength,
+                    densityHandle);
+                densityField = overhangDensityField;
+            }
         }
 
         var snapTopCellsJob = new SnapDualSDFTopCellsToTerrainJob
@@ -10169,6 +10188,18 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ChthonicPillarEdgeWarpMeters,
             ChthonicPillarNoiseFrequency,
             JobHandle.CombineDependencies(densityHandle, selectedPillarHandle));
+
+        densityHandle = HectonAnomalyEngine.InjectFissureNetworkSDF(
+            densityField,
+            anomalyFissureMask,
+            terrainHeights,
+            data.PtsX,
+            data.PtsY,
+            data.PtsZ,
+            data.VoxelStep,
+            sdfOriginAup,
+            500f, // Deep canyon depth
+            densityHandle);
 
         chunkContentFlags[0] = 1;
         JobHandle chunkContentHandle = new VoxelChunkBoundsContentJob

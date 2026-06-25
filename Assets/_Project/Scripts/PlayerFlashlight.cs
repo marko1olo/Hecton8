@@ -478,6 +478,7 @@ namespace Hecton8.Gameplay
         private bool _isOn;
         private float _currentIntensity;
         private BeamMode _beamMode;
+        private int _proxyLightKey;
         private Camera _cachedMainCamera;
         private Transform _cachedMainCameraTransform;
         private HectonPlayerMovement _playerMovement;
@@ -528,6 +529,7 @@ namespace Hecton8.Gameplay
             _isOverheated = false;
             _overheatCooldownTimer = 0f;
             _beamMode = defaultBeamMode;
+            _proxyLightKey = GetInstanceID();
 
             CachePlayerRuntimeContextCold();
             FlashlightEvents.PrewarmSignalLane();
@@ -594,6 +596,8 @@ namespace Hecton8.Gameplay
             _externalInterferenceHoldTimer = 0f;
             _celestialBeamPressure01 = 0f;
             _celestialLightReadModel = null;
+            if (_proxyLightKey != 0)
+                Hecton8.World.ProxyLightRegistry.Unregister(_proxyLightKey);
         }
 
         private void OnDestroy()
@@ -601,6 +605,8 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwap();
             TryUnregisterLateFrameTick();
             _celestialLightReadModel = null;
+            if (_proxyLightKey != 0)
+                Hecton8.World.ProxyLightRegistry.Unregister(_proxyLightKey);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -647,6 +653,77 @@ namespace Hecton8.Gameplay
 
             // ── Diagnostics ──
             UpdateDiagnostics();
+
+            UpdateProxyLightRegistry();
+        }
+
+        private void UpdateProxyLightRegistry()
+        {
+            if (_proxyLightKey == 0) return;
+
+            if (!IsBeamPresentationActive || !Hecton8.World.ProxyLightRegistry.IsInitialized)
+            {
+                Hecton8.World.ProxyLightRegistry.Unregister(_proxyLightKey);
+                return;
+            }
+
+            Transform camTransform = ResolveMainCameraReference(false);
+            if (camTransform == null) return;
+
+            Vector3 origin = camTransform.position + camTransform.forward * 0.2f;
+            Vector3 finalPos = origin;
+            float finalIntensity = PresentationIntensity;
+            uint finalFlags = (uint)(Hecton8.World.ProxyLightFlags.Visible | Hecton8.World.ProxyLightFlags.Powered | Hecton8.World.ProxyLightFlags.PlayerOwned);
+
+            int layerMask = Hecton8.Core.HectonLayerMasks.VoxelCaveLayerMask | Hecton8.Core.HectonLayerMasks.TerrainLayerMask;
+            
+            // Voxel interior check using physics overlap
+            if (UnityEngine.Physics.CheckSphere(origin, 0.05f, layerMask))
+            {
+                bool found = false;
+                float[] steps = new float[] { 0.05f, 0.10f, 0.20f, 0.40f };
+                for (int i = 0; i < steps.Length; i++)
+                {
+                    Vector3 candidate = camTransform.position - camTransform.forward * steps[i];
+                    if (!UnityEngine.Physics.CheckSphere(candidate, 0.05f, layerMask))
+                    {
+                        finalPos = candidate;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    finalPos = camTransform.position;
+                    // Disable shadow cast to prevent internal artifacts (Bit 0 is Visible/Shadow in this context according to mandate, wait, Visible is 1u << 0)
+                    // The mandate says L.Flags &= ~BIT0. We will just omit Visible? 
+                    // Actually, the registry uses bits: Visible=1, Powered=2, UiPanel=4, PlayerOwned=8.
+                    // We'll strip Visible so it won't render artifacts, or just dim it.
+                    finalFlags &= ~(uint)Hecton8.World.ProxyLightFlags.Visible;
+                    finalIntensity *= 0.3f;
+                }
+            }
+
+            var proxyData = new Hecton8.World.ProxyLightData
+            {
+                PositionAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(finalPos),
+                RuntimePosition = finalPos,
+                RangeMeters = math.max(0.01f, PresentationRange),
+                ColorLinear = new float3(PresentationColor.r, PresentationColor.g, PresentationColor.b),
+                Intensity = math.saturate(finalIntensity),
+                Forward = new float3(camTransform.forward.x, camTransform.forward.y, camTransform.forward.z),
+                SpotCosine = math.cos(math.radians(PresentationSpotAngle * 0.5f)),
+                ShadowPhase01 = 0f,
+                PowerFlicker01 = _isFlickering ? 0.4f : 1f, // Simplified flicker representation
+                OxygenStress01 = 0f,
+                LastUpdateUnscaledTime = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds,
+                Flags = finalFlags,
+                Type = (byte)Hecton8.World.ProxyLightType.Point,
+                Lod = 0
+            };
+
+            Hecton8.World.ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in proxyData);
         }
 
         // ══════════════════════════════════════════════════════════
