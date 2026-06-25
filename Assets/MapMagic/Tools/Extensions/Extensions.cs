@@ -50,11 +50,13 @@ namespace Den.Tools
 		{
 			#if UNITY_EDITOR
 			#if !UNITY_5_5_OR_NEWER
-				UnityEditor.EditorUtility.SetSelectedWireframeHidden(tfm.GetComponent<Renderer>(), !show);
+				if (tfm.TryGetComponent<Renderer>(out var renderer))
+					UnityEditor.EditorUtility.SetSelectedWireframeHidden(renderer, !show);
 				int childCount = tfm.childCount;
 				for (int c=0; c<childCount; c++) tfm.GetChild(c).ToggleDisplayWireframe(show);
 			#else
-				UnityEditor.EditorUtility.SetSelectedRenderState(tfm.GetComponent<Renderer>(), show? UnityEditor.EditorSelectedRenderState.Highlight : UnityEditor.EditorSelectedRenderState.Hidden);
+				if (tfm.TryGetComponent<Renderer>(out var renderer))
+					UnityEditor.EditorUtility.SetSelectedRenderState(renderer, show? UnityEditor.EditorSelectedRenderState.Highlight : UnityEditor.EditorSelectedRenderState.Hidden);
 				int childCount = tfm.childCount;
 				for (int c=0; c<childCount; c++) tfm.GetChild(c).ToggleDisplayWireframe(show);
 			#endif
