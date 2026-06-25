@@ -141,7 +141,7 @@ namespace MoreMountains.Tools
 			_rigidbodiesTempList = new List<Component>();
 			foreach (Component rigidbody in _rigidbodies)
 			{
-				if (rigidbody.gameObject.MMGetComponentNoAlloc<MMRagdollerIgnore>() == null)
+				if (!rigidbody.TryGetComponent<MMRagdollerIgnore>(out _))
 				{
 					_rigidbodiesTempList.Add(rigidbody);
 				}
@@ -172,7 +172,7 @@ namespace MoreMountains.Tools
 			}
 
 			// we store our animator
-			_animator = this.gameObject.GetComponent<Animator>();
+			this.gameObject.TryGetComponent<Animator>(out _animator);
 			RegisterAnimatorParameters();
 			
 			_initialized = true;
