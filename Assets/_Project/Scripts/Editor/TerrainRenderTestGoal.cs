@@ -153,7 +153,7 @@ namespace Hecton8.Editor
                 
                 // FIX: Generate procedural scatter
                 Debug.Log("[TRT] Generating procedural scatter...");
-                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains, ArtifactDir);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
