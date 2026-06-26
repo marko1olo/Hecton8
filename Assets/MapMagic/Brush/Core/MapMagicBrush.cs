@@ -32,7 +32,7 @@ namespace MapMagic.Brush
 	[ExecuteInEditMode] //to call onEnable, then it will subscribe to editor update
 	[HelpURL("https://gitlab.com/denispahunov/mapmagic/wikis/home")]
 	[DisallowMultipleComponent]
-	public class MapMagicBrush : MonoBehaviour
+	public partial class MapMagicBrush : MonoBehaviour
 	{
 		public static readonly SemVer version = new SemVer(1,0,0); 
 

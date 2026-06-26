@@ -128,7 +128,7 @@ namespace MapMagic.Brush
 				applyData.Apply(terrainData);
 			}
 
-			foreach (MapMagicBrush brush in GameObject.FindObjectsByType<MapMagicBrush>(FindObjectsInactive.Include))
+			foreach (MapMagicBrush brush in MapMagicBrush.Instances)
 				brush.UpdateCaches();
 		}
 	}
