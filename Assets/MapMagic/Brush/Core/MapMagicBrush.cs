@@ -34,6 +34,8 @@ namespace MapMagic.Brush
 	[DisallowMultipleComponent]
 	public class MapMagicBrush : MonoBehaviour
 	{
+		public static readonly HashSet<MapMagicBrush> instances = new HashSet<MapMagicBrush>();
+
 		public static readonly SemVer version = new SemVer(1,0,0); 
 
 		[NonSerialized] public bool draw;
@@ -88,7 +90,6 @@ namespace MapMagic.Brush
 
 		public void OnEnable ()
 		{
-
 			tuneStroke.brush = this;
 
 			if (preset == null)
@@ -99,6 +100,16 @@ namespace MapMagic.Brush
 			//updating cache on MapMagic change
 			TerrainTile.OnTileApplied -= UpdateCache;
 			TerrainTile.OnTileApplied += UpdateCache;
+		}
+
+		public void Awake()
+		{
+			instances.Add(this);
+		}
+
+		public void OnDestroy()
+		{
+			instances.Remove(this);
 		}
 
 		private void UpdateCache (TerrainTile tile, TileData data, StopToken stop) { UpdateCache(tile.draft?.terrain); UpdateCache(tile.main?.terrain); }
