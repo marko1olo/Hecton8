@@ -99,7 +99,7 @@ namespace Technie.PhysicsCreator.Rigid
 			return false;
 		}
 
-		public bool IsTriangleSelected(int triIndex, Renderer renderer, Mesh targetMesh)
+		public bool IsTrianglePainted(int triIndex)
 		{
 			return selectedFaces.Contains(triIndex);
 		}

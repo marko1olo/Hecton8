@@ -55,44 +55,11 @@ namespace Technie.PhysicsCreator.Skinned
 		//private List<int> thresholdSelectedFaces = new List<int>();
 
 
-		// TODO: responding to IsTriangleSelected properly for Auto hulls is tricky and means we have to pass awkward extra params (Renderer+Mesh) that only Auto cares about
-		// Ideally:
-		//		Move TryPipetteSelection from Controller to Overlay, and do a general raycast to find which hull we hit (more consistent with threshold/weighting behaviour plus it'll be better when we
-		//		eventually interpolate weights for finer control in Auto hulls)
-		//
-		//		Rename to something that's clear it only works for Manual hulls (IsTrianglePainted?)
-		//
-		public bool IsTriangleSelected(int triIndex, Renderer renderer, Mesh targetMesh)
+		public bool IsTrianglePainted(int triIndex)
 		{
 			if (type == HullType.Manual)
 			{
 				return selectedFaces.Contains(triIndex);
-			}
-			else if (type == HullType.Auto)
-			{
-				
-				SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
-				BoneWeight[] weights = targetMesh.boneWeights;
-				int[] triangles = targetMesh.triangles;
-
-				int i0 = triangles[triIndex * 3];
-				int i1 = triangles[triIndex * 3 + 1];
-				int i2 = triangles[triIndex * 3 + 2];
-
-				BoneWeight w0 = weights[i0];
-				BoneWeight w1 = weights[i1];
-				BoneWeight w2 = weights[i2];
-
-				Transform bone = SkinnedColliderCreator.FindBone(skinnedRenderer, targetBoneName);
-				int ownBoneIndex = Utils.FindBoneIndex(skinnedRenderer, bone);
-				if (Utils.IsWeightAboveThreshold(w0, ownBoneIndex, minThreshold, maxThreshold)
-					&& Utils.IsWeightAboveThreshold(w1, ownBoneIndex, minThreshold, maxThreshold)
-					&& Utils.IsWeightAboveThreshold(w2, ownBoneIndex, minThreshold, maxThreshold))
-				{
-					return true;
-				}
-				
-				//return thresholdSelectedFaces.Contains(triIndex);
 			}
 			return false;	
 		}
