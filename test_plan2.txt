@@ -1,0 +1,55 @@
+Ah wait! If `AmbientBiotaDirector` is tested on a background thread by calling `WriteTelemetryHeartbeat`, what exception occurs?
+Wait! The task actually states:
+"Missing error test for try-catch in AmbientBiotaDirector"
+Maybe the code provided in the prompt ALREADY had the catch added by someone else?
+No, the current code shown in the prompt is exactly what is in the file right now (with a try but no catch block). Wait, if there is a `try...finally` block, it is considered a try-catch construct. The prompt explicitly says: "Missing error test for try-catch in AmbientBiotaDirector" and the Rationale: "Testing the exception path requires forcing a failure but is important for robustness."
+Wait! If I look closely at the prompt:
+"Current Code:
+```csharp
+            bool queueBlackBoxDump = false;
+            try
+            {
+                if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
+                    return;
+
+                int index = cursor[0];
+                if ((uint)index >= (uint)ring.Length)
+                    index = 0;
+```"
+So I need to write a test that forces a failure inside the `try` block.
+
+If I use `Task.Run(() => ...)` to run `WriteTelemetryHeartbeat()`, wait, will it fail?
+Memory states: "When testing error handling for Unity `JobHandle.Complete()` or similar native job wrappers where in-job exceptions are swallowed natively, you can force a synchronous exception for test coverage by invoking the target method on a background thread (e.g., using `Task.Run()`), which reliably triggers Unity's 'JobHandle.Complete() can only be called from the main thread' InvalidOperationException."
+Wait, `WriteTelemetryHeartbeat` does NOT use `JobHandle.Complete()`. Is there something else that will throw?
+Let's see what happens if I add an explicit Catch block? "Missing error test for try-catch in AmbientBiotaDirector"
+Ah, maybe the user expects me to catch an exception in the test, so the test verifies the `finally` block runs?
+Or maybe I should change the code to add a `catch` block?
+If the prompt says "Missing error test for try-catch", it implies the test is missing, not that the catch block is missing from the code! (Although if I look closely, there is no `catch` block in `AmbientBiotaDirector.cs` around line 2209. Oh, wait, I see `catch (InvalidOperationException)` elsewhere. Maybe `try...finally` is referred to as "try-catch" loosely, or I need to add a catch block!)
+Wait! A `catch` block would be useful to prevent the exception from crashing the heartbeat process! The heartbeat process shouldn't bring down the main loop.
+
+Let's see if the code should have a catch block:
+```csharp
+            bool queueBlackBoxDump = false;
+            try
+            {
+                if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
+                    return;
+                // ...
+            }
+            catch (Exception e)
+            {
+                H8Debug.LogError($"[AmbientBiotaDirector] Telemetry heartbeat failed: {e}");
+            }
+            finally
+            {
+                ReleaseAmbientMutationGuard(guardVault, TelemetryMutationGuardMask);
+            }
+```
+If we add a catch block and a test for it, that would solve both the "missing catch" (if it implies that) and "missing error test". But the prompt says "Missing error test for try-catch". This implies the code might already be considered a try-catch, or the test is what's missing.
+
+Wait! I will use NSubstitute to mock `IDataVault`.
+I will substitute `TryAcquireMutationGuard` to return `true`.
+I will substitute `TryResolveHandle` to throw an exception, OR we can just throw from `TryAcquireMutationGuard`? No, it has to be inside the `try` block.
+`TryResolveTelemetryBuffers` calls `TryOpenVaultView`, which checks `IsOwnedVaultHandle` and `vault.TryResolveHandle(in handle, out buffer)`.
+If I mock `_vault` and make `TryResolveHandle` throw an `InvalidOperationException`, the exception will be thrown from inside the `try` block.
+Let's verify `IDataVault` interface methods to see how to mock it.
