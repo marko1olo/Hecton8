@@ -1,0 +1,5 @@
+🧪 [Add missing error test for TryWriteBlackBoxSnapshotCold in AmbientBiotaDirector]
+
+🎯 What: Addressed the missing error test for the try-finally block where `NativeFaultDumpWriter.CreateTransientPayload` is called inside `AmbientBiotaDirector.TryWriteBlackBoxSnapshotCold()`.
+📊 Coverage: Added `AmbientBiotaDirectorExceptionEditTests.cs` to test the scenario where a `NullReferenceException` is artificially forced, confirming that the transient payload correctly disposes via the `finally` block even when an exception interrupts the payload population.
+✨ Result: Ensured that transient native collections do not leak memory during a fault dump write failure, which is important for system robustness.
