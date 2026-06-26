@@ -40,6 +40,7 @@ namespace MoreMountains.Tools
 		{
 			object savedObject;
 			BinaryFormatter formatter = new BinaryFormatter();
+			formatter.Binder = new MMSecureSerializationBinder(objectType);
 			MemoryStream memoryStream = new MemoryStream();
 			try
 			{

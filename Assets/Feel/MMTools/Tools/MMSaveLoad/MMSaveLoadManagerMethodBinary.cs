@@ -35,6 +35,7 @@ namespace MoreMountains.Tools
 		{
 			object savedObject;
 			BinaryFormatter formatter = new BinaryFormatter();
+			formatter.Binder = new MMSecureSerializationBinder(objectType);
 			savedObject = formatter.Deserialize(saveFile);
 			saveFile.Close();
 			return savedObject;
