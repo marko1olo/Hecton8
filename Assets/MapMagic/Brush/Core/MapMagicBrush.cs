@@ -34,7 +34,20 @@ namespace MapMagic.Brush
 	[DisallowMultipleComponent]
 	public class MapMagicBrush : MonoBehaviour
 	{
-		public static readonly SemVer version = new SemVer(1,0,0); 
+
+		public static readonly HashSet<MapMagicBrush> instances = new HashSet<MapMagicBrush>();
+
+		private void Awake()
+		{
+			instances.Add(this);
+		}
+
+		private void OnDestroy()
+		{
+			instances.Remove(this);
+		}
+
+public static readonly SemVer version = new SemVer(1,0,0);
 
 		[NonSerialized] public bool draw;
 
