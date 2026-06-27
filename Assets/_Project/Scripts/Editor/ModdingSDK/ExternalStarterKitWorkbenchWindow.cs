@@ -2543,13 +2543,25 @@ namespace Hecton8.Editor.ModdingSDK
                 DiagnosticsProcessStartInfo startInfo = new DiagnosticsProcessStartInfo
                 {
                     FileName = ResolvePowerShellExecutable(),
-                    Arguments = "-NoProfile -ExecutionPolicy Bypass -File " + QuoteArgument(scriptPath) + " -Root " + QuoteArgument(rootPath) + extraArguments,
                     WorkingDirectory = rootPath,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
+
+                startInfo.ArgumentList.Add("-NoProfile");
+                startInfo.ArgumentList.Add("-ExecutionPolicy");
+                startInfo.ArgumentList.Add("Bypass");
+                startInfo.ArgumentList.Add("-File");
+                startInfo.ArgumentList.Add(scriptPath);
+                startInfo.ArgumentList.Add("-Root");
+                startInfo.ArgumentList.Add(rootPath);
+
+                foreach (string arg in ParseArguments(extraArguments))
+                {
+                    startInfo.ArgumentList.Add(arg);
+                }
 
                 DiagnosticsProcess process = new DiagnosticsProcess
                 {
@@ -2762,6 +2774,69 @@ namespace Hecton8.Editor.ModdingSDK
         private static string QuoteArgument(string value)
         {
             return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\"";
+        }
+
+        private static List<string> ParseArguments(string arguments)
+        {
+            List<string> result = new List<string>();
+            if (string.IsNullOrEmpty(arguments))
+                return result;
+
+            bool inQuotes = false;
+            int startIndex = 0;
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (arguments[i] == '\"')
+                {
+                    inQuotes = !inQuotes;
+                }
+                else if (arguments[i] == ' ' && !inQuotes)
+                {
+                    if (i > startIndex)
+                    {
+                        string arg = arguments.Substring(startIndex, i - startIndex);
+                        if (arg.StartsWith("\"") && arg.EndsWith("\"") && arg.Length >= 2)
+                        {
+                            arg = arg.Substring(1, arg.Length - 2);
+                        }
+                        else if (arg.StartsWith("\""))
+                        {
+                            arg = arg.Substring(1);
+                        }
+                        else if (arg.EndsWith("\""))
+                        {
+                            arg = arg.Substring(0, arg.Length - 1);
+                        }
+                        result.Add(arg);
+                    }
+                    startIndex = i + 1;
+                }
+            }
+            if (startIndex < arguments.Length)
+            {
+                string arg = arguments.Substring(startIndex);
+                if (arg.StartsWith("\"") && arg.EndsWith("\"") && arg.Length >= 2)
+                {
+                    arg = arg.Substring(1, arg.Length - 2);
+                }
+                else if (arg.StartsWith("\""))
+                {
+                    arg = arg.Substring(1);
+                }
+                else if (arg.EndsWith("\""))
+                {
+                    arg = arg.Substring(0, arg.Length - 1);
+                }
+                result.Add(arg);
+            }
+
+            for (int i = result.Count - 1; i >= 0; i--)
+            {
+                if (string.IsNullOrWhiteSpace(result[i]))
+                    result.RemoveAt(i);
+            }
+
+            return result;
         }
 
         private readonly struct SubmissionExpectedEntry
