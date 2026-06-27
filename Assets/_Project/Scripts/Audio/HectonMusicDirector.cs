@@ -3198,26 +3198,16 @@ namespace Hecton8.Audio
                 if (_voiceFading[i])
                 {
                     _voiceFadeElapsedTimes[i] += deltaTime;
-                    float duration = _voiceFadeDurations[i] > 0f ? _voiceFadeDurations[i] : 0.01f;
-                    float t = _voiceFadeElapsedTimes[i] * math.rcp(duration);
-                    if (t > 1f)
-                        t = 1f;
-
+                    float duration = _voiceFadeDurations[i];
+                    float elapsedTime = _voiceFadeElapsedTimes[i];
                     float startVolume = _voiceFadeStartVolumes[i];
                     float targetVolume = _voiceFadeTargetVolumes[i];
-                    if (targetVolume <= 0.0001f)
-                    {
-                        _voiceBaseVolumes[i] = startVolume * (1f - t * t);
-                    }
-                    else if (startVolume <= 0.0001f)
-                    {
-                        _voiceBaseVolumes[i] = targetVolume * (t * (2f - t));
-                    }
-                    else
-                    {
-                        _voiceBaseVolumes[i] = math.lerp(startVolume, targetVolume, t);
-                    }
-                    if (t >= 1f)
+
+                    _voiceBaseVolumes[i] = Hecton8.PureLogic.Systems.MusicStemBlendCrossfader.Calculate(
+                        startVolume, targetVolume, duration, elapsedTime, 0f);
+
+                    float durationSafe = duration > 0f ? duration : 0.01f;
+                    if (elapsedTime >= durationSafe)
                     {
                         _voiceFading[i] = false;
                         if (_voiceFadeTargetVolumes[i] <= 0.0001f)
