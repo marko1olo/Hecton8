@@ -29,6 +29,32 @@ namespace Hecton.Localization.Tests
         }
 
         [Test]
+        public void GetDistanceUnitKey_Imperial_ReturnsFeetKey()
+        {
+            // Arrange
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.GetDistanceUnitKey(language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(LocalizationKeys.HUD_UNIT_FEET));
+        }
+
+        [Test]
+        public void GetDistanceUnitKey_Metric_ReturnsMetersKey()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.GetDistanceUnitKey(language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(LocalizationKeys.HUD_UNIT_METERS));
+        }
+
+        [Test]
         public void ResolveTemperatureUnitLabelSpan_Imperial_NullManager_ReturnsFallback()
         {
             // Arrange
