@@ -266,6 +266,7 @@ namespace Hecton8.Editor
             dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             dirLight.color = new Color(1.0f, 0.95f, 0.9f); 
             dirLight.shadows = LightShadows.Soft;
+            RenderSettings.sun = dirLight;
 
             GameObject fillLightGo = new GameObject("TRT_DirectionalLight_Fill");
             Light fillLight = fillLightGo.AddComponent<Light>();
