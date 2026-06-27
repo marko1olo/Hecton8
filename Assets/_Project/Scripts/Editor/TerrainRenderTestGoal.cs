@@ -253,8 +253,15 @@ namespace Hecton8.Editor
             urpCam.renderShadows = false;     // Shadows need baked data - skip in batchmode
             urpCam.renderPostProcessing = true; // CRITICAL: enables ColorAdjustments/Exposure volume override
 
-            // FIX: Setup Directional Light with neutral-warm spectrum (anti-gloom)
             Light[] allLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Exclude);
+            foreach (var light in allLights)
+            {
+                if (light.type == LightType.Directional)
+                {
+                    light.enabled = false;
+                }
+            }
+
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
             RenderSettings.ambientLight = new Color(0.5f, 0.50f, 0.55f); // Slightly desaturated to not tint textures green
             RenderSettings.ambientIntensity = 2.5f;
@@ -264,7 +271,9 @@ namespace Hecton8.Editor
             dirLight.type = LightType.Directional;
             dirLight.intensity = 2.5f;
             dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-            dirLight.color = new Color(1.0f, 0.95f, 0.9f); 
+            dirLight.color = new Color(1.0f, 0.95f, 0.9f);
+            dirLight.useColorTemperature = true;
+            dirLight.colorTemperature = 5800f; // Neutral-warm spectrum (anti-gloom)
             dirLight.shadows = LightShadows.Soft;
             RenderSettings.sun = dirLight;
 
