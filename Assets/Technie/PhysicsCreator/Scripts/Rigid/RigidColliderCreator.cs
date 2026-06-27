@@ -301,13 +301,24 @@ namespace Technie.PhysicsCreator
 			}
 
 			// Try and connect orphaned hulls with orphaned colliders
+
+			// Cache orphaned childs by their GameObject to avoid expensive TryGetComponent calls in the loop below
+			Dictionary<GameObject, RigidColliderCreatorChild> childCache = new Dictionary<GameObject, RigidColliderCreatorChild>(orphanedChilds.Count);
+			for (int i = 0; i < orphanedChilds.Count; i++)
+			{
+				if (orphanedChilds[i] != null)
+				{
+					childCache[orphanedChilds[i].gameObject] = orphanedChilds[i];
+				}
+			}
+
 			List<RigidColliderCreatorChild> orphanedColliderChildren = new List<RigidColliderCreatorChild>(orphanedColliders.Count);
 			for (int i = 0; i < orphanedColliders.Count; i++)
 			{
 				RigidColliderCreatorChild child = null;
 				if (orphanedColliders[i].transform.parent == this.transform)
 				{
-					orphanedColliders[i].TryGetComponent<RigidColliderCreatorChild>(out child);
+					childCache.TryGetValue(orphanedColliders[i].gameObject, out child);
 				}
 				orphanedColliderChildren.Add(child);
 			}
