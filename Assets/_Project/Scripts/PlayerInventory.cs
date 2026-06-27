@@ -493,16 +493,16 @@ namespace Hecton8.Inventory
                 int safeCandidateIndex = math.min(math.max(candidateIndex, 0), math.max(0, slotCount - 1));
                 ushort sourceFlags = ItemStateFlags[sourceIndex];
                 ushort candidateFlags = ItemStateFlags[safeCandidateIndex];
-                bool sourceRadioactive = (sourceFlags & RadioactiveMask) != 0;
-                bool sourceFlammable = (sourceFlags & FlammableMask) != 0;
-                bool candidateRadioactive = (candidateFlags & RadioactiveMask) != 0;
-                bool candidateFlammable = (candidateFlags & FlammableMask) != 0;
+
+                uint reactionMask = (uint)(RadioactiveMask | FlammableMask);
+                uint reactionResult = Hecton8.PureLogic.Systems.BranchlessReactiveItemChemistryCalculator.Compute(sourceFlags, candidateFlags, reactionMask);
+
                 bool candidateActive = inBounds &
                                        AnchorHashIds[safeCandidateIndex] != 0 &
                                        StackCounts[safeCandidateIndex] != 0 &
                                        CraftLockedCounts[safeCandidateIndex] == 0;
-                return candidateActive &
-                       ((sourceRadioactive & candidateFlammable) | (sourceFlammable & candidateRadioactive));
+
+                return candidateActive & (reactionResult != 0);
             }
         }
 
