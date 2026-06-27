@@ -905,6 +905,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 2f)] private float slopeStabilityFactor = 1.1f;
         [SerializeField, Range(0f, 20f)] private float groundSnapForce = 8f;
         [SerializeField, Range(0f, 0.3f)] private float jumpBufferTime = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float maxJumpTime = 0.3f;
+        [SerializeField, Range(0f, 20f)] private float minJumpVelocity = 2f;
+        [SerializeField, Range(0f, 30f)] private float maxJumpVelocity = 5f;
         [SerializeField, Range(0f, 0.3f)] private float dryGroundGraceTime = 0.12f;
         [SerializeField, Range(0f, 0.3f)] private float shoreGroundGraceTime = 0.14f;
         [SerializeField, Range(0f, 0.6f)] private float stepAssistHeight = 0.3f;
@@ -1400,6 +1403,7 @@ namespace Hecton8.Gameplay
         private bool _jumpRequested;
         private bool _isSprinting;
         private float _jumpBufferTimer;
+        private float _jumpHeldTimer;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  BODY YAW (decoupled from camera)
@@ -9880,14 +9884,46 @@ namespace Hecton8.Gameplay
             {
                 if (!exosuitActive && (groundedOnDryLand || groundedOnShore) && _jumpBufferTimer > 0f)
                 {
-                    if (TryApplyJumpImpulse(suit.jumpImpulse))
+                    if (TryApplyJumpImpulse(maxJumpVelocity))
                     {
                         ConsumeJumpRequest();
+                        _jumpHeldTimer = 0f;
                         _dryGroundGraceTimer = 0f;
                         _shoreGroundGraceTimer = 0f;
                         _surfaceBreachLockTimer = 0f;
                     }
                 }
+            }
+
+            if (_isAirborne && !exosuitActive)
+            {
+                if (_currentInputState.HasAction(PlayerInputAction.Jump))
+                {
+                    _jumpHeldTimer += fixedDeltaTime;
+                }
+                else if (_jumpHeldTimer > 0f)
+                {
+                    // Button released early, cut velocity short
+                    float computedVelocity = Hecton8.PureLogic.Kinematics.VariableHeightJumpCalculator.Compute(
+                        _jumpHeldTimer, maxJumpTime, minJumpVelocity, maxJumpVelocity);
+
+                    _velocity = ResolveAuthoritativeLinearVelocity(UnityEngine.Vector3.zero);
+                    if (_velocity.y > computedVelocity)
+                    {
+                        _velocity.y = computedVelocity;
+                        ApplyMotorLinearVelocity(_velocity);
+                    }
+                    _jumpHeldTimer = 0f; // Reset to avoid repeatedly cutting velocity
+                }
+
+                if (_jumpHeldTimer >= maxJumpTime)
+                {
+                    _jumpHeldTimer = 0f;
+                }
+            }
+            else
+            {
+                _jumpHeldTimer = 0f;
             }
 
             if (exosuitKinematicAuthority)
@@ -12409,6 +12445,7 @@ namespace Hecton8.Gameplay
         {
             _jumpRequested = false;
             _jumpBufferTimer = 0f;
+            _jumpHeldTimer = 0f;
         }
 
         private void TryApplyKinematicWallKick(bool suppressPhysicsMutation)
