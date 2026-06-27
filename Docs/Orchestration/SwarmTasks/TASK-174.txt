@@ -1,0 +1,209 @@
+====================================================================
+AGENT MANDATE -- HECTON-8 SWARM  (PURE C# MATH ISOLATION)
+Task ID : TASK-174
+====================================================================
+
+YOU ARE ONE OF 100 JULES AGENTS EXECUTING THE HECTON-8 MEGA-UPDATE.
+THIS IS YOUR TASK: TASK-174
+
+--------------------------------------------------------------------
+AUTONOMY RULES  (read once, obey forever)
+--------------------------------------------------------------------
+- NEVER ask the user for permission, advice, or confirmation.
+- NEVER wait for approval of any kind.
+- Make ALL architectural, naming, and algorithmic decisions yourself.
+- Work iteratively: read task -> write class -> write NUnit tests ->
+  run [dotnet test] -> fix failures -> repeat until green.
+- After green build: git commit with the message below + open PR.
+- STOP ASKING. WORK FROM START TO FINISH. FULL STOP.
+
+--------------------------------------------------------------------
+TECH CONSTRAINTS  (iron laws -- any violation = fix immediately)
+--------------------------------------------------------------------
+1. Pure C# ONLY. No UnityEngine, no MonoBehaviour, no Rigidbody,
+   no Transform, no GameObject, no Physics, no Debug.Log.
+   Use System.Numerics.Vector3 / Vector2 for vectors.
+2. No hardcoded magic numbers. Every constant is a method parameter.
+3. Every public method has at least 5 NUnit test cases covering
+   happy path, boundary conditions, and edge/error conditions.
+4. Target framework: .NET Standard 2.1 or .NET 6+
+5. No file IO, no threading, no external dependencies.
+6. You write a NEW file. Never overwrite an existing file blindly.
+   Always check the diff before committing.
+
+--------------------------------------------------------------------
+NAMESPACE / FILE LOCATION
+--------------------------------------------------------------------
+Namespace : Hecton8.PureLogic.Systems
+File path : Assets/_Project/Scripts/PureLogic/Systems/VisibilityTurbidityCalculator.cs
+Test path : Assets/_Project/Scripts/PureLogic/Tests/VisibilityTurbidityCalculatorTests.cs
+
+====================================================================
+SYSTEM OVERVIEW
+====================================================================
+Extract underwater visibility from turbidity and bioluminescence from HectonAtmosphereManager.cs.. Extracted from the monolith `HectonAtmosphereManager.cs` to isolate pure business/math logic.
+
+====================================================================
+SOURCE MONOLITH CONTEXT
+====================================================================
+The math you must extract lives inside:
+  HectonAtmosphereManager.cs
+This is a Unity MonoBehaviour monolith mixing engine scaffolding
+(Update loops, Rigidbody, coroutines, SignalBus calls) with pure
+business logic. Extract ONLY the mathematical kernel. Leave all
+Unity API calls in the monolith -- they will be refactored to call
+your new static class once all swarm tasks are complete.
+
+====================================================================
+ALGORITHM SPECIFICATION
+====================================================================
+Step 1 - Parameter Validation: Check if inputs like delta time, mass, or densities are out of physical bounds. Clamp or throw accordingly.
+Step 2 - Business Logic: Apply the core mathematical relationship matching the system requirement (`Pure C#.`).
+Step 3 - Boundary Guarding: Clamp final values to ensure physical realism (e.g. no negative volumes, no exceeding maximum values).
+Step 4 - Output Return: Return the final evaluated type `float` without modifying state.
+
+--------------------------------------------------------------------
+MATHEMATICAL FORMULA / PSEUDOCODE
+--------------------------------------------------------------------
+Objective: Extract underwater visibility from turbidity and bioluminescence from HectonAtmosphereManager.cs.
+Constraints: Pure C#.
+
+====================================================================
+METHOD SIGNATURE
+====================================================================
+Input Parameters:
+  - turbidityNTU (float)
+  - biolumLevelLux (float)
+  - baseVisibilityMeters (float)
+
+Output:
+  - Type: float
+  - Description: effectiveVisibilityMeters
+
+====================================================================
+CLASS SKELETON  (implement this exactly)
+====================================================================
+using System;
+using System.Numerics;
+
+namespace Hecton8.PureLogic.Systems
+{
+    /// <summary>
+    /// Pure C# mathematical implementation for VisibilityTurbidityCalculator.
+    /// Extracted from HectonAtmosphereManager.cs. Fully stateless and allocation-free.
+    /// </summary>
+    public static class VisibilityTurbidityCalculator
+    {
+        /// <summary>
+        /// Computes/evaluates the mathematical model.
+        /// </summary>
+        /// <param name='turbidityNTU'>Parameter representing the turbidityNTU (float).</param>
+        /// <param name='biolumLevelLux'>Parameter representing the biolumLevelLux (float).</param>
+        /// <param name='baseVisibilityMeters'>Parameter representing the baseVisibilityMeters (float).</param>
+        /// <returns>Returns effectiveVisibilityMeters of type float.</returns>
+        public static float Compute(float turbidityNTU, float biolumLevelLux, float baseVisibilityMeters)
+        {
+            // TODO: Implement the isolated logic here
+            throw new NotImplementedException();
+        }
+    }
+}
+
+====================================================================
+TEST SKELETON  (implement this exactly under Tests/)
+====================================================================
+using NUnit.Framework;
+using System;
+using System.Numerics;
+using Hecton8.PureLogic.Systems;
+
+namespace Hecton8.PureLogic.Tests
+{
+    [TestFixture]
+    public class VisibilityTurbidityCalculatorTests
+    {
+        [Test]
+        public void Test_HappyPath_Case01()
+        {
+            // Arrange: Setup standard test inputs
+            // Act
+            // Assert: Verify expected output behaviour
+            Assert.Pass("Verify standard calculations return expected results.");
+        }
+
+        [Test]
+        public void Test_Boundary_Case02()
+        {
+            // Arrange: Setup boundary inputs (clamping thresholds, min/max values)
+            // Act
+            // Assert
+            Assert.Pass("Verify boundary constraints clamp correctly.");
+        }
+
+        [Test]
+        public void Test_ZeroInputs_Case03()
+        {
+            // Arrange: Setup zero values (zero speed, zero volume, zero duration)
+            // Act
+            // Assert
+            Assert.Pass("Verify zero inputs are handled without divide-by-zero or exception.");
+        }
+
+        [Test]
+        public void Test_NegativeInputs_Case04()
+        {
+            // Arrange: Setup negative or out-of-range inputs
+            // Act
+            // Assert
+            Assert.Pass("Verify negative inputs clamp gracefully or throw.");
+        }
+
+        [Test]
+        public void Test_ExtremeInputs_Case05()
+        {
+            // Arrange: Setup extreme or infinity values
+            // Act
+            // Assert
+            Assert.Pass("Verify robust calculation and overflow protection.");
+        }
+    }
+}
+
+====================================================================
+TEST CASES REQUIRED
+====================================================================
+Clear, no biolum: baseVisibility. High turbidity: reduced. Biolum partially compensates.
+
+====================================================================
+EDGE CASES TO HANDLE
+====================================================================
+- Zero values (e.g. division by zero protection).
+- Negative values (clamp to 0 or valid ranges).
+- NaN inputs: guard with float.IsNaN / float.IsInfinity checks.
+- Extremely large parameters: ensure no overflow in standard arithmetic.
+
+====================================================================
+INTEGRATION NOTE
+====================================================================
+Identify where `HectonAtmosphereManager.cs` computes the logic for:
+  Extract underwater visibility from turbidity and bioluminescence from HectonAtmosphereManager.cs.
+Replace the math implementation with a static call to:
+  Hecton8.PureLogic.Systems.VisibilityTurbidityCalculator.Compute(...)
+Keep the engine-specific calls (e.g. Rigidbody, Transform, particles)
+inside the monolith, passing data values directly to the static method.
+
+====================================================================
+VERIFICATION CHECKLIST  (answer each before committing)
+====================================================================
+[ ] 1. Does the file contain ANY reference to UnityEngine? -> Remove.
+[ ] 2. Does [dotnet build] pass zero errors, zero warnings? -> Fix all.
+[ ] 3. Do ALL NUnit tests pass ([dotnet test] green)? -> Fix failures.
+[ ] 4. Are all magic numbers extracted to parameters? -> Refactor.
+[ ] 5. Is the class fully stateless (no instance fields)? -> Convert.
+
+====================================================================
+COMMIT INSTRUCTION
+====================================================================
+git add Assets/_Project/Scripts/PureLogic/Systems/VisibilityTurbidityCalculator.cs
+git add Assets/_Project/Scripts/PureLogic/Tests/VisibilityTurbidityCalculatorTests.cs
+git commit -m "feat(PureLogic): TASK-174 VisibilityTurbidityCalculator - extract from HectonAtmosphereManager.cs"
