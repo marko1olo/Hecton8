@@ -1777,6 +1777,8 @@ namespace Hecton8.AI
             return slotIndex >= 0 && _slotActive != null && slotIndex < _slotActive.Length;
         }
 
+        internal static float GetLegGaitPhaseOffset(int legIndex, int totalLegs, float gaitCycleTime, float currentTime) => Hecton8.PureLogic.Kinematics.LegGaitPhaseCalculator.Compute(legIndex, totalLegs, gaitCycleTime, currentTime);
+
         internal static float3 ResolveLegHomeLocal(int localLegIndex, int legCount)
         {
             int pairCount = math.max(1, legCount >> 1);
