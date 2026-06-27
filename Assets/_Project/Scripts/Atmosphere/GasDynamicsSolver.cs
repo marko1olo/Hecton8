@@ -1010,6 +1010,12 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public float CalculateDecompressionStopTime(float maxDepthReached, float timeAtDepthMin, float ascentRate, float stopDepthMeters)
+        {
+            return Hecton8.PureLogic.Systems.DecompressionStopTimeCalculator.Compute(maxDepthReached, timeAtDepthMin, ascentRate, stopDepthMeters);
+        }
         public float ResolveEffectiveDepthStress01(int roomId, float depthStress01)
         {
             depthStress01 = FiniteSaturate01(depthStress01);
