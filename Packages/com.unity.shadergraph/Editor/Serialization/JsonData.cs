@@ -4,6 +4,11 @@ using UnityEngine;
 
 namespace UnityEditor.ShaderGraph.Serialization
 {
+    public static class JsonData
+    {
+        public static Action<Exception> logException { get; set; }
+    }
+
     [Serializable]
     struct JsonData<T> : ISerializationCallbackReceiver
         where T : JsonObject
@@ -43,8 +48,10 @@ namespace UnityEditor.ShaderGraph.Serialization
                 }
                 catch (Exception e)
                 {
-                    // TODO: Allow custom logging function
-                    Debug.LogException(e);
+                    if (JsonData.logException != null)
+                        JsonData.logException(e);
+                    else
+                        Debug.LogException(e);
                 }
             }
         }
