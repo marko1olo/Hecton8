@@ -981,7 +981,7 @@ namespace Hecton8.Atmosphere
 
         public float CurrentSunIntensity => _computedSunIntensity;
 
-        public float CurrentTemperature  => _currentValues.temperature;
+        public float CurrentTemperature  => Hecton8.PureLogic.Systems.AmbientTemperatureDepthGradientCalculator.Compute(_currentValues.temperature, ResolvePlayerDepth(), 0f);
         public float CurrentRadiation    => _currentValues.radiation;
         public float SeaLevelY           => ResolveSeaLevelY();
         public bool IsUnderwaterState    => _currentState == EnvironmentState.UNDERWATER;
