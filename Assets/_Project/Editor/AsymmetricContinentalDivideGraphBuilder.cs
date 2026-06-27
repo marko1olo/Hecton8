@@ -231,7 +231,10 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 field.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception ex)
+            {
+                UnityEngine.Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Failed to set field '{fieldName}' on {type.Name}: {ex.Message}");
+            }
         }
 
         // Try property
@@ -245,7 +248,10 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 prop.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception ex)
+            {
+                UnityEngine.Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Failed to set property '{fieldName}' on {type.Name}: {ex.Message}");
+            }
         }
 
         // Nuclear fallback
