@@ -1830,7 +1830,10 @@ namespace Hecton8.Gameplay
             if (_radGraceTimer < HazardGraceDuration) return;
 
             float excess = currentRad - stats.RadiationThreshold;
-            float dose = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
+            float rawRadiationLevel = excess * stats.RadiationDamageRate * dt;
+            float leadThicknessCm = radiationExposureScale > 0f ? (float)-Math.Log(radiationExposureScale) : float.PositiveInfinity;
+            float shieldingQuality = 1f;
+            float dose = Hecton8.PureLogic.Systems.RadiationLeadShieldingCalculator.Compute(rawRadiationLevel, leadThicknessCm, shieldingQuality);
             if (TryResolveSurvivalAup(out AbsoluteUniversePosition radiationAup))
                 RadiationHazardGrid.ReportExternalDose(dose, math.saturate(currentRad), in radiationAup);
             else
