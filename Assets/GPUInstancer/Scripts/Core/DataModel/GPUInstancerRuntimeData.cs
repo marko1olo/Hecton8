@@ -311,7 +311,7 @@ namespace GPUInstancer
                 {
                     foreach (Renderer renderer in lodGroup.GetLODs()[lod].renderers)
                     {
-                        if (renderer != null && renderer is MeshRenderer && renderer.GetComponent<MeshFilter>() != null)
+                        if (renderer != null && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out _))
                         {
                             // Do not create runtime LOD renderer if this LOD is a SpeedTree8 billboard and the GPUI generated billboard is used.
                             if (prototype.useGeneratedBillboard && prototype.treeType == GPUInstancerTreeType.SpeedTree8 && renderer.sharedMaterials[0].IsKeywordEnabled("EFFECT_BILLBOARD"))
@@ -359,7 +359,14 @@ namespace GPUInstancer
                         shadowMPB = new MaterialPropertyBlock();
                         lodRenderers[r].GetPropertyBlock(shadowMPB);
                     }
-                    AddRenderer(lod, lodRenderers[r].GetComponent<MeshFilter>().sharedMesh, instanceMaterials, transformOffset, mpb, lodRenderers[r].shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.Off, lodRenderers[r].gameObject.layer, shadowMPB, lodRenderers[r], lodRenderers[r].receiveShadows);
+
+                    Mesh sharedMesh = null;
+                    if (lodRenderers[r].TryGetComponent<MeshFilter>(out MeshFilter meshFilter))
+                    {
+                        sharedMesh = meshFilter.sharedMesh;
+                    }
+
+                    AddRenderer(lod, sharedMesh, instanceMaterials, transformOffset, mpb, lodRenderers[r].shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.Off, lodRenderers[r].gameObject.layer, shadowMPB, lodRenderers[r], lodRenderers[r].receiveShadows);
                 }
             }
             return true;
@@ -398,7 +405,7 @@ namespace GPUInstancer
 
             foreach (MeshRenderer meshRenderer in meshRenderers)
             {
-                if (meshRenderer.GetComponent<MeshFilter>() == null)
+                if (!meshRenderer.TryGetComponent<MeshFilter>(out MeshFilter meshFilter))
                 {
                     Debug.LogWarning("MeshRenderer with no MeshFilter found on GameObject <" + prototype.prefabObject.name +
                         "> (Child: <" + meshRenderer.gameObject + ">). Are you missing a component?");
@@ -430,7 +437,7 @@ namespace GPUInstancer
                     shadowMPB = new MaterialPropertyBlock();
                     meshRenderer.GetPropertyBlock(shadowMPB);
                 }
-                AddRenderer(lod, meshRenderer.GetComponent<MeshFilter>().sharedMesh, instanceMaterials, transformOffset, mpb,
+                AddRenderer(lod, meshFilter.sharedMesh, instanceMaterials, transformOffset, mpb,
                     meshRenderer.shadowCastingMode != UnityEngine.Rendering.ShadowCastingMode.Off, meshRenderer.gameObject.layer, shadowMPB, meshRenderer, meshRenderer.receiveShadows);
             }
 
