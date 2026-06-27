@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0a6i/96eHho=",
+  "dgSpecHash": "m5f2BpatuNY=",
   "success": true,
-  "projectFilePath": "C:\\hades\\Hecton8\\Tools\\DataMonolithBakeCli\\DataMonolithBakeCli.csproj",
+  "projectFilePath": "/app/Tools/DataMonolithBakeCli/DataMonolithBakeCli.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

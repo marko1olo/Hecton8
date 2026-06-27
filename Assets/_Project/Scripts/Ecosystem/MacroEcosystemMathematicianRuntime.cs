@@ -2051,8 +2051,9 @@ namespace Hecton8.Ecosystem
                 float alpha = alphaBase * math.max(0.05f, flora01);
                 float interaction = safePrey * safePredator;
                 float floraNext = flora + ((floraGrowth * safeFlora * (1f - flora01)) - (alpha * safePrey * 0.18f)) * dt;
-                float preyNext = prey + ((alpha * safePrey - beta * interaction) * dt);
-                float predatorNext = predator + ((delta * interaction - gamma * safePredator) * dt);
+                var stepResult = Hecton8.PureLogic.Ecosystem.LotkaVolterraPopulationStep.Step(prey, predator, alpha, beta, gamma, delta, dt);
+                float preyNext = stepResult.newPreyPop;
+                float predatorNext = stepResult.newPredatorPop;
                 flora = math.clamp(floraNext, 0f, carryingCapacity);
                 prey = math.clamp(preyNext, 0f, math.min(carryingCapacity, preyCapacity));
                 predator = math.clamp(predatorNext, 0f, math.min(carryingCapacity, predatorCapacity));
