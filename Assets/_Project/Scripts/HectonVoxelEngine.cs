@@ -1043,11 +1043,7 @@ public struct VoxelDensityJob : IJobParallelFor
 
     static int ResolveModifiedCellBucket(int3 cell, int bucketCount)
     {
-        uint hash = 2166136261u;
-        hash = (hash ^ (uint)cell.x) * 16777619u;
-        hash = (hash ^ (uint)cell.y) * 16777619u;
-        hash = (hash ^ (uint)cell.z) * 16777619u;
-        return (int)(hash & (uint)(bucketCount - 1));
+        return (int)Hecton8.PureLogic.Systems.VoxelCellDirtystateBitHashingCalculator.Compute(cell.x, cell.y, cell.z, bucketCount);
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -3779,11 +3775,7 @@ public struct VoxelColorJob : IJobParallelFor
 
     static int ResolveModifiedCellBucket(int3 cell, int bucketCount)
     {
-        uint hash = 2166136261u;
-        hash = (hash ^ (uint)cell.x) * 16777619u;
-        hash = (hash ^ (uint)cell.y) * 16777619u;
-        hash = (hash ^ (uint)cell.z) * 16777619u;
-        return (int)(hash & (uint)(bucketCount - 1));
+        return (int)Hecton8.PureLogic.Systems.VoxelCellDirtystateBitHashingCalculator.Compute(cell.x, cell.y, cell.z, bucketCount);
     }
 
     bool TryResolveCaveMouthTerrainColor(float3 position, out float4 terrainColor, out float weight)
@@ -4003,11 +3995,7 @@ public struct VoxelDirtyBlendJob : IJobParallelFor
 
     static int ResolveModifiedCellBucket(int3 cell, int bucketCount)
     {
-        uint hash = 2166136261u;
-        hash = (hash ^ (uint)cell.x) * 16777619u;
-        hash = (hash ^ (uint)cell.y) * 16777619u;
-        hash = (hash ^ (uint)cell.z) * 16777619u;
-        return (int)(hash & (uint)(bucketCount - 1));
+        return (int)Hecton8.PureLogic.Systems.VoxelCellDirtystateBitHashingCalculator.Compute(cell.x, cell.y, cell.z, bucketCount);
     }
 
     static bool IsFinite(float3 value)
