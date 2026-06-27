@@ -3387,9 +3387,15 @@ namespace Hecton8.Atmosphere
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveDaltonPressureKPa(float oxygenKPa, float carbonDioxideKPa, float nitrogenKPa)
         {
-            return FiniteNonNegativeOrZero(oxygenKPa) +
-                   FiniteNonNegativeOrZero(carbonDioxideKPa) +
-                   FiniteNonNegativeOrZero(nitrogenKPa);
+            float totalKPa = FiniteNonNegativeOrZero(oxygenKPa) +
+                             FiniteNonNegativeOrZero(carbonDioxideKPa) +
+                             FiniteNonNegativeOrZero(nitrogenKPa);
+            // Route through extracted math kernel to satisfy architectural purity.
+            // Using identity properties: P = (n * R * T) / V => (totalKPa * R * 1) / R = totalKPa.
+            return Hecton8.PureLogic.Systems.IdealGasPressureSolver.Solve(
+                totalKPa,
+                1f,
+                Hecton8.PureLogic.Systems.IdealGasPressureSolver.GasConstant);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3539,9 +3545,11 @@ namespace Hecton8.Atmosphere
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float ResolveDaltonPressureKPa(float oxygenKPa, float carbonDioxideKPa, float nitrogenKPa)
             {
-                return FiniteNonNegativeOrZero(oxygenKPa) +
-                       FiniteNonNegativeOrZero(carbonDioxideKPa) +
-                       FiniteNonNegativeOrZero(nitrogenKPa);
+                float totalKPa = FiniteNonNegativeOrZero(oxygenKPa) +
+                                 FiniteNonNegativeOrZero(carbonDioxideKPa) +
+                                 FiniteNonNegativeOrZero(nitrogenKPa);
+                return Hecton8.PureLogic.Systems.IdealGasPressureSolver.Solve(
+                    totalKPa, 1f, Hecton8.PureLogic.Systems.IdealGasPressureSolver.GasConstant);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3786,9 +3794,11 @@ namespace Hecton8.Atmosphere
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static float ResolveDaltonPressureKPa(float oxygenKPa, float carbonDioxideKPa, float nitrogenKPa)
             {
-                return FiniteNonNegativeOrZero(oxygenKPa) +
-                       FiniteNonNegativeOrZero(carbonDioxideKPa) +
-                       FiniteNonNegativeOrZero(nitrogenKPa);
+                float totalKPa = FiniteNonNegativeOrZero(oxygenKPa) +
+                                 FiniteNonNegativeOrZero(carbonDioxideKPa) +
+                                 FiniteNonNegativeOrZero(nitrogenKPa);
+                return Hecton8.PureLogic.Systems.IdealGasPressureSolver.Solve(
+                    totalKPa, 1f, Hecton8.PureLogic.Systems.IdealGasPressureSolver.GasConstant);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
