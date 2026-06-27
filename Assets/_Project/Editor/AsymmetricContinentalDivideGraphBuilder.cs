@@ -571,7 +571,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (graph.generators != null)
                 return graph.generators.Length;
         }
-        catch { }
+        catch (Exception e) { Debug.LogWarning($"[GraphBuilder] Exception when counting generators: {e.Message}"); }
         return 0;
     }
 
