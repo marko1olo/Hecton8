@@ -12239,20 +12239,26 @@ namespace Hecton8.Audio
             previousVelocityAupFrames[sourceIndex] = currentFrame;
 
             float3 listenerToSourceAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
-            float targetRatio = 1f;
             float distanceSq = math.lengthsq(listenerToSourceAup);
+            float targetRatio = 1f;
+
             if (distanceSq > 0.0001f)
             {
+                targetRatio = Hecton8.PureLogic.Systems.SubseaVehicleDopplerReverbShiftCalculator.Compute(
+                    1f,
+                    new System.Numerics.Vector3(listenerToSourceAup.x, listenerToSourceAup.y, listenerToSourceAup.z),
+                    new System.Numerics.Vector3(sourceVelocity.x, sourceVelocity.y, sourceVelocity.z),
+                    System.Numerics.Vector3.Zero,
+                    new System.Numerics.Vector3(listenerVelocity.x, listenerVelocity.y, listenerVelocity.z),
+                    SoundSpeedWaterMetersPerSecond
+                );
+
                 float3 direction = ResolveDominantAxisDirection(listenerToSourceAup);
                 float relativeVelocity = math.dot((float3)(listenerVelocity - sourceVelocity), direction);
                 float clampedRelativeVelocity = math.clamp(
                     relativeVelocity,
                     -SoundSpeedWaterMetersPerSecond * 0.9f,
                     SoundSpeedWaterMetersPerSecond * 0.9f);
-                targetRatio = math.clamp(
-                    1f + (clampedRelativeVelocity * math.rcp(SoundSpeedWaterMetersPerSecond)),
-                    ManualDopplerMaximumRatioInv,
-                    ManualDopplerMaximumRatio);
 
                 float previousRelativeVelocity = _previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length
                     ? _previousRelativeVelocities[sourceIndex]
