@@ -72,8 +72,11 @@ namespace Hecton8.Gameplay
         [Tooltip("Battery drain per second while moving.")]
         [SerializeField, Range(0.5f, 10f)] private float batteryDrainRate = 2f;
 
-        [Tooltip("Minimum battery charge to activate (0-1).")]
+                [Tooltip("Minimum battery charge to activate (0-1).")]
         [SerializeField, Range(0f, 0.3f)] private float minChargeToActivate = 0.05f;
+
+        [Tooltip("Nominal battery capacity in Watt-hours.")]
+        [SerializeField, Range(10f, 1000f)] private float batteryCapacityWh = 100f;
 
         [Header("Drive Misfires")]
         [Tooltip("Hull-stress threshold where the scooter starts suffering propulsion misfires.")]
@@ -599,9 +602,21 @@ namespace Hecton8.Gameplay
             if (!TryGetModularEquipment(out IModularEquipmentService service) || RuntimeToolId == 0u)
                 return;
 
-            float requestedDrainRate = active
-                ? ResolveEffectiveBatteryDrainRate() * math.saturate(driveThrottleOutput)
-                : 0f;
+            float effectiveDrainRate = ResolveEffectiveBatteryDrainRate();
+
+            // TASK-156: Replace the math implementation with a static call
+            float newCharge = Hecton8.PureLogic.Kinematics.ScooterBatteryDrainCalculator.Compute(
+                active ? driveThrottleOutput : 0f,
+                effectiveDrainRate,
+                batteryCapacityWh,
+                BatteryCharge,
+                Time.deltaTime);
+
+            // Interface with the central solver's requestedDrainRate
+            float drainThisFrameNormalized = math.max(0f, BatteryCharge - newCharge);
+            float drainThisFrameWh = drainThisFrameNormalized * batteryCapacityWh;
+            float requestedDrainRate = (Time.deltaTime > 0f) ? (drainThisFrameWh / (Time.deltaTime / 3600f)) : 0f;
+
             service.SetToolActive(RuntimeToolId, active, requestedDrainRate);
         }
 
