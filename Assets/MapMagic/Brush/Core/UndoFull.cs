@@ -41,6 +41,8 @@ namespace MapMagic.Brush
 		const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
 
+		public MapMagicBrush brush;
+
 		//private Stack<Set> sets = new Stack<Set>();  //we've got to remove first items from it, so using list instead
 		[SerializeField] private List< Dictionary<Terrain,TerrainApplyData> > sets = new List< Dictionary<Terrain,TerrainApplyData> >();
 
@@ -55,24 +57,39 @@ namespace MapMagic.Brush
 
 			public void OnUndoRedoPerformed ()
 			{
-				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+				bool undoMatched = false;
 
-				if (currGroupName == undoName || currGroupName == lastUndoName)
-				// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
-				// so we store previous (before mm change) name and performing undo if this name is first in stack
-				// TODO: use undo from MapMagicBrush with ids, it's more stable
+				if (brush != null && brush.curUndoId != brush.prevUndoId)
 				{
-					Perform();
-
-					if (currGroupName == lastUndoName)
-						lastUndoName = null;
+					brush.prevUndoId = brush.curUndoId;
+					undoMatched = true;
 				}
+
+				if (!undoMatched)
+				{
+					string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+
+					if (currGroupName == undoName || currGroupName == lastUndoName)
+					// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
+					// so we store previous (before mm change) name and performing undo if this name is first in stack
+					{
+						undoMatched = true;
+
+						if (currGroupName == lastUndoName)
+							lastUndoName = null;
+					}
+				}
+
+				if (undoMatched)
+					Perform();
 			}
 		#endif
 
 		public void NewGroup (MapMagicBrush brush)
 		///Registering new undo (at the start of each stroke)
 		{
+			this.brush = brush;
+
 			/*if (sets.Count > 10)
 			{
 				List<Set> last10 = new List<Set>(sets);
@@ -86,6 +103,7 @@ namespace MapMagic.Brush
 					lastUndoName = currGroupName;
 
 				UnityEditor.Undo.RecordObject(brush, undoName);
+				brush.curUndoId++;
 				brush.temp = !brush.temp;
 			#endif
 		}
