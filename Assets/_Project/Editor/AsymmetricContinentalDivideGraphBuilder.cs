@@ -365,7 +365,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return true;
                     }
                 }
-                catch { }
+                catch (global::System.Exception ex) { UnityEngine.Debug.LogWarning($"[GraphBuilder] ImplementsInletMatrixWorld exception: {ex.Message}"); }
             }
         }
 
