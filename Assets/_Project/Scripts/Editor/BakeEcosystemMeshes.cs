@@ -59,7 +59,7 @@ namespace Hecton8.Editor
             
             var kNormal = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/_Project/Art/TEXTURES/WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png");
             if (kNormal != null) kelpMat.SetTexture("_BumpMap", kNormal);
-            // FIX: Mark materials dirty so they save to disk
+            // Patch: Mark materials dirty so they save to disk
             EditorUtility.SetDirty(coralMat);
             EditorUtility.SetDirty(kelpMat);
             AssetDatabase.SaveAssets();
