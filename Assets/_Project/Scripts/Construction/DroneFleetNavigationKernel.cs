@@ -2024,9 +2024,13 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveStepCost(int3 current, int3 neighbor, float3 world, float cell)
         {
-            float cost = current.y != neighbor.y ? VerticalPenalty * cell : cell;
             float textureSeamBias = math.frac((world.x + (world.z * 0.37f)) * 0.0625f);
-            return cost + (math.abs(textureSeamBias - 0.5f) * 0.02f);
+            System.Numerics.Vector3 fromNode = new System.Numerics.Vector3(current.x, current.y, current.z);
+            System.Numerics.Vector3 toNode = new System.Numerics.Vector3(neighbor.x, neighbor.y, neighbor.z);
+            float verticalHazard = current.y != neighbor.y ? (VerticalPenalty - 1f) * cell : 0f;
+            float seamHazard = math.abs(textureSeamBias - 0.5f) * 0.02f;
+            float[] hazards = new float[] { verticalHazard, seamHazard };
+            return global::Hecton8.PureLogic.Systems.DronePathfindCostCalculator.Compute(fromNode, toNode, hazards, cell);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
