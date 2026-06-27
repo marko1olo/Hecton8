@@ -181,7 +181,7 @@ namespace MapMagic.Brush
 				if (par == terrain) //ignore terrain itself
 					continue;
 
-				if (par.GetComponent<Terrain>() != null) //ignore draft terrains
+				if (par.TryGetComponent<Terrain>(out _)) //ignore draft terrains
 					continue;
 
 				foreach (Transform tfm in ChildRelatedTransforms(par, worldPos, worldSize))
@@ -352,7 +352,7 @@ namespace MapMagic.Brush
 				if (terrain.transform.parent != null)
 					foreach (Transform par in terrain.transform.parent)
 					{
-						if (par.GetComponent<TerrainTile>() != null)
+						if (par.TryGetComponent<TerrainTile>(out _))
 							parent = par;
 					}
 
