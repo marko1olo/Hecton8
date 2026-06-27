@@ -1806,10 +1806,7 @@ namespace Hecton8.World
         private float ResolveSpawnCreditSelectionWeight(CreatureArchetypeData archetype)
         {
             float cost = ResolveSpawnCreditCost(archetype, IsApexRole(archetype), IsPredatorOrApex(archetype));
-            if (cost <= 0f)
-                return 1f;
-
-            return _spawnCreditBudget + 0.0001f >= cost ? 1f : 0f;
+            return Hecton8.PureLogic.Ecosystem.EcosystemSpeciesSelectionWeightCalculator.Compute(1f, cost, _spawnCreditBudget);
         }
 
         private float ResolveBiomassSpawnSelectionWeight(CreatureArchetypeData archetype, Vector3 worldPosition)
