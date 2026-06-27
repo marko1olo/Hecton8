@@ -174,24 +174,28 @@ def _safe_eval(expr_str):
         ast.Invert: operator.invert,
     }
 
-    def _eval(node):
+    def _eval(node, depth=0):
+        if depth > 100:
+            raise ValueError("Expression too deep")
         if isinstance(node, ast.Constant):
+            if not isinstance(node.value, (int, float)):
+                raise ValueError(f"Unsupported constant type {type(node.value)}")
             return node.value
         elif isinstance(node, ast.BinOp):
-            left = _eval(node.left)
-            right = _eval(node.right)
+            left = _eval(node.left, depth + 1)
+            right = _eval(node.right, depth + 1)
             if type(node.op) not in operators:
                 raise ValueError(f"Unsupported operator {type(node.op)}")
             if type(node.op) in (ast.LShift, ast.RShift) and right > 256:
                 raise ValueError("Shift count too large")
             return operators[type(node.op)](left, right)
         elif isinstance(node, ast.UnaryOp):
-            operand = _eval(node.operand)
+            operand = _eval(node.operand, depth + 1)
             if type(node.op) not in operators:
                 raise ValueError(f"Unsupported operator {type(node.op)}")
             return operators[type(node.op)](operand)
         elif isinstance(node, ast.Expression):
-            return _eval(node.body)
+            return _eval(node.body, depth + 1)
         raise ValueError(f"Unsupported node {type(node)}")
 
     try:
