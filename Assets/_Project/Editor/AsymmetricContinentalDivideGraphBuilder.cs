@@ -531,8 +531,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            UnityEngine.Debug.LogWarning($"[GraphBuilder] Failed to collect graph generators: {ex.Message}");
             s_clearGraphGenerators.Clear();
         }
 
@@ -542,7 +543,10 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (gen != null)
             {
                 try { graph.Remove(gen); }
-                catch { }
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogWarning($"[GraphBuilder] Failed to remove generator: {ex.Message}");
+                }
             }
         }
 
