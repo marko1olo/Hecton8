@@ -2968,15 +2968,12 @@ namespace Hecton8.Audio
             float safePocketSuppression01 = ResolveSafePocketSuppression01(matrixProfile, currentZone);
             float firstHourPressureBoost01 = ResolveFirstHourPressureBoost01(matrixProfile, currentZone);
 
-            float tension01 =
-                aiTension01 * _aiTensionWeight +
-                biomePressure01 * _biomePressureWeight +
-                zonePressure01 * _zonePressureWeight +
-                depthZonePressure01 * _depthZonePressureWeight +
-                soundscapePressure01 * _soundscapePressureWeight +
-                rewardUnease01 * _rewardUneaseWeight +
-                firstHourPressureBoost01 * _firstHourPressureBoostWeight -
-                safePocketSuppression01 * _safePocketSuppressionWeight;
+            float tension01 = Hecton8.PureLogic.Systems.GameStateTensionScorer.Calculate(
+                _predatorProximity01,
+                depthZonePressure01,
+                1f - _oxygenDanger01,
+                1f - _playerCriticalStress01
+            );
 
             if (ResolveBaseContext())
                 tension01 *= _baseContextTensionScale;
