@@ -53,7 +53,7 @@ namespace UnityEditor.ShaderGraph
         #region GeneratePassStructsAndInterpolators
         // This funcion is an exact copy of the lines in Generator.cs, except the the member value m_HumanReadable is replaced with the
         // variable isHumanReadable so that this function can be static.
-        internal static void GeneratePassStructsAndInterpolators(out ShaderStringBuilder interpolatorBuilder, out ShaderStringBuilder passStructBuilder, ActiveFields activeFields, List<StructDescriptor> passStructs, bool isHumanReadable)
+        internal static void GeneratePassStructsAndInterpolators(out ShaderStringBuilder interpolatorBuilder, out ShaderStringBuilder passStructBuilder, ActiveFields activeFields, List<StructDescriptor> passStructs, bool isHumanReadable, ConcretePrecision graphDefaultConcretePrecision)
         {
             // -----------------------------
             // Generated structs and Packing code
@@ -115,7 +115,7 @@ namespace UnityEditor.ShaderGraph
                 passStructs.AddRange(packedStructs);
             }
             if (interpolatorBuilder.length != 0) //hard code interpolators to float, TODO: proper handle precision
-                interpolatorBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, ConcretePrecision.Single.ToShaderString());
+                interpolatorBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, graphDefaultConcretePrecision.ToShaderString());
             else
                 interpolatorBuilder.AppendLine("//Interpolator Packs: <None>");
             Profiler.EndSample();
@@ -130,7 +130,7 @@ namespace UnityEditor.ShaderGraph
                     foreach (StructDescriptor shaderStruct in passStructs)
                     {
                         GenerationUtils.GenerateShaderStruct(shaderStruct, activeFields, isHumanReadable, out structBuilder);
-                        structBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, ConcretePrecision.Single.ToShaderString()); //hard code structs to float, TODO: proper handle precision
+                        structBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, graphDefaultConcretePrecision.ToShaderString()); //hard code structs to float, TODO: proper handle precision
                         passStructBuilder.Concat(structBuilder);
                     }
                 }
@@ -205,7 +205,7 @@ namespace UnityEditor.ShaderGraph
                 // follow the same rules as above
                 var structBuilder = new ShaderStringBuilder(humanReadable: isHumanReadable);
                 GenerationUtils.GenerateShaderStruct(structDesc, activeFields, isHumanReadable, out structBuilder);
-                structBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, ConcretePrecision.Single.ToShaderString()); //hard code structs to float, TODO: proper handle precision
+                structBuilder.ReplaceInCurrentMapping(PrecisionUtil.Token, graphDefaultConcretePrecision.ToShaderString()); //hard code structs to float, TODO: proper handle precision
 
                 surfaceDescStr = structBuilder.ToCodeBlock();
             }
@@ -242,7 +242,7 @@ namespace UnityEditor.ShaderGraph
 
                 // start with the original structs, and add interpolators, which might include uv0Ddx, uv0Ddy, etc.
                 List<StructDescriptor> adjustedPassStructs = new List<StructDescriptor>(originalPassStructs);
-                GeneratePassStructsAndInterpolators(out interpolatorBuilder, out passStructBuilder, activeFields, adjustedPassStructs, isHumanReadable);
+                GeneratePassStructsAndInterpolators(out interpolatorBuilder, out passStructBuilder, activeFields, adjustedPassStructs, isHumanReadable, graphDefaultConcretePrecision);
 
                 string dstInterpolatorPack = interpolatorBuilder.ToCodeBlock();
                 string dstPassStructs = passStructBuilder.ToCodeBlock();
