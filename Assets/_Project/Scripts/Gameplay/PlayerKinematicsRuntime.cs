@@ -150,7 +150,9 @@ namespace Hecton8.Gameplay
                 telemetrySolidDensity = sdfDensity;
             }
 
-            float dragTerm = SanitizeNonNegative(drag * density * dt);
+            float speed = math.length(velocity);
+            float dragDecel = Hecton8.PureLogic.Kinematics.SomaticDragCurveCalculator.Compute(speed, DepthMeters, SuitIntegrity01, drag, DragDepthScaleMax, DragBrokenSuitMultiplier, MaxDragClamp, DragMathEpsilon);
+            float dragTerm = SanitizeNonNegative(dragDecel * density * dt);
             velocity *= math.rcp(1.0f + dragTerm);
             velocity += SanitizeFloat3(FlowVelocity[0], float3.zero) * dt;
             if (ActiveMaelstromCount > 0)
