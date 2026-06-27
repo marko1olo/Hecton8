@@ -2317,6 +2317,10 @@ namespace Hecton8.AI.Ambient
                 s_blackBoxDumpHash = nonZeroHash;
                 return true;
             }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
             finally
             {
                 NativeFaultDumpWriter.DisposeTransientPayload(
