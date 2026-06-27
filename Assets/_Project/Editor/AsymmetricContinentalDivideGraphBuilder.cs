@@ -724,7 +724,10 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             Debug.Log("[GraphBuilder] Linked via reflection fallback.");
                             return;
                         }
-                        catch { }
+                        catch (global::System.Exception e)
+                        {
+                            UnityEngine.Debug.LogWarning($"[GraphBuilder] Failed to link via reflection fallback: {e.Message}");
+                        }
                     }
                 }
             }
