@@ -2411,6 +2411,19 @@ namespace Hecton8.AI.GPU
         /// <summary>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð±Ð¾Ð¹Ð´Ð¾Ð².</summary>
         public int BoidCount => boidCount;
 
+        /// <summary>
+        /// Pure logic redirect for boid alignment force.
+        /// Extracts calculation safely for tests.
+        /// </summary>
+        public static UnityEngine.Vector3 CalculateSteerForce(UnityEngine.Vector3 boidVelocity, UnityEngine.Vector3 averageNeighborVelocity, float maxSteerForce)
+        {
+            var systemBoidVel = new System.Numerics.Vector3(boidVelocity.x, boidVelocity.y, boidVelocity.z);
+            var systemAvgVel = new System.Numerics.Vector3(averageNeighborVelocity.x, averageNeighborVelocity.y, averageNeighborVelocity.z);
+            var result = Hecton8.PureLogic.Ecosystem.FlockingBoidAlignmentVector.Calculate(systemBoidVel, systemAvgVel, maxSteerForce);
+            return new UnityEngine.Vector3(result.X, result.Y, result.Z);
+        }
+
+
         /// <summary>Ð¡ÐµÐ¹Ñ‡Ð°Ñ Ñ€ÐµÐ½Ð´ÐµÑ€Ð¸Ñ‚ÑÑ.</summary>
         public bool IsVisible => _debugIsVisible;
 
