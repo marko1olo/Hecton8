@@ -560,7 +560,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                     clearMethod.Invoke(links, null);
             }
         }
-        catch { }
+        catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] Clear links reflection fallback failed: {e.Message}"); }
     }
 
     /// <summary>Count generators in the graph.</summary>
@@ -571,7 +571,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (graph.generators != null)
                 return graph.generators.Length;
         }
-        catch { }
+        catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] CountGenerators failed: {e.Message}"); }
         return 0;
     }
 
