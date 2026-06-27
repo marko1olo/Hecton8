@@ -88,6 +88,8 @@ namespace Hecton8.Physics.Vehicles
         [SerializeField, Min(0f)] private float maxThrustN = 52000f;
         [SerializeField, Min(0f)] private float maxTorqueNm = 18000f;
         [SerializeField, Min(0f)] private float ballastLiftN = 140000f;
+        [SerializeField, Min(0f)] private float ballastFillRatePerSec = 0.2f;
+        [SerializeField, Min(0f)] private float ballastVentRatePerSec = 0.3f;
         [SerializeField, Min(0f)] private float dragScale = 1f;
 
         [Header("Stability")]
@@ -271,7 +273,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
             }
 
-            if (!TryApplyPreScheduleSignals(controls, masses, forces, configs, out SubmarineKinematicConfig frameConfig))
+            if (!TryApplyPreScheduleSignals(controls, masses, forces, configs, fixedDeltaTime, out SubmarineKinematicConfig frameConfig))
             {
                 UnlockSimulationBuffers();
                 return;
@@ -1027,6 +1029,7 @@ namespace Hecton8.Physics.Vehicles
             NativeArray<SubmarineMassProperties> masses,
             NativeArray<SubmarineForceAccumulator> forces,
             NativeArray<SubmarineKinematicConfig> configs,
+            float fixedDeltaTime,
             out SubmarineKinematicConfig frameConfig)
         {
             frameConfig = default;
@@ -1040,7 +1043,7 @@ namespace Hecton8.Physics.Vehicles
             }
 
             VehicleCommandSignalBus.FlushPending();
-            ConsumeSignals(controls, masses, forces, configs);
+            ConsumeSignals(controls, masses, forces, configs, fixedDeltaTime);
             frameConfig = configs[0];
             return true;
         }
@@ -1115,7 +1118,8 @@ namespace Hecton8.Physics.Vehicles
             NativeArray<SubmarineKinematicControl> controls,
             NativeArray<SubmarineMassProperties> masses,
             NativeArray<SubmarineForceAccumulator> forces,
-            NativeArray<SubmarineKinematicConfig> configs)
+            NativeArray<SubmarineKinematicConfig> configs,
+            float fixedDeltaTime)
         {
             SubmarineKinematicControl control = controls[0];
             SubmarineMassProperties mass = masses[0];
@@ -1124,7 +1128,7 @@ namespace Hecton8.Physics.Vehicles
 
             control.TargetDepthMeters = targetDepthMeters;
             control.Throttle01 = defaultThrottle01;
-            control.BallastCommand01 = defaultBallast01;
+            control.BallastCommand01 = Hecton8.PureLogic.Systems.BallastTankController.Calculate(control.BallastCommand01, defaultBallast01, ballastFillRatePerSec, ballastVentRatePerSec, fixedDeltaTime);
             control.ThrustLocal = new float3(0f, 0f, 1f);
             control.TorqueLocal = float3.zero;
 
