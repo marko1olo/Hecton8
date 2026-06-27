@@ -197,7 +197,6 @@ namespace Hecton8.Editor
             if (urpCam == null) urpCam = cam.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             urpCam.renderShadows = true;
 
-            // FIX: Setup Directional Light to ensure shaders respond properly
             Light dirLight = Object.FindAnyObjectByType<Light>();
             if (dirLight == null || dirLight.type != LightType.Directional)
             {
