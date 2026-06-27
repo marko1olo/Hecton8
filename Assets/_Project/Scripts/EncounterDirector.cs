@@ -264,6 +264,11 @@ namespace Hecton8.Systems.AI
 
     internal sealed class EncounterDirector : IDisposable
     {
+        public float ComputeSpawningOddsForAmbientDynamicEncounters(float baseWeight, float playerStress01, float cooldownRemaining)
+        {
+            return Hecton8.PureLogic.Ecosystem.AmbientEncounterSpawningWeightCalculator.Compute(baseWeight, playerStress01, cooldownRemaining);
+        }
+
         internal const int FrustumPlaneCount = 6;
         private const int DebugEventRingCapacity = 256;
         private const int DirectorBlackBoxCapacity = 300;
