@@ -27,6 +27,13 @@ namespace GPUInstancer
         private bool _isRigidbodyCached;
         private Rigidbody _cachedRigidbody;
 
+        private bool _isMeshRenderersCached;
+        private MeshRenderer[] _cachedMeshRenderers;
+        private bool _isBillboardRenderersCached;
+        private BillboardRenderer[] _cachedBillboardRenderers;
+        private bool _isLODGroupCached;
+        private LODGroup _cachedLODGroup;
+
         public virtual void AddVariation<T>(string bufferName, T value)
         {
             if (variationDataList == null)
@@ -79,6 +86,35 @@ namespace GPUInstancer
             return _cachedRigidbody;
         }
 
+        public virtual MeshRenderer[] GetCachedMeshRenderers(bool forceNew = false)
+        {
+            if (!_isMeshRenderersCached || forceNew)
+            {
+                _cachedMeshRenderers = GetComponentsInChildren<MeshRenderer>(true);
+                _isMeshRenderersCached = true;
+            }
+            return _cachedMeshRenderers;
+        }
+
+        public virtual BillboardRenderer[] GetCachedBillboardRenderers(bool forceNew = false)
+        {
+            if (!_isBillboardRenderersCached || forceNew)
+            {
+                _cachedBillboardRenderers = GetComponentsInChildren<BillboardRenderer>(true);
+                _isBillboardRenderersCached = true;
+            }
+            return _cachedBillboardRenderers;
+        }
+
+        public virtual LODGroup GetCachedLODGroup(bool forceNew = false)
+        {
+            if (!_isLODGroupCached || forceNew)
+            {
+                TryGetComponent(out _cachedLODGroup);
+                _isLODGroupCached = true;
+            }
+            return _cachedLODGroup;
+        }
         public virtual void SetupPrefabInstance(GPUInstancerRuntimeData runtimeData, bool forceNew = false)
         {
 
