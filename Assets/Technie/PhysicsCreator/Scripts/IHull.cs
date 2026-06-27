@@ -22,7 +22,7 @@ namespace Technie.PhysicsCreator
 			get;
 		}
 
-		bool IsTriangleSelected(int triIndex, Renderer renderer, Mesh targetMesh);
+		bool IsTrianglePainted(int triIndex);
 
 		int[] GetSelectedFaces();
 
