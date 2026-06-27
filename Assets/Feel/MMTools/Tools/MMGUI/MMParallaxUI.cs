@@ -46,6 +46,7 @@ namespace MoreMountains.Tools
 		protected Vector2 _referencePosition;
 		protected Vector3 _newPosition;
 		protected Vector2 _mousePosition;
+		protected Camera _mainCamera;
         
 		/// <summary>
 		/// On Start we initialize our reference position
@@ -60,6 +61,7 @@ namespace MoreMountains.Tools
 		/// </summary>
 		public virtual void Initialization()
 		{
+			_mainCamera = Camera.main;
 			foreach (ParallaxLayer layer in ParallaxLayers)
 			{
 				layer.StartPosition = layer.Rect.position;
@@ -90,7 +92,11 @@ namespace MoreMountains.Tools
 					#else
 					_mousePosition = Input.mousePosition;
 					#endif
-					_referencePosition = Camera.main.ScreenToViewportPoint(_mousePosition);
+					if (_mainCamera == null)
+					{
+						_mainCamera = Camera.main;
+					}
+					_referencePosition = _mainCamera.ScreenToViewportPoint(_mousePosition);
 					break;
 			}
             
