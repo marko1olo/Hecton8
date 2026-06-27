@@ -2725,7 +2725,8 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
         int cubeIndex = ResolveCubeIndex(in densities);
 
-        int edgeBits = edgeTable[cubeIndex];
+
+        int edgeBits = Hecton8.PureLogic.Systems.MarchingCubesLookupTable.Calculate((byte)cubeIndex, d0, d1, d2, d3, d4, d5, d6, d7, 0f);
         if (edgeBits == 0) return;
 
         int vertCount = cellVertexCounts[cellIdx];
