@@ -2602,6 +2602,11 @@ namespace Hecton8.Atmosphere
             return math.max(ResolveSafeReferencePressureKPa(), FiniteOr(maximumPressureKPa, DefaultMaximumPressureKPa));
         }
 
+        public float GetAirlockEqualizationTime(float internalPressurePa, float externalPressurePa, float airlockVolumeM3, float valveFlowRateM3PerSec)
+        {
+            return Hecton8.PureLogic.Systems.PressureEqualizationCalculator.Compute(internalPressurePa, externalPressurePa, airlockVolumeM3, valveFlowRateM3PerSec, Epsilon);
+        }
+
         public float GetRoomPressureKPa(int roomIndex)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount ||
