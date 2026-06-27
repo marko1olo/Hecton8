@@ -502,16 +502,26 @@ namespace Hecton8.Power
             float turbidity = math.max(0f, SanitizeFinite(conditions.WaterTurbidity, 1f));
             float attenuationCoefficient = math.max(0.000001f, SanitizeFinite(conditions.WaterAttenuationCoefficient, SolarPowerGenerationConstants.DefaultWaterAttenuationCoefficient));
             float turbidityMultiplier = math.max(0f, SanitizeFinite(conditions.TurbidityMultiplier, SolarPowerGenerationConstants.DefaultTurbidityMultiplier));
-            float opticalDepth = depthMeters * attenuationCoefficient * (1f + turbidity * turbidityMultiplier);
-            float attenuation = ResolveBeerLambert(opticalDepth, quality);
             float shadowMultiplier = angleMultiplier > 0.0001f
                 ? ResolveShadowMultiplier(panel.PanelAUP, in conditions, sunDirection, quality, ref output.Flags)
                 : 1f;
-            float irradiance = math.max(0f, SanitizeFinite(conditions.InitialIntensityWatts, SolarPowerGenerationConstants.DefaultSolarIrradianceWatts)) *
-                               attenuation *
-                               angleMultiplier *
-                               shadowMultiplier;
-            float generatedWatts = irradiance * math.max(0f, panel.BaseEfficiencyScalar);
+
+            float safeInitialIntensity = math.max(0f, SanitizeFinite(conditions.InitialIntensityWatts, SolarPowerGenerationConstants.DefaultSolarIrradianceWatts));
+            float safeEfficiency = math.max(0f, panel.BaseEfficiencyScalar);
+
+            float opticalDepth = depthMeters * attenuationCoefficient * (1f + turbidity * turbidityMultiplier);
+
+            float generatedWatts = Hecton8.PureLogic.Systems.SolarIrradianceDepthCalculator.Compute(
+                depthMeters,
+                safeInitialIntensity * angleMultiplier * shadowMultiplier,
+                attenuationCoefficient * (1f + turbidity * turbidityMultiplier),
+                safeEfficiency
+            );
+
+            // Back-calculate irradiance from pure method if we need it for outputs, but we can also just compute it
+            float attenuation = math.exp(-math.clamp(MathLodApproximation.FiniteOr(opticalDepth, 0f), 0f, 40f));
+            float irradiance = safeInitialIntensity * attenuation * angleMultiplier * shadowMultiplier;
+
             if (!math.isfinite(generatedWatts) || !math.isfinite(opticalDepth))
             {
                 generatedWatts = 0f;
@@ -695,14 +705,7 @@ namespace Hecton8.Power
             return math.lerp(lowTier, highTier, math.saturate(quality));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveBeerLambert(float opticalDepth, float quality)
-        {
-            float x = math.clamp(MathLodApproximation.FiniteOr(opticalDepth, 0f), 0f, 40f);
-            float cheap = math.rcp(1f + x + 0.5f * x * x);
-            float pade = MathLodApproximation.ApproxExpNegPade33Wide40(x);
-            return math.saturate(MathLodApproximation.BlendByQuality(cheap, pade, quality, 0.30f, 0.85f));
-        }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 NormalizeWithFallback(float3 value, float3 fallback)
