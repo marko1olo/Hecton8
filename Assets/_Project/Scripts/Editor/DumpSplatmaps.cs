@@ -5,7 +5,7 @@ using UnityEditor.SceneManagement;
 public class DumpSplatmaps {
     public static void Execute() {
         EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity");
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         if (terrains.Length > 0) {
             var t = terrains[0];
             Debug.Log($"[FAS] Terrain {t.name} alphamap resolution: {t.terrainData.alphamapResolution}");

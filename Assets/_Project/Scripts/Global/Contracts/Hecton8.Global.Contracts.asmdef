@@ -25,5 +25,5 @@
             "define": "H8_QUALITY_ROUTING_URP17"
         }
     ],
-    "noEngineReferences": true
+    "noEngineReferences": false
 }

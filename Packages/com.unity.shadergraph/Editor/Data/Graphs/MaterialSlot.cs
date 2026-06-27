@@ -28,12 +28,45 @@ namespace UnityEditor.ShaderGraph
         bool m_Hidden;
 
         [SerializeField]
+        bool m_HideConnector;
+
+        [SerializeField]
         string m_ShaderOutputName;
 
         [SerializeField]
         ShaderStageCapability m_StageCapability;
 
+        [SerializeField]
+        string m_CustomBinding;
+
         bool m_HasError;
+
+        internal string CustomBinding
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(m_CustomBinding))
+                    return m_CustomBinding;
+
+                else if (owner is SubGraphNode sgNode)
+                {
+                    var property = sgNode.GetShaderProperty(id);
+                    if (property?.useCustomSlotLabel ?? false)
+                        return property.customSlotLabel;
+                }
+
+                else if (owner is PropertyNode propertyNode)
+                {
+                    if (propertyNode.property?.useCustomSlotLabel ?? false)
+                        return propertyNode.property.customSlotLabel;
+                }
+
+                return null;
+            }
+            set { m_CustomBinding = value; }
+        }
+
+        internal bool HasCustomBinding => CustomBinding != null;
 
         protected MaterialSlot() { }
 
@@ -53,30 +86,13 @@ namespace UnityEditor.ShaderGraph
             this.shaderOutputName = shaderOutputName;
         }
 
-        public bool IsConnectionTestable()
-        {
-            if (owner is SubGraphNode sgNode)
-            {
-                var property = sgNode.GetShaderProperty(id);
-                if (property != null)
-                {
-                    return property.isConnectionTestable;
-                }
-            }
-            else if (owner is PropertyNode propertyNode)
-            {
-                return propertyNode.property.isConnectionTestable;
-            }
-            return false;
-        }
+        public bool IsConnectionTestable() => HasCustomBinding;
 
         public VisualElement InstantiateCustomControl()
         {
-            if (!isConnected && IsConnectionTestable())
+            if (!isConnected && HasCustomBinding)
             {
-                var sgNode = owner as SubGraphNode;
-                var property = sgNode.GetShaderProperty(id);
-                return new LabelSlotControlView(property.customSlotLabel);
+                return new LabelSlotControlView(CustomBinding);
             }
             return null;
         }
@@ -136,6 +152,34 @@ namespace UnityEditor.ShaderGraph
         public string RawDisplayName()
         {
             return m_DisplayName;
+        }
+
+        public static MaterialSlot CreateMaterialSlotFromProperty(AbstractShaderProperty property, int slotId)
+        {
+            MaterialSlot slot;
+            switch (property)
+            {
+                case ColorShaderProperty color:
+                    slot = new ColorRGBAMaterialSlot(slotId, property.displayName, property.referenceName, SlotType.Input, color.value);
+                    break;
+                case Vector1ShaderProperty vector1:
+                    switch (vector1.floatType)
+                    {
+                        case FloatType.Slider: slot = new Vector1MaterialRangeSlot(slotId, vector1); break;
+                        case FloatType.Integer: slot = new Vector1MaterialIntegerSlot(slotId, vector1); break;
+                        case FloatType.Enum: slot = new Vector1MaterialEnumSlot(slotId, vector1); break;
+                        default:
+                        case FloatType.Default: slot = new Vector1MaterialSlot(slotId, vector1); break;
+                    }
+                    (slot as Vector1MaterialSlot).LiteralMode = vector1.LiteralFloatMode;
+                    break;
+                default:
+                    SlotValueType valueType = property.concreteShaderValueType.ToSlotValueType();
+                    slot = CreateMaterialSlot(valueType, slotId, property.displayName, property.referenceName, SlotType.Input, Vector4.zero);
+                    break;
+            }
+            slot.hideConnector = property.hideConnector;
+            return slot;
         }
 
         public static MaterialSlot CreateMaterialSlot(
@@ -200,6 +244,8 @@ namespace UnityEditor.ShaderGraph
                     return new BooleanMaterialSlot(slotId, displayName, shaderOutputName, slotType, false, shaderStageCapability, hidden);
                 case SlotValueType.PropertyConnectionState:
                     return new PropertyConnectionStateMaterialSlot(slotId, displayName, shaderOutputName, slotType, shaderStageCapability, hidden);
+                case SlotValueType.External:
+                    return new ProviderSystem.ExternalMaterialSlot(slotId, displayName, shaderOutputName, "ERROR_TYPE", slotType);
             }
 
             throw new ArgumentOutOfRangeException("type", type, null);
@@ -217,6 +263,14 @@ namespace UnityEditor.ShaderGraph
         {
             get { return m_Hidden; }
             set { m_Hidden = value; }
+        }
+
+        internal virtual bool canHideConnector => false;
+
+        public bool hideConnector
+        {
+            get { return m_HideConnector && canHideConnector; }
+            set { m_HideConnector = value; }
         }
 
         public int id
@@ -313,6 +367,11 @@ namespace UnityEditor.ShaderGraph
                 res = this is IMaterialSlotSupportsLiteralMode { LiteralMode: true };
             }
             requiresLiteralMode = !res;
+
+            if (res && (this is ProviderSystem.INeedsExplicitCompatibilityTest || otherSlot is ProviderSystem.INeedsExplicitCompatibilityTest))
+            {
+                res = ProviderSystem.INeedsExplicitCompatibilityTest.TestExplicitCompatibility(this, otherSlot);
+            }
             return res;
         }
 

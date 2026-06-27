@@ -1,92 +1,110 @@
+// H8_ScreenshotTaker.cs
+// Editor-only. Renders scene cameras via URP RenderPipeline.SubmitRenderRequest.
+// cam.Render() alone does NOT invoke URP in batchmode — SubmitRenderRequest is required.
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using System.IO;
 
 namespace Hecton8.EditorTools
 {
     public static class H8_ScreenshotTaker
     {
-        private static float _startTime;
-        private static int _state = 0;
+        private static readonly string OutputDir = "C:/hades/Hecton8/Logs/Screenshots/";
+
+        public static void TakeScreenshotSandboxAndExit()
+        {
+            TakeSceneScreenshot("020", "Assets/_Project/Scenes/020_RENDER_SANDBOX.unity");
+            EditorApplication.Exit(0);
+        }
 
         public static void TakeScreenshotAndExit()
         {
-            Debug.Log("[ScreenshotTaker] Opening 02_HECTON_WORLD in Editor mode...");
-            UnityEditor.SceneManagement.EditorSceneManager.OpenScene("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
-            
-            _startTime = Time.realtimeSinceStartup;
-            _state = 0;
-            EditorApplication.update += EditorUpdate;
-            Debug.Log("[ScreenshotTaker] Hooked EditorApplication.update. Waiting for MapMagic generation...");
+            TakeSceneScreenshot("02", "Assets/_Project/Scenes/02_HECTON_WORLD.unity");
+            EditorApplication.Exit(0);
         }
 
-        private static void EditorUpdate()
+        public static void TakeSceneScreenshot(string suffix, string scenePath)
         {
-            if (_state == 0)
-            {
-                if (Time.realtimeSinceStartup - _startTime < 45.0f)
-                    return;
-                
-                _state = 1;
-                Debug.Log("[ScreenshotTaker] Capturing screenshot 1...");
-                CaptureScreenshot("terrain_runtime_1.png", new Vector3(0, 200, -200), Quaternion.Euler(45, 0, 0));
-                
-                _startTime = Time.realtimeSinceStartup;
-            }
-            else if (_state == 1)
-            {
-                if (Time.realtimeSinceStartup - _startTime < 2.0f)
-                    return;
+            Directory.CreateDirectory(OutputDir);
+            Debug.Log($"[H8Screenshot] Loading scene: {scenePath}");
+            EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
-                _state = 2;
-                Debug.Log("[ScreenshotTaker] Capturing screenshot 2...");
-                CaptureScreenshot("terrain_runtime_2.png", new Vector3(500, 50, 500), Quaternion.Euler(15, 45, 0));
-                
-                _startTime = Time.realtimeSinceStartup;
-            }
-            else if (_state == 2)
-            {
-                if (Time.realtimeSinceStartup - _startTime < 2.0f)
-                    return;
+            // Use scene camera or create survey cam
+            var cam = Object.FindAnyObjectByType<Camera>();
+            bool ownedCam = false;
+            GameObject surveyGO = null;
 
-                Debug.Log("[ScreenshotTaker] Done. Exiting.");
-                EditorApplication.update -= EditorUpdate;
-                EditorApplication.Exit(0);
-            }
-        }
-
-        private static void CaptureScreenshot(string filename, Vector3 pos, Quaternion rot)
-        {
-            Camera cam = Camera.main;
-            if (cam == null) cam = GameObject.FindObjectOfType<Camera>();
-            if (cam != null)
+            if (cam == null)
             {
-                cam.transform.position = pos;
-                cam.transform.rotation = rot;
+                surveyGO = new GameObject("H8_SurveyCam");
+                cam = surveyGO.AddComponent<Camera>();
+                cam.transform.position = new Vector3(0f, 150f, -200f);
+                cam.transform.rotation = Quaternion.Euler(25f, 0f, 0f);
+                cam.nearClipPlane = 1f;
+                cam.farClipPlane = 50000f;
+                cam.clearFlags = CameraClearFlags.Skybox;
+                ownedCam = true;
+                Debug.Log("[H8Screenshot] Created survey camera (no cam found in scene).");
             }
             else
             {
-                Debug.LogWarning("[ScreenshotTaker] No camera found!");
-                return;
+                Debug.Log($"[H8Screenshot] Using scene camera: {cam.name} at {cam.transform.position}");
             }
 
-            int width = 1920;
-            int height = 1080;
-            RenderTexture rt = new RenderTexture(width, height, 24);
-            cam.targetTexture = rt;
-            
-            Texture2D screenShot = new Texture2D(width, height, TextureFormat.RGB24, false);
-            cam.Render();
+            const int W = 1920, H_RES = 1080;
+            var rt = new RenderTexture(W, H_RES, 32, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            rt.Create();
+
+            string outPath = $"{OutputDir}shot_{suffix}.png";
+
+            // URP-aware render: use SubmitRenderRequest — the ONLY correct path in batchmode
+            var urpPipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (urpPipeline != null)
+            {
+                var request = new UniversalRenderPipeline.SingleCameraRequest();
+                request.destination = RTHandles.Alloc(rt);
+                if (RenderPipeline.SupportsRenderRequest(cam, request))
+                {
+                    RenderPipeline.SubmitRenderRequest(cam, request);
+                    Debug.Log("[H8Screenshot] Used URP SubmitRenderRequest.");
+                    request.destination.Release();
+                }
+                else
+                {
+                    // Fallback: will be clearColor in batchmode but doesn't crash
+                    cam.targetTexture = rt;
+                    cam.Render();
+                    cam.targetTexture = null;
+                    Debug.LogWarning("[H8Screenshot] SubmitRenderRequest not supported — fallback to cam.Render().");
+                }
+            }
+            else
+            {
+                cam.targetTexture = rt;
+                cam.Render();
+                cam.targetTexture = null;
+                Debug.LogWarning("[H8Screenshot] No URP pipeline asset found — using cam.Render() fallback.");
+            }
+
+            var tex = new Texture2D(W, H_RES, TextureFormat.RGB24, false);
             RenderTexture.active = rt;
-            screenShot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            screenShot.Apply();
-            cam.targetTexture = null;
-            RenderTexture.active = null; 
+            tex.ReadPixels(new Rect(0, 0, W, H_RES), 0, 0);
+            tex.Apply();
+            RenderTexture.active = null;
+
+            rt.Release();
             Object.DestroyImmediate(rt);
 
-            byte[] bytes = screenShot.EncodeToPNG();
-            string path = System.IO.Path.Combine(Application.dataPath, "../" + filename);
-            System.IO.File.WriteAllBytes(path, bytes);
-            Debug.Log($"[ScreenshotTaker] Saved {bytes.Length} bytes to {path}");
+            File.WriteAllBytes(outPath, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+
+            if (ownedCam && surveyGO != null)
+                Object.DestroyImmediate(surveyGO);
+
+            Debug.Log($"[H8Screenshot] Saved -> {outPath}");
         }
     }
 }

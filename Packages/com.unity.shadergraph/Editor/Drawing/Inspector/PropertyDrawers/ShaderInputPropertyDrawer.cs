@@ -160,6 +160,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
             BuildDisplayNameField(propertySheet);
             BuildReferenceNameField(propertySheet);
             BuildPromoteField(propertySheet);
+            BuildNoConnectorField(propertySheet);
             BuildPropertyFields(propertySheet);            
             BuildKeywordFields(propertySheet, shaderInput);
             BuildDropdownFields(propertySheet, shaderInput);
@@ -220,6 +221,27 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                 "Promote to final Shader",
                 out var promoteToggleVisualElement,
                 tooltip: "Promote this as a material property to the final shader. It will not show up as an input port on the Subgraph Node."));
+        }
+
+        void BuildNoConnectorField(PropertySheet propertySheet)
+        {
+            if (shaderInput is not AbstractShaderProperty property)
+                return;
+            if (!isSubGraph || property.promoteToFinalShader || property.hidden || !property.canHideConnector)
+                return;
+
+            var toggleDataPropertyDrawer = new ToggleDataPropertyDrawer();
+            propertySheet.Add(toggleDataPropertyDrawer.CreateGUI(
+                evt =>
+                {
+                    this._preChangeValueCallback("Change disable connector toggle");
+                    property.hideConnector = evt.isOn;
+                    this._postChangeValueCallback(true, ModificationScope.Topological);
+                },
+                new ToggleData(property.hideConnector),
+                "Disable connector",
+                out _,
+                tooltip: "Select this to prevent a port from appearing on the subgraph."));
         }
 
         void BuildExposedField(PropertySheet propertySheet)
@@ -621,7 +643,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
 
         void HandleVector1ShaderProperty(PropertySheet propertySheet, Vector1ShaderProperty vector1ShaderProperty)
         {
-            if (shaderInput.isExposed && (!isSubGraph || shaderInput.promoteToFinalShader) && !isCurrentPropertyGlobal)
+            if (shaderInput.isExposed && (!isSubGraph || shaderInput.promoteToFinalShader) && !isCurrentPropertyGlobal || isSubGraph && !shaderInput.promoteToFinalShader)
             {
                 var enumPropertyDrawer = new EnumPropertyDrawer();
                 propertySheet.Add(enumPropertyDrawer.CreateGUI(
@@ -630,33 +652,36 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                         this._preChangeValueCallback("Change Vector1 Mode");
                         vector1ShaderProperty.floatType = (FloatType)newValue;
                         this._postChangeValueCallback(true);
+                        this._dropdownChangedCallback();
                     },
                     vector1ShaderProperty.floatType,
                     "Mode",
                     FloatType.Default,
                     out var modePropertyEnumField,
-                    tooltip: "Indicate how this float property should appear in the material inspector UI."));
+                    tooltip: isSubGraph ? "Indicate which editor should appear on the node." : "Indicate how this float property should appear in the material inspector UI."));
             }
 
-            var floatType = (!shaderInput.isExposed || isSubGraph || isCurrentPropertyGlobal) && !shaderInput.promoteToFinalShader ? FloatType.Default : vector1ShaderProperty.floatType;
+            var floatType = vector1ShaderProperty.floatType;
             // Handle vector 1 mode parameters
             switch (floatType)
             {
                 case FloatType.Slider:
-                    var sliderTypePropertyDrawer = new EnumPropertyDrawer();
-                    propertySheet.Add(sliderTypePropertyDrawer.CreateGUI(
-                        newValue =>
-                        {
-                            this._preChangeValueCallback("Change Slider Type");
-                            vector1ShaderProperty.sliderType = (SliderType)newValue;
-                            this._postChangeValueCallback(true);
-                        },
-                        vector1ShaderProperty.sliderType,
-                    "Slider Type",
-                        SliderType.Default,
-                        out var sliderTypePropertyEnumField,
-                        tooltip: "Set the Slider type."));
-
+                    if (!isSubGraph) // slider type isn't supported in subgraphs
+                    {
+                        var sliderTypePropertyDrawer = new EnumPropertyDrawer();
+                        propertySheet.Add(sliderTypePropertyDrawer.CreateGUI(
+                            newValue =>
+                            {
+                                this._preChangeValueCallback("Change Slider Type");
+                                vector1ShaderProperty.sliderType = (SliderType)newValue;
+                                this._postChangeValueCallback(true);
+                            },
+                            vector1ShaderProperty.sliderType,
+                        "Slider Type",
+                            SliderType.Default,
+                            out var sliderTypePropertyEnumField,
+                            tooltip: "Set the Slider type."));
+                    }
                     var floatPropertyDrawer = new FloatPropertyDrawer();
                     // Default field
                     propertySheet.Add(floatPropertyDrawer.CreateGUI(
@@ -789,6 +814,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                             this._preChangeValueCallback("Change Enum Type");
                             vector1ShaderProperty.enumType = (EnumType)newValue;
                             this._postChangeValueCallback(true);
+                            this._dropdownChangedCallback();
                         },
                         (EnumTypeForUI)vector1ShaderProperty.enumType,
                         "Enum Type",
@@ -811,10 +837,16 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                                     newValue = GetSanitizedEnumRefName(newValue);
                                     vector1ShaderProperty.cSharpEnumString = newValue;
                                     this._postChangeValueCallback(true);
+                                    this._dropdownChangedCallback();
                                 },
                                 vector1ShaderProperty.cSharpEnumString,
                                 "C# Enum Type",
-                                tooltip: "Enter an Enum type."));
+                                tooltip: "Enter a fully qualified enum type name."));
+
+                            if (string.IsNullOrEmpty(vector1ShaderProperty.cSharpEnumString))
+                                propertySheet.Add(new HelpBoxRow($"Type name string is empty, must be a fully qualified enum type name.", MessageType.Error));
+                            else if (vector1ShaderProperty.cSharpEnumType == null)
+                                propertySheet.Add(new HelpBoxRow($"Type of '{vector1ShaderProperty.cSharpEnumString}' could not be found or is not an enum type.", MessageType.Error));
                             break;
                         case EnumType.KeywordEnum:
                         default:
@@ -1690,6 +1722,19 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                 propertySheet.Add(help);
             }
 
+            var isShaderBuildSettingsCompatibleDrawer = new ToggleDataPropertyDrawer();
+            propertySheet.Add(isShaderBuildSettingsCompatibleDrawer.CreateGUI(
+                newValue =>
+                {
+                    this._preChangeValueCallback("Change Keyword Allow Definition Override");
+                    keyword.IsShaderBuildSettingsCompatible = newValue.isOn;
+                    this._postChangeValueCallback(modificationScope: ModificationScope.Graph);
+                },
+                new ToggleData(keyword.IsShaderBuildSettingsCompatible),
+                "Allow Definition Override",
+                out VisualElement isShaderBuildSettingsCompatibleToggle,
+                tooltip: "Indicates whether this keyword's definition can be overridden by the project's shader build settings."));
+
             typeField.SetEnabled(!keyword.isBuiltIn);
             {
                 var isOverridablePropertyDrawer = new ToggleDataPropertyDrawer();
@@ -1698,15 +1743,15 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                 propertySheet.Add(isOverridablePropertyDrawer.CreateGUI(
                     newValue =>
                     {
-                        this._preChangeValueCallback("Change Keyword Is Overridable");
+                        this._preChangeValueCallback("Change Keyword Allow State Override");
                         keyword.keywordScope = newValue.isOn
                             ? KeywordScope.Global
                             : KeywordScope.Local;
                     },
                     new ToggleData(toggleState),
-                    "Is Overridable",
+                    "Allow State Override",
                     out keywordScopeField,
-                    tooltip: "Indicate whether this keyword's state can be overridden through the Shader.SetKeyword scripting interface."));
+                    tooltip: "Indicates whether this keyword's state can be overridden through the Shader.SetKeyword scripting interface."));
                 keywordScopeField.SetEnabled(enabledState);
             }
             BuildExposedField(propertySheet);
@@ -1761,6 +1806,24 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
         {
             // Clamp value between entry list
             int value = Mathf.Clamp(keyword.value, 0, keyword.entries.Count - 1);
+
+            // Include "none" entry
+            var includeNoneDrawer = new ToggleDataPropertyDrawer();
+            propertySheet.Add(includeNoneDrawer.CreateGUI(
+                (newValue) =>
+                {
+                    this._preChangeValueCallback("Change Include None Value");
+                    if (newValue.isOn)
+                        keyword.entries.Insert(0, new KeywordEntry(GetFirstUnusedKeywordID(), "None", string.Empty));
+                    else
+                        keyword.entries.RemoveAll(entry => entry.IsNoneKeyword);
+                    this._postChangeValueCallback();
+                    this._keywordChangedCallback();
+                },
+                new ToggleData(keyword.HasNoneEntry),
+                "Include \"none\" entry",
+                out VisualElement includeNoneToggle,
+                tooltip: "Indicates whether the enum can assume a \"none\" value as indicated by the \"_\" keyword."));
 
             // Default field
             var field = new PopupField<string>(keyword.entries.Select(x => x.displayName).ToList(), value);
@@ -1880,6 +1943,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                         vector1Property.enumValues[index] = value;
 
                         this._postChangeValueCallback(true);
+                        this._dropdownChangedCallback();
                     }
                 };
 
@@ -1898,6 +1962,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
 
                     // Update GUI
                     this._postChangeValueCallback(true);
+                    this._dropdownChangedCallback();
                     m_EnumSelectedIndex = list.count - 1;
                 };
 
@@ -1912,6 +1977,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
 
                     // Rebuild();
                     this._postChangeValueCallback(true);
+                    this._dropdownChangedCallback();
                     m_EnumSelectedIndex = m_EnumSelectedIndex >= list.list.Count - 1 ? list.list.Count - 1 : m_EnumSelectedIndex;
                 };
 
@@ -1950,6 +2016,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                     vector1Property.enumNames.Insert(newIndex, name);
                     vector1Property.enumValues.Insert(newIndex, value);
                     this._postChangeValueCallback(true);
+                    this._dropdownChangedCallback();
                 };
             }
         }
@@ -2008,6 +2075,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
             {
                 KeywordEntry entry = ((KeywordEntry)m_KeywordReorderableList.list[index]);
                 EditorGUI.BeginChangeCheck();
+                EditorGUI.BeginDisabled(entry.IsNoneKeyword);
 
                 Rect displayRect = new Rect(rect.x, rect.y, rect.width / 2, EditorGUIUtility.singleLineHeight);
                 var displayName = EditorGUI.DelayedTextField(displayRect, entry.displayName, EditorStyles.label);
@@ -2016,6 +2084,7 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
                 var referenceName = EditorGUI.TextField(new Rect(rect.x + rect.width / 2, rect.y, rect.width / 2, EditorGUIUtility.singleLineHeight), entry.referenceName,
                     keyword.isBuiltIn ? EditorStyles.label : greyLabel);
 
+                EditorGUI.EndDisabled();
                 if (EditorGUI.EndChangeCheck())
                 {
                     this._preChangeValueCallback("Edit Enum Keyword Entry");
@@ -2141,6 +2210,24 @@ namespace UnityEditor.ShaderGraph.Drawing.Inspector.PropertyDrawers
 
         void KeywordReorderEntries(ReorderableList list)
         {
+            if (shaderInput is not ShaderKeyword keyword)
+                return;
+
+            // Ensure that the "none" entry is always at position 0
+            int noneEntryIndex = 0;
+            for (; noneEntryIndex < list.list.Count; ++noneEntryIndex)
+            {
+                KeywordEntry entry = (KeywordEntry)list.list[noneEntryIndex];
+                if (entry.IsNoneKeyword)
+                    break;
+            }
+            if (0 < noneEntryIndex && noneEntryIndex < list.list.Count)
+            {
+                object noneEntry = list.list[noneEntryIndex];
+                list.list.RemoveAt(noneEntryIndex);
+                list.list.Insert(0, noneEntry);
+            }
+
             this._preChangeValueCallback("Reorder Keyword Entry");
             this._postChangeValueCallback(true);
             this._keywordChangedCallback();

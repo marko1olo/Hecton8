@@ -26,13 +26,13 @@ public static class CheckGeneratedMat {
         }
         EditorApplication.update -= OnUpdate;
         
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         string log = "";
         foreach (var t in terrains) {
             log += "Terrain " + t.name + ":\n";
             var mat = t.materialTemplate;
             if (mat != null) {
-                log += "  Material: " + mat.name + " (Instance ID: " + mat.GetInstanceID() + ")\n";
+                log += "  Material: " + mat.name + " (Instance ID: " + mat.GetHashCode() + ")\n";
                 log += "  Shader: " + mat.shader.name + "\n";
                 log += "  _AlbedoArray: " + (mat.GetTexture("_AlbedoArray") != null ? mat.GetTexture("_AlbedoArray").name : "null") + "\n";
                 log += "  _NormalArray: " + (mat.GetTexture("_NormalArray") != null ? mat.GetTexture("_NormalArray").name : "null") + "\n";
@@ -46,3 +46,4 @@ public static class CheckGeneratedMat {
         EditorApplication.Exit(0);
     }
 }
+

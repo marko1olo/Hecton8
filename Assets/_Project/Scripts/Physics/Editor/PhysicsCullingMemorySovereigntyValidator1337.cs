@@ -51,7 +51,7 @@ namespace Hecton8.Physics.Editor
 #if UNITY_2023_1_OR_NEWER
             return Object.FindAnyObjectByType<GlobalPhysicsStateManager>();
 #else
-            return Object.FindObjectOfType<GlobalPhysicsStateManager>();
+            return Object.FindAnyObjectByType<GlobalPhysicsStateManager>();
 #endif
         }
     }

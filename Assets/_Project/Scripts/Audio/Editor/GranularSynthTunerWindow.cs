@@ -205,7 +205,7 @@ namespace Hecton8.Audio.Editor
 #if UNITY_2023_1_OR_NEWER
             PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>(FindObjectsInactive.Include);
 #else
-            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindObjectOfType<PlayerCriticalProceduralAudioRenderer>();
+            PlayerCriticalProceduralAudioRenderer sceneRenderer = UnityEngine.Object.FindAnyObjectByType<PlayerCriticalProceduralAudioRenderer>();
 #endif
             return IsRendererUsable(sceneRenderer, requireReady) ? sceneRenderer : null;
         }

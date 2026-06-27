@@ -58,15 +58,6 @@ When real workstation GUI/process control is required, use:
 
 These are GUI/process-control tools, not subagent rules. Do not persist raw CSRF tokens or secrets in memory, reports, prompts, or chat.
 
-[NO-LOSS PROVENANCE]
-This file was reduced from a HECTON-8-specific always-on rule copy into a router on 2026-06-05. The full previous text is preserved at:
-
-`C:\Users\danat\.gemini\recovery_backups\GEMINI_full_before_router_20260605.md`
-
-That preserved file is recovery/provenance material, not active authority, unless a current project authority explicitly imports it.
-
-
-
 [OTHER ROUTES] (NON - HECTON).
 
 Feel free to explore outside hecton8, create new files, folders. You're free to act.

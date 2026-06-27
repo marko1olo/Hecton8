@@ -209,8 +209,7 @@ namespace Hecton8.Quest
                 false,
                 0,
                 camera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void RegisterRuntime()

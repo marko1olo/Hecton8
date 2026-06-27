@@ -1127,8 +1127,7 @@ namespace Hecton8.UI
                 false,
                 renderLayer,
                 camera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void BindPropertyBlockIfDirty(

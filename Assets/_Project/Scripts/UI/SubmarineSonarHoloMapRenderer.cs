@@ -160,8 +160,7 @@ namespace Hecton8.UI
                 ShadowCastingMode.Off,
                 false,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private static Vector3 ResolveAnchorRuntimePosition(Transform anchor)

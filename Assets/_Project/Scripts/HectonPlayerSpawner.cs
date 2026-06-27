@@ -344,6 +344,8 @@ public class HectonPlayerSpawner : MonoBehaviour
 #endif
             enabled = false;
         }
+
+        Debug.Log($"[HectonPlayerSpawner-DEBUG] Awake FINISHED. InstanceID={this.GetHashCode()}, playerRigidbody is {(System.Object.ReferenceEquals(playerRigidbody, null) ? "REAL_NULL" : (playerRigidbody == null ? "DESTROYED" : "VALID"))}");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -364,6 +366,14 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// </summary>
     public async Awaitable SpawnPlayerAsync(CancellationToken ct)
     {
+        Debug.Log($"[HectonPlayerSpawner-DEBUG] SpawnPlayerAsync STARTED. InstanceID={gameObject.GetEntityId()}, playerRigidbody is {(System.Object.ReferenceEquals(playerRigidbody, null) ? "REAL_NULL" : (playerRigidbody == null ? "DESTROYED" : "VALID"))}");
+        
+        if (playerRigidbody != null) {
+            Debug.Log("[HectonPlayerSpawner-DEBUG] playerRigidbody name: " + playerRigidbody.gameObject.name);
+            Debug.Log("[HectonPlayerSpawner-DEBUG] Has Movement: " + (playerRigidbody.gameObject.GetComponent<IBootstrapProductionPlayerMovementAuthority>() != null));
+            Debug.Log("[HectonPlayerSpawner-DEBUG] Has Interaction: " + (playerRigidbody.gameObject.GetComponent<IBootstrapProductionPlayerInteractionAuthority>() != null));
+        }
+
         if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -900,7 +910,13 @@ public class HectonPlayerSpawner : MonoBehaviour
 
         GameObject instance = Instantiate(productionPlayerPrefab, transform.position, transform.rotation);
         if (instance != null)
+        {
             instance.name = productionPlayerPrefab.name;
+            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(instance, this.gameObject.scene);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogSpawner($"[HectonPlayerSpawner-DEBUG] Instantiated player into scene: {instance.scene.name}");
+#endif
+        }
 
         if (instance != null &&
             TryAcceptProductionPlayerTransform(instance.transform, out body, out movement))

@@ -529,7 +529,7 @@ namespace Hecton8.Gameplay
             _isOverheated = false;
             _overheatCooldownTimer = 0f;
             _beamMode = defaultBeamMode;
-            _proxyLightKey = GetInstanceID();
+            _proxyLightKey = this.GetHashCode();
 
             CachePlayerRuntimeContextCold();
             FlashlightEvents.PrewarmSignalLane();

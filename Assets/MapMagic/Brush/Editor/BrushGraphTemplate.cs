@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
@@ -28,9 +28,9 @@ namespace MapMagic.Nodes.GUI
 					null);
 			}
 
-			class TmpCallbackRecieverBrush : UnityEditor.ProjectWindowCallback.EndNameEditAction
+			class TmpCallbackRecieverBrush : UnityEditor.ProjectWindowCallback.AssetCreationEndAction
 			{
-				public override void Action(int instanceId, string pathName, string resourceFile)
+				public override void Action(UnityEngine.EntityId instanceId, string pathName, string resourceFile)
 				{
 					Graph graph = CreateBrushErosionTemplate();
 					graph.name = System.IO.Path.GetFileName(pathName);

@@ -779,7 +779,9 @@ namespace Hecton8.Gameplay
                 markerSystem.Initialize(scannerMarkerMesh, scannerMarkerMaterial);
 
             if (!TryGetComponent(out _dataArchaeology))
-                _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
+            {
+                Hecton8.Core.H8Debug.LogError("[ScannerTool] Fatal: Missing DataArchaeologyRuntime component on scanner prefab.", this);
+            }
         }
 
         public override void OnEquip()

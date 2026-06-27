@@ -4,7 +4,7 @@ using UnityEditor.SceneManagement;
 public class AnalyzeSplatmaps {
     public static void Execute() {
         EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity");
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         foreach(var t in terrains) {
             if (t.transform.position.sqrMagnitude < 1000) { // closest to origin
                 var alphamaps = t.terrainData.GetAlphamaps(0, 0, t.terrainData.alphamapWidth, t.terrainData.alphamapHeight);

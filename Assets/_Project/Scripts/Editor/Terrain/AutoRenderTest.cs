@@ -40,7 +40,7 @@ namespace Hecton8.Editor.Terrain
             EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity");
             
             // Find MapMagic and force generate
-            var mmObject = Object.FindObjectOfType<MapMagic.Core.MapMagicObject>();
+            var mmObject = Object.FindAnyObjectByType<MapMagic.Core.MapMagicObject>();
             if (mmObject != null)
             {
                 // Change seed to force a completely fresh evaluation

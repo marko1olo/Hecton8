@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System;
 using System.Reflection;
@@ -69,7 +69,7 @@ namespace MoreMountains.Tools
 			}
 			foreach (KeyValuePair<string, MMInspectorGroupData> groupData in GroupData)
 			{
-				EditorPrefs.SetBool(string.Format($"{groupData.Value.GroupAttribute.GroupName}{groupData.Value.PropertiesList[0].name}{target.GetInstanceID()}"), groupData.Value.GroupIsOpen);
+				EditorPrefs.SetBool(string.Format($"{groupData.Value.GroupAttribute.GroupName}{groupData.Value.PropertiesList[0].name}{target.GetHashCode()}"), groupData.Value.GroupIsOpen);
 				groupData.Value.ClearGroup();
 			}
 		}
@@ -130,7 +130,7 @@ namespace MoreMountains.Tools
 
 				if (!GroupData.TryGetValue(group.GroupName, out groupData))
 				{
-					bool groupIsOpen = EditorPrefs.GetBool(string.Format($"{group.GroupName}{fieldInfoList[i].Name}{target.GetInstanceID()}"), false);
+					bool groupIsOpen = EditorPrefs.GetBool(string.Format($"{group.GroupName}{fieldInfoList[i].Name}{target.GetHashCode()}"), false);
 					GroupData.Add(group.GroupName, new MMInspectorGroupData
 					{
 						GroupAttribute = group,

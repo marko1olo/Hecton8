@@ -125,9 +125,6 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (TryAbortForUsableExistingRuntime())
-                return;
-
             _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage.AsSpan());
             _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
         }
@@ -170,14 +167,13 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
-            if (TryAbortForUsableExistingRuntime())
-                return;
-
             GlobalRegistry.RegisterScanLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ScanLog, this);
             if (_serviceRegistered)
                 s_activeRuntimeInstance = this;
         }
+
+
 
         private bool TryAbortForUsableExistingRuntime()
         {
@@ -186,7 +182,6 @@ namespace Hecton8.Gameplay
             {
                 if (IsScanLogRuntimeUsable(active))
                 {
-                    ClearScanArchivedNotificationDiagnostics();
                     Destroy(gameObject);
                     return true;
                 }
@@ -204,14 +199,11 @@ namespace Hecton8.Gameplay
             if (IsScanLogRuntimeUsable(registered))
             {
                 s_activeRuntimeInstance = registered;
-                ClearScanArchivedNotificationDiagnostics();
                 Destroy(gameObject);
                 return true;
             }
 
             GlobalRegistry.UnregisterScanLogRuntime(registered);
-            if (ReferenceEquals(s_activeRuntimeInstance, registered))
-                s_activeRuntimeInstance = null;
             return false;
         }
 

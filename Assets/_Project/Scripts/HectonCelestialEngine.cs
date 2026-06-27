@@ -1049,6 +1049,17 @@ namespace Hecton8.Celestial
         [SerializeField, Min(8f)] private float _surfaceCloudShadowCookieSize = 420f;
         [SerializeField, Min(0f)] private float _surfaceCloudShadowCookieScrollSpeed = 8f;
 
+        public void ApplyTuningState(float planetCenterRadius, float sunIntensity, Color sunColor)
+        {
+            aegirSkyProjection.fallbackAngularRadius = math.clamp(planetCenterRadius / 100f, 0.05f, 0.65f);
+            
+            if (sunLight != null)
+            {
+                sunLight.intensity = sunIntensity;
+                sunLight.color = sunColor;
+            }
+        }
+
         [Header("Aegir Ring Shadow Cookie")]
         [Tooltip("Authored directional-light cookie with parallel ring-shadow stripes. Enabled only while Aegir is above the observer horizon.")]
         [SerializeField] private Texture2D aegirRingShadowCookie;

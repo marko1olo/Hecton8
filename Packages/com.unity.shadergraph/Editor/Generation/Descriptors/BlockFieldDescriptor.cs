@@ -35,4 +35,22 @@ namespace UnityEditor.ShaderGraph
         }
     }
 
+    // TODO: This exposes the MaterialSlot API
+    // TODO: This needs to be removed but is currently required by HDRP for DiffusionProfileInputMaterialSlot
+    internal class CustomSlotBlockFieldDescriptor : BlockFieldDescriptor
+    {
+        public Func<MaterialSlot> createSlot;
+
+        public CustomSlotBlockFieldDescriptor(string tag, string referenceName, string define, Func<MaterialSlot> createSlot)
+            : base(tag, referenceName, define, null, ShaderStage.Fragment)
+        {
+            this.createSlot = createSlot;
+        }
+
+        public CustomSlotBlockFieldDescriptor(string tag, string referenceName, string displayName, string define, Func<MaterialSlot> createSlot)
+            : base(tag, referenceName, displayName, define, null, ShaderStage.Fragment)
+        {
+            this.createSlot = createSlot;
+        }
+    }
 }

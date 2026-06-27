@@ -186,9 +186,6 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (TryAbortForUsableExistingRuntime())
-                return;
-
             _signalSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(GetEntityId()));
             RefreshColdRegistryReferences();
             AutoResolve(true);
@@ -233,9 +230,6 @@ namespace Hecton8.Gameplay
             if (_serviceRegistered || !Application.isPlaying)
                 return true;
 
-            if (TryAbortForUsableExistingRuntime())
-                return false;
-
             GlobalRegistry.RegisterPDAExchangeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAExchange, this);
             return _serviceRegistered;
@@ -267,24 +261,7 @@ namespace Hecton8.Gameplay
             _serviceRegistered = false;
         }
 
-        private bool TryAbortForUsableExistingRuntime()
-        {
-            if (!Application.isPlaying)
-                return false;
 
-            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
-            if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
-                return false;
-
-            if (IsPDAExchangeRuntimeUsable(registered))
-            {
-                Destroy(gameObject);
-                return true;
-            }
-
-            GlobalRegistry.UnregisterPDAExchangeRuntime(registered);
-            return false;
-        }
 
         private static bool IsPDAExchangeRuntimeUsable(PDAExchangeSystem system)
         {

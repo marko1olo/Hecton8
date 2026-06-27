@@ -4344,6 +4344,16 @@ namespace Hecton8.Gameplay
             TriggerHypoxiaVisorDistortion(intensity, holdDuration, recoverySpeed);
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void OnDestroy()
+        {
+            if (this != null && gameObject != null)
+            {
+                Hecton8.Core.H8Debug.Log($"[HectonPlayerMovement-DEBUG] OnDestroy called on player! InstanceID={gameObject.GetEntityId()}\n" + UnityEngine.StackTraceUtility.ExtractStackTrace());
+            }
+        }
+#endif
+
         private void Awake()
         {
             EnsureDegreeSinCosLutInitialized();

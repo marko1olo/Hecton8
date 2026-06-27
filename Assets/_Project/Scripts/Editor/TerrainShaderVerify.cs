@@ -114,7 +114,7 @@ public static class TerrainShaderVerify
         if (cam == null)
         {
             // Find any camera
-            var cams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+            var cams = Object.FindObjectsByType<Camera>();
             if (cams.Length > 0) cam = cams[0];
         }
 

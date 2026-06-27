@@ -794,6 +794,7 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
 
             if (this.ShowNonAddressables)
             {
+/*
                 var searchFilter = "";
 
                 foreach (Type filterType in this.filterTypes)
@@ -866,6 +867,7 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
 
                     nonAddressablesItem.ChildMenuItems.SortMenuItemsByName();
                 }
+*/
             }
 
             OdinMenuItem noneItem;

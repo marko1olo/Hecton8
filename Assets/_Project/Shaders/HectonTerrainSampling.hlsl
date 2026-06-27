@@ -24,6 +24,64 @@ struct TerrainSample
     float ao;
 };
 
+// --- MACRO NOISE ANTI-TILING GENERATOR ---
+float HectonHash2D(float2 p)
+{
+    // High-quality PRNG hash to eliminate grid tiling artifacts
+    float3 p3  = frac(float3(p.xyx) * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return frac((p3.x + p3.y) * p3.z);
+}
+
+float HectonNoise2D(float2 p)
+{
+    float2 i = floor(p);
+    float2 f = frac(p);
+    float2 u = f * f * (3.0 - 2.0 * f);
+
+    return lerp(lerp(HectonHash2D(i + float2(0.0, 0.0)), 
+                     HectonHash2D(i + float2(1.0, 0.0)), u.x),
+                lerp(HectonHash2D(i + float2(0.0, 1.0)), 
+                     HectonHash2D(i + float2(1.0, 1.0)), u.x), u.y);
+}
+
+float HectonMacroNoise(float2 p)
+{
+    float v = 0.0;
+    v += HectonNoise2D(p) * 0.6;
+    v += HectonNoise2D(p * 2.5 + float2(3.1, 1.7)) * 0.4;
+    return v;
+}
+
+void SampleTerrainLayerWithMacroNoise(float2 baseUV, float2 macroNoiseUV, float layerIndex, out float3 albedo, out float3 normal, out float4 mask)
+{
+    // 1. Generate low-frequency macro noise
+    float macroNoise = HectonMacroNoise(macroNoiseUV);
+
+    // 2. Sample at two different scales, rotations, and offsets to break tiling patterns
+    float2 uv1 = baseUV;
+    float2 uv2 = float2(baseUV.y, -baseUV.x) * 0.618 + float2(0.37, 0.19);
+
+    float3 a1 = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uv1, layerIndex).rgb;
+    float3 n1 = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uv1, layerIndex).rgb;
+    float4 m1 = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uv1, layerIndex);
+
+    float3 a2 = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uv2, layerIndex).rgb;
+    float3 n2 = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uv2, layerIndex).rgb;
+    float4 m2 = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uv2, layerIndex);
+
+    // 3. Blend them based on the macro noise
+    albedo = lerp(a1, a2, macroNoise);
+    normal = lerp(n1, n2, macroNoise);
+    mask   = lerp(m1, m2, macroNoise);
+    
+    // 4. Large-scale macro color blend to destroy repetition across the landscape
+    float colorNoise = HectonNoise2D(macroNoiseUV * 0.15) * 0.5 + 0.5; // Smooth large gradient
+    float3 tintA = float3(0.7, 0.75, 0.8);
+    float3 tintB = float3(1.0, 0.95, 0.9);
+    albedo *= lerp(tintA, tintB, colorNoise);
+}
+
 // 8 layers from _Control and _Control1
 TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worldPos, float3 worldNormal, float3 viewDirTS)
 {
@@ -41,10 +99,26 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     weights[7] = ctrl1.a;
 
     float uvScale = _HectonUVScale;
-    float2 uv  = detailUV * uvScale;
+    if (uvScale < 0.0001) uvScale = 1.0; // Fallback: 1.0 keeps detailUV as-is
 
-    // --- HEIGHT BLENDING ---
-    // Sample height for all present layers to sharpen transitions and avoid mud
+    // Top-down UV: use detailUV (terrain local 0..1) scaled by uvScale
+    // Do NOT use worldPos.xz — it breaks UV continuity across chunks at low uvScale values
+    float2 uvXZ = detailUV * uvScale;
+    // Biplanar wall projections still use worldPos for correct cliff texturing
+    float2 uvXY = worldPos.xy * uvScale;
+    float2 uvZY = worldPos.zy * uvScale;
+
+    // Нормаль для весов
+    float3 absNormal = abs(worldNormal);
+    // Отсекаем слабую ось для Biplanar
+    float3 biW = absNormal;
+    if (biW.x <= biW.y && biW.x <= biW.z) biW.x = 0;
+    else if (biW.y <= biW.x && biW.y <= biW.z) biW.y = 0;
+    else biW.z = 0;
+    
+    biW /= (biW.x + biW.y + biW.z + 1e-6);
+
+    // Height blending over the Y axis mostly, to sharpen material transitions
     float blend[8];
     float maxBlend = 0.0;
     [unroll]
@@ -52,7 +126,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     {
         if (weights[h] > 0.001)
         {
-            float height = SAMPLE_TEXTURE2D_ARRAY(_MaskArray, sampler_LinearRepeat, uv, (float)h).b;
+            float height = SAMPLE_TEXTURE2D_ARRAY(_MaskArray, sampler_LinearRepeat, uvXZ, (float)h).b;
             blend[h] = weights[h] + height;
             maxBlend = max(maxBlend, blend[h]);
         }
@@ -62,7 +136,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
         }
     }
 
-    float heightTransition = 0.15; // Lower means sharper transitions
+    float heightTransition = 0.15;
     float totalW = 0.001;
     [unroll]
     for (int w = 0; w < 8; w++)
@@ -74,7 +148,6 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
         }
     }
 
-    // Normalize
     float invW = 1.0 / totalW;
     [unroll]
     for (int i = 0; i < 8; i++) weights[i] *= invW;
@@ -91,69 +164,42 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
         [branch]
         if (weights[k] > 0.001)
         {
-            float2 curUV = uv;
+            float3 a = 0;
+            float3 n = 0;
+            float4 m = 0;
 
-            float3 a = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, curUV, (float)k).rgb;
-            float3 n = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, curUV, (float)k).rgb;
-            float4 m = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, curUV, (float)k);
+            float3 a_y = 0; float3 n_y = 0; float4 m_y = 0;
+            float3 a_x = 0; float3 n_x = 0; float4 m_x = 0;
+            float3 a_z = 0; float3 n_z = 0; float4 m_z = 0;
 
-            // Stochastic macro-variation on flat sediment (0, 2, 5)
-            if (k == 0 || k == 2 || k == 5)
+            [branch] if (biW.y > 0)
             {
-                float2 uv2  = curUV * 0.41 + 0.3;
-
-                float3 a2 = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uv2, (float)k).rgb;
-                float3 n2 = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uv2, (float)k).rgb;
-                float4 m2 = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uv2, (float)k);
-
-                // Multi-scale stochastic variation to completely hide tiling from a distance
-                float noiseLarge = sin(worldPos.x * 0.002) * cos(worldPos.z * 0.0031);
-                float noiseMedium = sin(worldPos.x * 0.013 + worldPos.z * 0.009) * cos(worldPos.x * 0.011 - worldPos.z * 0.017);
-                float noiseSmall = sin(worldPos.x * 0.05) * cos(worldPos.z * 0.07);
-                
-                float noise = saturate((noiseLarge * 0.5 + noiseMedium * 0.35 + noiseSmall * 0.15) * 0.5 + 0.5);
-
-                a = lerp(a, a2, noise);
-                n = lerp(n, n2, noise);
-                m = lerp(m, m2, noise);
+                SampleTerrainLayerWithMacroNoise(uvXZ, worldPos.xz * 0.0015, (float)k, a_y, n_y, m_y);
+                a += a_y * biW.y;
+                n += n_y * biW.y;
+                m += m_y * biW.y;
+            }
+            [branch] if (biW.x > 0)
+            {
+                SampleTerrainLayerWithMacroNoise(uvZY, worldPos.zy * 0.0015, (float)k, a_x, n_x, m_x);
+                a += a_x * biW.x;
+                // Swizzle normal for X plane
+                n += float3(n_x.z, n_x.y, n_x.x) * biW.x;
+                m += m_x * biW.x;
+            }
+            [branch] if (biW.z > 0)
+            {
+                SampleTerrainLayerWithMacroNoise(uvXY, worldPos.xy * 0.0015, (float)k, a_z, n_z, m_z);
+                a += a_z * biW.z;
+                // Swizzle normal for Z plane
+                n += float3(n_z.x, n_z.z, n_z.y) * biW.z;
+                m += m_z * biW.z;
             }
 
             // Decode BC5 normal
             float3 nd;
             nd.xy = n.rg * 2.0 - 1.0;
             nd.z  = sqrt(max(1e-6, 1.0 - dot(nd.xy, nd.xy)));
-
-            float slope = abs(worldNormal.y);
-            // Universal Triplanar on ALL layers on steep slopes to prevent vertical stretching
-            if (slope < 0.7)
-            {
-                float triplanarScale = 0.05; // 20m per tile
-                float2 uvX  = worldPos.zy * triplanarScale;
-                float2 uvZ  = worldPos.xy * triplanarScale;
-
-                float3 aX = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uvX, (float)k).rgb;
-                float3 nX = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uvX, (float)k).rgb;
-                float4 mX = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uvX, (float)k);
-
-                float3 aZ = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_LinearRepeat, uvZ, (float)k).rgb;
-                float3 nZ = SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_LinearRepeat, uvZ, (float)k).rgb;
-                float4 mZ = SAMPLE_TEXTURE2D_ARRAY(_MaskArray,   sampler_LinearRepeat, uvZ, (float)k);
-
-                float bF     = pow(1.0 - saturate(slope / 0.7), _HectonTriplanarBlend);
-                float normX  = abs(worldNormal.x);
-                float normZ  = abs(worldNormal.z);
-                float triTot = max(0.001, normX + normZ);
-
-                float3 nXd; nXd.xy = nX.rg * 2.0 - 1.0; nXd.z = sqrt(max(1e-6, 1.0 - dot(nXd.xy, nXd.xy)));
-                float3 nZd; nZd.xy = nZ.rg * 2.0 - 1.0; nZd.z = sqrt(max(1e-6, 1.0 - dot(nZd.xy, nZd.xy)));
-
-                float3 tsX = float3(nXd.z * sign(worldNormal.x), nXd.x, nXd.y);
-                float3 tsZ = float3(nZd.x, nZd.z * sign(worldNormal.z), nZd.y);
-
-                a  = lerp(a,  (aX * normX + aZ * normZ) / triTot, bF);
-                nd = lerp(nd, (tsX * normX + tsZ * normZ) / triTot, bF);
-                m  = lerp(m,  (mX * normX + mZ * normZ)  / triTot, bF);
-            }
 
             albedo    += a    * weights[k];
             normalTS  += nd   * weights[k];

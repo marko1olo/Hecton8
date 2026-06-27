@@ -60,7 +60,7 @@ public static class CaptureScreenshotTool
             
             // Try to find a tile
             Vector3 camPos = new Vector3(0, 300, 0);
-            var transforms = GameObject.FindObjectsByType<Transform>(FindObjectsSortMode.None);
+            var transforms = GameObject.FindObjectsByType<Transform>();
             bool foundTile = false;
             foreach (var t in transforms)
             {

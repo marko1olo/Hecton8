@@ -1880,7 +1880,7 @@ namespace Hecton8.Scavenging
                 return;
 
 #if UNITY_EDITOR
-            GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
+            GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
             for (int i = 0; i < objects.Length; i++)
             {
                 GameObject candidate = objects[i];

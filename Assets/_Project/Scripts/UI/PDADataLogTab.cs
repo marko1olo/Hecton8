@@ -2467,8 +2467,7 @@ namespace Hecton8.UI
                 UnityEngine.Rendering.ShadowCastingMode.Off,
                 false,
                 null,
-                UnityEngine.Rendering.LightProbeUsage.Off,
-                null);
+                UnityEngine.Rendering.LightProbeUsage.Off);
         }
 
         private static float EvaluateCheapWaveSigned(float phaseRadians)

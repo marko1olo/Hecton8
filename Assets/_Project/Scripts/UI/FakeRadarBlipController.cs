@@ -578,8 +578,7 @@ namespace Hecton8.UI
                 false,
                 HudInternalLayerIndex,
                 renderCamera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void ApplyRadarBlipMaterialProperties()

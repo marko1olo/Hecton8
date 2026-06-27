@@ -99,6 +99,16 @@ namespace UnityEditor.ShaderGraph
             set => OnCustomBlockFieldModified(customName, customWidth, value);
         }
 
+        // A helper method to create a temporary BlockNode for use during code generation.
+        public static BlockNode CreateInlineBlockNode(BlockFieldDescriptor fieldDescriptor, GraphData owner)
+        {
+            BlockNode result = new BlockNode();
+            result.Init(fieldDescriptor);
+            result.owner = owner;
+            result.Concretize();
+            return result;
+        }
+
         public void Init(BlockFieldDescriptor fieldDescriptor)
         {
             m_Descriptor = fieldDescriptor;
@@ -107,6 +117,16 @@ namespace UnityEditor.ShaderGraph
             name = !isCustomBlock
                 ? $"{fieldDescriptor.tag}.{fieldDescriptor.name}"
                 : $"{BlockFields.VertexDescription.name}.{k_CustomBlockDefaultName}";
+
+            // TODO: This exposes the MaterialSlot API
+            // TODO: This needs to be removed but is currently required by HDRP for DiffusionProfileInputMaterialSlot
+            if (m_Descriptor is CustomSlotBlockFieldDescriptor customSlotDescriptor)
+            {
+                var newSlot = customSlotDescriptor.createSlot();
+                AddSlot(newSlot);
+                RemoveSlotsNameNotMatching(new int[] { 0 });
+                return;
+            }
 
             AddSlotFromControlType();
         }
@@ -118,6 +138,7 @@ namespace UnityEditor.ShaderGraph
 
         private void AddSlotFromControlType(bool attemptToModifyExisting = true)
         {
+            // TODO: this should really just use callbacks like the CustomSlotBlockFieldDescriptor. then we wouldn't need this switch to make a copy
             var stageCapability = m_Descriptor.shaderStage.GetShaderStageCapability();
             switch (descriptor.control)
             {

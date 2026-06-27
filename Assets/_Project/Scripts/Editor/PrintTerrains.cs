@@ -3,7 +3,7 @@ using UnityEditor;
 
 public static class PrintTerrains {
     public static void Execute() {
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         foreach (var t in terrains) {
             Debug.Log("TERRAIN: " + t.name);
             var m = t.materialTemplate;

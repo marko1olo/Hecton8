@@ -402,8 +402,7 @@ namespace Hecton8.UI
                 false,
                 renderLayer,
                 renderCamera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private Camera ResolveRenderCamera()

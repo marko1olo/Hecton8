@@ -14,6 +14,7 @@ namespace UnityEditor.ShaderGraph
         , IGeneratesBodyCode
         , IOnAssetEnabled
         , IGeneratesFunction
+        , IHasAssetDependencies
         , IMayRequireNormal
         , IMayRequireTangent
         , IMayRequireBitangent
@@ -392,7 +393,6 @@ namespace UnityEditor.ShaderGraph
             var toFix = new HashSet<(SlotReference from, SlotReference to)>();
             foreach (var prop in props)
             {
-                SlotValueType valueType = prop.concreteShaderValueType.ToSlotValueType();
                 var propertyString = prop.guid.ToString();
                 var propertyIndex = m_PropertyGuids.IndexOf(propertyString);
                 if (propertyIndex < 0)
@@ -418,12 +418,7 @@ namespace UnityEditor.ShaderGraph
                 }
 
                 MaterialSlot slot;
-                if (prop is Vector1ShaderProperty { LiteralFloatMode: true })
-                {
-                    slot = new Vector1MaterialSlot(id, prop.displayName, prop.referenceName, SlotType.Input, 0, literal:true);
-                }
-                else
-                    slot = MaterialSlot.CreateMaterialSlot(valueType, id, prop.displayName, prop.referenceName, SlotType.Input, Vector4.zero);
+                slot = MaterialSlot.CreateMaterialSlotFromProperty(prop, id);
 
                 // Copy defaults
                 switch (prop.concreteShaderValueType)

@@ -170,8 +170,7 @@ namespace Hecton8.VFX
                 shadowCastingMode,
                 receiveShadows,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)

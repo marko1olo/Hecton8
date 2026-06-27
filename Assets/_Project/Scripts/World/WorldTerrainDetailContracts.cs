@@ -174,21 +174,29 @@ namespace Hecton8.World
             float provinceJitter = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x51A7E531u, 900f);
             float localPatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0xB34ACE21u, 240f);
 
-            float steepSlope = math.smoothstep(0.35f, 0.55f, sample.Slope01);
-            float verySteep = math.smoothstep(0.55f, 0.85f, sample.Slope01);
+            // CALIBRATED SPLATMAP MATH
+            // With slope01 = tan(theta) * 0.6:
+            // 45 deg -> ~0.60
+            float steepSlope = math.smoothstep(0.4f, 0.8f, sample.Slope01);
+            float verySteep = math.smoothstep(0.60f, 0.90f, sample.Slope01);
             
             // Hard rock dominates completely on steep walls
-            float rockBase = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f));
+            float rockBase = math.saturate((hardRock * 0.5f) + (ridge * 0.3f) + (sample.FaultMask * 0.2f) - (sediment * 0.3f));
             float finalRock = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
 
             // Add high contrast to sand vs silt patches using noise
             float patchContrast = math.smoothstep(0.3f, 0.7f, localPatch);
 
+            // Depth dependent base (Sand on shelf, Silt in abyss)
+            float depthLerp = math.saturate((sample.DepthMeters - 200f) / 1800f);
+            float baseSand = math.lerp(0.85f, 0.1f, depthLerp);
+            float baseSilt = math.lerp(0.1f, 0.85f, depthLerp);
+
             WorldTerrainSurfaceMaterialWeights weights = new WorldTerrainSurfaceMaterialWeights
             {
-                ShellSand = math.saturate(((shelf * shallow * flat * 0.62f) + (terrace * shallow * 0.20f) + patchContrast * 0.4f) * (1f - finalRock)),
-                LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)) * (1f - finalRock)),
-                ClaySilt = math.saturate(((sediment * (0.58f + basin * 0.30f)) + (slump * 0.18f) + (flat * abyss * 0.16f) + (1f - patchContrast) * 0.4f) * (1f - finalRock)),
+                ShellSand = math.saturate((baseSand * flat + patchContrast * 0.25f + terrace * 0.2f) * (1f - finalRock)),
+                LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f)) * (1f - finalRock)),
+                ClaySilt = math.saturate((baseSilt * flat + (1f - patchContrast) * 0.25f + basin * 0.3f) * (1f - finalRock)),
                 HardRock = finalRock,
                 BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (math.smoothstep(2200f, 2800f, sample.DepthMeters) * basin * 0.12f)) * (1f - finalRock)),
                 ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f) * (1f - finalRock)),

@@ -44,14 +44,22 @@ namespace Hecton8.World
                 if (_instancedMaterial != null && customTerrainMaterial != null)
                 {
                     // Copy textures (AlbedoArray, NormalArray, etc) that might have been updated
-                    // We don't use CopyPropertiesFromMaterial directly here because it might overwrite everything,
-                    // but we can copy the specific global arrays.
                     if (customTerrainMaterial.HasProperty("_AlbedoArray")) _instancedMaterial.SetTexture("_AlbedoArray", customTerrainMaterial.GetTexture("_AlbedoArray"));
                     if (customTerrainMaterial.HasProperty("_NormalArray")) _instancedMaterial.SetTexture("_NormalArray", customTerrainMaterial.GetTexture("_NormalArray"));
                     if (customTerrainMaterial.HasProperty("_MaskArray")) _instancedMaterial.SetTexture("_MaskArray", customTerrainMaterial.GetTexture("_MaskArray"));
+
+#if UNITY_EDITOR
+                    // Robust loading for Batchmode tests when material references might be lost
+                    if (_instancedMaterial.GetTexture("_AlbedoArray") == null)
+                        _instancedMaterial.SetTexture("_AlbedoArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset"));
+                    if (_instancedMaterial.GetTexture("_NormalArray") == null)
+                        _instancedMaterial.SetTexture("_NormalArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset"));
+                    if (_instancedMaterial.GetTexture("_MaskArray") == null)
+                        _instancedMaterial.SetTexture("_MaskArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset"));
+#endif
                     
-                    _instancedMaterial.SetFloat("_HectonUVScale", customTerrainMaterial.GetFloat("_HectonUVScale"));
-                    _instancedMaterial.SetFloat("_HectonTriplanarBlend", customTerrainMaterial.GetFloat("_HectonTriplanarBlend"));
+                    if (customTerrainMaterial.HasProperty("_HectonUVScale")) _instancedMaterial.SetFloat("_HectonUVScale", customTerrainMaterial.GetFloat("_HectonUVScale"));
+                    if (customTerrainMaterial.HasProperty("_HectonTriplanarBlend")) _instancedMaterial.SetFloat("_HectonTriplanarBlend", customTerrainMaterial.GetFloat("_HectonTriplanarBlend"));
                 }
 
                 // Ensure splatmaps are assigned (MapMagic might update them)

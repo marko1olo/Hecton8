@@ -4,7 +4,7 @@ using System.IO;
 
 public static class CheckSceneMat {
     public static void Execute() {
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         string log = "";
         foreach (var t in terrains) {
             log += "Terrain " + t.name + ":\n";

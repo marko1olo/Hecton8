@@ -23,7 +23,7 @@ namespace Hecton8.Editor
                         EditorSceneManager.OpenScene(scenePath);
                     }
 
-                    var mapMagicObject = UnityEngine.Object.FindObjectOfType<MapMagic.Core.MapMagicObject>();
+                    var mapMagicObject = UnityEngine.Object.FindAnyObjectByType<MapMagic.Core.MapMagicObject>();
                     if (mapMagicObject == null)
                     {
                         Debug.LogError("MapMagicObject not found!");

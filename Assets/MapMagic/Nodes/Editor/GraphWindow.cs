@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEditor;
 using System.Collections;
@@ -1150,7 +1150,7 @@ namespace MapMagic.Nodes.GUI
 			[UnityEditor.Callbacks.OnOpenAsset(0)]
 			public static bool ShowEditor (int instanceID, int line)
 			{
-				UnityEngine.Object obj = EditorUtility.InstanceIDToObject(instanceID);
+				UnityEngine.Object obj = EditorUtility.EntityIdToObject(instanceID);
 				if (obj is Nodes.Graph graph) 
 				{ 
 					if (graph.generators == null)

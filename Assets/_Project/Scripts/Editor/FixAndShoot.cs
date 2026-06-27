@@ -15,7 +15,7 @@ public static class FixAndShoot
         EditorSceneManager.OpenScene("Assets/_Project/Scenes/02_HECTON_WORLD.unity");
 
         cam = GameObject.Find("Main Camera")?.GetComponent<Camera>();
-        if (cam == null) cam = Object.FindFirstObjectByType<Camera>();
+        if (cam == null) cam = Object.FindAnyObjectByType<Camera>();
         if (cam == null) cam = new GameObject("VerifyCam").AddComponent<Camera>();
 
         cam.clearFlags = CameraClearFlags.Skybox;

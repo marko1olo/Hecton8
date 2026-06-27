@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using GUID = UnityEngine.GUID;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -60,7 +59,7 @@ namespace UnityEditor.ShaderGraph
             kernels.Add(kernel);
         }
 
-        public void AddAssetDependency(GUID guid, AssetCollection.Flags flags)
+        public void AddAssetDependency(UnityEngine.GUID guid, AssetCollection.Flags flags)
         {
             assetCollection?.AddAssetDependency(guid, flags);
         }

@@ -330,8 +330,7 @@ namespace Hecton8.Gameplay
                 false,
                 _resolvedRenderLayer,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private Transform ResolveSparkAnchor(int bitIndex)

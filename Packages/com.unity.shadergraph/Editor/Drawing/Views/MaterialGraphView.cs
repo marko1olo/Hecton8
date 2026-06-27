@@ -13,6 +13,9 @@ using UnityEditor.ShaderGraph.Internal;
 using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine.UIElements;
 using Edge = UnityEditor.Experimental.GraphView.Edge;
+#if UNITY_6000_5_OR_NEWER
+using UnityEngine.Assemblies;
+#endif
 using Node = UnityEditor.Experimental.GraphView.Node;
 using UnityEngine.Pool;
 
@@ -38,7 +41,11 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             // Get reference to GraphView assembly
             Assembly graphViewAssembly = null;
+#if UNITY_6000_5_OR_NEWER
+            foreach (var assembly in CurrentAssemblies.GetLoadedAssemblies())
+#else
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+#endif
             {
                 var assemblyName = assembly.GetName().ToString();
                 if (assemblyName.Contains("GraphView"))
@@ -63,6 +70,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         Vector3 lkgScale;
         void OnTransformChanged(GraphView graphView)
         {
+#pragma warning disable CS0618 // Type or member is obsolete
             if (!graphView.viewTransform.position.Equals(Vector3.zero))
             {
                 lkgPosition = graphView.viewTransform.position;
@@ -72,6 +80,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 graphView.UpdateViewTransform(lkgPosition, lkgScale);
             }
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         protected internal override bool canCutSelection
@@ -328,6 +337,21 @@ namespace UnityEditor.ShaderGraph.Drawing
                 {
                     evt.menu.AppendSeparator();
                     evt.menu.AppendAction("Open Sub Graph", OpenSubGraph, (a) => DropdownMenuAction.Status.Normal);
+                }
+                if (selection.OfType<IShaderNodeView>().Count() == 1
+                    && selection.OfType<IShaderNodeView>().First().node is ProviderSystem.ProviderNode providerNode
+                    && providerNode.isValid
+                    && (providerNode.Provider?.IsValid ?? false)
+                    && providerNode.Provider.AssetID != default)
+                {
+                    evt.menu.AppendSeparator();
+
+                    void PingSource(DropdownMenuAction action)
+                    {
+                        var asset = AssetDatabase.LoadAssetByGUID<Object>(providerNode.Provider.AssetID);
+                        EditorGUIUtility.PingObject(asset);
+                    }
+                    evt.menu.AppendAction("Show Source in Project", PingSource, (a) => DropdownMenuAction.Status.Normal);
                 }
             }
             evt.menu.AppendSeparator();
@@ -655,15 +679,6 @@ namespace UnityEditor.ShaderGraph.Drawing
 
         void ChangeCustomNodeColor(DropdownMenuAction menuAction)
         {
-            // Color Picker is internal :(
-            var t = typeof(EditorWindow).Assembly.GetTypes().FirstOrDefault(ty => ty.Name == "ColorPicker");
-            var m = t?.GetMethod("Show", new[] { typeof(Action<Color>), typeof(Color), typeof(bool), typeof(bool) });
-            if (m == null)
-            {
-                Debug.LogWarning("Could not invoke Color Picker for ShaderGraph.");
-                return;
-            }
-
             var editorView = GetFirstAncestorOfType<GraphEditorView>();
             var defaultColor = Color.gray;
             if (selection.FirstOrDefault(sel => sel is MaterialNodeView) is MaterialNodeView selNode1)
@@ -685,7 +700,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
 
             graph.owner.RegisterCompleteObjectUndo("Change Node Color");
-            m.Invoke(null, new object[] { (Action<Color>)ApplyColor, defaultColor, true, false });
+            ColorPicker.Show(ApplyColor, defaultColor, true, false);
         }
 
         protected internal override bool canDeleteSelection
@@ -1346,10 +1361,10 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             bool dropdownsDirty = false;
 
-            var blackboardController = graphView.GetFirstAncestorOfType<GraphEditorView>()?.blackboardController;
+            var blackboardController = graphView.GetFirstAncestorOfType<GraphEditorView>().blackboardController;
 
             // Get the position to insert the new shader inputs per category
-            int insertionIndex = blackboardController != null ? blackboardController.GetInsertionIndexForPaste() : -1;
+            int insertionIndex = blackboardController.GetInsertionIndexForPaste();
 
             // Any child of the categories need to be removed from selection as well (there's a Graphview issue where these don't get properly added to selection before the duplication sometimes, have to do it manually)
             foreach (var selectable in graphView.selection)

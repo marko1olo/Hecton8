@@ -233,7 +233,7 @@ namespace Hecton8.Audio.Editor
 #if UNITY_2023_1_OR_NEWER
             SpatialAudioManager sceneManager = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
 #else
-            SpatialAudioManager sceneManager = UnityEngine.Object.FindObjectOfType<SpatialAudioManager>();
+            SpatialAudioManager sceneManager = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>();
 #endif
             return IsSpatialAudioManagerUsable(sceneManager, requireReady) ? sceneManager : null;
         }

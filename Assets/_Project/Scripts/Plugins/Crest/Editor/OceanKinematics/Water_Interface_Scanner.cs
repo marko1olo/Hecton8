@@ -19,7 +19,7 @@ namespace Hecton8.Physics.Editor
 
         private static readonly string[] Patterns =
         {
-            "FindObjectOfType<OceanRenderer",
+            "Object.FindAnyObjectByType<OceanRenderer",
             "FindAnyObjectByType<OceanRenderer",
             ".GetWaterHeight(",
             ".GetSurfaceFlow(",

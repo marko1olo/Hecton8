@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEditor.Graphing;
 using UnityEditor.Graphing.Util;
 using UnityEngine;
-using UnityEditor.UIElements;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine.UIElements;
 using UnityEditor.Searcher;
 using UnityEngine.Profiling;
 using UnityEngine.Pool;
 using Object = UnityEngine.Object;
+using UnityEditor.ShaderGraph.ProviderSystem;
+using UnityEditor.ShaderGraph.ProviderSystem.Hints;
 
 namespace UnityEditor.ShaderGraph.Drawing
 {
@@ -48,7 +48,7 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             // Transparent icon to trick search window into indenting items
             m_Icon = new Texture2D(1, 1);
-            m_Icon.SetPixel(0, 0, new Color(0, 0, 0, 0));
+            m_Icon.SetPixel(0, 0, new UnityEngine.Color(0, 0, 0, 0));
             m_Icon.Apply();
         }
 
@@ -205,6 +205,31 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
             Profiler.EndSample();
 
+            Profiler.BeginSample("SearchWindowProvider.GenerateNodeEntries.IterateProviders");
+            HashSet<string> providerCollisions = new();
+            foreach (var provider in ProviderLibrary.Instance.AllProvidersByType<IShaderFunction>())
+            {
+                if (!provider.IsValid || !provider.Definition.Hints.ContainsKey(Func.kProviderKey))
+                    continue;
+
+                if (!ProviderTypeCache.TryCreateModel(provider.ProviderKey, out var model) || model is not ProviderNode node)
+                    node = new ProviderNode();
+
+                node.InitializeFromProvider(provider);
+                var header = node.Header;
+
+                string rawTitle = $"{header.searchCategory}/{header.searchName}";
+
+                int orderFound = 0;
+                while (providerCollisions.Contains(rawTitle))
+                    rawTitle += $", ({++orderFound})";
+
+                providerCollisions.Add(rawTitle);
+
+                var title = new List<string>(rawTitle.Split('/'));
+                AddEntries(node, title.ToArray(), nodeEntries);
+            }
+            Profiler.EndSample();
 
             Profiler.BeginSample("SearchWindowProvider.GenerateNodeEntries.IterateGraphInputs");
             foreach (var property in m_Graph.properties)
@@ -454,6 +479,10 @@ namespace UnityEditor.ShaderGraph.Drawing
             if (ShaderGraphPreferences.allowDeprecatedBehaviors && oldNode.sgVersion != newNode.sgVersion)
             {
                 newNode.ChangeVersion(oldNode.sgVersion);
+            }
+            if (newNode is ProviderNode providerNode)
+            {
+                providerNode.InitializeFromProvider(((ProviderNode)oldNode).Provider);
             }
             if (newNode is SubGraphNode subgraphNode)
             {

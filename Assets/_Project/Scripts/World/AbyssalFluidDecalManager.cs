@@ -821,8 +821,7 @@ namespace Hecton8.World
                 ShadowCastingMode.Off,
                 false,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         internal int CopyScreenSpaceDecals(Matrix4x4[] matrices, Color[] colors, int capacity)

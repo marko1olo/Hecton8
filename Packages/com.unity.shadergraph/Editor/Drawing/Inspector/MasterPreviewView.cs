@@ -7,6 +7,9 @@ using UnityEditor.Graphing;
 using UnityEditor.Graphing.Util;
 using UnityEditor.ShaderGraph.Drawing.Interfaces;
 using Object = UnityEngine.Object;
+#if UNITY_6000_5_OR_NEWER
+using UnityEngine.Assemblies;
+#endif
 
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;

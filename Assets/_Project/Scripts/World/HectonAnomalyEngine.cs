@@ -411,7 +411,7 @@ namespace Hecton8.World
                 
                 PrimaryFrequency = 0.012f,
                 SecondaryFrequency = 0.017f, // Slightly higher frequency for intersection
-                CarveStrengthMeters = 20.0f, // More aggressive carve
+                CarveStrengthMeters = 0.0f, // [NTP FIX] Disable volumetric cave carving
                 CaveThreshold = 0.65f,       // Higher threshold for Swiss Cheese intersection
                 MaxCrustDepthMeters = 400.0f,
                 SurfaceProtectionMeters = 50.0f, // 50m protection zone to prevent surface breakup and black holes

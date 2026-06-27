@@ -31,8 +31,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static readonly uint _mapMagicContextHash =
             unchecked((uint)LocHash.Compute("MapMagic.SandboxAbyssalShelf"));
 
-        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
-        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -10000f;
+        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 1000f;
+        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -4000f;
         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 15000f;
         [Den.Tools.GUI.ValAttribute("Exponential Falloff")] public float macroExponentialFalloff = 3.1f;
         [Den.Tools.GUI.ValAttribute("Shelf Run m")] public float shelfRunMeters = 15000f;

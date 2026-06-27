@@ -43,7 +43,9 @@ namespace Hecton8.Editor
                 }
             }
 
-            string path = "C:/Users/danat/.gemini/antigravity/brain/389e4a53-b1e6-440c-b190-0f5c509fa8c4/scratch/BiomeOutput.md";
+            string logsDir = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Application.dataPath), "Logs");
+            if (!Directory.Exists(logsDir)) Directory.CreateDirectory(logsDir);
+            string path = System.IO.Path.Combine(logsDir, "BiomeOutput.md");
             File.WriteAllText(path, sb.ToString());
             Debug.Log($"[BiomeRuntimeDiagnostics] Audit complete. Saved to {path}");
         }

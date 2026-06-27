@@ -1579,8 +1579,7 @@ namespace Hecton8.UI.Navigation
                 false,
                 source.gameObject.layer,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
             return stateDirty;
         }
 

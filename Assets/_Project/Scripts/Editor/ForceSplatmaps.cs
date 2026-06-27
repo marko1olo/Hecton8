@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 public class ForceSplatmaps {
     public static void Execute() {
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsSortMode.None);
+        var terrains = Object.FindObjectsByType<Terrain>();
         Material mat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
         foreach(var t in terrains) {
             t.materialTemplate = mat;

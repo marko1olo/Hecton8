@@ -3245,8 +3245,7 @@ namespace Hecton8.UI
                 false,
                 HudInternalLayerIndex,
                 projectionCamera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void ApplyThreatChevronMaterialProperties()

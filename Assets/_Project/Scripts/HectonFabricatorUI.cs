@@ -996,8 +996,7 @@ namespace Hecton8.UI
                 false,
                 0,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void RenderSelectedRecipeHologram(RecipeData recipe, float deltaTime)
@@ -1035,8 +1034,7 @@ namespace Hecton8.UI
                 ShadowCastingMode.Off,
                 false,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private void EnsureSelectedHologramBaseMatrix(Transform anchor, int recipeHash, float selectedSize)

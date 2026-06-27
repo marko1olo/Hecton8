@@ -252,8 +252,7 @@ namespace Hecton8.Gameplay
                 false,
                 0,
                 hudCamera,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         private int BuildMarkerMatrices()

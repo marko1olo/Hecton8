@@ -260,7 +260,7 @@ namespace Hecton8.BlackboxDiagnostics
                         foreach (var go in foundGos)
                         {
                             if (go == null) continue;
-                            int id = go.GetInstanceID();
+                            int id = go.GetHashCode();
                             if (seenIds.Contains(id)) continue;
                             seenIds.Add(id);
                             results.Add(H8Utils.BuildKeyObjectInfo($"name:{name}", go));
@@ -292,7 +292,7 @@ namespace Hecton8.BlackboxDiagnostics
                             if (comp == null) continue;
                             var go = comp.gameObject;
                             if (go == null) continue;
-                            int id = go.GetInstanceID();
+                            int id = go.GetHashCode();
                             if (seenIds.Contains(id)) continue;
                             seenIds.Add(id);
                             results.Add(H8Utils.BuildKeyObjectInfo($"type:{typeName}", go));

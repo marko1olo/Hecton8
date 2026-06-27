@@ -13,7 +13,7 @@ namespace UnityEditor.ShaderGraph
 {
     [HasDependencies(typeof(MinimalCustomFunctionNode))]
     [Title("Utility", "Custom Function")]
-    class CustomFunctionNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireTransform
+    class CustomFunctionNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireTransform, IHasAssetDependencies
     {
         // 0 original version
         // 1 differentiate between struct-based UnityTexture2D and bare Texture2D resources (for all texture and samplerstate resources)
@@ -159,7 +159,7 @@ namespace UnityEditor.ShaderGraph
                 if (!IsValidFunction())
                 {
                     // invalid functions generate special preview code..  (why?)
-                    if (generationMode == GenerationMode.Preview && outputSlots.Count != 0)
+                    if (generationMode.IsPreview() && outputSlots.Count != 0)
                     {
                         outputSlots.OrderBy(s => s.id);
                         var hlslVariableType = outputSlots[0].concreteValueType.ToShaderString();

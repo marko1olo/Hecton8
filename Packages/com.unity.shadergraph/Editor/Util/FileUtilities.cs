@@ -9,6 +9,24 @@ namespace UnityEditor.ShaderGraph
 {
     static class FileUtilities
     {
+        public static string ReadAllTextUTF8(string path)
+        {
+            ReadOnlySpan<byte> contents;
+#if UNITY_EDITOR_WIN
+            // Windows has problems with long asset paths. Performing file access through native code works around the
+            // issue.
+            if (!UnityEngine.Windows.File.Exists(path))
+                throw new FileNotFoundException();
+            contents = UnityEngine.Windows.File.ReadAllBytes(path);
+#else
+            contents = File.ReadAllBytes(path);
+#endif
+            ReadOnlySpan<byte> bom = Encoding.UTF8.Preamble;
+            if (contents.StartsWith(bom))
+                contents = contents[bom.Length..];
+            return Encoding.UTF8.GetString(contents);
+        }
+
         // if successfully written to disk, returns the serialized file contents as a string
         // on failure, returns null
         public static string WriteShaderGraphToDisk(string path, GraphData data)
@@ -37,7 +55,7 @@ namespace UnityEditor.ShaderGraph
             {
                 try
                 {
-                    File.WriteAllText(path, text);
+                    File.WriteAllText(FileUtil.PathToAbsolutePath(path), text);
                 }
                 catch (Exception e)
                 {
@@ -74,7 +92,7 @@ namespace UnityEditor.ShaderGraph
             string result = null;
             try
             {
-                result = File.ReadAllText(assetPath, Encoding.UTF8);
+                result = ReadAllTextUTF8(assetPath);
             }
             catch
             {
@@ -87,7 +105,7 @@ namespace UnityEditor.ShaderGraph
         {
             try
             {
-                var textGraph = File.ReadAllText(path, Encoding.UTF8);
+                var textGraph = ReadAllTextUTF8(path);
                 graph = new GraphData
                 {
                     messageManager = new Graphing.Util.MessageManager(),

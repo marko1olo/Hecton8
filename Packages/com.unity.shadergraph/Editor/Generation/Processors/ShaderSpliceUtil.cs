@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using UnityEditor.ShaderGraph.Internal;
 using UnityEngine.Profiling;
-using GUID = UnityEngine.GUID;
 
 namespace UnityEditor.ShaderGraph
 {
@@ -94,7 +93,7 @@ namespace UnityEditor.ShaderGraph
 
                     if (assetCollection != null)
                     {
-                        GUID guid = AssetDatabase.GUIDFromAssetPath(filePath);
+                        UnityEngine.GUID guid = AssetDatabase.GUIDFromAssetPath(filePath);
                         if (!guid.Empty())
                             assetCollection.AddAssetDependency(guid, AssetCollection.Flags.SourceDependency);
                     }
@@ -239,7 +238,8 @@ namespace UnityEditor.ShaderGraph
                             string templatePath = templatePaths[i];
                             includeLocation = Path.Combine(templatePath, param.GetString());
                             bool cacheHit = includeCache.ContainsKey(includeLocation);
-                            if (cacheHit ||  File.Exists(includeLocation))                            {
+                            if (cacheHit ||  File.Exists(FileUtil.PathToAbsolutePath(includeLocation)))
+                            {
                                 found = true;
                                 break;
                             }

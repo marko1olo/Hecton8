@@ -837,8 +837,7 @@ namespace Hecton8.Gameplay
                 false,
                 gameObject.layer,
                 null,
-                LightProbeUsage.Off,
-                null);
+                LightProbeUsage.Off);
         }
 
         /// <inheritdoc />
