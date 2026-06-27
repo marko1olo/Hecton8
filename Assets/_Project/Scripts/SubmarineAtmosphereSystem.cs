@@ -2017,16 +2017,29 @@ namespace Hecton8.Atmosphere
                     int roomB = math.clamp(pair.y, 0, RoomCapacity - 1);
                     float blend = math.select(0f, 1f, validPair);
 
-                    float averageOxygen = (O2Back[roomA] + O2Back[roomB]) * 0.5f;
-                    float averageToxicity = (CO2Back[roomA] + CO2Back[roomB]) * 0.5f;
+                    // HECTON-8 MEGA-UPDATE: Replace simplistic lerp with pure Fick's law mathematical kernel
+                    // Note: We use a placeholder area of 2.0f until the swarm tasks complete the engine scaffolding refactor
+                    System.Numerics.Vector2 transfer = Hecton8.PureLogic.Systems.AtmosphericRoomGasDiffusionCalculator.Compute(
+                        O2Back[roomA],
+                        O2Back[roomB],
+                        CO2Back[roomA],
+                        CO2Back[roomB],
+                        2.0f,
+                        DeltaTime,
+                        DefaultDoorConductance,
+                        0.5f);
+
+                    float transferO2 = transfer.X * blend;
+                    float transferCO2 = transfer.Y * blend;
+
+                    O2Back[roomA] -= transferO2;
+                    O2Back[roomB] += transferO2;
+                    CO2Back[roomA] -= transferCO2;
+                    CO2Back[roomB] += transferCO2;
+
                     float averageInert = (InertBack[roomA] + InertBack[roomB]) * 0.5f;
                     float averageSteam = (SteamBack[roomA] + SteamBack[roomB]) * 0.5f;
                     float averageHeat = (TemperatureBack[roomA] + TemperatureBack[roomB]) * 0.5f;
-
-                    O2Back[roomA] = math.lerp(O2Back[roomA], averageOxygen, blend);
-                    O2Back[roomB] = math.lerp(O2Back[roomB], averageOxygen, blend);
-                    CO2Back[roomA] = math.lerp(CO2Back[roomA], averageToxicity, blend);
-                    CO2Back[roomB] = math.lerp(CO2Back[roomB], averageToxicity, blend);
                     InertBack[roomA] = math.lerp(InertBack[roomA], averageInert, blend);
                     InertBack[roomB] = math.lerp(InertBack[roomB], averageInert, blend);
                     SteamBack[roomA] = math.lerp(SteamBack[roomA], averageSteam, blend);
