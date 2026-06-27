@@ -526,25 +526,36 @@ def sanitize_int_expr(expr: str, constants: dict[str, int]) -> str:
 def eval_int_expr(expr: str, constants: dict[str, int]) -> int:
     sanitized = sanitize_int_expr(expr, constants)
 
-    def _eval(node: ast.AST) -> int:
+    def _eval(node: ast.AST, depth: int = 0) -> int:
+        if depth > 100:
+            raise ValueError("expression recursion limit exceeded")
         if isinstance(node, ast.Expression):
-            return _eval(node.body)
+            return _eval(node.body, depth + 1)
         elif isinstance(node, ast.Constant):
             return int(node.value)
         elif isinstance(node, ast.UnaryOp):
-            operand = _eval(node.operand)
+            operand = _eval(node.operand, depth + 1)
             if isinstance(node.op, ast.UAdd): return +operand
             elif isinstance(node.op, ast.USub): return -operand
             elif isinstance(node.op, ast.Invert): return ~operand
             raise ValueError(f"unsupported unary op: {node.op}")
         elif isinstance(node, ast.BinOp):
-            left, right = _eval(node.left), _eval(node.right)
+            left, right = _eval(node.left, depth + 1), _eval(node.right, depth + 1)
+            if isinstance(node.op, (ast.LShift, ast.RShift)) and (right < 0 or right > 4096):
+                raise ValueError("shift count out of bounds")
             if isinstance(node.op, ast.Add): return left + right
             elif isinstance(node.op, ast.Sub): return left - right
-            elif isinstance(node.op, ast.Mult): return left * right
+            elif isinstance(node.op, ast.Mult):
+                if left.bit_length() + right.bit_length() > 4096:
+                    raise ValueError("multiplication result too large")
+                return left * right
             elif isinstance(node.op, ast.Div): return left // right
             elif isinstance(node.op, ast.FloorDiv): return left // right
             elif isinstance(node.op, ast.Mod): return left % right
+            elif isinstance(node.op, ast.Pow):
+                if right < 0 or right > 256 or left.bit_length() * right > 4096:
+                    raise ValueError("exponentiation result too large")
+                return left ** right
             elif isinstance(node.op, ast.LShift): return left << right
             elif isinstance(node.op, ast.RShift): return left >> right
             elif isinstance(node.op, ast.BitOr): return left | right
@@ -552,15 +563,17 @@ def eval_int_expr(expr: str, constants: dict[str, int]) -> int:
             elif isinstance(node.op, ast.BitAnd): return left & right
             raise ValueError(f"unsupported binary op: {node.op}")
         elif isinstance(node, ast.Compare):
-            left = _eval(node.left)
+            left = _eval(node.left, depth + 1)
             if len(node.ops) != 1: raise ValueError("multiple comparisons not supported")
-            op, right = node.ops[0], _eval(node.comparators[0])
+            op, right = node.ops[0], _eval(node.comparators[0], depth + 1)
             if isinstance(op, ast.Lt): return int(left < right)
             elif isinstance(op, ast.Gt): return int(left > right)
             raise ValueError(f"unsupported comparison op: {op}")
         raise ValueError(f"unsupported node: {node}")
 
-    return int(_eval(ast.parse(sanitized, mode='eval')))
+    # Use ast.parse securely with explicit depth & value limits in _eval
+    parsed_tree = ast.parse(sanitized, mode='eval')
+    return int(_eval(parsed_tree))
 
 
 def collect_csharp_files(paths: Iterable[Path]) -> list[Path]:
