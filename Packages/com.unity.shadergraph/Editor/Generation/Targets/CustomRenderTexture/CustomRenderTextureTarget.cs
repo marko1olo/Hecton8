@@ -16,9 +16,10 @@ namespace UnityEditor.Rendering.CustomRenderTexture.ShaderGraph
     [GenerateBlocks]
     internal struct FullScreenBlocks
     {
-        // TODO: use base color and alpha blocks
-        public static BlockFieldDescriptor colorBlock = new BlockFieldDescriptor(String.Empty, "Color", "Color",
-                new ColorRGBAControl(UnityEngine.Color.white), ShaderStage.Fragment);
+        public static BlockFieldDescriptor baseColorBlock = new BlockFieldDescriptor(String.Empty, "BaseColor", "Base Color",
+                new ColorControl(UnityEngine.Color.white, false), ShaderStage.Fragment);
+        public static BlockFieldDescriptor alphaBlock = new BlockFieldDescriptor(String.Empty, "Alpha", "Alpha",
+                new FloatControl(1.0f), ShaderStage.Fragment);
     }
 
     sealed class CustomRenderTextureTarget : Target
