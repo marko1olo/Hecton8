@@ -1969,6 +1969,12 @@ namespace Hecton8.Physics.Exosuit
         }
 #endif
 
+
+        public float ComputeServoTorqueLoadFallback(float loadKg, float armAngleDeg, float armLengthM, float gravity, float servoEfficiency)
+        {
+            return Hecton8.PureLogic.Kinematics.ServoTorqueLoadCalculator.Compute(loadKg, armAngleDeg, armLengthM, gravity, servoEfficiency);
+        }
+
 #if UNITY_EDITOR
         private void OnDrawGizmos()
         {
