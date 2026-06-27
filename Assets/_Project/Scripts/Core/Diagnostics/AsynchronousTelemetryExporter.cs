@@ -2382,7 +2382,8 @@ namespace Hecton8.Core.Diagnostics
             try
             {
                 string endpoint = _endpointUrl;
-                if (!IsHttpEndpoint(endpoint))
+                bool hasApiKey = !string.IsNullOrEmpty(_apiKey);
+                if (!IsHttpEndpoint(endpoint, hasApiKey))
                 {
                     Volatile.Write(ref _workerLastResponseCode, -3);
                     Interlocked.Increment(ref _workerFaultCount);
@@ -2445,11 +2446,16 @@ namespace Hecton8.Core.Diagnostics
             }
         }
 
-        private static bool IsHttpEndpoint(string endpoint)
+        private static bool IsHttpEndpoint(string endpoint, bool requiresHttps)
         {
-            return !string.IsNullOrEmpty(endpoint) &&
-                   (endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                    endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(endpoint))
+                return false;
+
+            if (requiresHttps)
+                return endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+
+            return endpoint.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                   endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase);
         }
 
         private void WriteDiskFallback(NativeArray<byte> payload, int byteCount)
