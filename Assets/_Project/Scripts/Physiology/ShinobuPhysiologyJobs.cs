@@ -1284,9 +1284,7 @@ namespace Hecton8.Physiology
             float ambientTemperature = ShinobuPhysiologyJobMath.SanitizeFinite(env.AmbientTemperatureCelsius, 4f);
             bool insulated = (env.InventoryMask & ShinobuInventoryBits.ThermalSuitUpgrade) != 0u;
             float insulation = insulated ? tuning.ThermalSuitInsulation01 : 0f;
-            float cooling = ShinobuPhysiologyJobMath.OneMinusApproxExpNegPade33Reduced(tuning.HypothermiaCoolingRate * dt);
-            vital.CoreTemperature += (ambientTemperature - vital.CoreTemperature) * cooling * (1f - insulation);
-            vital.CoreTemperature = math.clamp(ShinobuPhysiologyJobMath.SanitizeFinite(vital.CoreTemperature, 37f), 20f, 43f);
+            vital.CoreTemperature = Hecton8.PureLogic.Systems.CoreTempEquilibriumSolver.Solve(vital.CoreTemperature, ambientTemperature, insulation, dt, tuning.HypothermiaCoolingRate, 20f, 43f);
             scalar.HypothermiaShiver = math.saturate((35f - vital.CoreTemperature) * math.rcp(3f));
 
             status &= ~ShinobuPhysiologyFlags.Hypothermia;
