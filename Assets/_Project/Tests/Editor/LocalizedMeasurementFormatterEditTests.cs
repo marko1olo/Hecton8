@@ -32,7 +32,7 @@ namespace Hecton.Localization.Tests
         public void ResolveTemperatureUnitLabelSpan_Imperial_NullManager_ReturnsFallback()
         {
             // Arrange
-            var language = GameLanguage.English;
+            var language = GameLanguage.English_US;
 
             // Act
             var result = LocalizedMeasurementFormatter.ResolveTemperatureUnitLabelSpan(language, null);
@@ -58,7 +58,7 @@ namespace Hecton.Localization.Tests
         public void ResolveTemperatureUnitLabelSpan_Imperial_WithManager_ReturnsLocalized()
         {
             // Arrange
-            var language = GameLanguage.English;
+            var language = GameLanguage.English_US;
             var manager = new MockLocalizationManager();
 
             // Act
@@ -81,5 +81,70 @@ namespace Hecton.Localization.Tests
             // Assert
             Assert.AreEqual("Mock_C", result.ToString());
         }
-    }
+
+        [Test]
+        public void ConvertTemperatureCelsius_Imperial_ReturnsFahrenheit()
+        {
+            // Arrange
+            var language = GameLanguage.English_US;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(20f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(68f).Within(0.01f));
+        }
+
+        [Test]
+        public void ConvertTemperatureCelsius_Metric_ReturnsCelsius()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(20f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(20f).Within(0.01f));
+        }
+
+        [Test]
+        public void ConvertTemperatureCelsius_Imperial_AbsoluteZero_ReturnsFahrenheit()
+        {
+            // Arrange
+            var language = GameLanguage.English_US;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(-273.15f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(-459.67f).Within(0.01f));
+        }
+
+        [Test]
+        public void ConvertTemperatureCelsius_Imperial_FreezingPoint_ReturnsFahrenheit()
+        {
+            // Arrange
+            var language = GameLanguage.English_US;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(0f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(32f).Within(0.01f));
+        }
+
+        [Test]
+        public void ConvertTemperatureCelsius_Imperial_BoilingPoint_ReturnsFahrenheit()
+        {
+            // Arrange
+            var language = GameLanguage.English_US;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertTemperatureCelsius(100f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(212f).Within(0.01f));
+        }
+}
 }
