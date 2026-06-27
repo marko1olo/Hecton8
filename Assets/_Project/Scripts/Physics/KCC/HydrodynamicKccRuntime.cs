@@ -2123,7 +2123,8 @@ namespace Hecton8.Physics.KCC
 
                 flags |= entityFlags;
                 uint entityHash = HydrodynamicKccMath.HashState(state.AUP_Position, velocity, SimulationFrame, entityFlags);
-                hash ^= entityHash + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                entityHash ^= (uint)i * 0x9E3779B9u;
+                hash += entityHash;
                 computeUs += HydrodynamicKccMath.EstimateIntegrationMicroseconds(quality, speed) +
                              HydrodynamicKccMath.EstimateResolutionMicroseconds(quality, executedIterations, (entityFlags & HydrodynamicKccMath.FlagCollision) != 0u, speed);
             }
@@ -2197,7 +2198,8 @@ namespace Hecton8.Physics.KCC
 
                 KinematicStateDTO state = States[i];
                 uint entityHash = HydrodynamicKccMath.HashState(state.AUP_Position, appliedFlow, SimulationFrame, debug.Flags);
-                hash ^= entityHash + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                entityHash ^= (uint)i * 0x9E3779B9u;
+                hash += entityHash;
             }
 
             averageFlow *= math.rcp(math.max(1f, count));

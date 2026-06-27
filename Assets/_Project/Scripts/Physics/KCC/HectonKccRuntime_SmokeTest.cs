@@ -484,7 +484,9 @@ namespace Hecton8.Physics.KCC
                     maxSpeed = math.max(maxSpeed, speed);
                     minSdf = math.min(minSdf, sdf);
                     flags |= state.Flags;
-                    hash ^= HydrodynamicKccMath.HashState(state.AUP_Position, state.Velocity, (uint)frame, state.Flags) + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                    uint entityHash = HydrodynamicKccMath.HashState(state.AUP_Position, state.Velocity, (uint)frame, state.Flags);
+                    entityHash ^= (uint)i * 0x9E3779B9u;
+                    hash += entityHash;
                     if (i == 0)
                         driftSum = (float)math.abs(States[i].AUP_Position.x - math.round(States[i].AUP_Position.x * 1000.0d) * 0.001d) * 1000f;
                 }
