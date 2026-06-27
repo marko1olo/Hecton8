@@ -10186,13 +10186,13 @@ namespace Hecton8.Physics
             }
 
             float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
-            float surfaceAdvection01 = 1f - math.saturate(depthBelowSurface * math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f)));
-            float3 windAdvectionForce = windAdvectionVector *
-                                        (math.max(0f, windAdvectionForcePerKg) *
-                                         p.mass *
-                                         subRatio *
-                                         p.currentResponse *
-                                         surfaceAdvection01);
+            System.Numerics.Vector3 pureCurrent = Hecton8.PureLogic.Kinematics.SurfaceCurrentWindshearVector.Calculate(
+                                            new System.Numerics.Vector2(windAdvectionVector.x, windAdvectionVector.z),
+                                            windAdvectionForcePerKg,
+                                            depthBelowSurface,
+                                            SurfaceStormLayerDepthMeters);
+            float3 windAdvectionForce = new float3(pureCurrent.X, 0f, pureCurrent.Z) *
+                                        (p.mass * subRatio * p.currentResponse);
             float viscosityMultiplier = 1f;
             if (enableDynamicViscosityRegions != 0 && activeViscosityRegionCount > 0)
             {
