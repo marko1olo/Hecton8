@@ -6273,7 +6273,7 @@ namespace Hecton8.Inventory
             float carryCapacityKg = ResolveCarryCapacityKilograms();
             float inverseCarryCapacityKg = math.rcp(carryCapacityKg);
             CachedInventoryLoad01 = math.saturate(_currentWeightKg * inverseCarryCapacityKg);
-            CachedMaxSwimSpeedMultiplier = math.lerp(1f, InventoryLoadMinimumMovementMultiplier, CachedInventoryLoad01);
+            CachedMaxSwimSpeedMultiplier = Hecton8.PureLogic.Systems.WeightPenaltyCurveCalculator.Compute(_currentWeightKg, carryCapacityKg, 0f, 1f - InventoryLoadMinimumMovementMultiplier);
 
             WriteInventoryBlackBoxFrame(invalidTotals ? 1 : 0);
             if (invalidTotals)
