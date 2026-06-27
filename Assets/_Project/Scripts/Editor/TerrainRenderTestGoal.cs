@@ -192,7 +192,9 @@ namespace Hecton8.Editor
                     }
                 }
                 
-                // Ecosystem Sterilization: Scatter generation intentionally removed.
+                // FIX: Generate procedural scatter
+                Debug.Log("[TRT] Generating procedural scatter...");
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
