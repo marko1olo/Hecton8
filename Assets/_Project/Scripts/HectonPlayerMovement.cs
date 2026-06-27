@@ -2250,8 +2250,21 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude <= 0.0001f || acceleration <= 0.0001f)
                 return;
 
-            float invMagnitude = math.rsqrt(math.max(sqrMagnitude, 0.000001f));
-            QueueEnvironmentalForce(toSource * (invMagnitude * ResolveAuthoritativeBodyMassKg() * acceleration));
+            Vector3 centerOfMass = _rb.worldCenterOfMass;
+            System.Numerics.Vector3 playerPos = new System.Numerics.Vector3(centerOfMass.x, centerOfMass.y, centerOfMass.z);
+            System.Numerics.Vector3 sourcePos = new System.Numerics.Vector3(sourcePosition.x, sourcePosition.y, sourcePosition.z);
+
+            System.Numerics.Vector3 computedForce = Hecton8.PureLogic.Kinematics.FaunaHypnosisPullForceCalculator.Compute(
+                playerPos,
+                sourcePos,
+                acceleration,
+                ResolveAuthoritativeBodyMassKg(),
+                lockDuration,
+                0.0001f,
+                0.000001f);
+
+            Vector3 finalForce = new Vector3(computedForce.X, computedForce.Y, computedForce.Z);
+            QueueEnvironmentalForce(finalForce);
 
             float clampedLockDuration = math.max(0f, lockDuration);
             if (clampedLockDuration <= 0.0001f)
