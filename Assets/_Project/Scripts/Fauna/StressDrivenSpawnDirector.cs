@@ -3029,7 +3029,7 @@ namespace Hecton8.AI
             selection.StateHash = Hash(best.SpeciesHash, input.SimulationTick, best.CandidateHash);
             float spawnRatePerColdTick = math.saturate(tuning.BaseSpawnRatePerMinute * (1f / 60f));
             float qualityBias = math.lerp(0.55f, 1.25f, quality);
-            float tensionBias = math.lerp(0.45f, 1.65f, math.saturate(input.TensionIndex));
+            float tensionBias = Hecton8.PureLogic.Ecosystem.StressSpawnEscalationCalculator.Compute(math.saturate(input.TensionIndex), 0.45f, 1.2f, 1.65f);
             float probability = math.saturate(best.SpawnProbability01 * spawnRatePerColdTick * qualityBias * tensionBias * math.max(1f, tuning.MaxSpawnPerColdTick));
             if (Roll01(Hash(best.SpeciesHash, input.SimulationTick, input.WorldSeed ^ input.SectorHash)) > probability)
             {
