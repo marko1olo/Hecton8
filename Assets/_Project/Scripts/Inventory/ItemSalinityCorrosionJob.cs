@@ -29,6 +29,7 @@ namespace Hecton8.Inventory.Corrosion
         public ushort RustedMask;
         public ushort BrokenMask;
         public ushort DegradedThresholdMilli;
+        public float ElapsedSeconds;
 
         public void Execute()
         {
@@ -76,10 +77,15 @@ namespace Hecton8.Inventory.Corrosion
                 }
 
                 float nextDurability = currentDurability;
-                if (tickDegradation > 0f)
+                if (DegradationRate > 0f)
                 {
-                    nextDurability = math.saturate(currentDurability - tickDegradation);
-                    if (salinity > 0f)
+                    nextDurability = Hecton8.PureLogic.Systems.InventorySalinityCorrosionCalculator.Compute(
+                        currentDurability,
+                        SalinityFactor,
+                        DegradationRate,
+                        ElapsedSeconds);
+
+                    if (salinity > 0f && nextDurability < currentDurability)
                         flags = (ushort)(flags | RustedMask);
                 }
 

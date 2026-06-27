@@ -5817,11 +5817,12 @@ namespace Hecton8.Inventory
                         BrokenItemHashes = brokenItemHashes,
                         CurrentInventoryMask = CurrentInventoryMask,
                         SalinityFactor = _currentSalinityFactor,
-                        DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
+                        DegradationRate = SalinityCorrosionDegradationRatePerFrostTick / SalinityCorrosionFrostTickSeconds,
                         DegradedMask = DegradedItemStateMask,
                         RustedMask = RustedItemStateMask,
                         BrokenMask = BrokenItemStateMask,
-                        DegradedThresholdMilli = DegradedQualityMilliThreshold
+                        DegradedThresholdMilli = DegradedQualityMilliThreshold,
+                        ElapsedSeconds = SalinityCorrosionFrostTickSeconds
                     };
                     salinityJob.Execute();
 
