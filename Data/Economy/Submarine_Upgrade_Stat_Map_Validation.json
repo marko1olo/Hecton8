@@ -22,8 +22,8 @@
     },
     "speed_power_png": {
       "file": "Submarine_Upgrade_SpeedPower.png",
-      "bytes": 779,
-      "sha256": "5BFF1CCB15A710E149418F5FD42E5E93230E5D001714C2EF9A2311B59F248ED8"
+      "bytes": 785,
+      "sha256": "F4EC80E60188A18BF59ED7B946365E0A4231D5E1637686EA7E925BBF728644BB"
     },
     "binary_pack": {
       "file": "Submarine_Upgrade_Stat_Map.h8bin",
