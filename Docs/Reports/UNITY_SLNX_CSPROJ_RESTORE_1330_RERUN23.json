@@ -1,0 +1,477 @@
+{
+  "agentId": "1330",
+  "createdProjectCount": 0,
+  "createdProjects": [],
+  "mappings": [
+    {
+      "editor": true,
+      "project": "Unity.ShaderGraph.Editor.csproj",
+      "projectReferences": [],
+      "source": "Packages\\com.unity.shadergraph\\Editor\\Unity.ShaderGraph.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Hecton8.Core.Contracts.csproj",
+      "projectReferences": [],
+      "source": "Assets\\_Project\\Scripts\\Core\\Contracts\\Hecton8.Core.Contracts.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.csproj",
+      "projectReferences": [
+        "Lofelt.NiceVibrations",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacks\\MoreMountains.Feedbacks.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Assembly-CSharp-Editor-firstpass.csproj",
+      "projectReferences": [],
+      "source": "default-unity-assembly"
+    },
+    {
+      "editor": false,
+      "project": "ShapesRuntime.csproj",
+      "projectReferences": [
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Assets\\Shapes\\Scripts\\Runtime\\Shapes Runtime.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Crest.csproj",
+      "projectReferences": [
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Assets\\Crest\\Crest\\Scripts\\Crest.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Tools.csproj",
+      "projectReferences": [
+        "Lofelt.NiceVibrations"
+      ],
+      "source": "Assets\\Feel\\MMTools\\Tools\\MoreMountains.Tools.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "MoreMountains.Tools.Editor.csproj",
+      "projectReferences": [
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMTools\\Editor\\MoreMountains.Tools.Editor.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "AmplifyImpostors.Editor.csproj",
+      "projectReferences": [
+        "AmplifyImpostors.Runtime"
+      ],
+      "source": "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Hecton8.Editor.csproj",
+      "projectReferences": [
+        "Den.Tools",
+        "GPUInstancer",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "MapMagic",
+        "ShapesRuntime",
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Assets\\_Project\\Scripts\\Editor\\Hecton8.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "VolumetricLightBeam.csproj",
+      "projectReferences": [
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Assets\\VolumetricLightBeam\\Scripts\\VolumetricLightBeam.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "ShapesEditor.csproj",
+      "projectReferences": [
+        "ShapesRuntime",
+        "Unity.RenderPipelines.Universal.Editor",
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Assets\\Shapes\\Scripts\\Editor\\Shapes Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Assembly-CSharp.csproj",
+      "projectReferences": [],
+      "source": "default-unity-assembly"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.PostProcessing.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\PostProcessing\\MoreMountains.Feedbacks.PostProcessing.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "VolumetricLightBeam.Editor.csproj",
+      "projectReferences": [
+        "VolumetricLightBeam"
+      ],
+      "source": "Assets\\VolumetricLightBeam\\Editor\\VolumetricLightBeam.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.MMTools.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\MMTools\\MoreMountains.Feedbacks.MMTools.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MapMagic.csproj",
+      "projectReferences": [
+        "Den.Tools"
+      ],
+      "source": "Assets\\MapMagic\\Core\\MapMagic.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.Cinemachine.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\Cinemachine\\MoreMountains.Feedbacks.Cinemachine.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "TechniePhysicsCreator.csproj",
+      "projectReferences": [],
+      "source": "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Assembly-CSharp-Editor.csproj",
+      "projectReferences": [],
+      "source": "default-unity-assembly"
+    },
+    {
+      "editor": true,
+      "project": "MeshBakerEditor.csproj",
+      "projectReferences": [
+        "MeshBakerCore"
+      ],
+      "source": "Assets\\MeshBaker\\Editor\\MeshBakerEditor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.TextMeshPro.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Feedbacks.MMTools",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\TextMeshPro\\MoreMountains.Feedbacks.TextMeshPro.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Assembly-CSharp-firstpass.csproj",
+      "projectReferences": [],
+      "source": "default-unity-assembly"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.HDRP.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\HDRP\\MoreMountains.Feedbacks.HDRP.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.URP.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\URP\\MoreMountains.Feedbacks.URP.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Den.Tools.csproj",
+      "projectReferences": [],
+      "source": "Assets\\MapMagic\\Tools\\Tools.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "GPUInstancer.csproj",
+      "projectReferences": [],
+      "source": "Assets\\GPUInstancer\\GPUInstancer.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "GPUInstancer.Editor.csproj",
+      "projectReferences": [
+        "GPUInstancer"
+      ],
+      "source": "Assets\\GPUInstancer\\Scripts\\Editor\\GPUInstancer.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Lofelt.NiceVibrations.csproj",
+      "projectReferences": [],
+      "source": "Assets\\Feel\\NiceVibrations\\Lofelt.NiceVibrations.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "MapMagic.Editor.csproj",
+      "projectReferences": [
+        "Den.Tools",
+        "Den.Tools.Editor",
+        "MapMagic"
+      ],
+      "source": "Assets\\MapMagic\\Core\\Editor\\MapMagic.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.NiceVibrations.csproj",
+      "projectReferences": [
+        "Lofelt.NiceVibrations",
+        "MoreMountains.Feedbacks"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\MMFeedbacksForThirdParty\\NiceVibrations\\MoreMountains.Feedbacks.NiceVibrations.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MoreMountains.Feedbacks.Authorizations.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks",
+        "MoreMountains.Feedbacks.Cinemachine",
+        "MoreMountains.Feedbacks.HDRP",
+        "MoreMountains.Feedbacks.MMTools",
+        "MoreMountains.Feedbacks.NiceVibrations",
+        "MoreMountains.Feedbacks.PostProcessing",
+        "MoreMountains.Feedbacks.TextMeshPro",
+        "MoreMountains.Feedbacks.URP",
+        "MoreMountains.Tools"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\Authorizations\\MoreMountains.Feedbacks.Authorizations.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MeshBakerCore.csproj",
+      "projectReferences": [],
+      "source": "Assets\\MeshBaker\\scripts\\MeshBakerCore.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "JBooth.MicroSplat.Core.Editor.csproj",
+      "projectReferences": [
+        "JBooth.MicroSplat.Core"
+      ],
+      "source": "Packages\\com.jbooth.microsplat.core\\Scripts\\Editor\\JBooth.MicroSplat.Core.Editor.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Lofelt.NiceVibrations.Editor.csproj",
+      "projectReferences": [
+        "Lofelt.NiceVibrations"
+      ],
+      "source": "Assets\\Feel\\NiceVibrations\\Scripts\\Editor\\Lofelt.NiceVibrations.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "BakeryRuntimeAssembly.csproj",
+      "projectReferences": [],
+      "source": "Assets\\Bakery\\BakeryRuntimeAssembly.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "AmplifyImpostors.Runtime.csproj",
+      "projectReferences": [],
+      "source": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "MoreMountains.Feedbacks.Editor.csproj",
+      "projectReferences": [
+        "MoreMountains.Feedbacks"
+      ],
+      "source": "Assets\\Feel\\MMFeedbacks\\Editor\\MoreMountains.Feedbacks.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Hecton8.World.Contracts.csproj",
+      "projectReferences": [
+        "Hecton8.Core.Contracts"
+      ],
+      "source": "Assets\\_Project\\Scripts\\World\\Contracts\\Hecton8.World.Contracts.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Crest.Helpers.Editor.csproj",
+      "projectReferences": [
+        "Crest"
+      ],
+      "source": "Assets\\Crest\\Crest\\Scripts\\Editor\\Crest.Editor.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Den.Tools.Editor.csproj",
+      "projectReferences": [
+        "Den.Tools"
+      ],
+      "source": "Assets\\MapMagic\\Tools\\Editor\\Tools.Editor.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Technie.PhysicsCreator.Updater.csproj",
+      "projectReferences": [],
+      "source": "Assets\\Technie\\PhysicsCreator\\Updater\\Technie.PhysicsCreator.Updater.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+      "projectReferences": [],
+      "source": "Assets\\Plugins\\Sirenix\\Odin Inspector\\Modules\\Unity.Mathematics\\Sirenix.OdinInspector.Modules.UnityMathematics.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "JBooth.MicroSplat.Core.csproj",
+      "projectReferences": [
+        "Unity.RenderPipelines.Universal.Runtime"
+      ],
+      "source": "Packages\\com.jbooth.microsplat.core\\Scripts\\JBooth.MicroSplat.Core.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Hecton8.Bootstrap.Contracts.csproj",
+      "projectReferences": [],
+      "source": "Assets\\_Project\\Scripts\\Core\\BootstrapContracts\\Hecton8.Bootstrap.Contracts.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "MapMagic.Settings.csproj",
+      "projectReferences": [],
+      "source": "Assets\\MapMagic\\Core\\Plugins\\MapMagic.Settings.asmdef"
+    },
+    {
+      "editor": true,
+      "project": "MapMagic.MicroSplat.Editor.csproj",
+      "projectReferences": [
+        "Den.Tools",
+        "Den.Tools.Editor",
+        "JBooth.MicroSplat.Core",
+        "JBooth.MicroSplat.Core.Editor",
+        "MapMagic",
+        "MapMagic.Editor",
+        "MapMagic.MicroSplat"
+      ],
+      "source": "Assets\\MapMagic\\Compatibility\\MicroSplat\\Editor\\MapMagic.MicroSplat.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Hecton8.Input.Generated.csproj",
+      "projectReferences": [],
+      "source": "Assets\\_Project\\Input\\Hecton8.Input.Generated.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "MapMagic.MicroSplat.csproj",
+      "projectReferences": [
+        "Den.Tools",
+        "JBooth.MicroSplat.Core",
+        "MapMagic"
+      ],
+      "source": "Assets\\MapMagic\\Compatibility\\MicroSplat\\MapMagic.MicroSplat.asmdef"
+    }
+  ],
+  "preservedProjectCount": 1,
+  "preservedProjects": [
+    "Hecton8.Core.csproj"
+  ],
+  "slnxProjectCount": 56,
+  "sourceOfTruth": "Unity .asmdef plus default Assembly-CSharp conventions; generated files are offline recovery artifacts",
+  "staleScriptAssemblyMasking": "asmdef projects exclude all solution project DLLs from Library/ScriptAssemblies and use project references when the asmdef target is present in Hecton8.slnx",
+  "status": "PARTIAL",
+  "task": "UNITY_SLNX_CSPROJ_RESTORE",
+  "unchangedProjectCount": 49,
+  "unchangedProjects": [
+    "Unity.ShaderGraph.Editor.csproj",
+    "Hecton8.Core.Contracts.csproj",
+    "MoreMountains.Feedbacks.csproj",
+    "Assembly-CSharp-Editor-firstpass.csproj",
+    "ShapesRuntime.csproj",
+    "Crest.csproj",
+    "MoreMountains.Tools.csproj",
+    "MoreMountains.Tools.Editor.csproj",
+    "AmplifyImpostors.Editor.csproj",
+    "Hecton8.Editor.csproj",
+    "VolumetricLightBeam.csproj",
+    "ShapesEditor.csproj",
+    "Assembly-CSharp.csproj",
+    "MoreMountains.Feedbacks.PostProcessing.csproj",
+    "VolumetricLightBeam.Editor.csproj",
+    "MoreMountains.Feedbacks.MMTools.csproj",
+    "MapMagic.csproj",
+    "MoreMountains.Feedbacks.Cinemachine.csproj",
+    "TechniePhysicsCreator.csproj",
+    "Assembly-CSharp-Editor.csproj",
+    "MeshBakerEditor.csproj",
+    "MoreMountains.Feedbacks.TextMeshPro.csproj",
+    "Assembly-CSharp-firstpass.csproj",
+    "MoreMountains.Feedbacks.HDRP.csproj",
+    "MoreMountains.Feedbacks.URP.csproj",
+    "Den.Tools.csproj",
+    "GPUInstancer.csproj",
+    "GPUInstancer.Editor.csproj",
+    "Lofelt.NiceVibrations.csproj",
+    "MapMagic.Editor.csproj",
+    "MoreMountains.Feedbacks.NiceVibrations.csproj",
+    "MoreMountains.Feedbacks.Authorizations.csproj",
+    "MeshBakerCore.csproj",
+    "JBooth.MicroSplat.Core.Editor.csproj",
+    "Lofelt.NiceVibrations.Editor.csproj",
+    "BakeryRuntimeAssembly.csproj",
+    "AmplifyImpostors.Runtime.csproj",
+    "MoreMountains.Feedbacks.Editor.csproj",
+    "Hecton8.World.Contracts.csproj",
+    "Crest.Helpers.Editor.csproj",
+    "Den.Tools.Editor.csproj",
+    "Technie.PhysicsCreator.Updater.csproj",
+    "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+    "JBooth.MicroSplat.Core.csproj",
+    "Hecton8.Bootstrap.Contracts.csproj",
+    "MapMagic.Settings.csproj",
+    "MapMagic.MicroSplat.Editor.csproj",
+    "Hecton8.Input.Generated.csproj",
+    "MapMagic.MicroSplat.csproj"
+  ],
+  "unresolvedProjectCount": 6,
+  "unresolvedProjects": [
+    "Unity.RenderPipelines.Universal.Editor.csproj",
+    "Unity.RenderPipelines.Core.Editor.csproj",
+    "Unity.RenderPipelines.Universal.Runtime.csproj",
+    "BakeryEditorAssembly.csproj",
+    "Hecton8.World.Dots.csproj",
+    "Tools\\DataMonolithBakeCli\\DataMonolithBakeCli.csproj"
+  ],
+  "updatedProjectCount": 0,
+  "updatedProjects": [],
+  "verificationHashSha256": "6016efcc72d35e4d1beea934c73083e9c7cb68db51029c1a6d6ebdca0cd68a40",
+  "verifiedDirectWriteCount": 0,
+  "verifiedDirectWrites": [],
+  "writeFailureCount": 0,
+  "writeFailures": [],
+  "writeMode": "verified direct writes; this sandbox denies Python os.replace/unlink on generated root artifacts, so the generator verifies readback instead of leaving temp files; Hecton8.Core.csproj preserved"
+}
