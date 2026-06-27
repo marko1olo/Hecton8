@@ -45,8 +45,8 @@ namespace Sirenix.OdinInspector
     /// </example>
     /// <seealso cref="DisallowAddressableSubAssetFieldAttribute" />
     [Conditional("UNITY_EDITOR")]
-    [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
-    public class RegisterAssetReferenceAttributeForwardToChildAttribute : Attribute // TODO: Should this be a global attribute?
+    [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true)]
+    public class RegisterAssetReferenceAttributeForwardToChildAttribute : Attribute
     {
         /// <summary>
         /// The type of the attribute to forward.
@@ -1124,10 +1124,26 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
 
         static AssetReferencePropertyResolver()
         {
-            attributesToForward = AppDomain.CurrentDomain.GetAssemblies()
+            var assemblyAttributes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(x => x.GetCustomAttributes<RegisterAssetReferenceAttributeForwardToChildAttribute>())
-                .Cast<RegisterAssetReferenceAttributeForwardToChildAttribute>()
+                .Cast<RegisterAssetReferenceAttributeForwardToChildAttribute>();
+
+            var typeAttributes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(x => {
+                    try {
+                        return x.GetTypes();
+                    } catch (System.Reflection.ReflectionTypeLoadException e) {
+                        return e.Types.Where(t => t != null);
+                    } catch {
+                        return Type.EmptyTypes;
+                    }
+                })
+                .SelectMany(x => x.GetCustomAttributes<RegisterAssetReferenceAttributeForwardToChildAttribute>())
+                .Cast<RegisterAssetReferenceAttributeForwardToChildAttribute>();
+
+            attributesToForward = assemblyAttributes.Concat(typeAttributes)
                 .Select(x => x.AttributeType)
+                .Distinct()
                 .ToArray();
         }
 
