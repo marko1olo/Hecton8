@@ -2732,7 +2732,7 @@ namespace Hecton8.Audio.Synthesis
                         ref SynthVoiceDTO voice = ref UnsafeUtility.AsRef<SynthVoiceDTO>(Voices + voiceIndex);
                         uint hash = voice.SoundHash;
                         float phase = math.frac(voice.CurrentPhase);
-                        float grainWindow = MathLodApproximation.ApproxSinBhaskara(phase * math.PI);
+                        float grainWindow = Hecton8.PureLogic.Systems.GrainEnvelopeCalculator.Compute(phase, 0.5f, 0.5f);
                         float offset = HashToUnit(Hash32(hash ^ tuning.WaveformHash));
                         float samplePhase = math.frac(phase + offset);
                         float position = samplePhase * (safeBankLength - 1);
