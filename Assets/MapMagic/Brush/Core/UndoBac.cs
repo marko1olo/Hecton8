@@ -160,6 +160,7 @@ namespace MapMagic.Brush.Undo
 	{
 		public const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
+		public MapMagicBrush brush;
 
 		//private Stack<Set> sets = new Stack<Set>();  //we've got to remove first items from it, so using list instead
 		[SerializeField] private List< Dictionary<Terrain,TerrainUndoData> > sets = new List< Dictionary<Terrain,TerrainUndoData> >();
@@ -177,17 +178,35 @@ namespace MapMagic.Brush.Undo
 
 			public void OnUndoRedoPerformed ()
 			{
-				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+				bool undoMatched = false;
 
-				if (currGroupName == undoName || currGroupName == lastUndoName)
-				// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
-				// so we store previous (before mm change) name and performing undo if this name is first in stack
-				// TODO: use undo from MapMagicBrush with ids, it's more stable
+				if (brush != null)
+				{
+					if (brush.curUndoId != brush.prevUndoId)
+					{
+						brush.prevUndoId = brush.curUndoId;
+						undoMatched = true;
+					}
+				}
+
+				if (!undoMatched)
+				{
+					string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+
+					if (currGroupName == undoName || currGroupName == lastUndoName)
+					// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
+					// so we store previous (before mm change) name and performing undo if this name is first in stack
+					{
+						undoMatched = true;
+
+						if (currGroupName == lastUndoName)
+							lastUndoName = null;
+					}
+				}
+
+				if (undoMatched)
 				{
 					Perform();
-
-					if (currGroupName == lastUndoName)
-						lastUndoName = null;
 				}
 			}
 		#endif
@@ -195,6 +214,8 @@ namespace MapMagic.Brush.Undo
 		public void NewGroup (MapMagicBrush brush)
 		///Registering new undo (at the start of each stroke)
 		{
+			this.brush = brush;
+
 			/*if (sets.Count > 10)
 			{
 				List<Set> last10 = new List<Set>(sets);
@@ -203,6 +224,9 @@ namespace MapMagic.Brush.Undo
 			sets.Add( new Dictionary<Terrain,TerrainUndoData>() );
 
 			#if UNITY_EDITOR
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
+
 				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
@@ -323,6 +347,7 @@ namespace MapMagic.Brush.Undo
 		const int numChunksPerTerrain = 8; //number*number of chunks in terrain
 		const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
+		public MapMagicBrush brush;
 
 		//private Stack<Set> sets = new Stack<Set>();  //we've got to remove first items from it, so using list instead
 		[SerializeField] private List<Set> sets = new List<Set>();
@@ -338,17 +363,35 @@ namespace MapMagic.Brush.Undo
 
 			public void OnUndoRedoPerformed ()
 			{
-				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+				bool undoMatched = false;
 
-				if (currGroupName == undoName || currGroupName == lastUndoName)
-				// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
-				// so we store previous (before mm change) name and performing undo if this name is first in stack
-				// TODO: use undo from MapMagicBrush with ids, it's more stable
+				if (brush != null)
+				{
+					if (brush.curUndoId != brush.prevUndoId)
+					{
+						brush.prevUndoId = brush.curUndoId;
+						undoMatched = true;
+					}
+				}
+
+				if (!undoMatched)
+				{
+					string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+
+					if (currGroupName == undoName || currGroupName == lastUndoName)
+					// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
+					// so we store previous (before mm change) name and performing undo if this name is first in stack
+					{
+						undoMatched = true;
+
+						if (currGroupName == lastUndoName)
+							lastUndoName = null;
+					}
+				}
+
+				if (undoMatched)
 				{
 					Perform();
-
-					if (currGroupName == lastUndoName)
-						lastUndoName = null;
 				}
 			}
 		#endif
@@ -356,6 +399,8 @@ namespace MapMagic.Brush.Undo
 		public void NewGroup (MapMagicBrush brush)
 		///Registering new undo (at the start of each stroke)
 		{
+			this.brush = brush;
+
 			/*if (sets.Count > 10)
 			{
 				List<Set> last10 = new List<Set>(sets);
@@ -365,6 +410,9 @@ namespace MapMagic.Brush.Undo
 			sets.Add(newSet);
 
 			#if UNITY_EDITOR
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
+
 				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
