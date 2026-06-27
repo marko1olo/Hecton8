@@ -231,7 +231,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 field.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
         }
 
         // Try property
@@ -245,7 +245,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 prop.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
         }
 
         // Nuclear fallback
@@ -359,7 +359,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return true;
                     }
                 }
-                catch { }
+                catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
             }
         }
 
@@ -458,7 +458,10 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return inlet;
                         }
                     }
-                    catch { }
+                    catch (global::System.Exception ex)
+                    {
+                        UnityEngine.Debug.LogException(ex);
+                    }
                 }
             }
 
@@ -542,7 +545,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (gen != null)
             {
                 try { graph.Remove(gen); }
-                catch { }
+                catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
             }
         }
 
@@ -560,7 +563,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                     clearMethod.Invoke(links, null);
             }
         }
-        catch { }
+        catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
     }
 
     /// <summary>Count generators in the graph.</summary>
@@ -571,7 +574,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (graph.generators != null)
                 return graph.generators.Length;
         }
-        catch { }
+        catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
         return 0;
     }
 
@@ -629,7 +632,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 }
                 if (genType != null) break;
             }
-            catch { }
+            catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
         }
 
         if (genType == null)
@@ -714,7 +717,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             Debug.Log("[GraphBuilder] Linked via reflection fallback.");
                             return;
                         }
-                        catch { }
+                        catch (global::System.Exception ex) { UnityEngine.Debug.LogException(ex); }
                     }
                 }
             }
