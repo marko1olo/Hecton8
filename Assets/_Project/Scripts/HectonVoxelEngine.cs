@@ -9122,14 +9122,17 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return ResolveDistanceBasedVoxelLodLevel(in worldCenterAup, in playerAup, VoxelLodColliderDisableDistanceMeters);
     }
 
+    private static readonly float[] _sharedLodThresholds = new float[1];
+
     private static int ResolveDistanceBasedVoxelLodLevel(
         in AbsoluteUniversePosition worldCenterAup,
         in AbsoluteUniversePosition observerAup,
         float lodDistanceMeters)
     {
         double distanceSq = AbsoluteUniversePosition.DistanceSq(in worldCenterAup, in observerAup);
-        double thresholdSq = (double)lodDistanceMeters * lodDistanceMeters;
-        return distanceSq > thresholdSq ? 1 : 0;
+        float distance = (float)System.Math.Sqrt(distanceSq);
+        _sharedLodThresholds[0] = lodDistanceMeters;
+        return Hecton8.PureLogic.Systems.LodChunkSelector.Calculate(distance, _sharedLodThresholds, 1);
     }
 
     private bool ShouldUseCinematicColliderFake(in VoxelPipelineData data)
