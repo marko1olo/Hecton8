@@ -2086,7 +2086,7 @@ namespace Hecton8.World
                 if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
                     continue;
 
-                if (prefab.GetComponent("AmplifyImpostor") == null)
+                if (!prefab.TryGetComponent<AmplifyImpostors.AmplifyImpostor>(out _))
                     continue;
 
                 bakedCount++;
