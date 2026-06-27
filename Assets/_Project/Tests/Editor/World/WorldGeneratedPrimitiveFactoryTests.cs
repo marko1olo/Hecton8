@@ -30,6 +30,66 @@ namespace Hecton8.Tests.World
         }
 
         [Test]
+        public void RegisterPrimitiveResourcesCold_ValidInputs_ReturnsTrueAndCachesResources()
+        {
+            // Arrange
+            var cachedMeshesField = typeof(WorldGeneratedPrimitiveFactory).GetField("_CachedMeshes", BindingFlags.NonPublic | BindingFlags.Static);
+            var cachedMaterialsField = typeof(WorldGeneratedPrimitiveFactory).GetField("_CachedMaterials", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Mesh testMesh = new Mesh();
+            Material testMaterial = new Material(Shader.Find("Hidden/InternalErrorShader"));
+
+            // Act
+            bool result = WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold(PrimitiveType.Cube, testMesh, testMaterial);
+
+            // Assert
+            Assert.IsTrue(result);
+
+            var cachedMeshes = (Mesh[])cachedMeshesField.GetValue(null);
+            var cachedMaterials = (Material[])cachedMaterialsField.GetValue(null);
+
+            Assert.AreEqual(testMesh, cachedMeshes[(int)PrimitiveType.Cube]);
+            Assert.AreEqual(testMaterial, cachedMaterials[(int)PrimitiveType.Cube]);
+        }
+
+        [Test]
+        public void RegisterPrimitiveResourcesCold_NullMesh_ReturnsFalseAndDoesNotCache()
+        {
+            // Arrange
+            var cachedMeshesField = typeof(WorldGeneratedPrimitiveFactory).GetField("_CachedMeshes", BindingFlags.NonPublic | BindingFlags.Static);
+            var cachedMaterialsField = typeof(WorldGeneratedPrimitiveFactory).GetField("_CachedMaterials", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Material testMaterial = new Material(Shader.Find("Hidden/InternalErrorShader"));
+
+            // Act
+            bool result = WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold(PrimitiveType.Cube, null, testMaterial);
+
+            // Assert
+            Assert.IsFalse(result);
+
+            var cachedMeshes = (Mesh[])cachedMeshesField.GetValue(null);
+            var cachedMaterials = (Material[])cachedMaterialsField.GetValue(null);
+
+            Assert.IsNull(cachedMeshes[(int)PrimitiveType.Cube]);
+            Assert.IsNull(cachedMaterials[(int)PrimitiveType.Cube]);
+        }
+
+        [Test]
+        public void RegisterPrimitiveResourcesCold_OutOfBoundsPrimitiveType_ReturnsFalse()
+        {
+            // Arrange
+            Mesh testMesh = new Mesh();
+            Material testMaterial = new Material(Shader.Find("Hidden/InternalErrorShader"));
+            PrimitiveType outOfBoundsType = (PrimitiveType)99;
+
+            // Act
+            bool result = WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold(outOfBoundsType, testMesh, testMaterial);
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        [Test]
         public void PrewarmPrimitiveResources_CachesAllExpectedPrimitives()
         {
             // Arrange
