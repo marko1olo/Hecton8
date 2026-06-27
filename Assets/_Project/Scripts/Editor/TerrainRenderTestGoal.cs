@@ -192,14 +192,16 @@ namespace Hecton8.Editor
                     }
                 }
                 
-                // Ecosystem Sterilization: Scatter generation intentionally removed.
+                // FIX: Generate procedural scatter
+                Debug.Log("[TRT] Generating procedural scatter...");
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
             // Calculate center
             Vector3 boundsCenter = Vector3.zero;
             float boundsHalf = 0f;
-            if (terrains.Length > 0)
+            if (terrains.Length > 0 && terrains[0].terrainData != null)
             {
                 Bounds b = new Bounds();
                 bool initialized = false;
