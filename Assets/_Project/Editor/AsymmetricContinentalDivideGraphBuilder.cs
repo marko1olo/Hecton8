@@ -629,7 +629,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 }
                 if (genType != null) break;
             }
-            catch { }
+            catch (global::System.Exception ex) { UnityEngine.Debug.LogWarning($"[GraphBuilder] Could not get types from assembly {asm.FullName}: {ex.Message}"); }
         }
 
         if (genType == null)
