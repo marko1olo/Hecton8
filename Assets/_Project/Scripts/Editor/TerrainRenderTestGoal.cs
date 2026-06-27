@@ -192,7 +192,9 @@ namespace Hecton8.Editor
                     }
                 }
                 
-                // Ecosystem Sterilization: Scatter generation intentionally removed.
+                // Generate procedural scatter for rendering tests
+                Debug.Log("[TRT] Generating procedural scatter...");
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
@@ -463,8 +465,11 @@ namespace Hecton8.Editor
             pLight.transform.position = cam.transform.position;
             TakeScreenshot(cam, ArtifactDir + "Naked_Cave_Interior.png");
             
-            // Ecosystem Screenshots are physically ELIMINATED for sterile geology validation
-            // TakeScatterScreenshot(cam, "family_kelp", ...);
+            // 5. Take screenshots of scattered objects
+            cam.backgroundColor = Color.black;
+            RenderSettings.fog = true;
+            TakeScatterScreenshot(cam, "kelp", ArtifactDir + "Scatter_Kelp.png", pLight);
+            TakeScatterScreenshot(cam, "coral", ArtifactDir + "Scatter_Coral.png", pLight);
 
             Debug.Log("[TRT] All screenshots captured. Exporting Diagnostic Maps...");
             ExportDiagnosticMaps(terrains, ArtifactDir);
