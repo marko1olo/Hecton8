@@ -1999,11 +1999,8 @@ namespace NASAPunk.Visor
 
         internal static float ResolveHypoxiaNarcosisTarget(float oxygenNormalized, float safeThreshold, float nitrogenVisionBlur01)
         {
-            float safe = Mathf.Clamp(safeThreshold, 0.01f, 1f);
-            float hypoxia = oxygenNormalized < safe
-                ? 1f - Mathf.Clamp01(oxygenNormalized * math.rcp(safe))
-                : 0f;
-            return Mathf.Max(hypoxia, Mathf.Clamp01(nitrogenVisionBlur01));
+            System.Numerics.Vector2 pureLogicResult = Hecton8.PureLogic.Systems.HypoxiaVisorBlurIntensityCalculator.Compute(oxygenNormalized, 0f, 1f, safeThreshold, 0.2f, 10f, 0.5f, 5f, 10f);
+            return Mathf.Max(pureLogicResult.X, Mathf.Clamp01(nitrogenVisionBlur01));
         }
 
         private void UpdatePressureFlickerState(float deltaTime)

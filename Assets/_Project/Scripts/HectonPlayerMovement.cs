@@ -4341,7 +4341,10 @@ namespace Hecton8.Gameplay
 
         void IPlayerHypoxiaPresentationSink.RequestHypoxiaVisorDistortion(float intensity, float holdDuration, float recoverySpeed)
         {
-            TriggerHypoxiaVisorDistortion(intensity, holdDuration, recoverySpeed);
+            float oxygenLevel01 = _survivalSystem != null ? _survivalSystem.OxygenNormalized : 1f;
+            float safeThreshold = 0.8f;
+            System.Numerics.Vector2 hypoxiaVisorBlur = Hecton8.PureLogic.Systems.HypoxiaVisorBlurIntensityCalculator.Compute(oxygenLevel01, holdDuration, recoverySpeed, safeThreshold, 0.2f, 10f, 0.5f, 5f, 10f);
+            TriggerHypoxiaVisorDistortion(Mathf.Max(intensity, hypoxiaVisorBlur.X), holdDuration, recoverySpeed);
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
