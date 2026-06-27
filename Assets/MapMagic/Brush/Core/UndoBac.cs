@@ -175,19 +175,38 @@ namespace MapMagic.Brush.Undo
 				UnityEditor.Undo.undoRedoPerformed += OnUndoRedoPerformed;
 			}
 
-			public void OnUndoRedoPerformed ()
+									public void OnUndoRedoPerformed ()
 			{
-				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+				bool undoMatched = false;
 
-				if (currGroupName == undoName || currGroupName == lastUndoName)
-				// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
-				// so we store previous (before mm change) name and performing undo if this name is first in stack
-				// TODO: use undo from MapMagicBrush with ids, it's more stable
+				MapMagicBrush[] brushes = GameObject.FindObjectsByType<MapMagicBrush>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+				foreach (MapMagicBrush brush in brushes)
+				{
+					if (brush.curUndoId != brush.prevUndoId)
+					{
+						brush.prevUndoId = brush.curUndoId;
+						undoMatched = true;
+					}
+				}
+
+				if (!undoMatched)
+				{
+					string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+
+					if (currGroupName == undoName || currGroupName == lastUndoName)
+					// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
+					// so we store previous (before mm change) name and performing undo if this name is first in stack
+					{
+						undoMatched = true;
+
+						if (currGroupName == lastUndoName)
+							lastUndoName = null;
+					}
+				}
+
+				if (undoMatched)
 				{
 					Perform();
-
-					if (currGroupName == lastUndoName)
-						lastUndoName = null;
 				}
 			}
 		#endif
@@ -207,7 +226,9 @@ namespace MapMagic.Brush.Undo
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
 
-				UnityEditor.Undo.RecordObject(brush, undoName);
+												UnityEditor.Undo.RecordObject(brush, undoName);
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
 				brush.temp = !brush.temp;
 			#endif
 		}
@@ -336,19 +357,38 @@ namespace MapMagic.Brush.Undo
 				UnityEditor.Undo.undoRedoPerformed += OnUndoRedoPerformed;
 			}
 
-			public void OnUndoRedoPerformed ()
+									public void OnUndoRedoPerformed ()
 			{
-				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+				bool undoMatched = false;
 
-				if (currGroupName == undoName || currGroupName == lastUndoName)
-				// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
-				// so we store previous (before mm change) name and performing undo if this name is first in stack
-				// TODO: use undo from MapMagicBrush with ids, it's more stable
+				MapMagicBrush[] brushes = GameObject.FindObjectsByType<MapMagicBrush>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+				foreach (MapMagicBrush brush in brushes)
+				{
+					if (brush.curUndoId != brush.prevUndoId)
+					{
+						brush.prevUndoId = brush.curUndoId;
+						undoMatched = true;
+					}
+				}
+
+				if (!undoMatched)
+				{
+					string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
+
+					if (currGroupName == undoName || currGroupName == lastUndoName)
+					// a bit hacky here. On undoRedoPerformed there is already no current group in stack, and no way to get current group name
+					// so we store previous (before mm change) name and performing undo if this name is first in stack
+					{
+						undoMatched = true;
+
+						if (currGroupName == lastUndoName)
+							lastUndoName = null;
+					}
+				}
+
+				if (undoMatched)
 				{
 					Perform();
-
-					if (currGroupName == lastUndoName)
-						lastUndoName = null;
 				}
 			}
 		#endif
@@ -369,7 +409,9 @@ namespace MapMagic.Brush.Undo
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
 
-				UnityEditor.Undo.RecordObject(brush, undoName);
+												UnityEditor.Undo.RecordObject(brush, undoName);
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
 				brush.temp = !brush.temp;
 			#endif
 		}
