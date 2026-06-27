@@ -525,21 +525,66 @@ namespace Technie.PhysicsCreator
 
 				if (c.gameObject == this.gameObject)
 				{
-					DestroyImmediateWithUndo(c);
+#if UNITY_EDITOR
+					if (!Application.isPlaying)
+					{
+						Undo.DestroyObjectImmediate(c);
+					}
+					else
+					{
+						GameObject.DestroyImmediate(c);
+					}
+#else
+					GameObject.DestroyImmediate(c);
+#endif
 				}
 				else
 				{
 					// Child collider - delete collider, RigidColliderCreatorChild (if any) and GameObject (if empty)
 
 					GameObject go = c.gameObject;
-					DestroyImmediateWithUndo(c);
+#if UNITY_EDITOR
+					if (!Application.isPlaying)
+					{
+						Undo.DestroyObjectImmediate(c);
+					}
+					else
+					{
+						GameObject.DestroyImmediate(c);
+					}
+#else
+					GameObject.DestroyImmediate(c);
+#endif
+
 					if (go.TryGetComponent<RigidColliderCreatorChild>(out var rigidChild))
 					{
-						DestroyImmediateWithUndo(rigidChild);
+#if UNITY_EDITOR
+						if (!Application.isPlaying)
+						{
+							Undo.DestroyObjectImmediate(rigidChild);
+						}
+						else
+						{
+							GameObject.DestroyImmediate(rigidChild);
+						}
+#else
+						GameObject.DestroyImmediate(rigidChild);
+#endif
 					}
 					if (IsDeletable(go))
 					{
-						DestroyImmediateWithUndo(go);
+#if UNITY_EDITOR
+						if (!Application.isPlaying)
+						{
+							Undo.DestroyObjectImmediate(go);
+						}
+						else
+						{
+							GameObject.DestroyImmediate(go);
+						}
+#else
+						GameObject.DestroyImmediate(go);
+#endif
 					}
 				}
 			}
