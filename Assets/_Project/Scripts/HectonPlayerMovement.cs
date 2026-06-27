@@ -5183,7 +5183,7 @@ namespace Hecton8.Gameplay
 
         private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
         {
-            return ResolveInventoryLoadMovementMultiplierFromLoad(ResolveInventoryLoad01(totalMassKg, carryCapacityKg));
+            return Hecton8.PureLogic.Kinematics.InventoryMassLoadSpeedScalar.Calculate(totalMassKg, carryCapacityKg, InventoryLoadMinimumMovementMultiplier);
         }
 
         private float ResolveRuntimeInventoryLoadMovementMultiplier()
@@ -5227,7 +5227,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
         {
-            return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, math.saturate(load01));
+            return Hecton8.PureLogic.Kinematics.InventoryMassLoadSpeedScalar.Calculate(load01, 1f, InventoryLoadMinimumMovementMultiplier);
         }
 
         internal static float ResolveInventoryUpwardSwimMultiplierFromLoad(float load01)
