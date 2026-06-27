@@ -16,6 +16,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Hecton8.PureLogic.Systems;
 using UnityEngine;
 using Hecton8.World;
 
@@ -2627,10 +2628,13 @@ namespace Hecton8.Power
                 float allocatedPower = math.min(
                     availablePower,
                     requestedPowerWatts * (availablePower / math.max(0.0001f, totalAvailablePowerWatts)));
-                result.NextStoredEnergyWattSeconds = math.clamp(
-                    record.StoredEnergyWattSeconds + (allocatedPower * safeDeltaTime * safeChargeEfficiency),
-                    0f,
-                    safeCapacity);
+
+                result.NextStoredEnergyWattSeconds = BatteryChargeEfficiencyCurveCalculator.Compute(
+                    record.StoredEnergyWattSeconds,
+                    safeCapacity,
+                    allocatedPower * safeChargeEfficiency,
+                    safeDeltaTime);
+
                 result.PlannedGridPowerWatts = -allocatedPower;
                 return result;
             }
