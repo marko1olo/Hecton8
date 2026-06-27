@@ -162,6 +162,8 @@ namespace Hecton8.Gameplay
         private const float HydrostaticExitDownwardVelocityKick = 1.35f;
         private const int SpeculativeHoverFixedTicksAfterAupShift = 1;
         private const float SpeculativeHoverBaseHeightMeters = 0.025f;
+        private const float SpeculativeHoverBobbingFrequency = 0.5f;
+        private const float SpeculativeHoverBobbingAmplitude = 0.00625f;
         private const int LegacyCollisionContactCapacity = 16;
         private const int KinematicContactMaxAgeFrames = 2;
         private const int KinematicContactColliderInstanceId = -2147483647;
@@ -2705,7 +2707,7 @@ namespace Hecton8.Gameplay
             IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
             return physicsStateEvents != null
                 ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(baseHeightMeters, timeSeconds)
-                : math.max(0f, baseHeightMeters);
+                : Hecton8.PureLogic.Kinematics.SinusoidalHoverBobbingCalculator.Compute(baseHeightMeters, timeSeconds, SpeculativeHoverBobbingFrequency, SpeculativeHoverBobbingAmplitude);
         }
 
         private void MoveMotorPosition(Vector3 position)
