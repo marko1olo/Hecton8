@@ -58,7 +58,7 @@ namespace Hecton8.Editor
 
         public static Dictionary<string, Vector3> RepresentativeInstancesByPrefab = new Dictionary<string, Vector3>();
 
-        public static void GenerateAndLogScatter(UnityEngine.Terrain[] terrains)
+        public static void GenerateAndLogScatter(UnityEngine.Terrain[] terrains, string artifactDir = "Logs/")
         {
             RepresentativeInstancesByPrefab.Clear();
             Cleanup();
@@ -229,7 +229,7 @@ namespace Hecton8.Editor
             }
 
             Debug.Log($"[SCATTER VALIDATION] Terrain Height Range: {minY:F1} to {maxY:F1}");
-            System.IO.File.WriteAllText(System.IO.Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/RenderLog.txt"), $"[SCATTER] Total BRG Instances: {totalSpawned}\n");
+            System.IO.File.WriteAllText(artifactDir + "RenderLog.txt", $"[SCATTER] Total BRG Instances: {totalSpawned}\n");
             
             if (totalSpawned == 0) Debug.LogError("[SCATTER VALIDATION] FAILED! Zero objects spawned.");
             else Debug.Log($"[SCATTER VALIDATION] SUCCESS! Total spawned BRG instances: {totalSpawned}");
