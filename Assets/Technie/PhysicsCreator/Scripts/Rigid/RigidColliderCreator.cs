@@ -190,7 +190,14 @@ namespace Technie.PhysicsCreator
 			if (obj == null)
 				return;
 #if UNITY_EDITOR
-			Undo.DestroyObjectImmediate(obj);
+			if (!Application.isPlaying)
+			{
+				Undo.DestroyObjectImmediate(obj);
+			}
+			else
+			{
+				GameObject.DestroyImmediate(obj);
+			}
 #else
 			GameObject.DestroyImmediate(obj);
 #endif
@@ -510,7 +517,6 @@ namespace Technie.PhysicsCreator
 			}
 			
 			// Delete any left over colliders
-			// TODO: This probably isn't properly undo-aware
 
 			foreach (Collider c in orphanedColliders)
 			{
@@ -539,7 +545,6 @@ namespace Technie.PhysicsCreator
 			}
 
 			// Delete any left over hull painter childs
-			// TODO: This probably isn't undo-aware
 			
 			foreach (RigidColliderCreatorChild child in orphanedChilds)
 			{
