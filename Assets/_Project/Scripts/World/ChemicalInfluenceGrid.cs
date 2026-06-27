@@ -591,7 +591,7 @@ namespace Hecton8.World
         internal static bool IsInsidePermanentDefoliantDeadZoneAbsolute(Vector3 absolutePosition)
         {
             ChemicalInfluenceGrid instance = _activeRuntimeInstance;
-            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(ToDouble3(absolutePosition));
+            return instance != null && instance.IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(global::Hecton8.World.AUPMath.ToDouble3(absolutePosition));
         }
 
         public static bool TryGetTuningSnapshot(out ChemicalTuningDTO tuning)
@@ -2149,7 +2149,7 @@ namespace Hecton8.World
 
         private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(Vector3 absolutePosition)
         {
-            return IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(ToDouble3(absolutePosition));
+            return IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(global::Hecton8.World.AUPMath.ToDouble3(absolutePosition));
         }
 
         private bool IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(double3 absolutePosition)
@@ -2732,11 +2732,6 @@ namespace Hecton8.World
         private static float3 ToFloat3(double3 value)
         {
             return new float3((float)value.x, (float)value.y, (float)value.z);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static int FastFloorToInt(double value)

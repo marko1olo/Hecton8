@@ -466,7 +466,7 @@ namespace Hecton8.Construction
                     return dto.CurrentAUP;
             }
 
-            return ToDouble3(drone.Position);
+            return global::Hecton8.World.AUPMath.ToDouble3(drone.Position);
         }
 
         private void MirrorDto(int index, in HeadlessDroneState drone, uint taskHash)
@@ -525,11 +525,6 @@ namespace Hecton8.Construction
         private static bool IsFinite(double3 value)
         {
             return math.all(math.isfinite(value));
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
     }
 
@@ -620,7 +615,7 @@ namespace Hecton8.Construction
 
             DroneStateDTO* statePtr = (DroneStateDTO*)DroneStatesDto.GetUnsafePtr();
             ref DroneStateDTO dto = ref UnsafeUtility.AsRef<DroneStateDTO>(statePtr + index);
-            dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : ToDouble3(drone.Position);
+            dto.CurrentAUP = IsFinite(drone.PositionAup) ? drone.PositionAup : global::Hecton8.World.AUPMath.ToDouble3(drone.Position);
             dto.Velocity = drone.Velocity;
             dto.CurrentTargetHashID = math.hash(new uint3((uint)math.max(0, drone.TargetTaskIndex + 1), (uint)math.max(0, drone.DroneId), (uint)drone.State));
             dto.TaskStateFlags = ((uint)drone.State) | ((uint)drone.FactionBit << 8) | ((uint)drone.CorridorTight << 16);
@@ -630,11 +625,6 @@ namespace Hecton8.Construction
         private static bool IsFinite(double3 value)
         {
             return math.all(math.isfinite(value));
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1992,9 +1982,9 @@ namespace Hecton8.Construction
         private static double3 ResolveWaypointAup(in HeadlessDroneState drone, float3 localPosition)
         {
             if (IsFinite(drone.PositionAup) && IsFinite(drone.Position) && IsFinite(localPosition))
-                return drone.PositionAup + ToDouble3(localPosition - drone.Position);
+                return drone.PositionAup + global::Hecton8.World.AUPMath.ToDouble3(localPosition - drone.Position);
 
-            return ToDouble3(localPosition);
+            return global::Hecton8.World.AUPMath.ToDouble3(localPosition);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2090,9 +2080,5 @@ namespace Hecton8.Construction
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
     }
 }

@@ -2039,8 +2039,8 @@ namespace Hecton8.Economy
 
             MarauderTradeTuningDTO tuning = BuildTuning(tuningArray);
             tuningArray[0] = tuning;
-            double3 playerAup = _hasExternalPlayerAup ? _playerAupDouble : ToDouble3(_playerAupMeters);
-            double3 baseAup = _hasExternalBaseAup ? _baseAupDouble : ToDouble3(_baseAupMeters);
+            double3 playerAup = _hasExternalPlayerAup ? _playerAupDouble : global::Hecton8.World.AUPMath.ToDouble3(_playerAupMeters);
+            double3 baseAup = _hasExternalBaseAup ? _baseAupDouble : global::Hecton8.World.AUPMath.ToDouble3(_baseAupMeters);
             float3 playerVelocity = _playerVelocityMetersPerSecond;
             int maxSolves = math.max(1, tuning.MaxRouteSolves);
             int active = math.min(tuning.ActiveMarauders, states.Length);
@@ -2661,10 +2661,6 @@ namespace Hecton8.Economy
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
 
         private static unsafe bool TryDumpBlackBox(NativeArray<MarauderTelemetryEntry> telemetry)
         {

@@ -3772,7 +3772,7 @@ namespace Hecton8.World
                 dearLieGenerateMockDamageBurst = false;
                 int mockCount = math.min(DearLieMockDamageSignalCount, DearLieMaxDamageSignalsPerFrame - writeCount);
                 double3 originAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-                double3 centerAup = originAup + ToDouble3(dearLieMockDamageCenter);
+                double3 centerAup = originAup + global::Hecton8.World.AUPMath.ToDouble3(dearLieMockDamageCenter);
                 var mockJob = new GenerateMockFloraDamageJob
                 {
                     Events = _dearLieDamageEvents,
@@ -10605,11 +10605,11 @@ namespace Hecton8.World
 
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                ToDouble3(runtimePosition));
+                global::Hecton8.World.AUPMath.ToDouble3(runtimePosition));
             return IsFiniteAup(in positionAup);
         }
 
-        private static double3 ToDouble3(Vector3 value)
+        private static double3 global::Hecton8.World.AUPMath.ToDouble3(Vector3 value)
         {
             double3 result = default;
             result.x = value.x;

@@ -178,8 +178,8 @@ namespace Hecton8.Vehicles.Automation
                 distance * ControlDistanceScale,
                 MinControlDistanceMeters,
                 MaxControlDistanceMeters);
-            double3 startHandle = startAbsolute + (ToDouble3(safeStartForward) * controlDistance);
-            double3 targetHandle = targetAbsolute - (ToDouble3(safeTargetForward) * controlDistance);
+            double3 startHandle = startAbsolute + (global::Hecton8.World.AUPMath.ToDouble3(safeStartForward) * controlDistance);
+            double3 targetHandle = targetAbsolute - (global::Hecton8.World.AUPMath.ToDouble3(safeTargetForward) * controlDistance);
 
             spline = new ActiveSplineData
             {
@@ -291,11 +291,6 @@ namespace Hecton8.Vehicles.Automation
         {
             float3 tangent = new float3((float)derivative.x, (float)derivative.y, (float)derivative.z);
             return NormalizeOrFallback(tangent, fallback);
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static bool IsFiniteVector(Vector3 value)

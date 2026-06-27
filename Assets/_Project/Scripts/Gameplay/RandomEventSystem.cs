@@ -106,8 +106,8 @@ namespace Hecton8.Gameplay
                 impulseRadiusMeters,
                 impulseMagnitude,
                 appliedStampCount,
-                ToDouble3(aupStart),
-                ToDouble3(aupEnd),
+                global::Hecton8.World.AUPMath.ToDouble3(aupStart),
+                global::Hecton8.World.AUPMath.ToDouble3(aupEnd),
                 true)
         {
         }
@@ -159,11 +159,6 @@ namespace Hecton8.Gameplay
         private static Vector3 ToVector3(double3 value)
         {
             return new Vector3((float)value.x, (float)value.y, (float)value.z);
-        }
-
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
     }
 

@@ -412,10 +412,6 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Mix(uint a, uint b)

@@ -1603,16 +1603,6 @@ namespace Hecton8.Caves
             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
 
-        private static double3 ToDouble3(Vector3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
-        }
-
         private static double3 InvalidAupCoordinate()
         {
             double3 value;
@@ -1857,7 +1847,7 @@ namespace Hecton8.Caves
             byte sourceFlags = 0,
             Vector3 absoluteImpulseDirection = default)
         {
-            ApplyImmediateAbsoluteCrater(volume, ToDouble3(absoluteHitPoint), radius, materialId, sourceFlags, absoluteImpulseDirection);
+            ApplyImmediateAbsoluteCrater(volume, global::Hecton8.World.AUPMath.ToDouble3(absoluteHitPoint), radius, materialId, sourceFlags, absoluteImpulseDirection);
         }
 
         public void ApplyImmediateAbsoluteCrater(
@@ -1900,7 +1890,7 @@ namespace Hecton8.Caves
             Vector3 absoluteImpulseDirection,
             byte materialId = DefaultMaterialId)
         {
-            ApplyImmediateAbsoluteCrater(volume, ToDouble3(absoluteHitPoint), radius, materialId, CarveSourceLaser, absoluteImpulseDirection);
+            ApplyImmediateAbsoluteCrater(volume, global::Hecton8.World.AUPMath.ToDouble3(absoluteHitPoint), radius, materialId, CarveSourceLaser, absoluteImpulseDirection);
         }
 
         public void ApplyImmediateAbsoluteLaserCrater(
@@ -1926,7 +1916,7 @@ namespace Hecton8.Caves
             Vector3 halfExtents,
             byte materialId = DefaultMaterialId)
         {
-            ApplyImmediateAbsoluteBoxCrater(volume, ToDouble3(absoluteCenter), halfExtents, materialId);
+            ApplyImmediateAbsoluteBoxCrater(volume, global::Hecton8.World.AUPMath.ToDouble3(absoluteCenter), halfExtents, materialId);
         }
 
         public void ApplyImmediateAbsoluteBoxCrater(
@@ -1972,7 +1962,7 @@ namespace Hecton8.Caves
         /// <param name="materialId">Material palette index for the modified cells.</param>
         public void ApplyImmediateAbsoluteWeld(HectonVoxelVolume volume, Vector3 absoluteHitPoint, float radius, float strength, byte materialId = DefaultMaterialId)
         {
-            ApplyImmediateAbsoluteWeld(volume, ToDouble3(absoluteHitPoint), radius, strength, materialId);
+            ApplyImmediateAbsoluteWeld(volume, global::Hecton8.World.AUPMath.ToDouble3(absoluteHitPoint), radius, strength, materialId);
         }
 
         public void ApplyImmediateAbsoluteWeld(HectonVoxelVolume volume, double3 absoluteHitPoint, float radius, float strength, byte materialId = DefaultMaterialId)
@@ -2010,7 +2000,7 @@ namespace Hecton8.Caves
             float strength,
             byte materialId = DefaultMaterialId)
         {
-            ApplyImmediateAbsoluteCapsuleWeld(volume, ToDouble3(absoluteStart), ToDouble3(absoluteEnd), radius, strength, materialId);
+            ApplyImmediateAbsoluteCapsuleWeld(volume, global::Hecton8.World.AUPMath.ToDouble3(absoluteStart), global::Hecton8.World.AUPMath.ToDouble3(absoluteEnd), radius, strength, materialId);
         }
 
         public void ApplyImmediateAbsoluteCapsuleWeld(

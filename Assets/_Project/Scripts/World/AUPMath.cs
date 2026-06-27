@@ -217,6 +217,19 @@ namespace Hecton8.World
             return ToAbsoluteDouble3(in weightedPosition);
         }
 
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 ToDouble3(UnityEngine.Vector3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 ToDouble3(float3 value)
+        {
+            return new double3(value.x, value.y, value.z);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double3 InvalidDouble3()
         {

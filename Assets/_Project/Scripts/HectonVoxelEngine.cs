@@ -1311,7 +1311,6 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.all(math.isfinite(value));
     }
 
-
     // ════════════════════════════════════════════════════════════════════════
     //  CAVE SDF EVALUATION — Core of the cave generation system
     // ════════════════════════════════════════════════════════════════════════
@@ -1890,7 +1889,6 @@ public struct VoxelDensityJob : IJobParallelFor
             math.max(caveParams.terraceSharpness * 0.8f, 2f));
         return fbm * 0.55f + strata * 0.75f;
     }
-
 
     // ════════════════════════════════════════════════════════════════════════
     //  WALL DETAIL — Noise + terraces applied near cave surface
@@ -3541,7 +3539,6 @@ public struct VoxelShiftAwareProjectionJob : IJobParallelFor
         return math.all(math.isfinite(value));
     }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 3.5: Biome Sampling (UNCHANGED from v3.2)
@@ -6359,7 +6356,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             double3 committedTotalOffsetDouble = stableShift.NewTotalOffsetDouble;
             if (!TryResolveRuntimeVector3FromAup(volume.GenerationAbsoluteUniversePositionDouble, committedTotalOffsetDouble, out Vector3 worldCenter))
                 return false;
-            double3 capturedTotalOffsetDouble = volume.GenerationAbsoluteUniversePositionDouble - ToDouble3(volume.generationPosition);
+            double3 capturedTotalOffsetDouble = volume.GenerationAbsoluteUniversePositionDouble - global::Hecton8.World.AUPMath.ToDouble3(volume.generationPosition);
             if (!math.all(math.isfinite(capturedTotalOffsetDouble)))
                 return false;
             CaveGenerationParams caveParams = volume.CaveParams;
@@ -9251,22 +9248,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, Vector3 capturedOffset)
     {
-        return BuildCapturedAup(runtimePosition, ToDouble3(capturedOffset));
+        return BuildCapturedAup(runtimePosition, global::Hecton8.World.AUPMath.ToDouble3(capturedOffset));
     }
 
     private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, double3 capturedOffset)
     {
-        return AbsoluteUniversePosition.FromAbsolutePosition(ToDouble3(runtimePosition) + capturedOffset);
-    }
-
-    private static double3 ToDouble3(Vector3 value)
-    {
-        return new double3(value.x, value.y, value.z);
-    }
-
-    private static double3 ToDouble3(float3 value)
-    {
-        return new double3(value.x, value.y, value.z);
+        return AbsoluteUniversePosition.FromAbsolutePosition(global::Hecton8.World.AUPMath.ToDouble3(runtimePosition) + capturedOffset);
     }
 
     private static float3 ToFloat3(double3 value)
@@ -9339,7 +9326,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!math.isfinite(radius))
             return false;
 
-        double3 runtimeSurfaceDelta = ToDouble3(entrance.surfacePosition) + capturedTotalOffset - committedTotalOffset;
+        double3 runtimeSurfaceDelta = global::Hecton8.World.AUPMath.ToDouble3(entrance.surfacePosition) + capturedTotalOffset - committedTotalOffset;
         if (!TryResolveLocalDeltaFloat3(runtimeSurfaceDelta, out float3 runtimeSurfaceFloat))
             return false;
 
@@ -9361,7 +9348,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
         }
 
-        double3 targetAup = ToDouble3(capturedRuntimePosition) + capturedOriginAup;
+        double3 targetAup = global::Hecton8.World.AUPMath.ToDouble3(capturedRuntimePosition) + capturedOriginAup;
         return TryResolveRuntimeFloat3FromAup(targetAup, committedOriginAup, out runtimePosition);
     }
 
@@ -10097,7 +10084,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         long anomalySolveStartTimestamp = Stopwatch.GetTimestamp();
 
         double3 terrainOriginAup = absoluteGridOriginDouble;
-        double3 sdfOriginAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
+        double3 sdfOriginAup = global::Hecton8.World.AUPMath.ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
         JobHandle pillarDetectionHandle = HectonAnomalyEngine.ScheduleRidgeFeatureDetection(
             terrainHeights,
             anomalyFeatureRecords,
@@ -12745,7 +12732,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ShiftEpochChanged = shiftEpochChanged ? (byte)1 : (byte)0;
         }
 
-        public double3 AbsolutePositionOffsetDouble => StableShift.NewTotalOffsetDouble + ToDouble3(RootRuntimePosition);
+        public double3 AbsolutePositionOffsetDouble => StableShift.NewTotalOffsetDouble + global::Hecton8.World.AUPMath.ToDouble3(RootRuntimePosition);
 
         public float3 RuntimePositionOffset => (float3)RootRuntimePosition;
 
@@ -13413,7 +13400,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
 
         double3 baseAup = new double3(record.AupX, record.AupY, record.AupZ);
-        double3 chunkMinAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
+        double3 chunkMinAup = global::Hecton8.World.AUPMath.ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
         double3 chunkMaxAup = chunkMinAup + new double3(
             math.max(1, data.PtsX) - 1,
             math.max(1, data.PtsY) - 1,
@@ -13497,7 +13484,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
 
         double3 baseAup = new double3(record.AupX, record.AupY, record.AupZ);
-        double3 chunkMinAup = ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
+        double3 chunkMinAup = global::Hecton8.World.AUPMath.ToDouble3(data.VolumeOrigin) + data.AbsoluteUniverseOffsetAtStartDouble;
         double3 chunkMaxAup = chunkMinAup + new double3(
             math.max(1, data.PtsX) - 1,
             math.max(1, data.PtsY) - 1,
@@ -14165,7 +14152,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return;
         }
 
-        double3 absoluteUniverseCenter = ToDouble3(worldCenter) + capturedTotalOffset;
+        double3 absoluteUniverseCenter = global::Hecton8.World.AUPMath.ToDouble3(worldCenter) + capturedTotalOffset;
         if (!math.all(math.isfinite(absoluteUniverseCenter)))
             return;
 
@@ -14181,7 +14168,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         for (int sp = 0; sp < safeSpawnPointCount; sp++)
         {
             CaveSpawnData spawnData = spawnPointList[sp];
-            double3 runtimeSpawnDelta = ToDouble3(spawnData.position) + capturedTotalOffset - committedTotalOffset;
+            double3 runtimeSpawnDelta = global::Hecton8.World.AUPMath.ToDouble3(spawnData.position) + capturedTotalOffset - committedTotalOffset;
             if (!TryResolveLocalDeltaFloat3(runtimeSpawnDelta, out float3 runtimeSpawnFloat))
                 continue;
 

@@ -1604,9 +1604,9 @@ namespace Hecton8.Physics
                 float stiffness = math.saturate(math.isfinite(constraint.Stiffness) ? constraint.Stiffness : 1f);
                 float3 correction = delta * (error * invLen * stiffness / invMassSum);
                 if (invMassA > 0f)
-                    nodeA.CurrentAUP += ToDouble3(correction * invMassA);
+                    nodeA.CurrentAUP += global::Hecton8.World.AUPMath.ToDouble3(correction * invMassA);
                 if (invMassB > 0f)
-                    nodeB.CurrentAUP -= ToDouble3(correction * invMassB);
+                    nodeB.CurrentAUP -= global::Hecton8.World.AUPMath.ToDouble3(correction * invMassB);
             }
 
             float tension = math.max(0f, error) * math.max(0f, TensionForceScale);
@@ -1661,11 +1661,6 @@ namespace Hecton8.Physics
             double span = CablePhysics132Constants.SafeLocalAupSpanMeters;
             delta = math.clamp(delta, new double3(-span), new double3(span));
             return true;
-        }
-
-        private static double3 ToDouble3(float3 value)
-        {
-            return new double3(value.x, value.y, value.z);
         }
 
         private static bool IsFinite(double3 value)
