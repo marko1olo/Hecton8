@@ -1604,9 +1604,9 @@ namespace Hecton8.Physics
                 float stiffness = math.saturate(math.isfinite(constraint.Stiffness) ? constraint.Stiffness : 1f);
                 float3 correction = delta * (error * invLen * stiffness / invMassSum);
                 if (invMassA > 0f)
-                    nodeA.CurrentAUP += global::Hecton8.World.AUPMath.ToDouble3(correction * invMassA);
+                    nodeA.CurrentAUP += new double3(correction.x * invMassA, correction.y * invMassA, correction.z * invMassA);
                 if (invMassB > 0f)
-                    nodeB.CurrentAUP -= global::Hecton8.World.AUPMath.ToDouble3(correction * invMassB);
+                    nodeB.CurrentAUP -= new double3(correction.x * invMassB, correction.y * invMassB, correction.z * invMassB);
             }
 
             float tension = math.max(0f, error) * math.max(0f, TensionForceScale);

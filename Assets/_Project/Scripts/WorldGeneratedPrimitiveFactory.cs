@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
-    internal static class WorldGeneratedPrimitiveFactory
+    public static class WorldGeneratedPrimitiveFactory
     {
         private static readonly Mesh[] _CachedMeshes = new Mesh[6];
         private static readonly Material[] _CachedMaterials = new Material[6];

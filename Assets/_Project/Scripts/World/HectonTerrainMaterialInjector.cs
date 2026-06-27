@@ -33,13 +33,16 @@ namespace Hecton8.World
         {
             ApplyMaterial();
 
-            // MapMagic might replace materialTemplate or regenerate TerrainData
-            if (_terrain != null && _terrain.terrainData != null)
-            {
-                if (_terrain.materialTemplate != _instancedMaterial && _instancedMaterial != null)
-                {
-                    _terrain.materialTemplate = _instancedMaterial;
-                }
+             // MapMagic might replace materialTemplate or regenerate TerrainData
+             if (_terrain != null && _terrain.terrainData != null)
+             {
+                 // Enforce very high basemap distance to prevent Unity from falling back to URP Lit Basemap shader
+                 _terrain.basemapDistance = 100000.0f;
+
+                 if (_terrain.materialTemplate != _instancedMaterial && _instancedMaterial != null)
+                 {
+                     _terrain.materialTemplate = _instancedMaterial;
+                 }
 
                 if (_instancedMaterial != null && customTerrainMaterial != null)
                 {
@@ -51,11 +54,11 @@ namespace Hecton8.World
 #if UNITY_EDITOR
                     // Robust loading for Batchmode tests when material references might be lost
                     if (_instancedMaterial.GetTexture("_AlbedoArray") == null)
-                        _instancedMaterial.SetTexture("_AlbedoArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset"));
+                        _instancedMaterial.SetTexture("_AlbedoArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_AlbedoArray.asset"));
                     if (_instancedMaterial.GetTexture("_NormalArray") == null)
-                        _instancedMaterial.SetTexture("_NormalArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset"));
+                        _instancedMaterial.SetTexture("_NormalArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_NormalArray.asset"));
                     if (_instancedMaterial.GetTexture("_MaskArray") == null)
-                        _instancedMaterial.SetTexture("_MaskArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset"));
+                        _instancedMaterial.SetTexture("_MaskArray", UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset")); // Keep mask array same if not rebuilt
 #endif
                     
                     if (customTerrainMaterial.HasProperty("_HectonUVScale")) _instancedMaterial.SetFloat("_HectonUVScale", customTerrainMaterial.GetFloat("_HectonUVScale"));

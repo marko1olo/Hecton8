@@ -2079,6 +2079,5 @@ namespace Hecton8.Construction
             return new float3((float)value.x, (float)value.y, (float)value.z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
     }
 }

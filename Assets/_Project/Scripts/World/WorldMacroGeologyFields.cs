@@ -107,7 +107,7 @@ namespace Hecton8.World
         public const int DefaultAuthoringSeed = 880031;
         public const float MinimumWorldExtentMeters = 30000f;
         public const float DefaultChunkSizeMeters = 512f;
-        public const uint ArtifactVersion = 6u;
+        public const uint ArtifactVersion = 7u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint CombineWorldSeed(uint authoringSeed, int runtimeWorldSeed)
@@ -141,9 +141,6 @@ namespace Hecton8.World
                 return default;
 
             float height = EvaluateHeightMeters(absoluteX, absoluteZ, in p, out MacroMasks masks);
-            
-            float2 pos = new float2(absoluteX, absoluteZ);
-
             float probe = p.DetailProbeMeters;
             float west = EvaluateHeightMeters(absoluteX - probe, absoluteZ, in p, out _);
             float east = EvaluateHeightMeters(absoluteX + probe, absoluteZ, in p, out _);
@@ -153,19 +150,15 @@ namespace Hecton8.World
             float dx = (east - west) / math.max(0.001f, probe * 2f);
             float dz = (north - south) / math.max(0.001f, probe * 2f);
             float slope = FastSqrtPositive(dx * dx + dz * dz);
-            
-            float curvature = (west + east + south + north - height * 4f) / math.max(0.001f, probe * probe);
-
-            // slope is tan(theta). tan(45)=1.0, tan(60)=1.73
-            // Scaling by 0.6 means saturate hits 1.0 at slope=1.66 (approx 59 degrees).
-            float slope01 = math.saturate(slope * 0.6f);
+            float curvature = (west + east + south + north - height * 4f) /
+                math.max(0.001f, probe * probe);
+            float slope01 = math.saturate(slope / 1.25f);
             float curvature01 = math.saturate(math.abs(curvature) * 280f);
             float positiveCurvature01 = math.saturate(math.max(0f, curvature) * 280f);
             float negativeCurvature01 = math.saturate(math.max(0f, -curvature) * 280f);
-
             float basinFlow = math.saturate(masks.Basin * 0.48f + masks.ShelfBreak * 0.22f + (1f - slope01) * 0.18f);
             float faultFlow = math.saturate(masks.Fault * 0.35f + masks.Trench * 0.32f);
-            float erosionFlow = math.saturate(basinFlow + faultFlow + FractalNoise01(pos * 0.00038f, p.Seed ^ 0xA511E9B3u) * 0.12f);
+            float erosionFlow = math.saturate(basinFlow + faultFlow + FractalNoise01(new float2(absoluteX, absoluteZ) * 0.00038f, p.Seed ^ 0xA511E9B3u) * 0.12f);
             float sediment = math.saturate((1f - slope01) * 0.58f + masks.Basin * 0.42f + masks.Shelf * 0.16f - masks.Ridge * 0.28f - masks.Trench * 0.16f);
             float seep = math.saturate(masks.Fault * 0.45f + masks.Basin * 0.25f + masks.Trench * 0.18f);
             float deepPlain01 = math.saturate((p.WaterSurfaceY - height - 1600f) / 1800f);
@@ -313,46 +306,317 @@ namespace Hecton8.World
 
         private static float EvaluateHeightMeters(float absoluteX, float absoluteZ, in WorldMacroGeologyParams p, out MacroMasks masks)
         {
-            // --- CONTINUOUS COORDINATE WRAPPING ---
-            float period = math.max(MinimumWorldExtentMeters, p.WorldExtentMeters);
+            float extent = math.max(MinimumWorldExtentMeters, p.WorldExtentMeters);
+            float half = extent * 0.5f;
             float2 pos = new float2(absoluteX, absoluteZ);
-            float2 norm = pos / period;
-            
-            // DOMAIN WARPING
+            float2 norm = pos / extent;
+            float lowWarp = (FractalNoise01(norm * 2.0f + new float2(11.7f, -3.9f), p.Seed ^ 0xB5297A4Du) * 2f - 1f) * 980f;
+            float midWarp = (FractalNoise01(norm * 4.4f + new float2(-2.1f, 8.6f), p.Seed ^ 0x4CF5AD43u) * 2f - 1f) * 520f;
+            float highWarp = (FractalNoise01(norm * 7.2f + new float2(-17.2f, 29.3f), p.Seed ^ 0x68E31DA4u) * 2f - 1f) * 240f;
+
+            // DOMAIN WARPING: To break the "plastic" value noise look, we perturb the coordinates for high-frequency noise.
             float warpX = (FractalSimplexNoise01(norm * 12.0f, p.Seed ^ 0x8A1F3C4Du) * 2f - 1f) * 0.005f; 
             float warpZ = (FractalSimplexNoise01(norm * 12.0f, p.Seed ^ 0x3B8E1D2Fu) * 2f - 1f) * 0.005f;
             float2 warpedNorm = norm + new float2(warpX, warpZ);
+            float2 warpedPos = warpedNorm * extent;
 
-            // CONTINENTAL SHELF BLEND (Smooth descent from shallows to abyss)
-            float continentMask = FractalSimplexNoise01(warpedNorm * 3.0f, p.Seed ^ 0x12345678u);
-            continentMask = math.smoothstep(0.3f, 0.7f, continentMask);
-            float depth = math.lerp(p.AbyssDepthMeters, p.ShelfDepthMeters, continentMask);
+            // 1. CONTINENTAL SHELF / ABYSS BLEND
+            float continentNoise = FractalSimplexNoise01(warpedNorm * 2.8f, p.Seed ^ 0x12345678u);
+            float shelfMask = math.smoothstep(0.35f, 0.65f, continentNoise);
+            
+            // Steep, dramatic continental slope transition (ShelfBreak)
+            float shelfBreakMask = 1f - math.saturate(math.abs(continentNoise - 0.5f) * 6.0f);
+            shelfBreakMask = math.saturate(shelfBreakMask);
+            
+            // Canyon cuts on the shelf break
+            float canyonNoise = FractalNoise01(warpedPos * 0.0004f, p.Seed ^ 0x0CA14405u);
+            float canyonDepthProfile = math.pow(math.smoothstep(0.6f, 0.95f, canyonNoise), 3f);
+            float canyonMask = canyonDepthProfile * math.smoothstep(0.1f, 0.9f, shelfBreakMask);
+            
+            // Base depth blend
+            float depth = math.lerp(p.AbyssDepthMeters, p.ShelfDepthMeters, shelfMask);
+            depth += canyonMask * 800f; // Deep canyon cuts
 
-            // RIDGES
-            float ridgeNoise = RidgedMultifractal01(warpedNorm * 18.0f, p.Seed ^ 0x91E83B37u, 5);
-            float ridgeMask = math.smoothstep(0.4f, 1.0f, ridgeNoise);
-            depth -= ridgeMask * p.RidgeHeightMeters * (1f - continentMask * 0.6f);
+            // 2. MOUNTAIN RIDGES
+            // Use Ridged Multifractal for sharp, peaked mountain ranges
+            float ridgeNoise = RidgedMultifractal01(warpedNorm * 8.0f, p.Seed ^ 0x91E83B37u, 5);
+            float ridgeMask = math.smoothstep(0.35f, 0.85f, ridgeNoise);
+            depth -= ridgeMask * p.RidgeHeightMeters * (1f - shelfMask * 0.4f);
 
-            // FAULTS / TRENCHES (Deep cuts)
-            float faultNoise = RidgedMultifractal01(warpedNorm * 12.0f + new float2(0.3f, 0.7f), p.Seed ^ 0x4B3A2C1Du, 4);
-            float trenchMask = math.smoothstep(0.6f, 1.0f, faultNoise);
+            // 3. DEEP OCEANIC TRENCHES / FAULTS
+            float trenchNoise = RidgedMultifractal01(warpedNorm * 6.0f + new float2(0.4f, -0.6f), p.Seed ^ 0x4B3A2C1Du, 4);
+            float trenchMask = math.smoothstep(0.55f, 0.95f, trenchNoise) * (1f - shelfMask);
             depth += trenchMask * p.TrenchDepthMeters;
 
-            // HILLS
-            float hillNoise = FractalSimplexNoise01(warpedNorm * 50.0f, p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
-            depth += hillNoise * 80f;
+            // 4. FAULT LINES
+            float faultNoise = RidgedMultifractal01(warpedNorm * 12.0f, p.Seed ^ 0xCA97D1F3u, 3);
+            float faultMask = math.smoothstep(0.45f, 0.85f, faultNoise) * (1f - shelfMask * 0.5f);
+            depth += faultMask * 120f;
 
+            // 5. ABYSSAL BASINS
+            float basinMask = math.saturate((1f - shelfMask) * (1f - ridgeMask) * (1f - trenchMask));
+            depth += basinMask * p.BasinDepthMeters;
+
+            // 6. ABYSSAL SEAMOUNTS / GUYOTS (warpedPos deforms perfect circular shapes)
+            float2 seamountCell = math.floor(warpedPos * 0.0003f); // 3.3km grid
+            float2 frac = warpedPos * 0.0003f - seamountCell;
+            float minDist = 8.0f;
+            float2 seamountHash = new float2(0, 0);
+            float2 seamountCenterLocal = new float2(0, 0);
+            
+            for (int y = -1; y <= 1; y++)
+            {
+                for (int x = -1; x <= 1; x++)
+                {
+                    float2 neighbor = new float2(x, y);
+                    float2 pointHash = Hash2((int)(seamountCell.x + neighbor.x), (int)(seamountCell.y + neighbor.y), p.Seed ^ 0x5EA30447u);
+                    float2 seamountDiff = neighbor + pointHash - frac;
+                    float dist = math.length(seamountDiff);
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        seamountHash = pointHash;
+                        seamountCenterLocal = seamountDiff; // vector from current warpedPos to seamount center
+                    }
+                }
+            }
+            
+            float seamountProfile = math.saturate(1f - minDist * 2f);
+            if (seamountProfile > 0f)
+            {
+                // Volcanic exponential profile
+                float volProfile = math.exp(-minDist * 6.0f);
+                
+                float isGuyot = HashToUnitFloat(Hash(unchecked((int)(seamountHash.x * 1000f)), unchecked((int)(seamountHash.y * 1000f)), 0x123456)) > 0.5f ? 1f : 0f;
+                
+                if (isGuyot > 0f)
+                {
+                    // Guyot: Flat top
+                    volProfile = math.min(volProfile, 0.4f);
+                }
+                else
+                {
+                    // Caldera (Depression at the very center)
+                    float calderaProfile = 1f - math.smoothstep(0f, 0.045f, minDist);
+                    volProfile -= calderaProfile * 0.3f * seamountProfile;
+                }
+                
+                // Radial Erosional Gullies (seam-free organic branching using normalized direction and warpedPos phase shift)
+                float2 dir = minDist > 0.0001f ? seamountCenterLocal / minDist : new float2(1f, 0f);
+                float gullyPattern = (FractalSimplexNoise01(dir * 3.8f + warpedPos * 0.0005f, p.Seed ^ 0x901177Au) * 2f - 1f);
+                float gullyProfile = 1f - math.abs(gullyPattern);
+                gullyProfile = math.pow(gullyProfile, 3.0f); // Sharper cuts
+                
+                // Gullies only form on the flanks
+                float flankMask = math.smoothstep(0.05f, 0.3f, minDist) * math.smoothstep(0.4f, 0.25f, minDist);
+                volProfile -= gullyProfile * flankMask * 0.15f;
+                
+                depth -= math.saturate(volProfile) * basinMask * 2600f;
+            }
+
+            // 3. INTERNAL PLATE FEATURES (Highlands & Warps)
+            float provinceRelief = math.smoothstep(0.36f, 0.92f, FractalNoise01(warpedPos * 0.00006f, p.Seed ^ 0x21DA7F47u));
+            depth += provinceRelief * 145f * math.saturate(shelfMask + basinMask);
+
+            // Tectonic Network (Internal smaller faults)
+            float internalNetwork = 1f - 2f * math.abs(FractalNoise01(warpedPos * 0.00015f, p.Seed ^ 0xCA97D1F3u) - 0.5f);
+            internalNetwork = math.smoothstep(0.85f, 0.98f, internalNetwork); // Tighter faults
+            float fractureMask = math.max(faultMask, internalNetwork * 0.5f);
+            depth += internalNetwork * 80f; // Reduced from 150f
+
+            float descent01 = 1f - shelfMask;
+            // Relief gate controls where chaotic noise is allowed. Keep it near 0 on flat shelves and basins.
+            float reliefGate = math.saturate(shelfBreakMask * 0.6f + ridgeMask * 0.8f + faultMask * 0.4f);
+
+            // REALISTIC TECTONIC BREAKUP:
+            // Macro uses RidgedMultifractal to create sharp, eroded-looking mountain peaks instead of rounded value noise hills.
+            // Meso and Micro use Simplex for natural organic surface roughness without grid artifacts.
+            float macroBreakup = RidgedMultifractal01(warpedNorm * 18.0f + new float2(7.7f, 41.3f), p.Seed ^ 0x91E83B37u, 5);
+            float mesoBreakup = FractalSimplexNoise01(warpedNorm * 48.0f + new float2(-23.1f, 5.6f), p.Seed ^ 0x6C8E9CF5u) * 2f - 1f;
+            float microBreakup = FractalSimplexNoise01(warpedNorm * 220.0f + new float2(33.1f, -14.6f), p.Seed ^ 0x1A2B3C4Du) * 2f - 1f;
+            
+            // Apply macro breakup as sharp peaks (subtracting depth) where relief is allowed
+            depth -= macroBreakup * 350f * reliefGate; 
+            depth += mesoBreakup * 140f * math.saturate(reliefGate + shelfBreakMask * 0.2f);
+            float microBreakupWeight = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + reliefGate * 0.5f);
+            depth += microBreakup * math.lerp(10f, 60f, microBreakupWeight);
+            depth += fractureMask * 60f;
+
+            // MESO/MICRO DETAIL PASS
+            float rockDetailNoise = (FractalNoise01(warpedNorm * 150.0f + new float2(-44.2f, 88.1f), p.Seed ^ 0x7B9C1A2Fu) * 2f - 1f);
+            float rockyRidgeDetail = 1f - 2f * math.abs(FractalNoise01(warpedNorm * 320.0f + new float2(11.4f, -99.3f), p.Seed ^ 0x5E8A9C1Du) - 0.5f);
+            
+            float hardRockExposure = math.saturate(ridgeMask * 0.6f + faultMask * 0.4f + math.saturate(descent01 * 1.5f) * 0.20f);
+            float mesoDetailWeight = math.saturate(hardRockExposure * 0.8f + reliefGate * 0.3f);
+            
+            depth += rockDetailNoise * 35f * mesoDetailWeight;
+            depth -= rockyRidgeDetail * 30f * mesoDetailWeight * math.saturate(descent01); 
+
+            // SEDIMENT DUNE/RIPPLE DETAIL PASS
+            float duneSample = FractalSimplexNoise01(warpedPos * 0.05f, p.Seed ^ 0xD11EBA5Eu);
+            duneSample = 1f - math.abs(duneSample); // Create sharp ridges and wide valleys
+            duneSample = math.pow(duneSample, 1.8f); // Pin the valleys flatter
+            
+            // Patch masking: dunes only appear in specific fields
+            float duneFieldMask = FractalNoise01(warpedPos * 0.0015f, p.Seed ^ 0xA8B2C41Eu);
+            duneFieldMask = math.smoothstep(0.4f, 0.6f, duneFieldMask); // Sharp transition into dune fields
+            
+            float sedimentDepth = math.saturate(1f - math.saturate(hardRockExposure * 1.5f));
+            
+            float duneAmplitude = math.lerp(4f, 1f, depth / 6000f);
+            float addedHeight = duneSample * duneAmplitude * sedimentDepth * duneFieldMask;
+            
+            // CELLULAR PITS PASS (Craters / Pockmarks / Subsidence)
+            float2 cellHash;
+            float cellDist = CellularDistance01(warpedPos * 0.012f, p.Seed ^ 0xF131A21Eu, out cellHash);
+            
+            // We want deep pits at the center (cellDist near 0).
+            float pitProfile = math.saturate(1f - cellDist * 3f); // Only the central 33% of the cell
+            pitProfile = math.pow(pitProfile, 2.5f); // Make it a bowl shape
+            
+            // Pits appear in clusters
+            float pitFieldMask = FractalNoise01(warpedPos * 0.0008f, p.Seed ^ 0x99BBE211u);
+            pitFieldMask = math.smoothstep(0.5f, 0.7f, pitFieldMask);
+            
+            // Pits subtract from sediment depth. Max pit depth is 6m.
+            float pitDepth = pitProfile * pitFieldMask * sedimentDepth * 6f;
+            
+            // METEOR CRATERS PASS (with rim-warping to prevent perfect mathematical circles)
+            float craterDepthDelta = 0f;
+            float craterMask = 0f;
+            
+            float craterGridSize = 2000f;
+            int2 craterCell = new int2((int)math.floor(warpedPos.x / craterGridSize), (int)math.floor(warpedPos.y / craterGridSize));
+            
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int2 craterNeighborCell = craterCell + new int2(dx, dz);
+                    uint h = Hash(craterNeighborCell.x, craterNeighborCell.y, unchecked((int)(p.Seed ^ 0x9B3A21EFu)));
+                    
+                    // ~15% chance of a crater in this 2km cell
+                    float probability = HashToUnitFloat(h ^ 0x12345678u);
+                    if (probability > 0.15f) continue;
+                    
+                    float cx = (craterNeighborCell.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
+                    float cz = (craterNeighborCell.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
+                    
+                    // Radius between 120m and 600m
+                    float radius = math.lerp(120f, 600f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.5f)); 
+                    
+                    float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
+                    if (dist > radius * 2.0f) continue;
+                    
+                    // rimWarp: deforms the crater radius so it is NOT a perfect circle
+                    float rimWarp = (FractalSimplexNoise01(warpedPos * 0.015f, h ^ 0xDEADBEEFu) * 2f - 1f) * 0.06f;
+                    float normalizedDist = dist / radius + rimWarp;
+                    
+                    // Crater Cavity
+                    float bowl = 1f - math.smoothstep(0f, 1f, normalizedDist); 
+                    bowl = math.pow(bowl, 1.5f); // Flatten the center due to sedimentation
+                    
+                    // Crater Rim
+                    float rimProfile = math.max(0f, 1f - math.abs(normalizedDist - 1f) * 2.5f);
+                    rimProfile = math.smoothstep(0f, 1f, rimProfile);
+                    
+                    // Central Peak (only in large craters)
+                    float peak = 0f;
+                    if (radius > 1200f) {
+                        float peakRadius = radius * 0.15f;
+                        peak = 1f - math.smoothstep(0f, peakRadius, dist);
+                        peak = math.smoothstep(0f, 1f, peak) * 0.4f;
+                    }
+                    
+                    // Rim Erosion Noise
+                    float angle = math.atan2(warpedPos.y - cz, warpedPos.x - cx);
+                    float rimErosion = FractalNoise01(new float2(angle * 4.0f, radius), h ^ 0xDEADBEEFu);
+                    rimProfile *= (0.4f + rimErosion * 0.6f);
+                    
+                    float maxDepth = radius * 0.18f;
+                    float maxRimHeight = radius * 0.08f;
+                    
+                    craterDepthDelta += bowl * maxDepth;     // Depress (add to depth)
+                    craterDepthDelta -= peak * maxDepth;     // Raise peak (subtract from depth)
+                    craterDepthDelta -= rimProfile * maxRimHeight; // Raise rim
+                    
+                    craterMask = math.max(craterMask, bowl);
+                }
+            }
+            depth += craterDepthDelta;
+            
+            depth -= (addedHeight - pitDepth);
+
+            if (depth < -260f)
+                depth = -260f + (depth + 260f) * 0.42f;
             depth = math.clamp(depth, -620f, p.HadalDepthMeters);
+
+            // TECTONIC TERRACING — Localized Geological Strata
+            //
+            // ROOT CAUSE OF MINECRAFT LOOK:
+            //   Old step=18-55m on 400m mountain = 7-22 terraces covering 90% surface → Minecraft.
+            //   Old patchMask = max(0.15, smoothstep(0.1,0.65,...)) → covers 85%+ of surface → Minecraft.
+            //   Old blend = terraceStrength * patchMask ≈ 0.6-0.9 → full replacement → Minecraft.
+            //
+            // REAL GEOLOGY:
+            //   3-5 wide benches (100-180m each) on specific slope aspects, 25-35% coverage, rest smooth.
+            //
+            float terraceStrength = math.saturate(shelfBreakMask * 0.8f + ridgeMask * 0.4f + faultMask * 0.5f);
+            if (terraceStrength > 0.05f)
+            {
+                // STEP 1: LARGE STEPS → only 3-5 terraces on a 400m mountain.
+                // 80-180m: wide geological platforms, not pixel-height Minecraft slabs.
+                float dynamicTerraceScale = math.lerp(80.0f, 180.0f,
+                    FractalSimplexNoise01(warpedNorm * 3.0f, p.Seed ^ 0x112233u));
+
+                // STEP 2: STRATA TILT via pos (meters). 50m per km = 1-2 step shifts across mountain.
+                float2 tiltDir = math.normalize(new float2(
+                    FractalSimplexNoise01(warpedNorm * 1.8f, p.Seed ^ 0xAB12CD34u) * 2f - 1f,
+                    FractalSimplexNoise01(warpedNorm * 1.8f, p.Seed ^ 0x56EF78ABu) * 2f - 1f
+                ));
+                float strataCoord = depth + math.dot(tiltDir, pos) * 0.05f;
+
+                // STEP 3: EROSION at mountain scale. ±60m+±25m on 80-180m steps = 0.33-0.75 step shift.
+                // Merges/kills whole terraces in patches rather than just wiggling edges.
+                float terraceErosionC = (FractalSimplexNoise01(warpedNorm * 80.0f,  p.Seed ^ 0x99AA88BBu) * 2f - 1f) * 60.0f;
+                float terraceErosionF = (FractalSimplexNoise01(warpedNorm * 250.0f, p.Seed ^ 0x77CC4411u) * 2f - 1f) * 25.0f;
+                float terraceErosion  = terraceErosionC + terraceErosionF;
+
+                // STEP 4: QUANTIZE with sharp cliff wall at top of step.
+                float hPhase = (strataCoord + terraceErosion) / dynamicTerraceScale;
+                float fStep  = math.frac(hPhase);
+                float sStep  = math.smoothstep(0.55f, 0.88f, fStep);
+
+                float terracedCoord = (math.floor(hPhase) + sStep) * dynamicTerraceScale - terraceErosion;
+                float terracedDepth = terracedCoord - math.dot(tiltDir, pos) * 0.05f;
+
+                // STEP 5: AGGRESSIVE PATCHINESS — only ~30% of mountain gets terracing.
+                // smoothstep(0.60, 0.92) with NO floor: passes only top 32% of noise distribution.
+                float terracePatchMask = math.smoothstep(0.60f, 0.92f,
+                    FractalSimplexNoise01(warpedNorm * 4.5f, p.Seed ^ 0x992211AAu));
+
+                // STEP 6: MAX BLEND 0.55 — macro shape always reads through.
+                depth = math.lerp(depth, terracedDepth, terraceStrength * terracePatchMask * 0.55f);
+            }
+
+            // TALUS / SCREE ACCUMULATION
+            float rockBase  = math.saturate(ridgeMask * 0.7f + faultMask * 0.4f + math.saturate((1f - shelfMask) * 1.5f) * 0.3f);
+            float slope01   = math.saturate(shelfBreakMask * 0.9f + ridgeMask * 0.8f + faultMask * 0.4f);
+            float screeMask = math.smoothstep(0.05f, 0.30f, slope01) * (1.0f - math.smoothstep(0.40f, 0.65f, slope01));
+            float screeC    = RidgedMultifractal01(warpedNorm * 140.0f, p.Seed ^ 0xE70D1A5Bu, 3);
+            float screeF    = RidgedMultifractal01(warpedNorm * 480.0f,  p.Seed ^ 0xC3F19802u, 2);
+            float screeRubble = ((screeC * 0.7f + screeF * 0.3f) * 2f - 1f) * 35.0f;
+            depth += screeRubble * screeMask * rockBase;
 
             masks = new MacroMasks
             {
-                Shelf = math.saturate(continentMask),
-                ShelfBreak = math.saturate(1f - continentMask) * 0.5f,
+                Shelf = math.saturate(shelfMask),
+                ShelfBreak = math.saturate(shelfBreakMask),
                 Ridge = math.saturate(ridgeMask),
                 Trench = math.saturate(trenchMask),
-                Basin = math.saturate(1f - ridgeNoise - trenchMask),
-                Fault = math.saturate(math.smoothstep(0.4f, 0.6f, faultNoise)),
-                Crater = 0f
+                Basin = math.saturate(basinMask),
+                Fault = math.saturate(fractureMask),
+                Crater = math.saturate(craterMask)
             };
             return p.WaterSurfaceY - depth;
         }
@@ -468,10 +732,8 @@ namespace Hecton8.World
             for (int octave = 0; octave < octaves; octave++)
             {
                 float n = SimplexNoise01(sample * frequency, seed + (uint)octave * 0x9E3779B9u);
-                // Soft Ridged inversion: 1 - sqrt((noise*2-1)^2 + 0.01) to prevent C0 discontinuity
-                float centered = n * 2f - 1f;
-                n = 1f - math.sqrt(centered * centered + 0.01f);
-                n = math.max(0f, n); // clamp to 0
+                // Ridged inversion: 1 - abs(noise * 2 - 1)
+                n = 1f - math.abs(n * 2f - 1f);
                 n = n * n; // sharpen ridges
                 n *= weight;
                 weight = math.saturate(n * 2f);
@@ -599,3 +861,4 @@ namespace Hecton8.World
         }
     }
 }
+

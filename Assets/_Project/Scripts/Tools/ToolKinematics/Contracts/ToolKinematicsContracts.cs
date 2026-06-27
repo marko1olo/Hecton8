@@ -412,8 +412,6 @@ namespace Hecton8.Tools.ToolKinematics.Contracts
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint Mix(uint a, uint b)
         {
             uint h = a ^ 0x9E3779B9u;

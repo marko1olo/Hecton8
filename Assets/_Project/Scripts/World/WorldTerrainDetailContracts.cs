@@ -177,8 +177,8 @@ namespace Hecton8.World
             // CALIBRATED SPLATMAP MATH
             // With slope01 = tan(theta) * 0.6:
             // 45 deg -> ~0.60
-            float steepSlope = math.smoothstep(0.4f, 0.8f, sample.Slope01);
-            float verySteep = math.smoothstep(0.60f, 0.90f, sample.Slope01);
+            float steepSlope = math.smoothstep(0.35f, 0.55f, sample.Slope01);
+            float verySteep = math.smoothstep(0.50f, 0.80f, sample.Slope01);
             
             // Hard rock dominates completely on steep walls
             float rockBase = math.saturate((hardRock * 0.5f) + (ridge * 0.3f) + (sample.FaultMask * 0.2f) - (sediment * 0.3f));
@@ -527,8 +527,28 @@ namespace Hecton8.World
             else if (extent < 1000f)
                 maxDelta = math.min(maxDelta, 24f);
 
+            // [MICRO-GEOLOGY CALIBRATION] Add Ridged Noise for Hard Rock/Talus
+            float rockNoise1 = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x1A2B3C4Du, 15f);
+            float rockNoise2 = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x4D3C2B1Au, 6f);
+            float ridged1 = 1f - math.abs(rockNoise1 * 2f - 1f);
+            float ridged2 = 1f - math.abs(rockNoise2 * 2f - 1f);
+            // Sharp, aggressive erosion that bites into slopes and talus regions
+            float rockErosion = (ridged1 * 0.7f + ridged2 * 0.3f) * math.saturate(talus + (slope * 2f));
+            float rockDelta = -rockErosion * (4f + 16f * detailGate);
+
+            // [MICRO-GEOLOGY CALIBRATION] Add Sand ripples (Micro-dunes) for sediment areas
+            float waveScale = 12f;
+            float waveDir = 0.785398f; // 45 degrees
+            float2 waveVec = new float2(math.cos(waveDir), math.sin(waveDir));
+            float dotPos = absoluteX * waveVec.x + absoluteZ * waveVec.y;
+            float sineWave = math.sin(dotPos * (3.14159f * 2f / waveScale));
+            float rippleJitter = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xABCDEF12u, waveScale * 1.5f);
+            // Warped sine wave for natural looking underwater current ripples
+            float dunes = math.saturate((sineWave + 1f) * 0.5f + (rippleJitter - 0.5f));
+            float duneDelta = (dunes - 0.5f) * (1.8f + 2.5f * detailGate) * sediment;
+
             float delta = math.clamp(
-                terraceDelta + channelDelta + slumpDelta + talusDelta + rubbleDelta + reefDelta,
+                terraceDelta + channelDelta + slumpDelta + talusDelta + rubbleDelta + reefDelta + rockDelta + duneDelta,
                 -maxDelta,
                 maxDelta);
 

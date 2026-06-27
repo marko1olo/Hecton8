@@ -37,7 +37,7 @@ namespace UnityEditor.ShaderGraph
     }
 
     [GenerationAPI] // TODO: Public
-    public abstract class SubTarget<T> : SubTarget where T : Target
+    internal abstract class SubTarget<T> : SubTarget where T : Target
     {
         internal override Type targetType => typeof(T);
 

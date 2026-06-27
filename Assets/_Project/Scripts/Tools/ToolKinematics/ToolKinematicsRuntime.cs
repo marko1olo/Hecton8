@@ -358,7 +358,7 @@ namespace Hecton8.Tools.ToolKinematics
                 uint triggerFlags = frameTriggerFlags;
                 triggerFlags |= ResolveToolModeFlag(state.ToolTypeHash);
 
-                state.AUP = cameraAup + ToolKinematicsMath.global::Hecton8.World.AUPMath.ToDouble3(controllerLocal);
+                state.AUP = cameraAup + new double3(controllerLocal.x, controllerLocal.y, controllerLocal.z);
                 if (!math.isfinite(state.MaxEnergyCapacity) || state.MaxEnergyCapacity <= 0.0001f)
                     state.MaxEnergyCapacity = 1f;
                 state.EnergyRemaining = math.clamp(math.select(0f, state.EnergyRemaining, math.isfinite(state.EnergyRemaining)), 0f, state.MaxEnergyCapacity);

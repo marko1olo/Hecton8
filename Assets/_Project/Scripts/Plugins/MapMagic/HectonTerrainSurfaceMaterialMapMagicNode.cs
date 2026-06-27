@@ -284,7 +284,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static int RegisterPersistentArray<T>(NativeArray<T> array, string label)
             where T : struct
         {
-            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Permanent);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TransientArena);
             if (registrationId <= 0)
                 throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
 

@@ -10609,7 +10609,7 @@ namespace Hecton8.World
             return IsFiniteAup(in positionAup);
         }
 
-        private static double3 global::Hecton8.World.AUPMath.ToDouble3(Vector3 value)
+        private static double3 ToDouble3(Vector3 value)
         {
             double3 result = default;
             result.x = value.x;
