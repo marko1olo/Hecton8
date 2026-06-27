@@ -231,7 +231,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 field.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Field {fieldName} on {type.Name} assignment failed: {e.Message}"); }
         }
 
         // Try property
@@ -245,7 +245,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 prop.SetValue(target, value);
                 return;
             }
-            catch { }
+            catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Property {fieldName} on {type.Name} assignment failed: {e.Message}"); }
         }
 
         // Nuclear fallback
@@ -359,7 +359,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return true;
                     }
                 }
-                catch { }
+                catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] ImplementsInletMatrixWorld: Generic arguments check failed: {e.Message}"); }
             }
         }
 
@@ -458,7 +458,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return inlet;
                         }
                     }
-                    catch { }
+                    catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] GetDefaultInlet: Property get value failed: {e.Message}"); }
                 }
             }
 
@@ -542,7 +542,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (gen != null)
             {
                 try { graph.Remove(gen); }
-                catch { }
+                catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] ClearGraph: Failed to remove generator: {e.Message}"); }
             }
         }
 
@@ -560,7 +560,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                     clearMethod.Invoke(links, null);
             }
         }
-        catch { }
+        catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] ClearGraph: Failed to clear links: {e.Message}"); }
     }
 
     /// <summary>Count generators in the graph.</summary>
@@ -571,7 +571,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (graph.generators != null)
                 return graph.generators.Length;
         }
-        catch { }
+        catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] CountGenerators: Failed to count generators: {e.Message}"); }
         return 0;
     }
 
@@ -629,7 +629,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 }
                 if (genType != null) break;
             }
-            catch { }
+            catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] CreateGeneratorByName: Failed to get types from assembly: {e.Message}"); }
         }
 
         if (genType == null)
@@ -714,7 +714,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             Debug.Log("[GraphBuilder] Linked via reflection fallback.");
                             return;
                         }
-                        catch { }
+                        catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] LinkNodes: Fallback reflection link failed: {e.Message}"); }
                     }
                 }
             }
