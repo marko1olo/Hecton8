@@ -241,83 +241,62 @@ namespace Den.Tools.Splines
 
 		#region Ops
 
+			public int CalcPointsNum (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
+			{
+				int numPoints = 0;
+				for (int s=0; s<segments.Length; s++)
+				{
+					int modRes = (int)( segments[s].length * resPerUnit );
+					if (modRes < minRes) modRes = minRes;
+					if (modRes > maxRes) modRes = maxRes;
+					numPoints += modRes;
+				}
+				return numPoints;
+			}
+
+			public void FillPoints (Vector3[] points, Vector3[] derivatives, float resPerUnit=0.1f, int minRes=3, int maxRes=20)
+			{
+				int i=0;
+				for (int s=0; s<segments.Length; s++)
+				{
+					int modRes = (int)( segments[s].length * resPerUnit );
+					if (modRes < minRes) modRes = minRes;
+					if (modRes > maxRes) modRes = maxRes;
+
+					for (int p=0; p<modRes; p++)
+					{
+						float percent = 1f*p / modRes;
+						points[i] = segments[s].GetPoint(percent);
+						if (derivatives != null)
+							derivatives[i] = segments[s].GetDerivative(percent);
+						i++;
+					}
+				}
+
+				//the last one
+				points[points.Length-1] = segments[segments.Length-1].end.pos;
+				if (derivatives != null)
+					derivatives[points.Length-1] = -segments[segments.Length-1].end.dir;
+			}
+
 			public Vector3[] GetAllPoints (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
 			/// Converts line into array of points to draw polyline
 			/// resPerUnit defines how many points will be created for 1 meter of spline. Then min/maxRes clamps the amount of points per segment.
 			/// Requires length updated
 			{
-				//calculating number of points
-				int numPoints = 0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					numPoints += modRes;
-				}
-
+				int numPoints = CalcPointsNum(resPerUnit, minRes, maxRes);
 				Vector3[] points = new Vector3[numPoints + 1];
-			
-				int i=0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					for (int p=0; p<modRes; p++)
-					{
-						float percent = 1f*p / modRes;
-						points[i] = segments[s].GetPoint(percent);
-						i++;
-					}
-				}
-
-				//the last one
-				points[points.Length-1] = segments[segments.Length-1].end.pos;
-
+				FillPoints(points, null, resPerUnit, minRes, maxRes);
 				return points; 
 			}
 
 			public (Vector3[], Vector3[]) GetAllPointsDerivatives (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
 			/// Copy of GetAllPoints, but returns derivatives as well
-			/// TODO: replace with CalcPointsNum and FillPoints
 			{
-				//calculating number of points
-				int numPoints = 0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					numPoints += modRes;
-				}
-
+				int numPoints = CalcPointsNum(resPerUnit, minRes, maxRes);
 				Vector3[] points = new Vector3[numPoints + 1];
 				Vector3[] derivatives = new Vector3[numPoints + 1];
-			
-				int i=0;
-				for (int s=0; s<segments.Length; s++)
-				{
-					int modRes = (int)( segments[s].length * resPerUnit );
-					if (modRes < minRes) modRes = minRes;
-					if (modRes > maxRes) modRes = maxRes;
-
-					for (int p=0; p<modRes; p++)
-					{
-						float percent = 1f*p / modRes;
-						points[i] = segments[s].GetPoint(percent);
-						derivatives[i] = segments[s].GetDerivative(percent);
-						i++;
-					}
-				}
-
-				//the last one
-				points[points.Length-1] = segments[segments.Length-1].end.pos;
-				derivatives[points.Length-1] = -segments[segments.Length-1].end.dir;
-
+				FillPoints(points, derivatives, resPerUnit, minRes, maxRes);
 				return (points, derivatives); 
 			}
 
