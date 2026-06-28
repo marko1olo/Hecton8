@@ -556,21 +556,9 @@ namespace Hecton8.SaveSystem
             return TryEnqueue(SaveEventType.SaveStarted, slotHash, 0u, null);
         }
 
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveStarted(uint).", true)]
-        public static void RaiseSaveStarted(string slot)
-        {
-            TryRaiseSaveStarted(ComputeSlotHash(slot));
-        }
-
         public static bool TryRaiseSaveCompleted(uint slotHash)
         {
             return TryEnqueue(SaveEventType.SaveCompleted, slotHash, 0u, null);
-        }
-
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveCompleted(uint).", true)]
-        public static void RaiseSaveCompleted(string slot)
-        {
-            TryRaiseSaveCompleted(ComputeSlotHash(slot));
         }
 
         public static bool TryRaiseSaveFailed(uint slotHash, uint errorHash, string errorMessage)
