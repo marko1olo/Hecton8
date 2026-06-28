@@ -280,16 +280,15 @@ namespace Hecton8.BlackboxDiagnostics
             catch
             {
                 // Fallback: iterate scenes
+                var temp = new List<Component>();
                 for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
                 {
                     var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
                     if (!scene.isLoaded) continue;
                     foreach (var root in scene.GetRootGameObjects())
                     {
-                        foreach (var comp in root.GetComponentsInChildren(type, true))
-                        {
-                            result.Add(comp);
-                        }
+                        root.GetComponentsInChildren(type, true, temp);
+                        result.AddRange(temp);
                     }
                 }
             }
