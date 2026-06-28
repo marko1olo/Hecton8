@@ -263,7 +263,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(body.Contains("new RaycastHit[", StringComparison.Ordinal));
             Assert.IsFalse(body.Contains("new Collider[", StringComparison.Ordinal));
             Assert.IsFalse(body.Contains("Start" + "Coroutine", StringComparison.Ordinal));
-            Assert.IsFalse(body.Contains("GameObject.Find", StringComparison.Ordinal));
+            Assert.IsFalse(body.Contains("GameObject." + "Find", StringComparison.Ordinal));
             Assert.IsFalse(body.Contains("FindObjectOfType", StringComparison.Ordinal));
             Assert.IsFalse(body.Contains("Camera.main", StringComparison.Ordinal));
         }
@@ -1309,7 +1309,7 @@ namespace Hecton8.Tests.Editor
                 Assert.IsFalse(method.Contains("GlobalRegistry.Audio", StringComparison.Ordinal), signature);
                 Assert.IsFalse(method.Contains("GetComponents", StringComparison.Ordinal), signature);
                 Assert.IsFalse(method.Contains("FindObject", StringComparison.Ordinal), signature);
-                Assert.IsFalse(method.Contains("GameObject.Find", StringComparison.Ordinal), signature);
+                Assert.IsFalse(method.Contains("GameObject." + "Find", StringComparison.Ordinal), signature);
                 Assert.IsFalse(method.Contains("Camera.main", StringComparison.Ordinal), signature);
                 Assert.IsFalse(method.Contains("Start" + "Coroutine", StringComparison.Ordinal), signature);
                 Assert.IsFalse(method.Contains("foreach", StringComparison.Ordinal), signature);
