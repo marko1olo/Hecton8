@@ -2237,6 +2237,10 @@ namespace Hecton8.AI.Ambient
                     queueBlackBoxDump = TryStageBlackBoxDump(ring, index);
                 }
             }
+            catch (System.Exception e)
+            {
+                Hecton8.Core.H8Debug.LogError($"[AmbientBiotaDirector] Telemetry heartbeat failed: {e}");
+            }
             finally
             {
                 ReleaseAmbientMutationGuard(guardVault, TelemetryMutationGuardMask);
