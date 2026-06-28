@@ -9,7 +9,7 @@ using UnityEditor.ShaderGraph.Serialization;
 namespace UnityEditor.ShaderGraph
 {
     [Serializable, GenerationAPI] // TODO: Public
-    internal abstract class Target : JsonObject
+    public abstract class Target : JsonObject
     {
         public string displayName { get; set; }
         public bool isHidden { get; set; }
