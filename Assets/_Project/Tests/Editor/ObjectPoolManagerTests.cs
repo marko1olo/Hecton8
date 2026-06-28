@@ -197,5 +197,25 @@ namespace Hecton8.Tests.Editor
             if (spawned1 != null) Object.DestroyImmediate(spawned1);
             if (spawned2 != null) Object.DestroyImmediate(spawned2);
         }
+
+        [Test]
+        public void Spawn_WithNullGameObject_ReturnsNull()
+        {
+            // Act
+            GameObject result = _poolManager.Spawn((GameObject)null, Vector3.zero, Quaternion.identity);
+
+            // Assert
+            Assert.IsNull(result, "Spawn should return null when passed a null GameObject.");
+        }
+
+        [Test]
+        public void Spawn_WithNullComponent_ReturnsNull()
+        {
+            // Act
+            GameObject result = _poolManager.Spawn((Component)null, Vector3.zero, Quaternion.identity);
+
+            // Assert
+            Assert.IsNull(result, "Spawn should return null when passed a null Component.");
+        }
     }
 }
