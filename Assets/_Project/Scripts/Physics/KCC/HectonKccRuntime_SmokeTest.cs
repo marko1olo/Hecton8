@@ -293,9 +293,9 @@ namespace Hecton8.Physics.KCC
             // exclusively by this scheduled job for the full 10,000-frame background pass.
             //
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-            // Splitting every frame into many small jobs was rejected because it creates same-frame schedule/readback
-            // pressure and hides determinism bugs behind scheduler order. Managed collections were rejected because
-            // the history and rollback state must be flat native memory.
+            // This monolithic IJob design is strictly required to prevent determinism bugs that would be introduced
+            // by scheduler ordering if the work were split into smaller jobs. It also avoids same-frame schedule/readback
+            // pressure. Managed collections were rejected because the history and rollback state must be flat native memory.
             //
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Invariant: callers schedule this job only after geometry/init jobs complete and schedule validation jobs
