@@ -14769,4 +14769,8 @@ namespace Hecton8.Gameplay
         private static void JulesLink_VehicleEmergencyEjectionVector() { _ = typeof(Hecton8.PureLogic.Systems.VehicleEmergencyEjectionVector); }
         #endregion
 }
+
+        #region JulesLink_NitrogenNarcosisCriticalDepthCalculator
+        private static void JulesLink_NitrogenNarcosisCriticalDepthCalculator() { _ = typeof(Hecton8.PureLogic.Systems.NitrogenNarcosisCriticalDepthCalculator); }
+        #endregion
 }
