@@ -497,6 +497,7 @@ namespace CandiceAIforGames.Data
             string nonNull = "";
             string autoincrement = "";
             string pk = "";
+            string defaultVal = "";
             if (info.Pk)
             {
                 pk = " PRIMARY KEY";
@@ -509,7 +510,16 @@ namespace CandiceAIforGames.Data
             {
                 nonNull = " NOT NULL";
             }
-            columnParameters += EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull;
+            if (!string.IsNullOrEmpty(info.DefaultValue))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(info.DefaultValue, @"^[a-zA-Z0-9_\-\.\s]+$"))
+                {
+                    Debug.LogError("Invalid default value provided: " + info.DefaultValue);
+                    return -1;
+                }
+                defaultVal = " DEFAULT '" + info.DefaultValue.Replace("'", "''") + "'";
+            }
+            columnParameters += EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull + defaultVal;
 
 
             int rc = 0;
@@ -521,7 +531,7 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                createQuery = "ALTER TABLE " + EscapeIdentifier(tableName) + " ADD COLUMN" + columnParameters;
+                createQuery = string.Format("ALTER TABLE {0} ADD COLUMN {1}", EscapeIdentifier(tableName), columnParameters.TrimStart());
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();
