@@ -9711,6 +9711,168 @@ namespace Hecton8.Gameplay
                     _shoreGroundGraceTimer = 0f;
             }
 
+            AdvanceCooldownTimers(fixedDeltaTime);
+            AdvanceFatalPressureSequence(fixedDeltaTime);
+            UpdateWipeoutState(fixedDeltaTime);
+            UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+            UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+
+            bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+            bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+            bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+            bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+            exosuitActive = IsExosuitTransportActive();
+            exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+            ToggleBuoyancy(!exosuitActive);
+            RefreshSurfaceBreachLock(physicsImmersion);
+            UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+
+            float targetGravityScale = exosuitActive
+                ? exosuitNegativeBuoyancyScale
+                : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+            _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+
+            if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+            {
+                float mass = ResolveAuthoritativeBodyMassKg();
+                _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+                _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+                _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+                QueueEnvironmentalForce(_forceVector);
+            }
+
+            if ((exosuitActive && _isGrounded) || groundedOnShore)
+            {
+                _snapScale = 1f;
+            }
+            else
+            {
+                _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+            }
+
+            bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+            bool shouldStartSurfaceDiveAssist =
+                !shouldWalk &&
+                !IsInDryInterior() &&
+                physicsImmersion >= surfaceBreachMinImmersion &&
+                GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+                HasCommittedSurfaceDive(activeTransportPreset);
+
+            if (shouldWalk)
+            {
+                _surfaceDiveAssistTimer = 0f;
+            }
+            else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
+            {
+                _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
+            }
+
+            if (shouldWalk != _isWalking)
+            {
+                _isWalking = shouldWalk;
+                ApplyModePhysics(suit);
+                UpdateModeDiagnostics();
+            }
+
+            _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
+            _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
+            SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
+            _environmentHandler?.ExecuteStep(fixedDeltaTime, !exosuitKinematicAuthority);
+            ApplyQueuedExternalKinematicForces(fixedDeltaTime, !exosuitKinematicAuthority);
+            ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
+            UpdateSurfaceLockState(fixedDeltaTime);
+            UpdateWaterPresentationPose(fixedDeltaTime);
+            UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
+            UpdateHeavyTowRuntimeResponse(fixedDeltaTime, exosuitKinematicAuthority);
+            UpdateWetLensSignal(fixedDeltaTime);
+            UpdateHeadSurfaceRecovery(fixedDeltaTime);
+            UpdateTransportCriticalBailout();
+            UpdateModeDiagnostics();
+            TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
+            TryPlaySurfacePierceSplashAudio(previousWaterImmersionRatio, currentVerticalVelocity);
+            TryStartSurfaceBreachArc(previousWaterImmersionRatio, currentVerticalVelocity);
+            ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
+
+            SmoothDampingTransition(fixedDeltaTime, suit);
+            TryApplyKinematicWallKick(exosuitKinematicAuthority);
+
+            ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
+
+            if (exosuitKinematicAuthority)
+            {
+                CoolExosuitJumpJets(fixedDeltaTime);
+                AdvanceExosuitGrappleRequest(fixedDeltaTime);
+                _exosuitGrappleCurrentForce = 0f;
+            }
+            else if (_isWalking)
+            {
+                bool hasLandInput = _inputH != 0f || _inputV != 0f;
+                ApplyEnvironmentalDrag(1f);
+                AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
+                AdvanceParasiteLatchInfluence(fixedDeltaTime);
+                _sargassumFieldDensity01 = 0f;
+                UpdateSargassumMatBuoyancyBlend(fixedDeltaTime);
+                WalkPhysics(suit, fixedDeltaTime);
+                ApplyCuttingTensionPhysics(fixedDeltaTime);
+                ApplyExosuitGrapplePhysics(fixedDeltaTime);
+                ApplyExosuitJumpJets(fixedDeltaTime);
+                if (!exosuitActive)
+                    CoolExosuitJumpJets(fixedDeltaTime);
+
+                if (hasLandInput)
+                    TryApplyStepAssist(groundedOnDryLand, groundedOnShore);
+
+                if (_isGrounded && _snapScale > 0.001f)
+                    ApplyGroundStability(_snapScale);
+            }
+            else
+            {
+                CoolExosuitJumpJets(fixedDeltaTime);
+                AdvanceCuttingTensionRequest(fixedDeltaTime);
+                ApplyExosuitGrapplePhysics(fixedDeltaTime);
+                AdvanceCurrentPhaseTimer(fixedDeltaTime);
+                AdvanceSargassumInfluence(fixedDeltaTime, activeTransportPreset);
+                AdvanceAbyssalThermalInfluence(fixedDeltaTime, activeTransportPreset);
+                AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
+                AdvanceParasiteLatchInfluence(fixedDeltaTime);
+                SwimPhysics(suit, fixedDeltaTime, activeTransportPreset);
+
+                if (_surfaceLockBlend > 0.001f)
+                    ApplySurfaceLock(suit, activeTransportPreset);
+
+                if (_waterImmersionRatio > 0.3f)
+                    ApplyAmbientCurrent(suit, fixedDeltaTime, activeTransportPreset);
+            }
+
+            if (!exosuitKinematicAuthority)
+            {
+                TryProcessKccWallScrapeFeedback();
+                ApplyWipeoutRecoveryForces(fixedDeltaTime);
+                ApplyProceduralLinearDamping(fixedDeltaTime);
+                ClampVelocity(suit);
+            }
+            SanitizeKccFiniteState();
+            Vector3 safeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+            bodyRuntimePosition = ResolveBodyRuntimePosition();
+            WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
+            _playerKinematicsNativeState.WriteTelemetry(
+                _dataVault,
+                _lastPlayerKinematicsDragCoefficient,
+                _lastPlayerKinematicsWaterDensityScale,
+                ResolvePlayerKinematicsTelemetryFlags());
+            PublishMovementAcousticSignal(safeVelocity);
+            SyncSwimVatSpeedScalar(safeVelocity, suit);
+            PushMovementStaminaBurnInput();
+            ApplyVoxelNoClipFailsafe(exosuitKinematicAuthority);
+            CaptureFixedInterpolationState();
+            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
+            UpdateGroundDiagnostics();
+            _useFixedFrameSpatialCache = false;
+            }
+        }
+
+        private void AdvanceCooldownTimers(float fixedDeltaTime)
+        {
             if (_jumpBufferTimer > 0f)
             {
                 _jumpBufferTimer -= fixedDeltaTime;
@@ -9795,7 +9957,10 @@ namespace Hecton8.Gameplay
                 if (_criticalStaminaFailureTimer < 0f)
                     _criticalStaminaFailureTimer = 0f;
             }
+        }
 
+        private void AdvanceFatalPressureSequence(float fixedDeltaTime)
+        {
             if (_fatalPressureSequenceTimer > 0f)
             {
                 _fatalPressureSequenceTimer -= fixedDeltaTime;
@@ -9827,7 +9992,10 @@ namespace Hecton8.Gameplay
                     _fatalPressureLookPitchAnchor = _cameraPitch;
                 }
             }
+        }
 
+        private void UpdateWipeoutState(float fixedDeltaTime)
+        {
             if (_stateMachine != null)
             {
                 _wipeoutTimer = _stateMachine.WipeoutTimer;
@@ -9842,89 +10010,10 @@ namespace Hecton8.Gameplay
                     _wipeoutSeverity = 0f;
                 }
             }
+        }
 
-            UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
-            UpdateVegetationDensityLinearDamping(fixedDeltaTime);
-
-            bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
-            bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
-            bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
-            bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
-            exosuitActive = IsExosuitTransportActive();
-            exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
-            ToggleBuoyancy(!exosuitActive);
-            RefreshSurfaceBreachLock(physicsImmersion);
-            UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
-
-            float targetGravityScale = exosuitActive
-                ? exosuitNegativeBuoyancyScale
-                : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
-            _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
-
-            if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
-            {
-                float mass = ResolveAuthoritativeBodyMassKg();
-                _forceVector.x = _cachedGravity.x * mass * _gravityScale;
-                _forceVector.y = _cachedGravity.y * mass * _gravityScale;
-                _forceVector.z = _cachedGravity.z * mass * _gravityScale;
-                QueueEnvironmentalForce(_forceVector);
-            }
-
-            if ((exosuitActive && _isGrounded) || groundedOnShore)
-            {
-                _snapScale = 1f;
-            }
-            else
-            {
-                _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
-            }
-
-            bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
-            bool shouldStartSurfaceDiveAssist =
-                !shouldWalk &&
-                !IsInDryInterior() &&
-                physicsImmersion >= surfaceBreachMinImmersion &&
-                GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
-                HasCommittedSurfaceDive(activeTransportPreset);
-
-            if (shouldWalk)
-            {
-                _surfaceDiveAssistTimer = 0f;
-            }
-            else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
-            {
-                _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
-            }
-
-            if (shouldWalk != _isWalking)
-            {
-                _isWalking = shouldWalk;
-                ApplyModePhysics(suit);
-                UpdateModeDiagnostics();
-            }
-
-            _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
-            _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
-            SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
-            _environmentHandler?.ExecuteStep(fixedDeltaTime, !exosuitKinematicAuthority);
-            ApplyQueuedExternalKinematicForces(fixedDeltaTime, !exosuitKinematicAuthority);
-            ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
-            UpdateSurfaceLockState(fixedDeltaTime);
-            UpdateWaterPresentationPose(fixedDeltaTime);
-            UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
-            UpdateHeavyTowRuntimeResponse(fixedDeltaTime, exosuitKinematicAuthority);
-            UpdateWetLensSignal(fixedDeltaTime);
-            UpdateHeadSurfaceRecovery(fixedDeltaTime);
-            UpdateTransportCriticalBailout();
-            UpdateModeDiagnostics();
-            TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
-            TryPlaySurfacePierceSplashAudio(previousWaterImmersionRatio, currentVerticalVelocity);
-            TryStartSurfaceBreachArc(previousWaterImmersionRatio, currentVerticalVelocity);
-            ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
-
-            SmoothDampingTransition(fixedDeltaTime, suit);
-            TryApplyKinematicWallKick(exosuitKinematicAuthority);
-
+        private void ProcessJumpInput(float fixedDeltaTime, bool exosuitActive, bool groundedOnDryLand, bool groundedOnShore)
+        {
             if (_jumpRequested)
             {
                 if (!exosuitActive && (groundedOnDryLand || groundedOnShore) && _jumpBufferTimer > 0f)
@@ -9969,80 +10058,8 @@ namespace Hecton8.Gameplay
             else
             {
                 _jumpHeldTimer = 0f;
-            }
+            }        }
 
-            if (exosuitKinematicAuthority)
-            {
-                CoolExosuitJumpJets(fixedDeltaTime);
-                AdvanceExosuitGrappleRequest(fixedDeltaTime);
-                _exosuitGrappleCurrentForce = 0f;
-            }
-            else if (_isWalking)
-            {
-                bool hasLandInput = _inputH != 0f || _inputV != 0f;
-                ApplyEnvironmentalDrag(1f);
-                AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
-                AdvanceParasiteLatchInfluence(fixedDeltaTime);
-                _sargassumFieldDensity01 = 0f;
-                UpdateSargassumMatBuoyancyBlend(fixedDeltaTime);
-                WalkPhysics(suit, fixedDeltaTime);
-                ApplyCuttingTensionPhysics(fixedDeltaTime);
-                ApplyExosuitGrapplePhysics(fixedDeltaTime);
-                ApplyExosuitJumpJets(fixedDeltaTime);
-                if (!exosuitActive)
-                    CoolExosuitJumpJets(fixedDeltaTime);
-
-                if (hasLandInput)
-                    TryApplyStepAssist(groundedOnDryLand, groundedOnShore);
-
-                if (_isGrounded && _snapScale > 0.001f)
-                    ApplyGroundStability(_snapScale);
-            }
-            else
-            {
-                CoolExosuitJumpJets(fixedDeltaTime);
-                AdvanceCuttingTensionRequest(fixedDeltaTime);
-                ApplyExosuitGrapplePhysics(fixedDeltaTime);
-                AdvanceCurrentPhaseTimer(fixedDeltaTime);
-                AdvanceSargassumInfluence(fixedDeltaTime, activeTransportPreset);
-                AdvanceAbyssalThermalInfluence(fixedDeltaTime, activeTransportPreset);
-                AdvanceExternalEnvironmentalDrag(fixedDeltaTime);
-                AdvanceParasiteLatchInfluence(fixedDeltaTime);
-                SwimPhysics(suit, fixedDeltaTime, activeTransportPreset);
-
-                if (_surfaceLockBlend > 0.001f)
-                    ApplySurfaceLock(suit, activeTransportPreset);
-
-                if (_waterImmersionRatio > 0.3f)
-                    ApplyAmbientCurrent(suit, fixedDeltaTime, activeTransportPreset);
-            }
-
-            if (!exosuitKinematicAuthority)
-            {
-                TryProcessKccWallScrapeFeedback();
-                ApplyWipeoutRecoveryForces(fixedDeltaTime);
-                ApplyProceduralLinearDamping(fixedDeltaTime);
-                ClampVelocity(suit);
-            }
-            SanitizeKccFiniteState();
-            Vector3 safeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
-            bodyRuntimePosition = ResolveBodyRuntimePosition();
-            WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
-            _playerKinematicsNativeState.WriteTelemetry(
-                _dataVault,
-                _lastPlayerKinematicsDragCoefficient,
-                _lastPlayerKinematicsWaterDensityScale,
-                ResolvePlayerKinematicsTelemetryFlags());
-            PublishMovementAcousticSignal(safeVelocity);
-            SyncSwimVatSpeedScalar(safeVelocity, suit);
-            PushMovementStaminaBurnInput();
-            ApplyVoxelNoClipFailsafe(exosuitKinematicAuthority);
-            CaptureFixedInterpolationState();
-            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
-            UpdateGroundDiagnostics();
-            _useFixedFrameSpatialCache = false;
-            }
-        }
 
         private void ApplyLadderSplineSnapFromAsyncProbe(bool suppressPhysicsMutation)
         {
