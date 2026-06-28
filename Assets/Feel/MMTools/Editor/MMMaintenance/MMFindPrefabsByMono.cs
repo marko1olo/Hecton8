@@ -162,6 +162,7 @@ namespace MoreMountains.Tools
 			{
 				string[] allPrefabs = GetAllPrefabsInProject();
 				_resultsList = new List<string>();
+				List<Component> components = new List<Component>();
 				foreach (string prefab in allPrefabs)
 				{
 					UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(prefab);
@@ -169,7 +170,7 @@ namespace MoreMountains.Tools
 					try
 					{
 						assetGameObject = (GameObject)asset;
-						Component[] components = assetGameObject.GetComponentsInChildren<Component>(true);
+						assetGameObject.GetComponentsInChildren<Component>(true, components);
 						foreach (Component component in components)
 						{
 							if (component == null)
