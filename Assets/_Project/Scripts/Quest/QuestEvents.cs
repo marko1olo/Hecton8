@@ -286,21 +286,9 @@ namespace Hecton8.Quest
             }
         }
 
-        [Obsolete("Use TryRaiseActivated(uint) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseActivated(uint questHash)
-        {
-            TryRaiseActivated(questHash);
-        }
-
         public static bool TryRaiseActivated(uint questHash)
         {
             return Enqueue(QuestEventType.Activated, questHash);
-        }
-
-        [Obsolete("Use TryRaiseCompleted(uint) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseCompleted(uint questHash)
-        {
-            TryRaiseCompleted(questHash);
         }
 
         public static bool TryRaiseCompleted(uint questHash)
@@ -308,21 +296,9 @@ namespace Hecton8.Quest
             return Enqueue(QuestEventType.Completed, questHash);
         }
 
-        [Obsolete("Use TryRaiseFailed(uint) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseFailed(uint questHash)
-        {
-            TryRaiseFailed(questHash);
-        }
-
         public static bool TryRaiseFailed(uint questHash)
         {
             return Enqueue(QuestEventType.Failed, questHash);
-        }
-
-        [Obsolete("Use TryRaiseRevertRequested(in QuestRevertRequest) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseRevertRequested(in QuestRevertRequest request)
-        {
-            TryRaiseRevertRequested(in request);
         }
 
         public static bool TryRaiseRevertRequested(in QuestRevertRequest request)
