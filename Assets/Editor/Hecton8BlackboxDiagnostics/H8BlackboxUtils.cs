@@ -297,9 +297,11 @@ namespace Hecton8.BlackboxDiagnostics
         {
             total = 0; active = 0; inactive = 0;
             if (!scene.isLoaded) return;
+            var transforms = new List<Transform>();
             foreach (var root in scene.GetRootGameObjects())
             {
-                foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                root.GetComponentsInChildren<Transform>(true, transforms);
+                foreach (var t in transforms)
                 {
                     total++;
                     if (t.gameObject.activeInHierarchy) active++;
@@ -315,9 +317,11 @@ namespace Hecton8.BlackboxDiagnostics
         {
             int count = 0;
             if (!scene.isLoaded) return 0;
+            var components = new List<T>();
             foreach (var root in scene.GetRootGameObjects())
             {
-                count += root.GetComponentsInChildren<T>(true).Length;
+                root.GetComponentsInChildren<T>(true, components);
+                count += components.Count;
             }
             return count;
         }
