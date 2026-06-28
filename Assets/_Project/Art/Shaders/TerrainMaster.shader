@@ -859,7 +859,7 @@ Shader "HECTON/Terrain/TerrainMaster"
         }
 
         // ================================================================
-        // PASS 4: DepthNormals - manual pass, avoids Unity 6 include bugs
+        // PASS 4: DepthNormals - manual implementation is robust and required for custom clip/axis logic
         // Uses the same cheap sampling path as the forward pass.
         // ================================================================
         Pass
