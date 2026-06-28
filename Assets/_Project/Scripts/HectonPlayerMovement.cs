@@ -10715,11 +10715,23 @@ namespace Hecton8.Gameplay
                 float depthT = math.saturate(
                     (_currentDepth - crushDepthStart) /
                     math.max(crushDepthFullDepth - crushDepthStart, 0.01f));
-                float depthRateT = math.saturate(math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y) / math.max(crushDepthRateForFullStress, 0.01f));
+
+                // Fetch signed depth rate so negative values can relieve stress correctly
+                float depthRate = ResolveAuthoritativeLinearVelocity(Vector3.zero).y;
+                float depthRateT = math.saturate(math.abs(depthRate) / math.max(crushDepthRateForFullStress, 0.01f));
+
                 float transportProtection = transportPreset != null
                     ? math.max(0.1f, transportPreset.PressureDamageScale)
                     : 1f;
-                targetStress = math.saturate((depthT * 0.72f + depthRateT * 0.28f) * transportProtection);
+
+                float computedStress = Hecton8.PureLogic.Systems.PressureHullIntegrityStressCalculator.Compute(
+                    depthT,
+                    0f,
+                    depthRateT,
+                    transportProtection
+                );
+
+                targetStress = math.saturate(computedStress);
             }
 
             if (_externalHullStressRequestedThisStep)
