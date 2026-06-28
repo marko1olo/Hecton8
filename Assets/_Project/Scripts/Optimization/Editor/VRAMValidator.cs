@@ -42,14 +42,14 @@ namespace Hecton8.Optimization.Editor
         public static void RunFromMenu()
         {
             ValidateOrThrow();
-            Debug.Log("[VRAMValidator] Texture budget gate passed.");
+            Hecton8.Core.H8Debug.Log("[VRAMValidator] Texture budget gate passed.");
         }
 
         [MenuItem("Hecton8/Validation/Run 02_HECTON_WORLD Texture Budget Gate")]
         public static void RunWorldSceneFromMenu()
         {
             SceneTextureBudgetResult result = ValidateWorldSceneTextureBudgetOrThrow();
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[VRAMValidator] 02_HECTON_WORLD texture budget passed. Total=" +
                 BytesToMegabytes(result.TotalBytes).ToString("F2", CultureInfo.InvariantCulture) +
                 "MB Textures=" +
