@@ -1,0 +1,316 @@
+ 13350	        }
+ 13351
+ 13352	        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+ 13353	        //  SWIM PHYSICS Ã¢â‚¬â€ with depth pressure resistance
+ 13354	        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+ 13355
+ 13356	        private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
+ 13357	        {
+ 13358	            _velocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+ 13359	            if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
+ 13360	            {
+ 13361	                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
+ 13362	                Vector3 brineVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
+ 13363	                    _velocity,
+ 13364	                    true,
+ 13365	                    thrusterActive,
+ 13366	                    brineSinkMultiplier);
+ 13367	                Vector3 brineDelta = brineVelocity - _velocity;
+ 13368	                if (brineDelta.sqrMagnitude > 0.000001f)
+ 13369	                {
+ 13370	                    ApplyMotorVelocityChange(brineDelta);
+ 13371	                    _velocity = brineVelocity;
+ 13372	                }
+ 13373	            }
+ 13374
+ 13375	            if (IsCriticallyEncumbered && _velocity.y > 0f)
+ 13376	            {
+ 13377	                _velocity.y = 0f;
+ 13378	                ApplyMotorLinearVelocity(_velocity);
+ 13379	            }
+ 13380
+ 13381	            float speedSq = _velocity.sqrMagnitude;
+ 13382	            bool isSurfaceSwim = _isSurfaceSwimming;
+ 13383	            bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
+ 13384	            float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
+ 13385	            float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
+ 13386	            float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
+ 13387
+ 13388	            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+ 13389	            float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
+ 13390	                _currentDepth,
+ 13391	                suit.depthSwimSlowdownStart,
+ 13392	                suit.depthSwimSlowdownEnd,
+ 13393	                suit.depthDragIncreaseMax);
+ 13394
+ 13395	            float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
+ 13396	            if (isSurfaceSwim)
+ 13397	                effectiveDragCoeff *= surfaceDragMultiplier;
+ 13398
+ 13399	            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
+ 13400	            float sargassumDragMultiplier = ResolveSargassumDragMultiplier();
+ 13401	            float externalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
+ 13402	            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
+ 13403	            effectiveDragCoeff *= sargassumDragMultiplier;
+ 13404	            effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
+ 13405	            effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
+ 13406	            effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
+ 13407	            effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
+ 13408	            _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
+ 13409	            _lastPlayerKinematicsWaterDensityScale = brineWaterDensityScale;
+ 13410	            // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
+ 13411	            if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
+ 13412	            {
+ 13413	                Vector3 dampedVelocity = ResolvePlayerKinematicsBurstDragVelocity(
+ 13414	                    _velocity,
+ 13415	                    _lastPlayerKinematicsIntendedMovement,
+ 13416	                    effectiveDragCoeff,
+ 13417	                    brineWaterDensityScale,
+ 13418	                    fixedDeltaTime);
+ 13419	                ApplyMotorVelocityChange(dampedVelocity - _velocity);
+ 13420	                _velocity = dampedVelocity;
+ 13421	            }
+ 13422
+ 13423	            // Ã¢â€â‚¬Ã¢â€â‚¬ Swim thrust Ã¢â€â‚¬Ã¢â€â‚¬
+ 13424	            float rawTransportPropulsionForce =
+ 13425	                ResolveActiveTransportPropulsionForce() *
+ 13426	                sargassumSpeedMultiplier *
+ 13427	                externalEnvironmentalThrustMultiplier *
+ 13428	                ResolveWipeoutTransportControl01();
+ 13429	            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+ 13430	            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+ 13431	            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+ 13432	            ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
+ 13433	            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
+ 13434	            bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
+ 13435	            bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
+ 13436	            if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
+ 13437	                return;
+ 13438
+ 13439	            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+ 13440	            float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
+ 13441	                _currentDepth,
+ 13442	                suit.depthSwimSlowdownStart,
+ 13443	                suit.depthSwimSlowdownEnd,
+ 13444	                suit.depthSwimSlowdownMax);
+ 13445
+ 13446	            bool heavyCarryActive = IsHeavyCarryActive();
+ 13447	            float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
+ 13448	            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * brineSwimSpeedMultiplier;
+ 13449	            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+ 13450	            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+ 13451	            effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
+ 13452	            float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
+ 13453	            effectiveSwimForce *= heavyCarryForceMultiplier;
+ 13454	            effectiveVerticalForce *= heavyCarryForceMultiplier;
+ 13455	            effectiveSwimForce *= externalEnvironmentalThrustMultiplier;
+ 13456	            effectiveVerticalForce *= math.lerp(1f, externalEnvironmentalThrustMultiplier, 0.7f);
+ 13457	            effectiveSwimForce *= sargassumSpeedMultiplier;
+ 13458	            effectiveVerticalForce *= math.lerp(1f, sargassumSpeedMultiplier, 0.55f);
+ 13459	            effectiveSwimForce *= shoreSwimBlend;
+ 13460	            effectiveVerticalForce *= math.lerp(0.45f, 1f, shoreSwimBlend);
+ 13461	            float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
+ 13462	            float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
+ 13463	            float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
+ 13464	            float transportReverseThrustScale = ResolveTransportReverseThrustScale(transportPreset);
+ 13465	            float transportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(transportPreset);
+ 13466	            float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
+ 13467	            transportStrafeInputScale *= hullStressTurnScale;
+ 13468
+ 13469	            ResolveDegreesSinCosFast(ResolveVrSwimmingReferenceYawDegrees(), out float sinBodyYaw, out float cosBodyYaw);
+ 13470	            ResolveDegreesSinCosFast(_cameraPitch, out float sinPitch, out float cosPitch);
+ 13471	            float fwdX;
+ 13472	            float fwdY;
+ 13473	            float fwdZ;
+ 13474	            float rightX;
+ 13475	            float rightZ;
+ 13476
+ 13477	            if (isSurfaceSwim && !hasSurfaceDiveIntent)
+ 13478	            {
+ 13479	                Vector3 bodyForward = new Vector3(sinBodyYaw, 0f, cosBodyYaw);
+ 13480	                Vector3 bodyRight = new Vector3(cosBodyYaw, 0f, -sinBodyYaw);
+ 13481	                Vector3 surfaceNormal = EffectiveWaterSurfaceNormal;
+ 13482	                Vector3 surfaceForward = ProjectOnPlaneFast(bodyForward, surfaceNormal);
+ 13483	                Vector3 surfaceRight = ProjectOnPlaneFast(bodyRight, surfaceNormal);
+ 13484
+ 13485	                if (surfaceForward.sqrMagnitude <= 0.0001f)
+ 13486	                    surfaceForward = bodyForward;
+ 13487	                else
+ 13488	                    surfaceForward = NormalizeVectorRsqrt(surfaceForward, bodyForward);
+ 13489
+ 13490	                if (surfaceRight.sqrMagnitude <= 0.0001f)
+ 13491	                    surfaceRight = bodyRight;
+ 13492	                else
+ 13493	                    surfaceRight = NormalizeVectorRsqrt(surfaceRight, bodyRight);
+ 13494
+ 13495	                fwdX = surfaceForward.x;
+ 13496	                fwdY = surfaceForward.y;
+ 13497	                fwdZ = surfaceForward.z;
+ 13498	                rightX = surfaceRight.x;
+ 13499	                rightZ = surfaceRight.z;
+ 13500	            }
+ 13501	            else
+ 13502	            {
+ 13503	                float surfaceDepthT = isSurfaceSwim
+ 13504	                    ? math.saturate(_currentDepth / math.max(surfaceSwimDepthBand, 0.01f))
+ 13505	                    : 1f;
+ 13506	                float surfacePitchBlend = isSurfaceSwim
+ 13507	                    ? math.lerp(1f - surfaceForwardPitchSuppression, 1f, surfaceDepthT)
+ 13508	                    : 1f;
+ 13509	                surfacePitchBlend *= transportForwardPitchInfluence;
+ 13510
+ 13511	                float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
+ 13512	                fwdX = sinBodyYaw * fwdPlanarScale;
+ 13513	                fwdY = -sinPitch * transportForwardPitchInfluence;
+ 13514	                fwdZ = cosBodyYaw * fwdPlanarScale;
+ 13515	                rightX = cosBodyYaw;
+ 13516	                rightZ = -sinBodyYaw;
+ 13517	            }
+ 13518
+ 13519	            float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
+ 13520	            float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
+ 13521	            float forwardInput = gatedInputV;
+ 13522	            if (forwardInput < 0f)
+ 13523	                forwardInput *= transportReverseThrustScale;
+ 13524
+ 13525	            float forwardVelocity = _velocity.x * fwdX + _velocity.y * fwdY + _velocity.z * fwdZ;
+ 13526	            float transportPropulsionForce = rawTransportPropulsionForce;
+ 13527	            if (transportPropulsionForce > 0f)
+ 13528	            {
+ 13529	                transportPropulsionForce *= shoreSwimBlend;
+ 13530	                float cavitationEfficiency = ResolveTransportCavitationEfficiency(
+ 13531	                    fixedDeltaTime,
+ 13532	                    true,
+ 13533	                    forwardVelocity,
+ 13534	                    ResolveActiveTransportBoost01());
+ 13535	                transportPropulsionForce *= cavitationEfficiency;
+ 13536	            }
+ 13537	            else
+ 13538	            {
+ 13539	                ResolveTransportCavitationEfficiency(fixedDeltaTime, false, forwardVelocity, 0f);
+ 13540	            }
+ 13541
+ 13542	            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (gatedInputH * strafeScale);
+ 13543	            float dirY = fwdY * (forwardInput * forwardScale);
+ 13544	            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (gatedInputH * strafeScale);
+ 13545
+ 13546	            float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
+ 13547	            if (sqrMag > 1.0001f)
+ 13548	            {
+ 13549	                float invMag = math.rsqrt(math.max(sqrMag, 0.000001f));
+ 13550	                dirX *= invMag; dirY *= invMag; dirZ *= invMag;
+ 13551	            }
+ 13552
+ 13553	            float verticalInput = gatedInputVertical;
+ 13554	            if (IsCriticallyEncumbered && verticalInput > 0f)
+ 13555	                verticalInput = 0f;
+ 13556
+ 13557	            if (isSurfaceSwim && verticalInput > 0f)
+ 13558	            {
+ 13559	                float ascendGate = math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
+ 13560	                verticalInput *= ascendGate;
+ 13561	            }
+ 13562	            verticalInput *= transportVerticalInputScale;
+ 13563
+ 13564	            if (_activeTransportPlatform != null)
+ 13565	            {
+ 13566	                Vector3 platformUp = TransformTransportPlatformDirectionToWorld(Vector3.up);
+ 13567	                Vector3 rawInputWorld =
+ 13568	                    new Vector3(dirX, dirY, dirZ) +
+ 13569	                    (platformUp * verticalInput);
+ 13570	                Vector3 transformedInputWorld = ResolveTransportPlatformRelativeWorldDirection(rawInputWorld);
+ 13571	                dirX = transformedInputWorld.x;
+ 13572	                dirY = transformedInputWorld.y;
+ 13573	                dirZ = transformedInputWorld.z;
+ 13574	                verticalInput = 0f;
+ 13575	            }
+ 13576
+ 13577	            _lastPlayerKinematicsIntendedMovement = new float3(dirX, dirY + verticalInput, dirZ);
+ 13578
+ 13579	            _forceVector.x = dirX * effectiveSwimForce;
+ 13580	            _forceVector.y = dirY * effectiveSwimForce;
+ 13581	            _forceVector.z = dirZ * effectiveSwimForce;
+ 13582	            _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
+ 13583
+ 13584	            if (surfaceDiveAssistActive)
+ 13585	            {
+ 13586	                float diveAssistT = math.saturate(_surfaceDiveAssistTimer / math.max(surfaceDiveAssistDuration, 0.01f));
+ 13587	                _forceVector.y -= effectiveVerticalForce * surfaceDiveAssistForceMultiplier * transportSurfaceDiveAssistScale * diveAssistT;
+ 13588	            }
+ 13589
+ 13590	            if (isSurfaceSwim && hasSurfaceDiveIntent && surfaceDiveResistanceDamping > 0f && _velocity.y < 0f)
+ 13591	            {
+ 13592	                float headDepth = GetHeadDepthBelowSurface(EffectiveWaterSurfaceY);
+ 13593	                float surfaceResistanceT = 1f - math.saturate(headDepth / math.max(surfaceDiveBreakDepth, 0.01f));
+ 13594	                if (surfaceResistanceT > 0f)
+ 13595	                {
+ 13596	                    _forceVector.y -= _velocity.y * ResolveAuthoritativeBodyMassKg() * surfaceDiveResistanceDamping * surfaceResistanceT;
+ 13597	                }
+ 13598	            }
+ 13599
+ 13600	            if (transportPropulsionForce > 0f)
+ 13601	            {
+ 13602	                Vector3 transportPropulsionDirection = new Vector3(_forceVector.x, _forceVector.y, _forceVector.z);
+ 13603	                if (transportPropulsionDirection.sqrMagnitude <= 0.0001f)
+ 13604	                    transportPropulsionDirection = new Vector3(fwdX, fwdY, fwdZ);
+ 13605	                else
+ 13606	                    transportPropulsionDirection = NormalizeVectorRsqrt(transportPropulsionDirection, new Vector3(fwdX, fwdY, fwdZ));
+ 13607
+ 13608	                if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
+ 13609	                    mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
+ 13610	                {
+ 13611	                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+ 13612	                        transportPropulsionDirection,
+ 13613	                        misfireDeviationDegrees.x,
+ 13614	                        misfireDeviationDegrees.y,
+ 13615	                        0f);
+ 13616	                }
+ 13617
+ 13618	                if (math.abs(_abyssalTransportTurbulencePitchOffset) > 0.001f ||
+ 13619	                    math.abs(_abyssalTransportTurbulenceYawOffset) > 0.001f)
+ 13620	                {
+ 13621	                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+ 13622	                        transportPropulsionDirection,
+ 13623	                        _abyssalTransportTurbulencePitchOffset,
+ 13624	                        _abyssalTransportTurbulenceYawOffset,
+ 13625	                        0f);
+ 13626	                }
+ 13627
+ 13628	                transportPropulsionDirection = ResolveProceduralThrusterNoiseDirection(transportPropulsionDirection);
+ 13629	                _forceVector.x += transportPropulsionDirection.x * transportPropulsionForce;
+ 13630	                _forceVector.y += transportPropulsionDirection.y * transportPropulsionForce;
+ 13631	                _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
+ 13632	            }
+ 13633
+ 13634	            _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
+ 13635	            Vector3 swimAcceleration = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessAcceleration(
+ 13636	                _forceVector,
+ 13637	                _velocity,
+ 13638	                ResolveAuthoritativeBodyMassKg());
+ 13639
+ 13640	            ApplyMotorAcceleration(swimAcceleration);
+ 13641	            ApplySargassumEntanglementForce(transportPreset);
+ 13642	            ApplyAbyssalCableEntanglementForce(transportPreset);
+ 13643	            ApplySargassumMatBuoyancySupport();
+ 13644
+ 13645	            if (isSurfaceSwim && surfaceAscendVelocityDamping > 0f && _velocity.y > 0f)
+ 13646	            {
+ 13647	                if (_velocity.y >= surfaceBreachReleaseVelocity)
+ 13648	                    return;
+ 13649
+ 13650	                float upwardDampingT = 1f - math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
+ 13651	                if (upwardDampingT > 0f)
+ 13652	                {
+ 13653	                    _forceVector.x = 0f;
+ 13654	                    _forceVector.y = -_velocity.y * ResolveAuthoritativeBodyMassKg() * surfaceAscendVelocityDamping * upwardDampingT;
+ 13655	                    _forceVector.z = 0f;
+ 13656	                    ApplyMotorAccelerationFromForce(_forceVector);
+ 13657	                }
+ 13658	            }
+ 13659	        }
+ 13660
+ 13661	        private bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
+ 13662	        {
+ 13663	            sinkMultiplier = 0f;
+ 13664	            ResourceDistributionDirector director = _resourceDistributionRuntime;
+ 13665	            if (!TryResolvePlayerRuntimeShiftOffsetY(worldPosition, out float shiftOffsetY))

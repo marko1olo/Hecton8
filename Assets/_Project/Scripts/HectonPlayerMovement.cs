@@ -13353,9 +13353,102 @@ namespace Hecton8.Gameplay
         //  SWIM PHYSICS Ã¢â‚¬â€ with depth pressure resistance
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
+                private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             _velocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+            ApplySwimVelocityOverrides();
+
+            bool isSurfaceSwim = _isSurfaceSwimming;
+            bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
+            float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
+            float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
+            float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
+
+            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
+            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
+
+            ApplySwimDrag(suit, fixedDeltaTime, isSurfaceSwim, brineWaterDensityScale);
+
+            // ─── Swim thrust ───
+            float rawTransportPropulsionForce =
+                ResolveActiveTransportPropulsionForce() *
+                sargassumSpeedMultiplier *
+                externalEnvironmentalThrustMultiplier *
+                ResolveWipeoutTransportControl01();
+
+            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+            ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
+            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
+            bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
+            bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
+            if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
+                return;
+
+            CalculateSwimThrustMultipliers(suit, isSurfaceSwim, shoreSwimBlend, brineSwimSpeedMultiplier, sargassumSpeedMultiplier, externalEnvironmentalThrustMultiplier, out float effectiveSwimForce, out float effectiveVerticalForce);
+
+            float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
+            float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
+            float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
+            float transportReverseThrustScale = ResolveTransportReverseThrustScale(transportPreset);
+            float transportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(transportPreset);
+            float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
+            transportStrafeInputScale *= hullStressTurnScale;
+
+            CalculateSwimOrientation(isSurfaceSwim, hasSurfaceDiveIntent, transportForwardPitchInfluence, out Vector3 fwd, out Vector3 right);
+
+            float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
+            float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
+            float forwardInput = gatedInputV;
+            if (forwardInput < 0f)
+                forwardInput *= transportReverseThrustScale;
+
+            float forwardVelocity = _velocity.x * fwd.x + _velocity.y * fwd.y + _velocity.z * fwd.z;
+            float transportPropulsionForce = rawTransportPropulsionForce;
+            if (transportPropulsionForce > 0f)
+            {
+                transportPropulsionForce *= shoreSwimBlend;
+                float cavitationEfficiency = ResolveTransportCavitationEfficiency(
+                    fixedDeltaTime,
+                    true,
+                    forwardVelocity,
+                    ResolveActiveTransportBoost01());
+                transportPropulsionForce *= cavitationEfficiency;
+            }
+            else
+            {
+                ResolveTransportCavitationEfficiency(fixedDeltaTime, false, forwardVelocity, 0f);
+            }
+
+            CalculateSwimIntendedDirection(fwd, right, forwardInput, forwardScale, gatedInputH, strafeScale, gatedInputVertical, transportVerticalInputScale, isSurfaceSwim, out Vector3 inputDir, out float verticalInput);
+
+            _lastPlayerKinematicsIntendedMovement = new float3(inputDir.x, inputDir.y + verticalInput, inputDir.z);
+
+            CalculateBaseSwimForceVector(inputDir, verticalInput, effectiveSwimForce, effectiveVerticalForce, isSurfaceSwim, surfaceDiveAssistActive, transportSurfaceDiveAssistScale, hasSurfaceDiveIntent);
+
+            if (transportPropulsionForce > 0f)
+            {
+                ApplyTransportPropulsionForce(fwd, transportPropulsionForce);
+            }
+
+            _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
+            Vector3 swimAcceleration = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessAcceleration(
+                _forceVector,
+                _velocity,
+                ResolveAuthoritativeBodyMassKg());
+
+            ApplyMotorAcceleration(swimAcceleration);
+            ApplySargassumEntanglementForce(transportPreset);
+            ApplyAbyssalCableEntanglementForce(transportPreset);
+            ApplySargassumMatBuoyancySupport();
+
+            ApplySurfaceAscendDamping(isSurfaceSwim);
+        }
+
+
+        private void ApplySwimVelocityOverrides()
+        {
             if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
             {
                 bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
@@ -13377,15 +13470,11 @@ namespace Hecton8.Gameplay
                 _velocity.y = 0f;
                 ApplyMotorLinearVelocity(_velocity);
             }
+        }
 
+        private void ApplySwimDrag(SuitData suit, float fixedDeltaTime, bool isSurfaceSwim, float brineWaterDensityScale)
+        {
             float speedSq = _velocity.sqrMagnitude;
-            bool isSurfaceSwim = _isSurfaceSwimming;
-            bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
-            float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
-            float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
-            float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
-
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
             float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
                 _currentDepth,
                 suit.depthSwimSlowdownStart,
@@ -13396,18 +13485,17 @@ namespace Hecton8.Gameplay
             if (isSurfaceSwim)
                 effectiveDragCoeff *= surfaceDragMultiplier;
 
-            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
             float sargassumDragMultiplier = ResolveSargassumDragMultiplier();
             float externalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
-            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
             effectiveDragCoeff *= sargassumDragMultiplier;
             effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
             effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
             effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
+
             _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
             _lastPlayerKinematicsWaterDensityScale = brineWaterDensityScale;
-            // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
+
             if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
             {
                 Vector3 dampedVelocity = ResolvePlayerKinematicsBurstDragVelocity(
@@ -13419,24 +13507,18 @@ namespace Hecton8.Gameplay
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
             }
+        }
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Swim thrust Ã¢â€â‚¬Ã¢â€â‚¬
-            float rawTransportPropulsionForce =
-                ResolveActiveTransportPropulsionForce() *
-                sargassumSpeedMultiplier *
-                externalEnvironmentalThrustMultiplier *
-                ResolveWipeoutTransportControl01();
-            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
-            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
-            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
-            ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
-            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
-            bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
-            bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
-            if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
-                return;
-
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+        private void CalculateSwimThrustMultipliers(
+            SuitData suit,
+            bool isSurfaceSwim,
+            float shoreSwimBlend,
+            float brineSwimSpeedMultiplier,
+            float sargassumSpeedMultiplier,
+            float externalEnvironmentalThrustMultiplier,
+            out float effectiveSwimForce,
+            out float effectiveVerticalForce)
+        {
             float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
                 _currentDepth,
                 suit.depthSwimSlowdownStart,
@@ -13446,33 +13528,27 @@ namespace Hecton8.Gameplay
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
             float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * brineSwimSpeedMultiplier;
-            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
-            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+
+            effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
+
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
             effectiveSwimForce *= heavyCarryForceMultiplier;
             effectiveVerticalForce *= heavyCarryForceMultiplier;
+
             effectiveSwimForce *= externalEnvironmentalThrustMultiplier;
             effectiveVerticalForce *= math.lerp(1f, externalEnvironmentalThrustMultiplier, 0.7f);
             effectiveSwimForce *= sargassumSpeedMultiplier;
             effectiveVerticalForce *= math.lerp(1f, sargassumSpeedMultiplier, 0.55f);
             effectiveSwimForce *= shoreSwimBlend;
             effectiveVerticalForce *= math.lerp(0.45f, 1f, shoreSwimBlend);
-            float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
-            float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
-            float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
-            float transportReverseThrustScale = ResolveTransportReverseThrustScale(transportPreset);
-            float transportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(transportPreset);
-            float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
-            transportStrafeInputScale *= hullStressTurnScale;
+        }
 
+        private void CalculateSwimOrientation(bool isSurfaceSwim, bool hasSurfaceDiveIntent, float transportForwardPitchInfluence, out Vector3 fwd, out Vector3 right)
+        {
             ResolveDegreesSinCosFast(ResolveVrSwimmingReferenceYawDegrees(), out float sinBodyYaw, out float cosBodyYaw);
             ResolveDegreesSinCosFast(_cameraPitch, out float sinPitch, out float cosPitch);
-            float fwdX;
-            float fwdY;
-            float fwdZ;
-            float rightX;
-            float rightZ;
 
             if (isSurfaceSwim && !hasSurfaceDiveIntent)
             {
@@ -13492,11 +13568,8 @@ namespace Hecton8.Gameplay
                 else
                     surfaceRight = NormalizeVectorRsqrt(surfaceRight, bodyRight);
 
-                fwdX = surfaceForward.x;
-                fwdY = surfaceForward.y;
-                fwdZ = surfaceForward.z;
-                rightX = surfaceRight.x;
-                rightZ = surfaceRight.z;
+                fwd = surfaceForward;
+                right = surfaceRight;
             }
             else
             {
@@ -13509,39 +13582,27 @@ namespace Hecton8.Gameplay
                 surfacePitchBlend *= transportForwardPitchInfluence;
 
                 float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
-                fwdX = sinBodyYaw * fwdPlanarScale;
-                fwdY = -sinPitch * transportForwardPitchInfluence;
-                fwdZ = cosBodyYaw * fwdPlanarScale;
-                rightX = cosBodyYaw;
-                rightZ = -sinBodyYaw;
+                fwd = new Vector3(sinBodyYaw * fwdPlanarScale, -sinPitch * transportForwardPitchInfluence, cosBodyYaw * fwdPlanarScale);
+                right = new Vector3(cosBodyYaw, 0f, -sinBodyYaw);
             }
+        }
 
-            float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
-            float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
-            float forwardInput = gatedInputV;
-            if (forwardInput < 0f)
-                forwardInput *= transportReverseThrustScale;
-
-            float forwardVelocity = _velocity.x * fwdX + _velocity.y * fwdY + _velocity.z * fwdZ;
-            float transportPropulsionForce = rawTransportPropulsionForce;
-            if (transportPropulsionForce > 0f)
-            {
-                transportPropulsionForce *= shoreSwimBlend;
-                float cavitationEfficiency = ResolveTransportCavitationEfficiency(
-                    fixedDeltaTime,
-                    true,
-                    forwardVelocity,
-                    ResolveActiveTransportBoost01());
-                transportPropulsionForce *= cavitationEfficiency;
-            }
-            else
-            {
-                ResolveTransportCavitationEfficiency(fixedDeltaTime, false, forwardVelocity, 0f);
-            }
-
-            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (gatedInputH * strafeScale);
-            float dirY = fwdY * (forwardInput * forwardScale);
-            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (gatedInputH * strafeScale);
+        private void CalculateSwimIntendedDirection(
+            Vector3 fwd,
+            Vector3 right,
+            float forwardInput,
+            float forwardScale,
+            float gatedInputH,
+            float strafeScale,
+            float gatedInputVertical,
+            float transportVerticalInputScale,
+            bool isSurfaceSwim,
+            out Vector3 inputDir,
+            out float verticalInput)
+        {
+            float dirX = fwd.x * (forwardInput * forwardScale) + right.x * (gatedInputH * strafeScale);
+            float dirY = fwd.y * (forwardInput * forwardScale);
+            float dirZ = fwd.z * (forwardInput * forwardScale) + right.z * (gatedInputH * strafeScale);
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
@@ -13550,7 +13611,7 @@ namespace Hecton8.Gameplay
                 dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
-            float verticalInput = gatedInputVertical;
+            verticalInput = gatedInputVertical;
             if (IsCriticallyEncumbered && verticalInput > 0f)
                 verticalInput = 0f;
 
@@ -13574,11 +13635,22 @@ namespace Hecton8.Gameplay
                 verticalInput = 0f;
             }
 
-            _lastPlayerKinematicsIntendedMovement = new float3(dirX, dirY + verticalInput, dirZ);
+            inputDir = new Vector3(dirX, dirY, dirZ);
+        }
 
-            _forceVector.x = dirX * effectiveSwimForce;
-            _forceVector.y = dirY * effectiveSwimForce;
-            _forceVector.z = dirZ * effectiveSwimForce;
+        private void CalculateBaseSwimForceVector(
+            Vector3 inputDir,
+            float verticalInput,
+            float effectiveSwimForce,
+            float effectiveVerticalForce,
+            bool isSurfaceSwim,
+            bool surfaceDiveAssistActive,
+            float transportSurfaceDiveAssistScale,
+            bool hasSurfaceDiveIntent)
+        {
+            _forceVector.x = inputDir.x * effectiveSwimForce;
+            _forceVector.y = inputDir.y * effectiveSwimForce;
+            _forceVector.z = inputDir.z * effectiveSwimForce;
             _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
 
             if (surfaceDiveAssistActive)
@@ -13596,52 +13668,44 @@ namespace Hecton8.Gameplay
                     _forceVector.y -= _velocity.y * ResolveAuthoritativeBodyMassKg() * surfaceDiveResistanceDamping * surfaceResistanceT;
                 }
             }
+        }
 
-            if (transportPropulsionForce > 0f)
+        private void ApplyTransportPropulsionForce(Vector3 fwd, float transportPropulsionForce)
+        {
+            Vector3 transportPropulsionDirection = new Vector3(_forceVector.x, _forceVector.y, _forceVector.z);
+            if (transportPropulsionDirection.sqrMagnitude <= 0.0001f)
+                transportPropulsionDirection = fwd;
+            else
+                transportPropulsionDirection = NormalizeVectorRsqrt(transportPropulsionDirection, fwd);
+
+            if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
+                mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
             {
-                Vector3 transportPropulsionDirection = new Vector3(_forceVector.x, _forceVector.y, _forceVector.z);
-                if (transportPropulsionDirection.sqrMagnitude <= 0.0001f)
-                    transportPropulsionDirection = new Vector3(fwdX, fwdY, fwdZ);
-                else
-                    transportPropulsionDirection = NormalizeVectorRsqrt(transportPropulsionDirection, new Vector3(fwdX, fwdY, fwdZ));
-
-                if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
-                    mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
-                {
-                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
-                        transportPropulsionDirection,
-                        misfireDeviationDegrees.x,
-                        misfireDeviationDegrees.y,
-                        0f);
-                }
-
-                if (math.abs(_abyssalTransportTurbulencePitchOffset) > 0.001f ||
-                    math.abs(_abyssalTransportTurbulenceYawOffset) > 0.001f)
-                {
-                    transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
-                        transportPropulsionDirection,
-                        _abyssalTransportTurbulencePitchOffset,
-                        _abyssalTransportTurbulenceYawOffset,
-                        0f);
-                }
-
-                transportPropulsionDirection = ResolveProceduralThrusterNoiseDirection(transportPropulsionDirection);
-                _forceVector.x += transportPropulsionDirection.x * transportPropulsionForce;
-                _forceVector.y += transportPropulsionDirection.y * transportPropulsionForce;
-                _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
+                transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+                    transportPropulsionDirection,
+                    misfireDeviationDegrees.x,
+                    misfireDeviationDegrees.y,
+                    0f);
             }
 
-            _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
-            Vector3 swimAcceleration = HectonPlayerMotor.ResolveHydrodynamicAddedMassStatelessAcceleration(
-                _forceVector,
-                _velocity,
-                ResolveAuthoritativeBodyMassKg());
+            if (math.abs(_abyssalTransportTurbulencePitchOffset) > 0.001f ||
+                math.abs(_abyssalTransportTurbulenceYawOffset) > 0.001f)
+            {
+                transportPropulsionDirection = RotateVectorByAxisAnglesDegrees(
+                    transportPropulsionDirection,
+                    _abyssalTransportTurbulencePitchOffset,
+                    _abyssalTransportTurbulenceYawOffset,
+                    0f);
+            }
 
-            ApplyMotorAcceleration(swimAcceleration);
-            ApplySargassumEntanglementForce(transportPreset);
-            ApplyAbyssalCableEntanglementForce(transportPreset);
-            ApplySargassumMatBuoyancySupport();
+            transportPropulsionDirection = ResolveProceduralThrusterNoiseDirection(transportPropulsionDirection);
+            _forceVector.x += transportPropulsionDirection.x * transportPropulsionForce;
+            _forceVector.y += transportPropulsionDirection.y * transportPropulsionForce;
+            _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
+        }
 
+        private void ApplySurfaceAscendDamping(bool isSurfaceSwim)
+        {
             if (isSurfaceSwim && surfaceAscendVelocityDamping > 0f && _velocity.y > 0f)
             {
                 if (_velocity.y >= surfaceBreachReleaseVelocity)
@@ -13657,6 +13721,7 @@ namespace Hecton8.Gameplay
                 }
             }
         }
+
 
         private bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
         {
