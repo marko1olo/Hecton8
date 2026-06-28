@@ -685,9 +685,9 @@ namespace Hecton8.Editor.Assembly
                         maxAngleDegrees = math.isfinite(source.maxAngleDegrees) ? source.maxAngleDegrees : 90f,
                         gripRadiusMeters = SanitizeNonNegativeFinite(source.gripRadiusMeters, 0.06f),
                         portIndex = math.max(0, source.portIndex),
-                        localPosition = ToFloat3(position),
-                        localForward = ToFloat3(forward),
-                        localRotationAxis = ToFloat3(axis)
+                        localPosition = (float3)(position),
+                        localForward = (float3)(forward),
+                        localRotationAxis = (float3)(axis)
                     };
                     handleTransforms[i] = handleObject.transform;
                 }
@@ -709,9 +709,9 @@ namespace Hecton8.Editor.Assembly
                     gripRadiusMeters = 0.06f,
                     portIndex = 0,
                     stableHash = ResolveHandleHash(group.name, null, 0),
-                    localPosition = ToFloat3(localPosition),
+                    localPosition = (float3)(localPosition),
                     localForward = new float3(0f, 0f, 1f),
-                    localRotationAxis = ToFloat3(axisFallback)
+                    localRotationAxis = (float3)(axisFallback)
                 }
             };
         }
@@ -1522,11 +1522,6 @@ namespace Hecton8.Editor.Assembly
         private static int CompareGroupsByName(PowerSourceGroup a, PowerSourceGroup b)
         {
             return string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static bool IsPowerVisualAsset(string path)

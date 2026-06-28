@@ -1240,12 +1240,9 @@ namespace Hecton8.Construction
             return math.all(math.isfinite(value));
         }
 
-        private static float3 ToFloat3(double3 value)
+        private static double3 ToDouble3(float3 value)
         {
-            if (!IsFinite(value) || math.any(math.abs(value) > (double)float.MaxValue))
-                return new float3(float.NaN);
-
-            return new float3((float)value.x, (float)value.y, (float)value.z);
+            return new double3(value.x, value.y, value.z);
         }
 
         private static float3 BlendLinear(float3 from, float3 to, float t)

@@ -1657,11 +1657,6 @@ namespace Hecton8.Gameplay
             return value;
         }
 
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
-
         private static float3 CubicHermite(float3 p0, float3 m0, float3 p1, float3 m1, float t)
         {
             float safeT = math.saturate(math.isfinite(t) ? t : 0f);

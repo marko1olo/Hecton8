@@ -3811,12 +3811,12 @@ namespace Hecton8.Construction
             job.ServiceCommandCapacity = DroneServiceCommandCapacity;
             job.DeltaTime = s_LastHeadlessDeltaTime;
             job.ServiceQueueEnabled = serviceQueueEnabled ? 1 : 0;
-            job.PlayerPosition = ToFloat3(playerPosition);
+            job.PlayerPosition = (float3)(playerPosition);
             job.PlayerPositionValid = hasPlayer ? 1 : 0;
             job.EmergencyOverclock = IsEmergencyOverclockActive ? 1 : 0;
             job.FormationMode = (int)s_FleetFormationMode;
             job.DroneSpatialBucketMask = DroneSpatialBucketCapacity - 1;
-            job.FormationAnchorPosition = ToFloat3(formationAnchorPosition);
+            job.FormationAnchorPosition = (float3)(formationAnchorPosition);
             job.FormationAnchorValid = hasFormationAnchor ? 1 : 0;
             job.AbyssalFlowVolumeValid = hasAbyssalFlow ? 1 : 0;
             job.AbyssalFlowResolutionXZ = abyssalFlowResolutionXZ;
@@ -3824,12 +3824,12 @@ namespace Hecton8.Construction
             job.AbyssalFlowRingOffsetX = abyssalFlowRingOffsetX;
             job.AbyssalFlowRingOffsetY = abyssalFlowRingOffsetY;
             job.AbyssalFlowRingOffsetZ = abyssalFlowRingOffsetZ;
-            job.AbyssalFlowCenter = ToFloat3(abyssalFlowCenter);
+            job.AbyssalFlowCenter = (float3)(abyssalFlowCenter);
             job.AbyssalFlowHorizontalCellSize = abyssalFlowHorizontalCellSize;
             job.AbyssalFlowVerticalCellSize = abyssalFlowVerticalCellSize;
             job.AbyssalFlowWaterLevel = abyssalFlowSurfaceY;
             job.AbyssalFlowDepthMeters = abyssalFlowDepthMeters;
-            job.BaseFlowVelocity = ToFloat3(baseFlowVelocity);
+            job.BaseFlowVelocity = (float3)(baseFlowVelocity);
             job.PhantomFlowTime = ResolveHeadlessSimulationClockSeconds();
             job.PhantomFlowNoiseScale = phantomFlowNoiseScale;
             job.PhantomFlowTimeScale = phantomFlowTimeScale;
@@ -4728,7 +4728,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            float3 runtimeOffset = -ToFloat3(shiftOffset);
+            float3 runtimeOffset = -(float3)(shiftOffset);
             DroneFleetOriginShiftJob job = new DroneFleetOriginShiftJob
             {
                 DroneStates = droneStates,
@@ -4834,7 +4834,7 @@ namespace Hecton8.Construction
                     if (TryResolvePlayerPosition(out Vector3 playerPosition) &&
                         TryResolvePlayerAup(out double3 playerAup))
                     {
-                        drone.TargetPosition = ToFloat3(playerPosition);
+                        drone.TargetPosition = (float3)(playerPosition);
                         drone.TargetAup = playerAup;
                         drone.State = (byte)HeadlessDroneRuntimeState.Travel;
                         droneMutated = true;
@@ -5081,10 +5081,10 @@ namespace Hecton8.Construction
                 if (drone.State != (byte)HeadlessDroneRuntimeState.Docking)
                     continue;
 
-                float3 p0 = IsFiniteDouble3(drone.DockControlP0) ? ToFloat3(drone.DockControlP0) : drone.Position;
-                float3 p1 = IsFiniteDouble3(drone.DockControlP1) ? ToFloat3(drone.DockControlP1) : p0;
-                float3 p2 = IsFiniteDouble3(drone.DockControlP2) ? ToFloat3(drone.DockControlP2) : drone.HomePosition;
-                float3 p3 = IsFiniteDouble3(drone.DockControlP3) ? ToFloat3(drone.DockControlP3) : drone.HomePosition;
+                float3 p0 = IsFiniteDouble3(drone.DockControlP0) ? (float3)(drone.DockControlP0) : drone.Position;
+                float3 p1 = IsFiniteDouble3(drone.DockControlP1) ? (float3)(drone.DockControlP1) : p0;
+                float3 p2 = IsFiniteDouble3(drone.DockControlP2) ? (float3)(drone.DockControlP2) : drone.HomePosition;
+                float3 p3 = IsFiniteDouble3(drone.DockControlP3) ? (float3)(drone.DockControlP3) : drone.HomePosition;
                 if (!IsFiniteFloat3(p0) || !IsFiniteFloat3(p1) || !IsFiniteFloat3(p2) || !IsFiniteFloat3(p3))
                     continue;
 
@@ -5288,7 +5288,7 @@ namespace Hecton8.Construction
 
             Vector3 failureVector = hitPoint - ToVector3(drone.Position);
             float3 finiteFailureVector = IsFiniteVector(failureVector)
-                ? ToFloat3(failureVector)
+                ? (float3)(failureVector)
                 : float3.zero;
             DockingFailedSignal signal = new DockingFailedSignal
             {
@@ -5666,7 +5666,7 @@ namespace Hecton8.Construction
             if (!TryResolveAupDoubleFromRuntimeOrigin(endpointPosition, out double3 endpointAup))
                 return;
 
-            drone.SupplyPosition = ToFloat3(endpointPosition);
+            drone.SupplyPosition = (float3)(endpointPosition);
             drone.SupplyAup = endpointAup;
             drone.State = (byte)HeadlessDroneRuntimeState.ResupplyTravel;
             drone.Velocity = float3.zero;
@@ -5747,7 +5747,7 @@ namespace Hecton8.Construction
             if (!hubDockAup.IsFinite())
                 return false;
 
-            drone.HomePosition = ToFloat3(bestHub.DockPosition);
+            drone.HomePosition = (float3)(bestHub.DockPosition);
             drone.HomeAup = hubDockAup.ToAbsoluteDouble3();
             drone.HomeRotation = ToQuaternion(bestHub.DockRotation);
             drone.TargetTaskIndex = EmptyTaskIndex;
@@ -6039,7 +6039,7 @@ namespace Hecton8.Construction
                 if (TryResolvePlayerPosition(out Vector3 playerPosition) &&
                     TryResolvePlayerAup(out double3 playerAup))
                 {
-                    drone.TargetPosition = ToFloat3(playerPosition);
+                    drone.TargetPosition = (float3)(playerPosition);
                     drone.TargetAup = playerAup;
                 }
                 return;
@@ -6150,7 +6150,7 @@ namespace Hecton8.Construction
                 if (!TryResolveAupDoubleFromRuntimeOrigin(endpointPosition, out double3 endpointAup))
                     return;
 
-                drone.SupplyPosition = ToFloat3(endpointPosition);
+                drone.SupplyPosition = (float3)(endpointPosition);
                 drone.SupplyAup = endpointAup;
                 drone.State = (byte)HeadlessDroneRuntimeState.ResupplyTravel;
                 return;
@@ -6197,7 +6197,7 @@ namespace Hecton8.Construction
             }
 
             double3 weldDeltaDouble = targetAup - drone.PositionAup;
-            float3 weldDirectionLocal = ToFloat3(weldDeltaDouble);
+            float3 weldDirectionLocal = (float3)(weldDeltaDouble);
             float weldDistanceSq = math.lengthsq(weldDirectionLocal);
             if (weldDistanceSq <= SeparationDistanceEpsilon)
                 return;
@@ -6226,7 +6226,7 @@ namespace Hecton8.Construction
             }
 
             double3 cutDeltaDouble = targetAup - drone.PositionAup;
-            float3 cutDirectionLocal = ToFloat3(cutDeltaDouble);
+            float3 cutDirectionLocal = (float3)(cutDeltaDouble);
             float cutDistanceSq = math.lengthsq(cutDirectionLocal);
             if (cutDistanceSq <= SeparationDistanceEpsilon)
                 return;
@@ -6369,12 +6369,12 @@ namespace Hecton8.Construction
                     RepairRatePerSecond = Mathf.Max(0.01f, launch.RepairRatePerSecond * chassis.RepairSpeed),
                     WeldPowerNormalized = HeadlessWeldPowerNormalized,
                     WeldRangeMeters = HeadlessWeldRangeMeters,
-                    Position = ToFloat3(launch.HomePosition),
+                    Position = (float3)(launch.HomePosition),
                     Velocity = float3.zero,
-                    HomePosition = ToFloat3(launch.HomePosition),
-                    TargetPosition = ToFloat3(launch.Task.Position),
-                    SupplyPosition = ToFloat3(launch.HomePosition),
-                    DockStartPosition = ToFloat3(launch.HomePosition),
+                    HomePosition = (float3)(launch.HomePosition),
+                    TargetPosition = (float3)(launch.Task.Position),
+                    SupplyPosition = (float3)(launch.HomePosition),
+                    DockStartPosition = (float3)(launch.HomePosition),
                     Rotation = homeRotation,
                     HomeRotation = homeRotation,
                     DockStartRotation = homeRotation,
@@ -6885,7 +6885,7 @@ namespace Hecton8.Construction
                 assignmentTasks[taskIndex] = new DroneAssignmentTaskDTO
                 {
                     TargetAup = targetAup,
-                    LocalPosition = ToFloat3(position),
+                    LocalPosition = (float3)(position),
                     Priority = 1f,
                     Score = 0f,
                     CriticalityWeight = Mathf.Max(0.1f, criticalityWeight),
@@ -7179,7 +7179,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            float3 anchor = ToFloat3(anchorPosition);
+            float3 anchor = (float3)(anchorPosition);
             float quality = ResolveGlobalQualityWeight();
             float precisionWeight = quality * quality * (3f - (2f * quality));
             for (int slot = 0; slot < s_DroneSlotDroneIds.Length; slot++)
@@ -8280,8 +8280,8 @@ namespace Hecton8.Construction
                 AveragePathfindingTimeMs = s_LastDroneAStarAveragePathfindingTimeMs,
                 TasksCompleted = s_DroneTasksCompletedCount,
                 FirstPosition = firstPosition,
-                BoundsCenter = ToFloat3(s_DroneDrawBounds.center),
-                BoundsExtents = ToFloat3(s_DroneDrawBounds.extents)
+                BoundsCenter = (float3)(s_DroneDrawBounds.center),
+                BoundsExtents = (float3)(s_DroneDrawBounds.extents)
             };
         }
 
@@ -9564,7 +9564,7 @@ namespace Hecton8.Construction
             DroneAssignmentTaskDTO dto = new DroneAssignmentTaskDTO
             {
                 TargetAup = targetAup,
-                LocalPosition = ToFloat3(candidate.Position),
+                LocalPosition = (float3)(candidate.Position),
                 Priority = ResolveTaskPriority(candidate.Kind),
                 Score = candidate.Score,
                 CriticalityWeight = candidate.CriticalityWeight,
@@ -9888,12 +9888,7 @@ namespace Hecton8.Construction
             return hub != null ? hub.DockPosition : Vector3.zero;
         }
 
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
-        }
-
-        private static float3 ToFloat3(double3 value)
+        private static float3 (float3)(double3 value)
         {
             if (!IsFiniteDouble3(value) || math.any(math.abs(value) > (double)float.MaxValue))
                 return new float3(float.NaN);
@@ -9915,7 +9910,7 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(localDelta)))
                 return false;
 
-            runtimePosition = ToFloat3(localDelta);
+            runtimePosition = (float3)(localDelta);
             return IsFiniteFloat3(runtimePosition);
         }
 

@@ -9248,11 +9248,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return AbsoluteUniversePosition.FromAbsolutePosition(global::Hecton8.World.AUPMath.ToDouble3(runtimePosition) + capturedOffset);
     }
 
-    private static float3 ToFloat3(double3 value)
-    {
-        return new float3((float)value.x, (float)value.y, (float)value.z);
-    }
-
     private static Vector3 ToVector3(float3 value)
     {
         return new Vector3(value.x, value.y, value.z);

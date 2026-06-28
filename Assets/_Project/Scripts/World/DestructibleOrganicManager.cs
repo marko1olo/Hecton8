@@ -10541,15 +10541,6 @@ namespace Hecton8.World
             return ToRuntimeVector3(value.x, value.y, value.z);
         }
 
-        private static float3 ToFloat3(Vector3 value)
-        {
-            float3 result = default;
-            result.x = value.x;
-            result.y = value.y;
-            result.z = value.z;
-            return result;
-        }
-
         private static Vector3 ToRuntimeVector3(float x, float y, float z)
         {
             Vector3 result = default;

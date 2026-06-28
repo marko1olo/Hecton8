@@ -777,7 +777,7 @@ namespace Hecton8.UI.VR
         private void CacheConfiguration()
         {
             _resolvedLocalAxis = NormalizeOr(localRotationAxis, Vector3.right);
-            _axisLocalFloat = ToFloat3(_resolvedLocalAxis);
+            _axisLocalFloat = (float3)(_resolvedLocalAxis);
             if (!IsFiniteVector(pivotLocalPosition))
                 pivotLocalPosition = Vector3.zero;
 
@@ -793,9 +793,9 @@ namespace Hecton8.UI.VR
             minimumQualityIkBlend = math.saturate(SanitizeFloat(minimumQualityIkBlend, 0.35f));
             maximumQualityIkBlend = math.saturate(SanitizeFloat(maximumQualityIkBlend, 0.85f));
             _referenceLocalVector = ResolveReferenceVector();
-            _referenceLocalFloat = ToFloat3(_referenceLocalVector);
+            _referenceLocalFloat = (float3)(_referenceLocalVector);
             if (_nativeAllocated)
-                _leverPivot = ToFloat3(pivotLocalPosition);
+                _leverPivot = (float3)(pivotLocalPosition);
         }
 
         private Vector3 ResolveReferenceVector()
@@ -828,7 +828,7 @@ namespace Hecton8.UI.VR
             if (!EnsureBlackBoxVaultBuffer())
                 return;
 
-            _leverPivot = ToFloat3(pivotLocalPosition);
+            _leverPivot = (float3)(pivotLocalPosition);
             _nativeAllocated = true;
         }
 
@@ -1158,11 +1158,6 @@ namespace Hecton8.UI.VR
         {
             Vector3 local = _cachedTransform != null ? _cachedTransform.InverseTransformPoint(world) : world;
             return new float3(local.x, local.y, local.z);
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static float SolveAngleFromHand(float3 handLocal, float3 pivotLocal, float3 axisLocal, float3 referenceLocal, float minimum, float maximum)

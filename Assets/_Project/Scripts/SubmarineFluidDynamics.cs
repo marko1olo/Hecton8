@@ -6311,12 +6311,6 @@ namespace Hecton8.Physics
             WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return IsFiniteVector(value) ? new float3(value.x, value.y, value.z) : float3.zero;
-        }
-
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;

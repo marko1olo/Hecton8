@@ -2644,11 +2644,11 @@ namespace Hecton8.Editor.Assembly
 
         private static float3 SelectVector(Vector3 primary, Vector3 secondary, float3 fallback)
         {
-            float3 value = ToFloat3(primary);
+            float3 value = (float3)(primary);
             if (math.lengthsq(value) > 0.000001f && math.all(math.isfinite(value)))
                 return value;
 
-            value = ToFloat3(secondary);
+            value = (float3)(secondary);
             if (math.lengthsq(value) > 0.000001f && math.all(math.isfinite(value)))
                 return value;
 
@@ -2657,11 +2657,11 @@ namespace Hecton8.Editor.Assembly
 
         private static float3 SelectPosition(Vector3 localPosition, Vector3 fallbackPosition)
         {
-            float3 local = ToFloat3(localPosition);
+            float3 local = (float3)(localPosition);
             if (!math.all(math.isfinite(local)))
                 local = default;
 
-            float3 fallback = ToFloat3(fallbackPosition);
+            float3 fallback = (float3)(fallbackPosition);
             if (!math.all(math.isfinite(fallback)))
                 fallback = default;
 
@@ -2931,11 +2931,6 @@ namespace Hecton8.Editor.Assembly
             return IsFinite(value) &&
                    value >= MinTextSurfaceExtentMeters &&
                    value <= MaxTextSurfaceExtentMeters;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(float3 value)

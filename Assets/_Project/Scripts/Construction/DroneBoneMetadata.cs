@@ -238,8 +238,8 @@ namespace Hecton8.Construction
                     descriptor.Damping < 0f ||
                     descriptor.SolverWeight < 0f ||
                     descriptor.SolverWeight > 1f ||
-                    math.lengthsq(ToFloat3(descriptor.LocalAxis)) <= 0.000001f ||
-                    math.lengthsq(ToFloat3(descriptor.LimitPlaneNormal)) <= 0.000001f)
+                    math.lengthsq((float3)(descriptor.LocalAxis)) <= 0.000001f ||
+                    math.lengthsq((float3)(descriptor.LimitPlaneNormal)) <= 0.000001f)
                 {
                     failureReason = "DroneBoneMetadata descriptor validation failed.";
                     return false;
@@ -309,22 +309,17 @@ namespace Hecton8.Construction
             runtime.BoneHash = descriptor.BoneHash;
             runtime.SolverFlags = (byte)descriptor.SolverFlags;
             runtime.TierMask = (byte)descriptor.TierMask;
-            runtime.BindLocalPosition = ToFloat3(descriptor.BindLocalPosition);
+            runtime.BindLocalPosition = (float3)(descriptor.BindLocalPosition);
             runtime.BindLocalRotation = ToQuaternion(descriptor.BindLocalRotation);
-            runtime.LocalAxis = math.normalizesafe(ToFloat3(descriptor.LocalAxis), new float3(0f, 1f, 0f));
-            runtime.LimitPlaneNormal = math.normalizesafe(ToFloat3(descriptor.LimitPlaneNormal), new float3(0f, 0f, 1f));
+            runtime.LocalAxis = math.normalizesafe((float3)(descriptor.LocalAxis), new float3(0f, 1f, 0f));
+            runtime.LimitPlaneNormal = math.normalizesafe((float3)(descriptor.LimitPlaneNormal), new float3(0f, 0f, 1f));
             runtime.MinAngleDegrees = descriptor.MinAngleDegrees;
             runtime.MaxAngleDegrees = descriptor.MaxAngleDegrees;
             runtime.Stiffness = descriptor.Stiffness;
             runtime.Damping = descriptor.Damping;
             runtime.SolverWeight = descriptor.SolverWeight;
-            runtime.VisualOverkillOffset = ToFloat3(descriptor.VisualOverkillOffset);
+            runtime.VisualOverkillOffset = (float3)(descriptor.VisualOverkillOffset);
             return runtime;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static quaternion ToQuaternion(Quaternion value)

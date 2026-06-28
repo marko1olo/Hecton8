@@ -1225,10 +1225,10 @@ namespace Hecton8.Gameplay
 
             try
             {
-                tankLocalPositions[TankFront] = ToFloat3(frontTankLocalPosition);
-                tankLocalPositions[TankAft] = ToFloat3(aftTankLocalPosition);
-                tankLocalPositions[TankPort] = ToFloat3(portTankLocalPosition);
-                tankLocalPositions[TankStarboard] = ToFloat3(starboardTankLocalPosition);
+                tankLocalPositions[TankFront] = (float3)(frontTankLocalPosition);
+                tankLocalPositions[TankAft] = (float3)(aftTankLocalPosition);
+                tankLocalPositions[TankPort] = (float3)(portTankLocalPosition);
+                tankLocalPositions[TankStarboard] = (float3)(starboardTankLocalPosition);
             }
             finally
             {
@@ -1564,7 +1564,7 @@ namespace Hecton8.Gameplay
 
         private void ResetDynamicFloodState(bool clearSignalFrame)
         {
-            _dynamicFloodCenterOfMassLocal = ToFloat3(baseCenterOfMassLocal);
+            _dynamicFloodCenterOfMassLocal = (float3)(baseCenterOfMassLocal);
             _dynamicFloodComOffsetLocal = float3.zero;
             _dynamicFloodInertiaTensorMultiplier = new float3(1f);
             _dynamicFloodGlobalPivotAnchor = double3.zero;
@@ -1981,7 +1981,7 @@ namespace Hecton8.Gameplay
                     HullPositionAup = hullAup,
                     HullAup = hullAbsolute,
                     OceanSurfaceAup = surfaceAbsolute,
-                    HullVelocity = ToFloat3(_hull.linearVelocity),
+                    HullVelocity = (float3)(_hull.linearVelocity),
                     HullHeightMeters = hullHeight,
                     HullVolumeCubicMeters = hullVolume,
                     FluidDensityKgPerM3 = WaterDensityKgPerCubicMeter,
@@ -2130,7 +2130,7 @@ namespace Hecton8.Gameplay
 
             float baseMass = math.max(MinimumMassForReciprocal, _baseMassKg);
             float totalBallastMass = 0f;
-            float3 weightedSum = ToFloat3(baseCenterOfMassLocal) * baseMass;
+            float3 weightedSum = (float3)(baseCenterOfMassLocal) * baseMass;
 
             if (!_ballastSolverJobPending &&
                 !_ballastSolverVaultLocksHeld &&
@@ -2162,7 +2162,7 @@ namespace Hecton8.Gameplay
             _centerOfMassLocal = weightedSum * math.rcp(math.max(MinimumMassForReciprocal, totalMass));
             ApplyDynamicFloodMassToCurrentCenter(totalMass);
             if (!math.all(math.isfinite(_centerOfMassLocal)))
-                _centerOfMassLocal = ToFloat3(baseCenterOfMassLocal);
+                _centerOfMassLocal = (float3)(baseCenterOfMassLocal);
 
             if (_hull != null)
             {
@@ -2192,7 +2192,7 @@ namespace Hecton8.Gameplay
 
             float dryMass = math.max(MinimumMassForReciprocal, _baseMassKg);
             float floodMass = math.max(0f, _dynamicFloodWaterMassKg);
-            float3 dryCenter = ToFloat3(baseCenterOfMassLocal);
+            float3 dryCenter = (float3)(baseCenterOfMassLocal);
             float3 floodOnlyWeightedCenter =
                 (_dynamicFloodCenterOfMassLocal * (dryMass + floodMass)) -
                 (dryCenter * dryMass);
@@ -2258,7 +2258,7 @@ namespace Hecton8.Gameplay
             if (math.lengthsq(delta) <= 0.00000025f)
                 return;
 
-            float3 baseTensor = ToFloat3(_baseInertiaTensor);
+            float3 baseTensor = (float3)(_baseInertiaTensor);
             float3 nextTensor = math.max(new float3(0.001f), baseTensor * multiplier);
             if (!math.all(math.isfinite(nextTensor)))
             {
@@ -2516,7 +2516,7 @@ namespace Hecton8.Gameplay
             if (!IsFinite(ventPosition))
                 return;
 
-            float3 ventDirection = ToFloat3(-_cachedTransform.forward);
+            float3 ventDirection = (float3)(-_cachedTransform.forward);
             if (!math.all(math.isfinite(ventDirection)))
                 return;
 
@@ -2673,7 +2673,7 @@ namespace Hecton8.Gameplay
                 _pidHandle = new SubmarineAutoLevelPidJob
                 {
                     CurrentRotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
-                    AngularVelocityWorld = ToFloat3(angularVelocity),
+                    AngularVelocityWorld = (float3)(angularVelocity),
                     PreviousError = _previousPidError,
                     PreviousIntegral = _pidIntegral,
                     DeltaTime = fixedDeltaTime,
@@ -2684,7 +2684,7 @@ namespace Hecton8.Gameplay
                     MaxTorque = maxTorqueNewtons,
                     MaelstromAccelerationClamp = MaelstromAccelerationClamp,
                     SystemStress01 = _systemStress01,
-                    PositionWS = ToFloat3(_hull.worldCenterOfMass),
+                    PositionWS = (float3)(_hull.worldCenterOfMass),
                     DynamicFloodCenterOfMassOffsetLocal = _dynamicFloodComOffsetLocal,
                     FloodPitchBiasPerMeter = floodPidPitchBiasPerMeter,
                     ResetIntegral = _resetIntegralPending ? (byte)1 : (byte)0,
@@ -2864,10 +2864,10 @@ namespace Hecton8.Gameplay
             SubmarineFluidDynamics fluidDynamics = _core != null ? _core.FluidDynamics : null;
             _snapshot = new SubmarineStateSnapshot
             {
-                RuntimePosition = SnapMillimeter(ToFloat3(_hull.position)),
+                RuntimePosition = SnapMillimeter((float3)(_hull.position)),
                 RuntimeRotation = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w),
-                LinearVelocity = SnapMillimeter(ToFloat3(_hull.linearVelocity)),
-                AngularVelocity = ToFloat3(_hull.angularVelocity),
+                LinearVelocity = SnapMillimeter((float3)(_hull.linearVelocity)),
+                AngularVelocity = (float3)(_hull.angularVelocity),
                 CenterOfMassLocal = _centerOfMassLocal,
                 BaseMassKg = _baseMassKg,
                 BallastWaterMassKg = _ballastWaterMassKg,
@@ -2933,7 +2933,7 @@ namespace Hecton8.Gameplay
                     Output = floodMassOutput,
                     RoomCount = roomCount,
                     BaseMassKg = _baseMassKg,
-                    BaseCenterOfMassLocal = ToFloat3(baseCenterOfMassLocal),
+                    BaseCenterOfMassLocal = (float3)(baseCenterOfMassLocal),
                     GlobalPivotAnchor = ResolveGlobalPivotAnchor()
                 }.Schedule();
                 _floodMassJobPending = true;
@@ -3093,9 +3093,9 @@ namespace Hecton8.Gameplay
                 telemetry[index] = new SubmarinePidTelemetryEntry
                 {
                     Frame = _tickCount,
-                    RuntimePosition = SnapMillimeter(ToFloat3(position)),
-                    LinearVelocity = SnapMillimeter(ToFloat3(velocity)),
-                    AngularVelocity = ToFloat3(angularVelocity),
+                    RuntimePosition = SnapMillimeter((float3)(position)),
+                    LinearVelocity = SnapMillimeter((float3)(velocity)),
+                    AngularVelocity = (float3)(angularVelocity),
                     CenterOfMassLocal = _centerOfMassLocal,
                     DynamicFloodComOffsetLocal = _dynamicFloodComOffsetLocal,
                     DynamicFloodInertiaTensorMultiplier = _dynamicFloodInertiaTensorMultiplier,
@@ -4423,11 +4423,6 @@ namespace Hecton8.Gameplay
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return AbsoluteUniversePosition.IsFinite(in positionAup);
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static Vector3 ToVector3(float3 value)

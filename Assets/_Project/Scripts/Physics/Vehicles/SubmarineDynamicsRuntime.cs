@@ -342,7 +342,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
 
             MockFloodSignal signal = default;
-            signal.LocalCompartment = ToFloat3(mockFloodLocal);
+            signal.LocalCompartment = (float3)(mockFloodLocal);
             signal.WaterMassKg = 1200f;
             signal.FillRatio01 = math.saturate(signal.WaterMassKg / 4000f);
             signal.Frame = frame;
@@ -1516,7 +1516,7 @@ namespace Hecton8.Physics.Vehicles
             config.CargoForwardMeters = 2.8f;
             config.TickDilationPressure01 = 0.72f;
             config.SourceHash = SubmarineDynamicsConstants.SourceHashMock;
-            config.MockFloodLocal = ToFloat3(mockFloodLocal);
+            config.MockFloodLocal = (float3)(mockFloodLocal);
             return config;
         }
 
@@ -1534,7 +1534,7 @@ namespace Hecton8.Physics.Vehicles
                 SubmarineKinematicState state = states[i];
                 state.Aup = config.LocalOriginAup;
                 state.Rotation = quaternion.identity;
-                state.CenterOfBuoyancyLocal = ToFloat3(centerOfBuoyancyLocal);
+                state.CenterOfBuoyancyLocal = (float3)(centerOfBuoyancyLocal);
                 state.InertiaTensor = math.float3(28000f, 92000f, 92000f);
                 state.TotalMassKg = config.BaseMassKg;
                 state.EntityId = ResolveVehicleEntityHashForIndex(i);
@@ -1553,7 +1553,7 @@ namespace Hecton8.Physics.Vehicles
                 mass.FloodCenterLocal = config.MockFloodLocal;
                 mass.CargoCenterLocal = math.float3(0f, -0.2f, config.CargoForwardMeters);
                 mass.CenterOfMassLocal = float3.zero;
-                mass.CenterOfBuoyancyLocal = ToFloat3(centerOfBuoyancyLocal);
+                mass.CenterOfBuoyancyLocal = (float3)(centerOfBuoyancyLocal);
                 mass.BaseMassKg = config.BaseMassKg;
                 masses[i] = mass;
 
@@ -2483,11 +2483,6 @@ namespace Hecton8.Physics.Vehicles
         private static float ReadFloatAt(FileStream stream, long offset)
         {
             return math.asfloat(ReadUInt32At(stream, offset));
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static float3 SafeFinite(float3 value)

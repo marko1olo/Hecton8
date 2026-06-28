@@ -864,8 +864,8 @@ namespace Hecton8.World.Outposts
                 Counters = counters,
                 Dimensions = ResolveActiveDimensions(),
                 OriginMeters = _generationOrigin,
-                TerrainPosition = ToFloat3(payload.TerrainPosition),
-                TerrainSize = ToFloat3(payload.TerrainSize),
+                TerrainPosition = (float3)(payload.TerrainPosition),
+                TerrainSize = (float3)(payload.TerrainSize),
                 HeightResolution = payload.HeightmapResolution,
                 CellSizeMeters = ResolveCellSizeMeters(),
                 FloorHeightMeters = ResolveFloorHeightMeters(),
@@ -950,8 +950,8 @@ namespace Hecton8.World.Outposts
                 return false;
 
             int requiredLength = resolution * resolution;
-            float3 terrainPosition = ToFloat3(payload.TerrainPosition);
-            float3 terrainSize = ToFloat3(payload.TerrainSize);
+            float3 terrainPosition = (float3)(payload.TerrainPosition);
+            float3 terrainSize = (float3)(payload.TerrainSize);
             return payload.HeightSamples.Length >= requiredLength &&
                    math.all(math.isfinite(originMeters)) &&
                    IsFinite(payload.TerrainPosition) &&
@@ -996,7 +996,7 @@ namespace Hecton8.World.Outposts
                 if (!IsFinite(position))
                     position = Vector3.zero;
             }
-            return ToFloat3(position);
+            return (float3)(position);
         }
 
         private static OutpostGenerationQualityTier ResolveCompatibilityQualityTier(float qualityWeight01)
@@ -2276,11 +2276,6 @@ namespace Hecton8.World.Outposts
             _renderPropertyDecayRuntime = default;
             _renderPropertyAge01 = 0f;
             _renderPropertiesDirty = true;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private static bool IsDestroyedUnityObject(object instance)

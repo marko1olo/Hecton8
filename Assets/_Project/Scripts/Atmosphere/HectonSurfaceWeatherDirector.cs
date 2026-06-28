@@ -1294,7 +1294,6 @@ namespace Hecton8.Atmosphere
         }
 
         private static float2 ToFloat2(Vector2 value) => new float2(value.x, value.y);
-        private static float3 ToFloat3(Vector3 value) => new float3(value.x, value.y, value.z);
         private static float4 ToFloat4(Color value) => new float4(value.r, value.g, value.b, value.a);
         private static Vector2 ToVector2(float2 value) => new Vector2(value.x, value.y);
         private static Vector3 ToVector3(float3 value) => new Vector3(value.x, value.y, value.z);

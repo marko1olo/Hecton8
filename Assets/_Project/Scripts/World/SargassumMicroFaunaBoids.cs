@@ -4533,7 +4533,7 @@ namespace Hecton8.World
 
             float totalLength = 0f;
             for (int i = 1; i < safePathCount; i++)
-                totalLength += ApproxLeviathanSegmentLength(ToFloat3(sourcePath[i - 1]), ToFloat3(sourcePath[i]));
+                totalLength += ApproxLeviathanSegmentLength((float3)(sourcePath[i - 1]), (float3)(sourcePath[i]));
 
             if (totalLength <= 0.001f)
                 return 0;
@@ -4542,7 +4542,7 @@ namespace Hecton8.World
             float distanceStep = totalLength / math.max(1, targetCount - 1);
             int pathCursor = 1;
             float traversed = 0f;
-            float3 previousPoint = ToFloat3(sourcePath[0]);
+            float3 previousPoint = (float3)(sourcePath[0]);
 
             for (int nodeIndex = 0; nodeIndex < targetCount; nodeIndex++)
             {
@@ -4556,8 +4556,8 @@ namespace Hecton8.World
                         break;
 
                     pathIterationCount++;
-                    float3 previousPathPoint = ToFloat3(sourcePath[pathCursor - 1]);
-                    float3 currentPathPoint = ToFloat3(sourcePath[pathCursor]);
+                    float3 previousPathPoint = (float3)(sourcePath[pathCursor - 1]);
+                    float3 currentPathPoint = (float3)(sourcePath[pathCursor]);
                     float segmentLength = ApproxLeviathanSegmentLength(previousPathPoint, currentPathPoint);
                     if (traversed + segmentLength >= targetDistance || pathCursor >= safePathCount - 1)
                     {
@@ -4573,7 +4573,7 @@ namespace Hecton8.World
                 }
 
                 if (pathCursor >= safePathCount)
-                    previousPoint = ToFloat3(sourcePath[safePathCount - 1]);
+                    previousPoint = (float3)(sourcePath[safePathCount - 1]);
 
                 outputNodes[nodeIndex] = new LeviathanNodeData
                 {
@@ -4615,11 +4615,6 @@ namespace Hecton8.World
             float minAxis = math.cmin(delta);
             float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
             return maxAxis + midAxis * 0.5f + minAxis * 0.25f;
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private bool WriteLeviathanNodeCount(int nodeCount)
@@ -6669,15 +6664,15 @@ namespace Hecton8.World
                 int safeCount = math.clamp(_activeBoidCount, 0, boidState.Length);
                 float safeBiteRange = ClampFinite(biteRangeMeters, 0.05f, MassiveThreatMaxRadiusMeters);
                 float biteRangeSq = safeBiteRange * safeBiteRange;
-                float3 biteCenter = ToFloat3(biteCenterWS);
-                float3 predatorPosition = ToFloat3(predatorPositionWS);
+                float3 biteCenter = (float3)(biteCenterWS);
+                float3 predatorPosition = (float3)(predatorPositionWS);
                 for (int i = 0; i < safeCount && emitted < PredatorKillSignalDrainLimit; i++)
                 {
                     BoidData boid = boidState[i];
                     if ((boid.StateFlags & ConsumedBoidStateFlag) != 0u)
                         continue;
 
-                    float3 boidPosition = ToFloat3(boid.Position);
+                    float3 boidPosition = (float3)(boid.Position);
                     if (math.lengthsq(boidPosition - biteCenter) > biteRangeSq)
                         continue;
 

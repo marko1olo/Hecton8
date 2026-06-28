@@ -1048,8 +1048,8 @@ namespace Hecton8.UI
             }
 
             float3 anchorPosition = ResolveSelectedHologramAnchorRuntimePosition(anchor);
-            float3 anchorUp = ToFloat3(anchor.up);
-            float3 anchorForward = ToFloat3(anchor.forward);
+            float3 anchorUp = (float3)(anchor.up);
+            float3 anchorForward = (float3)(anchor.forward);
             float3 position = anchorPosition + (anchorUp * (hologramHeight + 0.28f)) + (anchorForward * 0.16f);
             quaternion rotation = quaternion.LookRotationSafe(anchorForward, anchorUp);
             _selectedHologramBaseMatrix = float4x4.TRS(position, rotation, new float3(selectedSize, selectedSize, 1f));
@@ -1074,11 +1074,6 @@ namespace Hecton8.UI
                 new float4(0f, 1f, 0f, 0f),
                 new float4(sinYaw, 0f, cosYaw, 0f),
                 new float4(0f, 0f, 0f, 1f));
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private void UpdateHologramMaterialState(RecipeData recipe)
@@ -1138,8 +1133,8 @@ namespace Hecton8.UI
 
             int instanceCount = 0;
             float3 anchorRuntimePosition = ResolveSelectedHologramAnchorRuntimePosition(anchor);
-            float3 anchorUp = ToFloat3(anchor.up);
-            float3 anchorForward = ToFloat3(anchor.forward);
+            float3 anchorUp = (float3)(anchor.up);
+            float3 anchorForward = (float3)(anchor.forward);
             float3 anchorPosition = anchorRuntimePosition + (anchorUp * hologramHeight);
             quaternion anchorRotation = quaternion.LookRotationSafe(anchorForward, math.up());
             int ingredientCount = recipe.ingredients.Count;

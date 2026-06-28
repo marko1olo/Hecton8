@@ -5723,15 +5723,6 @@ namespace Hecton8.Physics
             return value;
         }
 
-        private static float3 ToFloat3(Vector3 value)
-        {
-            float3 value3 = default;
-            value3.x = value.x;
-            value3.y = value.y;
-            value3.z = value.z;
-            return value3;
-        }
-
         private void RefreshKinematicAnchorCompensationState(bool forceRecalculateDamping)
         {
             bool nextState = GlobalPhysicsStateManager.IsKinematicAnchorCompensationEnabled(this, PhysicsConnectionKind.Tether);

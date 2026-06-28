@@ -605,7 +605,7 @@ namespace Hecton8.Gameplay
                 snapRecoilImpulse *
                 math.lerp(0.65f, 1.2f, clampedSeverity) *
                 activeTowMass));
-            float signedRoll = math.clamp(math.dot(ToFloat3(playerSegmentSafe), ToFloat3(playerRight)), -1f, 1f);
+            float signedRoll = math.clamp(math.dot((float3)(playerSegmentSafe), (float3)(playerRight)), -1f, 1f);
             ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentSafe, playerUp, playerRight, clampedSeverity);
 
             if (IsTowBoundToPlayer() && playerMovement != null)
@@ -647,7 +647,7 @@ namespace Hecton8.Gameplay
 
             Vector3 torqueAxis = Vector3.Cross(payloadSegmentSafe, playerUpSafe);
             float torqueAxisSq = torqueAxis.sqrMagnitude;
-            if (torqueAxisSq <= 0.0001f || !math.all(math.isfinite(ToFloat3(torqueAxis))))
+            if (torqueAxisSq <= 0.0001f || !math.all(math.isfinite((float3)(torqueAxis))))
                 torqueAxis = playerRightSafe;
             else
                 torqueAxis *= math.rsqrt(torqueAxisSq);
@@ -681,11 +681,6 @@ namespace Hecton8.Gameplay
                         payloadTorqueVelocityChange,
                         clampedSeverity));
             }
-        }
-
-        private static float3 ToFloat3(Vector3 value)
-        {
-            return new float3(value.x, value.y, value.z);
         }
 
         private void ResolveTowMassBounds(out float minMass, out float maxMass)
@@ -730,7 +725,7 @@ namespace Hecton8.Gameplay
 
         private static bool IsFinite(Vector3 value)
         {
-            return math.all(math.isfinite(ToFloat3(value)));
+            return math.all(math.isfinite((float3)(value)));
         }
 
         private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
