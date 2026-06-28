@@ -45,6 +45,7 @@ namespace Shapes {
 				Draw.style.renderState.keywords = GetMaterialKeywords( sourceMat );
 				Draw.style.renderState.isTextMaterial = drawType == DrawType.TextPooledPersistent || drawType == DrawType.TextAssetClone;
 
+
 				switch( drawType ) {
 					// clone material if needed
 					case DrawType.TextAssetClone:
@@ -97,28 +98,13 @@ namespace Shapes {
 				metaMpbPrevious = metaMpb;
 			} else {
 				drawState.mesh = sourceMesh;
-				drawState.mat = sourceMat;
-				drawState.submesh = submesh;
+					drawState.mat = drawType == DrawType.Custom ? sourceMat : IMMaterialPool.GetMaterial( ref Draw.style.renderState );
+					drawState.submesh = submesh;
 				if( metaMpb.PreAppendCheck( drawState, mtx ) == false )
 					Debug.LogError( "Somehow PreAppendCheck failed for this draw" );
-				if( drawType != DrawType.Custom )
-					ApplyGlobalProperties( drawState.mat ); // this will set render state of the material. todo: will this modify the assets? this seems bad
+				}
 			}
-		}
 
-		static void ApplyGlobalProperties( Material m ) {
-			if( DrawCommand.IsAddingDrawCommandsToBuffer == false ) { // mpbs can't carry render state
-				m.SetFloat( ShapesMaterialUtils.propZTest, (float)Draw.ZTest );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetFactor, Draw.ZOffsetFactor );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits );
-				m.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)Draw.ColorMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilComp, (float)Draw.StencilComp );
-				m.SetFloat( ShapesMaterialUtils.propStencilOpPass, (float)Draw.StencilOpPass );
-				m.SetFloat( ShapesMaterialUtils.propStencilID, Draw.StencilRefID );
-				m.SetFloat( ShapesMaterialUtils.propStencilReadMask, Draw.StencilReadMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilWriteMask, Draw.StencilWriteMask );
-			}
-		}
 
 		// this is a little gross because it's duplicated, kinda, but we have to deal with gross things sometimes
 		static void ApplyGlobalPropertiesTMP( Material m ) {
