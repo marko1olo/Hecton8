@@ -7,12 +7,17 @@ namespace Hecton8.Editor
 {
     public static class WorldProceduralScatterPreviewGizmoDrawer
     {
+        // Set to true by TerrainRenderTestGoal before Camera.Render() — kills ALL scatter gizmo drawing
+        // without fighting Unity gizmo system timing or reflection assembly lookup issues.
+        public static bool TrtSuppressAll = false;
+
         private static readonly List<WorldProceduralScatterDirector.ScatterPreviewGizmoRecord> _records =
             new List<WorldProceduralScatterDirector.ScatterPreviewGizmoRecord>(512); // COLD ALLOC: List<ScatterPreviewGizmoRecord>[512] - SceneView scatter preview gizmo cache - owner: WorldProceduralScatterPreviewGizmoDrawer
 
         [DrawGizmo(GizmoType.Selected | GizmoType.NonSelected)]
         private static void DrawScatterPreviewGizmos(WorldProceduralScatterDirector director, GizmoType gizmoType)
         {
+            if (TrtSuppressAll) { _records.Clear(); return; }
             if (director == null || !director.isActiveAndEnabled)
             {
                 _records.Clear();

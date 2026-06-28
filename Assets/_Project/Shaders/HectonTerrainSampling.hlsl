@@ -289,24 +289,30 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             nd.xy = n.rg * 2.0 - 1.0;
             nd.z  = sqrt(max(1e-6, 1.0 - dot(nd.xy, nd.xy)));
 
-            float lum = dot(a, float3(0.299, 0.587, 0.114));
+            // Procedural luminance — fully independent of broken/stub albedo array content.
+            // Three octaves: macro (500m), meso (50m), micro (2m) — drives all color variation.
+            float lumMacro = HectonNoise2D(worldPos.xz * 0.002  + float2(3.7, 8.1));
+            float lumMeso  = HectonNoise2D(worldPos.xz * 0.022  + float2(11.3, 2.9));
+            float lumMicro = HectonNoise2D(worldPos.xz * 0.31   + float2(5.7, 17.1));
+            // Combined procedural lum (macro dominates, micro adds grit)
+            float procLum  = lumMacro * 0.50 + lumMeso * 0.33 + lumMicro * 0.17;
+
             float3 finalColor;
 
             if (k >= 2)
             {
-                // HardRock/Basalt: dark, desaturated, with macro variation
-                // Base: very dark teal-grey. macroVar modulates to brownish basalt.
-                float3 darkRock  = float3(0.045, 0.050, 0.060);
-                float3 lightRock = float3(0.160, 0.175, 0.185);
-                float3 tintCold  = float3(0.85, 0.90, 1.00); // cold grey-blue
-                float3 tintWarm  = float3(1.05, 0.95, 0.85); // warm basalt brown
-                float3 base = lerp(darkRock, lightRock, lum);
-                base *= lerp(tintCold, tintWarm, macroVar);
-                // Additional meso-scale luminance patch
+                // Hard basalt / dark submarine rock.
+                // Range: near-black charcoal → dark cool stone. Never warm, never khaki.
+                float3 darkRock  = float3(0.030f, 0.033f, 0.040f); // near-black with cold cast
+                float3 lightRock = float3(0.110f, 0.120f, 0.140f); // mid charcoal, still cool
+                float3 tintCold  = float3(0.88f, 0.93f, 1.05f);    // cold grey-blue — submarine basalt
+                float3 tintWarm  = float3(1.04f, 0.98f, 0.88f);    // faint warm on exposed fractures
+                float3 base = lerp(darkRock, lightRock, procLum);
+                base *= lerp(tintCold, tintWarm, macroVar * 0.4); // macroVar only 40% influence — keeps rock cold
                 float mesoVar = HectonNoise2D(worldPos.xz * 0.015) * 0.5 + 0.5;
-                finalColor = base * lerp(0.75, 1.15, mesoVar);
+                finalColor = base * lerp(0.80, 1.25, mesoVar);
 
-                // Micro-normals: rock grit
+                // Micro-normals: rock grit — adds fine surface bump
                 float nx = HectonNoise2D(worldPos.xz * 120.0) - 0.5;
                 float ny = HectonNoise2D(worldPos.xz * 120.0 + float2(17.3, 31.1)) - 0.5;
                 float3 gritNormal = normalize(float3(nx * 1.2, ny * 1.2, 1.0));
@@ -314,15 +320,16 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             }
             else
             {
-                // Sand/Silt: cold deep-sea sediment with subtle macro colour drift
-                float3 darkSand  = float3(0.08, 0.10, 0.13);
-                float3 lightSand = float3(0.20, 0.24, 0.28);
-                float3 tintA = float3(0.90, 0.95, 1.05); // cold blue-grey silt
-                float3 tintB = float3(1.05, 1.00, 0.90); // slight ochre drift at sediment fans
-                float3 base = lerp(darkSand, lightSand, lum);
-                base *= lerp(tintA, tintB, macroVar);
+                // Abyssal silt / deep-sea sediment.
+                // Cold blue-grey — volcanic ash sediment, no ochre, no warmth.
+                float3 darkSilt  = float3(0.055f, 0.065f, 0.080f); // very dark cold silt
+                float3 lightSilt = float3(0.150f, 0.170f, 0.200f); // pale grey-blue
+                float3 tintA = float3(0.88f, 0.94f, 1.08f); // dominant cold silt
+                float3 tintB = float3(1.03f, 1.00f, 0.92f); // slight drift at sediment fans
+                float3 base = lerp(darkSilt, lightSilt, procLum);
+                base *= lerp(tintA, tintB, macroVar * 0.35);
                 float mesoVar = HectonNoise2D(worldPos.xz * 0.012) * 0.5 + 0.5;
-                finalColor = base * lerp(0.80, 1.10, mesoVar);
+                finalColor = base * lerp(0.82, 1.12, mesoVar);
 
                 // Sand ripples procedural normal
                 float dx = cos(worldPos.x * 12.0 + worldPos.z * 3.0) * 0.05;
@@ -335,7 +342,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             normalTS  += nd        * weights[k];
             metallic  += m.r       * weights[k];
             ao        += m.g       * weights[k];
-            smoothness += m.a * 0.12 * weights[k];
+            smoothness += m.a * 0.18 * weights[k]; // 0.18 cap — wet submarine rock gets slight specular
         }
     }
 

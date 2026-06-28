@@ -415,13 +415,35 @@ namespace MapMagic.Nodes.MatrixGenerators
 				#else
 					renTex = new RenderTexture(res,res,32, RenderTextureFormat.RFloat);
 				#endif
+
+				// GPU guard: batchmode -nographics can fail RT creation silently.
+				if (!renTex.IsCreated()) renTex.Create();
+				if (!renTex.IsCreated())
+				{
+					// CPU fallback: decode RFloat texBytes directly into SetHeights.
+					Vector3 terrainSize = data.size;
+					data.heightmapResolution = res;
+					data.size = new Vector3(terrainSize.x, height, terrainSize.z);
+					terrain.groupingID = res;
+					float[,] heights = new float[res, res];
+					for (int z = 0; z < res; z++)
+						for (int x = 0; x < res; x++)
+						{
+							int idx = (z * res + x) * 4;
+							heights[z, x] = System.BitConverter.ToSingle(texBytes, idx);
+						}
+					data.SetHeightsDelayLOD(0, 0, heights);
+					data.DirtyHeightmapRegion(texRect, TerrainHeightmapSyncControl.HeightAndLod);
+					return;
+				}
+
 				Graphics.Blit(tempTex, renTex);
 
 				//no resize algorithm
-				Vector3 terrainSize = data.size;
+				Vector3 terrainSize2 = data.size;
 				data.heightmapResolution = res;
 				terrain.groupingID = res;
-				data.size = new Vector3(terrainSize.x, height, terrainSize.z);
+				data.size = new Vector3(terrainSize2.x, height, terrainSize2.z);
 
 				RenderTexture bacRenTex = RenderTexture.active;
 				RenderTexture.active = renTex;
@@ -454,7 +476,31 @@ namespace MapMagic.Nodes.MatrixGenerators
 				#else
 					renTex = new RenderTexture(res,res,32, RenderTextureFormat.RFloat);
 				#endif
-					
+
+				// GPU guard: batchmode -nographics can fail RT creation silently.
+				if (!renTex.IsCreated()) renTex.Create();
+				if (!renTex.IsCreated())
+				{
+					// CPU fallback: decode RFloat texBytes directly into SetHeightsDelayLOD.
+					Profiler.BeginSample("CPU Height Fallback");
+					Vector3 terrainSizeCPU = data.size;
+					data.size = new Vector3(terrainSizeCPU.x, height, terrainSizeCPU.z);
+					ApplySplitData.FastHeightmapResize(terrain, res, new Vector3(terrainSizeCPU.x, height, terrainSizeCPU.z));
+					terrain.groupingID = res;
+					float[,] heights = new float[res, res];
+					for (int z = 0; z < res; z++)
+						for (int x = 0; x < res; x++)
+						{
+							int idx = (z * res + x) * 4;
+							heights[z, x] = System.BitConverter.ToSingle(texBytes, idx);
+						}
+					data.SetHeightsDelayLOD(0, 0, heights);
+					data.DirtyHeightmapRegion(texRect, TerrainHeightmapSyncControl.HeightAndLod);
+					Profiler.EndSample();
+					Profiler.EndSample(); // PrepareTexApply
+					yield break;
+				}
+
 				Profiler.BeginSample("Blit Tex");
 				Graphics.Blit(tempTex, renTex);
 				Profiler.EndSample();

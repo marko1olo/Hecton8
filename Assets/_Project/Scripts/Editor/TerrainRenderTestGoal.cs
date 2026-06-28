@@ -359,8 +359,8 @@ namespace Hecton8.Editor
             try
             {
                 Material baseMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
-                Texture2DArray albedo = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_AlbedoArray.asset");
-                Texture2DArray normal = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_NormalArray.asset");
+                Texture2DArray albedo = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset");
+                Texture2DArray normal = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset");
                 Texture2DArray mask = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
 
                 foreach (var t in terrains)
@@ -506,8 +506,8 @@ namespace Hecton8.Editor
             try
             {
                 Material baseMat2 = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
-                Texture2DArray albedo2 = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_AlbedoArray.asset");
-                Texture2DArray normal2 = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_NormalArray.asset");
+                Texture2DArray albedo2 = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset");
+                Texture2DArray normal2 = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset");
                 Texture2DArray mask2   = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
 
                 if (baseMat2 != null)
@@ -625,8 +625,8 @@ namespace Hecton8.Editor
             tonemapping.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.None);
 
             var exposure = profile.Add<UnityEngine.Rendering.Universal.ColorAdjustments>();
-            exposure.postExposure.Override(3.5f); // +3.5 EV — deep sea terrain needs strong boost
-            exposure.contrast.Override(-25f);     // Lift shadows aggressively to read terrain detail
+            exposure.postExposure.Override(2.2f); // +2.2 EV — dark basalt: 0.03*4.6=0.14 midtone, 0.14*4.6=0.64 highlights, no clip
+            exposure.contrast.Override(-15f);     // Gentle shadow lift — preserves topo readability without crushing darks
 
             // Extra fill for macro topography — ensure we see terrain detail
             GameObject pointGo = new GameObject("TRT_DirectionalLight");
@@ -912,8 +912,8 @@ namespace Hecton8.Editor
                     {
                         Material inst2 = new Material(baseMat3);
                         inst2.name = baseMat3.name + "_" + t.name;
-                        Texture2DArray alb = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_AlbedoArray.asset");
-                        Texture2DArray nor = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_NormalArray.asset");
+                        Texture2DArray alb = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset");
+                        Texture2DArray nor = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset");
                         Texture2DArray msk = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
                         if (alb != null) inst2.SetTexture("_AlbedoArray", alb);
                         if (nor != null) inst2.SetTexture("_NormalArray", nor);
@@ -939,22 +939,9 @@ namespace Hecton8.Editor
                 }
             }
 
-            // Clear scatter gizmo records via reflection to prevent [DrawGizmo] from drawing isolines
-            try
-            {
-                var drawerType = System.Type.GetType("Hecton8.Editor.WorldProceduralScatterPreviewGizmoDrawer, Assembly-CSharp-Editor");
-                if (drawerType != null)
-                {
-                    var recordsField = drawerType.GetField("_records",
-                        System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                    if (recordsField != null)
-                    {
-                        var list = recordsField.GetValue(null) as System.Collections.IList;
-                        list?.Clear();
-                    }
-                }
-            }
-            catch { /* silent — gizmo suppression is best-effort */ }
+            // Suppress ALL scatter gizmo rendering (isolines + vertical sticks) via direct static flag.
+            // The flag check is the FIRST line in DrawScatterPreviewGizmos — guaranteed to fire before any Handles call.
+            WorldProceduralScatterPreviewGizmoDrawer.TrtSuppressAll = true;
 
             RenderTexture rt = new RenderTexture(1920, 1080, 24);
             cam.targetTexture = rt;
