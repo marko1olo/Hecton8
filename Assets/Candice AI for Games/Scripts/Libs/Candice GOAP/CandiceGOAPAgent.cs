@@ -59,6 +59,11 @@ namespace CandiceAIforGames.AI
                 CandiceGOAPAction action = actionS.ConvertToGOAPAction(aiController);
                 availableActions.Add(action);
             }
+            Apply();
+        }
+
+        public void Apply()
+        {
             List<CandiceGOAPAction> plan = Plan(availableActions, gameState, goalState);
             if (plan == null)
             {
@@ -69,7 +74,6 @@ namespace CandiceAIforGames.AI
             {
                 CandiceGOAPAction action = plan[i];
                 planQueue.Enqueue(action);
-
             }
             currentAction = planQueue.Dequeue();
         }
@@ -79,7 +83,7 @@ namespace CandiceAIforGames.AI
         {
             if(currentAction != null)
             {
-                CandiceBehaviorStates behaviorState = currentAction.Apply(gameState.state);
+                CandiceBehaviorStates behaviorState = currentAction.Evaluate(gameState.state);
                 if(currentAction.isComplete)
                 {
                     if(planQueue.Count > 0)

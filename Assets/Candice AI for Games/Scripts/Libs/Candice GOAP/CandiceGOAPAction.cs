@@ -108,7 +108,7 @@ namespace CandiceAIforGames.AI
         /// </summary>
         /// <param name="state">The current state of the AI.</param>
         /// <returns>The behavior state of the action after the application of the effects to the state.</returns>
-        public CandiceBehaviorStates Apply(CandiceDictionary<string, int> state)
+        public CandiceBehaviorStates Evaluate(CandiceDictionary<string, int> state)
         {
             // By default, assume the behavior state of the action is SUCCESS.
             CandiceBehaviorStates behaviorState = CandiceBehaviorStates.SUCCESS;
