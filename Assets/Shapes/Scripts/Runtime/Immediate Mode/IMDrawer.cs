@@ -22,6 +22,7 @@ namespace Shapes {
 		ShapeDrawState drawState;
 		Matrix4x4 mtx;
 		bool allowInstancing;
+		bool destroyMatOnDispose;
 
 		public enum DrawType {
 			Shape,
@@ -35,6 +36,7 @@ namespace Shapes {
 			this.mtx = Draw.Matrix;
 			this.metaMpb = metaMpb;
 			this.allowInstancing = allowInstancing && ShapesConfig.Instance.useImmediateModeInstancing;
+			this.destroyMatOnDispose = false;
 
 			#if UNITY_EDITOR
 			if( sourceMat == null )
@@ -96,27 +98,30 @@ namespace Shapes {
 
 				metaMpbPrevious = metaMpb;
 			} else {
+				Draw.style.renderState.shader = sourceMat.shader;
+				Draw.style.renderState.keywords = GetMaterialKeywords( sourceMat );
+				Draw.style.renderState.isTextMaterial = drawType == DrawType.TextPooledPersistent || drawType == DrawType.TextAssetClone;
+
+				switch( drawType ) {
+					case DrawType.TextAssetClone:
+						drawState.mat = Object.Instantiate( sourceMat );
+						ApplyGlobalPropertiesTMP( drawState.mat );
+						destroyMatOnDispose = true;
+						break;
+					case DrawType.TextPooledAuto:
+					case DrawType.TextPooledPersistent:
+					case DrawType.Custom:
+						drawState.mat = sourceMat;
+						break;
+					default:
+						drawState.mat = IMMaterialPool.GetMaterial( ref Draw.style.renderState );
+						break;
+				}
+
 				drawState.mesh = sourceMesh;
-				drawState.mat = sourceMat;
 				drawState.submesh = submesh;
 				if( metaMpb.PreAppendCheck( drawState, mtx ) == false )
 					Debug.LogError( "Somehow PreAppendCheck failed for this draw" );
-				if( drawType != DrawType.Custom )
-					ApplyGlobalProperties( drawState.mat ); // this will set render state of the material. todo: will this modify the assets? this seems bad
-			}
-		}
-
-		static void ApplyGlobalProperties( Material m ) {
-			if( DrawCommand.IsAddingDrawCommandsToBuffer == false ) { // mpbs can't carry render state
-				m.SetFloat( ShapesMaterialUtils.propZTest, (float)Draw.ZTest );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetFactor, Draw.ZOffsetFactor );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits );
-				m.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)Draw.ColorMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilComp, (float)Draw.StencilComp );
-				m.SetFloat( ShapesMaterialUtils.propStencilOpPass, (float)Draw.StencilOpPass );
-				m.SetFloat( ShapesMaterialUtils.propStencilID, Draw.StencilRefID );
-				m.SetFloat( ShapesMaterialUtils.propStencilReadMask, Draw.StencilReadMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilWriteMask, Draw.StencilWriteMask );
 			}
 		}
 
@@ -139,6 +144,7 @@ namespace Shapes {
 				metaMpb.ApplyDirectlyToMaterial();
 				drawState.mat.SetPass( 0 );
 				Graphics.DrawMeshNow( drawState.mesh, mtx, drawState.submesh );
+				if( destroyMatOnDispose ) drawState.mat.DestroyBranched();
 			} else if( allowInstancing == false ) {
 				// finalize the draw if we're not using instancing
 				ShapeDrawCall drawCall = metaMpb.ExtractDrawCall();
