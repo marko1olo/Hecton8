@@ -466,9 +466,12 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			// todo: something fucky happens sometimes when fallback fonts are the only things in town
-			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
-				// will draw on dispose
+			if( tmp.mesh != null && tmp.mesh.vertexCount > 0 ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+					// will draw on dispose
+				}
+			} else if( drawType == IMDrawer.DrawType.TextPooledAuto && DrawCommand.IsAddingDrawCommandsToBuffer ) {
+				DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( disposeId );
 			}
 
 			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
@@ -480,8 +483,10 @@ namespace Shapes {
 						sm.renderer.enabled = false; // :>
 					if( sm.sharedMaterial == null )
 						continue; // cursed but ok
-					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
-						// will draw on dispose
+					if( sm.mesh != null && sm.mesh.vertexCount > 0 ) {
+						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
+							// will draw on dispose
+						}
 					}
 				}
 			}
