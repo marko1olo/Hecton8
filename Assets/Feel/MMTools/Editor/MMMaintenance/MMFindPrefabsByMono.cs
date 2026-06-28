@@ -28,6 +28,10 @@ namespace MoreMountains.Tools
 		static RectOffset _padding;
 		static RectOffset _horizontalPaddingOnly;
 
+		// Test seams
+		internal static System.Func<string[]> _getAllPrefabsInProjectMock;
+		internal static System.Func<string, UnityEngine.Object> _loadMainAssetAtPathMock;
+
 		/// <summary>
 		/// Menu bound method
 		/// </summary>
@@ -152,6 +156,40 @@ namespace MoreMountains.Tools
 		}
         
 		/// <summary>
+		/// Performs the search for missing scripts on prefabs and populates the result list.
+		/// </summary>
+		internal void PerformSearchMissing()
+		{
+			string[] allPrefabs = _getAllPrefabsInProjectMock != null ? _getAllPrefabsInProjectMock() : GetAllPrefabsInProject();
+			_resultsList = new List<string>();
+			List<Component> components = new List<Component>();
+			foreach (string prefab in allPrefabs)
+			{
+				UnityEngine.Object asset = _loadMainAssetAtPathMock != null ? _loadMainAssetAtPathMock(prefab) : AssetDatabase.LoadMainAssetAtPath(prefab);
+				GameObject assetGameObject;
+				try
+				{
+					assetGameObject = (GameObject)asset;
+					if (assetGameObject != null)
+					{
+						assetGameObject.GetComponentsInChildren<Component>(true, components);
+						foreach (Component component in components)
+						{
+							if (component == null)
+							{
+								_resultsList.Add(prefab);
+							}
+						}
+					}
+				}
+				catch
+				{
+					Debug.Log("An error occured with prefab " + prefab);
+				}
+			}
+		}
+
+		/// <summary>
 		/// Draws the search missing form
 		/// </summary>
 		protected virtual void DrawSearchMissing()
@@ -160,33 +198,7 @@ namespace MoreMountains.Tools
 			GUILayout.Space(20);
 			if (GUILayout.Button("Search the project for prefabs with missing scripts"))
 			{
-				string[] allPrefabs = GetAllPrefabsInProject();
-				_resultsList = new List<string>();
-				List<Component> components = new List<Component>();
-				foreach (string prefab in allPrefabs)
-				{
-					UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(prefab);
-					GameObject assetGameObject;
-					try
-					{
-						assetGameObject = (GameObject)asset;
-						if (assetGameObject != null)
-						{
-							assetGameObject.GetComponentsInChildren<Component>(true, components);
-							foreach (Component component in components)
-							{
-								if (component == null)
-								{
-									_resultsList.Add(prefab);
-								}
-							}
-						}
-					}
-					catch
-					{
-						Debug.Log("An error occured with prefab " + prefab);
-					}
-				}
+				PerformSearchMissing();
 			}
 			GUILayout.EndHorizontal();
 		}
