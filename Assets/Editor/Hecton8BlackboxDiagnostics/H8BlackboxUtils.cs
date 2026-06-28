@@ -315,9 +315,11 @@ namespace Hecton8.BlackboxDiagnostics
         {
             int count = 0;
             if (!scene.isLoaded) return 0;
+            var buffer = new List<T>();
             foreach (var root in scene.GetRootGameObjects())
             {
-                count += root.GetComponentsInChildren<T>(true).Length;
+                root.GetComponentsInChildren<T>(true, buffer);
+                count += buffer.Count;
             }
             return count;
         }
