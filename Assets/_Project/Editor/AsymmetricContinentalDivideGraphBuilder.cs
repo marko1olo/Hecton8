@@ -464,7 +464,7 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return inlet;
                         }
                     }
-                    catch { }
+                    catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] GetDefaultInlet: Property get value failed: {e.Message}"); }
                 }
             }
 
