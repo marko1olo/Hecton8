@@ -403,21 +403,9 @@ namespace Hecton8.UI
             return false;
         }
 
-        [Obsolete("Use TryPushInfo(string) so notification queue refusal stays visible at the producer.", true)]
-        public static void PushInfo(string message)
-        {
-            TryPushInfo(message);
-        }
-
         public static bool TryPushInfo(string message)
         {
             return TryPublish(message, NotificationEventSeverity.Info);
-        }
-
-        [Obsolete("Use TryPushInfo(ReadOnlySpan<char>) so notification queue refusal stays visible at the producer.", true)]
-        public static void PushInfo(ReadOnlySpan<char> message)
-        {
-            TryPushInfo(message);
         }
 
         public static bool TryPushInfo(ReadOnlySpan<char> message)
