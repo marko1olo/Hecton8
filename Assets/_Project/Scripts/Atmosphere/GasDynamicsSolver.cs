@@ -3882,5 +3882,8 @@ namespace Hecton8.Atmosphere
         #region JulesLink_AtmosphereLeakRateCalculator
         private static void JulesLink_AtmosphereLeakRateCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AtmosphereLeakRateCalculator); }
         #endregion
+        #region JulesLink_GasMixturePartialPressureCalculator
+        private static void JulesLink_GasMixturePartialPressureCalculator() { _ = typeof(Hecton8.PureLogic.Systems.GasMixturePartialPressureCalculator); }
+        #endregion
 }
 }
