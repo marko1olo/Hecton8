@@ -14,7 +14,7 @@ Shader "Hidden/Crest/Simulation/Update Shadow URP"
 			// #pragma enable_d3d11_debug_symbols
 
 			// maybe this is the equivalent of the SHADOW_COLLECTOR_PASS define? inspired from com.unity.render-pipelines.universal\Shaders\Utils\ScreenSpaceShadows.shader
-			#define _MAIN_LIGHT_SHADOWS_CASCADE
+			#pragma multi_compile_fragment _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
 			#define MAIN_LIGHT_CALCULATE_SHADOWS
 
 			#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
