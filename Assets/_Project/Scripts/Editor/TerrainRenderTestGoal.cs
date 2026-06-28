@@ -590,9 +590,11 @@ namespace Hecton8.Editor
             Light dirLight = lightGo.AddComponent<Light>();
             dirLight.type = LightType.Directional;
             dirLight.intensity = 2.5f;
-            dirLight.transform.rotation = Quaternion.Euler(40f, 60f, 0f); // Low grazing angle reveals micro-grit and terraces
-            dirLight.color = Color.white; // Spectrally neutral — no tint
-            dirLight.shadows = LightShadows.None;
+            dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+            dirLight.color = new Color(1.0f, 0.95f, 0.9f);
+            dirLight.useColorTemperature = true;
+            dirLight.colorTemperature = 5800f; // Neutral-warm spectrum (anti-gloom)
+            dirLight.shadows = LightShadows.Soft;
             RenderSettings.sun = dirLight;
 
             // Fill light: dim, opposite axis — lifts shadows without tinting
