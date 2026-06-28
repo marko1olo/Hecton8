@@ -676,7 +676,7 @@ namespace Crest
             // TODO: Have a BufferCount which will be the run-time buffer size or prune data.
             // NOTE: Hardcode minimum (2) to avoid breaking server builds and LodData* toggles.
             // Gather the buffer size for shared data.
-            BufferSize = 2;
+            BufferSize = 1;
             foreach (var lodData in _lodDatas)
             {
                 if (lodData.enabled)
@@ -688,14 +688,14 @@ namespace Crest
             _perCascadeInstanceData = new BufferedData<PerCascadeInstanceData[]>(BufferSize, () => new PerCascadeInstanceData[LodDataMgr.MAX_LOD_COUNT]);
             _bufPerCascadeInstanceData = new ComputeBuffer(_perCascadeInstanceData.Current.Length, UnsafeUtility.SizeOf<PerCascadeInstanceData>());
             Shader.SetGlobalBuffer(sp_perCascadeInstanceData, _bufPerCascadeInstanceData);
-            _bufPerCascadeInstanceDataSource = new ComputeBuffer(_perCascadeInstanceData.Previous(1).Length, UnsafeUtility.SizeOf<PerCascadeInstanceData>());
+            _bufPerCascadeInstanceDataSource = new ComputeBuffer(_perCascadeInstanceData.Previous(BufferSize > 1 ? 1 : 0).Length, UnsafeUtility.SizeOf<PerCascadeInstanceData>());
             Shader.SetGlobalBuffer(sp_CrestPerCascadeInstanceDataSource, _bufPerCascadeInstanceDataSource);
 
             // The extra LOD accounts for reading off the cascade (eg CurrentIndex + LodChange + 1).
             _cascadeParams = new BufferedData<CascadeParams[]>(BufferSize, () => new CascadeParams[LodDataMgr.MAX_LOD_COUNT + 1]);
             _bufCascadeDataTgt = new ComputeBuffer(_cascadeParams.Current.Length, UnsafeUtility.SizeOf<CascadeParams>());
             Shader.SetGlobalBuffer(sp_cascadeData, _bufCascadeDataTgt);
-            _bufCascadeDataSrc = new ComputeBuffer(_cascadeParams.Previous(1).Length, UnsafeUtility.SizeOf<CascadeParams>());
+            _bufCascadeDataSrc = new ComputeBuffer(_cascadeParams.Previous(BufferSize > 1 ? 1 : 0).Length, UnsafeUtility.SizeOf<CascadeParams>());
             Shader.SetGlobalBuffer(sp_CrestCascadeDataSource, _bufCascadeDataSrc);
 
             _lodTransform = new LodTransform();
@@ -1224,7 +1224,10 @@ namespace Crest
                 for (int i = 0; i < _lodTransform._renderData.Length; i++)
                 {
                     _lodTransform._renderData[i].Current._frame = -1;
-                    _lodTransform._renderData[i].Previous(1)._frame = -1;
+                    if (BufferSize > 1)
+                    {
+                        _lodTransform._renderData[i].Previous(1)._frame = -1;
+                    }
                 }
             }
 #endif
@@ -1279,12 +1282,12 @@ namespace Crest
             _cascadeParams.Flip();
             _lodTransform.WriteCascadeParams(_cascadeParams);
             _bufCascadeDataTgt.SetData(_cascadeParams.Current);
-            _bufCascadeDataSrc.SetData(_cascadeParams.Previous(1));
+            _bufCascadeDataSrc.SetData(_cascadeParams.Previous(BufferSize > 1 ? 1 : 0));
 
             _perCascadeInstanceData.Flip();
             WritePerCascadeInstanceData(_perCascadeInstanceData);
             _bufPerCascadeInstanceData.SetData(_perCascadeInstanceData.Current);
-            _bufPerCascadeInstanceDataSource.SetData(_perCascadeInstanceData.Previous(1));
+            _bufPerCascadeInstanceDataSource.SetData(_perCascadeInstanceData.Previous(BufferSize > 1 ? 1 : 0));
         }
 
         /// <summary>
