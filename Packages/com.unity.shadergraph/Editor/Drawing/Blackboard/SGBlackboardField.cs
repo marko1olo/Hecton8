@@ -37,8 +37,6 @@ namespace UnityEditor.ShaderGraph.Drawing
         internal TextField textField => m_TextField;
 
         Action m_ResetReferenceNameTrigger;
-        List<Node> m_SelectedNodes = new List<Node>();
-
         public string text
         {
             get { return m_Pill.text; }
@@ -128,9 +126,9 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             ShaderGraphPreferences.onAllowDeprecatedChanged += UpdateTypeText;
 
-            RegisterCallback<MouseEnterEvent>(evt => OnMouseHover(evt, ViewModel.model));
-            RegisterCallback<MouseLeaveEvent>(evt => OnMouseHover(evt, ViewModel.model));
-            RegisterCallback<DragUpdatedEvent>(OnDragUpdatedEvent);
+            RegisterCallback<MouseEnterEvent>(evt => controller?.OnMouseHover(evt, ViewModel.model));
+            RegisterCallback<MouseLeaveEvent>(evt => controller?.OnMouseHover(evt, ViewModel.model));
+            RegisterCallback<DragUpdatedEvent>(evt => controller?.OnDragUpdatedEvent(evt));
 
             var blackboard = ViewModel.parentView.GetFirstAncestorOfType<SGBlackboard>();
             if (blackboard != null)
@@ -265,72 +263,6 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
         }
 
-        void OnDragUpdatedEvent(DragUpdatedEvent evt)
-        {
-            if (m_SelectedNodes.Any())
-            {
-                foreach (var node in m_SelectedNodes)
-                {
-                    node.RemoveFromClassList("hovered");
-                }
-                m_SelectedNodes.Clear();
-            }
-        }
-
-        // TODO: Move to controller? Feels weird for this to be directly communicating with PropertyNodes etc.
-        // Better way would be to send event to controller that notified of hover enter/exit and have other controllers be sent those events in turn
-        void OnMouseHover(EventBase evt, ShaderInput input)
-        {
-            var graphView = ViewModel.parentView.GetFirstAncestorOfType<MaterialGraphView>();
-            if (evt.eventTypeId == MouseEnterEvent.TypeId())
-            {
-                foreach (var node in graphView.nodes.ToList())
-                {
-                    if (input is AbstractShaderProperty property)
-                    {
-                        if (node.userData is PropertyNode propertyNode)
-                        {
-                            if (propertyNode.property == input)
-                            {
-                                m_SelectedNodes.Add(node);
-                                node.AddToClassList("hovered");
-                            }
-                        }
-                    }
-                    else if (input is ShaderKeyword keyword)
-                    {
-                        if (node.userData is KeywordNode keywordNode)
-                        {
-                            if (keywordNode.keyword == input)
-                            {
-                                m_SelectedNodes.Add(node);
-                                node.AddToClassList("hovered");
-                            }
-                        }
-                    }
-                    else if (input is ShaderDropdown dropdown)
-                    {
-                        if (node.userData is DropdownNode dropdownNode)
-                        {
-                            if (dropdownNode.dropdown == input)
-                            {
-                                m_SelectedNodes.Add(node);
-                                node.AddToClassList("hovered");
-                            }
-                        }
-                    }
-                }
-            }
-            else if (evt.eventTypeId == MouseLeaveEvent.TypeId() && m_SelectedNodes.Any())
-            {
-                foreach (var node in m_SelectedNodes)
-                {
-                    node.RemoveFromClassList("hovered");
-                }
-                m_SelectedNodes.Clear();
-            }
-        }
-
         void UpdateTypeText()
         {
             if (shaderInput is AbstractShaderProperty asp)
@@ -379,16 +311,13 @@ namespace UnityEditor.ShaderGraph.Drawing
             m_InspectorUpdateDelegate = null;
 
             UnregisterCallback<MouseDownEvent>(OnMouseDownEvent);
-            UnregisterCallback<MouseEnterEvent>(evt => OnMouseHover(evt, ViewModel.model));
-            UnregisterCallback<MouseLeaveEvent>(evt => OnMouseHover(evt, ViewModel.model));
-            UnregisterCallback<DragUpdatedEvent>(OnDragUpdatedEvent);
+            // Unregistering callbacks that use lambdas is tricky, but they are cleared with the element.
             var blackboard = ViewModel.parentView.GetFirstAncestorOfType<SGBlackboard>();
             UnregisterCallback<DragEnterEvent>(blackboard.OnDragEnterEvent);
             UnregisterCallback<DragExitedEvent>(blackboard.OnDragExitedEvent);
             ShaderGraphPreferences.onAllowDeprecatedChanged -= UpdateTypeText;
 
             // Clear references
-            m_SelectedNodes = null;
             m_ContentItem = null;
             m_Pill = null;
             m_TypeLabel = null;
