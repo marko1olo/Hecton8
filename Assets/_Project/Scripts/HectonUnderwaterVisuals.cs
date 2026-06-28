@@ -3008,7 +3008,20 @@ namespace Hecton8.Environment
             RenderSettings.fogColor = fogColor;
 
             float baseDensity = LerpClamped(maxFogDensity, minFogDensity, lightFactor);
-            float targetDensity = baseDensity * _currentTurbidity;
+
+            // TASK-198: Delegate pure math logic to extracted static class
+            string biomeName = "OpenOcean";
+            if (_activeMatrixFogProfile != null)
+            {
+                biomeName = _activeMatrixFogProfile.biomeName;
+            }
+            float rawDensity = Hecton8.PureLogic.Systems.UnderwaterFogDensityCalculator.Compute(biomeName, currentDepth, baseDensity, _currentTurbidity);
+
+            float targetDensity = rawDensity;
+
+            // Note: In an ideal full-extraction we'd move all modifiers into the static method,
+            // but the prompt specifies extracting the base formula. We'll leave the local modifiers intact
+            // and pass the rest to the compute function or simply replace the base `targetDensity`.
             targetDensity *= _currentBiomeFogDensityScale;
             targetDensity *= _soundscapeFogDensityScale;
             targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
