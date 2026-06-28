@@ -32,6 +32,7 @@ UNITY_INSTANCING_BUFFER_END(Props)
 #define IP_DISTANCES intp2.xyz
 #define IP_pxPerMeter intp3.x
 #define IP_inradius intp3.y
+#define IP_uniformScale intp3.z
 
 struct VertexInput {
     float4 vertex : POSITION;
@@ -43,7 +44,7 @@ struct VertexOutput {
     half4 intp0 : TEXCOORD1;
     half4 intp1 : TEXCOORD2;
     half4 intp2 : TEXCOORD3;
-    half2 intp3 : TEXCOORD4;
+    half3 intp3 : TEXCOORD4;
     UNITY_FOG_COORDS(5)
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
@@ -79,6 +80,7 @@ VertexOutput vert (VertexInput v) {
     half3 objScale = GetObjectScale();
     half uniformScale = GetUniformScale(objScale);
     half scaleThickness = useUniformScale ? uniformScale : 1;
+    o.IP_uniformScale = scaleThickness;
   
     half3 coordinateScaling = useUniformScale ? half3(1,1,1) : objScale; 
     half3 a = PROP(_A) * coordinateScaling;
@@ -312,7 +314,7 @@ inline half GetAngularMask( VertexOutput i, half tRadial, out float tAngular ) {
     if( IsDashed() && PROP(_Hollow) > 0 ) {
         float dist, distTotal;
         GetPerimeterDistance( i, /*out*/ dist, /*out*/ distTotal );
-        DashConfig dash = GetDashConfig( 1, /*periodicEndToEnd = */ true ); // todo: uniform scale?
+        DashConfig dash = GetDashConfig( i.IP_uniformScale, /*periodicEndToEnd = */ true );
         DashCoordinates dashData = GetDashCoordinates( dash, dist, distTotal, i.IP_HALF_THICKNESS*2*i.IP_inradius, i.IP_pxPerMeter );
         ApplyDashMask( /*inout*/ mask, dashData, tRadial, dash.type, dash.modifier );
         tAngular = dist / distTotal;

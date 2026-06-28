@@ -30,6 +30,7 @@ UNITY_INSTANCING_BUFFER_END(Props)
 #define IP_thickness intp2.x
 #define IP_pxCoverage intp2.y
 #define IP_pxPerMeter intp2.z
+#define IP_uniformScale intp2.w
 
 struct VertexInput {
     float4 vertex : POSITION;
@@ -41,7 +42,7 @@ struct VertexOutput {
     half4 intp0 : TEXCOORD1;
     half4 intp1 : TEXCOORD2;
     #if defined(BORDERED) || defined(CORNER_RADIUS)
-        half3 intp2 : TEXCOORD3;
+        half4 intp2 : TEXCOORD3;
     #endif
 	UNITY_FOG_COORDS(4)
 	UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -75,6 +76,7 @@ VertexOutput vert (VertexInput v) {
 	LineWidthData wd = GetScreenSpaceWidthDataSimple( LocalToWorldPos(localCenter), CAM_UP, thickness, thicknessSpace );
 	
 	#if defined(BORDERED)
+		o.IP_uniformScale = scaleThickness;
 		o.IP_pxPerMeter = wd.pxPerMeter;
 		o.IP_pxCoverage = saturate(wd.thicknessPixelsTarget);
 		o.IP_thickness = wd.thicknessMeters / scaleThickness;
@@ -184,7 +186,7 @@ inline void ApplyDashes( inout half mask, VertexOutput i, half4 radii, half tRad
 	if( IsDashed() ) {
 		float dist, distTotal;
 		GetPerimeterDistance( i, /*out*/ dist, /*out*/ distTotal, radii, i.IP_uv0, i.IP_thickness );
-		DashConfig dash = GetDashConfig( 1, /*periodicEndToEnd:*/ true ); // todo: uniform scale?
+		DashConfig dash = GetDashConfig( i.IP_uniformScale, /*periodicEndToEnd:*/ true );
 		DashCoordinates dashData = GetDashCoordinates( dash, dist, distTotal, i.IP_thickness, i.IP_pxPerMeter );
 		ApplyDashMask( /*inout*/ mask, dashData, tRadial*2-1, dash.type, dash.modifier );		
 	}
