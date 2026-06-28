@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using UnityEngine;
 
@@ -55,7 +56,7 @@ namespace Hecton8.Optimization.Editor
             
             if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycleService == null)
             {
-                Debug.LogWarning("[ResolutionAnalyzer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
+                H8Debug.LogWarning("[ResolutionAnalyzer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
                 return recommendations;
             }
             
@@ -129,7 +130,7 @@ namespace Hecton8.Optimization.Editor
         {
             if (rt == null)
             {
-                Debug.LogWarning("[ResolutionAnalyzer] Cannot capture screenshot: RenderTexture is null");
+                H8Debug.LogWarning("[ResolutionAnalyzer] Cannot capture screenshot: RenderTexture is null");
                 return null;
             }
             
@@ -174,7 +175,7 @@ namespace Hecton8.Optimization.Editor
                     
                     Object.DestroyImmediate(texture);
                     
-                    Debug.Log($"[ResolutionAnalyzer] Screenshot saved: {fullPath}");
+                    H8Debug.Log($"[ResolutionAnalyzer] Screenshot saved: {fullPath}");
                     return fullPath;
                 }
                 finally
