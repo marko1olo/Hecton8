@@ -1886,7 +1886,7 @@ namespace Hecton8.Scavenging
                 GameObject candidate = objects[i];
                 if (candidate == null ||
                     !string.Equals(candidate.name, HostObjectName, StringComparison.Ordinal) ||
-                    candidate.GetComponent<ScavengingLootOracleRuntime>() != null)
+                    candidate.TryGetComponent<ScavengingLootOracleRuntime>(out _))
                 {
                     continue;
                 }
