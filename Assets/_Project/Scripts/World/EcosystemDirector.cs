@@ -1797,9 +1797,11 @@ namespace Hecton8.World
             _debugPlayerStress01 = stress01;
             float recoveryScale = 1.15f - (0.6f * stress01);
             float biomeGradientScale = 1f + (_biomeGradientBlend01 * BiomeGradientAmbientSpawnGain);
-            _spawnCreditBudget = math.min(
-                spawnCreditBudgetMax,
-                _spawnCreditBudget + (spawnCreditRecoverPerSecond * math.max(0f, deltaSeconds) * recoveryScale * biomeGradientScale));
+            float effectiveRegenRate = spawnCreditRecoverPerSecond * recoveryScale * biomeGradientScale;
+
+            _spawnCreditBudget = Hecton8.PureLogic.Ecosystem.EcosystemSpawnCreditBudgeting.Calculate(
+                _spawnCreditBudget, spawnCreditBudgetMax, effectiveRegenRate, deltaSeconds);
+
             _debugSpawnCreditBudget = _spawnCreditBudget;
         }
 
