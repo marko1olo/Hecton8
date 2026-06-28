@@ -629,6 +629,39 @@ namespace Hecton8.AI
             ResetConstraintIterationHysteresis();
         }
 
+        public void SetFleeIntent(UnityEngine.Vector3 threatPos, UnityEngine.Vector3[] obstaclePositions, float obstacleAvoidRadius, float fleeBias, float speed)
+        {
+            float3 ownerPosition = ResolveOwnerRuntimePosition();
+            System.Numerics.Vector3 sysSelfPos = new System.Numerics.Vector3(ownerPosition.x, ownerPosition.y, ownerPosition.z);
+            System.Numerics.Vector3 sysThreatPos = new System.Numerics.Vector3(threatPos.x, threatPos.y, threatPos.z);
+
+            System.Numerics.Vector3[] sysObstacles = null;
+            if (obstaclePositions != null)
+            {
+                sysObstacles = new System.Numerics.Vector3[obstaclePositions.Length];
+                for (int i = 0; i < obstaclePositions.Length; i++)
+                {
+                    sysObstacles[i] = new System.Numerics.Vector3(obstaclePositions[i].x, obstaclePositions[i].y, obstaclePositions[i].z);
+                }
+            }
+
+            System.Numerics.Vector3 sysResult = Hecton8.PureLogic.Ecosystem.FaunaFleeVectorCalculator.Compute(
+                sysSelfPos,
+                sysThreatPos,
+                sysObstacles,
+                obstacleAvoidRadius,
+                fleeBias
+            );
+
+            float3 fleeDir = new float3(sysResult.X, sysResult.Y, sysResult.Z);
+            float3 intendedVelocity = fleeDir * speed;
+            float3 headTarget = ownerPosition + (fleeDir * _segmentLength);
+
+            _motionIntentVelocity = SanitizeFiniteInputFloat3(intendedVelocity, float3.zero);
+            _motionIntentHeadTarget = SanitizeFiniteInputFloat3(headTarget, ownerPosition);
+            _motionIntentPending = true;
+        }
+
         internal void SetMotionIntent(Vector3 intendedVelocity, Vector3 headTargetWorldPosition)
         {
             _motionIntentVelocity = SanitizeFiniteInputFloat3((float3)intendedVelocity, float3.zero);
