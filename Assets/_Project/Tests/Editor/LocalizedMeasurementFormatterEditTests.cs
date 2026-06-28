@@ -81,5 +81,57 @@ namespace Hecton.Localization.Tests
             // Assert
             Assert.AreEqual("Mock_C", result.ToString());
         }
+
+        [Test]
+        public void IsRightToLeft_Arabic_ReturnsTrue()
+        {
+            // Arrange
+            var language = GameLanguage.Arabic;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.IsRightToLeft(language);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void IsRightToLeft_Hebrew_ReturnsTrue()
+        {
+            // Arrange
+            var language = GameLanguage.Hebrew;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.IsRightToLeft(language);
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void IsRightToLeft_English_ReturnsFalse()
+        {
+            // Arrange
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.IsRightToLeft(language);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void IsRightToLeft_French_ReturnsFalse()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.IsRightToLeft(language);
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
     }
 }
