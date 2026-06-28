@@ -926,6 +926,43 @@ public static class CaveGraphGenerator
             }
         }
 
+
+        // Check connectivity
+        if (nodes.Length > 0)
+        {
+            int nodeCount = nodes.Length;
+            bool[,] adjacencyMatrix = new bool[nodeCount, nodeCount];
+
+            for (int i = 0; i < tunnels.Length; i++)
+            {
+                float3 pointA = tunnels[i].pointA;
+                float3 pointB = tunnels[i].pointB;
+
+                int indexA = -1;
+                int indexB = -1;
+
+                for (int j = 0; j < nodeCount; j++)
+                {
+                    if (math.all(nodes[j].position == pointA)) indexA = j;
+                    if (math.all(nodes[j].position == pointB)) indexB = j;
+                }
+
+                if (indexA != -1 && indexB != -1)
+                {
+                    adjacencyMatrix[indexA, indexB] = true;
+                    adjacencyMatrix[indexB, indexA] = true;
+                }
+            }
+
+            if (!Hecton8.PureLogic.Systems.CaveGraphConnectivityChecker.Check(nodeCount, adjacencyMatrix, out int[] disconnectedNodes))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning($"[CaveGraph] Graph is not fully connected. Isolated nodes: {disconnectedNodes.Length}");
+#endif
+                valid = false;
+            }
+        }
+
         // Check entrances
         for (int i = 0; i < entrances.Length; i++)
         {
