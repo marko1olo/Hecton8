@@ -125,8 +125,17 @@ namespace Hecton8.AI
 
             int legIndex = entity.LegStartIndex + localLegIndex;
             float safeScale = math.max(0.0001f, entity.Scale);
+            System.Numerics.Vector3 targetOutput = Hecton8.PureLogic.Kinematics.StepTargetPredictor.Calculate(
+                new System.Numerics.Vector3(entity.RootPosition.x, entity.RootPosition.y, entity.RootPosition.z),
+                new System.Numerics.Vector3(entity.Velocity.x, entity.Velocity.y, entity.Velocity.z),
+                entity.VelocityLeadSeconds,
+                safeScale,
+                localLegIndex,
+                entity.LegCount
+            );
             float3 homeLocal = ProceduralCrabLegIKRuntime.ResolveLegHomeLocal(localLegIndex, entity.LegCount) * safeScale;
-            float3 ledHome = entity.RootPosition + math.rotate(entity.RootRotation, homeLocal) + (entity.Velocity * math.max(0f, entity.VelocityLeadSeconds));
+            float3 rotatedLocal = math.rotate(entity.RootRotation, homeLocal) - homeLocal;
+            float3 ledHome = new float3(targetOutput.X, targetOutput.Y, targetOutput.Z) + rotatedLocal;
             float3 rootUp = ContextualPhysicalIkMath.SafeNormalize(math.rotate(entity.RootRotation, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
             float3 rawAvoidance = entity.SpatialHashAvoidanceOffset * math.saturate(entity.SpatialHashAvoidanceStrength);
             float3 avoidance = ClampVectorLength(rawAvoidance, math.max(0f, entity.SpatialHashAvoidanceMaxOffset));
