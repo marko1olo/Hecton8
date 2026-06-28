@@ -9,14 +9,20 @@ namespace Hecton8.Tools
     {
         private float _timeoutWait = 0f;
         private int _waitFrames = 0;
+        private GameObject _player;
 
         void Update()
         {
             _timeoutWait += Time.unscaledDeltaTime;
 
-            var player = GameObject.FindWithTag("Player");
-            if (player == null) player = GameObject.Find("HectonPlayer");
-            if (player == null) player = GameObject.Find("Player(Clone)");
+            if (_player == null)
+            {
+                _player = GameObject.FindWithTag("Player");
+                if (_player == null) _player = GameObject.Find("HectonPlayer");
+                if (_player == null) _player = GameObject.Find("Player(Clone)");
+            }
+
+            var player = _player;
 
             // Wait up to 180s for massive scenes to boot
             if (player != null || _timeoutWait > 180f)
