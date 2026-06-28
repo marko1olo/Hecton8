@@ -101,7 +101,7 @@ namespace Shapes {
 				}
 			} else { // per-corner
 				SerializedProperty[] components = propCornerRadii.GetVisibleChildren().ToArray();
-				(int component, string label )[] corners = { ( 1, "↖" ), ( 2, "↗" ), ( 0, "↙" ), ( 3, "↘" ) };
+				(int component, string label )[] corners = { ( 1, "↖" ), ( 0, "↗" ), ( 2, "↙" ), ( 3, "↘" ) };
 				void CornerField( string label, int component ) => EditorGUILayout.PropertyField( components[component], new GUIContent( label ), GUILayout.Width( 64 ) );
 
 				void RowFields( string label, int a, int b ) {

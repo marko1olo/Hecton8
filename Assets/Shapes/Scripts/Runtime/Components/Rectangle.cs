@@ -107,7 +107,7 @@ namespace Shapes {
 				SetVector4Now( ShapesMaterialUtils.propCornerRadii, cornerRadii = new Vector4( r, r, r, r ) );
 			}
 		}
-		/// <summary>Gets or sets a specific radius for each corner when rounded. Order is clockwise from bottom left</summary>
+		/// <summary>Gets or sets a specific radius for each corner when rounded. Order is counter-clockwise from top right</summary>
 		public Vector4 CornerRadii {
 			get => cornerRadii;
 			set => SetVector4Now( ShapesMaterialUtils.propCornerRadii, cornerRadii = new Vector4( Mathf.Max( 0f, value.x ), Mathf.Max( 0f, value.y ), Mathf.Max( 0f, value.z ), Mathf.Max( 0f, value.w ) ) );
