@@ -1,0 +1,27 @@
+{
+    "name": "Hecton8.Optimization.Tests",
+    "rootNamespace": "Hecton8.Tests.Optimization",
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Optimization",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
