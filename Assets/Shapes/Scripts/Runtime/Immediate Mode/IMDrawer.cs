@@ -101,22 +101,32 @@ namespace Shapes {
 				drawState.submesh = submesh;
 				if( metaMpb.PreAppendCheck( drawState, mtx ) == false )
 					Debug.LogError( "Somehow PreAppendCheck failed for this draw" );
-				if( drawType != DrawType.Custom )
-					ApplyGlobalProperties( drawState.mat ); // this will set render state of the material. todo: will this modify the assets? this seems bad
-			}
-		}
+				if( drawType == DrawType.Shape || drawType == DrawType.TextPooledPersistent || drawType == DrawType.TextPooledAuto || drawType == DrawType.TextAssetClone ) {
+					Draw.style.renderState.shader = sourceMat.shader;
+					Draw.style.renderState.keywords = GetMaterialKeywords( sourceMat );
+					Draw.style.renderState.isTextMaterial = drawType == DrawType.TextPooledPersistent || drawType == DrawType.TextAssetClone;
 
-		static void ApplyGlobalProperties( Material m ) {
-			if( DrawCommand.IsAddingDrawCommandsToBuffer == false ) { // mpbs can't carry render state
-				m.SetFloat( ShapesMaterialUtils.propZTest, (float)Draw.ZTest );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetFactor, Draw.ZOffsetFactor );
-				m.SetFloat( ShapesMaterialUtils.propZOffsetUnits, Draw.ZOffsetUnits );
-				m.SetInt_Shapes( ShapesMaterialUtils.propColorMask, (int)Draw.ColorMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilComp, (float)Draw.StencilComp );
-				m.SetFloat( ShapesMaterialUtils.propStencilOpPass, (float)Draw.StencilOpPass );
-				m.SetFloat( ShapesMaterialUtils.propStencilID, Draw.StencilRefID );
-				m.SetFloat( ShapesMaterialUtils.propStencilReadMask, Draw.StencilReadMask );
-				m.SetFloat( ShapesMaterialUtils.propStencilWriteMask, Draw.StencilWriteMask );
+					switch( drawType ) {
+						// clone material if needed
+						case DrawType.TextAssetClone:
+							// instantiate and then delete it after this DrawCommand has been executed
+							drawState.mat = Object.Instantiate( sourceMat );
+							ApplyGlobalPropertiesTMP( drawState.mat ); // a lil gross but sfine
+							// NOTE: We do not cache and delete TextAssetClone materials here in direct draw because
+							// Direct draw does not support TextAssetClone properly (it leaks without command buffer cleanup).
+							// But we support it to prevent compilation or runtime breakage.
+							break;
+						case DrawType.TextPooledPersistent:
+							drawState.mat = sourceMat;
+							break;
+						case DrawType.TextPooledAuto:
+							drawState.mat = sourceMat;
+							break;
+						default:
+							drawState.mat = IMMaterialPool.GetMaterial( ref Draw.style.renderState );
+							break;
+					}
+				}
 			}
 		}
 
