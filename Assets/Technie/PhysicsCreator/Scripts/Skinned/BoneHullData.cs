@@ -49,7 +49,8 @@ namespace Technie.PhysicsCreator.Skinned
 		// Manual properties
 		[SerializeField]
 		private List<int> selectedFaces = new List<int>();  // selected triangle indices
-		public List<Vector3> cachedTriangleVertices = new List<Vector3>();  // TODO Implement this
+		[SerializeField]
+		private List<Vector3> cachedTriangleVertices = new List<Vector3>();
 
 		// Cache of the faces indices for triangles that are fully between the min/max thresholds
 		//private List<int> thresholdSelectedFaces = new List<int>();
