@@ -53,7 +53,7 @@ namespace Unity.XR.Management.TestPackage
             TestSettings settings = GetSettings();
             if (settings != null)
             {
-                // TODO: Pass settings off to plugin prior to subsystem init.
+                TestSettings.s_RuntimeInstance = settings;
             }
 
             CreateSubsystem<StandaloneSubsystemDescriptor, StandaloneSubsystem>(s_StandaloneSubsystemDescriptors, "Standalone Subsystem");

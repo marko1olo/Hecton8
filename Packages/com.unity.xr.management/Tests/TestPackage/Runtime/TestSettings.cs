@@ -7,6 +7,8 @@ namespace Unity.XR.Management.TestPackage
     public class TestSettings : ScriptableObject
     {
 
+        public static TestSettings s_RuntimeInstance = null;
+
 #if !UNITY_EDITOR
         internal static TestSettings s_Settings;
 
