@@ -376,13 +376,25 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
+			Dictionary<GameObject, MeshFilter> mfDict = new Dictionary<GameObject, MeshFilter>();
+			MeshFilter[] allFilters = GetComponentsInChildren<MeshFilter>( true );
+			for( int i = 0; i < allFilters.Length; i++ )
+				mfDict[ allFilters[ i ].gameObject ] = allFilters[ i ];
+
+			if( m_rootTransform != null && m_rootTransform != transform )
+			{
+				MeshFilter[] rootFilters = m_rootTransform.GetComponentsInChildren<MeshFilter>( true );
+				for( int i = 0; i < rootFilters.Length; i++ )
+					mfDict[ rootFilters[ i ].gameObject ] = rootFilters[ i ];
+			}
+
 			MeshFilter[] cachedMeshFilters = new MeshFilter[Renderers.Length];
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
 				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 					continue;
 
-				MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
+				mfDict.TryGetValue( Renderers[ i ].gameObject, out MeshFilter mf );
 				if( mf == null || mf.sharedMesh == null )
 					continue;
 
