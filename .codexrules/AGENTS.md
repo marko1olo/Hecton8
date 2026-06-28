@@ -391,6 +391,12 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [FORBID] "I do not know why it crashed" as a final answer when the system lacks a black-box route.
 
+## API Testing Safety
+
+[FORBID] Do not run rapid, parallel, or unthrottled batch-testing of API keys (including Groq, Gemini, OpenAI, etc.). Mass consecutive requests will trigger provider rate limits, account bans, or key revocation.
+
+[REQ] Any API key verification, diagnostic testing, or key rotation routine must execute sequentially and enforce a strict safety cooldown delay of at least 2 to 3 seconds between consecutive requests.
+
 ## Final Directive
 
 Zero GC in hot runtime paths. Correct player route, integrated code/data, measured proof where applicable, no false verification, no bureaucracy theater. Enterprise quality. No "good enough for testing". Facts only.

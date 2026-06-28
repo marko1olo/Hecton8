@@ -154,7 +154,7 @@ Audio import defaults: ambient/music use Vorbis around Q70 and Compressed In Mem
 
 Third-party boundaries: MapMagic is terrain-only through the approved bridge owner; Crest ocean uses assigned asset materials, not runtime material clones; Odin remains editor-only. Do not introduce or extend A* Pathfinding, DOTween, Easy Save 3, Master Audio, or vendor scripting defines as first-party runtime dependencies without an explicit cleanup/integration task and source-backed approval.
 
-**Streaming/import defaults: heavy terrain, ocean, caves, generated asset families, and large content load through tracked async handles such as Addressables or an approved streaming owner. Release handles on unload/despawn/shutdown. Do not call `Resources.Load`, do not fire-and-forget asset loads, do not use `LoadSceneAsync(activateOnLoad:true)` without a loading-screen route, and do not call `Resources.UnloadUnusedAssets()` as a normal gameplay cleanup path.
+Streaming/import defaults: heavy terrain, ocean, caves, generated asset families, and large content load through tracked async handles such as Addressables or an approved streaming owner. Release handles on unload/despawn/shutdown. Do not call `Resources.Load`, do not fire-and-forget asset loads, do not use `LoadSceneAsync(activateOnLoad:true)` without a loading-screen route, and do not call `Resources.UnloadUnusedAssets()` as a normal gameplay cleanup path.
 
 ## Global Systems Doctrine
 
@@ -390,6 +390,12 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 [REQ] On crash, NaN, non-finite state, deterministic desync, or critical route corruption, dump the ring to a deterministic project artifact. Use `Docs\AgentLogs\Dump_[ID].bin` only when an explicit agent ID exists; otherwise use system name and timestamp.
 
 [FORBID] "I do not know why it crashed" as a final answer when the system lacks a black-box route.
+
+## API Testing Safety
+
+[FORBID] Do not run rapid, parallel, or unthrottled batch-testing of API keys (including Groq, Gemini, OpenAI, etc.). Mass consecutive requests will trigger provider rate limits, account bans, or key revocation.
+
+[REQ] Any API key verification, diagnostic testing, or key rotation routine must execute sequentially and enforce a strict safety cooldown delay of at least 2 to 3 seconds between consecutive requests.
 
 ## Final Directive
 

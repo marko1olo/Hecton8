@@ -6057,7 +6057,7 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 
 [RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`. After agent rule-surface edits, also run `python -B Tools/Docs/TestAgentRuleRouting.py`. After mandate edits, also run `python -B Tools/Docs/TestMandateRegistry.py`.
 
-[RULE] Full pre-kernel root law text from 2026-06-05 is preserved in `Docs\AGENTS_RULE_DETAIL_LEDGER.md`. That ledger is binding detail/provenance when a task or dispute needs a former monolithic clause not yet promoted into a narrower bible or mandate. Do not bulk-read it for ordinary work.
+[RULE] Detailed rules archive: `Docs\AGENTS_RULE_DETAIL_LEDGER.md`.
 
 [RULE] No rule, constraint, rejection gate, product vision lock, proof requirement, or workflow exception may be deleted because it is noisy. Rule splitting must follow `Docs\AGENT_AUTHORITY_ROUTING.md` no-loss protocol.
 
@@ -6081,6 +6081,8 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
 [REQ] Authority files, route bibles, mandate files, and important task documents must be read as complete documents before you evaluate their meaning. Text search is allowed for navigation, locating symbols, and audit checks, but not as a substitute for reading the document and reasoning about the whole rule set.
+
+[REQ] To prove that authority files were read as complete documents (preventing memory fatigue and stale-weight hallucinations), every non-trivial task plan or first response must start with a direct quote or explicit reference to a key constraint, constant (e.g. `used/total > 0.90`, `GlobalQualityWeight`), or API check from the relevant domain bible or mandate. Guessing rule contents without reading is a critical compliance failure.
 
 [REQ] Final chat or explicit batch log for non-trivial tasks must include a concise authority receipt:
 `Authority used: AGENTS.md; PROJECT_BIBLES.md; <domain bible>; <mandate files>; <proof/source files>.`
@@ -6149,15 +6151,9 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 ## Batch, Logs, And State
 
-
-
 [RULE] Batch prompt protocol is explicit-only. Use it only when the user provides a master batch file path and an agent ID, or directly asks for a batch-agent run. Do not infer IDs from tabs, stale files, filenames, old logs, status files, or neighboring prompts.
 
-[REQ] Create or update `Docs\Tasks\Status_[ID].md`, `Docs\AgentLogs\Rationale_[ID].md`, `Docs\AgentLogs\LOG_[ID].md`, or `Docs\AgentLogs\Dump_[ID].bin` only when the user explicitly asks for persistent logs or supplies a batch ID. For ordinary requests, do the work and report in chat.
-
-[REQ] If an explicit agent ID or batch/logging mode already exists in the current conversation or active task, keep using that ID until the user exits batch/log mode, assigns a new ID, or starts a clearly unrelated ordinary task.
-
-[FORBID] Do not read `Docs\Tasks\Status_[ID].md`, `Docs\AgentLogs\Rationale_[ID].md`, `CURRENT_BATCH.md`, or old logs before every response unless an active ID/logging mode exists or the user asks for those logs.
+[REQ] Create, update, or read batch status files and logs only when the user explicitly asks for persistent logging or supplies a batch ID. For ordinary requests, do the work and report in chat.
 
 ## Project Shape
 
@@ -6393,47 +6389,9 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 ## Delegation And Subagents
 
-[REQ] Subagents are a primary HECTON-8 work tool, not an orchestrator-only feature. Any HECTON-8 agent may and should spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis. This includes:
-- source/proof inspection for a narrow route;
-- report synthesis across already named artifacts;
-- alternative design review for a risky owner boundary;
-- static checks that do not require Unity ownership;
-- lane-specific critique before dispatching a serious batch.
+[REQ] Subagents are a primary HECTON-8 work tool, not an orchestrator-only feature. Any HECTON-8 agent may and should spawn/use subagents when they materially improve correctness, parallel evidence gathering, bounded audits, alternative design review, implementation on a disjoint scope, or report synthesis.
 
-[REQ] Every subagent assignment must state:
-- role;
-- reason it is delegated;
-- exact authority docs already routed for the parent task;
-- owned read/edit scope;
-- forbidden scope;
-- primary deliverable class;
-- kill condition for same-failure or report-only drift;
-- expected output format;
-- evidence standard;
-- whether file edits are allowed.
-
-[REQ] Subagents inherit HECTON-8 law, including root authority, route bibles, mandates, no-fake-proof rules, visual floor, zero-GC hot path discipline, and no-loss rule preservation, but they do not become authority. The primary agent remains responsible for:
-- selecting the subagent scope;
-- giving enough context to avoid shallow guesses;
-- merging only evidence-backed findings;
-- rejecting conflicts against root docs, route bibles, lane contracts, or live source;
-- verifying final claims before reporting to the user.
-
-[FORBID] Subagents are useful for parallelism, not for evasion. Do not suppress subagents just because a top-level batch is large. Internal subagents do not count against the top-level batch size unless exported as standalone taskslocal agent files. Do not use them to:
-- skip complete reading of controlling authority docs;
-- outsource the primary decision without review;
-- launder guesses or fabricate proof;
-- create hidden same-wave dependencies;
-- overwrite unrelated work or run broad unrelated audits;
-- produce another paper-success loop after a blocker is already known.
-
-[FORBID] A subagent wave is invalid if all lanes only summarize, route, or validate while no lane is assigned a concrete source, asset, content, proof, or blocker outcome. Synthesis is allowed only after at least one lane produces evidence or a change-ready blocker.
-
-[REQ] If a subagent finds a blocker, the primary route becomes one of:
-- fix the source/asset/rule gate;
-- execute the missing proof;
-- rewrite the downstream task;
-- report `BLOCKED_BY_EXACT_EXTERNAL_GATE`.
+[REQ] Subagents inherit HECTON-8 law, but they do not become authority. The primary agent remains responsible for selecting subagent scope, merging evidence-backed findings, and verifying final claims.
 
 ## Orchestration
 
@@ -6472,6 +6430,12 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 [REQ] On crash, NaN, non-finite state, deterministic desync, or critical route corruption, dump the ring to a deterministic project artifact. Use `Docs\AgentLogs\Dump_[ID].bin` only when an explicit agent ID exists; otherwise use system name and timestamp.
 
 [FORBID] "I do not know why it crashed" as a final answer when the system lacks a black-box route.
+
+## API Testing Safety
+
+[FORBID] Do not run rapid, parallel, or unthrottled batch-testing of API keys (including Groq, Gemini, OpenAI, etc.). Mass consecutive requests will trigger provider rate limits, account bans, or key revocation.
+
+[REQ] Any API key verification, diagnostic testing, or key rotation routine must execute sequentially and enforce a strict safety cooldown delay of at least 2 to 3 seconds between consecutive requests.
 
 ## Final Directive
 
