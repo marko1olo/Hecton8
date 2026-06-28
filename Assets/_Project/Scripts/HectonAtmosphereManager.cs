@@ -2382,6 +2382,9 @@ namespace Hecton8.Atmosphere
                     target.fogAttenuationDistance,
                     blend));
 
+            // Extract underwater visibility from turbidity and bioluminescence from HectonAtmosphereManager.cs.
+            _smoothedBiomeInfluenceAtmosphere.fogAttenuationDistance = Hecton8.PureLogic.Systems.VisibilityTurbidityCalculator.Compute(_currentValues.fogDensity, _currentValues.sunIntensity, _smoothedBiomeInfluenceAtmosphere.fogAttenuationDistance);
+
             _currentValues.fogColor = _smoothedBiomeInfluenceAtmosphere.fogColor;
             _currentValues.fogDensity = _smoothedBiomeInfluenceAtmosphere.fogDensity;
             _currentValues.fogAttenuationDistance = _smoothedBiomeInfluenceAtmosphere.fogAttenuationDistance;
