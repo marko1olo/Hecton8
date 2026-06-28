@@ -1996,7 +1996,7 @@ namespace Hecton8.Atmosphere
                     float floodFill01 = math.saturate(floodVolume / math.max(roomVolume, Epsilon));
                     float floodBlend = math.saturate(floodFill01 * deltaTime * 0.1f);
                     float mixedTemperature = math.lerp(previousTemperature, floodWaterTemperature, floodBlend);
-                    float temperatureDelta = SanitizeFinite(RoomHeatWatts[roomIndex], 0f) * SanitizeNonNegative(HeatWattsToCelsiusPerSecond) * deltaTime;
+                    float temperatureDelta = Hecton8.PureLogic.Systems.ModuleThermalDissipationRate.Calculate(mixedTemperature, SanitizeFinite(RoomHeatWatts[roomIndex], 0f), 0f, roomVolume, deltaTime, 1.2f, 1005f, 0.001f);
                     float roomTemperature = math.clamp(
                         mixedTemperature + temperatureDelta,
                         minimumTemperature,
