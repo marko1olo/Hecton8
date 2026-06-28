@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 
 using UnityEngine;
 using UnityEditor;
@@ -170,12 +170,15 @@ namespace MoreMountains.Tools
 					try
 					{
 						assetGameObject = (GameObject)asset;
-						assetGameObject.GetComponentsInChildren<Component>(true, components);
-						foreach (Component component in components)
+						if (assetGameObject != null)
 						{
-							if (component == null)
+							assetGameObject.GetComponentsInChildren<Component>(true, components);
+							foreach (Component component in components)
 							{
-								_resultsList.Add(prefab);
+								if (component == null)
+								{
+									_resultsList.Add(prefab);
+								}
 							}
 						}
 					}
