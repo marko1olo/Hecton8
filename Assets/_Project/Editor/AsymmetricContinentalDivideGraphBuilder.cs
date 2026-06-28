@@ -231,10 +231,12 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 field.SetValue(target, value);
                 return;
             }
+
             catch (global::System.Exception ex)
             {
                 UnityEngine.Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Failed to set field '{fieldName}' on {type.Name}: {ex.Message}");
             }
+
         }
 
         // Try property
@@ -248,10 +250,12 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 prop.SetValue(target, value);
                 return;
             }
+
             catch (global::System.Exception ex)
             {
                 UnityEngine.Debug.LogWarning($"[GraphBuilder] SetFieldReflection: Failed to set property '{fieldName}' on {type.Name}: {ex.Message}");
             }
+
         }
 
         // Nuclear fallback
@@ -365,7 +369,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return true;
                     }
                 }
+
                 catch (global::System.Exception ex) { UnityEngine.Debug.LogWarning($"[GraphBuilder] ImplementsInletMatrixWorld exception: {ex.Message}"); }
+
             }
         }
 
@@ -464,7 +470,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             return inlet;
                         }
                     }
+
                     catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] GetDefaultInlet: Property get value failed: {e.Message}"); }
+
                 }
             }
 
@@ -549,10 +557,12 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (gen != null)
             {
                 try { graph.Remove(gen); }
+
                 catch (Exception ex)
                 {
                     UnityEngine.Debug.LogWarning($"[GraphBuilder] Failed to remove generator: {ex.Message}");
                 }
+
             }
         }
 
@@ -570,7 +580,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
                     clearMethod.Invoke(links, null);
             }
         }
+
         catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] Clear links reflection fallback failed: {e.Message}"); }
+
     }
 
     /// <summary>Count generators in the graph.</summary>
@@ -581,7 +593,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
             if (graph.generators != null)
                 return graph.generators.Length;
         }
+
         catch (global::System.Exception e) { Debug.LogWarning($"[GraphBuilder] CountGenerators failed: {e.Message}"); }
+
         return 0;
     }
 
@@ -639,7 +653,9 @@ public static class AsymmetricContinentalDivideGraphBuilder
                 }
                 if (genType != null) break;
             }
+
             catch (global::System.Exception ex) { UnityEngine.Debug.LogWarning($"[GraphBuilder] Could not get types from assembly {asm.FullName}: {ex.Message}"); }
+
         }
 
         if (genType == null)
@@ -724,10 +740,12 @@ public static class AsymmetricContinentalDivideGraphBuilder
                             Debug.Log("[GraphBuilder] Linked via reflection fallback.");
                             return;
                         }
+
                         catch (global::System.Exception e)
                         {
                             UnityEngine.Debug.LogWarning($"[GraphBuilder] Failed to link via reflection fallback: {e.Message}");
                         }
+
                     }
                 }
             }
