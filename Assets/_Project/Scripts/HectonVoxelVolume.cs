@@ -1494,13 +1494,12 @@ namespace Hecton8.Caves
             float c011 = DecodePublishedDensityAt(encodedSdf, gridDimensions, sdfRange, x0, y1, z1);
             float c111 = DecodePublishedDensityAt(encodedSdf, gridDimensions, sdfRange, x1, y1, z1);
 
-            float c00 = math.lerp(c000, c100, tx);
-            float c10 = math.lerp(c010, c110, tx);
-            float c01 = math.lerp(c001, c101, tx);
-            float c11 = math.lerp(c011, c111, tx);
-            float c0 = math.lerp(c00, c10, ty);
-            float c1 = math.lerp(c01, c11, ty);
-            return math.lerp(c0, c1, tz);
+            Span<float> cornerValues = stackalloc float[]
+            {
+                c000, c100, c010, c110,
+                c001, c101, c011, c111
+            };
+            return Hecton8.PureLogic.Systems.VoxelSdfTrilinearInterpolationCalculator.Compute(cornerValues, tx, ty, tz);
         }
 
         private static float DecodePublishedDensityAt(
