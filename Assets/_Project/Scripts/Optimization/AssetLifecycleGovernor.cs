@@ -24,7 +24,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8012)]
-    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHotSwapListener
+    public sealed partial class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHotSwapListener
     {
         private const uint CollisionSalt = 0xDEADBEEF;
         private const float NativeHeapOverheadFactor = 1.15f;
