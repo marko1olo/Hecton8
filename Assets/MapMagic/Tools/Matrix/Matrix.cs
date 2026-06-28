@@ -2451,6 +2451,91 @@ namespace Den.Tools.Matrices
 
 		#region Other
 
+		public static byte[][] BlendMatrices (CoordRect colorsRect, IList<Matrix> matrices, IList<Matrix> biomeMasks, IList<float> opacities, IList<int> channelNums, bool normalize=false)
+		/// Reads matrices and fills normalized values to bytes using masks
+		{
+			int texturesCount;
+			int maxChannelNum = 0;
+			foreach (int chNum in channelNums)
+				if (chNum > maxChannelNum) maxChannelNum=chNum;
+			texturesCount = maxChannelNum/4 + 1;
+
+			byte[][] bytes = new byte[texturesCount][];
+
+			int matrixCount = matrices.Count;
+
+			//getting matrices rect
+			CoordRect matrixRect = new CoordRect(0,0,0,0);
+			for (int m=0; m<matrixCount; m++)
+				if (matrices[m] != null) matrixRect = matrices[m].rect;
+
+			//checking rect
+			for (int m=0; m<matrixCount; m++)
+				if (matrices[m] != null  &&  matrices[m].rect != matrixRect)
+					throw new Exception("MapMagic: Matrix rect mismatch");
+			for (int b=0; b<matrixCount; b++)
+				if (biomeMasks[b] != null  &&  biomeMasks[b].rect != matrixRect)
+					throw new Exception("MapMagic: Biome matrix rect mismatch");
+
+			//preparing row re-use array
+			float[] values = new float[texturesCount*4];
+
+			//blending
+			for (int x=0; x<colorsRect.size.x; x++)
+				for (int z=0; z<colorsRect.size.z; z++)
+				{
+					int matrixPosX = colorsRect.offset.x + x;
+					int matrixPosZ = colorsRect.offset.z + z;
+					int matrixPos = (matrixPosZ-matrixRect.offset.z)*matrixRect.size.x + matrixPosX - matrixRect.offset.x;
+
+					int colorsPos = z*colorsRect.size.x + x; //(z-colorsRect.offset.z)*colorsRect.size.x + x - colorsRect.offset.x;
+
+					float sum = 0;
+
+					//resetting values
+					for (int m=0; m<values.Length; m++)
+						values[m] = 0;
+
+					//getting values
+					for (int m=0; m<matrixCount; m++)
+					{
+						Matrix matrix = matrices[m];
+						if (matrix == null)
+							continue;
+
+						float val = matrix.arr[matrixPos];
+
+						//multiply with biome
+						Matrix biomeMask = biomeMasks[m];
+						if (biomeMask != null) //no empty biomes in list (so no mask == root biome)
+							val *= biomeMask.arr[matrixPos]; //if mask is not assigned biome was ignored, so only main outs with mask==null left here
+
+						//clamp
+						if (val < 0) val = 0; if (val > 1) val = 1;
+
+						sum += val;
+						values[channelNums[m]] += val;
+					}
+
+					//normalizing and writing to colors
+					for (int m=0; m<values.Length; m++)
+					{
+						float val = values[m];
+
+						if (normalize) val = sum!=0 ? val/sum : 0;
+
+						int texNum = m / 4;
+						int chNum = m % 4;
+
+						if (bytes[texNum] == null) bytes[texNum] = new byte[colorsRect.size.x*colorsRect.size.z*4];
+
+						bytes[texNum][colorsPos*4 + chNum] = (byte)Mathf.Clamp(bytes[texNum][colorsPos*4 + chNum] + val * 255.0f, 0, 255);
+					}
+				}
+
+			return bytes;
+		}
+
 			#if MM_NATIVE && (UNITY_EDITOR || !UNITY_ANDROID && !ENABLE_IL2CPP)
 				public void Line (Vector2D start, Vector2D end, float valStart=1, float valEnd=1, bool antialised=false, bool paddedOnePixel=false, bool endInclusive=false) =>
 					Line(this, start.x, start.z, end.x, end.z, valStart, valEnd, antialised, paddedOnePixel, endInclusive);
