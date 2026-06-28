@@ -827,7 +827,10 @@ namespace Hecton8.Habitat.Deformation
             BaseIntegrityLedgerDTO ledger = Ledger[0];
             float pressure = math.isfinite(ledger.DepthPressure) ? math.max(0f, ledger.DepthPressure) : 0f;
             float submarineSip = math.isfinite(SubmarineSIP) ? math.max(0f, SubmarineSIP) : float.MaxValue;
-            if (pressure <= submarineSip)
+            
+            float stress = Hecton8.PureLogic.Systems.StructuralDepthRatingCalculator.Compute(
+                pressure, submarineSip, 1f, 0f);
+            if (stress <= 0f)
                 return;
 
             int capacity = math.clamp(Capacity, 1, math.min(Dents.Length, HullIntegrityConstants.MaxDentCapacity));
@@ -839,7 +842,7 @@ namespace Hecton8.Habitat.Deformation
             float3 finiteExtents = math.all(math.isfinite(HullExtents)) ? HullExtents : new float3(3f, 2f, 8f);
             float3 extents = math.max(finiteExtents, new float3(0.25f, 0.25f, 0.25f));
             float safeRadius = math.isfinite(DentRadius) ? math.max(0.05f, DentRadius) : 0.05f;
-            float safeDepth = math.isfinite(DentDepth) ? math.max(0.001f, DentDepth) : 0.001f;
+            float safeDepth = (math.isfinite(DentDepth) ? math.max(0.001f, DentDepth) : 0.001f) * stress;
             float u = ((hash >> 8) & 1023u) * (1f / 1023f) * 2f - 1f;
             float v = ((hash >> 20) & 1023u) * (1f / 1023f) * 2f - 1f;
             int face = (int)(hash % 6u);

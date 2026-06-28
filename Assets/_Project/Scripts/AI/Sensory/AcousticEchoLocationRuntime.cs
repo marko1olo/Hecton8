@@ -257,7 +257,13 @@ namespace Hecton8.AI.Sensory
                 float3 direction = SafeNormalize(
                     rear * math.abs(cos) + right * sin + new float3(0f, (vertical01 - 0.5f) * 0.18f, 0f),
                     rear);
-                float distance = math.lerp(14f, 78f, distance01);
+                float maxRange = Hecton8.PureLogic.Systems.EcholocationRangeCalculator.Compute(
+                    120f * stressMultiplier,
+                    15f * (1f - frequencyMultiplier),
+                    1.2f,
+                    0.4f
+                );
+                float distance = math.lerp(14f, math.max(14f, math.min(78f, maxRange)), distance01);
                 float dot = math.dot(flashlightForward, direction);
                 float illuminatedMask = math.step(flashlightConeCos, dot) * flashlightActive;
                 float approachPulse = 0.7f + 0.3f * AcousticEchoLocationRuntime.SinPolynomial7(currentTime * 7.0f + i * 1.6180339f);

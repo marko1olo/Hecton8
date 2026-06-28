@@ -6457,5 +6457,9 @@ namespace Hecton8.Physics
             second = temp;
         }
 
-    }
+    
+        #region JulesLink_FluidVelocityFieldDragCalculator
+        private static void JulesLink_FluidVelocityFieldDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FluidVelocityFieldDragCalculator); }
+        #endregion
+}
 }

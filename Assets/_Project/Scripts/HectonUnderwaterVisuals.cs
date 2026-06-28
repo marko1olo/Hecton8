@@ -8306,6 +8306,10 @@ namespace Hecton8.Environment
             return maxTime;
         }
 #endif
-    }
+    
+        #region JulesLink_CausticIntensityDepthCalculator
+        private static void JulesLink_CausticIntensityDepthCalculator() { _ = typeof(Hecton8.PureLogic.Systems.CausticIntensityDepthCalculator); }
+        #endregion
+}
 
 }

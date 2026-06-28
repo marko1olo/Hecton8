@@ -79,7 +79,10 @@ namespace Hecton8.Biolum
         protected override void EvaluateBiolumState()
         {
             float safePulseFrequency = math.min(SanitizeNonNegative(_pulseFrequency, 0.5f), 2f);
-            _pulsePhase = BiolumTickTime * safePulseFrequency;
+            float depth = math.max(0f, 14f - GetZonePosition().y);
+            float calculatedFrequency = Hecton8.PureLogic.Systems.BioluminescencePulseFrequencyCalculator.Compute(
+                0f, depth, safePulseFrequency, 1.25f, 0.001f);
+            _pulsePhase = BiolumTickTime * calculatedFrequency;
 
             if (_activeLightCount == 0)
             {

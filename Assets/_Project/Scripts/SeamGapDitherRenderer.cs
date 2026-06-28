@@ -851,5 +851,9 @@ namespace Hecton8.World
                 return (value & 0x00FFFFFFu) * (1f / 16777215f);
             }
         }
-    }
+    
+        #region JulesLink_TerrainSeamDitherAlphaCalculator
+        private static void JulesLink_TerrainSeamDitherAlphaCalculator() { _ = typeof(Hecton8.PureLogic.Systems.TerrainSeamDitherAlphaCalculator); }
+        #endregion
+}
 }

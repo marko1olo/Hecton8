@@ -5363,7 +5363,11 @@ namespace Hecton8.Environment
             [System.Runtime.InteropServices.FieldOffset(63)]
             private byte _pad23;
         }
-    }
+    
+        #region JulesLink_SeismicRichterDamageCalculator
+        private static void JulesLink_SeismicRichterDamageCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SeismicRichterDamageCalculator); }
+        #endregion
+}
 
 #if UNITY_EDITOR
     public sealed class TectonicEventTunerWindow : EditorWindow

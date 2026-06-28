@@ -2238,7 +2238,11 @@ namespace Hecton8.Systems.AI
             _predatorAupClearPending = true;
             ClearPredatorAupSourceIds();
         }
-    }
+    
+        #region JulesLink_SpawnCooldownGate
+        private static void JulesLink_SpawnCooldownGate() { _ = typeof(Hecton8.PureLogic.Systems.SpawnCooldownGate); }
+        #endregion
+}
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct EncounterDirectorJob : IJobParallelFor

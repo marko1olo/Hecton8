@@ -7053,5 +7053,9 @@ namespace Hecton8.Construction
                 Forward = forward;
             }
         }
-    }
+    
+        #region JulesLink_FloodFillRoomVolumeCalculator
+        private static void JulesLink_FloodFillRoomVolumeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FloodFillRoomVolumeCalculator); }
+        #endregion
+}
 }

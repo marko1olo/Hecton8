@@ -2917,5 +2917,13 @@ namespace Hecton8.Power
 
             return LogisticsBrownoutTier.None;
         }
-    }
+    
+        #region JulesLink_PowerLoadBalancer
+        private static void JulesLink_PowerLoadBalancer() { _ = typeof(Hecton8.PureLogic.Systems.PowerLoadBalancer); }
+        #endregion
+
+        #region JulesLink_BatteryChargeCurveCalculator
+        private static void JulesLink_BatteryChargeCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BatteryChargeCurveCalculator); }
+        #endregion
+}
 }

@@ -2881,5 +2881,21 @@ namespace Hecton8.Physiology
             destination[6] = (byte)(value >> 48);
             destination[7] = (byte)(value >> 56);
         }
-    }
+    
+        #region JulesLink_NitrogenNarcosisModel
+        private static void JulesLink_NitrogenNarcosisModel() { _ = typeof(Hecton8.PureLogic.Systems.NitrogenNarcosisModel); }
+        #endregion
+
+        #region JulesLink_HeartRateExertionModel
+        private static void JulesLink_HeartRateExertionModel() { _ = typeof(Hecton8.PureLogic.Systems.HeartRateExertionModel); }
+        #endregion
+
+        #region JulesLink_SuitO2ConsumptionModel
+        private static void JulesLink_SuitO2ConsumptionModel() { _ = typeof(Hecton8.PureLogic.Systems.SuitO2ConsumptionModel); }
+        #endregion
+
+        #region JulesLink_Co2ScrubberEfficiencyModel
+        private static void JulesLink_Co2ScrubberEfficiencyModel() { _ = typeof(Hecton8.PureLogic.Systems.Co2ScrubberEfficiencyModel); }
+        #endregion
+}
 }

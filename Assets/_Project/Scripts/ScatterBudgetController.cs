@@ -857,5 +857,9 @@ namespace Hecton8.World
 
             return Mathf.Clamp01(value);
         }
-    }
+    
+        #region JulesLink_ProceduralFoliageScatterBudgetCalculator
+        private static void JulesLink_ProceduralFoliageScatterBudgetCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ProceduralFoliageScatterBudgetCalculator); }
+        #endregion
+}
 }

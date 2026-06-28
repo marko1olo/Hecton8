@@ -3105,5 +3105,13 @@ namespace Hecton8.Gameplay
         //  IBatteryTool IMPLEMENTATION
         // ══════════════════════════════════════════════════════════
 
-    }
+    
+        #region JulesLink_RepairRateMaterialCalculator
+        private static void JulesLink_RepairRateMaterialCalculator() { _ = typeof(Hecton8.PureLogic.Systems.RepairRateMaterialCalculator); }
+        #endregion
+
+        #region JulesLink_WeldHeatDissipationCalculator
+        private static void JulesLink_WeldHeatDissipationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.WeldHeatDissipationCalculator); }
+        #endregion
+}
 }

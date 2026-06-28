@@ -1980,7 +1980,12 @@ namespace Hecton8.Atmosphere
                     float oxygenDrain = SanitizeNonNegative(O2ConsumptionRates[roomIndex]) * playerCount * deltaTime;
                     float oxygen = math.clamp(SanitizeFinite(O2Front[roomIndex], tankCapacity) - oxygenDrain, 0f, tankCapacity);
                     float carbonDioxide = math.clamp(
-                        SanitizeNonNegative(CO2Front[roomIndex]) + (SanitizeNonNegative(CO2GenerationRates[roomIndex]) * playerCount * deltaTime),
+                        SanitizeNonNegative(CO2Front[roomIndex]) + Hecton8.PureLogic.Systems.Co2ScrubberLoadCalculator.Compute(
+                            playerCount,
+                            0f,
+                            0f,
+                            SanitizeNonNegative(CO2GenerationRates[roomIndex])
+                        ) * deltaTime,
                         0f,
                         tankCapacity);
                     float inert = math.clamp(SanitizeNonNegative(InertFront[roomIndex]), 0f, tankCapacity);
@@ -7477,5 +7482,9 @@ namespace Hecton8.Atmosphere
             [FieldOffset(62)]
             public ushort FailureCode;
         }
-    }
+    
+        #region JulesLink_FireOxygenConsumptionCalculator
+        private static void JulesLink_FireOxygenConsumptionCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FireOxygenConsumptionCalculator); }
+        #endregion
+}
 }

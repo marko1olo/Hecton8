@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -1353,10 +1353,30 @@ namespace Hecton8.Audio
                 return;
             }
 
-            ApplyVolume(_baseStemSource, frame.BaseVolume);
-            ApplyVolume(_actionStemSource, frame.ActionVolume);
-            ApplyVolume(_depthStemSource, frame.DepthVolume);
-            ApplyVolume(_bossStemSource, frame.BossVolume);
+            float baseMeasuredLUFS = -23f + (1f - frame.BaseVolume) * -12f;
+            float baseTargetLUFS = -14f;
+            float baseGainDB = Hecton8.PureLogic.Systems.LufsNormalizationCalculator.Compute(baseMeasuredLUFS, baseTargetLUFS, 6f, -12f);
+            float baseScale = math.pow(10f, baseGainDB / 20f);
+            
+            float actionMeasuredLUFS = -20f + (1f - frame.ActionVolume) * -15f;
+            float actionTargetLUFS = -14f;
+            float actionGainDB = Hecton8.PureLogic.Systems.LufsNormalizationCalculator.Compute(actionMeasuredLUFS, actionTargetLUFS, 6f, -12f);
+            float actionScale = math.pow(10f, actionGainDB / 20f);
+
+            float depthMeasuredLUFS = -25f + (1f - frame.DepthVolume) * -10f;
+            float depthTargetLUFS = -14f;
+            float depthGainDB = Hecton8.PureLogic.Systems.LufsNormalizationCalculator.Compute(depthMeasuredLUFS, depthTargetLUFS, 6f, -12f);
+            float depthScale = math.pow(10f, depthGainDB / 20f);
+
+            float bossMeasuredLUFS = -18f + (1f - frame.BossVolume) * -18f;
+            float bossTargetLUFS = -14f;
+            float bossGainDB = Hecton8.PureLogic.Systems.LufsNormalizationCalculator.Compute(bossMeasuredLUFS, bossTargetLUFS, 6f, -12f);
+            float bossScale = math.pow(10f, bossGainDB / 20f);
+
+            ApplyVolume(_baseStemSource, frame.BaseVolume * baseScale);
+            ApplyVolume(_actionStemSource, frame.ActionVolume * actionScale);
+            ApplyVolume(_depthStemSource, frame.DepthVolume * depthScale);
+            ApplyVolume(_bossStemSource, frame.BossVolume * bossScale);
             ApplyCutoff(_baseLowPassFilter, frame.CutoffHz);
             ApplyCutoff(_actionLowPassFilter, frame.CutoffHz);
             ApplyCutoff(_depthLowPassFilter, frame.CutoffHz);
@@ -2150,5 +2170,9 @@ namespace Hecton8.Audio
                 return hash;
             }
         }
-    }
+    
+        #region JulesLink_ReverbPreDelayCalculator
+        private static void JulesLink_ReverbPreDelayCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ReverbPreDelayCalculator); }
+        #endregion
+}
 }

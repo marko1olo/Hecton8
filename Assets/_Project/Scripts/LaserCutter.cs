@@ -2939,5 +2939,17 @@ namespace Hecton8.Gameplay
         {
             _toolStateFlags &= unchecked((byte)~flag);
         }
-    }
+    
+        #region JulesLink_LaserBeamIntensityAttenuationCalculator
+        private static void JulesLink_LaserBeamIntensityAttenuationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.LaserBeamIntensityAttenuationCalculator); }
+        #endregion
+
+        #region JulesLink_LaserCutDepthPowerCalculator
+        private static void JulesLink_LaserCutDepthPowerCalculator() { _ = typeof(Hecton8.PureLogic.Systems.LaserCutDepthPowerCalculator); }
+        #endregion
+
+        #region JulesLink_LaserCutterVoxelDamageCalculator
+        private static void JulesLink_LaserCutterVoxelDamageCalculator() { _ = typeof(Hecton8.PureLogic.Systems.LaserCutterVoxelDamageCalculator); }
+        #endregion
+}
 }

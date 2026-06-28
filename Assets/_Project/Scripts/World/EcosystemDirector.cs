@@ -8742,5 +8742,19 @@ namespace Hecton8.World
             return (byte)math.select(0, 1, value);
         }
 
-    }
+    
+        #region JulesLink_BiomassResourceGradientWeightCalculator
+        private static void JulesLink_BiomassResourceGradientWeightCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BiomassResourceGradientWeightCalculator); }
+        #endregion
+
+        #region JulesLink_BiomeDepthViabilityCurveCalculator
+        private static void JulesLink_BiomeDepthViabilityCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BiomeDepthViabilityCurveCalculator); }
+        #endregion
+}
+
+        #region JulesLink__2dGridHeatmapDecayCalculator
+        private static void JulesLink__2dGridHeatmapDecayCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem._2dGridHeatmapDecayCalculator); }
+        #endregion
+
+        // 2dGridHeatmapDecayCalculator
 }

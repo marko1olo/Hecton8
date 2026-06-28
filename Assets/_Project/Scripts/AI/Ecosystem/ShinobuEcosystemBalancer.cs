@@ -4727,7 +4727,11 @@ namespace Hecton8.AI.Ecosystem
             hash = (hash ^ (uint)overflow) * 16777619u;
             return hash;
         }
-    }
+    
+        #region JulesLink_ExtinctionRiskIndexCalculator
+        private static void JulesLink_ExtinctionRiskIndexCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ExtinctionRiskIndexCalculator); }
+        #endregion
+}
 
     public static unsafe class ShinobuEcosystemTelemetryForensics
     {

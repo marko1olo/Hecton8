@@ -3045,5 +3045,13 @@ namespace Hecton8.AI
         {
             return new Vector3(value.x, value.y, value.z);
         }
-    }
+    
+        #region JulesLink_PredatorStalkSpeedCalculator
+        private static void JulesLink_PredatorStalkSpeedCalculator() { _ = typeof(Hecton8.PureLogic.Systems.PredatorStalkSpeedCalculator); }
+        #endregion
+
+        #region JulesLink_SchoolingSeparationForceCalculator
+        private static void JulesLink_SchoolingSeparationForceCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SchoolingSeparationForceCalculator); }
+        #endregion
+}
 }

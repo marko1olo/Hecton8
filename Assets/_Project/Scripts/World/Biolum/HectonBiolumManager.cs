@@ -1793,7 +1793,15 @@ namespace Hecton8.Biolum
                 }
 
                 float distanceSq = (float)math.min(distanceSqDouble, float.MaxValue);
-                float proximity = 1f - Mathf.Clamp01(distanceSq / zoneRangeSq);
+                float distance = (float)math.sqrt(distanceSqDouble);
+                float perceivedProximity = Hecton8.PureLogic.Systems.BioluminescenceIntensityDecayCalculator.Compute(
+                    1f,
+                    490f,
+                    distance,
+                    0.8f
+                );
+                float boundaryScale = 1f - Mathf.Clamp01(distanceSq / zoneRangeSq);
+                float proximity = perceivedProximity * boundaryScale;
                 float weightedStrength = zone.SampleZoneIntensity() * proximity;
                 if (weightedStrength <= sampledStrength)
                 {
@@ -1831,7 +1839,15 @@ namespace Hecton8.Biolum
                     continue;
 
                 float distanceSq = (float)math.min(distanceSqDouble, float.MaxValue);
-                float proximity = 1f - Mathf.Clamp01(distanceSq / effectiveRangeSq);
+                float distance = (float)math.sqrt(distanceSqDouble);
+                float perceivedProximity = Hecton8.PureLogic.Systems.BioluminescenceIntensityDecayCalculator.Compute(
+                    1f,
+                    490f,
+                    distance,
+                    0.8f
+                );
+                float boundaryScale = 1f - Mathf.Clamp01(distanceSq / effectiveRangeSq);
+                float proximity = perceivedProximity * boundaryScale;
                 float score = zone.SampleZoneIntensity() * proximity;
                 if (score <= 0f)
                     continue;

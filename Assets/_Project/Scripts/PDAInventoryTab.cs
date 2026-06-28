@@ -3820,7 +3820,11 @@ namespace Hecton8.UI
                 : PdaInventoryItemDescriptionSourceHash;
         }
 
-    }
+    
+        #region JulesLink_StorageAutosorterCalculator
+        private static void JulesLink_StorageAutosorterCalculator() { _ = typeof(Hecton8.PureLogic.Systems.StorageAutosorterCalculator); }
+        #endregion
+}
     // ══════════════════════════════════════════════════════════════
     //  HELPER: Drop Item Button
     // ══════════════════════════════════════════════════════════════

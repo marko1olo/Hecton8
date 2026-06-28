@@ -8461,5 +8461,13 @@ namespace Hecton8.Core
             {
             }
         }
-    }
+    
+        #region JulesLink_DecompressionNitrogenLoadCalculator
+        private static void JulesLink_DecompressionNitrogenLoadCalculator() { _ = typeof(Hecton8.PureLogic.Systems.DecompressionNitrogenLoadCalculator); }
+        #endregion
+
+        #region JulesLink_BloomTriggerThresholdCalculator
+        private static void JulesLink_BloomTriggerThresholdCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BloomTriggerThresholdCalculator); }
+        #endregion
+}
 }

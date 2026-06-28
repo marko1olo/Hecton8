@@ -5163,5 +5163,21 @@ namespace Hecton8.Physics.KCC
             Gizmos.DrawLine(top + Vector3.right * radius, bottom + Vector3.right * radius);
             Gizmos.DrawLine(top - Vector3.right * radius, bottom - Vector3.right * radius);
         }
-    }
+    
+        #region JulesLink_ThermoclineResistanceCalculator
+        private static void JulesLink_ThermoclineResistanceCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ThermoclineResistanceCalculator); }
+        #endregion
+
+        #region JulesLink_PressureCrushDamageModel
+        private static void JulesLink_PressureCrushDamageModel() { _ = typeof(Hecton8.PureLogic.Systems.PressureCrushDamageModel); }
+        #endregion
+
+        #region JulesLink_OceanCurrentDragCalculator
+        private static void JulesLink_OceanCurrentDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.OceanCurrentDragCalculator); }
+        #endregion
+
+        #region JulesLink_BuoyancyDensityRatioMath
+        private static void JulesLink_BuoyancyDensityRatioMath() { _ = typeof(Hecton8.PureLogic.Systems.BuoyancyDensityRatioMath); }
+        #endregion
+}
 }

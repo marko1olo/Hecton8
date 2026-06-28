@@ -104,5 +104,9 @@ namespace Hecton8.Systems.AI
             if (proceduralFamilies == null)
                 proceduralFamilies = Array.Empty<ProceduralFamily_Fauna>();
         }
-    }
+    
+        #region JulesLink_ThreatCostMultiplier
+        private static void JulesLink_ThreatCostMultiplier() { _ = typeof(Hecton8.PureLogic.Systems.ThreatCostMultiplier); }
+        #endregion
+}
 }

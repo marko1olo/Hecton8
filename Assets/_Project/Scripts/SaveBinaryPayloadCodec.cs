@@ -7294,5 +7294,13 @@ namespace Hecton8.SaveSystem
                 return true;
             }
         }
-    }
+    
+        #region JulesLink_HuffmanRleSaveDataCompressorCalculator
+        private static void JulesLink_HuffmanRleSaveDataCompressorCalculator() { _ = typeof(Hecton8.PureLogic.Systems.HuffmanRleSaveDataCompressorCalculator); }
+        #endregion
+
+        #region JulesLink_SaveDataBinaryChecksumCalculator
+        private static void JulesLink_SaveDataBinaryChecksumCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveDataBinaryChecksumCalculator); }
+        #endregion
+}
 }

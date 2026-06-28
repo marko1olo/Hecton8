@@ -519,6 +519,20 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
     }
 
+    public string SampleVoronoiBiome(Vector3 worldPos, Vector3[] biomeSeedPoints, string[] biomeTypes, float noiseBlend)
+    {
+        var pos = new System.Numerics.Vector3(worldPos.x, worldPos.y, worldPos.z);
+        var seeds = new System.Numerics.Vector3[biomeSeedPoints != null ? biomeSeedPoints.Length : 0];
+        if (biomeSeedPoints != null)
+        {
+            for (int i = 0; i < biomeSeedPoints.Length; i++)
+            {
+                seeds[i] = new System.Numerics.Vector3(biomeSeedPoints[i].x, biomeSeedPoints[i].y, biomeSeedPoints[i].z);
+            }
+        }
+        return Hecton8.PureLogic.Systems.VoronoiBiomeSeedCalculator.Compute(pos, seeds, biomeTypes, noiseBlend);
+    }
+
     // COLD ALLOC: Comparison<HectonChunkRequest>[1] - cached request sort delegate, prevents per-refresh lambda allocation - owner: HectonWorldGenerator
     private static readonly System.Comparison<HectonChunkRequest> _chunkRequestDistanceComparison = CompareChunkRequestsByDistance;
     // COLD ALLOC: Comparison<VoxelClusterAccumulator>[1] - cached POI cluster sort delegate, prevents per-finalize lambda allocation - owner: HectonWorldGenerator

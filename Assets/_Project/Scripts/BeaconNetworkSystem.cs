@@ -1067,5 +1067,9 @@ namespace Hecton8.Gameplay
 
             return digits;
         }
-    }
+    
+        #region JulesLink_BeaconNetworkSignalAttenuationCalculator
+        private static void JulesLink_BeaconNetworkSignalAttenuationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BeaconNetworkSignalAttenuationCalculator); }
+        #endregion
+}
 }

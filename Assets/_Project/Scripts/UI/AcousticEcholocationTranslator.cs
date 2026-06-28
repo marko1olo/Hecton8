@@ -557,6 +557,25 @@ namespace Hecton8.UI
                 return false;
 
             distanceMeters = RoundApproximateAupDistanceMeters(in originAup, in nearestAup);
+
+            Vector3 originPos = new Vector3((float)originAup.DoubleX, (float)originAup.DoubleY, (float)originAup.DoubleZ);
+            Vector3 targetPos = new Vector3((float)nearestAup.DoubleX, (float)nearestAup.DoubleY, (float)nearestAup.DoubleZ);
+            if (UnityEngine.Physics.Linecast(originPos, targetPos, out UnityEngine.RaycastHit hit))
+            {
+                float distanceToObstacle = hit.distance;
+                float obstacleSize = hit.collider != null ? hit.collider.bounds.size.magnitude : 5f;
+                float occlusionFactor = Hecton8.PureLogic.Systems.SoundShadowOcclusionCalculator.Compute(
+                    obstacleSize,
+                    distanceToObstacle,
+                    (float)math.sqrt(nearestDistanceSqr),
+                    375f
+                );
+                if (occlusionFactor > 0.85f)
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 

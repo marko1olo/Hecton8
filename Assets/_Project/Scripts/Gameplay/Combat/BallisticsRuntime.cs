@@ -1819,7 +1819,15 @@ namespace Hecton8.Gameplay
             return hash;
         }
 #endif
-    }
+    
+        #region JulesLink_SplashEntryAngleCalculator
+        private static void JulesLink_SplashEntryAngleCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SplashEntryAngleCalculator); }
+        #endregion
+
+        #region JulesLink_ProjectileDropCalculator
+        private static void JulesLink_ProjectileDropCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ProjectileDropCalculator); }
+        #endregion
+}
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public unsafe struct GenerateMockBallisticsJob : IJobParallelFor

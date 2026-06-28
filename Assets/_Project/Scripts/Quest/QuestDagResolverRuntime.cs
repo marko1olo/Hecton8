@@ -2004,4 +2004,8 @@ namespace Hecton8.Quest
             header32[5] = QuestDagRuntimeConstants.SpatialCellSizeMeters;
         }
     }
+
+        #region JulesLink_QuestDagUnlockChecker
+        private static void JulesLink_QuestDagUnlockChecker() { _ = typeof(Hecton8.PureLogic.Systems.QuestDagUnlockChecker); }
+        #endregion
 }

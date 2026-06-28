@@ -12892,7 +12892,11 @@ namespace Hecton8.Audio
             return Color.Lerp(open, blocked, math.saturate(occlusion01));
         }
 #endif
-    }
+    
+        #region JulesLink_AudioDistanceAttenuationCurveCalculator
+        private static void JulesLink_AudioDistanceAttenuationCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AudioDistanceAttenuationCurveCalculator); }
+        #endregion
+}
 
     /// <summary>
     /// Caption request wrapper for contextual spatial-audio captions.

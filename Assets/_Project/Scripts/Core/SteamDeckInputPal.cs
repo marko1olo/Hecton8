@@ -106,17 +106,24 @@ namespace Hecton8.Core
             float safeDeltaTime = math.isfinite(deltaTime) ? math.min(math.max(0f, deltaTime), 0.05f) : 0f;
             Vector3 angularVelocity = gyro.angularVelocity.ReadValue();
             float2 axis = new float2(angularVelocity.y, -angularVelocity.x);
+            float sampleRateHz = safeDeltaTime > 0f ? 1f / safeDeltaTime : 0f;
             if (!math.all(math.isfinite(axis)) || math.lengthsq(axis) <= GyroNoiseFloorSq)
             {
-                float decayAlpha = ResolveLowPassAlpha(safeDeltaTime, GyroIdleDecayCutoffHz);
-                _gyroEwma = math.lerp(_gyroEwma, float2.zero, decayAlpha);
+                float decayX = Hecton8.PureLogic.Systems.GyroDriftFilterCalculator.Compute(
+                    0f, _gyroEwma.x, GyroIdleDecayCutoffHz, sampleRateHz);
+                float decayY = Hecton8.PureLogic.Systems.GyroDriftFilterCalculator.Compute(
+                    0f, _gyroEwma.y, GyroIdleDecayCutoffHz, sampleRateHz);
+                _gyroEwma = new float2(decayX, decayY);
                 return Vector2.zero;
             }
 
             float2 delta = axis * (GyroSensitivity * safeDeltaTime);
             delta = math.clamp(delta, new float2(-MaxGyroDelta), new float2(MaxGyroDelta));
-            float alpha = ResolveLowPassAlpha(safeDeltaTime, GyroLowPassCutoffHz);
-            _gyroEwma = math.lerp(_gyroEwma, delta, alpha);
+            float filteredX = Hecton8.PureLogic.Systems.GyroDriftFilterCalculator.Compute(
+                delta.x, _gyroEwma.x, GyroLowPassCutoffHz, sampleRateHz);
+            float filteredY = Hecton8.PureLogic.Systems.GyroDriftFilterCalculator.Compute(
+                delta.y, _gyroEwma.y, GyroLowPassCutoffHz, sampleRateHz);
+            _gyroEwma = new float2(filteredX, filteredY);
             return new Vector2(_gyroEwma.x, _gyroEwma.y);
         }
 

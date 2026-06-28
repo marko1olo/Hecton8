@@ -4599,5 +4599,9 @@ namespace Hecton8.Gameplay
             return 1.0f - math.abs((unit * 4.0f) - 2.0f);
         }
 
-    }
+    
+        #region JulesLink_StrafeAngleBlendWeightCalculator
+        private static void JulesLink_StrafeAngleBlendWeightCalculator() { _ = typeof(Hecton8.PureLogic.Systems.StrafeAngleBlendWeightCalculator); }
+        #endregion
+}
 }

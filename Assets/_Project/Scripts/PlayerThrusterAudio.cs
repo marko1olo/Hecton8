@@ -715,5 +715,9 @@ namespace Hecton8.Audio
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _lateFrameRegistered = false;
         }
-    }
+    
+        #region JulesLink_ThrusterEfficiencyVsPressureCalculator
+        private static void JulesLink_ThrusterEfficiencyVsPressureCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ThrusterEfficiencyVsPressureCalculator); }
+        #endregion
+}
 }

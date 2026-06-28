@@ -1192,5 +1192,9 @@ namespace Hecton8.Economy
             InteractionEvents.Unregister(this);
             _interactionRegistered = false;
         }
-    }
+    
+        #region JulesLink_ScarcityPriceSpikeCalculator
+        private static void JulesLink_ScarcityPriceSpikeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ScarcityPriceSpikeCalculator); }
+        #endregion
+}
 }

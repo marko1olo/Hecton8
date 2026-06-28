@@ -2505,7 +2505,11 @@ namespace Hecton8.Gameplay
                         BatteryCharge,
                         out DataArchaeologyFrequencyResult tuningResult))
                 {
-                    fragmentProgressDelta = tuningResult.ProgressDeltaSeconds;
+                    float dist = Vector3.Distance(transform.position, _activeScientificProbePosition);
+                    float range = math.max(1f, focusedScanRange);
+                    float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
+                        dist, range, 0.15f, BatteryCharge);
+                    fragmentProgressDelta = tuningResult.ProgressDeltaSeconds * resolutionFactor;
                 }
 
                 if (fragmentProgressDelta > 0f)
@@ -2527,7 +2531,11 @@ namespace Hecton8.Gameplay
                      now - _scientificLastContactTime <= holdTimeout &&
                      heldDeltaTime > 0f)
             {
-                _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime);
+                float dist = Vector3.Distance(transform.position, _activeScientificEntityProbePosition);
+                float range = math.max(1f, focusedScanRange);
+                float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
+                    dist, range, 0.15f, BatteryCharge);
+                _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime * resolutionFactor);
                 if (_dataArchaeology != null &&
                     _dataArchaeology.UpdateProbeTargetProgress(
                         _activeScientificEntityHash,

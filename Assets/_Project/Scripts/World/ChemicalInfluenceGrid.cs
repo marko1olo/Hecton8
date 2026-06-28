@@ -3779,4 +3779,8 @@ namespace Hecton8.World
             return hash == 0u ? 1u : hash;
         }
     }
+
+        #region JulesLink_ChemicalDiffusionSolver
+        private static void JulesLink_ChemicalDiffusionSolver() { _ = typeof(Hecton8.PureLogic.Systems.ChemicalDiffusionSolver); }
+        #endregion
 }

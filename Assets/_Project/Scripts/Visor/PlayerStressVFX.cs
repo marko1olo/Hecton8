@@ -229,6 +229,15 @@ namespace Hecton8.Visor
                 : audioStress01;
             float heartbeatInterval = math.lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, heartbeatBlend01);
             float pulseFrequency = 1f / math.max(0.05f, heartbeatInterval);
+
+            if (_survivalSystem != null)
+            {
+                float oxygenNormalized = SanitizeUnit(_survivalSystem.OxygenNormalized);
+                float o2PulseFrequency = Hecton8.PureLogic.Systems.O2BarPulseRateCalculator.Compute(
+                    oxygenNormalized, oxygenCriticalThreshold, 0.05f, 0.5f, 4.0f);
+                pulseFrequency = math.max(pulseFrequency, o2PulseFrequency);
+            }
+
             _pulsePhase += deltaTime * pulseFrequency * PulseTwoPi;
             if (_pulsePhase > PulseTwoPi)
                 _pulsePhase -= PulseTwoPi;

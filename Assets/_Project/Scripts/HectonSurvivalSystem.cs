@@ -5539,5 +5539,9 @@ namespace Hecton8.Gameplay
         }
 
         private static void ForceDirty(ref float lastPub) => lastPub = DirtySentinel;
-    }
+    
+        #region JulesLink_CaloricDeficitPenaltyCalculator
+        private static void JulesLink_CaloricDeficitPenaltyCalculator() { _ = typeof(Hecton8.PureLogic.Systems.CaloricDeficitPenaltyCalculator); }
+        #endregion
+}
 }

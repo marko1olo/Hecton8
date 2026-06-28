@@ -302,5 +302,9 @@ namespace Hecton8.World
                 ? zone.ZoneLabel
                 : UnresolvedZoneLabel;
         }
-    }
+    
+        #region JulesLink_PoissondiscLandmarkSpacingSolver
+        private static void JulesLink_PoissondiscLandmarkSpacingSolver() { _ = typeof(Hecton8.PureLogic.Systems.PoissondiscLandmarkSpacingSolver); }
+        #endregion
+}
 }

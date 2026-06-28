@@ -3878,5 +3878,9 @@ namespace Hecton8.Atmosphere
             [FieldOffset(62)]
             public ushort Reserved;
         }
-    }
+    
+        #region JulesLink_AtmosphereLeakRateCalculator
+        private static void JulesLink_AtmosphereLeakRateCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AtmosphereLeakRateCalculator); }
+        #endregion
+}
 }

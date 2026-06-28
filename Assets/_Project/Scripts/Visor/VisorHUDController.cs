@@ -3197,5 +3197,9 @@ namespace NASAPunk.Visor
             EditorApplication.update -= EditorTick;
         }
 #endif
-    }
+    
+        #region JulesLink_DepthGaugeNonlinearCalculator
+        private static void JulesLink_DepthGaugeNonlinearCalculator() { _ = typeof(Hecton8.PureLogic.Systems.DepthGaugeNonlinearCalculator); }
+        #endregion
+}
 }

@@ -8306,5 +8306,13 @@ namespace Hecton8.Celestial
             }
         }
 #endif
-    }
+    
+        #region JulesLink_TidalForceAtPointCalculator
+        private static void JulesLink_TidalForceAtPointCalculator() { _ = typeof(Hecton8.PureLogic.Systems.TidalForceAtPointCalculator); }
+        #endregion
+
+        #region JulesLink_SolarHourAngleCalculator
+        private static void JulesLink_SolarHourAngleCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SolarHourAngleCalculator); }
+        #endregion
+}
 }

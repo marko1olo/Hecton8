@@ -14372,6 +14372,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         Gizmos.matrix = previousMatrix;
     }
 #endif
+
+        #region JulesLink_VoxelSdfBooleanSubtraction
+        private static void JulesLink_VoxelSdfBooleanSubtraction() { _ = typeof(Hecton8.PureLogic.Systems.VoxelSdfBooleanSubtraction); }
+        #endregion
+
+        #region JulesLink_CeilingConcavityAirPocketVolumeCalculator
+        private static void JulesLink_CeilingConcavityAirPocketVolumeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.CeilingConcavityAirPocketVolumeCalculator); }
+        #endregion
 }
 
 #endregion

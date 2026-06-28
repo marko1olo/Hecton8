@@ -5665,5 +5665,17 @@ namespace Hecton8.AI
             int z = (int)key;
             return new WorldMacroZoneCoordinate(x, z);
         }
-    }
+    
+        #region JulesLink_FaunaSensoryDetectionRangeCalculator
+        private static void JulesLink_FaunaSensoryDetectionRangeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FaunaSensoryDetectionRangeCalculator); }
+        #endregion
+
+        #region JulesLink_FaunaPheromoneTrackingVector
+        private static void JulesLink_FaunaPheromoneTrackingVector() { _ = typeof(Hecton8.PureLogic.Systems.FaunaPheromoneTrackingVector); }
+        #endregion
+
+        #region JulesLink_FaunaPatrolPathSmootherCalculator
+        private static void JulesLink_FaunaPatrolPathSmootherCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FaunaPatrolPathSmootherCalculator); }
+        #endregion
+}
 }

@@ -4010,5 +4010,9 @@ namespace Hecton8.Audio
 
         }
 #endif
-    }
+    
+        #region JulesLink_AcousticZoneReverbDecay
+        private static void JulesLink_AcousticZoneReverbDecay() { _ = typeof(Hecton8.PureLogic.Systems.AcousticZoneReverbDecay); }
+        #endregion
+}
 }

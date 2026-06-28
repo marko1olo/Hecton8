@@ -1999,5 +1999,9 @@ namespace Hecton8.Physics.Exosuit
             Gizmos.DrawLine(center, center + new Vector3(output.DesiredVelocity.x, output.DesiredVelocity.y, output.DesiredVelocity.z));
         }
 #endif
-    }
+    
+        #region JulesLink_ArmReachIkSolver
+        private static void JulesLink_ArmReachIkSolver() { _ = typeof(Hecton8.PureLogic.Systems.ArmReachIkSolver); }
+        #endregion
+}
 }

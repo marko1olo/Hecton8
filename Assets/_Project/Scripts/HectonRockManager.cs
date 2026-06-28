@@ -660,5 +660,9 @@ namespace Hecton8.World
 
             gpuiManager.enabled = false;
         }
-    }
+    
+        #region JulesLink_RockAlignmentSplineNormalCalculator
+        private static void JulesLink_RockAlignmentSplineNormalCalculator() { _ = typeof(Hecton8.PureLogic.Systems.RockAlignmentSplineNormalCalculator); }
+        #endregion
+}
 }

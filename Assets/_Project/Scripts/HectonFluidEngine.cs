@@ -3945,6 +3945,15 @@ namespace Hecton8.Physics
                                                hasAdvectionParticles &&
                                                _fluidAdvectionKernel >= 0;
 
+            if (!_coldSupportsComputeShaders)
+            {
+                RunCpuFluidSimulationFallback(Time.deltaTime);
+                if (hasAdvectionParticles)
+                {
+                    RunCpuFluidAdvectionFallback(Time.deltaTime);
+                }
+            }
+
             WriteFluidAdvectionTelemetry();
             TryDrainScheduledBuoyancyJob();
         }
@@ -5216,6 +5225,229 @@ namespace Hecton8.Physics
                    IsFluidAdvectionGpuBufferStateReady() &&
                    _emptyFluidAdvectionTexture != null &&
                    _emptyFluidAdvectionTextureHandle != null;
+        }
+
+        private void RunCpuFluidAdvectionFallback(float deltaTime)
+        {
+            if (!_prebakedVectorNoiseField.TryResolve(out NativeArray<float3> noiseField) || !noiseField.IsCreated)
+                return;
+
+            int length = noiseField.Length;
+            if (length <= 0)
+                return;
+
+            float[] velX = new float[length];
+            float[] velY = new float[length];
+            float[] velZ = new float[length];
+            for (int i = 0; i < length; i++)
+            {
+                float3 v = noiseField[i];
+                velX[i] = v.x;
+                velY[i] = v.y;
+                velZ[i] = v.z;
+            }
+
+            int n = (int)Math.Round(Math.Pow(length, 1.0 / 3.0));
+            if (n * n * n != length)
+                return;
+
+            float gridSpacing = prebakedVectorNoiseCellSizeMeters / n;
+
+            double3 totalOffset = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+            float invCellSize = math.rcp(math.max(0.25f, prebakedVectorNoiseCellSizeMeters));
+
+            if (_advectedSiltUpload.TryResolve(out NativeArray<AdvectedSilt> siltArray) && siltArray.IsCreated)
+            {
+                for (int i = 0; i < _activeAdvectedSiltCount; i++)
+                {
+                    AdvectedSilt particle = siltArray[i];
+                    if ((particle.Flags & AdvectedBubbleActiveFlag) == 0)
+                        continue;
+
+                    double3 localCell = (new double3(particle.PositionWS.x, particle.PositionWS.y, particle.PositionWS.z) + totalOffset) * invCellSize;
+                    int x = Math.Clamp((int)Math.Floor(localCell.x) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int y = Math.Clamp((int)Math.Floor(localCell.y) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int z = Math.Clamp((int)Math.Floor(localCell.z) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+
+                    float advectedX = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velX, velY, velZ, x, y, z, deltaTime, gridSpacing);
+                    float advectedY = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velY, velZ, velX, x, y, z, deltaTime, gridSpacing);
+                    float advectedZ = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velZ, velX, velY, x, y, z, deltaTime, gridSpacing);
+
+                    particle.PositionWS += particle.VelocityWS * deltaTime;
+                    particle.VelocityWS = new float3(advectedX, advectedY, advectedZ);
+                    particle.Life -= deltaTime;
+                    if (particle.Life <= 0f)
+                        particle.Flags &= ~AdvectedBubbleActiveFlag;
+
+                    siltArray[i] = particle;
+                }
+            }
+
+            if (_advectedBubbleUpload.TryResolve(out NativeArray<AdvectedBubble> bubbleArray) && bubbleArray.IsCreated)
+            {
+                for (int i = 0; i < _activeAdvectedBubbleCount; i++)
+                {
+                    AdvectedBubble particle = bubbleArray[i];
+                    if ((particle.Flags & AdvectedBubbleActiveFlag) == 0)
+                        continue;
+
+                    double3 localCell = (new double3(particle.PositionWS.x, particle.PositionWS.y, particle.PositionWS.z) + totalOffset) * invCellSize;
+                    int x = Math.Clamp((int)Math.Floor(localCell.x) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int y = Math.Clamp((int)Math.Floor(localCell.y) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int z = Math.Clamp((int)Math.Floor(localCell.z) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+
+                    float advectedX = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velX, velY, velZ, x, y, z, deltaTime, gridSpacing);
+                    float advectedY = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velY, velZ, velX, x, y, z, deltaTime, gridSpacing);
+                    float advectedZ = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velZ, velX, velY, x, y, z, deltaTime, gridSpacing);
+
+                    particle.PositionWS += particle.VelocityWS * deltaTime;
+                    particle.VelocityWS = new float3(advectedX, advectedY, advectedZ);
+                    particle.Life -= deltaTime;
+                    if (particle.Life <= 0f)
+                        particle.Flags &= ~AdvectedBubbleActiveFlag;
+
+                    bubbleArray[i] = particle;
+                }
+            }
+
+            if (_advectedDebrisUpload.TryResolve(out NativeArray<AdvectedDebris> debrisArray) && debrisArray.IsCreated)
+            {
+                for (int i = 0; i < _activeAdvectedDebrisCount; i++)
+                {
+                    AdvectedDebris particle = debrisArray[i];
+                    if ((particle.Flags & AdvectedDebrisActiveFlag) == 0)
+                        continue;
+
+                    double3 localCell = (new double3(particle.PositionWS.x, particle.PositionWS.y, particle.PositionWS.z) + totalOffset) * invCellSize;
+                    int x = Math.Clamp((int)Math.Floor(localCell.x) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int y = Math.Clamp((int)Math.Floor(localCell.y) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+                    int z = Math.Clamp((int)Math.Floor(localCell.z) & HectonAnalyticalFlowField.VectorNoiseMask, 0, n - 1);
+
+                    float advectedX = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velX, velY, velZ, x, y, z, deltaTime, gridSpacing);
+                    float advectedY = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velY, velZ, velX, x, y, z, deltaTime, gridSpacing);
+                    float advectedZ = Hecton8.PureLogic.Systems.FluidAdvectionStepCalculator.Compute(
+                        velZ, velX, velY, x, y, z, deltaTime, gridSpacing);
+
+                    particle.PositionWS += particle.VelocityWS * deltaTime;
+                    particle.VelocityWS = new float3(advectedX, advectedY, advectedZ);
+                    particle.Life -= deltaTime;
+                    if (particle.Life <= 0f)
+                        particle.Flags &= ~AdvectedDebrisActiveFlag;
+
+                    debrisArray[i] = particle;
+                }
+            }
+        }
+
+        private void RunCpuFluidSimulationFallback(float deltaTime)
+        {
+            if (!_prebakedVectorNoiseField.TryResolve(out NativeArray<float3> noiseField) || !noiseField.IsCreated)
+                return;
+
+            int length = noiseField.Length;
+            if (length <= 0)
+                return;
+
+            int n = HectonAnalyticalFlowField.VectorNoiseResolution;
+            if (n * n * n != length)
+                return;
+
+            float[,,] velX = new float[n, n, n];
+            float[,,] velY = new float[n, n, n];
+            float[,,] velZ = new float[n, n, n];
+
+            for (int x = 0; x < n; x++)
+            {
+                for (int y = 0; y < n; y++)
+                {
+                    for (int z = 0; z < n; z++)
+                    {
+                        int idx = x | (y << HectonAnalyticalFlowField.VectorNoiseSliceShift) | (z << HectonAnalyticalFlowField.VectorNoisePlaneShift);
+                        float3 v = noiseField[idx];
+                        velX[x, y, z] = v.x;
+                        velY[x, y, z] = v.y;
+                        velZ[x, y, z] = v.z;
+                    }
+                }
+            }
+
+            float gridSpacing = prebakedVectorNoiseCellSizeMeters / n;
+
+            var confinementForces = Hecton8.PureLogic.Systems.VorticityConfinementForceCalculator.Compute(
+                velX, velY, velZ, 0.1f, gridSpacing);
+
+            float[,,] fx = confinementForces.Item1;
+            float[,,] fy = confinementForces.Item2;
+            float[,,] fz = confinementForces.Item3;
+
+            for (int x = 0; x < n; x++)
+            {
+                for (int y = 0; y < n; y++)
+                {
+                    for (int z = 0; z < n; z++)
+                    {
+                        velX[x, y, z] += fx[x, y, z] * deltaTime;
+                        velY[x, y, z] += fy[x, y, z] * deltaTime;
+                        velZ[x, y, z] += fz[x, y, z] * deltaTime;
+                    }
+                }
+            }
+
+            float[,,] divergence = new float[n, n, n];
+            float[,,] pressure = new float[n, n, n];
+            float invSpacing2 = 1.0f / (2.0f * gridSpacing);
+
+            for (int x = 1; x < n - 1; x++)
+            {
+                for (int y = 1; y < n - 1; y++)
+                {
+                    for (int z = 1; z < n - 1; z++)
+                    {
+                        float div = ((velX[x + 1, y, z] - velX[x - 1, y, z]) +
+                                     (velY[x, y + 1, z] - velY[x, y - 1, z]) +
+                                     (velZ[x, y, z + 1] - velZ[x, y, z - 1])) * invSpacing2;
+                        divergence[x, y, z] = div;
+                    }
+                }
+            }
+
+            for (int iter = 0; iter < 10; iter++)
+            {
+                pressure = Hecton8.PureLogic.Systems.FluidPressureJacobiSolver.Solve(pressure, divergence, gridSpacing);
+            }
+
+            for (int x = 1; x < n - 1; x++)
+            {
+                for (int y = 1; y < n - 1; y++)
+                {
+                    for (int z = 1; z < n - 1; z++)
+                    {
+                        velX[x, y, z] -= (pressure[x + 1, y, z] - pressure[x - 1, y, z]) * invSpacing2;
+                        velY[x, y, z] -= (pressure[x, y + 1, z] - pressure[x, y - 1, z]) * invSpacing2;
+                        velZ[x, y, z] -= (pressure[x, y, z + 1] - pressure[x, y, z - 1]) * invSpacing2;
+                    }
+                }
+            }
+
+            for (int x = 0; x < n; x++)
+            {
+                for (int y = 0; y < n; y++)
+                {
+                    for (int z = 0; z < n; z++)
+                    {
+                        int idx = x | (y << HectonAnalyticalFlowField.VectorNoiseSliceShift) | (z << HectonAnalyticalFlowField.VectorNoisePlaneShift);
+                        noiseField[idx] = new float3(velX[x, y, z], velY[x, y, z], velZ[x, y, z]);
+                    }
+                }
+            }
         }
 
         private bool IsFluidAdvectionStorageReady()
@@ -9667,7 +9899,15 @@ namespace Hecton8.Physics
 #endif
         }
 #endif
-    }
+    
+        #region JulesLink_AbyssalVortexAngularTorqueCalculator
+        private static void JulesLink_AbyssalVortexAngularTorqueCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AbyssalVortexAngularTorqueCalculator); }
+        #endregion
+
+        #region JulesLink_MaelstromSpatialWarpPullCalculator
+        private static void JulesLink_MaelstromSpatialWarpPullCalculator() { _ = typeof(Hecton8.PureLogic.Systems.MaelstromSpatialWarpPullCalculator); }
+        #endregion
+}
 
     // ══════════════════════════════════════════════════════════════════
     //  BuoyancyParams — dannye obekta dlya Job (blittable struct)
@@ -10565,10 +10805,10 @@ namespace Hecton8.Physics
     {
         public const int VectorNoiseResolution = 32;
         public const int VectorNoiseVoxelCount = VectorNoiseResolution * VectorNoiseResolution * VectorNoiseResolution;
-        private const int VectorNoiseMask = VectorNoiseResolution - 1;
-        private const int VectorNoiseMinimumDetailMask = VectorNoiseMask & ~1;
-        private const int VectorNoiseSliceShift = 5;
-        private const int VectorNoisePlaneShift = 10;
+        public const int VectorNoiseMask = VectorNoiseResolution - 1;
+        public const int VectorNoiseMinimumDetailMask = VectorNoiseMask & ~1;
+        public const int VectorNoiseSliceShift = 5;
+        public const int VectorNoisePlaneShift = 10;
         private const float SurfaceStormLayerDepthMeters = 50f;
         private const float StormSurfaceTurbulenceStrength = 0.4f;
 

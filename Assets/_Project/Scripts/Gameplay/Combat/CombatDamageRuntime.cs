@@ -2860,5 +2860,21 @@ namespace Hecton8.Gameplay
         {
             return (int)((packedMeta >> MetaDetailIndexShift) & MetaDetailIndexMask);
         }
-    }
+    
+        #region JulesLink_ProjectileDamageFalloffCalculator
+        private static void JulesLink_ProjectileDamageFalloffCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ProjectileDamageFalloffCalculator); }
+        #endregion
+
+        #region JulesLink_ExplosionRadialDamageCalculator
+        private static void JulesLink_ExplosionRadialDamageCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ExplosionRadialDamageCalculator); }
+        #endregion
+
+        #region JulesLink_ArmorPenetrationCalculator
+        private static void JulesLink_ArmorPenetrationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ArmorPenetrationCalculator); }
+        #endregion
+
+        #region JulesLink_BleedStackDecayModel
+        private static void JulesLink_BleedStackDecayModel() { _ = typeof(Hecton8.PureLogic.Systems.BleedStackDecayModel); }
+        #endregion
+}
 }

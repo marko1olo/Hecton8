@@ -156,5 +156,9 @@ namespace Hecton8.SaveSystem
             for (int i = 0; i < words.Length; i++)
                 words[i] = 0L;
         }
-    }
+    
+        #region JulesLink_BiomeDiscoveryBitmaskTracker
+        private static void JulesLink_BiomeDiscoveryBitmaskTracker() { _ = typeof(Hecton8.PureLogic.Systems.BiomeDiscoveryBitmaskTracker); }
+        #endregion
+}
 }

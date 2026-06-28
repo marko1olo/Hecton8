@@ -961,5 +961,9 @@ namespace Hecton8.Power
             _debugTotalConsumption = consumption;
             _debugDeficitGrids = deficitGrids;
         }
-    }
+    
+        #region JulesLink_PowerGridResourceDistributorCalculator
+        private static void JulesLink_PowerGridResourceDistributorCalculator() { _ = typeof(Hecton8.PureLogic.Systems.PowerGridResourceDistributorCalculator); }
+        #endregion
+}
 }

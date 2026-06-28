@@ -7653,5 +7653,9 @@ namespace Hecton8.Inventory
                 lane.ReleaseWriteLock();
             }
         }
-    }
+    
+        #region JulesLink_InventoryItemDefragmentationConsolidationCalculator
+        private static void JulesLink_InventoryItemDefragmentationConsolidationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.InventoryItemDefragmentationConsolidationCalculator); }
+        #endregion
+}
 }

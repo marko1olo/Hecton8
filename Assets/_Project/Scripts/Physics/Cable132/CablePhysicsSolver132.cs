@@ -1356,7 +1356,15 @@ namespace Hecton8.Physics
             float q = math.saturate(math.isfinite(value) ? value : 1f);
             return q * q * (3f - 2f * q);
         }
-    }
+    
+        #region JulesLink_VerletCableSimulator
+        private static void JulesLink_VerletCableSimulator() { _ = typeof(Hecton8.PureLogic.Systems.VerletCableSimulator); }
+        #endregion
+
+        #region JulesLink_CableConstraintSatisfier
+        private static void JulesLink_CableConstraintSatisfier() { _ = typeof(Hecton8.PureLogic.Systems.CableConstraintSatisfier); }
+        #endregion
+}
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     internal unsafe struct AdvanceMockCableEndpointsJob : IJob

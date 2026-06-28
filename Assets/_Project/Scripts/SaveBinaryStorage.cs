@@ -8813,11 +8813,28 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            uint computedChecksum = Hash32(rawPayloadPtr, rawPayloadLength);
-            if (computedChecksum != entry.Checksum)
+            byte[] managedPayload = new byte[rawPayloadLength];
+            System.Runtime.InteropServices.Marshal.Copy((IntPtr)rawPayloadPtr, managedPayload, 0, rawPayloadLength);
+            bool isValid = Hecton8.PureLogic.Systems.SaveChecksumVerifier.Verify(
+                managedPayload,
+                entry.Checksum,
+                14695981039346656037UL,
+                1099511628211UL,
+                0xff51afd7ed558ccdUL,
+                0xc4ceb9fe1a85ec53UL,
+                32,
+                33,
+                1UL
+            );
+
+            if (!isValid)
             {
-                error = $"Indexed sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
-                return false;
+                uint computedChecksum = Hash32(rawPayloadPtr, rawPayloadLength);
+                if (computedChecksum != entry.Checksum)
+                {
+                    error = $"Indexed sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
+                    return false;
+                }
             }
 
             return true;
@@ -8887,10 +8904,26 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (expectedChecksum != 0u && Hash32(rawPtr, decompressedLength) != expectedChecksum)
+            if (expectedChecksum != 0u)
             {
-                error = "Sector override verification checksum mismatch.";
-                return false;
+                byte[] managedPayload = new byte[decompressedLength];
+                System.Runtime.InteropServices.Marshal.Copy((IntPtr)rawPtr, managedPayload, 0, decompressedLength);
+                bool isValid = Hecton8.PureLogic.Systems.SaveChecksumVerifier.Verify(
+                    managedPayload,
+                    expectedChecksum,
+                    14695981039346656037UL,
+                    1099511628211UL,
+                    0xff51afd7ed558ccdUL,
+                    0xc4ceb9fe1a85ec53UL,
+                    32,
+                    33,
+                    1UL
+                );
+                if (!isValid && Hash32(rawPtr, decompressedLength) != expectedChecksum)
+                {
+                    error = "Sector override verification checksum mismatch.";
+                    return false;
+                }
             }
 
             return true;
@@ -11777,5 +11810,9 @@ namespace Hecton8.SaveSystem
 
         [DllImport(Lz4DllName, EntryPoint = "LZ4_decompress_safe")]
         private static extern int LZ4Decompress(byte* source, byte* destination, int compressedLength, int destinationCapacity);
-    }
+    
+        #region JulesLink_SaveDeltaVoxelStatePackingCalculator
+        private static void JulesLink_SaveDeltaVoxelStatePackingCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveDeltaVoxelStatePackingCalculator); }
+        #endregion
+}
 }

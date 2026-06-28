@@ -5237,4 +5237,8 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
     }
+
+        #region JulesLink_SignalPrioritySortCalculator
+        private static void JulesLink_SignalPrioritySortCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SignalPrioritySortCalculator); }
+        #endregion
 }

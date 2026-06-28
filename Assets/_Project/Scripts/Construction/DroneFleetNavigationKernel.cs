@@ -574,12 +574,20 @@ namespace Hecton8.Construction
                 drone.State = (byte)HeadlessDroneRuntimeState.Stasis;
                 drone.Velocity = float3.zero;
             }
-            else if (drone.BatteryPercent <= ReturnBatteryThresholdPercent &&
-                drone.State != (byte)HeadlessDroneRuntimeState.Return &&
-                drone.State != (byte)HeadlessDroneRuntimeState.Docking &&
-                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyTravel &&
-                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyDocked &&
-                drone.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
+            else
+            {
+                float distToBase = FastLengthFromSq(math.distancesq(drone.Position, drone.HomePosition));
+                float batteryLevel01 = drone.BatteryPercent * 0.01f;
+                float batteryDrainPerMeter = ((drone.BatteryDrainPerSecond * 0.01f) * drainScale) / maxSpeed;
+                bool mustReturn = Hecton8.PureLogic.Systems.DroneBatteryReturnThresholdCalculator.Compute(
+                    batteryLevel01, distToBase, batteryDrainPerMeter, ReturnBatteryThresholdPercent * 0.01f);
+
+                if (mustReturn &&
+                    drone.State != (byte)HeadlessDroneRuntimeState.Return &&
+                    drone.State != (byte)HeadlessDroneRuntimeState.Docking &&
+                    drone.State != (byte)HeadlessDroneRuntimeState.ResupplyTravel &&
+                    drone.State != (byte)HeadlessDroneRuntimeState.ResupplyDocked &&
+                    drone.State != (byte)HeadlessDroneRuntimeState.ResupplyCommitPending)
             {
                 drone.TargetTaskIndex = EmptyTaskIndex;
                 drone.TargetModuleId = 0;
@@ -602,6 +610,7 @@ namespace Hecton8.Construction
                         Reserved0 = 0u
                     };
                 }
+            }
             }
 
             Drones[index] = drone;

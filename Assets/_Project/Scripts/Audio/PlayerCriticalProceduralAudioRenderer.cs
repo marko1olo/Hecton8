@@ -906,7 +906,19 @@ namespace Hecton8.Audio
                     float rayDistance = math.max(0f, distance - step + step * t);
                     float returnDistance = LengthApprox(hitPoint - ListenerPosition);
                     float totalDistance = math.max(0.001f, rayDistance + returnDistance);
-                    float delaySeconds = totalDistance * math.max(SoundSpeedInv, 0.000001f);
+
+                    float soundSpeedMps = math.max(0.001f, math.rcp(math.max(SoundSpeedInv, 0.000001f)));
+                    var sonarResult = Hecton8.PureLogic.Systems.SonarPingReturnTimeCalculator.Compute(
+                        totalDistance * 0.5f,
+                        soundSpeedMps,
+                        0f,
+                        0f,
+                        0f,
+                        0f,
+                        0.001f,
+                        5000f
+                    );
+                    float delaySeconds = sonarResult.returnTimeSeconds;
                     float totalTimeSq = math.max(delaySeconds * delaySeconds, 0.000001f);
                     float absorption = ApproxExpNeg(totalDistance * math.max(0f, AbsorptionCoefficient));
                     float reference = math.max(0.001f, ReferenceDistanceMeters);

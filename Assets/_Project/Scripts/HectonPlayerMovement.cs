@@ -10809,7 +10809,10 @@ namespace Hecton8.Gameplay
                     transportProtection
                 );
 
-                targetStress = math.saturate(computedStress);
+                float warningUrgency = Hecton8.PureLogic.Systems.HudCrushDepthWarningUrgencyCalculator.Compute(
+                    _currentDepth, crushDepthStart, depthRate);
+
+                targetStress = math.saturate(math.max(computedStress, warningUrgency));
             }
 
             if (_externalHullStressRequestedThisStep)
@@ -14733,5 +14736,37 @@ namespace Hecton8.Gameplay
             }
         }
 #endif
-    }
+    
+        #region JulesLink_CrouchCapsuleLerp
+        private static void JulesLink_CrouchCapsuleLerp() { _ = typeof(Hecton8.PureLogic.Systems.CrouchCapsuleLerp); }
+        #endregion
+
+        #region JulesLink_WallSlideFrictionCalculator
+        private static void JulesLink_WallSlideFrictionCalculator() { _ = typeof(Hecton8.PureLogic.Systems.WallSlideFrictionCalculator); }
+        #endregion
+
+        #region JulesLink_LedgeGrabImpulseCalculator
+        private static void JulesLink_LedgeGrabImpulseCalculator() { _ = typeof(Hecton8.PureLogic.Systems.LedgeGrabImpulseCalculator); }
+        #endregion
+
+        #region JulesLink_WaterSurfaceTransitionDragCalculator
+        private static void JulesLink_WaterSurfaceTransitionDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.WaterSurfaceTransitionDragCalculator); }
+        #endregion
+
+        #region JulesLink_EquipmentHydrodynamicDragCalculator
+        private static void JulesLink_EquipmentHydrodynamicDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.EquipmentHydrodynamicDragCalculator); }
+        #endregion
+
+        #region JulesLink_ThermalVentUpdraftForce
+        private static void JulesLink_ThermalVentUpdraftForce() { _ = typeof(Hecton8.PureLogic.Systems.ThermalVentUpdraftForce); }
+        #endregion
+
+        #region JulesLink_ParasiteLatchDragCalculator
+        private static void JulesLink_ParasiteLatchDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ParasiteLatchDragCalculator); }
+        #endregion
+
+        #region JulesLink_VehicleEmergencyEjectionVector
+        private static void JulesLink_VehicleEmergencyEjectionVector() { _ = typeof(Hecton8.PureLogic.Systems.VehicleEmergencyEjectionVector); }
+        #endregion
+}
 }

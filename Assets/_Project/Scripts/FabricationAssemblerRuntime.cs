@@ -1903,7 +1903,15 @@ namespace Hecton8.Crafting
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
             public void VisualSyncTick(in DispatcherTimingDTO timing) { _owner.VisualSyncTick(in timing); }
         }
-    }
+    
+        #region JulesLink_FabricationRecipeYieldRoll
+        private static void JulesLink_FabricationRecipeYieldRoll() { _ = typeof(Hecton8.PureLogic.Systems.FabricationRecipeYieldRoll); }
+        #endregion
+
+        #region JulesLink_FabricationCraftTimeModifier
+        private static void JulesLink_FabricationCraftTimeModifier() { _ = typeof(Hecton8.PureLogic.Systems.FabricationCraftTimeModifier); }
+        #endregion
+}
 
 #if UNITY_EDITOR
     internal static class FabricationLayoutValidator

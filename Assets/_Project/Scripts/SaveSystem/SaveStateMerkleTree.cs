@@ -2840,7 +2840,11 @@ namespace Hecton8.SaveSystem
                 Cursor[0] = writeIndex + 1;
             }
         }
-    }
+    
+        #region JulesLink_SaveMerkleHashNodeCalculator
+        private static void JulesLink_SaveMerkleHashNodeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveMerkleHashNodeCalculator); }
+        #endregion
+}
 
     #if UNITY_EDITOR
     internal static unsafe class SaveMerkleCsvOverrideParser

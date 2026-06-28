@@ -1300,7 +1300,11 @@ namespace Hecton8.Ecosystem
             WriteUInt32(target, unchecked((uint)value));
             WriteUInt32(target.Slice(4, 4), unchecked((uint)(value >> 32)));
         }
-    }
+    
+        #region JulesLink_NutrientCycleSinkCalculator
+        private static void JulesLink_NutrientCycleSinkCalculator() { _ = typeof(Hecton8.PureLogic.Systems.NutrientCycleSinkCalculator); }
+        #endregion
+}
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct EcosystemSectorCoordDTO

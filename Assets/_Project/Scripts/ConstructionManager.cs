@@ -4187,5 +4187,9 @@ namespace Hecton8.Construction
             return _habitatGraphManager != null &&
                    _habitatGraphManager.TryResolveFungalMindTarget(sourceModule, out targetModule, out targetPotential);
         }
-    }
+    
+        #region JulesLink_AnchorStabilityScoreCalculator
+        private static void JulesLink_AnchorStabilityScoreCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AnchorStabilityScoreCalculator); }
+        #endregion
+}
 }

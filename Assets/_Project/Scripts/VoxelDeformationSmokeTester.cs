@@ -748,5 +748,9 @@ namespace Hecton8.Dev
             if (verboseLogging)
                 Hecton8.Core.H8Debug.Log(message, this);
         }
-    }
+    
+        #region JulesLink_VoxelExplosionDeformationVolumeCalculator
+        private static void JulesLink_VoxelExplosionDeformationVolumeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.VoxelExplosionDeformationVolumeCalculator); }
+        #endregion
+}
 }

@@ -1133,6 +1133,30 @@ namespace Hecton8.Atmosphere
                 atmosphere[0] = atmo;
             }
 
+            if (ResolveBeaufortProfiles(out NativeArray<BeaufortProfileDTO> profiles) && profiles.IsCreated && profiles.Length > 0)
+            {
+                if (profiles[0].WindSpeed <= 0f)
+                {
+                    for (int i = 0; i < profiles.Length; i++)
+                    {
+                        float beaufort = i;
+                        float waveHeight = Hecton8.PureLogic.Systems.StormWaveHeightBeaufortCalculator.Compute(beaufort, 100f, 24f);
+
+                        BeaufortProfileDTO p = profiles[i];
+                        p.StateHash = (uint)i;
+                        p.WindSpeed = 0.836f * (float)Math.Pow(beaufort, 1.5f);
+                        p.BaseSteepness = 0.05f + 0.03f * (beaufort / 12f);
+                        p.BaseWavelength = 10f + 15f * beaufort;
+                        p.StormIntensity = beaufort / 12f;
+                        p.FoamThreshold = 0.25f + 0.15f * (beaufort / 12f);
+                        p.FrequencyScale = 1f;
+                        p.Flags = 1u;
+                        p.Reserved0.x = waveHeight;
+                        profiles[i] = p;
+                    }
+                }
+            }
+
             return EnsureWeatherDefaultsFromWaves();
         }
 

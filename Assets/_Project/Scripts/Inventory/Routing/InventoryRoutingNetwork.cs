@@ -922,7 +922,8 @@ namespace Hecton8.Inventory
             NativeArray<InventoryTransactionResultDTO> results,
             int requestCount,
             bool emitTransferSignals,
-            JobHandle dependency = default)
+            JobHandle dependency = default,
+            NativeArray<InventoryStackLimitDTO> stackLimits = default)
         {
             if (!slots.IsCreated || !requests.IsCreated || !results.IsCreated)
                 return dependency;
@@ -946,7 +947,8 @@ namespace Hecton8.Inventory
                 TransferSignalWriter = writer,
                 TransferSignalWriterBudget = writerBudget,
                 RequestCount = requestCount,
-                EmitTransferSignals = emit
+                EmitTransferSignals = emit,
+                StackLimits = stackLimits
             }.Schedule(dependency);
         }
 
@@ -1566,6 +1568,7 @@ namespace Hecton8.Inventory
         [NativeDisableParallelForRestriction] public NativeArray<int> TransferSignalWriterBudget;
         public int RequestCount;
         public int EmitTransferSignals;
+        [ReadOnly, NoAlias] public NativeArray<InventoryStackLimitDTO> StackLimits;
 
         public void Execute()
         {
@@ -1634,7 +1637,7 @@ namespace Hecton8.Inventory
             {
                 result.Status = (byte)InventoryTransactionStatus.DestinationOccupied;
             }
-            else if (uint.MaxValue - destination.Quantity < request.Quantity)
+            else if (IsMergeOverflow(destination.Quantity, request.Quantity, request.ItemHashID))
             {
                 result.Status = (byte)InventoryTransactionStatus.DestinationOverflow;
             }
@@ -1705,6 +1708,34 @@ namespace Hecton8.Inventory
         {
             int* lockPtr = (int*)UnsafeUtility.AddressOf(ref slots[index].ReservedLock);
             Interlocked.Exchange(ref UnsafeUtility.AsRef<int>(lockPtr), 0);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool IsMergeOverflow(uint destQty, uint reqQty, uint itemHash)
+        {
+            if (uint.MaxValue - destQty < reqQty)
+                return true;
+
+            uint maxStack = 99u;
+            if (StackLimits.IsCreated)
+            {
+                for (int i = 0; i < StackLimits.Length; i++)
+                {
+                    if (StackLimits[i].ItemHashID == itemHash)
+                    {
+                        maxStack = StackLimits[i].MaxStack;
+                        break;
+                    }
+                }
+            }
+
+            int[] stackCounts = new int[] { (int)destQty };
+            int[] mergeResult = Hecton8.PureLogic.Systems.StackMergePriorityCalculator.Compute(
+                stackCounts,
+                (int)maxStack,
+                (int)reqQty
+            );
+            return mergeResult[1] > 0;
         }
     }
 
