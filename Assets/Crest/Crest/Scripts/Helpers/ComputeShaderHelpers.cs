@@ -2,6 +2,7 @@
 
 // Copyright 2020 Wave Harmonic Ltd
 
+using System;
 using UnityEngine;
 
 namespace Crest
@@ -10,6 +11,16 @@ namespace Crest
     {
         public const int MaxPortableThreadGroupSize = 256;
         public const int MaxDispatchGroupsPerDimension = 65535;
+
+        internal delegate bool IsSupportedDelegate(ComputeShader shader, int kernel);
+        internal delegate void GetKernelThreadGroupSizesDelegate(ComputeShader shader, int kernel, out uint x, out uint y, out uint z);
+        internal delegate bool HasKernelDelegate(ComputeShader shader, string kernelName);
+        internal delegate int FindKernelDelegate(ComputeShader shader, string kernelName);
+
+        internal static IsSupportedDelegate s_isSupported = (shader, kernel) => shader.IsSupported(kernel);
+        internal static GetKernelThreadGroupSizesDelegate s_getKernelThreadGroupSizes = (ComputeShader shader, int kernel, out uint x, out uint y, out uint z) => shader.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
+        internal static HasKernelDelegate s_hasKernel = (shader, kernelName) => shader.HasKernel(kernelName);
+        internal static FindKernelDelegate s_findKernel = (shader, kernelName) => shader.FindKernel(kernelName);
 
         public static ComputeShader LoadShader(string path)
         {
@@ -52,12 +63,12 @@ namespace Crest
             uint kernelSizeZ;
             try
             {
-                if (!shader.IsSupported(kernel))
+                if (!s_isSupported(shader, kernel))
                 {
                     return false;
                 }
 
-                shader.GetKernelThreadGroupSizes(kernel, out kernelSizeX, out kernelSizeY, out kernelSizeZ);
+                s_getKernelThreadGroupSizes(shader, kernel, out kernelSizeX, out kernelSizeY, out kernelSizeZ);
             }
             catch (System.ObjectDisposedException)
             {
@@ -138,12 +149,12 @@ namespace Crest
 
             try
             {
-                if (!shader.HasKernel(kernelName))
+                if (!s_hasKernel(shader, kernelName))
                 {
                     return false;
                 }
 
-                kernel = shader.FindKernel(kernelName);
+                kernel = s_findKernel(shader, kernelName);
                 return kernel >= 0;
             }
             catch (System.ObjectDisposedException)
