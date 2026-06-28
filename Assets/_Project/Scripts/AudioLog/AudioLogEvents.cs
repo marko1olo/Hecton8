@@ -99,11 +99,13 @@ namespace Hecton8.Narrative
         private struct AudioLogListenerRegistry
         {
             private readonly ListenerSlot[] _slots;
+            private readonly System.Collections.Generic.HashSet<IAudioLogEventListener> _set;
             private int _count;
 
             public AudioLogListenerRegistry(int capacity)
             {
                 _slots = new ListenerSlot[capacity]; // COLD ALLOC: ListenerSlot[16] - fixed audio-log listener slots drained on dispatcher LateUpdate - owner: AudioLogEvents
+                _set = new System.Collections.Generic.HashSet<IAudioLogEventListener>(capacity); // COLD ALLOC: HashSet[16] - O(1) listener checks - owner: AudioLogEvents
                 _count = 0;
             }
 
@@ -114,23 +116,21 @@ namespace Hecton8.Narrative
                 for (int i = 0; i < _count; i++)
                     _slots[i].Clear();
 
+                _set.Clear();
                 _count = 0;
             }
 
             public bool Contains(IAudioLogEventListener listener)
             {
-                for (int i = 0; i < _count; i++)
-                {
-                    if (ReferenceEquals(_slots[i].Listener, listener))
-                        return true;
-                }
-
-                return false;
+                return listener != null && _set.Contains(listener);
             }
 
             public bool TryRegister(IAudioLogEventListener listener)
             {
                 if (listener == null || _count >= _slots.Length)
+                    return false;
+
+                if (!_set.Add(listener))
                     return false;
 
                 _slots[_count++].Listener = listener;
@@ -139,15 +139,18 @@ namespace Hecton8.Narrative
 
             public bool TryUnregister(IAudioLogEventListener listener)
             {
+                if (listener == null || !_set.Remove(listener))
+                    return false;
+
                 for (int i = 0; i < _count; i++)
                 {
-                    if (!ReferenceEquals(_slots[i].Listener, listener))
-                        continue;
-
-                    _count--;
-                    _slots[i] = _slots[_count];
-                    _slots[_count].Clear();
-                    return true;
+                    if (ReferenceEquals(_slots[i].Listener, listener))
+                    {
+                        _count--;
+                        _slots[i] = _slots[_count];
+                        _slots[_count].Clear();
+                        return true;
+                    }
                 }
 
                 return false;
