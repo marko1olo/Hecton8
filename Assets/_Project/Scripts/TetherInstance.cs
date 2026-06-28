@@ -4836,7 +4836,7 @@ namespace Hecton8.Physics
             float rawSnapDuration = _owner != null ? _owner.ResolveSnapStressDuration() : 0.1f;
             float snapDuration = math.isfinite(rawSnapDuration) ? math.max(0.1f, rawSnapDuration) : 0.1f;
 
-            if (safePeakTension > snapThreshold)
+            if (Hecton8.PureLogic.Systems.TetherSnapLoadCalculator.Compute(safePeakTension, 1f, snapThreshold))
             {
                 _stressTimer += safeFixedDeltaTime;
             }
