@@ -80,6 +80,10 @@ namespace Hecton8.BlackboxDiagnostics
             return Path.Combine(localAppData, "Unity", "Editor", "Editor.log");
         }
 
+        internal static Func<string, bool> s_FileExists = File.Exists;
+        internal static Func<string, FileMode, FileAccess, FileShare, Stream> s_FileStreamFactory =
+            (path, mode, access, share) => new FileStream(path, mode, access, share);
+
         /// <summary>
         /// Read the last N lines of Editor.log. Returns empty string on failure.
         /// </summary>
@@ -88,10 +92,10 @@ namespace Hecton8.BlackboxDiagnostics
             try
             {
                 string logPath = GetEditorLogPath();
-                if (!File.Exists(logPath)) return $"Editor.log not found at: {logPath}";
+                if (!s_FileExists(logPath)) return $"Editor.log not found at: {logPath}";
 
                 // Open with shared read access since Unity holds a write lock
-                using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var fs = s_FileStreamFactory(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 using (var reader = new StreamReader(fs, Encoding.UTF8))
                 {
                     var lines = new List<string>();
