@@ -105,7 +105,7 @@ namespace Hecton8.Modding
     /// Header: 8 bytes. Payload: seven 64-bit words = 56 bytes. Total: 64 bytes.
     /// Payload0 packs ModHash in bits 0..31 and RequestId in bits 32..63.
     /// </summary>
-    [System.Obsolete("Legacy ModCommand lane is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", false)]
+    [System.Obsolete("Legacy ModCommand lane is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", true)]
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ModCommand
     {
@@ -165,7 +165,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Engine-side executor for a validated mod command.
     /// </summary>
-    [System.Obsolete("Legacy managed mod command kernels are quarantined. Future command execution uses Burst jobs and SignalBus lanes.", false)]
+    [System.Obsolete("Legacy managed mod command kernels are quarantined. Future command execution uses Burst jobs and SignalBus lanes.", true)]
     internal interface IModCommandKernel
     {
         /// <summary>
@@ -653,7 +653,7 @@ namespace Hecton8.Modding
                 ModLoader.DisableMod(modId, "CRITICAL_MEMORY_EVICTION: tracked managed allocation quota exceeded.");
         }
 
-        [System.Obsolete("Legacy managed command kernel registration is quarantined. Use FutureCommandEnvelope kernel opcodes.", false)]
+        [System.Obsolete("Legacy managed command kernel registration is quarantined. Use FutureCommandEnvelope kernel opcodes.", true)]
         internal static bool RegisterKernel(
             ModCommandOpcode opcode,
             ModCommandTargetSystem targetSystem,
@@ -690,7 +690,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="command">Command payload. Mod identity is overwritten from the active execution scope.</param>
         /// <returns>True when the command entered the queue.</returns>
-        [System.Obsolete("Legacy ModCommand request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
+        [System.Obsolete("Legacy ModCommand request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", true)]
         internal static bool Request(in ModCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)
@@ -740,7 +740,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="command">AUP command wrapper.</param>
         /// <returns>True when queued.</returns>
-        [System.Obsolete("Legacy AUP command request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
+        [System.Obsolete("Legacy AUP command request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", true)]
         internal static bool RequestAup(in ModAupCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)
@@ -784,7 +784,7 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="command">Render instance packet. Mod identity is overwritten.</param>
         /// <returns>True when queued.</returns>
-        [System.Obsolete("Legacy render-instance request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", false)]
+        [System.Obsolete("Legacy render-instance request lane is quarantined and returns false. Use HectonAPI.Commands.RequestFuture.", true)]
         internal static bool RequestRenderInstance(in ModRenderInstanceCommand command)
         {
             if (!LegacyCommandSurfaceEnabled)

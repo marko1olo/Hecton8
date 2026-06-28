@@ -301,7 +301,7 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="command">Command packet. Mod identity is assigned by the engine.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
-            [System.Obsolete("Legacy ModCommand lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
+            [System.Obsolete("Legacy ModCommand lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", true)]
             public static bool Request(in ModCommand command)
             {
                 ThrowIfNoActiveMod("Commands.Request");
@@ -313,7 +313,7 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="command">AUP-backed command packet.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
-            [System.Obsolete("Legacy AUP command lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
+            [System.Obsolete("Legacy AUP command lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", true)]
             public static bool RequestAup(in ModAupCommand command)
             {
                 ThrowIfNoActiveMod("Commands.RequestAup");
@@ -325,7 +325,7 @@ namespace Hecton8.Modding
             /// </summary>
             /// <param name="command">Render instance packet.</param>
             /// <returns>Always false while envelope-only UGC is enforced.</returns>
-            [System.Obsolete("Legacy render-instance lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", false)]
+            [System.Obsolete("Legacy render-instance lane is quarantined and returns false. Use RequestFuture with a 64-byte FutureCommandEnvelope.", true)]
             public static bool RequestRenderInstance(in ModRenderInstanceCommand command)
             {
                 ThrowIfNoActiveMod("Commands.RequestRenderInstance");
