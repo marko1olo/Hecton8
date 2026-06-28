@@ -6585,11 +6585,16 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude <= 0.000001f)
                 return;
 
-            float maxAccelerationSq = maxAcceleration * maxAcceleration;
-            if (sqrMagnitude > maxAccelerationSq)
-                acceleration3 *= maxAcceleration * math.rsqrt(math.max(sqrMagnitude, 0.000001f));
+            System.Numerics.Vector3 currentNumVel = System.Numerics.Vector3.Zero;
+            System.Numerics.Vector3 targetNumVel = new System.Numerics.Vector3(acceleration3.x, acceleration3.y, acceleration3.z);
 
-            ApplyMotorAcceleration(new Vector3(acceleration3.x, acceleration3.y, acceleration3.z));
+            System.Numerics.Vector3 result = Hecton8.PureLogic.Kinematics.KinematicAccelerationLimiter.Calculate(
+                currentNumVel,
+                targetNumVel,
+                maxAcceleration,
+                1f);
+
+            ApplyMotorAcceleration(new Vector3(result.X, result.Y, result.Z));
         }
 
         private void ApplySargassumEntanglementForce(PlayerTransportPreset transportPreset)
