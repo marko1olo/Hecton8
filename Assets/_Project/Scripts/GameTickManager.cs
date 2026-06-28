@@ -888,10 +888,13 @@ namespace Hecton8.Core
         {
             // ── Osnovnoy spisok ──
             private readonly List<T> _items;
+            private readonly HashSet<T> _itemsSet;
 
             // ── Bufery otlozhennyh operatsiy ──
             private readonly List<T> _toAdd;
+            private readonly HashSet<T> _toAddSet;
             private readonly List<T> _toRemove;
+            private readonly HashSet<T> _toRemoveSet;
 
             // ── Flag: seychas idet iteratsiya ──
             private bool _isIterating;
@@ -903,8 +906,11 @@ namespace Hecton8.Core
             public TickList(int initialCapacity)
             {
                 _items    = new List<T>(initialCapacity);
+                _itemsSet = new HashSet<T>(initialCapacity, ReferenceEqualityComparer.Instance);
                 _toAdd    = new List<T>(16);
+                _toAddSet = new HashSet<T>(16, ReferenceEqualityComparer.Instance);
                 _toRemove = new List<T>(16);
+                _toRemoveSet = new HashSet<T>(16, ReferenceEqualityComparer.Instance);
             }
 
             // ─────────────────────────────────────────────────────
@@ -923,8 +929,11 @@ namespace Hecton8.Core
             {
                 _isIterating = false;
                 _items.Clear();
+                _itemsSet.Clear();
                 _toAdd.Clear();
+                _toAddSet.Clear();
                 _toRemove.Clear();
+                _toRemoveSet.Clear();
             }
 
             // ─────────────────────────────────────────────────────
@@ -941,19 +950,19 @@ namespace Hecton8.Core
                 {
                     // Proverka: mozhet, on uzhe v bufere udaleniya?
                     // Esli da — otmenyaem udalenie vmesto dvoynogo dobavleniya.
-                    if (ContainsRef(_toRemove, item))
+                    if (_toRemoveSet.Remove(item))
                     {
                         RemoveRef(_toRemove, item);
                         return;
                     }
 
                     // Ne dobavlyaem dvazhdy
-                    if (!ContainsRef(_items, item) && !ContainsRef(_toAdd, item))
+                    if (!_itemsSet.Contains(item) && _toAddSet.Add(item))
                         _toAdd.Add(item);
                 }
                 else
                 {
-                    if (!ContainsRef(_items, item))
+                    if (_itemsSet.Add(item))
                         _items.Add(item);
                 }
             }
@@ -967,18 +976,19 @@ namespace Hecton8.Core
                 if (_isIterating)
                 {
                     // Mozhet, on esche ne dobavlen (v bufere dobavleniya)?
-                    if (ContainsRef(_toAdd, item))
+                    if (_toAddSet.Remove(item))
                     {
                         RemoveRef(_toAdd, item);
                         return;
                     }
 
-                    if (ContainsRef(_items, item) && !ContainsRef(_toRemove, item))
+                    if (_itemsSet.Contains(item) && _toRemoveSet.Add(item))
                         _toRemove.Add(item);
                 }
                 else
                 {
-                    SwapRemove(_items, item);
+                    if (_itemsSet.Remove(item))
+                        SwapRemove(_items, item);
                 }
             }
 
@@ -1019,9 +1029,14 @@ namespace Hecton8.Core
                 if (removeCount > 0)
                 {
                     for (int i = 0; i < removeCount; i++)
-                        SwapRemove(_items, _toRemove[i]);
+                    {
+                        T item = _toRemove[i];
+                        if (_itemsSet.Remove(item))
+                            SwapRemove(_items, item);
+                    }
 
                     _toRemove.Clear();
+                    _toRemoveSet.Clear();
                 }
 
                 // ── Dobavleniya ──
@@ -1031,33 +1046,18 @@ namespace Hecton8.Core
                     for (int i = 0; i < addCount; i++)
                     {
                         T item = _toAdd[i];
-                        if (!ContainsRef(_items, item))
+                        if (_itemsSet.Add(item))
                             _items.Add(item);
                     }
 
                     _toAdd.Clear();
+                    _toAddSet.Clear();
                 }
             }
 
             // ─────────────────────────────────────────────────────
             //  PRIVATE — Zero-GC Collection Helpers
             // ─────────────────────────────────────────────────────
-
-            /// <summary>
-            /// Proverka nalichiya po ssylke. Bez EqualityComparer,
-            /// bez boxing, bez allokatsiy. O(n) — no spiski malenkie,
-            /// i vyzyvaetsya tolko pri Register/Unregister (redko).
-            /// </summary>
-            private static bool ContainsRef(List<T> list, T item)
-            {
-                int count = list.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    if (ReferenceEquals(list[i], item))
-                        return true;
-                }
-                return false;
-            }
 
             /// <summary>
             /// Udalenie po ssylke iz nebuferizovannogo spiska.
