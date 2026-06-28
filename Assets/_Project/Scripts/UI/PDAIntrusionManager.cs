@@ -60,113 +60,48 @@ namespace Hecton8.UI
 
         private struct PDAIntrusionListenerRegistry
         {
-            private int _count;
-            private IPDAIntrusionEventListener _slot0;
-            private IPDAIntrusionEventListener _slot1;
-            private IPDAIntrusionEventListener _slot2;
-            private IPDAIntrusionEventListener _slot3;
-            private IPDAIntrusionEventListener _slot4;
-            private IPDAIntrusionEventListener _slot5;
-            private IPDAIntrusionEventListener _slot6;
-            private IPDAIntrusionEventListener _slot7;
+            private System.Collections.Generic.HashSet<IPDAIntrusionEventListener> _set;
+            private System.Collections.Generic.HashSet<IPDAIntrusionEventListener> Set
+            {
+                get
+                {
+                    if (_set == null)
+                        _set = new System.Collections.Generic.HashSet<IPDAIntrusionEventListener>();
+                    return _set;
+                }
+            }
 
-            public int Count => _count;
+            public int Count => _set?.Count ?? 0;
 
             public void Clear()
             {
-                _slot0 = null;
-                _slot1 = null;
-                _slot2 = null;
-                _slot3 = null;
-                _slot4 = null;
-                _slot5 = null;
-                _slot6 = null;
-                _slot7 = null;
-                _count = 0;
+                _set?.Clear();
             }
 
             public bool Contains(IPDAIntrusionEventListener listener)
             {
-                for (int i = 0; i < _count; i++)
-                {
-                    if (ReferenceEquals(GetAt(i), listener))
-                        return true;
-                }
-
-                return false;
+                return _set != null && _set.Contains(listener);
             }
 
             public bool TryRegister(IPDAIntrusionEventListener listener)
             {
-                if (listener == null || _count >= ListenerCapacity)
+                if (listener == null || Set.Count >= ListenerCapacity)
                     return false;
 
-                SetAt(_count, listener);
-                _count++;
-                return true;
+                return Set.Add(listener);
             }
 
             public bool TryUnregister(IPDAIntrusionEventListener listener)
             {
-                for (int i = 0; i < _count; i++)
-                {
-                    if (!ReferenceEquals(GetAt(i), listener))
-                        continue;
+                if (listener == null || _set == null)
+                    return false;
 
-                    _count--;
-                    SetAt(i, GetAt(_count));
-                    SetAt(_count, null);
-                    return true;
-                }
-
-                return false;
+                return _set.Remove(listener);
             }
 
-            public IPDAIntrusionEventListener GetAt(int index)
+            public System.Collections.Generic.HashSet<IPDAIntrusionEventListener>.Enumerator GetEnumerator()
             {
-                return index switch
-                {
-                    0 => _slot0,
-                    1 => _slot1,
-                    2 => _slot2,
-                    3 => _slot3,
-                    4 => _slot4,
-                    5 => _slot5,
-                    6 => _slot6,
-                    7 => _slot7,
-                    _ => null
-                };
-            }
-
-            private void SetAt(int index, IPDAIntrusionEventListener listener)
-            {
-                switch (index)
-                {
-                    case 0:
-                        _slot0 = listener;
-                        break;
-                    case 1:
-                        _slot1 = listener;
-                        break;
-                    case 2:
-                        _slot2 = listener;
-                        break;
-                    case 3:
-                        _slot3 = listener;
-                        break;
-                    case 4:
-                        _slot4 = listener;
-                        break;
-                    case 5:
-                        _slot5 = listener;
-                        break;
-                    case 6:
-                        _slot6 = listener;
-                        break;
-                    case 7:
-                        _slot7 = listener;
-                        break;
-                }
+                return Set.GetEnumerator();
             }
         }
 
@@ -315,13 +250,11 @@ namespace Hecton8.UI
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                int count = _listeners.Count;
                 _isDispatching = true;
                 try
                 {
-                    for (int i = count - 1; i >= 0; i--)
+                    foreach (var listener in _listeners)
                     {
-                        IPDAIntrusionEventListener listener = _listeners.GetAt(i);
                         if (listener == null || IsDeferredUnregisterPending(listener))
                             continue;
 
@@ -505,20 +438,16 @@ namespace Hecton8.UI
 
         private static void ApplyDeferredListenerMutations()
         {
-            int unregisterCount = _deferredUnregisterListeners.Count;
-            for (int i = 0; i < unregisterCount; i++)
+            foreach (var listener in _deferredUnregisterListeners)
             {
-                IPDAIntrusionEventListener listener = _deferredUnregisterListeners.GetAt(i);
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
 
             _deferredUnregisterListeners.Clear();
 
-            int registerCount = _deferredRegisterListeners.Count;
-            for (int i = 0; i < registerCount; i++)
+            foreach (var listener in _deferredRegisterListeners)
             {
-                IPDAIntrusionEventListener listener = _deferredRegisterListeners.GetAt(i);
                 if (listener != null)
                     RegisterImmediate(listener);
             }
