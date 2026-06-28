@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -32,11 +33,11 @@ namespace Hecton8.SaveSystem
         private readonly struct NativeWindowsWriteSegmentArgs
         {
             public readonly IntPtr Handle;
-            public readonly void* Source;
+            public readonly IntPtr Source;
             public readonly int ByteCount;
             public readonly bool PaceWrites;
 
-            public NativeWindowsWriteSegmentArgs(IntPtr handle, void* source, int byteCount, bool paceWrites)
+            public NativeWindowsWriteSegmentArgs(IntPtr handle, IntPtr source, int byteCount, bool paceWrites)
             {
                 Handle = handle;
                 Source = source;
@@ -48,11 +49,11 @@ namespace Hecton8.SaveSystem
         private readonly struct NativeUnixWriteSegmentArgs
         {
             public readonly int Fd;
-            public readonly void* Source;
+            public readonly IntPtr Source;
             public readonly int ByteCount;
             public readonly bool PaceWrites;
 
-            public NativeUnixWriteSegmentArgs(int fd, void* source, int byteCount, bool paceWrites)
+            public NativeUnixWriteSegmentArgs(int fd, IntPtr source, int byteCount, bool paceWrites)
             {
                 Fd = fd;
                 Source = source;
@@ -1156,8 +1157,9 @@ namespace Hecton8.SaveSystem
             {
                 InvalidateCachedReadWindows(absolutePath);
 
-                if (!TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, paceWrites, out string writeError))
-                    return new NativeWriteResult(false, writeError);
+                var writeRes = await TryWriteAllNativeAsync(absolutePath, (IntPtr)firstBuffer, firstByteCount, (IntPtr)secondBuffer, secondByteCount, totalBytes, createAlways: true, paceWrites);
+                if (!writeRes.success)
+                    return new NativeWriteResult(false, writeRes.error);
 
                 InvalidateCachedReadWindows(absolutePath);
 
@@ -1172,55 +1174,59 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        public static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
+        public static async Task<(bool success, string error)> OverwriteAllAsync(string absolutePath, IntPtr buffer, int byteCount)
         {
-            return OverwriteAllInternal(absolutePath, buffer, byteCount, criticalFlush: false, out error);
+            return await OverwriteAllInternalAsync(absolutePath, buffer, byteCount, criticalFlush: false);
         }
 
-        public static bool OverwriteAllCritical(string absolutePath, void* buffer, int byteCount, out string error)
+        public static async Task<(bool success, string error)> OverwriteAllCriticalAsync(string absolutePath, IntPtr buffer, int byteCount)
         {
-            return OverwriteAllInternal(absolutePath, buffer, byteCount, criticalFlush: true, out error);
+            return await OverwriteAllInternalAsync(absolutePath, buffer, byteCount, criticalFlush: true);
         }
 
-        private static bool OverwriteAllInternal(string absolutePath, void* buffer, int byteCount, bool criticalFlush, out string error)
+        private static async Task<(bool success, string error)> OverwriteAllInternalAsync(string absolutePath, IntPtr buffer, int byteCount, bool criticalFlush)
         {
-            error = string.Empty;
-            if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
+            string error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath) || buffer == IntPtr.Zero || byteCount <= 0)
             {
                 error = "Native overwrite request is invalid.";
-                return false;
+                return (false, error);
             }
 
             if (IsSuppressedDiagnosticDumpPath(absolutePath))
-                return true;
+                return (true, error);
 
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, paceWrites: false, out error))
-                    return false;
+                var writeRes = await TryWriteAllNativeAsync(absolutePath, buffer, byteCount, IntPtr.Zero, 0, byteCount, createAlways: false, paceWrites: false);
+                if (!writeRes.success)
+                {
+                    error = writeRes.error;
+                    return (false, error);
+                }
 
                 InvalidateCachedReadWindows(absolutePath);
 
                 if (criticalFlush)
                 {
                     if (!FlushCriticalSavePath(absolutePath, byteCount, out error))
-                        return false;
+                        return (false, error);
                 }
                 else
                 {
                     if (!QueueThrottledFlush(absolutePath, byteCount, out error))
-                        return false;
+                        return (false, error);
                 }
 
-                return true;
+                return (true, error);
             }
             catch (Exception)
             {
                 error = criticalFlush
                     ? "Critical native overwrite failed."
                     : "Sequential native overwrite failed.";
-                return false;
+                return (false, error);
             }
         }
 
@@ -1241,54 +1247,52 @@ namespace Hecton8.SaveSystem
                     fileName.EndsWith(".h8dump", StringComparison.OrdinalIgnoreCase));
         }
 
-        private static bool TryWriteAllNative(
+        private static async Task<(bool success, string error)> TryWriteAllNativeAsync(
             string absolutePath,
-            void* firstBuffer,
+            IntPtr firstBuffer,
             int firstByteCount,
-            void* secondBuffer,
+            IntPtr secondBuffer,
             int secondByteCount,
             int totalBytes,
             bool createAlways,
-            bool paceWrites,
-            out string error)
+            bool paceWrites)
         {
-            error = string.Empty;
+            string error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || totalBytes <= 0)
             {
                 error = "Native write request is invalid.";
-                return false;
+                return (false, error);
             }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-            return TryWriteAllNativeWindows(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites, out error);
+            return await TryWriteAllNativeWindowsAsync(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites);
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
-            return TryWriteAllNativeUnix(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites, out error);
+            return await TryWriteAllNativeUnixAsync(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, paceWrites);
 #else
             error = "Native write is unsupported on this platform.";
-            return false;
+            return (false, error);
 #endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void PaceAfterNativeWritePage(int bytesWritten, int remainingBytes)
+        private static async Task PaceAfterNativeWritePageAsync(int bytesWritten, int remainingBytes)
         {
             if (remainingBytes > 0 && bytesWritten > 0)
-                Thread.Sleep(NativeWritePagePaceMilliseconds);
+                await Task.Delay(NativeWritePagePaceMilliseconds);
         }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
-        private static bool TryWriteAllNativeWindows(
+        private static async Task<(bool success, string error)> TryWriteAllNativeWindowsAsync(
             string absolutePath,
-            void* firstBuffer,
+            IntPtr firstBuffer,
             int firstByteCount,
-            void* secondBuffer,
+            IntPtr secondBuffer,
             int secondByteCount,
             int totalBytes,
             bool createAlways,
-            bool paceWrites,
-            out string error)
+            bool paceWrites)
         {
-            error = string.Empty;
+            string error = string.Empty;
             fixed (char* path = absolutePath)
             {
                 IntPtr handle = CreateFileWNative(
@@ -1303,7 +1307,7 @@ namespace Hecton8.SaveSystem
                 if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
                 {
                     error = "Native write open failed.";
-                    return false;
+                    return (false, error);
                 }
 
                 try
@@ -1347,16 +1351,17 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryWriteWindowsSegment(in NativeWindowsWriteSegmentArgs args, ref long cursor, out string error)
+        private static async Task<(bool success, string error)> TryWriteWindowsSegmentAsync(NativeWindowsWriteSegmentArgs args, long cursor)
         {
-            error = string.Empty;
+            string error = string.Empty;
             if (args.ByteCount <= 0)
-                return true;
+                return (true, error);
 
-            if (args.Source == null)
+            if (args.Source == IntPtr.Zero)
             {
                 cursor += args.ByteCount;
-                return TrySeekWindowsHandle(args.Handle, cursor, out error);
+                bool seekResult = TrySeekWindowsHandle(args.Handle, cursor, out error);
+                return (seekResult, error);
             }
 
             byte* sourceBytes = (byte*)args.Source;
@@ -1367,22 +1372,22 @@ namespace Hecton8.SaveSystem
                 if (!WriteFileNative(args.Handle, sourceBytes + offset, (uint)chunkBytes, out uint bytesWritten, IntPtr.Zero))
                 {
                     error = "Native write failed.";
-                    return false;
+                    return (false, error);
                 }
 
                 if (bytesWritten == 0u)
                 {
                     error = "Native write accepted zero bytes.";
-                    return false;
+                    return (false, error);
                 }
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
                 if (args.PaceWrites)
-                    PaceAfterNativeWritePage((int)bytesWritten, args.ByteCount - offset);
+                    await PaceAfterNativeWritePageAsync((int)bytesWritten, args.ByteCount - offset);
             }
 
-            return true;
+            return (true, error);
         }
 
         private static bool TryFlushPathNative(string absolutePath)
@@ -1444,18 +1449,17 @@ namespace Hecton8.SaveSystem
             }
         }
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
-        private static bool TryWriteAllNativeUnix(
+        private static async Task<(bool success, string error)> TryWriteAllNativeUnixAsync(
             string absolutePath,
-            void* firstBuffer,
+            IntPtr firstBuffer,
             int firstByteCount,
-            void* secondBuffer,
+            IntPtr secondBuffer,
             int secondByteCount,
             int totalBytes,
             bool createAlways,
-            bool paceWrites,
-            out string error)
+            bool paceWrites)
         {
-            error = string.Empty;
+            string error = string.Empty;
             int fd = -1;
             lock (s_nativeUnixPathLock)
             {
@@ -1464,7 +1468,7 @@ namespace Hecton8.SaveSystem
                     if (!TryEncodePathUtf8(absolutePath, path, NativeUnixPathCapacity, out _))
                     {
                         error = "Native write path encoding failed.";
-                        return false;
+                        return (false, error);
                     }
 
                     int flags = NativeUnixOpenWriteOnly;
@@ -1480,7 +1484,7 @@ namespace Hecton8.SaveSystem
             if (fd < 0)
             {
                 error = "Native write open failed.";
-                return false;
+                return (false, error);
             }
 
             try
@@ -1514,7 +1518,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool TryWriteUnixSegment(in NativeUnixWriteSegmentArgs args, ref long cursor, out string error)
+        private static async Task<(bool success, string error)> TryWriteUnixSegmentAsync(NativeUnixWriteSegmentArgs args, long cursor)
         {
             error = string.Empty;
             if (args.ByteCount <= 0)
@@ -1541,22 +1545,22 @@ namespace Hecton8.SaveSystem
                 if (bytesWritten < 0L)
                 {
                     error = "Native write failed.";
-                    return false;
+                    return (false, error);
                 }
 
                 if (bytesWritten == 0L)
                 {
                     error = "Native write accepted zero bytes.";
-                    return false;
+                    return (false, error);
                 }
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
                 if (args.PaceWrites)
-                    PaceAfterNativeWritePage((int)bytesWritten, args.ByteCount - offset);
+                    await PaceAfterNativeWritePageAsync((int)bytesWritten, args.ByteCount - offset);
             }
 
-            return true;
+            return (true, error);
         }
 
         private static bool TryFlushPathNative(string absolutePath)
