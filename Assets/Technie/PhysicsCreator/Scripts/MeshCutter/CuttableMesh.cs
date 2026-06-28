@@ -6,7 +6,6 @@ namespace Technie.PhysicsCreator
 {
 	// Normalised, high-precision mesh stored in a format suitable to actually apply the cutting algorithm to
 	//
-	// Todo: need to implement other optional vertex attributes: tangents, uv2, uv3, etc.
 	// 
 	public class CuttableMesh
 	{
@@ -14,6 +13,12 @@ namespace Technie.PhysicsCreator
 
 		private bool hasUvs;
 		private bool hasUv1s;
+		private bool hasUv2s;
+		private bool hasUv3s;
+		private bool hasUv4s;
+		private bool hasUv5s;
+		private bool hasUv6s;
+		private bool hasUv7s;
 		private bool hasColours;
 		private bool hasTangents;
 
@@ -44,11 +49,23 @@ namespace Technie.PhysicsCreator
 				Vector3[] normals = inputMesh.normals;
 				Vector2[] uvs = inputMesh.uv;
 				Vector2[] uv1 = inputMesh.uv2;
+				Vector2[] uv2 = inputMesh.uv3;
+				Vector2[] uv3 = inputMesh.uv4;
+				Vector2[] uv4 = inputMesh.uv5;
+				Vector2[] uv5 = inputMesh.uv6;
+				Vector2[] uv6 = inputMesh.uv7;
+				Vector2[] uv7 = inputMesh.uv8;
 				Color32[] colours = inputMesh.colors32;
 				Vector4[] tangents = inputMesh.tangents;
 
 				this.hasUvs = uvs != null && uvs.Length > 0;
 				this.hasUv1s = uv1 != null && uv1.Length > 0;
+				this.hasUv2s = uv2 != null && uv2.Length > 0;
+				this.hasUv3s = uv3 != null && uv3.Length > 0;
+				this.hasUv4s = uv4 != null && uv4.Length > 0;
+				this.hasUv5s = uv5 != null && uv5.Length > 0;
+				this.hasUv6s = uv6 != null && uv6.Length > 0;
+				this.hasUv7s = uv7 != null && uv7.Length > 0;
 				this.hasColours = colours != null && colours.Length > 0;
 				this.hasTangents = tangents != null && tangents.Length > 0;
 
@@ -56,7 +73,7 @@ namespace Technie.PhysicsCreator
 				{
 					int[] indices = inputMesh.GetIndices(i);
 
-					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, colours, uvs, uv1, tangents);
+					CuttableSubMesh subMesh = new CuttableSubMesh(indices, vertices, normals, colours, uvs, uv1, uv2, uv3, uv4, uv5, uv6, uv7, tangents);
 					this.subMeshes.Add(subMesh);
 				}
 			}
@@ -72,6 +89,12 @@ namespace Technie.PhysicsCreator
 
 			this.hasUvs = inputMesh.hasUvs;
 			this.hasUv1s = inputMesh.hasUv1s;
+			this.hasUv2s = inputMesh.hasUv2s;
+			this.hasUv3s = inputMesh.hasUv3s;
+			this.hasUv4s = inputMesh.hasUv4s;
+			this.hasUv5s = inputMesh.hasUv5s;
+			this.hasUv6s = inputMesh.hasUv6s;
+			this.hasUv7s = inputMesh.hasUv7s;
 			this.hasColours = inputMesh.hasColours;
 			this.hasTangents = inputMesh.hasTangents;
 
@@ -166,6 +189,12 @@ namespace Technie.PhysicsCreator
 			List<Color32> outputColours = hasColours ? new List<Color32>() : null;
 			List<Vector2> outputUvs = hasUvs ? new List<Vector2>() : null;
 			List<Vector2> outputUv1s = hasUv1s ? new List<Vector2>() : null;
+			List<Vector2> outputUv2s = hasUv2s ? new List<Vector2>() : null;
+			List<Vector2> outputUv3s = hasUv3s ? new List<Vector2>() : null;
+			List<Vector2> outputUv4s = hasUv4s ? new List<Vector2>() : null;
+			List<Vector2> outputUv5s = hasUv5s ? new List<Vector2>() : null;
+			List<Vector2> outputUv6s = hasUv6s ? new List<Vector2>() : null;
+			List<Vector2> outputUv7s = hasUv7s ? new List<Vector2>() : null;
 			List<Vector4> outputTangents = hasTangents ? new List<Vector4>() : null;
 
 			List<int> baseSubMeshVertex = new List<int>();
@@ -174,7 +203,7 @@ namespace Technie.PhysicsCreator
 			{
 				baseSubMeshVertex.Add(outputVertices.Count);
 
-				sub.AddTo(outputVertices, outputNormals, outputColours, outputUvs, outputUv1s, outputTangents);
+				sub.AddTo(outputVertices, outputNormals, outputColours, outputUvs, outputUv1s, outputUv2s, outputUv3s, outputUv4s, outputUv5s, outputUv6s, outputUv7s, outputTangents);
 			}
 
 			newMesh.vertices = outputVertices.ToArray();
@@ -182,6 +211,12 @@ namespace Technie.PhysicsCreator
 			newMesh.colors32 = hasColours ? outputColours.ToArray() : null;
 			newMesh.uv = hasUvs ? outputUvs.ToArray() : null;
 			newMesh.uv2 = hasUv1s ? outputUv1s.ToArray() : null;
+			newMesh.uv3 = hasUv2s ? outputUv2s.ToArray() : null;
+			newMesh.uv4 = hasUv3s ? outputUv3s.ToArray() : null;
+			newMesh.uv5 = hasUv4s ? outputUv4s.ToArray() : null;
+			newMesh.uv6 = hasUv5s ? outputUv5s.ToArray() : null;
+			newMesh.uv7 = hasUv6s ? outputUv6s.ToArray() : null;
+			newMesh.uv8 = hasUv7s ? outputUv7s.ToArray() : null;
 			newMesh.tangents = hasTangents ? outputTangents.ToArray() : null;
 
 			newMesh.subMeshCount = subMeshes.Count;
