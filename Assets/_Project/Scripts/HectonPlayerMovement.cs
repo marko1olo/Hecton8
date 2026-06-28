@@ -6357,9 +6357,19 @@ namespace Hecton8.Gameplay
 
         private float ResolveSargassumSpeedMultiplier()
         {
-            return _sargassumMovementInfluence != null
-                ? ResolveSargassumSpeedMultiplier(_sargassumMovementInfluence.SpeedMultiplier)
-                : 1f;
+            if (_sargassumMovementInfluence == null)
+            {
+                return 1f;
+            }
+
+            float sargassumDensity01 = ResolveSargassum01(_sargassumFieldDensity01);
+            float currentSpeed = _velocity.magnitude;
+            float bodyTangleWeight = ResolveAuthoritativeBodyMassKg();
+
+            return Hecton8.PureLogic.Kinematics.SargassumKelpDragCalculator.Compute(
+                sargassumDensity01,
+                currentSpeed,
+                bodyTangleWeight);
         }
 
         private float ResolveSargassumDragMultiplier()
