@@ -1664,14 +1664,17 @@ namespace Hecton8.World
             in AbsoluteUniversePosition faunaAup)
         {
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in faunaAup);
+            float zone1RadiusSq = LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters;
+            float zone2RadiusSq = LogicalLodDataOnlyDistanceMeters * LogicalLodDataOnlyDistanceMeters;
+            float qualityWeight = ResolveGlobalQualityWeight01();
 
-            if (distanceSq < (LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters))
-                return FaunaLogicalLodTier.FullSim;
+            int tierIndex = Hecton8.PureLogic.Ecosystem.EcosystemLogicalLodTieringCalculator.Compute(
+                (float)distanceSq,
+                zone1RadiusSq,
+                zone2RadiusSq,
+                qualityWeight);
 
-            if (distanceSq <= (LogicalLodDataOnlyDistanceMeters * LogicalLodDataOnlyDistanceMeters))
-                return FaunaLogicalLodTier.DataOnly;
-
-            return FaunaLogicalLodTier.Hibernating;
+            return (FaunaLogicalLodTier)tierIndex;
         }
 
         internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
