@@ -1795,18 +1795,23 @@ namespace Hecton8.Gameplay
 
             uint timeTick = (uint)math.max(0, (int)math.min(2147483647f, _currentTimer * 60f));
             uint narcosisSeed = AdvanceRuntimeNarcosisLcg(unchecked((uint)_instanceId) ^ timeTick);
+
             float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency +
                 ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi;
-            inputH = math.clamp(
-                inputH + SignedTriangleRadians(phase) * RuntimeNarcosisInputNoiseScale * severity01,
-                -1f,
-                1f);
-            narcosisSeed = AdvanceRuntimeNarcosisLcg(narcosisSeed);
-            inputV = math.clamp(
-                inputV + SignedTriangleRadians(phase * 1.618f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) * RuntimeNarcosisInputNoiseScale * 0.5f * severity01,
-                -1f,
-                1f);
-            narcosisSeed = AdvanceRuntimeNarcosisLcg(narcosisSeed);
+
+            System.Numerics.Vector2 drifted2D = Hecton8.PureLogic.Kinematics.NitrogenNarcosisInputDrifter.Calculate(
+                new System.Numerics.Vector2(inputH, inputV),
+                severity01,
+                _currentTimer,
+                unchecked((int)narcosisSeed)
+            );
+
+            inputH = drifted2D.X;
+            inputV = drifted2D.Y;
+
+            // Advance seed twice to account for the two advancements that happened inside Calculate (for X and Y)
+            narcosisSeed = AdvanceRuntimeNarcosisLcg(AdvanceRuntimeNarcosisLcg(narcosisSeed));
+
             inputVertical = math.clamp(
                 inputVertical + SignedTriangleRadians(phase * 1.231f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) * RuntimeNarcosisInputNoiseScale * 0.35f * severity01,
                 -1f,
