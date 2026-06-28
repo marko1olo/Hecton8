@@ -4651,6 +4651,227 @@ namespace Hecton8.SaveSystem
             return SaveGameAsyncInternal(slotName, ResolveManualSlotIndex(slotName), ResolveOperationId(0u));
         }
 
+
+        private struct SaveGameContext
+        {
+            public string SlotName;
+            public byte SlotIndex;
+            public uint OperationId;
+            public Stopwatch TotalTimer;
+            public SaveData Data;
+            public bool SnapshotPauseActive;
+            public NativeArray<PersistentWorldDeltaRecord>.ReadOnly PersistentWorldDeltaSnapshot;
+            public NativeArray<PersistentWorldDeltaRecord> PersistentWorldDeltaSnapshotOwner;
+            public NativeArray<EcosystemSectorSaveRecord>.ReadOnly EcosystemSectorSnapshot;
+            public NativeArray<EcosystemSectorSaveRecord> EcosystemSectorSnapshotOwner;
+            public NativeArray<uint> PackedQuestStateSnapshot;
+            public QuestSaveHeader PackedQuestSaveHeader;
+            public NativeArray<byte> VoxelDeltaSnapshot;
+            public bool OwnsVoxelDeltaSnapshot;
+            public VoxelDeltaProcessor BorrowedVoxelDeltaSnapshotOwner;
+            public long SaveTimestampTicks;
+        }
+
+        private bool CaptureSaveablesSnapshot(ref SaveGameContext context)
+        {
+            SortRegistryIfDirty(SavePriorityComparer);
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                ISaveable saveable = _saveables[i];
+                if (!IsAlive(saveable))
+                    continue;
+
+                if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
+                {
+                    Exception cleanupException = null;
+                    if (context.BorrowedVoxelDeltaSnapshotOwner != null)
+                    {
+                        ReleaseBorrowedVoxelDeltaSnapshotBestEffort(context.BorrowedVoxelDeltaSnapshotOwner, ref cleanupException);
+                        context.BorrowedVoxelDeltaSnapshotOwner = null;
+                    }
+
+                    if (context.VoxelDeltaSnapshot.IsCreated && context.OwnsVoxelDeltaSnapshot)
+                        DisposeTransientNativeArrayBestEffort(ref context.VoxelDeltaSnapshot, ref cleanupException, sentinelLabel: "voxelDeltaSnapshot");
+                    else
+                        context.VoxelDeltaSnapshot = default;
+
+                    ReportPersistenceCleanupFailure("save", cleanupException);
+                    context.OwnsVoxelDeltaSnapshot = false;
+                    if (!voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                            out context.VoxelDeltaSnapshot,
+                            out int voxelDeltaSnapshotByteCount) ||
+                        voxelDeltaSnapshotByteCount <= 0)
+                    {
+                        if (voxelDeltaSnapshotByteCount > 0)
+                        {
+                            const string reason = "Voxel delta native snapshot copy failed.";
+                            const string logReason = "[SaveManager] Save failed: voxel delta native snapshot copy failed.";
+                            const uint failureCode = 3u;
+                            context.VoxelDeltaSnapshot = default;
+                            if (context.SnapshotPauseActive)
+                            {
+                                ReleaseSnapshotPauseBestEffort(context.OperationId, ref cleanupException);
+                                context.SnapshotPauseActive = false;
+                            }
+
+                            ReportPersistenceCleanupFailure("save", cleanupException);
+                            RecordAsyncPersistenceTelemetry(context.OperationId, context.SlotName, context.TotalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                            PublishSaveCompletedForSlotName(context.SlotIndex, context.SlotName, new PublishSaveCompletedArgs(operationId: context.OperationId, durationMs: context.TotalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
+                            PublishSaveStatusForSlotName(context.SlotIndex, context.SlotName, context.OperationId, SaveStatusSignal.Failed, 1f, failureCode);
+                            DumpSaveBlackBox();
+                            RecordFailure(context.SlotName, "save", reason);
+                            LastOperationError = reason;
+                            LogError(logReason);
+                            SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(context.SlotName), SaveEvents.ComputeMessageHash(reason), reason);
+                            return false;
+                        }
+
+                        context.VoxelDeltaSnapshot = default;
+                    }
+                    else
+                    {
+                        context.BorrowedVoxelDeltaSnapshotOwner = voxelDeltaProcessor;
+                    }
+
+                }
+
+                saveable.PopulateSaveData(context.Data);
+            }
+            return true;
+        }
+
+        private bool CapturePersistentWorldSnapshot(ref SaveGameContext context)
+        {
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (persistentWorldRegistry != null)
+            {
+                if (!persistentWorldRegistry.CaptureSaveSnapshot())
+                {
+                    const string reason = "Persistent world save snapshot capture failed.";
+                    const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
+                    const uint failureCode = 3u;
+                    Exception cleanupException = null;
+                    if (context.SnapshotPauseActive)
+                    {
+                        ReleaseSnapshotPauseBestEffort(context.OperationId, ref cleanupException);
+                        context.SnapshotPauseActive = false;
+                    }
+
+                    ReportPersistenceCleanupFailure("save", cleanupException);
+                    RecordAsyncPersistenceTelemetry(context.OperationId, context.SlotName, context.TotalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                    PublishSaveCompletedForSlotName(context.SlotIndex, context.SlotName, new PublishSaveCompletedArgs(operationId: context.OperationId, durationMs: context.TotalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
+                    PublishSaveStatusForSlotName(context.SlotIndex, context.SlotName, context.OperationId, SaveStatusSignal.Failed, 1f, failureCode);
+                    DumpSaveBlackBox();
+                    RecordFailure(context.SlotName, "save", reason);
+                    LastOperationError = reason;
+                    LogError(logReason);
+                    SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(context.SlotName), SaveEvents.ComputeMessageHash(reason), reason);
+                    return false;
+                }
+
+                int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
+                if (persistentWorldSnapshotCapacity > 0)
+                {
+                    context.PersistentWorldDeltaSnapshotOwner = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
+                        persistentWorldSnapshotCapacity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory,
+                        "persistentWorldDeltaSnapshotOwner");
+
+                    if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
+                        context.PersistentWorldDeltaSnapshotOwner,
+                        persistentWorldSnapshotCapacity,
+                        out int copiedPersistentWorldDeltas))
+                    {
+                        Exception cleanupException = null;
+                        DisposeTransientNativeArrayBestEffort(ref context.PersistentWorldDeltaSnapshotOwner, ref cleanupException, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
+                        const string reason = "Persistent world save snapshot copy failed.";
+                        const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
+                        const uint failureCode = 3u;
+                        if (context.SnapshotPauseActive)
+                        {
+                            ReleaseSnapshotPauseBestEffort(context.OperationId, ref cleanupException);
+                            context.SnapshotPauseActive = false;
+                        }
+
+                        ReportPersistenceCleanupFailure("save", cleanupException);
+                        RecordAsyncPersistenceTelemetry(context.OperationId, context.SlotName, context.TotalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
+                        PublishSaveCompletedForSlotName(context.SlotIndex, context.SlotName, new PublishSaveCompletedArgs(operationId: context.OperationId, durationMs: context.TotalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
+                        PublishSaveStatusForSlotName(context.SlotIndex, context.SlotName, context.OperationId, SaveStatusSignal.Failed, 1f, failureCode);
+                        DumpSaveBlackBox();
+                        RecordFailure(context.SlotName, "save", reason);
+                        LastOperationError = reason;
+                        LogError(logReason);
+                        SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(context.SlotName), SaveEvents.ComputeMessageHash(reason), reason);
+                        return false;
+                    }
+
+                    if (copiedPersistentWorldDeltas > 0)
+                    {
+                        NativeArray<PersistentWorldDeltaRecord> copiedView = copiedPersistentWorldDeltas < context.PersistentWorldDeltaSnapshotOwner.Length
+                            ? context.PersistentWorldDeltaSnapshotOwner.GetSubArray(0, copiedPersistentWorldDeltas)
+                            : context.PersistentWorldDeltaSnapshotOwner;
+                        context.PersistentWorldDeltaSnapshot = copiedView.AsReadOnly();
+                    }
+                }
+            }
+            return true;
+        }
+
+        private void CaptureEcosystemSnapshot(ref SaveGameContext context)
+        {
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector != null)
+            {
+                ecosystemDirector.CaptureSaveSnapshot();
+                NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
+                if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
+                {
+                    context.EcosystemSectorSnapshotOwner = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
+                        ecosystemRecordCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory,
+                        "ecosystemSectorSnapshotOwner");
+
+                    for (int i = 0; i < ecosystemRecordCount; i++)
+                        context.EcosystemSectorSnapshotOwner[i] = ecosystemView[i];
+
+                    context.EcosystemSectorSnapshot = context.EcosystemSectorSnapshotOwner.AsReadOnly();
+                }
+            }
+        }
+
+        private void CaptureQuestSnapshot(ref SaveGameContext context)
+        {
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (questManager != null)
+            {
+                int packedQuestWordCount = questManager.PackedStateWordCount;
+                if (packedQuestWordCount > 0)
+                {
+                    context.PackedQuestStateSnapshot = CreateTransientNativeArray<uint>(
+                        packedQuestWordCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory,
+                        "packedQuestStateSnapshot");
+
+                    bool copiedQuestState;
+                    unsafe
+                    {
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(context.PackedQuestStateSnapshot);
+                        copiedQuestState = questManager.TryCopyPackedStateSnapshot(
+                            destinationPtr,
+                            context.PackedQuestStateSnapshot.Length,
+                            out context.PackedQuestSaveHeader,
+                            context.SaveTimestampTicks);
+                    }
+
+                    if (!copiedQuestState)
+                        DisposeTransientNativeArrayBestEffortAndReport(ref context.PackedQuestStateSnapshot, "save", "packedQuestStateSnapshot");
+                }
+            }
+        }
+
         private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
         {
             CachePersistentDataPathRoot();
@@ -4760,196 +4981,65 @@ namespace Hecton8.SaveSystem
                 thumbnailTicket = SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId);
                 ThreadSafeCommandQueue.PrepareStorageReservationCommitBridgeForPersistenceSnapshot();
                 snapshotTimer.Restart();
-                SortRegistryIfDirty(SavePriorityComparer);
-                for (int i = 0; i < _saveableCount; i++)
+                SaveGameContext context = new SaveGameContext
                 {
-                    ISaveable saveable = _saveables[i];
-                    if (!IsAlive(saveable))
-                        continue;
+                    SlotName = slotName,
+                    SlotIndex = slotIndex,
+                    OperationId = operationId,
+                    TotalTimer = totalTimer,
+                    Data = data,
+                    SnapshotPauseActive = snapshotPauseActive,
+                    PersistentWorldDeltaSnapshot = persistentWorldDeltaSnapshot,
+                    PersistentWorldDeltaSnapshotOwner = persistentWorldDeltaSnapshotOwner,
+                    EcosystemSectorSnapshot = ecosystemSectorSnapshot,
+                    EcosystemSectorSnapshotOwner = ecosystemSectorSnapshotOwner,
+                    PackedQuestStateSnapshot = packedQuestStateSnapshot,
+                    PackedQuestSaveHeader = packedQuestSaveHeader,
+                    VoxelDeltaSnapshot = voxelDeltaSnapshot,
+                    OwnsVoxelDeltaSnapshot = ownsVoxelDeltaSnapshot,
+                    BorrowedVoxelDeltaSnapshotOwner = borrowedVoxelDeltaSnapshotOwner
+                };
 
-                    if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
-                    {
-                        Exception cleanupException = null;
-                        if (borrowedVoxelDeltaSnapshotOwner != null)
-                        {
-                            ReleaseBorrowedVoxelDeltaSnapshotBestEffort(borrowedVoxelDeltaSnapshotOwner, ref cleanupException);
-                            borrowedVoxelDeltaSnapshotOwner = null;
-                        }
-
-                        if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
-                            DisposeTransientNativeArrayBestEffort(ref voxelDeltaSnapshot, ref cleanupException, sentinelLabel: "voxelDeltaSnapshot");
-                        else
-                            voxelDeltaSnapshot = default;
-
-                        ReportPersistenceCleanupFailure("save", cleanupException);
-                        ownsVoxelDeltaSnapshot = false;
-                        if (!voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
-                                out voxelDeltaSnapshot,
-                                out int voxelDeltaSnapshotByteCount) ||
-                            voxelDeltaSnapshotByteCount <= 0)
-                        {
-                            if (voxelDeltaSnapshotByteCount > 0)
-                            {
-                                const string reason = "Voxel delta native snapshot copy failed.";
-                                const string logReason = "[SaveManager] Save failed: voxel delta native snapshot copy failed.";
-                                const uint failureCode = 3u;
-                                voxelDeltaSnapshot = default;
-                                if (snapshotPauseActive)
-                                {
-                                    ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                                    snapshotPauseActive = false;
-                                }
-
-                                ReportPersistenceCleanupFailure("save", cleanupException);
-                                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                                DumpSaveBlackBox();
-                                RecordFailure(slotName, "save", reason);
-                                LastOperationError = reason;
-                                LogError(logReason);
-                                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                                return;
-                            }
-
-                            voxelDeltaSnapshot = default;
-                        }
-                        else
-                        {
-                            borrowedVoxelDeltaSnapshotOwner = voxelDeltaProcessor;
-                        }
-
-                    }
-
-                    saveable.PopulateSaveData(data);
+                if (!CaptureSaveablesSnapshot(ref context))
+                {
+                    snapshotPauseActive = context.SnapshotPauseActive;
+                    voxelDeltaSnapshot = context.VoxelDeltaSnapshot;
+                    ownsVoxelDeltaSnapshot = context.OwnsVoxelDeltaSnapshot;
+                    borrowedVoxelDeltaSnapshotOwner = context.BorrowedVoxelDeltaSnapshotOwner;
+                    return;
                 }
 
-                StampRuntimeWorldSeed(data);
-                StampProceduralTerrainIdentity(data);
-                ModSaveStateStore.PopulateSaveData(data);
+                StampRuntimeWorldSeed(context.Data);
+                StampProceduralTerrainIdentity(context.Data);
+                ModSaveStateStore.PopulateSaveData(context.Data);
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
-                if (persistentWorldRegistry != null)
+
+                if (!CapturePersistentWorldSnapshot(ref context))
                 {
-                    if (!persistentWorldRegistry.CaptureSaveSnapshot())
-                    {
-                        const string reason = "Persistent world save snapshot capture failed.";
-                        const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
-                        const uint failureCode = 3u;
-                        Exception cleanupException = null;
-                        if (snapshotPauseActive)
-                        {
-                            ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                            snapshotPauseActive = false;
-                        }
-
-                        ReportPersistenceCleanupFailure("save", cleanupException);
-                        RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                        PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                        PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                        DumpSaveBlackBox();
-                        RecordFailure(slotName, "save", reason);
-                        LastOperationError = reason;
-                        LogError(logReason);
-                        SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                        return;
-                    }
-
-                    int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
-                    if (persistentWorldSnapshotCapacity > 0)
-                    {
-                        persistentWorldDeltaSnapshotOwner = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
-                            persistentWorldSnapshotCapacity,
-                            Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory,
-                            "persistentWorldDeltaSnapshotOwner");
-
-                        if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
-                            persistentWorldDeltaSnapshotOwner,
-                            persistentWorldSnapshotCapacity,
-                            out int copiedPersistentWorldDeltas))
-                        {
-                            Exception cleanupException = null;
-                            DisposeTransientNativeArrayBestEffort(ref persistentWorldDeltaSnapshotOwner, ref cleanupException, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
-                            const string reason = "Persistent world save snapshot copy failed.";
-                            const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
-                            const uint failureCode = 3u;
-                            if (snapshotPauseActive)
-                            {
-                                ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                                snapshotPauseActive = false;
-                            }
-
-                            ReportPersistenceCleanupFailure("save", cleanupException);
-                            RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                            PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                            DumpSaveBlackBox();
-                            RecordFailure(slotName, "save", reason);
-                            LastOperationError = reason;
-                            LogError(logReason);
-                            SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                            return;
-                        }
-
-                        if (copiedPersistentWorldDeltas > 0)
-                        {
-                            NativeArray<PersistentWorldDeltaRecord> copiedView = copiedPersistentWorldDeltas < persistentWorldDeltaSnapshotOwner.Length
-                                ? persistentWorldDeltaSnapshotOwner.GetSubArray(0, copiedPersistentWorldDeltas)
-                                : persistentWorldDeltaSnapshotOwner;
-                            persistentWorldDeltaSnapshot = copiedView.AsReadOnly();
-                        }
-                    }
+                    snapshotPauseActive = context.SnapshotPauseActive;
+                    persistentWorldDeltaSnapshot = context.PersistentWorldDeltaSnapshot;
+                    persistentWorldDeltaSnapshotOwner = context.PersistentWorldDeltaSnapshotOwner;
+                    return;
                 }
 
-                EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
-                if (ecosystemDirector != null)
-                {
-                    ecosystemDirector.CaptureSaveSnapshot();
-                    NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
-                    if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
-                    {
-                        ecosystemSectorSnapshotOwner = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
-                            ecosystemRecordCount,
-                            Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory,
-                            "ecosystemSectorSnapshotOwner");
-
-                        for (int i = 0; i < ecosystemRecordCount; i++)
-                            ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
-
-                        ecosystemSectorSnapshot = ecosystemSectorSnapshotOwner.AsReadOnly();
-                    }
-                }
+                CaptureEcosystemSnapshot(ref context);
 
                 divergenceSnapshotTimer.Stop();
-                long saveTimestampTicks = DateTime.UtcNow.Ticks;
-                QuestManager questManager = GlobalRegistry.Quest;
-                if (questManager != null)
-                {
-                    int packedQuestWordCount = questManager.PackedStateWordCount;
-                    if (packedQuestWordCount > 0)
-                    {
-                        packedQuestStateSnapshot = CreateTransientNativeArray<uint>(
-                            packedQuestWordCount,
-                            Allocator.Persistent,
-                            NativeArrayOptions.ClearMemory,
-                            "packedQuestStateSnapshot");
+                context.SaveTimestampTicks = DateTime.UtcNow.Ticks;
+                long saveTimestampTicks = context.SaveTimestampTicks;
 
-                        bool copiedQuestState;
-                        unsafe
-                        {
-                            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateSnapshot);
-                            copiedQuestState = questManager.TryCopyPackedStateSnapshot(
-                                destinationPtr,
-                                packedQuestStateSnapshot.Length,
-                                out packedQuestSaveHeader,
-                                saveTimestampTicks);
-                        }
+                CaptureQuestSnapshot(ref context);
 
-                        if (!copiedQuestState)
-                            DisposeTransientNativeArrayBestEffortAndReport(ref packedQuestStateSnapshot, "save", "packedQuestStateSnapshot");
-                    }
-                }
+                persistentWorldDeltaSnapshot = context.PersistentWorldDeltaSnapshot;
+                persistentWorldDeltaSnapshotOwner = context.PersistentWorldDeltaSnapshotOwner;
+                ecosystemSectorSnapshot = context.EcosystemSectorSnapshot;
+                ecosystemSectorSnapshotOwner = context.EcosystemSectorSnapshotOwner;
+                packedQuestStateSnapshot = context.PackedQuestStateSnapshot;
+                packedQuestSaveHeader = context.PackedQuestSaveHeader;
+                voxelDeltaSnapshot = context.VoxelDeltaSnapshot;
+                ownsVoxelDeltaSnapshot = context.OwnsVoxelDeltaSnapshot;
+                borrowedVoxelDeltaSnapshotOwner = context.BorrowedVoxelDeltaSnapshotOwner;
+                snapshotPauseActive = context.SnapshotPauseActive;
 
                 RecordPlayerDialogueChoiceFlag(SaveBinaryStorage.ExtractPlayerDialogueChoiceFlags(packedQuestStateSnapshot));
                 ushort playerDialogueChoiceFlagsSnapshot = PlayerDialogueChoiceFlags;
