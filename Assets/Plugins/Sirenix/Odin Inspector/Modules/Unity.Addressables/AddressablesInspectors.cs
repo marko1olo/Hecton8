@@ -1242,7 +1242,6 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
         {
             attributes.Add(new DoNotDrawAsReferenceAttribute());
             attributes.Add(new HideReferenceObjectPickerAttribute());
-            attributes.Add(new SuppressInvalidAttributeErrorAttribute()); // TODO: Remove this with proper attribute forwarding support.
 
             for (int i = attributes.Count - 1; i >= 0; i--)
             {
@@ -1263,7 +1262,6 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
         {
             attributes.Add(new DoNotDrawAsReferenceAttribute());
             attributes.Add(new HideReferenceObjectPickerAttribute());
-            attributes.Add(new SuppressInvalidAttributeErrorAttribute()); // TODO: Remove this with proper attribute forwarding support.
         }
     }
 
