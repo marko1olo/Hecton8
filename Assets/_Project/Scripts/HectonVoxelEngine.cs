@@ -172,7 +172,29 @@ public static class MCTables
 
             _vault = vault;
 
-            ReadOnlySpan<int> et = stackalloc int[256]
+            if (!InitializeEdgeTable(vault))
+            {
+                ReleaseVaultTables();
+                return;
+            }
+
+            if (!InitializeTriTable(vault))
+            {
+                ReleaseVaultTables();
+                return;
+            }
+
+            Volatile.Write(ref _ready, 1);
+        }
+        finally
+        {
+            ExitInitGate();
+        }
+    }
+
+    private static bool InitializeEdgeTable(IDataVault vault)
+    {
+        ReadOnlySpan<int> et = stackalloc int[256]
             {
                 0x000,0x109,0x203,0x30A,0x406,0x50F,0x605,0x70C,
                 0x80C,0x905,0xA0F,0xB06,0xC0A,0xD03,0xE09,0xF00,
@@ -209,8 +231,7 @@ public static class MCTables
             };
             if (!TryAcquireWritableVaultTable(vault, EdgeTableBufferId, EdgeTableLength, ref _edgeTableHandle, out NativeArray<int> edgeTable))
             {
-                ReleaseVaultTables();
-                return;
+                return false;
             }
             bool edgeReleased = false;
             try
@@ -224,11 +245,14 @@ public static class MCTables
             }
             if (!edgeReleased)
             {
-                ReleaseVaultTables();
-                return;
+                return false;
             }
+        return true;
+    }
 
-            ReadOnlySpan<int> tt = stackalloc int[4096]
+    private static bool InitializeTriTable(IDataVault vault)
+    {
+        ReadOnlySpan<int> tt = stackalloc int[4096]
             {
                 -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -489,8 +513,7 @@ public static class MCTables
             };
             if (!TryAcquireWritableVaultTable(vault, TriTableBufferId, TriTableLength, ref _triTableHandle, out NativeArray<int> triTable))
             {
-                ReleaseVaultTables();
-                return;
+                return false;
             }
             bool triReleased = false;
             try
@@ -504,16 +527,9 @@ public static class MCTables
             }
             if (!triReleased)
             {
-                ReleaseVaultTables();
-                return;
+                return false;
             }
-
-            Volatile.Write(ref _ready, 1);
-        }
-        finally
-        {
-            ExitInitGate();
-        }
+        return true;
     }
 
     static bool TryAcquireWritableVaultTable(
