@@ -403,7 +403,7 @@ namespace Hecton8.Editor
             // Calculate center
             Vector3 boundsCenter = Vector3.zero;
             float boundsHalf = 0f;
-            if (terrains.Length > 0)
+            if (terrains.Length > 0 && terrains[0].terrainData != null)
             {
                 Bounds b = new Bounds();
                 bool initialized = false;
