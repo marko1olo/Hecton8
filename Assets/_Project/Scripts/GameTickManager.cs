@@ -884,10 +884,20 @@ namespace Hecton8.Core
                 slowTickInterval = 0.5f;
         }
 
+        private sealed class ReferenceEqualityComparer<TComparer> : IEqualityComparer<TComparer> where TComparer : class
+        {
+            public static readonly ReferenceEqualityComparer<TComparer> Default = new ReferenceEqualityComparer<TComparer>();
+
+            public bool Equals(TComparer? x, TComparer? y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(TComparer obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+        }
+
         private sealed class TickList<T> where T : class
         {
             // ── Osnovnoy spisok ──
             private readonly List<T> _items;
+            private readonly HashSet<T> _itemsSet;
 
             // ── Bufery otlozhennyh operatsiy ──
             private readonly List<T> _toAdd;
@@ -903,6 +913,7 @@ namespace Hecton8.Core
             public TickList(int initialCapacity)
             {
                 _items    = new List<T>(initialCapacity);
+                _itemsSet = new HashSet<T>(initialCapacity, ReferenceEqualityComparer<T>.Default);
                 _toAdd    = new List<T>(16);
                 _toRemove = new List<T>(16);
             }
@@ -922,6 +933,7 @@ namespace Hecton8.Core
             public void Clear()
             {
                 _isIterating = false;
+                _itemsSet.Clear();
                 _items.Clear();
                 _toAdd.Clear();
                 _toRemove.Clear();
@@ -948,12 +960,12 @@ namespace Hecton8.Core
                     }
 
                     // Ne dobavlyaem dvazhdy
-                    if (!ContainsRef(_items, item) && !ContainsRef(_toAdd, item))
+                    if (!_itemsSet.Contains(item) && !ContainsRef(_toAdd, item))
                         _toAdd.Add(item);
                 }
                 else
                 {
-                    if (!ContainsRef(_items, item))
+                    if (_itemsSet.Add(item))
                         _items.Add(item);
                 }
             }
@@ -973,12 +985,13 @@ namespace Hecton8.Core
                         return;
                     }
 
-                    if (ContainsRef(_items, item) && !ContainsRef(_toRemove, item))
+                    if (_itemsSet.Contains(item) && !ContainsRef(_toRemove, item))
                         _toRemove.Add(item);
                 }
                 else
                 {
-                    SwapRemove(_items, item);
+                    if (_itemsSet.Remove(item))
+                        SwapRemove(_items, item);
                 }
             }
 
@@ -1019,7 +1032,10 @@ namespace Hecton8.Core
                 if (removeCount > 0)
                 {
                     for (int i = 0; i < removeCount; i++)
-                        SwapRemove(_items, _toRemove[i]);
+                    {
+                        if (_itemsSet.Remove(_toRemove[i]))
+                            SwapRemove(_items, _toRemove[i]);
+                    }
 
                     _toRemove.Clear();
                 }
@@ -1031,7 +1047,7 @@ namespace Hecton8.Core
                     for (int i = 0; i < addCount; i++)
                     {
                         T item = _toAdd[i];
-                        if (!ContainsRef(_items, item))
+                        if (_itemsSet.Add(item))
                             _items.Add(item);
                     }
 
