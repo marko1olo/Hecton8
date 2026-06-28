@@ -58,6 +58,7 @@ namespace CandiceAIforGames.AI
 			Vector3 startPos = transform.position;
 			Quaternion rot = Quaternion.identity;
 
+			bool hasFillImage = m_Image.transform.childCount > 0 && m_Image.transform.GetChild(0).TryGetComponent<Image>(out _);
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
 				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
@@ -70,8 +71,9 @@ namespace CandiceAIforGames.AI
 				segmentRectTransform.position += (right * i * m_SizeOfSegment) - posOffsetBase + (right * i * m_SizeOfNotch);
 
 				Transform childTransform = segmentImage.transform.GetChild(0);
-				if (childTransform.TryGetComponent<Image>(out Image segmentFillImage))
+				if (hasFillImage)
 				{
+					Image segmentFillImage = childTransform.GetComponent<Image>();
 					segmentFillImage.color = m_FillColor;
 					m_ProgressToFill.Add(segmentFillImage);
 
