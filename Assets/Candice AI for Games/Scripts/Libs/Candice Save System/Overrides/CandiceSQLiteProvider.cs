@@ -358,7 +358,13 @@ namespace CandiceAIforGames.Data
         private bool IsValidIdentifier(string identifier)
         {
             if (string.IsNullOrEmpty(identifier)) return false;
-            return System.Text.RegularExpressions.Regex.IsMatch(identifier, @"^[a-zA-Z0-9_]+$");
+            return System.Text.RegularExpressions.Regex.IsMatch(identifier, @"\A[a-zA-Z0-9_]+\z");
+        }
+
+        private bool IsValidColumnType(string type)
+        {
+            if (string.IsNullOrEmpty(type)) return false;
+            return System.Text.RegularExpressions.Regex.IsMatch(type, @"\A[a-zA-Z0-9_]+(\([0-9]+\))?\z");
         }
 
         private string EscapeIdentifier(string identifier)
@@ -388,7 +394,7 @@ namespace CandiceAIforGames.Data
                         Debug.LogError("Invalid column name provided: " + info.Name);
                         return -1;
                     }
-                    if (!IsValidIdentifier(info.Type))
+                    if (!IsValidColumnType(info.Type))
                     {
                         Debug.LogError("Invalid column type provided: " + info.Type);
                         return -1;
@@ -487,7 +493,7 @@ namespace CandiceAIforGames.Data
                 Debug.LogError("Invalid column name provided: " + info.Name);
                 return -1;
             }
-            if (!IsValidIdentifier(info.Type))
+            if (!IsValidColumnType(info.Type))
             {
                 Debug.LogError("Invalid column type provided: " + info.Type);
                 return -1;
