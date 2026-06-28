@@ -606,7 +606,7 @@ namespace Crest
 
         BufferedData<CascadeParams[]> _cascadeParams;
         BufferedData<PerCascadeInstanceData[]> _perCascadeInstanceData;
-        public int BufferSize { get; private set; }
+        public int BufferCount { get; private set; }
 
         // Drive state from OnEnable and OnDisable? OnEnable on RegisterLodDataInput seems to get called on script reload
         void OnEnable()
@@ -673,33 +673,32 @@ namespace Crest
 
             CreateDestroySubSystems();
 
-            // TODO: Have a BufferCount which will be the run-time buffer size or prune data.
             // NOTE: Hardcode minimum (2) to avoid breaking server builds and LodData* toggles.
-            // Gather the buffer size for shared data.
-            BufferSize = 2;
+            // Gather the buffer count for shared data.
+            BufferCount = 2;
             foreach (var lodData in _lodDatas)
             {
                 if (lodData.enabled)
                 {
-                    BufferSize = Mathf.Max(BufferSize, lodData.BufferCount);
+                    BufferCount = Mathf.Max(BufferCount, lodData.BufferCount);
                 }
             }
 
-            _perCascadeInstanceData = new BufferedData<PerCascadeInstanceData[]>(BufferSize, () => new PerCascadeInstanceData[LodDataMgr.MAX_LOD_COUNT]);
+            _perCascadeInstanceData = new BufferedData<PerCascadeInstanceData[]>(BufferCount, () => new PerCascadeInstanceData[LodDataMgr.MAX_LOD_COUNT]);
             _bufPerCascadeInstanceData = new ComputeBuffer(_perCascadeInstanceData.Current.Length, UnsafeUtility.SizeOf<PerCascadeInstanceData>());
             Shader.SetGlobalBuffer(sp_perCascadeInstanceData, _bufPerCascadeInstanceData);
             _bufPerCascadeInstanceDataSource = new ComputeBuffer(_perCascadeInstanceData.Previous(1).Length, UnsafeUtility.SizeOf<PerCascadeInstanceData>());
             Shader.SetGlobalBuffer(sp_CrestPerCascadeInstanceDataSource, _bufPerCascadeInstanceDataSource);
 
             // The extra LOD accounts for reading off the cascade (eg CurrentIndex + LodChange + 1).
-            _cascadeParams = new BufferedData<CascadeParams[]>(BufferSize, () => new CascadeParams[LodDataMgr.MAX_LOD_COUNT + 1]);
+            _cascadeParams = new BufferedData<CascadeParams[]>(BufferCount, () => new CascadeParams[LodDataMgr.MAX_LOD_COUNT + 1]);
             _bufCascadeDataTgt = new ComputeBuffer(_cascadeParams.Current.Length, UnsafeUtility.SizeOf<CascadeParams>());
             Shader.SetGlobalBuffer(sp_cascadeData, _bufCascadeDataTgt);
             _bufCascadeDataSrc = new ComputeBuffer(_cascadeParams.Previous(1).Length, UnsafeUtility.SizeOf<CascadeParams>());
             Shader.SetGlobalBuffer(sp_CrestCascadeDataSource, _bufCascadeDataSrc);
 
             _lodTransform = new LodTransform();
-            _lodTransform.InitLODData(_lodCount, BufferSize);
+            _lodTransform.InitLODData(_lodCount, BufferCount);
 
             // Resolution is 4 tiles across.
             var baseMeshDensity = _lodDataResolution * 0.25f / _geometryDownSampleFactor;
