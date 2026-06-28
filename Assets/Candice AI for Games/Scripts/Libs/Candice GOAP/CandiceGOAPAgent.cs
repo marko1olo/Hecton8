@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-/*
- * ToDo: Create Apply function in GOAPAgent to handle the Plan calulation. Refactor Apply function in GOAPAction to Evaluate, as it must evaluate a behavior tree. 
- *       Behavior Designer must have "Completion node" property.
- */
+
 namespace CandiceAIforGames.AI
 {
     public class CandiceGOAPAgent: MonoBehaviour
@@ -45,8 +42,6 @@ namespace CandiceAIforGames.AI
 
         public void onAgentReady(bool isRegistered, int agentID)
         {
-            planQueue.Clear();
-            currentAction = null;
             if (!isRegistered)
             {
                 return;
@@ -59,6 +54,15 @@ namespace CandiceAIforGames.AI
                 CandiceGOAPAction action = actionS.ConvertToGOAPAction(aiController);
                 availableActions.Add(action);
             }
+
+            Apply();
+        }
+
+        public void Apply()
+        {
+            planQueue.Clear();
+            currentAction = null;
+
             List<CandiceGOAPAction> plan = Plan(availableActions, gameState, goalState);
             if (plan == null)
             {
@@ -69,9 +73,11 @@ namespace CandiceAIforGames.AI
             {
                 CandiceGOAPAction action = plan[i];
                 planQueue.Enqueue(action);
-
             }
-            currentAction = planQueue.Dequeue();
+            if (planQueue.Count > 0)
+            {
+                currentAction = planQueue.Dequeue();
+            }
         }
 
         // Update is called once per frame
@@ -79,7 +85,7 @@ namespace CandiceAIforGames.AI
         {
             if(currentAction != null)
             {
-                CandiceBehaviorStates behaviorState = currentAction.Apply(gameState.state);
+                CandiceBehaviorStates behaviorState = currentAction.Evaluate(gameState.state);
                 if(currentAction.isComplete)
                 {
                     if(planQueue.Count > 0)

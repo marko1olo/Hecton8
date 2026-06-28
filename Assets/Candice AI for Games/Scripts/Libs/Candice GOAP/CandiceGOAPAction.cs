@@ -104,11 +104,11 @@ namespace CandiceAIforGames.AI
 
 
         /// <summary>
-        /// This method applies the effects of the action to the current state if the behavior tree evaluation result is SUCCESS.
+        /// This method evaluates the behavior tree if it exists and applies the effects of the action to the current state if the evaluation result is SUCCESS.
         /// </summary>
         /// <param name="state">The current state of the AI.</param>
-        /// <returns>The behavior state of the action after the application of the effects to the state.</returns>
-        public CandiceBehaviorStates Apply(CandiceDictionary<string, int> state)
+        /// <returns>The behavior state of the action after evaluation and possible application of the effects to the state.</returns>
+        public CandiceBehaviorStates Evaluate(CandiceDictionary<string, int> state)
         {
             // By default, assume the behavior state of the action is SUCCESS.
             CandiceBehaviorStates behaviorState = CandiceBehaviorStates.SUCCESS;
