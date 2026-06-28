@@ -2,7 +2,8 @@
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
-using Hecton8.Power; // Assuming PowerNode is in this namespace based on the source code snippet we saw before, wait no, let's keep it simple or just not use specific namespaces for components on same assembly if possible, but let's just use what we had.
+using System.Collections.Generic;
+using Hecton8.Power;
 
 namespace Hecton8.Tests.Editor
 {
@@ -63,6 +64,57 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(2, finalCount, "Grid should have 2 nodes after disconnection, triggering the CheckAndSplitGrid branch.");
 
             // Cleanup
+            Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void ConnectAuthoredNeighbor_EstablishesConnectionsAndHandlesGrids()
+        {
+            GameObject root = new GameObject("TestRoot");
+            var node1 = new GameObject("Node1").AddComponent<Hecton8.Power.PowerNode>();
+            var node2 = new GameObject("Node2").AddComponent<Hecton8.Power.PowerNode>();
+            node1.transform.SetParent(root.transform);
+            node2.transform.SetParent(root.transform);
+
+            FieldInfo gridField = typeof(Hecton8.Power.PowerNode).GetField("_grid", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo neighborsField = typeof(Hecton8.Power.PowerNode).GetField("_neighbors", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo revisionField = typeof(Hecton8.Power.PowerNode).GetField("_topologyRevision", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            int initialRevision1 = (int)revisionField.GetValue(node1);
+            int initialRevision2 = (int)revisionField.GetValue(node2);
+
+            // Test null and self
+            Assert.IsFalse(node1.ConnectAuthoredNeighbor(null), "Should return false for null neighbor");
+            Assert.IsFalse(node1.ConnectAuthoredNeighbor(node1), "Should return false for self connection");
+
+            // Test connection
+            bool result = node1.ConnectAuthoredNeighbor(node2);
+
+            Assert.IsTrue(result, "Should return true for new connection");
+
+            var neighbors1 = (List<Hecton8.Power.PowerNode>)neighborsField.GetValue(node1);
+            var neighbors2 = (List<Hecton8.Power.PowerNode>)neighborsField.GetValue(node2);
+
+            Assert.IsTrue(neighbors1.Contains(node2), "Node1 should contain Node2 in neighbors");
+            Assert.IsTrue(neighbors2.Contains(node1), "Node2 should contain Node1 in neighbors");
+
+            int newRevision1 = (int)revisionField.GetValue(node1);
+            int newRevision2 = (int)revisionField.GetValue(node2);
+
+            Assert.Greater(newRevision1, initialRevision1, "Node1 topology revision should increase");
+            Assert.Greater(newRevision2, initialRevision2, "Node2 topology revision should increase");
+
+            object grid1 = gridField.GetValue(node1);
+            object grid2 = gridField.GetValue(node2);
+
+            Assert.IsNotNull(grid1, "Grid should be created for Node1");
+            Assert.IsNotNull(grid2, "Grid should be assigned to Node2");
+            Assert.AreEqual(grid1, grid2, "Nodes should share the same grid");
+
+            // Test duplicate connection
+            bool duplicateResult = node1.ConnectAuthoredNeighbor(node2);
+            Assert.IsFalse(duplicateResult, "Should return false for duplicate connection");
+
             Object.DestroyImmediate(root);
         }
     }
