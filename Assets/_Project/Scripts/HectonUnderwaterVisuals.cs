@@ -4079,6 +4079,119 @@ namespace Hecton8.Environment
             float materialLightFactor = underwaterMaterial
                 ? Mathf.Clamp01(_cachedLightFactor)
                 : ResolveSurfaceMaterialLightFactor();
+
+            ResolveOceanScatterColors(
+                underwaterMaterial,
+                sharedOceanFeedsUnderwater,
+                materialLightFactor,
+                scatterSourceMaterial,
+                out Color scatterBase,
+                out Color scatterShallow);
+
+            ResolveOceanShadowColors(
+                underwaterMaterial,
+                sharedOceanFeedsUnderwater,
+                scatterSourceMaterial,
+                scatterBase,
+                scatterShallow,
+                out Color diffuseShadow,
+                out Color shallowShadow);
+
+            ResolveOceanSubSurfaceProperties(
+                underwaterMaterial,
+                sharedOceanFeedsUnderwater,
+                scatterSourceMaterial,
+                out float subSurfaceBaseIntensity,
+                out float subSurfaceSunIntensity,
+                out float subSurfaceSunFalloff);
+
+            Vector3 depthFogDensity = ResolveOceanDepthFogDensity(targetMaterial, underwaterMaterial);
+
+            ApplyOceanSkyBinding(targetMaterial);
+
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, scatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_Diffuse, scatterBase);
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseShadow, diffuseShadow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceColour, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourShallow, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, scatterShallow);
+            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowColShadow, shallowShadow);
+            SetMaterialVectorIfPresent(
+                targetMaterial,
+                _ID_DepthFogDensity,
+                new Vector4(
+                    depthFogDensity.x,
+                    depthFogDensity.y,
+                    depthFogDensity.z,
+                    0f));
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_Caustics,
+                _cachedCausticsStrength > 0.001f ? 1f : 0f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_CausticsStrength,
+                _cachedCausticsStrength);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceScattering,
+                1f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceBase,
+                subSurfaceBaseIntensity);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceSun,
+                subSurfaceSunIntensity);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceSunFallOff,
+                subSurfaceSunFalloff);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_SubSurfaceShallowColour,
+                1f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_Underwater,
+                crestUnderwaterSupportRequired ? 1f : 0f);
+            SetMaterialFloatIfPresent(
+                targetMaterial,
+                _ID_CullMode,
+                crestUnderwaterSupportRequired
+                    ? (float)UnityEngine.Rendering.CullMode.Off
+                    : (float)UnityEngine.Rendering.CullMode.Back);
+
+            if (crestUnderwaterSupportRequired)
+                targetMaterial.EnableKeyword(UnderwaterKeyword);
+            else
+                targetMaterial.DisableKeyword(UnderwaterKeyword);
+
+            ApplyOceanUnderwaterGlobals(
+                _runtimeVisualCallbacksActive,
+                targetMaterial,
+                depthFogDensity,
+                scatterBase,
+                scatterShallow,
+                diffuseShadow,
+                subSurfaceSunIntensity,
+                subSurfaceBaseIntensity,
+                subSurfaceSunFalloff);
+
+            if (_giRelaySurfaceEmissionActive)
+                ApplyGIRelaySurfaceEmissionToMaterial(targetMaterial, _giRelaySurfaceEmissionColor);
+        }
+
+        private void ResolveOceanScatterColors(
+            bool underwaterMaterial,
+            bool sharedOceanFeedsUnderwater,
+            float materialLightFactor,
+            Material scatterSourceMaterial,
+            out Color scatterBase,
+            out Color scatterShallow)
+        {
             float scatterLuminanceFloor;
             if (underwaterMaterial)
             {
@@ -4106,10 +4219,10 @@ namespace Hecton8.Environment
                 _ID_SubSurfaceShallowCol,
                 new Color(0f, 0.15f, 0.12f, 1f));
 
-            Color scatterBase = ResolveSafeOceanColor(
+            scatterBase = ResolveSafeOceanColor(
                 _currentScatterBase,
                 sourceScatterBase);
-            Color scatterShallow = ResolveSafeOceanColor(
+            scatterShallow = ResolveSafeOceanColor(
                 _currentScatterShallow,
                 sourceScatterShallow);
 
@@ -4209,18 +4322,28 @@ namespace Hecton8.Environment
                     scatterShallow,
                     SurfaceOceanShallowDaylightBlueBias);
             }
+        }
 
+        private void ResolveOceanShadowColors(
+            bool underwaterMaterial,
+            bool sharedOceanFeedsUnderwater,
+            Material scatterSourceMaterial,
+            Color scatterBase,
+            Color scatterShallow,
+            out Color diffuseShadow,
+            out Color shallowShadow)
+        {
             Color diffuseShadowFallback = sharedOceanFeedsUnderwater
                 ? Color.Lerp(scatterBase, Color.black, 0.22f)
                 : Color.Lerp(scatterBase, Color.black, 0.45f);
             Color shallowShadowFallback = sharedOceanFeedsUnderwater
                 ? Color.Lerp(scatterShallow, scatterBase, 0.18f)
                 : Color.Lerp(scatterShallow, scatterBase, 0.35f);
-            Color diffuseShadow = ReadMaterialColorOrDefault(
+            diffuseShadow = ReadMaterialColorOrDefault(
                 scatterSourceMaterial,
                 _ID_DiffuseShadow,
                 diffuseShadowFallback);
-            Color shallowShadow = ReadMaterialColorOrDefault(
+            shallowShadow = ReadMaterialColorOrDefault(
                 scatterSourceMaterial,
                 _ID_SubSurfaceShallowColShadow,
                 shallowShadowFallback);
@@ -4257,16 +4380,25 @@ namespace Hecton8.Environment
                     shallowShadow,
                     SurfaceOceanShallowShadowDaylightBlueBias);
             }
-            Vector3 depthFogDensity = ResolveSafeDepthFogDensity(targetMaterial);
-            float subSurfaceBaseIntensity = ReadMaterialFloatOrDefault(
+        }
+
+        private void ResolveOceanSubSurfaceProperties(
+            bool underwaterMaterial,
+            bool sharedOceanFeedsUnderwater,
+            Material scatterSourceMaterial,
+            out float subSurfaceBaseIntensity,
+            out float subSurfaceSunIntensity,
+            out float subSurfaceSunFalloff)
+        {
+            subSurfaceBaseIntensity = ReadMaterialFloatOrDefault(
                 scatterSourceMaterial,
                 _ID_SubSurfaceBase,
                 sharedOceanFeedsUnderwater ? 0f : 0.33f);
-            float subSurfaceSunIntensity = ReadMaterialFloatOrDefault(
+            subSurfaceSunIntensity = ReadMaterialFloatOrDefault(
                 scatterSourceMaterial,
                 _ID_SubSurfaceSun,
                 sharedOceanFeedsUnderwater ? 0.22f : 1.13f);
-            float subSurfaceSunFalloff = ReadMaterialFloatOrDefault(
+            subSurfaceSunFalloff = ReadMaterialFloatOrDefault(
                 scatterSourceMaterial,
                 _ID_SubSurfaceSunFallOff,
                 sharedOceanFeedsUnderwater ? 5.26f : 7.11f);
@@ -4292,7 +4424,11 @@ namespace Hecton8.Environment
                 subSurfaceSunIntensity = Mathf.Max(subSurfaceSunIntensity, 1.18f);
                 subSurfaceSunFalloff = Mathf.Min(subSurfaceSunFalloff, 5.4f);
             }
+        }
 
+        private Vector3 ResolveOceanDepthFogDensity(Material targetMaterial, bool underwaterMaterial)
+        {
+            Vector3 depthFogDensity = ResolveSafeDepthFogDensity(targetMaterial);
             Vector3 authoredDepthFogDensity = ResolveAuthoredDepthFogDensity(
                 targetMaterial,
                 ResolveFallbackDepthFogDensity(targetMaterial));
@@ -4311,81 +4447,7 @@ namespace Hecton8.Environment
                     Mathf.Min(depthFogDensity.y, SurfaceReadableOceanDepthFogCeiling),
                     Mathf.Min(depthFogDensity.z, SurfaceReadableOceanDepthFogCeiling));
             }
-            ApplyOceanSkyBinding(targetMaterial);
-
-            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourBase, scatterBase);
-            SetMaterialColorIfPresent(targetMaterial, _ID_Diffuse, scatterBase);
-            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseGrazing, scatterShallow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_DiffuseShadow, diffuseShadow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceColour, scatterShallow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_ScatterColourShallow, scatterShallow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowCol, scatterShallow);
-            SetMaterialColorIfPresent(targetMaterial, _ID_SubSurfaceShallowColShadow, shallowShadow);
-            SetMaterialVectorIfPresent(
-                targetMaterial,
-                _ID_DepthFogDensity,
-                new Vector4(
-                    depthFogDensity.x,
-                    depthFogDensity.y,
-                    depthFogDensity.z,
-                    0f));
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_Caustics,
-                _cachedCausticsStrength > 0.001f ? 1f : 0f);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_CausticsStrength,
-                _cachedCausticsStrength);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_SubSurfaceScattering,
-                1f);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_SubSurfaceBase,
-                subSurfaceBaseIntensity);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_SubSurfaceSun,
-                subSurfaceSunIntensity);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_SubSurfaceSunFallOff,
-                subSurfaceSunFalloff);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_SubSurfaceShallowColour,
-                1f);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_Underwater,
-                crestUnderwaterSupportRequired ? 1f : 0f);
-            SetMaterialFloatIfPresent(
-                targetMaterial,
-                _ID_CullMode,
-                crestUnderwaterSupportRequired
-                    ? (float)UnityEngine.Rendering.CullMode.Off
-                    : (float)UnityEngine.Rendering.CullMode.Back);
-
-            if (crestUnderwaterSupportRequired)
-                targetMaterial.EnableKeyword(UnderwaterKeyword);
-            else
-                targetMaterial.DisableKeyword(UnderwaterKeyword);
-
-            ApplyOceanUnderwaterGlobals(
-                _runtimeVisualCallbacksActive,
-                targetMaterial,
-                depthFogDensity,
-                scatterBase,
-                scatterShallow,
-                diffuseShadow,
-                subSurfaceSunIntensity,
-                subSurfaceBaseIntensity,
-                subSurfaceSunFalloff);
-
-            if (_giRelaySurfaceEmissionActive)
-                ApplyGIRelaySurfaceEmissionToMaterial(targetMaterial, _giRelaySurfaceEmissionColor);
+            return depthFogDensity;
         }
 
         private void ApplyOceanUnderwaterGlobals(
