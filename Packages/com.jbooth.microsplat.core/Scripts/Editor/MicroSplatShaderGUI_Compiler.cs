@@ -477,20 +477,6 @@ public partial class MicroSplatShaderGUI : ShaderGUI
       }
       
       public IRenderLoopAdapter renderLoop = null;
-
-      void SetPreferedRenderLoopByName(string[] features, string keyword)
-      {
-         if (!features.Contains (keyword))
-            return;
-
-         for (int i = 0; i < availableRenderLoops.Count; ++i)
-         {
-            if (availableRenderLoops [i].GetRenderLoopKeyword() == keyword)
-            {
-
-               renderLoop = availableRenderLoops [i];
-            }
-         }
       }
 
       public string Compile (string[] features, string name, string baseName = null, AuxShader auxShader = null)
@@ -514,27 +500,13 @@ public partial class MicroSplatShaderGUI : ShaderGUI
             }
 
             AddPipelineKeywords(ref features);
-                // TODO: this would be better if we asked the render loop if it is in the feature list, but
-                // would require a change to interface, so wait until we have a version bump.
-#if UNITY_6000_3_OR_NEWER
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYHDRP6P3");
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYURP6P3");
-#elif UNITY_6000_0_OR_NEWER
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYHDRP6");
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYURP6");
-#elif UNITY_2022_2_OR_NEWER
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYHDRP2022");
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYURP2022");
-#elif UNITY_2021_2_OR_NEWER
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYHDRP2021");
-            SetPreferedRenderLoopByName(features, "_MSRENDERLOOP_UNITYURP2021");
-#elif UNITY_2020_2_OR_NEWER
-            SetPreferedRenderLoopByName (features, "_MSRENDERLOOP_UNITYURP2020");
-            SetPreferedRenderLoopByName (features, "_MSRENDERLOOP_UNITYHDRP2020");
-#else
-            SetPreferedRenderLoopByName (features, "_MSRENDERLOOP_UNITYLD");
-            SetPreferedRenderLoopByName (features, "_MSRENDERLOOP_UNITYHD");
-#endif
+            for (int i = 0; i < availableRenderLoops.Count; ++i)
+            {
+               if (availableRenderLoops[i].HasRenderLoopFeature(features))
+               {
+                  renderLoop = availableRenderLoops[i];
+               }
+            }
 
             for (int i = 0; i < extensions.Count; ++i)
             {
