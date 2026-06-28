@@ -394,7 +394,9 @@ namespace Hecton8.Editor
                     }
                 }
                 
-                // Ecosystem Sterilization: Scatter generation intentionally removed.
+                // Generate procedural scatter for rendering tests
+                Debug.Log("[TRT] Generating procedural scatter...");
+                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
@@ -806,6 +808,12 @@ namespace Hecton8.Editor
             TakeMatrixShot(rockFacePos, rockLookDir * 20f + Vector3.up * 5f, Vector3.up * 2f, 50f, ArtifactDir + "Micro_Rock_1m.png");
             Object.DestroyImmediate(microLightGo);
             cam.nearClipPlane = 0.3f; // Restore
+
+            // 10. Take screenshots of scattered objects (from PR 600)
+            cam.backgroundColor = Color.black;
+            RenderSettings.fog = true;
+            TakeScatterScreenshot(cam, "kelp", ArtifactDir + "Scatter_Kelp.png", pLight);
+            TakeScatterScreenshot(cam, "coral", ArtifactDir + "Scatter_Coral.png", pLight);
 
             Debug.Log("[TRT] All screenshots captured. Exporting Diagnostic Maps...");
             ExportDiagnosticMaps(terrains, canyonRimPos, rockFacePos, ArtifactDir);
