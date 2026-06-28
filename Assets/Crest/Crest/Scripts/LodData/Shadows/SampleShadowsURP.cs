@@ -79,9 +79,19 @@ namespace Crest
                 return;
             }
 
-            // TODO: This may not be the same as OceanRenderer._primaryLight. Not certain how to support overriding the
-            // main light for shadows yet.
             var mainLightIndex = renderingData.lightData.mainLightIndex;
+            if (ocean._primaryLight != null)
+            {
+                var visibleLights = renderingData.lightData.visibleLights;
+                for (int i = 0; i < visibleLights.Length; i++)
+                {
+                    if (visibleLights[i].light == ocean._primaryLight)
+                    {
+                        mainLightIndex = i;
+                        break;
+                    }
+                }
+            }
 
             if (mainLightIndex == -1)
             {
