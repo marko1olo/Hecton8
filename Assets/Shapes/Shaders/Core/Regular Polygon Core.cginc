@@ -79,7 +79,7 @@ VertexOutput vert (VertexInput v) {
 		float thicknessSpace = PROP(_ThicknessSpace);
 		LineWidthData widthDataThickness = GetScreenSpaceWidthDataSimple( OBJ_ORIGIN, CAM_RIGHT, thickness, thicknessSpace );
 		half thicknessRadius = widthDataThickness.thicknessMeters / 2;
-		o.IP_pxCoverage = widthDataThickness.thicknessPixelsTarget; // todo: this isn't properly handling coordinate scaling yet
+		o.IP_pxCoverage = widthDataThickness.thicknessPixelsTarget / scaleThickness;
 		half radiusOuter = o.IP_radiusMeters + thicknessRadius;
 		o.IP_innerRadiusFraction = (radiusOuter - thicknessRadius*2) / radiusOuter;
 		o.IP_thicknessMeters = widthDataThickness.thicknessMeters;
