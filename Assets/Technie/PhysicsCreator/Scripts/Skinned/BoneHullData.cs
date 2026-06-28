@@ -21,11 +21,11 @@ namespace Technie.PhysicsCreator.Skinned
 
 		public Vector3[] CachedTriangleVertices
 		{
-			get { return cachedTriangleVertices.ToArray(); }
+			get { return cachedTriangleVertices != null ? cachedTriangleVertices.ToArray() : new Vector3[0]; }
 			set
 			{
-				cachedTriangleVertices.Clear();
-				cachedTriangleVertices.AddRange(value);
+				if (cachedTriangleVertices != null) cachedTriangleVertices.Clear(); else cachedTriangleVertices = new List<Vector3>();
+				if (value != null) cachedTriangleVertices.AddRange(value);
 			}
 		}
 
@@ -49,7 +49,8 @@ namespace Technie.PhysicsCreator.Skinned
 		// Manual properties
 		[SerializeField]
 		private List<int> selectedFaces = new List<int>();  // selected triangle indices
-		public List<Vector3> cachedTriangleVertices = new List<Vector3>();  // TODO Implement this
+		[SerializeField]
+		private List<Vector3> cachedTriangleVertices = new List<Vector3>();
 
 		// Cache of the faces indices for triangles that are fully between the min/max thresholds
 		//private List<int> thresholdSelectedFaces = new List<int>();
@@ -204,7 +205,7 @@ namespace Technie.PhysicsCreator.Skinned
 
 		public Vector3[] GetCachedTriangleVertices()
 		{
-			return cachedTriangleVertices.ToArray();
+			return cachedTriangleVertices != null ? cachedTriangleVertices.ToArray() : new Vector3[0];
 		}
 	}
 
