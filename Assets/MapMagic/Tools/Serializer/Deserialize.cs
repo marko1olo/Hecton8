@@ -81,13 +81,13 @@ namespace Den.Tools.Serialization
 			//string
 			else if (type == typeof(string))
 			{
-				if (deserializedIdsObjs.TryGetValue(id, out object val))
+				if (id != 0 && deserializedIdsObjs.TryGetValue(id, out object val))
 					return (name, val);
 
 				else
 				{
 					string sval = ((string)splitString[3]).Trim('"');
-					deserializedIdsObjs.Add(id, sval);
+					if (id != 0) deserializedIdsObjs.Add(id, sval);
 					return (name, sval);
 				}
 			}
