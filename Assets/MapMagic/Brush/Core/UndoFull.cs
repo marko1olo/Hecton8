@@ -60,10 +60,12 @@ namespace MapMagic.Brush
 				bool undoMatched = false;
 
 
+
 				if (brush != null && brush.curUndoId != brush.prevUndoId)
 				{
 					brush.prevUndoId = brush.curUndoId;
 					undoMatched = true;
+
 
 				}
 
@@ -107,6 +109,8 @@ namespace MapMagic.Brush
 
 				UnityEditor.Undo.RecordObject(brush, undoName);
 				brush.curUndoId++;
+
+
 
 				brush.temp = !brush.temp;
 			#endif
