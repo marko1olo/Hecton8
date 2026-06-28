@@ -127,20 +127,30 @@ namespace Hecton8.Audio.Synthesis.Editor
             }
 
             string codec = _codecField.value.ToString();
-            string args = "\"" + script + "\" --csv \"" + _csvField.value + "\" --out \"" + _outField.value + "\" --codec " + codec;
-            if (!string.IsNullOrWhiteSpace(_xttsField.value))
-                args += " --xtts-command \"" + _xttsField.value.Replace("\"", "\\\"") + "\"";
 
             ProcessStartInfo psi = new ProcessStartInfo
             {
                 FileName = ResolvePythonExecutable(),
-                Arguments = args,
                 WorkingDirectory = repo,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+
+            psi.ArgumentList.Add(script);
+            psi.ArgumentList.Add("--csv");
+            psi.ArgumentList.Add(_csvField.value);
+            psi.ArgumentList.Add("--out");
+            psi.ArgumentList.Add(_outField.value);
+            psi.ArgumentList.Add("--codec");
+            psi.ArgumentList.Add(codec);
+
+            if (!string.IsNullOrWhiteSpace(_xttsField.value))
+            {
+                psi.ArgumentList.Add("--xtts-command");
+                psi.ArgumentList.Add(_xttsField.value);
+            }
 
             lock (_processOutputLock)
             {
