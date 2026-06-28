@@ -13353,7 +13353,44 @@ namespace Hecton8.Gameplay
         //  SWIM PHYSICS Ã¢â‚¬â€ with depth pressure resistance
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
+
+        private struct SwimPhysicsContext
+        {
+            public SuitData Suit;
+            public float FixedDeltaTime;
+            public PlayerTransportPreset TransportPreset;
+
+            public bool IsSurfaceSwim;
+            public bool HasSurfaceDiveIntent;
+            public float ShoreSwimBlend;
+            public float BrineSwimSpeedMultiplier;
+            public float BrineWaterDensityScale;
+            public float SargassumSpeedMultiplier;
+            public float ExternalEnvironmentalThrustMultiplier;
+
+            public float RawTransportPropulsionForce;
+            public float GatedInputH;
+            public float GatedInputV;
+            public float GatedInputVertical;
+            public bool SurfaceDiveAssistActive;
+
+            public float EffectiveSwimForce;
+            public float EffectiveVerticalForce;
+
+            public float TransportForwardPitchInfluence;
+            public float TransportStrafeInputScale;
+            public float TransportVerticalInputScale;
+            public float TransportReverseThrustScale;
+            public float TransportSurfaceDiveAssistScale;
+
+            public float FwdX;
+            public float FwdY;
+            public float FwdZ;
+            public float RightX;
+            public float RightZ;
+        }
+
+        private void ApplySwimBuoyancyAndDrag(ref SwimPhysicsContext ctx)
         {
             _velocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
             if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
@@ -13379,34 +13416,36 @@ namespace Hecton8.Gameplay
             }
 
             float speedSq = _velocity.sqrMagnitude;
-            bool isSurfaceSwim = _isSurfaceSwimming;
-            bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
-            float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
-            float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
-            float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
+            ctx.IsSurfaceSwim = _isSurfaceSwimming;
+            ctx.HasSurfaceDiveIntent = ctx.IsSurfaceSwim && HasCommittedSurfaceDive(ctx.TransportPreset);
+            ctx.ShoreSwimBlend = ctx.IsSurfaceSwim ? _shoreBuoyancyBlend : 1f;
+            ctx.BrineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
+            ctx.BrineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
             float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
                 _currentDepth,
-                suit.depthSwimSlowdownStart,
-                suit.depthSwimSlowdownEnd,
-                suit.depthDragIncreaseMax);
+                ctx.Suit.depthSwimSlowdownStart,
+                ctx.Suit.depthSwimSlowdownEnd,
+                ctx.Suit.depthDragIncreaseMax);
 
-            float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
-            if (isSurfaceSwim)
+            float effectiveDragCoeff = ctx.Suit.swimDragCoefficient + depthDragAdd;
+            if (ctx.IsSurfaceSwim)
                 effectiveDragCoeff *= surfaceDragMultiplier;
 
-            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
+            ctx.SargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
             float sargassumDragMultiplier = ResolveSargassumDragMultiplier();
             float externalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
-            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
+            ctx.ExternalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
+
             effectiveDragCoeff *= sargassumDragMultiplier;
             effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
             effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
             effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
             _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
-            _lastPlayerKinematicsWaterDensityScale = brineWaterDensityScale;
+            _lastPlayerKinematicsWaterDensityScale = ctx.BrineWaterDensityScale;
+
             // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
             if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
             {
@@ -13414,67 +13453,81 @@ namespace Hecton8.Gameplay
                     _velocity,
                     _lastPlayerKinematicsIntendedMovement,
                     effectiveDragCoeff,
-                    brineWaterDensityScale,
-                    fixedDeltaTime);
+                    ctx.BrineWaterDensityScale,
+                    ctx.FixedDeltaTime);
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
             }
+        }
 
+        private bool ResolveSwimInput(ref SwimPhysicsContext ctx)
+        {
             // Ã¢â€â‚¬Ã¢â€â‚¬ Swim thrust Ã¢â€â‚¬Ã¢â€â‚¬
-            float rawTransportPropulsionForce =
+            ctx.RawTransportPropulsionForce =
                 ResolveActiveTransportPropulsionForce() *
-                sargassumSpeedMultiplier *
-                externalEnvironmentalThrustMultiplier *
+                ctx.SargassumSpeedMultiplier *
+                ctx.ExternalEnvironmentalThrustMultiplier *
                 ResolveWipeoutTransportControl01();
-            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
-            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
-            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
-            ApplyRuntimeNarcosisInputNoise(ref gatedInputH, ref gatedInputV, ref gatedInputVertical);
-            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
-            bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
-            bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
-            if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
-                return;
 
+            ctx.GatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+            ctx.GatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+            ctx.GatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+
+            ApplyRuntimeNarcosisInputNoise(ref ctx.GatedInputH, ref ctx.GatedInputV, ref ctx.GatedInputVertical);
+            _lastPlayerKinematicsIntendedMovement = new float3(ctx.GatedInputH, ctx.GatedInputVertical, ctx.GatedInputV);
+
+            bool hasInput = ctx.GatedInputH != 0f || ctx.GatedInputV != 0f || ctx.GatedInputVertical != 0f;
+            ctx.SurfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
+
+            return hasInput || ctx.RawTransportPropulsionForce > 0f || ctx.SurfaceDiveAssistActive;
+        }
+
+        private void CalculateEffectiveSwimForces(ref SwimPhysicsContext ctx)
+        {
             // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
             float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
                 _currentDepth,
-                suit.depthSwimSlowdownStart,
-                suit.depthSwimSlowdownEnd,
-                suit.depthSwimSlowdownMax);
+                ctx.Suit.depthSwimSlowdownStart,
+                ctx.Suit.depthSwimSlowdownEnd,
+                ctx.Suit.depthSwimSlowdownMax);
 
             bool heavyCarryActive = IsHeavyCarryActive();
-            float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * brineSwimSpeedMultiplier;
-            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
-            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
-            effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
-            float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
-            effectiveSwimForce *= heavyCarryForceMultiplier;
-            effectiveVerticalForce *= heavyCarryForceMultiplier;
-            effectiveSwimForce *= externalEnvironmentalThrustMultiplier;
-            effectiveVerticalForce *= math.lerp(1f, externalEnvironmentalThrustMultiplier, 0.7f);
-            effectiveSwimForce *= sargassumSpeedMultiplier;
-            effectiveVerticalForce *= math.lerp(1f, sargassumSpeedMultiplier, 0.55f);
-            effectiveSwimForce *= shoreSwimBlend;
-            effectiveVerticalForce *= math.lerp(0.45f, 1f, shoreSwimBlend);
-            float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
-            float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
-            float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
-            float transportReverseThrustScale = ResolveTransportReverseThrustScale(transportPreset);
-            float transportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(transportPreset);
-            float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
-            transportStrafeInputScale *= hullStressTurnScale;
+            float sprintMult = _isSprinting && !heavyCarryActive ? ctx.Suit.sprintMultiplier : 1f;
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * ctx.BrineSwimSpeedMultiplier;
 
+            ctx.EffectiveSwimForce = ctx.Suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            ctx.EffectiveVerticalForce = ctx.Suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            ctx.EffectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
+
+            float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
+            ctx.EffectiveSwimForce *= heavyCarryForceMultiplier;
+            ctx.EffectiveVerticalForce *= heavyCarryForceMultiplier;
+
+            ctx.EffectiveSwimForce *= ctx.ExternalEnvironmentalThrustMultiplier;
+            ctx.EffectiveVerticalForce *= math.lerp(1f, ctx.ExternalEnvironmentalThrustMultiplier, 0.7f);
+
+            ctx.EffectiveSwimForce *= ctx.SargassumSpeedMultiplier;
+            ctx.EffectiveVerticalForce *= math.lerp(1f, ctx.SargassumSpeedMultiplier, 0.55f);
+
+            ctx.EffectiveSwimForce *= ctx.ShoreSwimBlend;
+            ctx.EffectiveVerticalForce *= math.lerp(0.45f, 1f, ctx.ShoreSwimBlend);
+
+            ctx.TransportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(ctx.TransportPreset);
+            ctx.TransportStrafeInputScale = ResolveTransportStrafeInputScale(ctx.TransportPreset);
+            ctx.TransportVerticalInputScale = ResolveTransportVerticalInputScale(ctx.TransportPreset);
+            ctx.TransportReverseThrustScale = ResolveTransportReverseThrustScale(ctx.TransportPreset);
+            ctx.TransportSurfaceDiveAssistScale = ResolveTransportSurfaceDiveAssistScale(ctx.TransportPreset);
+
+            float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(ctx.TransportPreset);
+            ctx.TransportStrafeInputScale *= hullStressTurnScale;
+        }
+
+        private void ResolveSwimDirectionVectors(ref SwimPhysicsContext ctx)
+        {
             ResolveDegreesSinCosFast(ResolveVrSwimmingReferenceYawDegrees(), out float sinBodyYaw, out float cosBodyYaw);
             ResolveDegreesSinCosFast(_cameraPitch, out float sinPitch, out float cosPitch);
-            float fwdX;
-            float fwdY;
-            float fwdZ;
-            float rightX;
-            float rightZ;
 
-            if (isSurfaceSwim && !hasSurfaceDiveIntent)
+            if (ctx.IsSurfaceSwim && !ctx.HasSurfaceDiveIntent)
             {
                 Vector3 bodyForward = new Vector3(sinBodyYaw, 0f, cosBodyYaw);
                 Vector3 bodyRight = new Vector3(cosBodyYaw, 0f, -sinBodyYaw);
@@ -13492,43 +13545,46 @@ namespace Hecton8.Gameplay
                 else
                     surfaceRight = NormalizeVectorRsqrt(surfaceRight, bodyRight);
 
-                fwdX = surfaceForward.x;
-                fwdY = surfaceForward.y;
-                fwdZ = surfaceForward.z;
-                rightX = surfaceRight.x;
-                rightZ = surfaceRight.z;
+                ctx.FwdX = surfaceForward.x;
+                ctx.FwdY = surfaceForward.y;
+                ctx.FwdZ = surfaceForward.z;
+                ctx.RightX = surfaceRight.x;
+                ctx.RightZ = surfaceRight.z;
             }
             else
             {
-                float surfaceDepthT = isSurfaceSwim
+                float surfaceDepthT = ctx.IsSurfaceSwim
                     ? math.saturate(_currentDepth / math.max(surfaceSwimDepthBand, 0.01f))
                     : 1f;
-                float surfacePitchBlend = isSurfaceSwim
+                float surfacePitchBlend = ctx.IsSurfaceSwim
                     ? math.lerp(1f - surfaceForwardPitchSuppression, 1f, surfaceDepthT)
                     : 1f;
-                surfacePitchBlend *= transportForwardPitchInfluence;
+                surfacePitchBlend *= ctx.TransportForwardPitchInfluence;
 
                 float fwdPlanarScale = math.lerp(1f, cosPitch, surfacePitchBlend);
-                fwdX = sinBodyYaw * fwdPlanarScale;
-                fwdY = -sinPitch * transportForwardPitchInfluence;
-                fwdZ = cosBodyYaw * fwdPlanarScale;
-                rightX = cosBodyYaw;
-                rightZ = -sinBodyYaw;
+                ctx.FwdX = sinBodyYaw * fwdPlanarScale;
+                ctx.FwdY = -sinPitch * ctx.TransportForwardPitchInfluence;
+                ctx.FwdZ = cosBodyYaw * fwdPlanarScale;
+                ctx.RightX = cosBodyYaw;
+                ctx.RightZ = -sinBodyYaw;
             }
+        }
 
-            float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
-            float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
-            float forwardInput = gatedInputV;
+        private void ApplySwimPropulsionForces(ref SwimPhysicsContext ctx)
+        {
+            float forwardScale = ctx.IsSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
+            float strafeScale = (ctx.IsSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * ctx.TransportStrafeInputScale;
+            float forwardInput = ctx.GatedInputV;
             if (forwardInput < 0f)
-                forwardInput *= transportReverseThrustScale;
+                forwardInput *= ctx.TransportReverseThrustScale;
 
-            float forwardVelocity = _velocity.x * fwdX + _velocity.y * fwdY + _velocity.z * fwdZ;
-            float transportPropulsionForce = rawTransportPropulsionForce;
+            float forwardVelocity = _velocity.x * ctx.FwdX + _velocity.y * ctx.FwdY + _velocity.z * ctx.FwdZ;
+            float transportPropulsionForce = ctx.RawTransportPropulsionForce;
             if (transportPropulsionForce > 0f)
             {
-                transportPropulsionForce *= shoreSwimBlend;
+                transportPropulsionForce *= ctx.ShoreSwimBlend;
                 float cavitationEfficiency = ResolveTransportCavitationEfficiency(
-                    fixedDeltaTime,
+                    ctx.FixedDeltaTime,
                     true,
                     forwardVelocity,
                     ResolveActiveTransportBoost01());
@@ -13536,12 +13592,12 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                ResolveTransportCavitationEfficiency(fixedDeltaTime, false, forwardVelocity, 0f);
+                ResolveTransportCavitationEfficiency(ctx.FixedDeltaTime, false, forwardVelocity, 0f);
             }
 
-            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (gatedInputH * strafeScale);
-            float dirY = fwdY * (forwardInput * forwardScale);
-            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (gatedInputH * strafeScale);
+            float dirX = ctx.FwdX * (forwardInput * forwardScale) + ctx.RightX * (ctx.GatedInputH * strafeScale);
+            float dirY = ctx.FwdY * (forwardInput * forwardScale);
+            float dirZ = ctx.FwdZ * (forwardInput * forwardScale) + ctx.RightZ * (ctx.GatedInputH * strafeScale);
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
@@ -13550,16 +13606,16 @@ namespace Hecton8.Gameplay
                 dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
-            float verticalInput = gatedInputVertical;
+            float verticalInput = ctx.GatedInputVertical;
             if (IsCriticallyEncumbered && verticalInput > 0f)
                 verticalInput = 0f;
 
-            if (isSurfaceSwim && verticalInput > 0f)
+            if (ctx.IsSurfaceSwim && verticalInput > 0f)
             {
                 float ascendGate = math.saturate(_currentDepth / math.max(surfaceAscendReleaseDepth, 0.01f));
                 verticalInput *= ascendGate;
             }
-            verticalInput *= transportVerticalInputScale;
+            verticalInput *= ctx.TransportVerticalInputScale;
 
             if (_activeTransportPlatform != null)
             {
@@ -13576,18 +13632,18 @@ namespace Hecton8.Gameplay
 
             _lastPlayerKinematicsIntendedMovement = new float3(dirX, dirY + verticalInput, dirZ);
 
-            _forceVector.x = dirX * effectiveSwimForce;
-            _forceVector.y = dirY * effectiveSwimForce;
-            _forceVector.z = dirZ * effectiveSwimForce;
-            _forceVector.y += verticalInput * effectiveVerticalForce * (isSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
+            _forceVector.x = dirX * ctx.EffectiveSwimForce;
+            _forceVector.y = dirY * ctx.EffectiveSwimForce;
+            _forceVector.z = dirZ * ctx.EffectiveSwimForce;
+            _forceVector.y += verticalInput * ctx.EffectiveVerticalForce * (ctx.IsSurfaceSwim ? surfaceVerticalForceMultiplier : 1f);
 
-            if (surfaceDiveAssistActive)
+            if (ctx.SurfaceDiveAssistActive)
             {
                 float diveAssistT = math.saturate(_surfaceDiveAssistTimer / math.max(surfaceDiveAssistDuration, 0.01f));
-                _forceVector.y -= effectiveVerticalForce * surfaceDiveAssistForceMultiplier * transportSurfaceDiveAssistScale * diveAssistT;
+                _forceVector.y -= ctx.EffectiveVerticalForce * surfaceDiveAssistForceMultiplier * ctx.TransportSurfaceDiveAssistScale * diveAssistT;
             }
 
-            if (isSurfaceSwim && hasSurfaceDiveIntent && surfaceDiveResistanceDamping > 0f && _velocity.y < 0f)
+            if (ctx.IsSurfaceSwim && ctx.HasSurfaceDiveIntent && surfaceDiveResistanceDamping > 0f && _velocity.y < 0f)
             {
                 float headDepth = GetHeadDepthBelowSurface(EffectiveWaterSurfaceY);
                 float surfaceResistanceT = 1f - math.saturate(headDepth / math.max(surfaceDiveBreakDepth, 0.01f));
@@ -13601,9 +13657,9 @@ namespace Hecton8.Gameplay
             {
                 Vector3 transportPropulsionDirection = new Vector3(_forceVector.x, _forceVector.y, _forceVector.z);
                 if (transportPropulsionDirection.sqrMagnitude <= 0.0001f)
-                    transportPropulsionDirection = new Vector3(fwdX, fwdY, fwdZ);
+                    transportPropulsionDirection = new Vector3(ctx.FwdX, ctx.FwdY, ctx.FwdZ);
                 else
-                    transportPropulsionDirection = NormalizeVectorRsqrt(transportPropulsionDirection, new Vector3(fwdX, fwdY, fwdZ));
+                    transportPropulsionDirection = NormalizeVectorRsqrt(transportPropulsionDirection, new Vector3(ctx.FwdX, ctx.FwdY, ctx.FwdZ));
 
                 if (ResolveActiveTransportSource() is MantaScooter mantaScooter &&
                     mantaScooter.TryGetHullStressMisfireDeviation(out Vector2 misfireDeviationDegrees))
@@ -13638,11 +13694,11 @@ namespace Hecton8.Gameplay
                 ResolveAuthoritativeBodyMassKg());
 
             ApplyMotorAcceleration(swimAcceleration);
-            ApplySargassumEntanglementForce(transportPreset);
-            ApplyAbyssalCableEntanglementForce(transportPreset);
+            ApplySargassumEntanglementForce(ctx.TransportPreset);
+            ApplyAbyssalCableEntanglementForce(ctx.TransportPreset);
             ApplySargassumMatBuoyancySupport();
 
-            if (isSurfaceSwim && surfaceAscendVelocityDamping > 0f && _velocity.y > 0f)
+            if (ctx.IsSurfaceSwim && surfaceAscendVelocityDamping > 0f && _velocity.y > 0f)
             {
                 if (_velocity.y >= surfaceBreachReleaseVelocity)
                     return;
@@ -13658,6 +13714,24 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
+        {
+            SwimPhysicsContext ctx = new SwimPhysicsContext
+            {
+                Suit = suit,
+                FixedDeltaTime = fixedDeltaTime,
+                TransportPreset = transportPreset
+            };
+
+            ApplySwimBuoyancyAndDrag(ref ctx);
+
+            if (!ResolveSwimInput(ref ctx))
+                return;
+
+            CalculateEffectiveSwimForces(ref ctx);
+            ResolveSwimDirectionVectors(ref ctx);
+            ApplySwimPropulsionForces(ref ctx);
+        }
         private bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
         {
             sinkMultiplier = 0f;
