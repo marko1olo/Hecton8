@@ -55,14 +55,16 @@ namespace MapMagic.Brush
 				UnityEditor.Undo.undoRedoPerformed += OnUndoRedoPerformed;
 			}
 
-			public void OnUndoRedoPerformed ()
+									public void OnUndoRedoPerformed ()
 			{
 				bool undoMatched = false;
+
 
 				if (brush != null && brush.curUndoId != brush.prevUndoId)
 				{
 					brush.prevUndoId = brush.curUndoId;
 					undoMatched = true;
+
 				}
 
 				if (!undoMatched)
@@ -102,8 +104,10 @@ namespace MapMagic.Brush
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
 
+
 				UnityEditor.Undo.RecordObject(brush, undoName);
 				brush.curUndoId++;
+
 				brush.temp = !brush.temp;
 			#endif
 		}

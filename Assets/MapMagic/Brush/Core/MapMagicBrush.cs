@@ -85,7 +85,7 @@ namespace MapMagic.Brush
 		public bool guiSettings;
 		
 		public int curUndoId = 0;  //to change something on undo and find out if this is a proper undo on undo redo performed. See use case
-		public int prevUndoId = 0;  //should be in object itself
+		[NonSerialized] public int prevUndoId = 0;  //should be in object itself
 
 
 		public void OnEnable ()
