@@ -7303,4 +7303,8 @@ namespace Hecton8.SaveSystem
         private static void JulesLink_SaveDataBinaryChecksumCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveDataBinaryChecksumCalculator); }
         #endregion
 }
+
+        #region JulesLink_SaveDeltaCompressDiffCalculator
+        private static void JulesLink_SaveDeltaCompressDiffCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveDeltaCompressDiffCalculator); }
+        #endregion
 }

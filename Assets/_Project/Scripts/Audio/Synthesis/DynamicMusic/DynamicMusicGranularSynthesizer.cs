@@ -2833,4 +2833,8 @@ namespace Hecton8.Audio.Synthesis
             }
         }
     }
+
+        #region JulesLink_PitchShiftResampleCalculator
+        private static void JulesLink_PitchShiftResampleCalculator() { _ = typeof(Hecton8.PureLogic.Systems.PitchShiftResampleCalculator); }
+        #endregion
 }

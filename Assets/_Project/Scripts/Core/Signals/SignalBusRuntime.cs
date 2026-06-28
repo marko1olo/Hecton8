@@ -5241,4 +5241,8 @@ namespace Hecton8.Core.Contracts.Signals
         #region JulesLink_SignalPrioritySortCalculator
         private static void JulesLink_SignalPrioritySortCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SignalPrioritySortCalculator); }
         #endregion
+
+        #region JulesLink_FixedCapacityRingBuffer
+        private static void JulesLink_FixedCapacityRingBuffer() { _ = typeof(Hecton8.PureLogic.Systems.FixedCapacityRingBuffer); }
+        #endregion
 }

@@ -2877,4 +2877,8 @@ namespace Hecton8.Gameplay
         private static void JulesLink_BleedStackDecayModel() { _ = typeof(Hecton8.PureLogic.Systems.BleedStackDecayModel); }
         #endregion
 }
+
+        #region JulesLink_WaterPressureWeaponMultiplier
+        private static void JulesLink_WaterPressureWeaponMultiplier() { _ = typeof(Hecton8.PureLogic.Systems.WaterPressureWeaponMultiplier); }
+        #endregion
 }
