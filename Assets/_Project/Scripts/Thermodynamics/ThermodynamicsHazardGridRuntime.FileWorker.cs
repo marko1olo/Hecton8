@@ -19,6 +19,7 @@ namespace Hecton8.Thermodynamics
         // SPSC handoff: ConfigWorkerLoop is the only producer; Tick/SlowTick on the main thread is the only consumer/requester.
         // Volatile/Interlocked barriers publish staged config bytes before state flips to ConfigWorkerReady on ARM64.
         private Thread _configWorkerThread;
+        private AutoResetEvent _configWorkerSignal;
         private string _binaryConstantsPath;
         private string _csvOverridePath;
         private byte[] _binaryConstantsWorkerBytes;
@@ -47,6 +48,8 @@ namespace Hecton8.Thermodynamics
             if (!HasHandle(in _constants) ||
                 !HasHandle(in _binaryConstantBytes))
                 return;
+
+            _configWorkerSignal ??= new AutoResetEvent(false);
 
             _binaryConstantsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "thermodynamic_constants.h8bin");
 #if UNITY_EDITOR
@@ -87,10 +90,15 @@ namespace Hecton8.Thermodynamics
                 return true;
 
             Volatile.Write(ref _configWorkerRun, 0);
+            _configWorkerSignal?.Set();
             bool stopped = TryJoinConfigWorkerNoThrow(worker);
 
             if (stopped && ReferenceEquals(_configWorkerThread, worker))
+            {
                 _configWorkerThread = null;
+                _configWorkerSignal?.Dispose();
+                _configWorkerSignal = null;
+            }
             return stopped;
         }
 
@@ -125,11 +133,16 @@ namespace Hecton8.Thermodynamics
 #endif
         }
 
-        private static void RequestConfigLoad(ref int state)
+        private void RequestConfigLoad(ref int state)
         {
             int observed = Volatile.Read(ref state);
             if (observed == ConfigWorkerIdle || observed == ConfigWorkerFault)
-                Interlocked.CompareExchange(ref state, ConfigWorkerRequested, observed);
+            {
+                if (Interlocked.CompareExchange(ref state, ConfigWorkerRequested, observed) == observed)
+                {
+                    _configWorkerSignal?.Set();
+                }
+            }
         }
 
         private void ApplyPendingConfigLoads()
@@ -196,7 +209,7 @@ namespace Hecton8.Thermodynamics
 #endif
 
                 if (!worked)
-                    Thread.Sleep(ConfigWorkerSleepMs);
+                    _configWorkerSignal?.WaitOne(ConfigWorkerSleepMs);
             }
         }
 
