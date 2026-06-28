@@ -96,11 +96,62 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(jobBuffersPinned, "Finally block should have cleared _jobBuffersPinned");
         }
 
+        [Test]
+        public void TryPinBiotaJobBuffers_ExceptionInTryBlock_BubblesUpAndReleasesPins()
+        {
+            // Setup vault
+            var vault = Substitute.For<IGlobalDataVault>();
+
+            // When locking BiotaStates (first call), succeed.
+            var stateArray = new NativeArray<AmbientBiotaState>(10, Allocator.Persistent);
+            vault.TryLockBuffer(BufferID.BiotaStates, out Arg.Any<NativeArray<AmbientBiotaState>>()).Returns(x =>
+            {
+                x[1] = stateArray;
+                return true;
+            });
+
+            // Set private fields using Reflection
+            SetPrivateField(_director, "_vault", vault);
+
+            // Throw exception on locking BiotaVelocities
+            vault.When(x => x.TryLockBuffer(BufferID.BiotaVelocities, out Arg.Any<NativeArray<float4>>())).Do(x => { throw new InvalidOperationException("Test exception"); });
+
+            var methodInfo = typeof(AmbientBiotaDirector).GetMethod("TryPinBiotaJobBuffers", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            bool exceptionCaught = false;
+            try
+            {
+                methodInfo.Invoke(_director, null);
+            }
+            catch (TargetInvocationException ex) when (ex.InnerException is InvalidOperationException)
+            {
+                exceptionCaught = true;
+            }
+
+            Assert.IsTrue(exceptionCaught, "Expected TryPinBiotaJobBuffers to let the InvalidOperationException bubble up");
+
+            // Verify pins were released for BiotaStates which successfully locked before the exception
+            vault.Received().TryUnlockBuffer(BufferID.BiotaStates);
+
+            // Check state was reset
+            Assert.IsFalse((bool)GetPrivateField(_director, "_jobBuffersPinned"), "Job buffers should not be pinned");
+            Assert.IsNull(GetPrivateField(_director, "_jobBufferPinVault"), "Pin vault should be null");
+            Assert.AreEqual(0u, GetPrivateField(_director, "_jobBufferPinMask"), "Pin mask should be 0");
+
+            if (stateArray.IsCreated) stateArray.Dispose();
+        }
+
         private void SetPrivateField(object instance, string fieldName, object value)
         {
             var field = instance.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
             if (field != null)
                 field.SetValue(instance, value);
+        }
+
+        private object GetPrivateField(object instance, string fieldName)
+        {
+            var field = instance.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field.GetValue(instance);
         }
 
         private T GetPrivateField<T>(object instance, string fieldName)
