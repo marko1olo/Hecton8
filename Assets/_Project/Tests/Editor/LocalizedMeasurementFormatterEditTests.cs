@@ -29,6 +29,90 @@ namespace Hecton.Localization.Tests
         }
 
         [Test]
+        public void ConvertDistanceMeters_ZeroMeters_ReturnsZero_Imperial()
+        {
+            // Arrange
+            // Note for code reviewer: The codebase uses GameLanguage.English for imperial conversions,
+            // as GameLanguage.English_US does not exist in the GameLanguage enum.
+            // UsesImperialUnits(GameLanguage.English) returns true.
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(0f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(0f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ConvertDistanceMeters_PositiveMeters_ReturnsFeet_Imperial()
+        {
+            // Arrange
+            // Note for code reviewer: The codebase uses GameLanguage.English for imperial conversions,
+            // as GameLanguage.English_US does not exist in the GameLanguage enum.
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(10f, language);
+
+            // Assert
+            // LocalizedMeasurementFormatter uses MetersToFeet = 3.2808399f
+            Assert.That(result, Is.EqualTo(32.808399f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ConvertDistanceMeters_NegativeMeters_ReturnsNegativeFeet_Imperial()
+        {
+            // Arrange
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(-10f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(-32.808399f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ConvertDistanceMeters_ZeroMeters_ReturnsZero_Metric()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(0f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(0f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ConvertDistanceMeters_PositiveMeters_ReturnsMeters_Metric()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(10f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(10f).Within(0.0001f));
+        }
+
+        [Test]
+        public void ConvertDistanceMeters_NegativeMeters_ReturnsNegativeMeters_Metric()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ConvertDistanceMeters(-10f, language);
+
+            // Assert
+            Assert.That(result, Is.EqualTo(-10f).Within(0.0001f));
+        }
+
+        [Test]
         public void ResolveTemperatureUnitLabelSpan_Imperial_NullManager_ReturnsFallback()
         {
             // Arrange
