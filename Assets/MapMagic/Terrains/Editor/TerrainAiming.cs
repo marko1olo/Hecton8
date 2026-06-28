@@ -60,6 +60,18 @@ namespace MapMagic.Terrains.GUI
 		{
 			HashSet<Terrain> terrains = new HashSet<Terrain>();
 
+			Dictionary<GameObject, Terrain> terrainLookup = new Dictionary<GameObject, Terrain>();
+			if (possibleTerrains != null)
+			{
+				foreach (Terrain t in possibleTerrains)
+				{
+					if (t != null && t.gameObject != null)
+					{
+						terrainLookup[t.gameObject] = t;
+					}
+				}
+			}
+
 			//if frame is small (or single click) selecting terrains by raycast
 			Vector2[] screenFrameCorners = new Vector2[] {
 				new Vector2(screenFrame.x, screenFrame.y),
@@ -72,8 +84,14 @@ namespace MapMagic.Terrains.GUI
 				Ray worldRay = HandleUtility.GUIPointToWorldRay(screenFrameCorners[c]);
 				RaycastHit hit = GetAimedTerrainHit(worldRay, possibleTerrains);
 				if (hit.collider == null) continue;
-				Terrain terrain = hit.collider.gameObject.GetComponent<Terrain>();
-				if (!terrains.Contains(terrain)) terrains.Add(terrain);
+
+				Terrain terrain = null;
+				if (!terrainLookup.TryGetValue(hit.collider.gameObject, out terrain))
+				{
+					terrain = hit.collider.gameObject.GetComponent<Terrain>();
+				}
+
+				if (terrain != null && !terrains.Contains(terrain)) terrains.Add(terrain);
 			}
 
 			//selecting terrains by their bounding boxes if the frame is larger than one click
