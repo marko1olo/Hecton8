@@ -10227,28 +10227,9 @@ namespace Hecton8.Physics
             impactEventFlags[i] = 0;
             BuoyancyParams p = objParams[i];
 
-            if (p.simulationMode == 1)
+            if (p.simulationMode == 1 || p.simulationMode == 2 || p.isInAir != 0)
             {
                 resultForces[i] = float3.zero;
-                resultTorques[i] = float3.zero;
-                return;
-            }
-
-            if (p.simulationMode == 2)
-            {
-                resultForces[i] = float3.zero;
-                resultTorques[i] = float3.zero;
-                return;
-            }
-
-            // ══════════════════════════════════════════════
-            //  DRY ZONE CHECK — obekt vnutri nezatoplennogo modulya
-            // ══════════════════════════════════════════════
-            // Mgnovennoe otklyuchenie vsey vodnoy fiziki.
-            // Obekt podchinyaetsya tolko Unity gravity.
-            if (p.isInAir != 0)
-            {
-                resultForces[i]  = float3.zero;
                 resultTorques[i] = float3.zero;
                 return;
             }
@@ -10262,12 +10243,10 @@ namespace Hecton8.Physics
                 BuoyancyParams.ExactSurfaceNormalFlag,
                 detailedMathEnabled);
 
-            // ── Glubina pogruzheniya tsentra mass ──
             float waveOffset = waveOffsets[i];
             float surfaceY = waterLevel + waveOffset;
             float depthBelowSurface = surfaceY - pos.y;
 
-            // ── Obekt nad vodoy → nulevye sily ──
             if (depthBelowSurface <= 0f)
             {
                 resultForces[i]  = float3.zero;
@@ -10275,6 +10254,38 @@ namespace Hecton8.Physics
                 return;
             }
 
+            EvaluateImpactEvent(i, p, pos, vel, depthBelowSurface, surfaceY);
+
+            float subRatio = p.simplifiedSubmersion != 0
+                ? (depthBelowSurface > 0f ? 1f : 0f)
+                : math.saturate(depthBelowSurface * math.rcp(math.max(p.height, 0.0001f)));
+
+            float resolvedWaterDensity = ResolveFluidDensity(i, p, pos, depthBelowSurface, out byte brineSubmerged, out float denseLayer01);
+
+            float3 buoyancyForce = CalculateBuoyancyForce(i, p, subRatio, resolvedWaterDensity, brineSubmerged, out float displacedVolume, out float buoyancyMagnitude);
+
+            float3 sampledCurrent = CalculateSampledCurrent(p, pos, depthBelowSurface);
+            float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
+            float3 analyticalShearForce = CalculateShearForce(p, subRatio, denseLayer01);
+            float3 windAdvectionForce = CalculateWindForce(p, subRatio, depthBelowSurface);
+
+            float3 dragForce = CalculateDragForce(p, pos, vel, sampledCurrent, subRatio, resolvedWaterDensity);
+            float3 dampingVec = CalculateDampingForce(vel, subRatio, resolvedWaterDensity, displacedVolume);
+
+            float3 torqueForces = CalculateTorques(p, pos, up, targetUp, angularVel, sampledCurrent, subRatio, buoyancyMagnitude, depthBelowSurface);
+
+            resultForces[i] = MathGuard.SanitizeFiniteOrZero(
+                buoyancyForce + dragForce + currentF + windAdvectionForce + dampingVec + analyticalShearForce,
+                forceNanErrorCode,
+                mathGuardWriter);
+            resultTorques[i] = MathGuard.SanitizeFiniteOrZero(
+                torqueForces,
+                torqueNanErrorCode,
+                mathGuardWriter);
+        }
+
+        private void EvaluateImpactEvent(int i, BuoyancyParams p, float3 pos, float3 vel, float depthBelowSurface, float surfaceY)
+        {
             float velocitySq = math.lengthsq(vel);
             if (previousPositionValid[i] != 0 &&
                 previousPositions[i].y > surfaceY &&
@@ -10291,15 +10302,14 @@ namespace Hecton8.Physics
                 };
                 impactEventFlags[i] = 1;
             }
+        }
 
-            // ── Koeffitsient pogruzheniya (0..1) ──
-            float subRatio = p.simplifiedSubmersion != 0
-                ? (depthBelowSurface > 0f ? 1f : 0f)
-                : math.saturate(depthBelowSurface * math.rcp(math.max(p.height, 0.0001f)));
+        private float ResolveFluidDensity(int i, BuoyancyParams p, float3 pos, float depthBelowSurface, out byte brineSubmerged, out float denseLayer01)
+        {
             float resolvedWaterDensity = p.useLocalFluidDensityOverride != 0
                 ? math.max(0.01f, p.localFluidDensity)
                 : waterDensity;
-            byte brineSubmerged = 0;
+            brineSubmerged = 0;
             if (brineFlags.IsCreated &&
                 brineHeights.IsCreated &&
                 brineDensityMultipliers.IsCreated &&
@@ -10315,20 +10325,20 @@ namespace Hecton8.Physics
                     brineSubmerged = 1;
                 }
             }
-            float denseLayer01 = 0f;
+            denseLayer01 = 0f;
             if (enableAnalyticalFlowField != 0)
             {
                 float safeHaloclineDepth = math.max(0.01f, haloclineBoundaryDepthMeters);
                 denseLayer01 = depthBelowSurface >= safeHaloclineDepth ? 1f : 0f;
                 resolvedWaterDensity *= 1f + (math.max(1f, deepLayerDensityMultiplier) - 1f) * denseLayer01;
             }
+            return resolvedWaterDensity;
+        }
 
-
-            // ══════════════════════════════════════════════
-            //  1. SILA ARHIMEDA (Buoyancy)
-            // ══════════════════════════════════════════════
-            float displacedVolume = p.volume * subRatio;
-            float buoyancyMagnitude = resolvedWaterDensity * displacedVolume * gravity;
+        private float3 CalculateBuoyancyForce(int i, BuoyancyParams p, float subRatio, float resolvedWaterDensity, byte brineSubmerged, out float displacedVolume, out float buoyancyMagnitude)
+        {
+            displacedVolume = p.volume * subRatio;
+            buoyancyMagnitude = resolvedWaterDensity * displacedVolume * gravity;
             if (useGpuBuoyancyForce != 0 &&
                 p.useLocalFluidDensityOverride == 0 &&
                 i < gpuBuoyancyForcesY.Length)
@@ -10343,16 +10353,11 @@ namespace Hecton8.Physics
                 buoyancyMagnitude = math.min(buoyancyMagnitude, brineForceCap);
             }
 
-            float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
+            return new float3(0f, buoyancyMagnitude, 0f);
+        }
 
-            // ══════════════════════════════════════════════
-            //  2. VYaZKOE SOPROTIVLENIE (Drag)
-            // ══════════════════════════════════════════════
-            float3 dragForce = float3.zero;
-
-            // ══════════════════════════════════════════════
-            //  3. PODVODNOE TEChENIE (Current)
-            // ══════════════════════════════════════════════
+        private float3 CalculateSampledCurrent(BuoyancyParams p, float3 pos, float depthBelowSurface)
+        {
             float3 standardCurrent = baseCurrentForce + p.localCurrent;
             standardCurrent += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
             float3 sampledCurrent = baseCurrentForce + p.localCurrent;
@@ -10430,24 +10435,34 @@ namespace Hecton8.Physics
                         activeWhirlpools[whirlpoolIndex],
                         detailedMathEnabled == 0 ? (byte)1 : (byte)0);
             }
+            return sampledCurrent;
+        }
 
-            float3 analyticalShearForce = float3.zero;
+        private float3 CalculateShearForce(BuoyancyParams p, float subRatio, float denseLayer01)
+        {
             if (enableAnalyticalFlowField != 0 && denseLayer01 > 0f && haloclineShearForcePerKg != 0f && p.currentResponse > 0.0001f)
             {
-                analyticalShearForce = new float3(
+                return new float3(
                     0f,
                     0f,
                     haloclineShearForcePerKg * p.mass * subRatio * math.max(0f, p.currentResponse));
             }
+            return float3.zero;
+        }
 
-            float3 currentF = sampledCurrent * (subRatio * p.mass * p.currentResponse);
+        private float3 CalculateWindForce(BuoyancyParams p, float subRatio, float depthBelowSurface)
+        {
             System.Numerics.Vector3 pureWindVector = Hecton8.PureLogic.Kinematics.SurfaceCurrentWindshearVector.Calculate(
                 new System.Numerics.Vector2(windAdvectionVector.x, windAdvectionVector.z),
                 math.max(0f, windAdvectionForcePerKg) * p.mass * subRatio * p.currentResponse,
                 depthBelowSurface,
                 math.rcp(math.max(SurfaceStormLayerDepthMeters, 0.0001f))
             );
-            float3 windAdvectionForce = new float3(pureWindVector.X, pureWindVector.Y, pureWindVector.Z);
+            return new float3(pureWindVector.X, pureWindVector.Y, pureWindVector.Z);
+        }
+
+        private float3 CalculateDragForce(BuoyancyParams p, float3 pos, float3 vel, float3 sampledCurrent, float subRatio, float resolvedWaterDensity)
+        {
             float viscosityMultiplier = 1f;
             if (enableDynamicViscosityRegions != 0 && activeViscosityRegionCount > 0)
             {
@@ -10468,27 +10483,26 @@ namespace Hecton8.Physics
                                    resolvedWaterDensity *
                                    math.max(0.01f, p.volume) *
                                    subRatio;
-                dragForce = -relativeVelocity * (math.max(1f, relativeSpeed) * dragScalar);
-                dragForce = ClampVectorMagnitude(
+                float3 dragForce = -relativeVelocity * (math.max(1f, relativeSpeed) * dragScalar);
+                return ClampVectorMagnitude(
                     dragForce,
                     math.max(0f, maxQuadraticDragForcePerKg) * math.max(0.01f, p.mass));
             }
+            return float3.zero;
+        }
 
-            // ══════════════════════════════════════════════
-            //  4. DEMPFIROVANIE POKAChIVANIYa
-            // ══════════════════════════════════════════════
+        private float3 CalculateDampingForce(float3 vel, float subRatio, float resolvedWaterDensity, float displacedVolume)
+        {
             float dampingForce = 0f;
             if (subRatio < 1f)
             {
                 dampingForce = -vel.y * resolvedWaterDensity * displacedVolume * 0.5f;
             }
+            return new float3(0f, dampingForce, 0f);
+        }
 
-            float3 dampingVec = new float3(0f, dampingForce, 0f);
-
-            // ══════════════════════════════════════════════
-            //  ITOG
-            // ══════════════════════════════════════════════
-
+        private float3 CalculateTorques(BuoyancyParams p, float3 pos, float3 up, float3 targetUp, float3 angularVel, float3 sampledCurrent, float subRatio, float buoyancyMagnitude, float depthBelowSurface)
+        {
             float surfaceBand = math.saturate(
                 1f - math.abs(depthBelowSurface - p.height) *
                 math.rcp(math.max(0.25f, p.height * 1.5f)));
@@ -10509,6 +10523,13 @@ namespace Hecton8.Physics
             float3 shearTorque = float3.zero;
             if (enableTidalShearZones != 0 && tidalShearTorqueStrength > 0f && p.currentResponse > 0.0001f)
             {
+                float3 standardCurrent = baseCurrentForce + p.localCurrent;
+                standardCurrent += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
+                float giantWakeDepth01 = math.saturate(
+                    (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) *
+                    math.rcp(math.max(0.001f, giantWakeDepthFadeRange)));
+                float3 resolvedGiantWakeCurrent = giantWakeCurrent * giantWakeDepth01;
+
                 float standardSpeedSq = math.lengthsq(standardCurrent);
                 float wakeSpeedSq = math.lengthsq(resolvedGiantWakeCurrent);
                 if (standardSpeedSq > 0.0001f && wakeSpeedSq > 0.0001f)
@@ -10531,14 +10552,7 @@ namespace Hecton8.Physics
                 }
             }
 
-            resultForces[i] = MathGuard.SanitizeFiniteOrZero(
-                buoyancyForce + dragForce + currentF + windAdvectionForce + dampingVec + analyticalShearForce,
-                forceNanErrorCode,
-                mathGuardWriter);
-            resultTorques[i] = MathGuard.SanitizeFiniteOrZero(
-                angularDragTorque + stabilityTorque + gyroscopicFlowTorque + shearTorque,
-                torqueNanErrorCode,
-                mathGuardWriter);
+            return angularDragTorque + stabilityTorque + gyroscopicFlowTorque + shearTorque;
         }
 
         private static float FastMagnitudeApprox(float3 value)
