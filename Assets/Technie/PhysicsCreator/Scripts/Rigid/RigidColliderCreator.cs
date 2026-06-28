@@ -340,9 +340,8 @@ namespace Technie.PhysicsCreator
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
 					RigidColliderCreatorChild child = orphanedColliderChildren[j];
 
-					// todo needs better handling
-					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
-					bool isMatchingAuto = child != null && child.isAutoHull && h.type == HullType.Auto && meshCol != null && h.ContainsAutoMesh(meshCol.sharedMesh);
+					bool isMatchingHierarchy = (h.isChildCollider && c.transform.parent == this.transform) || (!h.isChildCollider && c.transform == this.transform);
+					bool isMatchingAuto = isMatchingHierarchy && child != null && child.isAutoHull && h.type == HullType.Auto && meshCol != null && h.ContainsAutoMesh(meshCol.sharedMesh);
 					if (isMatchingAuto)
 					{
 						HullMapping autoMapping = FindMapping(h);
@@ -365,7 +364,7 @@ namespace Technie.PhysicsCreator
 						// Hull no longer orphaned, so flag to remove it once we've finished trying other colliders
 						matchedHull = true;
 					}
-					else if (isMatchingChild)
+					else if (isMatchingHierarchy)
 					{
 						bool isMatchingBox = h.type == HullType.Box && c is BoxCollider && Approximately(h.collisionBox.collisionBox.center, boxCol.center) && Approximately(h.collisionBox.collisionBox.size, boxCol.size);
 						bool isMatchingSphere = h.type == HullType.Sphere && c is SphereCollider && h.collisionSphere != null && Approximately(h.collisionSphere.center, sphereCol.center) && Approximately(h.collisionSphere.radius, sphereCol.radius);
