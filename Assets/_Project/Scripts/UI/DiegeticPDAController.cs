@@ -1075,13 +1075,7 @@ namespace Hecton8.UI
 
         private static T ResolveNearestParentComponent<T>(Transform start) where T : Component
         {
-            for (Transform current = start; current != null; current = current.parent)
-            {
-                if (current.TryGetComponent(out T component))
-                    return component;
-            }
-
-            return null;
+            return start != null ? start.GetComponentInParent<T>(true) : null;
         }
 
         private void ClearPointerTargetCache()
