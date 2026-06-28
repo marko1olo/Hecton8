@@ -11,9 +11,11 @@ namespace Technie.PhysicsCreator
 		private List<Color32> colours;
 		private List<Vector2> uvs;
 		private List<Vector2> uv1s;
+		private List<Vector2> uv2s;
+		private List<Vector2> uv3s;
 		private List<Vector4> tangents;
 
-		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasTangents)
+		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasUv2, bool hasUv3, bool hasTangents)
 		{
 			vertices = new List<Vector3>();
 
@@ -29,11 +31,17 @@ namespace Technie.PhysicsCreator
 			if (hasUv1)
 				uv1s = new List<Vector2>();
 
+			if (hasUv2)
+				uv2s = new List<Vector2>();
+
+			if (hasUv3)
+				uv3s = new List<Vector2>();
+
 			if (hasTangents)
 				tangents = new List<Vector4>();
 		}
 
-		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1, Vector4[] inputTangents)
+		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1, Vector2[] inputUv2, Vector2[] inputUv3, Vector4[] inputTangents)
 		{
 			vertices = new List<Vector3>();
 
@@ -48,6 +56,12 @@ namespace Technie.PhysicsCreator
 
 			if (inputUv1 != null && inputUv1.Length > 0)
 				uv1s = new List<Vector2>();
+
+			if (inputUv2 != null && inputUv2.Length > 0)
+				uv2s = new List<Vector2>();
+
+			if (inputUv3 != null && inputUv3.Length > 0)
+				uv3s = new List<Vector2>();
 
 			if (inputTangents != null && inputTangents.Length > 0)
 				tangents = new List<Vector4>();
@@ -69,6 +83,12 @@ namespace Technie.PhysicsCreator
 
 				if (uv1s != null)
 					uv1s.Add(inputUv1[nextIndex]);
+
+				if (uv2s != null)
+					uv2s.Add(inputUv2[nextIndex]);
+
+				if (uv3s != null)
+					uv3s.Add(inputUv3[nextIndex]);
 
 				if (tangents != null)
 					tangents.Add(inputTangents[nextIndex]);
@@ -114,6 +134,16 @@ namespace Technie.PhysicsCreator
 			return uv1s != null;
 		}
 
+		public bool HasUv2()
+		{
+			return uv2s != null;
+		}
+
+		public bool HasUv3()
+		{
+			return uv3s != null;
+		}
+
 		public bool HasTangents()
 		{
 			return tangents != null;
@@ -134,6 +164,12 @@ namespace Technie.PhysicsCreator
 
 			if (uv1s != null)
 				uv1s.Add(srcMesh.uv1s[srcIndex]);
+
+			if (uv2s != null)
+				uv2s.Add(srcMesh.uv2s[srcIndex]);
+
+			if (uv3s != null)
+				uv3s.Add(srcMesh.uv3s[srcIndex]);
 
 			if (tangents != null)
 				tangents.Add(srcMesh.tangents[srcIndex]);
@@ -158,6 +194,12 @@ namespace Technie.PhysicsCreator
 			if (uv1s != null)
 				uv1s.Add(Vector2.Lerp(srcMesh.uv1s[i0], srcMesh.uv1s[i1], weight));
 
+			if (uv2s != null)
+				uv2s.Add(Vector2.Lerp(srcMesh.uv2s[i0], srcMesh.uv2s[i1], weight));
+
+			if (uv3s != null)
+				uv3s.Add(Vector2.Lerp(srcMesh.uv3s[i0], srcMesh.uv3s[i1], weight));
+
 			if (tangents != null)
 			{
 				Vector4 t0 = srcMesh.tangents[i0];
@@ -167,7 +209,7 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
-		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s, List<Vector4> destTangents)
+		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s, List<Vector2> destUv2s, List<Vector2> destUv3s, List<Vector4> destTangents)
 		{
 			destVertices.AddRange(this.vertices);
 
@@ -182,6 +224,12 @@ namespace Technie.PhysicsCreator
 
 			if (uv1s != null)
 				destUv1s.AddRange(uv1s);
+
+			if (uv2s != null)
+				destUv2s.AddRange(uv2s);
+
+			if (uv3s != null)
+				destUv3s.AddRange(uv3s);
 
 			if (tangents != null)
 				destTangents.AddRange(tangents);
