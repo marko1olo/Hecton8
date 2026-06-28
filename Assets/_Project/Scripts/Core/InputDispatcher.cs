@@ -3153,7 +3153,7 @@ namespace Hecton8.Core
                 return float2.zero;
 
             float magnitude = FastInputLengthFromSq(magnitudeSq, 0.00000001f);
-            float normalized = math.saturate((magnitude - inner) * math.rcp(math.max(outer - inner, 0.0001f)));
+            float normalized = Hecton8.PureLogic.Systems.AnalogStickDeadzoneNormalizer.Normalize(magnitude, inner, outer);
             float exponent = math.clamp(profile.MoveExponent, 0.25f, 4f);
             float curved = MathLodApproximation.ApproxPow01Curve(normalized, exponent);
             float scale = curved * math.rcp(math.max(magnitude, 0.0001f));
