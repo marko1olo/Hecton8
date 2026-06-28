@@ -218,8 +218,17 @@ namespace Hecton8.AI
 
                         float3 current = SanitizeFinite(Positions[nodeIndex], rootPosition);
                         float3 previous = SanitizeFinite(PreviousPositions[nodeIndex], current);
-                        float3 velocity = (current - previous) * safeDamping;
-                        float3 next = current + velocity + ((safeGravity + safeFlow + organicNoise) * dtSq);
+                        float3 anchor = current + (safeGravity + safeFlow + organicNoise);
+
+                        var result = Hecton8.PureLogic.Ecosystem.LeviathanTentacleSpringCalculator.Compute(
+                            new System.Numerics.Vector3(current.x, current.y, current.z),
+                            new System.Numerics.Vector3(previous.x, previous.y, previous.z),
+                            new System.Numerics.Vector3(anchor.x, anchor.y, anchor.z),
+                            1f, // springStrength
+                            safeDamping,
+                            safeDeltaTime
+                        );
+                        float3 next = new float3(result.X, result.Y, result.Z);
                         PreviousPositions[nodeIndex] = current;
                         Positions[nodeIndex] = SanitizeFinite(next, current);
                     }
