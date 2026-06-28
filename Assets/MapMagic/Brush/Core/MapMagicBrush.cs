@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -36,7 +36,7 @@ namespace MapMagic.Brush
 	{
 		public static readonly HashSet<MapMagicBrush> instances = new HashSet<MapMagicBrush>();
 
-		public static readonly SemVer version = new SemVer(1,0,0); 
+		public static readonly SemVer version = new SemVer(1,0,0);
 
 		[NonSerialized] public bool draw;
 
