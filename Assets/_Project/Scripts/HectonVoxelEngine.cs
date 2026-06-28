@@ -9700,17 +9700,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (elapsedMs <= VoxelAnomalySolveWarningMs)
         {
             _voxelAnomalySolveWarningArmed = false;
-            return;
         }
-
-        if (_voxelAnomalySolveWarningArmed)
-            return;
-
-        _voxelAnomalySolveWarningArmed = true;
-        GlobalTelemetryBus.PublishPerformanceWarning(
-            _VoxelAnomalySolveWarningHash,
-            _VoxelAnomalyContextHash,
-            elapsedMs);
+        else if (!_voxelAnomalySolveWarningArmed)
+        {
+            _voxelAnomalySolveWarningArmed = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _VoxelAnomalySolveWarningHash,
+                _VoxelAnomalyContextHash,
+                elapsedMs);
+        }
     }
 
     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
