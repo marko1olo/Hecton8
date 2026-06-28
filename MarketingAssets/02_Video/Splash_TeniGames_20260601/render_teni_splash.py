@@ -4,6 +4,7 @@ import json
 import math
 import os
 import random
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -482,6 +483,8 @@ def render_frame(t: float, frame: int, variant: str) -> Image.Image:
 
 
 def encode_mp4(variant: str) -> Path:
+    if not re.match(r"^[a-zA-Z0-9_-]+$", variant):
+        raise ValueError(f"Invalid variant: {variant}")
     if FFMPEG is None:
         raise RuntimeError("ffmpeg not found")
     out = OUT_DIR / f"tenigames_splash_{variant}_1080p.mp4"
@@ -528,6 +531,8 @@ def encode_mp4(variant: str) -> Path:
 
 
 def encode_gif(mp4: Path, variant: str) -> Path:
+    if not re.match(r"^[a-zA-Z0-9_-]+$", variant):
+        raise ValueError(f"Invalid variant: {variant}")
     gif = OUT_DIR / f"tenigames_splash_{variant}_960w.gif"
     if os.environ.get("H8_FORCE_RENDER") != "1" and gif.exists() and gif.stat().st_size > 1024:
         return gif
