@@ -977,7 +977,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveHypothermiaFrostIntensity01(float internalTemperatureCelsius)
         {
-            return SomaticSurvivalMath.ResolveHypothermiaFrostIntensity01(internalTemperatureCelsius);
+            return Hecton8.PureLogic.Systems.HypothermiaShiverCurveCalculator.Compute(internalTemperatureCelsius, DefaultInternalTemperatureCelsius, HypothermiaFrostStartCelsius, HypothermiaFrostFullCelsius);
         }
 
         public void SlowTick()
