@@ -1,0 +1,13 @@
+--- Tools/VerifyOpticsBaker.py
++++ Tools/VerifyOpticsBaker.py
+@@ -36,7 +36,7 @@
+     if matrix_bytes != EXPECTED_BYTES:
+         raise AssertionError(f"{rel(MATRIX)} bytes={matrix_bytes} expected={EXPECTED_BYTES}")
+     matrix = np.fromfile(MATRIX, dtype=HALF_DTYPE).reshape(SHAPE)
+-    red_500 = float(matrix[255, 0, 255])
++    red_500 = float(matrix[255, 0, 0])
+-    blue_500 = float(matrix[255, 0, 0])
++    blue_500 = float(matrix[255, 0, 2])
+     if red_500 != 0.0:
+         raise AssertionError("red at 500m is not exactly 0.0")
+     if blue_500 <= 0.0:

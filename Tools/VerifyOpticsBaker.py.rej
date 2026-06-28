@@ -1,0 +1,11 @@
+--- VerifyOpticsBaker.py
++++ VerifyOpticsBaker.py
+@@ -19,7 +19,7 @@
+ MATRIX = ROOT / "Data/Visuals/Water_Extinction_Matrix.bin"
+ MANIFEST = ROOT / "Data/Visuals/Water_Extinction_Matrix.manifest.json"
+ REPORT = ROOT / "Docs/Reports/OPTICS_LUT_VALIDATION.json"
+-EXPECTED_BYTES = 256 * 256 * 256 * 2
++EXPECTED_BYTES = 393216
+
+ def rel(path: Path) -> str:
+     try:
