@@ -1,0 +1,14 @@
+{
+    "name": "Hecton8.PureLogic",
+    "rootNamespace": "Hecton8.PureLogic",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
