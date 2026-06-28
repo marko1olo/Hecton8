@@ -1264,20 +1264,20 @@ namespace MapMagic.Nodes
 
 			public void OnAfterDeserialize () 
 			{
-//				try 
+				try
 				{
 					if (serializer200beta != null) serializer200beta.Deserialize(this);
 					//if (serializer199 != null) serializer199.Deserialize(this);
 					//if (serializedNodes!=null && serializedNodes.Length!=0) generators = (Generator[])Serializer.Deserialize(serializedNodes);
 				}
-/*				
+
 				catch (Exception e) 
 				{ 
 					generators=null; 
 					//Den.Tools.Tasks.CoroutineManager.Enqueue(()=>Debug.LogError("Could not load graph data: " + name + "\n" + e, this));
 					throw new Exception("Could not load graph data:\n" + e); 
 				} 
-*/
+
 			}
 
 			public static void DeepCopy (Graph src, Graph dst)
