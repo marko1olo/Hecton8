@@ -229,8 +229,7 @@ namespace MapMagic.Terrains.GUI
 							if (pinnedCustomTerrains.Contains(terrain)) continue;
 							terrain.transform.parent = mapMagic.transform;
 
-							TerrainTile tile = terrain.gameObject.GetComponent<TerrainTile>();
-							if (tile == null) tile = terrain.gameObject.AddComponent<TerrainTile>();
+							if (!terrain.TryGetComponent<TerrainTile>(out TerrainTile tile)) tile = terrain.gameObject.AddComponent<TerrainTile>();
 							tile.main.terrain = terrain;
 							//tile.main.area = new Terrains.Area(terrain);
 							//tile.main.use = true;
