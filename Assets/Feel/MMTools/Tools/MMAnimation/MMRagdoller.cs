@@ -138,10 +138,17 @@ namespace MoreMountains.Tools
 			// we grab all rigidbodies and set them to kinematic
 			_rigidbodies = GetComponentsInChildren(typeof(Rigidbody));
 
+			MMRagdollerIgnore[] ignores = GetComponentsInChildren<MMRagdollerIgnore>();
+			HashSet<GameObject> ignoreSet = new HashSet<GameObject>();
+			foreach (MMRagdollerIgnore ignore in ignores)
+			{
+				ignoreSet.Add(ignore.gameObject);
+			}
+
 			_rigidbodiesTempList = new List<Component>();
 			foreach (Component rigidbody in _rigidbodies)
 			{
-				if (!rigidbody.TryGetComponent<MMRagdollerIgnore>(out _))
+				if (!ignoreSet.Contains(rigidbody.gameObject))
 				{
 					_rigidbodiesTempList.Add(rigidbody);
 				}
