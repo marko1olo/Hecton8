@@ -219,9 +219,12 @@ namespace MapMagic.Terrains.GUI
 		/// Finds an aimed terrain from the list of all possible terrains (will not aim the terrain that is not in list)
 		{
 			RaycastHit[] hits = Physics.RaycastAll(aimRay, Mathf.Infinity);
+			if (hits.Length == 0) return new RaycastHit();
+
 			for (int h=0; h<hits.Length; h++)
 			{
-				Terrain hitTerrain = hits[h].collider.gameObject.GetComponent<Terrain>();
+				// Minor optimization: avoiding intermediate `.gameObject` C++ boundary crossing call.
+				Terrain hitTerrain = hits[h].collider.GetComponent<Terrain>();
 				if (hitTerrain == null) continue;
 				if (possibleTerrains!=null && !possibleTerrains.Contains(hitTerrain)) continue;
 				if (ignoredTerrains!=null && ignoredTerrains.Contains(hitTerrain)) continue;
