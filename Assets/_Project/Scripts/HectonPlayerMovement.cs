@@ -9583,134 +9583,9 @@ namespace Hecton8.Gameplay
             return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
         }
 
-        public void FixedTick(float fixedDeltaTime)
+
+        private void AdvanceTimers(float fixedDeltaTime)
         {
-            SuitData suit = currentSuitData;
-            if (suit == null) return;
-            if (_juiceProcessor == null) return;
-
-            using (_fixedTickProfilerMarker.Auto())
-            {
-                RefreshVrComfortSettingsCache();
-                AdvanceMovementProbeCacheFrame();
-
-                if (_transportEvaLockTicks > 0)
-                    _transportEvaLockTicks--;
-
-                if (_transportBailoutCooldownTimer > 0f)
-                {
-                    _transportBailoutCooldownTimer -= fixedDeltaTime;
-                    if (_transportBailoutCooldownTimer < 0f)
-                        _transportBailoutCooldownTimer = 0f;
-                }
-
-                _currentFixedDeltaTime = fixedDeltaTime;
-                RefreshActiveGravity(fixedDeltaTime);
-                Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
-                Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
-                _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
-                _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
-                WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
-                _useFixedFrameSpatialCache = true;
-                PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
-                _stateMachine?.AdvanceFixed(fixedDeltaTime);
-                ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
-                Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
-                ResolveActiveTransportPlatform();
-                if (_transportEvaLockTicks <= 0 &&
-                    previousTransportPlatform != null &&
-                    _activeTransportPlatform == null)
-                {
-                    ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
-                }
-
-                bool exosuitActive = IsExosuitTransportActive();
-                bool exosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
-                SyncTransportPlatformRotation();
-                RefreshFixedFrameSpatialCache();
-                ApplyTransportPlatformCarrierMotion(fixedDeltaTime, exosuitKinematicAuthority);
-                RefreshFixedFrameSpatialCache();
-                RefreshSharedGroundSweepBuffer();
-                float previousWaterImmersionRatio = _waterImmersionRatio;
-                bool wasGroundedLastFixedTick = _isGrounded;
-                float currentVerticalVelocity = authoritativeVelocity.y;
-
-                _rb.useGravity = false;
-
-                if (_isWalking)
-                {
-                    _bodyYaw = _cameraYaw;
-                    _bodyYawVelocity = 0f;
-                }
-                else
-                {
-                    float bodyYawOmega = suit.bodyYawSpringOmega *
-                        ResolveHeavyCarryBodyYawSpringMultiplier() *
-                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
-                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
-                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
-                }
-
-            _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
-            _wasGroundedLastFrame = _isGrounded;
-
-            GroundCheck();
-            _playerMotor?.SetGroundedState(_isGrounded);
-
-            UpdateOceanWaterHeight();
-            _waterImmersionRatio = ComputeImmersionRatio();
-            _currentDepth = ComputeDepth();
-            UpdateBottomClearance();
-
-            if (IsInDryInterior())
-            {
-                _waterImmersionRatio = 0f;
-                _smoothedImmersionRatio = 0f;
-                _currentDepth = 0f;
-            }
-
-            UpdateBrineLayerState(fixedDeltaTime);
-
-            ApplyLadderSplineSnapFromAsyncProbe(exosuitKinematicAuthority);
-
-            if (_waterImmersionRatio > _smoothedImmersionRatio)
-            {
-                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
-                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
-            }
-            else
-            {
-                float exitT = ResolveLinearBlendT(3f, fixedDeltaTime);
-                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
-            }
-
-            float physicsImmersion = _smoothedImmersionRatio;
-            float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
-            bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
-            bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
-            bool isDryLand = physicsImmersion <= 0.01f;
-            if (_isGrounded && isDryLand)
-            {
-                _dryGroundGraceTimer = dryGroundGraceTime;
-            }
-            else if (_dryGroundGraceTimer > 0f)
-            {
-                _dryGroundGraceTimer -= fixedDeltaTime;
-                if (_dryGroundGraceTimer < 0f)
-                    _dryGroundGraceTimer = 0f;
-            }
-
-            if (_isGrounded && isShallowEnoughForShore)
-            {
-                _shoreGroundGraceTimer = shoreGroundGraceTime;
-            }
-            else if (_shoreGroundGraceTimer > 0f)
-            {
-                _shoreGroundGraceTimer -= fixedDeltaTime;
-                if (_shoreGroundGraceTimer < 0f)
-                    _shoreGroundGraceTimer = 0f;
-            }
-
             if (_jumpBufferTimer > 0f)
             {
                 _jumpBufferTimer -= fixedDeltaTime;
@@ -9842,6 +9717,137 @@ namespace Hecton8.Gameplay
                     _wipeoutSeverity = 0f;
                 }
             }
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            SuitData suit = currentSuitData;
+            if (suit == null) return;
+            if (_juiceProcessor == null) return;
+
+            using (_fixedTickProfilerMarker.Auto())
+            {
+                RefreshVrComfortSettingsCache();
+                AdvanceMovementProbeCacheFrame();
+
+                if (_transportEvaLockTicks > 0)
+                    _transportEvaLockTicks--;
+
+                if (_transportBailoutCooldownTimer > 0f)
+                {
+                    _transportBailoutCooldownTimer -= fixedDeltaTime;
+                    if (_transportBailoutCooldownTimer < 0f)
+                        _transportBailoutCooldownTimer = 0f;
+                }
+
+                _currentFixedDeltaTime = fixedDeltaTime;
+                RefreshActiveGravity(fixedDeltaTime);
+                Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+                Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+                _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+                _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+                WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+                _useFixedFrameSpatialCache = true;
+                PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+                _stateMachine?.AdvanceFixed(fixedDeltaTime);
+                ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+                Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+                ResolveActiveTransportPlatform();
+                if (_transportEvaLockTicks <= 0 &&
+                    previousTransportPlatform != null &&
+                    _activeTransportPlatform == null)
+                {
+                    ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+                }
+
+                bool exosuitActive = IsExosuitTransportActive();
+                bool exosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+                SyncTransportPlatformRotation();
+                RefreshFixedFrameSpatialCache();
+                ApplyTransportPlatformCarrierMotion(fixedDeltaTime, exosuitKinematicAuthority);
+                RefreshFixedFrameSpatialCache();
+                RefreshSharedGroundSweepBuffer();
+                float previousWaterImmersionRatio = _waterImmersionRatio;
+                bool wasGroundedLastFixedTick = _isGrounded;
+                float currentVerticalVelocity = authoritativeVelocity.y;
+
+                _rb.useGravity = false;
+
+                if (_isWalking)
+                {
+                    _bodyYaw = _cameraYaw;
+                    _bodyYawVelocity = 0f;
+                }
+                else
+                {
+                    float bodyYawOmega = suit.bodyYawSpringOmega *
+                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+                }
+
+            _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+            _wasGroundedLastFrame = _isGrounded;
+
+            GroundCheck();
+            _playerMotor?.SetGroundedState(_isGrounded);
+
+            UpdateOceanWaterHeight();
+            _waterImmersionRatio = ComputeImmersionRatio();
+            _currentDepth = ComputeDepth();
+            UpdateBottomClearance();
+
+            if (IsInDryInterior())
+            {
+                _waterImmersionRatio = 0f;
+                _smoothedImmersionRatio = 0f;
+                _currentDepth = 0f;
+            }
+
+            UpdateBrineLayerState(fixedDeltaTime);
+
+            ApplyLadderSplineSnapFromAsyncProbe(exosuitKinematicAuthority);
+
+            if (_waterImmersionRatio > _smoothedImmersionRatio)
+            {
+                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
+            }
+            else
+            {
+                float exitT = ResolveLinearBlendT(3f, fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
+            }
+
+            float physicsImmersion = _smoothedImmersionRatio;
+            float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+            bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+            bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+            bool isDryLand = physicsImmersion <= 0.01f;
+            if (_isGrounded && isDryLand)
+            {
+                _dryGroundGraceTimer = dryGroundGraceTime;
+            }
+            else if (_dryGroundGraceTimer > 0f)
+            {
+                _dryGroundGraceTimer -= fixedDeltaTime;
+                if (_dryGroundGraceTimer < 0f)
+                    _dryGroundGraceTimer = 0f;
+            }
+
+            if (_isGrounded && isShallowEnoughForShore)
+            {
+                _shoreGroundGraceTimer = shoreGroundGraceTime;
+            }
+            else if (_shoreGroundGraceTimer > 0f)
+            {
+                _shoreGroundGraceTimer -= fixedDeltaTime;
+                if (_shoreGroundGraceTimer < 0f)
+                    _shoreGroundGraceTimer = 0f;
+            }
+
+            AdvanceTimers(fixedDeltaTime);
 
             UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
             UpdateVegetationDensityLinearDamping(fixedDeltaTime);
