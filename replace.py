@@ -1,22 +1,25 @@
 import re
 
-with open('./Assets/_Project/Scripts/HectonBoidController.cs', 'r') as f:
-    text = f.read()
+content = open('Assets/MapMagic/Tools/Matrix/Matrix.cs', 'r').read()
 
-text = text.replace('public int BoidCount => boidCount;', '''public int BoidCount => boidCount;
+search = """							float fallof;
+							if (transition == 0)
+								fallof = dist>radius ? 0 : 1;
+							else
+							{
+								fallof = 1 - (dist-radius) / transition;
+								if (fallof>1) fallof = 1; if (fallof<0) fallof = 0;
+								if (smoothFallof) fallof = 3*fallof*fallof - 2*fallof*fallof*fallof;
+							}"""
 
-        /// <summary>
-        /// Pure logic redirect for boid alignment force.
-        /// Extracts calculation safely for tests.
-        /// </summary>
-        public static UnityEngine.Vector3 CalculateSteerForce(UnityEngine.Vector3 boidVelocity, UnityEngine.Vector3 averageNeighborVelocity, float maxSteerForce)
-        {
-            var systemBoidVel = new System.Numerics.Vector3(boidVelocity.x, boidVelocity.y, boidVelocity.z);
-            var systemAvgVel = new System.Numerics.Vector3(averageNeighborVelocity.x, averageNeighborVelocity.y, averageNeighborVelocity.z);
-            var result = Hecton8.PureLogic.Ecosystem.FlockingBoidAlignmentVector.Calculate(systemBoidVel, systemAvgVel, maxSteerForce);
-            return new UnityEngine.Vector3(result.X, result.Y, result.Z);
-        }
-''')
+replace = """							float totalRadius = radius + transition;
+							float hardness = totalRadius == 0 ? 1 : radius / totalRadius;
+							float fallof = new Coord(x,z).GetFalloff(new Vector2D(centerX, centerZ), totalRadius, hardness, smoothFallof ? 1 : 0);"""
 
-with open('./Assets/_Project/Scripts/HectonBoidController.cs', 'w') as f:
-    f.write(text)
+if search in content:
+    print("Found! Replacing.")
+    content = content.replace(search, replace)
+    open('Assets/MapMagic/Tools/Matrix/Matrix.cs', 'w').write(content)
+else:
+    print("Not found.")
+

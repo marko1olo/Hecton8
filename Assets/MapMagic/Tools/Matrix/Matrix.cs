@@ -1965,7 +1965,6 @@ namespace Den.Tools.Matrices
 				/// Center does not need to be the real center, it's just used to calculate fallof
 				/// Hardness is the percent (0-1) of the stamp that has 100% fallof
 				/// Used in Locks (seems only)
-				/// TODO: switch to Fallof
 				{
 					CoordRect intersection = CoordRect.Intersected(rect, stamp.rect);
 					Coord min = intersection.Min; Coord max = intersection.Max;
@@ -1983,15 +1982,9 @@ namespace Den.Tools.Matrices
 							//int srcPos = (z-src.rect.offset.z)*src.rect.size.x + x - src.rect.offset.x; //not used
 							//if (dist > radius+transition) { arr[pos] = src.arr[srcPos]; continue; }
 
-							float fallof;
-							if (transition == 0)
-								fallof = dist>radius ? 0 : 1;
-							else
-							{
-								fallof = 1 - (dist-radius) / transition;
-								if (fallof>1) fallof = 1; if (fallof<0) fallof = 0;
-								if (smoothFallof) fallof = 3*fallof*fallof - 2*fallof*fallof*fallof;
-							}
+							float totalRadius = radius + transition;
+							float hardness = totalRadius == 0 ? 1 : radius / totalRadius;
+							float fallof = new Coord(x,z).GetFalloff(new Vector2D(centerX, centerZ), totalRadius, hardness, smoothFallof ? 1 : 0);
 
 							arr[pos] = src.arr[pos]*(1-fallof) + stamp.arr[stampPos]*fallof;
 						}
