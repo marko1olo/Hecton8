@@ -160,6 +160,7 @@ namespace MapMagic.Brush.Undo
 	{
 		public const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
+		public MapMagicBrush brush;
 
 		public MapMagicBrush brush;
 
@@ -180,6 +181,7 @@ namespace MapMagic.Brush.Undo
 			public void OnUndoRedoPerformed ()
 			{
 				bool undoMatched = false;
+
 
 				if (brush != null && brush.curUndoId != brush.prevUndoId)
 				{
@@ -220,6 +222,9 @@ namespace MapMagic.Brush.Undo
 			sets.Add( new Dictionary<Terrain,TerrainUndoData>() );
 
 			#if UNITY_EDITOR
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
+
 				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
@@ -341,6 +346,7 @@ namespace MapMagic.Brush.Undo
 		const int numChunksPerTerrain = 8; //number*number of chunks in terrain
 		const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
+		public MapMagicBrush brush;
 
 		public MapMagicBrush brush;
 
@@ -359,6 +365,7 @@ namespace MapMagic.Brush.Undo
 			public void OnUndoRedoPerformed ()
 			{
 				bool undoMatched = false;
+
 
 				if (brush != null && brush.curUndoId != brush.prevUndoId)
 				{
@@ -400,6 +407,9 @@ namespace MapMagic.Brush.Undo
 			sets.Add(newSet);
 
 			#if UNITY_EDITOR
+				brush.curUndoId++;
+				brush.prevUndoId = brush.curUndoId;
+
 				string currGroupName = UnityEditor.Undo.GetCurrentGroupName();
 				if (currGroupName != undoName)
 					lastUndoName = currGroupName;
