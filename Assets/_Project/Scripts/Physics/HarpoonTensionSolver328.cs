@@ -1848,8 +1848,7 @@ namespace Hecton8.Physics
                 float distance = lenSq * invLen;
                 float3 direction = math.select(new float3(0f, 0f, 1f), localDelta * invLen, lenSq > HarpoonTensionSolver328Constants.Epsilon);
                 float rest = math.max(HarpoonTensionSolver328Constants.Epsilon, state.RestLength);
-                float stretch = math.max(0f, distance - rest);
-                float tension = stretch * math.max(0f, TensionConstant);
+                float tension = Hecton8.PureLogic.Systems.HarpoonTensionForceCalculator.Compute(distance, rest, TensionConstant, 0f, 0f);
                 if (!math.isfinite(tension))
                 {
                     tension = 0f;
