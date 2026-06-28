@@ -466,12 +466,16 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			// todo: something fucky happens sometimes when fallback fonts are the only things in town
-			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
-				// will draw on dispose
+			bool hasMainMesh = tmp.mesh != null && tmp.mesh.vertexCount > 0;
+
+			if( hasMainMesh ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+					// will draw on dispose
+				}
 			}
 
 			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
+			bool hasAnySubmesh = false;
 			if( submeshes != null ) {
 				for( int i = 0; i < submeshes.Length; i++ ) {
 					TMP_SubMesh sm = submeshes[i];
@@ -480,10 +484,24 @@ namespace Shapes {
 						sm.renderer.enabled = false; // :>
 					if( sm.sharedMaterial == null )
 						continue; // cursed but ok
-					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
-						// will draw on dispose
+
+					bool isFirstDrawn = !hasMainMesh && !hasAnySubmesh;
+					int submeshDisposeId = isFirstDrawn ? disposeId : -1;
+
+					if( sm.mesh != null && sm.mesh.vertexCount > 0 ) {
+						// We need to use the original drawType so it handles TextPooledAuto/Persistent correctly,
+						// but pass the submeshDisposeId which might be -1 if the main mesh already took the auto-dispose ID.
+						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: submeshDisposeId ) ) {
+							// will draw on dispose
+						}
+						hasAnySubmesh = true;
 					}
 				}
+			}
+
+			// If nothing was drawn but we have an auto-dispose ID, we still need to dispose it
+			if( !hasMainMesh && !hasAnySubmesh && disposeId != -1 && drawType == IMDrawer.DrawType.TextPooledAuto && DrawCommand.IsAddingDrawCommandsToBuffer ) {
+				DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( disposeId );
 			}
 		}
 
