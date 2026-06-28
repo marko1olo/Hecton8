@@ -117,7 +117,7 @@ VertexOutput vert (VertexInput v) {
     // radius calc
     int thicknessSpace = PROP(_ThicknessSpace);
 	LineWidthData widthData = GetScreenSpaceWidthData( ptWorld, CAM_RIGHT, thickness, thicknessSpace );
-	o.IP_pxCoverage = widthData.thicknessPixelsTarget / scaleThickness; // hack: this is a lil weird honestly - I think we're mixing local vs world somehere before this
+	o.IP_pxCoverage = widthData.thicknessPixelsTarget / scaleThickness;
 	half vertexRadius = widthData.thicknessMeters * 0.5;
 	#if LOCAL_ANTI_ALIASING_QUALITY > 0
         half paddingWorldSpace = (0.5 * AA_PADDING_PX / widthData.pxPerMeter);
