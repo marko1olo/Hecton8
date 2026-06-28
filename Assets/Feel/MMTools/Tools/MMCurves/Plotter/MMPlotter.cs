@@ -137,9 +137,23 @@ namespace MoreMountains.Tools
 
 		protected virtual void DrawPoints()
 		{
+			MeshRenderer prefabRenderer = PlotPointPrefab.GetComponent<MeshRenderer>();
+			bool hasRenderer = prefabRenderer != null;
+
 			for (int i = 0; i < _points.Length; i++)
 			{
-				_point = Instantiate(PlotPointPrefab);
+				if (hasRenderer)
+				{
+					MeshRenderer pointRenderer = Instantiate(prefabRenderer);
+					_point = pointRenderer.transform;
+					pointRenderer.material = PlotPointMaterial;
+				}
+				else
+				{
+					_point = Instantiate(PlotPointPrefab);
+					_point.gameObject.MMGetComponentNoAlloc<MeshRenderer>().material = PlotPointMaterial;
+				}
+
 				_point.name = this.name + "Point" + i;
 
 				_pointValues.x = i * (1f / Resolution);
@@ -152,8 +166,6 @@ namespace MoreMountains.Tools
 
 				_point.localPosition = _position;
 				_point.localScale = _scale;
-
-				_point.gameObject.MMGetComponentNoAlloc<MeshRenderer>().material = PlotPointMaterial;
 
 				_point.SetParent(transform, false);
 				_points[i] = _point;
