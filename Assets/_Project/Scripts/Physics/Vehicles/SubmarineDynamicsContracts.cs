@@ -1694,7 +1694,16 @@ namespace Hecton8.Physics.Vehicles
             float3 thrustWorld = throttleVector * (config.MaxThrustN * throttle01);
             float speedSq = math.lengthsq(state.LinearVelocity);
             speedSq = math.isfinite(speedSq) ? speedSq : 0f;
-            float cavitationIndex = ComputeCavitation(depthMeters, throttle01, speedSq, in config);
+            // We must call the isolated pure logic static class
+            // Derive inputs for the pure logic from the simulation variables
+            float throttleToRpmScalar = 200f;
+            float hullVolumePower = 0.33f;
+            float propDiameterScalar = 0.4f;
+            float propRPM = throttle01 * throttleToRpmScalar;
+            float propDiameterM = math.pow(SafePositive(config.HullVolumeM3, 1f), hullVolumePower) * propDiameterScalar;
+            float waterTemperature = 10f;
+            float cavitationIndex = global::Hecton8.PureLogic.Systems.PropellerCavitationLimitCalculator.Compute(propRPM, depthMeters, waterTemperature, propDiameterM);
+
             if (cavitationIndex < config.CavitationThreshold)
             {
                 float stutter = 0.25f + 0.75f * Hash01(Frame + (uint)index * 101u);
@@ -1940,12 +1949,7 @@ namespace Hecton8.Physics.Vehicles
             return math.lerp(dragLut[index], dragLut[next], t);
         }
 
-        private static float ComputeCavitation(float depthMeters, float throttle01, float speedSq, in SubmarineKinematicConfig config)
-        {
-            float depthSafety = math.saturate(depthMeters / math.max(0.1f, SafePositive(config.CavitationDepthMeters, 0.1f)));
-            float speedPenalty = math.saturate(speedSq * 0.01f);
-            return depthSafety + (1f - throttle01) - (speedPenalty * throttle01 * 0.35f);
-        }
+
 
         private static float3 ResolveInertiaTensor(float totalMass, float3 centerOfMassLocal, float floodMass, in SubmarineKinematicConfig config)
         {
