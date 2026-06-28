@@ -6195,8 +6195,22 @@ namespace Hecton8.Physics
                 if (targetBody == null || targetBody.isKinematic)
                     continue;
 
+                float burstEnergy = burstEvent.Acceleration * burstEvent.Intensity01 * 1000f; // Derived equivalent energy
+                var rawForce = Hecton8.PureLogic.Kinematics.CavitationBurstShockwaveForce.Calculate(
+                    new System.Numerics.Vector3(targetBody.worldCenterOfMass.x, targetBody.worldCenterOfMass.y, targetBody.worldCenterOfMass.z),
+                    new System.Numerics.Vector3(burstEvent.Position.x, burstEvent.Position.y, burstEvent.Position.z),
+                    burstEnergy,
+                    waterDensity
+                );
+
+                Vector3 impulseForce = new Vector3(rawForce.X, rawForce.Y, rawForce.Z);
+
+                // Re-apply the engine specific direction modifiers and checks
                 Vector3 radial = targetBody.worldCenterOfMass - burstEvent.Position;
                 float radialDistanceSq = radial.sqrMagnitude;
+                if (radialDistanceSq > burstEvent.RadiusSq)
+                    continue;
+
                 Vector3 radialDirection = radialDistanceSq > 0.000001f
                     ? NormalizeOrDefault(radial, burstEvent.Direction)
                     : burstEvent.Direction;
@@ -6204,12 +6218,13 @@ namespace Hecton8.Physics
                 radialDirection.y += cavitationShockwaveVerticalLift;
                 radialDirection = NormalizeOrDefault(radialDirection, Vector3.up);
 
-                float distance01 = math.saturate(1f - radialDistanceSq * burstEvent.InvRadiusSq);
-                distance01 *= distance01;
-                if (distance01 <= 0.0001f)
-                    continue;
+                // The pure logic calculated a force impulse.
+                // We'll extract its magnitude to use as velocityChange since it scales inversely.
+                float velocityChange = impulseForce.magnitude;
 
-                float velocityChange = burstEvent.Acceleration * burstEvent.Intensity01 * distance01;
+                // If the impulse is zero, continue.
+                if (velocityChange <= 0.0001f)
+                    continue;
                 GlobalPhysicsStateManager.QueueKinematicImpact(
                     targetBody,
                     burstEvent.Position,
