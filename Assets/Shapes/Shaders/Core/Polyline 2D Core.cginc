@@ -185,7 +185,7 @@ VertexOutput vert (VertexInput v) {
     // todo: this causes *bad things* with anti-aliasing
     // it's complicated - this doesn't work due to how barycentric interpolation skews coordinates.
     // just scaling the UVs overscales those skew regions leading to dents in the AA region
-    o.IP_nrmCoordLat = v.uv0.x * widthData.aaPaddingScale; // scale compensate for fading
+    o.IP_nrmCoordLat = v.uv0.x * vertexRadius; // Use physical distance to avoid barycentric kink
     o.IP_nrmCoordLong = v.uv0.z;
 
     //float depth = unity_ObjectToWorld[2][3];
@@ -219,7 +219,7 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
         
 	// used for line segments and bevel joins
 	#if LOCAL_ANTI_ALIASING_QUALITY > 0 && ( defined(IS_JOIN_MESH) == false || (defined(IS_JOIN_MESH) && defined(JOIN_BEVEL)) )
-        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat, i.IP_pxCoverage );
+        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat / i.IP_radius, i.IP_pxCoverage );
         half maskEdgesCap = GetLineLocalAA( i.IP_nrmCoordLong, i.IP_pxCoverage );
         shape_mask = min( shape_mask, min( maskEdges, maskEdgesCap ) );
     #endif
