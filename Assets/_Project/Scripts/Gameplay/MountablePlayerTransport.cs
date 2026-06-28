@@ -2130,9 +2130,20 @@ namespace Hecton8.Gameplay
                 out Vector3 kccVelocity)
                 ? kccVelocity
                 : platformVelocityAtRider;
-            Vector3 riderRelativeVelocity = HectonPlayerMotor.SafeVelocity(riderVelocity - platformVelocityAtRider);
+
             Vector3 platformVelocityAtExit = GetPlatformPointVelocity(exitPosition);
-            Vector3 candidateVelocity = platformVelocityAtExit + riderRelativeVelocity;
+            if (!IsFiniteVector(platformVelocityAtExit) || !IsFiniteVector(riderVelocity))
+                return false;
+
+            float playerMass = _riderMovement != null ? _riderMovement.ResolveAuthoritativeBodyMassKg() : 85f;
+            float vehicleMass = _transportBody != null ? _transportBody.mass : 1500f;
+
+            System.Numerics.Vector3 sysVehicleVelocity = new System.Numerics.Vector3(platformVelocityAtExit.x, platformVelocityAtExit.y, platformVelocityAtExit.z);
+            System.Numerics.Vector3 sysPlayerVelocity = new System.Numerics.Vector3(riderVelocity.x, riderVelocity.y, riderVelocity.z);
+
+            System.Numerics.Vector3 sysResult = Hecton8.PureLogic.Kinematics.InertiaTransferCalculator.Compute(sysVehicleVelocity, sysPlayerVelocity, 0.85f, playerMass, vehicleMass);
+            Vector3 candidateVelocity = new Vector3(sysResult.X, sysResult.Y, sysResult.Z);
+
             if (!IsFiniteVector(candidateVelocity))
                 return false;
 

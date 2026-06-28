@@ -616,7 +616,11 @@ namespace Hecton8.World
             float distance01 = math.saturate(distanceSq * math.rcp(SdfOcclusionProbeMaxDistanceMeters * SdfOcclusionProbeMaxDistanceMeters));
             float obstruction01 = math.saturate(math.max(density01, distance01 * 0.35f));
             float transmission01 = math.lerp(SdfOcclusionTransmission01, SdfOcclusionTransmission01 * 0.5f, obstruction01);
-            float lowPassCutoffHz = math.lerp(SdfOcclusionLowPassHertz, MinimumLowPassCutoffHertz, obstruction01 * 0.35f);
+
+            float thicknessCm = obstruction01 * 100f;
+            float materialDensity = density01;
+            float lowPassCutoffHz = Hecton8.PureLogic.Systems.SoundObstructionLowpassCutoffCalculator.Compute(SdfOcclusionLowPassHertz, thicknessCm, materialDensity);
+
             result = new AcousticOcclusionResult(
                 math.clamp(transmission01, 0f, 1f),
                 math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),

@@ -7787,6 +7787,12 @@ namespace Hecton8.Gameplay
 
         private void SetSprintingState(bool isSprinting)
         {
+            if (isSprinting)
+            {
+                float stamina = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 1f;
+                isSprinting = Hecton8.PureLogic.Kinematics.SprintStaminaGate.EvaluateGate(stamina, 0.25f, 0.05f, _isSprinting);
+            }
+
             if (_isSprinting == isSprinting)
                 return;
 

@@ -2018,13 +2018,10 @@ namespace Hecton8.Gameplay
             float carryMassFactor = ResolveOxygenCarryMassScale();
             float equipmentFactor = ResolveOxygenRebreatherScale();
             float barotraumaFactor = ResolveBarotraumaOxygenDrainMultiplier();
-            return ResolveMultiplicativeOxygenDrain(
-                baseRate,
-                pressureFactor,
-                movementFactor,
-                stressFactor,
-                leakFactor,
-                carryMassFactor) * equipmentFactor * barotraumaFactor;
+
+            float pureO2Drain = Hecton8.PureLogic.Systems.SurvivalSuitOxygenBurnRate.Calculate(baseRate, movementFactor, pressureFactor);
+
+            return pureO2Drain * stressFactor * leakFactor * carryMassFactor * equipmentFactor * barotraumaFactor;
         }
 
         private float ResolveOxygenRebreatherScale()
