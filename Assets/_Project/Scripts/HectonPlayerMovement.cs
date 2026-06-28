@@ -1863,6 +1863,7 @@ namespace Hecton8.Gameplay
         public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
 
         public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
+        public bool IsSprinting => _isSprinting;
 
         /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
         public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();

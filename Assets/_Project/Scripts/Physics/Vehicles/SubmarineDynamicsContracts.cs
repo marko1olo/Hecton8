@@ -1097,7 +1097,7 @@ namespace Hecton8.Physics.Vehicles
             uint flags = 0u;
             if (enabled && !suppressed && !nonFinite)
             {
-                float pitchTorque = (pitchError * gyro.ProportionalGainPitch) - (pitchOmega * gyro.DerivativeGainPitch);
+                float pitchTorque = global::Hecton8.PureLogic.Systems.PitchTrimCorrectionCalculator.Compute(pitchError, gyro.ProportionalGainPitch, gyro.MaxCorrectionTorque, pitchOmega, gyro.DerivativeGainPitch);
                 float rollTorque = (rollError * gyro.ProportionalGainRoll) - (rollOmega * gyro.DerivativeGainRoll);
                 torque = (right * pitchTorque) + (forward * rollTorque);
                 torque = SubmarineGyroMath.ClampMagnitude(torque, gyro.MaxCorrectionTorque, out bool clamped);

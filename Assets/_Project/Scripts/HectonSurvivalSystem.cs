@@ -2424,7 +2424,14 @@ namespace Hecton8.Gameplay
             hunger = math.max(0f, hunger - stats.HungerDrainRate * coldNutritionMultiplier * dt);
 
             // Drain thirst (slightly faster)
-            thirst = math.max(0f, thirst - stats.ThirstDrainRate * dt);
+            float exertion = (_playerMovement != null && _playerMovement.IsSprinting) ? 1f : 0f;
+            float sweatLossRate = Hecton8.PureLogic.Systems.HydrationSweatLossCalculator.Compute(
+                exertion,
+                _environmentTemperature,
+                stats.ThirstDrainRate,
+                stats != null ? stats.MaxSafeTemp : 35f
+            );
+            thirst = math.max(0f, thirst - sweatLossRate * dt);
 
             // Apply starvation damage if hunger is 0
             if (hunger <= 0f)

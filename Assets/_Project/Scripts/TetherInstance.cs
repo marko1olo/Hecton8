@@ -806,11 +806,21 @@ namespace Hecton8.Physics
                 float safeDeltaTime = math.isfinite(deltaTime) ? math.max(deltaTime, 0f) : 0f;
                 float blendT = ResolveBlendFactor(_visualSegmentSmoothSpeed, safeDeltaTime);
                 CopyVisualSolverState(anchorCount, _visualAnchorPositions, _visualSegmentLengths);
+
+                float anchorASeparationX = math.abs(payloadPosition.x - anchorPosition.x);
+                float anchorBHeight = payloadPosition.y - anchorPosition.y;
+                float dynamicSag = Hecton8.PureLogic.Systems.TetherSagCatenaryCalculator.Compute(
+                    anchorASeparationX,
+                    anchorBHeight,
+                    _currentLength,
+                    0.15f);
+                float dynamicSagScale = math.clamp(dynamicSag / math.max(0.1f, _currentLength), 0f, 0.45f);
+
                 BuildVisualCatenaryImmediate(
                     anchorCount,
                     _currentLength,
                     blendT,
-                    VisualSagScale,
+                    dynamicSagScale,
                     _visualAnchorPositions,
                     _visualSegmentLengths,
                     _visualSegmentPositions);
