@@ -1165,7 +1165,8 @@ namespace Hecton8.Gameplay
         private void DrainPassiveEnergy(float dt)
         {
             float weightFactor = 1f + weight * 0.005f;
-            energy = math.max(0f, energy - stats.EnergyConsumptionRate * weightFactor * dt);
+            float temperatureAdjustedConsumptionRate = stats.EnergyConsumptionRate * Hecton8.PureLogic.Systems.SuitBatteryThermalEfficiencyCalculator.Compute(_environmentTemperature, stats.EnergyConsumptionRate);
+            energy = math.max(0f, energy - temperatureAdjustedConsumptionRate * weightFactor * dt);
         }
 
         private void ApplyPressureDamage(float dt)
