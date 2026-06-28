@@ -466,9 +466,16 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			// todo: something fucky happens sometimes when fallback fonts are the only things in town
-			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
-				// will draw on dispose
+			bool mainMeshHasVertices = tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > 0 && tmp.textInfo.meshInfo[0].vertexCount > 0;
+			if( mainMeshHasVertices ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+					// will draw on dispose
+				}
+			} else if( drawType == IMDrawer.DrawType.TextPooledAuto ) {
+				// We didn't draw anything with the main drawer, but we need to pass along the disposeId somehow.
+				// Since we can't reliably attach it to a submesh (as they might not exist or might not get drawn either),
+				// and if we don't dispose it, it will leak.
+				DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( disposeId );
 			}
 
 			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
@@ -480,8 +487,12 @@ namespace Shapes {
 						sm.renderer.enabled = false; // :>
 					if( sm.sharedMaterial == null )
 						continue; // cursed but ok
-					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
-						// will draw on dispose
+
+					bool subMeshHasVertices = tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > i + 1 && tmp.textInfo.meshInfo[i + 1].vertexCount > 0;
+					if( subMeshHasVertices ) {
+						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
+							// will draw on dispose
+						}
 					}
 				}
 			}
