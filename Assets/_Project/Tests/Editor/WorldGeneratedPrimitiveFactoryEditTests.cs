@@ -5,6 +5,7 @@ using Hecton8.World;
 
 namespace Hecton8.Tests.Editor
 {
+    [TestFixture]
     public sealed class WorldGeneratedPrimitiveFactoryEditTests
     {
         [Test]
@@ -60,6 +61,21 @@ namespace Hecton8.Tests.Editor
             // Cleanup
             Object.DestroyImmediate(dummyMesh);
             Object.DestroyImmediate(dummyMaterial);
+        }
+
+        [Test]
+        public void TryResolvePrimitiveComponentsCold_WithNullPrimitive_ReturnsFalseAndOutputsNull()
+        {
+            // Arrange
+            GameObject primitive = null;
+
+            // Act
+            bool result = WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(primitive, out MeshFilter filter, out MeshRenderer renderer);
+
+            // Assert
+            Assert.IsFalse(result);
+            Assert.IsNull(filter);
+            Assert.IsNull(renderer);
         }
     }
 }
