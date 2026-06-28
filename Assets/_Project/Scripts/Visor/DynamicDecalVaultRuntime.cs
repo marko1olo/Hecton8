@@ -2804,15 +2804,11 @@ namespace Hecton8.Visor
                 }
 
                 PlayerPresentationAup48 absolutePosition = signal.AbsolutePosition;
-                double3 impactAup = new global::Hecton8.World.AbsoluteUniversePosition
-                {
-                    GridX = absolutePosition.GridX,
-                    GridY = absolutePosition.GridY,
-                    GridZ = absolutePosition.GridZ,
-                    LocalX = absolutePosition.LocalX,
-                    LocalY = absolutePosition.LocalY,
-                    LocalZ = absolutePosition.LocalZ
-                }.ToAbsoluteDouble3();
+                double3 impactAup = AbsoluteUniversePosition.FromGridLocal(
+                    absolutePosition.GridX,
+                    absolutePosition.GridY,
+                    absolutePosition.GridZ,
+                    new float3(absolutePosition.LocalX, absolutePosition.LocalY, absolutePosition.LocalZ)).ToAbsoluteDouble3();
                 impactAup.y += SaltCrustVerticalOffsetMeters;
                 if (!math.all(math.isfinite(impactAup)))
                     continue;
