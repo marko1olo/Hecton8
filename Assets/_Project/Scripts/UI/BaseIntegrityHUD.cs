@@ -515,8 +515,6 @@ namespace Hecton8.UI
         public static bool TryRaiseAirQualityWarning(float airQualityNormalized)
             => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQualityNormalized);
 
-        [Obsolete("Use TryRaiseAirQualityWarning so bounded queue refusal is visible at the producer.", true)]
-        public static void RaiseAirQualityWarning(float airQualityNormalized) => TryRaiseAirQualityWarning(airQualityNormalized);
 
         /// <summary>
         /// Flushes queued base integrity events through registered listeners.
