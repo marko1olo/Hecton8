@@ -1,12 +1,12 @@
 {
   "all_source": {
     "counters": {
-      "files": 5554,
-      "lines": 2835047
+      "files": 5716,
+      "lines": 2825022
     }
   },
   "domain_index_count": 85,
-  "generated_at": "2026-06-12T16:36:54",
+  "generated_at": "2026-06-27T15:37:24",
   "h_phi_audit": {
     "observability_increased_by_this_pass": true,
     "runtime_data_sovereignty_increased_by_this_pass": false
@@ -15,40 +15,280 @@
     "evidence_class": "STATIC_SOURCE/PY_TOOL",
     "gate_passed": false,
     "owner_map": {
-      "present": false,
+      "present": true,
       "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_OWNER_MAP.json",
-      "top_owner_totals": []
+      "top_owner_totals": [
+        {
+          "criticalCount": 155,
+          "domainHint": "Core",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 110,
+          "domainHint": "World",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 65,
+          "domainHint": "RootScripts",
+          "warningCount": 24
+        },
+        {
+          "criticalCount": 65,
+          "domainHint": "Gameplay",
+          "warningCount": 8
+        },
+        {
+          "criticalCount": 48,
+          "domainHint": "Physics",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 35,
+          "domainHint": "AI",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 29,
+          "domainHint": "Construction",
+          "warningCount": 3
+        },
+        {
+          "criticalCount": 28,
+          "domainHint": "Fauna",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 21,
+          "domainHint": "UI",
+          "warningCount": 1
+        },
+        {
+          "criticalCount": 19,
+          "domainHint": "Ecosystem",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 18,
+          "domainHint": "Physiology",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 17,
+          "domainHint": "Interaction",
+          "warningCount": 0
+        }
+      ]
     },
     "regression": {
-      "critical_count": -1,
-      "findings": [],
-      "present": false,
+      "critical_count": 2,
+      "findings": [
+        {
+          "detail": "Compile_Wall critical count 154 exceeds baseline 120.",
+          "line": 1,
+          "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+          "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+          "scanner": "Static_Gate_Regression",
+          "severity": 2
+        },
+        {
+          "detail": "Hot_Registry_Polling critical count 4 exceeds baseline 0.",
+          "line": 1,
+          "path": "Docs/Reports/SHINOBU_140_STATIC_GATE_BASELINE.json",
+          "rule": "STATIC_GATE_CRITICAL_REGRESSION",
+          "scanner": "Static_Gate_Regression",
+          "severity": 2
+        }
+      ],
+      "present": true,
       "source": "Docs/Reports/SHINOBU_140_Static_Gate_Regression.json",
-      "warning_count": -1
+      "warning_count": 0
     },
     "regression_attribution": {
-      "present": false,
-      "regressions": [],
+      "present": true,
+      "regressions": [
+        {
+          "critical_delta": 34,
+          "scanner": "Compile_Wall",
+          "top_domains": [
+            {
+              "criticalCount": 153,
+              "domainHint": "Core",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 1,
+              "domainHint": "Hecton8.Core.asmdef",
+              "warningCount": 0
+            }
+          ],
+          "top_paths": [
+            {
+              "criticalCount": 59,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 18,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 16,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 13,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 5,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContextService.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 5,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/PlayerRuntimeContext.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 4,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/PlayerSensoryManager.cs",
+              "warningCount": 0
+            },
+            {
+              "criticalCount": 3,
+              "domainHint": "Core",
+              "path": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
+              "warningCount": 0
+            }
+          ],
+          "warning_delta": 0
+        },
+        {
+          "critical_delta": 4,
+          "scanner": "Hot_Registry_Polling",
+          "top_domains": [
+            {
+              "criticalCount": 4,
+              "domainHint": "Gameplay",
+              "warningCount": 0
+            }
+          ],
+          "top_paths": [
+            {
+              "criticalCount": 4,
+              "domainHint": "Gameplay",
+              "path": "Assets/_Project/Scripts/Gameplay/AirlockPressurization/AirlockPressurizationRuntimeOwner.cs",
+              "warningCount": 0
+            }
+          ],
+          "warning_delta": 0
+        }
+      ],
       "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_REGRESSION_ATTRIBUTION.json"
     },
-    "scanner_count": 0,
+    "scanner_count": 14,
     "scanner_self_tests": {
       "present": false,
       "source": "Docs/Reports/SHINOBU_140_SCANNER_SELF_TESTS.json",
       "status": "MISSING",
       "test_count": 0
     },
-    "scanners": [],
+    "scanners": {
+      "AUP_Compliance": {
+        "criticalCount": 22,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Burst_Job_Directives": {
+        "criticalCount": 417,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Compile_Wall": {
+        "criticalCount": 154,
+        "filesScanned": 2079,
+        "warningCount": 0
+      },
+      "Dev_Virtualization": {
+        "criticalCount": 0,
+        "filesScanned": 1854,
+        "warningCount": 44
+      },
+      "Hot_Helper_Complete": {
+        "criticalCount": 0,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Hot_Helper_Registry_Polling": {
+        "criticalCount": 73,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Hot_Registry_Polling": {
+        "criticalCount": 4,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Mid_Frame_Complete": {
+        "criticalCount": 0,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Rollback_Fence_Compliance": {
+        "criticalCount": 0,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Runtime_Struct_Layout": {
+        "criticalCount": 56,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Self_Audit_Proof": {
+        "criticalCount": 0,
+        "filesScanned": 1,
+        "warningCount": 0
+      },
+      "Signal_Bus_Topology": {
+        "criticalCount": 0,
+        "filesScanned": 1854,
+        "warningCount": 0
+      },
+      "Static_Gate_Regression": {
+        "criticalCount": 2,
+        "filesScanned": 13,
+        "warningCount": 0
+      },
+      "Vault_Sovereignty": {
+        "criticalCount": 48,
+        "filesScanned": 1854,
+        "warningCount": 0
+      }
+    },
     "self_audit": {
-      "present": false,
+      "agent": "SHINOBU_140",
+      "declared_task_count": 20,
+      "domain": "",
+      "present": true,
       "source": "Docs/Reports/SHINOBU_140_SELF_AUDIT.xml",
-      "status": "MISSING",
-      "task_count": 0
+      "status": "",
+      "task_count": 20
     },
     "source": "Docs/Reports/SHINOBU_140_STATIC_GATE_SUMMARY.json",
     "status": "PENDING VERIFICATION",
-    "total_critical": -1,
-    "total_warnings": -1,
+    "total_critical": 776,
+    "total_warnings": 44,
     "unity_invoked": false
   },
   "omega_polish_status": "VERIFIED MASTER GRADE STATIC_SOURCE ONLY",
