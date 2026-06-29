@@ -10,7 +10,9 @@ namespace Technie.PhysicsCreator
 		{
 			Vector3[] hullVertices;
 			int[] hullIndices;
+
 			hull.GenerateFitterInput(meshVertices, meshIndices, out hullVertices, out hullIndices);
+
 
 			return Fit(hullVertices, hullIndices);
 		}

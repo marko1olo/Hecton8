@@ -152,6 +152,16 @@ namespace Technie.PhysicsCreator.Rigid
 			QHullUtil.FindConvexHull(this.name, this.selectedFaces.ToArray(), meshVertices, meshIndices, out hullVertices, out hullIndices, false);
 		}
 
+		public void GenerateMathHull(Vector3[] meshVertices, int[] meshIndices, out Vector3[] hullVertices, out int[] hullIndices)
+		{
+			FindConvexHull(meshVertices, meshIndices, out hullVertices, out hullIndices, false);
+
+			if (hullVertices == null || hullVertices.Length == 0)
+			{
+				FindTriangles(meshVertices, meshIndices, out hullVertices, out hullIndices);
+			}
+		}
+
 		public List<Triangle> FindSelectedTriangles(Vector3[] meshVertices, int[] meshIndices)
 		{
 			List<Triangle> result = new List<Triangle>();

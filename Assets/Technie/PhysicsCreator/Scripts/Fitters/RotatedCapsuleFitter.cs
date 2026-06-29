@@ -45,9 +45,11 @@ namespace Technie.PhysicsCreator
 		{
 			// Vertices are in local space?
 
+
 			// Find find the convex hull - the tightest fitting box will always contain the hull, and this lets us simplify the input data
 
 			hull.GenerateFitterInput(meshVertices, meshIndices, out Vector3[] hullVertices, out int[] hullIndices);
+
 
 			//ConstructionPlane capsulePlane = FindBestCapsulePlane(hull, meshVertices, meshIndices);
 			//ConstructionPlane capsulePlane = FindBestCapsulePlane(hull, meshVertices, meshIndices);

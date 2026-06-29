@@ -136,12 +136,12 @@ namespace Technie.PhysicsCreator
 
 		public BoxDef Fit(Hull hull, Vector3[] meshVertices, int[] meshIndices)
 		{
-			// Find find the convex hull - the tightest fitting box will always contain the hull, and this lets us simplify the input data
-
 			Vector3[] hullVertices;
 			int[] hullIndices;
 
+
 			hull.GenerateFitterInput(meshVertices, meshIndices, out hullVertices, out hullIndices);
+
 
 			return Fit(hullVertices, hullIndices);
 		}
