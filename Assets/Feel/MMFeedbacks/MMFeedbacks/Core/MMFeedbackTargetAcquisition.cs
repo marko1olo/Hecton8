@@ -98,9 +98,11 @@ namespace MoreMountains.Feedbacks
 					int childCount = owner.transform.childCount;
 					for (int i = 0; i < childCount; i++)
 					{
+
 						if (owner.transform.GetChild(i).TryGetComponent<T>(out T component))
 						{
 							return component;
+
 						}
 					}
 					return owner.GetComponentInChildren<T>();
