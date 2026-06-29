@@ -1,3 +1,8 @@
-💡 **What:** Replaced O(N) TryGetComponent calls inside the loop with a single GetComponentsInChildren pre-cached in a HashSet<GameObject>.
-🎯 **Why:** TryGetComponent has native interop overhead in Unity; executing it in a loop across hundreds of children scales poorly and degrades performance needlessly.
-📊 **Measured Improvement:** In isolated C# benchmarks simulating Unity interop boundaries, fetching all components before the loop and hashing them yielded an ~89% execution time improvement over looping O(N) TryGetComponent calls.
+💡 **What:**
+Exposed the `characterController` field in `CandiceAIPlayerController.cs` to the Unity Inspector using the `[SerializeField]` attribute. The existing `GetComponent<CharacterController>()` call in `Start()` was wrapped in a null check (`if (characterController == null)`) so it only executes as a fallback.
+
+🎯 **Why:**
+The `GetComponent` call involves overhead due to crossing the C# to native C++ boundary and searching the game object's component list. Calling this at runtime during `Start()` can cause slight initialization hitches, especially if many such scripts initialize simultaneously. By assigning the component reference directly in the inspector, we eliminate this runtime lookup entirely, improving instantiation/startup performance. The fallback ensures we do not break any existing scenes or prefabs where the field hasn't been manually assigned yet.
+
+📊 **Measured Improvement:**
+While difficult to accurately isolate the micro-optimization of a single `GetComponent` call without a dedicated Unity Editor profiler environment in the sandbox, this is a universally recognized Unity best practice. Bypassing the native C++ `GetComponent` lookup results in a direct reduction in CPU cycles during the script's `Start()` phase, providing a net positive performance gain without any drawbacks.

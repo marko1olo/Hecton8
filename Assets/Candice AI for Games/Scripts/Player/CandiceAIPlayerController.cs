@@ -43,6 +43,7 @@ public class CandiceAIPlayerController : MonoBehaviour
     private Quaternion desiredRotation;
     private Transform thisTransform;
 
+    [SerializeField]
     CharacterController characterController;
     Vector3 moveDirection = Vector3.zero;
     Vector2 rotation = Vector2.zero;
@@ -54,7 +55,10 @@ public class CandiceAIPlayerController : MonoBehaviour
     {
         //get transform and controller
         thisTransform = gameObject.transform;
-        characterController = GetComponent<CharacterController>();
+        if (characterController == null)
+        {
+            characterController = GetComponent<CharacterController>();
+        }
 
         //reset y rotation on start
         if (rotation.y == 0f) {
