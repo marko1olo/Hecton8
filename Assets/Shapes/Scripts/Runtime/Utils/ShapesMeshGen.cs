@@ -245,9 +245,11 @@ namespace Shapes {
 			}
 
 			// assign to segments mesh
+
 			int targetSubMeshCount = separateJoinMesh ? 2 : 1;
 			bool clearMesh = mesh.vertexCount != meshVertices.list.Count || mesh.subMeshCount != targetSubMeshCount;
 			if( clearMesh )
+
 				mesh.Clear();
 			mesh.SetVertices( meshVertices.list );
 			mesh.subMeshCount = targetSubMeshCount;
@@ -308,7 +310,9 @@ namespace Shapes {
 			#endif
 
 			int pointCount = path.Count;
+
 			if( clearMesh || mesh.vertexCount != pointCount )
+
 				mesh.Clear();
 			if( pointCount < 2 )
 				return;
