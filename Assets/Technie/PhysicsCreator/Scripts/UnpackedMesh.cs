@@ -83,7 +83,9 @@ namespace Technie.PhysicsCreator
 		private Vector3[] modelSpaceVertices;
 
 		//private Vector3[] worldSpaceVertices; // transformed by the renderer's location (and the bindPose + bones if skinned)
+
 		private Vector3[] boneSpaceVertices;
+
 
 		public static UnpackedMesh Create(Renderer renderer)
 		{
@@ -143,6 +145,32 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
+
+		public Vector3[] GetBoneSpaceVertices(Transform targetBone)
+		{
+			Vector3[] boneSpaceVertices = new Vector3[vertices.Length];
+
+			if (skinnedRenderer != null)
+			{
+				Transform[] bones = skinnedRenderer.bones;
+				Matrix4x4[] bindPose = srcMesh.bindposes;
+
+				for (int i = 0; i < vertices.Length; i++)
+				{
+					boneSpaceVertices[i] = ApplyBindPoseWeighted(vertices[i], weights[i], bindPose, bones, targetBone);
+				}
+			}
+			else if (rigidRenderer != null)
+			{
+				for (int i = 0; i < vertices.Length; i++)
+				{
+					Vector3 worldPos = rigidRenderer.transform.TransformPoint(modelSpaceVertices[i]);
+					boneSpaceVertices[i] = targetBone.InverseTransformPoint(worldPos);
+				}
+			}
+
+			return boneSpaceVertices;
+		}
 
 		private static Vector3 ApplyBindPoseWeighted(Vector3 inputVertex, BoneWeight weight, Matrix4x4[] bindPoses, Transform[] bones, Transform outputLocalSpace)
 		{
