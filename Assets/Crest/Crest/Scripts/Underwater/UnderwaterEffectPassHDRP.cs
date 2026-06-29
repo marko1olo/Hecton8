@@ -77,6 +77,8 @@ namespace Crest
                 _underwaterEffectMaterial = new PropertyWrapperMaterial(k_ShaderPath);
             }
 
+
+
             SetUpVolumes();
         }
 
