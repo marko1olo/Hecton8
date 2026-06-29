@@ -1,4 +1,5 @@
 import unittest
+
 from unittest.mock import patch
 import importlib.util
 import sys
@@ -249,4 +250,5 @@ class TestOptimizeBatch34AlphaPngSources(unittest.TestCase):
         self.assertTrue(mock_print.called)
 
 if __name__ == '__main__':
+
     unittest.main()

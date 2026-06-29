@@ -10,7 +10,8 @@ from pathlib import Path
 from PIL import Image, ImageChops
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT_PATH = Path(__file__).resolve().parents[1]
+ROOT = ROOT_PATH
 ALPHA_MANIFEST = (
     ROOT
     / "Assets/_Project/Art/TEXTURES/Generated/GeminiBatch34SourceAtlases_20260608/AlphaCandidates/GeminiBatch34AlphaCandidates_Manifest.json"
@@ -21,11 +22,15 @@ PADDED_MANIFEST = (
 )
 
 
+class ToolError(Exception):
+    pass
+
+
 def display(path: Path) -> str:
     try:
-        return path.resolve().relative_to(ROOT).as_posix()
+        return str(path.relative_to(ROOT_PATH)).replace("\\", "/")
     except ValueError:
-        return str(path)
+        return str(path).replace("\\", "/")
 
 
 def project_path(raw: str) -> Path:
