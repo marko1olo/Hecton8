@@ -18,6 +18,9 @@ namespace GPUInstancer
 
         public static Texture2D dummyHiZTex;
         public static GPUIMatrixHandlingType matrixHandlingType;
+
+        private static readonly List<GameObject> s_sceneRootScratch = new List<GameObject>();
+        private static readonly List<GPUInstancerPrefab> s_prefabInstancesScratch = new List<GPUInstancerPrefab>();
         private static readonly int s_billboardWidthPropertyId = Shader.PropertyToID("billboardWidth");
         private static readonly int s_billboardHeightPropertyId = Shader.PropertyToID("billboardHeight");
 
@@ -1583,18 +1586,28 @@ namespace GPUInstancer
 
             if (!Application.isPlaying)
             {
-                GPUInstancerPrefab[] prefabInstances = GameObject.FindObjectsByType<GPUInstancerPrefab>(FindObjectsInactive.Include);
-                for (int i = 0; i < prefabInstances.Length; i++)
+                for (int s = 0; s < UnityEngine.SceneManagement.SceneManager.sceneCount; s++)
                 {
-#if UNITY_2018_2_OR_NEWER
-                    UnityEngine.Object prefabRoot = PrefabUtility.GetCorrespondingObjectFromSource(prefabInstances[i].gameObject);
-#else
-                    UnityEngine.Object prefabRoot = PrefabUtility.GetPrefabParent(prefabInstances[i].gameObject);
-#endif
-                    if (prefabRoot != null && ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>() != null && prefabInstances[i].prefabPrototype != ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype)
+                    var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(s);
+                    if (!scene.isLoaded) continue;
+                    scene.GetRootGameObjects(s_sceneRootScratch);
+                    foreach (var root in s_sceneRootScratch)
                     {
-                        Undo.RecordObject(prefabInstances[i], "Changed GPUInstancer Prefab Prototype " + prefabInstances[i].gameObject + i);
-                        prefabInstances[i].prefabPrototype = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype;
+                        root.GetComponentsInChildren<GPUInstancerPrefab>(true, s_prefabInstancesScratch);
+                        for (int i = 0; i < s_prefabInstancesScratch.Count; i++)
+                        {
+                            var instance = s_prefabInstancesScratch[i];
+#if UNITY_2018_2_OR_NEWER
+                            UnityEngine.Object prefabRoot = PrefabUtility.GetCorrespondingObjectFromSource(instance.gameObject);
+#else
+                            UnityEngine.Object prefabRoot = PrefabUtility.GetPrefabParent(instance.gameObject);
+#endif
+                            if (prefabRoot != null && ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>() != null && instance.prefabPrototype != ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype)
+                            {
+                                Undo.RecordObject(instance, "Changed GPUInstancer Prefab Prototype " + instance.gameObject + i);
+                                instance.prefabPrototype = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype;
+                            }
+                        }
                     }
                 }
             }
