@@ -406,6 +406,7 @@ namespace AmplifyImpostors
 			}
 
 
+
 			Dictionary<GameObject, MeshFilter> mfDict = new Dictionary<GameObject, MeshFilter>();
 			MeshFilter[] allFilters = GetComponentsInChildren<MeshFilter>( true );
 			for( int i = 0; i < allFilters.Length; i++ )
@@ -418,17 +419,22 @@ namespace AmplifyImpostors
 					mfDict[ rootFilters[ i ].gameObject ] = rootFilters[ i ];
 			}
 
+
 			MeshFilter[] cachedMeshFilters = new MeshFilter[Renderers.Length];
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
 				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 					continue;
 
+
 				mfDict.TryGetValue( Renderers[ i ].gameObject, out MeshFilter mf );
+
 				if( mf == null || mf.sharedMesh == null )
 					continue;
 
 				cachedMeshFilters[ i ] = mf;
+
+
 
 			}
 
@@ -444,8 +450,10 @@ namespace AmplifyImpostors
 
 
 
+
 						MeshFilter mf = cachedMeshFilters[ i ];
 						if( mf == null )
+
 
 
 
