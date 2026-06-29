@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,17 +8,23 @@ namespace Technie.PhysicsCreator
 	{
 		private List<Vector3> vertices;
 		private List<Vector3> normals;
+		private List<Vector4> tangents;
 		private List<Color32> colours;
 		private List<Vector2> uvs;
 		private List<Vector2> uv1s;
-		private List<Vector4> tangents;
 
-		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasTangents)
+
+
+		public CuttableSubMesh(bool hasNormals, bool hasTangents, bool hasColours, bool hasUvs, bool hasUv1)
+
 		{
 			vertices = new List<Vector3>();
 
 			if (hasNormals)
 				normals = new List<Vector3>();
+
+			if (hasTangents)
+				tangents = new List<Vector4>();
 
 			if (hasColours)
 				colours = new List<Color32>();
@@ -29,16 +35,20 @@ namespace Technie.PhysicsCreator
 			if (hasUv1)
 				uv1s = new List<Vector2>();
 
-			if (hasTangents)
-				tangents = new List<Vector4>();
+
 		}
 
-		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1, Vector4[] inputTangents)
+
+		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Vector4[] inputTangents, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1)
+
 		{
 			vertices = new List<Vector3>();
 
 			if (inputNormals != null && inputNormals.Length > 0)
 				normals = new List<Vector3>();
+
+			if (inputTangents != null && inputTangents.Length > 0)
+				tangents = new List<Vector4>();
 
 			if (inputColours != null && inputColours.Length > 0)
 				colours = new List<Color32>();
@@ -49,8 +59,7 @@ namespace Technie.PhysicsCreator
 			if (inputUv1 != null && inputUv1.Length > 0)
 				uv1s = new List<Vector2>();
 
-			if (inputTangents != null && inputTangents.Length > 0)
-				tangents = new List<Vector4>();
+
 
 			for (int i = 0; i < indices.Length; i++)
 			{
@@ -61,6 +70,9 @@ namespace Technie.PhysicsCreator
 				if (normals != null)
 					this.normals.Add(inputNormals[nextIndex]);
 
+				if (tangents != null)
+					this.tangents.Add(inputTangents[nextIndex]);
+
 				if (colours != null)
 					colours.Add(inputColours[nextIndex]);
 
@@ -70,8 +82,7 @@ namespace Technie.PhysicsCreator
 				if (uv1s != null)
 					uv1s.Add(inputUv1[nextIndex]);
 
-				if (tangents != null)
-					tangents.Add(inputTangents[nextIndex]);
+
 			}
 
 		}
@@ -97,6 +108,11 @@ namespace Technie.PhysicsCreator
 		public bool HasNormals()
 		{
 			return normals != null;
+		}
+
+		public bool HasTangents()
+		{
+			return tangents != null;
 		}
 
 		public bool HasColours()
@@ -126,6 +142,9 @@ namespace Technie.PhysicsCreator
 			if (normals != null)
 				normals.Add(srcMesh.normals[srcIndex]);
 
+			if (tangents != null)
+				tangents.Add(srcMesh.tangents[srcIndex]);
+
 			if (colours != null)
 				colours.Add(srcMesh.colours[srcIndex]);
 
@@ -135,8 +154,7 @@ namespace Technie.PhysicsCreator
 			if (uv1s != null)
 				uv1s.Add(srcMesh.uv1s[srcIndex]);
 
-			if (tangents != null)
-				tangents.Add(srcMesh.tangents[srcIndex]);
+
 		}
 
 		public void AddInterpolatedVertex(int i0, int i1, float weight, CuttableSubMesh srcMesh)
@@ -149,6 +167,14 @@ namespace Technie.PhysicsCreator
 			if (normals != null)
 				normals.Add(Vector3.Lerp(srcMesh.normals[i0], srcMesh.normals[i1], weight).normalized);
 
+			if (tangents != null)
+			{
+				Vector4 t0 = srcMesh.tangents[i0];
+				Vector4 t1 = srcMesh.tangents[i1];
+				Vector3 interpolatedTangent = Vector3.Lerp(t0, t1, weight).normalized;
+				tangents.Add(new Vector4(interpolatedTangent.x, interpolatedTangent.y, interpolatedTangent.z, t0.w));
+			}
+
 			if (colours != null)
 				colours.Add(Color32.Lerp(srcMesh.colours[i0], srcMesh.colours[i1], weight));
 
@@ -158,21 +184,18 @@ namespace Technie.PhysicsCreator
 			if (uv1s != null)
 				uv1s.Add(Vector2.Lerp(srcMesh.uv1s[i0], srcMesh.uv1s[i1], weight));
 
-			if (tangents != null)
-			{
-				Vector4 t0 = srcMesh.tangents[i0];
-				Vector4 t1 = srcMesh.tangents[i1];
-				Vector3 t = Vector3.Lerp(new Vector3(t0.x, t0.y, t0.z), new Vector3(t1.x, t1.y, t1.z), weight).normalized;
-				tangents.Add(new Vector4(t.x, t.y, t.z, t0.w));
-			}
 		}
 
-		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s, List<Vector4> destTangents)
+		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Vector4> destTangents, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s)
+
 		{
 			destVertices.AddRange(this.vertices);
 
 			if (normals != null)
 				destNormals.AddRange(this.normals);
+
+			if (tangents != null)
+				destTangents.AddRange(this.tangents);
 
 			if (colours != null)
 				destColours.AddRange(colours);
@@ -183,8 +206,7 @@ namespace Technie.PhysicsCreator
 			if (uv1s != null)
 				destUv1s.AddRange(uv1s);
 
-			if (tangents != null)
-				destTangents.AddRange(tangents);
+
 		}
 
 		public int NumIndices()

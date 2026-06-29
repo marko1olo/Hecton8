@@ -83,13 +83,16 @@ namespace Technie.PhysicsCreator
 		private void Cut(CuttableSubMesh inputSubMesh, Plane3d cutPlane)
 		{
 			bool hasNormals = inputSubMesh.HasNormals();
+			bool hasTangents = inputSubMesh.HasTangents();
 			bool hasColours = inputSubMesh.HasColours();
 			bool hasUvs = inputSubMesh.HasUvs();
 			bool hasUv1 = inputSubMesh.HasUv1();
 			bool hasTangents = inputSubMesh.HasTangents();
 
-			CuttableSubMesh frontSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasTangents);
-			CuttableSubMesh backSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasTangents);
+
+			CuttableSubMesh frontSubMesh = new CuttableSubMesh(hasNormals, hasTangents, hasColours, hasUvs, hasUv1);
+			CuttableSubMesh backSubMesh = new CuttableSubMesh(hasNormals, hasTangents, hasColours, hasUvs, hasUv1);
+
 
 			for (int i = 0; i < inputSubMesh.NumVertices(); i += 3)
 			{
