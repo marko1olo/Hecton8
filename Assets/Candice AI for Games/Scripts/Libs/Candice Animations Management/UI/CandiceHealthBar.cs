@@ -61,7 +61,9 @@ namespace CandiceAIforGames.AI
 			bool hasFillImage = m_Image.transform.childCount > 0 && m_Image.transform.GetChild(0).TryGetComponent<Image>(out _);
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
+
 				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
+
 				segmentImage.gameObject.SetActive(true);
 
 				segmentImage.fillAmount = m_SizeOfSegment;
@@ -71,6 +73,7 @@ namespace CandiceAIforGames.AI
 				segmentRectTransform.position += (right * i * m_SizeOfSegment) - posOffsetBase + (right * i * m_SizeOfNotch);
 
 				Transform childTransform = segmentImage.transform.GetChild(0);
+
 				if (hasFillImage)
 				{
 					Image segmentFillImage = childTransform.GetComponent<Image>();
@@ -80,6 +83,7 @@ namespace CandiceAIforGames.AI
 					RectTransform segmentFillRectTransform = segmentFillImage.rectTransform;
 					segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 				}
+
 			}
 
 			UpdateSegments();
