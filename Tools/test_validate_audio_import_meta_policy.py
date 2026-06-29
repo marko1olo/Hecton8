@@ -109,11 +109,11 @@ class ValidateAudioImportMetaPolicyTests(unittest.TestCase):
                 quality=1.0,
             )
 
-            # Fix it
+            # Apply modifications
             modified = fixer.fix_meta_file(path, row)
             self.assertTrue(modified)
 
-            # Check fixed values
+            # Check updated values
             meta = validator.parse_audio_meta(path)
             self.assertEqual("DecompressOnLoad", meta.load_type)
             self.assertEqual("ADPCM", meta.compression)
