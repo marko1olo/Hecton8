@@ -585,7 +585,6 @@ namespace AmplifyImpostors
 			else if( standardRendering )
 				alphaIndex = 2;
 
-
 			Shader packerShader = AssetDatabase.LoadAssetAtPath<Shader>( AssetDatabase.GUIDToAssetPath( PackerGUID ) );
 			Material packerMat = new Material( packerShader );
 
@@ -712,7 +711,6 @@ namespace AmplifyImpostors
 					m_trueDepth = null;
 				}
 			}
-
 
 			RenderTexture combinedAlphaTexture = RenderTexture.GetTemporary( MinAlphaResolution, MinAlphaResolution, m_alphaGBuffers[ alphaIndex ].depth, m_alphaGBuffers[ alphaIndex ].format );
 			PackingRemapping( ref m_alphaGBuffers[ alphaIndex ], ref combinedAlphaTexture, 8, packerMat );
@@ -927,7 +925,6 @@ namespace AmplifyImpostors
 				guid = m_data.ImpostorType == ImpostorType.Spherical ? ShaderURP : ShaderOctaURP;
 			else
 				guid = m_data.ImpostorType == ImpostorType.Spherical ? Shader : ShaderOcta;
-
 
 			CalculatePixelBounds( outputList.Count );
 			DisplayProgress( 0.1f, "Please Wait... Allocating Resources" );
@@ -1214,7 +1211,6 @@ namespace AmplifyImpostors
 			UnityEngine.Object targetPrefab = null;
 			GameObject tempGO = null;
 
-
 			Mesh mesh = m_data.Mesh;
 			if( mesh == null )
 			{
@@ -1414,7 +1410,6 @@ namespace AmplifyImpostors
 				impostorObject.transform.SetParent( par, true );
 				impostorObject.transform.SetSiblingIndex( sibIndex );
 			}
-
 
 			EditorUtility.SetDirty( m_data );
 			if( m_lastImpostor == null )
