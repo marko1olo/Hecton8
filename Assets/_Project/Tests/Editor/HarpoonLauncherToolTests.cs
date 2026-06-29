@@ -13,6 +13,22 @@ namespace Hecton8.Tests.Editor
     [TestFixture]
     public class HarpoonLauncherToolTests
     {
+        private class TestHarpoonLauncherTool : HarpoonLauncherTool
+        {
+            public bool ThrowOnWrite { get; set; }
+            protected override void WriteTracerPositionData(NativeArray<GpuCableSplinePointDTO> points, Vector3 start, Vector3 end)
+            {
+                if (ThrowOnWrite)
+                    throw new System.InvalidOperationException("Test exception");
+                base.WriteTracerPositionData(points, start, end);
+            }
+
+            public void InvokeUploadTracerGpuData(Vector3 start, Vector3 end)
+            {
+                base.UploadTracerGpuData(start, end);
+            }
+        }
+
         private GameObject _gameObject;
         private HarpoonLauncherTool _tool;
 
@@ -86,6 +102,42 @@ namespace Hecton8.Tests.Editor
             SetPrivateField(_tool, "_tracerPositionBuffer", null);
             SetPrivateField(_tool, "_tracerTensionBuffer", null);
             SetPrivateField(_tool, "_tracerDrawParamsBuffer", null);
+        }
+
+        [Test]
+        public void UploadTracerGpuData_WhenPositionWriteThrows_UnlocksBuffer()
+        {
+            var go = new GameObject("HarpoonLauncherTool_Test_ErrorPath");
+            var testTool = go.AddComponent<TestHarpoonLauncherTool>();
+            testTool.ThrowOnWrite = true;
+
+            var posBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 2, UnsafeUtility.SizeOf<GpuCableSplinePointDTO>());
+            var tenBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, sizeof(float));
+            var drawBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, 1, UnsafeUtility.SizeOf<GpuCableDrawParamsDTO>());
+
+            try
+            {
+                SetPrivateField(testTool, "_tracerPositionBuffer", posBuffer);
+                SetPrivateField(testTool, "_tracerTensionBuffer", tenBuffer);
+                SetPrivateField(testTool, "_tracerDrawParamsBuffer", drawBuffer);
+
+                Assert.Throws<System.InvalidOperationException>(() => testTool.InvokeUploadTracerGpuData(Vector3.zero, Vector3.one));
+
+                // Verify the buffer was successfully unlocked in the finally block
+                // If it wasn't unlocked, attempting to lock it again would throw an InvalidOperationException "The buffer is already locked"
+                Assert.DoesNotThrow(() =>
+                {
+                    posBuffer.LockBufferForWrite<GpuCableSplinePointDTO>(0, 2);
+                    posBuffer.UnlockBufferAfterWrite<GpuCableSplinePointDTO>(2);
+                });
+            }
+            finally
+            {
+                if (posBuffer != null) posBuffer.Release();
+                if (tenBuffer != null) tenBuffer.Release();
+                if (drawBuffer != null) drawBuffer.Release();
+                if (go != null) Object.DestroyImmediate(go);
+            }
         }
 
         private void SetPrivateField(object target, string fieldName, object value)
