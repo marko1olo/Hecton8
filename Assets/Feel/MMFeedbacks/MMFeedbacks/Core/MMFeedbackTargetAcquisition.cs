@@ -33,6 +33,9 @@ namespace MoreMountains.Feedbacks
 		[MMFEnumCondition("Mode", (int)Modes.ChildAtIndex)]
 		public int ChildIndex = 0;
 
+		private object _cachedTargetComponent;
+		private bool _targetComponentCached = false;
+
 		private static MMF_ReferenceHolder _referenceHolder;
 
 		public static MMF_ReferenceHolder GetReferenceHolder(MMFeedbackTargetAcquisition settings, MMF_Player owner, int currentFeedbackIndex)
@@ -105,7 +108,12 @@ namespace MoreMountains.Feedbacks
 					}
 					return owner.GetComponentInChildren<T>();
 				case Modes.Parent:
-					return owner.transform.parent.GetComponentInParent<T>();
+					if (!settings._targetComponentCached)
+					{
+						settings._cachedTargetComponent = owner.transform.parent.GetComponentInParent<T>();
+						settings._targetComponentCached = true;
+					}
+					return (T)settings._cachedTargetComponent;
 				case Modes.FirstReferenceHolder: 
 				case Modes.PreviousReferenceHolder:
 				case Modes.ClosestReferenceHolder:
