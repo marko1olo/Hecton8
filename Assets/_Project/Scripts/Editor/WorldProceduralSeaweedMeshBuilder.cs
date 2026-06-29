@@ -321,6 +321,35 @@ namespace Hecton8.Editor
                 new Color32(spec.TintByte, 184, 52, 255));
             AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
 
+            BuildUnderstoryBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, foldedGiant, frilledRibbon);
+
+            BuildCompanionBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
+
+            BuildTertiaryBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
+
+            BuildBridgingBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, frilledRibbon, broadleafKelp);
+
+            BuildCurtainBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedSheet);
+
+            BuildSailBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedGiant, sailKelp);
+
+            BuildFanBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, broadleafKelp, paddlefanKelp);
+
+            BuildMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed);
+
+            BuildBackingBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, sailKelp);
+
+            BuildLowerMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddlefanKelp);
+
+            BuildInnerBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, broadleafKelp);
+
+            BuildShroudBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
+
+            BuildVeilBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, frilledRibbon);
+        }
+
+        private static void BuildUnderstoryBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool foldedGiant, bool frilledRibbon)
+        {
             if (spec.ClusterCount > 1
                 && !paddleLobed
                 && !foldedGiant
@@ -371,7 +400,10 @@ namespace Hecton8.Editor
                     understoryForward,
                     lod);
             }
+        }
 
+        private static void BuildCompanionBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments)
+        {
             if (ShouldAddCompanionBlade(spec, lod, bladeIndex, normalized))
             {
                 int companionStemLod = ResolveSupplementalStemLod(spec, lod);
@@ -417,7 +449,10 @@ namespace Hecton8.Editor
                     companionForward,
                     lod);
             }
+        }
 
+        private static void BuildTertiaryBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments)
+        {
             if (ShouldAddTertiaryBlade(spec, lod, bladeIndex, normalized))
             {
                 int tertiaryStemLod = ResolveSupplementalStemLod(spec, lod);
@@ -463,7 +498,10 @@ namespace Hecton8.Editor
                     tertiaryForward,
                     lod);
             }
+        }
 
+        private static void BuildBridgingBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool frilledRibbon, bool broadleafKelp)
+        {
             if (spec.GrowthStyle == GrowthStyle.GiantFrond
                 && spec.ClusterCount <= 1
                 && lod == 0
@@ -513,7 +551,10 @@ namespace Hecton8.Editor
                     bridgingForward,
                     lod);
             }
+        }
 
+        private static void BuildCurtainBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool foldedSheet)
+        {
             if (foldedSheet
                 && lod == 0
                 && normalized > 0.36f
@@ -560,7 +601,10 @@ namespace Hecton8.Editor
                     curtainForward,
                     lod);
             }
+        }
 
+        private static void BuildSailBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool foldedGiant, bool sailKelp)
+        {
             if (foldedGiant
                 && !sailKelp
                 && !IsVeilwallVariant(spec)
@@ -609,7 +653,10 @@ namespace Hecton8.Editor
                     sailForward,
                     lod);
             }
+        }
 
+        private static void BuildFanBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool broadleafKelp, bool paddlefanKelp)
+        {
             if (paddleLobed
                 && lod == 0
                 && normalized > (broadleafKelp ? 0.24f : spec.ClusterCount > 1 ? 0.42f : 0.38f)
@@ -656,7 +703,10 @@ namespace Hecton8.Editor
                     fanForward,
                     lod);
             }
+        }
 
+        private static void BuildMantleBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed)
+        {
             if (spec.GrowthStyle == GrowthStyle.CrownCanopy
                 && paddleLobed
                 && lod == 0
@@ -704,7 +754,10 @@ namespace Hecton8.Editor
                     mantleForward,
                     lod);
             }
+        }
 
+        private static void BuildBackingBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool sailKelp)
+        {
             if (sailKelp
                 && lod == 0
                 && normalized > 0.46f
@@ -751,7 +804,10 @@ namespace Hecton8.Editor
                     backingForward,
                     lod);
             }
+        }
 
+        private static void BuildLowerMantleBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddlefanKelp)
+        {
             if (paddlefanKelp
                 && lod == 0
                 && normalized > 0.2f
@@ -798,7 +854,10 @@ namespace Hecton8.Editor
                     lowerMantleForward,
                     lod);
             }
+        }
 
+        private static void BuildInnerBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool broadleafKelp)
+        {
             if (broadleafKelp
                 && lod == 0
                 && normalized > 0.18f
@@ -845,7 +904,10 @@ namespace Hecton8.Editor
                     innerForward,
                     lod);
             }
+        }
 
+        private static void BuildShroudBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments)
+        {
             if (IsDeepPetalVariant(spec)
                 && lod == 0
                 && normalized > 0.22f
@@ -892,7 +954,10 @@ namespace Hecton8.Editor
                     shroudForward,
                     lod);
             }
+        }
 
+        private static void BuildVeilBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool frilledRibbon)
+        {
             if (frilledRibbon
                 && lod == 0
                 && normalized > (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.28f : 0.38f)
