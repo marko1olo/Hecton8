@@ -35,7 +35,9 @@ namespace Technie.PhysicsCreator.Skinned
 	}
 
 	[System.Serializable]
+
 	public class BonePhysicsData
+
 	{
 		public string targetBoneName;
 
@@ -68,7 +70,9 @@ namespace Technie.PhysicsCreator.Skinned
 		public float linearDamping = 0.0f;
 		public float angularDamping = 0.0f;
 		
+
 		public BonePhysicsData(Transform src)
+
 		{
 			this.targetBoneName = src.name;
 		}
@@ -118,7 +122,9 @@ namespace Technie.PhysicsCreator.Skinned
 		public PhysicsMaterial defaultMaterial;
 		public ColliderType defaultColliderType = ColliderType.Convex;
 
+
 		public List<BonePhysicsData> boneData = new List<BonePhysicsData>();
+
 		public List<BoneHullData> boneHullData = new List<BoneHullData>();
 
 		// Current selection - one of these will be valid (or neither)
@@ -171,11 +177,13 @@ namespace Technie.PhysicsCreator.Skinned
 
 		// Methods
 
+
 		public void SetSelection(BonePhysicsData bone)
+
 		{
-			for (int i=0; i<boneData.Count; i++)
+			for (int i=0; i<boneJointData.Count; i++)
 			{
-				if (boneData[i] == bone)
+				if (boneJointData[i] == bone)
 				{
 					selectedBoneIndex = i;
 					selectedHullIndex = INVALID_INDEX;
@@ -209,10 +217,12 @@ namespace Technie.PhysicsCreator.Skinned
 			MarkDirty();
 		}
 
+
 		public BonePhysicsData GetSelectedBone()
+
 		{
-			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneData.Count)
-				return boneData[selectedBoneIndex];
+			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneJointData.Count)
+				return boneJointData[selectedBoneIndex];
 			else
 				return null;
 		}
@@ -227,6 +237,7 @@ namespace Technie.PhysicsCreator.Skinned
 
 
 
+
 		public BonePhysicsData GetBonePhysicsData(Transform bone)
 		{
 			if (bone == null)
@@ -237,6 +248,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public BonePhysicsData GetBonePhysicsData(string boneName)
 		{
 			foreach (BonePhysicsData data in boneData)
+
 			{
 				if (data.targetBoneName == boneName)
 					return data;
@@ -307,16 +319,20 @@ namespace Technie.PhysicsCreator.Skinned
 			return lastModifiedFrame;
 		}
 
+
 		public void Add(BonePhysicsData data)
+
 		{
-			boneData.Add(data);
+			boneJointData.Add(data);
 
 			MarkDirty();
 		}
 
+
 		public void Remove(BonePhysicsData data)
+
 		{
-			boneData.Remove(data);
+			boneJointData.Remove(data);
 
 			MarkDirty();
 		}
