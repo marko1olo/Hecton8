@@ -440,8 +440,10 @@ namespace AmplifyImpostors
 					for( int i = 0; i < Renderers.Length; i++ )
 					{
 
+
 						MeshFilter mf = cachedMeshFilters[ i ];
 						if( mf == null )
+
 
 							continue;
 
