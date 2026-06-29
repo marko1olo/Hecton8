@@ -28,7 +28,9 @@ namespace Hecton8.Core
             };
 
             SignalBus<CpuStarvationSignal>.TryPushTracked(in signal, ref s_x001JobAdmissionTelemetryBridgeSignalPushDropCount);
+
             CrashTelemetryBuffer.JobAdmissionTelemetryArgs args = new CrashTelemetryBuffer.JobAdmissionTelemetryArgs(
+
                 lane: signal.Lane,
                 jobHash: signal.JobHash,
                 estimatedCostMs: signal.EstimatedCostMs,

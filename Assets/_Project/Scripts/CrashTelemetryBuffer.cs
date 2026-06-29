@@ -734,10 +734,32 @@ namespace Hecton8.Core
             instance.WriteActiveImpostorTelemetry(activeImpostors, qualityFlags, contextHash);
         }
 
+        public readonly struct JobAdmissionArgs
+        {
+            public readonly byte Lane;
+            public readonly uint JobHash;
+            public readonly float EstimatedCostMs;
+            public readonly float RemainingBudgetMs;
+            public readonly int CriticalDebtFrames;
+            public readonly byte Flags;
+
+            public JobAdmissionArgs(byte lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, int criticalDebtFrames, byte flags)
+            {
+                Lane = lane;
+                JobHash = jobHash;
+                EstimatedCostMs = estimatedCostMs;
+                RemainingBudgetMs = remainingBudgetMs;
+                CriticalDebtFrames = criticalDebtFrames;
+                Flags = flags;
+            }
+        }
+
         /// <summary>
         /// Records one denied job admission into the scheduler black-box lane.
         /// </summary>
+
         public static void ReportJobAdmissionState(in JobAdmissionTelemetryArgs args)
+
         {
             OrRuntimeFaultFlags(unchecked((int)ErrorBits.JobAdmissionStarvation));
             CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
@@ -783,7 +805,9 @@ namespace Hecton8.Core
                 return;
 
             byte nonFiniteFlags = (byte)(JobAdmissionTelemetryFlags.Denied | JobAdmissionTelemetryFlags.NonFinite);
+
             JobAdmissionTelemetryArgs args = new JobAdmissionTelemetryArgs(
+
                 lane: lane,
                 jobHash: jobHash,
                 estimatedCostMs: 0f,
@@ -1566,7 +1590,9 @@ namespace Hecton8.Core
             return count | (mask << 10) | (debt << 20) | barrier;
         }
 
+
         private void WriteJobAdmissionTelemetry(in JobAdmissionTelemetryArgs args)
+
         {
             uint frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             int writeIndex = ReserveTelemetryWriteIndex();
