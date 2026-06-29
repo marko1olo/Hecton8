@@ -156,6 +156,20 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private readonly struct NativeSegmentWriteRequest
+        {
+            public readonly void* Source;
+            public readonly int ByteCount;
+            public readonly bool PaceWrites;
+
+            public NativeSegmentWriteRequest(void* source, int byteCount, bool paceWrites)
+            {
+                Source = source;
+                ByteCount = byteCount;
+                PaceWrites = paceWrites;
+            }
+        }
+
         private struct CachedReadWindow
         {
             public string AbsolutePath;
@@ -1312,12 +1326,14 @@ namespace Hecton8.SaveSystem
                     if (!TrySeekWindowsHandle(handle, 0L, out error))
                         return false;
 
+
                     var firstArgs = new NativeWindowsWriteSegmentArgs(handle: handle, source: firstBuffer, byteCount: math.max(firstByteCount, 0), paceWrites: paceWrites);
                     if (!TryWriteWindowsSegment(in firstArgs, ref cursor, out error))
                         return false;
 
                     var secondArgs = new NativeWindowsWriteSegmentArgs(handle: handle, source: secondBuffer, byteCount: math.max(secondByteCount, 0), paceWrites: paceWrites);
                     if (!TryWriteWindowsSegment(in secondArgs, ref cursor, out error))
+
                         return false;
 
                     if (!TrySeekWindowsHandle(handle, totalBytes, out error) || !SetEndOfFileNative(handle))
@@ -1347,6 +1363,7 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
+
         private static bool TryWriteWindowsSegment(in NativeWindowsWriteSegmentArgs args, ref long cursor, out string error)
         {
             error = string.Empty;
@@ -1365,6 +1382,7 @@ namespace Hecton8.SaveSystem
             {
                 int chunkBytes = math.min(NativeWriteChunkBytes, args.ByteCount - offset);
                 if (!WriteFileNative(args.Handle, sourceBytes + offset, (uint)chunkBytes, out uint bytesWritten, IntPtr.Zero))
+
                 {
                     error = "Native write failed.";
                     return false;
@@ -1378,8 +1396,10 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
+
                 if (args.PaceWrites)
                     PaceAfterNativeWritePage((int)bytesWritten, args.ByteCount - offset);
+
             }
 
             return true;
@@ -1492,12 +1512,14 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+
                 var firstArgs = new NativeUnixWriteSegmentArgs(fd: fd, source: firstBuffer, byteCount: math.max(firstByteCount, 0), paceWrites: paceWrites);
                 if (!TryWriteUnixSegment(in firstArgs, ref cursor, out error))
                     return false;
 
                 var secondArgs = new NativeUnixWriteSegmentArgs(fd: fd, source: secondBuffer, byteCount: math.max(secondByteCount, 0), paceWrites: paceWrites);
                 if (!TryWriteUnixSegment(in secondArgs, ref cursor, out error))
+
                     return false;
 
                 if (FTruncateUnix(fd, totalBytes) != 0)
@@ -1514,6 +1536,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
+
         private static bool TryWriteUnixSegment(in NativeUnixWriteSegmentArgs args, ref long cursor, out string error)
         {
             error = string.Empty;
@@ -1524,6 +1547,7 @@ namespace Hecton8.SaveSystem
             {
                 cursor += args.ByteCount;
                 if (LSeekUnix(args.Fd, cursor, NativeUnixSeekSet) < 0L)
+
                 {
                     error = "Native write seek failed.";
                     return false;
@@ -1532,12 +1556,14 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
+
             byte* sourceBytes = (byte*)args.Source;
             int offset = 0;
             while (offset < args.ByteCount)
             {
                 int chunkBytes = math.min(NativeWriteChunkBytes, args.ByteCount - offset);
                 long bytesWritten = WriteUnix(args.Fd, sourceBytes + offset, (UIntPtr)chunkBytes).ToInt64();
+
                 if (bytesWritten < 0L)
                 {
                     error = "Native write failed.";
@@ -1552,8 +1578,10 @@ namespace Hecton8.SaveSystem
 
                 offset += (int)bytesWritten;
                 cursor += bytesWritten;
+
                 if (args.PaceWrites)
                     PaceAfterNativeWritePage((int)bytesWritten, args.ByteCount - offset);
+
             }
 
             return true;
