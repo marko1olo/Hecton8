@@ -39,7 +39,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class VRAMMonitor : MonoBehaviour, ISlowTickable, IVramBudgetReadModel, IVramBudgetSampleSink, IGlobalRegistryHotSwapListener
+    public class VRAMMonitor : MonoBehaviour, ISlowTickable, IVramBudgetReadModel, IVramBudgetSampleSink, IGlobalRegistryHotSwapListener
     {
         /// <summary>
         /// High-level VRAM pressure state derived from budget utilization.
@@ -579,7 +579,7 @@ namespace Hecton8.Optimization
             }
         }
 
-        private uint ResolveTelemetryFlags()
+        protected virtual uint ResolveTelemetryFlags()
         {
             uint flags = 0u;
             if (IsTextureMemoryOverBudget)
