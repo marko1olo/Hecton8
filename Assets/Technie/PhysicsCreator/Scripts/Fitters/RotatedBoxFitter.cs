@@ -236,8 +236,10 @@ namespace Technie.PhysicsCreator
 		public static BoxDef ToBoxDef(RotatedBox computedBox)
 		{
 			BoxDef result = new BoxDef();
+
 			Vector3 offset = computedBox.plane.rotation * computedBox.localCenter;
 			result.boxPosition = computedBox.plane.center + offset;
+
 			result.boxRotation = computedBox.plane.rotation;
 			result.collisionBox.center = Vector3.zero;
 			result.collisionBox.size = computedBox.size;
