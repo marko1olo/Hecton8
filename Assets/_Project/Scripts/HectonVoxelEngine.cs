@@ -680,6 +680,11 @@ public static class MCTables
 // ════════════════════════════════════════════════════════════════════════════════
 #region MC Types
 
+public struct CubeDensities
+{
+    public float d0, d1, d2, d3, d4, d5, d6, d7;
+}
+
 [StructLayout(LayoutKind.Explicit, Size = 24)]
 public struct MCRawVertex
 {
@@ -2559,7 +2564,9 @@ public struct VoxelMCCountJob : IJobParallelFor
         float d6 = D(cx + 1, cy + 1, cz + 1);
         float d7 = D(cx, cy + 1, cz + 1);
 
+
         CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
+
         int cubeIndex = ResolveCubeIndex(in densities);
 
         int triBase = cubeIndex * 16;
@@ -2595,6 +2602,7 @@ public struct VoxelMCCountJob : IJobParallelFor
             densityFaultFlags[slot] = 1;
     }
 
+
     static int ResolveCubeIndex(in CubeDensities densities)
     {
         return
@@ -2606,6 +2614,7 @@ public struct VoxelMCCountJob : IJobParallelFor
             math.select(0, 32, densities.d5 < 0f) |
             math.select(0, 64, densities.d6 < 0f) |
             math.select(0, 128, densities.d7 < 0f);
+
     }
 }
 
@@ -2718,7 +2727,9 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         float d6 = D(cx+1, cy+1, cz+1);
         float d7 = D(cx, cy+1, cz+1);
 
+
         CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
+
         int cubeIndex = ResolveCubeIndex(in densities);
 
 
@@ -2840,6 +2851,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         return math.select(float3.zero, result, IsFinite(result));
     }
 
+
     static int ResolveCubeIndex(in CubeDensities densities)
     {
         return
@@ -2851,6 +2863,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
             math.select(0, 32, densities.d5 < 0f) |
             math.select(0, 64, densities.d6 < 0f) |
             math.select(0, 128, densities.d7 < 0f);
+
     }
 
     static long PackEdge(int gA,int gB)
