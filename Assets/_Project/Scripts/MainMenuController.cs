@@ -601,24 +601,31 @@ namespace Hecton.UI.MainMenu
             if (root == null)
                 return;
 
+            bool isOwned = root.GetComponentInParent<Selectable>() != null ||
+                           root.GetComponentInParent<ScrollRect>() != null;
+
+            ConfigureDecorativeRaycastTargetsRecursive(root, isOwned);
+        }
+
+        private static void ConfigureDecorativeRaycastTargetsRecursive(Transform root, bool isOwnedByParent)
+        {
             if (root.name == "Panel_ModalConfirm")
                 return;
 
-            if (root.TryGetComponent(out Graphic graphic) &&
-                !IsGraphicOwnedByInteractiveControl(root))
+            if (!isOwnedByParent)
+            {
+                isOwnedByParent = root.TryGetComponent<Selectable>(out _) ||
+                                  root.TryGetComponent<ScrollRect>(out _);
+            }
+
+            if (!isOwnedByParent && root.TryGetComponent(out Graphic graphic))
             {
                 graphic.raycastTarget = false;
             }
 
             int childCount = root.childCount;
             for (int i = 0; i < childCount; i++)
-                ConfigureDecorativeRaycastTargetsCold(root.GetChild(i));
-        }
-
-        private static bool IsGraphicOwnedByInteractiveControl(Transform transform)
-        {
-            return transform.GetComponentInParent<Selectable>() != null ||
-                   transform.GetComponentInParent<ScrollRect>() != null;
+                ConfigureDecorativeRaycastTargetsRecursive(root.GetChild(i), isOwnedByParent);
         }
 
         private void CacheButtonActions()
