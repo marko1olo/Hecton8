@@ -22,6 +22,17 @@ namespace Hecton8.AI.Cognition.Editor
         {
             int checkedStructs = 0;
 
+            ValidateCognitionStructs(ref checkedStructs);
+            ValidateAnxietyStructs(ref checkedStructs);
+            ValidateApexStructs(ref checkedStructs);
+            ValidateAlphaLeviathanStructs(ref checkedStructs);
+
+            if (checkedStructs != ExpectedStructCount)
+                Fail("validated struct count " + checkedStructs + " != " + ExpectedStructCount);
+        }
+
+        private static void ValidateCognitionStructs(ref int checkedStructs)
+        {
             AssertSize<CognitionStateDTO>(32, nameof(CognitionStateDTO), ref checkedStructs);
             AssertOffset<CognitionStateDTO>(nameof(CognitionStateDTO.Hunger01), 0);
             AssertOffset<CognitionStateDTO>(nameof(CognitionStateDTO.Fear01), 4);
@@ -151,7 +162,10 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<CognitionDumpHeaderDTO>(nameof(CognitionDumpHeaderDTO.EntrySizeBytes), 20);
             AssertOffset<CognitionDumpHeaderDTO>(nameof(CognitionDumpHeaderDTO.Cursor), 24);
             AssertOffset<CognitionDumpHeaderDTO>(nameof(CognitionDumpHeaderDTO.AgentHash), 28);
+        }
 
+        private static void ValidateAnxietyStructs(ref int checkedStructs)
+        {
             AssertSize<AnxietyProfileDTO>(16, nameof(AnxietyProfileDTO), ref checkedStructs);
             AssertOffset<AnxietyProfileDTO>(nameof(AnxietyProfileDTO.FearDecayRate), 0);
             AssertOffset<AnxietyProfileDTO>(nameof(AnxietyProfileDTO.AggressionDecayRate), 4);
@@ -229,7 +243,10 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<AnxietyShelterSdfHeaderDTO>(nameof(AnxietyShelterSdfHeaderDTO.Flags), 52);
             AssertOffset<AnxietyShelterSdfHeaderDTO>("_pad0", 56);
             AssertOffset<AnxietyShelterSdfHeaderDTO>("_pad1", 60);
+        }
 
+        private static void ValidateApexStructs(ref int checkedStructs)
+        {
             AssertSize<ApexStateDTO>(64, nameof(ApexStateDTO), ref checkedStructs);
             AssertOffset<ApexStateDTO>(nameof(ApexStateDTO.AUP), 0);
             AssertOffset<ApexStateDTO>(nameof(ApexStateDTO.Velocity), 24);
@@ -448,7 +465,10 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<ApexPanicSignal>("_pad0", 55);
             AssertOffset<ApexPanicSignal>("_pad1", 56);
             AssertOffset<ApexPanicSignal>("_pad8", 63);
+        }
 
+        private static void ValidateAlphaLeviathanStructs(ref int checkedStructs)
+        {
             AssertSize<AlphaLeviathanTelemetryEntry>(64, nameof(AlphaLeviathanTelemetryEntry), ref checkedStructs);
             AssertOffset<AlphaLeviathanTelemetryEntry>(nameof(AlphaLeviathanTelemetryEntry.Frame), 0);
             AssertOffset<AlphaLeviathanTelemetryEntry>(nameof(AlphaLeviathanTelemetryEntry.DistanceToPlayerMeters), 4);
@@ -541,9 +561,6 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<AlphaLeviathanSteeringOutput>("_pad27", 112);
             AssertOffset<AlphaLeviathanSteeringOutput>("_pad35", 120);
             AssertOffset<AlphaLeviathanSteeringOutput>("_pad42", 127);
-
-            if (checkedStructs != ExpectedStructCount)
-                Fail("validated struct count " + checkedStructs + " != " + ExpectedStructCount);
         }
 
         private static void AssertSize<T>(int expected, string typeName, ref int checkedStructs)
