@@ -122,10 +122,12 @@ namespace Technie.PhysicsCreator.Skinned
 		public List<BoneHullData> boneHullData = new List<BoneHullData>();
 
 		// Current selection - one of these will be valid (or neither)
+
 		[System.NonSerialized]
 		private int selectedBoneIndex = INVALID_INDEX;
 
 		[System.NonSerialized]
+
 		private int selectedHullIndex = INVALID_INDEX;
 
 		private int lastModifiedFrame = 0;
