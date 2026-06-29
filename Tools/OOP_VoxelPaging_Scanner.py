@@ -31,22 +31,38 @@ def read(path: Path) -> str:
 
 
 def extract_method(source: str, signature: str) -> str:
-    start = source.find(signature)
-    if start < 0:
+    lines = source.split("\n")
+    start_idx = -1
+    for i, line in enumerate(lines):
+        if signature in line:
+            start_idx = i
+            break
+
+    if start_idx == -1:
         return ""
-    brace = source.find("{", start)
-    if brace < 0:
-        return ""
+
+    extracted = []
     depth = 0
-    for index in range(brace, len(source)):
-        char = source[index]
-        if char == "{":
-            depth += 1
-        elif char == "}":
-            depth -= 1
-            if depth == 0:
-                return source[start:index + 1]
-    return ""
+    found_brace = False
+
+    for i in range(start_idx, len(lines)):
+        line = lines[i]
+        extracted.append(line)
+
+        for char in line:
+            if char == "{":
+                depth += 1
+                found_brace = True
+            elif char == "}":
+                depth -= 1
+
+        if found_brace and depth == 0:
+            break
+
+    if not found_brace or depth > 0:
+        return ""
+
+    return "\n".join(extracted)
 
 
 def resolve_slot(sector_hash: int) -> int:
