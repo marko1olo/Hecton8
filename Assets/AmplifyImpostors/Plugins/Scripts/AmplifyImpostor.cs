@@ -193,7 +193,9 @@ namespace AmplifyImpostors
 		[NonSerialized]
 		private Bounds m_originalBound = new Bounds();
 
+
 		[NonSerialized]
+
 		private const int BlockSize = 65536;
 #if UNITY_EDITOR
 		[NonSerialized]
@@ -566,6 +568,7 @@ namespace AmplifyImpostors
 
 			m_pixelOffset = Vector2.zero;
 
+
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
@@ -575,6 +578,7 @@ namespace AmplifyImpostors
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
+
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -675,6 +679,7 @@ namespace AmplifyImpostors
 			bool sRGBcache = GL.sRGBWrite;
 			GL.sRGBWrite = true;
 
+
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
@@ -684,6 +689,7 @@ namespace AmplifyImpostors
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
+
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -932,6 +938,7 @@ namespace AmplifyImpostors
 			GenerateTextures( outputList, standardRendering );
 			DisplayProgress( 0.2f, "Please Wait... Baking" );
 
+
 			try
 			{
 				RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
@@ -941,6 +948,7 @@ namespace AmplifyImpostors
 				EditorUtility.ClearProgressBar();
 				throw e;
 			}
+
 
 			DisplayProgress( 0.5f, "Please Wait... Remapping" );
 
