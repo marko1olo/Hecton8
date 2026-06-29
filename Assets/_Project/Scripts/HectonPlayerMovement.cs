@@ -14284,16 +14284,21 @@ namespace Hecton8.Gameplay
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
-            if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
-            if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
-            if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
-            if (dryGroundGraceTime < 0f) dryGroundGraceTime = 0f;
-            if (dryGroundGraceTime > 0.3f) dryGroundGraceTime = 0.3f;
-            if (maxGroundAngle < 5f) maxGroundAngle = 5f;
-            if (maxGroundAngle > 89f) maxGroundAngle = 89f;
-            if (pitchMin < -89.9f) pitchMin = -89.9f;
-            if (pitchMax > 89.9f) pitchMax = 89.9f;
-            if (pitchMin > pitchMax) pitchMin = pitchMax;
+            ValidateVR();
+            ValidateCinematic();
+            ValidateExosuit();
+            ValidateMovement();
+            ValidateSurfaceAndCrest();
+            ValidateUnderwaterAndAbyssal();
+            ValidateEnvironmentAndHazards();
+            ValidateSargassumAndParasite();
+
+            RefreshGroundSlopeCache();
+            CacheBaseCollisionProfile();
+        }
+
+        private void ValidateVR()
+        {
             vrSnapTurnDegrees = math.clamp(vrSnapTurnDegrees, 15f, 60f);
             vrSnapTurnThreshold = math.clamp(vrSnapTurnThreshold, 0.25f, 0.98f);
             vrSnapTurnRearmThreshold = math.clamp(vrSnapTurnRearmThreshold, 0.01f, 0.6f);
@@ -14309,9 +14314,10 @@ namespace Hecton8.Gameplay
             vrComfortVisualDecaySharpness = math.clamp(vrComfortVisualDecaySharpness, 0.5f, 20f);
             vrComfortHighSpeedMetersPerSecond = math.clamp(vrComfortHighSpeedMetersPerSecond, 0.25f, 25f);
             vrComfortYawRateReference = math.clamp(vrComfortYawRateReference, 15f, 360f);
-            if (playerHeight < 0.5f) playerHeight = 0.5f;
-            if (baseFov < 30f) baseFov = 30f;
-            if (baseFov > 120f) baseFov = 120f;
+        }
+
+        private void ValidateCinematic()
+        {
             cinematicFocusPullStrength = math.clamp(cinematicFocusPullStrength, 0f, 12f);
             cinematicFocusInputBreakThreshold = math.clamp(cinematicFocusInputBreakThreshold, 0.1f, 30f);
             cinematicFocusYieldRecoverySharpness = math.clamp(cinematicFocusYieldRecoverySharpness, 0.25f, 20f);
@@ -14319,6 +14325,10 @@ namespace Hecton8.Gameplay
             cinematicFocusFovSharpness = math.clamp(cinematicFocusFovSharpness, 0.5f, 20f);
             cinematicFocusDefaultDuration = math.clamp(cinematicFocusDefaultDuration, 0.25f, 12f);
             cinematicFocusSubtitleFadeDistance = math.clamp(cinematicFocusSubtitleFadeDistance, 4f, 120f);
+        }
+
+        private void ValidateExosuit()
+        {
             if (exosuitJumpJetScooterDrainMultiplier < 1f) exosuitJumpJetScooterDrainMultiplier = 1f;
             if (exosuitJumpJetScooterDrainMultiplier > 10f) exosuitJumpJetScooterDrainMultiplier = 10f;
             if (exosuitNegativeBuoyancyScale < 1f) exosuitNegativeBuoyancyScale = 1f;
@@ -14351,10 +14361,6 @@ namespace Hecton8.Gameplay
             if (exosuitFootstepThreatStrength > 2f) exosuitFootstepThreatStrength = 2f;
             if (exosuitFootstepThreatHoldDuration < 0.1f) exosuitFootstepThreatHoldDuration = 0.1f;
             if (exosuitFootstepThreatHoldDuration > 1f) exosuitFootstepThreatHoldDuration = 1f;
-            if (baseFloorMetalFootstepVolume < 0f) baseFloorMetalFootstepVolume = 0f;
-            if (baseFloorMetalFootstepVolume > 1f) baseFloorMetalFootstepVolume = 1f;
-            if (baseFloorMetalFootstepPitch < 0.5f) baseFloorMetalFootstepPitch = 0.5f;
-            if (baseFloorMetalFootstepPitch > 1.5f) baseFloorMetalFootstepPitch = 1.5f;
             if (exosuitGrappleRestLength < 0.2f) exosuitGrappleRestLength = 0.2f;
             if (exosuitGrappleRestLength > 4f) exosuitGrappleRestLength = 4f;
             if (exosuitGrappleReelForce < 0f) exosuitGrappleReelForce = 0f;
@@ -14367,6 +14373,32 @@ namespace Hecton8.Gameplay
             if (exosuitGrappleMaxForce > 220f) exosuitGrappleMaxForce = 220f;
             if (exosuitGrappleHoldTime < 0f) exosuitGrappleHoldTime = 0f;
             if (exosuitGrappleHoldTime > 0.35f) exosuitGrappleHoldTime = 0.35f;
+            if (suitScrapeSlideAngleThresholdDegrees < 1f) suitScrapeSlideAngleThresholdDegrees = 1f;
+            if (suitScrapeSlideAngleThresholdDegrees > 89f) suitScrapeSlideAngleThresholdDegrees = 89f;
+            if (suitScrapeMinBlockedSpeed < 0f) suitScrapeMinBlockedSpeed = 0f;
+            if (suitScrapeImpactBusSpeedScale < 0f) suitScrapeImpactBusSpeedScale = 0f;
+            if (suitScrapeCameraSpeedScale < 0f) suitScrapeCameraSpeedScale = 0f;
+        }
+
+        private void ValidateMovement()
+        {
+            if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
+            if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
+            if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
+            if (dryGroundGraceTime < 0f) dryGroundGraceTime = 0f;
+            if (dryGroundGraceTime > 0.3f) dryGroundGraceTime = 0.3f;
+            if (maxGroundAngle < 5f) maxGroundAngle = 5f;
+            if (maxGroundAngle > 89f) maxGroundAngle = 89f;
+            if (pitchMin < -89.9f) pitchMin = -89.9f;
+            if (pitchMax > 89.9f) pitchMax = 89.9f;
+            if (pitchMin > pitchMax) pitchMin = pitchMax;
+            if (playerHeight < 0.5f) playerHeight = 0.5f;
+            if (baseFov < 30f) baseFov = 30f;
+            if (baseFov > 120f) baseFov = 120f;
+            if (baseFloorMetalFootstepVolume < 0f) baseFloorMetalFootstepVolume = 0f;
+            if (baseFloorMetalFootstepVolume > 1f) baseFloorMetalFootstepVolume = 1f;
+            if (baseFloorMetalFootstepPitch < 0.5f) baseFloorMetalFootstepPitch = 0.5f;
+            if (baseFloorMetalFootstepPitch > 1.5f) baseFloorMetalFootstepPitch = 1.5f;
             if (dryInteriorWalkForceMultiplier < 0.1f) dryInteriorWalkForceMultiplier = 0.1f;
             if (dryInteriorWalkForceMultiplier > 2f) dryInteriorWalkForceMultiplier = 2f;
             if (dryInteriorWalkSpeedMultiplier < 0.1f) dryInteriorWalkSpeedMultiplier = 0.1f;
@@ -14379,46 +14411,30 @@ namespace Hecton8.Gameplay
             if (dryInteriorFootProbeHeight > 1f) dryInteriorFootProbeHeight = 1f;
             if (dryInteriorFootProbeDistance < 0.1f) dryInteriorFootProbeDistance = 0.1f;
             if (dryInteriorFootProbeDistance > 2f) dryInteriorFootProbeDistance = 2f;
-            if (cuttingTensionRestLength < 0.2f) cuttingTensionRestLength = 0.2f;
-            if (cuttingTensionRestLength > 3f) cuttingTensionRestLength = 3f;
-            if (cuttingTensionSpring < 0f) cuttingTensionSpring = 0f;
-            if (cuttingTensionSpring > 120f) cuttingTensionSpring = 120f;
-            if (cuttingTensionDamping < 0f) cuttingTensionDamping = 0f;
-            if (cuttingTensionDamping > 40f) cuttingTensionDamping = 40f;
-            if (cuttingTensionMaxForce < 0f) cuttingTensionMaxForce = 0f;
-            if (cuttingTensionMaxForce > 120f) cuttingTensionMaxForce = 120f;
-            if (cuttingTensionHoldTime < 0f) cuttingTensionHoldTime = 0f;
-            if (cuttingTensionHoldTime > 0.25f) cuttingTensionHoldTime = 0.25f;
-            if (fatalPressureMinFov < 15f) fatalPressureMinFov = 15f;
-            if (fatalPressureMinFov > 25f) fatalPressureMinFov = 25f;
+            if (stepAssistVerticalVelocityPulse < 0f) stepAssistVerticalVelocityPulse = 0f;
+            if (stepAssistVerticalVelocityPulse > 3f) stepAssistVerticalVelocityPulse = 3f;
+            if (wallKickVelocityChange < 0f) wallKickVelocityChange = 0f;
+            if (wallKickResourceCost01 < 0f) wallKickResourceCost01 = 0f;
+            if (wallKickResourceCost01 > 0.5f) wallKickResourceCost01 = 0.5f;
+            if (wallKickContactFrameGrace < 0) wallKickContactFrameGrace = 0;
+            if (wallKickContactFrameGrace > 8) wallKickContactFrameGrace = 8;
+            if (wallKickCooldown < 0f) wallKickCooldown = 0f;
+            if (wallKickTangentFriction < 0f) wallKickTangentFriction = 0f;
+            if (wallKickTangentFriction > 1f) wallKickTangentFriction = 1f;
+            if (maxHeavyCarryBodyYawSpringMultiplier < 0.1f) maxHeavyCarryBodyYawSpringMultiplier = 0.1f;
+            if (maxHeavyCarryBodyYawSpringMultiplier > 1f) maxHeavyCarryBodyYawSpringMultiplier = 1f;
+        }
+
+        private void ValidateSurfaceAndCrest()
+        {
             if (wipeoutSuitUpgradeBreakChance < 0f) wipeoutSuitUpgradeBreakChance = 0f;
             if (wipeoutSuitUpgradeBreakChance > 1f) wipeoutSuitUpgradeBreakChance = 1f;
-            if (fatalPressureLookSensitivityFloor < 0f) fatalPressureLookSensitivityFloor = 0f;
-            if (fatalPressureLookSensitivityFloor > 0.35f) fatalPressureLookSensitivityFloor = 0.35f;
-            if (fatalPressureYawFreedomStart < 5f) fatalPressureYawFreedomStart = 5f;
-            if (fatalPressureYawFreedomEnd < 1f) fatalPressureYawFreedomEnd = 1f;
-            if (fatalPressureYawFreedomStart < fatalPressureYawFreedomEnd) fatalPressureYawFreedomStart = fatalPressureYawFreedomEnd;
-            if (fatalPressurePitchFreedomStart < 5f) fatalPressurePitchFreedomStart = 5f;
-            if (fatalPressurePitchFreedomEnd < 1f) fatalPressurePitchFreedomEnd = 1f;
-            if (fatalPressurePitchFreedomStart < fatalPressurePitchFreedomEnd) fatalPressurePitchFreedomStart = fatalPressurePitchFreedomEnd;
             if (surfaceSwimDepthBand < 0.1f) surfaceSwimDepthBand = 0.1f;
             if (surfaceAscendReleaseDepth < 0.02f) surfaceAscendReleaseDepth = 0.02f;
             if (surfaceDivePitchCommit < 0f) surfaceDivePitchCommit = 0f;
             if (surfaceDivePitchCommit > 85f) surfaceDivePitchCommit = 85f;
             if (surfaceDiveForwardCommit < 0f) surfaceDiveForwardCommit = 0f;
             if (surfaceDiveForwardCommit > 1f) surfaceDiveForwardCommit = 1f;
-            if (abyssalCounterDriveFlowThreshold < 0f) abyssalCounterDriveFlowThreshold = 0f;
-            if (abyssalCounterDriveFlowThreshold > 8f) abyssalCounterDriveFlowThreshold = 8f;
-            if (abyssalCounterDriveOppositionAngleDegrees < 90f) abyssalCounterDriveOppositionAngleDegrees = 90f;
-            if (abyssalCounterDriveOppositionAngleDegrees > 180f) abyssalCounterDriveOppositionAngleDegrees = 180f;
-            if (abyssalCounterDriveEnergyOverstrainMultiplier < 1f) abyssalCounterDriveEnergyOverstrainMultiplier = 1f;
-            if (abyssalCounterDriveEnergyOverstrainMultiplier > 4f) abyssalCounterDriveEnergyOverstrainMultiplier = 4f;
-            if (abyssalCurrentShearMaxSpeedMultiplier < 0.2f) abyssalCurrentShearMaxSpeedMultiplier = 0.2f;
-            if (abyssalCurrentShearMaxSpeedMultiplier > 1f) abyssalCurrentShearMaxSpeedMultiplier = 1f;
-            if (abyssalCurrentShearDrainExponent < 1f) abyssalCurrentShearDrainExponent = 1f;
-            if (abyssalCurrentShearDrainExponent > 6f) abyssalCurrentShearDrainExponent = 6f;
-            if (abyssalCurrentShearOxygenDrainPerSecond < 0f) abyssalCurrentShearOxygenDrainPerSecond = 0f;
-            if (abyssalCurrentShearEnergyDrainPerSecond < 0f) abyssalCurrentShearEnergyDrainPerSecond = 0f;
             if (surfaceDiveCommitHoldTime < 0f) surfaceDiveCommitHoldTime = 0f;
             if (surfaceDiveCommitHoldTime > 0.35f) surfaceDiveCommitHoldTime = 0.35f;
             if (surfaceDiveAssistDuration < 0.04f) surfaceDiveAssistDuration = 0.04f;
@@ -14511,6 +14527,28 @@ namespace Hecton8.Gameplay
             if (surfaceWaveAlignmentSharpness < 1f) surfaceWaveAlignmentSharpness = 1f;
             if (surfaceWaveMaxPitch < 0f) surfaceWaveMaxPitch = 0f;
             if (surfaceWaveMaxRoll < 0f) surfaceWaveMaxRoll = 0f;
+            if (brineViscosityDragMultiplier < 1f) brineViscosityDragMultiplier = 1f;
+            if (brineViscosityDragMultiplier > 8f) brineViscosityDragMultiplier = 8f;
+            if (impactBubbleMinIntensity < 0f) impactBubbleMinIntensity = 0f;
+            if (impactBubbleMinIntensity > 1f) impactBubbleMinIntensity = 1f;
+            if (impactBubbleMinCount < 0) impactBubbleMinCount = 0;
+            if (impactBubbleMaxCount < impactBubbleMinCount) impactBubbleMaxCount = impactBubbleMinCount;
+        }
+
+        private void ValidateUnderwaterAndAbyssal()
+        {
+            if (abyssalCounterDriveFlowThreshold < 0f) abyssalCounterDriveFlowThreshold = 0f;
+            if (abyssalCounterDriveFlowThreshold > 8f) abyssalCounterDriveFlowThreshold = 8f;
+            if (abyssalCounterDriveOppositionAngleDegrees < 90f) abyssalCounterDriveOppositionAngleDegrees = 90f;
+            if (abyssalCounterDriveOppositionAngleDegrees > 180f) abyssalCounterDriveOppositionAngleDegrees = 180f;
+            if (abyssalCounterDriveEnergyOverstrainMultiplier < 1f) abyssalCounterDriveEnergyOverstrainMultiplier = 1f;
+            if (abyssalCounterDriveEnergyOverstrainMultiplier > 4f) abyssalCounterDriveEnergyOverstrainMultiplier = 4f;
+            if (abyssalCurrentShearMaxSpeedMultiplier < 0.2f) abyssalCurrentShearMaxSpeedMultiplier = 0.2f;
+            if (abyssalCurrentShearMaxSpeedMultiplier > 1f) abyssalCurrentShearMaxSpeedMultiplier = 1f;
+            if (abyssalCurrentShearDrainExponent < 1f) abyssalCurrentShearDrainExponent = 1f;
+            if (abyssalCurrentShearDrainExponent > 6f) abyssalCurrentShearDrainExponent = 6f;
+            if (abyssalCurrentShearOxygenDrainPerSecond < 0f) abyssalCurrentShearOxygenDrainPerSecond = 0f;
+            if (abyssalCurrentShearEnergyDrainPerSecond < 0f) abyssalCurrentShearEnergyDrainPerSecond = 0f;
             if (underwaterTurbulenceMaxDepth < 1f) underwaterTurbulenceMaxDepth = 1f;
             if (underwaterTurbulenceHeightStart < 0.05f) underwaterTurbulenceHeightStart = 0.05f;
             if (underwaterTurbulenceHeightMax < underwaterTurbulenceHeightStart)
@@ -14535,6 +14573,72 @@ namespace Hecton8.Gameplay
             if (abyssalTransportTurbulencePitchDegrees < 0f) abyssalTransportTurbulencePitchDegrees = 0f;
             if (abyssalTransportTurbulenceYawDegrees < 0f) abyssalTransportTurbulenceYawDegrees = 0f;
             if (abyssalTransportTurbulenceRecoverySharpness < 1f) abyssalTransportTurbulenceRecoverySharpness = 1f;
+            if (abyssalCableEntanglementSpring < 0f) abyssalCableEntanglementSpring = 0f;
+            if (abyssalCableEntanglementSpring > 80f) abyssalCableEntanglementSpring = 80f;
+            if (abyssalCableEntanglementDamping < 0f) abyssalCableEntanglementDamping = 0f;
+            if (abyssalCableEntanglementDamping > 30f) abyssalCableEntanglementDamping = 30f;
+            if (abyssalCableEntanglementMaxAcceleration < 0f) abyssalCableEntanglementMaxAcceleration = 0f;
+            if (abyssalCableEntanglementMaxAcceleration > 120f) abyssalCableEntanglementMaxAcceleration = 120f;
+            if (abyssalCableEntanglementVerticalInfluence < 0f) abyssalCableEntanglementVerticalInfluence = 0f;
+            if (abyssalCableEntanglementVerticalInfluence > 1f) abyssalCableEntanglementVerticalInfluence = 1f;
+            if (!math.isfinite(abyssalCableEntanglementMassReference)) abyssalCableEntanglementMassReference = 110f;
+            if (abyssalCableEntanglementMassReference < 40f) abyssalCableEntanglementMassReference = 40f;
+            if (abyssalCableEntanglementMassReference > 500f) abyssalCableEntanglementMassReference = 500f;
+            if (abyssalCableEntanglementSwimEnvironmentalDrag < 0f) abyssalCableEntanglementSwimEnvironmentalDrag = 0f;
+            if (abyssalCableEntanglementSwimEnvironmentalDrag > 5f) abyssalCableEntanglementSwimEnvironmentalDrag = 5f;
+            if (abyssalCableEntanglementTransportEnvironmentalDrag < 0f) abyssalCableEntanglementTransportEnvironmentalDrag = 0f;
+            if (abyssalCableEntanglementTransportEnvironmentalDrag > 8f) abyssalCableEntanglementTransportEnvironmentalDrag = 8f;
+            if (abyssalCableEscapeEnergyDrainPerSecond < 0f) abyssalCableEscapeEnergyDrainPerSecond = 0f;
+            if (abyssalCableEscapeEnergyDrainPerSecond > 20f) abyssalCableEscapeEnergyDrainPerSecond = 20f;
+            if (abyssalCableEscapeEnergyMultiplier < 1f) abyssalCableEscapeEnergyMultiplier = 1f;
+            if (abyssalCableEscapeEnergyMultiplier > 8f) abyssalCableEscapeEnergyMultiplier = 8f;
+            if (abyssalCableCutReleaseThreshold < 0f) abyssalCableCutReleaseThreshold = 0f;
+            if (abyssalCableCutReleaseThreshold > 1f) abyssalCableCutReleaseThreshold = 1f;
+            if (abyssalCablePropulsionReliefAtFullCut < 0f) abyssalCablePropulsionReliefAtFullCut = 0f;
+            if (abyssalCablePropulsionReliefAtFullCut > 1f) abyssalCablePropulsionReliefAtFullCut = 1f;
+            if (underwaterImpactMinVolume < 0f) underwaterImpactMinVolume = 0f;
+            if (underwaterImpactMinVolume > 1f) underwaterImpactMinVolume = 1f;
+            if (underwaterImpactMaxVolume < 0f) underwaterImpactMaxVolume = 0f;
+            if (underwaterImpactMaxVolume > 1f) underwaterImpactMaxVolume = 1f;
+            if (underwaterImpactMinVolume > underwaterImpactMaxVolume) underwaterImpactMinVolume = underwaterImpactMaxVolume;
+            if (underwaterSomaticHeadbobFrequency < 0.1f) underwaterSomaticHeadbobFrequency = 0.1f;
+            if (underwaterSomaticPitchDegrees < 0f) underwaterSomaticPitchDegrees = 0f;
+            if (underwaterSomaticYawDegrees < 0f) underwaterSomaticYawDegrees = 0f;
+            if (underwaterSomaticReferenceSpeed < 0.25f) underwaterSomaticReferenceSpeed = 0.25f;
+            if (underwaterSomaticResponseSharpness < 0.5f) underwaterSomaticResponseSharpness = 0.5f;
+            if (underwaterSomaticFatigueStaminaThreshold01 < 0.01f) underwaterSomaticFatigueStaminaThreshold01 = 0.01f;
+            if (underwaterSomaticFatigueStaminaThreshold01 > 0.6f) underwaterSomaticFatigueStaminaThreshold01 = 0.6f;
+            if (underwaterSomaticFatigueCadenceMultiplier < 1f) underwaterSomaticFatigueCadenceMultiplier = 1f;
+            if (underwaterSomaticFatigueCadenceMultiplier > 3f) underwaterSomaticFatigueCadenceMultiplier = 3f;
+            if (underwaterSomaticFatigueSwayMultiplier < 1f) underwaterSomaticFatigueSwayMultiplier = 1f;
+            if (underwaterSomaticFatigueSwayMultiplier > 4f) underwaterSomaticFatigueSwayMultiplier = 4f;
+            if (underwaterSomaticFatigueBreathCooldown < 0.2f) underwaterSomaticFatigueBreathCooldown = 0.2f;
+            if (underwaterSomaticFatigueBreathVolumeScale < 0f) underwaterSomaticFatigueBreathVolumeScale = 0f;
+            if (underwaterSomaticFatigueBreathVolumeScale > 1f) underwaterSomaticFatigueBreathVolumeScale = 1f;
+        }
+
+        private void ValidateEnvironmentAndHazards()
+        {
+            if (cuttingTensionRestLength < 0.2f) cuttingTensionRestLength = 0.2f;
+            if (cuttingTensionRestLength > 3f) cuttingTensionRestLength = 3f;
+            if (cuttingTensionSpring < 0f) cuttingTensionSpring = 0f;
+            if (cuttingTensionSpring > 120f) cuttingTensionSpring = 120f;
+            if (cuttingTensionDamping < 0f) cuttingTensionDamping = 0f;
+            if (cuttingTensionDamping > 40f) cuttingTensionDamping = 40f;
+            if (cuttingTensionMaxForce < 0f) cuttingTensionMaxForce = 0f;
+            if (cuttingTensionMaxForce > 120f) cuttingTensionMaxForce = 120f;
+            if (cuttingTensionHoldTime < 0f) cuttingTensionHoldTime = 0f;
+            if (cuttingTensionHoldTime > 0.25f) cuttingTensionHoldTime = 0.25f;
+            if (fatalPressureMinFov < 15f) fatalPressureMinFov = 15f;
+            if (fatalPressureMinFov > 25f) fatalPressureMinFov = 25f;
+            if (fatalPressureLookSensitivityFloor < 0f) fatalPressureLookSensitivityFloor = 0f;
+            if (fatalPressureLookSensitivityFloor > 0.35f) fatalPressureLookSensitivityFloor = 0.35f;
+            if (fatalPressureYawFreedomStart < 5f) fatalPressureYawFreedomStart = 5f;
+            if (fatalPressureYawFreedomEnd < 1f) fatalPressureYawFreedomEnd = 1f;
+            if (fatalPressureYawFreedomStart < fatalPressureYawFreedomEnd) fatalPressureYawFreedomStart = fatalPressureYawFreedomEnd;
+            if (fatalPressurePitchFreedomStart < 5f) fatalPressurePitchFreedomStart = 5f;
+            if (fatalPressurePitchFreedomEnd < 1f) fatalPressurePitchFreedomEnd = 1f;
+            if (fatalPressurePitchFreedomStart < fatalPressurePitchFreedomEnd) fatalPressurePitchFreedomStart = fatalPressurePitchFreedomEnd;
             if (transportCavitationStartDepth < 0.1f) transportCavitationStartDepth = 0.1f;
             if (transportCavitationRecoveryDepth < transportCavitationStartDepth)
                 transportCavitationRecoveryDepth = transportCavitationStartDepth;
@@ -14547,8 +14651,18 @@ namespace Hecton8.Gameplay
             if (externalEnvironmentalDragHoldTime < 0f) externalEnvironmentalDragHoldTime = 0f;
             if (externalEnvironmentalDragHoldTime > 0.35f) externalEnvironmentalDragHoldTime = 0.35f;
             if (externalEnvironmentalDragBlendSpeed < 1f) externalEnvironmentalDragBlendSpeed = 1f;
-            if (brineViscosityDragMultiplier < 1f) brineViscosityDragMultiplier = 1f;
-            if (brineViscosityDragMultiplier > 8f) brineViscosityDragMultiplier = 8f;
+            if (heavyTowCameraPitchDegrees < 0f) heavyTowCameraPitchDegrees = 0f;
+            if (heavyTowCameraRollDegrees < 0f) heavyTowCameraRollDegrees = 0f;
+            if (heavyTowCameraBackwardOffset < 0f) heavyTowCameraBackwardOffset = 0f;
+            if (heavyTowCameraSideOffset < 0f) heavyTowCameraSideOffset = 0f;
+            if (heavyTowResponseBlendSharpness < 1f) heavyTowResponseBlendSharpness = 1f;
+            if (heavyTowCenterOfMassRearShift < 0f) heavyTowCenterOfMassRearShift = 0f;
+            if (heavyTowCenterOfMassLateralShift < 0f) heavyTowCenterOfMassLateralShift = 0f;
+            if (heavyTowCenterOfMassDownShift < 0f) heavyTowCenterOfMassDownShift = 0f;
+        }
+
+        private void ValidateSargassumAndParasite()
+        {
             if (parasiteLatchInfluenceHoldTime < 0f) parasiteLatchInfluenceHoldTime = 0f;
             if (parasiteLatchInfluenceHoldTime > 0.35f) parasiteLatchInfluenceHoldTime = 0.35f;
             if (parasiteLatchInfluenceBlendSpeed < 1f) parasiteLatchInfluenceBlendSpeed = 1f;
@@ -14582,29 +14696,6 @@ namespace Hecton8.Gameplay
             if (sargassumHighStrainEnergyMultiplier > 6f) sargassumHighStrainEnergyMultiplier = 6f;
             if (sargassumHighStrainHoldTime < 0f) sargassumHighStrainHoldTime = 0f;
             if (sargassumHighStrainHoldTime > 0.5f) sargassumHighStrainHoldTime = 0.5f;
-            if (abyssalCableEntanglementSpring < 0f) abyssalCableEntanglementSpring = 0f;
-            if (abyssalCableEntanglementSpring > 80f) abyssalCableEntanglementSpring = 80f;
-            if (abyssalCableEntanglementDamping < 0f) abyssalCableEntanglementDamping = 0f;
-            if (abyssalCableEntanglementDamping > 30f) abyssalCableEntanglementDamping = 30f;
-            if (abyssalCableEntanglementMaxAcceleration < 0f) abyssalCableEntanglementMaxAcceleration = 0f;
-            if (abyssalCableEntanglementMaxAcceleration > 120f) abyssalCableEntanglementMaxAcceleration = 120f;
-            if (abyssalCableEntanglementVerticalInfluence < 0f) abyssalCableEntanglementVerticalInfluence = 0f;
-            if (abyssalCableEntanglementVerticalInfluence > 1f) abyssalCableEntanglementVerticalInfluence = 1f;
-            if (!math.isfinite(abyssalCableEntanglementMassReference)) abyssalCableEntanglementMassReference = 110f;
-            if (abyssalCableEntanglementMassReference < 40f) abyssalCableEntanglementMassReference = 40f;
-            if (abyssalCableEntanglementMassReference > 500f) abyssalCableEntanglementMassReference = 500f;
-            if (abyssalCableEntanglementSwimEnvironmentalDrag < 0f) abyssalCableEntanglementSwimEnvironmentalDrag = 0f;
-            if (abyssalCableEntanglementSwimEnvironmentalDrag > 5f) abyssalCableEntanglementSwimEnvironmentalDrag = 5f;
-            if (abyssalCableEntanglementTransportEnvironmentalDrag < 0f) abyssalCableEntanglementTransportEnvironmentalDrag = 0f;
-            if (abyssalCableEntanglementTransportEnvironmentalDrag > 8f) abyssalCableEntanglementTransportEnvironmentalDrag = 8f;
-            if (abyssalCableEscapeEnergyDrainPerSecond < 0f) abyssalCableEscapeEnergyDrainPerSecond = 0f;
-            if (abyssalCableEscapeEnergyDrainPerSecond > 20f) abyssalCableEscapeEnergyDrainPerSecond = 20f;
-            if (abyssalCableEscapeEnergyMultiplier < 1f) abyssalCableEscapeEnergyMultiplier = 1f;
-            if (abyssalCableEscapeEnergyMultiplier > 8f) abyssalCableEscapeEnergyMultiplier = 8f;
-            if (abyssalCableCutReleaseThreshold < 0f) abyssalCableCutReleaseThreshold = 0f;
-            if (abyssalCableCutReleaseThreshold > 1f) abyssalCableCutReleaseThreshold = 1f;
-            if (abyssalCablePropulsionReliefAtFullCut < 0f) abyssalCablePropulsionReliefAtFullCut = 0f;
-            if (abyssalCablePropulsionReliefAtFullCut > 1f) abyssalCablePropulsionReliefAtFullCut = 1f;
             if (sargassumMatBuoyancyDensityThreshold < 0f) sargassumMatBuoyancyDensityThreshold = 0f;
             if (sargassumMatBuoyancyDensityThreshold > 1f) sargassumMatBuoyancyDensityThreshold = 1f;
             if (sargassumMatBuoyancyMaxDepth < 0.1f) sargassumMatBuoyancyMaxDepth = 0.1f;
@@ -14615,59 +14706,7 @@ namespace Hecton8.Gameplay
             if (sargassumMatSurfaceLockBoost > 3f) sargassumMatSurfaceLockBoost = 3f;
             if (sargassumMatSurfaceLiftOffset < 0f) sargassumMatSurfaceLiftOffset = 0f;
             if (sargassumMatSurfaceLiftOffset > 0.75f) sargassumMatSurfaceLiftOffset = 0.75f;
-            if (impactBubbleMinIntensity < 0f) impactBubbleMinIntensity = 0f;
-            if (impactBubbleMinIntensity > 1f) impactBubbleMinIntensity = 1f;
-            if (impactBubbleMinCount < 0) impactBubbleMinCount = 0;
-            if (impactBubbleMaxCount < impactBubbleMinCount) impactBubbleMaxCount = impactBubbleMinCount;
-            if (underwaterImpactMinVolume < 0f) underwaterImpactMinVolume = 0f;
-            if (underwaterImpactMinVolume > 1f) underwaterImpactMinVolume = 1f;
-            if (underwaterImpactMaxVolume < 0f) underwaterImpactMaxVolume = 0f;
-            if (underwaterImpactMaxVolume > 1f) underwaterImpactMaxVolume = 1f;
-            if (underwaterImpactMinVolume > underwaterImpactMaxVolume) underwaterImpactMinVolume = underwaterImpactMaxVolume;
-            if (underwaterSomaticHeadbobFrequency < 0.1f) underwaterSomaticHeadbobFrequency = 0.1f;
-            if (underwaterSomaticPitchDegrees < 0f) underwaterSomaticPitchDegrees = 0f;
-            if (underwaterSomaticYawDegrees < 0f) underwaterSomaticYawDegrees = 0f;
-            if (underwaterSomaticReferenceSpeed < 0.25f) underwaterSomaticReferenceSpeed = 0.25f;
-            if (underwaterSomaticResponseSharpness < 0.5f) underwaterSomaticResponseSharpness = 0.5f;
-            if (underwaterSomaticFatigueStaminaThreshold01 < 0.01f) underwaterSomaticFatigueStaminaThreshold01 = 0.01f;
-            if (underwaterSomaticFatigueStaminaThreshold01 > 0.6f) underwaterSomaticFatigueStaminaThreshold01 = 0.6f;
-            if (underwaterSomaticFatigueCadenceMultiplier < 1f) underwaterSomaticFatigueCadenceMultiplier = 1f;
-            if (underwaterSomaticFatigueCadenceMultiplier > 3f) underwaterSomaticFatigueCadenceMultiplier = 3f;
-            if (underwaterSomaticFatigueSwayMultiplier < 1f) underwaterSomaticFatigueSwayMultiplier = 1f;
-            if (underwaterSomaticFatigueSwayMultiplier > 4f) underwaterSomaticFatigueSwayMultiplier = 4f;
-            if (underwaterSomaticFatigueBreathCooldown < 0.2f) underwaterSomaticFatigueBreathCooldown = 0.2f;
-            if (underwaterSomaticFatigueBreathVolumeScale < 0f) underwaterSomaticFatigueBreathVolumeScale = 0f;
-            if (underwaterSomaticFatigueBreathVolumeScale > 1f) underwaterSomaticFatigueBreathVolumeScale = 1f;
-            if (stepAssistVerticalVelocityPulse < 0f) stepAssistVerticalVelocityPulse = 0f;
-            if (stepAssistVerticalVelocityPulse > 3f) stepAssistVerticalVelocityPulse = 3f;
-            if (wallKickVelocityChange < 0f) wallKickVelocityChange = 0f;
-            if (wallKickResourceCost01 < 0f) wallKickResourceCost01 = 0f;
-            if (wallKickResourceCost01 > 0.5f) wallKickResourceCost01 = 0.5f;
-            if (wallKickContactFrameGrace < 0) wallKickContactFrameGrace = 0;
-            if (wallKickContactFrameGrace > 8) wallKickContactFrameGrace = 8;
-            if (wallKickCooldown < 0f) wallKickCooldown = 0f;
-            if (wallKickTangentFriction < 0f) wallKickTangentFriction = 0f;
-            if (wallKickTangentFriction > 1f) wallKickTangentFriction = 1f;
-            if (suitScrapeSlideAngleThresholdDegrees < 1f) suitScrapeSlideAngleThresholdDegrees = 1f;
-            if (suitScrapeSlideAngleThresholdDegrees > 89f) suitScrapeSlideAngleThresholdDegrees = 89f;
-            if (suitScrapeMinBlockedSpeed < 0f) suitScrapeMinBlockedSpeed = 0f;
-            if (suitScrapeImpactBusSpeedScale < 0f) suitScrapeImpactBusSpeedScale = 0f;
-            if (suitScrapeCameraSpeedScale < 0f) suitScrapeCameraSpeedScale = 0f;
-            if (maxHeavyCarryBodyYawSpringMultiplier < 0.1f) maxHeavyCarryBodyYawSpringMultiplier = 0.1f;
-            if (maxHeavyCarryBodyYawSpringMultiplier > 1f) maxHeavyCarryBodyYawSpringMultiplier = 1f;
-            if (heavyTowCameraPitchDegrees < 0f) heavyTowCameraPitchDegrees = 0f;
-            if (heavyTowCameraRollDegrees < 0f) heavyTowCameraRollDegrees = 0f;
-            if (heavyTowCameraBackwardOffset < 0f) heavyTowCameraBackwardOffset = 0f;
-            if (heavyTowCameraSideOffset < 0f) heavyTowCameraSideOffset = 0f;
-            if (heavyTowResponseBlendSharpness < 1f) heavyTowResponseBlendSharpness = 1f;
-            if (heavyTowCenterOfMassRearShift < 0f) heavyTowCenterOfMassRearShift = 0f;
-            if (heavyTowCenterOfMassLateralShift < 0f) heavyTowCenterOfMassLateralShift = 0f;
-            if (heavyTowCenterOfMassDownShift < 0f) heavyTowCenterOfMassDownShift = 0f;
-
-            RefreshGroundSlopeCache();
-            CacheBaseCollisionProfile();
         }
-
         private void OnDrawGizmosSelected()
         {
             if (!Application.isPlaying) return;
