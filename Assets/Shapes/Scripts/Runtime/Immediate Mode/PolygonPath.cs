@@ -67,8 +67,10 @@ namespace Shapes {
 
 		void TryUpdateMesh( PolygonTriangulation triangulation ) {
 			lastUsedTriangulationMode = triangulation;
+
 			bool clearMesh = base.mesh.vertexCount != path.Count;
 			ShapesMeshGen.GenPolygonMesh( base.mesh, path, triangulation, clearMesh );
+
 		}
 
 

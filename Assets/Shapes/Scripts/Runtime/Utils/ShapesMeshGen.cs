@@ -245,12 +245,12 @@ namespace Shapes {
 			}
 
 			// assign to segments mesh
-			bool clearMesh = mesh.vertexCount != meshVertices.list.Count || mesh.subMeshCount != ( separateJoinMesh ? 2 : 1 );
+			int targetSubMeshCount = separateJoinMesh ? 2 : 1;
+			bool clearMesh = mesh.vertexCount != meshVertices.list.Count || mesh.subMeshCount != targetSubMeshCount;
 			if( clearMesh )
 				mesh.Clear();
-
 			mesh.SetVertices( meshVertices.list );
-			mesh.subMeshCount = separateJoinMesh ? 2 : 1;
+			mesh.subMeshCount = targetSubMeshCount;
 			mesh.SetTriangles( meshTriangles.list, 0 );
 			if( separateJoinMesh )
 				mesh.SetTriangles( meshJoinsTriangles.list, 1 );
@@ -308,7 +308,6 @@ namespace Shapes {
 			#endif
 
 			int pointCount = path.Count;
-
 			if( clearMesh || mesh.vertexCount != pointCount )
 				mesh.Clear();
 			if( pointCount < 2 )
