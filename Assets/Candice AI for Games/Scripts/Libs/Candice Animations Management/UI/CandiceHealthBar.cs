@@ -84,6 +84,8 @@ namespace CandiceAIforGames.AI
 					segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 				}
 
+
+
 			}
 
 			UpdateSegments();
