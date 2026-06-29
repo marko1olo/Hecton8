@@ -506,6 +506,33 @@ namespace Hecton8.Inventory
             }
         }
 
+        public struct ItemState
+        {
+            public ulong GeneticsMask;
+            public ushort QualityMilli;
+            public ushort StateFlags;
+            public bool HasExplicitStateFlags;
+
+            public ItemState(ulong geneticsMask, ushort qualityMilli)
+            {
+                GeneticsMask = geneticsMask;
+                QualityMilli = qualityMilli;
+                StateFlags = 0;
+                HasExplicitStateFlags = false;
+            }
+
+            public ItemState(ulong geneticsMask, ushort qualityMilli, ushort stateFlags)
+            {
+                GeneticsMask = geneticsMask;
+                QualityMilli = qualityMilli;
+                StateFlags = stateFlags;
+                HasExplicitStateFlags = true;
+            }
+
+            public ItemState(uint geneticsMask, ushort qualityMilli) : this((ulong)geneticsMask, qualityMilli) { }
+            public ItemState(uint geneticsMask, ushort qualityMilli, ushort stateFlags) : this((ulong)geneticsMask, qualityMilli, stateFlags) { }
+        }
+
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct CraftReservation
         {
@@ -2044,7 +2071,9 @@ namespace Hecton8.Inventory
 
         public bool TryAddItemWithGenetics(int itemHashId, ulong geneticsMask, int quantity = 1)
         {
+
             return TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(geneticsMask), out _);
+
         }
 
         public bool TryAddItemWithState(int itemHashId, in ItemState state, int quantity = 1)
@@ -2311,7 +2340,9 @@ namespace Hecton8.Inventory
             if (itemHashId == 0 || quantity <= 0)
                 return new ScavengeAttemptResult(Mathf.Max(0, quantity), 0);
 
+
             TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(geneticsMask, qualityMilli), out int addedQuantity);
+
             return new ScavengeAttemptResult(quantity, addedQuantity);
         }
 
@@ -4376,7 +4407,9 @@ namespace Hecton8.Inventory
 
         private bool TryAddItemInternal(int itemHashId, int quantity, out int addedQuantity)
         {
+
             return TryAddItemWithStateInternal(itemHashId, quantity, new ItemState(0UL), out addedQuantity);
+
         }
 
         private bool TryAddItemWithStateInternal(
@@ -4397,7 +4430,9 @@ namespace Hecton8.Inventory
 
             uint timestampNow = ResolveCurrentUnixTimestamp();
             ushort resolvedQualityMilli = NormalizeQualityMilli(state.QualityMilli);
+
             ushort resolvedStateFlags = state.HasExplicitFlags ? state.Flags : runtimeDescriptor.StateFlags;
+
             byte compressedGenetics = CompressItemGenetics(state.GeneticsMask);
 
             int requestedQuantity = quantity;
@@ -5478,10 +5513,13 @@ namespace Hecton8.Inventory
                 if (signal.ItemHash == 0u || requestedQuantity <= 0)
                     continue;
 
+                ItemState state = new ItemState(0UL, DefaultQualityMilli);
                 TryAddItemWithStateInternal(
                     unchecked((int)signal.ItemHash),
                     requestedQuantity,
+
                     new ItemState(0UL, DefaultQualityMilli),
+
                     out int addedQuantity);
 
                 int clampedAddedQuantity = math.clamp(addedQuantity, 0, requestedQuantity);
