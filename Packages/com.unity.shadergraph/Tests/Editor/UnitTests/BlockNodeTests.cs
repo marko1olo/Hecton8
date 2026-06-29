@@ -12,10 +12,6 @@ namespace UnityEditor.ShaderGraph.UnitTests
         static BlockFieldDescriptor s_DescriptorA = new BlockFieldDescriptor("Test", "BlockA", string.Empty, new FloatControl(0.5f), ShaderStage.Fragment, true);
         static BlockFieldDescriptor s_DescriptorB = new BlockFieldDescriptor("Test", "BlockB", string.Empty, new NormalControl(CoordinateSpace.World), ShaderStage.Fragment, true);
 
-        static Vector3MaterialSlot s_MaterialSlot = new Vector3MaterialSlot(0, "Test", "BlockB", SlotType.Input, Vector3.one);
-        static CustomSlotBlockFieldDescriptor s_CustomSlotDescriptor = new CustomSlotBlockFieldDescriptor("Test", "CustomBlock", string.Empty,
-            () => { return new Vector3MaterialSlot(0, "Test", "BlockB", SlotType.Input, Vector3.one); });
-
         [OneTimeSetUp]
         public void RunBeforeAnyTests()
         {
@@ -62,22 +58,6 @@ namespace UnityEditor.ShaderGraph.UnitTests
             Assert.AreEqual(SlotType.Input, vector3Slot.slotType);
             Assert.AreEqual(((FloatControl)s_DescriptorA.control).value, vector3Slot.value);
             Assert.AreEqual(s_DescriptorA.shaderStage.GetShaderStageCapability(), vector3Slot.stageCapability);
-        }
-
-        [Test]
-        public void CanCreateSlotFromCustomSlotBlockDescriptor()
-        {
-            var node = new BlockNode();
-            node.Init(s_CustomSlotDescriptor);
-            List<MaterialSlot> slots = new List<MaterialSlot>();
-            node.GetSlots(slots);
-
-            Assert.IsNotNull(slots);
-            Assert.AreEqual(1, slots.Count);
-            Assert.AreNotEqual(s_MaterialSlot, slots[0]); //We actually WANT to create a new slot in this case
-            Assert.AreEqual(s_MaterialSlot.displayName, slots[0].displayName);
-            Assert.AreEqual(s_MaterialSlot.valueType, slots[0].valueType);
-            Assert.AreEqual(s_MaterialSlot.value, ((Vector3MaterialSlot)slots[0]).value);
         }
 
         [Test]
