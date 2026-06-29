@@ -4743,8 +4743,10 @@ namespace Hecton8.World
             {
                 WorldPrefabFamilyProfile.ScatterLayer.Ground => groundCount < groundBudget,
                 WorldPrefabFamilyProfile.ScatterLayer.Cluster => clusterCount < clusterBudget,
+
                 WorldPrefabFamilyProfile.ScatterLayer.Structure => structureCount < structureBudget && GetWindowPlacementCount(new ScatterWindowContext(cellX, cellZ, structureStride, heightLayerIndex), _structureWindowCounts) < structureBudget,
                 WorldPrefabFamilyProfile.ScatterLayer.Spawn => spawnCount < spawnBudget && GetWindowPlacementCount(new ScatterWindowContext(cellX, cellZ, spawnStride, heightLayerIndex), _spawnWindowCounts) < spawnBudget,
+
                 _ => false
             };
         }
@@ -4812,7 +4814,9 @@ namespace Hecton8.World
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
 
+
                 long windowKey = ComposeWindowKey(new ScatterWindowContext(
+
                     candidate.Placement.CellX,
                     candidate.Placement.CellZ,
                     stride,
@@ -5002,9 +5006,11 @@ namespace Hecton8.World
             return true;
         }
 
+
         private static int GetWindowPlacementCount(in ScatterWindowContext context, Dictionary<long, int> counts)
         {
             long key = ComposeWindowKey(in context);
+
             return GetWindowPlacementCount(key, counts);
         }
 
@@ -5013,9 +5019,11 @@ namespace Hecton8.World
             return counts.TryGetValue(key, out int count) ? count : 0;
         }
 
+
         private static void RegisterWindowPlacement(in ScatterWindowContext context, Dictionary<long, int> counts)
         {
             long key = ComposeWindowKey(in context);
+
             RegisterWindowPlacement(key, counts);
         }
 
@@ -5039,6 +5047,7 @@ namespace Hecton8.World
             counts.EnsureCapacity(requiredCapacity);
         }
 
+
         private static long ComposeWindowKey(in ScatterWindowContext context)
         {
             int safeStride = math.max(1, context.Stride);
@@ -5046,6 +5055,7 @@ namespace Hecton8.World
             ulong windowZ = (uint)(int)math.floor(context.CellZ / (float)safeStride);
             ulong strideBits = (uint)safeStride;
             ulong heightBits = (uint)math.max(0, context.HeightLayerIndex);
+
             return (long)(
                 (windowX & 0xFFFFFUL) |
                 ((windowZ & 0xFFFFFUL) << 20) |
@@ -5133,7 +5143,9 @@ namespace Hecton8.World
                 if (placement.Family == null || placement.Family.scatterLayer != layer)
                     continue;
 
+
                 _occupiedCellBuffer.Add(ComposeWindowKey(new ScatterWindowContext(placement.CellX, placement.CellZ, 1, placement.HeightLayerIndex)));
+
             }
         }
 
@@ -5586,7 +5598,9 @@ namespace Hecton8.World
             int stride,
             Dictionary<long, ScatterCandidate> windowCandidates)
         {
+
             long windowKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, stride, candidate.Placement.HeightLayerIndex));
+
             if (windowCandidates.TryGetValue(windowKey, out ScatterCandidate existing))
             {
                 if (candidate.Score <= existing.Score)
@@ -5607,7 +5621,9 @@ namespace Hecton8.World
             int stride,
             ref CandidateMap windowCandidates)
         {
+
             long windowKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, stride, candidate.Placement.HeightLayerIndex));
+
             if (windowCandidates.TryGetIndex(windowKey, out int existingIndex))
             {
                 ScatterCandidate existing = windowCandidates.GetValueAtIndex(existingIndex);
@@ -6099,7 +6115,9 @@ namespace Hecton8.World
                     continue;
 
                 ScatterCandidate candidate = ordered[i];
+
                 long cellKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, 1, candidate.Placement.HeightLayerIndex));
+
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
@@ -6180,7 +6198,9 @@ namespace Hecton8.World
                     continue;
 
                 ScatterCandidate candidate = ordered[i];
+
                 long cellKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, 1, candidate.Placement.HeightLayerIndex));
+
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
@@ -6326,7 +6346,9 @@ namespace Hecton8.World
                     continue;
 
                 ScatterCandidate candidate = ordered[i];
+
                 long cellKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, 1, candidate.Placement.HeightLayerIndex));
+
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
@@ -6394,7 +6416,9 @@ namespace Hecton8.World
                     continue;
 
                 ScatterCandidate candidate = ordered[i];
+
                 long cellKey = ComposeWindowKey(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, 1, candidate.Placement.HeightLayerIndex));
+
 
                 if (!TryRegisterDesiredPlacement(candidate.Placement))
                     continue;
@@ -12359,14 +12383,18 @@ namespace Hecton8.World
             public readonly float MaxTiltAngleDegrees;
         }
 
+
         internal readonly struct ScatterWindowContext
+
         {
             public readonly int CellX;
             public readonly int CellZ;
             public readonly int Stride;
             public readonly int HeightLayerIndex;
 
+
             public ScatterWindowContext(int cellX, int cellZ, int stride, int heightLayerIndex)
+
             {
                 CellX = cellX;
                 CellZ = cellZ;

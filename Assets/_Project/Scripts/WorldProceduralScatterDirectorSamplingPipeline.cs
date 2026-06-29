@@ -1678,14 +1678,18 @@ namespace Hecton8.World
                         cellPlacementCounters.StructureCountPrimary++;
                     else
                         cellPlacementCounters.StructureCountSecondary++;
+
                     RegisterWindowPlacement(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, structureStride, candidate.Placement.HeightLayerIndex), _structureWindowCounts);
+
                     break;
                 case WorldPrefabFamilyProfile.ScatterLayer.Spawn:
                     if (candidate.Placement.HeightLayerIndex == 0)
                         cellPlacementCounters.SpawnCountPrimary++;
                     else
                         cellPlacementCounters.SpawnCountSecondary++;
+
                     RegisterWindowPlacement(new ScatterWindowContext(candidate.Placement.CellX, candidate.Placement.CellZ, spawnStride, candidate.Placement.HeightLayerIndex), _spawnWindowCounts);
+
                     break;
             }
         }
