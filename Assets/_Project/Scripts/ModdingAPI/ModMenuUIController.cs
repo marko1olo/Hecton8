@@ -50,6 +50,9 @@ namespace Hecton8.Modding
             _modRegistryEventRegistered = false;
         }
 
+
+        private Coroutine _rebuildRoutine;
+
         /// <summary>
         /// Rebuilds the UI from the current runtime registries.
         /// </summary>
@@ -59,9 +62,24 @@ namespace Hecton8.Modding
             ModLoader.CollectRuntimeInfo(_mods);
             ModSettingsRegistry.CollectSettings(_settings);
 
-            BindModList();
-            BindSettings();
+            if (_rebuildRoutine != null)
+            {
+                StopCoroutine(_rebuildRoutine);
+            }
 
+            if (gameObject.activeInHierarchy)
+            {
+                _rebuildRoutine = StartCoroutine(RebuildUIRoutine());
+            }
+            else
+            {
+                var enumerator = RebuildUIRoutine();
+                while (enumerator.MoveNext()) { }
+            }
+        }
+
+        private System.Collections.IEnumerator RebuildUIRoutine()
+        {
             if (emptyStateLabel != null)
             {
                 bool hasContent = _mods.Count > 0 || _settings.Count > 0;
@@ -69,8 +87,81 @@ namespace Hecton8.Modding
                 if (!hasContent)
                     Hecton8.UI.TmpTextNoAlloc.Set(emptyStateLabel, "No mods loaded.");
             }
-        }
 
+            int visibleCount = _mods.Count;
+            int itemsInstantiatedThisFrame = 0;
+            const int MAX_INSTANTIATIONS_PER_FRAME = 5;
+
+            for (int i = 0; i < visibleCount; i++)
+            {
+                bool instantiated = false;
+                ModMenuModEntryView view = GetOrCreateModView(i, out instantiated);
+                if (view == null)
+                    break;
+
+                view.Bind(_mods[i]);
+                view.gameObject.SetActive(true);
+
+                if (instantiated)
+                {
+                    itemsInstantiatedThisFrame++;
+                    if (itemsInstantiatedThisFrame >= MAX_INSTANTIATIONS_PER_FRAME)
+                    {
+                        itemsInstantiatedThisFrame = 0;
+                        yield return null;
+                    }
+                }
+            }
+
+            for (int i = visibleCount; i < _modViews.Count; i++)
+                _modViews[i].gameObject.SetActive(false);
+
+            int toggleCount = 0;
+            int sliderCount = 0;
+
+            for (int i = 0; i < _settings.Count; i++)
+            {
+                ModSettingView view = _settings[i];
+                bool instantiated = false;
+
+                if (view.Kind == ModSettingKind.Toggle)
+                {
+                    ModMenuSettingToggleView toggleView = GetOrCreateToggleView(toggleCount++, out instantiated);
+                    if (toggleView == null)
+                        break;
+
+                    toggleView.Bind(view);
+                    toggleView.gameObject.SetActive(true);
+                }
+                else
+                {
+                    ModMenuSettingSliderView sliderView = GetOrCreateSliderView(sliderCount++, out instantiated);
+                    if (sliderView == null)
+                        break;
+
+                    sliderView.Bind(view);
+                    sliderView.gameObject.SetActive(true);
+                }
+
+                if (instantiated)
+                {
+                    itemsInstantiatedThisFrame++;
+                    if (itemsInstantiatedThisFrame >= MAX_INSTANTIATIONS_PER_FRAME)
+                    {
+                        itemsInstantiatedThisFrame = 0;
+                        yield return null;
+                    }
+                }
+            }
+
+            for (int i = toggleCount; i < _toggleViews.Count; i++)
+                _toggleViews[i].gameObject.SetActive(false);
+
+            for (int i = sliderCount; i < _sliderViews.Count; i++)
+                _sliderViews[i].gameObject.SetActive(false);
+
+            _rebuildRoutine = null;
+        }
         /// <summary>
         /// Handles deferred mod registry invalidation events.
         /// </summary>
@@ -118,59 +209,9 @@ namespace Hecton8.Modding
             }
         }
 
-        private void BindModList()
+        private ModMenuModEntryView GetOrCreateModView(int index, out bool instantiated)
         {
-            int visibleCount = _mods.Count;
-            for (int i = 0; i < visibleCount; i++)
-            {
-                ModMenuModEntryView view = GetOrCreateModView(i);
-                if (view == null)
-                    break;
-
-                view.Bind(_mods[i]);
-                view.gameObject.SetActive(true);
-            }
-
-            for (int i = visibleCount; i < _modViews.Count; i++)
-                _modViews[i].gameObject.SetActive(false);
-        }
-
-        private void BindSettings()
-        {
-            int toggleCount = 0;
-            int sliderCount = 0;
-
-            for (int i = 0; i < _settings.Count; i++)
-            {
-                ModSettingView view = _settings[i];
-                if (view.Kind == ModSettingKind.Toggle)
-                {
-                    ModMenuSettingToggleView toggleView = GetOrCreateToggleView(toggleCount++);
-                    if (toggleView == null)
-                        break;
-
-                    toggleView.Bind(view);
-                    toggleView.gameObject.SetActive(true);
-                    continue;
-                }
-
-                ModMenuSettingSliderView sliderView = GetOrCreateSliderView(sliderCount++);
-                if (sliderView == null)
-                    break;
-
-                sliderView.Bind(view);
-                sliderView.gameObject.SetActive(true);
-            }
-
-            for (int i = toggleCount; i < _toggleViews.Count; i++)
-                _toggleViews[i].gameObject.SetActive(false);
-
-            for (int i = sliderCount; i < _sliderViews.Count; i++)
-                _sliderViews[i].gameObject.SetActive(false);
-        }
-
-        private ModMenuModEntryView GetOrCreateModView(int index)
-        {
+            instantiated = false;
             while (_modViews.Count <= index)
             {
                 if (modEntryTemplate == null || modListContainer == null)
@@ -179,13 +220,15 @@ namespace Hecton8.Modding
                 ModMenuModEntryView instance = Instantiate(modEntryTemplate, modListContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _modViews.Add(instance);
+                instantiated = true;
             }
 
             return _modViews[index];
         }
 
-        private ModMenuSettingToggleView GetOrCreateToggleView(int index)
+        private ModMenuSettingToggleView GetOrCreateToggleView(int index, out bool instantiated)
         {
+            instantiated = false;
             while (_toggleViews.Count <= index)
             {
                 if (toggleSettingTemplate == null || modSettingsContainer == null)
@@ -194,13 +237,15 @@ namespace Hecton8.Modding
                 ModMenuSettingToggleView instance = Instantiate(toggleSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _toggleViews.Add(instance);
+                instantiated = true;
             }
 
             return _toggleViews[index];
         }
 
-        private ModMenuSettingSliderView GetOrCreateSliderView(int index)
+        private ModMenuSettingSliderView GetOrCreateSliderView(int index, out bool instantiated)
         {
+            instantiated = false;
             while (_sliderViews.Count <= index)
             {
                 if (sliderSettingTemplate == null || modSettingsContainer == null)
@@ -209,9 +254,11 @@ namespace Hecton8.Modding
                 ModMenuSettingSliderView instance = Instantiate(sliderSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _sliderViews.Add(instance);
+                instantiated = true;
             }
 
             return _sliderViews[index];
         }
+
     }
 }
