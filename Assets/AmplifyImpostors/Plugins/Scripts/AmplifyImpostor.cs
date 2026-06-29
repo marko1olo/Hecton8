@@ -194,15 +194,6 @@ namespace AmplifyImpostors
 		private Bounds m_originalBound = new Bounds();
 
 		[NonSerialized]
-		private Vector3 m_oriPos = Vector3.zero;
-
-		[NonSerialized]
-		private Quaternion m_oriRot = Quaternion.identity;
-
-		[NonSerialized]
-		private Vector3 m_oriSca = Vector3.one;
-
-		[NonSerialized]
 		private const int BlockSize = 65536;
 #if UNITY_EDITOR
 		[NonSerialized]
@@ -1640,6 +1631,7 @@ namespace AmplifyImpostors
 			}
 
 			int validMeshesCount = validMeshes.Count;
+			MaterialPropertyBlock pBlock = new MaterialPropertyBlock();
 
 
 			for( int x = 0; x < hframes; x++ )
@@ -1671,7 +1663,7 @@ namespace AmplifyImpostors
 					Matrix4x4 V = camMatrixRot.inverse * Matrix4x4.LookAt( frameBounds.center - new Vector3( 0, 0, m_depthFitSize * 0.5f ), frameBounds.center, Vector3.up );
 					float fitSize = m_xyFitSize * 0.5f;
 					Matrix4x4 P = Matrix4x4.Ortho( -fitSize+ m_pixelOffset.x, fitSize + m_pixelOffset.x, -fitSize + m_pixelOffset.y, fitSize + m_pixelOffset.y, 0, -m_depthFitSize );
-					V = V.inverse * m_rootTransform.worldToLocalMatrix;
+					V = V.inverse;
 
 					if( standardrendering && m_renderPipelineInUse == RenderPipelineInUse.HDRP )
 						P = GL.GetGPUProjectionMatrix( P, true );
@@ -1715,10 +1707,10 @@ namespace AmplifyImpostors
 						Material[] meshMaterials = Renderers[ j ].sharedMaterials;
 
 						// Draw Mesh
-							Transform childTransform = Renderers[ j ].transform;
-							MaterialPropertyBlock pBlock = new MaterialPropertyBlock();
-							Renderers[ j ].GetPropertyBlock( pBlock );
-							Matrix4x4 localMatrix = m_rootTransform.worldToLocalMatrix * childTransform.localToWorldMatrix;
+						Transform childTransform = Renderers[ j ].transform;
+						pBlock.Clear();
+						Renderers[ j ].GetPropertyBlock( pBlock );
+						Matrix4x4 localMatrix = m_rootTransform.worldToLocalMatrix * childTransform.localToWorldMatrix;
 
 						for( int k = 0; k < meshMaterials.Length; k++ )
 						{
