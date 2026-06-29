@@ -323,6 +323,7 @@ namespace Shapes {
 		public bool HasFrameBounds() => true;
 
 		public Bounds OnGetFrameBounds() {
+
 			ShapeRenderer[] selectedShapes = Selection.GetFiltered<ShapeRenderer>( SelectionMode.Editable );
 			if( selectedShapes.Length > 1 ) {
 				Bounds bounds = selectedShapes[0].GetWorldBounds();
@@ -333,6 +334,7 @@ namespace Shapes {
 			} else {
 				return ( (ShapeRenderer)target ).GetWorldBounds();
 			}
+
 		}
 
 	}
