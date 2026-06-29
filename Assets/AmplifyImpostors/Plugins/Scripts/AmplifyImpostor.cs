@@ -405,6 +405,7 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
+
 			Dictionary<GameObject, MeshFilter> mfDict = new Dictionary<GameObject, MeshFilter>();
 			MeshFilter[] allFilters = GetComponentsInChildren<MeshFilter>( true );
 			for( int i = 0; i < allFilters.Length; i++ )
@@ -428,6 +429,7 @@ namespace AmplifyImpostors
 					continue;
 
 				cachedMeshFilters[ i ] = mf;
+
 			}
 
 			for( int x = 0; x < hframes; x++ )
@@ -441,8 +443,10 @@ namespace AmplifyImpostors
 					{
 
 
+
 						MeshFilter mf = cachedMeshFilters[ i ];
 						if( mf == null )
+
 
 
 							continue;
