@@ -625,10 +625,10 @@ namespace GPUInstancer
                 {
                     if (prototype.prefabObject != null)
                     {
-                        GPUInstancerUtility.GenerateInstancedShadersForGameObject(prototype);
+                        bool hasMeshRenderer = GPUInstancerUtility.GenerateInstancedShadersForGameObject(prototype);
                         if (string.IsNullOrEmpty(prototype.warningText))
                         {
-                            if (prototype.prefabObject.GetComponentInChildren<MeshRenderer>() == null)
+                            if (!hasMeshRenderer)
                             {
                                 prototype.warningText = "Prefab object does not contain any Mesh Renderers.";
                             }
