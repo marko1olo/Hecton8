@@ -63,6 +63,7 @@ namespace Shapes {
 				return;
 
 			bool isOverlay = Canvas.renderMode == RenderMode.ScreenSpaceOverlay && !DisplayAsWorldSpacePanel( cam );
+
 			RectTransform cnvTf = CanvasRectTf;
 
 			DrawCommand drawCmd;
@@ -85,6 +86,7 @@ namespace Shapes {
 			using( drawCmd ) {
 				Draw.ZTest = CompareFunction.Always;
 				canvasContext.UpdateParams( Canvas, cam, cnvTf, cnvTf.localToWorldMatrix );
+
 				Draw.Matrix = canvasContext.canvasToWorldNet;
 				DrawCanvasShapes( canvasContext );
 			}

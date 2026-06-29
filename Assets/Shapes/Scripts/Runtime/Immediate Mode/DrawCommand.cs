@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -130,6 +130,16 @@ namespace Shapes {
 		CameraEvent camEvt;
 		#endif
 
+		public bool useCustomViewProj;
+		public Matrix4x4 customView;
+		public Matrix4x4 customProj;
+
+		public DrawCommand UseCustomViewProjection( Matrix4x4 view, Matrix4x4 proj ) {
+			useCustomViewProj = true;
+			customView = view;
+			customProj = proj;
+			return this;
+		}
 
 		#if SHAPES_URP
 		internal DrawCommand Initialize( Camera cam, RenderPassEvent cameraEvent = RenderPassEvent.BeforeRenderingPostProcessing, bool useCustomViewProjMatrix = false, Matrix4x4 customViewMatrix = default, Matrix4x4 customProjectionMatrix = default ) {
@@ -158,18 +168,29 @@ namespace Shapes {
 		internal void AppendToBuffer( RasterCommandBuffer cmd ) {
 			if( useCustomViewProjMatrix )
 				cmd.SetViewProjectionMatrices( customViewMatrix, customProjectionMatrix );
+			else if( useCustomViewProj )
+				cmd.SetViewProjectionMatrices( customView, customProj );
 			foreach( ShapeDrawCall draw in drawCalls )
 				draw.AddToCommandBuffer( cmd );
+
+			if( useCustomViewProj && hasValidCamera )
+				cmd.SetViewProjectionMatrices( cam.worldToCameraMatrix, cam.projectionMatrix );
 		}
 #endif
 		internal void AppendToBuffer( CommandBuffer cmd ) {
 			if( useCustomViewProjMatrix )
 				cmd.SetViewProjectionMatrices( customViewMatrix, customProjectionMatrix );
+			else if( useCustomViewProj )
+				cmd.SetViewProjectionMatrices( customView, customProj );
 			foreach( ShapeDrawCall draw in drawCalls )
 				draw.AddToCommandBuffer( cmd );
+
+			if( useCustomViewProj && hasValidCamera )
+				cmd.SetViewProjectionMatrices( cam.worldToCameraMatrix, cam.projectionMatrix );
 		}
 
 		void Clear() { // prepares for removing it from the list, if we want to delete it
+			useCustomViewProj = false;
 			CleanupCachedAssetsAndMeshes();
 			#if !SHAPES_URP && !SHAPES_HDRP
 			RemoveFromCamera();
