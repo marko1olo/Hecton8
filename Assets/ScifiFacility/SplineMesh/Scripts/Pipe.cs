@@ -65,10 +65,12 @@ public class Pipe : MonoBehaviour {
             //go.hideFlags = HideFlags.NotEditable;
 
             go.AddComponent<MeshFilter>();
+
             MeshRenderer mr = go.AddComponent<MeshRenderer>();
             mr.material = material;
             MeshBender mb = go.AddComponent<MeshBender>();
             go.AddComponent<MeshCollider>();
+
 
             mb.SetSourceMesh(mesh, false);
             mb.SetRotation(Quaternion.Euler(rotation), false);
