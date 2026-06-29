@@ -350,9 +350,11 @@ class GooglePhotosBackup:
                 logging.error(f"Failed to commit batch. HTTP Status: {response.status_code}, Response: {response.text}")
                 # Mark all in batch as failed
                 error_msg = f"Batch create failed: {response.text[:200]}"
+
                 cursor.executemany(
                     "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
                     [(error_msg, filepath) for filepath, _ in batch]
+
                 )
                 conn.commit()
                 return
@@ -364,8 +366,8 @@ class GooglePhotosBackup:
             failed_updates = []
             now_iso = datetime.now().isoformat()
 
-
             # Match results back to paths
+
             for i, result in enumerate(results):
                 filepath, token = batch[i]
                 status_obj = result.get('status', {})
@@ -374,6 +376,7 @@ class GooglePhotosBackup:
                 if code == 0:
                     media_item = result.get('mediaItem', {})
                     media_id = media_item.get('id')
+
 
                     successful_updates.append((now_iso, media_id, filepath))
 
@@ -395,15 +398,18 @@ class GooglePhotosBackup:
                 cursor.executemany(
                     "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
                     failed_updates
+
                 )
 
             conn.commit()
         except Exception as e:
             logging.error(f"Error finalizing batch: {e}")
             error_msg = f"Finalize exception: {str(e)[:200]}"
+
             cursor.executemany(
                 "UPDATE uploads SET status = 'failed', error_message = ? WHERE filepath = ?",
                 [(error_msg, filepath) for filepath, _ in batch]
+
             )
             conn.commit()
         finally:
