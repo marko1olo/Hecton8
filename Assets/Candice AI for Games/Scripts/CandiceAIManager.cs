@@ -157,6 +157,10 @@ namespace CandiceAIforGames.AI
         }
         public static CandiceAIManager getInstance()
         {
+            if (instance == null)
+            {
+                instance = FindAnyObjectByType<CandiceAIManager>();
+            }
             return instance;
         }
         private void Initialise()

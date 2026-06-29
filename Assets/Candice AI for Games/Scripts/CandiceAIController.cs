@@ -328,7 +328,7 @@ namespace CandiceAIforGames.AI
         {
             EnsureRuntimeListCapacity();
             //Check if there is a Candice AI Manager Component in the scene.
-            candice = FindAnyObjectByType<CandiceAIManager>();
+            candice = CandiceAIManager.getInstance();
             if (candice == null)
             {
                 Debug.LogError("You need to attach a Candice AI Manager Component to an Empty GameObject.");
