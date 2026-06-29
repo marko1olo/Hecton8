@@ -1,72 +1,12 @@
-The issue description is: "Missing error test for try-catch in AmbientBiotaDirector"
-Rationale: "Testing the exception path requires forcing a failure but is important for robustness."
-Wait, if I look at the existing tests, I can see NSubstitute being used.
-What if I mock `IDataVault`?
-```csharp
-var mockVault = Substitute.For<IDataVault>();
-```
-Wait, `AmbientBiotaDirector` uses `IDataVault`. Let's look at `IDataVault` interface.
-If we mock `IDataVault` and make `TryAcquireMutationGuard` return true, but then throw an exception inside one of the vault methods (like `TryResolveHandle`), we can trigger an exception in `TryResolveTelemetryBuffers`. But `TryResolveTelemetryBuffers` has a catch? No, `TryResolveTelemetryBuffers` doesn't have a catch, it propagates the exception out, which will be caught... wait, there is NO catch block in `WriteTelemetryHeartbeat()`! It's just `try ... finally`!
-Wait! The task might be implicitly asking to add the `catch` block to `AmbientBiotaDirector.cs` AND add a test for it? Or is the test supposed to just verify the `finally` block runs?
-The issue is: "Missing error test for try-catch in AmbientBiotaDirector"
-Maybe there IS a catch block in `WriteTelemetryHeartbeat` that I missed?
-No, we saw it:
-```csharp
-            bool queueBlackBoxDump = false;
-            try
+I need to test the OperationCanceledException catch block in `ObjectPoolManager.WarmupPresetsAsync`.
+The issue asks for "Missing Tests for ObjectPoolManager Warmup Cancelation".
+The code being tested is:
+            catch (OperationCanceledException)
             {
-                if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
-                    return;
-                // ...
+                _warmupPresetsStarted = false;
+                throw;
             }
-            finally
-            {
-                ReleaseAmbientMutationGuard(guardVault, TelemetryMutationGuardMask);
-            }
-```
-If we look at `AmbientBiotaDirector` again, maybe there's a try-catch in `TryEnsureGraphicsResourcesCold`? We found one earlier:
-```csharp
-        private bool TryEnsureGraphicsResourcesCold(int capacity)
-        {
-            try
-            {
-                return EnsureGraphicsResources(capacity);
-            }
-            catch (InvalidOperationException)
-            {
-                ReleaseGraphicsResources();
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                ReleaseGraphicsResources();
-                return false;
-            }
-            catch (UnityException)
-            {
-                ReleaseGraphicsResources();
-                return false;
-            }
-        }
-```
-Wait, the prompt says:
-**File:** `Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs:2209`
-And the current code:
-```csharp
-            bool queueBlackBoxDump = false;
-            try
-            {
-                if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
-                    return;
-```
-So it specifically points to line 2209. So the test should be about `WriteTelemetryHeartbeat`.
-It says "Missing error test for try-catch". Maybe I need to test that if an exception is thrown in `WriteTelemetryHeartbeat`'s try block, `ReleaseAmbientMutationGuard` is called (finally block), or that it bubbles up correctly? Or maybe I should add a catch block and a test?
-"Testing the exception path requires forcing a failure but is important for robustness."
 
-Let's check if the memory prompt says anything about exception testing.
-"When testing error handling for Unity `JobHandle.Complete()` or similar native job wrappers where in-job exceptions are swallowed natively, you can force a synchronous exception for test coverage by invoking the target method on a background thread (e.g., using `Task.Run()`), which reliably triggers Unity's 'JobHandle.Complete() can only be called from the main thread' InvalidOperationException."
+Because `ObjectPoolManagerWarmupCancelationTests.cs` will have only NUnit / Unity missing references in standard dotnet, I will ignore those structural errors.
 
-Ah! If we run `WriteTelemetryHeartbeat()` on a background thread, it will throw `InvalidOperationException` because `WriteTelemetryHeartbeat` uses native arrays? Or because it might call something that only works on the main thread? No, wait! `WriteTelemetryHeartbeat` assigns to a `NativeArray`! But `NativeArray` can be written to on a background thread if it's created.
-Wait, if it throws, we can catch it in our test.
-Let's see if we can trigger `InvalidOperationException` by calling it from `Task.Run()`. Wait, does `WriteTelemetryHeartbeat()` access Unity API?
-It accesses `_lastPlayerAup`? No, it accesses `Time.time` or similar? Let's check `TryResolveTelemetryBuffers`. It calls `_vault.TryResolveHandle`. If `_vault` is a mock, we can just make `TryResolveHandle` throw an exception! Wait, `TryResolveTelemetryBuffers` is an internal private method, we can mock `_vault` directly.
+I'll write `Assets/_Project/Tests/PlayMode/ObjectPoolManagerWarmupCancelationTests.cs`.

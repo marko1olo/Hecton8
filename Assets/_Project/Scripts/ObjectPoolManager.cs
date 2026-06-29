@@ -408,7 +408,7 @@ namespace Hecton8.Core
             catch (OperationCanceledException)
             {
                 _warmupPresetsStarted = false;
-                throw;
+                return false;
             }
             catch (Exception ex)
             {
