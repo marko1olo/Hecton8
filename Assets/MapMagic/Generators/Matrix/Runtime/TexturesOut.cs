@@ -423,19 +423,22 @@ namespace MapMagic.Nodes.MatrixGenerators {
 						values[channelNums[m]] += val;
 					}
 
-					//normalizing and writing to colors
+					//normalizing and writing to bytes
 					for (int m=0; m<values.Length; m++)
 					{
 						float val = values[m];
 
 						if (normalize) val = sum!=0 ? val/sum : 0;
+						if (val < 0) val = 0; if (val > 1) val = 1;
 						
 						int texNum = m / 4;
 						int chNum = m % 4;
 
 						if (bytes[texNum] == null) bytes[texNum] = new byte[colorsRect.size.x*colorsRect.size.z*4];
 
+
 						bytes[texNum][colorsPos*4 + chNum] = (byte)Mathf.Clamp(bytes[texNum][colorsPos*4 + chNum] + val * 255.0f, 0, 255);
+
 					}
 				}
 			
@@ -444,7 +447,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 
 		public static byte[] MatricesToBytes (CoordRect colorsRect, Matrix rMatrix, Matrix gMatrix, Matrix bMatrix, Matrix aMatrix)
+
 		/// Just creates a texture byte array from matrices without blending
+
 		{
 			CoordRect matrixRect = rMatrix.rect;
 			byte[] bytes = new byte[colorsRect.size.x*colorsRect.size.z*4];
@@ -457,10 +462,12 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				int matrixPos = (z-matrixRect.offset.z)*matrixRect.size.x + x - matrixRect.offset.x;
 				int colorsPos =  (z-colorsRect.offset.z)*colorsRect.size.x + x - colorsRect.offset.x;
 				
+
 				bytes[colorsPos*4 + 0] = (byte)Mathf.Clamp(rMatrix.arr[matrixPos] * 255.0f, 0, 255);
 				if (gMatrix != null) bytes[colorsPos*4 + 1] = (byte)Mathf.Clamp(gMatrix.arr[matrixPos] * 255.0f, 0, 255);
 				if (bMatrix != null) bytes[colorsPos*4 + 2] = (byte)Mathf.Clamp(bMatrix.arr[matrixPos] * 255.0f, 0, 255);
 				if (aMatrix != null) bytes[colorsPos*4 + 3] = (byte)Mathf.Clamp(aMatrix.arr[matrixPos] * 255.0f, 0, 255);
+
 			}
 
 			return bytes;
@@ -481,7 +488,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				if (textureBytes==null) return;
 				int numTextures = textureBytes.Length;
 				if (numTextures==0) return;
+
 				int resolution = (int)Mathf.Sqrt(textureBytes[0].Length / 4);
+
 
 				//MaterialPropertyBlock matProps = new MaterialPropertyBlock();
 
@@ -518,7 +527,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 						matPropSerializer.SetTexture(textureNames[i], tex);
 					}
 
+
 					tex.SetPixelData(textureBytes[i], 0);
+
 					tex.Apply();
 
 					//if (texName != null) matPropSerializer.SetTexture(texName, tex);
@@ -540,7 +551,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public int Resolution
 			{get{
 				if (textureBytes.Length==0) return 0;
+
 				else return (int)Mathf.Sqrt(textureBytes[0].Length / 4);
+
 			}}
 		}
 
@@ -621,8 +634,8 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					nameToNum.Add(name, nameToNum.Count);
 
 			//creating control textures contents
-			Color[][] colors = new Color[nameToNum.Count][];
-			string[] colorNames = new string[nameToNum.Count]; //texture names, in order corresponding to colors
+			byte[][] bytes = new byte[nameToNum.Count][];
+			string[] colorNames = new string[nameToNum.Count]; //texture names, in order corresponding to bytes
 			for (int m=0; m<matrices.Length; m++)
 			{
 				int textureNum = nameToNum[names[m]];
@@ -631,10 +644,23 @@ namespace MapMagic.Nodes.MatrixGenerators {
 
 				if (matrices[m] != null)
 				{
-					if (colors[textureNum] == null)
-						colors[textureNum] = new Color[data.area.active.rect.size.x * data.area.active.rect.size.z];
+					if (bytes[textureNum] == null)
+						bytes[textureNum] = new byte[data.area.active.rect.size.x * data.area.active.rect.size.z * 4];
 
-					matrices[m].ExportColors(colors[textureNum], data.area.active.rect.offset, data.area.active.rect.size, chIndexes[m], markOutrange:false, mask:masks[m]);
+					// TODO: Support exporting masks to byte array channels directly, for now filling using Matrix byte export and then copying if necessary. Actually we can just write custom logic here.
+					int resX = data.area.active.rect.size.x;
+					int resZ = data.area.active.rect.size.z;
+					CoordRect activeRect = data.area.active.rect;
+					for (int x=0; x<resX; x++)
+					    for (int z=0; z<resZ; z++)
+					    {
+					        int matrixPos = (z+activeRect.offset.z-matrices[m].rect.offset.z)*matrices[m].rect.size.x + x+activeRect.offset.x - matrices[m].rect.offset.x;
+					        int bytesPos = (z*resX + x)*4 + chIndexes[m];
+					        float val = matrices[m].arr[matrixPos];
+					        if (masks[m] != null) val *= masks[m].arr[matrixPos];
+					        if (val < 0) val = 0; if (val > 1) val = 1;
+					        bytes[textureNum][bytesPos] = (byte)(val * 255f);
+					    }
 				}
 			}
 			
@@ -656,7 +682,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			}
 
 			var controlTexturesData = new ApplyData() {
+
 				textureBytes = textureBytes,
+
 				textureNames = colorNames,
 				textureFormat = TextureFormat.RGBA32 };
 
@@ -674,7 +702,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public virtual void Apply (Terrain terrain)
 			{
 				if (textureBytes==null  ||  textureBytes.Length==0  ||  textureBytes.AllNull()) return;
+
 				int resolution = (int)Mathf.Sqrt(textureBytes.Any().Length / 4);
+
 
 				DirectTexturesHolder holder = terrain.GetComponent<DirectTexturesHolder>();
 				if (holder == null)
@@ -695,7 +725,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 					tex.name = textureNames[i];
 					tex.wrapMode = TextureWrapMode.Mirror; //to avoid border seams
 
+
 					tex.SetPixelData(textureBytes[i], 0);
+
 					tex.Apply();
 
 					newDict[texName] = tex; //it could be created from null
@@ -738,7 +770,9 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			public int Resolution
 			{get{
 				if (textureBytes.Length==0) return 0;
+
 				else return (int)Mathf.Sqrt(textureBytes[0].Length / 4);
+
 			}}
 		}
 

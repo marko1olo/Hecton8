@@ -328,7 +328,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 		{
 			#if __MICROSPLAT__
 
+
 			public byte[][] bytes;
+
 
 			public void Read (Terrain terrain) { throw new System.NotImplementedException(); }
 
@@ -343,7 +345,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 				int numTextures = bytes.Length;
 				if (numTextures==0) return;
+
 				int resolution = (int)Mathf.Sqrt(bytes[0].Length / 4);
+
 
 				for (int t=0; t<numTextures; t++)
 				{
@@ -411,7 +415,9 @@ namespace MapMagic.Nodes.MatrixGenerators
 			public int Resolution
 			{get{
 				if (bytes.Length==0) return 0;
+
 				else return (int)Mathf.Sqrt(bytes[0].Length / 4);
+
 			}}
 
 			#endif

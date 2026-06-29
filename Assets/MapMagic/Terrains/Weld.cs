@@ -340,9 +340,9 @@ namespace MapMagic.Terrains
 			}
 
 
-			public void ReadColors (Color[] colors, int ch)
+			public void ReadBytes (byte[] bytes, int ch)
 			{
-				int res = (int)Mathf.Sqrt(colors.Length);
+				int res = (int)Mathf.Sqrt(bytes.Length/4);
 
 				if (arr_x.Length != res) arr_x = new float[res];
 				if (arr_X.Length != res) arr_X = new float[res];
@@ -352,33 +352,39 @@ namespace MapMagic.Terrains
 				for (int x=0; x<res; x++)
 				{
 					int pos = x;
-					arr_x[x] = colors[x][ch];
-					arr_X[x] = colors[x + res*(res-1)][ch];
+					arr_x[x] = bytes[x*4+ch] / 255f;
+					arr_X[x] = bytes[(x + res*(res-1))*4+ch] / 255f;
 				}
 
 				for (int z=0; z<res; z++)
 				{
-					arr_z[z] = colors[z*res][ch];
-					arr_Z[z] = colors[z*res + res-1][ch];
+					arr_z[z] = bytes[(z*res)*4+ch] / 255f;
+					arr_Z[z] = bytes[(z*res + res-1)*4+ch] / 255f;
 				}
 			}
 
 
-			public void WriteColors (Color[] colors, int ch)
+			public void WriteBytes (byte[] bytes, int ch)
 			{
-				int res = (int)Mathf.Sqrt(colors.Length);
+				int res = (int)Mathf.Sqrt(bytes.Length/4);
 
 				for (int x=0; x<res; x++)
 				{
 					int pos = x;
-					colors[x][ch] = arr_x[x];
-					colors[x + res*(res-1)][ch] = arr_X[x];
+					float xv = arr_x[x]; if (xv<0) xv=0; if (xv>1) xv=1;
+					bytes[x*4+ch] = (byte)(xv * 255f);
+
+					float Xv = arr_X[x]; if (Xv<0) Xv=0; if (Xv>1) Xv=1;
+					bytes[(x + res*(res-1))*4+ch] = (byte)(Xv * 255f);
 				}
 
 				for (int z=0; z<res; z++)
 				{
-					colors[z*res][ch] = arr_z[z];
-					colors[z*res + res-1][ch] = arr_Z[z];
+					float zv = arr_z[z]; if (zv<0) zv=0; if (zv>1) zv=1;
+					bytes[(z*res)*4+ch] = (byte)(zv * 255f);
+
+					float Zv = arr_Z[z]; if (Zv<0) Zv=0; if (Zv>1) Zv=1;
+					bytes[(z*res + res-1)*4+ch] = (byte)(Zv * 255f);
 				}
 			}
 
