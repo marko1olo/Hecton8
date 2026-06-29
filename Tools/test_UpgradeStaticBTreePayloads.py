@@ -16,6 +16,7 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
+
     def test_write_json(self):
         from unittest.mock import patch
 
@@ -54,6 +55,7 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
 
         # Test bitwise AND masking (key_count & 0x7)
         # Values >= 8 should wrap/mask down
+
         self.assertEqual(tool.make_internal_meta(8), 0)
         self.assertEqual(tool.make_internal_meta(15), 7)
 
