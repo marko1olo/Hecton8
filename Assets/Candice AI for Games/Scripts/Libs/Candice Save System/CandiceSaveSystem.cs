@@ -240,7 +240,9 @@ namespace CandiceAIforGames.Data
             int rc = 0;
             if (providerBase is CandiceSQLiteProvider)
             {
+
                 rc = (providerBase as CandiceSQLiteProvider).CreateTable(tableName, columnInfos);
+
             }
             else
             {
