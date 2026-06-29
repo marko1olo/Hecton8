@@ -381,7 +381,7 @@ def find_collisions(records: list[HashRecord]) -> dict[int, list[HashRecord]]:
 def make_base_identifier(value: str) -> str:
     tokens = re.findall(r"[A-Za-z0-9]+", value)
     if not tokens:
-        digest = hashlib.sha1(value.encode("utf-8")).hexdigest()[:8]
+        digest = hashlib.sha256(value.encode("utf-8")).hexdigest()[:8]
         return f"Id{digest}"
 
     pieces: list[str] = []
@@ -402,7 +402,7 @@ def uniquify_identifier(base: str, used: set[str], record: HashRecord) -> str:
         used.add(base)
         return base
 
-    digest = hashlib.sha1(f"{record.category}|{record.group}|{record.value}|{record.hash_mode}".encode("utf-8")).hexdigest()[:8]
+    digest = hashlib.sha256(f"{record.category}|{record.group}|{record.value}|{record.hash_mode}".encode("utf-8")).hexdigest()[:8]
     candidate = f"{base}_{digest}"
     counter = 2
     while candidate in used:
@@ -456,7 +456,7 @@ def ensure_meta_file(csharp_path: Path) -> None:
     if meta_path.exists():
         return
 
-    digest = hashlib.sha1(csharp_path.as_posix().encode("utf-8")).hexdigest()[:32]
+    digest = hashlib.sha256(csharp_path.as_posix().encode("utf-8")).hexdigest()[:32]
     meta_path.write_text(
         "\n".join(
             [
