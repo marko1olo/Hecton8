@@ -8,7 +8,7 @@ public class CandiceAIPlayerController2D : MonoBehaviour
 {
 
     //player movement
-    private Rigidbody2D rb;
+    [SerializeField] private Rigidbody2D rb;
     [SerializeField] float speed = 4.0f;    
     public float animSpeedControl = 1f; //animation speed control
     [SerializeField] float jumpForce = 7.5f;
@@ -24,7 +24,8 @@ public class CandiceAIPlayerController2D : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+            rb = GetComponent<Rigidbody2D>();
     }
 
     // Update is called once per frame
