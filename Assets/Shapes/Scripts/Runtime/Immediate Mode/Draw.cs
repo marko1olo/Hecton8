@@ -466,9 +466,17 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			// todo: something fucky happens sometimes when fallback fonts are the only things in town
-			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
-				// will draw on dispose
+			bool mainMeshHasData = tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > 0 && tmp.textInfo.meshInfo[0].vertexCount > 0;
+
+			if( mainMeshHasData ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+					// will draw on dispose
+				}
+			} else {
+				// We must still dispose the pooled text element even if we don't draw it
+				if( drawType == IMDrawer.DrawType.TextPooledAuto && disposeId != -1 && DrawCommand.IsAddingDrawCommandsToBuffer ) {
+					DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( disposeId );
+				}
 			}
 
 			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
@@ -480,7 +488,13 @@ namespace Shapes {
 						sm.renderer.enabled = false; // :>
 					if( sm.sharedMaterial == null )
 						continue; // cursed but ok
-					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
+
+					if( sm.mesh == null || sm.mesh.vertexCount == 0 )
+						continue;
+
+					IMDrawer.DrawType smDrawType = drawType == IMDrawer.DrawType.TextPooledAuto ? IMDrawer.DrawType.TextPooledPersistent : drawType;
+
+					using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: smDrawType, allowInstancing: false ) ) {
 						// will draw on dispose
 					}
 				}
