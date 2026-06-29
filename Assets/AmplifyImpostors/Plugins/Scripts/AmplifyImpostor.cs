@@ -1702,10 +1702,12 @@ namespace AmplifyImpostors
 						Material[] meshMaterials = Renderers[ j ].sharedMaterials;
 
 						// Draw Mesh
+
 						Transform childTransform = Renderers[ j ].transform;
 						pBlock.Clear();
 						Renderers[ j ].GetPropertyBlock( pBlock );
 						Matrix4x4 localMatrix = m_rootTransform.worldToLocalMatrix * childTransform.localToWorldMatrix;
+
 
 						for( int k = 0; k < meshMaterials.Length; k++ )
 						{
