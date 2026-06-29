@@ -38,6 +38,7 @@ namespace CandiceAIforGames.AI
         public GameObject agentToBoost;
         private float agentHealth;
         private float agentSpeed;
+        private GameObject cachedAgent;
         private CandiceAIController agentController;
         private CandiceAIPlayerController playerController;
         private PendingRevertKind pendingRevert;
@@ -78,8 +79,12 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            agentController = agentToBoost.GetComponent<CandiceAIController>();
-            playerController = agentToBoost.GetComponent<CandiceAIPlayerController>();
+            if (cachedAgent != agentToBoost)
+            {
+                cachedAgent = agentToBoost;
+                agentToBoost.TryGetComponent<CandiceAIController>(out agentController);
+                agentToBoost.TryGetComponent<CandiceAIPlayerController>(out playerController);
+            }
             if (agentController == null || candiceUI == null)
             {
                 return;
