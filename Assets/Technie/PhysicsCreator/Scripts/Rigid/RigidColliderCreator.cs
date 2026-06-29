@@ -338,7 +338,9 @@ namespace Technie.PhysicsCreator
 					SphereCollider sphereCol = c as SphereCollider;
 
 					// Find the RigidColliderCreatorChild adjacent to the collider (if a child collider)
+
 					RigidColliderCreatorChild child = orphanedColliderChildren[j];
+
 
 					// todo needs better handling
 					bool isMatchingChild = h.isChildCollider && c.transform.parent == this.transform;
@@ -555,6 +557,7 @@ namespace Technie.PhysicsCreator
 
 					GameObject go = c.gameObject;
 
+
 #if UNITY_EDITOR
 					if (!Application.isPlaying)
 					{
@@ -583,6 +586,7 @@ namespace Technie.PhysicsCreator
 						GameObject.DestroyImmediate(rigidChild);
 #endif
 					}
+
 
 					if (IsDeletable(go))
 					{
@@ -613,10 +617,14 @@ namespace Technie.PhysicsCreator
 				GameObject go = child.gameObject;
 				DestroyImmediateWithUndo(child);
 
+
+
 				if (go.TryGetComponent<Collider>(out var col))
 				{
 					DestroyImmediateWithUndo(col);
 				}
+
+
 
 				if (IsDeletable(go))
 				{
@@ -1121,7 +1129,9 @@ namespace Technie.PhysicsCreator
 				MeshCollider col = autoColliders[i];
 				generatedColliders[i] = col;
 
+
 				childDict.TryGetValue(col.gameObject, out childMarkers[i]);
+
 
 			}
 
