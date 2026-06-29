@@ -120,7 +120,9 @@ namespace Hecton8.Modding
             {
                 InstallHooks();
                 await Awaitable.NextFrameAsync();
+
                 await DiscoverAndLoadMods();
+
                 await Awaitable.NextFrameAsync();
                 ModLocalizationBridge.FlushPendingInjections();
             }
@@ -189,7 +191,9 @@ namespace Hecton8.Modding
             _hooksInstalled = false;
         }
 
+
         private static async Awaitable DiscoverAndLoadMods()
+
         {
 #if ENABLE_IL2CPP
             Hecton8.Core.H8Debug.LogWarning("[ModLoader] WARNING: External managed code mods require a Mono scripting backend. IL2CPP builds cannot load runtime assemblies dynamically.");
@@ -212,12 +216,14 @@ namespace Hecton8.Modding
             List<Awaitable<ModCandidate>> tasks = new List<Awaitable<ModCandidate>>(manifestPaths.Count);
             for (int i = 0; i < manifestPaths.Count; i++)
             {
+
                 tasks.Add(TryReadManifestAsync(manifestPaths[i]));
             }
 
             for (int i = 0; i < tasks.Count; i++)
             {
                 ModCandidate candidate = await tasks[i];
+
                 if (candidate != null)
                     candidates.Add(candidate);
             }
@@ -286,6 +292,8 @@ namespace Hecton8.Modding
 
         private static async Awaitable<ModCandidate> TryReadManifestAsync(string manifestPath)
         {
+
+
             try
             {
                 if (!TryValidateManifestFileSize(manifestPath))
@@ -353,6 +361,8 @@ namespace Hecton8.Modding
                     hasManagedEntry,
                     catalogPath,
                     localizationFiles);
+
+
             }
             catch (Exception ex)
             {
