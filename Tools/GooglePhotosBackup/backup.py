@@ -359,9 +359,11 @@ class GooglePhotosBackup:
 
             results = response.json().get('newMediaItemResults', [])
             
+
             successful_updates = []
             failed_updates = []
             now_iso = datetime.now().isoformat()
+
 
             # Match results back to paths
             for i, result in enumerate(results):
@@ -372,18 +374,22 @@ class GooglePhotosBackup:
                 if code == 0:
                     media_item = result.get('mediaItem', {})
                     media_id = media_item.get('id')
+
                     successful_updates.append((now_iso, media_id, filepath))
+
                     logging.info(f"Successfully finalized: {os.path.basename(filepath)}")
                 else:
                     msg = status_obj.get('message', 'Unknown creation error')
                     failed_updates.append((f"Creation failed (code {code}): {msg}", filepath))
                     logging.error(f"Failed to finalize {os.path.basename(filepath)}: {msg}")
             
+
             if successful_updates:
                 cursor.executemany(
                     "UPDATE uploads SET status = 'uploaded', uploaded_at = ?, google_media_id = ?, error_message = NULL WHERE filepath = ?",
                     successful_updates
                 )
+
 
             if failed_updates:
                 cursor.executemany(
