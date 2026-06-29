@@ -37,15 +37,20 @@ public class EnemySpawners : MonoBehaviour
     void Start()
     {
         parentLayerTransform = parentLayer == null ? null : parentLayer.transform;
+        StartCoroutine(InitializePoolsRoutine());
+    }
+
 
         if (enemyPrefab != null)
         {
             var op = InstantiateAsync(enemyPrefab, enemyPool.Length, parentLayerTransform, transform.position, transform.rotation);
             op.completed += onEnemyInstantiated;
+
         }
 
         if (SpawnFx != null)
         {
+
             var op = InstantiateAsync(SpawnFx, spawnFxPool.Length, transform.position, transform.rotation);
             op.completed += onSpawnFxInstantiated;
         }
@@ -83,6 +88,7 @@ public class EnemySpawners : MonoBehaviour
                 }
             }
         }
+
     }
 
     // Update is called once per frame
