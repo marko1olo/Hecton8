@@ -119,7 +119,36 @@ namespace AmplifyImpostors
 
 		[SerializeField]
 		private Renderer[] m_renderers;
-		public Renderer[] Renderers { get { return m_renderers; } set { m_renderers = value; } }
+		public Renderer[] Renderers {
+			get { return m_renderers; }
+			set {
+				m_renderers = value;
+				m_meshFilters = null;
+			}
+		}
+
+		private MeshFilter[] m_meshFilters;
+		public MeshFilter[] MeshFilters {
+			get {
+				if( m_meshFilters == null || m_meshFilters.Length != (m_renderers != null ? m_renderers.Length : 0) )
+				{
+					if( m_renderers != null )
+					{
+						m_meshFilters = new MeshFilter[ m_renderers.Length ];
+						for( int i = 0; i < m_renderers.Length; i++ )
+						{
+							if( m_renderers[ i ] != null )
+								m_meshFilters[ i ] = m_renderers[ i ].GetComponent<MeshFilter>();
+						}
+					}
+					else
+					{
+						m_meshFilters = new MeshFilter[ 0 ];
+					}
+				}
+				return m_meshFilters;
+			}
+		}
 
 		public LODReplacement m_lodReplacement = LODReplacement.ReplaceLast;
 
@@ -410,8 +439,10 @@ namespace AmplifyImpostors
 
 					for( int i = 0; i < Renderers.Length; i++ )
 					{
+
 						MeshFilter mf = cachedMeshFilters[ i ];
 						if( mf == null )
+
 							continue;
 
 						if( frameBounds.size == Vector3.zero )
@@ -1573,6 +1604,7 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
+
 			List<MeshFilter> validMeshes = new List<MeshFilter>();
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
@@ -1595,6 +1627,7 @@ namespace AmplifyImpostors
 
 			int validMeshesCount = validMeshes.Count;
 
+
 			for( int x = 0; x < hframes; x++ )
 			{
 				for( int y = 0; y <= vframes; y++ )
@@ -1602,15 +1635,19 @@ namespace AmplifyImpostors
 					Bounds frameBounds = new Bounds();
 					Matrix4x4 camMatrixRot = GetCameraRotationMatrix( impostorType, hframes, vframes, x, y );
 
-					for( int i = 0; i < validMeshesCount; i++ )
+					for( int i = 0; i < Renderers.Length; i++ )
 					{
-						if( validMeshes[ i ] == null )
+						if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
+							continue;
+
+						MeshFilter mf = MeshFilters[ i ];
+						if( mf == null || mf.sharedMesh == null )
 							continue;
 
 						if( frameBounds.size == Vector3.zero )
-							frameBounds = validMeshes[ i ].sharedMesh.bounds.Transform( m_rootTransform.worldToLocalMatrix * Renderers[ i ].localToWorldMatrix );
+							frameBounds = mf.sharedMesh.bounds.Transform( m_rootTransform.worldToLocalMatrix * Renderers[ i ].localToWorldMatrix );
 						else
-							frameBounds.Encapsulate( validMeshes[ i ].sharedMesh.bounds.Transform( m_rootTransform.worldToLocalMatrix * Renderers[ i ].localToWorldMatrix ) );
+							frameBounds.Encapsulate( mf.sharedMesh.bounds.Transform( m_rootTransform.worldToLocalMatrix * Renderers[ i ].localToWorldMatrix ) );
 					}
 
 					if( x == 0 && y == 0 )
