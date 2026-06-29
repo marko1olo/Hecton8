@@ -24,7 +24,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8012)]
-    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHotSwapListener
+    public class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink, IGlobalRegistryHotSwapListener
     {
         private const uint CollisionSalt = 0xDEADBEEF;
         private const float NativeHeapOverheadFactor = 1.15f;
@@ -2300,7 +2300,7 @@ namespace Hecton8.Optimization
             return true;
         }
 
-        private void EvaluateAddressableTtlAndQueueReleases()
+        protected virtual void EvaluateAddressableTtlAndQueueReleases()
         {
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
@@ -3970,7 +3970,7 @@ namespace Hecton8.Optimization
                 QueueAsyncDispatch(_retryCandidates[i]);
         }
 
-        private void ReportColdTickBudgetIfNeeded(long startTicks)
+        protected virtual void ReportColdTickBudgetIfNeeded(long startTicks)
         {
             long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
             double elapsedMilliseconds = elapsedTicks * 1000d / Stopwatch.Frequency;
