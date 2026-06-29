@@ -62,9 +62,11 @@ namespace CandiceAIforGames.AI
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
 
+
 				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
 
 				segmentImage.gameObject.SetActive(true);
+
 
 				segmentImage.fillAmount = m_SizeOfSegment;
 
@@ -83,6 +85,8 @@ namespace CandiceAIforGames.AI
 					RectTransform segmentFillRectTransform = segmentFillImage.rectTransform;
 					segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 				}
+
+
 
 
 
