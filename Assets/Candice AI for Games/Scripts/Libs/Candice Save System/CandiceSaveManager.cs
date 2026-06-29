@@ -130,6 +130,7 @@ namespace CandiceAIforGames.Data
 
                 obj.transform.SetParent(container.transform, false);
 
+
                 int lastSlash = file.LastIndexOf('/');
                 string fileName = lastSlash >= 0 ? file.Substring(lastSlash + 1) : file;
 
@@ -138,6 +139,7 @@ namespace CandiceAIforGames.Data
                     int lastDot = fileName.LastIndexOf('.');
                     saveItem.text.text = lastDot >= 0 ? fileName.Substring(0, lastDot) : fileName;
                     saveItem.path = folderName + "/" + fileName;
+
                 }
                 pos.y -= 35f;
             }
