@@ -100,9 +100,11 @@ namespace MoreMountains.Feedbacks
 					{
 
 
+
 						if (owner.transform.GetChild(i).TryGetComponent<T>(out T component))
 						{
 							return component;
+
 
 
 						}
