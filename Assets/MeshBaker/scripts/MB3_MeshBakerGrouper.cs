@@ -257,6 +257,7 @@ namespace DigitalOpus.MB.Core
                 //      if not add it to LOD0 for that cell
                 //      otherwise add it to LODX for that cell creating LODs as necessary
                 Dictionary<string, List<Renderer>> cell2objsNew = new Dictionary<string, List<Renderer>>();
+                Dictionary<Transform, LODGroup> lodCache = new Dictionary<Transform, LODGroup>();
                 foreach (string key in cell2objs.Keys)
                 {
                     List<Renderer> gaws = cell2objs[key];
@@ -264,7 +265,17 @@ namespace DigitalOpus.MB.Core
                     {
                         if (r == null) continue;
                         bool foundInLOD = false;
-                        LODGroup lodg = r.GetComponentInParent<LODGroup>();
+
+                        LODGroup lodg = null;
+                        Transform p = r.transform.parent;
+                        if (p != null) {
+                            if (!lodCache.TryGetValue(p, out lodg)) {
+                                lodg = r.GetComponentInParent<LODGroup>();
+                                lodCache[p] = lodg;
+                            }
+                        } else {
+                            lodg = r.GetComponent<LODGroup>();
+                        }
                         if (lodg != null)
                         {
                             LOD[] lods = lodg.GetLODs();
