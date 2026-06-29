@@ -63,8 +63,10 @@ namespace Shapes {
 						propSpace.serializedObject.ApplyModifiedProperties();
 						foreach( Object target in propSpace.serializedObject.targetObjects ) {
 							using( SerializedObject so = new SerializedObject( target ) ) {
+
 								SerializedProperty pSpacing = so.FindProperty( propSpacing.propertyPath );
 								SerializedProperty pSize = so.FindProperty( propSize.propertyPath );
+
 								float period = pSpacing.floatValue + pSize.floatValue;
 								pSpacing.floatValue = pSpacing.floatValue / period;
 								so.ApplyModifiedProperties();
