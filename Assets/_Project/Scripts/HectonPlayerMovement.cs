@@ -14427,6 +14427,19 @@ namespace Hecton8.Gameplay
                 UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
+            ValidateMovementAndVRSettings();
+            ValidateExosuitAndInteractionSettings();
+            ValidateSargassumAndAbyssalSettings();
+            ValidateImpactAndSurfaceSettings();
+            ValidateHazardAndMiscSettings();
+
+            RefreshGroundSlopeCache();
+            CacheBaseCollisionProfile();
+        }
+
+        private void ValidateMovementAndVRSettings()
+        {
+
             if (mouseSensitivity < 0.01f) mouseSensitivity = 0.01f;
             if (groundCheckRadius < 0.01f) groundCheckRadius = 0.01f;
             if (groundCheckDistance < 0.01f) groundCheckDistance = 0.01f;
@@ -14502,6 +14515,10 @@ namespace Hecton8.Gameplay
             if (exosuitGrappleRestLength > 4f) exosuitGrappleRestLength = 4f;
             if (exosuitGrappleReelForce < 0f) exosuitGrappleReelForce = 0f;
             if (exosuitGrappleReelForce > 180f) exosuitGrappleReelForce = 180f;
+        }
+
+        private void ValidateExosuitAndInteractionSettings()
+        {
             if (exosuitGrappleSpring < 0f) exosuitGrappleSpring = 0f;
             if (exosuitGrappleSpring > 160f) exosuitGrappleSpring = 160f;
             if (exosuitGrappleDamping < 0f) exosuitGrappleDamping = 0f;
@@ -14578,6 +14595,10 @@ namespace Hecton8.Gameplay
             if (surfaceBreachFluidDragBypassDuration < 0.05f) surfaceBreachFluidDragBypassDuration = 0.05f;
             if (surfaceBreachGravitySpikeDelay < 0f) surfaceBreachGravitySpikeDelay = 0f;
             if (surfaceBreachGravitySpikeDelay > 1.5f) surfaceBreachGravitySpikeDelay = 1.5f;
+        }
+
+        private void ValidateSargassumAndAbyssalSettings()
+        {
             if (surfaceBreachGravitySpikeAcceleration < 0f) surfaceBreachGravitySpikeAcceleration = 0f;
             if (surfaceBreachGravitySpikeDuration < 0.05f) surfaceBreachGravitySpikeDuration = 0.05f;
             if (surfaceBreachSplashEnergyScale < 1f) surfaceBreachSplashEnergyScale = 1f;
@@ -14654,6 +14675,10 @@ namespace Hecton8.Gameplay
             if (surfaceWaveAlignmentSharpness < 1f) surfaceWaveAlignmentSharpness = 1f;
             if (surfaceWaveMaxPitch < 0f) surfaceWaveMaxPitch = 0f;
             if (surfaceWaveMaxRoll < 0f) surfaceWaveMaxRoll = 0f;
+        }
+
+        private void ValidateImpactAndSurfaceSettings()
+        {
             if (underwaterTurbulenceMaxDepth < 1f) underwaterTurbulenceMaxDepth = 1f;
             if (underwaterTurbulenceHeightStart < 0.05f) underwaterTurbulenceHeightStart = 0.05f;
             if (underwaterTurbulenceHeightMax < underwaterTurbulenceHeightStart)
@@ -14730,6 +14755,10 @@ namespace Hecton8.Gameplay
             if (abyssalCableEntanglementDamping < 0f) abyssalCableEntanglementDamping = 0f;
             if (abyssalCableEntanglementDamping > 30f) abyssalCableEntanglementDamping = 30f;
             if (abyssalCableEntanglementMaxAcceleration < 0f) abyssalCableEntanglementMaxAcceleration = 0f;
+        }
+
+        private void ValidateHazardAndMiscSettings()
+        {
             if (abyssalCableEntanglementMaxAcceleration > 120f) abyssalCableEntanglementMaxAcceleration = 120f;
             if (abyssalCableEntanglementVerticalInfluence < 0f) abyssalCableEntanglementVerticalInfluence = 0f;
             if (abyssalCableEntanglementVerticalInfluence > 1f) abyssalCableEntanglementVerticalInfluence = 1f;
@@ -14807,8 +14836,6 @@ namespace Hecton8.Gameplay
             if (heavyTowCenterOfMassLateralShift < 0f) heavyTowCenterOfMassLateralShift = 0f;
             if (heavyTowCenterOfMassDownShift < 0f) heavyTowCenterOfMassDownShift = 0f;
 
-            RefreshGroundSlopeCache();
-            CacheBaseCollisionProfile();
         }
 
         private void OnDrawGizmosSelected()
