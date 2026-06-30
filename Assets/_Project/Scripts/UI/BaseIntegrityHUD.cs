@@ -484,8 +484,6 @@ namespace Hecton8.UI
         public static bool TryRaiseIntegrityWarning(float integrity)
             => Enqueue(BaseIntegrityEventType.IntegrityWarning, BaseModuleFailureMode.None, integrity);
 
-        [Obsolete("Use TryRaiseIntegrityWarning so bounded queue refusal is visible at the producer.", true)]
-        public static void RaiseIntegrityWarning(float integrity) => TryRaiseIntegrityWarning(integrity);
 
         /// <summary>
         /// Queues a module breached payload.
@@ -493,8 +491,6 @@ namespace Hecton8.UI
         public static bool TryRaiseBreached()
             => Enqueue(BaseIntegrityEventType.Breached, BaseModuleFailureMode.None, 0f);
 
-        [Obsolete("Use TryRaiseBreached so bounded queue refusal is visible at the producer.", true)]
-        public static void RaiseBreached() => TryRaiseBreached();
 
         /// <summary>
         /// Queues a base emergency payload.
@@ -504,9 +500,6 @@ namespace Hecton8.UI
         public static bool TryRaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
             => Enqueue(BaseIntegrityEventType.Emergency, failureMode, integrity);
 
-        [Obsolete("Use TryRaiseEmergency so bounded queue refusal is visible at the producer.", true)]
-        public static void RaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
-            => TryRaiseEmergency(failureMode, integrity);
 
         /// <summary>
         /// Queues an air-quality warning payload.
@@ -515,8 +508,6 @@ namespace Hecton8.UI
         public static bool TryRaiseAirQualityWarning(float airQualityNormalized)
             => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQualityNormalized);
 
-        [Obsolete("Use TryRaiseAirQualityWarning so bounded queue refusal is visible at the producer.", true)]
-        public static void RaiseAirQualityWarning(float airQualityNormalized) => TryRaiseAirQualityWarning(airQualityNormalized);
 
         /// <summary>
         /// Flushes queued base integrity events through registered listeners.
