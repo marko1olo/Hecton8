@@ -80,6 +80,18 @@ namespace Crest
             }
 
             var mainLightIndex = renderingData.lightData.mainLightIndex;
+            if (ocean._primaryLight != null)
+            {
+                var visibleLights = renderingData.lightData.visibleLights;
+                for (int i = 0; i < visibleLights.Length; i++)
+                {
+                    if (visibleLights[i].light == ocean._primaryLight)
+                    {
+                        mainLightIndex = i;
+                        break;
+                    }
+                }
+            }
 
             if (ocean._primaryLight != null)
             {
