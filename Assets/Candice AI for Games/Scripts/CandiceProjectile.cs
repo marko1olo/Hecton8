@@ -25,8 +25,8 @@ namespace CandiceAIforGames.AI
         private bool _deactivateScheduled;
         private float _deactivateAt;
         private Transform _initialParent;
-        private Transform _cachedCameraParent;
-        private Transform _cachedVsfxRoot;
+        [SerializeField] private Transform _cachedCameraParent;
+        [SerializeField] private Transform _cachedVsfxRoot;
         private RigidbodyConstraints _initialConstraints;
 
         public Transform CachedCameraParent => _cachedCameraParent;
@@ -37,8 +37,8 @@ namespace CandiceAIforGames.AI
         {
             rb = GetComponent<Rigidbody>();
             _initialParent = transform.parent;
-            _cachedCameraParent = transform.Find("CameraParent");
-            _cachedVsfxRoot = transform.Find("VSFX");
+            if (_cachedCameraParent == null) _cachedCameraParent = transform.Find("CameraParent");
+            if (_cachedVsfxRoot == null) _cachedVsfxRoot = transform.Find("VSFX");
             _initialConstraints = rb == null ? RigidbodyConstraints.None : rb.constraints;
         }
 
