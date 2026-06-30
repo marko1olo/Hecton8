@@ -8,7 +8,8 @@
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",
-        "Unity.Mathematics", "CandiceAIforGames.Runtime"
+        "Unity.Mathematics",
+        "CandiceAIforGames.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
