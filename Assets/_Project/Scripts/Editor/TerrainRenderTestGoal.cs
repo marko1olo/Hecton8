@@ -302,60 +302,57 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void CaptureScreenshots()
+        private static void ToggleAnnotationGizmos(bool show, out bool originalValue, ref System.Reflection.PropertyInfo showGizmosProp)
         {
-            bool originalShowGizmos = true;
-            System.Reflection.PropertyInfo showGizmosProp = null;
+            originalValue = true;
             try
             {
                 var annotationUtilityType = System.Type.GetType("UnityEditor.AnnotationUtility, UnityEditor");
                 if (annotationUtilityType != null)
                 {
-                    showGizmosProp = annotationUtilityType.GetProperty("showGizmos", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+                    if (showGizmosProp == null)
+                        showGizmosProp = annotationUtilityType.GetProperty("showGizmos", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public);
+
                     if (showGizmosProp != null)
                     {
-                        originalShowGizmos = (bool)showGizmosProp.GetValue(null);
-                        showGizmosProp.SetValue(null, false);
-                        Debug.Log("[TRT] AnnotationUtility.showGizmos temporarily set to false");
+                        originalValue = (bool)showGizmosProp.GetValue(null);
+                        showGizmosProp.SetValue(null, show);
+                        Debug.Log($"[TRT] AnnotationUtility.showGizmos temporarily set to {show}");
                     }
                 }
             }
             catch (System.Exception ex) { Debug.LogWarning($"[TRT] Failed to toggle AnnotationUtility.showGizmos: {ex.Message}"); }
+        }
 
-            try
+        private static void CleanupMapMagicTerrains(ref UnityEngine.Terrain[] terrains)
+        {
+            var allTerrains = Object.FindObjectsByType<UnityEngine.Terrain>(FindObjectsInactive.Include);
+            foreach (var t in allTerrains)
             {
-                // Clear editor selection to avoid drawing selection gizmos/outlines in screenshots
-                UnityEditor.Selection.activeGameObject = null;
-                UnityEditor.Selection.objects = new UnityEngine.Object[0];
-
-                UnityEngine.Terrain[] terrains = UnityEngine.Terrain.activeTerrains;
-
-                // Clean up any preview terrains or draft terrains left in the scene by MapMagic
-                var allTerrains = Object.FindObjectsByType<UnityEngine.Terrain>(FindObjectsInactive.Include);
-                foreach (var t in allTerrains)
+                if (t != null)
                 {
-                    if (t != null)
+                    if (t.gameObject.name == "Preview Terrain")
                     {
-                        if (t.gameObject.name == "Preview Terrain")
-                        {
-                            Debug.Log($"[TRT] Destroying MapMagic Preview Terrain: '{t.gameObject.name}'");
-                            Object.DestroyImmediate(t.gameObject);
-                        }
-                        else if (t.gameObject.name.Contains("Draft"))
-                        {
-                            Debug.Log($"[TRT] Disabling MapMagic Draft Terrain: '{t.gameObject.name}'");
-                            t.gameObject.SetActive(false);
-                        }
-                        else
-                        {
-                            t.drawHeightmap = true;
-                        }
+                        Debug.Log($"[TRT] Destroying MapMagic Preview Terrain: '{t.gameObject.name}'");
+                        Object.DestroyImmediate(t.gameObject);
+                    }
+                    else if (t.gameObject.name.Contains("Draft"))
+                    {
+                        Debug.Log($"[TRT] Disabling MapMagic Draft Terrain: '{t.gameObject.name}'");
+                        t.gameObject.SetActive(false);
+                    }
+                    else
+                    {
+                        t.drawHeightmap = true;
                     }
                 }
-                
-                // Refresh active terrains list after cleanup
-                terrains = UnityEngine.Terrain.activeTerrains;
+            }
+            // Refresh active terrains list after cleanup
+            terrains = UnityEngine.Terrain.activeTerrains;
+        }
 
+        private static void SetupTerrainMaterialsWithInjector(UnityEngine.Terrain[] terrains)
+        {
             try
             {
                 Material baseMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
@@ -399,10 +396,11 @@ namespace Hecton8.Editor
                 Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
+        }
 
-            // Calculate center
-            Vector3 boundsCenter = Vector3.zero;
-            float boundsHalf = 0f;
+        private static void CalculateBoundsCenter(UnityEngine.Terrain[] terrains, out Vector3 boundsCenter)
+        {
+            boundsCenter = Vector3.zero;
             if (terrains.Length > 0 && terrains[0].terrainData != null)
             {
                 Bounds b = new Bounds();
@@ -424,24 +422,11 @@ namespace Hecton8.Editor
                     }
                 }
                 boundsCenter = b.center;
-                boundsHalf = Mathf.Max(b.size.x, b.size.z) * 0.5f;
             }
+        }
 
-            // Find central terrain to sample height properly
-            float groundY = 0f;
-            foreach (var t in terrains)
-            {
-                if (t.terrainData == null) continue;
-                Vector3 tPos = t.transform.position;
-                Vector3 tSize = t.terrainData.size;
-                if (boundsCenter.x >= tPos.x && boundsCenter.x <= tPos.x + tSize.x &&
-                    boundsCenter.z >= tPos.z && boundsCenter.z <= tPos.z + tSize.z)
-                {
-                    groundY = tPos.y + t.SampleHeight(boundsCenter);
-                    break;
-                }
-            }
-
+        private static Camera SetupCameraAndCleanBehaviours()
+        {
             Camera cam = Camera.main;
             if (cam == null)
             {
@@ -460,10 +445,7 @@ namespace Hecton8.Editor
                 }
             }
 
-            // Disable ALL custom MonoBehaviours — kills gizmo drawers, scatter directors, overlay systems.
-            // HectonTerrainMaterialInjector is NOT protected here — we re-apply material directly below.
-            // WorldProceduralScatterDirector must be DESTROYED, not just disabled, to prevent [DrawGizmo]
-            // from being called at all (Unity only invokes [DrawGizmo] when the target component exists).
+            // Disable ALL custom MonoBehaviours
             foreach (var comp in Object.FindObjectsByType<Component>(FindObjectsInactive.Include))
             {
                 if (comp == null || comp is Transform || comp is Camera || comp is Light) continue;
@@ -471,15 +453,12 @@ namespace Hecton8.Editor
                 var type = comp.GetType();
                 string typeName = type.FullName ?? "";
 
-                // Protect only the URP Volume and pure UnityEngine terrain internals
                 if (type == typeof(UnityEngine.Rendering.Volume) ||
                     typeName.StartsWith("UnityEngine.Terrain"))
                 {
                     continue;
                 }
 
-                // DESTROY scatter director — [DrawGizmo] only fires when the component exists in scene.
-                // Disabling is not enough; Unity still iterates existing components for DrawGizmo.
                 if (typeName.Contains("WorldProceduralScatterDirector") ||
                     typeName.Contains("ScatterDirector"))
                 {
@@ -488,7 +467,6 @@ namespace Hecton8.Editor
                     continue;
                 }
 
-                // Destroy any MeshRenderer/SkinnedMeshRenderer that isn't terrain — kills vertical stick artifacts
                 if (comp is MeshRenderer || comp is SkinnedMeshRenderer)
                 {
                     Debug.Log($"[TRT] Destroying mesh renderer object: '{comp.name}' ({typeName})");
@@ -496,15 +474,16 @@ namespace Hecton8.Editor
                     continue;
                 }
 
-                // Disable everything else that is a Behaviour (MonoBehaviour, etc.)
                 if (comp is Behaviour beh && beh.enabled)
                 {
                     beh.enabled = false;
                 }
             }
+            return cam;
+        }
 
-            // --- Re-apply terrain material directly after the sweep ---
-            // The injector is now disabled, so we push materialTemplate manually.
+        private static void ApplyManualTerrainMaterials(UnityEngine.Terrain[] terrains)
+        {
             try
             {
                 Material baseMat2 = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
@@ -515,10 +494,9 @@ namespace Hecton8.Editor
                 if (baseMat2 != null)
                 {
                     Debug.Log($"[TRT] Shader on baseMat2: {baseMat2.shader?.name ?? "null"}");
-                    foreach (var t in UnityEngine.Terrain.activeTerrains)
+                    foreach (var t in terrains)
                     {
                         if (t == null) continue;
-                        // Create a per-terrain instanced copy so _Control can differ per tile
                         Material inst = new Material(baseMat2);
                         inst.name = baseMat2.name + "_" + t.name;
 
@@ -531,7 +509,6 @@ namespace Hecton8.Editor
                         inst.EnableKeyword("_MASKMAP");
                         inst.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
 
-                        // Assign splatmaps from terrainData
                         if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0)
                         {
                             Texture2D[] alphamaps = t.terrainData.alphamapTextures;
@@ -553,7 +530,10 @@ namespace Hecton8.Editor
                 }
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
+        }
 
+        private static void SetupLightingAndPostProcessing(Camera cam, out Light pLight)
+        {
             foreach (var c in cam.GetComponents<Component>())
             {
                 if (c != null) Debug.Log($"[TRT] Camera component: {c.GetType().FullName}");
@@ -566,40 +546,36 @@ namespace Hecton8.Editor
                     if (c != null) Debug.Log($"[TRT] Camera parent component: {c.GetType().FullName}");
                 }
             }
-            cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f); // Dark sea, not pure black
+            cam.backgroundColor = new Color(0.05f, 0.08f, 0.12f);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.farClipPlane = 60000f;
 
             var urpCam = cam.gameObject.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             if (urpCam == null) urpCam = cam.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
-            urpCam.renderShadows = false;     // Shadows need baked data - skip in batchmode
-            urpCam.renderPostProcessing = true; // CRITICAL: enables ColorAdjustments/Exposure volume override
+            urpCam.renderShadows = false;
+            urpCam.renderPostProcessing = true;
 
-            // Kill all pre-existing scene lights — any tinted light destroys PBR albedo read
             foreach (var existingLight in Object.FindObjectsByType<Light>(FindObjectsInactive.Exclude))
                 Object.DestroyImmediate(existingLight.gameObject);
 
-            // Neutral ambient — low enough not to tint, present enough to kill pure-black shadows
             RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.2f, 0.25f, 0.3f); // Clinical neutral-cool, safe for PBR albedo
+            RenderSettings.ambientLight = new Color(0.2f, 0.25f, 0.3f);
             RenderSettings.ambientIntensity = 1.0f;
 
-            // Key light: white, 2.5 intensity, low-angle to reveal topology
             GameObject lightGo = new GameObject("TRT_DirectionalLight_Main");
-            lightGo.transform.position = new Vector3(0f, -99999f, 0f); // Underground — icon hidden behind terrain
+            lightGo.transform.position = new Vector3(0f, -99999f, 0f);
             Light dirLight = lightGo.AddComponent<Light>();
             dirLight.type = LightType.Directional;
             dirLight.intensity = 2.5f;
             dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
             dirLight.color = new Color(1.0f, 0.95f, 0.9f);
             dirLight.useColorTemperature = true;
-            dirLight.colorTemperature = 5800f; // Neutral-warm spectrum (anti-gloom)
+            dirLight.colorTemperature = 5800f;
             dirLight.shadows = LightShadows.Soft;
             RenderSettings.sun = dirLight;
 
-            // Fill light: dim, opposite axis — lifts shadows without tinting
             GameObject fillLightGo = new GameObject("TRT_DirectionalLight_Fill");
-            fillLightGo.transform.position = new Vector3(0f, -99999f, 0f); // Underground
+            fillLightGo.transform.position = new Vector3(0f, -99999f, 0f);
             Light fillLight = fillLightGo.AddComponent<Light>();
             fillLight.type = LightType.Directional;
             fillLight.intensity = 0.8f;
@@ -607,15 +583,11 @@ namespace Hecton8.Editor
             fillLight.color = Color.white;
             fillLight.shadows = LightShadows.None;
 
-            // RenderSettings setup for ambient
             RenderSettings.fog = true;
             RenderSettings.fogColor = new Color(0.01f, 0.03f, 0.05f);
             RenderSettings.fogMode = FogMode.Exponential;
             RenderSettings.fogDensity = 0.005f;
 
-            // Create Global Volume for PostProcessing
-            // CRITICAL: Remove ACES - it crushes blacks in batchmode.
-            // Use None tonemapping + explicit Exposure to get laboratory brightness.
             GameObject volumeGo = new GameObject("TRT_GlobalVolume");
             volumeGo.layer = LayerMask.NameToLayer("Default");
             var volume = volumeGo.AddComponent<UnityEngine.Rendering.Volume>();
@@ -629,22 +601,29 @@ namespace Hecton8.Editor
             tonemapping.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.None);
 
             var exposure = profile.Add<UnityEngine.Rendering.Universal.ColorAdjustments>();
-            exposure.postExposure.Override(2.2f); // +2.2 EV — dark basalt: 0.03*4.6=0.14 midtone, 0.14*4.6=0.64 highlights, no clip
-            exposure.contrast.Override(-15f);     // Gentle shadow lift — preserves topo readability without crushing darks
+            exposure.postExposure.Override(2.2f);
+            exposure.contrast.Override(-15f);
 
-            // Extra fill for macro topography — ensure we see terrain detail
             GameObject pointGo = new GameObject("TRT_DirectionalLight");
-            pointGo.transform.position = new Vector3(0f, -99999f, 0f); // Underground
-            Light pLight = pointGo.AddComponent<Light>();
+            pointGo.transform.position = new Vector3(0f, -99999f, 0f);
+            pLight = pointGo.AddComponent<Light>();
             pLight.type = LightType.Directional;
             pLight.intensity = 1.5f;
             pLight.color = new Color(0.9f, 0.95f, 1.0f);
-            pLight.shadows = LightShadows.None; // Always off — no baked shadow maps in TRT
+            pLight.shadows = LightShadows.None;
             pLight.transform.rotation = Quaternion.Euler(50f, 30f, 0f);
 
             RenderSettings.fog = false;
+        }
 
-            // Find Center Terrain
+        private static void FindKeyTerrainPositions(UnityEngine.Terrain[] terrains, Vector3 boundsCenter, out Vector3 rockFacePos, out Vector3 rockFaceNormal, out Vector3 plainPos, out Vector3 canyonRimPos, out Vector3 terracesPos)
+        {
+            rockFacePos = boundsCenter;
+            rockFaceNormal = Vector3.up;
+            plainPos = boundsCenter;
+            canyonRimPos = boundsCenter;
+            terracesPos = boundsCenter;
+
             UnityEngine.Terrain centerTerrain = null;
             float minCenterDist = float.MaxValue;
             if (terrains.Length > 0)
@@ -659,26 +638,15 @@ namespace Hecton8.Editor
                 }
             }
 
-            Vector3 rockFacePos = boundsCenter;
-            Vector3 rockFaceNormal = Vector3.up;
-            Vector3 plainPos = boundsCenter;
-            Vector3 transitionPos = boundsCenter;
-            Vector3 canyonRimPos = boundsCenter;
-            Vector3 terracesPos = boundsCenter;
-
             if (centerTerrain != null && centerTerrain.terrainData != null)
             {
                 var td = centerTerrain.terrainData;
                 int res = td.heightmapResolution;
                 int alphaRes = td.alphamapResolution;
-                float[,,] alphas = td.GetAlphamaps(0, 0, alphaRes, alphaRes);
                 
-                float maxSlope = 0f;
                 float minSlope = 90f;
                 float bestRockScore = -1f;
 
-                // Key light: Euler(40, 60, 0) — need forward-facing faces for lit micro shots
-                // L = -forward of light transform = transform.forward negated in light convention
                 Vector3 keyLightDir = new Vector3(
                     -Mathf.Sin(60f * Mathf.Deg2Rad) * Mathf.Cos(40f * Mathf.Deg2Rad),
                      Mathf.Sin(40f * Mathf.Deg2Rad),
@@ -699,11 +667,8 @@ namespace Hecton8.Editor
                         );
                         Vector3 normal = td.GetInterpolatedNormal(nx, ny);
 
-                        // Rock Face: steep AND front-lit by key light (avoids dark back-faces)
-                        // Score combines steepness with lighting angle — pure max-steepness
-                        // always picks back-lit canyon walls that appear black.
                         float litFactor = Mathf.Max(0f, Vector3.Dot(normal, keyLightDir));
-                        float rockScore = steepness * (0.3f + litFactor * 0.7f); // 30% base, 70% lit
+                        float rockScore = steepness * (0.3f + litFactor * 0.7f);
                         if (steepness > 25f && rockScore > bestRockScore)
                         {
                             bestRockScore = rockScore;
@@ -711,34 +676,17 @@ namespace Hecton8.Editor
                             rockFaceNormal = normal;
                         }
 
-                        // Abyssal Plain (Flattest)
                         if (steepness < minSlope)
                         {
                             minSlope = steepness;
                             plainPos = worldPos;
                         }
 
-                        // Biome Transition (roughly 50% rock, 50% sand)
-                        int ax = Mathf.Clamp(Mathf.RoundToInt(nx * alphaRes), 0, alphaRes - 1);
-                        int ay = Mathf.Clamp(Mathf.RoundToInt(ny * alphaRes), 0, alphaRes - 1);
-                        if (alphas.GetLength(2) >= 4)
-                        {
-                            float sandWeight = alphas[ay, ax, 0];
-                            float rockWeight = alphas[ay, ax, 3];
-                            // Ideal transition is where both are around 0.5
-                            if (sandWeight > 0.35f && rockWeight > 0.35f)
-                            {
-                                transitionPos = worldPos;
-                            }
-                        }
-
-                        // Canyon Rim (High elevation, steep drop-off)
                         if (worldPos.y > centerTerrain.transform.position.y + 400f && steepness > 45f)
                         {
-                            canyonRimPos = worldPos + Vector3.up * 10f; // Stand on the rim
+                            canyonRimPos = worldPos + Vector3.up * 10f;
                         }
 
-                        // Terraces (Mid slope, distinct height steps)
                         if (steepness > 15f && steepness < 35f && worldPos.y < centerTerrain.transform.position.y + 300f)
                         {
                             terracesPos = worldPos;
@@ -746,8 +694,10 @@ namespace Hecton8.Editor
                     }
                 }
             }
+        }
 
-            // Helper function for shots
+        private static void CaptureDiagnosticShots(Camera cam, UnityEngine.Terrain[] terrains, Vector3 boundsCenter, Vector3 rockFacePos, Vector3 rockFaceNormal, Vector3 plainPos, Vector3 canyonRimPos, Vector3 terracesPos, Light pLight)
+        {
             void TakeMatrixShot(Vector3 targetPos, Vector3 camOffset, Vector3 lookOffset, float fov, string filename, bool ortho = false, float orthoSize = 5000f)
             {
                 cam.transform.position = targetPos + camOffset;
@@ -761,10 +711,8 @@ namespace Hecton8.Editor
 
             Vector3 centerPos = boundsCenter;
 
-            // 1. Macro_Nadir_10km.png
             TakeMatrixShot(centerPos, Vector3.up * 8000f, Vector3.zero, 60f, ArtifactDir + "Macro_Nadir_10km.png", true, 5000f);
             
-            // 2. Macro_Iso_10km.png
             cam.transform.position = centerPos + new Vector3(5000f, 5000f, -5000f);
             cam.transform.LookAt(centerPos);
             cam.orthographic = true;
@@ -772,33 +720,18 @@ namespace Hecton8.Editor
             TakeScreenshot(cam, ArtifactDir + "Macro_Iso_10km.png");
             cam.orthographic = false;
 
-            // 3. Meso_Canyon_Top_2km.png
             TakeMatrixShot(canyonRimPos, Vector3.up * 2000f, Vector3.zero, 60f, ArtifactDir + "Meso_Canyon_Top_2km.png");
-
-            // 4. Meso_Canyon_Angled_2km.png
             TakeMatrixShot(canyonRimPos, Vector3.up * 1000f - Vector3.forward * 1000f, Vector3.zero, 60f, ArtifactDir + "Meso_Canyon_Angled_2km.png");
-
-            // 5. Meso_Mountain_Peak_1km.png
-            TakeMatrixShot(canyonRimPos, Vector3.up * 500f + Vector3.right * 500f, Vector3.zero, 60f, ArtifactDir + "Meso_Mountain_Peak_1km.png"); // Using canyon rim as peak proxy
-
-            // 6. Meso_Abyssal_Plain_1km.png
+            TakeMatrixShot(canyonRimPos, Vector3.up * 500f + Vector3.right * 500f, Vector3.zero, 60f, ArtifactDir + "Meso_Mountain_Peak_1km.png");
             TakeMatrixShot(plainPos, Vector3.up * 500f, Vector3.zero, 60f, ArtifactDir + "Meso_Abyssal_Plain_1km.png");
-
-            // 7. Meso_Shelf_Dropoff_2km.png
             TakeMatrixShot(terracesPos, Vector3.up * 2000f - Vector3.forward * 500f, Vector3.zero, 60f, ArtifactDir + "Meso_Shelf_Dropoff_2km.png");
-
-            // 8. Beauty_Fault_Line.png
             TakeMatrixShot(canyonRimPos, Vector3.up * 500f - Vector3.forward * 2000f, Vector3.zero, 45f, ArtifactDir + "Beauty_Fault_Line.png");
-
-            // 9. Beauty_Sediment_Basin.png
             TakeMatrixShot(plainPos, Vector3.up * 300f - Vector3.forward * 1000f, Vector3.zero, 60f, ArtifactDir + "Beauty_Sediment_Basin.png");
 
-            // Camera 20m back (was 10m — risk of being inside terrain at cliff base).
-            // nearClipPlane 0.5f to avoid near-clip z-fighting on close faces.
             cam.nearClipPlane = 0.5f;
             Vector3 rockLookDir = new Vector3(rockFaceNormal.x, 0, rockFaceNormal.z).normalized;
             if (rockLookDir.sqrMagnitude < 0.1f) rockLookDir = Vector3.forward;
-            // Point light co-located with camera — face is lit regardless of directional angle
+
             GameObject microLightGo = new GameObject("TRT_MicroLight");
             Light microLight = microLightGo.AddComponent<Light>();
             microLight.type = LightType.Point;
@@ -809,21 +742,47 @@ namespace Hecton8.Editor
             microLightGo.transform.position = rockFacePos + rockLookDir * 20f + Vector3.up * 5f;
             TakeMatrixShot(rockFacePos, rockLookDir * 20f + Vector3.up * 5f, Vector3.up * 2f, 50f, ArtifactDir + "Micro_Rock_1m.png");
             Object.DestroyImmediate(microLightGo);
-            cam.nearClipPlane = 0.3f; // Restore
+            cam.nearClipPlane = 0.3f;
 
-            // 10. Take screenshots of scattered objects (from PR 600)
             cam.backgroundColor = Color.black;
             RenderSettings.fog = true;
             TakeScatterScreenshot(cam, "kelp", ArtifactDir + "Scatter_Kelp.png", pLight);
             TakeScatterScreenshot(cam, "coral", ArtifactDir + "Scatter_Coral.png", pLight);
+        }
 
-            Debug.Log("[TRT] All screenshots captured. Exporting Diagnostic Maps...");
-            ExportDiagnosticMaps(terrains, canyonRimPos, rockFacePos, ArtifactDir);
+        private static void CaptureScreenshots()
+        {
+            bool originalShowGizmos = true;
+            System.Reflection.PropertyInfo showGizmosProp = null;
+            ToggleAnnotationGizmos(false, out originalShowGizmos, ref showGizmosProp);
 
-            Debug.Log("[TRT] Done.");
-            File.WriteAllText(ArtifactDir + "mcp_success.txt", $"DONE at {System.DateTime.UtcNow:O}\nTerrains={terrains.Length}");
+            try
+            {
+                UnityEditor.Selection.activeGameObject = null;
+                UnityEditor.Selection.objects = new UnityEngine.Object[0];
 
-            if (Application.isBatchMode) EditorApplication.Exit(0);
+                UnityEngine.Terrain[] terrains = UnityEngine.Terrain.activeTerrains;
+                CleanupMapMagicTerrains(ref terrains);
+                SetupTerrainMaterialsWithInjector(terrains);
+
+                CalculateBoundsCenter(terrains, out Vector3 boundsCenter);
+
+                Camera cam = SetupCameraAndCleanBehaviours();
+                ApplyManualTerrainMaterials(terrains);
+
+                SetupLightingAndPostProcessing(cam, out Light pLight);
+
+                FindKeyTerrainPositions(terrains, boundsCenter, out Vector3 rockFacePos, out Vector3 rockFaceNormal, out Vector3 plainPos, out Vector3 canyonRimPos, out Vector3 terracesPos);
+
+                CaptureDiagnosticShots(cam, terrains, boundsCenter, rockFacePos, rockFaceNormal, plainPos, canyonRimPos, terracesPos, pLight);
+
+                Debug.Log("[TRT] All screenshots captured. Exporting Diagnostic Maps...");
+                ExportDiagnosticMaps(terrains, canyonRimPos, rockFacePos, ArtifactDir);
+
+                Debug.Log("[TRT] Done.");
+                File.WriteAllText(ArtifactDir + "mcp_success.txt", $"DONE at {System.DateTime.UtcNow:O}\nTerrains={terrains.Length}");
+
+                if (Application.isBatchMode) EditorApplication.Exit(0);
             }
             finally
             {
