@@ -109,7 +109,7 @@ class ValidateAudioImportMetaPolicyTests(unittest.TestCase):
                 quality=1.0,
             )
 
-            # Fix it
+            # Apply fixes to the meta file
             modified = fixer.fix_meta_file(path, row)
             self.assertTrue(modified)
 
