@@ -32,7 +32,7 @@ namespace Shapes {
 			TextPooledPersistent
 		}
 
-		public IMDrawer( MetaMpb metaMpb, Material sourceMat, Mesh sourceMesh, int submesh = 0, DrawType drawType = DrawType.Shape, bool allowInstancing = true, int textAutoDisposeId = -1 ) {
+		public IMDrawer( MetaMpb metaMpb, Material sourceMat, Mesh sourceMesh, int submesh = 0, DrawType drawType = DrawType.Shape, bool allowInstancing = true ) {
 			this.mtx = Draw.Matrix;
 			this.metaMpb = metaMpb;
 			this.allowInstancing = allowInstancing && ShapesConfig.Instance.useImmediateModeInstancing;
@@ -61,7 +61,6 @@ namespace Shapes {
 						break;
 					case DrawType.TextPooledAuto:
 						drawState.mat = sourceMat;
-						DrawCommand.CurrentWritingCommandBuffer.cachedTextIds.Add( textAutoDisposeId );
 						break;
 					case DrawType.Custom:
 						drawState.mat = sourceMat;
