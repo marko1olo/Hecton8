@@ -7345,9 +7345,52 @@ namespace Hecton8.SaveSystem
             result.Success = true;
             result.IntegrityState = info.IntegrityState;
 
-            SaveLoadCandidate selectedCandidate = default;
-            SaveData selectedData = null;
-            bool selectedLegacyFormat = false;
+            bool hasSelectedCandidate = TryAuditLoadCandidates(
+                slotName,
+                result,
+                out SaveLoadCandidate selectedCandidate,
+                out SaveData selectedData,
+                out bool selectedLegacyFormat);
+
+            result.SlotReadable = hasSelectedCandidate;
+            if (!hasSelectedCandidate)
+            {
+                result.Message = "No readable save source found.";
+                return true;
+            }
+
+            result.SelectedBackupSource = selectedCandidate.IsBackup;
+            result.SelectedBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
+            result.SelectedLegacyCompression = selectedLegacyFormat;
+            result.DetectedVersion = selectedData != null ? math.max(selectedData.version, 0) : 0;
+            result.RequiresMigration = selectedData != null && selectedData.version != SaveData.CurrentVersion;
+            result.RecommendedSource = selectedCandidate.IsBackup
+                ? $"Backup g{selectedCandidate.BackupGeneration}"
+                : "Primary";
+
+            bool recommendedRepair = selectedCandidate.IsBackup
+                || selectedLegacyFormat
+                || info.IntegrityState == SaveSlotIntegrityState.MissingMetadata
+                || info.IntegrityState == SaveSlotIntegrityState.MetadataRecoveredFromBackup
+                || info.IntegrityState == SaveSlotIntegrityState.MetadataSynthesized
+                || info.IntegrityState == SaveSlotIntegrityState.CorruptedMetadata;
+
+            result.RecommendedRepair = recommendedRepair;
+            result.Message = BuildAuditMessage(result);
+            RecordAuditResult(result);
+            return true;
+        }
+
+        private static bool TryAuditLoadCandidates(
+            string slotName,
+            SaveSlotAuditResult result,
+            out SaveLoadCandidate selectedCandidate,
+            out SaveData selectedData,
+            out bool selectedLegacyFormat)
+        {
+            selectedCandidate = default;
+            selectedData = null;
+            selectedLegacyFormat = false;
             bool hasSelectedCandidate = false;
 
             int candidateCount = 0;
@@ -7416,33 +7459,7 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            result.SlotReadable = hasSelectedCandidate;
-            if (!hasSelectedCandidate)
-            {
-                result.Message = "No readable save source found.";
-                return true;
-            }
-
-            result.SelectedBackupSource = selectedCandidate.IsBackup;
-            result.SelectedBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
-            result.SelectedLegacyCompression = selectedLegacyFormat;
-            result.DetectedVersion = selectedData != null ? math.max(selectedData.version, 0) : 0;
-            result.RequiresMigration = selectedData != null && selectedData.version != SaveData.CurrentVersion;
-            result.RecommendedSource = selectedCandidate.IsBackup
-                ? $"Backup g{selectedCandidate.BackupGeneration}"
-                : "Primary";
-
-            bool recommendedRepair = selectedCandidate.IsBackup
-                || selectedLegacyFormat
-                || info.IntegrityState == SaveSlotIntegrityState.MissingMetadata
-                || info.IntegrityState == SaveSlotIntegrityState.MetadataRecoveredFromBackup
-                || info.IntegrityState == SaveSlotIntegrityState.MetadataSynthesized
-                || info.IntegrityState == SaveSlotIntegrityState.CorruptedMetadata;
-
-            result.RecommendedRepair = recommendedRepair;
-            result.Message = BuildAuditMessage(result);
-            RecordAuditResult(result);
-            return true;
+            return hasSelectedCandidate;
         }
 
         private static string BuildAuditMessage(SaveSlotAuditResult result)
