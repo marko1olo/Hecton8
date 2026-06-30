@@ -15,6 +15,7 @@ namespace Hecton8.Tests.Editor
         {
             _poolRoot = new GameObject("ObjectPoolManager");
             _poolManager = _poolRoot.AddComponent<ObjectPoolManager>();
+
         }
 
         [TearDown]
@@ -67,6 +68,7 @@ namespace Hecton8.Tests.Editor
 
             // Assert
             Assert.IsNull(GlobalRegistry.ObjectPoolRuntimeMirror, "Mirror should be set to null if it matched this instance.");
+
         }
     }
 }
