@@ -102,7 +102,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				data.globals.microSplatApplyType==Core.Globals.MicroSplatApplyType.Both)
 			{
 				if (stop!=null && stop.stop) return;
-				byte[][] bytes = CustomShaderOutput200.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
+				byte[][] bytes = MatrixOps.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
 				string[] names = new string[bytes.Length];
 				for (int i=0; i<names.Length; i++)
 					names[i] = (data.globals.useCustomControlTextures ? "_CustomControl" : "_Control") + i.ToString();
@@ -111,7 +111,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				if (data.globals.microSplatNormals)
 				{
 					(Matrix r, Matrix g, Matrix b) = MatrixOps.NormalsSet(data.heights, data.area.PixelSize.x, data.globals.height);
-					byte[] normBytes = CustomShaderOutput200.MatricesToBytes(data.area.active.rect, r, g, b, null);
+					byte[] normBytes = MatrixOps.MatricesToBytes(data.area.active.rect, r, g, b, null);
 
 					ArrayTools.Add(ref bytes, normBytes);
 					ArrayTools.Add(ref names, "_PerPixelNormal");
