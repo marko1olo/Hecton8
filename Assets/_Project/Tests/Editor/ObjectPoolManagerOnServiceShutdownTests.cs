@@ -24,56 +24,49 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void OnServiceShutdown_RepeatedCalls_DoesNotThrow()
+        public void OnServiceShutdown_RepeatedCalls_UpdatesFlagsCorrectly()
         {
-            // Act & Assert
-            Assert.DoesNotThrow(() =>
-            {
-                _poolManager.OnServiceShutdown();
-                _poolManager.OnServiceShutdown();
-            }, "Repeated calls to OnServiceShutdown should not throw errors.");
-        }
 
-        [Test]
-        public void OnServiceShutdown_SetsServiceShuttingDownFlag()
-        {
-            // Act
+            // Arrange
+            _poolManager.InitializeService();
+
+            Assert.IsTrue(_poolManager.IsServiceReady, "Service should be ready after InitializeService.");
+            Assert.AreEqual(ServiceHeartbeatState.Ready, _poolManager.HeartbeatState, "HeartbeatState should be Ready.");
+
+            // Act - First shutdown
             _poolManager.OnServiceShutdown();
 
-            // Assert
-            var shuttingDownField = typeof(ObjectPoolManager).GetField("_serviceShuttingDown", BindingFlags.NonPublic | BindingFlags.Instance);
-            bool isShuttingDown = (bool)shuttingDownField.GetValue(_poolManager);
+            // Assert - State after first shutdown
+            Assert.IsFalse(_poolManager.IsServiceReady, "Service should not be ready after first shutdown.");
+            Assert.AreEqual(ServiceHeartbeatState.NotStarted, _poolManager.HeartbeatState, "HeartbeatState should be NotStarted after first shutdown.");
 
-            Assert.IsTrue(isShuttingDown, "OnServiceShutdown should set _serviceShuttingDown to true.");
+            var activeRuntimeProp = typeof(ObjectPoolManager).GetProperty("ActiveRuntimeInstance", BindingFlags.NonPublic | BindingFlags.Static);
+            var activeInstance = activeRuntimeProp?.GetValue(null);
+            Assert.IsNull(activeInstance, "ActiveRuntimeInstance should be null after shutdown.");
+
+            // Act - Second shutdown (repeated call)
+            _poolManager.OnServiceShutdown();
+
+            // Assert - State after second shutdown
+            Assert.IsFalse(_poolManager.IsServiceReady, "Service should still not be ready after repeated shutdown.");
+            Assert.AreEqual(ServiceHeartbeatState.NotStarted, _poolManager.HeartbeatState, "HeartbeatState should still be NotStarted after repeated shutdown.");
         }
 
         [Test]
-        public void OnServiceShutdown_SetsServiceRegisteredFlagToFalse()
+        public void OnServiceShutdown_ActiveRuntimeMirror_SetsToNull()
         {
             // Arrange
-            var registeredField = typeof(ObjectPoolManager).GetField("_serviceRegistered", BindingFlags.NonPublic | BindingFlags.Instance);
-            registeredField.SetValue(_poolManager, true);
+            _poolManager.InitializeService();
+
+            // Set mirror manually to ensure it handles the exact match case
+            GlobalRegistry.ObjectPoolRuntimeMirror = _poolManager;
+            Assert.AreEqual(_poolManager, GlobalRegistry.ObjectPoolRuntimeMirror, "Mirror should be set to our instance.");
 
             // Act
             _poolManager.OnServiceShutdown();
 
             // Assert
-            bool isRegistered = (bool)registeredField.GetValue(_poolManager);
-            Assert.IsFalse(isRegistered, "OnServiceShutdown should set _serviceRegistered to false.");
-        }
-
-        [Test]
-        public void OnServiceShutdown_ClearsGlobalRegistryMirror_IfItIsThis()
-        {
-            // Arrange
-            var mirrorProperty = typeof(GlobalRegistry).GetProperty("ObjectPoolRuntimeMirror", BindingFlags.NonPublic | BindingFlags.Static);
-            mirrorProperty?.SetValue(null, _poolManager);
-
-            // Act
-            _poolManager.OnServiceShutdown();
-
-            // Assert
-            Assert.IsNull(mirrorProperty?.GetValue(null), "OnServiceShutdown should set GlobalRegistry.ObjectPoolRuntimeMirror to null if it references the current instance.");
+            Assert.IsNull(GlobalRegistry.ObjectPoolRuntimeMirror, "Mirror should be set to null if it matched this instance.");
         }
     }
 }
