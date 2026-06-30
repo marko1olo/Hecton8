@@ -13,11 +13,15 @@ namespace VLB
         SerializedProperty m_DepthMapResolution = null, m_DepthMapDepth = null, m_LayerMask = null, m_UseOcclusionCulling = null;
         SerializedProperty m_UpdateRate = null, m_WaitXFrames = null;
         TargetList<VolumetricShadowHD> m_Targets;
+        VolumetricLightBeamHD[] m_Beams;
 
         protected override void OnEnable()
         {
             base.OnEnable();
             m_Targets = new TargetList<VolumetricShadowHD>(targets);
+            m_Beams = new VolumetricLightBeamHD[m_Targets.Count];
+            for (int i = 0; i < m_Targets.Count; i++)
+                m_Beams[i] = m_Targets[i].GetComponent<VolumetricLightBeamHD>();
         }
 
         public override void OnInspectorGUI()
@@ -107,7 +111,16 @@ namespace VLB
 
         protected override void GetInfoTips(List<InfoTip> tips)
         {
-            if (m_Targets.HasAtLeastOneTargetWith((VolumetricShadowHD comp) => { return comp.GetComponent<VolumetricLightBeamHD>().jitteringFactor == 0.0f; }))
+            bool hasJittering = false;
+            foreach (var beam in m_Beams)
+            {
+                if (beam != null && beam.jitteringFactor == 0.0f)
+                {
+                    hasJittering = true;
+                    break;
+                }
+            }
+            if (hasJittering)
                 tips.Add(new InfoTip { type = MessageType.Info, message = EditorStrings.Beam.HD.TipJittering });
             base.GetInfoTips(tips);
         }
