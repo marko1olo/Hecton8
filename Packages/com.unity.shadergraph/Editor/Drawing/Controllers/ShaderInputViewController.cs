@@ -1,6 +1,8 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEditor.Graphing;
 using UnityEditor.ShaderGraph.Drawing.Controls;
 using UnityEditor.ShaderGraph.Internal;
@@ -354,6 +356,76 @@ namespace UnityEditor.ShaderGraph.Drawing
             }
         }
 
+
+        List<Node> m_SelectedNodes = new List<Node>();
+
+        internal void OnDragUpdatedEvent(DragUpdatedEvent evt)
+        {
+            if (m_SelectedNodes.Any())
+            {
+                foreach (var node in m_SelectedNodes)
+                {
+                    node.RemoveFromClassList("hovered");
+                }
+                m_SelectedNodes.Clear();
+            }
+        }
+
+        internal void OnMouseHover(EventBase evt, ShaderInput input)
+        {
+            var graphView = m_SgBlackboardField.GetFirstAncestorOfType<MaterialGraphView>();
+            if (graphView == null)
+                return;
+
+            if (evt.eventTypeId == MouseEnterEvent.TypeId())
+            {
+                foreach (var node in graphView.nodes.ToList())
+                {
+                    if (input is AbstractShaderProperty property)
+                    {
+                        if (node.userData is PropertyNode propertyNode)
+                        {
+                            if (propertyNode.property == input)
+                            {
+                                m_SelectedNodes.Add(node);
+                                node.AddToClassList("hovered");
+                            }
+                        }
+                    }
+                    else if (input is ShaderKeyword keyword)
+                    {
+                        if (node.userData is KeywordNode keywordNode)
+                        {
+                            if (keywordNode.keyword == input)
+                            {
+                                m_SelectedNodes.Add(node);
+                                node.AddToClassList("hovered");
+                            }
+                        }
+                    }
+                    else if (input is ShaderDropdown dropdown)
+                    {
+                        if (node.userData is DropdownNode dropdownNode)
+                        {
+                            if (dropdownNode.dropdown == input)
+                            {
+                                m_SelectedNodes.Add(node);
+                                node.AddToClassList("hovered");
+                            }
+                        }
+                    }
+                }
+            }
+            else if (evt.eventTypeId == MouseLeaveEvent.TypeId() && m_SelectedNodes.Any())
+            {
+                foreach (var node in m_SelectedNodes)
+                {
+                    node.RemoveFromClassList("hovered");
+                }
+                m_SelectedNodes.Clear();
+            }
+        }
+
         public override void Dispose()
         {
             if (m_SgBlackboardField == null)
@@ -368,6 +440,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             m_SgBlackboardField.Dispose();
 
             m_BlackboardRowView = null;
+            m_SelectedNodes = null;
             m_SgBlackboardField = null;
         }
     }
