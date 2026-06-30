@@ -163,7 +163,7 @@ namespace Hecton8.Optimization.Editor
                 rec.RenderTexture.format = rec.RecommendedFormat;
                 rec.RenderTexture.Create();
                 
-                Debug.Log($"[FormatOptimizer] Applied format optimization to {rec.RenderTexture.name}: {rec.CurrentFormat} → {rec.RecommendedFormat}");
+                Hecton8.Core.H8Debug.Log($"[FormatOptimizer] Applied format optimization to {rec.RenderTexture.name}: {rec.CurrentFormat} → {rec.RecommendedFormat}");
                 
                 RefreshFormatRecommendations();
             }
@@ -251,7 +251,7 @@ namespace Hecton8.Optimization.Editor
                 rec.RenderTexture.height = rec.RecommendedHeight;
                 rec.RenderTexture.Create();
                 
-                Debug.Log($"[ResolutionAnalyzer] Applied resolution optimization to {rec.RenderTexture.name}: {rec.CurrentWidth}x{rec.CurrentHeight} → {rec.RecommendedWidth}x{rec.RecommendedHeight}");
+                Hecton8.Core.H8Debug.Log($"[ResolutionAnalyzer] Applied resolution optimization to {rec.RenderTexture.name}: {rec.CurrentWidth}x{rec.CurrentHeight} → {rec.RecommendedWidth}x{rec.RecommendedHeight}");
                 
                 RefreshResolutionRecommendations();
             }
