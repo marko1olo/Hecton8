@@ -1,17 +1,12 @@
 {
     "name": "CandiceAIforGames.Tests",
     "rootNamespace": "CandiceAIforGames.Tests",
-    "optionalUnityReferences": [
-        "TestAssemblies"
-    ],
     "references": [
         "CandiceAIforGames.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
