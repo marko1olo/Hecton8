@@ -13460,27 +13460,8 @@ namespace Hecton8.Gameplay
         private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             _velocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
-            if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
-            {
-                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
-                Vector3 brineVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
-                    _velocity,
-                    true,
-                    thrusterActive,
-                    brineSinkMultiplier);
-                Vector3 brineDelta = brineVelocity - _velocity;
-                if (brineDelta.sqrMagnitude > 0.000001f)
-                {
-                    ApplyMotorVelocityChange(brineDelta);
-                    _velocity = brineVelocity;
-                }
-            }
-
-            if (IsCriticallyEncumbered && _velocity.y > 0f)
-            {
-                _velocity.y = 0f;
-                ApplyMotorLinearVelocity(_velocity);
-            }
+            ApplyHeavyBrineSinkEffect();
+            ApplyCriticalEncumbranceVerticalVelocityGate();
 
             float speedSq = _velocity.sqrMagnitude;
             bool isSurfaceSwim = _isSurfaceSwimming;
@@ -13489,47 +13470,24 @@ namespace Hecton8.Gameplay
             float brineSwimSpeedMultiplier = _isInsideBrineLayer ? BrineLayerConstants.SwimSpeedMultiplier : 1f;
             float brineWaterDensityScale = _isInsideBrineLayer ? BrineLayerConstants.DensityMultiplier : 1f;
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based drag increase (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
-            float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
-                _currentDepth,
-                suit.depthSwimSlowdownStart,
-                suit.depthSwimSlowdownEnd,
-                suit.depthDragIncreaseMax);
+            // ─── Depth-based drag increase (v7.0) ───
+            float effectiveDragCoeff = CalculateSwimEffectiveDragCoefficient(suit, isSurfaceSwim);
 
-            float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
-            if (isSurfaceSwim)
-                effectiveDragCoeff *= surfaceDragMultiplier;
-
-            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
-            float sargassumDragMultiplier = ResolveSargassumDragMultiplier();
-            float externalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
-            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
-            effectiveDragCoeff *= sargassumDragMultiplier;
-            effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
-            effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
-            effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
-            effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
             _lastPlayerKinematicsDragCoefficient = effectiveDragCoeff;
             _lastPlayerKinematicsWaterDensityScale = brineWaterDensityScale;
             // Burst scalar water drag: presentation sells turbulence, authority stays replayable.
-            if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
-            {
-                Vector3 dampedVelocity = ResolvePlayerKinematicsBurstDragVelocity(
-                    _velocity,
-                    _lastPlayerKinematicsIntendedMovement,
-                    effectiveDragCoeff,
-                    brineWaterDensityScale,
-                    fixedDeltaTime);
-                ApplyMotorVelocityChange(dampedVelocity - _velocity);
-                _velocity = dampedVelocity;
-            }
+            ApplyBurstScalarWaterDrag(speedSq, effectiveDragCoeff, brineWaterDensityScale, fixedDeltaTime);
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Swim thrust Ã¢â€â‚¬Ã¢â€â‚¬
+            // ─── Swim thrust ───
+            float sargassumSpeedMultiplier = ResolveSargassumSpeedMultiplier();
+            float externalEnvironmentalThrustMultiplier = ResolveExternalEnvironmentalThrustMultiplier();
+
             float rawTransportPropulsionForce =
                 ResolveActiveTransportPropulsionForce() *
                 sargassumSpeedMultiplier *
                 externalEnvironmentalThrustMultiplier *
                 ResolveWipeoutTransportControl01();
+
             float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
             float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
             float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
@@ -13540,7 +13498,7 @@ namespace Hecton8.Gameplay
             if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
                 return;
 
-            // Ã¢â€â‚¬Ã¢â€â‚¬ Depth-based swim force reduction (v7.0) Ã¢â€â‚¬Ã¢â€â‚¬
+            // ─── Depth-based swim force reduction (v7.0) ───
             float depthSlowdown = PlayerSwimMotor.ResolveDepthSlowdown(
                 _currentDepth,
                 suit.depthSwimSlowdownStart,
@@ -13550,18 +13508,11 @@ namespace Hecton8.Gameplay
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
             float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier() * brineSwimSpeedMultiplier;
-            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
-            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
-            effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
-            effectiveSwimForce *= heavyCarryForceMultiplier;
-            effectiveVerticalForce *= heavyCarryForceMultiplier;
-            effectiveSwimForce *= externalEnvironmentalThrustMultiplier;
-            effectiveVerticalForce *= math.lerp(1f, externalEnvironmentalThrustMultiplier, 0.7f);
-            effectiveSwimForce *= sargassumSpeedMultiplier;
-            effectiveVerticalForce *= math.lerp(1f, sargassumSpeedMultiplier, 0.55f);
-            effectiveSwimForce *= shoreSwimBlend;
-            effectiveVerticalForce *= math.lerp(0.45f, 1f, shoreSwimBlend);
+
+            float effectiveSwimForce = CalculateEffectiveSwimForce(suit, depthSlowdown, sprintMult, runtimeSwimSpeedScale, heavyCarryForceMultiplier, externalEnvironmentalThrustMultiplier, sargassumSpeedMultiplier, shoreSwimBlend);
+            float effectiveVerticalForce = CalculateEffectiveVerticalForce(suit, depthSlowdown, sprintMult, runtimeSwimSpeedScale, heavyCarryForceMultiplier, externalEnvironmentalThrustMultiplier, sargassumSpeedMultiplier, shoreSwimBlend);
+
             float transportForwardPitchInfluence = ResolveTransportForwardPitchInfluence(transportPreset);
             float transportStrafeInputScale = ResolveTransportStrafeInputScale(transportPreset);
             float transportVerticalInputScale = ResolveTransportVerticalInputScale(transportPreset);
@@ -13761,6 +13712,94 @@ namespace Hecton8.Gameplay
                 }
             }
         }
+
+        private void ApplyHeavyBrineSinkEffect()
+        {
+            if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
+            {
+                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
+                Vector3 brineVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
+                    _velocity,
+                    true,
+                    thrusterActive,
+                    brineSinkMultiplier);
+                Vector3 brineDelta = brineVelocity - _velocity;
+                if (brineDelta.sqrMagnitude > 0.000001f)
+                {
+                    ApplyMotorVelocityChange(brineDelta);
+                    _velocity = brineVelocity;
+                }
+            }
+        }
+
+        private void ApplyCriticalEncumbranceVerticalVelocityGate()
+        {
+            if (IsCriticallyEncumbered && _velocity.y > 0f)
+            {
+                _velocity.y = 0f;
+                ApplyMotorLinearVelocity(_velocity);
+            }
+        }
+
+        private float CalculateSwimEffectiveDragCoefficient(SuitData suit, bool isSurfaceSwim)
+        {
+            float depthDragAdd = PlayerSwimMotor.ResolveDepthDragAdd(
+                _currentDepth,
+                suit.depthSwimSlowdownStart,
+                suit.depthSwimSlowdownEnd,
+                suit.depthDragIncreaseMax);
+
+            float effectiveDragCoeff = suit.swimDragCoefficient + depthDragAdd;
+            if (isSurfaceSwim)
+                effectiveDragCoeff *= surfaceDragMultiplier;
+
+            float sargassumDragMultiplier = ResolveSargassumDragMultiplier();
+            float externalEnvironmentalDragMultiplier = ResolveExternalEnvironmentalDragMultiplier();
+            effectiveDragCoeff *= sargassumDragMultiplier;
+            effectiveDragCoeff *= externalEnvironmentalDragMultiplier;
+            effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
+            effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
+            effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
+
+            return effectiveDragCoeff;
+        }
+
+        private void ApplyBurstScalarWaterDrag(float speedSq, float effectiveDragCoeff, float brineWaterDensityScale, float fixedDeltaTime)
+        {
+            if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
+            {
+                Vector3 dampedVelocity = ResolvePlayerKinematicsBurstDragVelocity(
+                    _velocity,
+                    _lastPlayerKinematicsIntendedMovement,
+                    effectiveDragCoeff,
+                    brineWaterDensityScale,
+                    fixedDeltaTime);
+                ApplyMotorVelocityChange(dampedVelocity - _velocity);
+                _velocity = dampedVelocity;
+            }
+        }
+
+        private float CalculateEffectiveSwimForce(SuitData suit, float depthSlowdown, float sprintMult, float runtimeSwimSpeedScale, float heavyCarryForceMultiplier, float externalEnvironmentalThrustMultiplier, float sargassumSpeedMultiplier, float shoreSwimBlend)
+        {
+            float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            effectiveSwimForce *= heavyCarryForceMultiplier;
+            effectiveSwimForce *= externalEnvironmentalThrustMultiplier;
+            effectiveSwimForce *= sargassumSpeedMultiplier;
+            effectiveSwimForce *= shoreSwimBlend;
+            return effectiveSwimForce;
+        }
+
+        private float CalculateEffectiveVerticalForce(SuitData suit, float depthSlowdown, float sprintMult, float runtimeSwimSpeedScale, float heavyCarryForceMultiplier, float externalEnvironmentalThrustMultiplier, float sargassumSpeedMultiplier, float shoreSwimBlend)
+        {
+            float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
+            effectiveVerticalForce *= _runtimeInventoryUpwardSwimMultiplier;
+            effectiveVerticalForce *= heavyCarryForceMultiplier;
+            effectiveVerticalForce *= math.lerp(1f, externalEnvironmentalThrustMultiplier, 0.7f);
+            effectiveVerticalForce *= math.lerp(1f, sargassumSpeedMultiplier, 0.55f);
+            effectiveVerticalForce *= math.lerp(0.45f, 1f, shoreSwimBlend);
+            return effectiveVerticalForce;
+        }
+
 
         private bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
         {
