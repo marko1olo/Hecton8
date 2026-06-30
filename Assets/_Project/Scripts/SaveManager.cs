@@ -4886,6 +4886,57 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private bool TryPassSavePreconditions(string inputSlotName, byte slotIndex, uint operationId, out string resolvedSlotName)
+        {
+            resolvedSlotName = inputSlotName;
+            if (_runtimeOwnerAborted || !_serviceRegistered)
+            {
+                uint unavailableSlotHash = ResolveUnavailableSlotContext(inputSlotName, slotIndex, out string unavailableSlotName);
+                LastOperationError = SaveServiceUnavailableReason;
+                LastOperationSlot = unavailableSlotName;
+                SaveEvents.TryRaiseSaveFailed(unavailableSlotHash, SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);
+                PublishSaveStatus(unavailableSlotHash, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
+                return false;
+            }
+
+            if (!TryResolveSafeSlotName(inputSlotName, out string safeSlotName))
+            {
+                LastOperationError = InvalidSlotNameReason;
+                LogWarning("[SaveManager] Ignored save request: invalid slot name.");
+                SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);
+                PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
+                return false;
+            }
+
+            LastOperationSlot = safeSlotName;
+            resolvedSlotName = safeSlotName;
+
+            if (_isBusy)
+            {
+                const string reason = "Save already in progress.";
+                LastOperationError = reason;
+                LogWarning($"[SaveManager] Ignored save request for '{safeSlotName}': {reason}");
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(safeSlotName), SaveEvents.ComputeMessageHash(reason), reason);
+                PublishSaveStatusForSlotName(slotIndex, safeSlotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
+                return false;
+            }
+
+            if (TryRejectSaveDuringRespawnReconciliation(slotIndex, operationId, safeSlotName))
+                return false;
+
+            if (HectonFloatingOrigin.IsShiftInProgress || HectonFloatingOrigin.IsPhysicsPausedForShift)
+            {
+                const string reason = "Save blocked during floating-origin shift.";
+                LastOperationError = reason;
+                LogWarning($"[SaveManager] Ignored save request for '{safeSlotName}': {reason}");
+                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(safeSlotName), SaveEvents.ComputeMessageHash(reason), reason);
+                PublishSaveStatusForSlotName(slotIndex, safeSlotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
+                return false;
+            }
+
+            return true;
+        }
+
         private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
         {
             CachePersistentDataPathRoot();
@@ -4897,49 +4948,8 @@ namespace Hecton8.SaveSystem
             LastLoadSelfRepaired = false;
             LastLoadUsedLegacyCompression = false;
 
-            if (_runtimeOwnerAborted || !_serviceRegistered)
-            {
-                uint unavailableSlotHash = ResolveUnavailableSlotContext(slotName, slotIndex, out string unavailableSlotName);
-                LastOperationError = SaveServiceUnavailableReason;
-                LastOperationSlot = unavailableSlotName;
-                SaveEvents.TryRaiseSaveFailed(unavailableSlotHash, SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);
-                PublishSaveStatus(unavailableSlotHash, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
+            if (!TryPassSavePreconditions(slotName, slotIndex, operationId, out slotName))
                 return;
-            }
-
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-            {
-                LastOperationError = InvalidSlotNameReason;
-                LogWarning("[SaveManager] Ignored save request: invalid slot name.");
-                SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);
-                PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
-                return;
-            }
-
-            LastOperationSlot = slotName;
-
-            if (_isBusy)
-            {
-                const string reason = "Save already in progress.";
-                LastOperationError = reason;
-                LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
-                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
-                return;
-            }
-
-            if (TryRejectSaveDuringRespawnReconciliation(slotIndex, operationId, slotName))
-                return;
-
-            if (HectonFloatingOrigin.IsShiftInProgress || HectonFloatingOrigin.IsPhysicsPausedForShift)
-            {
-                const string reason = "Save blocked during floating-origin shift.";
-                LastOperationError = reason;
-                LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
-                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));
-                return;
-            }
 
             _isBusy = true;
             Exception startupException = null;
