@@ -8871,27 +8871,51 @@ namespace Hecton8.Gameplay
 
             if (!active)
             {
-                _vrSnapTurnFadeTimer = 0f;
-                _vrComfortVignette01 = math.lerp(_vrComfortVignette01, 0f, settleT);
-                _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
-                _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, 0f, settleT);
-                _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
-                _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, 0f, settleT);
-                _vrComfortSway.x = math.lerp(_vrComfortSway.x, 0f, settleT);
-                _vrComfortSway.y = math.lerp(_vrComfortSway.y, 0f, settleT);
-                _vrComfortMotionVector.x = math.lerp(_vrComfortMotionVector.x, 0f, settleT);
-                _vrComfortMotionVector.y = math.lerp(_vrComfortMotionVector.y, 0f, settleT);
-                ApplyVrComfortShaderSignals(
-                    false,
-                    _vrComfortVignette01,
-                    _vrComfortVisualBounce01,
-                    _vrComfortPeripheralBlur01,
-                    _vrComfortSway,
-                    _vrComfortVelocitySq01,
-                    _vrComfortMotionVector);
+                UpdateInactiveVrComfortSignals(settleT);
                 return;
             }
 
+            UpdateActiveVrComfortSignals(
+                safeDeltaTime,
+                invSafeDeltaTime,
+                comfortModeActive,
+                safeComfortVelocity,
+                safeYawDeltaDegrees,
+                settleT,
+                frameRateVignette01);
+        }
+
+        private void UpdateInactiveVrComfortSignals(float settleT)
+        {
+            _vrSnapTurnFadeTimer = 0f;
+            _vrComfortVignette01 = math.lerp(_vrComfortVignette01, 0f, settleT);
+            _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
+            _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, 0f, settleT);
+            _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
+            _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, 0f, settleT);
+            _vrComfortSway.x = math.lerp(_vrComfortSway.x, 0f, settleT);
+            _vrComfortSway.y = math.lerp(_vrComfortSway.y, 0f, settleT);
+            _vrComfortMotionVector.x = math.lerp(_vrComfortMotionVector.x, 0f, settleT);
+            _vrComfortMotionVector.y = math.lerp(_vrComfortMotionVector.y, 0f, settleT);
+            ApplyVrComfortShaderSignals(
+                false,
+                _vrComfortVignette01,
+                _vrComfortVisualBounce01,
+                _vrComfortPeripheralBlur01,
+                _vrComfortSway,
+                _vrComfortVelocitySq01,
+                _vrComfortMotionVector);
+        }
+
+        private void UpdateActiveVrComfortSignals(
+            float safeDeltaTime,
+            float invSafeDeltaTime,
+            bool comfortModeActive,
+            Vector3 safeComfortVelocity,
+            float safeYawDeltaDegrees,
+            float settleT,
+            float frameRateVignette01)
+        {
             float yawRate = comfortModeActive ? math.abs(safeYawDeltaDegrees) * invSafeDeltaTime : 0f;
             float yawRate01 = math.saturate(yawRate * math.rcp(math.max(1f, vrComfortYawRateReference)));
             float speedReference = math.max(0.25f, vrComfortHighSpeedMetersPerSecond);
@@ -8932,21 +8956,13 @@ namespace Hecton8.Gameplay
             _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
             _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, velocitySq01, vignetteT);
 
-            float targetSwayX = 0f;
-            float targetSwayY = 0f;
-            float targetMotionX = 0f;
-            float targetMotionY = 0f;
-            if (velocitySq > 0.0001f)
-            {
-                Vector3 localVelocity = _cachedTransform != null
-                    ? _cachedTransform.InverseTransformDirection(safeComfortVelocity)
-                    : safeComfortVelocity;
-                float invSpeed = math.rsqrt(math.max(velocitySq, 0.000001f));
-                targetSwayX = -math.clamp(localVelocity.x * invSpeed, -1f, 1f) * 0.35f;
-                targetSwayY = -math.clamp(localVelocity.y * invSpeed, -1f, 1f) * 0.22f;
-                targetMotionX = math.clamp(localVelocity.x * invSpeed, -1f, 1f);
-                targetMotionY = math.clamp(localVelocity.y * invSpeed, -1f, 1f);
-            }
+            CalculateVrComfortSwayAndMotion(
+                velocitySq,
+                safeComfortVelocity,
+                out float targetSwayX,
+                out float targetSwayY,
+                out float targetMotionX,
+                out float targetMotionY);
 
             _vrComfortSway.x = math.lerp(_vrComfortSway.x, targetSwayX, vignetteT);
             _vrComfortSway.y = math.lerp(_vrComfortSway.y, targetSwayY, vignetteT);
@@ -8961,6 +8977,32 @@ namespace Hecton8.Gameplay
                 _vrComfortSway,
                 _vrComfortVelocitySq01,
                 _vrComfortMotionVector);
+        }
+
+        private void CalculateVrComfortSwayAndMotion(
+            float velocitySq,
+            Vector3 safeComfortVelocity,
+            out float targetSwayX,
+            out float targetSwayY,
+            out float targetMotionX,
+            out float targetMotionY)
+        {
+            targetSwayX = 0f;
+            targetSwayY = 0f;
+            targetMotionX = 0f;
+            targetMotionY = 0f;
+
+            if (velocitySq > 0.0001f)
+            {
+                Vector3 localVelocity = _cachedTransform != null
+                    ? _cachedTransform.InverseTransformDirection(safeComfortVelocity)
+                    : safeComfortVelocity;
+                float invSpeed = math.rsqrt(math.max(velocitySq, 0.000001f));
+                targetSwayX = -math.clamp(localVelocity.x * invSpeed, -1f, 1f) * 0.35f;
+                targetSwayY = -math.clamp(localVelocity.y * invSpeed, -1f, 1f) * 0.22f;
+                targetMotionX = math.clamp(localVelocity.x * invSpeed, -1f, 1f);
+                targetMotionY = math.clamp(localVelocity.y * invSpeed, -1f, 1f);
+            }
         }
 
         private void InvalidateVrComfortShaderPublishCache()
