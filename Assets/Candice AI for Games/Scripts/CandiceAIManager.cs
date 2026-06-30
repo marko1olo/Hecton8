@@ -167,10 +167,6 @@ namespace CandiceAIforGames.AI
         {
             //CandiceConfig.enableDebug = enableDebug;
             instance = this;
-            if (grid == null)
-            {
-                grid = GetComponent<CandiceGrid>();
-            }
             if (grid != null)
             {
                 pathFinding = new CandicePathFinding(grid);
