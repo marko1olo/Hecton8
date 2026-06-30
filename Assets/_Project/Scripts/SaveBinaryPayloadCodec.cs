@@ -5261,7 +5261,25 @@ namespace Hecton8.SaveSystem
         private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)
         {
             value = default;
-            bool ok = reader.ReadString(out value.prefabId)
+
+            if (!ReadModuleBaseProperties(ref reader, ref value))
+                return false;
+
+            if (!ReadModuleRecyclerProperties(ref reader, version, ref value))
+                return false;
+
+            if (!ReadModuleStorageCrateProperties(ref reader, version, ref value))
+                return false;
+
+            if (!ReadModulePhysicalAndStatusProperties(ref reader, version, ref value))
+                return false;
+
+            return ReadModuleCultivationAndFabricatorProperties(ref reader, version, ref value);
+        }
+
+        private static bool ReadModuleBaseProperties(ref BufferReader reader, ref ModuleDTO value)
+        {
+            return reader.ReadString(out value.prefabId)
                 && reader.ReadString(out value.slottedToolItemId)
                 && reader.ReadString(out value.pipeInFlightItemId)
                 && reader.ReadInt(out value.pipeInFlightAmount)
@@ -5280,12 +5298,13 @@ namespace Hecton8.SaveSystem
                     out value.sorterBufferedQuantities,
                     ModuleSorterBufferSlotMax,
                     nameof(value.sorterBufferedQuantities));
-            if (!ok)
-                return false;
+        }
 
+        private static bool ReadModuleRecyclerProperties(ref BufferReader reader, int version, ref ModuleDTO value)
+        {
             if (version >= ResourceRecyclerModuleSaveVersion)
             {
-                ok = reader.ReadInt(out value.recyclerBufferedSlotCount)
+                return reader.ReadInt(out value.recyclerBufferedSlotCount)
                     && ReadStringArray(
                         ref reader,
                         out value.recyclerBufferedItemIds,
@@ -5306,23 +5325,23 @@ namespace Hecton8.SaveSystem
                         out value.recyclerPendingYieldQuantities,
                         ModuleRecyclerPendingYieldSlotMax,
                         nameof(value.recyclerPendingYieldQuantities));
-                if (!ok)
-                    return false;
-            }
-            else
-            {
-                value.recyclerBufferedSlotCount = 0;
-                value.recyclerBufferedItemIds = null;
-                value.recyclerBufferedQuantities = null;
-                value.recyclerActiveSourceItemId = string.Empty;
-                value.recyclerPendingYieldSlotCount = 0;
-                value.recyclerPendingYieldItemIds = null;
-                value.recyclerPendingYieldQuantities = null;
             }
 
+            value.recyclerBufferedSlotCount = 0;
+            value.recyclerBufferedItemIds = null;
+            value.recyclerBufferedQuantities = null;
+            value.recyclerActiveSourceItemId = string.Empty;
+            value.recyclerPendingYieldSlotCount = 0;
+            value.recyclerPendingYieldItemIds = null;
+            value.recyclerPendingYieldQuantities = null;
+            return true;
+        }
+
+        private static bool ReadModuleStorageCrateProperties(ref BufferReader reader, int version, ref ModuleDTO value)
+        {
             if (version >= StorageCrateModuleSaveVersion)
             {
-                ok = reader.ReadBool(out value.storageCrateContentsSerialized)
+                return reader.ReadBool(out value.storageCrateContentsSerialized)
                     && reader.ReadInt(out value.storageCrateSlotCount)
                     && ReadStringArray(
                         ref reader,
@@ -5333,18 +5352,18 @@ namespace Hecton8.SaveSystem
                         out value.storageCrateQuantities,
                         ModuleStorageCrateSlotMax,
                         nameof(value.storageCrateQuantities));
-                if (!ok)
-                    return false;
-            }
-            else
-            {
-                value.storageCrateContentsSerialized = false;
-                value.storageCrateSlotCount = 0;
-                value.storageCrateItemIds = null;
-                value.storageCrateQuantities = null;
             }
 
-            ok = reader.ReadFloat(out value.posX)
+            value.storageCrateContentsSerialized = false;
+            value.storageCrateSlotCount = 0;
+            value.storageCrateItemIds = null;
+            value.storageCrateQuantities = null;
+            return true;
+        }
+
+        private static bool ReadModulePhysicalAndStatusProperties(ref BufferReader reader, int version, ref ModuleDTO value)
+        {
+            bool ok = reader.ReadFloat(out value.posX)
                 && reader.ReadFloat(out value.posY)
                 && reader.ReadFloat(out value.posZ)
                 && reader.ReadFloat(out value.rotX)
@@ -5357,6 +5376,7 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.co2Normalized)
                 && reader.ReadBool(out value.isFlooded)
                 && reader.ReadByte(out value.failureMode);
+
             if (!ok)
                 return false;
 
@@ -5384,6 +5404,11 @@ namespace Hecton8.SaveSystem
                 value.interiorReefInfestationActive = false;
             }
 
+            return true;
+        }
+
+        private static bool ReadModuleCultivationAndFabricatorProperties(ref BufferReader reader, int version, ref ModuleDTO value)
+        {
             if (version < 48)
             {
                 value.cultivationSlotCount = 0;
@@ -5396,7 +5421,7 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            ok = reader.ReadInt(out value.cultivationSlotCount)
+            bool ok = reader.ReadInt(out value.cultivationSlotCount)
                 && ReadStringArray(
                     ref reader,
                     out value.cultivationSeedItemIds,
@@ -5415,6 +5440,7 @@ namespace Hecton8.SaveSystem
                     out value.cultivationGrowth01,
                     ModuleCultivationSlotMax,
                     nameof(value.cultivationGrowth01));
+
             if (!ok)
                 return false;
 
