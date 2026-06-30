@@ -69,5 +69,40 @@ namespace Hecton8.Tests.Editor
             GameObject second = _manager.Spawn(_prefab, Vector3.zero, Quaternion.identity, false);
             Assert.IsNull(second, "Second spawn from exhausted pool should return null.");
         }
+
+        [Test]
+        public void Spawn_GameObject_WithNullPrefab_AndRotation_ReturnsNull()
+        {
+            GameObject result = _manager.Spawn((GameObject)null, Vector3.zero, Quaternion.identity);
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void Spawn_Component_WithNullPrefab_AndRotation_ReturnsNull()
+        {
+            GameObject result = _manager.Spawn((Component)null, Vector3.zero, Quaternion.identity);
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void Spawn_Component_WithNullPrefab_AndRotation_AndAllowExpand_ReturnsNull()
+        {
+            GameObject result = _manager.Spawn((Component)null, Vector3.zero, Quaternion.identity, true);
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void Spawn_GameObject_WithNullPrefab_NoRotation_ReturnsNull()
+        {
+            GameObject result = _manager.Spawn((GameObject)null, Vector3.zero);
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public void Spawn_Component_WithNullPrefab_NoRotation_ReturnsNull()
+        {
+            GameObject result = _manager.Spawn((Component)null, Vector3.zero);
+            Assert.IsNull(result);
+        }
     }
 }
