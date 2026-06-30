@@ -19,7 +19,7 @@ public class MB2_UpdateSkinnedMeshBoundsFromBounds : MonoBehaviour {
 				return;
 			}
 			for (int i = 0; i < objects.Count; i++){
-				if (objects[i] == null || objects[i].GetComponent<Renderer>() == null){
+				if (objects[i] == null || !objects[i].TryGetComponent<Renderer>(out _)){
 					Debug.LogError("The list of objects had nulls or game objects without a renderer attached at position " + i);
 					smr = null;
 					return;
