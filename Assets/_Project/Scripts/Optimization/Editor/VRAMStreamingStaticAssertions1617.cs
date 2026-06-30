@@ -16,7 +16,7 @@ namespace Hecton8.Optimization.Editor
             AssertGraphicsBufferUploadBudgetCurve();
             AssertCoreUploadUtilityUsesBudgetGate();
             AssertProceduralGpuUploadsUseBudgetGate();
-            Debug.Log("[VRAMStreamingStaticAssertions1617] Static VRAM streaming assertions passed.");
+            Hecton8.Core.H8Debug.Log("[VRAMStreamingStaticAssertions1617] Static VRAM streaming assertions passed.");
         }
 
         private static void AssertMipBiasCurve()
