@@ -158,6 +158,7 @@ namespace Crest
 
                 _underwaterEffectCommandBuffer.GetTemporaryRT(ShaderIDs.s_CrestWaterVolumeStencil, descriptor);
 
+#if UNITY_2020_3
                 // Use blit for MSAA. We should be able to use CopyTexture. Might be the following bug:
                 // https://issuetracker.unity3d.com/product/unity/issues/guid/1308132
                 if (Helpers.IsMSAAEnabled(_camera))
@@ -166,6 +167,7 @@ namespace Crest
                     Helpers.Blit(_underwaterEffectCommandBuffer, _depthStencilTarget, Helpers.UtilityMaterial, (int)Helpers.UtilityPass.CopyDepth);
                 }
                 else
+#endif
                 {
                     // Copy depth then clear stencil.
                     _underwaterEffectCommandBuffer.CopyTexture(BuiltinRenderTextureType.Depth, _depthStencilTarget);
