@@ -42,7 +42,7 @@ namespace Hecton8.Optimization.Editor
         private static void RunMenu()
         {
             Verify();
-            Debug.Log("Agent 1617 APEX integrator verification passed.");
+            Hecton8.Core.H8Debug.Log("Agent 1617 APEX integrator verification passed.");
         }
 
         internal static void Verify()
