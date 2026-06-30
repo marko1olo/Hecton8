@@ -18,51 +18,56 @@ namespace Hecton8.BlackboxDiagnostics
 
         // ── 1. Project Metadata ──────────────────────────────────────────────
 
+        internal static Action<H8ProjectMetadata> PopulateProjectMetadata = (meta) =>
+        {
+            meta.unityVersion = Application.unityVersion;
+            meta.projectPath = H8Utils.GetProjectRoot();
+            meta.platform = Application.platform.ToString();
+            meta.buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
+            meta.qualityLevelIndex = QualitySettings.GetQualityLevel();
+            meta.qualityLevelName = QualitySettings.names.Length > meta.qualityLevelIndex
+                ? QualitySettings.names[meta.qualityLevelIndex]
+                : "Unknown";
+
+            // Render pipeline references (safe null checks)
+            var currentRP = GraphicsSettings.currentRenderPipeline;
+            meta.currentRenderPipeline = currentRP != null ? currentRP.name : "null";
+
+            var defaultRP = GraphicsSettings.defaultRenderPipeline;
+            meta.defaultRenderPipeline = defaultRP != null ? defaultRP.name : "null";
+
+            var qualityRP = QualitySettings.renderPipeline;
+            meta.qualityRenderPipeline = qualityRP != null ? qualityRP.name : "null";
+
+            // Package versions from manifest.json
+            meta.packageVersions = ReadPackageVersions();
+
+            // Build scenes
+            foreach (var scene in EditorBuildSettings.scenes)
+            {
+                string entry = scene.enabled
+                    ? scene.path
+                    : $"{scene.path} (disabled)";
+                meta.buildScenes.Add(entry);
+            }
+
+            // Active and loaded scenes
+            var activeScene = SceneManager.GetActiveScene();
+            meta.activeScene = activeScene.name;
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var s = SceneManager.GetSceneAt(i);
+                if (s.isLoaded)
+                    meta.loadedScenes.Add(s.name);
+            }
+        };
+
         public static H8ProjectMetadata CollectProjectMetadata(H8DiagnosticOptions opts)
         {
             var meta = new H8ProjectMetadata();
             try
             {
-                meta.unityVersion = Application.unityVersion;
-                meta.projectPath = H8Utils.GetProjectRoot();
-                meta.platform = Application.platform.ToString();
-                meta.buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
-                meta.qualityLevelIndex = QualitySettings.GetQualityLevel();
-                meta.qualityLevelName = QualitySettings.names.Length > meta.qualityLevelIndex
-                    ? QualitySettings.names[meta.qualityLevelIndex]
-                    : "Unknown";
-
-                // Render pipeline references (safe null checks)
-                var currentRP = GraphicsSettings.currentRenderPipeline;
-                meta.currentRenderPipeline = currentRP != null ? currentRP.name : "null";
-
-                var defaultRP = GraphicsSettings.defaultRenderPipeline;
-                meta.defaultRenderPipeline = defaultRP != null ? defaultRP.name : "null";
-
-                var qualityRP = QualitySettings.renderPipeline;
-                meta.qualityRenderPipeline = qualityRP != null ? qualityRP.name : "null";
-
-                // Package versions from manifest.json
-                meta.packageVersions = ReadPackageVersions();
-
-                // Build scenes
-                foreach (var scene in EditorBuildSettings.scenes)
-                {
-                    string entry = scene.enabled
-                        ? scene.path
-                        : $"{scene.path} (disabled)";
-                    meta.buildScenes.Add(entry);
-                }
-
-                // Active and loaded scenes
-                var activeScene = SceneManager.GetActiveScene();
-                meta.activeScene = activeScene.name;
-                for (int i = 0; i < SceneManager.sceneCount; i++)
-                {
-                    var s = SceneManager.GetSceneAt(i);
-                    if (s.isLoaded)
-                        meta.loadedScenes.Add(s.name);
-                }
+                PopulateProjectMetadata(meta);
             }
             catch (Exception e)
             {
