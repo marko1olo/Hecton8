@@ -257,11 +257,28 @@ inline void GetPerimeterDistance( VertexOutput i, out float dist, out float dist
     float2 vThis = v[sector];
     float2 vNext = v[sectorNext];
 
-    // todo: distinguish between linear and actual curved dist when roundness is involved
+    // distinguish between linear and actual curved dist when roundness is involved
     // this is linear dist along the edge, from the inner points! not actual triangle edges
     bool hasLinearDist = roundness <= BASICALLY_A_CIRCLE_ROUNDNESS;
     float linearDist = hasLinearDist ? dot(p-vThis, vNext-vThis)/max(0.00001,dists[sector]) : 0;
-    float3 edgeDists = dists + (arcLengths+arcLengths.yzx)/2; // edge dists is dist + rounded sections
+
+    float tLocal = hasLinearDist ? linearDist / max(0.00001,dists[sector]) : sign(dot(tangents[sector],p));
+
+    // calculate actual radius based on the fragment's distance
+    float2 tangentDir = length(vNext - vThis) > 0.00001 ? normalize(vNext - vThis) : float2(1,0);
+    float actualRadius = roundnessRadius;
+    if( roundness > 0 ) {
+        if( tLocal < 0 ) {
+            actualRadius = length(p - vThis);
+        } else if( tLocal >= 1 ) {
+            actualRadius = length(p - vNext);
+        } else {
+            actualRadius = abs(Determinant(tangentDir, p - vThis));
+        }
+    }
+
+    float3 actualArcLengths = arcAngles * actualRadius;
+    float3 edgeDists = dists + (actualArcLengths+actualArcLengths.yzx)/2; // edge dists is dist + rounded sections
     float localDist = linearDist; // only if non-rounded
 
 
@@ -271,8 +288,6 @@ inline void GetPerimeterDistance( VertexOutput i, out float dist, out float dist
 
     if( roundness > 0 ) {
         // shit gets complicated oh boy
-        float tLocal = hasLinearDist ? linearDist / max(0.00001,dists[sector]) : sign(dot(tangents[sector],p));
-
         if( tLocal < 0 || tLocal >= 1 ) { // >= here to include fully rounded sign == 1 case
             float2 pivotCorner = tLocal < 0 ? vThis : vNext;
             float2 relVec = p - pivotCorner;
@@ -280,13 +295,13 @@ inline void GetPerimeterDistance( VertexOutput i, out float dist, out float dist
             // we don't need to scale by inradius to get arc length here,
             // I think, since inradius == 1 in our coord system
             float ang = acos(clamp(Determinant(tangents[sector], normalize(relVec)),-1,1));
-            float angArcLen = ang*roundnessRadius;
+            float angArcLen = ang*actualRadius;
             if( tLocal < 0 )
-                localDist = arcLengths[sector]/2 - angArcLen;
+                localDist = actualArcLengths[sector]/2 - angArcLen;
             else // if( tLocal > 1 )
-                localDist = arcLengths[sector]/2 + dists[sector] + angArcLen;
+                localDist = actualArcLengths[sector]/2 + dists[sector] + angArcLen;
         } else {
-            localDist = arcLengths[sector]/2 + linearDist;
+            localDist = actualArcLengths[sector]/2 + linearDist;
         }
             
     }
