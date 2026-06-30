@@ -202,9 +202,10 @@ namespace UnityEditor.ShaderGraph.ProviderSystem.Tests
             var searchBase = new TestProvider("base", Hints.Func.kSearchCategory, "This/Is/A/Category");
             DoOneHintTest(reg, searchBase, true, "This/Is/A/Category", false, values, messages, Hints.Func.kSearchCategory);
 
-            // Doesn't work on Mac; probably due to ADB warmup issues; TODO: determine why and correct this.
-            //var searchPath = new TestProvider("path", kAllHintsPath, null);
-            //DoOneHintTest(reg, searchPath, true, $"Reflected by Path/{kAllHintsPath}", false, values, messages, Hints.Func.kSearchCategory);
+
+            var path = "Packages/com.unity.shadergraph/Tests/Editor/ProviderTests/StrongHintTests.cs";
+            var searchPath = new TestProvider("path", path, null);
+            DoOneHintTest(reg, searchPath, true, $"Reflected by Path/{path}", false, values, messages, Hints.Func.kSearchCategory);
 
             // namespace should trump the file path fallback
             var searchNamespace = new TestProvider("namespace", kAllHintsPath, new string[] { "NamespaceA", "NamespaceB" });
