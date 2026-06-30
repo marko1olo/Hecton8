@@ -22,5 +22,6 @@ namespace JBooth.MicroSplat
             string name,
             string baseName);
       string GetVersion();
+      bool HasRenderLoopFeature(string[] features);
    }
 }

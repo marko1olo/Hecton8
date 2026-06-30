@@ -33,6 +33,15 @@ namespace JBooth.MicroSplat
          return MicroSplatShaderGUI.MicroSplatVersion;
       }
 
+      public bool HasRenderLoopFeature(string[] features)
+      {
+         if (features.Contains(GetRenderLoopKeyword()))
+         {
+             return true;
+         }
+         return false;
+      }
+
       MicroSplatGenerator gen;
 
       TextAsset templateStandard;

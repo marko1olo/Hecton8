@@ -29,6 +29,15 @@ namespace JBooth.MicroSplat
          return "3.9";
       }
 
+      public bool HasRenderLoopFeature(string[] features)
+      {
+         if (features.Contains(GetRenderLoopKeyword()))
+         {
+             return true;
+         }
+         return false;
+      }
+
       MicroSplatGenerator gen;
 
       TextAsset templateURP;
