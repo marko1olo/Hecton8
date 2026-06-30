@@ -92,17 +92,17 @@ namespace Shapes {
 					Vector3 gizDown = -gizUp;
 
 					( Vector3 a, Vector3 b )[] gizDirs = {
-						( gizRight, gizUp ),
-						( gizDown, gizRight ),
 						( gizLeft, gizDown ),
+						( gizDown, gizRight ),
+						( gizRight, gizUp ),
 						( gizUp, gizLeft )
 					};
 
 					Vector2 rectBl = RectBottomLeft();
 					Vector3[] gizCorners = {
-						RectToGizmo( rectBl ),
-						RectToGizmo( rectBl + Vector2.up * rect.Height ),
 						RectToGizmo( rectBl + Vector2.up * rect.Height + Vector2.right * rect.Width ),
+						RectToGizmo( rectBl + Vector2.up * rect.Height ),
+						RectToGizmo( rectBl ),
 						RectToGizmo( rectBl + Vector2.right * rect.Width )
 					};
 

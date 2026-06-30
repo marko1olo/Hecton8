@@ -128,7 +128,7 @@ inline void GetPerimeterDistance( VertexOutput i, out float perimeterDistance, o
 	half borderPivot = 0; // PIVOT: 0 = outer, 0.5 = center, 1 = inner
 	half borderOffset = borderPivot * thickness;
 	bool snapEndToEnd = PROP(_DashSnap) == DASH_SNAP_ENDTOEND;
-	radii = radii.zyxw - borderOffset; // todo: this is gross I hate this pls breaking change to fix maybe?
+	radii = radii - borderOffset;
 	uint quadrant = GetQuadrant( pt );
 	uint quadrantPrev = (quadrant+3)%4;
 	float2 p = QuadrantRotate( pt );
@@ -201,7 +201,7 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
 	    fixed2 sgn = sign(i.IP_nrmCoord);
 	    half maxRadius = min(i.IP_rect.z, i.IP_rect.w) / 2;
 	    cornerRadii = min( cornerRadii, maxRadius ); // clamp all radii
-		int rComp = sgn.x-0.5*sgn.x*sgn.y+1.5; // thanks @khyperia <3
+		int rComp = -sgn.y + ( -sgn.x * sgn.y + 3 ) / 2;
 	    half cornerRadius = cornerRadii[rComp];
     #else
 		half4 cornerRadii = half4(0,0,0,0);
