@@ -10,6 +10,10 @@ namespace VLB
 {
     public class ShaderGenerator : ScriptableObject
     {
+#if UNITY_EDITOR
+        internal static System.Action<string, string> mockWriteAllText;
+#endif
+
         [SerializeField] TextAsset m_Base = null;
         TextAsset textAssetBase { get { return m_Base; } }
 
@@ -294,7 +298,16 @@ namespace VLB
                 var outputFullPath = Path.Combine(outputFolderPath, GetShaderAssetName(shaderMode));
                 try
                 {
-                    File.WriteAllText(outputFullPath, code);
+#if UNITY_EDITOR
+                    if (mockWriteAllText != null)
+                    {
+                        mockWriteAllText(outputFullPath, code);
+                    }
+                    else
+#endif
+                    {
+                        File.WriteAllText(outputFullPath, code);
+                    }
                 }
                 catch (System.Exception ex)
                 {
