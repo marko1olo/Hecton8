@@ -356,17 +356,15 @@ public static class ModuleStatusEvents
     /// Enqueues a module enter notification. Called from <see cref="BaseModule"/>.
     /// </summary>
     /// <param name="module">Entered module.</param>
-    [System.Obsolete("Use TryNotifyEnter(BaseModule) so bounded enqueue refusal is visible.", true)]
-    public static void NotifyEnter(BaseModule module)
-    {
-        TryNotifyEnter(module);
-    }
-
     public static bool TryNotifyEnter(BaseModule module)
     {
         return Enqueue(ModuleStatusEventType.Enter, module);
     }
 
+    /// <summary>
+    /// Enqueues a module exit notification. Called from <see cref="BaseModule"/>.
+    /// </summary>
+    /// <param name="module">Exited module.</param>
     public static bool TryNotifyExit(BaseModule module)
     {
         return Enqueue(ModuleStatusEventType.Exit, module);
