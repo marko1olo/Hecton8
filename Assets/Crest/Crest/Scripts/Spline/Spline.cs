@@ -171,14 +171,27 @@ namespace Crest.Spline
             }
 #endif
 
+            var allPoints = GetComponentsInChildren<SplinePoint>(true);
+
             for (int i = 0; i < transform.childCount; i++)
             {
-                if (!transform.GetChild(i).TryGetComponent<SplinePoint>(out _))
+                var child = transform.GetChild(i);
+                bool hasPoint = false;
+                for (int j = 0; j < allPoints.Length; j++)
+                {
+                    if (allPoints[j].transform == child)
+                    {
+                        hasPoint = true;
+                        break;
+                    }
+                }
+
+                if (!hasPoint)
                 {
                     showMessage
                     (
-                        $"All child GameObjects under <i>Spline</i> must have <i>SplinePoint</i> component added. Object <i>{transform.GetChild(i).gameObject.name}</i> does not have one.",
-                        $"Add a <i>SplinePoint</i> component to object {transform.GetChild(i).gameObject.name}, or move this object out in the hierarchy.",
+                        $"All child GameObjects under <i>Spline</i> must have <i>SplinePoint</i> component added. Object <i>{child.gameObject.name}</i> does not have one.",
+                        $"Add a <i>SplinePoint</i> component to object {child.gameObject.name}, or move this object out in the hierarchy.",
                         ValidatedHelper.MessageType.Error, this
                     );
 
