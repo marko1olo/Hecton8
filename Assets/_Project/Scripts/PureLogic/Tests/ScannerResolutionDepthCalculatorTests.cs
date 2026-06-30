@@ -12,6 +12,7 @@ namespace Hecton8.PureLogic.Tests
         public void Test_HappyPath_Case01()
         {
             float result = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, 10f, 90f);
+
             Assert.That(result, Is.EqualTo(0.9f * 0.9f).Within(0.0001f));
         }
 
@@ -19,6 +20,7 @@ namespace Hecton8.PureLogic.Tests
         public void Test_Boundary_Case02()
         {
             float resultEdge = ScannerResolutionDepthCalculator.ComputeSqr(10000f, 10000f, 0f, 100f);
+
             Assert.That(resultEdge, Is.EqualTo(0f));
 
             float resultZeroNoise = ScannerResolutionDepthCalculator.ComputeSqr(0f, 10000f, 0f, 10f);
@@ -32,6 +34,7 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(resultZeroRange, Is.EqualTo(0f));
 
             float resultZeroPowerNoise = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, 0f, 0f);
+
             Assert.That(resultZeroPowerNoise, Is.EqualTo(0f));
         }
 
@@ -39,6 +42,7 @@ namespace Hecton8.PureLogic.Tests
         public void Test_NegativeInputs_Case04()
         {
             float resultNegDist = ScannerResolutionDepthCalculator.ComputeSqr(-10f, 10000f, 10f, 90f);
+
             Assert.That(resultNegDist, Is.EqualTo(1f * 0.9f).Within(0.0001f));
 
             float resultNegNoise = ScannerResolutionDepthCalculator.ComputeSqr(0f, 10000f, -50f, 100f);
@@ -52,6 +56,7 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(resultNan, Is.EqualTo(0f));
 
             float resultInf = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, float.PositiveInfinity, 10f);
+
             Assert.That(resultInf, Is.EqualTo(0f));
         }
     }

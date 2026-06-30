@@ -9,6 +9,7 @@ namespace Hecton8.PureLogic.Systems
         {
             if (float.IsNaN(sqrTargetDistance) || float.IsInfinity(sqrTargetDistance) ||
                 float.IsNaN(sqrMaxScanRange) || float.IsInfinity(sqrMaxScanRange) ||
+
                 float.IsNaN(ambientNoiseLevel) || float.IsInfinity(ambientNoiseLevel) ||
                 float.IsNaN(scannerPower) || float.IsInfinity(scannerPower))
             {
@@ -20,6 +21,7 @@ namespace Hecton8.PureLogic.Systems
             float clampedDistanceSqr = Math.Max(0f, sqrTargetDistance);
             if (clampedDistanceSqr >= sqrMaxScanRange) return 0f;
 
+
             float clampedNoise = Math.Max(0f, ambientNoiseLevel);
             float clampedPower = Math.Max(0f, scannerPower);
 
@@ -27,6 +29,7 @@ namespace Hecton8.PureLogic.Systems
             if (clampedPower == 0f) return 0f;
 
             float distanceFactor = 1f - (float)Math.Sqrt(clampedDistanceSqr / sqrMaxScanRange);
+
             float signalToNoise = clampedPower / (clampedPower + clampedNoise);
 
             return Math.Clamp(distanceFactor * signalToNoise, 0f, 1f);

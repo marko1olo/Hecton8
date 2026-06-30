@@ -2509,6 +2509,7 @@ namespace Hecton8.Gameplay
                     float range = math.max(1f, focusedScanRange);
                     float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.ComputeSqr(
                         distSqr, range * range, 0.15f, BatteryCharge);
+
                     fragmentProgressDelta = tuningResult.ProgressDeltaSeconds * resolutionFactor;
                 }
 
@@ -2535,6 +2536,7 @@ namespace Hecton8.Gameplay
                 float range = math.max(1f, focusedScanRange);
                 float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.ComputeSqr(
                     distSqr, range * range, 0.15f, BatteryCharge);
+
                 _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime * resolutionFactor);
                 if (_dataArchaeology != null &&
                     _dataArchaeology.UpdateProbeTargetProgress(
