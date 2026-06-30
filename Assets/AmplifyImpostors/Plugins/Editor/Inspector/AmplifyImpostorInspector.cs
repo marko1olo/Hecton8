@@ -1419,11 +1419,13 @@ namespace AmplifyImpostors
 
 				if( searchChildren )
 				{
+					// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 					go.GetComponentsInChildren<Renderer>( false, tempRenderers );
 					renderers.AddRange( tempRenderers );
 				}
 				else
 				{
+					// ReSharper disable once Unity.PerformanceCriticalCodeInvocation
 					if( go.TryGetComponent<Renderer>( out var renderer ) )
 					{
 						renderers.Add( renderer );
