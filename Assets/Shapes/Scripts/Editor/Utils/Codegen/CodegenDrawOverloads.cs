@@ -345,7 +345,7 @@ namespace Shapes {
 							new[] { new Param( $"Vector2 size // {DOC_RECT_SIZE}", "rect" ) { methodCallStr = $"{pivot}.GetRect( size )" } },
 							new[] {
 								new Param( $"float width // {DOC_RECT_WIDTH}", "rect" ) { methodCallStr = $"{pivot}.GetRect( width, height )" },
-								new Param( $"float height // {DOC_RECT_HEIGHT}" ) // a bit of a hack but it's fiiiine, this shouuld go ignored by the target call
+								new Param( $"float height // {DOC_RECT_HEIGHT}", "rect" ) { methodCallStr = "" }
 							}
 						} );
 						if( noPivot == false )
