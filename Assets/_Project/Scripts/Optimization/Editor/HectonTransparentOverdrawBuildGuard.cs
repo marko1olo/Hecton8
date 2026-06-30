@@ -47,7 +47,7 @@ namespace Hecton8.Optimization.Editor
         public static void RunFromMenu()
         {
             TransparentOverdrawResult result = ValidateOrThrow();
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[HectonTransparentOverdrawBuildGuard] Passed. Factor=" +
                 result.TransparentPixelOverlapFactor.ToString("F2", CultureInfo.InvariantCulture) +
                 " Budget=" +
