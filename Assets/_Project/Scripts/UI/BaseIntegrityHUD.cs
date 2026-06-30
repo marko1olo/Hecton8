@@ -485,12 +485,6 @@ namespace Hecton8.UI
             => Enqueue(BaseIntegrityEventType.IntegrityWarning, BaseModuleFailureMode.None, integrity);
 
 
-        /// <summary>
-        /// Queues a module breached payload.
-        /// </summary>
-        public static bool TryRaiseBreached()
-            => Enqueue(BaseIntegrityEventType.Breached, BaseModuleFailureMode.None, 0f);
-
 
         /// <summary>
         /// Queues a base emergency payload.
@@ -500,13 +494,6 @@ namespace Hecton8.UI
         public static bool TryRaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
             => Enqueue(BaseIntegrityEventType.Emergency, failureMode, integrity);
 
-
-        /// <summary>
-        /// Queues an air-quality warning payload.
-        /// </summary>
-        /// <param name="airQualityNormalized">Normalized breathable reserve.</param>
-        public static bool TryRaiseAirQualityWarning(float airQualityNormalized)
-            => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQualityNormalized);
 
 
         /// <summary>
