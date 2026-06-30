@@ -556,21 +556,9 @@ namespace Hecton8.SaveSystem
             return TryEnqueue(SaveEventType.SaveStarted, slotHash, 0u, null);
         }
 
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveStarted(uint).", true)]
-        public static void RaiseSaveStarted(string slot)
-        {
-            TryRaiseSaveStarted(ComputeSlotHash(slot));
-        }
-
         public static bool TryRaiseSaveCompleted(uint slotHash)
         {
             return TryEnqueue(SaveEventType.SaveCompleted, slotHash, 0u, null);
-        }
-
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseSaveCompleted(uint).", true)]
-        public static void RaiseSaveCompleted(string slot)
-        {
-            TryRaiseSaveCompleted(ComputeSlotHash(slot));
         }
 
         public static bool TryRaiseSaveFailed(uint slotHash, uint errorHash, string errorMessage)
@@ -578,21 +566,9 @@ namespace Hecton8.SaveSystem
             return TryEnqueue(SaveEventType.SaveFailed, slotHash, errorHash, errorMessage);
         }
 
-        [Obsolete("Save event payloads must use precomputed hashes; use TryRaiseSaveFailed(uint,uint,string).", true)]
-        public static void RaiseSaveFailed(string slot, string error)
-        {
-            TryRaiseSaveFailed(ComputeSlotHash(slot), ComputeHash(error), error);
-        }
-
         public static bool TryRaiseMappedWriteStarted(uint slotHash)
         {
             return TryEnqueue(SaveEventType.MappedWriteStarted, slotHash, 0u, null);
-        }
-
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseMappedWriteStarted(uint).", true)]
-        public static void RaiseMappedWriteStarted(string slot)
-        {
-            TryRaiseMappedWriteStarted(ComputeSlotHash(slot));
         }
 
         public static bool TryRaiseLoadStarted(uint slotHash)
@@ -600,21 +576,9 @@ namespace Hecton8.SaveSystem
             return TryEnqueue(SaveEventType.LoadStarted, slotHash, 0u, null);
         }
 
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseLoadStarted(uint).", true)]
-        public static void RaiseLoadStarted(string slot)
-        {
-            TryRaiseLoadStarted(ComputeSlotHash(slot));
-        }
-
         public static bool TryRaiseLoadCompleted(uint slotHash)
         {
             return TryEnqueue(SaveEventType.LoadCompleted, slotHash, 0u, null);
-        }
-
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseLoadCompleted(uint).", true)]
-        public static void RaiseLoadCompleted(string slot)
-        {
-            TryRaiseLoadCompleted(ComputeSlotHash(slot));
         }
 
         public static bool TryRaiseLoadFailed(uint slotHash, uint errorHash, string errorMessage)
@@ -622,21 +586,9 @@ namespace Hecton8.SaveSystem
             return TryEnqueue(SaveEventType.LoadFailed, slotHash, errorHash, errorMessage);
         }
 
-        [Obsolete("Save event payloads must use precomputed hashes; use TryRaiseLoadFailed(uint,uint,string).", true)]
-        public static void RaiseLoadFailed(string slot, string error)
-        {
-            TryRaiseLoadFailed(ComputeSlotHash(slot), ComputeHash(error), error);
-        }
-
         public static bool TryRaiseEmergencyBackupRestoreRequested(uint slotHash)
         {
             return TryEnqueue(SaveEventType.EmergencyBackupRestoreRequested, slotHash, 0u, null);
-        }
-
-        [Obsolete("Save event payloads must use precomputed slot hashes; use TryRaiseEmergencyBackupRestoreRequested(uint).", true)]
-        public static void RaiseEmergencyBackupRestoreRequested(string slot)
-        {
-            TryRaiseEmergencyBackupRestoreRequested(ComputeSlotHash(slot));
         }
 
         private static void DispatchToListener(ISaveEventListener listener, in SaveEventPayload payload)
