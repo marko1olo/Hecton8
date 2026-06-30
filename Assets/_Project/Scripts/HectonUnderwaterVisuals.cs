@@ -969,6 +969,8 @@ namespace Hecton8.Environment
         private Transform _transitionVisorSearchTransform;
         private Transform _shallowSunBeamTransform;
         private Transform _shallowSunBeamLightSearchTransform;
+        private Transform _cachedPlayerCameraTransform;
+        private Camera _cachedPlayerCameraComponent;
         private Light _sunVisualSearchLight;
         private Vector3 _shallowSunBeamBaseLocalPosition;
         private bool _underwaterSuspendedMotesSearchCompleted;
@@ -7489,11 +7491,12 @@ namespace Hecton8.Environment
             Camera camera = mainCamera;
             if (camera == null && playerCamera != null)
             {
-                if (_playerCameraComponent == null || _playerCameraComponent.transform != playerCamera)
+                if (!ReferenceEquals(_cachedPlayerCameraTransform, playerCamera))
                 {
-                    _playerCameraComponent = playerCamera.GetComponent<Camera>();
+                    _cachedPlayerCameraTransform = playerCamera;
+                    playerCamera.TryGetComponent(out _cachedPlayerCameraComponent);
                 }
-                camera = _playerCameraComponent;
+                camera = _cachedPlayerCameraComponent;
             }
 
             if (camera != null && math.isfinite(camera.transform.position.y) &&
