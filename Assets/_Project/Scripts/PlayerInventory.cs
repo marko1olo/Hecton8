@@ -31,7 +31,7 @@ namespace Hecton8.Inventory
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed partial class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IMappedInventoryWriteCommitSink
+    public partial class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IMappedInventoryWriteCommitSink
     {
         private static int _signalPushDropCount;
         private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
@@ -1905,7 +1905,7 @@ namespace Hecton8.Inventory
             return false;
         }
 
-        internal bool TryRemoveFirstMatchingItemByHash(int itemHashId)
+        internal virtual bool TryRemoveFirstMatchingItemByHash(int itemHashId)
         {
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;

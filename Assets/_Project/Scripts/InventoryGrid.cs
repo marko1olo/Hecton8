@@ -14,7 +14,7 @@ namespace Hecton8.Inventory
     using Unity.Mathematics;
     using UnityEngine;
 
-    public sealed class InventoryGrid
+    public class InventoryGrid
     {
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public readonly struct CheckFitArgs
