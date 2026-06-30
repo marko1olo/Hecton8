@@ -25,13 +25,13 @@ namespace Hecton8.Tools
             }
 
             // Wait up to 180s for massive scenes to boot
-            if (player != null || _timeoutWait > 180f)
+            if (_cachedPlayer != null || _timeoutWait > 180f)
             {
                 _waitFrames++;
                 if (_waitFrames > 600) // wait an extra 600 frames (10s) for bootstrap and physics/water to settle
                 {
                     enabled = false;
-                    CaptureAndExit(player);
+                    CaptureAndExit(_cachedPlayer);
                 }
             }
         }
