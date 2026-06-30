@@ -596,7 +596,7 @@ namespace Hecton.UI.MainMenu
             ConfigureDecorativeRaycastTargetsCold(group.transform);
         }
 
-        private static void ConfigureDecorativeRaycastTargetsCold(Transform root)
+        private static void ConfigureDecorativeRaycastTargetsCold(Transform root, bool isOwnedByInteractive = false, bool isInitialCall = true)
         {
             if (root == null)
                 return;
@@ -604,21 +604,26 @@ namespace Hecton.UI.MainMenu
             if (root.name == "Panel_ModalConfirm")
                 return;
 
-            if (root.TryGetComponent(out Graphic graphic) &&
-                !IsGraphicOwnedByInteractiveControl(root))
+            // For the initial root node, we must check its parents to maintain identical behavior.
+            if (isInitialCall)
+            {
+                isOwnedByInteractive = isOwnedByInteractive ||
+                                       root.GetComponentInParent<Selectable>() != null ||
+                                       root.GetComponentInParent<ScrollRect>() != null;
+            }
+
+            bool currentlyOwned = isOwnedByInteractive ||
+                                  root.TryGetComponent<Selectable>(out _) ||
+                                  root.TryGetComponent<ScrollRect>(out _);
+
+            if (root.TryGetComponent(out Graphic graphic) && !currentlyOwned)
             {
                 graphic.raycastTarget = false;
             }
 
             int childCount = root.childCount;
             for (int i = 0; i < childCount; i++)
-                ConfigureDecorativeRaycastTargetsCold(root.GetChild(i));
-        }
-
-        private static bool IsGraphicOwnedByInteractiveControl(Transform transform)
-        {
-            return transform.GetComponentInParent<Selectable>() != null ||
-                   transform.GetComponentInParent<ScrollRect>() != null;
+                ConfigureDecorativeRaycastTargetsCold(root.GetChild(i), currentlyOwned, false);
         }
 
         private void CacheButtonActions()
