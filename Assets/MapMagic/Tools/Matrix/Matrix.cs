@@ -1967,34 +1967,9 @@ namespace Den.Tools.Matrices
 				/// Used in Locks (seems only)
 				/// TODO: switch to Fallof
 				{
-					CoordRect intersection = CoordRect.Intersected(rect, stamp.rect);
-					Coord min = intersection.Min; Coord max = intersection.Max;
-
-					for (int x=min.x; x<max.x; x++)
-						for (int z=min.z; z<max.z; z++)
-						{
-							float dist = Mathf.Sqrt((x-centerX)*(x-centerX) + (z-centerZ)*(z-centerZ));
-
-							int pos = (z-rect.offset.z)*rect.size.x + x - rect.offset.x;
-
-							int stampPos = (z-stamp.rect.offset.z)*stamp.rect.size.x + x - stamp.rect.offset.x;
-							//if (dist < radius) { arr[pos] = stamp.arr[stampPos]; continue; } //not radius, but radius/transition
-
-							//int srcPos = (z-src.rect.offset.z)*src.rect.size.x + x - src.rect.offset.x; //not used
-							//if (dist > radius+transition) { arr[pos] = src.arr[srcPos]; continue; }
-
-							float fallof;
-							if (transition == 0)
-								fallof = dist>radius ? 0 : 1;
-							else
-							{
-								fallof = 1 - (dist-radius) / transition;
-								if (fallof>1) fallof = 1; if (fallof<0) fallof = 0;
-								if (smoothFallof) fallof = 3*fallof*fallof - 2*fallof*fallof*fallof;
-							}
-
-							arr[pos] = src.arr[pos]*(1-fallof) + stamp.arr[stampPos]*fallof;
-						}
+					float fallofRadius = radius + transition;
+					float hardness = fallofRadius == 0 ? 1 : radius / fallofRadius;
+					Fallof(src, stamp, this, new Vector2D(centerX, centerZ), fallofRadius, hardness, smoothFallof);
 				}
 			#endif
 
