@@ -4717,6 +4717,39 @@ namespace Hecton8.Gameplay
             _pendingLookInput = Vector2.zero;
             _cachedVerticalInput = 0f;
             ResetFootstepAudioMaterialCache();
+
+            ResetVrComfortRuntimeState();
+            ClearPendingPresentationSync();
+            ResetUnderwaterSomaticRuntimeState();
+            ResetEnvironmentalDragAndTensionRuntimeState();
+
+            _stateMachine?.ResetRuntimeState();
+            _waterTransitionHandler?.ResetRuntimeState();
+            _playerState.ResetTransient();
+            _playerMotor?.ResetRuntimeState();
+
+            ApplyResolvedCollisionProfile(1f, 1f, 0f);
+            ApplyCenterOfMassIfChanged(_baseCenterOfMass);
+
+            ResetTransportPlatformRuntimeState();
+            InvalidateMovementProbeCaches();
+            ResetLegacyCollisionProbeHits();
+            ResetRenderInterpolationRuntimeState();
+
+            ToggleBuoyancy(true);
+
+            UnregisterGlobalLifecycleListeners();
+
+            _playerKinematicsNativeState.Dispose();
+            ClearCinematicFocus(true);
+            DisposeCinematicFocusBlackBox();
+            _lastValidAupWriteIndex = 0;
+            _lastValidAupCount = 0;
+            ClearInjectedDependencies();
+        }
+
+        private void ResetVrComfortRuntimeState()
+        {
             _vrSnapTurnArmed = true;
             _vrComfortVignette01 = 0f;
             _vrComfortVisualBounce01 = 0f;
@@ -4730,13 +4763,20 @@ namespace Hecton8.Gameplay
             InvalidateVrComfortShaderPublishCache();
             ApplyVrComfortShaderSignals(false, 0f, 0f, 0f, Vector2.zero, 0f, Vector2.zero);
             FlushVrComfortShaderSignals();
-            ClearPendingPresentationSync();
+        }
+
+        private void ResetUnderwaterSomaticRuntimeState()
+        {
             _underwaterSomaticPhase = 0f;
             _underwaterSomaticWeight = 0f;
             _underwaterSomaticPitchOffset = 0f;
             _underwaterSomaticYawOffset = 0f;
             _underwaterSomaticFatigue01 = 0f;
             _underwaterSomaticFatigueBreathCooldownTimer = 0f;
+        }
+
+        private void ResetEnvironmentalDragAndTensionRuntimeState()
+        {
             _externalEnvironmentalDragRequestedMultiplier = 1f;
             _externalEnvironmentalDragCurrentMultiplier = 1f;
             _externalEnvironmentalDragHoldTimer = 0f;
@@ -4774,12 +4814,10 @@ namespace Hecton8.Gameplay
             _undertowIntensity = 0f;
             _wipeoutTimer = 0f;
             _wipeoutSeverity = 0f;
-            _stateMachine?.ResetRuntimeState();
             _transportBailoutCooldownTimer = 0f;
             _transportEvaLockTicks = 0;
             _recentBreachExitTimer = 0f;
             _surfaceBreachFluidDragBypassTimer = 0f;
-            _waterTransitionHandler?.ResetRuntimeState();
             _surfaceGaspUnderwaterTimer = 0f;
             _surfaceGaspCooldownTimer = 0f;
             _sargassumRestRecoveryBlend = 0f;
@@ -4831,12 +4869,10 @@ namespace Hecton8.Gameplay
             _lastProcessedKccSlideFeedbackFrame = -1;
             _thermalUpdraftTraumaCooldownTimer = 0f;
             _vegetationDensityLinearDamping = 0f;
-            _playerState.ResetTransient();
-            _playerMotor?.ResetRuntimeState();
-            _environmentHandler?.ResetRuntimeState();
-            _stateMachine?.ResetRuntimeState();
-            ApplyResolvedCollisionProfile(1f, 1f, 0f);
-            ApplyCenterOfMassIfChanged(_baseCenterOfMass);
+        }
+
+        private void ResetTransportPlatformRuntimeState()
+        {
             _activeTransportPlatform = null;
             _activeTransportPlatformBehaviour = null;
             _activeTransportPlatformTransform = null;
@@ -4854,13 +4890,18 @@ namespace Hecton8.Gameplay
             _cachedTransportPlatformSpatialFrameValid = false;
             _transportPlatformAupFrameValid = false;
             _useFixedFrameSpatialCache = false;
-            InvalidateMovementProbeCaches();
-            ResetLegacyCollisionProbeHits();
+        }
+
+        private void ResetRenderInterpolationRuntimeState()
+        {
             _renderInterpolatedLinearVelocity = Vector3.zero;
             _renderInterpolatedCameraYaw = _cameraYaw;
             _renderInterpolatedBodyYaw = _bodyYaw;
             _renderInterpolationStateInitialized = false;
-            ToggleBuoyancy(true);
+        }
+
+        private void UnregisterGlobalLifecycleListeners()
+        {
             if (_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -4902,13 +4943,6 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
                 _registeredHotSwapListener = false;
             }
-
-            _playerKinematicsNativeState.Dispose();
-            ClearCinematicFocus(true);
-            DisposeCinematicFocusBlackBox();
-            _lastValidAupWriteIndex = 0;
-            _lastValidAupCount = 0;
-            ClearInjectedDependencies();
         }
 
         private void OnCollisionEnter(Collision collision)
