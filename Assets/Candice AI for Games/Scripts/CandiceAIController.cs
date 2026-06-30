@@ -338,9 +338,15 @@ namespace CandiceAIforGames.AI
                 candice.RegisterAgent(gameObject, onRegistrationComplete);
             }
             if (is3D)
-                col = GetComponent<Collider>();
+            {
+                TryGetComponent<Collider>(out var collider);
+                col = collider;
+            }
             else
-                col = GetComponent<Collider2D>();
+            {
+                TryGetComponent<Collider2D>(out var collider2D);
+                col = collider2D;
+            }
 
             InitialiseRuntimeModules();
             EnsureWanderTarget();
