@@ -1584,6 +1584,7 @@ namespace GPUInstancer
             if (!Application.isPlaying)
             {
                 GPUInstancerPrefab[] prefabInstances = GameObject.FindObjectsByType<GPUInstancerPrefab>(FindObjectsInactive.Include);
+                Dictionary<UnityEngine.Object, GPUInstancerPrefab> prefabRootCache = new Dictionary<UnityEngine.Object, GPUInstancerPrefab>();
                 for (int i = 0; i < prefabInstances.Length; i++)
                 {
 #if UNITY_2018_2_OR_NEWER
@@ -1591,10 +1592,19 @@ namespace GPUInstancer
 #else
                     UnityEngine.Object prefabRoot = PrefabUtility.GetPrefabParent(prefabInstances[i].gameObject);
 #endif
-                    if (prefabRoot != null && ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>() != null && prefabInstances[i].prefabPrototype != ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype)
+                    if (prefabRoot != null)
                     {
-                        Undo.RecordObject(prefabInstances[i], "Changed GPUInstancer Prefab Prototype " + prefabInstances[i].gameObject + i);
-                        prefabInstances[i].prefabPrototype = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype;
+                        if (!prefabRootCache.TryGetValue(prefabRoot, out GPUInstancerPrefab rootPrefabScript))
+                        {
+                            rootPrefabScript = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>();
+                            prefabRootCache[prefabRoot] = rootPrefabScript;
+                        }
+
+                        if (rootPrefabScript != null && prefabInstances[i].prefabPrototype != rootPrefabScript.prefabPrototype)
+                        {
+                            Undo.RecordObject(prefabInstances[i], "Changed GPUInstancer Prefab Prototype " + prefabInstances[i].gameObject + i);
+                            prefabInstances[i].prefabPrototype = rootPrefabScript.prefabPrototype;
+                        }
                     }
                 }
             }
