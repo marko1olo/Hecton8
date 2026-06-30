@@ -121,15 +121,6 @@ namespace Crest
 #if CREST_URP
                 var asset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
 
-                // TODO: Support single casacades as it is possible.
-                if (asset && asset.shadowCascadeCount < 2)
-                {
-                    Debug.LogError("Crest shadowing requires shadow cascades to be enabled on the pipeline asset. "
-                        + $"See documentation here: {Internal.Constants.HELP_URL_BASE_USER}ocean-simulation.html#shadows", asset);
-                    enabled = false;
-                    return;
-                }
-
                 if (asset.mainLightRenderingMode == LightRenderingMode.Disabled)
                 {
                     Debug.LogError("Crest: Main Light must be enabled to enable ocean shadowing.", OceanRenderer.Instance);
