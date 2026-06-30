@@ -8,7 +8,7 @@ namespace Hecton8.Tests.Editor
     [TestFixture]
     public sealed class LocalizedMeasurementFormatterEditTests
     {
-        private class MockLocalizationManager : ILocalizationManager
+        private class MockLocalizationManager : ILocalizationManager, ILocalizationTextReadModel
         {
             public GameLanguage CurrentLanguage => GameLanguage.English;
 
@@ -18,8 +18,79 @@ namespace Hecton8.Tests.Editor
                 if (key == "UI_UNIT_FAHRENHEIT" || key == "fahrenheit") return "Mock_F";
                 return key;
             }
+
+            public ushort ActiveLanguageId => 0;
+
+            public string GetOrFallback(string key, string fallback) => fallback;
+
+            public string GetFormatted(string key, params object[] args) => key;
+
+            public System.ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, System.ReadOnlySpan<char> fallback)
+            {
+                if (keyHash == LocHash.Compute(LocalizationKeys.HUD_UNIT_CELSIUS.AsSpan())) return "Mock_C".AsSpan();
+                if (keyHash == LocHash.Compute(LocalizationKeys.HUD_UNIT_FAHRENHEIT.AsSpan())) return "Mock_F".AsSpan();
+                if (keyHash == LocHash.Compute(LocalizationKeys.HUD_UNIT_METERS.AsSpan())) return "Mock_M".AsSpan();
+                if (keyHash == LocHash.Compute(LocalizationKeys.HUD_UNIT_FEET.AsSpan())) return "Mock_FT".AsSpan();
+
+                return fallback;
+            }
         }
 
+        [Test]
+        public void ResolveDistanceUnitLabelSpan_Imperial_NullManager_ReturnsFallback()
+        {
+            // Arrange
+            var language = GameLanguage.English;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(language, null);
+
+            // Assert
+            Assert.AreEqual("ft", result.ToString());
+        }
+
+        [Test]
+        public void ResolveDistanceUnitLabelSpan_Metric_NullManager_ReturnsFallback()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(language, null);
+
+            // Assert
+            Assert.AreEqual("m", result.ToString());
+        }
+
+        [Test]
+        public void ResolveDistanceUnitLabelSpan_Imperial_WithManager_ReturnsLocalized()
+        {
+            // Arrange
+            var language = GameLanguage.English_US;
+            var manager = new MockLocalizationManager();
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(language, manager);
+
+            // Assert
+            Assert.AreEqual("Mock_FT", result.ToString());
+        }
+
+        [Test]
+        public void ResolveDistanceUnitLabelSpan_Metric_WithManager_ReturnsLocalized()
+        {
+            // Arrange
+            var language = GameLanguage.French;
+            var manager = new MockLocalizationManager();
+
+            // Act
+            var result = LocalizedMeasurementFormatter.ResolveDistanceUnitLabelSpan(language, manager);
+
+            // Assert
+            Assert.AreEqual("Mock_M", result.ToString());
+        }
+
+        [Test]
         public void GetDistanceUnitKey_Imperial_ReturnsFeetKey()
         {
             // Arrange
