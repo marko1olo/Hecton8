@@ -3199,7 +3199,7 @@ namespace Hecton8.SaveSystem
             return $"{salt:x8}{safeIndex:x8}{safeSequence:x8}{capacity:x8}";
         }
 
-        private static bool EnsureLoreSystems(ref SaveData data, int sourceVersion, List<string> steps)
+        private static bool EnsureAudioLogSystems(ref SaveData data, List<string> steps)
         {
             bool changed = false;
 
@@ -3265,6 +3265,13 @@ namespace Hecton8.SaveSystem
             }
             changed |= ClearEncryptedAudioLogFragmentTail(data, steps);
 
+            return changed;
+        }
+
+        private static bool EnsureIndustrialLoreSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
             if (data.industrialLoreUnlockWords == null ||
                 data.industrialLoreUnlockWords.Length != IndustrialLoreBitMask.WordCount)
             {
@@ -3279,6 +3286,13 @@ namespace Hecton8.SaveSystem
                 changed = true;
                 steps.Add("industrial lore bit words repaired");
             }
+
+            return changed;
+        }
+
+        private static bool EnsureDataArchaeologySystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
 
             if (data.dataArchaeologyDiscoveryBitWords == null ||
                 data.dataArchaeologyDiscoveryBitWords.Length != SaveData.MaxDataArchaeologyDiscoveryWords)
@@ -3402,6 +3416,13 @@ namespace Hecton8.SaveSystem
             if (repairedArchaeologyScanStateValues)
                 steps.Add("data archaeology scan-state values repaired");
 
+            return changed;
+        }
+
+        private static bool EnsureQuestSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
             if (data.questActiveIds == null)
             {
                 data.questActiveIds = new System.Collections.Generic.List<string>();
@@ -3434,6 +3455,13 @@ namespace Hecton8.SaveSystem
                 "quest completed ids repaired",
                 steps);
 
+            return changed;
+        }
+
+        private static bool EnsureSuitUpgradeSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
             if (data.suitInstalledUpgradeIds == null)
             {
                 data.suitInstalledUpgradeIds = new System.Collections.Generic.List<string>();
@@ -3465,6 +3493,13 @@ namespace Hecton8.SaveSystem
                 data.suitUnlockedBlueprintIds,
                 "suit blueprint ids repaired",
                 steps);
+
+            return changed;
+        }
+
+        private static bool EnsureCorporateOrderSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
 
             if (data.corporateReceivedOrderIds == null)
             {
@@ -3511,6 +3546,13 @@ namespace Hecton8.SaveSystem
                 "corporate order timers repaired",
                 steps);
 
+            return changed;
+        }
+
+        private static bool EnsureMissionSystems(ref SaveData data, List<string> steps)
+        {
+            bool changed = false;
+
             if (data.missionActiveIds == null)
             {
                 data.missionActiveIds = new System.Collections.Generic.List<string>();
@@ -3543,6 +3585,13 @@ namespace Hecton8.SaveSystem
                 "mission completed ids repaired",
                 steps);
 
+            return changed;
+        }
+
+        private static bool EnsureNarrativeSystems(ref SaveData data, int sourceVersion, List<string> steps)
+        {
+            bool changed = false;
+
             float safeAtlasSignalPulseTimer = SanitizeNonNegativeFinite(data.atlasSignalPulseTimer);
             if (!Approximately(data.atlasSignalPulseTimer, safeAtlasSignalPulseTimer))
             {
@@ -3572,6 +3621,20 @@ namespace Hecton8.SaveSystem
                 steps.Add("atlas reveal stage repaired");
             }
 
+            return changed;
+        }
+
+        private static bool EnsureLoreSystems(ref SaveData data, int sourceVersion, List<string> steps)
+        {
+            bool changed = false;
+            changed |= EnsureAudioLogSystems(ref data, steps);
+            changed |= EnsureIndustrialLoreSystems(ref data, steps);
+            changed |= EnsureDataArchaeologySystems(ref data, steps);
+            changed |= EnsureQuestSystems(ref data, steps);
+            changed |= EnsureSuitUpgradeSystems(ref data, steps);
+            changed |= EnsureCorporateOrderSystems(ref data, steps);
+            changed |= EnsureMissionSystems(ref data, steps);
+            changed |= EnsureNarrativeSystems(ref data, sourceVersion, steps);
             return changed;
         }
 
