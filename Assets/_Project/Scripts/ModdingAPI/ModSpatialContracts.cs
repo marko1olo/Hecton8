@@ -61,7 +61,7 @@ namespace Hecton8.Modding
     /// AUP-backed command wrapper for every mod request that touches position.
     /// The dispatcher rebases this payload against the current floating-origin offset at drain time.
     /// </summary>
-    [System.Obsolete("Legacy AUP mod command wrapper is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", false)]
+    [System.Obsolete("Legacy AUP mod command wrapper is quarantined. Use FutureCommandEnvelope through HectonAPI.Commands.RequestFuture.", true)]
     [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.AupCommandStrideBytes)]
     public struct ModAupCommand
     {
@@ -168,7 +168,7 @@ namespace Hecton8.Modding
     /// <summary>
     /// Matrix submission packet for the reserved mod instancing layer.
     /// </summary>
-    [System.Obsolete("Legacy render-instance mod command wrapper is quarantined. Use FutureCommandEnvelope plus an approved future kernel lane.", false)]
+    [System.Obsolete("Legacy render-instance mod command wrapper is quarantined. Use FutureCommandEnvelope plus an approved future kernel lane.", true)]
     [StructLayout(LayoutKind.Explicit, Size = ModSpatialContractLayout.RenderInstanceCommandStrideBytes)]
     public struct ModRenderInstanceCommand
     {
