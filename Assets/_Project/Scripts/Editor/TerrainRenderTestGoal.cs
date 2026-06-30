@@ -570,6 +570,7 @@ namespace Hecton8.Editor
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.farClipPlane = 60000f;
 
+
             var urpCam = cam.gameObject.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             if (urpCam == null) urpCam = cam.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             urpCam.renderShadows = false;     // Shadows need baked data - skip in batchmode
@@ -594,6 +595,7 @@ namespace Hecton8.Editor
             dirLight.color = new Color(1.0f, 0.95f, 0.9f);
             dirLight.useColorTemperature = true;
             dirLight.colorTemperature = 5800f; // Neutral-warm spectrum (anti-gloom)
+
             dirLight.shadows = LightShadows.Soft;
             RenderSettings.sun = dirLight;
 
