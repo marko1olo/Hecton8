@@ -966,12 +966,25 @@ namespace Hecton8.Editor.GeographySanity
         {
             StringBuilder builder = new StringBuilder(4096);
             serializationPatchCharOffset = -1;
-            builder.Append("{\n");
+            builder.Append("{\n"); // }
             AppendJson(builder, "schema", "hecton8.geography_sanity_report.v1", 1).Append(",\n");
             AppendJson(builder, "agent", GeographySanityConstants.AgentId, 1).Append(",\n");
             AppendJson(builder, "mode", mode, 1).Append(",\n");
             AppendJson(builder, "status", metrics.FatalMathCount > 0 ? "FATAL_MATH_ERROR" : "PENDING_VERIFICATION", 1).Append(",\n");
             AppendJson(builder, "proofGrade", ResolveProofGrade(settings, metrics), 1).Append(",\n");
+
+            AppendMetrics(builder, settings, metrics, out serializationPatchCharOffset);
+            AppendSettings(builder, settings);
+
+            builder.Append("  \"rollbackNetcodeExcluded\": true,\n");
+            builder.Append("  \"runtimeAuthorityMutation\": false,\n");
+            // {
+            builder.Append("  \"anomalies\": [\n"); // }
+            return builder.ToString();
+        }
+
+        private static void AppendMetrics(StringBuilder builder, GeographySanitySettings settings, GeographySanityMetricsDTO metrics, out int serializationPatchCharOffset)
+        {
             builder.Append("  \"certificationEligible\": ").Append(IsCertificationEligible(settings, metrics) ? "true" : "false").Append(",\n");
             builder.Append("  \"sectorCount\": ").Append(metrics.SectorCount).Append(",\n");
             builder.Append("  \"completedSectors\": ").Append(metrics.CompletedSectors).Append(",\n");
@@ -990,7 +1003,12 @@ namespace Hecton8.Editor.GeographySanity
             AppendSerializationPlaceholder(builder).Append(",\n");
             builder.Append("  \"totalMilliseconds\": ");
             AppendDouble(builder, metrics.TotalMilliseconds).Append(",\n");
-            builder.Append("  \"settings\": {\n");
+        }
+
+        private static void AppendSettings(StringBuilder builder, GeographySanitySettings settings)
+        {
+            // {
+            builder.Append("  \"settings\": {\n"); // }
             builder.Append("    \"sectorSizeMeters\": ");
             AppendFloat(builder, settings.SectorSizeMeters).Append(",\n");
             builder.Append("    \"heightResolution\": ").Append(settings.HeightResolution).Append(",\n");
@@ -1001,11 +1019,8 @@ namespace Hecton8.Editor.GeographySanity
             builder.Append("    \"effectiveVerticalProbeSteps\": ").Append(ResolveVerticalProbeSteps(settings.VerticalProbeSteps, settings.GlobalQualityWeight)).Append(",\n");
             builder.Append("    \"globalQualityWeight\": ");
             AppendFloat(builder, settings.GlobalQualityWeight).Append("\n");
-            builder.Append("  },\n");
-            builder.Append("  \"rollbackNetcodeExcluded\": true,\n");
-            builder.Append("  \"runtimeAuthorityMutation\": false,\n");
-            builder.Append("  \"anomalies\": [\n");
-            return builder.ToString();
+            // {
+            builder.Append("  },\n"); // }
         }
 
         private static StringBuilder AppendSerializationPlaceholder(StringBuilder builder)
