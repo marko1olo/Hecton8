@@ -63,6 +63,7 @@ namespace Crest
         [Tooltip("Scales horizontal displacement"), Range(0f, 2f)]
         public float _chop = 1.6f;
 
+
         static void Upgrade(SerializedObject soSpectrum)
         {
             var spVer = soSpectrum.FindProperty("_version");
