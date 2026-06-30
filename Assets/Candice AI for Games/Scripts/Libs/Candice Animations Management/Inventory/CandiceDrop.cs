@@ -78,11 +78,20 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            if (!agentToBoost.TryGetComponent<CandiceAIController>(out agentController) || candiceUI == null)
+            if (agentController == null || agentController.gameObject != agentToBoost)
+            {
+                agentToBoost.TryGetComponent<CandiceAIController>(out agentController);
+            }
+
+            if (playerController == null || playerController.gameObject != agentToBoost)
+            {
+                agentToBoost.TryGetComponent<CandiceAIPlayerController>(out playerController);
+            }
+
+            if (agentController == null || candiceUI == null)
             {
                 return;
             }
-            agentToBoost.TryGetComponent<CandiceAIPlayerController>(out playerController);
 
             candiceUI.thisAgent = agentToBoost;
             if (candiceUI.HealthBar == null)
