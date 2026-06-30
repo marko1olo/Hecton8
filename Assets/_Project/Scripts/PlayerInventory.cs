@@ -5824,6 +5824,7 @@ namespace Hecton8.Inventory
             int salinityFrameFlags = 0;
             try
             {
+
                 if (!TryResolveSalinityCorrosionScratchWithGuardHeld(
                         out NativeArray<int> changedSlots,
                         out NativeArray<float> nextDurability,
@@ -5878,6 +5879,7 @@ namespace Hecton8.Inventory
                             nextStateFlags);
                     salinityFrameFlags = changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0;
                 }
+
             }
             finally
             {
@@ -5995,6 +5997,72 @@ namespace Hecton8.Inventory
             }
 
             return committedRows > 0;
+        }
+
+
+        private void ExecuteSalinityCorrosionJobWithGuardHeld(
+            out int changedCount,
+            out int brokenCount,
+            out bool committedChanges,
+            out int salinityFrameFlags)
+        {
+            changedCount = 0;
+            brokenCount = 0;
+            committedChanges = false;
+            salinityFrameFlags = 0;
+
+            if (!TryResolveSalinityCorrosionScratchWithGuardHeld(
+                    out NativeArray<int> changedSlots,
+                    out NativeArray<float> nextDurability,
+                    out NativeArray<byte> nextDurabilityBytes,
+                    out NativeArray<ushort> nextQualityMilli,
+                    out NativeArray<ushort> nextStateFlags,
+                    out NativeArray<int> jobResult,
+                    out NativeArray<uint> brokenItemHashes))
+            {
+                _averageEquipmentDurability01 = ResolveAverageEquipmentDurability();
+                salinityFrameFlags = 0x14;
+                return;
+            }
+
+            ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
+            {
+                ItemHashes = _itemHashes.AsReadOnly(),
+                StackCounts = _stackCounts.AsReadOnly(),
+                ItemDurability = _itemDurability.AsReadOnly(),
+                DurabilityBytes = _durabilities.AsReadOnly(),
+                QualityMilli = _qualityMilli.AsReadOnly(),
+                ItemStateFlags = _itemStateFlags.AsReadOnly(),
+                ChangedSlots = changedSlots,
+                NextItemDurability = nextDurability,
+                NextDurabilityBytes = nextDurabilityBytes,
+                NextQualityMilli = nextQualityMilli,
+                NextItemStateFlags = nextStateFlags,
+                Result = jobResult,
+                BrokenItemHashes = brokenItemHashes,
+                CurrentInventoryMask = CurrentInventoryMask,
+                SalinityFactor = _currentSalinityFactor,
+                DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
+                DegradedMask = DegradedItemStateMask,
+                RustedMask = RustedItemStateMask,
+                BrokenMask = BrokenItemStateMask,
+                DegradedThresholdMilli = DegradedQualityMilliThreshold
+            };
+            salinityJob.Execute();
+
+            int averageMilli = jobResult[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
+            _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
+            changedCount = jobResult[InventoryCorrosionConstants.ResultChangedCount];
+            brokenCount = jobResult[InventoryCorrosionConstants.ResultBrokenCount];
+            committedChanges = changedCount <= 0 ||
+                TryCommitSalinityCorrosionScratchWithGuardHeld(
+                    changedCount,
+                    changedSlots,
+                    nextDurability,
+                    nextDurabilityBytes,
+                    nextQualityMilli,
+                    nextStateFlags);
+            salinityFrameFlags = changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0;
         }
 
         private static int ResolveSalinityScratchChangeCountWithGuardHeld(
