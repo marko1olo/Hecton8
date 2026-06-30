@@ -346,34 +346,6 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         LogSpawner($"[HectonPlayerSpawner-DEBUG] Awake FINISHED. InstanceID={this.GetHashCode()}, playerRigidbody is {(System.Object.ReferenceEquals(playerRigidbody, null) ? "REAL_NULL" : (playerRigidbody == null ? "DESTROYED" : "VALID"))}");
-    }
-
-    // ══════════════════════════════════════════════════════════════
-    //  PUBLIC API
-    // ══════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Asinhronnyy poisk bezopasnoy tochki spavna i teleportatsiya igroka.
-    ///
-    /// v3.1: Zaschita ot dedloka:
-    ///   • Per-point retry limit (maxRetriesPerPoint) — kazhdaya tochka spirali
-    ///     mozhet byt proverena ne bolee N raz. Pri ischerpanii — propuskaetsya.
-    ///   • Globalnyy taymaut (globalTimeoutSec) — esli vsya operatsiya
-    ///     prevyshaet limit — nemedlennyy fallback spavn.
-    ///   • Beskonechnyy tsikl na odnoy tochke MATEMATIChESKI NEVOZMOZhEN:
-    ///     retryCount inkrementiruetsya pri kazhdoy neudache, spiralIndex++
-    ///     garantirovanno vyzyvaetsya pri retryCount >= maxRetriesPerPoint.
-    /// </summary>
-    public async Awaitable SpawnPlayerAsync(CancellationToken ct)
-    {
-        LogSpawner($"[HectonPlayerSpawner-DEBUG] SpawnPlayerAsync STARTED. InstanceID={gameObject.GetEntityId()}, playerRigidbody is {(System.Object.ReferenceEquals(playerRigidbody, null) ? "REAL_NULL" : (playerRigidbody == null ? "DESTROYED" : "VALID"))}");
-        
-        if (playerRigidbody != null) {
-            LogSpawner("[HectonPlayerSpawner-DEBUG] playerRigidbody name: " + playerRigidbody.gameObject.name);
-            LogSpawner("[HectonPlayerSpawner-DEBUG] Has Movement: " + (playerRigidbody.gameObject.GetComponent<IBootstrapProductionPlayerMovementAuthority>() != null));
-            LogSpawner("[HectonPlayerSpawner-DEBUG] Has Interaction: " + (playerRigidbody.gameObject.GetComponent<IBootstrapProductionPlayerInteractionAuthority>() != null));
-        }
-
         if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
