@@ -1146,16 +1146,21 @@ namespace Hecton8.UI
             if (source.IsEmpty)
                 source = fallback;
 
+            if (HasNumericPlaceholder(source))
+                source = fallback;
+
+            return CopySpanToFixedBuffer(source, destination);
+        }
+
+        private static bool HasNumericPlaceholder(ReadOnlySpan<char> source)
+        {
             for (int i = 0; i < source.Length - 1; i++)
             {
                 if (source[i] == '{' && source[i + 1] >= '0' && source[i + 1] <= '9')
-                {
-                    source = fallback;
-                    break;
-                }
+                    return true;
             }
 
-            return CopySpanToFixedBuffer(source, destination);
+            return false;
         }
 
         private void CacheSinglePlaceholderTemplate(ReadOnlySpan<char> template)
