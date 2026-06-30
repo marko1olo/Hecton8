@@ -37,10 +37,11 @@ namespace Den.Tools.Serialization
 		//		<SomeType, Tools>,
 		//		<x, System.Single, 3> >
 
-
-		// TODO: 
-		// Find out what is the best way to serialize referenced objects:
-		// Ideas: serialize all as it is (with inlined class), assign class ids, and then just link to inlined classes (how to deserialize?)
+		private class ReferenceEqualityComparer : IEqualityComparer<object>
+		{
+			bool IEqualityComparer<object>.Equals(object x, object y) => ReferenceEquals(x, y);
+			int IEqualityComparer<object>.GetHashCode(object obj) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+		}
 
 		public static string Serialize (object val)
 		/// Serializes all to string without Unity assets
@@ -48,7 +49,7 @@ namespace Den.Tools.Serialization
 			if (val==null) 
 				return "null";
 
-			return SerializeRecursive("root", val, new Dictionary<object,int>(), null);
+			return SerializeRecursive("root", val, new Dictionary<object,int>(new ReferenceEqualityComparer()), null);
 		}
 
 
@@ -58,7 +59,7 @@ namespace Den.Tools.Serialization
 			if (val==null) 
 				{ unityObjs = new UnityEngine.Object[0]; return "null"; }
 
-			Dictionary<object,int> serializedObjsIds = new Dictionary<object,int>();
+			Dictionary<object,int> serializedObjsIds = new Dictionary<object,int>(new ReferenceEqualityComparer());
 			List<UnityEngine.Object> unityObjsList = new List<UnityEngine.Object>();
 
 			string str = SerializeRecursive("root", val, serializedObjsIds, unityObjsList);
@@ -99,16 +100,14 @@ namespace Den.Tools.Serialization
 			//bool isClass = type.IsClass; //IsClass is _extremely_ long operation (10 times longer than IsPrimitive, 100 times than GetType)			
 
 			//already serialized (no mater of it's array, string, other class)
-			if (serializedObjsIds!=null  &&  serializedObjsIds.TryGetValue(val, out int existingId))
+			if (serializedObjsIds!=null  &&  type != typeof(string) && serializedObjsIds.TryGetValue(val, out int existingId))
 				return $"{offset}< \"{name}\", \"{TypeName(type)}\", id{existingId} >";
 
 			//string
 			if (val is string)
 			{
-				int id = serializedObjsIds.Count + 1; 
-				serializedObjsIds.Add(val, id); //checking if it was serialized in the beginning
-
-				return $"{offset}< \"{name}\", System.String, id{id}, \"{val}\" >"; 
+				// we intentionally do not reuse strings by object reference to avoid unexpected behaviors and issues with string interning
+				return $"{offset}< \"{name}\", System.String, id0, \"{val}\" >";
 			}
 
 			//guid
