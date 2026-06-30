@@ -13,7 +13,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
-    public sealed class HarpoonLauncherTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public class HarpoonLauncherTool : PlayerTool, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const string HarpoonCategory = "HARPOON";
         private static readonly int _TetherPositionsId = Shader.PropertyToID("_TetherPositions");
@@ -664,21 +664,26 @@ namespace Hecton8.Gameplay
             UnityEngine.Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, 6, 1);
         }
 
-        private void UploadTracerGpuData(Vector3 start, Vector3 end)
+        protected virtual void WriteTracerPositionData(NativeArray<GpuCableSplinePointDTO> points, Vector3 start, Vector3 end)
+        {
+            points[0] = new GpuCableSplinePointDTO
+            {
+                Position = new float3(start.x, start.y, start.z),
+                Tension01 = 0f
+            };
+            points[1] = new GpuCableSplinePointDTO
+            {
+                Position = new float3(end.x, end.y, end.z),
+                Tension01 = 0f
+            };
+        }
+
+        protected virtual void UploadTracerGpuData(Vector3 start, Vector3 end)
         {
             NativeArray<GpuCableSplinePointDTO> points = _tracerPositionBuffer.LockBufferForWrite<GpuCableSplinePointDTO>(0, 2);
             try
             {
-                points[0] = new GpuCableSplinePointDTO
-                {
-                    Position = new float3(start.x, start.y, start.z),
-                    Tension01 = 0f
-                };
-                points[1] = new GpuCableSplinePointDTO
-                {
-                    Position = new float3(end.x, end.y, end.z),
-                    Tension01 = 0f
-                };
+                WriteTracerPositionData(points, start, end);
             }
             finally
             {
