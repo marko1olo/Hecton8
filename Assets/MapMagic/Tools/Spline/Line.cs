@@ -242,6 +242,7 @@ namespace Den.Tools.Splines
 		#region Ops
 
 			public int CalcPointsNum (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
+
 			{
 				int numPoints = 0;
 				for (int s=0; s<segments.Length; s++)
@@ -249,12 +250,14 @@ namespace Den.Tools.Splines
 					int modRes = (int)( segments[s].length * resPerUnit );
 					if (modRes < minRes) modRes = minRes;
 					if (modRes > maxRes) modRes = maxRes;
+
 					numPoints += modRes;
 				}
 				return numPoints;
 			}
 
 			public void FillPoints (Vector3[] points, Vector3[] derivatives, float resPerUnit=0.1f, int minRes=3, int maxRes=20)
+
 			{
 				int i=0;
 				for (int s=0; s<segments.Length; s++)
@@ -269,6 +272,7 @@ namespace Den.Tools.Splines
 						points[i] = segments[s].GetPoint(percent);
 						if (derivatives != null)
 							derivatives[i] = segments[s].GetDerivative(percent);
+
 						i++;
 					}
 				}
@@ -277,6 +281,7 @@ namespace Den.Tools.Splines
 				points[points.Length-1] = segments[segments.Length-1].end.pos;
 				if (derivatives != null)
 					derivatives[points.Length-1] = -segments[segments.Length-1].end.dir;
+
 			}
 
 			public Vector3[] GetAllPoints (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
