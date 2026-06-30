@@ -104,7 +104,8 @@ namespace Hecton8.UI
 
         [Header("=== GRAPHICS ===")]
         [SerializeField, Tooltip("Main camera for FOV application")]
-        private Camera mainCamera;
+        [UnityEngine.Serialization.FormerlySerializedAs("mainCamera")]
+        private Camera _mainCamera;
 
         [SerializeField, Tooltip("URP Volume for post-processing overrides with a live scene owner (Bloom/Motion Blur). AO preference is cached separately.")]
         private Volume urpVolume;
@@ -1690,7 +1691,7 @@ namespace Hecton8.UI
             _cachedVolumeProfile = null;
             if (_mainCameraResolvedFromPlayer)
             {
-                mainCamera = null;
+                _mainCamera = null;
                 _mainCameraResolvedFromPlayer = false;
             }
         }
@@ -1791,10 +1792,10 @@ namespace Hecton8.UI
             if (_cachedMainCamera != null)
                 return true;
 
-            if (mainCamera != null)
+            if (_mainCamera != null)
             {
                 _mainCameraResolvedFromPlayer = false;
-                _cachedMainCamera = mainCamera;
+                _cachedMainCamera = _mainCamera;
                 return true;
             }
 
@@ -1803,7 +1804,7 @@ namespace Hecton8.UI
             {
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                 {
-                    mainCamera = playerOwnedCamera;
+                    _mainCamera = playerOwnedCamera;
                     _cachedMainCamera = playerOwnedCamera;
                     _mainCameraResolvedFromPlayer = true;
                     return true;
@@ -1813,7 +1814,7 @@ namespace Hecton8.UI
                 Camera playerChildCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerChildCamera != null)
                 {
-                    mainCamera = playerChildCamera;
+                    _mainCamera = playerChildCamera;
                     _cachedMainCamera = playerChildCamera;
                     _mainCameraResolvedFromPlayer = true;
                     return true;
@@ -1822,7 +1823,7 @@ namespace Hecton8.UI
 
             if (TryGetComponent(out Camera localCamera))
             {
-                mainCamera = localCamera;
+                _mainCamera = localCamera;
                 _cachedMainCamera = localCamera;
                 _mainCameraResolvedFromPlayer = false;
                 return true;
@@ -1831,7 +1832,7 @@ namespace Hecton8.UI
             Camera childCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
             if (childCamera != null)
             {
-                mainCamera = childCamera;
+                _mainCamera = childCamera;
                 _cachedMainCamera = childCamera;
                 _mainCameraResolvedFromPlayer = false;
                 return true;
@@ -1842,7 +1843,7 @@ namespace Hecton8.UI
                 if (!current.TryGetComponent(out Camera parentCamera))
                     continue;
 
-                mainCamera = parentCamera;
+                _mainCamera = parentCamera;
                 _cachedMainCamera = parentCamera;
                 _mainCameraResolvedFromPlayer = false;
                 return true;
@@ -1859,14 +1860,14 @@ namespace Hecton8.UI
             if (TryCacheVolumeProfile(urpVolume))
                 return true;
 
-            if (mainCamera != null &&
-                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(mainCamera.transform)))
+            if (_mainCamera != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(_mainCamera.transform)))
             {
                 return true;
             }
 
             if (_cachedMainCamera != null &&
-                _cachedMainCamera != mainCamera &&
+                _cachedMainCamera != _mainCamera &&
                 TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(_cachedMainCamera.transform)))
             {
                 return true;
