@@ -9,6 +9,9 @@ namespace Hecton8.Data.Editor
 {
     internal static class H8AndroidAssetBridge1504StaticAudit
     {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor.
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value.
+
         private const string ReportPath = "Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1504.json";
         private const string ArenaPath = "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs";
         private const string TypesPath = "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs";
@@ -55,38 +58,162 @@ namespace Hecton8.Data.Editor
             if (string.IsNullOrEmpty(projectRoot))
                 throw new ArgumentException("Project root is empty.", nameof(projectRoot));
 
-            long startTicks = DateTime.UtcNow.Ticks;
-            string arena = ReadRequired(projectRoot, ArenaPath);
-            string types = ReadRequired(projectRoot, TypesPath);
-            string globalDataVault = ReadRequired(projectRoot, GlobalDataVaultPath);
-            string bootstrapper = ReadRequired(projectRoot, BootstrapperPath);
-            string native = ReadRequired(projectRoot, NativePath);
-            string nativeMeta = ReadRequired(projectRoot, NativeMetaPath);
-            string cmake = ReadRequired(projectRoot, CmakePath);
-            string cmakeMeta = ReadRequired(projectRoot, CmakeMetaPath);
-            string gradle = ReadRequired(projectRoot, GradlePath);
-            string manifest = ReadRequired(projectRoot, ManifestPath);
-            string projectSettings = ReadRequired(projectRoot, ProjectSettingsPath);
-            string tests = ReadRequired(projectRoot, TestsPath);
-            string audit = ReadRequired(projectRoot, AuditPath);
-            string auditMeta = ReadRequired(projectRoot, AuditMetaPath);
-            string testsMeta = ReadRequired(projectRoot, TestsMetaPath);
-            string nativeMatrixValidator = ReadRequired(projectRoot, NativeMatrixValidatorPath);
-            string legacyAudit = ReadRequired(projectRoot, LegacyAuditPath);
-            string legacyTests = ReadRequired(projectRoot, LegacyTestsPath);
-            string runtimeIntegrationDoc = ReadRequired(projectRoot, RuntimeIntegrationDocPath);
-            string h8binSpecDoc = ReadRequired(projectRoot, H8binSpecDocPath);
-            string bootSequenceDoc = ReadRequired(projectRoot, BootSequenceDocPath);
-            string productContractsDoc = ReadRequired(projectRoot, ProductContractsDocPath);
-            string handoffDoc = ReadRequired(projectRoot, HandoffDocPath);
-            string portabilityProofDoc = ReadRequired(projectRoot, PortabilityProofDocPath);
-            string h8binValidationReport = ReadRequired(projectRoot, H8binValidationReportPath);
-            string h8binValidationJunit = ReadRequired(projectRoot, H8binValidationJunitPath);
-            string h8binValidationMetricPhi = ReadRequired(projectRoot, H8binValidationMetricPhiPath);
+            new AuditExecution(projectRoot).Execute();
+        }
 
-            int androidLeakCount;
-            bool androidReferencesGuarded = AreAndroidReferencesGuarded(arena, out androidLeakCount);
-            bool nativeBridgePresent = native.Contains("#include <android/asset_manager.h>", StringComparison.Ordinal) &&
+        private sealed class AuditExecution
+        {
+
+            private readonly string projectRoot;
+            private readonly long startTicks;
+
+            // Files
+            private string arena;
+            private string types;
+            private string globalDataVault;
+            private string bootstrapper;
+            private string native;
+            private string nativeMeta;
+            private string cmake;
+            private string cmakeMeta;
+            private string gradle;
+            private string manifest;
+            private string projectSettings;
+            private string tests;
+            private string audit;
+            private string auditMeta;
+            private string testsMeta;
+            private string nativeMatrixValidator;
+            private string legacyAudit;
+            private string legacyTests;
+            private string runtimeIntegrationDoc;
+            private string h8binSpecDoc;
+            private string bootSequenceDoc;
+            private string productContractsDoc;
+            private string handoffDoc;
+            private string portabilityProofDoc;
+            private string h8binValidationReport;
+            private string h8binValidationJunit;
+            private string h8binValidationMetricPhi;
+
+            // Rules
+            private bool androidReferencesGuarded;
+            private bool nativeBridgePresent;
+            private bool nativeOverflowGuard;
+            private bool nativeUncompressedFdGuard;
+            private bool nativeNoHeapStaging;
+            private bool nativeBoundedDumpPath;
+            private bool nativeExportVisibilityPresent;
+            private bool androidNativeTelemetryDumpPresent;
+            private bool androidNativeTelemetryAgentDumpMirrorPresent;
+            private bool telemetryDumpLayoutExplicit;
+            private bool writerReleaseRetryCrossPlatformPresent;
+            private int payloadWriteAcquireCount;
+            private int payloadWriteReleaseCount;
+            private int payloadWriteFinallyReleaseCount;
+            private bool payloadWriteLockFinallyProofPresent;
+            private bool globalDataVaultDeferredWriterReleaseQueueContract;
+            private bool dumpTelemetryReadOnlyOnly;
+            private bool telemetryDumpChronologicalOrderPresent;
+            private bool jniLocalReferenceLifetimeBounded;
+            private bool nativeAssetManagerNoCache;
+            private bool nativeJniEnvironmentReleaseBalanced;
+            private bool csharpRawJniRoute;
+            private bool androidAssetNameStackAsciiRoute;
+            private bool androidTelemetryRouteFlagsPresent;
+            private bool pInvokeSourcePluginRoute;
+            private bool namedLibraryRouteAbsent;
+            private bool zeroPointerGuards;
+            private bool dataVaultPointerRoute;
+            private bool windowsCreateFileRoute;
+            private bool androidBranchRoute;
+            private bool bootstrapRoute;
+            private bool cmakeReferenceValid;
+            private bool gradleNoCompress;
+            private bool gradleExternalNativeBuildAbsent;
+            private bool unitySourceBuildGradlePlaceholdersPresent;
+            private bool nativeSourcePluginDefaultImporterMetaComplete;
+            private bool androidSourcePluginRouteSerialized;
+            private bool androidIl2Cpp;
+            private bool androidArm64OnlySerialized;
+            private bool androidSplitApplicationBinaryDisabled;
+            private bool gameActivity;
+            private bool androidGameActivityNoLooperDependency;
+            private bool mockJniPointerFuzzerTest;
+            private bool auditScriptPresent;
+            private bool auditRegeneratesFdBackedStatus;
+            private bool auditStatusDowngradeGuardPresent;
+            private bool editorStaticTestsPresent;
+            private bool nativeMatrixValidatorGuard;
+            private bool nativeMatrixValidatorDumpMirrorGuard;
+            private bool legacyAuditGuard;
+            private bool legacyTestsGuard;
+            private bool architectureDocsUpdated;
+            private bool activeArchitectureDocsAligned;
+            private bool unityMetaFilesComplete;
+            private bool h8binValidatorScopedPass;
+            private long staticDataBytes;
+            private long elapsedMicroseconds;
+            private bool fatalPass;
+            private int androidLeakCount;
+
+#pragma warning restore CS8618
+#pragma warning restore CS0649
+#pragma warning restore CS8618
+            public AuditExecution(string projectRoot)
+            {
+                this.projectRoot = projectRoot;
+                this.startTicks = DateTime.UtcNow.Ticks;
+            }
+
+            public void Execute()
+            {
+                LoadFiles();
+                EvaluateRules();
+                WriteReport();
+            }
+
+            private void LoadFiles()
+            {
+
+
+            this.arena = ReadRequired(projectRoot, ArenaPath);
+            this.types = ReadRequired(projectRoot, TypesPath);
+            this.globalDataVault = ReadRequired(projectRoot, GlobalDataVaultPath);
+            this.bootstrapper = ReadRequired(projectRoot, BootstrapperPath);
+            this.native = ReadRequired(projectRoot, NativePath);
+            this.nativeMeta = ReadRequired(projectRoot, NativeMetaPath);
+            this.cmake = ReadRequired(projectRoot, CmakePath);
+            this.cmakeMeta = ReadRequired(projectRoot, CmakeMetaPath);
+            this.gradle = ReadRequired(projectRoot, GradlePath);
+            this.manifest = ReadRequired(projectRoot, ManifestPath);
+            this.projectSettings = ReadRequired(projectRoot, ProjectSettingsPath);
+            this.tests = ReadRequired(projectRoot, TestsPath);
+            this.audit = ReadRequired(projectRoot, AuditPath);
+            this.auditMeta = ReadRequired(projectRoot, AuditMetaPath);
+            this.testsMeta = ReadRequired(projectRoot, TestsMetaPath);
+            this.nativeMatrixValidator = ReadRequired(projectRoot, NativeMatrixValidatorPath);
+            this.legacyAudit = ReadRequired(projectRoot, LegacyAuditPath);
+            this.legacyTests = ReadRequired(projectRoot, LegacyTestsPath);
+            this.runtimeIntegrationDoc = ReadRequired(projectRoot, RuntimeIntegrationDocPath);
+            this.h8binSpecDoc = ReadRequired(projectRoot, H8binSpecDocPath);
+            this.bootSequenceDoc = ReadRequired(projectRoot, BootSequenceDocPath);
+            this.productContractsDoc = ReadRequired(projectRoot, ProductContractsDocPath);
+            this.handoffDoc = ReadRequired(projectRoot, HandoffDocPath);
+            this.portabilityProofDoc = ReadRequired(projectRoot, PortabilityProofDocPath);
+            this.h8binValidationReport = ReadRequired(projectRoot, H8binValidationReportPath);
+            this.h8binValidationJunit = ReadRequired(projectRoot, H8binValidationJunitPath);
+            this.h8binValidationMetricPhi = ReadRequired(projectRoot, H8binValidationMetricPhiPath);
+
+
+
+            }
+
+            private void EvaluateRules()
+            {
+
+            this.androidReferencesGuarded = AreAndroidReferencesGuarded(arena, out androidLeakCount);
+            this.nativeBridgePresent = native.Contains("#include <android/asset_manager.h>", StringComparison.Ordinal) &&
                                        native.Contains("#include <android/asset_manager_jni.h>", StringComparison.Ordinal) &&
                                        native.Contains("AAssetManager_fromJava", StringComparison.Ordinal) &&
                                        native.Contains("AAssetManager_open", StringComparison.Ordinal) &&
@@ -95,26 +222,26 @@ namespace Hecton8.Data.Editor
                                        native.Contains("AAsset_close(asset)", StringComparison.Ordinal) &&
                                        native.Contains("H8_GetAssetSize", StringComparison.Ordinal) &&
                                        native.Contains("H8_LoadAssetToPointer", StringComparison.Ordinal);
-            bool nativeOverflowGuard = native.Contains("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal);
-            bool nativeUncompressedFdGuard = native.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) &&
+            this.nativeOverflowGuard = native.Contains("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal);
+            this.nativeUncompressedFdGuard = native.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) &&
                                              native.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                              native.Contains("close(fd)", StringComparison.Ordinal) &&
                                              arena.Contains("private const int AndroidAssetCompressed = -6;", StringComparison.Ordinal) &&
                                              arena.Contains("blobBytes == AndroidAssetCompressed", StringComparison.Ordinal);
-            bool nativeNoHeapStaging = !native.Contains("std::vector", StringComparison.Ordinal) &&
+            this.nativeNoHeapStaging = !native.Contains("std::vector", StringComparison.Ordinal) &&
                                        !native.Contains("std::string", StringComparison.Ordinal) &&
                                        !native.Contains("malloc", StringComparison.Ordinal) &&
                                        !native.Contains("free(", StringComparison.Ordinal) &&
                                        !native.Contains("new ", StringComparison.Ordinal) &&
                                        !native.Contains("delete", StringComparison.Ordinal);
-            bool nativeBoundedDumpPath = native.Contains("H8_TryMeasureCString", StringComparison.Ordinal) &&
+            this.nativeBoundedDumpPath = native.Contains("H8_TryMeasureCString", StringComparison.Ordinal) &&
                                          native.Contains("requiredBytes > static_cast<size_t>(capacity)", StringComparison.Ordinal) &&
                                          !native.Contains("std::strlen", StringComparison.Ordinal);
-            bool nativeExportVisibilityPresent = native.Contains("extern \"C\" JNIEXPORT int32_t JNICALL H8_GetAssetSize", StringComparison.Ordinal) &&
+            this.nativeExportVisibilityPresent = native.Contains("extern \"C\" JNIEXPORT int32_t JNICALL H8_GetAssetSize", StringComparison.Ordinal) &&
                                                  native.Contains("extern \"C\" JNIEXPORT bool JNICALL H8_LoadAssetToPointer", StringComparison.Ordinal) &&
                                                  native.Contains("extern \"C\" JNIEXPORT bool JNICALL H8_WriteTelemetryDump", StringComparison.Ordinal) &&
                                                  cmake.Contains("-fvisibility=hidden", StringComparison.Ordinal);
-            bool androidNativeTelemetryDumpPresent = arena.Contains("#elif UNITY_ANDROID && !UNITY_EDITOR", StringComparison.Ordinal) &&
+            this.androidNativeTelemetryDumpPresent = arena.Contains("#elif UNITY_ANDROID && !UNITY_EDITOR", StringComparison.Ordinal) &&
                                                      arena.Contains("WriteTelemetryDumpAndroid(status, ring, telemetryCursor)", StringComparison.Ordinal) &&
                                                      arena.Contains("byte* persistentDataPathUtf8 = stackalloc byte[AndroidPersistentPathUtf8Capacity]", StringComparison.Ordinal) &&
                                                      arena.Contains("TryWriteUtf8NullTerminated(", StringComparison.Ordinal) &&
@@ -125,33 +252,33 @@ namespace Hecton8.Data.Editor
                                                      native.Contains("H8_WriteAll", StringComparison.Ordinal) &&
                                                      native.Contains("errno == EINTR", StringComparison.Ordinal) &&
                                                      native.Contains("close(fd)", StringComparison.Ordinal);
-            bool androidNativeTelemetryAgentDumpMirrorPresent = native.Contains("H8_WriteTelemetryDumpFile", StringComparison.Ordinal) &&
+            this.androidNativeTelemetryAgentDumpMirrorPresent = native.Contains("H8_WriteTelemetryDumpFile", StringComparison.Ordinal) &&
                                                                 native.Contains("Docs/AgentLogs/Dump_1404.bin", StringComparison.Ordinal) &&
                                                                 native.Contains("Docs/AgentLogs/Dump_1504.bin", StringComparison.Ordinal) &&
                                                                 native.Contains("const bool legacyOk = H8_WriteTelemetryDumpFile", StringComparison.Ordinal) &&
                                                                 native.Contains("const bool agentOk = H8_WriteTelemetryDumpFile", StringComparison.Ordinal) &&
                                                                 native.Contains("return legacyOk && agentOk;", StringComparison.Ordinal);
-            bool telemetryDumpLayoutExplicit = types.Contains("[StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.TelemetryEntrySize)]", StringComparison.Ordinal) &&
+            this.telemetryDumpLayoutExplicit = types.Contains("[StructLayout(LayoutKind.Explicit, Size = H8DataLayoutConstants.TelemetryEntrySize)]", StringComparison.Ordinal) &&
                                                types.Contains("public struct H8DataMonolithTelemetryEntry", StringComparison.Ordinal) &&
                                                types.Contains("[FieldOffset(0)] public ulong Checksum64", StringComparison.Ordinal) &&
                                                types.Contains("[FieldOffset(60)] public uint Reserved3", StringComparison.Ordinal) &&
                                                types.Contains("UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>() == H8DataLayoutConstants.TelemetryEntrySize", StringComparison.Ordinal);
-            bool writerReleaseRetryCrossPlatformPresent = arena.Contains("private const int DataMonolithWriterReleaseRetryCount = 4;", StringComparison.Ordinal) &&
+            this.writerReleaseRetryCrossPlatformPresent = arena.Contains("private const int DataMonolithWriterReleaseRetryCount = 4;", StringComparison.Ordinal) &&
                                                           arena.Contains("for (int attempt = 0; attempt < DataMonolithWriterReleaseRetryCount; attempt++)", StringComparison.Ordinal) &&
                                                           arena.Contains("vault.ReleaseWriteLock(in handle, owner)", StringComparison.Ordinal) &&
                                                           arena.Contains("Thread.Yield();", StringComparison.Ordinal) &&
                                                           !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\n#endif", StringComparison.Ordinal) &&
                                                           !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\r\n#endif", StringComparison.Ordinal);
-            int payloadWriteAcquireCount = CountToken(arena, "TryAcquireArenaWriteView(out NativeArray<byte> arena)") - 1;
-            int payloadWriteReleaseCount = CountToken(arena, "writeLockReleased = ReleaseArenaWriteView();");
-            int payloadWriteFinallyReleaseCount = CountTokenWithPreviousToken(arena, "writeLockReleased = ReleaseArenaWriteView();", "finally", 96);
-            bool payloadWriteLockFinallyProofPresent = payloadWriteAcquireCount >= 4 &&
+            this.payloadWriteAcquireCount = CountToken(arena, "TryAcquireArenaWriteView(out NativeArray<byte> arena)") - 1;
+            this.payloadWriteReleaseCount = CountToken(arena, "writeLockReleased = ReleaseArenaWriteView();");
+            this.payloadWriteFinallyReleaseCount = CountTokenWithPreviousToken(arena, "writeLockReleased = ReleaseArenaWriteView();", "finally", 96);
+            this.payloadWriteLockFinallyProofPresent = payloadWriteAcquireCount >= 4 &&
                                                        payloadWriteReleaseCount == payloadWriteAcquireCount &&
                                                        payloadWriteFinallyReleaseCount == payloadWriteReleaseCount &&
                                                        arena.Contains("if (!lockTransferred)", StringComparison.Ordinal) &&
                                                        arena.Contains("ReleaseWriteLockWithRetry(vault, in _arenaHandle, SystemID.CoreDataVault);", StringComparison.Ordinal) &&
                                                        arena.Contains("arena = default;", StringComparison.Ordinal);
-            bool globalDataVaultDeferredWriterReleaseQueueContract = globalDataVault.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) &&
+            this.globalDataVaultDeferredWriterReleaseQueueContract = globalDataVault.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) &&
                                                                      globalDataVault.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal) &&
                                                                      globalDataVault.Contains("if (kind == DeferredReleaseKindWriter)", StringComparison.Ordinal) &&
                                                                      globalDataVault.Contains("enqueueGateAcquired = Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) == 0;", StringComparison.Ordinal) &&
@@ -161,18 +288,18 @@ namespace Hecton8.Data.Editor
                                                                      !globalDataVault.Contains("pending->Kind == kind", StringComparison.Ordinal) &&
                                                                      !globalDataVault.Contains("Thread.SpinWait", StringComparison.Ordinal) &&
                                                                      !globalDataVault.Contains("while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate", StringComparison.Ordinal);
-            bool dumpTelemetryReadOnlyOnly = arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)", StringComparison.Ordinal) &&
+            this.dumpTelemetryReadOnlyOnly = arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)", StringComparison.Ordinal) &&
                                              arena.Contains("if (!TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))", StringComparison.Ordinal) &&
                                              TokenWindowDoesNotContain(
                                                  arena,
                                                  "private static void DumpTelemetry(H8DataBlobLoadStatus status)",
                                                  "private static int NormalizeTelemetryCursor(int cursor)",
                                                  "EnsureTelemetry(");
-            bool telemetryDumpChronologicalOrderPresent = arena.Contains("int start = NormalizeTelemetryCursor(cursor);", StringComparison.Ordinal) &&
+            this.telemetryDumpChronologicalOrderPresent = arena.Contains("int start = NormalizeTelemetryCursor(cursor);", StringComparison.Ordinal) &&
                                                           arena.Contains("int ringIndex = start + i;", StringComparison.Ordinal) &&
                                                           native.Contains("const int32_t firstEntryCount = entryCount - normalizedCursor;", StringComparison.Ordinal) &&
                                                           native.Contains("entryBytes + normalizedCursor * entrySize", StringComparison.Ordinal);
-            bool jniLocalReferenceLifetimeBounded = ContainsTokensInOrder(
+            this.jniLocalReferenceLifetimeBounded = ContainsTokensInOrder(
                                                         arena,
                                                         "assetManager = AndroidJNI.CallObjectMethodUnsafe(activity, getAssetsMethod, null);",
                                                         "int blobBytes = H8_GetAssetSize(javaVm, assetManager, assetName);",
@@ -188,14 +315,14 @@ namespace Hecton8.Data.Editor
                                                     arena.Contains("AndroidJNI.ExceptionClear();", StringComparison.Ordinal) &&
                                                     arena.Contains("AndroidJNI.DeleteLocalRef(exception);", StringComparison.Ordinal) &&
                                                     !arena.Contains("AndroidJNI.NewGlobalRef", StringComparison.Ordinal);
-            bool nativeAssetManagerNoCache = native.Contains("AAssetManager_fromJava(environment, reinterpret_cast<jobject>(javaAssetManager))", StringComparison.Ordinal) &&
+            this.nativeAssetManagerNoCache = native.Contains("AAssetManager_fromJava(environment, reinterpret_cast<jobject>(javaAssetManager))", StringComparison.Ordinal) &&
                                              CountToken(native, "AAsset_close(asset);") >= 4 &&
                                              !native.Contains("NewGlobalRef", StringComparison.Ordinal) &&
                                              !native.Contains("DeleteGlobalRef", StringComparison.Ordinal) &&
                                              !native.Contains("static AAssetManager", StringComparison.Ordinal) &&
                                              !native.Contains("static AAsset", StringComparison.Ordinal) &&
                                              !native.Contains("static jobject", StringComparison.Ordinal);
-            bool nativeJniEnvironmentReleaseBalanced = native.Contains("const jint getEnvResult = vm->GetEnv(reinterpret_cast<void**>(environment), JNI_VERSION_1_6);", StringComparison.Ordinal) &&
+            this.nativeJniEnvironmentReleaseBalanced = native.Contains("const jint getEnvResult = vm->GetEnv(reinterpret_cast<void**>(environment), JNI_VERSION_1_6);", StringComparison.Ordinal) &&
                                                        native.Contains("if (getEnvResult == JNI_OK)", StringComparison.Ordinal) &&
                                                        native.Contains("if (getEnvResult != JNI_EDETACHED)", StringComparison.Ordinal) &&
                                                        native.Contains("vm->AttachCurrentThread(environment, nullptr)", StringComparison.Ordinal) &&
@@ -229,19 +356,19 @@ namespace Hecton8.Data.Editor
                                                            "AAsset* asset = AAssetManager_open(resolvedAssetManager, filename, AASSET_MODE_STREAMING);",
                                                            "AAsset_close(asset);",
                                                            "return totalRead == assetLength;");
-            bool csharpRawJniRoute = arena.Contains("AndroidJNI.FindClass(\"com/unity3d/player/UnityPlayer\")", StringComparison.Ordinal) &&
+            this.csharpRawJniRoute = arena.Contains("AndroidJNI.FindClass(\"com/unity3d/player/UnityPlayer\")", StringComparison.Ordinal) &&
                                      arena.Contains("AndroidJNI.GetStaticObjectField", StringComparison.Ordinal) &&
                                      arena.Contains("CallObjectMethodUnsafe(activity, getAssetsMethod, null)", StringComparison.Ordinal) &&
                                      arena.Contains("AndroidJNI.GetJavaVM()", StringComparison.Ordinal) &&
                                      !arena.Contains("new AndroidJavaClass", StringComparison.Ordinal) &&
                                      !arena.Contains("new jvalue", StringComparison.Ordinal);
-            bool androidAssetNameStackAsciiRoute = arena.Contains("byte* assetName = stackalloc byte[assetNameCapacity]", StringComparison.Ordinal) &&
+            this.androidAssetNameStackAsciiRoute = arena.Contains("byte* assetName = stackalloc byte[assetNameCapacity]", StringComparison.Ordinal) &&
                                                    arena.Contains("TryWriteAndroidAssetName(assetName, assetNameCapacity)", StringComparison.Ordinal) &&
                                                    arena.Contains("ReadOnlySpan<char> relativePath = H8DataLayoutConstants.DefaultStreamingAssetsRelativePath.AsSpan();", StringComparison.Ordinal) &&
                                                    arena.Contains("if (c > 0x7F)", StringComparison.Ordinal) &&
                                                    arena.Contains("destination[relativePath.Length] = 0;", StringComparison.Ordinal) &&
                                                    types.Contains("DefaultStreamingAssetsRelativePath = \"Hecton8/DataMonolith/static_data.h8bin\"", StringComparison.Ordinal);
-            bool androidTelemetryRouteFlagsPresent = arena.Contains("private const uint PathFlagAndroidAssetManager = 128u;", StringComparison.Ordinal) &&
+            this.androidTelemetryRouteFlagsPresent = arena.Contains("private const uint PathFlagAndroidAssetManager = 128u;", StringComparison.Ordinal) &&
                                                      arena.Contains("private const uint PathFlagAndroidJavaAssetManager = 256u;", StringComparison.Ordinal) &&
                                                      arena.Contains("uint pathFlags = PathFlagVaultBacked | PathFlagAndroidAssetManager | PathFlagAndroidJavaAssetManager;", StringComparison.Ordinal) &&
                                                      arena.Contains("_lastReadPathFlags = pathFlags;", StringComparison.Ordinal) &&
@@ -272,52 +399,52 @@ namespace Hecton8.Data.Editor
                                                          "private static unsafe bool TryInitializeFromAndroidStreamingAssets(",
                                                          "private static bool TryConsumePendingAndroidJniException()",
                                                          "Path.Combine(");
-            bool pInvokeSourcePluginRoute = arena.Contains("DllImport(\"__Internal\"", StringComparison.Ordinal) &&
+            this.pInvokeSourcePluginRoute = arena.Contains("DllImport(\"__Internal\"", StringComparison.Ordinal) &&
                                              arena.Contains("EntryPoint = \"H8_GetAssetSize\"", StringComparison.Ordinal) &&
                                              arena.Contains("EntryPoint = \"H8_LoadAssetToPointer\"", StringComparison.Ordinal) &&
                                              arena.Contains("CallingConvention.Cdecl", StringComparison.Ordinal);
-            bool namedLibraryRouteAbsent = !arena.Contains("DllImport(\"HectonAndroidBridge\"", StringComparison.Ordinal);
-            bool zeroPointerGuards = arena.Contains("unityPlayerClass == IntPtr.Zero", StringComparison.Ordinal) &&
+            this.namedLibraryRouteAbsent = !arena.Contains("DllImport(\"HectonAndroidBridge\"", StringComparison.Ordinal);
+            this.zeroPointerGuards = arena.Contains("unityPlayerClass == IntPtr.Zero", StringComparison.Ordinal) &&
                                      arena.Contains("activity == IntPtr.Zero", StringComparison.Ordinal) &&
                                      arena.Contains("activityClass == IntPtr.Zero", StringComparison.Ordinal) &&
                                      arena.Contains("getAssetsMethod == IntPtr.Zero", StringComparison.Ordinal) &&
                                      arena.Contains("assetManager == IntPtr.Zero", StringComparison.Ordinal) &&
                                      arena.Contains("javaVm == IntPtr.Zero", StringComparison.Ordinal);
-            bool dataVaultPointerRoute = arena.Contains("TryAcquireArenaWriteView(out NativeArray<byte> arena)", StringComparison.Ordinal) &&
+            this.dataVaultPointerRoute = arena.Contains("TryAcquireArenaWriteView(out NativeArray<byte> arena)", StringComparison.Ordinal) &&
                                          arena.Contains("NativeArrayUnsafeUtility.GetUnsafePtr(arena)", StringComparison.Ordinal) &&
                                          arena.Contains("H8_LoadAssetToPointer(javaVm, assetManager, assetName, destination, blobBytes)", StringComparison.Ordinal);
-            bool windowsCreateFileRoute = arena.Contains("CreateFileWNative(", StringComparison.Ordinal) &&
+            this.windowsCreateFileRoute = arena.Contains("CreateFileWNative(", StringComparison.Ordinal) &&
                                           arena.Contains("TryInitializeFromWindowsPlayerStreamingAssets", StringComparison.Ordinal);
-            bool androidBranchRoute = arena.Contains("#elif UNITY_ANDROID && !UNITY_EDITOR", StringComparison.Ordinal) &&
+            this.androidBranchRoute = arena.Contains("#elif UNITY_ANDROID && !UNITY_EDITOR", StringComparison.Ordinal) &&
                                       arena.Contains("TryInitializeFromAndroidStreamingAssets", StringComparison.Ordinal);
-            bool bootstrapRoute = bootstrapper.Contains("InitializeMemoryPreWarmPhaseAsync", StringComparison.Ordinal) &&
+            this.bootstrapRoute = bootstrapper.Contains("InitializeMemoryPreWarmPhaseAsync", StringComparison.Ordinal) &&
                                   bootstrapper.Contains("InitializeBootstrapDataMonolithAsync", StringComparison.Ordinal) &&
                                   bootstrapper.Contains("TryInitializeFromStreamingAssetsAsync", StringComparison.Ordinal);
-            bool cmakeReferenceValid = cmake.Contains("add_library(HectonAndroidBridge SHARED", StringComparison.Ordinal) &&
+            this.cmakeReferenceValid = cmake.Contains("add_library(HectonAndroidBridge SHARED", StringComparison.Ordinal) &&
                                        cmake.Contains("target_compile_features(HectonAndroidBridge PRIVATE cxx_std_17)", StringComparison.Ordinal) &&
                                        cmake.Contains("target_link_libraries(HectonAndroidBridge", StringComparison.Ordinal) &&
                                        cmake.Contains("android", StringComparison.Ordinal) &&
                                        cmake.Contains("log", StringComparison.Ordinal);
-            bool gradleNoCompress = gradle.Contains("noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ') + ['h8bin']", StringComparison.Ordinal);
-            bool gradleExternalNativeBuildAbsent = !gradle.Contains("externalNativeBuild", StringComparison.Ordinal);
-            bool unitySourceBuildGradlePlaceholdersPresent = gradle.Contains("**IL_CPP_BUILD_SETUP**", StringComparison.Ordinal) &&
+            this.gradleNoCompress = gradle.Contains("noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ') + ['h8bin']", StringComparison.Ordinal);
+            this.gradleExternalNativeBuildAbsent = !gradle.Contains("externalNativeBuild", StringComparison.Ordinal);
+            this.unitySourceBuildGradlePlaceholdersPresent = gradle.Contains("**IL_CPP_BUILD_SETUP**", StringComparison.Ordinal) &&
                                                              gradle.Contains("**SOURCE_BUILD_SETUP**", StringComparison.Ordinal) &&
                                                              gradle.Contains("**EXTERNAL_SOURCES**", StringComparison.Ordinal);
-            bool nativeSourcePluginDefaultImporterMetaComplete = IsDefaultImporterMetaComplete(nativeMeta) &&
+            this.nativeSourcePluginDefaultImporterMetaComplete = IsDefaultImporterMetaComplete(nativeMeta) &&
                                                                  IsDefaultImporterMetaComplete(cmakeMeta);
-            bool androidSourcePluginRouteSerialized = pInvokeSourcePluginRoute &&
+            this.androidSourcePluginRouteSerialized = pInvokeSourcePluginRoute &&
                                                       cmakeReferenceValid &&
                                                       gradleExternalNativeBuildAbsent &&
                                                       unitySourceBuildGradlePlaceholdersPresent &&
                                                       nativeSourcePluginDefaultImporterMetaComplete;
-            bool androidIl2Cpp = projectSettings.Contains("scriptingBackend:\n    Android: 1", StringComparison.Ordinal) ||
+            this.androidIl2Cpp = projectSettings.Contains("scriptingBackend:\n    Android: 1", StringComparison.Ordinal) ||
                                  projectSettings.Contains("scriptingBackend:\r\n    Android: 1", StringComparison.Ordinal);
-            bool androidArm64OnlySerialized = projectSettings.Contains("AndroidTargetArchitectures: 2", StringComparison.Ordinal);
-            bool androidSplitApplicationBinaryDisabled = projectSettings.Contains("androidSplitApplicationBinary: 0", StringComparison.Ordinal) &&
+            this.androidArm64OnlySerialized = projectSettings.Contains("AndroidTargetArchitectures: 2", StringComparison.Ordinal);
+            this.androidSplitApplicationBinaryDisabled = projectSettings.Contains("androidSplitApplicationBinary: 0", StringComparison.Ordinal) &&
                                                          projectSettings.Contains("AndroidBuildApkPerCpuArchitecture: 0", StringComparison.Ordinal);
-            bool gameActivity = projectSettings.Contains("androidApplicationEntry: 2", StringComparison.Ordinal) &&
+            this.gameActivity = projectSettings.Contains("androidApplicationEntry: 2", StringComparison.Ordinal) &&
                                 manifest.Contains("com.unity3d.player.UnityPlayerGameActivity", StringComparison.Ordinal);
-            bool androidGameActivityNoLooperDependency = gameActivity &&
+            this.androidGameActivityNoLooperDependency = gameActivity &&
                                                          runtimeIntegrationDoc.Contains("Unity GameActivity remains allowed", StringComparison.Ordinal) &&
                                                          runtimeIntegrationDoc.Contains("does not depend on Java `Looper`, `myLooper`, or `Handler` APIs", StringComparison.Ordinal) &&
                                                          TokenWindowDoesNotContain(
@@ -335,34 +462,34 @@ namespace Hecton8.Data.Editor
                                                              "private static unsafe bool TryInitializeFromAndroidStreamingAssets(",
                                                              "private static bool TryConsumePendingAndroidJniException()",
                                                              "Handler");
-            bool mockJniPointerFuzzerTest = tests.Contains("MockJniPointerFuzzer_ZeroPointersAbortBeforeNativeBoundary", StringComparison.Ordinal) &&
+            this.mockJniPointerFuzzerTest = tests.Contains("MockJniPointerFuzzer_ZeroPointersAbortBeforeNativeBoundary", StringComparison.Ordinal) &&
                                             tests.Contains("MockShouldAbortBeforeNative", StringComparison.Ordinal);
-            bool auditScriptPresent = audit.Contains("H8AndroidAssetBridge1504StaticAudit", StringComparison.Ordinal) &&
+            this.auditScriptPresent = audit.Contains("H8AndroidAssetBridge1504StaticAudit", StringComparison.Ordinal) &&
                                       audit.Contains("fatalPass ? \"PASS_STATIC_SOURCE_FD_BACKED_GUARD\" : \"FATAL_STATIC_SOURCE\"", StringComparison.Ordinal);
-            bool auditRegeneratesFdBackedStatus = auditScriptPresent &&
+            this.auditRegeneratesFdBackedStatus = auditScriptPresent &&
                                                   audit.Contains("fdBackedGuardBasis", StringComparison.Ordinal);
-            bool auditStatusDowngradeGuardPresent = tests.Contains("StaticAudit_RegeneratesFdBackedStatusAndMetaProof", StringComparison.Ordinal) &&
+            this.auditStatusDowngradeGuardPresent = tests.Contains("StaticAudit_RegeneratesFdBackedStatusAndMetaProof", StringComparison.Ordinal) &&
                                                     tests.Contains("PASS_STATIC_SOURCE_FD_BACKED_GUARD", StringComparison.Ordinal);
-            bool editorStaticTestsPresent = tests.Contains("AndroidAssetBridge1504StaticAuditTests", StringComparison.Ordinal) &&
+            this.editorStaticTestsPresent = tests.Contains("AndroidAssetBridge1504StaticAuditTests", StringComparison.Ordinal) &&
                                             tests.Contains("NativeBridge_FailsClosedOnNullInputsAndSizeDrift", StringComparison.Ordinal);
-            bool nativeMatrixValidatorGuard = nativeMatrixValidator.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
+            this.nativeMatrixValidatorGuard = nativeMatrixValidator.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                               nativeMatrixValidator.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) &&
                                               nativeMatrixValidator.Contains("AndroidAssetCompressed", StringComparison.Ordinal) &&
                                               nativeMatrixValidator.Contains("uncompressed FD-backed h8bin guard", StringComparison.Ordinal);
-            bool nativeMatrixValidatorDumpMirrorGuard = nativeMatrixValidator.Contains("nativeDumpMirrorRouteValid", StringComparison.Ordinal) &&
+            this.nativeMatrixValidatorDumpMirrorGuard = nativeMatrixValidator.Contains("nativeDumpMirrorRouteValid", StringComparison.Ordinal) &&
                                                         nativeMatrixValidator.Contains("H8_WriteTelemetryDumpFile", StringComparison.Ordinal) &&
                                                         nativeMatrixValidator.Contains("Docs/AgentLogs/Dump_1404.bin", StringComparison.Ordinal) &&
                                                         nativeMatrixValidator.Contains("Docs/AgentLogs/Dump_1504.bin", StringComparison.Ordinal) &&
                                                         nativeMatrixValidator.Contains("return legacyOk && agentOk;", StringComparison.Ordinal) &&
                                                         nativeMatrixValidator.Contains("Dump_1404 plus Dump_1504 mirror routes", StringComparison.Ordinal);
-            bool legacyAuditGuard = legacyAudit.Contains("uncompressedFdBackedAssetGuard", StringComparison.Ordinal) &&
+            this.legacyAuditGuard = legacyAudit.Contains("uncompressedFdBackedAssetGuard", StringComparison.Ordinal) &&
                                     legacyAudit.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                     legacyAudit.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) &&
                                     legacyAudit.Contains("ComputeHash(stream)", StringComparison.Ordinal) &&
                                     !legacyAudit.Contains(FileReadAllBytesToken, StringComparison.Ordinal);
-            bool legacyTestsGuard = legacyTests.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
+            this.legacyTestsGuard = legacyTests.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                     legacyTests.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal);
-            bool architectureDocsUpdated = runtimeIntegrationDoc.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
+            this.architectureDocsUpdated = runtimeIntegrationDoc.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                            runtimeIntegrationDoc.Contains("Gradle must keep `h8bin` in `noCompress`", StringComparison.Ordinal) &&
                                            runtimeIntegrationDoc.Contains("AndroidTargetArchitectures: 2", StringComparison.Ordinal) &&
                                            runtimeIntegrationDoc.Contains("androidSplitApplicationBinary: 0", StringComparison.Ordinal) &&
@@ -371,7 +498,7 @@ namespace Hecton8.Data.Editor
                                            !runtimeIntegrationDoc.Contains("Android/JAR URL staging is cold-boot async", StringComparison.Ordinal) &&
                                            h8binSpecDoc.Contains("uncompressed/FD-backed", StringComparison.Ordinal) &&
                                            h8binSpecDoc.Contains("AndroidTargetArchitectures: 2", StringComparison.Ordinal);
-            bool activeArchitectureDocsAligned = bootSequenceDoc.Contains("NDK `AAssetManager` source-plugin bridge", StringComparison.Ordinal) &&
+            this.activeArchitectureDocsAligned = bootSequenceDoc.Contains("NDK `AAssetManager` source-plugin bridge", StringComparison.Ordinal) &&
                                                  bootSequenceDoc.Contains("Android/Quest URI staging is not the monolith route", StringComparison.Ordinal) &&
                                                  productContractsDoc.Contains("NDK `AAssetManager` bridge with an FD-backed/uncompressed APK entry guard", StringComparison.Ordinal) &&
                                                  handoffDoc.Contains("Android/Quest via NDK `AAssetManager` source-plugin direct-to-Vault hydration", StringComparison.Ordinal) &&
@@ -379,18 +506,18 @@ namespace Hecton8.Data.Editor
                                                  !bootSequenceDoc.Contains("Android/Quest URI staging to cache", StringComparison.Ordinal) &&
                                                  !productContractsDoc.Contains("staging Android/Quest URI assets to cache", StringComparison.Ordinal) &&
                                                  !handoffDoc.Contains("Android/Quest URI staging", StringComparison.Ordinal);
-            bool unityMetaFilesComplete = IsMonoImporterMetaComplete(auditMeta) &&
+            this.unityMetaFilesComplete = IsMonoImporterMetaComplete(auditMeta) &&
                                           IsMonoImporterMetaComplete(testsMeta);
-            bool h8binValidatorScopedPass = h8binValidationReport.Contains("\"status\": \"PASS\"", StringComparison.Ordinal) &&
+            this.h8binValidatorScopedPass = h8binValidationReport.Contains("\"status\": \"PASS\"", StringComparison.Ordinal) &&
                                             h8binValidationReport.Contains("\"agent_id\": \"1504\"", StringComparison.Ordinal) &&
                                             h8binValidationReport.Contains("\"files_checked\": 2", StringComparison.Ordinal) &&
                                             h8binValidationReport.Contains("\"structs_parsed\": 32", StringComparison.Ordinal) &&
                                             h8binValidationJunit.Contains("<testsuite name=\"h8bin_validator\"", StringComparison.Ordinal) &&
                                             h8binValidationJunit.Contains("failures=\"0\"", StringComparison.Ordinal) &&
                                             h8binValidationMetricPhi.Contains("\"status\": \"PASS\"", StringComparison.Ordinal);
-            long staticDataBytes = GetFileLengthOrNegative(projectRoot, StaticDataPath);
-            long elapsedMicroseconds = (DateTime.UtcNow.Ticks - startTicks) / 10L;
-            bool fatalPass = androidReferencesGuarded &&
+            this.staticDataBytes = GetFileLengthOrNegative(projectRoot, StaticDataPath);
+            this.elapsedMicroseconds = (DateTime.UtcNow.Ticks - startTicks) / 10L;
+            this.fatalPass = androidReferencesGuarded &&
                              nativeBridgePresent &&
                              nativeOverflowGuard &&
                              nativeUncompressedFdGuard &&
@@ -444,7 +571,13 @@ namespace Hecton8.Data.Editor
                              h8binValidatorScopedPass &&
                              staticDataBytes > 0L;
 
-            StringBuilder builder = new StringBuilder(4096);
+
+
+            }
+
+            private void WriteReport()
+            {
+StringBuilder builder = new StringBuilder(4096);
             builder.AppendLine("{");
             AppendJson(builder, "agentId", "1504", true);
             AppendJson(builder, "role", "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT", true);
@@ -582,7 +715,10 @@ namespace Hecton8.Data.Editor
 
             if (!fatalPass)
                 throw new FatalArchitectureException("Android asset bridge 1504 static audit failed. See " + ReportPath + ".");
+
+            }
         }
+
 
         private static string ReadRequired(string projectRoot, string relativePath)
         {
