@@ -480,7 +480,7 @@ def normalize_type(type_name: str) -> str:
     return type_name.replace("readonly", "").strip()
 
 
-def sanitize_int_expr(expr: str, constants: dict[str, int]) -> str:
+def sanitize_int_expr(expr: str, constants: dict[str, int]) -> list[str]:
     tokens = tokenize_csharp_bytes(expr.encode("utf-8", errors="ignore"))
     sanitized: list[str] = []
     index = 0
@@ -515,65 +515,101 @@ def sanitize_int_expr(expr: str, constants: dict[str, int]) -> str:
             sanitized.append(strip_numeric_suffix(value))
             index += 1
             continue
-        if value in {"+", "-", "*", "/", "%", "(", ")", "<<", ">>", "<", ">", "&", "|", "~"}:
+        if value == "*" and index + 1 < len(tokens) and tokens[index + 1].value == "*":
+            sanitized.append("**")
+            index += 2
+            continue
+        if value in {"+", "-", "*", "/", "%", "(", ")", "<<", ">>", "<", ">", "&", "|", "^", "~"}:
             sanitized.append(value)
             index += 1
             continue
         raise ValueError(f"unsupported integer expression token: {value!r}")
-    return " ".join(sanitized)
+    return sanitized
 
 
 def eval_int_expr(expr: str, constants: dict[str, int]) -> int:
-    sanitized = sanitize_int_expr(expr, constants)
+    sanitized_tokens = sanitize_int_expr(expr, constants)
 
-    def _eval(node: ast.AST, depth: int = 0) -> int:
+    def parse_expr(min_prec: int, depth: int) -> int:
         if depth > 100:
             raise ValueError("expression recursion limit exceeded")
-        if isinstance(node, ast.Expression):
-            return _eval(node.body, depth + 1)
-        elif isinstance(node, ast.Constant):
-            return int(node.value)
-        elif isinstance(node, ast.UnaryOp):
-            operand = _eval(node.operand, depth + 1)
-            if isinstance(node.op, ast.UAdd): return +operand
-            elif isinstance(node.op, ast.USub): return -operand
-            elif isinstance(node.op, ast.Invert): return ~operand
-            raise ValueError(f"unsupported unary op: {node.op}")
-        elif isinstance(node, ast.BinOp):
-            left, right = _eval(node.left, depth + 1), _eval(node.right, depth + 1)
-            if isinstance(node.op, (ast.LShift, ast.RShift)) and (right < 0 or right > 4096):
-                raise ValueError("shift count out of bounds")
-            if isinstance(node.op, ast.Add): return left + right
-            elif isinstance(node.op, ast.Sub): return left - right
-            elif isinstance(node.op, ast.Mult):
+        if not sanitized_tokens:
+            raise ValueError("unexpected end of expression")
+        token = sanitized_tokens.pop(0)
+
+        if token == "(":
+            left = parse_expr(0, depth + 1)
+            if not sanitized_tokens or sanitized_tokens.pop(0) != ")":
+                raise ValueError("missing closing parenthesis")
+        elif token == "~":
+            left = ~parse_expr(8, depth + 1)
+        elif token == "-":
+            left = -parse_expr(8, depth + 1)
+        elif token == "+":
+            left = parse_expr(8, depth + 1)
+        else:
+            try:
+                left = int(token, 0)
+            except ValueError:
+                raise ValueError(f"invalid integer literal: {token}")
+
+        PREC = {
+            "<": 1, ">": 1,
+            "|": 2,
+            "^": 3,
+            "&": 4,
+            "<<": 5, ">>": 5,
+            "+": 6, "-": 6,
+            "*": 7, "/": 7, "%": 7,
+            "**": 9
+        }
+
+        while sanitized_tokens:
+            op = sanitized_tokens[0]
+            prec = PREC.get(op, -1)
+            if prec < min_prec:
+                break
+            sanitized_tokens.pop(0)
+
+            next_prec = prec if op == "**" else prec + 1
+            right = parse_expr(next_prec, depth + 1)
+
+            if op == "+": left = left + right
+            elif op == "-": left = left - right
+            elif op == "*":
                 if left.bit_length() + right.bit_length() > 4096:
                     raise ValueError("multiplication result too large")
-                return left * right
-            elif isinstance(node.op, ast.Div): return left // right
-            elif isinstance(node.op, ast.FloorDiv): return left // right
-            elif isinstance(node.op, ast.Mod): return left % right
-            elif isinstance(node.op, ast.Pow):
+                left = left * right
+            elif op == "**":
                 if right < 0 or right > 256 or left.bit_length() * right > 4096:
                     raise ValueError("exponentiation result too large")
-                return left ** right
-            elif isinstance(node.op, ast.LShift): return left << right
-            elif isinstance(node.op, ast.RShift): return left >> right
-            elif isinstance(node.op, ast.BitOr): return left | right
-            elif isinstance(node.op, ast.BitXor): return left ^ right
-            elif isinstance(node.op, ast.BitAnd): return left & right
-            raise ValueError(f"unsupported binary op: {node.op}")
-        elif isinstance(node, ast.Compare):
-            left = _eval(node.left, depth + 1)
-            if len(node.ops) != 1: raise ValueError("multiple comparisons not supported")
-            op, right = node.ops[0], _eval(node.comparators[0], depth + 1)
-            if isinstance(op, ast.Lt): return int(left < right)
-            elif isinstance(op, ast.Gt): return int(left > right)
-            raise ValueError(f"unsupported comparison op: {op}")
-        raise ValueError(f"unsupported node: {node}")
+                left = left ** right
+            elif op == "/":
+                if right == 0: raise ValueError("division by zero")
+                left = left // right
+            elif op == "%":
+                if right == 0: raise ValueError("modulo by zero")
+                left = left % right
+            elif op == "<<":
+                if right < 0 or right > 4096: raise ValueError("shift count out of bounds")
+                left = left << right
+            elif op == ">>":
+                if right < 0 or right > 4096: raise ValueError("shift count out of bounds")
+                left = left >> right
+            elif op == "&": left = left & right
+            elif op == "|": left = left | right
+            elif op == "^": left = left ^ right
+            elif op == "<": left = int(left < right)
+            elif op == ">": left = int(left > right)
 
-    # Use ast.parse securely with explicit depth & value limits in _eval
-    parsed_tree = ast.parse(sanitized, mode='eval')
-    return int(_eval(parsed_tree))
+        return left
+
+    if not sanitized_tokens:
+        raise ValueError("empty expression")
+    result = parse_expr(0, 0)
+    if sanitized_tokens:
+        raise ValueError(f"unexpected trailing tokens: {sanitized_tokens}")
+    return result
 
 
 def collect_csharp_files(paths: Iterable[Path]) -> list[Path]:
