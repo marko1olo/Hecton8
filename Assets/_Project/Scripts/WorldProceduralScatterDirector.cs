@@ -2192,6 +2192,18 @@ namespace Hecton8.World
 
         private void ResetDiagnostics()
         {
+            ResetCoreDiagnostics();
+            ResetStringDiagnostics();
+            ResetCountDiagnostics();
+            ResetTimingAndReconcileDiagnostics();
+
+            ScatterHybridRuntimePlan backendPlan = RefreshScatterBackendPlan();
+            _scatterBackendHost?.ResetTelemetry();
+            ResetScatterBackendDebugTelemetry(backendPlan);
+        }
+
+        private void ResetCoreDiagnostics()
+        {
             _debugReady = false;
             _debugEvaluatedCells = 0;
             _debugDesiredPlacements = 0;
@@ -2213,13 +2225,17 @@ namespace Hecton8.World
             _debugBiomeInfluenceGpuBufferCapacity = 0;
             _debugBiomeInfluenceTransitionCells = 0;
             _debugFloraQuotaRejectedCandidates = 0;
-            _debugRejectedResidencyFamily = "None";
             _debugRejectedResidencyDistance = 0f;
             _debugRejectedResidencyRadius = 0f;
             _debugMaxCandidatesBeforePrunePerCell = 0;
             _debugMaxCandidatesAfterPrunePerCell = 0;
             _debugTrackedSpawnRescueCandidates = 0;
             _debugInjectedSpawnRescuePlacements = 0;
+        }
+
+        private void ResetStringDiagnostics()
+        {
+            _debugRejectedResidencyFamily = "None";
             _debugZone = "None";
             _debugBiomeMatrixProfile = "None";
             _debugBiomeFamily = "None";
@@ -2249,6 +2265,10 @@ namespace Hecton8.World
             _debugSpawnDominantBiomeFamily = "None";
             _debugClusterDominantAccentRole = "None";
             _debugStructureDominantAccentRole = "None";
+        }
+
+        private void ResetCountDiagnostics()
+        {
             _debugGroundDominantCount = 0;
             _debugClusterDominantCount = 0;
             _debugStructureDominantCount = 0;
@@ -2286,6 +2306,10 @@ namespace Hecton8.World
             _debugPatternSpawnBudgetScale = 1f;
             _debugTopHeat = 0f;
             _debugTopScore = 0f;
+        }
+
+        private void ResetTimingAndReconcileDiagnostics()
+        {
             _debugRuntimeCellSize = _runtimeStreamingState.CellSize;
             _debugRuntimeRadiusCells = _runtimeStreamingState.RadiusCells;
             _debugRuntimeChunkSize = _runtimeStreamingState.ChunkSize;
@@ -2306,9 +2330,6 @@ namespace Hecton8.World
             _debugReconcileRebuiltCount = 0;
             _debugReconcileCreatedCount = 0;
             _debugReconcileReusedCount = 0;
-            ScatterHybridRuntimePlan backendPlan = RefreshScatterBackendPlan();
-            _scatterBackendHost?.ResetTelemetry();
-            ResetScatterBackendDebugTelemetry(backendPlan);
         }
 
         private ScatterCandidatePreview BuildCandidatePreview(
