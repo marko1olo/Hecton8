@@ -11,47 +11,47 @@ namespace Hecton8.PureLogic.Tests
         [Test]
         public void Test_HappyPath_Case01()
         {
-            float result = ScannerResolutionDepthCalculator.Compute(10f, 100f, 10f, 90f);
+            float result = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, 10f, 90f);
             Assert.That(result, Is.EqualTo(0.9f * 0.9f).Within(0.0001f));
         }
 
         [Test]
         public void Test_Boundary_Case02()
         {
-            float resultEdge = ScannerResolutionDepthCalculator.Compute(100f, 100f, 0f, 100f);
+            float resultEdge = ScannerResolutionDepthCalculator.ComputeSqr(10000f, 10000f, 0f, 100f);
             Assert.That(resultEdge, Is.EqualTo(0f));
 
-            float resultZeroNoise = ScannerResolutionDepthCalculator.Compute(0f, 100f, 0f, 10f);
+            float resultZeroNoise = ScannerResolutionDepthCalculator.ComputeSqr(0f, 10000f, 0f, 10f);
             Assert.That(resultZeroNoise, Is.EqualTo(1f));
         }
 
         [Test]
         public void Test_ZeroInputs_Case03()
         {
-            float resultZeroRange = ScannerResolutionDepthCalculator.Compute(10f, 0f, 10f, 10f);
+            float resultZeroRange = ScannerResolutionDepthCalculator.ComputeSqr(100f, 0f, 10f, 10f);
             Assert.That(resultZeroRange, Is.EqualTo(0f));
 
-            float resultZeroPowerNoise = ScannerResolutionDepthCalculator.Compute(10f, 100f, 0f, 0f);
+            float resultZeroPowerNoise = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, 0f, 0f);
             Assert.That(resultZeroPowerNoise, Is.EqualTo(0f));
         }
 
         [Test]
         public void Test_NegativeInputs_Case04()
         {
-            float resultNegDist = ScannerResolutionDepthCalculator.Compute(-10f, 100f, 10f, 90f);
+            float resultNegDist = ScannerResolutionDepthCalculator.ComputeSqr(-10f, 10000f, 10f, 90f);
             Assert.That(resultNegDist, Is.EqualTo(1f * 0.9f).Within(0.0001f));
 
-            float resultNegNoise = ScannerResolutionDepthCalculator.Compute(0f, 100f, -50f, 100f);
+            float resultNegNoise = ScannerResolutionDepthCalculator.ComputeSqr(0f, 10000f, -50f, 100f);
             Assert.That(resultNegNoise, Is.EqualTo(1f));
         }
 
         [Test]
         public void Test_ExtremeInputs_Case05()
         {
-            float resultNan = ScannerResolutionDepthCalculator.Compute(float.NaN, 100f, 10f, 10f);
+            float resultNan = ScannerResolutionDepthCalculator.ComputeSqr(float.NaN, 10000f, 10f, 10f);
             Assert.That(resultNan, Is.EqualTo(0f));
 
-            float resultInf = ScannerResolutionDepthCalculator.Compute(10f, 100f, float.PositiveInfinity, 10f);
+            float resultInf = ScannerResolutionDepthCalculator.ComputeSqr(100f, 10000f, float.PositiveInfinity, 10f);
             Assert.That(resultInf, Is.EqualTo(0f));
         }
     }
