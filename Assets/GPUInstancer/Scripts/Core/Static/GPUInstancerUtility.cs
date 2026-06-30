@@ -2927,10 +2927,10 @@ namespace GPUInstancer
 
         #region Shader Functions
 
-        public static void GenerateInstancedShadersForGameObject(GPUInstancerPrototype prototype)
+        public static bool GenerateInstancedShadersForGameObject(GPUInstancerPrototype prototype)
         {
             if (prototype.prefabObject == null)
-                return;
+                return false;
 
             MeshRenderer[] meshRenderers = prototype.prefabObject.GetComponentsInChildren<MeshRenderer>();
 
@@ -3026,6 +3026,7 @@ namespace GPUInstancer
                 }
             }
 #endif
+            return meshRenderers != null && meshRenderers.Length > 0;
         }
 
         public static bool IsShaderInstanced(Shader shader)
