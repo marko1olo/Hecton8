@@ -1027,6 +1027,17 @@ namespace Hecton8.Input
             if (string.IsNullOrEmpty(json))
                 return false;
 
+            if (!TryGetLegacyRecordsArrayRange(json, out int arrayStart, out int arrayEnd))
+                return false;
+
+            return TryParseAndApplyLegacyRecordsArray(json, arrayStart, arrayEnd);
+        }
+
+        private static bool TryGetLegacyRecordsArrayRange(string json, out int arrayStart, out int arrayEnd)
+        {
+            arrayStart = 0;
+            arrayEnd = 0;
+
             int rootObjectStart = 0;
             SkipJsonWhitespace(json, ref rootObjectStart, json.Length);
             if (rootObjectStart >= json.Length || json[rootObjectStart] != '{')
@@ -1045,27 +1056,32 @@ namespace Hecton8.Input
                     rootObjectStart,
                     rootObjectEnd,
                     "Records",
-                    out int valueStart,
-                    out int recordsValueEnd))
+                    out arrayStart,
+                    out arrayEnd))
                 return false;
 
-            if (valueStart >= recordsValueEnd || json[valueStart] != '[')
+            if (arrayStart >= arrayEnd || json[arrayStart] != '[')
                 return false;
 
-            int index = valueStart + 1;
+            return true;
+        }
+
+        private bool TryParseAndApplyLegacyRecordsArray(string json, int arrayStart, int arrayEnd)
+        {
+            int index = arrayStart + 1;
             int stagedRecords = 0;
-            while (index < recordsValueEnd)
+            while (index < arrayEnd)
             {
-                SkipJsonWhitespace(json, ref index, recordsValueEnd);
-                if (index >= recordsValueEnd)
+                SkipJsonWhitespace(json, ref index, arrayEnd);
+                if (index >= arrayEnd)
                     return false;
 
                 char token = json[index];
                 if (token == ']')
                 {
                     int afterArray = index + 1;
-                    SkipJsonWhitespace(json, ref afterArray, recordsValueEnd);
-                    if (afterArray != recordsValueEnd)
+                    SkipJsonWhitespace(json, ref afterArray, arrayEnd);
+                    if (afterArray != arrayEnd)
                         return false;
 
                     ApplyStagedOptionRecords(stagedRecords);
@@ -1082,7 +1098,7 @@ namespace Hecton8.Input
                     return false;
 
                 int recordObjectStart = index;
-                if (!TryFindJsonObjectEnd(json, recordObjectStart, recordsValueEnd, out int recordObjectEnd))
+                if (!TryFindJsonObjectEnd(json, recordObjectStart, arrayEnd, out int recordObjectEnd))
                     return false;
 
                 if (!TryReadLegacyOptionRecord(json, recordObjectStart, recordObjectEnd, out OptionRecord record))
