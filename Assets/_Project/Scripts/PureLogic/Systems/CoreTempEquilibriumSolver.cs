@@ -1,14 +1,5 @@
 using System;
 using System.Numerics;
-
-namespace Hecton8.PureLogic.Systems
-{
-    /// <summary>
-    /// Pure C# mathematical implementation for CoreTempEquilibriumSolver.
-    /// Extracted from ShinobuPhysiologyRuntime.cs. Fully stateless and allocation-free.
-    /// </summary>
-    public static class CoreTempEquilibriumSolver
-    {
         /// <summary>
         /// Computes/evaluates the mathematical model.
         /// </summary>
@@ -50,12 +41,6 @@ namespace Hecton8.PureLogic.Systems
             float numerator = 1f - (0.5f * x) + (0.1f * x2) - ((1f / 120f) * x3);
             float denominator = 1f + (0.5f * x) + (0.1f * x2) + ((1f / 120f) * x3);
 
-            float baseDecay = numerator / Math.Max(denominator, 1e-6f);
-            float decay2 = baseDecay * baseDecay;
-            float decay4 = decay2 * decay2;
-
-            float result = float.IsFinite(decay4) ? decay4 : 0f;
-            return Math.Clamp(1f - result, 0f, 1f);
         }
     }
 }

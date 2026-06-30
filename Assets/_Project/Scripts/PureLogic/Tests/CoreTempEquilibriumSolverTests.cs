@@ -1,32 +1,6 @@
 using NUnit.Framework;
 using System;
 using System.Numerics;
-using Hecton8.PureLogic.Systems;
-
-namespace Hecton8.PureLogic.Tests
-{
-    [TestFixture]
-    public class CoreTempEquilibriumSolverTests
-    {
-        private const float DefaultCoolingRate = 0.006f;
-        private const float DefaultMinTemp = 20f;
-        private const float DefaultMaxTemp = 43f;
-
-        [Test]
-        public void Test_HappyPath_Case01()
-        {
-            // Core == ambient: no change
-            float result1 = CoreTempEquilibriumSolver.Solve(37f, 37f, 0f, 10f, DefaultCoolingRate, DefaultMinTemp, DefaultMaxTemp);
-            Assert.That(result1, Is.EqualTo(37f).Within(0.001f));
-
-            // Perfect suit: near zero drift
-            float result2 = CoreTempEquilibriumSolver.Solve(37f, 2f, 1f, 10f, DefaultCoolingRate, DefaultMinTemp, DefaultMaxTemp);
-            Assert.That(result2, Is.EqualTo(37f).Within(0.001f));
-
-            // Exposed to 2C water: rapid drop
-            float result3 = CoreTempEquilibriumSolver.Solve(37f, 2f, 0f, 600f, DefaultCoolingRate, DefaultMinTemp, DefaultMaxTemp);
-            Assert.That(result3, Is.LessThan(37f));
-            Assert.That(result3, Is.GreaterThanOrEqualTo(DefaultMinTemp));
         }
 
         [Test]
