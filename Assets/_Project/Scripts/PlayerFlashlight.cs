@@ -190,33 +190,20 @@ namespace Hecton8.Gameplay
             return Enqueue(FlashlightEventType.Toggled, isOn, batteryPercent, heat01);
         }
 
-        [System.Obsolete("Use TryRaiseToggled so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseToggled(bool isOn, float batteryPercent, float heat01) => TryRaiseToggled(isOn, batteryPercent, heat01);
-
         internal static bool TryRaiseBatteryDepleted(float batteryPercent, float heat01)
         {
             return Enqueue(FlashlightEventType.BatteryDepleted, false, batteryPercent, heat01);
         }
-
-        [System.Obsolete("Use TryRaiseBatteryDepleted so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseBatteryDepleted(float batteryPercent, float heat01) => TryRaiseBatteryDepleted(batteryPercent, heat01);
 
         internal static bool TryRaiseOverheat(float batteryPercent, float heat01)
         {
             return Enqueue(FlashlightEventType.Overheat, false, batteryPercent, heat01);
         }
 
-        [System.Obsolete("Use TryRaiseOverheat so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseOverheat(float batteryPercent, float heat01) => TryRaiseOverheat(batteryPercent, heat01);
-
         internal static bool TryRaiseFlickerStart(bool isOn, float batteryPercent, float heat01)
         {
             return Enqueue(FlashlightEventType.FlickerStart, isOn, batteryPercent, heat01);
         }
-
-        [System.Obsolete("Use TryRaiseFlickerStart so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseFlickerStart(bool isOn, float batteryPercent, float heat01)
-            => TryRaiseFlickerStart(isOn, batteryPercent, heat01);
 
         private static void EnsureSignalLaneInitialized()
         {
