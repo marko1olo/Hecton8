@@ -294,7 +294,7 @@ namespace Hecton8.Physics.KCC
             //
             // SAFETY_JUSTIFICATION_PARAGRAPH_2:
             // Splitting every frame into many small jobs was rejected because it creates same-frame schedule/readback
-            // pressure and hides determinism bugs behind scheduler order. Managed collections were rejected because
+            // pressure and hides determinism issues behind scheduler order. Managed collections were rejected because
             // the history and rollback state must be flat native memory.
             //
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
