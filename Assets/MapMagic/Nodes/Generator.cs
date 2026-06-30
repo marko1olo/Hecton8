@@ -106,15 +106,6 @@ namespace MapMagic.Nodes
 		public abstract OutputLevel OutputLevel {get;}
 	}
 
-	/*public interface IOutput
-	/// Either output layer or output generator itself
-	/// TODO: merge with output generator?
-	{
-		Generator Gen { get; } 
-		void SetGen (Generator gen);
-		ulong Id { get; set; }
-	}
-	*/
 
 	public interface IApplyData
 	{
