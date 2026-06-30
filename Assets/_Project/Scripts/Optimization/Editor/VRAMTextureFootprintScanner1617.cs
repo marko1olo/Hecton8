@@ -24,7 +24,7 @@ namespace Hecton8.Optimization.Editor
         {
             TextureScanSummary summary = ScanTextures(out StringBuilder report);
             WriteReport(report);
-            Debug.Log(
+            Hecton8.Core.H8Debug.Log(
                 "[VRAMTextureFootprintScanner1617] Scanned textures=" +
                 summary.TextureCount.ToString(CultureInfo.InvariantCulture) +
                 " bytes=" +
