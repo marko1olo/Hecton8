@@ -265,65 +265,78 @@ namespace Hecton8.Editor.GeologyForge
 
                     bool commentOnly = IsCommentOnly(trimmed);
                     bool editorCompileGuarded = IsEditorCompileGuarded(preprocessorStack);
-                    TrackPendingContextMenuAttribute(trimmed, commentOnly, ref pendingContextMenuAttribute);
-                    if (!commentOnly && TryExtractMethodName(trimmed, out string methodName))
-                    {
-                        methodScope.Active = true;
-                        methodScope.Opened = line.IndexOf('{') >= 0;
-                        methodScope.MethodName = methodName;
-                        methodScope.StartLine = lineIndex;
-                        methodScope.ParentBraceDepth = braceDepth;
-                        methodScope.ContextMenu = pendingContextMenuAttribute;
-                        pendingContextMenuAttribute = false;
-                    }
-                    else if (!commentOnly && ShouldClearPendingContextMenuAttribute(trimmed))
-                    {
-                        pendingContextMenuAttribute = false;
-                    }
 
+                    UpdateMethodScope(line, trimmed, lineIndex, braceDepth, commentOnly, ref methodScope, ref pendingContextMenuAttribute);
                     TrackPlayModeBlockedContextMenu(trimmed, commentOnly, ref methodScope);
-
-                    for (int patternIndex = 0; patternIndex < _ForbiddenPatterns.Length; patternIndex++)
-                    {
-                        string pattern = _ForbiddenPatterns[patternIndex];
-                        if (LineContainsPattern(line, pattern))
-                        {
-                            string executionContext = ClassifyExecutionContext(methodScope, commentOnly, editorCompileGuarded);
-                            string kind = ClassifyPattern(pattern, line);
-                            string ownerDomain = ClassifyOwnerDomain(path);
-                            bool approvedCoreVoxelPipeline = !commentOnly && IsApprovedCoreVoxelPipeline(path, methodScope, kind, line);
-                            findings.Add(new Finding
-                            {
-                                Path = path,
-                                Line = lineIndex,
-                                Pattern = pattern,
-                                Kind = kind,
-                                OwnerDomain = ownerDomain,
-                                ApprovedCoreVoxelPipeline = approvedCoreVoxelPipeline,
-                                ExecutionContext = executionContext,
-                                Method = methodScope.Active ? methodScope.MethodName : string.Empty,
-                                RuntimePhaseRisk = ClassifyRisk(kind, executionContext, commentOnly, editorCompileGuarded),
-                                CommentOnly = commentOnly,
-                                EditorCompileGuarded = editorCompileGuarded,
-                                EditorPlayModeBlocked = IsEditorPlayModeBlocked(methodScope)
-                            });
-                        }
-                    }
-
-                    int openingBraces = CountChar(line, '{');
-                    int closingBraces = CountChar(line, '}');
-                    if (methodScope.Active && openingBraces > 0)
-                        methodScope.Opened = true;
-
-                    braceDepth += openingBraces;
-                    braceDepth -= closingBraces;
-                    if (braceDepth < 0)
-                        braceDepth = 0;
-
-                    if (methodScope.Active && methodScope.Opened && lineIndex > methodScope.StartLine && braceDepth <= methodScope.ParentBraceDepth)
-                        methodScope = default;
+                    EvaluatePatterns(path, line, lineIndex, commentOnly, editorCompileGuarded, methodScope, findings);
+                    UpdateBraceDepth(line, lineIndex, ref braceDepth, ref methodScope);
                 }
             }
+        }
+
+        private static void UpdateMethodScope(string line, string trimmed, int lineIndex, int braceDepth, bool commentOnly, ref MethodScope methodScope, ref bool pendingContextMenuAttribute)
+        {
+            TrackPendingContextMenuAttribute(trimmed, commentOnly, ref pendingContextMenuAttribute);
+            if (!commentOnly && TryExtractMethodName(trimmed, out string methodName))
+            {
+                methodScope.Active = true;
+                methodScope.Opened = line.IndexOf('\x7B') >= 0;
+                methodScope.MethodName = methodName;
+                methodScope.StartLine = lineIndex;
+                methodScope.ParentBraceDepth = braceDepth;
+                methodScope.ContextMenu = pendingContextMenuAttribute;
+                pendingContextMenuAttribute = false;
+            }
+            else if (!commentOnly && ShouldClearPendingContextMenuAttribute(trimmed))
+            {
+                pendingContextMenuAttribute = false;
+            }
+        }
+
+        private static void EvaluatePatterns(string path, string line, int lineIndex, bool commentOnly, bool editorCompileGuarded, MethodScope methodScope, List<Finding> findings)
+        {
+            for (int patternIndex = 0; patternIndex < _ForbiddenPatterns.Length; patternIndex++)
+            {
+                string pattern = _ForbiddenPatterns[patternIndex];
+                if (LineContainsPattern(line, pattern))
+                {
+                    string executionContext = ClassifyExecutionContext(methodScope, commentOnly, editorCompileGuarded);
+                    string kind = ClassifyPattern(pattern, line);
+                    string ownerDomain = ClassifyOwnerDomain(path);
+                    bool approvedCoreVoxelPipeline = !commentOnly && IsApprovedCoreVoxelPipeline(path, methodScope, kind, line);
+                    findings.Add(new Finding
+                    {
+                        Path = path,
+                        Line = lineIndex,
+                        Pattern = pattern,
+                        Kind = kind,
+                        OwnerDomain = ownerDomain,
+                        ApprovedCoreVoxelPipeline = approvedCoreVoxelPipeline,
+                        ExecutionContext = executionContext,
+                        Method = methodScope.Active ? methodScope.MethodName : string.Empty,
+                        RuntimePhaseRisk = ClassifyRisk(kind, executionContext, commentOnly, editorCompileGuarded),
+                        CommentOnly = commentOnly,
+                        EditorCompileGuarded = editorCompileGuarded,
+                        EditorPlayModeBlocked = IsEditorPlayModeBlocked(methodScope)
+                    });
+                }
+            }
+        }
+
+        private static void UpdateBraceDepth(string line, int lineIndex, ref int braceDepth, ref MethodScope methodScope)
+        {
+            int openingBraces = CountChar(line, '\x7B');
+            int closingBraces = CountChar(line, '\x7D');
+            if (methodScope.Active && openingBraces > 0)
+                methodScope.Opened = true;
+
+            braceDepth += openingBraces;
+            braceDepth -= closingBraces;
+            if (braceDepth < 0)
+                braceDepth = 0;
+
+            if (methodScope.Active && methodScope.Opened && lineIndex > methodScope.StartLine && braceDepth <= methodScope.ParentBraceDepth)
+                methodScope = default;
         }
 
         private static void WriteReport(List<Finding> findings)
