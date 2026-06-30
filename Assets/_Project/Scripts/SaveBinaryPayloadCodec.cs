@@ -508,30 +508,15 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
-            int narrativeDiscoverySourceCount = ClampCollectionCount(
-                data.narrativeDiscoveryCount,
-                data.narrativeDiscoveryIds,
-                SaveData.MaxNarrativeDiscoveries);
-            int narrativeDiscoveryCount = CountNonBlankStringArraySlice(
-                data.narrativeDiscoveryIds,
-                narrativeDiscoverySourceCount,
-                SaveData.MaxNarrativeDiscoveries);
-            int corporatePendingOrderSourceCount = ClampPairedListCount(
-                data.corporatePendingOrderIds,
-                data.corporatePendingOrderTimers,
-                SaveData.MaxCorporateOrderIds);
+            return WriteSaveDataCore(data, ref writer)
+                && WriteSaveDataWorld(data, ref writer)
+                && WriteSaveDataNarrativeAndMeta(data, ref writer)
+                && WriteSaveDataSettingsAndProcedural(data, ref writer);
+        }
+
+        private static bool WriteSaveDataCore(SaveData data, ref BufferWriter writer)
+        {
             double totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
-            float firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
-            int endingChoice = SanitizeEndingChoice(data.endingChoice);
-            bool endingComplete = data.endingComplete && endingChoice != 0;
-            if (!endingComplete)
-                endingChoice = 0;
-            bool endingConditionMet = data.endingConditionMet || endingComplete;
-            ulong suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
-            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
-                data.lastDiscoveredBiomeId,
-                data.discoveredBiomeIds,
-                data.discoveredBiomeBitWords);
 
             return writer.WriteInt(data.version)
                 && writer.WriteStruct(data.contractVersionHashLo)
@@ -561,8 +546,17 @@ namespace Hecton8.SaveSystem
                 && WritePdaAdvisories(ref writer, data.pdaAdvisories)
                 && WriteProceduralLore(ref writer, data.proceduralLore)
                 && WriteAchievementRegistry(ref writer, data.achievements)
-                && WriteRunModifiers(ref writer, data.runModifiers)
-                && WriteMetaCampaign(ref writer, data.metaCampaign)
+                && WriteRunModifiers(ref writer, data.runModifiers);
+        }
+
+        private static bool WriteSaveDataWorld(SaveData data, ref BufferWriter writer)
+        {
+            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
+                data.lastDiscoveredBiomeId,
+                data.discoveredBiomeIds,
+                data.discoveredBiomeBitWords);
+
+            return WriteMetaCampaign(ref writer, data.metaCampaign)
                 && WriteResourceScarcity(ref writer, data.resourceScarcity)
                 && WriteEnvironmentalStrain(ref writer, data.environmentalStrain)
                 && WriteEcosystemState(ref writer, data.ecosystemState)
@@ -581,8 +575,32 @@ namespace Hecton8.SaveSystem
                 && WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)
                 && WriteDiscoveredBiomeHashSet(ref writer, data.discoveredBiomeIds)
                 && WriteDiscoveredBiomeBitWords(ref writer, data.discoveredBiomeBitWords)
-                && writer.WriteInt(lastDiscoveredBiomeId)
-                && writer.WriteInt(narrativeDiscoveryCount)
+                && writer.WriteInt(lastDiscoveredBiomeId);
+        }
+
+        private static bool WriteSaveDataNarrativeAndMeta(SaveData data, ref BufferWriter writer)
+        {
+            int narrativeDiscoverySourceCount = ClampCollectionCount(
+                data.narrativeDiscoveryCount,
+                data.narrativeDiscoveryIds,
+                SaveData.MaxNarrativeDiscoveries);
+            int narrativeDiscoveryCount = CountNonBlankStringArraySlice(
+                data.narrativeDiscoveryIds,
+                narrativeDiscoverySourceCount,
+                SaveData.MaxNarrativeDiscoveries);
+            int corporatePendingOrderSourceCount = ClampPairedListCount(
+                data.corporatePendingOrderIds,
+                data.corporatePendingOrderTimers,
+                SaveData.MaxCorporateOrderIds);
+            float firstHourSessionTime = SanitizeNonNegativeFinite(data.firstHourSessionTime);
+            int endingChoice = SanitizeEndingChoice(data.endingChoice);
+            bool endingComplete = data.endingComplete && endingChoice != 0;
+            if (!endingComplete)
+                endingChoice = 0;
+            bool endingConditionMet = data.endingConditionMet || endingComplete;
+            ulong suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
+
+            return writer.WriteInt(narrativeDiscoveryCount)
                 && WriteNonBlankStringArraySlice(
                     ref writer,
                     data.narrativeDiscoveryIds,
