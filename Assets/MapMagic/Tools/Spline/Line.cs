@@ -242,7 +242,6 @@ namespace Den.Tools.Splines
 		#region Ops
 
 			public int CalcPointsNum (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
-
 			{
 				int numPoints = 0;
 				for (int s=0; s<segments.Length; s++)
@@ -256,8 +255,7 @@ namespace Den.Tools.Splines
 				return numPoints;
 			}
 
-			public void FillPoints (Vector3[] points, Vector3[] derivatives, float resPerUnit=0.1f, int minRes=3, int maxRes=20)
-
+			public void FillPoints (Vector3[] points, float resPerUnit=0.1f, int minRes=3, int maxRes=20, Vector3[] derivatives=null)
 			{
 				int i=0;
 				for (int s=0; s<segments.Length; s++)
@@ -272,16 +270,13 @@ namespace Den.Tools.Splines
 						points[i] = segments[s].GetPoint(percent);
 						if (derivatives != null)
 							derivatives[i] = segments[s].GetDerivative(percent);
-
 						i++;
 					}
 				}
 
-				//the last one
 				points[points.Length-1] = segments[segments.Length-1].end.pos;
 				if (derivatives != null)
 					derivatives[points.Length-1] = -segments[segments.Length-1].end.dir;
-
 			}
 
 			public Vector3[] GetAllPoints (float resPerUnit=0.1f, int minRes=3, int maxRes=20)
@@ -291,7 +286,7 @@ namespace Den.Tools.Splines
 			{
 				int numPoints = CalcPointsNum(resPerUnit, minRes, maxRes);
 				Vector3[] points = new Vector3[numPoints + 1];
-				FillPoints(points, null, resPerUnit, minRes, maxRes);
+				FillPoints(points, resPerUnit, minRes, maxRes);
 				return points; 
 			}
 
@@ -301,7 +296,7 @@ namespace Den.Tools.Splines
 				int numPoints = CalcPointsNum(resPerUnit, minRes, maxRes);
 				Vector3[] points = new Vector3[numPoints + 1];
 				Vector3[] derivatives = new Vector3[numPoints + 1];
-				FillPoints(points, derivatives, resPerUnit, minRes, maxRes);
+				FillPoints(points, resPerUnit, minRes, maxRes, derivatives);
 				return (points, derivatives); 
 			}
 
