@@ -11,6 +11,9 @@ namespace Hecton8.BlackboxDiagnostics
     /// </summary>
     public static class H8CLI
     {
+        public static Action<H8DiagnosticOptions> s_RunEditModeAction = H8Runner.RunEditMode;
+        public static Action<int> s_ExitAction = EditorApplication.Exit;
+
         private static H8DiagnosticOptions GetDefaultOpts()
         {
             return new H8DiagnosticOptions
@@ -29,7 +32,7 @@ namespace Hecton8.BlackboxDiagnostics
         {
             Debug.Log("[H8Blackbox] CLI starting RunSelfCheck...");
             H8Runner.RunSelfCheck(GetDefaultOpts());
-            if (Application.isBatchMode) EditorApplication.Exit(0);
+            if (Application.isBatchMode) s_ExitAction(0);
         }
 
         public static void RunEditMode()
@@ -37,13 +40,13 @@ namespace Hecton8.BlackboxDiagnostics
             Debug.Log("[H8Blackbox] CLI starting RunEditMode...");
             try
             {
-                H8Runner.RunEditMode(GetDefaultOpts());
-                if (Application.isBatchMode) EditorApplication.Exit(0);
+                s_RunEditModeAction(GetDefaultOpts());
+                if (Application.isBatchMode) s_ExitAction(0);
             }
             catch (Exception e)
             {
                 Debug.LogError($"[H8Blackbox] CLI RunEditMode failed: {e.Message}\n{e.StackTrace}");
-                if (Application.isBatchMode) EditorApplication.Exit(1);
+                if (Application.isBatchMode) s_ExitAction(1);
             }
         }
 
@@ -83,7 +86,7 @@ namespace Hecton8.BlackboxDiagnostics
                 H8Writers.WriteRunSummary(outDir, pSummary);
                 H8Utils.WriteFile(System.IO.Path.Combine(outDir, "full_comparison_report.md"), "# Full Comparison Aborted\nBatchmode not supported for FullComparison PlayMode state machine.");
                 
-                EditorApplication.Exit(0);
+                s_ExitAction(0);
                 return;
             }
             H8Runner.RunFullComparison(GetDefaultOpts());
