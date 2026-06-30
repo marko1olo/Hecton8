@@ -108,25 +108,34 @@ namespace Lofelt.NiceVibrations
         /// </summary>
         ///
         /// This needs to be called before calling any other method.
-        public static void Initialize()
+        internal static System.Action AndroidInitAction = PerformAndroidInitialization;
+
+        internal static void PerformAndroidInitialization()
         {
 #if (UNITY_ANDROID && !UNITY_EDITOR)
+            using (var unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (var context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity"))
+            {
+                lofeltHaptics = new AndroidJavaObject("com.lofelt.haptics.LofeltHaptics", context);
+                nativeController = lofeltHaptics.Call<long>("getControllerHandle");
+                hapticPatterns = new AndroidJavaObject("com.lofelt.haptics.HapticPatterns", context);
+
+                playMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "play", "()V", false);
+                stopMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "stop", "()V", false);
+                seekMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "seek", "(F)V", false);
+                loopMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "loop", "(Z)V", false);
+                setAmplitudeMultiplicationMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "setAmplitudeMultiplication", "(F)V", false);
+                playMaximumAmplitudePattern = AndroidJNIHelper.GetMethodID(hapticPatterns.GetRawClass(), "playMaximumAmplitudePattern", "([F)V", false);
+            }
+#endif
+        }
+
+        public static void Initialize()
+        {
+#if (UNITY_ANDROID && !UNITY_EDITOR) || UNITY_EDITOR
             try
             {
-                using (var unityPlayerClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                using (var context = unityPlayerClass.GetStatic<AndroidJavaObject>("currentActivity"))
-                {
-                    lofeltHaptics = new AndroidJavaObject("com.lofelt.haptics.LofeltHaptics", context);
-                    nativeController = lofeltHaptics.Call<long>("getControllerHandle");
-                    hapticPatterns = new AndroidJavaObject("com.lofelt.haptics.HapticPatterns", context);
-
-                    playMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "play", "()V", false);
-                    stopMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "stop", "()V", false);
-                    seekMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "seek", "(F)V", false);
-                    loopMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "loop", "(Z)V", false);
-                    setAmplitudeMultiplicationMethodId = AndroidJNIHelper.GetMethodID(lofeltHaptics.GetRawClass(), "setAmplitudeMultiplication", "(F)V", false);
-                    playMaximumAmplitudePattern = AndroidJNIHelper.GetMethodID(hapticPatterns.GetRawClass(), "playMaximumAmplitudePattern", "([F)V", false);
-                }
+                AndroidInitAction?.Invoke();
             }
             catch (Exception ex)
             {
