@@ -78,12 +78,11 @@ namespace CandiceAIforGames.AI
                 return;
             }
 
-            agentController = agentToBoost.GetComponent<CandiceAIController>();
-            playerController = agentToBoost.GetComponent<CandiceAIPlayerController>();
-            if (agentController == null || candiceUI == null)
+            if (!agentToBoost.TryGetComponent<CandiceAIController>(out agentController) || candiceUI == null)
             {
                 return;
             }
+            agentToBoost.TryGetComponent<CandiceAIPlayerController>(out playerController);
 
             candiceUI.thisAgent = agentToBoost;
             if (candiceUI.HealthBar == null)
