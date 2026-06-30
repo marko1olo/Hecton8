@@ -29,6 +29,9 @@ namespace Hecton8.BlackboxDiagnostics
         private static Action<H8DiagnosticSnapshot> s_OnComplete;
         private static H8DiagnosticOptions s_Opts;
 
+        internal static Action<H8DiagnosticOptions> s_RunSelfCheckLogic;
+        internal static Action<H8DiagnosticOptions> s_RunEditModeLogic;
+
         static H8Runner()
         {
             // Called on domain reload
@@ -50,39 +53,46 @@ namespace Hecton8.BlackboxDiagnostics
             Debug.Log("[H8Blackbox] Starting SelfCheck...");
             try
             {
-                string outDir = H8Utils.CreateOutputFolder();
-                var snapshot = H8Collectors.CollectFullSnapshot(opts, "SelfCheck");
-                var findings = H8FindingsEngine.Analyze(snapshot);
+                if (s_RunSelfCheckLogic != null)
+                {
+                    s_RunSelfCheckLogic(opts);
+                }
+                else
+                {
+                    string outDir = H8Utils.CreateOutputFolder();
+                    var snapshot = H8Collectors.CollectFullSnapshot(opts, "SelfCheck");
+                    var findings = H8FindingsEngine.Analyze(snapshot);
 
-                var sb = new System.Text.StringBuilder();
-                sb.AppendLine("# Hecton8 Blackbox Self-Check\n");
-                
-                string IsOk(bool cond) => cond ? "OK" : "FAIL";
-                
-                sb.AppendLine($"1. Output folder writable: {IsOk(Directory.Exists(outDir))}");
-                sb.AppendLine($"2. Unity version read: {IsOk(!string.IsNullOrEmpty(snapshot.project.unityVersion))}");
-                sb.AppendLine($"3. Project root exists: {IsOk(Directory.Exists(H8Utils.GetProjectRoot()))}");
-                sb.AppendLine($"4. Assets exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets")))}");
-                sb.AppendLine($"5. Packages exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Packages")))}");
-                sb.AppendLine($"6. ProjectSettings exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "ProjectSettings")))}");
-                sb.AppendLine($"7. 00_BOOTSTRAP scene exists: {IsOk(File.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "_Project", "Scenes", "00_BOOTSTRAP.unity")))}");
-                sb.AppendLine($"8. 02_HECTON_WORLD scene exists: {IsOk(File.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "_Project", "Scenes", "02_HECTON_WORLD.unity")))}");
-                sb.AppendLine($"9. GameBootstrapper type found: {IsOk(snapshot.bootstrap.bootstrapperFound)}");
-                sb.AppendLine($"10. GlobalRegistry type found: {IsOk(snapshot.registry.typeFound)}");
-                bool mapMagicFound = H8Reflect.FindType("MapMagicObject") != null || Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "MapMagic"));
-                sb.AppendLine($"11. MapMagicObject type or folder found: {IsOk(mapMagicFound)}");
-                bool crestFound = H8Reflect.FindType("OceanRenderer") != null || Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "Crest"));
-                sb.AppendLine($"12. OceanRenderer type or folder found: {IsOk(crestFound)}");
-                sb.AppendLine($"13. Can collect project metadata: {IsOk(snapshot.project != null)}");
-                sb.AppendLine($"14. Can collect scene info: {IsOk(snapshot.scenes != null)}");
-                sb.AppendLine($"15. Can collect URP info: {IsOk(snapshot.urp != null)}");
-                sb.AppendLine($"16. Can write JSON: OK");
-                sb.AppendLine($"17. Can write Markdown: OK");
+                    var sb = new System.Text.StringBuilder();
+                    sb.AppendLine("# Hecton8 Blackbox Self-Check\n");
 
-                H8Utils.WriteFile(Path.Combine(outDir, "self_check.md"), sb.ToString());
-                WriteOutput(outDir, snapshot, findings, "SelfCheck");
+                    string IsOk(bool cond) => cond ? "OK" : "FAIL";
 
-                Debug.Log($"[H8Blackbox] SelfCheck complete. Written to {outDir}");
+                    sb.AppendLine($"1. Output folder writable: {IsOk(Directory.Exists(outDir))}");
+                    sb.AppendLine($"2. Unity version read: {IsOk(!string.IsNullOrEmpty(snapshot.project.unityVersion))}");
+                    sb.AppendLine($"3. Project root exists: {IsOk(Directory.Exists(H8Utils.GetProjectRoot()))}");
+                    sb.AppendLine($"4. Assets exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets")))}");
+                    sb.AppendLine($"5. Packages exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Packages")))}");
+                    sb.AppendLine($"6. ProjectSettings exists: {IsOk(Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "ProjectSettings")))}");
+                    sb.AppendLine($"7. 00_BOOTSTRAP scene exists: {IsOk(File.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "_Project", "Scenes", "00_BOOTSTRAP.unity")))}");
+                    sb.AppendLine($"8. 02_HECTON_WORLD scene exists: {IsOk(File.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "_Project", "Scenes", "02_HECTON_WORLD.unity")))}");
+                    sb.AppendLine($"9. GameBootstrapper type found: {IsOk(snapshot.bootstrap.bootstrapperFound)}");
+                    sb.AppendLine($"10. GlobalRegistry type found: {IsOk(snapshot.registry.typeFound)}");
+                    bool mapMagicFound = H8Reflect.FindType("MapMagicObject") != null || Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "MapMagic"));
+                    sb.AppendLine($"11. MapMagicObject type or folder found: {IsOk(mapMagicFound)}");
+                    bool crestFound = H8Reflect.FindType("OceanRenderer") != null || Directory.Exists(Path.Combine(H8Utils.GetProjectRoot(), "Assets", "Crest"));
+                    sb.AppendLine($"12. OceanRenderer type or folder found: {IsOk(crestFound)}");
+                    sb.AppendLine($"13. Can collect project metadata: {IsOk(snapshot.project != null)}");
+                    sb.AppendLine($"14. Can collect scene info: {IsOk(snapshot.scenes != null)}");
+                    sb.AppendLine($"15. Can collect URP info: {IsOk(snapshot.urp != null)}");
+                    sb.AppendLine($"16. Can write JSON: OK");
+                    sb.AppendLine($"17. Can write Markdown: OK");
+
+                    H8Utils.WriteFile(Path.Combine(outDir, "self_check.md"), sb.ToString());
+                    WriteOutput(outDir, snapshot, findings, "SelfCheck");
+
+                    Debug.Log($"[H8Blackbox] SelfCheck complete. Written to {outDir}");
+                }
             }
             catch (Exception e)
             {
@@ -95,10 +105,17 @@ namespace Hecton8.BlackboxDiagnostics
             Debug.Log("[H8Blackbox] Starting Edit Mode Diagnostic...");
             try
             {
-                string outDir = H8Utils.CreateOutputFolder();
-                var snapshot = H8Collectors.CollectFullSnapshot(opts, "EditMode");
-                var findings = H8FindingsEngine.Analyze(snapshot);
-                WriteOutput(outDir, snapshot, findings, "EditMode");
+                if (s_RunEditModeLogic != null)
+                {
+                    s_RunEditModeLogic(opts);
+                }
+                else
+                {
+                    string outDir = H8Utils.CreateOutputFolder();
+                    var snapshot = H8Collectors.CollectFullSnapshot(opts, "EditMode");
+                    var findings = H8FindingsEngine.Analyze(snapshot);
+                    WriteOutput(outDir, snapshot, findings, "EditMode");
+                }
             }
             catch (Exception e)
             {
