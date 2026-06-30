@@ -1,2 +1,0 @@
-rm Assets/_Project/Scripts/PureLogic/Systems/CeilingConcavityAirPocketVolumeCalculator.cs
-rm Assets/_Project/Scripts/PureLogic/Tests/CeilingConcavityAirPocketVolumeCalculatorTests.cs
