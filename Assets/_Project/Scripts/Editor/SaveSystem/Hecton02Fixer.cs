@@ -18,7 +18,7 @@ namespace Hecton8.Editor.SaveSystem
                 var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
                 
                 // Fix pickup stable IDs
-                int repaired = WorldPickupStateAuthoringValidator.ScanOpenScenePickups(repair: true);
+                int repaired = WorldPickupStateAuthoringValidator.ScanOpenScenePickupStableIds(repair: true).RepairedCount;
                 Debug.Log($"[Hecton02Fixer] Repaired {repaired} pickup stable IDs.");
 
                 bool saved = EditorSceneManager.SaveScene(scene, scenePath);
