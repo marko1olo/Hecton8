@@ -135,7 +135,7 @@ namespace Hecton8.Optimization.Editor
             }
             
             // Ensure output directory exists
-            string baseDir = System.IO.Path.Combine("Docs", "Screenshots", "Optimization");
+            string baseDir = "Assets/_Project/Optimization/Screenshots";
             if (!System.IO.Directory.Exists(baseDir))
             {
                 System.IO.Directory.CreateDirectory(baseDir);
