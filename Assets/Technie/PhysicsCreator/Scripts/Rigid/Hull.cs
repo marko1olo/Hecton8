@@ -52,7 +52,8 @@ namespace Technie.PhysicsCreator.Rigid
 		
 		[SerializeField]
 		private List<int> selectedFaces = new List<int> ();  // selected triangle indices
-		public List<Vector3> cachedTriangleVertices = new List<Vector3>();
+		[SerializeField]
+		private List<Vector3> cachedTriangleVertices = new List<Vector3>();
 
 		// Convex hull data
 		public Mesh collisionMesh; // Computed convex hull. Reference to the stored mesh asset in HullMeshAsset
