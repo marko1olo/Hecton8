@@ -57,7 +57,7 @@ namespace MapMagic.Nodes
 				serializedData = Serializer.Serialize(prot, onAfterSerialize:AfterSerialize);
 		}
 
-		public void Deserialize (Graph graph) 
+		public virtual void Deserialize (Graph graph)
 		{
 			if (serializedData != null)
 			{
