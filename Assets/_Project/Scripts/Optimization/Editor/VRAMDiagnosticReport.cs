@@ -63,7 +63,7 @@ namespace Hecton8.Optimization.Editor
             var asset = AssetDatabase.LoadAssetAtPath<TextAsset>(filepath);
             EditorGUIUtility.PingObject(asset);
             
-            Debug.Log($"[VRAMDiagnostic] Report generated: {filepath}");
+            Hecton8.Core.H8Debug.Log($"[VRAMDiagnostic] Report generated: {filepath}");
             
             EditorUtility.DisplayDialog("Success", $"Diagnostic report generated:\n{filename}", "OK");
         }
