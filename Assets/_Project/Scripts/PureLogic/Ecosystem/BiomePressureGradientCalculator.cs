@@ -18,64 +18,115 @@ namespace Hecton8.PureLogic.Ecosystem
         /// <returns>Returns migrationFlows between biomes of type float[].</returns>
         public static float[] Compute(float[] biomePressures, int[] adjacencyMap, float migrationRate)
         {
-            if (biomePressures == null || adjacencyMap == null)
+            if (biomePressures == null || adjacencyMap == null || biomePressures.Length == 0)
             {
                 return Array.Empty<float>();
             }
 
-            int biomeCount = biomePressures.Length;
-            if (biomeCount == 0 || adjacencyMap.Length != biomeCount * biomeCount)
+            int count = biomePressures.Length;
+            if (adjacencyMap.Length < count * count)
             {
-                return new float[biomeCount];
+                // Invalid adjacency map size, return array of zeros
+                return new float[count];
             }
 
-            if (float.IsNaN(migrationRate) || float.IsInfinity(migrationRate) || migrationRate < 0f)
+            float[] flows = new float[count];
+
+            if (float.IsNaN(migrationRate) || float.IsInfinity(migrationRate) || migrationRate <= 0f)
             {
-                migrationRate = 0f;
+                return flows; // zero flow
             }
 
-            const float maxFlow = 1000000f;
-            float[] migrationFlows = new float[biomeCount];
+            // To handle multiple outflows, we need to accumulate the desired outflows
+            // and if the total outflow exceeds the available pressure, we scale it down.
+            float[] totalOutflows = new float[count];
 
-            for (int i = 0; i < biomeCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                float currentPressure = biomePressures[i];
-                if (float.IsNaN(currentPressure) || float.IsInfinity(currentPressure))
+                if (float.IsNaN(biomePressures[i]) || float.IsInfinity(biomePressures[i]))
                 {
-                    currentPressure = 0f;
+                    continue;
                 }
 
-                float netFlow = 0f;
-
-                for (int j = 0; j < biomeCount; j++)
+                for (int j = 0; j < count; j++)
                 {
                     if (i == j) continue;
 
-                    int adjacency = adjacencyMap[i * biomeCount + j];
-                    if (adjacency <= 0) continue;
-
-                    float neighborPressure = biomePressures[j];
-                    if (float.IsNaN(neighborPressure) || float.IsInfinity(neighborPressure))
+                    if (float.IsNaN(biomePressures[j]) || float.IsInfinity(biomePressures[j]))
                     {
-                        neighborPressure = 0f;
+                        continue;
                     }
 
-                    // Positive if current pressure is higher (outflow)
-                    // Negative if neighbor pressure is higher (inflow)
-                    float pressureDifference = currentPressure - neighborPressure;
-
-                    netFlow += pressureDifference * adjacency * migrationRate;
+                    int adjIndex = i * count + j;
+                    if (adjacencyMap[adjIndex] != 0)
+                    {
+                        float gradient = biomePressures[i] - biomePressures[j];
+                        if (gradient > 0f)
+                        {
+                            float desiredFlow = gradient * migrationRate;
+                            if (!float.IsNaN(desiredFlow) && !float.IsInfinity(desiredFlow))
+                            {
+                                totalOutflows[i] += desiredFlow;
+                            }
+                        }
+                    }
                 }
-
-                // Clamp to prevent infinite values or catastrophic overflow
-                if (float.IsNaN(netFlow)) netFlow = 0f;
-                if (netFlow > maxFlow) netFlow = maxFlow;
-                if (netFlow < -maxFlow) netFlow = -maxFlow;
-
-                migrationFlows[i] = netFlow;
             }
 
-            return migrationFlows;
+            for (int i = 0; i < count; i++)
+            {
+                if (float.IsNaN(biomePressures[i]) || float.IsInfinity(biomePressures[i])) continue;
+
+                float maxOutflow = Math.Max(0f, biomePressures[i]);
+                float scale = 1f;
+
+                if (totalOutflows[i] > maxOutflow && totalOutflows[i] > 0f)
+                {
+                    scale = maxOutflow / totalOutflows[i];
+                }
+
+                for (int j = 0; j < count; j++)
+                {
+                    if (i == j) continue;
+
+                    if (float.IsNaN(biomePressures[j]) || float.IsInfinity(biomePressures[j])) continue;
+
+                    int adjIndex = i * count + j;
+                    if (adjacencyMap[adjIndex] != 0)
+                    {
+                        float gradient = biomePressures[i] - biomePressures[j];
+                        if (gradient > 0f)
+                        {
+                            float desiredFlow = gradient * migrationRate;
+                            if (!float.IsNaN(desiredFlow) && !float.IsInfinity(desiredFlow))
+                            {
+                                float actualFlow = desiredFlow * scale;
+                                flows[i] -= actualFlow;
+                                flows[j] += actualFlow;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Failsafe boundary clamping
+            for (int i = 0; i < count; i++)
+            {
+                if (float.IsNaN(flows[i]) || float.IsInfinity(flows[i]))
+                {
+                    flows[i] = 0f;
+                }
+
+                if (!float.IsNaN(biomePressures[i]) && !float.IsInfinity(biomePressures[i]))
+                {
+                    if (flows[i] < -Math.Max(0f, biomePressures[i]))
+                    {
+                        flows[i] = -Math.Max(0f, biomePressures[i]);
+                    }
+                }
+            }
+
+            return flows;
         }
     }
 }
