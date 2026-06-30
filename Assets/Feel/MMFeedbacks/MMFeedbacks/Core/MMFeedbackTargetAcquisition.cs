@@ -95,13 +95,11 @@ namespace MoreMountains.Feedbacks
 				case Modes.ChildAtIndex:
 					return owner.transform.GetChild(settings.ChildIndex).gameObject.GetComponent<T>();
 				case Modes.AnyChild:
-					int childCount = owner.transform.childCount;
+					Transform ownerTransform = owner.transform;
+					int childCount = ownerTransform.childCount;
 					for (int i = 0; i < childCount; i++)
 					{
-
-
-
-						if (owner.transform.GetChild(i).TryGetComponent<T>(out T component))
+						if (ownerTransform.GetChild(i).TryGetComponent<T>(out T component))
 						{
 							return component;
 
