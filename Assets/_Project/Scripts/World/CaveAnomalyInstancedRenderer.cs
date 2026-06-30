@@ -13,6 +13,8 @@ namespace Hecton8.World
         private Matrix4x4[][] _batches;
         private int _batchCount;
 
+        private static readonly Bounds _cachedBounds = new Bounds(Vector3.zero, new Vector3(100000, 100000, 100000));
+
         public void SetInstances(List<Matrix4x4> newInstances)
         {
             instances = newInstances;
@@ -49,7 +51,7 @@ namespace Hecton8.World
             if (mesh == null || material == null || _batches == null) return;
 
             RenderParams rp = new RenderParams(material);
-            rp.worldBounds = new Bounds(Vector3.zero, new Vector3(100000, 100000, 100000));
+            rp.worldBounds = _cachedBounds;
             rp.receiveShadows = false;
             rp.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
