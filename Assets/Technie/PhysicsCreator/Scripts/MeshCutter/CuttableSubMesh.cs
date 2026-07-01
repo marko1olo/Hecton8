@@ -11,9 +11,21 @@ namespace Technie.PhysicsCreator
 		private List<Color32> colours;
 		private List<Vector2> uvs;
 		private List<Vector2> uv1s;
+		private List<Vector2> uv3s;
+		private List<Vector2> uv4s;
+#if UNITY_2018_2_OR_NEWER
+		private List<Vector2> uv5s;
+		private List<Vector2> uv6s;
+		private List<Vector2> uv7s;
+		private List<Vector2> uv8s;
+#endif
 		private List<Vector4> tangents;
 
-		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasTangents)
+		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasUv3, bool hasUv4,
+#if UNITY_2018_2_OR_NEWER
+			bool hasUv5, bool hasUv6, bool hasUv7, bool hasUv8,
+#endif
+			bool hasTangents)
 		{
 			vertices = new List<Vector3>();
 
@@ -29,11 +41,32 @@ namespace Technie.PhysicsCreator
 			if (hasUv1)
 				uv1s = new List<Vector2>();
 
+			if (hasUv3)
+				uv3s = new List<Vector2>();
+
+			if (hasUv4)
+				uv4s = new List<Vector2>();
+
+#if UNITY_2018_2_OR_NEWER
+			if (hasUv5)
+				uv5s = new List<Vector2>();
+			if (hasUv6)
+				uv6s = new List<Vector2>();
+			if (hasUv7)
+				uv7s = new List<Vector2>();
+			if (hasUv8)
+				uv8s = new List<Vector2>();
+#endif
+
 			if (hasTangents)
 				tangents = new List<Vector4>();
 		}
 
-		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1, Vector4[] inputTangents)
+		public CuttableSubMesh(int[] indices, Vector3[] inputVertices, Vector3[] inputNormals, Color32[] inputColours, Vector2[] inputUvs, Vector2[] inputUv1, Vector2[] inputUv3, Vector2[] inputUv4,
+#if UNITY_2018_2_OR_NEWER
+			Vector2[] inputUv5, Vector2[] inputUv6, Vector2[] inputUv7, Vector2[] inputUv8,
+#endif
+			Vector4[] inputTangents)
 		{
 			vertices = new List<Vector3>();
 
@@ -48,6 +81,23 @@ namespace Technie.PhysicsCreator
 
 			if (inputUv1 != null && inputUv1.Length > 0)
 				uv1s = new List<Vector2>();
+
+			if (inputUv3 != null && inputUv3.Length > 0)
+				uv3s = new List<Vector2>();
+
+			if (inputUv4 != null && inputUv4.Length > 0)
+				uv4s = new List<Vector2>();
+
+#if UNITY_2018_2_OR_NEWER
+			if (inputUv5 != null && inputUv5.Length > 0)
+				uv5s = new List<Vector2>();
+			if (inputUv6 != null && inputUv6.Length > 0)
+				uv6s = new List<Vector2>();
+			if (inputUv7 != null && inputUv7.Length > 0)
+				uv7s = new List<Vector2>();
+			if (inputUv8 != null && inputUv8.Length > 0)
+				uv8s = new List<Vector2>();
+#endif
 
 			if (inputTangents != null && inputTangents.Length > 0)
 				tangents = new List<Vector4>();
@@ -69,6 +119,23 @@ namespace Technie.PhysicsCreator
 
 				if (uv1s != null)
 					uv1s.Add(inputUv1[nextIndex]);
+
+				if (uv3s != null)
+					uv3s.Add(inputUv3[nextIndex]);
+
+				if (uv4s != null)
+					uv4s.Add(inputUv4[nextIndex]);
+
+#if UNITY_2018_2_OR_NEWER
+				if (uv5s != null)
+					uv5s.Add(inputUv5[nextIndex]);
+				if (uv6s != null)
+					uv6s.Add(inputUv6[nextIndex]);
+				if (uv7s != null)
+					uv7s.Add(inputUv7[nextIndex]);
+				if (uv8s != null)
+					uv8s.Add(inputUv8[nextIndex]);
+#endif
 
 				if (tangents != null)
 					tangents.Add(inputTangents[nextIndex]);
@@ -114,6 +181,35 @@ namespace Technie.PhysicsCreator
 			return uv1s != null;
 		}
 
+		public bool HasUv3()
+		{
+			return uv3s != null;
+		}
+
+		public bool HasUv4()
+		{
+			return uv4s != null;
+		}
+
+#if UNITY_2018_2_OR_NEWER
+		public bool HasUv5()
+		{
+			return uv5s != null;
+		}
+		public bool HasUv6()
+		{
+			return uv6s != null;
+		}
+		public bool HasUv7()
+		{
+			return uv7s != null;
+		}
+		public bool HasUv8()
+		{
+			return uv8s != null;
+		}
+#endif
+
 		public bool HasTangents()
 		{
 			return tangents != null;
@@ -134,6 +230,23 @@ namespace Technie.PhysicsCreator
 
 			if (uv1s != null)
 				uv1s.Add(srcMesh.uv1s[srcIndex]);
+
+			if (uv3s != null)
+				uv3s.Add(srcMesh.uv3s[srcIndex]);
+
+			if (uv4s != null)
+				uv4s.Add(srcMesh.uv4s[srcIndex]);
+
+#if UNITY_2018_2_OR_NEWER
+			if (uv5s != null)
+				uv5s.Add(srcMesh.uv5s[srcIndex]);
+			if (uv6s != null)
+				uv6s.Add(srcMesh.uv6s[srcIndex]);
+			if (uv7s != null)
+				uv7s.Add(srcMesh.uv7s[srcIndex]);
+			if (uv8s != null)
+				uv8s.Add(srcMesh.uv8s[srcIndex]);
+#endif
 
 			if (tangents != null)
 				tangents.Add(srcMesh.tangents[srcIndex]);
@@ -158,6 +271,23 @@ namespace Technie.PhysicsCreator
 			if (uv1s != null)
 				uv1s.Add(Vector2.Lerp(srcMesh.uv1s[i0], srcMesh.uv1s[i1], weight));
 
+			if (uv3s != null)
+				uv3s.Add(Vector2.Lerp(srcMesh.uv3s[i0], srcMesh.uv3s[i1], weight));
+
+			if (uv4s != null)
+				uv4s.Add(Vector2.Lerp(srcMesh.uv4s[i0], srcMesh.uv4s[i1], weight));
+
+#if UNITY_2018_2_OR_NEWER
+			if (uv5s != null)
+				uv5s.Add(Vector2.Lerp(srcMesh.uv5s[i0], srcMesh.uv5s[i1], weight));
+			if (uv6s != null)
+				uv6s.Add(Vector2.Lerp(srcMesh.uv6s[i0], srcMesh.uv6s[i1], weight));
+			if (uv7s != null)
+				uv7s.Add(Vector2.Lerp(srcMesh.uv7s[i0], srcMesh.uv7s[i1], weight));
+			if (uv8s != null)
+				uv8s.Add(Vector2.Lerp(srcMesh.uv8s[i0], srcMesh.uv8s[i1], weight));
+#endif
+
 			if (tangents != null)
 			{
 				Vector4 t0 = srcMesh.tangents[i0];
@@ -167,7 +297,11 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
-		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s, List<Vector4> destTangents)
+		public void AddTo(List<Vector3> destVertices, List<Vector3> destNormals, List<Color32> destColours, List<Vector2> destUvs, List<Vector2> destUv1s, List<Vector2> destUv3s, List<Vector2> destUv4s,
+#if UNITY_2018_2_OR_NEWER
+			List<Vector2> destUv5s, List<Vector2> destUv6s, List<Vector2> destUv7s, List<Vector2> destUv8s,
+#endif
+			List<Vector4> destTangents)
 		{
 			destVertices.AddRange(this.vertices);
 
@@ -182,6 +316,23 @@ namespace Technie.PhysicsCreator
 
 			if (uv1s != null)
 				destUv1s.AddRange(uv1s);
+
+			if (uv3s != null)
+				destUv3s.AddRange(uv3s);
+
+			if (uv4s != null)
+				destUv4s.AddRange(uv4s);
+
+#if UNITY_2018_2_OR_NEWER
+			if (uv5s != null)
+				destUv5s.AddRange(uv5s);
+			if (uv6s != null)
+				destUv6s.AddRange(uv6s);
+			if (uv7s != null)
+				destUv7s.AddRange(uv7s);
+			if (uv8s != null)
+				destUv8s.AddRange(uv8s);
+#endif
 
 			if (tangents != null)
 				destTangents.AddRange(tangents);
