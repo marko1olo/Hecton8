@@ -748,6 +748,7 @@ namespace Hecton8.Gameplay
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Project" });
             int suspects = 0;
+            var cachedColliders = new System.Collections.Generic.List<Collider>(64);
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -755,11 +756,11 @@ namespace Hecton8.Gameplay
                 if (prefab == null || ComponentReferenceUtility.ResolveOwnedComponent<FaunaBrain>(prefab.transform) == null)
                     continue;
 
-                Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);
+                prefab.GetComponentsInChildren<Collider>(true, cachedColliders);
                 int primitiveCount = 0;
-                for (int c = 0; c < colliders.Length; c++)
+                for (int c = 0; c < cachedColliders.Count; c++)
                 {
-                    Collider collider = colliders[c];
+                    Collider collider = cachedColliders[c];
                     if (collider is CapsuleCollider || collider is SphereCollider || collider is BoxCollider)
                         primitiveCount++;
                 }
