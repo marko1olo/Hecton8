@@ -646,7 +646,7 @@ namespace Hecton8.World
                 if (pickup == null)
                     continue;
 
-                if (pickup.TryGetComponent<ObjectPoolManager.PoolItemMarker>(out _))
+                if (pickup.IsPooledRuntimeInstance)
                     continue;
 
                 long persistenceKey;
