@@ -227,12 +227,16 @@ namespace Den.Tools.Splines
 						continue;
 						
 					if (weldedLines.Length==2  &&  weldedLines[0].segments.Length + weldedLines[1].segments.Length == line1.segments.Length + line2.segments.Length)
-					//no change (two lines and summary nodes count has not been changed, although they might be swapped)
-					//TODO: compare point by point?
 					{
-						linesList[l1] = weldedLines[0];
-						linesList[l2] = weldedLines[1]; //assigning lines just in case they have minor change
-						continue;
+						bool match1 = weldedLines[0].IsSimilarTo(line1) && weldedLines[1].IsSimilarTo(line2);
+						bool match2 = weldedLines[0].IsSimilarTo(line2) && weldedLines[1].IsSimilarTo(line1);
+
+						if (match1 || match2)
+						{
+							linesList[l1] = weldedLines[0];
+							linesList[l2] = weldedLines[1]; //assigning lines just in case they have minor change
+							continue;
+						}
 					}
 
 					linesList.RemoveAt(l1); //l2 is always less l1,  l1 is always bigger l2
