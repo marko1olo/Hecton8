@@ -1674,17 +1674,13 @@ namespace Hecton8.World
 
         private void PublishWorkerResult(in TerrainChunkWorkerResultDTO result)
         {
-            int spins = 0;
+            SpinWait spin = new SpinWait();
             while (Volatile.Read(ref _workerRunning) != 0)
             {
                 if (TryEnqueueWorkerResult(in result))
                     return;
 
-                spins++;
-                if (spins < 4)
-                    Thread.Yield();
-                else
-                    Thread.Sleep(1);
+                spin.SpinOnce();
             }
         }
 
