@@ -194,13 +194,16 @@ namespace Crest
         public static void ClearRenderTexture(RenderTexture texture, Color clear, bool depth = true, bool color = true)
         {
             var active = RenderTexture.active;
-
             // Using RenderTexture.active will not write to all slices.
             Graphics.SetRenderTarget(texture, 0, CubemapFace.Unknown, -1);
-            // TODO: Do we need to disable GL.sRGBWrite as it is linear to linear.
+            var isLinear = texture.sRGB ? QualitySettings.activeColorSpace == ColorSpace.Linear : true;
+            var sRGBCache = GL.sRGBWrite;
+            GL.sRGBWrite = isLinear;
             GL.Clear(depth, color, clear);
+            GL.sRGBWrite = sRGBCache;
 
             // Graphics.SetRenderTarget can be equivalent to setting RenderTexture.active:
+
             // https://docs.unity3d.com/ScriptReference/Graphics.SetRenderTarget.html
             // Restore previous active texture or it can incur a warning when releasing:
             // Releasing render texture that is set to be RenderTexture.active!
