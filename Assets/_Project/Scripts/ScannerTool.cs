@@ -2505,10 +2505,15 @@ namespace Hecton8.Gameplay
                         BatteryCharge,
                         out DataArchaeologyFrequencyResult tuningResult))
                 {
-                    float dist = Vector3.Distance(transform.position, _activeScientificProbePosition);
                     float range = math.max(1f, focusedScanRange);
-                    float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
-                        dist, range, 0.15f, BatteryCharge);
+                    float distSqr = (transform.position - _activeScientificProbePosition).sqrMagnitude;
+                    float resolutionFactor = 0f;
+                    if (distSqr < range * range)
+                    {
+                        float dist = math.sqrt(distSqr);
+                        resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
+                            dist, range, 0.15f, BatteryCharge);
+                    }
                     fragmentProgressDelta = tuningResult.ProgressDeltaSeconds * resolutionFactor;
                 }
 
@@ -2531,10 +2536,15 @@ namespace Hecton8.Gameplay
                      now - _scientificLastContactTime <= holdTimeout &&
                      heldDeltaTime > 0f)
             {
-                float dist = Vector3.Distance(transform.position, _activeScientificEntityProbePosition);
                 float range = math.max(1f, focusedScanRange);
-                float resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
-                    dist, range, 0.15f, BatteryCharge);
+                float distSqr = (transform.position - _activeScientificEntityProbePosition).sqrMagnitude;
+                float resolutionFactor = 0f;
+                if (distSqr < range * range)
+                {
+                    float dist = math.sqrt(distSqr);
+                    resolutionFactor = Hecton8.PureLogic.Systems.ScannerResolutionDepthCalculator.Compute(
+                        dist, range, 0.15f, BatteryCharge);
+                }
                 _activeScientificEntityProgress = SafeNonNegative(_activeScientificEntityProgress + heldDeltaTime * resolutionFactor);
                 if (_dataArchaeology != null &&
                     _dataArchaeology.UpdateProbeTargetProgress(
