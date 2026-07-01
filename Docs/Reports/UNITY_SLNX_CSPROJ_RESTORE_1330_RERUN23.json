@@ -480,7 +480,7 @@
   ],
   "updatedProjectCount": 0,
   "updatedProjects": [],
-  "verificationHashSha256": "6016efcc72d35e4d1beea934c73083e9c7cb68db51029c1a6d6ebdca0cd68a40",
+  "verificationHashSha256": "ecc9643327d3c86fc3b0e006a212df51863c82af3ad8334f8fd91b95c7907734",
   "verifiedDirectWriteCount": 50,
   "verifiedDirectWrites": [
     "Unity.ShaderGraph.Editor.csproj",
