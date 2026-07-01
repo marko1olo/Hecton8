@@ -451,13 +451,19 @@ namespace Hecton8.UI
             if (configuredTabs == null || configuredTabs.Length != s_defaultTabNames.Length)
                 configuredTabs = new GameObject[s_defaultTabNames.Length]; // COLD ALLOC: GameObject[8] — diegetic PDA tab routing cache resize — owner: DiegeticPDAController
 
-            for (int tabIndex = 0; tabIndex < s_defaultTabNames.Length; tabIndex++)
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
             {
-                if (configuredTabs[tabIndex] != null)
-                    continue;
-
-                Transform tabTransform = root.Find(s_defaultTabNames[tabIndex]);
-                configuredTabs[tabIndex] = tabTransform != null ? tabTransform.gameObject : null;
+                Transform child = root.GetChild(i);
+                string childName = child.name;
+                for (int tabIndex = 0; tabIndex < s_defaultTabNames.Length; tabIndex++)
+                {
+                    if (configuredTabs[tabIndex] == null && childName == s_defaultTabNames[tabIndex])
+                    {
+                        configuredTabs[tabIndex] = child.gameObject;
+                        break;
+                    }
+                }
             }
 
             _tabsRouted = true;
