@@ -125,9 +125,17 @@ namespace Den.Tools
 		public void Add (TransitionsList other)
 		/// Combines two lists in current
 		{
+			int targetCapacity = count + other.count;
+			if (arr.Length < targetCapacity)
+			{
+				int newCapacity = arr.Length > 0 ? arr.Length : 4;
+				while (newCapacity < targetCapacity)
+					newCapacity *= 2;
+				SetCapacity(newCapacity);
+			}
+
 			for (int t=0; t<other.count; t++)
 				Add(other.arr[t]);
-			//TODO: avoid resizing array several times
 		}
 
 
