@@ -348,7 +348,7 @@ namespace Hecton8.World
                 if (node == null)
                     continue;
 
-                if (node.TryGetComponent<ObjectPoolManager.PoolItemMarker>(out _))
+                if (node.IsPooledInstance())
                     continue;
 
                 string nodeId = node.UniqueId;
@@ -646,7 +646,7 @@ namespace Hecton8.World
                 if (pickup == null)
                     continue;
 
-                if (pickup.TryGetComponent<ObjectPoolManager.PoolItemMarker>(out _))
+                if (pickup.IsPooledInstance())
                     continue;
 
                 long persistenceKey;

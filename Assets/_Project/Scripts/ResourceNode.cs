@@ -1571,7 +1571,7 @@ namespace Hecton8.Scavenging
             }
         }
 
-        private bool IsPooledInstance()
+        internal bool IsPooledInstance()
         {
             if (_isKnownPooledInstance)
                 return true;
