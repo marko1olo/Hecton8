@@ -602,8 +602,8 @@ namespace Technie.PhysicsCreator.Rigid
 		{
 			foreach (Vector3 existing in list)
 			{
-				float dist = Vector3.Distance(existing, p);
-				if (dist < 0.0001f)
+				float sqrDist = (existing - p).sqrMagnitude;
+				if (sqrDist < 0.00000001f) // 0.0001f squared
 					return true;
 			}
 			return false;
