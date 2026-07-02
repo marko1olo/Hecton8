@@ -2469,20 +2469,39 @@ namespace GPUInstancer
 
                     if (lodGroup != null) // if the SpeedTree is not an LOD Group, it will be treated the same with mesh renderer non-SpeedTree objects below.
                     {
-                        for (int lod = 0; lod < lodGroup.GetLODs().Length; lod++)
+                        LOD[] lods = lodGroup.GetLODs();
+                        for (int lod = 0; lod < lods.Length; lod++)
                         {
                             bool speedTreeBillboardFound = false;
+                            Renderer[] renderers = lods[lod].renderers;
 
                             if (runtimeData.prototype.treeType == GPUInstancerTreeType.SpeedTree)
-                                speedTreeBillboardFound = lodGroup.GetLODs()[lod].renderers.Any(r => r.GetComponent<BillboardRenderer>() != null);
-
-                            if (runtimeData.prototype.treeType == GPUInstancerTreeType.SpeedTree8)
-                                speedTreeBillboardFound = lodGroup.GetLODs()[lod].renderers.Any(r => r.sharedMaterials[0].IsKeywordEnabled("EFFECT_BILLBOARD"));
+                            {
+                                for (int r = 0; r < renderers.Length; r++)
+                                {
+                                    if (renderers[r] is BillboardRenderer || (renderers[r] != null && renderers[r].GetComponent<BillboardRenderer>() != null))
+                                    {
+                                        speedTreeBillboardFound = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            else if (runtimeData.prototype.treeType == GPUInstancerTreeType.SpeedTree8)
+                            {
+                                for (int r = 0; r < renderers.Length; r++)
+                                {
+                                    if (renderers[r] != null && renderers[r].sharedMaterials != null && renderers[r].sharedMaterials.Length > 0 && renderers[r].sharedMaterials[0] != null && renderers[r].sharedMaterials[0].IsKeywordEnabled("EFFECT_BILLBOARD"))
+                                    {
+                                        speedTreeBillboardFound = true;
+                                        break;
+                                    }
+                                }
+                            }
 
                             if (speedTreeBillboardFound)
                             {
                                 runtimeData.AddLodAndRenderer(billboardMesh, new List<Material> { billboardMaterial }, new MaterialPropertyBlock(), isShadowCasting,
-                                    lodGroup.GetLODs()[lod].screenRelativeTransitionHeight, new MaterialPropertyBlock(), true, runtimeData.prototype.prefabObject.layer);
+                                    lods[lod].screenRelativeTransitionHeight, new MaterialPropertyBlock(), true, runtimeData.prototype.prefabObject.layer);
                                 return;
                             }
 
