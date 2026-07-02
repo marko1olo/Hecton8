@@ -31,103 +31,113 @@ namespace Hecton8.Power.Editor
             Debug.Log("Charger OOP scanner wrote " + reportPath);
         }
 
+
         public static string RunScan()
         {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
-            string reportPath = Path.GetFullPath(Path.Combine(projectRoot, ReportRelativePath));
-            string binaryLedgerPath = Path.Combine(projectRoot, "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md");
-            string runtimeAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef");
-            string editorAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/Editor/Hecton8.Power.BatteryChargerLogistics.Editor.asmdef");
+            return new ScannerContext().Execute();
+        }
+
+        private class ScannerContext
+        {
+        private readonly string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        private readonly string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
+        private readonly string reportPath = Path.GetFullPath(Path.Combine(projectRoot, ReportRelativePath));
+        private readonly string binaryLedgerPath = Path.Combine(projectRoot, "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md");
+        private readonly string runtimeAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef");
+        private readonly string editorAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/Editor/Hecton8.Power.BatteryChargerLogistics.Editor.asmdef");
+
+        private int chargerFiles = 0;
+        private int updateLoops = 0;
+        private int coroutineLoops = 0;
+        private int managedBatteryLists = 0;
+        private int managedBatteryArrays = 0;
+        private int slowTickRegistrations = 0;
+        private int managedChargingShadowState = 0;
+        private int legacyGridDirty = 0;
+        private int legacySlotFacades = 0;
+        private bool scheduleLocksBeforeBufferResolve = false;
+        private bool cadenceQualitySampleUsesTuningLock = false;
+        private bool jobBufferLockIncludesTuning = false;
+        private bool coldSlotWriteLocksBeforeResolve = false;
+        private bool coldSlotWriteUsesGenerationHandleFence = false;
+        private bool chargeReadRejectsReservedLock = false;
+        private bool facadeRejectsUnassignedInventorySlotZero = false;
+        private bool facadeWritesSlotBeforeLinkRegistration = false;
+        private bool facadeUsesCoreFloatingOriginAup = false;
+        private bool facadeUsesCurrentOriginAupProof = false;
+        private bool facadeRejectsDirectFloatingOriginBridge = false;
+        private bool facadeAupFiniteGuarded = false;
+        private int facadeWorldImportHits = 0;
+        private int facadeWorldRouteHits = 0;
+        private int facadeGlobalOriginAupHits = 0;
+        private int facadeOffsetAbsoluteAupHits = 0;
+        private int facadeDirectFloatingOriginBridgeHits = 0;
+        private int facadeFromRuntimePositionHits = 0;
+        private bool humAupWritesContractFields = false;
+        private bool humAupRejectsOutOfExtent = false;
+        private int runtimeWorldImportHits = 0;
+        private int runtimeWorldRouteHits = 0;
+        private bool interactTextUsesCachedToolOnly = false;
+        private bool playerInventoryBridgeRemovesBeforeChargerCommit = false;
+        private bool playerInventoryBridgeReservesBeforeChargerCommit = false;
+        private bool playerInventoryBridgeCommitsReservationAfterChargerCommit = false;
+        private bool playerInventoryBridgeReleasesReservationOnFailure = false;
+        private bool playerInventoryBridgePreflightsAuthoredSlotRange = false;
+        private bool playerInventoryRollbackResultChecked = false;
+        private bool playerInventoryBridgeHardReservationProof = false;
+        private bool toolSwapRollsBackOnInsertFailure = false;
+        private bool toolSwapRollbackResultsChecked = false;
+        private bool toolSwapPreflightsBeforeToolRemoval = false;
+        private bool removeToInventoryPreflightsCapacity = false;
+        private bool facadeColdInitializesSlotObjects = false;
+        private int facadeConcreteInventoryToolImportHits = 0;
+        private int constructionModuleConcreteGameplayToolImportHits = 0;
+        private bool concreteFacadeBridgeContractResidual = false;
+        private bool inventoryRoutingSharesShinobuSlots = false;
+        private bool inventoryRoutingWholeSlotMaintenanceWriters = false;
+        private bool runtimeUsesMockInventorySlotsOwnedByPower = false;
+        private bool runtimeSharedInventoryAllocationHits = false;
+        private bool emergencyMockEditorOrDevelopmentOnly = false;
+        private bool liveRegistrationDropsMockFallback = false;
+        private bool visualBuffersPrewarmedBeforeVisualSync = false;
+        private bool skippedCadenceTelemetryRecorded = false;
+        private bool skippedCadenceTelemetryCoalesced = false;
+        private bool xrayDisplaysSkippedCadenceFrames = false;
+        private bool nanFaultProducerPresent = false;
+        private bool rawPointerSafetyJustificationPresent = false;
+        private bool csvParserRejectsMalformedRows = false;
+        private bool binaryPayloadLedgerRangeRegistered = false;
+        private bool binaryPayloadLedgerBoundaryRegistered = false;
+        private bool runtimeAsmdefPresent = false;
+        private bool runtimeAsmdefNoSiblingRuntimeRefs = false;
+        private bool editorAsmdefPresent = false;
+        private bool facadeUsesBridgeNoRuntimeCall = false;
+        private bool runtimeRegistersBridge = false;
+        private bool runtimeRegistersGlobalRegistryService = false;
+        private bool registryResetClearsBridgeForDomainReload = false;
+        private bool bridgeDirectClearEradicated = false;
+        private bool bridgeDelegateTableEradicated = false;
+        private bool bridgeUsesCachedRegistryService = false;
+        private bool globalRegistryBatteryServiceRoute = false;
+        private bool lockedSimulationTickDeltaUsed = false;
+        private bool frameDeltaBypassedForChargeAuthority = false;
+        private bool cadenceCapPreservesAccumulatorRemainder = false;
+        private bool authorityAccumulatorSubtractedAfterAdmission = false;
+        private bool editorTuningWritesResolvedQualityCadence = false;
+        private bool runtimeFiniteDtoWriteGuards = false;
+        private bool telemetryUsesFenceElapsedMicroseconds = false;
+        private bool telemetryContractsUseFenceElapsedMicroseconds = false;
+        private bool faultDumpBlockingFaultOnlyDocumented = false;
+        private int facadeDirectRuntimeCallHits = 0;
+
+
+            public string Execute()
+            {
             Directory.CreateDirectory(Path.GetDirectoryName(reportPath));
 
-            int chargerFiles = 0;
-            int updateLoops = 0;
-            int coroutineLoops = 0;
-            int managedBatteryLists = 0;
-            int managedBatteryArrays = 0;
-            int slowTickRegistrations = 0;
-            int managedChargingShadowState = 0;
-            int legacyGridDirty = 0;
-            int legacySlotFacades = 0;
-            bool scheduleLocksBeforeBufferResolve = false;
-            bool cadenceQualitySampleUsesTuningLock = false;
-            bool jobBufferLockIncludesTuning = false;
-            bool coldSlotWriteLocksBeforeResolve = false;
-            bool coldSlotWriteUsesGenerationHandleFence = false;
-            bool chargeReadRejectsReservedLock = false;
-            bool facadeRejectsUnassignedInventorySlotZero = false;
-            bool facadeWritesSlotBeforeLinkRegistration = false;
-            bool facadeUsesCoreFloatingOriginAup = false;
-            bool facadeUsesCurrentOriginAupProof = false;
-            bool facadeRejectsDirectFloatingOriginBridge = false;
-            bool facadeAupFiniteGuarded = false;
-            int facadeWorldImportHits = 0;
-            int facadeWorldRouteHits = 0;
-            int facadeGlobalOriginAupHits = 0;
-            int facadeOffsetAbsoluteAupHits = 0;
-            int facadeDirectFloatingOriginBridgeHits = 0;
-            int facadeFromRuntimePositionHits = 0;
-            bool humAupWritesContractFields = false;
-            bool humAupRejectsOutOfExtent = false;
-            int runtimeWorldImportHits = 0;
-            int runtimeWorldRouteHits = 0;
-            bool interactTextUsesCachedToolOnly = false;
-            bool playerInventoryBridgeRemovesBeforeChargerCommit = false;
-            bool playerInventoryBridgeReservesBeforeChargerCommit = false;
-            bool playerInventoryBridgeCommitsReservationAfterChargerCommit = false;
-            bool playerInventoryBridgeReleasesReservationOnFailure = false;
-            bool playerInventoryBridgePreflightsAuthoredSlotRange = false;
-            bool playerInventoryRollbackResultChecked = false;
-            bool playerInventoryBridgeHardReservationProof = false;
-            bool toolSwapRollsBackOnInsertFailure = false;
-            bool toolSwapRollbackResultsChecked = false;
-            bool toolSwapPreflightsBeforeToolRemoval = false;
-            bool removeToInventoryPreflightsCapacity = false;
-            bool facadeColdInitializesSlotObjects = false;
-            int facadeConcreteInventoryToolImportHits = 0;
-            int constructionModuleConcreteGameplayToolImportHits = 0;
-            bool concreteFacadeBridgeContractResidual = false;
-            bool inventoryRoutingSharesShinobuSlots = false;
-            bool inventoryRoutingWholeSlotMaintenanceWriters = false;
-            bool runtimeUsesMockInventorySlotsOwnedByPower = false;
-            bool runtimeSharedInventoryAllocationHits = false;
-            bool emergencyMockEditorOrDevelopmentOnly = false;
-            bool liveRegistrationDropsMockFallback = false;
-            bool visualBuffersPrewarmedBeforeVisualSync = false;
-            bool skippedCadenceTelemetryRecorded = false;
-            bool skippedCadenceTelemetryCoalesced = false;
-            bool xrayDisplaysSkippedCadenceFrames = false;
-            bool nanFaultProducerPresent = false;
-            bool rawPointerSafetyJustificationPresent = false;
-            bool csvParserRejectsMalformedRows = false;
-            bool binaryPayloadLedgerRangeRegistered = false;
-            bool binaryPayloadLedgerBoundaryRegistered = false;
-            bool runtimeAsmdefPresent = false;
-            bool runtimeAsmdefNoSiblingRuntimeRefs = false;
-            bool editorAsmdefPresent = false;
-            bool facadeUsesBridgeNoRuntimeCall = false;
-            bool runtimeRegistersBridge = false;
-            bool runtimeRegistersGlobalRegistryService = false;
-            bool registryResetClearsBridgeForDomainReload = false;
-            bool bridgeDirectClearEradicated = false;
-            bool bridgeDelegateTableEradicated = false;
-            bool bridgeUsesCachedRegistryService = false;
-            bool globalRegistryBatteryServiceRoute = false;
-            bool lockedSimulationTickDeltaUsed = false;
-            bool frameDeltaBypassedForChargeAuthority = false;
-            bool cadenceCapPreservesAccumulatorRemainder = false;
-            bool authorityAccumulatorSubtractedAfterAdmission = false;
-            bool editorTuningWritesResolvedQualityCadence = false;
-            bool runtimeFiniteDtoWriteGuards = false;
-            bool telemetryUsesFenceElapsedMicroseconds = false;
-            bool telemetryContractsUseFenceElapsedMicroseconds = false;
-            bool faultDumpBlockingFaultOnlyDocumented = false;
-            int facadeDirectRuntimeCallHits = 0;
-
-            string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
-            StringBuilder findings = new StringBuilder(1024);
-            for (int i = 0; i < files.Length; i++)
+                string[] files = Directory.GetFiles(scriptsRoot, "*.cs", SearchOption.AllDirectories);
+                StringBuilder findings = new StringBuilder(1024);
+                for (int i = 0; i < files.Length; i++)
             {
                 string path = files[i];
                 string fileName = Path.GetFileName(path);
@@ -135,6 +145,103 @@ namespace Hecton8.Power.Editor
                 string scanText = StripNonCode(text);
                 if (fileName == "BatteryChargerLogisticsRuntime.cs")
                 {
+                    ScanBatteryChargerLogisticsRuntime(scanText);
+                }
+
+
+                if (fileName == "BatteryCharger.cs")
+                {
+                    ScanBatteryCharger(scanText);
+                }
+
+
+                if (fileName == "BatteryChargerLogisticsBridge.cs")
+                {
+                    ScanBatteryChargerLogisticsBridge(scanText);
+                }
+
+
+                if (fileName == "BatteryLogisticsXRayWindow.cs")
+                {
+                    ScanBatteryLogisticsXRayWindow(scanText);
+                }
+
+
+                if (fileName == "GlobalRegistry.BatteryChargerLogistics.cs")
+                {
+                    ScanGlobalRegistryBatteryChargerLogistics(scanText);
+                }
+
+
+                if (fileName == "BatteryChargerModule.cs")
+                {
+                    ScanBatteryChargerModule(scanText);
+                }
+
+
+                if (fileName == "BatteryChargerLogisticsContracts.cs")
+                {
+                    ScanBatteryChargerLogisticsContracts(scanText);
+                }
+
+
+                if (fileName == "InventoryRoutingNetwork.cs")
+                {
+                    ScanInventoryRoutingNetwork(scanText);
+                }
+
+
+                ScanCounts fileScan = AnalyzeSource(fileName, scanText);
+                if (!fileScan.IsChargerFile)
+                    continue;
+
+                chargerFiles++;
+                int fileUpdate = fileScan.UpdateLoops;
+                int fileCoroutine = fileScan.CoroutineLoops;
+                int fileLists = fileScan.ManagedBatteryLists;
+                int fileArrays = fileScan.ManagedBatteryArrays;
+                int fileSlow = fileScan.SlowTickRegistrations;
+                int fileShadow = fileScan.ManagedChargingShadowState;
+                int fileGridDirty = fileScan.LegacyGridDirty;
+                int fileFacade = fileScan.LegacySlotFacades;
+
+                updateLoops += fileUpdate;
+                coroutineLoops += fileCoroutine;
+                managedBatteryLists += fileLists;
+                managedBatteryArrays += fileArrays;
+                slowTickRegistrations += fileSlow;
+                managedChargingShadowState += fileShadow;
+                legacyGridDirty += fileGridDirty;
+                legacySlotFacades += fileFacade;
+
+                if (fileUpdate + fileCoroutine + fileLists + fileArrays + fileSlow + fileShadow + fileGridDirty > 0)
+                {
+                    findings.Append("    { \"path\": \"");
+                    findings.Append(Escape(Path.GetRelativePath(projectRoot, path)));
+                    findings.Append("\", \"updateLoops\": ");
+                    findings.Append(fileUpdate);
+                    findings.Append(", \"coroutines\": ");
+                    findings.Append(fileCoroutine);
+                    findings.Append(", \"managedBatteryLists\": ");
+                    findings.Append(fileLists);
+                    findings.Append(", \"managedBatteryArrays\": ");
+                    findings.Append(fileArrays);
+                    findings.Append(", \"slowTickRegistrations\": ");
+                    findings.Append(fileSlow);
+                    findings.Append(", \"managedChargingShadowState\": ");
+                    findings.Append(fileShadow);
+                    findings.Append(", \"legacyGridDirty\": ");
+                    findings.Append(fileGridDirty);
+                    findings.Append(" },\n");
+                }
+            }
+
+
+                return GenerateReport(findings);
+            }
+
+        private void ScanBatteryChargerLogisticsRuntime(string scanText)
+        {
                     int lockIndex = scanText.IndexOf("TryLockJobBuffers(vault)", StringComparison.Ordinal);
                     int resolveIndex = scanText.IndexOf("TryResolveSimulationBuffers(", StringComparison.Ordinal);
                     scheduleLocksBeforeBufferResolve = lockIndex >= 0 && resolveIndex > lockIndex;
@@ -275,10 +382,10 @@ namespace Hecton8.Power.Editor
                         skippedResetIndex > skippedWriteIndex &&
                         immediateSkipWriteIndex < 0 &&
                         scanText.IndexOf("entry.Flags = BatteryChargerLogisticsConstants.TelemetryFlagSkippedCadence", StringComparison.Ordinal) < 0;
-                }
+                        }
 
-                if (fileName == "BatteryCharger.cs")
-                {
+        private void ScanBatteryCharger(string scanText)
+        {
                     int facadeSlotWriteIndex = scanText.IndexOf("WriteInventorySlotState(i, slot.batteryItem, slot.currentCharge)", StringComparison.Ordinal);
                     int facadeLinkRegisterIndex = scanText.IndexOf("TryRegisterChargerLink(", StringComparison.Ordinal);
                     facadeDirectRuntimeCallHits = CountToken(scanText, "BatteryChargerLogisticsRuntime.");
@@ -373,10 +480,10 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("private void EnsureSlotObjects()", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("slots[i] = new BatterySlot()", StringComparison.Ordinal) >= 0;
                     concreteFacadeBridgeContractResidual = facadeConcreteInventoryToolImportHits > 0;
-                }
+                        }
 
-                if (fileName == "BatteryChargerLogisticsBridge.cs")
-                {
+        private void ScanBatteryChargerLogisticsBridge(string scanText)
+        {
                     bridgeDelegateTableEradicated =
                         scanText.IndexOf("TryRegisterChargerLinkDelegate", StringComparison.Ordinal) < 0 &&
                         scanText.IndexOf("TryUnregisterChargerLinksDelegate", StringComparison.Ordinal) < 0 &&
@@ -389,18 +496,18 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("Volatile.Read(ref s_service)", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("GlobalRegistry.BatteryChargerLogistics", StringComparison.Ordinal) < 0 &&
                         scanText.IndexOf("public static void Clear(", StringComparison.Ordinal) < 0;
-                }
+                        }
 
-                if (fileName == "BatteryLogisticsXRayWindow.cs")
-                {
+        private void ScanBatteryLogisticsXRayWindow(string scanText)
+        {
                     xrayDisplaysSkippedCadenceFrames =
                         scanText.IndexOf("entry.SkippedCadenceFrames", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("TelemetryFlagSkippedCadence", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("barColor = new Color(0.2f, 0.55f, 1f, 1f)", StringComparison.Ordinal) >= 0;
-                }
+                        }
 
-                if (fileName == "GlobalRegistry.BatteryChargerLogistics.cs")
-                {
+        private void ScanGlobalRegistryBatteryChargerLogistics(string scanText)
+        {
                     globalRegistryBatteryServiceRoute =
                         scanText.IndexOf("IBatteryChargerLogisticsService _batteryChargerLogisticsRuntime", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("RegisterBatteryChargerLogisticsRuntime(IBatteryChargerLogisticsService instance)", StringComparison.Ordinal) >= 0 &&
@@ -409,18 +516,18 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("Interlocked.Exchange(ref _batteryChargerLogisticsRuntime, null)", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("BatteryChargerLogisticsBridge.BindService(instance)", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("BatteryChargerLogisticsBridge.BindService(null)", StringComparison.Ordinal) >= 0;
-                }
+                        }
 
-                if (fileName == "BatteryChargerModule.cs")
-                {
+        private void ScanBatteryChargerModule(string scanText)
+        {
                     constructionModuleConcreteGameplayToolImportHits =
                         CountToken(scanText, "using Hecton8.Gameplay") +
                         CountToken(scanText, "using Hecton8.Tools");
                     concreteFacadeBridgeContractResidual |= constructionModuleConcreteGameplayToolImportHits > 0;
-                }
+                        }
 
-                if (fileName == "BatteryChargerLogisticsContracts.cs")
-                {
+        private void ScanBatteryChargerLogisticsContracts(string scanText)
+        {
                     telemetryContractsUseFenceElapsedMicroseconds =
                         scanText.IndexOf("FenceElapsedMicroseconds", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("FaultDumpFenceElapsedThresholdMicroseconds", StringComparison.Ordinal) >= 0 &&
@@ -437,10 +544,10 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("Trim(line).Length != 0", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("!sawDigit || index != value.Length", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("math.isfinite(parsed)", StringComparison.Ordinal) >= 0;
-                }
+                        }
 
-                if (fileName == "InventoryRoutingNetwork.cs")
-                {
+        private void ScanInventoryRoutingNetwork(string scanText)
+        {
                     inventoryRoutingSharesShinobuSlots =
                         scanText.IndexOf("BufferID.ShinobuInventorySlots", StringComparison.Ordinal) >= 0;
                     inventoryRoutingWholeSlotMaintenanceWriters =
@@ -448,53 +555,11 @@ namespace Hecton8.Power.Editor
                         scanText.IndexOf("ClearInventoryContainerRangeJob", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("TickInventoryDecayJob", StringComparison.Ordinal) >= 0 &&
                         scanText.IndexOf("CompactInventoryArrayJob", StringComparison.Ordinal) >= 0;
-                }
+                        }
 
-                ScanCounts fileScan = AnalyzeSource(fileName, scanText);
-                if (!fileScan.IsChargerFile)
-                    continue;
 
-                chargerFiles++;
-                int fileUpdate = fileScan.UpdateLoops;
-                int fileCoroutine = fileScan.CoroutineLoops;
-                int fileLists = fileScan.ManagedBatteryLists;
-                int fileArrays = fileScan.ManagedBatteryArrays;
-                int fileSlow = fileScan.SlowTickRegistrations;
-                int fileShadow = fileScan.ManagedChargingShadowState;
-                int fileGridDirty = fileScan.LegacyGridDirty;
-                int fileFacade = fileScan.LegacySlotFacades;
-
-                updateLoops += fileUpdate;
-                coroutineLoops += fileCoroutine;
-                managedBatteryLists += fileLists;
-                managedBatteryArrays += fileArrays;
-                slowTickRegistrations += fileSlow;
-                managedChargingShadowState += fileShadow;
-                legacyGridDirty += fileGridDirty;
-                legacySlotFacades += fileFacade;
-
-                if (fileUpdate + fileCoroutine + fileLists + fileArrays + fileSlow + fileShadow + fileGridDirty > 0)
-                {
-                    findings.Append("    { \"path\": \"");
-                    findings.Append(Escape(Path.GetRelativePath(projectRoot, path)));
-                    findings.Append("\", \"updateLoops\": ");
-                    findings.Append(fileUpdate);
-                    findings.Append(", \"coroutines\": ");
-                    findings.Append(fileCoroutine);
-                    findings.Append(", \"managedBatteryLists\": ");
-                    findings.Append(fileLists);
-                    findings.Append(", \"managedBatteryArrays\": ");
-                    findings.Append(fileArrays);
-                    findings.Append(", \"slowTickRegistrations\": ");
-                    findings.Append(fileSlow);
-                    findings.Append(", \"managedChargingShadowState\": ");
-                    findings.Append(fileShadow);
-                    findings.Append(", \"legacyGridDirty\": ");
-                    findings.Append(fileGridDirty);
-                    findings.Append(" },\n");
-                }
-            }
-
+        private string GenerateReport(StringBuilder findings)
+        {
             bool eradicated = updateLoops == 0 &&
                               coroutineLoops == 0 &&
                               managedBatteryLists == 0 &&
@@ -1000,6 +1065,7 @@ namespace Hecton8.Power.Editor
             WriteSharedReport(reportPath, json.ToString());
             return reportPath;
         }
+    }
 
         private static void WriteSharedReport(string reportPath, string entryJson)
         {
