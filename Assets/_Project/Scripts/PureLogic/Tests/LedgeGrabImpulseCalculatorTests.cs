@@ -24,9 +24,9 @@ namespace Hecton8.PureLogic.Tests
             // Ledge normal is (0, 0, -1). Inward dot is (10*0 + -5*0 + 10*-1) = -10.
             // Since -10 < 0, we subtract normal * dot => (-10) * (0,0,-1) = (0,0,10).
             // So Z becomes 10 - 10 = 0.
-            Assert.AreEqual(10f, result.X, 0.001f);
-            Assert.AreEqual(5f, result.Y, 0.001f);
-            Assert.AreEqual(0f, result.Z, 0.001f);
+            Assert.That(result.X, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(5f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
         }
 
         [Test]
@@ -42,9 +42,9 @@ namespace Hecton8.PureLogic.Tests
             Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
 
             // Assert
-            Assert.AreEqual(10f, result.X, 0.001f);
-            Assert.AreEqual(0f, result.Y, 0.001f);
-            Assert.AreEqual(0f, result.Z, 0.001f);
+            Assert.That(result.X, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
         }
 
         [Test]
@@ -60,9 +60,9 @@ namespace Hecton8.PureLogic.Tests
             Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
 
             // Assert
-            Assert.AreEqual(0f, result.X, 0.001f);
-            Assert.AreEqual(0f, result.Y, 0.001f);
-            Assert.AreEqual(0f, result.Z, 0.001f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
         }
 
         [Test]
@@ -78,9 +78,9 @@ namespace Hecton8.PureLogic.Tests
             Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
 
             // Assert
-            Assert.AreEqual(-10f, result.X, 0.001f);
-            Assert.AreEqual(-10f, result.Y, 0.001f);
-            Assert.AreEqual(0f, result.Z, 0.001f); // inward velocity cancelled
+            Assert.That(result.X, Is.EqualTo(-10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(-10f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f)); // inward velocity cancelled
         }
 
         [Test]
@@ -96,9 +96,80 @@ namespace Hecton8.PureLogic.Tests
             Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
 
             // Assert
-            Assert.AreEqual(0f, result.X, 0.001f);
-            Assert.AreEqual(0f, result.Y, 0.001f);
-            Assert.AreEqual(0f, result.Z, 0.001f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_CancelFraction_Clamp_LowerBound()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(0f, 10f, 0f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float pullUp = 0f;
+            float cancelFrac = -0.5f; // should clamp to 0
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            // Y velocity should be multiplied by (1 - 0) = 1, so it remains 10.
+            Assert.That(result.Y, Is.EqualTo(10f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_CancelFraction_Clamp_UpperBound()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(0f, 10f, 0f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float pullUp = 0f;
+            float cancelFrac = 2.0f; // should clamp to 1
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            // Y velocity should be multiplied by (1 - 1) = 0, so it becomes 0.
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_PullUpForce_MinBound()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(0f, 0f, 0f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float pullUp = -10f; // should clamp to 0
+            float cancelFrac = 0f;
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            // Y velocity should have 0 pullUpForce added.
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_LedgeNormal_FallbackToUnitY()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(0f, -10f, 0f);
+            // Length squared < 0.0001f (0.01^2 = 0.0001)
+            Vector3 norm = new Vector3(0f, 0.005f, 0f);
+            float pullUp = 0f;
+            float cancelFrac = 0f;
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            // Fallback normal is UnitY (0, 1, 0).
+            // Inward dot is Dot((0, -10, 0), (0, 1, 0)) = -10.
+            // Since -10 < 0, we subtract UnitY * -10 from velocity -> (0, -10, 0) - (0, -10, 0) = (0, 0, 0).
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
         }
     }
 }
