@@ -174,10 +174,7 @@ namespace Crest
             var a = Mathf.Sqrt(a_2);
 
             // Gerstner fudge - one hack to get Gerstners looking on par with FFT
-            if (_version > 0)
-            {
-                a *= 5f;
-            }
+            a *= 5f;
 
             return a * _multiplier;
         }
@@ -284,7 +281,6 @@ namespace Crest
             _hostComponentType = hostComponentType;
         }
 
->>>>>>> origin/pr/1108
         public override void OnInspectorGUI()
         {
             // Display a notice if its being edited as a standalone asset (not embedded in a component) because
