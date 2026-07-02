@@ -25,9 +25,9 @@ namespace Hecton8.PureLogic.Tests
             // surfaceAdvection01 = 1 - 0.5 = 0.5
             // forceX = 1 * 10 * 0.5 = 5
             // forceZ = 0.5 * 10 * 0.5 = 2.5
-            Assert.AreEqual(5f, result.X, 0.0001f);
-            Assert.AreEqual(0f, result.Y, 0.0001f);
-            Assert.AreEqual(2.5f, result.Z, 0.0001f);
+            Assert.That(result.X, Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(result.Z, Is.EqualTo(2.5f).Within(0.0001f));
         }
 
         [Test]
@@ -40,17 +40,17 @@ namespace Hecton8.PureLogic.Tests
             // Boundary 1: Surface depth = 0
             Vector3 resultSurface = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 0f, 0.02f);
             // decayFactor = 0, surfaceAdvection = 1, force = 5
-            Assert.AreEqual(5f, resultSurface.X, 0.0001f);
+            Assert.That(resultSurface.X, Is.EqualTo(5f).Within(0.0001f));
 
             // Boundary 2: Deep depth where current drops to zero
             Vector3 resultDeep = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 50f, 0.02f);
             // decayFactor = 50 * 0.02 = 1, surfaceAdvection = 0, force = 0
-            Assert.AreEqual(0f, resultDeep.X, 0.0001f);
+            Assert.That(resultDeep.X, Is.EqualTo(0f).Within(0.0001f));
 
             // Boundary 3: Very deep depth where current stays zero
             Vector3 resultVeryDeep = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 100f, 0.02f);
             // decayFactor = 100 * 0.02 = 2 clamped to 1, surfaceAdvection = 0, force = 0
-            Assert.AreEqual(0f, resultVeryDeep.X, 0.0001f);
+            Assert.That(resultVeryDeep.X, Is.EqualTo(0f).Within(0.0001f));
         }
 
         [Test]
@@ -66,9 +66,9 @@ namespace Hecton8.PureLogic.Tests
             Vector3 result = SurfaceCurrentWindshearVector.Calculate(zeroWind, zeroStrength, zeroDepth, zeroDecay);
 
             // Assert
-            Assert.AreEqual(0f, result.X, 0.0001f);
-            Assert.AreEqual(0f, result.Y, 0.0001f);
-            Assert.AreEqual(0f, result.Z, 0.0001f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.0001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.0001f));
         }
 
         [Test]
@@ -87,8 +87,8 @@ namespace Hecton8.PureLogic.Tests
             // negative depth clamped to 0, negative decay clamped to 0
             // surfaceAdvection = 1
             // forceX = -1 * -5 * 1 = 5
-            Assert.AreEqual(5f, result.X, 0.0001f);
-            Assert.AreEqual(5f, result.Z, 0.0001f);
+            Assert.That(result.X, Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(result.Z, Is.EqualTo(5f).Within(0.0001f));
         }
 
         [Test]
@@ -102,8 +102,36 @@ namespace Hecton8.PureLogic.Tests
             Vector3 resultInf = SurfaceCurrentWindshearVector.Calculate(windVector, float.PositiveInfinity, 10f, 0.02f);
 
             // Assert
-            Assert.AreEqual(Vector3.Zero, resultNan);
-            Assert.AreEqual(Vector3.Zero, resultInf);
+            Assert.That(resultNan, Is.EqualTo(Vector3.Zero));
+            Assert.That(resultInf, Is.EqualTo(Vector3.Zero));
+        }
+
+        [Test]
+        public void Test_ClampedBounds_EdgeCases()
+        {
+            Vector2 windVector = new Vector2(1f, 1f);
+            float windStrength = 10f;
+            float decayRate = 0.02f;
+
+            // decayFactor = depth * decayRate
+            // surfaceAdvection01 = 1f - Math.Min(Math.Max(decayFactor, 0f), 1f)
+            // forceX = windVector.X * windStrength * surfaceAdvection01
+
+            // Case A: Just below 1 (decayFactor = 0.99)
+            Vector3 resultBelow = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 49.5f, decayRate);
+            Assert.That(resultBelow.X, Is.EqualTo(0.1f).Within(0.0001f));
+
+            // Case B: Exactly 1 (decayFactor = 1.0)
+            Vector3 resultExact = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 50f, decayRate);
+            Assert.That(resultExact.X, Is.EqualTo(0f).Within(0.0001f));
+
+            // Case C: Just above 1 (decayFactor = 1.01)
+            Vector3 resultAbove = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 50.5f, decayRate);
+            Assert.That(resultAbove.X, Is.EqualTo(0f).Within(0.0001f));
+
+            // Case D: Just above 0 (decayFactor = 0.01)
+            Vector3 resultAboveZero = SurfaceCurrentWindshearVector.Calculate(windVector, windStrength, 0.5f, decayRate);
+            Assert.That(resultAboveZero.X, Is.EqualTo(9.9f).Within(0.0001f));
         }
     }
 }
