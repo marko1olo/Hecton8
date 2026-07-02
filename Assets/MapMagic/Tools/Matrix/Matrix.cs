@@ -1,4 +1,4 @@
-﻿// Operations with "maps"
+// Operations with "maps"
 // Note that functions are not inlined in editor, so keeping all method unfolded
 
 using UnityEngine;
@@ -1965,10 +1965,9 @@ namespace Den.Tools.Matrices
 				/// Center does not need to be the real center, it's just used to calculate fallof
 				/// Hardness is the percent (0-1) of the stamp that has 100% fallof
 				/// Used in Locks (seems only)
-				/// TODO: switch to Fallof
 				{
 					float fallofRadius = radius + transition;
-					float hardness = fallofRadius == 0 ? 1 : radius / fallofRadius;
+					float hardness = fallofRadius > 0.00001f ? radius / fallofRadius : 1f;
 					Fallof(src, stamp, this, new Vector2D(centerX, centerZ), fallofRadius, hardness, smoothFallof);
 				}
 			#endif
