@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 using Den.Tools;
@@ -44,7 +45,7 @@ namespace MapMagic.Products
 		
 		//per-tile products (refs copied to subDatas)
 		private HashSet<FinalizeAction> finalizeMarks = new HashSet<FinalizeAction>();
-		private Dictionary<Type,IApplyData> applyMarks = new Dictionary<Type,IApplyData>(); //finalize marks are unique, apply datas are created new each time
+		private ConcurrentDictionary<Type,IApplyData> applyMarks = new ConcurrentDictionary<Type,IApplyData>(); //finalize marks are unique, apply datas are created new each time
 
 		public MatrixWorld heights = null; //last heights applied to floor objects
 
@@ -579,13 +580,7 @@ namespace MapMagic.Products
 			public void MarkApply (IApplyData data)  
 			{ 
 				Type type = data.GetType();
-				lock (applyMarks) //added from thread, but read from main
-				{
-					if (applyMarks.ContainsKey(type))
-						applyMarks[type] = data;
-					else
-						applyMarks.Add(type, data); 
-				}
+				applyMarks[type] = data;
 			}
 
 			public int ApplyMarksCount  =>  applyMarks.Count;
@@ -602,16 +597,15 @@ namespace MapMagic.Products
 				IApplyData topPriorityApply = null;
 				int topPriority = -1;
 
-				lock (applyMarks) //otherwise can cause "Collection was modified; enumeration operation may not execute."
-					foreach (IApplyData data in applyMarks.Values)
-					//TODO: enumerators here (especially this one) 
-					{
-						int priority = GetApplyPriority(data);
-						if (priority > topPriority)
-							{ topPriority=priority; topPriorityApply=data; }
-					}
-			
-				applyMarks.Remove(topPriorityApply.GetType());
+				foreach (IApplyData data in applyMarks.Values)
+				{
+					int priority = GetApplyPriority(data);
+					if (priority > topPriority)
+						{ topPriority=priority; topPriorityApply=data; }
+				}
+
+				if (topPriorityApply != null)
+					applyMarks.TryRemove(topPriorityApply.GetType(), out _);
 				return topPriorityApply;
 			}
 
