@@ -71,6 +71,19 @@ namespace MapMagic.Terrains
 
 			public DetailLevel (TerrainTile tile, bool isDraft) { data=new TileData(); terrain = tile.CreateTerrain(isDraft); }
 			public void Remove () { data?.Clear(inSubs:true); if (terrain!=null) GameObject.DestroyImmediate(terrain.gameObject); }
+
+			public void SetPriority (int priority)
+			{
+				if (task != null) task.priority = priority;
+				if (coroutine != null) coroutine.priority = priority;
+				if (applyDraftCoroutine != null) applyDraftCoroutine.priority = priority;
+				if (switchLodCoroutine != null) switchLodCoroutine.priority = priority;
+				if (applyMainCoroutines != null)
+				{
+					foreach (CoroutineManager.Task c in applyMainCoroutines)
+						if (c != null) c.priority = priority;
+				}
+			}
 		}
 
 		[NonSerialized] public DetailLevel main;
@@ -372,7 +385,8 @@ namespace MapMagic.Terrains
 					if (main != null  &&  !main.generateStarted) StartGenerate(mapMagic.graph, generateMain:true, generateLod:false);
 				}
 
-				//TODO: switch tasks priorities
+				main?.SetPriority(Priority);
+				draft?.SetPriority(Priority + 1000);
 			}
 
 
