@@ -77,5 +77,54 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(FaunaHypnosisPullForceCalculator.Compute(playerPos, sourcePos, float.PositiveInfinity, 1f, 1f), Is.EqualTo(Vector3.Zero));
             Assert.That(FaunaHypnosisPullForceCalculator.Compute(new Vector3(float.NaN, 0, 0), sourcePos, 1f, 1f, 1f), Is.EqualTo(Vector3.Zero));
         }
+
+        [Test]
+        public void Test_Array_Null_ReturnsZero()
+        {
+            Vector3 playerPos = new Vector3(0, 0, 0);
+            Vector3[] sourcePositions = null;
+            float acceleration = 1f;
+            float playerMass = 1f;
+            float lockDuration = 1f;
+
+            Vector3 result = FaunaHypnosisPullForceCalculator.Compute(playerPos, sourcePositions, acceleration, playerMass, lockDuration);
+            Assert.That(result, Is.EqualTo(Vector3.Zero));
+        }
+
+        [Test]
+        public void Test_Array_Empty_ReturnsZero()
+        {
+            Vector3 playerPos = new Vector3(0, 0, 0);
+            Vector3[] sourcePositions = new Vector3[0];
+            float acceleration = 1f;
+            float playerMass = 1f;
+            float lockDuration = 1f;
+
+            Vector3 result = FaunaHypnosisPullForceCalculator.Compute(playerPos, sourcePositions, acceleration, playerMass, lockDuration);
+            Assert.That(result, Is.EqualTo(Vector3.Zero));
+        }
+
+        [Test]
+        public void Test_Array_Valid_ReturnsSumOfForces()
+        {
+            Vector3 playerPos = new Vector3(0, 0, 0);
+            Vector3[] sourcePositions = new Vector3[]
+            {
+                new Vector3(3, 4, 0), // Same as HappyPath case 1
+                new Vector3(-3, 4, 0) // Symmetric, should cancel X, double Y
+            };
+            float acceleration = 2f;
+            float playerMass = 80f;
+            float lockDuration = 2f;
+
+            Vector3 result = FaunaHypnosisPullForceCalculator.Compute(playerPos, sourcePositions, acceleration, playerMass, lockDuration);
+
+            // Expected for first pos: (3.84, 5.12, 0)
+            // Expected for second pos: (-3.84, 5.12, 0)
+            // Sum: (0, 10.24, 0)
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(10.24f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
+        }
     }
 }
