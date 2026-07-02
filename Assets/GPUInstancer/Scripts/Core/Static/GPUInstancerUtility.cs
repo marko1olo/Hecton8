@@ -1293,9 +1293,28 @@ namespace GPUInstancer
                         detailPrototype.treeType == GPUInstancerTreeType.TreeCreatorTree)
                         GPUInstancerManager.AddTreeProxy(detailPrototype, runtimeData);
 
-                    if (detailPrototypes[i].prefabObject.GetComponentsInChildren<MeshRenderer>()
-                        .Any(r => r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP
-                               || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP))
+                    bool hasFoliageShader = false;
+                    if (runtimeData.instanceLODs != null)
+                    {
+                        for (int lod = 0; lod < runtimeData.instanceLODs.Count; lod++)
+                        {
+                            if (runtimeData.instanceLODs[lod].renderers != null)
+                            {
+                                for (int r = 0; r < runtimeData.instanceLODs[lod].renderers.Count; r++)
+                                {
+                                    if (runtimeData.instanceLODs[lod].renderers[r].materials != null &&
+                                        runtimeData.instanceLODs[lod].renderers[r].materials.Any(m => m != null && m.shader != null && (m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP)))
+                                    {
+                                        hasFoliageShader = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasFoliageShader) break;
+                        }
+                    }
+
+                    if (hasFoliageShader)
                     {
                         for (int lod = 0; lod < runtimeData.instanceLODs.Count; lod++)
                         {
@@ -1418,9 +1437,28 @@ namespace GPUInstancer
 
                 if (detailPrototype.usePrototypeMesh)
                 {
-                    if (detailPrototype.prefabObject.GetComponentsInChildren<MeshRenderer>()
-                        .Any(r => r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP
-                               || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP))
+                    bool hasFoliageShader = false;
+                    if (runtimeDataList[i].instanceLODs != null)
+                    {
+                        for (int lod = 0; lod < runtimeDataList[i].instanceLODs.Count; lod++)
+                        {
+                            if (runtimeDataList[i].instanceLODs[lod].renderers != null)
+                            {
+                                for (int r = 0; r < runtimeDataList[i].instanceLODs[lod].renderers.Count; r++)
+                                {
+                                    if (runtimeDataList[i].instanceLODs[lod].renderers[r].materials != null &&
+                                        runtimeDataList[i].instanceLODs[lod].renderers[r].materials.Any(m => m != null && m.shader != null && (m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || m.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP)))
+                                    {
+                                        hasFoliageShader = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (hasFoliageShader) break;
+                        }
+                    }
+
+                    if (hasFoliageShader)
                     {
                         for (int lod = 0; lod < runtimeDataList[i].instanceLODs.Count; lod++)
                         {
