@@ -1412,15 +1412,23 @@ namespace GPUInstancer
         public static void UpdateDetailInstanceRuntimeDataList(List<GPUInstancerRuntimeData> runtimeDataList, GPUInstancerTerrainSettings terrainSettings, bool updateMeshes = false,
             int detailLayer = 0)
         {
+            Dictionary<GPUInstancerDetailPrototype, bool> prototypeFoliageCache = new Dictionary<GPUInstancerDetailPrototype, bool>();
             for (int i = 0; i < runtimeDataList.Count; i++)
             {
                 GPUInstancerDetailPrototype detailPrototype = (GPUInstancerDetailPrototype)runtimeDataList[i].prototype;
 
                 if (detailPrototype.usePrototypeMesh)
                 {
-                    if (detailPrototype.prefabObject.GetComponentsInChildren<MeshRenderer>()
-                        .Any(r => r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP
-                               || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP))
+                    bool hasFoliage = false;
+                    if (!prototypeFoliageCache.TryGetValue(detailPrototype, out hasFoliage))
+                    {
+                        hasFoliage = detailPrototype.prefabObject.GetComponentsInChildren<MeshRenderer>()
+                            .Any(r => r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_URP
+                                   || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_LWRP || r.sharedMaterial.shader.name == GPUInstancerConstants.SHADER_GPUI_FOLIAGE_HDRP);
+                        prototypeFoliageCache.Add(detailPrototype, hasFoliage);
+                    }
+
+                    if (hasFoliage)
                     {
                         for (int lod = 0; lod < runtimeDataList[i].instanceLODs.Count; lod++)
                         {
