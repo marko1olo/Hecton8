@@ -51,6 +51,7 @@ namespace Technie.PhysicsCreator
 
 	public class RigidColliderCreator : MonoBehaviour, ICreatorComponent
 	{
+		private static readonly List<Component> s_componentCache = new List<Component>();
 		public PaintingData paintingData;
 		public HullMeshAsset hullData;
 
@@ -158,8 +159,13 @@ namespace Technie.PhysicsCreator
 						DestroyImmediateWithUndo(child);
 
 						// If the child has no children and is now empty, destroy the object as well
-						if (childObj.transform.childCount == 0 && childObj.GetComponents<Component>().Length == 1) // length=1 means only transform left
-							DestroyImmediateWithUndo(childObj);
+						if (childObj.transform.childCount == 0)
+						{
+							childObj.GetComponents<Component>(s_componentCache);
+							if (s_componentCache.Count == 1) // length=1 means only transform left
+								DestroyImmediateWithUndo(childObj);
+							s_componentCache.Clear();
+						}
 					}
 				}
 			}
@@ -167,11 +173,11 @@ namespace Technie.PhysicsCreator
 
 		private static bool IsDeletable(GameObject obj)
 		{
-			Component[] allComps = obj.GetComponents<Component>();
+			obj.GetComponents<Component>(s_componentCache);
 
 			int numIgnorable = 0;
 
-			foreach (Component comp in allComps)
+			foreach (Component comp in s_componentCache)
 			{
 				if (comp is Transform
 					|| comp is Collider
@@ -182,7 +188,9 @@ namespace Technie.PhysicsCreator
 				}
 			}
 
-			return allComps.Length == numIgnorable;
+			bool isDeletable = s_componentCache.Count == numIgnorable;
+			s_componentCache.Clear();
+			return isDeletable;
 		}
 
 		private static void DestroyImmediateWithUndo(Object obj)
