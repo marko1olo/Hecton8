@@ -833,15 +833,14 @@ namespace Technie.PhysicsCreator
 		private List<T> FindLocal<T>() where T : Component
 		{
 			List<T> localComps = new List<T>();
-			this.gameObject.GetComponents<T>(localComps);
+			GetComponentsInChildren<T>(true, localComps);
 
-			if (transform.childCount > 0)
+			for (int i = localComps.Count - 1; i >= 0; i--)
 			{
-				List<T> childComps = new List<T>();
-				for (int i = 0; i < transform.childCount; i++)
+				Transform t = localComps[i].transform;
+				if (t != this.transform && t.parent != this.transform)
 				{
-					transform.GetChild(i).GetComponents<T>(childComps);
-					localComps.AddRange(childComps);
+					localComps.RemoveAt(i);
 				}
 			}
 
