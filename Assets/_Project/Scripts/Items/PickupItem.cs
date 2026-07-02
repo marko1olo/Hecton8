@@ -111,6 +111,7 @@ namespace Hecton8.Interaction
         private long _legacyWorldStatePersistenceKey;
         private Vector3 _worldStateAnchorPosition;
         private bool _isPooledRuntimeInstance;
+        public bool IsPooledRuntimeInstance => _isPooledRuntimeInstance;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
         private bool _registeredToWorldStateRegistry;
