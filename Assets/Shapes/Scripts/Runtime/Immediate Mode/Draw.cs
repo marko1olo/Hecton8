@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -466,7 +466,8 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			bool hasMainMesh = tmp.mesh != null && tmp.mesh.vertexCount > 0;
+			bool hasMainMesh = (tmp.mesh != null && tmp.mesh.vertexCount > 0) ||
+			                   (tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > 0 && tmp.textInfo.meshInfo[0].vertexCount > 0);
 
 			if( hasMainMesh ) {
 				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
