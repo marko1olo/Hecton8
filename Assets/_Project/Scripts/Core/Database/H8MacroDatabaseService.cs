@@ -74,6 +74,7 @@ namespace Hecton8.Core.Database
         private int _asyncHydrationActive;
         private int _compactionActive;
         private int _compactionCopyActive;
+        private readonly ManualResetEventSlim _compactionCopyEvent = new ManualResetEventSlim(true);
         private int _compactionState;
         private int _compactionPersistenceGate;
         private int _compactionMemoryResumeTickMs;
@@ -1047,8 +1048,7 @@ namespace Hecton8.Core.Database
         public void Shutdown()
         {
             Volatile.Write(ref _compactionActive, 0);
-            while (Volatile.Read(ref _compactionCopyActive) != 0)
-                Thread.Sleep(1);
+            _compactionCopyEvent.Wait();
 
             lock (_fileGate)
             {
@@ -1202,6 +1202,7 @@ namespace Hecton8.Core.Database
                     return false;
 
                 rootOffset = ReadRootNodeOffset();
+                _compactionCopyEvent.Reset();
                 Volatile.Write(ref _compactionCopyActive, 1);
             }
 
@@ -1238,6 +1239,7 @@ namespace Hecton8.Core.Database
             finally
             {
                 Volatile.Write(ref _compactionCopyActive, 0);
+                _compactionCopyEvent.Set();
                 target.Shutdown();
             }
         }
