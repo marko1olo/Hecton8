@@ -1897,6 +1897,7 @@ namespace GPUInstancer
         public static Mesh CreateCrossQuadsMeshForDetailGrass(float width, float height, string name, int quality)
         {
             GameObject parent = new GameObject(name, typeof(MeshFilter));
+            MeshFilter parentMeshFilter = parent.GetComponent<MeshFilter>();
             parent.transform.position = Vector3.zero;
             CombineInstance[] combinesInstances = new CombineInstance[quality];
             for (int i = 0; i < quality; i++)
@@ -1909,7 +1910,8 @@ namespace GPUInstancer
                 for (int j = 0; j < mesh.normals.Length; j++)
                     mesh.normals[i] = Vector3.up;
 
-                child.GetComponent<MeshFilter>().sharedMesh = mesh;
+                MeshFilter childMeshFilter = child.GetComponent<MeshFilter>();
+                childMeshFilter.sharedMesh = mesh;
                 child.transform.parent = parent.transform;
                 child.transform.localPosition = Vector3.zero;
                 child.transform.localRotation = Quaternion.identity * Quaternion.AngleAxis((180.0f / quality) * i, Vector3.up);
@@ -1917,13 +1919,13 @@ namespace GPUInstancer
 
                 combinesInstances[i] = new CombineInstance
                 {
-                    mesh = child.GetComponent<MeshFilter>().sharedMesh,
+                    mesh = mesh,
                     transform = child.transform.localToWorldMatrix
                 };
             }
-            parent.GetComponent<MeshFilter>().sharedMesh = new Mesh();
-            parent.GetComponent<MeshFilter>().sharedMesh.CombineMeshes(combinesInstances, true, true);
-            Mesh result = parent.GetComponent<MeshFilter>().sharedMesh;
+            parentMeshFilter.sharedMesh = new Mesh();
+            parentMeshFilter.sharedMesh.CombineMeshes(combinesInstances, true, true);
+            Mesh result = parentMeshFilter.sharedMesh;
             result.name = name;
 
             GameObject.DestroyImmediate(parent);
