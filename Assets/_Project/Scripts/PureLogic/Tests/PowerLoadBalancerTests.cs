@@ -73,5 +73,27 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(result[0], Is.EqualTo(0f)); // Infinity supply -> 0. MaxValue demand is satisfied by 0 supply
             Assert.That(result[1], Is.EqualTo(0f));
         }
+
+        [Test]
+        public void Test_Error_ArgumentNullException()
+        {
+            float supply = 100f;
+            float[] demands = { 20f, 50f };
+            int[] priorities = { 1, 3 };
+
+            Assert.Throws<ArgumentNullException>(() => PowerLoadBalancer.Calculate(supply, null, priorities));
+            Assert.Throws<ArgumentNullException>(() => PowerLoadBalancer.Calculate(supply, demands, null));
+            Assert.Throws<ArgumentNullException>(() => PowerLoadBalancer.Calculate(supply, null, null));
+        }
+
+        [Test]
+        public void Test_Error_ArgumentException_LengthMismatch()
+        {
+            float supply = 100f;
+            float[] demands = { 20f, 50f };
+            int[] priorities = { 1, 3, 2 };
+
+            Assert.Throws<ArgumentException>(() => PowerLoadBalancer.Calculate(supply, demands, priorities));
+        }
     }
 }
