@@ -466,9 +466,10 @@ namespace Shapes {
 
 
 		static void Text_Internal( TextMeshProShapes tmp, IMDrawer.DrawType drawType, int disposeId = -1 ) {
-			// todo: something fucky happens sometimes when fallback fonts are the only things in town
-			using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
-				// will draw on dispose
+			if( tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > 0 && tmp.textInfo.meshInfo[0].vertexCount > 0 ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+					// will draw on dispose
+				}
 			}
 
 			TMP_SubMesh[] submeshes = tmp.GetSubmeshes();
