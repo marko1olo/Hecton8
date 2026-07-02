@@ -47,5 +47,24 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(AcousticZoneReverbDecay.Calculate(100f, float.PositiveInfinity, 1f), Is.EqualTo(0.12f));
             Assert.That(AcousticZoneReverbDecay.Calculate(float.NaN, 1f, 1f), Is.EqualTo(10f));
         }
+
+        [Test]
+        public void Test_ExactBounds_Case06()
+        {
+            // Exact minimum bound (0.12f)
+            Assert.That(AcousticZoneReverbDecay.Calculate(12f, 16.1f, 1f), Is.EqualTo(0.12f).Within(0.001f));
+
+            // Exact maximum bound (10.0f)
+            Assert.That(AcousticZoneReverbDecay.Calculate(1000f, 16.1f, 1f), Is.EqualTo(10.0f).Within(0.001f));
+
+            // Just below minimum bound (0.11f) -> clamps to 0.12f
+            Assert.That(AcousticZoneReverbDecay.Calculate(11f, 16.1f, 1f), Is.EqualTo(0.12f).Within(0.001f));
+
+            // Just above maximum bound (10.1f) -> clamps to 10.0f
+            Assert.That(AcousticZoneReverbDecay.Calculate(1010f, 16.1f, 1f), Is.EqualTo(10.0f).Within(0.001f));
+
+            // Inside bounds (5.0f)
+            Assert.That(AcousticZoneReverbDecay.Calculate(500f, 16.1f, 1f), Is.EqualTo(5.0f).Within(0.001f));
+        }
     }
 }
