@@ -1146,18 +1146,22 @@ namespace Hecton8.UI
             if (source.IsEmpty)
                 source = fallback;
 
-            if (HasNumericPlaceholder(source))
+            if (ContainsNumericPlaceholder(source))
+            {
                 source = fallback;
+            }
 
             return CopySpanToFixedBuffer(source, destination);
         }
 
-        private static bool HasNumericPlaceholder(ReadOnlySpan<char> source)
+        private static bool ContainsNumericPlaceholder(ReadOnlySpan<char> source)
         {
             for (int i = 0; i < source.Length - 1; i++)
             {
-                if (source[i] == '{' && source[i + 1] >= '0' && source[i + 1] <= '9')
+                if (source[i] == '{' && source[i + 1] >= '0' && source[i + 1] <= '9') // }
+                {
                     return true;
+                }
             }
 
             return false;
@@ -1193,7 +1197,7 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < source.Length - 1; i++)
             {
-                if (source[i] == '{' && source[i + 1] == '0')
+                if (source[i] == '{' && source[i + 1] == '0') // }
                     return i;
             }
 
@@ -1204,7 +1208,7 @@ namespace Hecton8.UI
         {
             for (int i = math.max(0, startIndex); i < source.Length; i++)
             {
-                if (source[i] == '}')
+                if (source[i] == '}') // {
                     return i;
             }
 
