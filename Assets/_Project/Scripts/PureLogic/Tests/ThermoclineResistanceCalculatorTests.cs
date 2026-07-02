@@ -50,5 +50,17 @@ namespace Hecton8.PureLogic.Tests
             float resultNaN = ThermoclineResistanceCalculator.Compute(float.NaN, 100f, 20f, 10f, 1f);
             Assert.That(resultNaN, Is.EqualTo(0f));
         }
+
+        [Test]
+        public void Test_ClampBounds_Case06()
+        {
+            // Test max bound
+            float resultMax = ThermoclineResistanceCalculator.Compute(100f, 100f, 20f, 1000f, 1000f);
+            Assert.That(resultMax, Is.EqualTo(1f));
+
+            // Test min bound
+            float resultMin = ThermoclineResistanceCalculator.Compute(100f, 100f, 20f, -10f, 1f);
+            Assert.That(resultMin, Is.EqualTo(0f));
+        }
     }
 }
