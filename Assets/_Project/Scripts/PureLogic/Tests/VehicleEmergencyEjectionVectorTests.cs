@@ -25,9 +25,9 @@ namespace Hecton8.PureLogic.Tests
             // horizontal impulse = 7.5 * 1.1 = 8.25
             // vertical impulse = 3.4 * 0.975 = 3.315
             // lateral dir should be -X -> (-8.25, 3.315, 0)
-            Assert.AreEqual(-8.25f, result.X, 0.01f);
-            Assert.AreEqual(3.315f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(-8.25f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(3.315f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
         }
 
         [Test]
@@ -47,9 +47,9 @@ namespace Hecton8.PureLogic.Tests
             // horizontal impulse = 7.5 * 1.35 = 10.125
             // vertical impulse = 3.4 * 1.2 = 4.08
             // lateral dir should be -fwd -> (0, 0, -1)
-            Assert.AreEqual(0f, result.X, 0.01f);
-            Assert.AreEqual(4.08f, result.Y, 0.01f);
-            Assert.AreEqual(-10.125f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(4.08f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(-10.125f).Within(0.01f));
         }
 
         [Test]
@@ -69,9 +69,9 @@ namespace Hecton8.PureLogic.Tests
             // Fallback since vel and fwd are zero -> (0, 0, -1)
             // horizontal impulse = 7.5 * 0.85 = 6.375
             // vertical impulse = 3.4 * 0.75 = 2.55
-            Assert.AreEqual(0f, result.X, 0.01f);
-            Assert.AreEqual(2.55f, result.Y, 0.01f);
-            Assert.AreEqual(-6.375f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(2.55f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(-6.375f).Within(0.01f));
         }
 
         [Test]
@@ -89,9 +89,9 @@ namespace Hecton8.PureLogic.Tests
             // Assert
             // Planar velocity is 0. Fallback lateral is -fwd = (1, 0, 0)
             // horizontal impulse = 7.5 * 0.85 = 6.375
-            Assert.AreEqual(6.375f, result.X, 0.01f);
-            Assert.AreEqual(2.55f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(6.375f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(2.55f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
         }
 
         [Test]
@@ -108,12 +108,12 @@ namespace Hecton8.PureLogic.Tests
 
             // Assert
             // NaN handling should return Zero
-            Assert.AreEqual(Vector3.Zero, result);
+            Assert.That(result, Is.EqualTo(Vector3.Zero));
 
             // Testing infinity
             vel = new Vector3(float.PositiveInfinity, 0f, 0f);
             result = VehicleEmergencyEjectionVector.Calculate(vel, fwd, up, severity);
-            Assert.AreEqual(Vector3.Zero, result);
+            Assert.That(result, Is.EqualTo(Vector3.Zero));
         }
 
         [Test]
@@ -121,23 +121,48 @@ namespace Hecton8.PureLogic.Tests
         {
             // Arrange
             Vector3 vel = new Vector3(10f, 0f, 0f);
-            Vector3 fwd = new Vector3(1f, 0f, 0f);
+            Vector3 fwd = new Vector3(0f, 0f, 1f);
             Vector3 up = new Vector3(0f, 1f, 0f);
             float severity = 0.5f;
 
             // Act
             Vector3 result = VehicleEmergencyEjectionVector.CalculateImpulse(
                 vel, fwd, up, severity,
-                10f, 5f, 0.5f, 1.5f, 0.5f, 1.5f, 0.001f);
+                horizontalImpulseScale: 10f, verticalImpulseScale: 5f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1.5f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1.5f,
+                epsilonSquared: 0.0001f);
 
             // Assert
             // severity 0.5 -> horizontalLerp = 1.0, verticalLerp = 1.0
             // horizontal impulse = 10 * 1.0 = 10
             // vertical impulse = 5 * 1.0 = 5
-            // lateral dir should be -X -> (-10, 5, 0)
-            Assert.AreEqual(-10f, result.X, 0.01f);
-            Assert.AreEqual(5f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(-10f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(5f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
+        }
+
+        [Test]
+        public void Test_CalculateImpulse_Boundary()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(10f, 0f, 0f);
+            Vector3 fwd = new Vector3(0f, 0f, 1f);
+            Vector3 up = new Vector3(0f, 1f, 0f);
+            float severity = 1.5f;
+
+            // Act
+            Vector3 result = VehicleEmergencyEjectionVector.CalculateImpulse(
+                vel, fwd, up, severity,
+                horizontalImpulseScale: 10f, verticalImpulseScale: 5f,
+                horizontalLerpMin: 0f, horizontalLerpMax: 2f,
+                verticalLerpMin: 0f, verticalLerpMax: 2f,
+                epsilonSquared: 0.0001f);
+
+            // Assert
+            Assert.That(result.X, Is.EqualTo(-20f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(10f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
         }
 
         [Test]
@@ -153,16 +178,19 @@ namespace Hecton8.PureLogic.Tests
             // using epsilon 0.00001f so vel.LengthSquared (0.0001) > epsilonSquared
             Vector3 result = VehicleEmergencyEjectionVector.CalculateImpulse(
                 vel, fwd, up, severity,
-                10f, 5f, 0.5f, 1.5f, 0.5f, 1.5f, 0.00001f);
+                horizontalImpulseScale: 10f, verticalImpulseScale: 5f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1.5f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1.5f,
+                epsilonSquared: 0.00001f);
 
             // Assert
             // severity 1 -> horizontalLerp = 1.5, verticalLerp = 1.5
             // horizontal impulse = 10 * 1.5 = 15
             // vertical impulse = 5 * 1.5 = 7.5
             // lateral dir should be -X -> (-15, 7.5, 0)
-            Assert.AreEqual(-15f, result.X, 0.01f);
-            Assert.AreEqual(7.5f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(-15f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(7.5f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
         }
 
         [Test]
@@ -170,46 +198,45 @@ namespace Hecton8.PureLogic.Tests
         {
             // Arrange
             Vector3 vel = new Vector3(0f, 0f, 0f);
-            Vector3 fwd = new Vector3(0f, 0f, 0f);
-            Vector3 up = new Vector3(0f, 0f, 0f);
+            Vector3 fwd = new Vector3(0f, 0f, 1f);
+            Vector3 up = new Vector3(0f, 1f, 0f);
             float severity = 0f;
 
             // Act
             Vector3 result = VehicleEmergencyEjectionVector.CalculateImpulse(
                 vel, fwd, up, severity,
-                0f, 0f, 0f, 0f, 0f, 0f, 0f);
+                horizontalImpulseScale: 8f, verticalImpulseScale: 4f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1f,
+                epsilonSquared: 0.0001f);
 
             // Assert
-            // severity 0, all lerps 0, scales 0 -> impulse should be 0
-            Assert.AreEqual(0f, result.X, 0.01f);
-            Assert.AreEqual(0f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(0f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(2f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(-4f).Within(0.01f));
         }
 
         [Test]
         public void Test_CalculateImpulse_NegativeInputs()
         {
             // Arrange
-            Vector3 vel = new Vector3(0f, 0f, 0f);
+            Vector3 vel = new Vector3(0f, -50f, 0f);
             Vector3 fwd = new Vector3(-1f, 0f, 0f);
             Vector3 up = new Vector3(0f, 1f, 0f);
-            float severity = -5f; // Clamped to 0
+            float severity = -1f;
 
             // Act
             Vector3 result = VehicleEmergencyEjectionVector.CalculateImpulse(
                 vel, fwd, up, severity,
-                -10f, -5f, -2f, -1f, -2f, -1f, 0.001f);
+                horizontalImpulseScale: 8f, verticalImpulseScale: 4f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1f,
+                epsilonSquared: 0.0001f);
 
             // Assert
-            // planarVelocity = 0, fallbackDir = -fwd = (1, 0, 0)
-            // severity clamped to 0 -> horizontalLerp = -2, verticalLerp = -2
-            // horizontal impulse = -10 * -2 = 20
-            // vertical impulse = -5 * -2 = 10
-            // lateral dir = (1, 0, 0)
-            // impulse = (20, 10, 0)
-            Assert.AreEqual(20f, result.X, 0.01f);
-            Assert.AreEqual(10f, result.Y, 0.01f);
-            Assert.AreEqual(0f, result.Z, 0.01f);
+            Assert.That(result.X, Is.EqualTo(4f).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(2f).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.01f));
         }
 
         [Test]
@@ -217,20 +244,27 @@ namespace Hecton8.PureLogic.Tests
         {
             // Arrange
             Vector3 vel = new Vector3(10f, 0f, 0f);
-            Vector3 fwd = new Vector3(1f, 0f, 0f);
+            Vector3 fwd = new Vector3(0f, 0f, 1f);
             Vector3 up = new Vector3(0f, 1f, 0f);
+            float severity = 0.5f;
 
             // Act & Assert NaN Severity
-            Vector3 resultNaN = VehicleEmergencyEjectionVector.CalculateImpulse(
-                vel, fwd, up, float.NaN,
-                10f, 5f, 0.5f, 1.5f, 0.5f, 1.5f, 0.001f);
-            Assert.AreEqual(Vector3.Zero, resultNaN);
+            Vector3 result1 = VehicleEmergencyEjectionVector.CalculateImpulse(
+                vel, fwd, up, severity,
+                horizontalImpulseScale: float.NaN, verticalImpulseScale: 5f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1.5f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1.5f,
+                epsilonSquared: 0.0001f);
+            Assert.That(result1, Is.EqualTo(Vector3.Zero));
 
             // Act & Assert Infinity scale
-            Vector3 resultInf = VehicleEmergencyEjectionVector.CalculateImpulse(
-                vel, fwd, up, 0.5f,
-                float.PositiveInfinity, 5f, 0.5f, 1.5f, 0.5f, 1.5f, 0.001f);
-            Assert.AreEqual(Vector3.Zero, resultInf);
+            Vector3 result2 = VehicleEmergencyEjectionVector.CalculateImpulse(
+                vel, fwd, up, severity,
+                horizontalImpulseScale: float.PositiveInfinity, verticalImpulseScale: 5f,
+                horizontalLerpMin: 0.5f, horizontalLerpMax: 1.5f,
+                verticalLerpMin: 0.5f, verticalLerpMax: 1.5f,
+                epsilonSquared: 0.0001f);
+            Assert.That(result2, Is.EqualTo(Vector3.Zero));
         }
     }
 }
