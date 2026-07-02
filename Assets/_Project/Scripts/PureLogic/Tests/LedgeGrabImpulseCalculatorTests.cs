@@ -171,5 +171,59 @@ namespace Hecton8.PureLogic.Tests
             // Since -10 < 0, we subtract UnitY * -10 from velocity -> (0, -10, 0) - (0, -10, 0) = (0, 0, 0).
             Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
         }
+
+        [Test]
+        public void Test_Array_Null_ReturnsZeroPullUp()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(10f, -5f, 10f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float[] pullUp = null;
+            float cancelFrac = 1f;
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            Assert.That(result.X, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_Array_Empty_ReturnsZeroPullUp()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(10f, -5f, 10f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float[] pullUp = new float[0];
+            float cancelFrac = 1f;
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            Assert.That(result.X, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
+        }
+
+        [Test]
+        public void Test_Array_WithValues_ReturnsSummedPullUp()
+        {
+            // Arrange
+            Vector3 vel = new Vector3(10f, -5f, 10f);
+            Vector3 norm = new Vector3(0f, 0f, -1f);
+            float[] pullUp = new float[] { 2f, 3f }; // sum is 5f
+            float cancelFrac = 1f;
+
+            // Act
+            Vector3 result = LedgeGrabImpulseCalculator.Compute(vel, norm, pullUp, cancelFrac);
+
+            // Assert
+            Assert.That(result.X, Is.EqualTo(10f).Within(0.001f));
+            Assert.That(result.Y, Is.EqualTo(5f).Within(0.001f));
+            Assert.That(result.Z, Is.EqualTo(0f).Within(0.001f));
+        }
     }
 }

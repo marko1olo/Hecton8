@@ -63,5 +63,20 @@ namespace Hecton8.PureLogic.Kinematics
 
             return newVelocity;
         }
-    }
+
+        public static Vector3 Compute(Vector3 playerVelocity, Vector3 ledgeNormal, float[] pullUpForces, float cancelFraction)
+        {
+            if (pullUpForces == null || pullUpForces.Length == 0)
+            {
+                return Compute(playerVelocity, ledgeNormal, 0f, cancelFraction);
+            }
+
+            float totalPullUpForce = 0f;
+            foreach(var force in pullUpForces)
+            {
+                totalPullUpForce += force;
+            }
+            return Compute(playerVelocity, ledgeNormal, totalPullUpForce, cancelFraction);
+        }
+}
 }
