@@ -1909,7 +1909,8 @@ namespace GPUInstancer
                 for (int j = 0; j < mesh.normals.Length; j++)
                     mesh.normals[i] = Vector3.up;
 
-                child.GetComponent<MeshFilter>().sharedMesh = mesh;
+                MeshFilter childMeshFilter = child.GetComponent<MeshFilter>();
+                childMeshFilter.sharedMesh = mesh;
                 child.transform.parent = parent.transform;
                 child.transform.localPosition = Vector3.zero;
                 child.transform.localRotation = Quaternion.identity * Quaternion.AngleAxis((180.0f / quality) * i, Vector3.up);
@@ -1917,13 +1918,14 @@ namespace GPUInstancer
 
                 combinesInstances[i] = new CombineInstance
                 {
-                    mesh = child.GetComponent<MeshFilter>().sharedMesh,
+                    mesh = mesh,
                     transform = child.transform.localToWorldMatrix
                 };
             }
-            parent.GetComponent<MeshFilter>().sharedMesh = new Mesh();
-            parent.GetComponent<MeshFilter>().sharedMesh.CombineMeshes(combinesInstances, true, true);
-            Mesh result = parent.GetComponent<MeshFilter>().sharedMesh;
+            MeshFilter parentMeshFilter = parent.GetComponent<MeshFilter>();
+            parentMeshFilter.sharedMesh = new Mesh();
+            parentMeshFilter.sharedMesh.CombineMeshes(combinesInstances, true, true);
+            Mesh result = parentMeshFilter.sharedMesh;
             result.name = name;
 
             GameObject.DestroyImmediate(parent);
