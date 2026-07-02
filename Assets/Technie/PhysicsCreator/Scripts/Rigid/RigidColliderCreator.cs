@@ -1085,8 +1085,7 @@ namespace Technie.PhysicsCreator
 				colliderToUse.isTrigger = hull.isTrigger;
 				colliderToUse.material = hull.material;
 
-				// TODO: Inflation?
-				// ..
+				ApplyMeshColliderInflationCompatibility(colliderToUse, hull);
 			}
 
 			// Rename all the collider objects by index (because the indices may have changed since last time)
