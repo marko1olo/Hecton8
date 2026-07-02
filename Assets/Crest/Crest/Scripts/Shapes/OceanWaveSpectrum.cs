@@ -1,4 +1,4 @@
-﻿// Crest Ocean System
+// Crest Ocean System
 
 // Copyright 2020 Wave Harmonic Ltd
 
@@ -63,7 +63,6 @@ namespace Crest
         [Tooltip("Scales horizontal displacement"), Range(0f, 2f)]
         public float _chop = 1.6f;
 
-
         static void Upgrade(SerializedObject soSpectrum)
         {
             var spVer = soSpectrum.FindProperty("_version");
@@ -73,6 +72,219 @@ namespace Crest
             soSpectrum.ApplyModifiedProperties();
         }
 
+#pragma warning disable 414
+        [SerializeField, HideInInspector]
+        bool _showAdvancedControls = false;
+#pragma warning restore 414
+
+#if UNITY_EDITOR
+
+        public enum SpectrumModel
+        {
+            None,
+            PiersonMoskowitz,
+        }
+
+#pragma warning disable 414
+        // We need to serialize if we want undo/redo.
+        [HideInInspector, SerializeField] SpectrumModel _model;
+#pragma warning restore 414
+#endif
+
+        public static float SmallWavelength(float octaveIndex) => Mathf.Pow(2f, SMALLEST_WL_POW_2 + octaveIndex);
+
+        public static int GetOctaveIndex(float wavelength)
+        {
+            Debug.Assert(wavelength > 0f, "Crest: OceanWaveSpectrum: Wavelength must be > 0.");
+            var wl_pow2 = Mathf.Log(wavelength) / Mathf.Log(2f);
+            return (int)(wl_pow2 - SMALLEST_WL_POW_2);
+        }
+
+        /// <summary>
+        /// Returns the amplitude of a wave described by wavelength.
+        /// </summary>
+        /// <param name="wavelength">Wavelength in m</param>
+        /// <param name="componentsPerOctave">How many waves we're sampling, used to conserve energy for different sampling rates</param>
+        /// <param name="windSpeed">Wind speed in m/s</param>
+        /// <param name="power">The energy of the wave in J</param>
+        /// <returns>The amplitude of the wave in m</returns>
+        public float GetAmplitude(float wavelength, float componentsPerOctave, float windSpeed, out float power)
+        {
+            Debug.Assert(wavelength > 0f, "Crest: OceanWaveSpectrum: Wavelength must be > 0.", this);
+
+            var wl_pow2 = Mathf.Log(wavelength) / Mathf.Log(2f);
+            wl_pow2 = Mathf.Clamp(wl_pow2, SMALLEST_WL_POW_2, SMALLEST_WL_POW_2 + NUM_OCTAVES - 1f);
+
+            var lower = Mathf.Pow(2f, Mathf.Floor(wl_pow2));
+
+            var index = (int)(wl_pow2 - SMALLEST_WL_POW_2);
+
+            if (_powerLog.Length < NUM_OCTAVES || _powerDisabled.Length < NUM_OCTAVES)
+            {
+                Debug.LogWarning($"Crest: Wave spectrum {name} is out of date, please open this asset and resave in editor.", this);
+            }
+
+            if (index >= _powerLog.Length || index >= _powerDisabled.Length)
+            {
+                Debug.Assert(index < _powerLog.Length && index < _powerDisabled.Length, $"Crest: OceanWaveSpectrum: index {index} is out of range.", this);
+                power = 0f;
+                return 0f;
+            }
+
+            // Get the first power for interpolation if available
+            var thisPower = !_powerDisabled[index] ? _powerLog[index] : MIN_POWER_LOG;
+
+            // Get the next power for interpolation if available
+            var nextIndex = index + 1;
+            var hasNextIndex = nextIndex < _powerLog.Length;
+            var nextPower = hasNextIndex && !_powerDisabled[nextIndex] ? _powerLog[nextIndex] : MIN_POWER_LOG;
+
+            // The amplitude calculation follows this nice paper from Frechot:
+            // https://hal.archives-ouvertes.fr/file/index/docid/307938/filename/frechot_realistic_simulation_of_ocean_surface_using_wave_spectra.pdf
+            var wl_lo = Mathf.Pow(2f, Mathf.Floor(wl_pow2));
+            var k_lo = 2f * Mathf.PI / wl_lo;
+            var c_lo = ComputeWaveSpeed(wl_lo);
+            var omega_lo = k_lo * c_lo;
+            var wl_hi = 2f * wl_lo;
+            var k_hi = 2f * Mathf.PI / wl_hi;
+            var c_hi = ComputeWaveSpeed(wl_hi);
+            var omega_hi = k_hi * c_hi;
+
+            var domega = (omega_lo - omega_hi) / componentsPerOctave;
+
+            // Alpha used to interpolate between power values
+            var alpha = (wavelength - lower) / lower;
+
+            // Power
+            power = hasNextIndex ? Mathf.Lerp(thisPower, nextPower, alpha) : thisPower;
+            power = Mathf.Pow(10f, power);
+
+            // Empirical wind influence based on alpha-beta spectrum that underlies empirical spectra
+            var gravity = _gravityScale * OceanRenderer.Instance.Gravity;
+            // Zero gravity will cause NaNs, and they have always been flat.
+            if (gravity <= 0f) return 0f;
+            var B = 1.291f;
+            var wm = 0.87f * gravity / windSpeed;
+            DeepDispersion(2f * Mathf.PI / wavelength, gravity, out var w);
+            power *= Mathf.Exp(-B * Mathf.Pow(wm / w, 4.0f));
+
+            var a_2 = 2f * power * domega;
+
+            // Amplitude
+            var a = Mathf.Sqrt(a_2);
+
+            // Gerstner fudge - one hack to get Gerstners looking on par with FFT
+            if (_version > 0)
+            {
+                a *= 5f;
+            }
+
+            return a * _multiplier;
+        }
+
+        public static float ComputeWaveSpeed(float wavelength, float gravityMultiplier = 1f)
+        {
+            // wave speed of deep sea ocean waves: https://en.wikipedia.org/wiki/Wind_wave
+            // https://en.wikipedia.org/wiki/Dispersion_(water_waves)#Wave_propagation_and_dispersion
+            var g = OceanRenderer.Instance.Gravity * gravityMultiplier;
+            var k = 2f * Mathf.PI / wavelength;
+            //float h = max(depth, 0.01);
+            //float cp = sqrt(abs(tanh_clamped(h * k)) * g / k);
+            var cp = Mathf.Sqrt(g / k);
+            return cp;
+        }
+
+        /// <summary>
+        /// Samples spectrum to generate wave data. Wavelengths will be in ascending order.
+        /// </summary>
+        public void GenerateWaveData(int componentsPerOctave, ref float[] wavelengths, ref float[] anglesDeg)
+        {
+            var totalComponents = NUM_OCTAVES * componentsPerOctave;
+
+            if (wavelengths == null || wavelengths.Length != totalComponents) wavelengths = new float[totalComponents];
+            if (anglesDeg == null || anglesDeg.Length != totalComponents) anglesDeg = new float[totalComponents];
+
+            var minWavelength = Mathf.Pow(2f, SMALLEST_WL_POW_2);
+            var invComponentsPerOctave = 1f / componentsPerOctave;
+
+            for (var octave = 0; octave < NUM_OCTAVES; octave++)
+            {
+                for (var i = 0; i < componentsPerOctave; i++)
+                {
+                    var index = octave * componentsPerOctave + i;
+
+                    // Stratified random sampling - should give a better distribution of wavelengths, and also means i can generate
+                    // the wavelengths in ascending order!
+                    var minWavelengthi = minWavelength + invComponentsPerOctave * minWavelength * i;
+                    var maxWavelengthi = Mathf.Min(minWavelengthi + invComponentsPerOctave * minWavelength, 2f * minWavelength);
+                    wavelengths[index] = Mathf.Lerp(minWavelengthi, maxWavelengthi, Random.value);
+
+                    var rnd = (i + Random.value) * invComponentsPerOctave;
+                    anglesDeg[index] = (2f * rnd - 1f) * _waveDirectionVariance;
+                }
+
+                minWavelength *= 2f;
+            }
+        }
+
+        // This applies the correct PM spectrum powers, validated against a separate implementation
+        public void ApplyPiersonMoskowitzSpectrum()
+        {
+            var gravity = Physics.gravity.magnitude;
+
+            for (int octave = 0; octave < NUM_OCTAVES; octave++)
+            {
+                var wl = SmallWavelength(octave);
+
+                var pow = PiersonMoskowitzSpectrum(gravity, wl);
+
+                // we store power on logarithmic scale. this does not include 0, we represent 0 as min value
+                pow = Mathf.Max(pow, Mathf.Pow(10f, MIN_POWER_LOG));
+
+                _powerLog[octave] = Mathf.Log10(pow);
+            }
+        }
+
+        // Alpha-beta spectrum without the beta. Beta represents wind influence and is evaluated at runtime
+        // for 'current' wind conditions
+        static float AlphaSpectrum(float A, float g, float w)
+        {
+            return A * g * g / Mathf.Pow(w, 5.0f);
+        }
+
+        static void DeepDispersion(float k, float gravity, out float w)
+        {
+            w = Mathf.Sqrt(gravity * k);
+        }
+
+        static float PiersonMoskowitzSpectrum(float gravity, float wavelength)
+        {
+            var k = 2f * Mathf.PI / wavelength;
+            DeepDispersion(k, gravity, out var w);
+            var phillipsConstant = 8.1e-3f;
+            return AlphaSpectrum(phillipsConstant, gravity, w);
+        }
+    }
+
+#if UNITY_EDITOR
+    [CustomEditor(typeof(OceanWaveSpectrum))]
+    public class OceanWaveSpectrumEditor : Editor, Crest.EditorHelpers.IEmbeddableEditor
+    {
+        readonly static string[] s_modelDescriptions = new string[]
+        {
+            "Select an option to author waves using a spectrum model.",
+            "Fully developed sea with infinite fetch.",
+        };
+
+        readonly static GUIContent s_timeScaleLabel = new GUIContent("Time Scale");
+
+        System.Type _hostComponentType = null;
+        public void SetTypeOfHostComponent(System.Type hostComponentType)
+        {
+            _hostComponentType = hostComponentType;
+        }
+
+>>>>>>> origin/pr/1108
         public override void OnInspectorGUI()
         {
             // Display a notice if its being edited as a standalone asset (not embedded in a component) because
