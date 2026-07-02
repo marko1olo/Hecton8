@@ -134,6 +134,8 @@ namespace Hecton8.Interaction
         public byte ImpactAudioMaterialId => itemData != null ? itemData.AudioMaterialByte : (byte)ItemAudioMaterialId.Organic;
         public bool IsFaunaBait => Hecton8.Inventory.PlayerInventory.IsFaunaBaitItem(itemData);
 
+        internal bool IsPooledInstance() => _isPooledRuntimeInstance;
+
         public static PickupItem GetWorldStateRegistryAt(int index)
         {
             return _worldStateRegistry.GetAt(index);
