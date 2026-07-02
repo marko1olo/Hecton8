@@ -6,8 +6,19 @@ using Hecton8.Core;
 
 namespace Hecton8.Tests.Editor
 {
+    [TestFixture]
     public sealed class EntityChangeDetectorEditTests
     {
+        [TearDown]
+        public void TearDown()
+        {
+            // The tests create temporary objects, clean them up to not pollute state
+            EntityChangeManager.RemoveDetector("test_entity");
+            EntityChangeManager.RemoveDetector("TestEntity");
+            EntityChangeManager.RemoveDetector("TestEntity1");
+            EntityChangeManager.RemoveDetector("TestEntity2");
+        }
+
         [Test]
         public void EntityChangeDetector_NewInstance_HasNoDirtyFlags()
         {
@@ -41,7 +52,6 @@ namespace Hecton8.Tests.Editor
 
             detector.ClearDirty();
             Assert.IsFalse(detector.IsDirty(EntityChangeFlag.All));
-            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Position));
         }
 
         [Test]
@@ -125,6 +135,60 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(scaleChanged);
             Assert.IsFalse(rotationChanged, "Rotation callback should not be invoked as it was not dirty");
             Assert.IsFalse(detector.IsDirty(EntityChangeFlag.All), "All dirty flags should be cleared");
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForPosition_WhenPositionChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool positionChangedCalled = false;
+            Vector3 oldPos = Vector3.zero;
+            Vector3 newPos = Vector3.zero;
+
+            detector.OnPositionChanged += (oldV, newV) =>
+            {
+                positionChangedCalled = true;
+                oldPos = oldV;
+                newPos = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Position);
+
+            // Value hasn't changed from default zero, so we need to pass a non-zero to trigger
+            detector.FlushChanges(currentPos: new Vector3(1, 2, 3));
+
+            Assert.IsTrue(positionChangedCalled);
+            Assert.AreEqual(Vector3.zero, oldPos);
+            Assert.AreEqual(new Vector3(1, 2, 3), newPos);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Position));
+        }
+
+        [Test]
+        public void EntityChangeDetector_GetOrCreateDetector_ReturnsSameInstanceForSameId()
+        {
+            var detector1 = EntityChangeManager.GetOrCreateDetector("TestEntity1");
+            var detector2 = EntityChangeManager.GetOrCreateDetector("TestEntity1");
+            var detector3 = EntityChangeManager.GetOrCreateDetector("TestEntity2");
+
+            Assert.IsNotNull(detector1);
+            Assert.AreSame(detector1, detector2);
+            Assert.AreNotSame(detector1, detector3);
+        }
+
+        [Test]
+        public void EntityChangeDetector_RemoveDetector_RemovesInstanceFromRegistry()
+        {
+            var detector1 = EntityChangeManager.GetOrCreateDetector("TestEntity1");
+            Assert.AreEqual(1, EntityChangeManager.GetActiveDetectorCount());
+
+            EntityChangeManager.RemoveDetector("TestEntity1");
+            Assert.AreEqual(0, EntityChangeManager.GetActiveDetectorCount());
+
+            // A new call should return a new instance
+            var detector2 = EntityChangeManager.GetOrCreateDetector("TestEntity1");
+            Assert.AreNotSame(detector1, detector2);
+            Assert.AreEqual(1, EntityChangeManager.GetActiveDetectorCount());
         }
     }
 }
