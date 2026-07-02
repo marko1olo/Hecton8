@@ -48,5 +48,18 @@ namespace Hecton8.PureLogic.Kinematics
 
             return forceVector;
         }
+
+        public static Vector3 Compute(Vector3 playerPos, Vector3[] sourcePositions, float acceleration, float playerMass, float lockDuration, float minMagnitudeSqr = 0.0001f, float epsilon = 0.000001f)
+        {
+            if (sourcePositions == null || sourcePositions.Length == 0)
+                return Vector3.Zero;
+
+            Vector3 totalForce = Vector3.Zero;
+            for (int i = 0; i < sourcePositions.Length; i++)
+            {
+                totalForce += Compute(playerPos, sourcePositions[i], acceleration, playerMass, lockDuration, minMagnitudeSqr, epsilon);
+            }
+            return totalForce;
+        }
     }
 }
