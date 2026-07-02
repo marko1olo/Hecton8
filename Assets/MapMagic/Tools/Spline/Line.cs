@@ -42,6 +42,20 @@ namespace Den.Tools.Splines
 			{ segments = new Segment[] { new Segment(start,end) }; }
 
 
+				public bool IsSimilarTo (Line other, float threshold=0.0001f)
+		{
+			if (segments.Length != other.segments.Length)
+				return false;
+
+			float sqrThreshold = threshold * threshold;
+			for (int s=0; s<segments.Length; s++)
+			{
+				if ((segments[s].start.pos - other.segments[s].start.pos).sqrMagnitude > sqrThreshold) return false;
+				if ((segments[s].end.pos - other.segments[s].end.pos).sqrMagnitude > sqrThreshold) return false;
+			}
+			return true;
+		}
+
 		public Vector3 GetPoint (int segNum, float segPercent)
 		{
 			return segments[segNum].GetPoint(segPercent);
