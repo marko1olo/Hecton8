@@ -197,8 +197,11 @@ namespace Crest
 
             // Using RenderTexture.active will not write to all slices.
             Graphics.SetRenderTarget(texture, 0, CubemapFace.Unknown, -1);
-            // TODO: Do we need to disable GL.sRGBWrite as it is linear to linear.
+
+            var sRGBWrite = GL.sRGBWrite;
+            GL.sRGBWrite = texture != null && texture.sRGB && QualitySettings.activeColorSpace == ColorSpace.Linear;
             GL.Clear(depth, color, clear);
+            GL.sRGBWrite = sRGBWrite;
 
             // Graphics.SetRenderTarget can be equivalent to setting RenderTexture.active:
             // https://docs.unity3d.com/ScriptReference/Graphics.SetRenderTarget.html
