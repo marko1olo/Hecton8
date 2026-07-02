@@ -1591,10 +1591,14 @@ namespace GPUInstancer
 #else
                     UnityEngine.Object prefabRoot = PrefabUtility.GetPrefabParent(prefabInstances[i].gameObject);
 #endif
-                    if (prefabRoot != null && ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>() != null && prefabInstances[i].prefabPrototype != ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype)
+                    if (prefabRoot != null)
                     {
-                        Undo.RecordObject(prefabInstances[i], "Changed GPUInstancer Prefab Prototype " + prefabInstances[i].gameObject + i);
-                        prefabInstances[i].prefabPrototype = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>().prefabPrototype;
+                        GPUInstancerPrefab rootPrefabScript = ((GameObject)prefabRoot).GetComponent<GPUInstancerPrefab>();
+                        if (rootPrefabScript != null && prefabInstances[i].prefabPrototype != rootPrefabScript.prefabPrototype)
+                        {
+                            Undo.RecordObject(prefabInstances[i], "Changed GPUInstancer Prefab Prototype " + prefabInstances[i].gameObject + i);
+                            prefabInstances[i].prefabPrototype = rootPrefabScript.prefabPrototype;
+                        }
                     }
                 }
             }
