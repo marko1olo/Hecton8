@@ -596,34 +596,78 @@ namespace Hecton.UI.MainMenu
             ConfigureDecorativeRaycastTargetsCold(group.transform);
         }
 
-        private static void ConfigureDecorativeRaycastTargetsCold(Transform root, bool isOwnedByInteractive = false, bool isInitialCall = true)
+        private static readonly List<Graphic> s_GraphicBuffer = new List<Graphic>(128);
+        private static readonly List<Selectable> s_SelectableBuffer = new List<Selectable>(128);
+        private static readonly List<ScrollRect> s_ScrollRectBuffer = new List<ScrollRect>(32);
+        private static readonly HashSet<Transform> s_InteractiveRoots = new HashSet<Transform>(128);
+
+        private static void ConfigureDecorativeRaycastTargetsCold(Transform root)
         {
             if (root == null)
                 return;
 
-            if (root.name == "Panel_ModalConfirm")
-                return;
+            root.GetComponentsInChildren(true, s_GraphicBuffer);
+            root.GetComponentsInChildren(true, s_SelectableBuffer);
+            root.GetComponentsInChildren(true, s_ScrollRectBuffer);
 
-            // For the initial root node, we must check its parents to maintain identical behavior.
-            if (isInitialCall)
+            s_InteractiveRoots.Clear();
+
+            if (root.GetComponentInParent<Selectable>() != null || root.GetComponentInParent<ScrollRect>() != null)
             {
-                isOwnedByInteractive = isOwnedByInteractive ||
-                                       root.GetComponentInParent<Selectable>() != null ||
-                                       root.GetComponentInParent<ScrollRect>() != null;
+                s_InteractiveRoots.Add(root);
+            }
+            else
+            {
+                for (int i = 0; i < s_SelectableBuffer.Count; i++)
+                    s_InteractiveRoots.Add(s_SelectableBuffer[i].transform);
+                for (int i = 0; i < s_ScrollRectBuffer.Count; i++)
+                    s_InteractiveRoots.Add(s_ScrollRectBuffer[i].transform);
             }
 
-            bool currentlyOwned = isOwnedByInteractive ||
-                                  root.TryGetComponent<Selectable>(out _) ||
-                                  root.TryGetComponent<ScrollRect>(out _);
-
-            if (root.TryGetComponent(out Graphic graphic) && !currentlyOwned)
+            Transform lastGraphicTransform = null;
+            for (int i = 0; i < s_GraphicBuffer.Count; i++)
             {
-                graphic.raycastTarget = false;
+                Graphic graphic = s_GraphicBuffer[i];
+                Transform current = graphic.transform;
+
+                // Mimic TryGetComponent behavior (only process the first Graphic per GameObject)
+                if (current == lastGraphicTransform)
+                    continue;
+                lastGraphicTransform = current;
+
+                bool isOwned = false;
+                bool skip = false;
+
+                while (current != null)
+                {
+                    if (current.name == "Panel_ModalConfirm")
+                    {
+                        skip = true;
+                        break;
+                    }
+
+                    if (s_InteractiveRoots.Contains(current))
+                    {
+                        isOwned = true;
+                        break;
+                    }
+
+                    if (current == root)
+                        break;
+
+                    current = current.parent;
+                }
+
+                if (!skip && !isOwned)
+                {
+                    graphic.raycastTarget = false;
+                }
             }
 
-            int childCount = root.childCount;
-            for (int i = 0; i < childCount; i++)
-                ConfigureDecorativeRaycastTargetsCold(root.GetChild(i), currentlyOwned, false);
+            s_GraphicBuffer.Clear();
+            s_SelectableBuffer.Clear();
+            s_ScrollRectBuffer.Clear();
+            s_InteractiveRoots.Clear();
         }
 
         private void CacheButtonActions()
