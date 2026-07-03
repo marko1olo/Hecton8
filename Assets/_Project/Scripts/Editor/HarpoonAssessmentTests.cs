@@ -57,6 +57,57 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(result);
             Assert.AreEqual("PREFIX: ", buffer.AsSpan().ToString());
         }
+
+        [Test]
+        public void TryWriteSummary_WithValidSummary_WritesToBuffer()
+        {
+            var method = _assessmentType.GetMethod("TryWriteSummary", BindingFlags.Public | BindingFlags.Instance);
+            Assert.IsNotNull(method, "Could not find TryWriteSummary method.");
+
+            object assessment = CreateAssessment("CRITICAL BREACH", "Hull compromised", "Repair immediately", "CRITICAL");
+            var buffer = new FixedCharBuffer(64);
+            object[] args = new object[] { buffer };
+
+            bool result = (bool)method.Invoke(assessment, args);
+            buffer = (FixedCharBuffer)args[0];
+
+            Assert.IsTrue(result);
+            Assert.AreEqual("Hull compromised", buffer.AsSpan().ToString());
+        }
+
+        [Test]
+        public void TryWriteRecommendation_WithValidRecommendation_WritesToBuffer()
+        {
+            var method = _assessmentType.GetMethod("TryWriteRecommendation", BindingFlags.Public | BindingFlags.Instance);
+            Assert.IsNotNull(method, "Could not find TryWriteRecommendation method.");
+
+            object assessment = CreateAssessment("CRITICAL BREACH", "Hull compromised", "Repair immediately", "CRITICAL");
+            var buffer = new FixedCharBuffer(64);
+            object[] args = new object[] { buffer };
+
+            bool result = (bool)method.Invoke(assessment, args);
+            buffer = (FixedCharBuffer)args[0];
+
+            Assert.IsTrue(result);
+            Assert.AreEqual("Repair immediately", buffer.AsSpan().ToString());
+        }
+
+        [Test]
+        public void TryWriteHudMessage_WithValidData_WritesCorrectly()
+        {
+            var method = _assessmentType.GetMethod("TryWriteHudMessage", BindingFlags.Public | BindingFlags.Instance);
+            Assert.IsNotNull(method, "Could not find TryWriteHudMessage method.");
+
+            object assessment = CreateAssessment("CRITICAL BREACH", "Hull compromised", "Repair immediately", "CRITICAL");
+            var buffer = new FixedCharBuffer(64);
+            object[] args = new object[] { buffer };
+
+            bool result = (bool)method.Invoke(assessment, args);
+            buffer = (FixedCharBuffer)args[0];
+
+            Assert.IsTrue(result);
+            Assert.AreEqual("CRITICAL BREACHHull compromisedRepair immediately", buffer.AsSpan().ToString());
+        }
     }
 }
 #endif
