@@ -117,6 +117,21 @@ namespace Hecton8.Tests.Editor
 
             Object.DestroyImmediate(root);
         }
-    }
+
+        [Test]
+        public void SetGrid_AssignsGridCorrectly()
+        {
+            var node = new GameObject("TestNode").AddComponent<Hecton8.Power.PowerNode>();
+            var grid = new Hecton8.Power.PowerGrid();
+
+            node.SetGrid(grid);
+            Assert.AreEqual(grid, node.Grid, "SetGrid should assign the provided grid.");
+
+            node.SetGrid(null);
+            Assert.IsNull(node.Grid, "SetGrid should set the grid to null when null is provided.");
+
+            Object.DestroyImmediate(node.gameObject);
+        }
+}
 }
 #endif
