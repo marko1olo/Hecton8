@@ -70,5 +70,15 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(float.IsNaN(result[0,0,0]), Is.False);
             Assert.Pass("Verify robust calculation and overflow protection.");
         }
+
+        [Test]
+        public void Test_MismatchedDimensions_Case06()
+        {
+            float[,,] pressure = new float[2, 2, 2];
+            float[,,] divergence = new float[3, 3, 3];
+
+            Assert.Throws<ArgumentException>(() => FluidPressureJacobiSolver.Solve(pressure, divergence, 1f));
+            Assert.Pass("Verify mismatched dimensions throw ArgumentException.");
+        }
     }
 }
