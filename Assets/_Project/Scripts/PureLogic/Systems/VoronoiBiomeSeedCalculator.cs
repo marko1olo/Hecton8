@@ -54,8 +54,8 @@ namespace Hecton8.PureLogic.Systems
                 return $"{biomeTypes[0]},1.000";
             }
 
-            float d1 = float.MaxValue;
-            float d2 = float.MaxValue;
+            float d1Sq = float.MaxValue;
+            float d2Sq = float.MaxValue;
             int closestIndex = 0;
 
             for (int i = 0; i < biomeSeedPoints.Length; i++)
@@ -68,37 +68,40 @@ namespace Hecton8.PureLogic.Systems
                 }
 
                 // Protect against extreme values overflowing distance calculation
-                float dist;
+                float distSq;
                 try
                 {
-                    dist = Vector3.Distance(worldPos, pt);
+                    distSq = Vector3.DistanceSquared(worldPos, pt);
                 }
                 catch (OverflowException)
                 {
-                    dist = float.MaxValue;
+                    distSq = float.MaxValue;
                 }
 
-                if (float.IsNaN(dist) || float.IsInfinity(dist))
+                if (float.IsNaN(distSq) || float.IsInfinity(distSq))
                 {
-                    dist = float.MaxValue;
+                    distSq = float.MaxValue;
                 }
 
-                if (dist < d1)
+                if (distSq < d1Sq)
                 {
-                    d2 = d1;
-                    d1 = dist;
+                    d2Sq = d1Sq;
+                    d1Sq = distSq;
                     closestIndex = i;
                 }
-                else if (dist < d2)
+                else if (distSq < d2Sq)
                 {
-                    d2 = dist;
+                    d2Sq = distSq;
                 }
             }
 
-            if (d1 == float.MaxValue)
+            if (d1Sq == float.MaxValue)
             {
                 return $"{biomeTypes[0]},1.000";
             }
+
+            float d1 = (float)Math.Sqrt(d1Sq);
+            float d2 = d2Sq == float.MaxValue ? float.MaxValue : (float)Math.Sqrt(d2Sq);
 
             float rawBlend = 1f;
             if (d2 > 0.000001f)
