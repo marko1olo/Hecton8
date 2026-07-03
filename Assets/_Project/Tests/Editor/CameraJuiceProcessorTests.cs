@@ -28,6 +28,55 @@ namespace Hecton8.Tests.Editor
             }
         }
 
+
+        [Test]
+        public void Initialize_ResetsAllFieldsAndSetsRollSign()
+        {
+            // Arrange
+            // Set up non-default values for a selection of fields to ensure they are reset
+            var bobTimerField = typeof(CameraJuiceProcessor).GetField("_bobTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+            var bobIntensityField = typeof(CameraJuiceProcessor).GetField("_bobIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
+            var wasInLowPhaseField = typeof(CameraJuiceProcessor).GetField("_wasInLowPhase", BindingFlags.NonPublic | BindingFlags.Instance);
+            var collisionShakeYField = typeof(CameraJuiceProcessor).GetField("_collisionShakeY", BindingFlags.NonPublic | BindingFlags.Instance);
+            var collisionShakeYVelField = typeof(CameraJuiceProcessor).GetField("_collisionShakeYVel", BindingFlags.NonPublic | BindingFlags.Instance);
+            var currentRollField = typeof(CameraJuiceProcessor).GetField("_currentRoll", BindingFlags.NonPublic | BindingFlags.Instance);
+            var wasSubmergedField = typeof(CameraJuiceProcessor).GetField("_wasSubmerged", BindingFlags.NonPublic | BindingFlags.Instance);
+            var submergeChangeThisFrameField = typeof(CameraJuiceProcessor).GetField("_submergeChangeThisFrame", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            bobTimerField.SetValue(_processor, 1.5f);
+            bobIntensityField.SetValue(_processor, 0.5f);
+            wasInLowPhaseField.SetValue(_processor, true);
+            collisionShakeYField.SetValue(_processor, 2.0f);
+            collisionShakeYVelField.SetValue(_processor, 1.0f);
+            currentRollField.SetValue(_processor, 10.0f);
+            wasSubmergedField.SetValue(_processor, true);
+            submergeChangeThisFrameField.SetValue(_processor, true);
+
+            // Act with leanIntoTurn = true
+            _processor.Initialize(true);
+
+            // Assert they are reset
+            Assert.AreEqual(0f, GetPrivateField<float>("_bobTimer"));
+            Assert.AreEqual(0f, GetPrivateField<float>("_bobIntensity"));
+            Assert.IsFalse(GetPrivateField<bool>("_wasInLowPhase"));
+            Assert.AreEqual(0f, GetPrivateField<float>("_collisionShakeY"));
+            Assert.AreEqual(0f, GetPrivateField<float>("_collisionShakeYVel"));
+            Assert.AreEqual(0f, GetPrivateField<float>("_currentRoll"));
+            Assert.IsFalse(GetPrivateField<bool>("_wasSubmerged"));
+            Assert.IsFalse(GetPrivateField<bool>("_submergeChangeThisFrame"));
+            Assert.AreEqual(-1f, GetPrivateField<float>("_rollSign"));
+
+            // Act again with leanIntoTurn = false to check rollSign
+            // First modify something so we can see it reset again (sanity check)
+            currentRollField.SetValue(_processor, 5.0f);
+
+            _processor.Initialize(false);
+
+            // Assert rollSign is correctly set
+            Assert.AreEqual(1f, GetPrivateField<float>("_rollSign"));
+            Assert.AreEqual(0f, GetPrivateField<float>("_currentRoll"));
+        }
+
         [Test]
         public void Process_WithZeroDeltaTime_ReturnsZeroOutput()
         {
