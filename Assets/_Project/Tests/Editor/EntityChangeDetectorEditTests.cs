@@ -44,6 +44,36 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityChangeDetector_MarkDirty_WithNone_DoesNotChangeFlags()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.Health);
+
+            detector.MarkDirty(EntityChangeFlag.None);
+
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Health));
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Position));
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.All));
+        }
+
+        [Test]
+        public void EntityChangeDetector_MarkDirty_WithAll_SetsAllFlags()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.All);
+
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Position));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Rotation));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Scale));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Health));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.State));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Inventory));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Active));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Velocity));
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.All));
+        }
+
+        [Test]
         public void EntityChangeDetector_ClearDirty_ResetsAllFlags()
         {
             var detector = new EntityChangeDetector("test_entity");
