@@ -163,17 +163,23 @@ namespace Technie.PhysicsCreator
 			result.center = plane.center;
 			result.dir = plane.normal;
 
+			float maxRadiusSq = 0f;
+			float maxHeightSq = 0f;
+
 			for (int i=0; i<points.Length; i++)
 			{
 				Vector3 p = points[i];
 				Vector3 pointOnAxis = ProjectOntoAxis(plane, p);
-				float distFromAxis = Vector3.Distance(pointOnAxis, p);
-				float distAlongAxis = Vector3.Distance(plane.center, pointOnAxis);
 				
-				// NB: .height is total height, not the length of the internal line segment
-				result.radius = Mathf.Max(result.radius, distFromAxis);
-				result.height = Mathf.Max(result.height, distAlongAxis * 2.0f);
+				float distFromAxisSq = (pointOnAxis - p).sqrMagnitude;
+				float distAlongAxisSq = (plane.center - pointOnAxis).sqrMagnitude;
+
+				if (distFromAxisSq > maxRadiusSq) maxRadiusSq = distFromAxisSq;
+				if (distAlongAxisSq > maxHeightSq) maxHeightSq = distAlongAxisSq;
 			}
+
+			result.radius = Mathf.Sqrt(maxRadiusSq);
+			result.height = Mathf.Sqrt(maxHeightSq) * 2.0f;
 
 			return result;
 		}
