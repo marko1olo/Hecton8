@@ -2848,86 +2848,10 @@ namespace Hecton8.Tests.Editor
         public void SubmarineOs_BindsAtlas6ActiveRuntimeChangesWithoutUiDuplicateOwner()
         {
             string manager = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "Atlas6Liability", "Atlas6CorporateLiabilityManager.cs");
-            string subOs = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "HectonSubmarineOS.cs");
-            string display = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "HectonSubmarineOsDisplay.cs");
-            string bios = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "BIOSMessageStreamer.cs");
-            string cockpit = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VehicleSubOsCockpitRuntime.cs");
-            string powerEvents = ReadProjectFile("Assets", "_Project", "Scripts", "Power", "PowerGridTelemetryEvents.cs");
-            string displayOnEnable = ExtractMethodBody(display, "private void OnEnable()");
-            string biosOnEnable = ExtractMethodBody(bios, "private void OnEnable()");
-            string cockpitOnEnable = ExtractMethodBody(cockpit, "private void OnEnable()");
-            string subOsSubscribe = ExtractMethodBody(subOs, "private void Subscribe()");
             string tryRegisterActive = ExtractMethodBody(manager, "private bool TryRegisterActiveRuntimeInstance()");
             string tryUnregisterActive = ExtractMethodBody(manager, "private void TryUnregisterActiveRuntimeInstance()");
             string abortDuplicateOwner = ExtractMethodBody(manager, "private void AbortDuplicateRuntimeOwner()");
             string publishActiveRuntimeChanged = ExtractMethodBody(manager, "private static void PublishActiveRuntimeInstanceChanged(");
-            string registerListener = ExtractMethodBody(subOs, "private void TryRegisterAtlas6ActiveRuntimeListener()");
-            string unregisterListener = ExtractMethodBody(subOs, "private void TryUnregisterAtlas6ActiveRuntimeListener()");
-            string refreshAtlas = ExtractMethodBody(subOs, "private void RefreshAtlas6ManagerReference(");
-            string handleAtlasChanged = ExtractMethodBody(subOs, "private void HandleAtlas6ActiveRuntimeInstanceChanged(");
-            string serviceReplaced = ExtractMethodBody(subOs, "public void OnGlobalRegistryServiceReplaced(");
-            string publishSnapshotIfReady = ExtractMethodBody(subOs, "private void PublishCurrentSnapshotIfRuntimeReady()");
-            string refreshPlayerDrivenState = ExtractMethodBody(subOs, "private void RefreshPlayerDrivenStateAfterServiceReplacement()");
-            string refreshTelemetry = ExtractMethodBody(subOs, "private void RefreshTelemetryFromServices()");
-            string resetPowerFallback = ExtractMethodBody(subOs, "private void ResetPowerTelemetryFallback()");
-            string refreshAtmosphere = ExtractMethodBody(subOs, "private void RefreshAtmosphereTelemetry()");
-            string resolveVwsFlags = ExtractMethodBody(subOs, "private SubmarineVwsFlags ResolveVwsFlags()");
-            string resolveVwsOxygen = ExtractMethodBody(subOs, "private float ResolveVwsOxygenNormalized()");
-            string resolveVitalWarning = ExtractMethodBody(subOs, "private bool ResolvePlayerVitalWarningActive()");
-            string powerGridTelemetry = ExtractMethodBody(subOs, "public void OnPowerGridTelemetryUpdated(");
-            string handleHighPressure = ExtractMethodBody(subOs, "private void HandleHighPressure(");
-            string cockpitOnDisable = ExtractMethodBody(cockpit, "private void OnDisable()");
-            string cockpitOnDestroy = ExtractMethodBody(cockpit, "private void OnDestroy()");
-            string refreshMetrics = ExtractMethodBody(display, "private void RefreshMetricsLabel()");
-            string refreshHeatBar = ExtractMethodBody(display, "private void RefreshEngineHeatBar(");
-            string displayInsertPending = ExtractMethodBody(display, "private void InsertPendingEntry(");
-            string displayDropForPriority = ExtractMethodBody(display, "private bool TryDropQueuedEntryForIncomingPriority(");
-            string displayRemovePending = ExtractMethodBody(display, "private void RemovePendingEntryAtLogicalIndex(");
-            string displayRecordDrop = ExtractMethodBody(display, "private void RecordPendingEntryDrop(");
-            string cockpitEvent = ExtractMethodBody(cockpit, "void ISubmarineOsEventListener.OnSubmarineOsEvent(");
-            string cockpitStatus = ExtractMethodBody(cockpit, "private int ResolveStatusDisplayMode()");
-            string cockpitStatusWriter = ExtractMethodBody(cockpit, "private bool WriteStatusLine(");
-            string cockpitTelemetryFlags = ExtractMethodBody(cockpit, "private uint BuildTelemetryFlags(");
-            string cockpitResetTelemetry = ExtractMethodBody(cockpit, "private void ResetRuntimeTelemetryCache()");
-            string subOsRegister = ExtractMethodBody(subOs, "public static void Register(ISubmarineOsEventListener listener)");
-            string subOsUnregister = ExtractMethodBody(subOs, "public static void Unregister(ISubmarineOsEventListener listener)");
-            string subOsRegisterImmediate = ExtractMethodBody(subOs, "private static void RegisterImmediate(ISubmarineOsEventListener listener)");
-            string subOsEnqueue = ExtractMethodBody(subOs, "private static bool Enqueue(in SubmarineOsEventPayload payload)");
-            string subOsTryRaiseSnapshot = ExtractMethodBody(subOs, "public static bool TryRaiseSnapshotUpdated(");
-            string subOsTryRaiseLogRequest = ExtractMethodBody(subOs, "public static bool TryRaiseLogRequested(");
-            string subOsBuildSnapshot = ExtractMethodBody(subOs, "public static bool TryBuildSnapshot(");
-            string subOsBuildLogRequest = ExtractMethodBody(subOs, "public static bool TryBuildLogRequest(");
-            string subOsKnownEmergencyLevel = ExtractMethodBody(subOs, "private static bool IsKnownEmergencyLevel(");
-            string subOsSanitizeNormalized = ExtractMethodBody(subOs, "private static float SanitizeNormalized(");
-            string subOsSanitizeNonNegative = ExtractMethodBody(subOs, "private static float SanitizeNonNegativeFinite(");
-            string subOsKnownLogCode = ExtractMethodBody(subOs, "private static bool IsKnownLogCode(");
-            string recordDroppedEvent = ExtractMethodBody(subOs, "private static void RecordDroppedEvent(");
-            string dispatchListeners = ExtractMethodBody(subOs, "private static void DispatchRegisteredListeners(");
-            string dispatchToListener = ExtractMethodBody(subOs, "private static void DispatchToListener(");
-            string logListenerException = ExtractMethodBody(subOs, "private static void LogListenerDispatchException(");
-            string queueDeferredRegister = ExtractMethodBody(subOs, "private static void QueueDeferredRegister(");
-            string queueDeferredUnregister = ExtractMethodBody(subOs, "private static void QueueDeferredUnregister(");
-            string applyDeferredMutations = ExtractMethodBody(subOs, "private static void ApplyDeferredListenerMutations()");
-            string subOsReserveTelemetryFrame = ExtractMethodBody(subOs, "private static bool TryReserveTelemetryWarningFrame(");
-            string subOsResolveFrame = ExtractMethodBody(subOs, "private static int ResolveCurrentFrameIndexSafe()");
-            string subOsPublishWarning = ExtractMethodBody(subOs, "private static void PublishPerformanceWarningBestEffort(");
-            string publishSnapshot = ExtractMethodBody(subOs, "private void PublishCurrentSnapshotIfChanged()");
-            string publishShutdownSnapshot = ExtractMethodBody(subOs, "private void PublishShutdownSnapshot()");
-            string publishLog = ExtractMethodBody(subOs, "private void PublishLog(");
-            string recordPublishDrop = ExtractMethodBody(subOs, "private void RecordSubOsEventPublishDrop(");
-            string resolveSupplyRatio = ExtractMethodBody(subOs, "private static float ResolveSupplyRatio(");
-            string saturateFinite = ExtractMethodBody(subOs, "private static float SaturateFinite(");
-            string nonNegativeFinite = ExtractMethodBody(subOs, "private static float NonNegativeFinite(");
-            string quantizeHeat = ExtractMethodBody(subOs, "private static float QuantizeHeat01(");
-            string displayReserveTelemetryFrame = ExtractMethodBody(display, "private static bool TryReserveTelemetryWarningFrame(");
-            string displayPublishWarning = ExtractMethodBody(display, "private static void PublishPerformanceWarningBestEffort(");
-            string biosInsertPending = ExtractMethodBody(bios, "private void InsertPendingEntry(");
-            string biosDropForPriority = ExtractMethodBody(bios, "private bool TryDropQueuedEntryForIncomingPriority(");
-            string biosRemovePending = ExtractMethodBody(bios, "private void RemovePendingEntryAtLogicalIndex(");
-            string biosRecordDrop = ExtractMethodBody(bios, "private void RecordPendingEntryDrop(");
-            string biosReserveTelemetryFrame = ExtractMethodBody(bios, "private static bool TryReserveTelemetryWarningFrame(");
-            string biosPublishWarning = ExtractMethodBody(bios, "private static void PublishPerformanceWarningBestEffort(");
-            string biosBuildMessage = ExtractMethodBody(bios, "private int BuildMessage(");
             string uiDuplicate = Path.Combine(
                 Application.dataPath,
                 "_Project",
@@ -2961,6 +2885,59 @@ namespace Hecton8.Tests.Editor
             AssertSourceOrder(abortDuplicateOwner, "TryUnregisterSaveParticipant();", "_runtimeOwnerAborted = true;");
             AssertSourceOrder(abortDuplicateOwner, "ClearCachedRuntimeServices();", "_runtimeOwnerAborted = true;");
             Assert.That(abortDuplicateOwner, Does.Not.Contain("_saveRegistered = false;"));
+        }
+
+        [Test]
+        public void SubmarineOs_VerifiesHectonSubmarineOsLogic()
+        {
+            string subOs = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "HectonSubmarineOS.cs");
+            string subOsSubscribe = ExtractMethodBody(subOs, "private void Subscribe()");
+            string registerListener = ExtractMethodBody(subOs, "private void TryRegisterAtlas6ActiveRuntimeListener()");
+            string unregisterListener = ExtractMethodBody(subOs, "private void TryUnregisterAtlas6ActiveRuntimeListener()");
+            string refreshAtlas = ExtractMethodBody(subOs, "private void RefreshAtlas6ManagerReference(");
+            string handleAtlasChanged = ExtractMethodBody(subOs, "private void HandleAtlas6ActiveRuntimeInstanceChanged(");
+            string serviceReplaced = ExtractMethodBody(subOs, "public void OnGlobalRegistryServiceReplaced(");
+            string publishSnapshotIfReady = ExtractMethodBody(subOs, "private void PublishCurrentSnapshotIfRuntimeReady()");
+            string refreshPlayerDrivenState = ExtractMethodBody(subOs, "private void RefreshPlayerDrivenStateAfterServiceReplacement()");
+            string refreshTelemetry = ExtractMethodBody(subOs, "private void RefreshTelemetryFromServices()");
+            string resetPowerFallback = ExtractMethodBody(subOs, "private void ResetPowerTelemetryFallback()");
+            string refreshAtmosphere = ExtractMethodBody(subOs, "private void RefreshAtmosphereTelemetry()");
+            string resolveVwsFlags = ExtractMethodBody(subOs, "private SubmarineVwsFlags ResolveVwsFlags()");
+            string resolveVwsOxygen = ExtractMethodBody(subOs, "private float ResolveVwsOxygenNormalized()");
+            string resolveVitalWarning = ExtractMethodBody(subOs, "private bool ResolvePlayerVitalWarningActive()");
+            string powerGridTelemetry = ExtractMethodBody(subOs, "public void OnPowerGridTelemetryUpdated(");
+            string handleHighPressure = ExtractMethodBody(subOs, "private void HandleHighPressure(");
+            string subOsRegister = ExtractMethodBody(subOs, "public static void Register(ISubmarineOsEventListener listener)");
+            string subOsUnregister = ExtractMethodBody(subOs, "public static void Unregister(ISubmarineOsEventListener listener)");
+            string subOsRegisterImmediate = ExtractMethodBody(subOs, "private static void RegisterImmediate(ISubmarineOsEventListener listener)");
+            string subOsEnqueue = ExtractMethodBody(subOs, "private static bool Enqueue(in SubmarineOsEventPayload payload)");
+            string subOsTryRaiseSnapshot = ExtractMethodBody(subOs, "public static bool TryRaiseSnapshotUpdated(");
+            string subOsTryRaiseLogRequest = ExtractMethodBody(subOs, "public static bool TryRaiseLogRequested(");
+            string subOsBuildSnapshot = ExtractMethodBody(subOs, "public static bool TryBuildSnapshot(");
+            string subOsBuildLogRequest = ExtractMethodBody(subOs, "public static bool TryBuildLogRequest(");
+            string subOsKnownEmergencyLevel = ExtractMethodBody(subOs, "private static bool IsKnownEmergencyLevel(");
+            string subOsSanitizeNormalized = ExtractMethodBody(subOs, "private static float SanitizeNormalized(");
+            string subOsSanitizeNonNegative = ExtractMethodBody(subOs, "private static float SanitizeNonNegativeFinite(");
+            string subOsKnownLogCode = ExtractMethodBody(subOs, "private static bool IsKnownLogCode(");
+            string recordDroppedEvent = ExtractMethodBody(subOs, "private static void RecordDroppedEvent(");
+            string dispatchListeners = ExtractMethodBody(subOs, "private static void DispatchRegisteredListeners(");
+            string dispatchToListener = ExtractMethodBody(subOs, "private static void DispatchToListener(");
+            string logListenerException = ExtractMethodBody(subOs, "private static void LogListenerDispatchException(");
+            string queueDeferredRegister = ExtractMethodBody(subOs, "private static void QueueDeferredRegister(");
+            string queueDeferredUnregister = ExtractMethodBody(subOs, "private static void QueueDeferredUnregister(");
+            string applyDeferredMutations = ExtractMethodBody(subOs, "private static void ApplyDeferredListenerMutations()");
+            string subOsReserveTelemetryFrame = ExtractMethodBody(subOs, "private static bool TryReserveTelemetryWarningFrame(");
+            string subOsResolveFrame = ExtractMethodBody(subOs, "private static int ResolveCurrentFrameIndexSafe()");
+            string subOsPublishWarning = ExtractMethodBody(subOs, "private static void PublishPerformanceWarningBestEffort(");
+            string publishSnapshot = ExtractMethodBody(subOs, "private void PublishCurrentSnapshotIfChanged()");
+            string publishShutdownSnapshot = ExtractMethodBody(subOs, "private void PublishShutdownSnapshot()");
+            string publishLog = ExtractMethodBody(subOs, "private void PublishLog(");
+            string recordPublishDrop = ExtractMethodBody(subOs, "private void RecordSubOsEventPublishDrop(");
+            string resolveSupplyRatio = ExtractMethodBody(subOs, "private static float ResolveSupplyRatio(");
+            string saturateFinite = ExtractMethodBody(subOs, "private static float SaturateFinite(");
+            string nonNegativeFinite = ExtractMethodBody(subOs, "private static float NonNegativeFinite(");
+            string quantizeHeat = ExtractMethodBody(subOs, "private static float QuantizeHeat01(");
+
             Assert.That(registerListener, Does.Contain("ActiveRuntimeInstanceChanged -= HandleAtlas6ActiveRuntimeInstanceChanged"));
             Assert.That(registerListener, Does.Contain("ActiveRuntimeInstanceChanged += HandleAtlas6ActiveRuntimeInstanceChanged"));
             Assert.That(unregisterListener, Does.Contain("ActiveRuntimeInstanceChanged -= HandleAtlas6ActiveRuntimeInstanceChanged"));
@@ -3012,16 +2989,6 @@ namespace Hecton8.Tests.Editor
             AssertSourceOrder(subOsSubscribe, "PowerGridTelemetryEvents.Unregister(this);", "PowerGridTelemetryEvents.Register(this);");
             AssertSourceOrder(subOsSubscribe, "HighPressureEvents.Unregister(this);", "HighPressureEvents.Register(this);");
             AssertSourceOrder(subOsSubscribe, "FatalPressureImplosionEvents.Unregister(this);", "FatalPressureImplosionEvents.Register(this);");
-            Assert.That(powerEvents, Does.Contain("public static int DroppedEventCount => _droppedEventCount;"));
-            Assert.That(powerEvents, Does.Contain("public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;"));
-            Assert.That(powerEvents, Does.Contain("public static int ListenerRejectCount => _listenerRejectCount;"));
-            Assert.That(powerEvents, Does.Contain("public static int ListenerExceptionCount => _listenerExceptionCount;"));
-            Assert.That(powerEvents, Does.Contain("QueueDeferredRegister(listener);"));
-            Assert.That(powerEvents, Does.Contain("QueueDeferredUnregister(listener);"));
-            Assert.That(powerEvents, Does.Contain("ApplyDeferredListenerMutations();"));
-            Assert.That(powerEvents, Does.Contain("ReportQueueOverflow();"));
-            Assert.That(powerEvents, Does.Contain("DispatchToListener(listener, in snapshot);"));
-            Assert.That(powerEvents, Does.Contain("H8Debug.LogException(exception);"));
             Assert.That(subOsRegister, Does.Contain("QueueDeferredRegister(listener);"));
             Assert.That(subOsRegister, Does.Contain("RegisterImmediate(listener);"));
             Assert.That(subOsUnregister, Does.Contain("QueueDeferredUnregister(listener);"));
@@ -3053,7 +3020,6 @@ namespace Hecton8.Tests.Editor
             Assert.That(subOs, Does.Contain("ThermalSheerManager.TelemetryFlagCriticalDowngraded"));
             Assert.That(subOs, Does.Contain("MaximumDecodedPressureKPa = 999999f"));
             Assert.That(subOs, Does.Contain("MaximumDecodedSpeedKnots = 9999.9f"));
-            Assert.That(display, Does.Contain("MetricBufferLength = 160"));
             Assert.That(subOsKnownEmergencyLevel, Does.Contain("SubmarineEmergencyLevel.Evacuate"));
             Assert.That(subOsSanitizeNormalized, Does.Contain("math.saturate(value)"));
             Assert.That(subOsSanitizeNonNegative, Does.Contain("math.clamp(value, 0f, math.max(0f, maxValue))"));
@@ -3115,6 +3081,40 @@ namespace Hecton8.Tests.Editor
             Assert.That(recordPublishDrop, Does.Contain("SubOsSnapshotDropWarningHash"));
             Assert.That(recordPublishDrop, Does.Contain("SubOsLogDropWarningHash"));
             Assert.That(recordPublishDrop, Does.Contain("SubOsEventDropTelemetryCooldownFrames"));
+        }
+
+        [Test]
+        public void SubmarineOs_VerifiesPowerGridTelemetryEventsLogic()
+        {
+            string powerEvents = ReadProjectFile("Assets", "_Project", "Scripts", "Power", "PowerGridTelemetryEvents.cs");
+
+            Assert.That(powerEvents, Does.Contain("public static int DroppedEventCount => _droppedEventCount;"));
+            Assert.That(powerEvents, Does.Contain("public static int DuplicateListenerRegistrationCount => _duplicateListenerRegistrationCount;"));
+            Assert.That(powerEvents, Does.Contain("public static int ListenerRejectCount => _listenerRejectCount;"));
+            Assert.That(powerEvents, Does.Contain("public static int ListenerExceptionCount => _listenerExceptionCount;"));
+            Assert.That(powerEvents, Does.Contain("QueueDeferredRegister(listener);"));
+            Assert.That(powerEvents, Does.Contain("QueueDeferredUnregister(listener);"));
+            Assert.That(powerEvents, Does.Contain("ApplyDeferredListenerMutations();"));
+            Assert.That(powerEvents, Does.Contain("ReportQueueOverflow();"));
+            Assert.That(powerEvents, Does.Contain("DispatchToListener(listener, in snapshot);"));
+            Assert.That(powerEvents, Does.Contain("H8Debug.LogException(exception);"));
+        }
+
+        [Test]
+        public void SubmarineOs_VerifiesHectonSubmarineOsDisplayLogic()
+        {
+            string display = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "HectonSubmarineOsDisplay.cs");
+            string displayOnEnable = ExtractMethodBody(display, "private void OnEnable()");
+            string refreshMetrics = ExtractMethodBody(display, "private void RefreshMetricsLabel()");
+            string refreshHeatBar = ExtractMethodBody(display, "private void RefreshEngineHeatBar(");
+            string displayInsertPending = ExtractMethodBody(display, "private void InsertPendingEntry(");
+            string displayDropForPriority = ExtractMethodBody(display, "private bool TryDropQueuedEntryForIncomingPriority(");
+            string displayRemovePending = ExtractMethodBody(display, "private void RemovePendingEntryAtLogicalIndex(");
+            string displayRecordDrop = ExtractMethodBody(display, "private void RecordPendingEntryDrop(");
+            string displayReserveTelemetryFrame = ExtractMethodBody(display, "private static bool TryReserveTelemetryWarningFrame(");
+            string displayPublishWarning = ExtractMethodBody(display, "private static void PublishPerformanceWarningBestEffort(");
+
+            Assert.That(display, Does.Contain("MetricBufferLength = 160"));
             Assert.That(displayInsertPending, Does.Contain("TryDropQueuedEntryForIncomingPriority(priority)"));
             Assert.That(displayInsertPending, Does.Contain("RecordPendingEntryDrop(droppedIncoming: true);"));
             Assert.That(displayInsertPending, Does.Contain("RecordPendingEntryDrop(droppedIncoming: false);"));
@@ -3134,6 +3134,27 @@ namespace Hecton8.Tests.Editor
                 displayOnEnable,
                 "HectonSubmarineOsEvents.Unregister(this);",
                 "HectonSubmarineOsEvents.Register(this);");
+            Assert.That(refreshMetrics, Does.Contain("_snapshot.EngineHeatMaskDelta01"));
+            Assert.That(refreshMetrics, Does.Contain("_snapshot.IsEngineTelemetryMasked"));
+            Assert.That(refreshMetrics, Does.Contain("\"  HT \""));
+            Assert.That(refreshMetrics, Does.Contain("\" MSK+\""));
+            Assert.That(refreshMetrics, Does.Contain("RefreshEngineHeatBar(engineHeatPercent, engineTelemetryMasked);"));
+            Assert.That(refreshHeatBar, Does.Contain("engineTelemetryMasked || engineHeatPercent >= 75"));
+        }
+
+        [Test]
+        public void SubmarineOs_VerifiesBIOSMessageStreamerLogic()
+        {
+            string bios = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "BIOSMessageStreamer.cs");
+            string biosOnEnable = ExtractMethodBody(bios, "private void OnEnable()");
+            string biosInsertPending = ExtractMethodBody(bios, "private void InsertPendingEntry(");
+            string biosDropForPriority = ExtractMethodBody(bios, "private bool TryDropQueuedEntryForIncomingPriority(");
+            string biosRemovePending = ExtractMethodBody(bios, "private void RemovePendingEntryAtLogicalIndex(");
+            string biosRecordDrop = ExtractMethodBody(bios, "private void RecordPendingEntryDrop(");
+            string biosReserveTelemetryFrame = ExtractMethodBody(bios, "private static bool TryReserveTelemetryWarningFrame(");
+            string biosPublishWarning = ExtractMethodBody(bios, "private static void PublishPerformanceWarningBestEffort(");
+            string biosBuildMessage = ExtractMethodBody(bios, "private int BuildMessage(");
+
             Assert.That(biosInsertPending, Does.Contain("TryDropQueuedEntryForIncomingPriority(priority)"));
             Assert.That(biosInsertPending, Does.Contain("RecordPendingEntryDrop(droppedIncoming: true);"));
             Assert.That(biosInsertPending, Does.Contain("RecordPendingEntryDrop(droppedIncoming: false);"));
@@ -3155,12 +3176,21 @@ namespace Hecton8.Tests.Editor
                 biosOnEnable,
                 "HectonSubmarineOsEvents.Unregister(this);",
                 "HectonSubmarineOsEvents.Register(this);");
-            Assert.That(refreshMetrics, Does.Contain("_snapshot.EngineHeatMaskDelta01"));
-            Assert.That(refreshMetrics, Does.Contain("_snapshot.IsEngineTelemetryMasked"));
-            Assert.That(refreshMetrics, Does.Contain("\"  HT \""));
-            Assert.That(refreshMetrics, Does.Contain("\" MSK+\""));
-            Assert.That(refreshMetrics, Does.Contain("RefreshEngineHeatBar(engineHeatPercent, engineTelemetryMasked);"));
-            Assert.That(refreshHeatBar, Does.Contain("engineTelemetryMasked || engineHeatPercent >= 75"));
+        }
+
+        [Test]
+        public void SubmarineOs_VerifiesVehicleSubOsCockpitRuntimeLogic()
+        {
+            string cockpit = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VehicleSubOsCockpitRuntime.cs");
+            string cockpitOnEnable = ExtractMethodBody(cockpit, "private void OnEnable()");
+            string cockpitOnDisable = ExtractMethodBody(cockpit, "private void OnDisable()");
+            string cockpitOnDestroy = ExtractMethodBody(cockpit, "private void OnDestroy()");
+            string cockpitEvent = ExtractMethodBody(cockpit, "void ISubmarineOsEventListener.OnSubmarineOsEvent(");
+            string cockpitStatus = ExtractMethodBody(cockpit, "private int ResolveStatusDisplayMode()");
+            string cockpitStatusWriter = ExtractMethodBody(cockpit, "private bool WriteStatusLine(");
+            string cockpitTelemetryFlags = ExtractMethodBody(cockpit, "private uint BuildTelemetryFlags(");
+            string cockpitResetTelemetry = ExtractMethodBody(cockpit, "private void ResetRuntimeTelemetryCache()");
+
             Assert.That(cockpit, Does.Contain("StatusModeEngineTelemetryMasked = 4"));
             Assert.That(cockpitEvent, Does.Contain("HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot)"));
             Assert.That(cockpitEvent, Does.Contain("snapshot.IsEngineTelemetryMasked"));
