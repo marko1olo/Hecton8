@@ -219,12 +219,29 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
         
 	// used for line segments and bevel joins
 	#if LOCAL_ANTI_ALIASING_QUALITY > 0 && ( defined(IS_JOIN_MESH) == false || (defined(IS_JOIN_MESH) && defined(JOIN_BEVEL)) )
-        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat / i.IP_radius, i.IP_pxCoverage );
-        half maskEdgesCap = GetLineLocalAA( i.IP_nrmCoordLong, i.IP_pxCoverage );
+
+        // Unskew longitudinally-constant variables to fix barycentric kink
+        float2 g_lat = float2(ddx(i.IP_nrmCoordLat), ddy(i.IP_nrmCoordLat));
+        float lat_sq = dot(g_lat, g_lat);
+        float lat_inv = lat_sq > 1e-10 ? 1.0 / lat_sq : 0.0;
+
+        float2 g_rad = float2(ddx(i.IP_radius), ddy(i.IP_radius));
+        float rad_unskewed = i.IP_radius - i.IP_nrmCoordLat * dot(g_rad, g_lat) * lat_inv;
+
+        float2 g_cov = float2(ddx(i.IP_pxCoverage), ddy(i.IP_pxCoverage));
+        float cov_unskewed = i.IP_pxCoverage - i.IP_nrmCoordLat * dot(g_cov, g_lat) * lat_inv;
+
+        float2 g_long = float2(ddx(i.IP_nrmCoordLong), ddy(i.IP_nrmCoordLong));
+        float long_unskewed = i.IP_nrmCoordLong - i.IP_nrmCoordLat * dot(g_long, g_lat) * lat_inv;
+
+        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat / rad_unskewed, cov_unskewed );
+        half maskEdgesCap = GetLineLocalAA( long_unskewed, cov_unskewed );
         shape_mask = min( shape_mask, min( maskEdges, maskEdgesCap ) );
+    #else
+        float cov_unskewed = i.IP_pxCoverage;
     #endif
 
-    shape_mask *= saturate( i.IP_pxCoverage );
+    shape_mask *= saturate( cov_unskewed );
     
     return SHAPES_OUTPUT( i.color, shape_mask, i );
     
