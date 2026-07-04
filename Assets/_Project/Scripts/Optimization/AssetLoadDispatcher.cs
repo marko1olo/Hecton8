@@ -698,9 +698,8 @@ namespace Hecton8.Optimization
         {
             for (int i = 0; i < _queuedRequestCount; i++)
             {
-                AssetDispatchRequest request = _queuedRequests[i];
+                ref AssetDispatchRequest request = ref _queuedRequests[i];
                 request.AgeFrames++;
-                _queuedRequests[i] = request;
             }
         }
 
