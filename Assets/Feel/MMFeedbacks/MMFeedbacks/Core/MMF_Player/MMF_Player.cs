@@ -139,16 +139,7 @@ namespace MoreMountains.Feedbacks
 					return;
 				}
 				
-				// if we're in the very first frames, we delay our play for 2 frames to avoid Unity bugs
-				if (Time.frameCount < 2)
-				{
-					_lastOnEnableFrame = 2;
-					StartCoroutine(PlayFeedbacksAfterFrames(2));
-				}
-				else
-				{
-					PlayFeedbacks();
-				}
+				PlayFeedbacks();
 			}
 		}
 
@@ -366,13 +357,6 @@ namespace MoreMountains.Feedbacks
 			ComputeNewRandomDurationMultipliers();
 			CheckForPauses();
             
-			if (Time.frameCount < 2)
-			{
-				this.enabled = false;
-				StartCoroutine(FrameOnePlayCo(position, feedbacksIntensity, forceRevert));
-				return;
-			}
-
 			if (InitialDelay > 0f)
 			{
 				StartCoroutine(HandleInitialDelayCo(position, feedbacksIntensity, forceRevert));
@@ -451,16 +435,6 @@ namespace MoreMountains.Feedbacks
 			return true;
 		}
         
-		protected virtual IEnumerator FrameOnePlayCo(Vector3 position, float feedbacksIntensity, bool forceRevert = false)
-		{
-			yield return null;
-			this.enabled = true;
-			_startTime = GetTime();
-			_lastStartAt = _startTime;
-			IsPlaying = true;
-			yield return MMFeedbacksCoroutine.WaitForUnscaled(ComputedInitialDelay);
-			PreparePlay(position, feedbacksIntensity, forceRevert);
-		}
 
 		protected override void PreparePlay(Vector3 position, float feedbacksIntensity, bool forceRevert = false)
 		{
