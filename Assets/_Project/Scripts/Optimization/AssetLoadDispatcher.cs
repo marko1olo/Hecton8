@@ -484,14 +484,14 @@ namespace Hecton8.Optimization
                 return;
 
             _uiMipBiasGateActive = true;
-            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes / (float)BytesPerMegabyte);
+            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateHighHash, UiTextureContextHash, observedVramBytes * (1f / BytesPerMegabyte));
         }
 
         private void RestoreUiMipBiasGate(IVramPressureMipBiasSink pressureMonitor)
         {
             pressureMonitor.SetExternalMipPressureResponse(0f, _lastObservedVramBytes);
             _uiMipBiasGateActive = false;
-            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes / (float)BytesPerMegabyte);
+            GlobalTelemetryBus.PublishPerformanceWarning(UiMipGateRestoreHash, UiTextureContextHash, _lastObservedVramBytes * (1f / BytesPerMegabyte));
         }
 
         private void ClearUiMipBiasGate()
