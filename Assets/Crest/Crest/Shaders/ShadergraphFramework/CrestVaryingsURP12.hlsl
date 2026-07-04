@@ -86,8 +86,6 @@ Varyings BuildVaryings(Attributes input)
     #endif //FEATURES GRAPH TANGENT
 #endif //FEATURES_GRAPH_VERTEX
 
-    // TODO: Avoid path via VertexPositionInputs (Universal)
-    VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
 
     // Returns the camera relative position (if enabled)
     float3 positionWS = TransformObjectToWorld(input.positionOS);
@@ -179,7 +177,7 @@ Varyings BuildVaryings(Attributes input)
 #endif
 
 #ifdef VARYINGS_NEED_SCREENPOSITION
-    output.screenPosition = vertexInput.positionNDC;
+    output.screenPosition = ComputeScreenPos(output.positionCS);
 #endif
 
 #if (SHADERPASS == SHADERPASS_FORWARD) || (SHADERPASS == SHADERPASS_GBUFFER)
@@ -200,6 +198,9 @@ Varyings BuildVaryings(Attributes input)
 #endif
 
 #if defined(VARYINGS_NEED_SHADOW_COORD) && defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+    VertexPositionInputs vertexInput = (VertexPositionInputs)0;
+    vertexInput.positionWS = positionWS;
+    vertexInput.positionCS = output.positionCS;
     output.shadowCoord = GetShadowCoord(vertexInput);
 #endif
 
