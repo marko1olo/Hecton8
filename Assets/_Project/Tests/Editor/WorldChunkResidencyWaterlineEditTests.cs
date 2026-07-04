@@ -368,7 +368,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void WorldAndGameplayPlayerAupFallbacksRejectNonFiniteDirectMovement()
+        public void GameplayPlayerAupFallbacksRejectNonFiniteDirectMovement()
         {
             string noiseSource = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "PlayerNoiseEmitter.cs");
             string noiseTick = ExtractMethodBody(noiseSource, "public void Tick(float dt)");
@@ -376,76 +376,18 @@ namespace Hecton8.Tests.Editor
             string noiseRuntimeGuard = ExtractMethodBody(noiseSource, "private bool HasPlayerRuntimeContext()");
             string noiseRuntimeContextResolve = ExtractMethodBody(noiseSource, "private static bool TryResolvePlayerAupFromRuntimeContext(");
             string noiseStateResolve = ExtractMethodBody(noiseSource, "private static bool TryResolvePlayerAupFromMovementState(");
-            string voxelSource = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
-            string voxelResolve = ExtractMethodBody(voxelSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string voxelOverhang = ExtractMethodBody(voxelSource, "static bool ShouldApplyCameraFacingOverhangNoise(VoxelPipelineData data)");
-            string vegetationSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
-            string vegetationResolve = ExtractMethodBody(vegetationSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string wreckSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WreckMaterialRegistry.cs");
-            string wreckResolve = ExtractMethodBody(wreckSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string ecosystemSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs");
-            string ecosystemResolve = ExtractMethodBody(ecosystemSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string ecosystemRuntimeResolve = ExtractMethodBody(ecosystemSource, "private static bool TryResolvePlayerAupFromRuntimeContext(");
-            string ecosystemStress = ExtractMethodBody(ecosystemSource, "private static bool TryResolveDirectorPlayerStress01(out float stress01)");
             string lifepodSource = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "LifePodTactilePrologueController.cs");
             string lifepodObserver = ExtractMethodBody(lifepodSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
-            string acousticZoneSource = ReadProjectFile("Assets", "_Project", "Scripts", "AcousticZoneController.cs");
-            string acousticZoneResolve = ExtractMethodBody(acousticZoneSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string atmosphereSource = ReadProjectFile("Assets", "_Project", "Scripts", "SubmarineAtmosphereSystem.cs");
-            string atmosphereResolve = ExtractMethodBody(atmosphereSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string atlasSource = ReadProjectFile("Assets", "_Project", "Scripts", "AtlasSignal", "AtlasSignalSystem.cs");
-            string atlasResolve = ExtractMethodBody(atlasSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string atlas6Source = ReadProjectFile("Assets", "_Project", "Scripts", "AtlasSignal", "Atlas6DirectiveSystem.cs");
-            string atlas6Resolve = ExtractMethodBody(atlas6Source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             string fabricatorSource = ReadProjectFile("Assets", "_Project", "Scripts", "Fabricator.cs");
             string fabricatorResolve = ExtractMethodBody(fabricatorSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string worldInterestSource = ReadProjectFile("Assets", "_Project", "Scripts", "WorldInterestDirector.cs");
-            string worldInterestResolve = ExtractMethodBody(worldInterestSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string spectrumSource = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "SpectrumSystem.cs");
-            string spectrumResolve = ExtractMethodBody(spectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string explorationSource = ReadProjectFile("Assets", "_Project", "Scripts", "PDA", "PlayerExplorationTracker.cs");
-            string explorationResolve = ExtractMethodBody(explorationSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string explorationCached = ExtractMethodBody(explorationSource, "private bool TryResolveCachedPlayerRuntimeAup(out AbsoluteUniversePosition playerAup)");
-            string explorationCache = ExtractMethodBody(explorationSource, "private void CachePlayerContext(IPlayerRuntimeContext playerContext)");
-            string pdaMarkerSource = ReadProjectFile("Assets", "_Project", "Scripts", "PDA", "PDAMarkerHUDElement.cs");
-            string pdaMarkerResolve = ExtractMethodBody(pdaMarkerSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
-            string pdaMapSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDAMapTab.cs");
-            string pdaMapResolve = ExtractMethodBody(pdaMapSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string pdaSpectrumSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDASpectrumTab.cs");
-            string pdaSpectrumResolve = ExtractMethodBody(pdaSpectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             string itemHighlightSource = ReadProjectFile("Assets", "_Project", "Scripts", "Gameplay", "ItemHighlight.cs");
             string itemHighlightResolve = ExtractMethodBody(itemHighlightSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string beaconSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "BeaconHUDElement.cs");
-            string beaconResolve = ExtractMethodBody(beaconSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
-            string relaySource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "RelayHUDElement.cs");
-            string relayResolve = ExtractMethodBody(relaySource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string missionSource = ReadProjectFile("Assets", "_Project", "Scripts", "Quest", "MissionMarkerSystem.cs");
-            string missionResolve = ExtractMethodBody(missionSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string achievementSource = ReadProjectFile("Assets", "_Project", "Scripts", "Progression", "PlayerAchievementRegistry.cs");
-            string achievementResolve = ExtractMethodBody(achievementSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string narrativeSource = ReadProjectFile("Assets", "_Project", "Scripts", "Progression", "NarrativeProgressionBridge.cs");
-            string narrativeResolve = ExtractMethodBody(narrativeSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             string ladderSource = ReadProjectFile("Assets", "_Project", "Scripts", "Animation", "Locomotion", "ProceduralLadderClimbRuntime.cs");
             string ladderEntryAup = ExtractMethodBody(ladderSource, "private bool TryResolveEntryPointAup(");
             string crashSource = ReadProjectFile("Assets", "_Project", "Scripts", "CrashTelemetryBuffer.cs");
             string crashPlayerPosition = ExtractMethodBody(crashSource, "private float3 SamplePlayerPosition(out bool hasPlayer)");
             string crashPoseSnapshot = ExtractMethodBody(crashSource, "private static bool TryReadPlayerPoseSnapshot(");
             string crashMovementSnapshot = ExtractMethodBody(crashSource, "private static bool TryReadPlayerMovementAupSnapshot(");
-            string physicsSource = ReadProjectFile("Assets", "_Project", "Scripts", "GlobalPhysicsStateManager.cs");
-            string physicsSafeTeleport = ExtractMethodBody(physicsSource, "private void ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal()");
-            string physicsJitter = ExtractMethodBody(physicsSource, "private void ApplyAupJitterSentinel()");
-            string physicsCullingPlayer = ExtractMethodBody(physicsSource, "private static bool TryResolvePhysicsCullingPlayerState(");
-            string physicsPlayerAup = ExtractMethodBody(physicsSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
-            string physicsCullingPartialSource = ReadProjectFile("Assets", "_Project", "Scripts", "Physics", "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs");
-            string physicsCullingCameraAup = ExtractMethodBody(physicsCullingPartialSource, "private AbsoluteUniversePosition ResolvePhysicsCullingCameraAup(");
-            string physicsCullingFrustum = ExtractMethodBody(physicsCullingPartialSource, "private bool TryResolvePhysicsCullingFrustumPlanes(");
-
-            AssertTokensInOrder(
-                noiseTick,
-                "TryResolvePlayerAup(out playerAup)",
-                "HasPlayerRuntimeContext()",
-                "return;",
-                "playerPosition = ResolveCachedRuntimePosition();");
             StringAssert.Contains("_cachedPlayerContext != null", noiseRuntimeGuard);
             AssertTokensInOrder(
                 noiseResolve,
@@ -466,7 +408,105 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("PlayerRuntimeContextService.TryGetActiveRuntimeContext", noiseResolve);
             StringAssert.DoesNotContain("runtimeContext.MovementState", noiseResolve);
             AssertFinitePredictedAupBeforeSuccess(noiseStateResolve);
+            AssertTokensInOrder(
+                lifepodObserver,
+                "AbsoluteUniversePosition predictedAup = _cachedObserverMovement.PredictedAup;",
+                "if (predictedAup.IsFinite())",
+                "observerAup = predictedAup;");
+            AssertNoUnguardedCurrentAupSuccess(fabricatorResolve);
+            AssertTokensInOrder(
+                fabricatorResolve,
+                "IPlayerRuntimeContext playerContext = _cachedPlayerContext;",
+                "if (playerContext != null)",
+                "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
+                "(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
+                "snapshot.Aup.IsFinite()",
+                "playerAup = snapshot.Aup;",
+                "return true;",
+                "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
+                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
+                "movementState.PredictedAup.IsFinite()",
+                "playerAup = movementState.PredictedAup;",
+                "return true;",
+                "return false;",
+                "if (_playerMovement != null)");
+            StringAssert.DoesNotContain("playerContext.PlayerMovement", fabricatorResolve);
+            StringAssert.Contains("playerAup = AbsoluteUniversePosition.Invalid();", itemHighlightResolve);
+            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)", itemHighlightResolve);
+            StringAssert.Contains("(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", itemHighlightResolve);
+            StringAssert.Contains("snapshot.Aup.IsFinite()", itemHighlightResolve);
+            StringAssert.Contains("return false;", itemHighlightResolve);
+            StringAssert.DoesNotContain("playerContext.PlayerMovement", itemHighlightResolve);
+            Assert.That(
+                itemHighlightResolve.IndexOf("playerContext.TryGetPlayerPoseSnapshot", StringComparison.Ordinal),
+                Is.LessThan(itemHighlightResolve.IndexOf("return false;", StringComparison.Ordinal)));
+            Assert.That(
+                itemHighlightResolve.IndexOf("return false;", StringComparison.Ordinal),
+                Is.LessThan(itemHighlightResolve.IndexOf("HectonPlayerMovement playerMovement = _cachedPlayerMovement;", StringComparison.Ordinal)));
+            AssertTokensInOrder(
+                ladderEntryAup,
+                "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
+                "(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
+                "snapshot.Aup.IsFinite()",
+                "IsFinite(snapshot.RuntimePosition)",
+                "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
+                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u",
+                "!movementState.PredictedAup.IsFinite()",
+                "!IsFinite(movementState.WorldPosition)",
+                "AbsoluteUniversePosition playerAup = movementState.PredictedAup;",
+                "float3 playerRuntime = movementState.WorldPosition;",
+                "return TryOffsetAupByRuntimeDelta(");
+            StringAssert.DoesNotContain("playerContext.PlayerMovement", ladderEntryAup);
+            StringAssert.DoesNotContain("playerMovement.CurrentAup", ladderEntryAup);
+            AssertTokensInOrder(
+                crashPlayerPosition,
+                "IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;",
+                "if (runtimeContext != null)",
+                "TryReadPlayerPoseSnapshot(runtimeContext, out _, out float3 poseAup)",
+                "TryReadPlayerMovementAupSnapshot(runtimeContext, out float3 movementAup)",
+                "hasPlayer = false;",
+                "return float3.zero;",
+                "if (_playerTransform == null)",
+                "AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;");
+            AssertTokensInOrder(
+                crashPoseSnapshot,
+                "runtimeContext.TryGetPlayerPoseSnapshot(out pose)",
+                "(pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
+                "TryConvertAupToFloat3(pose.Aup, out playerAup);");
+            AssertTokensInOrder(
+                crashMovementSnapshot,
+                "runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
+                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
+                "TryConvertAupToFloat3(movementState.PredictedAup, out playerAup);");
+            StringAssert.DoesNotContain("TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", crashPlayerPosition);
+            AssertTokensInOrder(
+                noiseTick,
+                "TryResolvePlayerAup(out playerAup)",
+                "HasPlayerRuntimeContext()",
+                "return;",
+                "playerPosition = ResolveCachedRuntimePosition();");
+        }
 
+        [Test]
+        public void WorldPlayerAupFallbacksRejectNonFiniteDirectMovement()
+        {
+            string voxelSource = ReadProjectFile("Assets", "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string voxelResolve = ExtractMethodBody(voxelSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string voxelOverhang = ExtractMethodBody(voxelSource, "static bool ShouldApplyCameraFacingOverhangNoise(VoxelPipelineData data)");
+            string vegetationSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
+            string vegetationResolve = ExtractMethodBody(vegetationSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string wreckSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WreckMaterialRegistry.cs");
+            string wreckResolve = ExtractMethodBody(wreckSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string ecosystemSource = ReadProjectFile("Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs");
+            string ecosystemResolve = ExtractMethodBody(ecosystemSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string ecosystemRuntimeResolve = ExtractMethodBody(ecosystemSource, "private static bool TryResolvePlayerAupFromRuntimeContext(");
+            string ecosystemStress = ExtractMethodBody(ecosystemSource, "private static bool TryResolveDirectorPlayerStress01(out float stress01)");
+            string acousticZoneSource = ReadProjectFile("Assets", "_Project", "Scripts", "AcousticZoneController.cs");
+            string acousticZoneResolve = ExtractMethodBody(acousticZoneSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string atmosphereSource = ReadProjectFile("Assets", "_Project", "Scripts", "SubmarineAtmosphereSystem.cs");
+            string atmosphereResolve = ExtractMethodBody(atmosphereSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string worldInterestSource = ReadProjectFile("Assets", "_Project", "Scripts", "WorldInterestDirector.cs");
+            string worldInterestResolve = ExtractMethodBody(worldInterestSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             StringAssert.Contains("playerAup = AbsoluteUniversePosition.Invalid();", voxelResolve);
             StringAssert.Contains("playerRuntimeContext.IsInitialized", voxelResolve);
             StringAssert.Contains("AbsoluteUniversePosition.IsFinite(in movementState.PredictedAup)", voxelResolve);
@@ -480,7 +520,6 @@ namespace Hecton8.Tests.Editor
             Assert.That(
                 voxelOverhang.IndexOf("!AbsoluteUniversePosition.IsFinite(in movementState.PredictedAup)", StringComparison.Ordinal),
                 Is.LessThan(voxelOverhang.IndexOf("AbsoluteUniversePosition playerAup = movementState.PredictedAup;", StringComparison.Ordinal)));
-
             AssertTokensInOrder(
                 vegetationResolve,
                 "runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
@@ -490,7 +529,6 @@ namespace Hecton8.Tests.Editor
                 "return playerAup.IsFinite();");
             StringAssert.DoesNotContain("runtimeContext.PlayerMovement", vegetationResolve);
             StringAssert.DoesNotContain("movement.PredictedAup", vegetationResolve);
-
             AssertTokensInOrder(
                 wreckResolve,
                 "runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
@@ -504,7 +542,6 @@ namespace Hecton8.Tests.Editor
                 "playerAup = predictedAup;");
             StringAssert.DoesNotContain("runtimeContext.PlayerMovement", wreckResolve);
             StringAssert.DoesNotContain("playerMovement.CurrentAup", wreckResolve);
-
             AssertTokensInOrder(
                 ecosystemResolve,
                 "IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;",
@@ -527,7 +564,6 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("PlayerRuntimeContextService.TryGetActiveRuntimeContext", ecosystemResolve);
             StringAssert.DoesNotContain("runtimeContext.MovementState", ecosystemResolve);
             StringAssert.DoesNotContain("runtimeContext.LookState", ecosystemResolve);
-
             AssertTokensInOrder(
                 ecosystemStress,
                 "IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;",
@@ -544,42 +580,40 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("playerContext.PlayerMovement", ecosystemStress);
             StringAssert.DoesNotContain("runtimeContext.MovementState", ecosystemStress);
             StringAssert.DoesNotContain("CurrentUnderwaterStressIntensity01", ecosystemStress);
-
-            AssertTokensInOrder(
-                lifepodObserver,
-                "AbsoluteUniversePosition predictedAup = _cachedObserverMovement.PredictedAup;",
-                "if (predictedAup.IsFinite())",
-                "observerAup = predictedAup;");
-
             AssertNoUnguardedCurrentAupSuccess(acousticZoneResolve);
             AssertNoUnguardedCurrentAupSuccess(atmosphereResolve);
             AssertFinitePredictedAupBeforeSuccess(atmosphereResolve);
             StringAssert.DoesNotContain("playerContext.PlayerMovement.CurrentAup", atmosphereResolve);
-            AssertNoUnguardedCurrentAupSuccess(atlasResolve);
-            AssertFinitePredictedAupBeforeSuccess(atlasResolve);
-            AssertNoUnguardedCurrentAupSuccess(atlas6Resolve);
-            AssertFinitePredictedAupBeforeSuccess(atlas6Resolve);
-            AssertNoUnguardedCurrentAupSuccess(fabricatorResolve);
-            AssertTokensInOrder(
-                fabricatorResolve,
-                "IPlayerRuntimeContext playerContext = _cachedPlayerContext;",
-                "if (playerContext != null)",
-                "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
-                "(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
-                "snapshot.Aup.IsFinite()",
-                "playerAup = snapshot.Aup;",
-                "return true;",
-                "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
-                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
-                "movementState.PredictedAup.IsFinite()",
-                "playerAup = movementState.PredictedAup;",
-                "return true;",
-                "return false;",
-                "if (_playerMovement != null)");
-            StringAssert.DoesNotContain("playerContext.PlayerMovement", fabricatorResolve);
             AssertNoUnguardedCurrentAupSuccess(worldInterestResolve);
             AssertFinitePredictedAupBeforeSuccess(worldInterestResolve);
             StringAssert.DoesNotContain("_playerMovement.CurrentAup", worldInterestResolve);
+        }
+
+        [Test]
+        public void UiPlayerAupFallbacksRejectNonFiniteDirectMovement()
+        {
+            string spectrumSource = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "SpectrumSystem.cs");
+            string spectrumResolve = ExtractMethodBody(spectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string explorationSource = ReadProjectFile("Assets", "_Project", "Scripts", "PDA", "PlayerExplorationTracker.cs");
+            string explorationResolve = ExtractMethodBody(explorationSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string explorationCached = ExtractMethodBody(explorationSource, "private bool TryResolveCachedPlayerRuntimeAup(out AbsoluteUniversePosition playerAup)");
+            string explorationCache = ExtractMethodBody(explorationSource, "private void CachePlayerContext(IPlayerRuntimeContext playerContext)");
+            string pdaMarkerSource = ReadProjectFile("Assets", "_Project", "Scripts", "PDA", "PDAMarkerHUDElement.cs");
+            string pdaMarkerResolve = ExtractMethodBody(pdaMarkerSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string pdaMapSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDAMapTab.cs");
+            string pdaMapResolve = ExtractMethodBody(pdaMapSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string pdaSpectrumSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDASpectrumTab.cs");
+            string pdaSpectrumResolve = ExtractMethodBody(pdaSpectrumSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string beaconSource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "BeaconHUDElement.cs");
+            string beaconResolve = ExtractMethodBody(beaconSource, "private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)");
+            string relaySource = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "RelayHUDElement.cs");
+            string relayResolve = ExtractMethodBody(relaySource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string missionSource = ReadProjectFile("Assets", "_Project", "Scripts", "Quest", "MissionMarkerSystem.cs");
+            string missionResolve = ExtractMethodBody(missionSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string achievementSource = ReadProjectFile("Assets", "_Project", "Scripts", "Progression", "PlayerAchievementRegistry.cs");
+            string achievementResolve = ExtractMethodBody(achievementSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string narrativeSource = ReadProjectFile("Assets", "_Project", "Scripts", "Progression", "NarrativeProgressionBridge.cs");
+            string narrativeResolve = ExtractMethodBody(narrativeSource, "private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
             AssertNoUnguardedCurrentAupSuccess(spectrumResolve);
             AssertTokensInOrder(
                 spectrumResolve,
@@ -621,18 +655,6 @@ namespace Hecton8.Tests.Editor
                 "_lastSampledAup = snapshotAup;");
             StringAssert.DoesNotContain("CurrentAup", explorationCache);
             AssertNoUnguardedCurrentAupSuccess(pdaMarkerResolve);
-            StringAssert.Contains("playerAup = AbsoluteUniversePosition.Invalid();", itemHighlightResolve);
-            StringAssert.Contains("playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)", itemHighlightResolve);
-            StringAssert.Contains("(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u", itemHighlightResolve);
-            StringAssert.Contains("snapshot.Aup.IsFinite()", itemHighlightResolve);
-            StringAssert.Contains("return false;", itemHighlightResolve);
-            StringAssert.DoesNotContain("playerContext.PlayerMovement", itemHighlightResolve);
-            Assert.That(
-                itemHighlightResolve.IndexOf("playerContext.TryGetPlayerPoseSnapshot", StringComparison.Ordinal),
-                Is.LessThan(itemHighlightResolve.IndexOf("return false;", StringComparison.Ordinal)));
-            Assert.That(
-                itemHighlightResolve.IndexOf("return false;", StringComparison.Ordinal),
-                Is.LessThan(itemHighlightResolve.IndexOf("HectonPlayerMovement playerMovement = _cachedPlayerMovement;", StringComparison.Ordinal)));
             AssertTokensInOrder(
                 pdaMarkerResolve,
                 "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
@@ -686,44 +708,32 @@ namespace Hecton8.Tests.Editor
             AssertNoUnguardedCurrentAupSuccess(narrativeResolve);
             AssertFinitePredictedAupBeforeSuccess(pdaMapResolve);
             AssertFinitePredictedAupBeforeSuccess(spectrumResolve);
-            AssertTokensInOrder(
-                ladderEntryAup,
-                "playerContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot)",
-                "(snapshot.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
-                "snapshot.Aup.IsFinite()",
-                "IsFinite(snapshot.RuntimePosition)",
-                "playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
-                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u",
-                "!movementState.PredictedAup.IsFinite()",
-                "!IsFinite(movementState.WorldPosition)",
-                "AbsoluteUniversePosition playerAup = movementState.PredictedAup;",
-                "float3 playerRuntime = movementState.WorldPosition;",
-                "return TryOffsetAupByRuntimeDelta(");
-            StringAssert.DoesNotContain("playerContext.PlayerMovement", ladderEntryAup);
-            StringAssert.DoesNotContain("playerMovement.CurrentAup", ladderEntryAup);
+        }
 
-            AssertTokensInOrder(
-                crashPlayerPosition,
-                "IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;",
-                "if (runtimeContext != null)",
-                "TryReadPlayerPoseSnapshot(runtimeContext, out _, out float3 poseAup)",
-                "TryReadPlayerMovementAupSnapshot(runtimeContext, out float3 movementAup)",
-                "hasPlayer = false;",
-                "return float3.zero;",
-                "if (_playerTransform == null)",
-                "AbsoluteUniversePosition currentAup = _playerMovement.CurrentAup;");
-            AssertTokensInOrder(
-                crashPoseSnapshot,
-                "runtimeContext.TryGetPlayerPoseSnapshot(out pose)",
-                "(pose.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
-                "TryConvertAupToFloat3(pose.Aup, out playerAup);");
-            AssertTokensInOrder(
-                crashMovementSnapshot,
-                "runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState)",
-                "(movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u",
-                "TryConvertAupToFloat3(movementState.PredictedAup, out playerAup);");
-            StringAssert.DoesNotContain("TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)", crashPlayerPosition);
+        [Test]
+        public void SignalPlayerAupFallbacksRejectNonFiniteDirectMovement()
+        {
+            string atlasSource = ReadProjectFile("Assets", "_Project", "Scripts", "AtlasSignal", "AtlasSignalSystem.cs");
+            string atlasResolve = ExtractMethodBody(atlasSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string atlas6Source = ReadProjectFile("Assets", "_Project", "Scripts", "AtlasSignal", "Atlas6DirectiveSystem.cs");
+            string atlas6Resolve = ExtractMethodBody(atlas6Source, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            AssertNoUnguardedCurrentAupSuccess(atlasResolve);
+            AssertFinitePredictedAupBeforeSuccess(atlasResolve);
+            AssertNoUnguardedCurrentAupSuccess(atlas6Resolve);
+            AssertFinitePredictedAupBeforeSuccess(atlas6Resolve);
+        }
 
+        [Test]
+        public void PhysicsPlayerAupFallbacksRejectNonFiniteDirectMovement()
+        {
+            string physicsSource = ReadProjectFile("Assets", "_Project", "Scripts", "GlobalPhysicsStateManager.cs");
+            string physicsSafeTeleport = ExtractMethodBody(physicsSource, "private void ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal()");
+            string physicsJitter = ExtractMethodBody(physicsSource, "private void ApplyAupJitterSentinel()");
+            string physicsCullingPlayer = ExtractMethodBody(physicsSource, "private static bool TryResolvePhysicsCullingPlayerState(");
+            string physicsPlayerAup = ExtractMethodBody(physicsSource, "private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)");
+            string physicsCullingPartialSource = ReadProjectFile("Assets", "_Project", "Scripts", "Physics", "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs");
+            string physicsCullingCameraAup = ExtractMethodBody(physicsCullingPartialSource, "private AbsoluteUniversePosition ResolvePhysicsCullingCameraAup(");
+            string physicsCullingFrustum = ExtractMethodBody(physicsCullingPartialSource, "private bool TryResolvePhysicsCullingFrustumPlanes(");
             AssertTokensInOrder(
                 physicsCullingPlayer,
                 "IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;",
