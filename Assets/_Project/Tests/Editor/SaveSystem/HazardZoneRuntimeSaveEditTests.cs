@@ -2383,26 +2383,12 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes()
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_ItemData()
         {
             string itemDataSource = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/ItemData.cs"));
-            string buildableDataSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/BuildableData.cs"));
-            string hectonItemSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/HectonItem.cs"));
-            string itemNodeSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Inventory/ItemNodeData.cs"));
-            string itemCatalogSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/ItemCatalog.cs"));
-            string persistentWorldSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"));
+
 
             StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", itemDataSource);
             StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", itemDataSource);
@@ -2501,6 +2487,15 @@ namespace Hecton8.Tests.Editor
                 persistentIdGuardIndex,
                 StringComparison.Ordinal);
             Assert.Greater(legacyNameGuardIndex, persistentIdGuardIndex, itemDataSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_BuildableData()
+        {
+            string buildableDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BuildableData.cs"));
+
 
             int buildableRebuildIndex = buildableDataSource.IndexOf(
                 "private void RebuildCache()",
@@ -2570,6 +2565,15 @@ namespace Hecton8.Tests.Editor
                 StringComparison.Ordinal);
             Assert.Greater(buildableLazyResolveIndex, buildableTemplateHashNonZeroIndex, buildableDataSource);
             StringAssert.Contains("private int ResolvePersistentHashId()", buildableDataSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_HectonItem()
+        {
+            string hectonItemSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/HectonItem.cs"));
+
 
             int itemCacheIndex = hectonItemSource.IndexOf(
                 "private void RefreshCachedItemHash()",
@@ -2580,6 +2584,15 @@ namespace Hecton8.Tests.Editor
                 itemCacheIndex,
                 StringComparison.Ordinal);
             Assert.Greater(itemCacheHashIndex, itemCacheIndex, hectonItemSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_ItemNodeData()
+        {
+            string itemNodeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Inventory/ItemNodeData.cs"));
+
 
             int bakeIndex = itemNodeSource.IndexOf(
                 "public void ConfigureEditorBake(ItemData itemData, ushort authoredFlags)",
@@ -2590,6 +2603,15 @@ namespace Hecton8.Tests.Editor
                 bakeIndex,
                 StringComparison.Ordinal);
             Assert.Greater(bakeHashIndex, bakeIndex, itemNodeSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_ItemCatalog()
+        {
+            string itemCatalogSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ItemCatalog.cs"));
+
 
             int findByIdIndex = itemCatalogSource.IndexOf(
                 "public ItemData FindById(string id)",
@@ -2681,6 +2703,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("int hashId = ResolvePersistentHashId(item);", itemCatalogSource);
             StringAssert.DoesNotContain("LocHash.Compute(item.PersistentId)", itemCatalogSource);
             StringAssert.DoesNotContain("LocHash.Compute(persistentId)", itemCatalogSource);
+        }
+
+        [Test]
+        public void ItemIdentityRuntime_BlankPersistentIdsDoNotProduceHashes_PersistentWorldRegistry()
+        {
+            string persistentWorldSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"));
 
             int registerDroppedIndex = persistentWorldSource.IndexOf(
                 "private bool TryRegisterDroppedItemStateful(",
