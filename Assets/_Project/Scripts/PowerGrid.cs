@@ -559,7 +559,6 @@ namespace Hecton8.Power
 
             node.SetGrid(this);
             EnsureGraphSnapshotCapacityForCurrentTopologyCold();
-            WarmOverloadServiceCacheForNode(node);
             _isDirty = true;
         }
 
@@ -596,7 +595,13 @@ namespace Hecton8.Power
 
                 _nodes.Add(node);
                 node.SetGrid(this);
-                TransferOrWarmOverloadServiceCacheForNode(node, other);
+            }
+
+            Dictionary<BaseModule, CachedOverloadServices>.Enumerator cacheEnumerator = other._overloadServiceCache.GetEnumerator();
+            while (cacheEnumerator.MoveNext())
+            {
+                KeyValuePair<BaseModule, CachedOverloadServices> pair = cacheEnumerator.Current;
+                _overloadServiceCache[pair.Key] = pair.Value;
             }
 
             other._nodes.Clear();
@@ -1190,59 +1195,16 @@ namespace Hecton8.Power
             if (_overloadServiceCache.TryGetValue(baseModule, out CachedOverloadServices services))
                 return services;
 
-            return default;
-        }
-
-        private void WarmOverloadServiceCacheForNode(PowerNode node)
-        {
-            if (node == null || node.Components == null)
-                return;
-
-            List<IPowerComponent> components = node.Components;
-            int componentCount = components.Count;
-            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
-            {
-                if (components[componentIndex] is BaseModule baseModule)
-                    WarmOverloadServiceCache(baseModule);
-            }
-        }
-
-        private void TransferOrWarmOverloadServiceCacheForNode(PowerNode node, PowerGrid sourceGrid)
-        {
-            if (node == null || node.Components == null)
-                return;
-
-            List<IPowerComponent> components = node.Components;
-            int componentCount = components.Count;
-            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
-            {
-                if (components[componentIndex] is not BaseModule baseModule)
-                    continue;
-
-                if (sourceGrid != null &&
-                    sourceGrid._overloadServiceCache.TryGetValue(baseModule, out CachedOverloadServices services))
-                {
-                    _overloadServiceCache[baseModule] = services;
-                    continue;
-                }
-
-                WarmOverloadServiceCache(baseModule);
-            }
-        }
-
-        private void WarmOverloadServiceCache(BaseModule baseModule)
-        {
-            if (baseModule == null || _overloadServiceCache.ContainsKey(baseModule))
-                return;
-
             baseModule.TryGetComponent(out IDamageReceiver damageReceiver);
-            CachedOverloadServices services = new CachedOverloadServices
+            services = new CachedOverloadServices
             {
                 Atmosphere = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(baseModule),
                 FluidDynamics = ComponentReferenceUtility.ResolveParentService<SubmarineFluidDynamics>(baseModule),
                 DamageReceiver = damageReceiver
             };
             _overloadServiceCache[baseModule] = services;
+
+            return services;
         }
 
         private void RemoveOverloadServiceCacheForNode(PowerNode node)
