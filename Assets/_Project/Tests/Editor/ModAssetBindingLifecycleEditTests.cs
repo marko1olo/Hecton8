@@ -347,14 +347,6 @@ namespace Hecton8.Tests.Editor
             string modRuntime = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs");
             string modRegistryEvents = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRegistryEvents.cs");
             string scrapManager = ReadProjectFile("Assets/_Project/Scripts/Economy/ScrapManager.cs");
-            string resourceRecycler = ReadProjectFile("Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs");
-            string baseLogisticsNetwork = ReadProjectFile("Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs");
-            string fabricatorRuntime = ReadProjectFile("Assets/_Project/Scripts/Fabricator.cs");
-            string repairDroneHub = ReadProjectFile("Assets/_Project/Scripts/Construction/RepairDroneHub.cs");
-            string droneFleetManager = ReadProjectFile("Assets/_Project/Scripts/Construction/DroneFleetManager.cs");
-            string maintenanceStationModule = ReadProjectFile("Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs");
-            string threadSafeCommandQueue = ReadProjectFile("Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs");
-            string saveManager = ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs");
             string registerById = ExtractMethodBody(recyclingRegistry, "public static bool TryRegister(string legacyItemId, IList<ResourceStack> yield, out string error)");
             string registerByHash = ExtractMethodBody(recyclingRegistry, "public static bool TryRegister(uint targetHashId, IList<ResourceStack> yield, out string error)");
             string resolveOwnedYield = ExtractMethodBody(recyclingRegistry, "internal static bool TryGetYield(uint targetHashId, out ResourceStack[] yield, out uint ownerHash)");
@@ -374,44 +366,6 @@ namespace Hecton8.Tests.Editor
             string tryMarkQueued = ExtractMethodBody(modRegistryEvents, "private static bool TryMarkQueued(ModRegistryEventType eventType)");
             string clearQueued = ExtractMethodBody(modRegistryEvents, "private static void ClearQueuedFlag(ushort eventType)");
             string recycleSnapshot = ExtractMethodBody(scrapManager, "internal static bool TryBuildRecycleYieldSnapshot(ItemData sourceItem, ResourceStack[] destination, out int resolvedCount)");
-            string recyclerEnable = ExtractMethodBody(resourceRecycler, "private void OnEnable()");
-            string recyclerDisable = ExtractMethodBody(resourceRecycler, "private void OnDisable()");
-            string recyclerHandleEvent = ExtractMethodBody(resourceRecycler, "private static void HandleModRegistryEvent(in ModRegistryEventPayload payload)");
-            string recyclerRegisterModule = ExtractMethodBody(resourceRecycler, "private void RegisterModuleInstance()");
-            string recyclerStart = ExtractMethodBody(resourceRecycler, "private bool TryStartBufferedRecycle()");
-            string recyclerDeliver = ExtractMethodBody(resourceRecycler, "private bool TryDeliverPendingYield(PlayerInventory inventory)");
-            string recyclerRegisterListener = ExtractMethodBody(resourceRecycler, "private static void TryRegisterModRegistryListener()");
-            string recyclerUnregisterListener = ExtractMethodBody(resourceRecycler, "private static void TryUnregisterModRegistryListenerIfNoActiveModules()");
-            string recyclerMarkDirty = ExtractMethodBody(resourceRecycler, "private void MarkPendingRecycleSnapshotDirtyIfAffected(uint modHash, uint sourceItemHash)");
-            string recyclerRefresh = ExtractMethodBody(resourceRecycler, "private bool TryRefreshInvalidatedPendingYield()");
-            string recyclerReportOverflow = ExtractMethodBody(resourceRecycler, "private static void ReportActiveModuleRegistrationOverflow()");
-            string recyclerTelemetryBestEffort = ExtractMethodBody(resourceRecycler, "private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)");
-            string recyclerClearPending = ExtractMethodBody(resourceRecycler, "private void ClearPendingOutput()");
-            string registerStorageEndpoint = ExtractMethodBody(baseLogisticsNetwork, "public static void RegisterStorage(StorageCrate crate, PowerNode node)");
-            string registerFabricatorEndpoint = ExtractMethodBody(baseLogisticsNetwork, "public static void RegisterFabricator(Fabricator fabricator, PowerNode node)");
-            string storageEndpointReportOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportStorageEndpointRegistrationOverflow()");
-            string fabricatorEndpointReportOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportFabricatorEndpointRegistrationOverflow()");
-            string reservationPoolExhausted = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolExhausted()");
-            string reservationPoolInvalidSlot = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolInvalidSlot()");
-            string reservationPoolReturnOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolReturnOverflow()");
-            string logisticsTelemetryBestEffort = ExtractMethodBody(baseLogisticsNetwork, "private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)");
-            string tryRentReservation = ExtractMethodBody(baseLogisticsNetwork, "private static bool TryRentReservation(PowerGrid grid, out LogisticsReservation reservation)");
-            string returnReservation = ExtractMethodBody(baseLogisticsNetwork, "private static void ReturnReservation(LogisticsReservation reservation)");
-            string droneStorageAck = ExtractMethodBody(droneFleetManager, "private static void HandleStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)");
-            string droneAckLiveApply = ExtractMethodBody(droneFleetManager, "private static bool TryApplyResolvedResupplyCommitToLiveSlot(int slot, bool committed)");
-            string droneAckConsume = ExtractMethodBody(droneFleetManager, "private static bool TryConsumeResolvedResupplyCommitAck(");
-            string droneAckClear = ExtractMethodBody(droneFleetManager, "private static void ClearPendingResupplyCommitAck(");
-            string droneApplyPendingControls = ExtractMethodBody(droneFleetManager, "private static void ApplyPendingControls(");
-            string droneRefreshFleetStatus = ExtractMethodBody(droneFleetManager, "private static void RefreshFleetStatusSnapshotFromDroneStates(");
-            string droneReportStaleAck = ExtractMethodBody(droneFleetManager, "private static void ReportStorageReservationStaleAck(int requesterId)");
-            string droneReportMismatchAck = ExtractMethodBody(droneFleetManager, "private static void ReportStorageReservationMismatchAck(int reservationId)");
-            string dronePublishAckWarning = ExtractMethodBody(droneFleetManager, "private static void PublishStorageReservationAckWarningBestEffort(uint warningHash, float value)");
-            string queueDroneResupply = ExtractMethodBody(repairDroneHub, "internal bool TryQueueDroneResupplyCommit(int requestedUnits, int droneId, out bool committedImmediately, out int queuedReservationId)");
-            string applyHeadlessResupply = ExtractMethodBody(droneFleetManager, "private static void ApplyHeadlessResupply(int slot, ref HeadlessDroneState drone)");
-            string commandQueueRegisterStorageAckListener = ExtractMethodBody(threadSafeCommandQueue, "public static bool Register(IStorageReservationCommitResolvedListener listener)");
-            string commandQueueReportStorageAckListenerCapacity = ExtractMethodBody(threadSafeCommandQueue, "private static void ReportStorageReservationCommitListenerCapacityExceeded()");
-            string commandQueueIncrementStorageAckListenerCapacity = ExtractMethodBody(threadSafeCommandQueue, "private static void IncrementStorageReservationCommitListenerCapacityExceededCount()");
-            string maintenancePrepareRepairReservation = ExtractMethodBody(maintenanceStationModule, "private bool TryPrepareRepairReservation(");
 
             StringAssert.Contains("using Hecton8.Modding;", recyclingRegistry);
             StringAssert.Contains("private static readonly Dictionary<string, string> _customYieldOwnerById", recyclingRegistry);
@@ -424,98 +378,6 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("private const int PendingEventCapacity = 5;", modRegistryEvents);
             StringAssert.Contains("private static bool _recycleRegistryChangeQueued;", modRegistryEvents);
             StringAssert.Contains("private static bool _recycleRegistryChangeOverflowed;", modRegistryEvents);
-            StringAssert.Contains("ActiveModuleRegistrationOverflowWarningHash = 0x5252434Fu", resourceRecycler);
-            StringAssert.Contains("ActiveModuleRegistrationOverflowContextHash = 0x52524D4Fu", resourceRecycler);
-            StringAssert.Contains("private static int s_DroppedActiveModuleRegistrationCount;", resourceRecycler);
-            StringAssert.Contains("internal static int DroppedActiveModuleRegistrationCount => s_DroppedActiveModuleRegistrationCount;", resourceRecycler);
-            StringAssert.Contains("s_DroppedActiveModuleRegistrationCount = 0;", resourceRecycler);
-            StringAssert.Contains("StorageEndpointRegistrationOverflowWarningHash = 0x424C534Fu", baseLogisticsNetwork);
-            StringAssert.Contains("StorageEndpointRegistrationOverflowContextHash = 0x424C5343u", baseLogisticsNetwork);
-            StringAssert.Contains("FabricatorEndpointRegistrationOverflowWarningHash = 0x424C464Fu", baseLogisticsNetwork);
-            StringAssert.Contains("FabricatorEndpointRegistrationOverflowContextHash = 0x424C4643u", baseLogisticsNetwork);
-            StringAssert.Contains("ReservationPoolExhaustedWarningHash = 0x424C5258u", baseLogisticsNetwork);
-            StringAssert.Contains("ReservationPoolInvalidSlotWarningHash = 0x424C524Eu", baseLogisticsNetwork);
-            StringAssert.Contains("ReservationPoolReturnOverflowWarningHash = 0x424C5252u", baseLogisticsNetwork);
-            StringAssert.Contains("ReservationPoolContextHash = 0x424C5250u", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_DroppedStorageEndpointRegistrationCount;", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_DroppedFabricatorEndpointRegistrationCount;", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_ReservationPoolExhaustionCount;", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_ReservationPoolInvalidSlotCount;", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_ReservationPoolReturnOverflowCount;", baseLogisticsNetwork);
-            StringAssert.Contains("internal static int DroppedStorageEndpointRegistrationCount => s_DroppedStorageEndpointRegistrationCount;", baseLogisticsNetwork);
-            StringAssert.Contains("internal static int DroppedFabricatorEndpointRegistrationCount => s_DroppedFabricatorEndpointRegistrationCount;", baseLogisticsNetwork);
-            StringAssert.Contains("internal static int ReservationPoolExhaustionCount => s_ReservationPoolExhaustionCount;", baseLogisticsNetwork);
-            StringAssert.Contains("internal static int ReservationPoolInvalidSlotCount => s_ReservationPoolInvalidSlotCount;", baseLogisticsNetwork);
-            StringAssert.Contains("internal static int ReservationPoolReturnOverflowCount => s_ReservationPoolReturnOverflowCount;", baseLogisticsNetwork);
-            StringAssert.Contains("s_DroppedStorageEndpointRegistrationCount = 0;", baseLogisticsNetwork);
-            StringAssert.Contains("s_DroppedFabricatorEndpointRegistrationCount = 0;", baseLogisticsNetwork);
-            StringAssert.Contains("s_ReservationPoolExhaustionCount = 0;", baseLogisticsNetwork);
-            StringAssert.Contains("s_ReservationPoolInvalidSlotCount = 0;", baseLogisticsNetwork);
-            StringAssert.Contains("s_ReservationPoolReturnOverflowCount = 0;", baseLogisticsNetwork);
-            StringAssert.Contains("private static int s_StorageReservationStaleAckCount;", droneFleetManager);
-            StringAssert.Contains("private static int s_StorageReservationMismatchAckCount;", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationStaleAckWarningHash", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationMismatchAckWarningHash", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationAckContextHash", droneFleetManager);
-            StringAssert.Contains("internal static int StorageReservationStaleAckCount =>", droneFleetManager);
-            StringAssert.Contains("internal static int StorageReservationMismatchAckCount =>", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationStaleAckCount = 0;", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationMismatchAckCount = 0;", droneFleetManager);
-            StringAssert.Contains("ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);", droneFleetManager);
-            StringAssert.Contains("EnsureStorageReservationCommitResolvedBridge();", droneFleetManager);
-            StringAssert.Contains("s_StorageReservationCommitResolvedListenerGeneration = -1;", droneFleetManager);
-            StringAssert.Contains("ThreadSafeCommandQueue.StorageReservationCommitListenerGeneration", droneFleetManager);
-            StringAssert.Contains("ThreadSafeCommandQueue.Register(s_StorageReservationCommitResolvedBridge)", droneFleetManager);
-            StringAssert.Contains("StorageReservationCommitResolvedPayload", threadSafeCommandQueue);
-            StringAssert.Contains("IStorageReservationCommitResolvedListener", threadSafeCommandQueue);
-            StringAssert.Contains("void ReleaseReservation(int reservationId);", threadSafeCommandQueue);
-            StringAssert.Contains("PrepareStorageReservationCommitBridgeForPersistenceSnapshot();", threadSafeCommandQueue);
-            StringAssert.Contains("_persistenceSnapshotCommandBuffer", threadSafeCommandQueue);
-            StringAssert.Contains("DrainPendingStorageReservationCommitsForPersistenceSnapshot();", threadSafeCommandQueue);
-            StringAssert.Contains("DrainAbandonedPendingCommands(dispatchStorageReservationFailures: false);", threadSafeCommandQueue);
-            StringAssert.Contains("DrainAbandonedPendingCommands(dispatchStorageReservationFailures: true);", threadSafeCommandQueue);
-            StringAssert.Contains("DrainAbandonedStorageReservationCommitResolvedEvents(dispatchPendingEvents: false);", threadSafeCommandQueue);
-            StringAssert.Contains("DrainAbandonedStorageReservationCommitResolvedEvents(dispatchPendingEvents: true);", threadSafeCommandQueue);
-            StringAssert.Contains("target.ReleaseReservation(command.IntValue);", threadSafeCommandQueue);
-            StringAssert.Contains("DispatchStorageReservationCommitResolvedFailure(command.SecondaryToken, command.IntValue);", threadSafeCommandQueue);
-            StringAssert.Contains("StorageReservationCommitListenerGeneration =>", threadSafeCommandQueue);
-            StringAssert.Contains("AdvanceStorageReservationCommitListenerGeneration();", threadSafeCommandQueue);
-            StringAssert.Contains("RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, committed);", threadSafeCommandQueue);
-            StringAssert.Contains("_storageCommitListenerCapacityWarningHash", threadSafeCommandQueue);
-            StringAssert.Contains("private static int _storageReservationCommitListenerCapacityExceededCount;", threadSafeCommandQueue);
-            StringAssert.Contains("public static int StorageReservationCommitListenerCapacityExceededCount =>", threadSafeCommandQueue);
-            StringAssert.Contains("_storageReservationCommitListenerCapacityExceededCount = 0;", threadSafeCommandQueue);
-            StringAssert.Contains("ThreadSafeCommandQueue.PrepareStorageReservationCommitBridgeForPersistenceSnapshot();", saveManager);
-            StringAssert.DoesNotContain("RecyclerEndpoint", baseLogisticsNetwork);
-            StringAssert.DoesNotContain("BaseLogisticsNetwork.RegisterRecycler", resourceRecycler);
-            StringAssert.DoesNotContain("BaseLogisticsNetwork.UnregisterRecycler", resourceRecycler);
-            StringAssert.DoesNotContain("using Hecton8.Construction;", resourceRecycler);
-            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(", fabricatorRuntime);
-            StringAssert.Contains("out _networkReservation", fabricatorRuntime);
-            StringAssert.Contains("BaseLogisticsNetwork.RollbackReserved(_networkReservation);", fabricatorRuntime);
-            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(_networkReservation);", fabricatorRuntime);
-            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(grid, _repairSupplyHashIds, _repairSupplyAmounts, 1, out BaseLogisticsNetwork.LogisticsReservation reservation)", repairDroneHub);
-            StringAssert.Contains("queuedReservationId = reservation.ReservationId;", repairDroneHub);
-            StringAssert.Contains("BaseLogisticsNetwork.TryCommitReservedViaCommandQueue(reservation, requesterId, out committedImmediately)", repairDroneHub);
-            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(reservation);", repairDroneHub);
-            StringAssert.Contains("hub.TryQueueDroneResupplyCommit(1, drone.DroneId, out bool committedImmediately, out int queuedReservationId)", droneFleetManager);
-            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(", maintenanceStationModule);
-            StringAssert.Contains("out _activeReservation", maintenanceStationModule);
-            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(_activeReservation);", maintenanceStationModule);
-            StringAssert.Contains("BaseLogisticsNetwork.RollbackReserved(_activeReservation);", maintenanceStationModule);
-            Assert.IsTrue(ContainsTokensInOrder(
-                maintenancePrepareRepairReservation,
-                "out _activeReservation",
-                "BaseLogisticsNetwork.CommitReserved(_activeReservation);",
-                "_activeReservation = null;",
-                "_repairTargetDurability = maxDurability;"));
-            StringAssert.Contains("private static bool s_ModRegistryEventRegistered;", resourceRecycler);
-            StringAssert.Contains("private static ModRegistryEventAdapter s_ModRegistryEventAdapter;", resourceRecycler);
-            StringAssert.Contains("s_ModRegistryEventRegistered = false;", resourceRecycler);
-            StringAssert.Contains("s_ModRegistryEventAdapter = null;", resourceRecycler);
-            StringAssert.Contains("private uint _pendingRecycleRegistryRevision;", resourceRecycler);
-            StringAssert.Contains("private bool _pendingRecycleUsesOverlay;", resourceRecycler);
-            StringAssert.Contains("private sealed class ModRegistryEventAdapter : IModRegistryEventListener", resourceRecycler);
             Assert.IsTrue(ContainsTokensInOrder(
                 registerById,
                 "string ownerId = ResolveActiveOwnerId();",
@@ -627,6 +489,41 @@ namespace Hecton8.Tests.Editor
                 "usedRegisteredOverlay = true;",
                 "return CopyYieldSnapshotNonAlloc(registeredYield, destination, out resolvedCount);",
                 "RecipeData recipe;"));
+        }
+
+        [Test]
+        public void ResourceRecyclerModule_ListensToModRegistryAndHandlesEventOverflow()
+        {
+            string resourceRecycler = ReadProjectFile("Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs");
+            string recyclerEnable = ExtractMethodBody(resourceRecycler, "private void OnEnable()");
+            string recyclerDisable = ExtractMethodBody(resourceRecycler, "private void OnDisable()");
+            string recyclerHandleEvent = ExtractMethodBody(resourceRecycler, "private static void HandleModRegistryEvent(in ModRegistryEventPayload payload)");
+            string recyclerRegisterModule = ExtractMethodBody(resourceRecycler, "private void RegisterModuleInstance()");
+            string recyclerStart = ExtractMethodBody(resourceRecycler, "private bool TryStartBufferedRecycle()");
+            string recyclerDeliver = ExtractMethodBody(resourceRecycler, "private bool TryDeliverPendingYield(PlayerInventory inventory)");
+            string recyclerRegisterListener = ExtractMethodBody(resourceRecycler, "private static void TryRegisterModRegistryListener()");
+            string recyclerUnregisterListener = ExtractMethodBody(resourceRecycler, "private static void TryUnregisterModRegistryListenerIfNoActiveModules()");
+            string recyclerMarkDirty = ExtractMethodBody(resourceRecycler, "private void MarkPendingRecycleSnapshotDirtyIfAffected(uint modHash, uint sourceItemHash)");
+            string recyclerRefresh = ExtractMethodBody(resourceRecycler, "private bool TryRefreshInvalidatedPendingYield()");
+            string recyclerReportOverflow = ExtractMethodBody(resourceRecycler, "private static void ReportActiveModuleRegistrationOverflow()");
+            string recyclerTelemetryBestEffort = ExtractMethodBody(resourceRecycler, "private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)");
+            string recyclerClearPending = ExtractMethodBody(resourceRecycler, "private void ClearPendingOutput()");
+
+            StringAssert.Contains("ActiveModuleRegistrationOverflowWarningHash = 0x5252434Fu", resourceRecycler);
+            StringAssert.Contains("ActiveModuleRegistrationOverflowContextHash = 0x52524D4Fu", resourceRecycler);
+            StringAssert.Contains("private static int s_DroppedActiveModuleRegistrationCount;", resourceRecycler);
+            StringAssert.Contains("internal static int DroppedActiveModuleRegistrationCount => s_DroppedActiveModuleRegistrationCount;", resourceRecycler);
+            StringAssert.Contains("s_DroppedActiveModuleRegistrationCount = 0;", resourceRecycler);
+            StringAssert.DoesNotContain("BaseLogisticsNetwork.RegisterRecycler", resourceRecycler);
+            StringAssert.DoesNotContain("BaseLogisticsNetwork.UnregisterRecycler", resourceRecycler);
+            StringAssert.DoesNotContain("using Hecton8.Construction;", resourceRecycler);
+            StringAssert.Contains("private static bool s_ModRegistryEventRegistered;", resourceRecycler);
+            StringAssert.Contains("private static ModRegistryEventAdapter s_ModRegistryEventAdapter;", resourceRecycler);
+            StringAssert.Contains("s_ModRegistryEventRegistered = false;", resourceRecycler);
+            StringAssert.Contains("s_ModRegistryEventAdapter = null;", resourceRecycler);
+            StringAssert.Contains("private uint _pendingRecycleRegistryRevision;", resourceRecycler);
+            StringAssert.Contains("private bool _pendingRecycleUsesOverlay;", resourceRecycler);
+            StringAssert.Contains("private sealed class ModRegistryEventAdapter : IModRegistryEventListener", resourceRecycler);
             Assert.IsTrue(ContainsTokensInOrder(
                 recyclerEnable,
                 "CacheRuntimeServicesCold();",
@@ -676,6 +573,124 @@ namespace Hecton8.Tests.Editor
                 "ActiveModuleRegistrationOverflowWarningHash,",
                 "ActiveModuleRegistrationOverflowContextHash,",
                 "s_DroppedActiveModuleRegistrationCount);"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerTelemetryBestEffort,
+                "try",
+                "GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);",
+                "catch (System.Exception)"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerStart,
+                "ScrapManager.TryBuildRecycleYieldSnapshot(",
+                "out uint overlayOwnerHash",
+                "out bool usedRegisteredOverlay",
+                "_pendingRecycleOverlayOwnerHash = overlayOwnerHash;",
+                "_pendingRecycleSubjectHash = unchecked((uint)sourceItem.PersistentHashId);",
+                "_pendingRecycleRegistryRevision = RecyclingRegistry.RegistryRevision;",
+                "_pendingRecycleUsesOverlay = usedRegisteredOverlay;",
+                "_pendingRecycleSnapshotInvalidated = false;"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerMarkDirty,
+                "if (!_isProcessing &&",
+                "!_hasPendingOutput)",
+                "return;",
+                "if (!_pendingRecycleUsesOverlay || _activeSourceItem == null)",
+                "return;",
+                "if (modHash != 0u && modHash != _pendingRecycleOverlayOwnerHash)",
+                "return;",
+                "if (sourceItemHash != 0u && sourceItemHash != _pendingRecycleSubjectHash)",
+                "return;",
+                "_pendingRecycleSnapshotInvalidated = true;"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerDeliver,
+                "if (_pendingRecycleUsesOverlay &&",
+                "_pendingRecycleRegistryRevision != RecyclingRegistry.RegistryRevision)",
+                "_pendingRecycleSnapshotInvalidated = true;",
+                "if (_pendingRecycleSnapshotInvalidated && !TryRefreshInvalidatedPendingYield())",
+                "return false;",
+                "if (_pendingYield == null || _pendingYieldCount <= 0)",
+                "return false;",
+                "ScrapManager.GrantYield(inventory, _pendingYield, _pendingYieldCount, ref grantedStackCount)"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerRefresh,
+                "ScrapManager.ClearYieldScratch(_pendingYieldScratch, _pendingYieldCount);",
+                "_pendingYield = null;",
+                "_pendingYieldCount = 0;",
+                "if (ScrapManager.TryBuildRecycleYieldSnapshot(",
+                "out uint overlayOwnerHash",
+                "out bool usedRegisteredOverlay",
+                "_pendingYield = _pendingYieldScratch;",
+                "_pendingRecycleRegistryRevision = RecyclingRegistry.RegistryRevision;",
+                "_pendingRecycleUsesOverlay = usedRegisteredOverlay;",
+                "_pendingRecycleSnapshotInvalidated = false;",
+                "return true;",
+                "if (TryBufferItem(sourceItem))",
+                "ClearPendingOutput();",
+                "return false;"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                recyclerClearPending,
+                "_pendingRecycleOverlayOwnerHash = 0u;",
+                "_pendingRecycleSubjectHash = 0u;",
+                "_pendingRecycleRegistryRevision = 0u;",
+                "_pendingRecycleUsesOverlay = false;",
+                "_pendingRecycleSnapshotInvalidated = false;"));
+        }
+
+        [Test]
+        public void BaseLogisticsNetwork_DropsEndpointRegistrationOverflowsAndValidatesReservations()
+        {
+            string baseLogisticsNetwork = ReadProjectFile("Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs");
+            string fabricatorRuntime = ReadProjectFile("Assets/_Project/Scripts/Fabricator.cs");
+            string maintenanceStationModule = ReadProjectFile("Assets/_Project/Scripts/Construction/MaintenanceStationModule.cs");
+            string registerStorageEndpoint = ExtractMethodBody(baseLogisticsNetwork, "public static void RegisterStorage(StorageCrate crate, PowerNode node)");
+            string registerFabricatorEndpoint = ExtractMethodBody(baseLogisticsNetwork, "public static void RegisterFabricator(Fabricator fabricator, PowerNode node)");
+            string storageEndpointReportOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportStorageEndpointRegistrationOverflow()");
+            string fabricatorEndpointReportOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportFabricatorEndpointRegistrationOverflow()");
+            string reservationPoolExhausted = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolExhausted()");
+            string reservationPoolInvalidSlot = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolInvalidSlot()");
+            string reservationPoolReturnOverflow = ExtractMethodBody(baseLogisticsNetwork, "private static void ReportReservationPoolReturnOverflow()");
+            string logisticsTelemetryBestEffort = ExtractMethodBody(baseLogisticsNetwork, "private static void PublishPerformanceWarningBestEffort(uint warningHash, uint contextHash, float value)");
+            string tryRentReservation = ExtractMethodBody(baseLogisticsNetwork, "private static bool TryRentReservation(PowerGrid grid, out LogisticsReservation reservation)");
+            string returnReservation = ExtractMethodBody(baseLogisticsNetwork, "private static void ReturnReservation(LogisticsReservation reservation)");
+            string maintenancePrepareRepairReservation = ExtractMethodBody(maintenanceStationModule, "private bool TryPrepareRepairReservation(");
+
+            StringAssert.Contains("StorageEndpointRegistrationOverflowWarningHash = 0x424C534Fu", baseLogisticsNetwork);
+            StringAssert.Contains("StorageEndpointRegistrationOverflowContextHash = 0x424C5343u", baseLogisticsNetwork);
+            StringAssert.Contains("FabricatorEndpointRegistrationOverflowWarningHash = 0x424C464Fu", baseLogisticsNetwork);
+            StringAssert.Contains("FabricatorEndpointRegistrationOverflowContextHash = 0x424C4643u", baseLogisticsNetwork);
+            StringAssert.Contains("ReservationPoolExhaustedWarningHash = 0x424C5258u", baseLogisticsNetwork);
+            StringAssert.Contains("ReservationPoolInvalidSlotWarningHash = 0x424C524Eu", baseLogisticsNetwork);
+            StringAssert.Contains("ReservationPoolReturnOverflowWarningHash = 0x424C5252u", baseLogisticsNetwork);
+            StringAssert.Contains("ReservationPoolContextHash = 0x424C5250u", baseLogisticsNetwork);
+            StringAssert.Contains("private static int s_DroppedStorageEndpointRegistrationCount;", baseLogisticsNetwork);
+            StringAssert.Contains("private static int s_DroppedFabricatorEndpointRegistrationCount;", baseLogisticsNetwork);
+            StringAssert.Contains("private static int s_ReservationPoolExhaustionCount;", baseLogisticsNetwork);
+            StringAssert.Contains("private static int s_ReservationPoolInvalidSlotCount;", baseLogisticsNetwork);
+            StringAssert.Contains("private static int s_ReservationPoolReturnOverflowCount;", baseLogisticsNetwork);
+            StringAssert.Contains("internal static int DroppedStorageEndpointRegistrationCount => s_DroppedStorageEndpointRegistrationCount;", baseLogisticsNetwork);
+            StringAssert.Contains("internal static int DroppedFabricatorEndpointRegistrationCount => s_DroppedFabricatorEndpointRegistrationCount;", baseLogisticsNetwork);
+            StringAssert.Contains("internal static int ReservationPoolExhaustionCount => s_ReservationPoolExhaustionCount;", baseLogisticsNetwork);
+            StringAssert.Contains("internal static int ReservationPoolInvalidSlotCount => s_ReservationPoolInvalidSlotCount;", baseLogisticsNetwork);
+            StringAssert.Contains("internal static int ReservationPoolReturnOverflowCount => s_ReservationPoolReturnOverflowCount;", baseLogisticsNetwork);
+            StringAssert.Contains("s_DroppedStorageEndpointRegistrationCount = 0;", baseLogisticsNetwork);
+            StringAssert.Contains("s_DroppedFabricatorEndpointRegistrationCount = 0;", baseLogisticsNetwork);
+            StringAssert.Contains("s_ReservationPoolExhaustionCount = 0;", baseLogisticsNetwork);
+            StringAssert.Contains("s_ReservationPoolInvalidSlotCount = 0;", baseLogisticsNetwork);
+            StringAssert.Contains("s_ReservationPoolReturnOverflowCount = 0;", baseLogisticsNetwork);
+            StringAssert.DoesNotContain("RecyclerEndpoint", baseLogisticsNetwork);
+            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(", fabricatorRuntime);
+            StringAssert.Contains("out _networkReservation", fabricatorRuntime);
+            StringAssert.Contains("BaseLogisticsNetwork.RollbackReserved(_networkReservation);", fabricatorRuntime);
+            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(_networkReservation);", fabricatorRuntime);
+            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(", maintenanceStationModule);
+            StringAssert.Contains("out _activeReservation", maintenanceStationModule);
+            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(_activeReservation);", maintenanceStationModule);
+            StringAssert.Contains("BaseLogisticsNetwork.RollbackReserved(_activeReservation);", maintenanceStationModule);
+            Assert.IsTrue(ContainsTokensInOrder(
+                maintenancePrepareRepairReservation,
+                "out _activeReservation",
+                "BaseLogisticsNetwork.CommitReserved(_activeReservation);",
+                "_activeReservation = null;",
+                "_repairTargetDurability = maxDurability;"));
             Assert.IsTrue(ContainsTokensInOrder(
                 registerStorageEndpoint,
                 "if (crate == null || node == null)",
@@ -762,6 +777,51 @@ namespace Hecton8.Tests.Editor
                 "ReservationPoolReturnOverflowWarningHash,",
                 "ReservationPoolContextHash,",
                 "s_ReservationPoolReturnOverflowCount);"));
+            Assert.IsTrue(ContainsTokensInOrder(
+                logisticsTelemetryBestEffort,
+                "try",
+                "GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);",
+                "catch (System.Exception exception) when (!(exception is FatalArchitectureException))",
+                "LogPerformanceWarningTelemetryException(exception);"));
+        }
+
+        [Test]
+        public void DroneFleetManager_HandlesReservationCommitsAndAppliesLiveState()
+        {
+            string repairDroneHub = ReadProjectFile("Assets/_Project/Scripts/Construction/RepairDroneHub.cs");
+            string droneFleetManager = ReadProjectFile("Assets/_Project/Scripts/Construction/DroneFleetManager.cs");
+            string threadSafeCommandQueue = ReadProjectFile("Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs");
+            string droneStorageAck = ExtractMethodBody(droneFleetManager, "private static void HandleStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)");
+            string droneAckLiveApply = ExtractMethodBody(droneFleetManager, "private static bool TryApplyResolvedResupplyCommitToLiveSlot(int slot, bool committed)");
+            string droneAckConsume = ExtractMethodBody(droneFleetManager, "private static bool TryConsumeResolvedResupplyCommitAck(");
+            string droneAckClear = ExtractMethodBody(droneFleetManager, "private static void ClearPendingResupplyCommitAck(");
+            string droneApplyPendingControls = ExtractMethodBody(droneFleetManager, "private static void ApplyPendingControls(");
+            string droneRefreshFleetStatus = ExtractMethodBody(droneFleetManager, "private static void RefreshFleetStatusSnapshotFromDroneStates(");
+            string droneReportStaleAck = ExtractMethodBody(droneFleetManager, "private static void ReportStorageReservationStaleAck(int requesterId)");
+            string droneReportMismatchAck = ExtractMethodBody(droneFleetManager, "private static void ReportStorageReservationMismatchAck(int reservationId)");
+            string dronePublishAckWarning = ExtractMethodBody(droneFleetManager, "private static void PublishStorageReservationAckWarningBestEffort(uint warningHash, float value)");
+            string queueDroneResupply = ExtractMethodBody(repairDroneHub, "internal bool TryQueueDroneResupplyCommit(int requestedUnits, int droneId, out bool committedImmediately, out int queuedReservationId)");
+            string applyHeadlessResupply = ExtractMethodBody(droneFleetManager, "private static void ApplyHeadlessResupply(int slot, ref HeadlessDroneState drone)");
+
+            StringAssert.Contains("private static int s_StorageReservationStaleAckCount;", droneFleetManager);
+            StringAssert.Contains("private static int s_StorageReservationMismatchAckCount;", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationStaleAckWarningHash", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationMismatchAckWarningHash", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationAckContextHash", droneFleetManager);
+            StringAssert.Contains("internal static int StorageReservationStaleAckCount =>", droneFleetManager);
+            StringAssert.Contains("internal static int StorageReservationMismatchAckCount =>", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationStaleAckCount = 0;", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationMismatchAckCount = 0;", droneFleetManager);
+            StringAssert.Contains("ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);", droneFleetManager);
+            StringAssert.Contains("EnsureStorageReservationCommitResolvedBridge();", droneFleetManager);
+            StringAssert.Contains("s_StorageReservationCommitResolvedListenerGeneration = -1;", droneFleetManager);
+            StringAssert.Contains("ThreadSafeCommandQueue.StorageReservationCommitListenerGeneration", droneFleetManager);
+            StringAssert.Contains("ThreadSafeCommandQueue.Register(s_StorageReservationCommitResolvedBridge)", droneFleetManager);
+            StringAssert.Contains("BaseLogisticsNetwork.TryReserveResources(grid, _repairSupplyHashIds, _repairSupplyAmounts, 1, out BaseLogisticsNetwork.LogisticsReservation reservation)", repairDroneHub);
+            StringAssert.Contains("queuedReservationId = reservation.ReservationId;", repairDroneHub);
+            StringAssert.Contains("BaseLogisticsNetwork.TryCommitReservedViaCommandQueue(reservation, requesterId, out committedImmediately)", repairDroneHub);
+            StringAssert.Contains("BaseLogisticsNetwork.CommitReserved(reservation);", repairDroneHub);
+            StringAssert.Contains("hub.TryQueueDroneResupplyCommit(1, drone.DroneId, out bool committedImmediately, out int queuedReservationId)", droneFleetManager);
             Assert.IsTrue(ContainsTokensInOrder(
                 droneStorageAck,
                 "int slot = ResolveHeadlessSlot(requesterId);",
@@ -859,6 +919,37 @@ namespace Hecton8.Tests.Editor
                 "GrantDroneResupply(ref drone, 1);",
                 "s_PendingResupplyReservationIdsBySlot[slot] = queuedReservationId;",
                 "drone.State = (byte)HeadlessDroneRuntimeState.ResupplyCommitPending;"));
+        }
+
+        [Test]
+        public void ThreadSafeCommandQueue_DrainsAbandonedStorageReservationsOnPersistence()
+        {
+            string threadSafeCommandQueue = ReadProjectFile("Assets/_Project/Scripts/Core/ThreadSafeCommandQueue.cs");
+            string saveManager = ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs");
+            string commandQueueRegisterStorageAckListener = ExtractMethodBody(threadSafeCommandQueue, "public static bool Register(IStorageReservationCommitResolvedListener listener)");
+            string commandQueueReportStorageAckListenerCapacity = ExtractMethodBody(threadSafeCommandQueue, "private static void ReportStorageReservationCommitListenerCapacityExceeded()");
+            string commandQueueIncrementStorageAckListenerCapacity = ExtractMethodBody(threadSafeCommandQueue, "private static void IncrementStorageReservationCommitListenerCapacityExceededCount()");
+
+            StringAssert.Contains("StorageReservationCommitResolvedPayload", threadSafeCommandQueue);
+            StringAssert.Contains("IStorageReservationCommitResolvedListener", threadSafeCommandQueue);
+            StringAssert.Contains("void ReleaseReservation(int reservationId);", threadSafeCommandQueue);
+            StringAssert.Contains("PrepareStorageReservationCommitBridgeForPersistenceSnapshot();", threadSafeCommandQueue);
+            StringAssert.Contains("_persistenceSnapshotCommandBuffer", threadSafeCommandQueue);
+            StringAssert.Contains("DrainPendingStorageReservationCommitsForPersistenceSnapshot();", threadSafeCommandQueue);
+            StringAssert.Contains("DrainAbandonedPendingCommands(dispatchStorageReservationFailures: false);", threadSafeCommandQueue);
+            StringAssert.Contains("DrainAbandonedPendingCommands(dispatchStorageReservationFailures: true);", threadSafeCommandQueue);
+            StringAssert.Contains("DrainAbandonedStorageReservationCommitResolvedEvents(dispatchPendingEvents: false);", threadSafeCommandQueue);
+            StringAssert.Contains("DrainAbandonedStorageReservationCommitResolvedEvents(dispatchPendingEvents: true);", threadSafeCommandQueue);
+            StringAssert.Contains("target.ReleaseReservation(command.IntValue);", threadSafeCommandQueue);
+            StringAssert.Contains("DispatchStorageReservationCommitResolvedFailure(command.SecondaryToken, command.IntValue);", threadSafeCommandQueue);
+            StringAssert.Contains("StorageReservationCommitListenerGeneration =>", threadSafeCommandQueue);
+            StringAssert.Contains("AdvanceStorageReservationCommitListenerGeneration();", threadSafeCommandQueue);
+            StringAssert.Contains("RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, committed);", threadSafeCommandQueue);
+            StringAssert.Contains("_storageCommitListenerCapacityWarningHash", threadSafeCommandQueue);
+            StringAssert.Contains("private static int _storageReservationCommitListenerCapacityExceededCount;", threadSafeCommandQueue);
+            StringAssert.Contains("public static int StorageReservationCommitListenerCapacityExceededCount =>", threadSafeCommandQueue);
+            StringAssert.Contains("_storageReservationCommitListenerCapacityExceededCount = 0;", threadSafeCommandQueue);
+            StringAssert.Contains("ThreadSafeCommandQueue.PrepareStorageReservationCommitBridgeForPersistenceSnapshot();", saveManager);
             Assert.IsTrue(ContainsTokensInOrder(
                 commandQueueRegisterStorageAckListener,
                 "if (listener == null)",
@@ -894,72 +985,6 @@ namespace Hecton8.Tests.Editor
                 "ref _storageReservationCommitListenerCapacityExceededCount,",
                 "currentCount + 1,",
                 "currentCount) != currentCount);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerTelemetryBestEffort,
-                "try",
-                "GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);",
-                "catch (System.Exception)"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                logisticsTelemetryBestEffort,
-                "try",
-                "GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, value);",
-                "catch (System.Exception exception) when (!(exception is FatalArchitectureException))",
-                "LogPerformanceWarningTelemetryException(exception);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerStart,
-                "ScrapManager.TryBuildRecycleYieldSnapshot(",
-                "out uint overlayOwnerHash",
-                "out bool usedRegisteredOverlay",
-                "_pendingRecycleOverlayOwnerHash = overlayOwnerHash;",
-                "_pendingRecycleSubjectHash = unchecked((uint)sourceItem.PersistentHashId);",
-                "_pendingRecycleRegistryRevision = RecyclingRegistry.RegistryRevision;",
-                "_pendingRecycleUsesOverlay = usedRegisteredOverlay;",
-                "_pendingRecycleSnapshotInvalidated = false;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerMarkDirty,
-                "if (!_isProcessing &&",
-                "!_hasPendingOutput)",
-                "return;",
-                "if (!_pendingRecycleUsesOverlay || _activeSourceItem == null)",
-                "return;",
-                "if (modHash != 0u && modHash != _pendingRecycleOverlayOwnerHash)",
-                "return;",
-                "if (sourceItemHash != 0u && sourceItemHash != _pendingRecycleSubjectHash)",
-                "return;",
-                "_pendingRecycleSnapshotInvalidated = true;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerDeliver,
-                "if (_pendingRecycleUsesOverlay &&",
-                "_pendingRecycleRegistryRevision != RecyclingRegistry.RegistryRevision)",
-                "_pendingRecycleSnapshotInvalidated = true;",
-                "if (_pendingRecycleSnapshotInvalidated && !TryRefreshInvalidatedPendingYield())",
-                "return false;",
-                "if (_pendingYield == null || _pendingYieldCount <= 0)",
-                "return false;",
-                "ScrapManager.GrantYield(inventory, _pendingYield, _pendingYieldCount, ref grantedStackCount)"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerRefresh,
-                "ScrapManager.ClearYieldScratch(_pendingYieldScratch, _pendingYieldCount);",
-                "_pendingYield = null;",
-                "_pendingYieldCount = 0;",
-                "if (ScrapManager.TryBuildRecycleYieldSnapshot(",
-                "out uint overlayOwnerHash",
-                "out bool usedRegisteredOverlay",
-                "_pendingYield = _pendingYieldScratch;",
-                "_pendingRecycleRegistryRevision = RecyclingRegistry.RegistryRevision;",
-                "_pendingRecycleUsesOverlay = usedRegisteredOverlay;",
-                "_pendingRecycleSnapshotInvalidated = false;",
-                "return true;",
-                "if (TryBufferItem(sourceItem))",
-                "ClearPendingOutput();",
-                "return false;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                recyclerClearPending,
-                "_pendingRecycleOverlayOwnerHash = 0u;",
-                "_pendingRecycleSubjectHash = 0u;",
-                "_pendingRecycleRegistryRevision = 0u;",
-                "_pendingRecycleUsesOverlay = false;",
-                "_pendingRecycleSnapshotInvalidated = false;"));
         }
 
         [Test]
