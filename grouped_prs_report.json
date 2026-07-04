@@ -1,0 +1,2223 @@
+{
+  "grouped": {
+    "TASK-129": [
+      {
+        "number": 798,
+        "title": "feat(PureLogic): TASK-129 SymbiosisBenefitMatrixCalculator",
+        "branch": "jules-10616489523543794054-dcf869e2",
+        "user": "marko1olo",
+        "created_at": "2026-06-28T08:46:44Z"
+      }
+    ],
+    "TASK-177": [
+      {
+        "number": 797,
+        "title": "feat(PureLogic): TASK-177 DroneBatteryReturnThresholdCalculator - extract from DroneFleetManager.cs",
+        "branch": "TASK-177-drone-battery-return-4634805517774551501",
+        "user": "marko1olo",
+        "created_at": "2026-06-28T08:37:55Z"
+      }
+    ],
+    "TASK-181": [
+      {
+        "number": 796,
+        "title": "feat(PureLogic): TASK-181 FluidAdvectionStepCalculator - extract from HectonFluidEngine.cs",
+        "branch": "jules-task-181-fluid-advection-3019909639939041882",
+        "user": "marko1olo",
+        "created_at": "2026-06-28T08:35:12Z"
+      }
+    ],
+    "TASK-174": [
+      {
+        "number": 795,
+        "title": "TASK-174 VisibilityTurbidityCalculator - extract from HectonAtmosphereManager.cs",
+        "branch": "feat/TASK-174-visibility-turbidity-1142064957506499125",
+        "user": "marko1olo",
+        "created_at": "2026-06-28T08:34:23Z"
+      }
+    ],
+    "TASK-191": [
+      {
+        "number": 793,
+        "title": "TASK-191: Extract GameStateTensionScorer",
+        "branch": "feat/task-191-tension-score-7440014836183428728",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T22:17:31Z"
+      }
+    ],
+    "TASK-167": [
+      {
+        "number": 792,
+        "title": "feat(PureLogic): TASK-167 BioluminescencePulseFrequencyCalculator - extract from HectonBiolumManager.cs",
+        "branch": "jules-11728190608355481166-8263ee47",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:54:03Z"
+      }
+    ],
+    "TASK-168": [
+      {
+        "number": 791,
+        "title": "feat(PureLogic): TASK-168 BioluminescenceIntensityDecayCalculator - extract from HectonBiolumManager.cs",
+        "branch": "jules-12692991880565040588-c698f056",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:53:24Z"
+      }
+    ],
+    "TASK-164": [
+      {
+        "number": 790,
+        "title": "TASK-164: SoundShadowOcclusionCalculator",
+        "branch": "jules-922471419738532736-00cc4eb3",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:50:37Z"
+      }
+    ],
+    "TASK-189": [
+      {
+        "number": 789,
+        "title": "feat(PureLogic): TASK-189 AnalogStickDeadzoneNormalizer - extract from InputDispatcher.cs",
+        "branch": "feat/purelogic-task-189-analog-stick-deadzone-4366638637229108870",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:49:06Z"
+      }
+    ],
+    "TASK-183": [
+      {
+        "number": 788,
+        "title": "TASK-183 VorticityConfinementForceCalculator Extracted",
+        "branch": "jules-12442019920467557682-29cd096d",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:49:05Z"
+      }
+    ],
+    "TASK-134": [
+      {
+        "number": 787,
+        "title": "feat(PureLogic): TASK-134 Co2ScrubberLoadCalculator - extract from SubmarineAtmosphereSystem.cs",
+        "branch": "jules-7704156133890396589-ab7bba14",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:45:33Z"
+      }
+    ],
+    "TASK-173": [
+      {
+        "number": 786,
+        "title": "TASK-173 StormWaveHeightBeaufortCalculator",
+        "branch": "jules-1967921947305953180-fbbe5863",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:45:00Z"
+      }
+    ],
+    "TASK-133": [
+      {
+        "number": 785,
+        "title": "feat(PureLogic): TASK-133 StackMergePriorityCalculator",
+        "branch": "feat-purelogic-task-133-2992114706491419114",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:33:20Z"
+      }
+    ],
+    "TASK-140": [
+      {
+        "number": 784,
+        "title": "feat(PureLogic): TASK-140 VoronoiBiomeSeedCalculator",
+        "branch": "jules-7309069949513596390-eb527342",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:32:53Z"
+      }
+    ],
+    "TASK-105": [
+      {
+        "number": 783,
+        "title": "feat(PureLogic): TASK-105 SplashEntryAngleCalculator - extract from BallisticsRuntime.cs",
+        "branch": "jules-14089311644225956794-dc598860",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:29:09Z"
+      }
+    ],
+    "TASK-179": [
+      {
+        "number": 782,
+        "title": "feat(PureLogic): TASK-179 MarchingCubesLookupTable",
+        "branch": "feat/task-179-marching-cubes-lookup-table-3222953108683766319",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:28:51Z"
+      }
+    ],
+    "TASK-136": [
+      {
+        "number": 781,
+        "title": "TASK-136 PressureEqualizationCalculator - extract from SubmarineAtmosphereSystem.cs",
+        "branch": "task-136-pressure-equalization-calculator-7978290667073379049",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:28:31Z"
+      }
+    ],
+    "TASK-113": [
+      {
+        "number": 780,
+        "title": "feat(PureLogic): TASK-113 BallastTankController - extract from SubmarineDynamicsRuntime.cs",
+        "branch": "jules-113-ballast-10575362923198361452",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:27:32Z"
+      }
+    ],
+    "TASK-190": [
+      {
+        "number": 779,
+        "title": "feat(PureLogic): TASK-190 GyroDriftFilterCalculator - extract from InputDispatcher.cs",
+        "branch": "feat/purelogic-gyro-drift-filter-14173837180795194581",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:25:02Z"
+      }
+    ],
+    "TASK-156": [
+      {
+        "number": 778,
+        "title": "TASK-156 ScooterBatteryDrainCalculator - extract from MantaScooter.cs",
+        "branch": "jules-task-156-scooter-battery-drain-3739325995088776268",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:24:10Z"
+      }
+    ],
+    "TASK-188": [
+      {
+        "number": 777,
+        "title": "feat(PureLogic): TASK-188 SignalPrioritySortCalculator - extract from SignalBusRuntime.cs",
+        "branch": "jules-task-188-signal-priority-sort-1253904439331085217",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:21:55Z"
+      }
+    ],
+    "TASK-125": [
+      {
+        "number": 776,
+        "title": "TASK-125 NutrientCycleSinkCalculator - extract from MacroEcosystemMathematicianRuntime.cs",
+        "branch": "jules-13059003309911550733-d63267e1",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:20:04Z"
+      }
+    ],
+    "TASK-144": [
+      {
+        "number": 775,
+        "title": "feat(PureLogic): TASK-144 ScannerResolutionDepthCalculator",
+        "branch": "task-144-scanner-resolution-1578074006245729725",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:18:24Z"
+      }
+    ],
+    "TASK-178": [
+      {
+        "number": 774,
+        "title": "TASK-178 VoxelSdfBooleanSubtraction - extract from HectonVoxelEngine.cs",
+        "branch": "jules-16458612385037249272-3d634ba1",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:16:42Z"
+      }
+    ],
+    "TASK-199": [
+      {
+        "number": 773,
+        "title": "feat(PureLogic): TASK-199 O2BarPulseRateCalculator - extract from VisorHUDController.cs",
+        "branch": "feature/TASK-199-O2BarPulseRateCalculator-7074750584167514335",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:15:50Z"
+      }
+    ],
+    "TASK-102": [
+      {
+        "number": 772,
+        "title": "feat(PureLogic): TASK-102 FaunaFleeVectorCalculator - extract from FaunaKinematicsRuntime.cs",
+        "branch": "jules-12860854705226858259-b8aba385",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:15:42Z"
+      }
+    ],
+    "TASK-138": [
+      {
+        "number": 771,
+        "title": "feat(PureLogic): TASK-138 TidalForceAtPointCalculator",
+        "branch": "feature/task-138-tidal-force-calc-7096646823762944790",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:15:39Z"
+      }
+    ],
+    "TASK-104": [
+      {
+        "number": 770,
+        "title": "feat(PureLogic): TASK-104 HarpoonTensionForceCalculator - extract from HarpoonTensionSolver328.cs",
+        "branch": "jules-11805914636917053562-355154e2",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:15:29Z"
+      }
+    ],
+    "TASK-116": [
+      {
+        "number": 769,
+        "title": "feat(PureLogic): TASK-116 StructuralDepthRatingCalculator - extract from HullIntegrityRuntime.cs",
+        "branch": "jules-15784363652748786298-793a3f59",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:15:04Z"
+      }
+    ],
+    "TASK-172": [
+      {
+        "number": 768,
+        "title": "feat(PureLogic): TASK-172 UpwellingNutrientFluxCalculator",
+        "branch": "feat-upwelling-flux-calculator-13691057447632473467",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:14:41Z"
+      }
+    ],
+    "TASK-175": [
+      {
+        "number": 767,
+        "title": "feat(PureLogic): TASK-175 DronePathfindCostCalculator",
+        "branch": "feat/task-175-drone-cost-calculator-9717460303855636625",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:13:25Z"
+      }
+    ],
+    "TASK-195": [
+      {
+        "number": 766,
+        "title": "feat(PureLogic): TASK-195 GrainEnvelopeCalculator - extract from DynamicMusicGranularSynthesizer.cs",
+        "branch": "jules-14743456397578856390-dc50de87",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:12:03Z"
+      }
+    ],
+    "TASK-124": [
+      {
+        "number": 765,
+        "title": "feat(PureLogic): Extract LotkaVolterraPopulationStep",
+        "branch": "task-124-lotka-volterra-extraction-17924803413395521950",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:12:01Z"
+      }
+    ],
+    "TASK-198": [
+      {
+        "number": 764,
+        "title": "feat(PureLogic): TASK-198 UnderwaterFogDensityCalculator - extract from HectonUnderwaterVisuals.cs",
+        "branch": "feat/task-198-purelogic-fog-density-7041665514570556139",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:11:05Z"
+      }
+    ],
+    "TASK-187": [
+      {
+        "number": 763,
+        "title": "TASK-187 Extract Pure Math logic for FixedCapacityRingBuffer",
+        "branch": "jules-396653800619230052-40365248",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:10:28Z"
+      }
+    ],
+    "TASK-197": [
+      {
+        "number": 762,
+        "title": "feat(PureLogic): Extract Caustic Intensity Depth Calculator",
+        "branch": "task-197-caustic-intensity-7873227998665252365",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:10:25Z"
+      }
+    ],
+    "TASK-192": [
+      {
+        "number": 761,
+        "title": "feat(PureLogic): Extract MusicStemBlendCrossfader from monolith",
+        "branch": "task-192-11810722801486665424",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:10:04Z"
+      }
+    ],
+    "TASK-194": [
+      {
+        "number": 760,
+        "title": "feat(PureLogic): TASK-194 ReverbPreDelayCalculator - extract from AdaptiveStemAudioMixer.cs",
+        "branch": "jules-12893659982477074078-1b2a4ce0",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:10:04Z"
+      }
+    ],
+    "TASK-171": [
+      {
+        "number": 759,
+        "title": "feat(PureLogic): TASK-171 MarineSnowFluxCalculator - extract from NutrientDriftRuntime.cs",
+        "branch": "feat/purelogic-marine-snow-flux-6112050570073445909",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:09:47Z"
+      }
+    ],
+    "TASK-180": [
+      {
+        "number": 758,
+        "title": "feat(PureLogic): TASK-180 LodChunkSelector - extract from HectonVoxelEngine.cs",
+        "branch": "task-180-lod-chunk-selector-2077089289039712674",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:09:36Z"
+      }
+    ],
+    "TASK-200": [
+      {
+        "number": 757,
+        "title": "feat(PureLogic): TASK-200 DepthGaugeNonlinearCalculator - extract from VisorHUDController.cs",
+        "branch": "task-200-depth-gauge-nonlinear-2710617198496926417",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:09:03Z"
+      }
+    ],
+    "TASK-165": [
+      {
+        "number": 756,
+        "title": "feat(PureLogic): TASK-165 VerletCableSimulator - extract from CablePhysicsSolver132.cs",
+        "branch": "feat/purelogic/task-165-verlet-cable-simulator-14107977946533227015",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:07:56Z"
+      }
+    ],
+    "TASK-184": [
+      {
+        "number": 755,
+        "title": "feat(PureLogic): TASK-184 SaveChecksumVerifier - extract from SaveBinaryStorage.cs",
+        "branch": "feat/task-184-save-checksum-verifier-7785201467927256941",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:07:56Z"
+      }
+    ],
+    "TASK-163": [
+      {
+        "number": 754,
+        "title": "TASK-163: Extract Echolocation Range Calculator to Pure C# Logic",
+        "branch": "jules-12153081657136354732-34a05d88",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:07:41Z"
+      }
+    ],
+    "TASK-193": [
+      {
+        "number": 753,
+        "title": "feat(PureLogic): TASK-193 LufsNormalizationCalculator",
+        "branch": "task-193-lufs-normalization-calculator-17074688682800190372",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:07:27Z"
+      }
+    ],
+    "TASK-182": [
+      {
+        "number": 752,
+        "title": "feat(PureLogic): TASK-182 FluidPressureJacobiSolver - extract from HectonFluidEngine.cs",
+        "branch": "feat/task-182-fluid-pressure-jacobi-solver-1311470747825303057",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:07:14Z"
+      }
+    ],
+    "TASK-161": [
+      {
+        "number": 749,
+        "title": "feat(PureLogic): TASK-161 TetherSagCatenaryCalculator - extract from TetherInstance.cs",
+        "branch": "jules-feat-task-161-tethersag-14683528699847578130",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:05:31Z"
+      }
+    ],
+    "TASK-196": [
+      {
+        "number": 748,
+        "title": "feat(PureLogic): TASK-196 PitchShiftResampleCalculator",
+        "branch": "task-196-pitchshift-resample-calc-14660437438469875430",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:05:16Z"
+      }
+    ],
+    "TASK-166": [
+      {
+        "number": 747,
+        "title": "feat(PureLogic): TASK-166 CableConstraintSatisfier - extract from CablePhysicsSolver132.cs",
+        "branch": "feature/purelogic-cableconstraint-14093772158875935179",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:05:03Z"
+      }
+    ],
+    "TASK-162": [
+      {
+        "number": 746,
+        "title": "feat(PureLogic): TASK-162 TetherSnapLoadCalculator - extract from TetherInstance.cs",
+        "branch": "feat/purelogic-tethersnaploadcalculator-10794038645052482532",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:04:00Z"
+      }
+    ],
+    "TASK-186": [
+      {
+        "number": 744,
+        "title": "feat(PureLogic): TASK-186 SaveMerkleHashNodeCalculator",
+        "branch": "task-186-merkle-hash-5948420425111149875",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:03:29Z"
+      }
+    ],
+    "TASK-170": [
+      {
+        "number": 743,
+        "title": "feat(PureLogic): TASK-170 DepositDepletionCurveCalculator",
+        "branch": "feat/TASK-170-pure-logic-depletion-curve-10975079176907852497",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:03:05Z"
+      }
+    ],
+    "TASK-169": [
+      {
+        "number": 742,
+        "title": "feat(PureLogic): TASK-169 ScarcityPriceSpikeCalculator - extract from ResourceScarcityDirector.cs",
+        "branch": "task-169-scarcity-calculator-2545439019442858059",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:02:26Z"
+      }
+    ],
+    "TASK-132": [
+      {
+        "number": 741,
+        "title": "feat(PureLogic): TASK-132 WeightPenaltyCurveCalculator",
+        "branch": "TASK-132-weight-penalty-calculator-17507966144096457588",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:01:51Z"
+      },
+      {
+        "number": 731,
+        "title": "feat(PureLogic): TASK-132 WeightPenaltyCurveCalculator",
+        "branch": "feat/task-132-pure-logic-weight-penalty-15946494375110616000",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:50:10Z"
+      }
+    ],
+    "TASK-139": [
+      {
+        "number": 740,
+        "title": "feat(PureLogic): TASK-139 SolarHourAngleCalculator - extract from HectonCelestialEngine.cs",
+        "branch": "jules-14576556675293437067-a455d009",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T21:00:52Z"
+      }
+    ],
+    "TASK-122": [
+      {
+        "number": 739,
+        "title": "feat(PureLogic): TASK-122 SpawnCooldownGate",
+        "branch": "jules-4223059181851240811-2199a2ee",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:59:55Z"
+      }
+    ],
+    "TASK-115": [
+      {
+        "number": 738,
+        "title": "feat(PureLogic): TASK-115 PropellerCavitationLimitCalculator",
+        "branch": "feat/task-115-propeller-cavitation-14848586980537976988",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:58:58Z"
+      }
+    ],
+    "TASK-159": [
+      {
+        "number": 736,
+        "title": "feat(PureLogic): TASK-159 LegGaitPhaseCalculator - extract from ProceduralCrabLegIKRuntime.cs",
+        "branch": "feat/task-159-leg-gait-phase-calculator-7639215741353225989",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:54:53Z"
+      }
+    ],
+    "TASK-151": [
+      {
+        "number": 735,
+        "title": "feat(PureLogic): TASK-151 QuestDagUnlockChecker",
+        "branch": "task-151-12214834902736105046",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:53:17Z"
+      }
+    ],
+    "TASK-141": [
+      {
+        "number": 734,
+        "title": "feat(PureLogic): TASK-141 CaveGraphConnectivityChecker - extract from CaveGraphGenerator.cs",
+        "branch": "jules-559963382594345089-f91a7978",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:52:05Z"
+      }
+    ],
+    "TASK-130": [
+      {
+        "number": 733,
+        "title": "TASK-130 ChemicalDiffusionSolver - extract from ChemicalInfluenceGrid.cs",
+        "branch": "feat/task-130-chemical-diffusion-solver-4614016265365504194",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:51:35Z"
+      }
+    ],
+    "TASK-155": [
+      {
+        "number": 730,
+        "title": "feat(PureLogic): TASK-155 ScooterThrustCurveCalculator",
+        "branch": "jules-813695235057730802-85ae9470",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:50:02Z"
+      }
+    ],
+    "TASK-150": [
+      {
+        "number": 729,
+        "title": "feat(PureLogic): Extract crafting yield random roll to pure C# isolation",
+        "branch": "task-150-purelogic-yieldroll-2986724925816429744",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:49:52Z"
+      }
+    ],
+    "TASK-145": [
+      {
+        "number": 728,
+        "title": "feat(PureLogic): TASK-145 RepairRateMaterialCalculator - extract from RepairTool.cs",
+        "branch": "purelogic/task-145-9956850314997369770",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:49:45Z"
+      }
+    ],
+    "TASK-112": [
+      {
+        "number": 727,
+        "title": "feat(PureLogic): TASK-112 SolarIrradianceDepthCalculator - extract from PowerGrid.cs",
+        "branch": "task-112-solar-irradiance-5179607820043328045",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:49:14Z"
+      }
+    ],
+    "TASK-147": [
+      {
+        "number": 726,
+        "title": "TASK-147: Extract LaserBeamIntensityAttenuationCalculator",
+        "branch": "jules/task-147-laser-beam-attenuation-15564901677402424195",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:48:10Z"
+      }
+    ],
+    "TASK-149": [
+      {
+        "number": 725,
+        "title": "feat(PureLogic): TASK-149 FabricationCraftTimeModifier - extract from FabricationAssemblerRuntime.cs",
+        "branch": "jules-7645769110639132046-76c72b27",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:47:42Z"
+      }
+    ],
+    "TASK-157": [
+      {
+        "number": 724,
+        "title": "feat(PureLogic): TASK-157 ArmReachIkSolver - extract from ExosuitKinematicsRuntime.cs",
+        "branch": "jules-12128007097260695414-d991ad43",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:47:15Z"
+      }
+    ],
+    "TASK-158": [
+      {
+        "number": 722,
+        "title": "feat(PureLogic): TASK-158 ServoTorqueLoadCalculator - extract from ExosuitKinematicsRuntime.cs",
+        "branch": "jules-14874473123813752741-3525f35a",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:45:58Z"
+      }
+    ],
+    "TASK-114": [
+      {
+        "number": 721,
+        "title": "feat(PureLogic): TASK-114 PitchTrimCorrectionCalculator",
+        "branch": "TASK-114-pitch-trim-correction-17531619969703766765",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:45:56Z"
+      }
+    ],
+    "TASK-101": [
+      {
+        "number": 720,
+        "title": "feat(PureLogic): TASK-101 LeviathanTentacleSpringCalculator - extract from LeviathanTentacleVerletSolver.cs",
+        "branch": "jules-task-101-15989065075922878967",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:45:46Z"
+      }
+    ],
+    "TASK-148": [
+      {
+        "number": 718,
+        "title": "feat(PureLogic): TASK-148 LaserCutDepthPowerCalculator",
+        "branch": "feat/TASK-148-laser-cut-depth-12488489565788323042",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:45:19Z"
+      }
+    ],
+    "TASK-160": [
+      {
+        "number": 717,
+        "title": "feat(PureLogic): TASK-160 StepTargetPredictor",
+        "branch": "jules-1139284449325187336-72e0631d",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:45:07Z"
+      }
+    ],
+    "TASK-108": [
+      {
+        "number": 716,
+        "title": "feat(PureLogic): TASK-108 AtmosphereLeakRateCalculator - extract from GasDynamicsSolver.cs",
+        "branch": "task-108-atmosphere-leak-rate-79047149778633382",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:44:39Z"
+      }
+    ],
+    "TASK-142": [
+      {
+        "number": 715,
+        "title": "feat(PureLogic): TASK-142 Extract SeismicRichterDamageCalculator",
+        "branch": "feat/task-142-seismic-damage-calculator-1138867833359540751",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:44:20Z"
+      }
+    ],
+    "TASK-119": [
+      {
+        "number": 714,
+        "title": "feat(PureLogic): TASK-119 RadiationDoseAccumulator - extract from HectonSurvivalSystem.cs",
+        "branch": "feat/purelogic-radiation-dose-accumulation-9626891009414080592",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:50Z"
+      }
+    ],
+    "TASK-123": [
+      {
+        "number": 713,
+        "title": "feat(PureLogic): TASK-123 StressSpawnEscalationCalculator",
+        "branch": "jules-5179128752212964802-134c0c16",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:41Z"
+      }
+    ],
+    "TASK-146": [
+      {
+        "number": 712,
+        "title": "feat(PureLogic): TASK-146 WeldHeatDissipationCalculator - extract from RepairTool.cs",
+        "branch": "feat/task-146-weld-heat-dissipation-18313680182416709570",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:40Z"
+      }
+    ],
+    "TASK-106": [
+      {
+        "number": 711,
+        "title": "feat(PureLogic): TASK-106 IdealGasPressureSolver - extract from GasDynamicsSolver.cs",
+        "branch": "task-106-ideal-gas-pressure-17862384528604506492",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:26Z"
+      }
+    ],
+    "TASK-103": [
+      {
+        "number": 710,
+        "title": "TASK-103: Implement ProjectileDropCalculator",
+        "branch": "feature/task-103-projectile-drop-17544382091181539858",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:23Z"
+      }
+    ],
+    "TASK-126": [
+      {
+        "number": 709,
+        "title": "feat(PureLogic): TASK-126 Extract BloomTriggerThresholdCalculator",
+        "branch": "feat/purelogic-bloom-calculator-8800391978966423869",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:05Z"
+      }
+    ],
+    "TASK-135": [
+      {
+        "number": 708,
+        "title": "feat(PureLogic): TASK-135 FireOxygenConsumptionCalculator - extract from SubmarineAtmosphereSystem.cs",
+        "branch": "feat/task-135-fire-oxygen-consumption-15943092239521941781",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:02Z"
+      }
+    ],
+    "TASK-143": [
+      {
+        "number": 707,
+        "title": "TASK-143: Extract Sonar Ping Return Time Math",
+        "branch": "feat/task-143-sonar-ping-return-time-5148650786048517987",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:43:01Z"
+      }
+    ],
+    "TASK-109": [
+      {
+        "number": 706,
+        "title": "feat(PureLogic): TASK-109 DecompressionStopTimeCalculator - extract from GasDynamicsSolver.cs",
+        "branch": "feat/purelogic-TASK-109-decompression-stop-5097548685745153336",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:42:10Z"
+      }
+    ],
+    "TASK-153": [
+      {
+        "number": 705,
+        "title": "feat(PureLogic): TASK-153 AnchorStabilityScoreCalculator",
+        "branch": "jules-17560825686391070725-16c05b51",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:41:53Z"
+      }
+    ],
+    "TASK-154": [
+      {
+        "number": 704,
+        "title": "feat(PureLogic): TASK-154 FloodFillRoomVolumeCalculator - extract from HabitatGraphManager.cs",
+        "branch": "task-154-flood-fill-room-volume-1238269205106662682",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:41:43Z"
+      }
+    ],
+    "TASK-28": [
+      {
+        "number": 703,
+        "title": "feat(PureLogic): TASK-28 AmbientEncounterSpawningWeightCalculator",
+        "branch": "jules-9426092474994305010-2f93239d",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:41:33Z"
+      }
+    ],
+    "TASK-128": [
+      {
+        "number": 702,
+        "title": "TASK-128: Extract ExtinctionRiskIndexCalculator to Pure C#",
+        "branch": "task-128-extinction-risk-index-17254607932301460012",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:41:25Z"
+      }
+    ],
+    "TASK-110": [
+      {
+        "number": 701,
+        "title": "feat(PureLogic): TASK-110 PowerLoadBalancer - extract from PowerGrid.cs",
+        "branch": "feat/purelogic-task-110-4330882912046198800",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:40:43Z"
+      }
+    ],
+    "TASK-117": [
+      {
+        "number": 699,
+        "title": "feat(PureLogic): TASK-117 CaloricDeficitPenaltyCalculator - extract from HectonSurvivalSystem.cs",
+        "branch": "feature/task-117-caloric-deficit-10638088173076568248",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:39:47Z"
+      }
+    ],
+    "TASK-111": [
+      {
+        "number": 698,
+        "title": "feat(PureLogic): TASK-111 BatteryChargeCurveCalculator - extract from PowerGrid.cs",
+        "branch": "feat/pure-logic-battery-charge-curve-13383391387144625402",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:39:41Z"
+      }
+    ],
+    "TASK-118": [
+      {
+        "number": 697,
+        "title": "feat: Extracted hydration sweat loss calculation pure C# logic",
+        "branch": "task-118-sweat-calculator-4130209564912127752",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:39:39Z"
+      }
+    ],
+    "TASK-120": [
+      {
+        "number": 695,
+        "title": "feat(PureLogic): TASK-120 HypothermiaShiverCurveCalculator - extract from HectonSurvivalSystem.cs",
+        "branch": "TASK-120-hypothermia-curve-18022112901040842581",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T20:38:54Z"
+      }
+    ],
+    "TASK-095": [
+      {
+        "number": 689,
+        "title": "feat(PureLogic): TASK-095 ProjectileDamageFalloffCalculator",
+        "branch": "jules-feat-purelogic-task-095-12187073869645445128",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:30:47Z"
+      }
+    ],
+    "TASK-092": [
+      {
+        "number": 687,
+        "title": "TASK-092 CoreTempEquilibriumSolver - extract from ShinobuPhysiologyRuntime.cs",
+        "branch": "feat/task-092-core-temp-solver-13776723114849506992",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:16:54Z"
+      },
+      {
+        "number": 684,
+        "title": "TASK-092: Extract CoreTempEquilibriumSolver",
+        "branch": "feat/core-temp-solver-17644630937457420497",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:04:36Z"
+      }
+    ],
+    "TASK-091": [
+      {
+        "number": 686,
+        "title": "feat: Extract NitrogenNarcosisModel into PureLogic",
+        "branch": "feat/task-091-nitrogen-narcosis-16981468633037215455",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:06:13Z"
+      }
+    ],
+    "TASK-096": [
+      {
+        "number": 685,
+        "title": "feat(PureLogic): TASK-096 ExplosionRadialDamageCalculator - extract from CombatDamageRuntime.cs",
+        "branch": "pure-logic-radial-damage-10141070135441309852",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:06:05Z"
+      }
+    ],
+    "TASK-093": [
+      {
+        "number": 683,
+        "title": "TASK-093: HeartRateExertionModel Pure Logic Extraction",
+        "branch": "feat/task-093-heart-rate-model-8371863631258382640",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:03:34Z"
+      }
+    ],
+    "TASK-094": [
+      {
+        "number": 682,
+        "title": "feat(PureLogic): TASK-094 ArmorPenetrationCalculator - extract from CombatDamageRuntime.cs",
+        "branch": "feat/task-094-armor-penetration-3676665393169754120",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:02:46Z"
+      }
+    ],
+    "TASK-099": [
+      {
+        "number": 681,
+        "title": "feat(PureLogic): TASK-099 PredatorStalkSpeedCalculator - extract from FaunaKinematicsRuntime.cs",
+        "branch": "feat/task-099-predator-stalk-speed-4723704187748418322",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T19:01:03Z"
+      }
+    ],
+    "TASK-100": [
+      {
+        "number": 680,
+        "title": "feat(PureLogic): TASK-100 SchoolingSeparationForceCalculator - extract from FaunaKinematicsRuntime.cs",
+        "branch": "feat/purelogic-separation-force-10883082269195824007",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:59:56Z"
+      }
+    ],
+    "TASK-097": [
+      {
+        "number": 679,
+        "title": "TASK-097 BleedStackDecayModel - extract from CombatDamageRuntime.cs",
+        "branch": "task-097-bleed-stack-decay-model-990629573804932295",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:57:57Z"
+      }
+    ],
+    "TASK-47": [
+      {
+        "number": 678,
+        "title": "feat(PureLogic): TASK-47 HypoxiaVisorBlurIntensityCalculator - extract from HectonPlayerMovement.cs",
+        "branch": "feat/task-47-hypoxia-blur-5475570021641904229",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:42:49Z"
+      }
+    ],
+    "TASK-084": [
+      {
+        "number": 677,
+        "title": "feat(PureLogic): TASK-084 StrafeAngleBlendWeightCalculator",
+        "branch": "feat/task-084-strafe-blend-weight-2106367885062601815",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:23:06Z"
+      }
+    ],
+    "TASK-75": [
+      {
+        "number": 676,
+        "title": "feat: TASK-75 SuitBatteryThermalEfficiencyCalculator pure C# extraction",
+        "branch": "jules-15905629202795908313-0ba7c108",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:14:37Z"
+      }
+    ],
+    "TASK-64": [
+      {
+        "number": 675,
+        "title": "🧹 [TASK-64] Extract AtmosphericRoomGasDiffusionCalculator pure math logic",
+        "branch": "jules-task-64-fick-law-diffusion-11089401009748244500",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:12:39Z"
+      }
+    ],
+    "TASK-081": [
+      {
+        "number": 674,
+        "title": "TASK-081 Extract Somatic Drag Curve",
+        "branch": "task-081-somatic-drag-pure-csharp-9167037858630328739",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:04:05Z"
+      }
+    ],
+    "TASK-58": [
+      {
+        "number": 673,
+        "title": "feat(PureLogic): TASK-58 CeilingConcavityAirPocketVolumeCalculator",
+        "branch": "jules-2628457571949959327-85d92eed",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:00:39Z"
+      }
+    ],
+    "TASK-39": [
+      {
+        "number": 672,
+        "title": "feat(PureLogic): TASK-39 LaserCutterVoxelDamageCalculator",
+        "branch": "jules-16086338979390375503-17bad84f",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T18:00:36Z"
+      }
+    ],
+    "TASK-70": [
+      {
+        "number": 671,
+        "title": "feat(PureLogic): TASK-70 NitrogenNarcosisCriticalDepthCalculator",
+        "branch": "feat/TASK-70-NitrogenNarcosisCriticalDepthCalculator-2589274802124577499",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T17:59:24Z"
+      }
+    ],
+    "TASK-089": [
+      {
+        "number": 668,
+        "title": "TASK-089: Extract Suit O2 Consumption Logic",
+        "branch": "feature/TASK-089-suit-o2-consumption-4188982235636779942",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T17:17:10Z"
+      }
+    ],
+    "TASK-078": [
+      {
+        "number": 667,
+        "title": "feat(PureLogic): TASK-078 CrouchCapsuleLerp - extract from HectonPlayerMovement.cs",
+        "branch": "jules-6734421379573886318-43f24ebb",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T17:07:09Z"
+      }
+    ],
+    "TASK-088": [
+      {
+        "number": 666,
+        "title": "TASK-088: Extract ThermoclineResistanceCalculator to Pure C# Logic",
+        "branch": "feat/task-088-thermocline-resistance-7384452021893144021",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:50:59Z"
+      }
+    ],
+    "TASK-076": [
+      {
+        "number": 665,
+        "title": "feat(PureLogic): TASK-076 WallSlideFrictionCalculator - extract from HectonPlayerMovement.cs",
+        "branch": "feat/task-076-wallslide-friction-10347584462097268732",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:50:44Z"
+      }
+    ],
+    "TASK-71": [
+      {
+        "number": 664,
+        "title": "feat(PureLogic): TASK-71 RockAlignmentSplineNormalCalculator",
+        "branch": "jules-14429138959060222112-7790d646",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:44:25Z"
+      }
+    ],
+    "TASK-087": [
+      {
+        "number": 663,
+        "title": "feat: extract pressure-induced crush damage model to pure C# logic",
+        "branch": "jules-task-087-crush-damage-1429842779001400470",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:43:50Z"
+      }
+    ],
+    "TASK-67": [
+      {
+        "number": 662,
+        "title": "feat(PureLogic): TASK-67 FaunaSensoryDetectionRangeCalculator - extract from FaunaDirector.cs",
+        "branch": "jules-10407473767015790946-a885af1e",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:42:51Z"
+      }
+    ],
+    "TASK-50": [
+      {
+        "number": 661,
+        "title": "feat(PureLogic): TASK-50 ProceduralFoliageScatterBudgetCalculator - extract from ScatterBudgetController.cs",
+        "branch": "jules-1554460721118720220-358ed1e9",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:37:13Z"
+      }
+    ],
+    "TASK-51": [
+      {
+        "number": 660,
+        "title": "feat(PureLogic): TASK-51 InventorySalinityCorrosionCalculator",
+        "branch": "jules-8040178975372814979-2173c150",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:36:37Z"
+      }
+    ],
+    "TASK-090": [
+      {
+        "number": 659,
+        "title": "feat(PureLogic): TASK-090 Co2ScrubberEfficiencyModel - extract from ShinobuPhysiologyRuntime.cs",
+        "branch": "feat/task-090-co2-scrubber-efficiency-10902104581448398810",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:34:17Z"
+      }
+    ],
+    "TASK-086": [
+      {
+        "number": 658,
+        "title": "Extract OceanCurrentDragCalculator for Pure Math Isolation",
+        "branch": "task-086-ocean-drag-calc-2366167334892745155",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:32:19Z"
+      }
+    ],
+    "TASK-60": [
+      {
+        "number": 657,
+        "title": "feat(PureLogic): Extract SubseaVehicleDopplerReverbShiftCalculator",
+        "branch": "feat/pure-logic/task-60-doppler-reverb-shift-890846523741787262",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:26:45Z"
+      }
+    ],
+    "TASK-085": [
+      {
+        "number": 656,
+        "title": "feat(PureLogic): TASK-085 Extract Buoyancy Density Ratio Math",
+        "branch": "task-085-buoyancy-math-2738770825091521153",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:25:52Z"
+      }
+    ],
+    "TASK-61": [
+      {
+        "number": 655,
+        "title": "feat(PureLogic): TASK-61 SoundObstructionLowpassCutoffCalculator",
+        "branch": "feat/task-61-sound-obstruction-7084495970415794660",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:23:56Z"
+      }
+    ],
+    "TASK-68": [
+      {
+        "number": 654,
+        "title": "feat(PureLogic): TASK-68 FaunaPheromoneTrackingVector",
+        "branch": "jules-task-68-fauna-pheromone-tracking-vector-9152221183628047931",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:18:51Z"
+      }
+    ],
+    "TASK-44": [
+      {
+        "number": 653,
+        "title": "feat(PureLogic): TASK-44 VoxelExplosionDeformationVolumeCalculator",
+        "branch": "feat/task-44-voxel-explosion-calc-7520734256466661743",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:18:16Z"
+      }
+    ],
+    "TASK-35": [
+      {
+        "number": 652,
+        "title": "feat(PureLogic): TASK-35 AmbientTemperatureDepthGradientCalculator - extract from HectonAtmosphereManager.cs",
+        "branch": "jules-11783400772560757678-bf56093e",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T16:00:57Z"
+      }
+    ],
+    "TASK-59": [
+      {
+        "number": 649,
+        "title": "feat(PureLogic): TASK-59 VoxelCellDirtystateBitHashingCalculator",
+        "branch": "jules-task-59-12755909783507135465",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:56:43Z"
+      }
+    ],
+    "TASK-66": [
+      {
+        "number": 648,
+        "title": "feat(PureLogic): TASK-66 FaunaObstacleAvoidanceVector - extract from HectonDirectorAI.cs",
+        "branch": "feat/purelogic-task-66-obstacle-avoidance-15813365611863189769",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:55:02Z"
+      }
+    ],
+    "TASK-082": [
+      {
+        "number": 647,
+        "title": "feat(PureLogic): TASK-082 InertiaTransferCalculator - extract from PlayerKinematicsRuntime.cs",
+        "branch": "feat/purelogic-inertia-transfer-9764421455747469122",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:50:34Z"
+      }
+    ],
+    "TASK-72": [
+      {
+        "number": 644,
+        "title": "TASK-72: PoissondiscLandmarkSpacingSolver Extraction",
+        "branch": "task-72-2843213069830498153",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:47:28Z"
+      }
+    ],
+    "TASK-65": [
+      {
+        "number": 641,
+        "title": "feat(PureLogic): TASK-65 ModuleThermalDissipationRate - extract from SubmarineAtmosphereSystem.cs",
+        "branch": "feat/purelogic-thermal-dissipation-5183078783614999288",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:46:00Z"
+      }
+    ],
+    "TASK-55": [
+      {
+        "number": 640,
+        "title": "feat(PureLogic): TASK-55 AbyssalVortexAngularTorqueCalculator",
+        "branch": "jules-4254285745278871539-e16548ad",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:45:54Z"
+      }
+    ],
+    "TASK-46": [
+      {
+        "number": 636,
+        "title": "feat(PureLogic): TASK-46 DecompressionNitrogenLoadCalculator",
+        "branch": "jules-17819190502993041478-fd84eb67",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:45:01Z"
+      }
+    ],
+    "TASK-57": [
+      {
+        "number": 633,
+        "title": "TASK-57 SurfaceCurrentWindshearVector",
+        "branch": "task-57-surface-current-windshear-6482590544042390431",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:44:45Z"
+      },
+      {
+        "number": 626,
+        "title": "feat(PureLogic): TASK-57 SurfaceCurrentWindshearVector",
+        "branch": "jules-11865523464413771990-7073635c",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:42:33Z"
+      }
+    ],
+    "TASK-077": [
+      {
+        "number": 634,
+        "title": "feat(PureLogic): TASK-077 LedgeGrabImpulseCalculator",
+        "branch": "task-077-ledgegrab-14191657711680107230",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:44:45Z"
+      }
+    ],
+    "TASK-56": [
+      {
+        "number": 631,
+        "title": "feat(PureLogic): TASK-56 CavitationBurstShockwaveForce - extract from HectonFluidEngine.cs",
+        "branch": "jules-6924392091639442132-f31e3772",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:44:34Z"
+      }
+    ],
+    "TASK-42": [
+      {
+        "number": 630,
+        "title": "feat(PureLogic): TASK-42 AcousticZoneReverbDecay",
+        "branch": "feat/purelogic-acoustic-zone-reverb-decay-5619657620772131088",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:43:09Z"
+      }
+    ],
+    "TASK-079": [
+      {
+        "number": 628,
+        "title": "feat(PureLogic): TASK-079 SprintStaminaGate - extract from HectonPlayerMovement.cs",
+        "branch": "task-079-sprintstaminagate-7941100920926363231",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:42:52Z"
+      }
+    ],
+    "TASK-41": [
+      {
+        "number": 623,
+        "title": "feat(PureLogic): TASK-41 AudioDistanceAttenuationCurveCalculator",
+        "branch": "feat/pure-logic/task-41-audio-attenuation-7404044596366037113",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:40:51Z"
+      }
+    ],
+    "TASK-74": [
+      {
+        "number": 622,
+        "title": "feat(PureLogic): TASK-74 BeaconNetworkSignalAttenuationCalculator - extract from BeaconNetworkSystem.cs",
+        "branch": "task-74-beacon-attenuation-9284605261557024242",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:40:44Z"
+      }
+    ],
+    "TASK-63": [
+      {
+        "number": 620,
+        "title": "feat(PureLogic): TASK-63 SaveDeltaVoxelStatePackingCalculator",
+        "branch": "task-63-save-delta-voxel-packing-2991960462404543150",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:40:35Z"
+      }
+    ],
+    "TASK-52": [
+      {
+        "number": 619,
+        "title": "feat(PureLogic): TASK-52 InventoryItemDefragmentationConsolidationCalculator - extract from PlayerInventory.cs",
+        "branch": "task-52-inventory-defrag-consolidation-8170813436390887580",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:40:07Z"
+      }
+    ],
+    "TASK-43": [
+      {
+        "number": 617,
+        "title": "feat(PureLogic): TASK-43 VoxelSdfTrilinearInterpolationCalculator",
+        "branch": "jules-18415140558947697882-8823f655",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:39:44Z"
+      }
+    ],
+    "TASK-54": [
+      {
+        "number": 616,
+        "title": "feat(PureLogic): TASK-54 MaelstromSpatialWarpPullCalculator",
+        "branch": "jules-1296806308133094063-0e60665a",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:39:33Z"
+      }
+    ],
+    "TASK-62": [
+      {
+        "number": 615,
+        "title": "feat(PureLogic): TASK-62 HuffmanRleSaveDataCompressorCalculator - extract from SaveBinaryPayloadCodec.cs",
+        "branch": "jules-task-62-huffman-rle-7010395664168013525",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:38:02Z"
+      }
+    ],
+    "TASK-48": [
+      {
+        "number": 614,
+        "title": "feat(PureLogic): TASK-48 StorageAutosorterCalculator - extract from PDAInventoryTab.cs",
+        "branch": "feat-purelogic-task-48-autosorter-7966072161071833615",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:37:41Z"
+      }
+    ],
+    "TASK-45": [
+      {
+        "number": 613,
+        "title": "feat(PureLogic): TASK-45 SaveDataBinaryChecksumCalculator - extract from SaveBinaryPayloadCodec.cs",
+        "branch": "feat/task-45-adler32-checksum-6604073749735525425",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:35:46Z"
+      }
+    ],
+    "TASK-31": [
+      {
+        "number": 612,
+        "title": "feat(PureLogic): Extract PressureHullIntegrityStressCalculator from monolith",
+        "branch": "feat/task-31-pressure-hull-integrity-408023692035429543",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:33:56Z"
+      }
+    ],
+    "TASK-25": [
+      {
+        "number": 611,
+        "title": "feat(PureLogic): TASK-25 2dGridHeatmapDecayCalculator - extract from EcosystemDirector.cs",
+        "branch": "jules-4314548454137668241-79285564",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:26:20Z"
+      }
+    ],
+    "TASK-23": [
+      {
+        "number": 610,
+        "title": "feat(PureLogic): TASK-23 FlockingBoidSeparationVector",
+        "branch": "jules-10773119924832401030-4f9e6aec",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:24:19Z"
+      }
+    ],
+    "TASK-15": [
+      {
+        "number": 609,
+        "title": "TASK-15 SargassumKelpDragCalculator - extract from HectonPlayerMovement.cs",
+        "branch": "jules-11408966394184134194-de752619",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:22:16Z"
+      }
+    ],
+    "TASK-24": [
+      {
+        "number": 608,
+        "title": "feat(PureLogic): TASK-24 FlockingBoidAlignmentVector - extract from HectonBoidController.cs",
+        "branch": "jules-2723354310534395202-02268ca7",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T15:12:30Z"
+      }
+    ],
+    "TASK-36": [
+      {
+        "number": 607,
+        "title": "🧹 feat(PureLogic): TASK-36 HudCrushDepthWarningUrgencyCalculator - extract from HUDNotification.cs",
+        "branch": "feat/task-36-purelogic-6167096221693021081",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T13:04:32Z"
+      }
+    ],
+    "TASK-30": [
+      {
+        "number": 606,
+        "title": "feat(PureLogic): TASK-30 ThreatCostMultiplier - extract from ThreatCostTable.cs",
+        "branch": "feat/task-30-threat-cost-multiplier-15431606812126130006",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T13:04:24Z"
+      }
+    ],
+    "TASK-29": [
+      {
+        "number": 605,
+        "title": "feat(PureLogic): TASK-29 SargassumKelpGrowthCurveCalculator - extract from WorldProceduralScatterDirectorMigratorySargassum.cs",
+        "branch": "feat/task-29-sargassum-growth-calculator-10863911520956448333",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T13:01:22Z"
+      },
+      {
+        "number": 594,
+        "title": "feat(PureLogic): TASK-29 SargassumKelpGrowthCurveCalculator - extract from WorldProceduralScatterDirectorMigratorySargassum.cs",
+        "branch": "feature/task-29-sargassum-pure-logic-12183519738958904263",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:48:01Z"
+      }
+    ],
+    "TASK-40": [
+      {
+        "number": 604,
+        "title": "feat(PureLogic): TASK-40 TerrainSeamDitherAlphaCalculator - extract from SeamGapDitherRenderer.cs",
+        "branch": "jules-16986194061577696992-112977bd",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:57:14Z"
+      }
+    ],
+    "TASK-34": [
+      {
+        "number": 603,
+        "title": "feat(PureLogic): TASK-34 RadiationLeadShieldingCalculator - extract from HectonSurvivalSystem.cs",
+        "branch": "jules/hecton-8-task-34-radiation-calculator-8167891825930245702",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:57:05Z"
+      }
+    ],
+    "TASK-38": [
+      {
+        "number": 602,
+        "title": "feat(PureLogic): TASK-38 BatteryChargeEfficiencyCurveCalculator - extract from PowerNode.cs",
+        "branch": "jules-1020926821642596078-76aab707",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:56:52Z"
+      }
+    ],
+    "TASK-26": [
+      {
+        "number": 601,
+        "title": "feat(PureLogic): TASK-26 FaunaPatrolPathSmootherCalculator - extract from FaunaDirector.cs",
+        "branch": "feat/purelogic-task-26-11620246333088454690",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:56:28Z"
+      }
+    ],
+    "TASK-37": [
+      {
+        "number": 599,
+        "title": "feat(PureLogic): TASK-37 PowerGridResourceDistributorCalculator - extract from PowerGridManager.cs",
+        "branch": "feat/pure-logic/task-37-power-grid-calculator-14538586843450509885",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:52:40Z"
+      }
+    ],
+    "TASK-14": [
+      {
+        "number": 598,
+        "title": "TASK-14 KinematicAccelerationLimiter",
+        "branch": "jules-6398254689963738393-43718e13",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:52:00Z"
+      }
+    ],
+    "TASK-33": [
+      {
+        "number": 597,
+        "title": "feat(PureLogic): TASK-33 SurvivalSuitOxygenBurnRate - extract from HectonPlayerMovement.cs",
+        "branch": "marko1olo/gigahrush-13158998174647478281",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:51:12Z"
+      }
+    ],
+    "TASK-16": [
+      {
+        "number": 596,
+        "title": "feat(PureLogic): TASK-16 EcosystemSpawnCreditBudgeting - extract from EcosystemDirector.cs",
+        "branch": "jules-6481764626815842189-bdfaf03c",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:50:34Z"
+      }
+    ],
+    "TASK-18": [
+      {
+        "number": 595,
+        "title": "feat(PureLogic): TASK-18 BiomassResourceGradientWeightCalculator",
+        "branch": "jules-8261350957813069768-1aa1e53e",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:49:58Z"
+      }
+    ],
+    "TASK-22": [
+      {
+        "number": 593,
+        "title": "feat(PureLogic): TASK-22 FlockingBoidCohesionVector",
+        "branch": "feat/pure-logic-flocking-cohesion-3146497135316823237",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:47:11Z"
+      }
+    ],
+    "TASK-09": [
+      {
+        "number": 592,
+        "title": "TASK-09: Extract SinusoidalHoverBobbingCalculator logic to PureLogic module",
+        "branch": "jules-10889080379455994737-f714dba8",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:46:35Z"
+      }
+    ],
+    "TASK-27": [
+      {
+        "number": 591,
+        "title": "🧹 [PureLogic Extraction] TASK-27: Extract BiomeDiscoveryBitmaskTracker logic",
+        "branch": "task-27-biome-discovery-bitmask-17820319088743339607",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:46:23Z"
+      }
+    ],
+    "TASK-20": [
+      {
+        "number": 590,
+        "title": "feat(PureLogic): TASK-20 EcosystemLogicalLodTieringCalculator - extract from EcosystemDirector.cs",
+        "branch": "jules-10790404763901863658-d80b468e",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:44:58Z"
+      }
+    ],
+    "TASK-10": [
+      {
+        "number": 588,
+        "title": "TASK-10: Extract WaterSurfaceTransitionDragCalculator logic",
+        "branch": "feat/task-10-water-surface-transition-drag-7680674421354255275",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:43:15Z"
+      }
+    ],
+    "TASK-11": [
+      {
+        "number": 587,
+        "title": "TASK-11 SubmergedBuoyancyForce",
+        "branch": "task-11-submerged-buoyancy-force-3521129516212621511",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:42:44Z"
+      }
+    ],
+    "TASK-17": [
+      {
+        "number": 586,
+        "title": "feat(PureLogic): TASK-17 EcosystemSpeciesSelectionWeightCalculator",
+        "branch": "jules-3773566257371919681-a6162b8f",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:42:29Z"
+      }
+    ],
+    "TASK-13": [
+      {
+        "number": 585,
+        "title": "feat: TASK-13 ThrusterEfficiencyVsPressureCalculator",
+        "branch": "feat/task-13-thruster-efficiency-10579936095860687905",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:42:00Z"
+      }
+    ],
+    "TASK-19": [
+      {
+        "number": 584,
+        "title": "feat(PureLogic): TASK-19 BiomeDepthViabilityCurveCalculator - extract from EcosystemDirector.cs",
+        "branch": "jules-task-19-8352454365127517455",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:41:48Z"
+      }
+    ],
+    "TASK-12": [
+      {
+        "number": 582,
+        "title": "feat(PureLogic): TASK-12 FluidVelocityFieldDragCalculator",
+        "branch": "feat/purelogic-fluid-drag-calculator-8593480853501819799",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:39:48Z"
+      }
+    ],
+    "TASK-05": [
+      {
+        "number": 581,
+        "title": "TASK-05 InventoryMassLoadSpeedScalar",
+        "branch": "feat/purelogic-kinematics-inventory-mass-load-speed-10476130669019295123",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:38:53Z"
+      }
+    ],
+    "TASK-04": [
+      {
+        "number": 580,
+        "title": "feat(PureLogic): TASK-04 NitrogenNarcosisInputDrifter - extract from HectonPlayerMovement.cs",
+        "branch": "feat/nitrogen-narcosis-input-drifter-5842770351142853577",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:37:50Z"
+      }
+    ],
+    "TASK-07": [
+      {
+        "number": 579,
+        "title": "feat(PureLogic): Extract EquipmentHydrodynamicDragCalculator and add NUnit tests",
+        "branch": "task-07-drag-calculator-14930928584811605327",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:37:00Z"
+      }
+    ],
+    "TASK-03": [
+      {
+        "number": 578,
+        "title": "feat(PureLogic): TASK-03 ThermalVentUpdraftForce - extract from HectonPlayerMovement.cs",
+        "branch": "task-03-thermal-vent-updraft-force-13130900895760954999",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:35:55Z"
+      }
+    ],
+    "TASK-02": [
+      {
+        "number": 577,
+        "title": "feat(PureLogic): TASK-02 ParasiteLatchDragCalculator",
+        "branch": "feat/purelogic-parasitelatch-drag-task-02-14099381049034546593",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:35:28Z"
+      }
+    ],
+    "TASK-06": [
+      {
+        "number": 576,
+        "title": "feat(PureLogic): TASK-06 VehicleEmergencyEjectionVector",
+        "branch": "feat/task-06-purelogic-ejection-10660483657785546295",
+        "user": "marko1olo",
+        "created_at": "2026-06-27T12:34:29Z"
+      }
+    ]
+  },
+  "ungrouped": [
+    {
+      "number": 812,
+      "title": "⚡ [Performance] Optimize GetComponentsInChildren in H8BlackboxReflection",
+      "branch": "jules-14666764250611280883-bac37e43",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T09:05:12Z"
+    },
+    {
+      "number": 811,
+      "title": "⚡ Evaluate GetComponent before loop",
+      "branch": "perf-GetComponent-15536268533770569883",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:59:19Z"
+    },
+    {
+      "number": 810,
+      "title": "⚡ Optimize component counting to remove array allocations inside loops",
+      "branch": "jules-perf-opt-getcomponents-10927864644058113741",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:57:09Z"
+    },
+    {
+      "number": 809,
+      "title": "Remove hack comment from Polyline 2D Core.cginc",
+      "branch": "jules-15262307962776242735-c28a8a6a",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:55:17Z"
+    },
+    {
+      "number": 808,
+      "title": "Fix barycentric interpolation skew causing dents in Polyline 2D AA",
+      "branch": "fix/polyline-aa-dents-16230348438877088076",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:54:48Z"
+    },
+    {
+      "number": 807,
+      "title": "⚡ Optimize memory allocation when searching for missing scripts",
+      "branch": "perf/mmtools-getcomponents-caching-2014190747613394418",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:54:38Z"
+    },
+    {
+      "number": 806,
+      "title": "⚡ Optimize GetComponent in RigidColliderCreator",
+      "branch": "perf/optimize-rigid-collider-hulls-7296065815556270582",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:53:33Z"
+    },
+    {
+      "number": 805,
+      "title": "⚡ Optimize TerrainAiming GetComponent overhead",
+      "branch": "optimize-terrain-aiming-8196872686030267725",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:53:13Z"
+    },
+    {
+      "number": 804,
+      "title": "⚡ Optimize missing script search to prevent GC allocations",
+      "branch": "optimize-missing-prefab-search-11951269794811470154",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:52:30Z"
+    },
+    {
+      "number": 803,
+      "title": "🧪 [testing improvement] Add tests for ObjectPoolManager.IsRuntimeOwnerUsableForRegistry",
+      "branch": "test-improvement-objectpool-12537569982736503000",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:52:23Z"
+    },
+    {
+      "number": 802,
+      "title": "🧪 Add WorldStreamingLayer integer bindings tests",
+      "branch": "test/world-streaming-layer-enum-17419889078417699507",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:49:33Z"
+    },
+    {
+      "number": 801,
+      "title": "🧪 Add tests for WorldProceduralStructureFocus enum",
+      "branch": "add-world-procedural-structure-focus-tests-13956460791392731407",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:48:21Z"
+    },
+    {
+      "number": 800,
+      "title": "🧪 [testing improvement] Add unit tests for HectonSocketHelper",
+      "branch": "add-hecton-socket-helper-tests-611689500685870459",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:48:19Z"
+    },
+    {
+      "number": 799,
+      "title": "⚡ Optimize CountComponentsInScene to eliminate GC allocation overhead",
+      "branch": "opt/count-components-allocation-10649589040706739347",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:48:05Z"
+    },
+    {
+      "number": 794,
+      "title": "⚡ Optimize MeshFilter fetching in CalculateSheetBounds and RenderImpostor",
+      "branch": "jules-optimize-amplify-impostor-10688995706031348371",
+      "user": "marko1olo",
+      "created_at": "2026-06-28T08:31:01Z"
+    },
+    {
+      "number": 751,
+      "title": "🧪 Add tests for LocalizedMeasurementFormatter.GetDistanceUnitKey",
+      "branch": "jules-17960400799541009537-ea4c4b6d",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T21:07:03Z"
+    },
+    {
+      "number": 750,
+      "title": "🧪 [Add tests for ConvertTemperatureCelsius]",
+      "branch": "jules-test-conversion-celsius-16462114239121702723",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T21:06:11Z"
+    },
+    {
+      "number": 745,
+      "title": "feat(PureLogic): Extract SaveDeltaCompressDiffCalculator",
+      "branch": "feat/purelogic-savedelta-compress-1624131737717423199",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T21:03:59Z"
+    },
+    {
+      "number": 737,
+      "title": "🧪 Add tests for HectonBiomeFamilyProfile",
+      "branch": "test/hecton-biome-family-profile-15813448328953720888",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:58:34Z"
+    },
+    {
+      "number": 732,
+      "title": "⚡ Bypass GameObject.Find false positive in test assertion",
+      "branch": "fix/gameobject-find-false-positive-13834362806278142538",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:51:02Z"
+    },
+    {
+      "number": 723,
+      "title": "🧪 [Add tests for ConvertDistanceMeters edge cases]",
+      "branch": "add-convert-distance-tests-12645106426847829947",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:47:07Z"
+    },
+    {
+      "number": 719,
+      "title": "⚡ Optimize MMRagdoller.Initialization to cache GetComponent calls",
+      "branch": "perf-mmragdoller-4519435814516304394",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:45:39Z"
+    },
+    {
+      "number": 700,
+      "title": "🧪 [Testing Improvement] Add tests for ObjectPoolManager.TryResolveActiveRuntime",
+      "branch": "jules-8958239942727170153-23e17981",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:39:52Z"
+    },
+    {
+      "number": 696,
+      "title": "⚡ Optimize orphaned collider TryGetComponent loop",
+      "branch": "perf/cache-getcomponent-orphaned-hulls-13575236449447746270",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:39:36Z"
+    },
+    {
+      "number": 694,
+      "title": "⚡ Optimize FindLocal Component Lookups",
+      "branch": "perf/optimize-findlocal-components-515917198536243795",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:38:29Z"
+    },
+    {
+      "number": 693,
+      "title": "🧹 Setup Directional Light with neutral-warm spectrum",
+      "branch": "fix/terrain-render-neutral-warm-light-12164768937399320988",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:38:27Z"
+    },
+    {
+      "number": 692,
+      "title": "🧪 [test warmup zero and negative edge cases]",
+      "branch": "test-warmup-edge-cases-14702480323068038660",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:38:15Z"
+    },
+    {
+      "number": 691,
+      "title": "🧪 [Add test coverage for LocalizedMeasurementFormatter.IsRightToLeft]",
+      "branch": "test/localized-measurement-formatter-11348581616262863318",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:34:34Z"
+    },
+    {
+      "number": 690,
+      "title": "⚡ Optimize MMPlotter point instantiation by caching GetComponent",
+      "branch": "perf/optimize-mmplotter-getcomponent-14311568454229801482",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T20:34:00Z"
+    },
+    {
+      "number": 688,
+      "title": "feat(PureLogic): Extract WaterPressureWeaponMultiplier from CombatDamageRuntime.cs",
+      "branch": "feat/purelogic-water-pressure-5044559961092721105",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T19:24:06Z"
+    },
+    {
+      "number": 670,
+      "title": "🔒 Fix Command Injection via Subprocess in render_teni_splash.py",
+      "branch": "fix/cmd-injection-render-splash-1575471051868255691",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T17:46:54Z"
+    },
+    {
+      "number": 669,
+      "title": "feat: Implement pure C# VariableHeightJumpCalculator and integrate into HectonPlayerMovement",
+      "branch": "jules-16424987513116731019-f10b61cb",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T17:35:10Z"
+    },
+    {
+      "number": 651,
+      "title": "Remove SuppressInvalidAttributeErrorAttribute from AddressablesInspectors",
+      "branch": "fix-remove-suppress-invalid-attr-10619923715137882422",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T16:00:09Z"
+    },
+    {
+      "number": 650,
+      "title": "Fix TestLoaderBase missing settings assignment",
+      "branch": "fix-test-settings-subsystem-init-18345368845193732526",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:56:56Z"
+    },
+    {
+      "number": 646,
+      "title": "🧪 Add SaveBinaryStorage error path tests",
+      "branch": "fix/add-save-binary-storage-error-path-tests-13512213400766391346",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:50:32Z"
+    },
+    {
+      "number": 645,
+      "title": "🧪 [RenderTextureLifecycleTracker memory leak checking testing improvement]",
+      "branch": "test-optimization-leak-checker-6253236571060489990",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:48:14Z"
+    },
+    {
+      "number": 643,
+      "title": "🧪 Add tests for PlayerInventory.DisposeNativeArray exception handling",
+      "branch": "testing-improvements-player-inventory-7744175367324715146",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:47:18Z"
+    },
+    {
+      "number": 642,
+      "title": "Fix proper handle precision in struct types",
+      "branch": "fix-shadergraph-precision-13419038175380196208",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:46:24Z"
+    },
+    {
+      "number": 639,
+      "title": "⚡ Optimize ScavengingLootOracleRuntime using TryGetComponent",
+      "branch": "perf/trygetcomponent-scavenging-loot-oracle-9749818219652098591",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:45:39Z"
+    },
+    {
+      "number": 638,
+      "title": "🧪 [Testing] Add coverage for PostFXRTManager budget checking",
+      "branch": "test-postfxrtmanager-budget-15702581326232819367",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:45:26Z"
+    },
+    {
+      "number": 637,
+      "title": "Fix undo-aware cleanup of orphaned colliders",
+      "branch": "fix/undo-aware-orphan-cleanup-8245932219991609238",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:45:06Z"
+    },
+    {
+      "number": 635,
+      "title": "Refactor CustomRenderTextureTarget color blocks",
+      "branch": "fix-custom-render-texture-color-blocks-5056542105099950880",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:44:47Z"
+    },
+    {
+      "number": 632,
+      "title": "feat: PureLogic extraction of BranchlessReactiveItemChemistryCalculator",
+      "branch": "jules-9508443361628145462-7b5d4849",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:44:40Z"
+    },
+    {
+      "number": 629,
+      "title": "Fix: Re-enable procedural scatter generation in TerrainRenderTestGoal",
+      "branch": "fix/terrain-procedural-scatter-16881794569992050405",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:42:56Z"
+    },
+    {
+      "number": 627,
+      "title": "🧪 Add test coverage for WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold",
+      "branch": "test-coverage-world-generated-primitive-factory-13122213124467318329",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:42:36Z"
+    },
+    {
+      "number": 625,
+      "title": "Implement procedural scatter generation for terrains in TerrainRenderTestGoal",
+      "branch": "fix-procedural-scatter-generation-16617738421116875433",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:42:27Z"
+    },
+    {
+      "number": 624,
+      "title": "🧪 [Testing] Add memory leak PlayMode tests for RenderTextureLifecycleTracker",
+      "branch": "testing-improvement-rt-tracker-17805458160203301250",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:42:23Z"
+    },
+    {
+      "number": 621,
+      "title": "🧪 [Test] Add tests for PowerGridManager.CheckAndSplitGrid",
+      "branch": "tests-power-grid-manager-split-371475195000018938",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:40:36Z"
+    },
+    {
+      "number": 618,
+      "title": "🧪 Add missing tests for power grid splitting logic",
+      "branch": "tests/powergrid-split-check-1990428310636226838",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T15:39:57Z"
+    },
+    {
+      "number": 600,
+      "title": "fix(editor): implement procedural scatter for terrain rendering test",
+      "branch": "jules-6440739933229600274-1d464a1a",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T12:52:40Z"
+    },
+    {
+      "number": 589,
+      "title": "feat(PureLogic): Extract FaunaHypnosisPullForceCalculator and add tests",
+      "branch": "feat/fauna-hypnosis-pure-logic-9907055982000267247",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T12:43:52Z"
+    },
+    {
+      "number": 583,
+      "title": "🧪 Add test for ConnectAuthoredNeighbor in PowerNode",
+      "branch": "jules-10723029515990350029-ddb53b64",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T12:40:20Z"
+    },
+    {
+      "number": 575,
+      "title": "🔒 Fix command injection vulnerability in DigitalVoiceForgeWindow",
+      "branch": "jules-9424761733801937670-ae69e4bf",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T11:40:34Z"
+    },
+    {
+      "number": 569,
+      "title": "⚡ Cache Camera.main to improve performance in MMParallaxUI",
+      "branch": "jules-6766183736668998664-cd0a2db2",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T11:15:56Z"
+    },
+    {
+      "number": 565,
+      "title": "🧹 [Code Health] Remove empty catch block in AsymmetricContinentalDivideGraphBuilder",
+      "branch": "jules-17990535002329904069-7328b12d",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T11:10:59Z"
+    },
+    {
+      "number": 564,
+      "title": "🧹 [Code Health] Handle empty catch blocks in AsymmetricContinentalDivideGraphBuilder",
+      "branch": "jules-5728015090484023398-ece85402",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T11:09:39Z"
+    },
+    {
+      "number": 559,
+      "title": "Refactor MapMagicBrush undo tracking to use IDs",
+      "branch": "fix/mapmagicbrush-undo-id-16926711024468473033",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T10:58:21Z"
+    },
+    {
+      "number": 557,
+      "title": "Fix MapMagicBrush undo using ID tracking for stability",
+      "branch": "fix-mapmagic-brush-undo-11376776334936171395",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:16:24Z"
+    },
+    {
+      "number": 553,
+      "title": "🧪 Add null check test for TryResolvePrimitiveComponentsCold",
+      "branch": "jules-12021044157717492618-15b7873d",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:03:15Z"
+    },
+    {
+      "number": 552,
+      "title": "Fix: Make SubTarget class public",
+      "branch": "jules/fix-subtarget-visibility-14030103930458980111",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:02:48Z"
+    },
+    {
+      "number": 551,
+      "title": "Fix MapMagicBrush UndoBac tracking",
+      "branch": "fix-undo-bac-mapmagicbrush-12897277765269329322",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:02:47Z"
+    },
+    {
+      "number": 550,
+      "title": "🧹 [code health improvement] Removed empty catch block in AsymmetricContinentalDivideGraphBuilder",
+      "branch": "jules-2855133781035387730-970aa0ba",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:01:45Z"
+    },
+    {
+      "number": 549,
+      "title": "🧪 [testing improvement] Add tests for WorldGeneratedPrimitiveFactory.RegisterPrimitiveResourcesCold",
+      "branch": "main-8892488643989582542",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T09:00:30Z"
+    },
+    {
+      "number": 544,
+      "title": "🧹 [code health] handle empty catch blocks in AsymmetricContinentalDivideGraphBuilder",
+      "branch": "jules-2802372039863622077-84f2bb10",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T08:56:57Z"
+    },
+    {
+      "number": 537,
+      "title": "fix: remove obsolete directional light comment in TerrainRenderTestGoal",
+      "branch": "fix/remove-obsolete-directional-light-comment-1058446760111872837",
+      "user": "marko1olo",
+      "created_at": "2026-06-27T08:52:17Z"
+    },
+    {
+      "number": 534,
+      "title": "🧪 Add TryPinBiotaJobBuffers exception test for AmbientBiotaDirector",
+      "branch": "jules-9737241016575022537-7d3eb451",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T21:49:37Z"
+    },
+    {
+      "number": 533,
+      "title": "⚡ Optimize FindObjectsByType in MapMagicBrush Undo",
+      "branch": "performance-optimization-mapmagic-brush-12741534543973152564",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T21:33:48Z"
+    },
+    {
+      "number": 532,
+      "title": "⚡ Optimize MapMagicBrush lookup in Undo event loops",
+      "branch": "jules-11687578998825631762-09f869c7",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T21:28:55Z"
+    },
+    {
+      "number": 531,
+      "title": "🧪 [testing improvement] Add exception handling test for AmbientBiotaDirector LateFrameTick",
+      "branch": "jules-12192753656671662797-b6648e8d",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T10:46:11Z"
+    },
+    {
+      "number": 530,
+      "title": "🧪 Add exception test for AmbientBiotaDirector buffer pinning",
+      "branch": "jules-12966574470734227984-c4647e5b",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T10:39:31Z"
+    },
+    {
+      "number": 526,
+      "title": "🧪 Testing Improvement: AmbientBiotaDirector Error Path",
+      "branch": "jules-testing-ambient-biota-director-2006621685935222439",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T06:36:13Z"
+    },
+    {
+      "number": 525,
+      "title": "🧪 Add tests for AmbientBiotaDirector exception handling",
+      "branch": "jules-5639185707219602792-0f9d39b4",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T06:34:52Z"
+    },
+    {
+      "number": 519,
+      "title": "🧪 Add try-catch block and exception tests to AmbientBiotaDirector",
+      "branch": "test/ambient-biota-director-exception-10481149686877596505",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T06:24:38Z"
+    },
+    {
+      "number": 518,
+      "title": "🧪 Add error test for try-catch in AmbientBiotaDirector",
+      "branch": "jules-17899509691700113050-1c29d09b",
+      "user": "marko1olo",
+      "created_at": "2026-06-26T06:24:28Z"
+    },
+    {
+      "number": 516,
+      "title": "⚡ [Performance Improvement] Optimize MMRagdoller component fetching with TryGetComponent",
+      "branch": "jules-14971314791962798681-645b7090",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T21:16:33Z"
+    },
+    {
+      "number": 512,
+      "title": "⚡ [Performance] Optimize GetComponent calls in GPUInstancerPrefabManager loop",
+      "branch": "jules-8152728677922494801-7e94742a",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T21:11:59Z"
+    },
+    {
+      "number": 511,
+      "title": "⚡ Optimize GetComponent to TryGetComponent in GPUInstancerPrefabManager",
+      "branch": "perf/optimize-getcomponent-prefabmanager-3244040335269934407",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T21:10:33Z"
+    },
+    {
+      "number": 507,
+      "title": "⚡ [performance] Optimize GetComponent in GPUInstancerPrefabManager loop",
+      "branch": "jules-1447067173114702323-27dd4159",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T19:00:40Z"
+    },
+    {
+      "number": 498,
+      "title": "🧹 Code Health Improvement: Centralize ToFloat3 utility method",
+      "branch": "jules-1687191952286511870-d65272eb",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T14:54:31Z"
+    },
+    {
+      "number": 493,
+      "title": "🧹 [Code Health] Remove duplicated ToDouble3 utility method in DynamicDecalVaultRuntime",
+      "branch": "jules-17558828944275546953-b616b6de",
+      "user": "marko1olo",
+      "created_at": "2026-06-25T14:17:46Z"
+    }
+  ]
+}

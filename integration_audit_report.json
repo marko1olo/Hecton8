@@ -1,0 +1,1239 @@
+{
+  "integrated": [
+    {
+      "taskId": "TASK-129",
+      "className": "SymbiosisBenefitMatrixCalculator",
+      "files": [
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-177",
+      "className": "DroneBatteryReturnThresholdCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-181",
+      "className": "FluidAdvectionStepCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-174",
+      "className": "VisibilityTurbidityCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonAtmosphereManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-191",
+      "className": "GameStateTensionScorer",
+      "files": [
+        "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-167",
+      "className": "BioluminescencePulseFrequencyCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/Biolum/FloorBiolumZone.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-168",
+      "className": "BioluminescenceIntensityDecayCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-164",
+      "className": "SoundShadowOcclusionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-189",
+      "className": "AnalogStickDeadzoneNormalizer",
+      "files": [
+        "Assets/_Project/Scripts/Core/InputDispatcher.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-183",
+      "className": "VorticityConfinementForceCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-134",
+      "className": "Co2ScrubberLoadCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-173",
+      "className": "StormWaveHeightBeaufortCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-133",
+      "className": "StackMergePriorityCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-140",
+      "className": "VoronoiBiomeSeedCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonWorldGenerator.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-105",
+      "className": "SplashEntryAngleCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-179",
+      "className": "MarchingCubesLookupTable",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-136",
+      "className": "PressureEqualizationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-113",
+      "className": "BallastTankController",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-190",
+      "className": "GyroDriftFilterCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Core/SteamDeckInputPal.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-156",
+      "className": "ScooterBatteryDrainCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/MantaScooter.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-188",
+      "className": "SignalPrioritySortCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-125",
+      "className": "NutrientCycleSinkCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-144",
+      "className": "ScannerResolutionDepthCalculator",
+      "files": [
+        "Assets/_Project/Scripts/ScannerTool.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-178",
+      "className": "VoxelSdfBooleanSubtraction",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-199",
+      "className": "O2BarPulseRateCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-102",
+      "className": "FaunaFleeVectorCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-138",
+      "className": "TidalForceAtPointCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonCelestialEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-104",
+      "className": "HarpoonTensionForceCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-116",
+      "className": "StructuralDepthRatingCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Habitat/Deformation/Runtime/HullIntegrityTypes.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-172",
+      "className": "UpwellingNutrientFluxCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-175",
+      "className": "DronePathfindCostCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-195",
+      "className": "GrainEnvelopeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-124",
+      "className": "LotkaVolterraPopulationStep",
+      "files": [
+        "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-198",
+      "className": "UnderwaterFogDensityCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-197",
+      "className": "CausticIntensityDepthCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-192",
+      "className": "MusicStemBlendCrossfader",
+      "files": [
+        "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-194",
+      "className": "ReverbPreDelayCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-171",
+      "className": "MarineSnowFluxCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-180",
+      "className": "LodChunkSelector",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-200",
+      "className": "DepthGaugeNonlinearCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Visor/VisorHUDController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-165",
+      "className": "VerletCableSimulator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-184",
+      "className": "SaveChecksumVerifier",
+      "files": [
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-163",
+      "className": "EcholocationRangeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-193",
+      "className": "LufsNormalizationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-182",
+      "className": "FluidPressureJacobiSolver",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-161",
+      "className": "TetherSagCatenaryCalculator",
+      "files": [
+        "Assets/_Project/Scripts/TetherInstance.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-166",
+      "className": "CableConstraintSatisfier",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-162",
+      "className": "TetherSnapLoadCalculator",
+      "files": [
+        "Assets/_Project/Scripts/TetherInstance.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-186",
+      "className": "SaveMerkleHashNodeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-170",
+      "className": "DepositDepletionCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-169",
+      "className": "ScarcityPriceSpikeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Economy/ResourceScarcityDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-132",
+      "className": "WeightPenaltyCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PlayerInventory.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-139",
+      "className": "SolarHourAngleCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonCelestialEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-122",
+      "className": "SpawnCooldownGate",
+      "files": [
+        "Assets/_Project/Scripts/EncounterDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-115",
+      "className": "PropellerCavitationLimitCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-159",
+      "className": "LegGaitPhaseCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-151",
+      "className": "QuestDagUnlockChecker",
+      "files": [
+        "Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-141",
+      "className": "CaveGraphConnectivityChecker",
+      "files": [
+        "Assets/_Project/Scripts/CaveGraphGenerator.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-130",
+      "className": "ChemicalDiffusionSolver",
+      "files": [
+        "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-155",
+      "className": "ScooterThrustCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/MantaScooter.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-150",
+      "className": "FabricationRecipeYieldRoll",
+      "files": [
+        "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-145",
+      "className": "RepairRateMaterialCalculator",
+      "files": [
+        "Assets/_Project/Scripts/RepairTool.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-112",
+      "className": "SolarIrradianceDepthCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-147",
+      "className": "LaserBeamIntensityAttenuationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/LaserCutter.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-149",
+      "className": "FabricationCraftTimeModifier",
+      "files": [
+        "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-157",
+      "className": "ArmReachIkSolver",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-158",
+      "className": "ServoTorqueLoadCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-114",
+      "className": "PitchTrimCorrectionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-101",
+      "className": "LeviathanTentacleSpringCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-148",
+      "className": "LaserCutDepthPowerCalculator",
+      "files": [
+        "Assets/_Project/Scripts/LaserCutter.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-160",
+      "className": "StepTargetPredictor",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/ProceduralCrabLegIKRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-108",
+      "className": "AtmosphereLeakRateCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-142",
+      "className": "SeismicRichterDamageCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-119",
+      "className": "RadiationDoseAccumulator",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-123",
+      "className": "StressSpawnEscalationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-146",
+      "className": "WeldHeatDissipationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/RepairTool.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-106",
+      "className": "IdealGasPressureSolver",
+      "files": [
+        "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-103",
+      "className": "ProjectileDropCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-126",
+      "className": "BloomTriggerThresholdCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Core/GlobalRegistry.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-135",
+      "className": "FireOxygenConsumptionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-143",
+      "className": "SonarPingReturnTimeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Audio/Echolocation/AcousticEcholocationRaymarch.cs",
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-109",
+      "className": "DecompressionStopTimeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-153",
+      "className": "AnchorStabilityScoreCalculator",
+      "files": [
+        "Assets/_Project/Scripts/ConstructionManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-154",
+      "className": "FloodFillRoomVolumeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-28",
+      "className": "AmbientEncounterSpawningWeightCalculator",
+      "files": [
+        "Assets/_Project/Scripts/EncounterDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-128",
+      "className": "ExtinctionRiskIndexCalculator",
+      "files": [
+        "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-110",
+      "className": "PowerLoadBalancer",
+      "files": [
+        "Assets/_Project/Scripts/PowerGrid.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-117",
+      "className": "CaloricDeficitPenaltyCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-111",
+      "className": "BatteryChargeCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PowerGrid.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-118",
+      "className": "HydrationSweatLossCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-120",
+      "className": "HypothermiaShiverCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-095",
+      "className": "ProjectileDamageFalloffCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-092",
+      "className": "CoreTempEquilibriumSolver",
+      "files": [
+        "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-091",
+      "className": "NitrogenNarcosisModel",
+      "files": [
+        "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-096",
+      "className": "ExplosionRadialDamageCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-093",
+      "className": "HeartRateExertionModel",
+      "files": [
+        "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-094",
+      "className": "ArmorPenetrationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-099",
+      "className": "PredatorStalkSpeedCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-100",
+      "className": "SchoolingSeparationForceCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-097",
+      "className": "BleedStackDecayModel",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-47",
+      "className": "HypoxiaVisorBlurIntensityCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "Assets/_Project/Scripts/Visor/VisorHUDController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-084",
+      "className": "StrafeAngleBlendWeightCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-75",
+      "className": "SuitBatteryThermalEfficiencyCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-64",
+      "className": "AtmosphericRoomGasDiffusionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-081",
+      "className": "SomaticDragCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-58",
+      "className": "CeilingConcavityAirPocketVolumeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-39",
+      "className": "LaserCutterVoxelDamageCalculator",
+      "files": [
+        "Assets/_Project/Scripts/LaserCutter.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-089",
+      "className": "SuitO2ConsumptionModel",
+      "files": [
+        "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-078",
+      "className": "CrouchCapsuleLerp",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-088",
+      "className": "ThermoclineResistanceCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-076",
+      "className": "WallSlideFrictionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-71",
+      "className": "RockAlignmentSplineNormalCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonRockManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-087",
+      "className": "PressureCrushDamageModel",
+      "files": [
+        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-67",
+      "className": "FaunaSensoryDetectionRangeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/FaunaDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-50",
+      "className": "ProceduralFoliageScatterBudgetCalculator",
+      "files": [
+        "Assets/_Project/Scripts/ScatterBudgetController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-51",
+      "className": "InventorySalinityCorrosionCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Inventory/ItemSalinityCorrosionJob.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-090",
+      "className": "Co2ScrubberEfficiencyModel",
+      "files": [
+        "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-086",
+      "className": "OceanCurrentDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-60",
+      "className": "SubseaVehicleDopplerReverbShiftCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SpatialAudioManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-085",
+      "className": "BuoyancyDensityRatioMath",
+      "files": [
+        "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-61",
+      "className": "SoundObstructionLowpassCutoffCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-68",
+      "className": "FaunaPheromoneTrackingVector",
+      "files": [
+        "Assets/_Project/Scripts/FaunaDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-44",
+      "className": "VoxelExplosionDeformationVolumeCalculator",
+      "files": [
+        "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-35",
+      "className": "AmbientTemperatureDepthGradientCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonAtmosphereManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-59",
+      "className": "VoxelCellDirtystateBitHashingCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-66",
+      "className": "FaunaObstacleAvoidanceVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonDirectorAI.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-082",
+      "className": "InertiaTransferCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-72",
+      "className": "PoissondiscLandmarkSpacingSolver",
+      "files": [
+        "Assets/_Project/Scripts/WorldContentDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-65",
+      "className": "ModuleThermalDissipationRate",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-55",
+      "className": "AbyssalVortexAngularTorqueCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-46",
+      "className": "DecompressionNitrogenLoadCalculator",
+      "files": [
+        "Assets/_Project/Scripts/Core/GlobalRegistry.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-57",
+      "className": "SurfaceCurrentWindshearVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-077",
+      "className": "LedgeGrabImpulseCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-56",
+      "className": "CavitationBurstShockwaveForce",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-42",
+      "className": "AcousticZoneReverbDecay",
+      "files": [
+        "Assets/_Project/Scripts/AcousticZoneController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-079",
+      "className": "SprintStaminaGate",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-41",
+      "className": "AudioDistanceAttenuationCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SpatialAudioManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-74",
+      "className": "BeaconNetworkSignalAttenuationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/BeaconNetworkSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-63",
+      "className": "SaveDeltaVoxelStatePackingCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-52",
+      "className": "InventoryItemDefragmentationConsolidationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PlayerInventory.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-43",
+      "className": "VoxelSdfTrilinearInterpolationCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonVoxelVolume.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-54",
+      "className": "MaelstromSpatialWarpPullCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonFluidEngine.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-62",
+      "className": "HuffmanRleSaveDataCompressorCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-48",
+      "className": "StorageAutosorterCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PDAInventoryTab.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-45",
+      "className": "SaveDataBinaryChecksumCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-31",
+      "className": "PressureHullIntegrityStressCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-25",
+      "className": "2dGridHeatmapDecayCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-23",
+      "className": "FlockingBoidSeparationVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonBoidController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-15",
+      "className": "SargassumKelpDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-24",
+      "className": "FlockingBoidAlignmentVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonBoidController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-36",
+      "className": "HudCrushDepthWarningUrgencyCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-30",
+      "className": "ThreatCostMultiplier",
+      "files": [
+        "Assets/_Project/Scripts/ThreatCostTable.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-29",
+      "className": "SargassumKelpGrowthCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-40",
+      "className": "TerrainSeamDitherAlphaCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SeamGapDitherRenderer.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-38",
+      "className": "BatteryChargeEfficiencyCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PowerGrid.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-26",
+      "className": "FaunaPatrolPathSmootherCalculator",
+      "files": [
+        "Assets/_Project/Scripts/FaunaDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-37",
+      "className": "PowerGridResourceDistributorCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PowerGridManager.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-14",
+      "className": "KinematicAccelerationLimiter",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-33",
+      "className": "SurvivalSuitOxygenBurnRate",
+      "files": [
+        "Assets/_Project/Scripts/HectonSurvivalSystem.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-16",
+      "className": "EcosystemSpawnCreditBudgeting",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-18",
+      "className": "BiomassResourceGradientWeightCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-22",
+      "className": "FlockingBoidCohesionVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonBoidController.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-09",
+      "className": "SinusoidalHoverBobbingCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-27",
+      "className": "BiomeDiscoveryBitmaskTracker",
+      "files": [
+        "Assets/_Project/Scripts/BiomeDiscoveryBitMask.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-20",
+      "className": "EcosystemLogicalLodTieringCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-10",
+      "className": "WaterSurfaceTransitionDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-11",
+      "className": "SubmergedBuoyancyForce",
+      "files": [
+        "Assets/_Project/Scripts/BuoyancyObject.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-17",
+      "className": "EcosystemSpeciesSelectionWeightCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-13",
+      "className": "ThrusterEfficiencyVsPressureCalculator",
+      "files": [
+        "Assets/_Project/Scripts/PlayerThrusterAudio.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-19",
+      "className": "BiomeDepthViabilityCurveCalculator",
+      "files": [
+        "Assets/_Project/Scripts/World/EcosystemDirector.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-12",
+      "className": "FluidVelocityFieldDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/SubmarineFluidDynamics.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-05",
+      "className": "InventoryMassLoadSpeedScalar",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-07",
+      "className": "EquipmentHydrodynamicDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-03",
+      "className": "ThermalVentUpdraftForce",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-02",
+      "className": "ParasiteLatchDragCalculator",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    },
+    {
+      "taskId": "TASK-06",
+      "className": "VehicleEmergencyEjectionVector",
+      "files": [
+        "Assets/_Project/Scripts/HectonPlayerMovement.cs"
+      ]
+    }
+  ],
+  "notIntegrated": []
+}
