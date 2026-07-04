@@ -738,17 +738,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -777,12 +773,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -1293,12 +1287,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -2960,17 +2952,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -2999,12 +2987,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -3515,12 +3501,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -5062,17 +5046,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -5101,12 +5081,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -6323,17 +6301,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -6362,12 +6336,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -7657,17 +7629,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -7696,12 +7664,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -8212,12 +8178,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -9742,17 +9706,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -9781,12 +9741,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -10297,12 +10255,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -11827,17 +11783,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -11866,12 +11818,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -12382,12 +12332,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -14011,17 +13959,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -14050,12 +13994,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -14566,12 +14508,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -16111,17 +16051,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -16150,12 +16086,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -17371,17 +17305,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -17410,12 +17340,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -18704,17 +18632,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -18743,12 +18667,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -19259,12 +19181,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -20789,17 +20709,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -20828,12 +20744,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -21344,12 +21258,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
@@ -22875,17 +22787,13 @@ Shader "Crest/Framework"
             {
             };
 
-            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float TexelsPerWave_2, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
+            void SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 IN, out float CrestTime_1, out float3 OceanCenterPosWorld_3, out float SliceCount_4, out float MeshScaleLerp_5)
             {
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                float3 _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 float _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
-                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
-                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;
-                TexelsPerWave_2 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_TexelsPerWave_1;
-                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
+                CrestNodeOceanGlobals_float(_CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3, _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4);
+                CrestTime_1 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_CrestTime_0;                OceanCenterPosWorld_3 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_OceanCenterPosWorld_2;
                 SliceCount_4 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_SliceCount_3;
                 MeshScaleLerp_5 = _CrestNodeOceanGlobalsCustomFunction_fe02a307e89c238b97e65500f054563b_MeshScaleLerp_4;
             }
@@ -22914,12 +22822,10 @@ Shader "Crest/Framework"
                 float _Property_eb129757082f4156a4ae421ab1ae77d3_Out_0 = Boolean_0155919f282340f8b64f4be43973e086;
                 float3 _Property_d5ab29d980874969ad38651f484839b4_Out_0 = Vector3_2000462dd5fd4d06959918e67d72b34a;
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;
-                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1;                float3 _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4;
                 float _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_TexelsPerWave_2, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_CrestTime_1, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_SliceCount_4, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_MeshScaleLerp_5);
                 float3 _Property_9c350782908643e2bec14e3ce3323270_Out_0 = Vector3_fdc388a789b4464fb27ec25c4017b469;
                 float3 _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2;
                 Unity_Subtract_float3(_Property_9c350782908643e2bec14e3ce3323270_Out_0, _CrestOceanGlobals_2c689bac6cb34d4684af0573b32ab8bd_OceanCenterPosWorld_3, _Subtract_05433bf52e6745b58d4099f8864d0f08_Out_2);
@@ -23430,12 +23336,10 @@ Shader "Crest/Framework"
                 float _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9;
                 SG_CrestSampleOceanDataSingle_a667f031fd6a3dd42beee0ccc432233d(_Vector2_e333d349efa9628bb41870e3f7bc5ff2_Out_0, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanPosScale1_4, _CrestDrivenData_f2de5467c244ab8b96c9e422a38fe3c1_OceanParams1_6, _Add_60d0214f5ef48980b9aa416d5bede4e8_Out_2, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_OceanWaterDepth_5, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Foam_6, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Shadow_7, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Flow_8, _CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_SubSurfaceScattering_9);
                 Bindings_CrestOceanGlobals_d50a85284893ec447a25a093505a2120 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;
-                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2;
-                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
+                float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1;                float3 _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4;
                 float _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5;
-                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_TexelsPerWave_2, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
+                SG_CrestOceanGlobals_d50a85284893ec447a25a093505a2120(_CrestOceanGlobals_8963a0855a70aa8595732b308db56d82, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_CrestTime_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_SliceCount_4, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_MeshScaleLerp_5);
                 float3 _Add_38e655aaff409081b61fb279841e137e_Out_2;
                 Unity_Add_float3(_CrestSampleOceanDataSingle_5cd0a595a3b8508eb7acec4614cf5a29_Displacement_1, _CrestOceanGlobals_8963a0855a70aa8595732b308db56d82_OceanCenterPosWorld_3, _Add_38e655aaff409081b61fb279841e137e_Out_2);
                 float _Split_7e9d076777dc1a86b00d434b65edcb92_R_1 = _Add_38e655aaff409081b61fb279841e137e_Out_2[0];
