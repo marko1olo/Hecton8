@@ -107,6 +107,7 @@ namespace Shapes {
 			SetInt( ShapesMaterialUtils.propThicknessSpace, (int)thicknessSpace );
 			SetInt( ShapesMaterialUtils.propAlignment, (int)geometry );
 			SetColor( ShapesMaterialUtils.propColorEnd, colorMode == LineColorMode.Double ? colorEnd : base.Color );
+			SetInt( ShapesMaterialUtils.propFillType, GradientFill.FILL_NONE );
 			SetAllDashValues( now: false );
 		}
 
