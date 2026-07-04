@@ -2133,43 +2133,18 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ModBuildableRegistry_DropsPendingAndLiveCatalogModulesForDisabledOwnerAndNotifiesReaders()
+        public void ModBuildableRegistry_RegisterAndUnregisterHandlesPendingAndLiveStates()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs");
-            string moduleCatalog = ReadProjectFile("Assets/_Project/Scripts/ModuleCatalog.cs");
-            string playerBuilder = ReadProjectFile("Assets/_Project/Scripts/PlayerBuilder.cs");
-            string constructionTab = ReadProjectFile("Assets/_Project/Scripts/UI/PDAConstructionTab.cs");
             string register = ExtractMethodBody(source, "internal static bool TryRegister(BuildableData buildableData, string customCategory, out string error)");
             string unregister = ExtractMethodBody(source, "internal static void UnregisterModBuildables(string modId)");
             string flush = ExtractMethodBody(source, "internal static void FlushPendingRegistrations()", 2);
-            string serviceReplaced = ExtractMethodBody(source, "internal static void OnGlobalRegistryServiceReplaced(", 1);
-            string ownerGuard = ExtractMethodBody(source, "private static bool IsPendingOwnerStillRegistered(uint modHash)", 1);
-            string activeOwner = ExtractMethodBody(source, "private static string ResolveActiveOwnerId()", 1);
-            string replay = ExtractMethodBody(source, "private static void ReplayLiveRegistrationsToActiveCatalog()", 1);
-            string addLive = ExtractMethodBody(source, "private static void AddOrReplaceLiveBuildableRegistration(");
-            string removeLive = ExtractMethodBody(source, "private static bool RemoveLiveBuildableRegistrationsForMod(string modId)");
-            string trackCatalog = ExtractMethodBody(source, "private static void TrackLiveCatalog(ModuleCatalog catalog)");
-            string knownCatalog = ExtractMethodBody(source, "private static bool ContainsKnownLiveCatalog(ModuleCatalog catalog)");
-            string unregisterKnownCatalogs = ExtractMethodBody(source, "private static bool UnregisterRuntimeBuildablesFromKnownCatalogs(string modId)");
-            string promoteKnownCatalogOwners = ExtractMethodBody(source, "private static void PromoteKnownModuleCatalogOwnersIfUnownedOrSameMod(BuildableData buildableData, string customCategory)");
-            string containsLive = ExtractMethodBody(source, "private static bool ContainsLiveBuildable(BuildableData buildableData)");
-            string findLive = ExtractMethodBody(source, "private static bool TryFindLiveBuildable(BuildableData buildableData, out int index)");
-            string containsPending = ExtractMethodBody(source, "private static bool ContainsPendingBuildable(BuildableData buildableData)");
-            string findPending = ExtractMethodBody(source, "private static bool TryFindPendingBuildable(BuildableData buildableData, out int index)");
-            string promoteRegistrationOwner = ExtractMethodBody(source, "private static void PromoteBuildableRegistrationOwnerIfUnownedOrSameMod(");
-            string publicCatalogRegister = ExtractMethodBody(moduleCatalog, "public bool TryRegisterRuntimeModule(BuildableData data, string customCategory, out string error)");
-            string ownedCatalogRegister = ExtractMethodBody(moduleCatalog, "internal bool TryRegisterRuntimeModule(BuildableData data, string customCategory, string ownerId, out string error)");
-            string catalogUnregister = ExtractMethodBody(moduleCatalog, "internal bool UnregisterRuntimeModulesForOwner(string ownerId)");
-            string catalogPromoteOwner = ExtractMethodBody(moduleCatalog, "internal bool TryPromoteRuntimeModuleOwnerIfPresent(BuildableData data, string customCategory, string ownerId)");
-            string ownerRecorder = ExtractMethodBody(moduleCatalog, "private void RecordRuntimeModuleOwner(string persistentId, string ownerId)");
-            string ownerPromoter = ExtractMethodBody(moduleCatalog, "private bool RecordRuntimeModuleOwnerIfUnownedOrSameOwner(string persistentId, string ownerId)");
 
             StringAssert.Contains("public string ModId;", source);
             StringAssert.Contains("public uint ModHash;", source);
             StringAssert.Contains("private static readonly List<PendingBuildableRegistration> _liveBuildables", source);
             StringAssert.Contains("private static readonly List<ModuleCatalog> _liveModuleCatalogs", source);
-            StringAssert.Contains("private Dictionary<string, string> _runtimeModuleOwnerByPersistentId;", moduleCatalog);
-            StringAssert.Contains("return TryRegisterRuntimeModule(data, customCategory, string.Empty, out error);", publicCatalogRegister);
+
             Assert.IsTrue(ContainsTokensInOrder(
                 register,
                 "string normalizedCategory = NormalizeCategory(customCategory);",
@@ -2195,6 +2170,7 @@ namespace Hecton8.Tests.Editor
                 "ModId = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty,",
                 "ModHash = ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModHash : 0u",
                 "ModRegistryEvents.NotifyBuildableRegistryChanged();"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 unregister,
                 "bool removed = false;",
@@ -2212,6 +2188,7 @@ namespace Hecton8.Tests.Editor
                 "removed = true;",
                 "if (removed)",
                 "ModRegistryEvents.NotifyBuildableRegistryChanged();"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 flush,
                 "PendingBuildableRegistration registration = _pendingBuildables[i];",
@@ -2222,6 +2199,17 @@ namespace Hecton8.Tests.Editor
                 "catalog.TryRegisterRuntimeModule(registration.Data, registration.CustomCategory, registration.ModId, out string error)",
                 "AddOrReplaceLiveBuildableRegistration(registration.Data, registration.CustomCategory, registration.ModId, registration.ModHash);",
                 "TrackLiveCatalog(catalog);"));
+        }
+
+        [Test]
+        public void ModBuildableRegistry_GlobalServiceReplacementFlushesAndReplaysRegistrations()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs");
+            string serviceReplaced = ExtractMethodBody(source, "internal static void OnGlobalRegistryServiceReplaced(", 1);
+            string replay = ExtractMethodBody(source, "private static void ReplayLiveRegistrationsToActiveCatalog()", 1);
+            string ownerGuard = ExtractMethodBody(source, "private static bool IsPendingOwnerStillRegistered(uint modHash)", 1);
+            string activeOwner = ExtractMethodBody(source, "private static string ResolveActiveOwnerId()", 1);
+
             Assert.IsTrue(ContainsTokensInOrder(
                 serviceReplaced,
                 "if (serviceSlot != GlobalRegistryServiceSlot.Logistics)",
@@ -2229,8 +2217,10 @@ namespace Hecton8.Tests.Editor
                 "s_logisticsService = currentService as ILogisticsService;",
                 "ReplayLiveRegistrationsToActiveCatalog();",
                 "FlushPendingRegistrations();"));
+
             StringAssert.Contains("return modHash == 0u || ModCommandDispatcher.IsRegisteredMod(modHash);", ownerGuard);
             StringAssert.Contains("return ModExecutionScope.HasActiveMod ? ModExecutionScope.CurrentModId : string.Empty;", activeOwner);
+
             Assert.IsTrue(ContainsTokensInOrder(
                 replay,
                 "ModuleCatalog catalog = ResolveActiveCatalog();",
@@ -2245,6 +2235,20 @@ namespace Hecton8.Tests.Editor
                 "_liveBuildables.RemoveAt(i);",
                 "if (changed)",
                 "ModRegistryEvents.NotifyBuildableRegistryChanged();"));
+        }
+
+        [Test]
+        public void ModBuildableRegistry_TracksAndPromotesLiveBuildableRegistrations()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs");
+            string addLive = ExtractMethodBody(source, "private static void AddOrReplaceLiveBuildableRegistration(");
+            string removeLive = ExtractMethodBody(source, "private static bool RemoveLiveBuildableRegistrationsForMod(string modId)");
+            string containsLive = ExtractMethodBody(source, "private static bool ContainsLiveBuildable(BuildableData buildableData)");
+            string findLive = ExtractMethodBody(source, "private static bool TryFindLiveBuildable(BuildableData buildableData, out int index)");
+            string containsPending = ExtractMethodBody(source, "private static bool ContainsPendingBuildable(BuildableData buildableData)");
+            string findPending = ExtractMethodBody(source, "private static bool TryFindPendingBuildable(BuildableData buildableData, out int index)");
+            string promoteRegistrationOwner = ExtractMethodBody(source, "private static void PromoteBuildableRegistrationOwnerIfUnownedOrSameMod(");
+
             Assert.IsTrue(ContainsTokensInOrder(
                 addLive,
                 "for (int i = 0; i < _liveBuildables.Count; i++)",
@@ -2256,45 +2260,14 @@ namespace Hecton8.Tests.Editor
                 "registration.ModHash = modHash;",
                 "_liveBuildables[i] = registration;",
                 "_liveBuildables.Add(new PendingBuildableRegistration"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 removeLive,
                 "for (int i = _liveBuildables.Count - 1; i >= 0; i--)",
                 "if (!string.Equals(_liveBuildables[i].ModId, modId, System.StringComparison.Ordinal))",
                 "_liveBuildables.RemoveAt(i);",
                 "removed = true;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                trackCatalog,
-                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
-                "ModuleCatalog existing = _liveModuleCatalogs[i];",
-                "_liveModuleCatalogs.RemoveAt(i);",
-                "if (ReferenceEquals(existing, catalog))",
-                "return;",
-                "_liveModuleCatalogs.Add(catalog);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                knownCatalog,
-                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
-                "ModuleCatalog existing = _liveModuleCatalogs[i];",
-                "_liveModuleCatalogs.RemoveAt(i);",
-                "if (ReferenceEquals(existing, catalog))",
-                "return true;",
-                "return false;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                unregisterKnownCatalogs,
-                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
-                "ModuleCatalog catalog = _liveModuleCatalogs[i];",
-                "_liveModuleCatalogs.RemoveAt(i);",
-                "if (catalog.UnregisterRuntimeModulesForOwner(modId))",
-                "removed = true;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                promoteKnownCatalogOwners,
-                "if (!ModExecutionScope.HasActiveMod || buildableData == null)",
-                "return;",
-                "string modId = ModExecutionScope.CurrentModId;",
-                "string normalizedCategory = NormalizeCategory(customCategory);",
-                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
-                "ModuleCatalog catalog = _liveModuleCatalogs[i];",
-                "_liveModuleCatalogs.RemoveAt(i);",
-                "catalog.TryPromoteRuntimeModuleOwnerIfPresent(buildableData, normalizedCategory, modId);"));
+
             StringAssert.Contains("return TryFindLiveBuildable(buildableData, out unusedIndex);", containsLive);
             Assert.IsTrue(ContainsTokensInOrder(
                 findLive,
@@ -2308,6 +2281,7 @@ namespace Hecton8.Tests.Editor
                 "index = i;",
                 "return true;",
                 "return false;"));
+
             StringAssert.Contains("return TryFindPendingBuildable(buildableData, out unusedIndex);", containsPending);
             Assert.IsTrue(ContainsTokensInOrder(
                 findPending,
@@ -2321,6 +2295,7 @@ namespace Hecton8.Tests.Editor
                 "index = i;",
                 "return true;",
                 "return false;"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 promoteRegistrationOwner,
                 "if (!ModExecutionScope.HasActiveMod ||",
@@ -2334,6 +2309,70 @@ namespace Hecton8.Tests.Editor
                 "registration.ModId = ModExecutionScope.CurrentModId;",
                 "registration.ModHash = ModExecutionScope.CurrentModHash;",
                 "registrations[index] = registration;"));
+        }
+
+        [Test]
+        public void ModBuildableRegistry_TracksAndPromotesKnownLiveCatalogs()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/ModRuntimeState.cs");
+            string trackCatalog = ExtractMethodBody(source, "private static void TrackLiveCatalog(ModuleCatalog catalog)");
+            string knownCatalog = ExtractMethodBody(source, "private static bool ContainsKnownLiveCatalog(ModuleCatalog catalog)");
+            string unregisterKnownCatalogs = ExtractMethodBody(source, "private static bool UnregisterRuntimeBuildablesFromKnownCatalogs(string modId)");
+            string promoteKnownCatalogOwners = ExtractMethodBody(source, "private static void PromoteKnownModuleCatalogOwnersIfUnownedOrSameMod(BuildableData buildableData, string customCategory)");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                trackCatalog,
+                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
+                "ModuleCatalog existing = _liveModuleCatalogs[i];",
+                "_liveModuleCatalogs.RemoveAt(i);",
+                "if (ReferenceEquals(existing, catalog))",
+                "return;",
+                "_liveModuleCatalogs.Add(catalog);"));
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                knownCatalog,
+                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
+                "ModuleCatalog existing = _liveModuleCatalogs[i];",
+                "_liveModuleCatalogs.RemoveAt(i);",
+                "if (ReferenceEquals(existing, catalog))",
+                "return true;",
+                "return false;"));
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                unregisterKnownCatalogs,
+                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
+                "ModuleCatalog catalog = _liveModuleCatalogs[i];",
+                "_liveModuleCatalogs.RemoveAt(i);",
+                "if (catalog.UnregisterRuntimeModulesForOwner(modId))",
+                "removed = true;"));
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                promoteKnownCatalogOwners,
+                "if (!ModExecutionScope.HasActiveMod || buildableData == null)",
+                "return;",
+                "string modId = ModExecutionScope.CurrentModId;",
+                "string normalizedCategory = NormalizeCategory(customCategory);",
+                "for (int i = _liveModuleCatalogs.Count - 1; i >= 0; i--)",
+                "ModuleCatalog catalog = _liveModuleCatalogs[i];",
+                "_liveModuleCatalogs.RemoveAt(i);",
+                "catalog.TryPromoteRuntimeModuleOwnerIfPresent(buildableData, normalizedCategory, modId);"));
+        }
+
+        [Test]
+        public void ModBuildableRegistry_ModuleCatalogPromotesAndRecordsOwnership()
+        {
+            string moduleCatalog = ReadProjectFile("Assets/_Project/Scripts/ModuleCatalog.cs");
+            string publicCatalogRegister = ExtractMethodBody(moduleCatalog, "public bool TryRegisterRuntimeModule(BuildableData data, string customCategory, out string error)");
+            string ownedCatalogRegister = ExtractMethodBody(moduleCatalog, "internal bool TryRegisterRuntimeModule(BuildableData data, string customCategory, string ownerId, out string error)");
+            string catalogUnregister = ExtractMethodBody(moduleCatalog, "internal bool UnregisterRuntimeModulesForOwner(string ownerId)");
+            string catalogPromoteOwner = ExtractMethodBody(moduleCatalog, "internal bool TryPromoteRuntimeModuleOwnerIfPresent(BuildableData data, string customCategory, string ownerId)");
+            string ownerRecorder = ExtractMethodBody(moduleCatalog, "private void RecordRuntimeModuleOwner(string persistentId, string ownerId)");
+            string ownerPromoter = ExtractMethodBody(moduleCatalog, "private bool RecordRuntimeModuleOwnerIfUnownedOrSameOwner(string persistentId, string ownerId)");
+            string moduleCatalogRebuild = ExtractMethodBody(moduleCatalog, "private void RebuildLookup()");
+
+            StringAssert.Contains("private Dictionary<string, string> _runtimeModuleOwnerByPersistentId;", moduleCatalog);
+            StringAssert.Contains("return TryRegisterRuntimeModule(data, customCategory, string.Empty, out error);", publicCatalogRegister);
+
             Assert.IsTrue(ContainsTokensInOrder(
                 ownedCatalogRegister,
                 "if (ContainsRuntimeModule(data))",
@@ -2345,6 +2384,7 @@ namespace Hecton8.Tests.Editor
                 "RecordRuntimeModuleOwner(persistentId, ownerId);",
                 "AddLookupAlias(persistentId, data);",
                 "_combinedModulesDirty = true;"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 catalogUnregister,
                 "ownerId = NormalizeRuntimeOwnerId(ownerId);",
@@ -2356,6 +2396,7 @@ namespace Hecton8.Tests.Editor
                 "_runtimeModules.RemoveAt(i);",
                 "if (removed)",
                 "RebuildLookup();"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 ownerRecorder,
                 "ownerId = NormalizeRuntimeOwnerId(ownerId);",
@@ -2363,6 +2404,7 @@ namespace Hecton8.Tests.Editor
                 "_runtimeModuleOwnerByPersistentId?.Remove(persistentId);",
                 "return;",
                 "_runtimeModuleOwnerByPersistentId[persistentId] = ownerId;"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 catalogPromoteOwner,
                 "string persistentId = NormalizeRuntimeModulePersistentId(data);",
@@ -2372,6 +2414,7 @@ namespace Hecton8.Tests.Editor
                 "_runtimeCategoryByPersistentId[persistentId] = NormalizeRuntimeCategory(customCategory);",
                 "_combinedModulesDirty = true;",
                 "return true;"));
+
             Assert.IsTrue(ContainsTokensInOrder(
                 ownerPromoter,
                 "persistentId = NormalizeRuntimeModulePersistentId(persistentId);",
@@ -2383,11 +2426,20 @@ namespace Hecton8.Tests.Editor
                 "return false;",
                 "RecordRuntimeModuleOwner(persistentId, ownerId);",
                 "return true;"));
+
             Assert.IsTrue(ContainsTokensInOrder(
-                moduleCatalog,
+                moduleCatalogRebuild,
                 "private void RebuildLookup()",
                 "_combinedModulesDirty = true;",
                 "AddHashAlias(runtimeModule.ModuleHashId, runtimeModule);"));
+        }
+
+        [Test]
+        public void ModBuildableRegistry_PlayerBuilderAndConstructionTabRespectModuleCatalog()
+        {
+            string playerBuilder = ReadProjectFile("Assets/_Project/Scripts/PlayerBuilder.cs");
+            string constructionTab = ReadProjectFile("Assets/_Project/Scripts/UI/PDAConstructionTab.cs");
+
             StringAssert.Contains("_buildCatalog.GetViewableCount(_cachedQuestSystem)", playerBuilder);
             StringAssert.Contains("BuildableData data = catalog.GetViewableAt(i, _cachedQuestSystem);", constructionTab);
         }
