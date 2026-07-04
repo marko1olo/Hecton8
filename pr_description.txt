@@ -1,0 +1,3 @@
+🎯 **What:** The testing gap addressed (Untested UnauthorizedAccessException handling in H8StaticDataArena)
+📊 **Coverage:** What scenarios are now tested (Simulated UnauthorizedAccessException via reflection on TryProbeExistingBlobLength and TryDeleteFile)
+✨ **Result:** The improvement in test coverage (Ensure no crashes and proper load status updates on permissions failure)
