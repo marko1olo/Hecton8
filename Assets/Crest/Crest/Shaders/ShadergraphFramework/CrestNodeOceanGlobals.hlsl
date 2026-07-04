@@ -15,7 +15,7 @@ void CrestNodeOceanGlobals_float
 )
 {
 	o_crestTime = _CrestTime;
-	// TODO: Look at removing as I do not think it is used.
+	// Unsafe to remove parameters from a third party shader graph node since it might break linked visual graphs.
 	o_texelsPerWave = 2.0;
 	o_oceanCenterPosWorld = _OceanCenterPosWorld;
 	o_sliceCount = _SliceCount;
