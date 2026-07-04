@@ -1,0 +1,29 @@
+{
+    "name": "Hecton8.Tests",
+    "rootNamespace": "Hecton8.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core",
+        "Hecton8.World",
+        "Hecton8.Gameplay",
+        "Hecton8.Building",
+        "Hecton8.Power",
+        "Hecton8.Construction"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
