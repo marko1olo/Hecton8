@@ -81,7 +81,9 @@ PROP_DEF(int, _DashSnap)
         #endif
     #endif
     
-    clip(outColor.a - VERY_SMOL); // todo: this disallows negative colors, which, might be bad? idk
+    #if ALLOW_NEGATIVE_COLORS == 0
+        clip(outColor.a - VERY_SMOL); // todo: this disallows negative colors, which, might be bad? idk
+    #endif
 
     #ifdef BLEND_FADE_TO_BLACK
         outColor.rgb *= outColor.a;
