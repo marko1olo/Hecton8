@@ -99,8 +99,8 @@ namespace MapMagic.Brush
 			UpdateCaches();
 
 			//updating cache on MapMagic change
-			TerrainTile.OnTileApplied -= UpdateCache;
-			TerrainTile.OnTileApplied += UpdateCache;
+			TerrainTile.OnTileComplete -= UpdateCache;
+			TerrainTile.OnTileComplete += UpdateCache;
 		}
 
 		public void Awake()

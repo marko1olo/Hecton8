@@ -3503,7 +3503,7 @@ namespace Hecton8.Core
             if (_terrainTileEventsSubscribed)
                 return;
 
-            TerrainTile.OnTileApplied += HandleTerrainTileApplied;
+            TerrainTile.OnTileComplete += HandleTerrainTileApplied;
             TerrainTile.OnTileMoved += HandleTerrainTileMoved;
             _terrainTileEventsSubscribed = true;
         }
@@ -3513,7 +3513,7 @@ namespace Hecton8.Core
             if (!_terrainTileEventsSubscribed)
                 return;
 
-            TerrainTile.OnTileApplied -= HandleTerrainTileApplied;
+            TerrainTile.OnTileComplete -= HandleTerrainTileApplied;
             TerrainTile.OnTileMoved -= HandleTerrainTileMoved;
             _terrainTileEventsSubscribed = false;
         }
