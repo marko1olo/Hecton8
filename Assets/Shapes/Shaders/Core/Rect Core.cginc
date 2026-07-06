@@ -210,8 +210,10 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
 	// base sdf
 	#ifdef CORNER_RADIUS
         half2 indentBoxSize = (i.IP_rect.zw - cornerRadius.xx*2);
+        half2 q = abs(i.IP_uv0.xy) - indentBoxSize/2;
         half boxSdf = SdfBox( i.IP_uv0.xy, indentBoxSize/2 ) - cornerRadius;
     #else
+        half2 q = abs(i.IP_uv0.xy) - i.IP_rect.zw/2;
         half boxSdf = SdfBox( i.IP_uv0.xy, i.IP_rect.zw/2 );
     #endif
     
@@ -222,12 +224,33 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
 		half boxSdfPreAbs = boxSdf;
 		boxSdf = abs(boxSdf + halfthick) - halfthick;
 	    #if LOCAL_ANTI_ALIASING_QUALITY > 0
-            half boxSdfPd = PD( boxSdf ); // todo: this has minor artifacts on inner corners, might want to separate masks by axis
-            half shape_mask = 1.0-StepThresholdPD( boxSdf, boxSdfPd );
+            half outer_mask = 1.0 - StepThresholdPD( boxSdfPreAbs, PD(boxSdfPreAbs) );
+            half shape_mask;
+            #ifdef CORNER_RADIUS
+            if( cornerRadius > thickness ) {
+                // inner corner is rounded, use standard distance
+                shape_mask = outer_mask * StepThresholdPD( boxSdfPreAbs + thickness, PD(boxSdfPreAbs) );
+            } else {
+                // inner corner is sharp, separate masks by axis
+                half innerSdfX = q.x - cornerRadius + thickness;
+                half innerSdfY = q.y - cornerRadius + thickness;
+                half maskX = StepThresholdPD( innerSdfX, PD(innerSdfX) );
+                half maskY = StepThresholdPD( innerSdfY, PD(innerSdfY) );
+                half inner_mask = 1.0 - (1.0 - maskX) * (1.0 - maskY);
+                shape_mask = outer_mask * inner_mask;
+            }
+            #else
+            // inner corner is sharp, separate masks by axis
+            half innerSdfX = q.x + thickness;
+            half innerSdfY = q.y + thickness;
+            half maskX = StepThresholdPD( innerSdfX, PD(innerSdfX) );
+            half maskY = StepThresholdPD( innerSdfY, PD(innerSdfY) );
+            half inner_mask = 1.0 - (1.0 - maskX) * (1.0 - maskY);
+            shape_mask = outer_mask * inner_mask;
+            #endif
         #else
             half shape_mask = 1-StepAA(boxSdf);
         #endif
-
 		// DASHES
 		ApplyDashes(/*inout*/ shape_mask, i, cornerRadii, 1+boxSdfPreAbs/thickness );
 	
