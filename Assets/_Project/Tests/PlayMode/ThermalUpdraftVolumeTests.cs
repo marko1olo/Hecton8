@@ -84,5 +84,43 @@ namespace Hecton8.Physics.Tests
                 _volume.SlowTick();
             });
         }
-    }
+
+        [Test]
+        public void OnGlobalRegistryServiceReplaced_WhenSlotIsNotDispatcher_DoesNothing()
+        {
+            _gameObject.SetActive(true);
+            var fieldRegistered = typeof(ThermalUpdraftVolume).GetField("_registeredToTick", BindingFlags.NonPublic | BindingFlags.Instance);
+            fieldRegistered?.SetValue(_volume, true); // simulate it being registered
+
+            _volume.OnGlobalRegistryServiceReplaced((Hecton8.Core.GlobalRegistryServiceSlot)999, null, null);
+
+            // Should still be true
+            Assert.IsTrue((bool)fieldRegistered.GetValue(_volume));
+        }
+
+        [Test]
+        public void OnGlobalRegistryServiceReplaced_WhenSlotIsDispatcher_AndServiceIsNull_Unregisters()
+        {
+            _gameObject.SetActive(true);
+            var fieldRegistered = typeof(ThermalUpdraftVolume).GetField("_registeredToTick", BindingFlags.NonPublic | BindingFlags.Instance);
+            fieldRegistered?.SetValue(_volume, true);
+
+            _volume.OnGlobalRegistryServiceReplaced(Hecton8.Core.GlobalRegistryServiceSlot.Dispatcher, null, null);
+
+            // Should be false now
+            Assert.IsFalse((bool)fieldRegistered.GetValue(_volume));
+        }
+
+        [Test]
+        public void OnGlobalRegistryServiceReplaced_WhenSlotIsDispatcher_AndServiceIsNotNull_DoesNotThrow()
+        {
+            _gameObject.SetActive(true);
+            var fieldRegistered = typeof(ThermalUpdraftVolume).GetField("_registeredToTick", BindingFlags.NonPublic | BindingFlags.Instance);
+            fieldRegistered?.SetValue(_volume, false);
+
+            Assert.DoesNotThrow(() => {
+                _volume.OnGlobalRegistryServiceReplaced(Hecton8.Core.GlobalRegistryServiceSlot.Dispatcher, null, new object());
+            });
+        }
+}
 }
