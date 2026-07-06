@@ -348,7 +348,6 @@ namespace MapMagic.Nodes.GUI
 
 		private static bool ClickedNearCurve (Curve curve)
 		{
-			//TODO: to optimize A LOT. Calculating AddCursorRect each frame are damn slow!
 			//however it's called only in cursor is in curve field
 
 			if (UI.current.layout) return false;
@@ -386,25 +385,27 @@ namespace MapMagic.Nodes.GUI
 
 					rect = rect.Extended(addRange);
 
-					#if UNITY_EDITOR
-					Rect dispRect = UI.current.scrollZoom != null ?
-						UI.current.scrollZoom.ToScreen(rect.position, rect.size) :
-						new Rect(rect.position, rect.size);
-					UnityEditor.EditorGUIUtility.AddCursorRect(dispRect, UnityEditor.MouseCursor.ArrowPlus);
-					//UnityEditor.EditorGUI.DrawRect(dispRect,Color.red);
-					#endif
-
-					if (Event.current.type==EventType.MouseDown  &&  rect.Contains(UI.current.mousePos)  &&  Event.current.button==0)
+					if (rect.Contains(UI.current.mousePos))
 					{
-						//excluding points that should be dragged instead
-						for (int n=0; n<curve.points.Length; n++)
-						{
-							Vector2 nPos = ToCell(curve.points[n].pos);
-							Rect nRect = new Rect(nPos.x-moveRange, nPos.y-moveRange, 1+moveRange*2, 1+moveRange*2);
-							if (nRect.Contains(UI.current.mousePos)) return false;
-						}
+						#if UNITY_EDITOR
+						Rect dispRect = UI.current.scrollZoom != null ?
+							UI.current.scrollZoom.ToScreen(rect.position, rect.size) :
+							new Rect(rect.position, rect.size);
+						UnityEditor.EditorGUIUtility.AddCursorRect(dispRect, UnityEditor.MouseCursor.ArrowPlus);
+						#endif
 
-						return true;
+						if (Event.current.type==EventType.MouseDown  &&  Event.current.button==0)
+						{
+							//excluding points that should be dragged instead
+							for (int n=0; n<curve.points.Length; n++)
+							{
+								Vector2 nPos = ToCell(curve.points[n].pos);
+								Rect nRect = new Rect(nPos.x-moveRange, nPos.y-moveRange, 1+moveRange*2, 1+moveRange*2);
+								if (nRect.Contains(UI.current.mousePos)) return false;
+							}
+
+							return true;
+						}
 					}
 				}
 			}
