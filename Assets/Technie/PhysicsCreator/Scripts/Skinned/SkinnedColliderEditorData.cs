@@ -140,13 +140,13 @@ namespace Technie.PhysicsCreator.Skinned
 
 		// Source mesh
 		public Mesh sourceMesh;
-		public Hash160 sourceMeshHash;
+		public Hash256 sourceMeshHash;
 
 		public bool suppressMeshModificationWarning = false;
 
 		// Properties
 
-		public Hash160 CachedHash
+		public Hash256 CachedHash
 		{
 			get { return sourceMeshHash; }
 			set { this.sourceMeshHash = value; }

@@ -5,16 +5,16 @@ using System.Security.Cryptography;
 namespace Technie.PhysicsCreator
 {
 	[System.Serializable]
-	public class Hash160
+	public class Hash256
 	{
 		public byte[] data;
 
-		public Hash160()
+		public Hash256()
 		{
 			this.data = new byte[0];
 		}
 
-		public Hash160(byte[] data)
+		public Hash256(byte[] data)
 		{
 			this.data = data;
 		}
@@ -42,7 +42,7 @@ namespace Technie.PhysicsCreator
 
 		public override bool Equals(object obj)
 		{
-			Hash160 other = obj as Hash160;
+			Hash256 other = obj as Hash256;
 			if (other == null)
 				return false;
 
@@ -63,7 +63,7 @@ namespace Technie.PhysicsCreator
 			return true;
 		}
 
-		public static bool operator ==(Hash160 lhs, Hash160 rhs)
+		public static bool operator ==(Hash256 lhs, Hash256 rhs)
 		{
 			if (lhs is null)
 			{
@@ -76,7 +76,7 @@ namespace Technie.PhysicsCreator
 			return lhs.Equals(rhs);
 		}
 
-		public static bool operator !=(Hash160 lhs, Hash160 rhs)
+		public static bool operator !=(Hash256 lhs, Hash256 rhs)
 		{
 			return !(lhs == rhs);
 		}
@@ -84,14 +84,14 @@ namespace Technie.PhysicsCreator
 
 	public class HashUtil
 	{
-		public static Hash160 CalcHash(Mesh srcMesh)
+		public static Hash256 CalcHash(Mesh srcMesh)
 		{
 			if (srcMesh == null)
-				return new Hash160();
+				return new Hash256();
 
 			System.DateTime startTime = System.DateTime.Now;
 
-			HashAlgorithm algo = SHA1.Create();
+			HashAlgorithm algo = SHA256.Create();
 
 			Vector3[] vertices = srcMesh.vertices;
 			for (int i = 0; i < vertices.Length; i++)
@@ -119,16 +119,16 @@ namespace Technie.PhysicsCreator
 			double elapsedTimeSecs = (finishTime - startTime).TotalSeconds;
 			//Console.output.Log("Hash calculation took: " + elapsedTimeSecs.ToString("0.00"));
 
-			return new Hash160(outputHash);
+			return new Hash256(outputHash);
 		}
 
-		public static Hash160 CalcHash(string input)
+		public static Hash256 CalcHash(string input)
 		{
-			HashAlgorithm algo = SHA1.Create();
+			HashAlgorithm algo = SHA256.Create();
 			byte[] bytes = System.Text.Encoding.UTF8.GetBytes(input);
 			algo.TransformFinalBlock(bytes, 0, bytes.Length);
 			byte[] outputHash = algo.Hash;
-			return new Hash160(outputHash);
+			return new Hash256(outputHash);
 		}
 
 		private static byte[] ToBytes(Vector3 vec)

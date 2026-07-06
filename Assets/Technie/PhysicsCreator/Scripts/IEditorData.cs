@@ -14,7 +14,7 @@ namespace Technie.PhysicsCreator
 			get;
 		}
 		
-		Hash160 CachedHash
+		Hash256 CachedHash
 		{
 			get;
 			set;

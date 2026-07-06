@@ -75,7 +75,7 @@ namespace Technie.PhysicsCreator
 			}
 		}
 
-		public Hash160 CachedHash
+		public Hash256 CachedHash
 		{
 			get { return sourceMeshHash; }
 			set { this.sourceMeshHash = value; }
@@ -112,7 +112,7 @@ namespace Technie.PhysicsCreator
 		public HullMeshAsset hullData;
 
 		public Mesh sourceMesh;
-		public Hash160 sourceMeshHash;
+		public Hash256 sourceMeshHash;
 
 		public int activeHull = -1;
 
