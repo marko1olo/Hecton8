@@ -847,7 +847,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/Player/Player PDA")]
     public sealed class PlayerPDA : MonoBehaviour, ITickable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, ISerializationCallbackReceiver
     {
-        public void OnBeforeSerialize() {}
+        void ISerializationCallbackReceiver.OnBeforeSerialize() {}
         public void OnAfterDeserialize()
         {
             if (!_migratedSettings)
