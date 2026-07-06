@@ -1,4 +1,2 @@
 using System;
-public class SyntaxCheck {
-    public static void Main() {}
-}
+class Program { static void Main() {} }
