@@ -2349,26 +2349,27 @@ namespace Den.Tools.Matrices {
 				/// Like ResampleStripeDownFast, but ignores black (lower than minVal) values
 				{
 					float sum; int num;
+					long minValLong = (long)(minVal * 0x3FFFFFFFFFFFFFFE);
 
 					for (int dstX=1; dstX<dst.length-1; dstX++)
 					{
 						sum = 0; num = 0;
 
-						if (src.arr[dstX*2] > minVal) { sum += src.arr[dstX*2] * 2; num += 2; } //TODO: compare in longs
-						if (src.arr[dstX*2-1] > minVal) { sum += src.arr[dstX*2-1]; num ++; }
-						if (src.arr[dstX*2+1] > minVal) { sum += src.arr[dstX*2+1]; num ++; }
+						if ((long)(src.arr[dstX*2] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[dstX*2] * 2; num += 2; }
+						if ((long)(src.arr[dstX*2-1] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[dstX*2-1]; num ++; }
+						if ((long)(src.arr[dstX*2+1] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[dstX*2+1]; num ++; }
 
 						dst.arr[dstX] = num>0 ? sum/num : 0;
 					}
 
 					sum = 0; num = 0;
-					if (src.arr[0] > minVal) { sum += src.arr[0]*3; num += 3; }
-					if (src.arr[1] > minVal) { sum += src.arr[1]; num ++; }
+					if ((long)(src.arr[0] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[0]*3; num += 3; }
+					if ((long)(src.arr[1] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[1]; num ++; }
 					dst.arr[0] = num>0 ? sum/num : 0;
 
 					sum = 0; num = 0;
-					if (src.arr[src.length-1] > minVal) { sum += src.arr[src.length-1]*3; num += 3; }
-					if (src.arr[src.length-2] > minVal) { sum += src.arr[src.length-2]; num ++; }
+					if ((long)(src.arr[src.length-1] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[src.length-1]*3; num += 3; }
+					if ((long)(src.arr[src.length-2] * 0x3FFFFFFFFFFFFFFE) > minValLong) { sum += src.arr[src.length-2]; num ++; }
 					dst.arr[dst.length-1] = num>0 ? sum/num : 0;
 				}
 			#endif
