@@ -186,6 +186,24 @@ namespace Hecton8.Tests.Editor
 
             goodListener.Received(1).OnCelestialEclipseStarted();
         }
+
+        [Test]
+        public void ListenerSlot_Clear_SetsListenerToNull()
+        {
+            Type listenerSlotType = typeof(CelestialEvents).GetNestedType("ListenerSlot", BindingFlags.NonPublic);
+            object slotInstance = Activator.CreateInstance(listenerSlotType);
+
+            FieldInfo listenerField = listenerSlotType.GetField("Listener", BindingFlags.Public | BindingFlags.Instance);
+            ICelestialEventListener listener = Substitute.For<ICelestialEventListener>();
+            listenerField.SetValue(slotInstance, listener);
+
+            Assert.IsNotNull(listenerField.GetValue(slotInstance));
+
+            MethodInfo clearMethod = listenerSlotType.GetMethod("Clear", BindingFlags.Public | BindingFlags.Instance);
+            clearMethod.Invoke(slotInstance, null);
+
+            Assert.IsNull(listenerField.GetValue(slotInstance));
+        }
     }
 }
 #endif
