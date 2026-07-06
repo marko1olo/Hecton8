@@ -82,6 +82,105 @@ namespace CandiceAIforGames.AI.Tests
             Assert.That(_controller.HalfHeight, Is.EqualTo(5f));
         }
 
+
+        [Test]
+        public void AttackRanged_WhenHasAttackAnimationAndNotAttacking_SetsIsAttackingTrueAndDoesNotSchedule()
+        {
+            _controller.HasAttackAnimation = true;
+            _controller.IsAttacking = false;
+
+            _controller.AttackRanged();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.False);
+        }
+
+        [Test]
+        public void AttackRanged_WhenDoesNotHaveAttackAnimationAndNotAttacking_SetsIsAttackingTrueAndSchedules()
+        {
+            _controller.HasAttackAnimation = false;
+            _controller.IsAttacking = false;
+
+            _controller.AttackRanged();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.True);
+
+            var pendingAttackIsRangedField = typeof(CandiceAIController).GetField("_pendingAttackIsRanged", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttackIsRanged = (bool)pendingAttackIsRangedField.GetValue(_controller);
+            Assert.That(pendingAttackIsRanged, Is.True);
+        }
+
+        [Test]
+        public void AttackRanged_WhenIsAttacking_DoesNothing()
+        {
+            _controller.HasAttackAnimation = true;
+            _controller.IsAttacking = true;
+
+            _controller.AttackRanged();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.False);
+        }
+
+        [Test]
+        public void AttackMelee_WhenHasAttackAnimationAndNotAttacking_SetsIsAttackingTrueAndDoesNotSchedule()
+        {
+            _controller.HasAttackAnimation = true;
+            _controller.IsAttacking = false;
+
+            _controller.AttackMelee();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.False);
+        }
+
+        [Test]
+        public void AttackMelee_WhenDoesNotHaveAttackAnimationAndNotAttacking_SetsIsAttackingTrueAndSchedules()
+        {
+            _controller.HasAttackAnimation = false;
+            _controller.IsAttacking = false;
+
+            _controller.AttackMelee();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.True);
+
+            var pendingAttackIsRangedField = typeof(CandiceAIController).GetField("_pendingAttackIsRanged", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttackIsRanged = (bool)pendingAttackIsRangedField.GetValue(_controller);
+            Assert.That(pendingAttackIsRanged, Is.False);
+        }
+
+        [Test]
+        public void AttackMelee_WhenIsAttacking_DoesNothing()
+        {
+            _controller.HasAttackAnimation = true;
+            _controller.IsAttacking = true;
+
+            _controller.AttackMelee();
+
+            Assert.That(_controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
+            Assert.That(pendingAttack, Is.False);
+        }
+
         private void SetPrivateField(object obj, string fieldName, object value)
         {
             var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
