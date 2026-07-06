@@ -192,7 +192,6 @@ namespace MapMagic.Brush
 
 		private static IEnumerable<Transform> ChildRelatedTransforms (Transform parent, Vector2D worldPos, Vector2D worldSize)
 		{
-				//foreach (Transform tfm in parent) //sometimes returns null instead of transform
 
 				int childCount = parent.childCount;
 				for (int i=0; i<childCount; i++)
