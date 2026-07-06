@@ -1255,14 +1255,11 @@ namespace Hecton8.Physics
             QueueImpactLocal(src.localPoint, math.max(src.magnitude, damageDelta * 10f), src.integrityDelta);
         }
 
-        /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
-        /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
 
-        /// <inheritdoc />
-        public void OnTraumaThresholdCrossed(TraumaLevel level) { }
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnTraumaThresholdCrossed(TraumaLevel level) { }
 
         /// <inheritdoc />
         public void OnHullBreach(float3 localPoint, float depth, float pressureDelta)
