@@ -209,6 +209,9 @@ namespace UnityEditor.ShaderGraph
                 case PropertyType.Texture2D:
                     sb.AppendLine($"UnityTexture2D {GetVariableNameForSlot(OutputSlotId)} = {property.GetHLSLVariableName(isGeneratingSubgraph, mode)};");
                     break;
+                case PropertyType.VirtualTexture:
+                    sb.AppendLine($"VTPropertyWithTextureType {GetVariableNameForSlot(OutputSlotId)} = {property.GetHLSLVariableName(isGeneratingSubgraph, mode)};");
+                    break;
                 case PropertyType.Texture3D:
                     sb.AppendLine($"UnityTexture3D {GetVariableNameForSlot(OutputSlotId)} = {property.GetHLSLVariableName(isGeneratingSubgraph, mode)};");
                     break;
@@ -236,18 +239,6 @@ namespace UnityEditor.ShaderGraph
                 // The parent graph always sets the explicit value to be passed to a subgraph function.
                 sb.AppendLine("bool {0} = {1};", GetConnectionStateVariableNameForSlot(OutputSlotId), (mode.IsPreview() || !isGeneratingSubgraph) ? (IsSlotConnected(OutputSlotId) ? "true" : "false") : property.GetConnectionStateHLSLVariableName());
             }
-        }
-
-        public override string GetVariableNameForSlot(int slotId)
-        {
-            // TODO: we should switch VirtualTexture away from the macro-based variables and towards using the same approach as Texture2D
-            switch (property.propertyType)
-            {
-                case PropertyType.VirtualTexture:
-                    return property.GetHLSLVariableName(owner.isSubGraph, GenerationMode.ForReals);
-            }
-
-            return base.GetVariableNameForSlot(slotId);
         }
 
         public string GetConnectionStateVariableNameForSlot(int slotId)
