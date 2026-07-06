@@ -4423,97 +4423,32 @@ namespace Hecton8.SaveSystem
             UnsafeUtility.MemClear(rawPtr, rawBuffer.Length);
             UnsafeUtility.MemClear(filePtr, compressedBuffer.Length);
 
-            int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
-            ushort playerDialogueChoiceFlags =
-                (ushort)(playerDialogueChoiceFlagsSnapshot | ExtractPlayerDialogueChoiceFlags(packedQuestStateWords));
-            if (!TryEncodeHeaderDeltaCount(packedQuestWordCount, playerDialogueChoiceFlags, out uint headerDeltaCount, out error))
-                return false;
-
-            int ecosystemSectorCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
-            int voxelDeltaByteLength = voxelDeltaSnapshot.IsCreated ? voxelDeltaSnapshot.Length : 0;
-            int packedQuestSectionLength = packedQuestWordCount > 0
-                ? PackedQuestStateSectionHeaderSize + (packedQuestWordCount * UnsafeUtility.SizeOf<uint>())
-                : 0;
-            if (!TryComputeEcosystemSectionLength(ecosystemSectorCount, CurrentVersion, out int ecosystemSectionLength))
-            {
-                error = "Ecosystem section exceeds supported bounds.";
-                return false;
-            }
-
-            int metadataCursor = PayloadPrefixSizeBytes + sceneBytesLength + versionBytesLength;
-            if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, metadataCursor), rawBuffer.Length - metadataCursor, out int saveDataByteLength, out error))
-                return false;
-
-            if (!TryResolveAupFromRuntimeOrigin(metadata.PlayerPosition, out AbsoluteUniversePosition playerAup))
-            {
-                error = "Save metadata contains an invalid runtime player position.";
-                return false;
-            }
-
             ulong timestampUnixMs = ToUnixMilliseconds(metadata.Timestamp);
-            PayloadPrefix prefix = new PayloadPrefix
+
+            if (!TryWriteSavePayloadMetadataV8(
+                    metadata,
+                    data,
+                    packedQuestHeader,
+                    packedQuestStateWords,
+                    playerDialogueChoiceFlagsSnapshot,
+                    ecosystemSectorStates,
+                    voxelDeltaSnapshot,
+                    rawPtr,
+                    rawBuffer.Length,
+                    sceneName,
+                    gameVersion,
+                    sceneBytesLength,
+                    versionBytesLength,
+                    timestampUnixMs,
+                    out uint headerDeltaCount,
+                    out int packedQuestOffsetInMetadataPayload,
+                    out int metadataRawLength,
+                    out ulong metadataHash64,
+                    out uint metadataChecksum,
+                    out error))
             {
-                TimestampUnixMs = timestampUnixMs,
-                PlayTimeSeconds = metadata.PlayTimeSeconds,
-                PlayerPosition = playerAup,
-                SaveDataVersion = math.max(data.version, 0),
-                SaveDataByteLength = (uint)saveDataByteLength,
-                SceneNameByteLength = (ushort)sceneBytesLength,
-                GameVersionByteLength = (ushort)versionBytesLength
-            };
-
-            UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
-            metadataCursor = PayloadPrefixSizeBytes;
-            if (!TryCopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, metadataCursor), sceneBytesLength, out error))
                 return false;
-            metadataCursor += sceneBytesLength;
-            if (!TryCopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, metadataCursor), versionBytesLength, out error))
-                return false;
-            metadataCursor += versionBytesLength;
-            metadataCursor += saveDataByteLength;
-            int packedQuestOffsetInMetadataPayload = metadataCursor;
-
-            if (packedQuestWordCount > 0)
-            {
-                QuestSaveHeader serializedQuestHeader = packedQuestHeader;
-                serializedQuestHeader.Magic = QuestSaveHeader.HeaderMagic;
-                serializedQuestHeader.FlagCount = (uint)packedQuestWordCount;
-                serializedQuestHeader.WriteSchemaVersion();
-                serializedQuestHeader.Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
-                UnsafeUtility.CopyStructureToPtr(ref serializedQuestHeader, AddByteOffset(rawPtr, metadataCursor));
-                metadataCursor += PackedQuestStateSectionHeaderSize;
-
-                void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
-                int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(rawPtr, metadataCursor), rawBuffer.Length - metadataCursor, packedQuestSourcePtr, packedQuestBytes))
-                {
-                    error = "Packed quest-state write exceeded metadata buffer bounds.";
-                    return false;
-                }
-
-                metadataCursor += packedQuestBytes;
             }
-
-            int ecosystemOffsetInMetadataPayload = metadataCursor;
-            if (!WriteEcosystemSection(AddByteOffset(rawPtr, metadataCursor), ecosystemSectorStates, out error))
-                return false;
-            metadataCursor += ecosystemSectionLength;
-
-            if (voxelDeltaByteLength > 0)
-            {
-                void* voxelSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(rawPtr, metadataCursor), rawBuffer.Length - metadataCursor, voxelSourcePtr, voxelDeltaByteLength))
-                {
-                    error = "Voxel delta snapshot write exceeded metadata buffer bounds.";
-                    return false;
-                }
-
-                metadataCursor += voxelDeltaByteLength;
-            }
-
-            int metadataRawLength = metadataCursor;
-            ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
-            uint metadataChecksum = unchecked((uint)metadataHash64);
 
             IndexedSectorGroupBuffer sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
             if (sectorGroups.InvalidRecordCount > 0)
@@ -4565,6 +4500,216 @@ namespace Hecton8.SaveSystem
                 sectorGroups.Dispose();
                 return false;
             }
+
+            try
+            {
+                if (!TryProcessIndexedSectorsV8(
+                        ref sectorGroups,
+                        sectorCount,
+                        rawPtr,
+                        filePtr,
+                        compressedBuffer.Length,
+                        sectorEntries,
+                        ref fileCursor,
+                        ref anyTokenSubstitution,
+                        out error))
+                {
+                    return false;
+                }
+            }
+            finally
+            {
+                sectorGroups.Dispose();
+            }
+
+            IndexedSectorDirectoryHeader directoryHeader = new IndexedSectorDirectoryHeader
+            {
+                SectorCount = (uint)sectorCount,
+                ChunkSizeMeters = chunkSizeMeters,
+                MetadataCompressedSize = metadataCompressedSize,
+                MetadataDecompressedSize = metadataRawLength
+            };
+            UnsafeUtility.CopyStructureToPtr(ref directoryHeader, filePtr + CurrentHeaderSize);
+
+            int directoryCursor = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize;
+            for (int i = 0; i < sectorEntries.Length; i++)
+            {
+                SectorEntry entry = sectorEntries[i];
+                WriteIndexedSectorEntry(filePtr + directoryCursor, sectorEntrySize, in entry);
+                directoryCursor += sectorEntrySize;
+            }
+
+            ulong directoryHash64 = Hash64(filePtr + CurrentHeaderSize, directoryBytes);
+            payloadHash64 = metadataHash64 ^ directoryHash64;
+            uint checksumRoot = ComputeIndexedChecksumRoot(metadataChecksum, sectorEntries);
+            rawPayloadLength = metadataRawLength;
+
+            SaveFileHeader header = new SaveFileHeader
+            {
+                MagicValue = Magic,
+                Version = CurrentVersion,
+                CompatMask = CurrentCompatMask,
+                Flags = (byte)(FlagLz4Blocks | FlagIndexedSectorBlocks | FlagProtectedLz4Blocks),
+                TimestampUnixMs = timestampUnixMs,
+                Checksum = checksumRoot,
+                DeltaCount = headerDeltaCount,
+                EntityCount = (uint)math.max(totalEntityCount, 0),
+                PlayerOffset = (uint)metadataBlockOffset,
+                DeltaOffset = (uint)(metadataBlockOffset + packedQuestOffsetInMetadataPayload),
+                EntityOffset = (uint)metadataBlockOffset,
+                HashPayload64 = payloadHash64,
+                HashHeader64 = 0UL
+            };
+
+            if (anyTokenSubstitution)
+                header.Flags |= FlagTokenSubstitution;
+
+            header.HashHeader64 = ComputeHeaderHash(ref header);
+            UnsafeUtility.CopyStructureToPtr(ref header, filePtr);
+
+            string directory = Path.GetDirectoryName(absolutePath);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            if (!AsyncWriteManager.WriteAllPaged(absolutePath, filePtr, fileCursor, out error))
+                return false;
+
+            metadata.Checksum = FormatPayloadChecksum(in header);
+            return true;
+        }
+        private static unsafe bool TryWriteSavePayloadMetadataV8(
+            SaveMetadata metadata,
+            SaveData data,
+            QuestSaveHeader packedQuestHeader,
+            NativeArray<uint> packedQuestStateWords,
+            ushort playerDialogueChoiceFlagsSnapshot,
+            NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorStates,
+            NativeArray<byte> voxelDeltaSnapshot,
+            byte* rawPtr,
+            int rawBufferLength,
+            string sceneName,
+            string gameVersion,
+            int sceneBytesLength,
+            int versionBytesLength,
+            ulong timestampUnixMs,
+            out uint headerDeltaCount,
+            out int packedQuestOffsetInMetadataPayload,
+            out int metadataRawLength,
+            out ulong metadataHash64,
+            out uint metadataChecksum,
+            out string error)
+        {
+            headerDeltaCount = 0;
+            packedQuestOffsetInMetadataPayload = 0;
+            metadataRawLength = 0;
+            metadataHash64 = 0UL;
+            metadataChecksum = 0;
+            error = string.Empty;
+
+            int packedQuestWordCount = packedQuestStateWords.IsCreated ? packedQuestStateWords.Length : 0;
+            ushort playerDialogueChoiceFlags =
+                (ushort)(playerDialogueChoiceFlagsSnapshot | ExtractPlayerDialogueChoiceFlags(packedQuestStateWords));
+            if (!TryEncodeHeaderDeltaCount(packedQuestWordCount, playerDialogueChoiceFlags, out headerDeltaCount, out error))
+                return false;
+
+            int ecosystemSectorCount = ecosystemSectorStates.IsCreated ? ecosystemSectorStates.Length : 0;
+            int voxelDeltaByteLength = voxelDeltaSnapshot.IsCreated ? voxelDeltaSnapshot.Length : 0;
+
+            if (!TryComputeEcosystemSectionLength(ecosystemSectorCount, CurrentVersion, out int ecosystemSectionLength))
+            {
+                error = "Ecosystem section exceeds supported bounds.";
+                return false;
+            }
+
+            int metadataCursor = PayloadPrefixSizeBytes + sceneBytesLength + versionBytesLength;
+            if (!SaveBinaryPayloadCodec.TryWrite(data, AddByteOffset(rawPtr, metadataCursor), rawBufferLength - metadataCursor, out int saveDataByteLength, out error))
+                return false;
+
+            if (!TryResolveAupFromRuntimeOrigin(metadata.PlayerPosition, out AbsoluteUniversePosition playerAup))
+            {
+                error = "Save metadata contains an invalid runtime player position.";
+                return false;
+            }
+
+            PayloadPrefix prefix = new PayloadPrefix
+            {
+                TimestampUnixMs = timestampUnixMs,
+                PlayTimeSeconds = metadata.PlayTimeSeconds,
+                PlayerPosition = playerAup,
+                SaveDataVersion = math.max(data.version, 0),
+                SaveDataByteLength = (uint)saveDataByteLength,
+                SceneNameByteLength = (ushort)sceneBytesLength,
+                GameVersionByteLength = (ushort)versionBytesLength
+            };
+
+            UnsafeUtility.CopyStructureToPtr(ref prefix, rawPtr);
+            metadataCursor = PayloadPrefixSizeBytes;
+            if (!TryCopyUtf16StringToUnmanaged(sceneName, AddByteOffset(rawPtr, metadataCursor), sceneBytesLength, out error))
+                return false;
+            metadataCursor += sceneBytesLength;
+            if (!TryCopyUtf16StringToUnmanaged(gameVersion, AddByteOffset(rawPtr, metadataCursor), versionBytesLength, out error))
+                return false;
+            metadataCursor += versionBytesLength;
+            metadataCursor += saveDataByteLength;
+            packedQuestOffsetInMetadataPayload = metadataCursor;
+
+            if (packedQuestWordCount > 0)
+            {
+                QuestSaveHeader serializedQuestHeader = packedQuestHeader;
+                serializedQuestHeader.Magic = QuestSaveHeader.HeaderMagic;
+                serializedQuestHeader.FlagCount = (uint)packedQuestWordCount;
+                serializedQuestHeader.WriteSchemaVersion();
+                serializedQuestHeader.Checksum = ComputePackedQuestStateChecksum(packedQuestStateWords);
+                UnsafeUtility.CopyStructureToPtr(ref serializedQuestHeader, AddByteOffset(rawPtr, metadataCursor));
+                metadataCursor += PackedQuestStateSectionHeaderSize;
+
+                void* packedQuestSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateWords);
+                int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(rawPtr, metadataCursor), rawBufferLength - metadataCursor, packedQuestSourcePtr, packedQuestBytes))
+                {
+                    error = "Packed quest-state write exceeded metadata buffer bounds.";
+                    return false;
+                }
+
+                metadataCursor += packedQuestBytes;
+            }
+
+            int ecosystemOffsetInMetadataPayload = metadataCursor;
+            if (!WriteEcosystemSection(AddByteOffset(rawPtr, metadataCursor), ecosystemSectorStates, out error))
+                return false;
+            metadataCursor += ecosystemSectionLength;
+
+            if (voxelDeltaByteLength > 0)
+            {
+                void* voxelSourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshot);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(AddByteOffset(rawPtr, metadataCursor), rawBufferLength - metadataCursor, voxelSourcePtr, voxelDeltaByteLength))
+                {
+                    error = "Voxel delta snapshot write exceeded metadata buffer bounds.";
+                    return false;
+                }
+
+                metadataCursor += voxelDeltaByteLength;
+            }
+
+            metadataRawLength = metadataCursor;
+            metadataHash64 = Hash64(rawPtr, metadataRawLength);
+            metadataChecksum = unchecked((uint)metadataHash64);
+
+            return true;
+        }
+
+        private static unsafe bool TryProcessIndexedSectorsV8(
+            ref IndexedSectorGroupBuffer sectorGroups,
+            int sectorCount,
+            byte* rawPtr,
+            byte* filePtr,
+            int compressedBufferLength,
+            NativeArray<SectorEntry> sectorEntries,
+            ref int fileCursor,
+            ref bool anyTokenSubstitution,
+            out string error)
+        {
+            error = string.Empty;
 
             NativeParallelHashMap<int3, ushort> persistentWorldChunkLookup = default;
             NativeList<int3> persistentWorldChunkTable = default;
@@ -4629,7 +4774,7 @@ namespace Hecton8.SaveSystem
                             rawPtr,
                             sectorRawLength,
                             filePtr,
-                            compressedBuffer.Length,
+                            compressedBufferLength,
                             ref fileCursor,
                             out int sectorCompressedSize,
                             out uint sectorBlockFlags,
@@ -4667,64 +4812,11 @@ namespace Hecton8.SaveSystem
                     ref persistentWorldItemHashLookup,
                     ref persistentWorldItemHashTable,
                     ref persistentWorldSectionTableSentinelIds);
-                sectorGroups.Dispose();
             }
 
-            IndexedSectorDirectoryHeader directoryHeader = new IndexedSectorDirectoryHeader
-            {
-                SectorCount = (uint)sectorCount,
-                ChunkSizeMeters = chunkSizeMeters,
-                MetadataCompressedSize = metadataCompressedSize,
-                MetadataDecompressedSize = metadataRawLength
-            };
-            UnsafeUtility.CopyStructureToPtr(ref directoryHeader, filePtr + CurrentHeaderSize);
-
-            int directoryCursor = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize;
-            for (int i = 0; i < sectorEntries.Length; i++)
-            {
-                SectorEntry entry = sectorEntries[i];
-                WriteIndexedSectorEntry(filePtr + directoryCursor, sectorEntrySize, in entry);
-                directoryCursor += sectorEntrySize;
-            }
-
-            ulong directoryHash64 = Hash64(filePtr + CurrentHeaderSize, directoryBytes);
-            payloadHash64 = metadataHash64 ^ directoryHash64;
-            uint checksumRoot = ComputeIndexedChecksumRoot(metadataChecksum, sectorEntries);
-            rawPayloadLength = metadataRawLength;
-
-            SaveFileHeader header = new SaveFileHeader
-            {
-                MagicValue = Magic,
-                Version = CurrentVersion,
-                CompatMask = CurrentCompatMask,
-                Flags = (byte)(FlagLz4Blocks | FlagIndexedSectorBlocks | FlagProtectedLz4Blocks),
-                TimestampUnixMs = timestampUnixMs,
-                Checksum = checksumRoot,
-                DeltaCount = headerDeltaCount,
-                EntityCount = (uint)math.max(totalEntityCount, 0),
-                PlayerOffset = (uint)metadataBlockOffset,
-                DeltaOffset = (uint)(metadataBlockOffset + packedQuestOffsetInMetadataPayload),
-                EntityOffset = (uint)metadataBlockOffset,
-                HashPayload64 = payloadHash64,
-                HashHeader64 = 0UL
-            };
-
-            if (anyTokenSubstitution)
-                header.Flags |= FlagTokenSubstitution;
-
-            header.HashHeader64 = ComputeHeaderHash(ref header);
-            UnsafeUtility.CopyStructureToPtr(ref header, filePtr);
-
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            if (!AsyncWriteManager.WriteAllPaged(absolutePath, filePtr, fileCursor, out error))
-                return false;
-
-            metadata.Checksum = FormatPayloadChecksum(in header);
             return true;
         }
+
 
         private static bool TryReadValidatedHeader(
             string absolutePath,
