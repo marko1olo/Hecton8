@@ -103,7 +103,7 @@ namespace MapMagic.Nodes
 			}
 
 			if (!(ienter is PortalEnter<T> enter)) return;
-			//TODO: other validity check
+			if (graph != null && graph.AreDependent((Generator)this, (Generator)enter)) return;
 
 			tempEnter = enter;
 			enterId = enter.id;
