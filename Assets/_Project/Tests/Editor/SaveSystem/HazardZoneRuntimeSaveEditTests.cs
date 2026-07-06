@@ -2851,53 +2851,11 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void BuildableIdentityRuntime_BlankPersistentIdsDoNotProduceHashesOrLookups()
+        public void BuildableIdentityRuntime_BuildableDataChecksCanonicalPersistentId()
         {
-            string moduleCatalogSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/ModuleCatalog.cs"));
             string buildableDataSource = File.ReadAllText(Path.Combine(
                 Directory.GetCurrentDirectory(),
                 "Assets/_Project/Scripts/BuildableData.cs"));
-            string baseModuleSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/BaseModule.cs"));
-            string constructionSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/ConstructionManager.cs"));
-            string templateSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/BaseModuleTemplate.cs"));
-            string saveDataSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/SaveData.cs"));
-            string contentSanitySource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs"));
-            string moduleMarkerSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/ModuleMarker.cs"));
-            string playerBuilderSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/PlayerBuilder.cs"));
-            string moduleStatusSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/ModuleStatusEvents.cs"));
-            string habitatConstructionSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs"));
-            string habitatGraphSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"));
-            string baseModuleCatalogRuntimeSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs"));
-            string baseModuleCatalogEditorSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Editor/BaseModuleCatalogEditorTools.cs"));
-            string abandonedAuthoringSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/Editor/AbandonedHabitatModuleAuthoring.cs"));
 
             StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", buildableDataSource);
             StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", buildableDataSource);
@@ -2910,6 +2868,14 @@ namespace Hecton8.Tests.Editor
                 buildableCanonicalIndex,
                 StringComparison.Ordinal);
             Assert.Greater(buildableCanonicalTrimIndex, buildableCanonicalIndex, buildableDataSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_ModuleCatalogChecksBlankPrefabIds()
+        {
+            string moduleCatalogSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleCatalog.cs"));
 
             int findDataIndex = moduleCatalogSource.IndexOf(
                 "public BuildableData FindDataById(string prefabId)",
@@ -3000,6 +2966,38 @@ namespace Hecton8.Tests.Editor
                 moduleAliasTrimIndex,
                 StringComparison.Ordinal);
             Assert.Greater(moduleAliasLookupIndex, moduleAliasTrimIndex, moduleCatalogSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_BaseModuleHashResolutionAvoidsDirectTemplateHashIdRead()
+        {
+            string baseModuleSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BaseModule.cs"));
+            string moduleMarkerSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleMarker.cs"));
+            string playerBuilderSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/PlayerBuilder.cs"));
+            string moduleStatusSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ModuleStatusEvents.cs"));
+            string habitatConstructionSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs"));
+            string habitatGraphSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs"));
+            string baseModuleCatalogRuntimeSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Construction/BaseModuleCatalogRuntime.cs"));
+            string baseModuleCatalogEditorSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/BaseModuleCatalogEditorTools.cs"));
+            string abandonedAuthoringSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/AbandonedHabitatModuleAuthoring.cs"));
 
             int cachedHashIndex = baseModuleSource.IndexOf(
                 "internal int CachedModuleHashId",
@@ -3024,6 +3022,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("moduleTemplate.TemplateHashId", moduleStatusSource);
             StringAssert.DoesNotContain("template.TemplateHashId", baseModuleCatalogEditorSource);
             StringAssert.DoesNotContain("asset.TemplateHashId", abandonedAuthoringSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_BaseModuleTemplateGeneratesCanonicalHashId()
+        {
+            string templateSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/BaseModuleTemplate.cs"));
 
             int templateValidateIndex = templateSource.IndexOf(
                 "private void OnValidate()",
@@ -3061,6 +3067,14 @@ namespace Hecton8.Tests.Editor
                 templateHashHelperCanonicalIndex,
                 StringComparison.Ordinal);
             Assert.Greater(templateHashHelperComputeIndex, templateHashHelperCanonicalIndex, templateSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_ContentSanityValidatorChecksTemplateHashIds()
+        {
+            string contentSanitySource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/Editor/ContentSanityValidator.cs"));
 
             int templateValidatorIndex = contentSanitySource.IndexOf(
                 "private static void ValidateBaseModuleTemplates(ValidationResult result)",
@@ -3086,6 +3100,14 @@ namespace Hecton8.Tests.Editor
                 validatorMismatchIndex,
                 StringComparison.Ordinal);
             Assert.Greater(validatorMessageIndex, validatorMismatchIndex, contentSanitySource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_ConstructionManagerChecksRefundCostAndSavePrefabId()
+        {
+            string constructionSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/ConstructionManager.cs"));
 
             int refundIndex = constructionSource.IndexOf(
                 "private static int ResolveRefundCostItemHash(InventoryCost cost)",
@@ -3105,6 +3127,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("hasGraphTopology && !string.IsNullOrWhiteSpace(graphNodeDto.prefabId)", constructionSource);
             StringAssert.Contains("if (string.IsNullOrWhiteSpace(prefabId) && (!hasGraphTopology || graphNodeDto.moduleHashId == 0))", constructionSource);
             StringAssert.Contains("BuildableData buildData = !string.IsNullOrWhiteSpace(prefabId)", constructionSource);
+        }
+
+        [Test]
+        public void BuildableIdentityRuntime_SaveDataSanitizesPersistenceIds()
+        {
+            string saveDataSource = File.ReadAllText(Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "Assets/_Project/Scripts/SaveData.cs"));
 
             int sanitizePersistenceIdIndex = saveDataSource.IndexOf(
                 "internal static string SanitizePersistenceId(string value)",
@@ -3127,7 +3157,6 @@ namespace Hecton8.Tests.Editor
                 StringComparison.Ordinal);
             Assert.Greater(graphNodePrefabSanitizeIndex, graphNodeSanitizeIndex, saveDataSource);
         }
-
         [Test]
         public void BuildableIdentityRuntime_TemplateHashIdDirectReadsStayOutOfRuntimeBindingPaths()
         {
