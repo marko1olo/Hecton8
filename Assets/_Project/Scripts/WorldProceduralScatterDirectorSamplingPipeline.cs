@@ -388,33 +388,9 @@ namespace Hecton8.World
             public HectonBiomeFamilyProfile DebugBiomeFamily;
         }
 
-        private void ProcessCompletedScatterSampling()
+        private ScatterCellEvaluationContext BuildScatterCellEvaluationContext(in ScatterSamplingCompletionContext completionContext)
         {
-            using (_scatterProcessingProfilerMarker.Auto())
-            {
-            if (!TryBuildScatterSamplingCompletionContext(out ScatterSamplingCompletionContext completionContext))
-            {
-                if (fieldSampler != null)
-                    fieldSampler.EndScatterSamplingFrame();
-                ResetSamplingState();
-                return;
-            }
-
-            Vector3 center = completionContext.AbsoluteCenter;
-            float size = completionContext.CellSize;
-            float now = completionContext.Now;
-            int totalCells = completionContext.TotalCells;
-            int clusterBudget = completionContext.ClusterBudget;
-            int structureStride = completionContext.StructureStride;
-            int structureBudget = completionContext.StructureBudget;
-            int spawnStride = completionContext.SpawnStride;
-            int spawnBudget = completionContext.SpawnBudget;
-            int groundBudget = completionContext.GroundBudget;
-            long rebuildStartTimestamp = completionContext.RebuildStartTimestamp;
-            long samplingInputsEndTimestamp = completionContext.SamplingInputsEndTimestamp;
-            long samplingCompleteEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
-            PublishBiomeInfluenceGrid(totalCells);
-            ScatterCellEvaluationContext evalContext = new ScatterCellEvaluationContext
+            return new ScatterCellEvaluationContext
             {
                 EvaluatedCells = 0,
                 BiomeInfluenceTransitionCells = 0,
@@ -461,6 +437,35 @@ namespace Hecton8.World
                 DebugBiomeProfile = completionContext.DebugBiomeProfile,
                 DebugBiomeFamily = completionContext.DebugBiomeFamily
             };
+        }
+
+        private void ProcessCompletedScatterSampling()
+        {
+            using (_scatterProcessingProfilerMarker.Auto())
+            {
+            if (!TryBuildScatterSamplingCompletionContext(out ScatterSamplingCompletionContext completionContext))
+            {
+                if (fieldSampler != null)
+                    fieldSampler.EndScatterSamplingFrame();
+                ResetSamplingState();
+                return;
+            }
+
+            Vector3 center = completionContext.AbsoluteCenter;
+            float size = completionContext.CellSize;
+            float now = completionContext.Now;
+            int totalCells = completionContext.TotalCells;
+            int clusterBudget = completionContext.ClusterBudget;
+            int structureStride = completionContext.StructureStride;
+            int structureBudget = completionContext.StructureBudget;
+            int spawnStride = completionContext.SpawnStride;
+            int spawnBudget = completionContext.SpawnBudget;
+            int groundBudget = completionContext.GroundBudget;
+            long rebuildStartTimestamp = completionContext.RebuildStartTimestamp;
+            long samplingInputsEndTimestamp = completionContext.SamplingInputsEndTimestamp;
+            long samplingCompleteEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
+            PublishBiomeInfluenceGrid(totalCells);
+            ScatterCellEvaluationContext evalContext = BuildScatterCellEvaluationContext(in completionContext);
             EvaluateScatterCells(
                 ref completionContext,
                 ref evalContext,
