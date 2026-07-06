@@ -46,8 +46,8 @@ namespace MapMagic.Nodes
 
 			[NonSerialized] public string[] origFields = new string[0];
 			[NonSerialized] public Serializer.Value[] origValues = new Serializer.Value[0];
+			[NonSerialized] public UnityEngine.Object[] origUnityObjects = new UnityEngine.Object[0];
 
-			//TODO: does not serialize UnityObject references
 			//TODO: does not serialize layers or multi-inlet links
 
 			public override void Generate (TileData data, StopToken stop) { }
@@ -62,26 +62,31 @@ namespace MapMagic.Nodes
 				List<string> fieldsList = new List<string>();
 				List<Serializer.Value> valuesList = new List<Serializer.Value>();
 
+				List<UnityEngine.Object> unityObjectsList = new List<UnityEngine.Object>();
+
 				for (int v=0; v<serObj.values.Length; v++)
 				{
 					if (serObj.values[v].t != 255) //if not reference
 					{
 						fieldsList.Add(serObj.fields[v]);
 						valuesList.Add(serObj.values[v]);
+						unityObjectsList.Add(null);
 					}
-
-					/*else if (serObj.values[v] >= 0) //if not null
+					else if (serObj.values[v] >= 0 && serObj.values[v] < allSerialized.Length) //if not null
 					{
-						 Serializer.Object fieldObj = allSerialized[serObj.values[v]];
-						 Type fieldType = Type.GetType(fieldObj.type);
-						 if (fieldType.IsGenericType &&
-							 IsInletType(fieldType) ) 
-								Debug.Log(fieldType);
-					}*/
+						Serializer.Object fieldObj = allSerialized[serObj.values[v]];
+						if (fieldObj != null && fieldObj.uniObj != null)
+						{
+							fieldsList.Add(serObj.fields[v]);
+							valuesList.Add(serObj.values[v]);
+							unityObjectsList.Add(fieldObj.uniObj);
+						}
+					}
 				}
 
 				origFields = fieldsList.ToArray();
 				origValues = valuesList.ToArray();
+				origUnityObjects = unityObjectsList.ToArray();
 			}
 
 
@@ -93,6 +98,24 @@ namespace MapMagic.Nodes
 
 				ArrayTools.Append(ref serObj.fields, origFields);
 				ArrayTools.Append(ref serObj.values, origValues); 
+
+				int length = serObj.values.Length;
+				for (int i=0; i<origUnityObjects.Length; i++)
+				{
+					if (origUnityObjects[i] != null)
+					{
+						if (!allSerialized.TryGetValue(origUnityObjects[i], out Serializer.Object fieldSerObj))
+						{
+							fieldSerObj = new Serializer.Object() { refId = allSerialized.Count, type = origUnityObjects[i].GetType().AssemblyQualifiedName, uniObj = origUnityObjects[i] };
+							allSerialized.Add(origUnityObjects[i], fieldSerObj);
+						}
+
+						// Update the reference id in the values array
+						// Since we appended origValues to serObj.values, we need to update the end portion.
+						// The offset for this value is length - origValues.Length + i.
+						serObj.values[length - origValues.Length + i] = fieldSerObj.refId;
+					}
+				}
 			}
 		}
 
