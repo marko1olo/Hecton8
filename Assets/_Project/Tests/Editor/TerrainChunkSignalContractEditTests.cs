@@ -898,283 +898,305 @@ namespace Hecton8.Tests.Editor
         public void ObjectPoolAndPrefabRegistryConsumers_ResolveLiveRuntimeOwners()
         {
             string root = Directory.GetCurrentDirectory();
-            string objectPool = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ObjectPoolManager.cs"));
-            string prefabRegistry = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PrefabRegistry.cs"));
-            string globalRegistry = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "GlobalRegistry.cs"));
-            string systemDispatcher = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "SystemDispatcher.cs"));
-            string commandQueue = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "ThreadSafeCommandQueue.cs"));
-            string bootstrap = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
-            string music = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "HectonMusicDirector.cs"));
-            string runtimeInstanceId = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "RuntimeInstanceId.cs"));
-            string scatter = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs"));
-            string resourceNode = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ResourceNode.cs"));
-            string harvestableOutcrop = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestableOutcrop.cs"));
-            string harvestablePlant = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestablePlant.cs"));
-            string oxygenPlant = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenPlant.cs"));
-            string oxygenBubble = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenBubble.cs"));
-            string voxelStreamingBridge = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonVoxelStreamingBridge.cs"));
-            string resourceDistribution = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ResourceDistributionDirector.cs"));
-            string worldChunkResidency = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs"));
-            string impostorSystem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ImpostorSystem.cs"));
-            string marauderOutpost = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs"));
-            string faunaDirector = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "FaunaDirector.cs"));
-            string faunaBrain = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs"));
-            string proceduralWreck = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ProceduralWreckGenerator.cs"));
-            string sargassumCollapse = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs"));
-            string playerTool = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerToolManager.cs"));
-            string construction = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ConstructionManager.cs"));
-            string baseModule = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BaseModule.cs"));
-            string playerBuilder = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerBuilder.cs"));
-            string beaconNetwork = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BeaconNetworkSystem.cs"));
-            string proximityCollider = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ProximityColliderSystem.cs"));
-            string uiParticle = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "UIParticleEffect.cs"));
-            string proceduralLore = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Narrative", "ProceduralLoreDirector.cs"));
-            string mantaEmergencyWreck = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaEmergencyWreck.cs"));
-            string mantaScooter = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaScooter.cs"));
-            string floraProjectile = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "FloraProjectile.cs"));
-            string randomEvent = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "RandomEventSystem.cs"));
-            string hectonItem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonItem.cs"));
-            string pickupItem = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Items", "PickupItem.cs"));
 
-            Assert.That(objectPool.Contains("internal static bool TryResolveActiveRuntime(ref ObjectPoolManager target)"), Is.True);
-            Assert.That(objectPool.Contains("ObjectPoolManager registered = GlobalRegistry.ObjectPoolRuntimeMirror;"), Is.True);
-            Assert.That(objectPool.Contains("internal static bool IsRuntimeOwnerUsableForRegistry(ObjectPoolManager runtime)"), Is.True);
-            Assert.That(objectPool.Contains("if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))"), Is.True);
-            Assert.That(objectPool.Contains("if (_serviceRegistered)\r\n                ActiveRuntimeInstance = this;") ||
-                        objectPool.Contains("if (_serviceRegistered)\n                ActiveRuntimeInstance = this;"), Is.True);
-            Assert.That(objectPool.Contains("if (ActiveRuntimeInstance == null)"), Is.False);
-            Assert.That(objectPool.Contains("internal static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
-            Assert.That(objectPool.Contains("internal static bool TryResolvePoolForInstance("), Is.True);
-            Assert.That(objectPool.Contains("internal static void DespawnOrDeactivate(GameObject instance, IObjectPoolService preferredPool)"), Is.True);
-            Assert.That(objectPool.Contains("!runtime._serviceShuttingDown"), Is.True);
-            Assert.That(objectPool.Contains("ClearRuntimeMirrorIfOwnedBy(registered);"), Is.True);
-            Assert.That(objectPool.Contains("if (ReferenceEquals(runtime, null))"), Is.True);
-            Assert.That(objectPool.Contains("GlobalRegistry.UnregisterObjectPoolService(runtime);"), Is.True);
-            Assert.That(objectPool.Contains("marker.Initialize(this, prefabId"), Is.True);
-            Assert.That(objectPool.Contains("private ObjectPoolManager _owner;"), Is.True);
-            Assert.That(objectPool.Contains("public ObjectPoolManager Owner => _owner;"), Is.True);
-            Assert.That(objectPool.Contains("_owner = owner;"), Is.True);
-            Assert.That(objectPool.Contains("if (_owner == null)"), Is.False);
-            Assert.That(objectPool.Contains("private void DespawnNowOrDestroy()"), Is.True);
-            Assert.That(objectPool.Contains("private bool TryResolveOwningPool(out ObjectPoolManager pool)"), Is.True);
-            Assert.That(objectPool.Contains("owner.CanDespawnWithoutDestroy(gameObject)"), Is.True);
-            Assert.That(objectPool.Contains("active.CanDespawnWithoutDestroy(gameObject)"), Is.True);
-            Assert.That(objectPool.Contains("ObjectPoolManager.Instance"), Is.False);
-            Assert.That(prefabRegistry.Contains("internal static bool TryResolveActiveRuntime(ref PrefabRegistry target)"), Is.True);
-            Assert.That(globalRegistry.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_objectPool)"), Is.True);
-            Assert.That(globalRegistry.Contains("public static IObjectPoolService ObjectPoolService => ObjectPool;"), Is.True);
-            Assert.That(globalRegistry.Contains("internal static ObjectPoolManager ObjectPoolRuntimeMirror => _objectPool;"), Is.True);
-            Assert.That(systemDispatcher.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(systemDispatcher.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(systemDispatcher.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(systemDispatcher.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(systemDispatcher.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(systemDispatcher.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(systemDispatcher.Contains("IObjectPoolService objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(systemDispatcher.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(commandQueue.Contains("BindObjectPoolServiceCold(null);"), Is.True);
-            Assert.That(commandQueue.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
-            Assert.That(commandQueue.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(commandQueue.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(commandQueue.Contains("Volatile.Write(ref _objectPool, GlobalRegistry.ObjectPoolService);"), Is.False);
-            Assert.That(commandQueue.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
-            Assert.That(commandQueue.Contains("ownerPool.Despawn(instance, Mathf.Max(0f, command.FloatValue));"), Is.True);
-
-            Assert.That(music.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
-            Assert.That(bootstrap.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref objectPoolManager);"), Is.True);
-            Assert.That(bootstrap.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
-            Assert.That(bootstrap.Contains("PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry)"), Is.True);
-            Assert.That(runtimeInstanceId.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
-            Assert.That(objectPool.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
-            Assert.That(scatter.Contains("PrefabRegistry.TryResolveActiveRuntime(ref prefabRegistry)"), Is.True);
-            Assert.That(scatter.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(scatter.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(scatter.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(scatter.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(scatter.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(scatter.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-            Assert.That(scatter.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(scatter.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-
-            Assert.That(resourceNode.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(resourceNode.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(resourceNode.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(resourceNode.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(resourceNode.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(resourceNode.Contains("IObjectPoolService pool = s_objectPool;"), Is.False);
-            Assert.That(resourceNode.Contains("s_objectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(resourceNode.Contains("s_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-
-            AssertResourceObjectPoolConsumerUsesLiveResolver(harvestableOutcrop);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(harvestablePlant);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(oxygenPlant);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(oxygenBubble);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(voxelStreamingBridge);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(resourceDistribution);
-            Assert.That(impostorSystem.Contains("public IObjectPoolService BillboardPoolOwner;"), Is.True);
-            Assert.That(impostorSystem.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(impostorSystem.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(impostorSystem.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
-            Assert.That(impostorSystem.Contains("private static void DespawnBillboardOrDeactivate(IObjectPoolService pool, GameObject billboardObject)"), Is.True);
-            Assert.That(impostorSystem.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(impostorSystem.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(impostorSystem.Contains("instance.BillboardPoolOwner = pool;"), Is.True);
-            Assert.That(impostorSystem.Contains("DespawnBillboardOrDeactivate(instance.BillboardPoolOwner, instance.BillboardObject);"), Is.True);
-            Assert.That(impostorSystem.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(impostorSystem.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(impostorSystem.Contains("ObjectPoolManager.DespawnOrDeactivate(billboardObject, pool);"), Is.True);
-            Assert.That(impostorSystem.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(impostorSystem.Contains("_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(impostorSystem.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
-
-            Assert.That(marauderOutpost.Contains("private IObjectPoolService[] _spawnedInteractableOwners;"), Is.True);
-            Assert.That(marauderOutpost.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(marauderOutpost.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(marauderOutpost.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
-            Assert.That(marauderOutpost.Contains("private static bool TryResolvePoolForInstance("), Is.True);
-            Assert.That(marauderOutpost.Contains("private static void DespawnInteractableProxyOrDeactivate(IObjectPoolService pool, GameObject instance)"), Is.True);
-            Assert.That(marauderOutpost.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(marauderOutpost.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(marauderOutpost.Contains("_spawnedInteractableOwners[i] = instance != null ? pool : null;"), Is.True);
-            Assert.That(marauderOutpost.Contains("DespawnInteractableProxyOrDeactivate(ownerPool, instance);"), Is.True);
-            Assert.That(marauderOutpost.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(marauderOutpost.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(marauderOutpost.Contains("ObjectPoolManager.PoolItemMarker marker"), Is.True);
-            Assert.That(marauderOutpost.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref active)"), Is.True);
-            Assert.That(marauderOutpost.Contains("ownerPool.Despawn(instance);"), Is.True);
-            Assert.That(marauderOutpost.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(marauderOutpost.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(faunaDirector);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(faunaBrain);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(proceduralWreck);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(sargassumCollapse);
-            AssertResourceObjectPoolConsumerUsesLiveResolver(playerTool);
-            Assert.That(playerTool.Contains("private bool TryResolvePoolForInstance("), Is.True);
-            Assert.That(playerTool.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, preferredPool, out pool)"), Is.True);
-            Assert.That(playerTool.Contains("preferredManager.CanDespawnWithoutDestroy(instance)"), Is.False);
-            Assert.That(playerTool.Contains("pool.CanDespawnWithoutDestroy(instance)"), Is.False);
-
-            Assert.That(construction.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(construction.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(construction.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(construction.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(construction.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(construction.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(construction.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(construction.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(construction.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-
-            Assert.That(baseModule.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(baseModule.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(baseModule.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(baseModule.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(baseModule.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(baseModule.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(baseModule.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(baseModule.Contains("_cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(baseModule.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-
-            Assert.That(playerBuilder.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(playerBuilder.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(playerBuilder.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(playerBuilder.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(playerBuilder.Contains("return TryResolveCachedObjectPool(out pool);"), Is.True);
-            Assert.That(playerBuilder.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(playerBuilder.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(playerBuilder.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(playerBuilder.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(playerBuilder.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-
-            Assert.That(beaconNetwork.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(beaconNetwork.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(beaconNetwork.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(beaconNetwork.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(beaconNetwork.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(beaconNetwork.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(beaconNetwork.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(beaconNetwork.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(beaconNetwork.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-
-            Assert.That(proximityCollider.Contains("private void CacheObjectPool(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(proximityCollider.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(proximityCollider.Contains("CacheObjectPool(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(proximityCollider.Contains("CacheObjectPool(null);"), Is.True);
-            Assert.That(proximityCollider.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(proximityCollider.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(proximityCollider.Contains("pool.CanDespawnWithoutDestroy(colliderObject)"), Is.True);
-            Assert.That(proximityCollider.Contains("CacheObjectPool(currentService as IObjectPoolService);"), Is.False);
-            Assert.That(proximityCollider.Contains("CacheObjectPool(GlobalRegistry.ObjectPoolService);"), Is.False);
-            Assert.That(proximityCollider.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
-
-            Assert.That(uiParticle.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(uiParticle.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(uiParticle.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
-            Assert.That(uiParticle.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(uiParticle.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(uiParticle.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_uiEffectPool)"), Is.True);
-            Assert.That(uiParticle.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(uiParticle.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(uiParticle.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
-            Assert.That(uiParticle.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(uiParticle.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-
-            Assert.That(proceduralLore.Contains("private bool CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(proceduralLore.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(proceduralLore.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
-            Assert.That(proceduralLore.Contains("CacheObjectPoolService(currentService as ObjectPoolManager)"), Is.True);
-            Assert.That(proceduralLore.Contains("CacheObjectPoolService(null)"), Is.True);
-            Assert.That(proceduralLore.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(proceduralLore.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(proceduralLore.Contains("ObjectPoolManager.DespawnOrDeactivate(instance, pool);"), Is.True);
-            Assert.That(proceduralLore.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(proceduralLore.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
-            Assert.That(proceduralLore.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
-
-            Assert.That(mantaEmergencyWreck.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(mantaEmergencyWreck.Contains("s_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(mantaEmergencyWreck.Contains("s_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(mantaEmergencyWreck.Contains("IObjectPoolService poolManager = s_cachedObjectPool;"), Is.False);
-
-            Assert.That(mantaScooter.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(mantaScooter.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(mantaScooter.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(mantaScooter.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(mantaScooter.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(mantaScooter.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(mantaScooter.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(mantaScooter.Contains("IObjectPoolService poolManager = _cachedObjectPool;"), Is.False);
-
-            Assert.That(floraProjectile.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
-            Assert.That(floraProjectile.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
-
-            Assert.That(randomEvent.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(randomEvent.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(randomEvent.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(randomEvent.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(randomEvent.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(randomEvent.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(randomEvent.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
-            Assert.That(randomEvent.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
-            Assert.That(randomEvent.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
-
-            Assert.That(worldChunkResidency.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
-            Assert.That(worldChunkResidency.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
-            Assert.That(worldChunkResidency.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
-            Assert.That(worldChunkResidency.Contains("CacheObjectPoolService(null);"), Is.True);
-            Assert.That(worldChunkResidency.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
-            Assert.That(worldChunkResidency.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
-            Assert.That(worldChunkResidency.Contains("currentService as IObjectPoolService"), Is.False);
-            Assert.That(worldChunkResidency.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
-            Assert.That(worldChunkResidency.Contains("IObjectPoolService pool = _objectPoolManager"), Is.False);
-            Assert.That(worldChunkResidency.Contains("_objectPoolManager = currentService"), Is.False);
-            Assert.That(worldChunkResidency.Contains("_objectPoolManager = GlobalRegistry"), Is.False);
-            AssertStaticObjectPoolConsumerUsesLiveResolver(hectonItem);
-            AssertStaticObjectPoolConsumerUsesLiveResolver(pickupItem);
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ObjectPoolManager.cs"));
+            Assert.That(content.Contains("internal static bool TryResolveActiveRuntime(ref ObjectPoolManager target)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager registered = GlobalRegistry.ObjectPoolRuntimeMirror;"), Is.True);
+            Assert.That(content.Contains("internal static bool IsRuntimeOwnerUsableForRegistry(ObjectPoolManager runtime)"), Is.True);
+            Assert.That(content.Contains("if (!IsRuntimeOwnerUsable(ActiveRuntimeInstance))"), Is.True);
+            Assert.That(content.Contains("if (_serviceRegistered)\r\n                ActiveRuntimeInstance = this;") ||
+                        content.Contains("if (_serviceRegistered)\n                ActiveRuntimeInstance = this;"), Is.True);
+            Assert.That(content.Contains("if (ActiveRuntimeInstance == null)"), Is.False);
+            Assert.That(content.Contains("internal static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(content.Contains("internal static bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(content.Contains("internal static void DespawnOrDeactivate(GameObject instance, IObjectPoolService preferredPool)"), Is.True);
+            Assert.That(content.Contains("!runtime._serviceShuttingDown"), Is.True);
+            Assert.That(content.Contains("ClearRuntimeMirrorIfOwnedBy(registered);"), Is.True);
+            Assert.That(content.Contains("if (ReferenceEquals(runtime, null))"), Is.True);
+            Assert.That(content.Contains("GlobalRegistry.UnregisterObjectPoolService(runtime);"), Is.True);
+            Assert.That(content.Contains("marker.Initialize(this, prefabId"), Is.True);
+            Assert.That(content.Contains("private ObjectPoolManager _owner;"), Is.True);
+            Assert.That(content.Contains("public ObjectPoolManager Owner => _owner;"), Is.True);
+            Assert.That(content.Contains("_owner = owner;"), Is.True);
+            Assert.That(content.Contains("if (_owner == null)"), Is.False);
+            Assert.That(content.Contains("private void DespawnNowOrDestroy()"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveOwningPool(out ObjectPoolManager pool)"), Is.True);
+            Assert.That(content.Contains("owner.CanDespawnWithoutDestroy(gameObject)"), Is.True);
+            Assert.That(content.Contains("active.CanDespawnWithoutDestroy(gameObject)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.Instance"), Is.False);
+            Assert.That(systemDispatcher.Contains("IObjectPoolService content = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PrefabRegistry.cs"));
+            Assert.That(content.Contains("internal static bool TryResolveActiveRuntime(ref PrefabRegistry target)"), Is.True);
+            Assert.That(bootstrap.Contains("PrefabRegistry.TryResolveActiveRuntime(ref content)"), Is.True);
+            Assert.That(scatter.Contains("PrefabRegistry.TryResolveActiveRuntime(ref content)"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "GlobalRegistry.cs"));
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_objectPool)"), Is.True);
+            Assert.That(content.Contains("public static IObjectPoolService ObjectPoolService => ObjectPool;"), Is.True);
+            Assert.That(content.Contains("internal static ObjectPoolManager ObjectPoolRuntimeMirror => _objectPool;"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "SystemDispatcher.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Core", "ThreadSafeCommandQueue.cs"));
+            Assert.That(content.Contains("BindObjectPoolServiceCold(null);"), Is.True);
+            Assert.That(content.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("Volatile.Write(ref _objectPool, GlobalRegistry.ObjectPoolService);"), Is.False);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
+            Assert.That(content.Contains("ownerPool.Despawn(instance, Mathf.Max(0f, command.FloatValue));"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Bootstrap", "GameBootstrapper.cs"));
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref objectPoolManager);"), Is.True);
+            Assert.That(content.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Audio", "HectonMusicDirector.cs"));
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "RuntimeInstanceId.cs"));
+            Assert.That(content.Contains("PrefabRegistry.TryResolveActiveRuntime(ref registry)"), Is.True);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ResourceNode.cs"));
+            Assert.That(content.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("IObjectPoolService pool = s_objectPool;"), Is.False);
+            Assert.That(content.Contains("s_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("s_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            }
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestableOutcrop.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "HarvestablePlant.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenPlant.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "OxygenBubble.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "HectonVoxelStreamingBridge.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ResourceDistributionDirector.cs")));
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("currentService as IObjectPoolService"), Is.False);
+            Assert.That(content.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _objectPoolManager"), Is.False);
+            Assert.That(content.Contains("_objectPoolManager = currentService"), Is.False);
+            Assert.That(content.Contains("_objectPoolManager = GlobalRegistry"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ImpostorSystem.cs"));
+            Assert.That(content.Contains("public IObjectPoolService BillboardPoolOwner;"), Is.True);
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(content.Contains("private static void DespawnBillboardOrDeactivate(IObjectPoolService pool, GameObject billboardObject)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("instance.BillboardPoolOwner = pool;"), Is.True);
+            Assert.That(content.Contains("DespawnBillboardOrDeactivate(instance.BillboardPoolOwner, instance.BillboardObject);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.DespawnOrDeactivate(billboardObject, pool);"), Is.True);
+            Assert.That(content.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_objectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs"));
+            Assert.That(content.Contains("private IObjectPoolService[] _spawnedInteractableOwners;"), Is.True);
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(content.Contains("private static bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(content.Contains("private static void DespawnInteractableProxyOrDeactivate(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("_spawnedInteractableOwners[i] = instance != null ? pool : null;"), Is.True);
+            Assert.That(content.Contains("DespawnInteractableProxyOrDeactivate(ownerPool, instance);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.PoolItemMarker marker"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref active)"), Is.True);
+            Assert.That(content.Contains("ownerPool.Despawn(instance);"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            }
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "FaunaDirector.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Fauna", "FaunaBrain.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "ProceduralWreckGenerator.cs")));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "World", "SargassumCollapseChunk.cs")));
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerToolManager.cs"));
+            AssertResourceObjectPoolConsumerUsesLiveResolver(content);
+            Assert.That(content.Contains("private bool TryResolvePoolForInstance("), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, preferredPool, out pool)"), Is.True);
+            Assert.That(content.Contains("preferredManager.CanDespawnWithoutDestroy(instance)"), Is.False);
+            Assert.That(content.Contains("pool.CanDespawnWithoutDestroy(instance)"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ConstructionManager.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BaseModule.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "PlayerBuilder.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("return TryResolveCachedObjectPool(out pool);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "BeaconNetworkSystem.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "ProximityColliderSystem.cs"));
+            Assert.That(content.Contains("private void CacheObjectPool(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPool(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPool(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("pool.CanDespawnWithoutDestroy(colliderObject)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPool(currentService as IObjectPoolService);"), Is.False);
+            Assert.That(content.Contains("CacheObjectPool(GlobalRegistry.ObjectPoolService);"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "UI", "UIParticleEffect.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(_uiEffectPool)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolvePoolForInstance(instance, pool, out IObjectPoolService ownerPool)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Narrative", "ProceduralLoreDirector.cs"));
+            Assert.That(content.Contains("private bool CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("private static bool CanDespawnWithPool(IObjectPoolService pool, GameObject instance)"), Is.False);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.DespawnOrDeactivate(instance, pool);"), Is.True);
+            Assert.That(content.Contains("_objectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _objectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaEmergencyWreck.cs"));
+            Assert.That(content.Contains("private static void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private static bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("s_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("s_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService poolManager = s_cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "MantaScooter.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService poolManager = _cachedObjectPool;"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "FloraProjectile.cs"));
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref pool)"), Is.True);
+            Assert.That(content.Contains("GlobalRegistry.ObjectPoolService"), Is.False);
+            }
+            {
+                string content = File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Gameplay", "RandomEventSystem.cs"));
+            Assert.That(content.Contains("private void CacheObjectPoolService(ObjectPoolManager candidate)"), Is.True);
+            Assert.That(content.Contains("private bool TryResolveCachedObjectPool(out IObjectPoolService pool)"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(currentService as ObjectPoolManager);"), Is.True);
+            Assert.That(content.Contains("CacheObjectPoolService(null);"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.IsRuntimeOwnerUsableForRegistry(cached)"), Is.True);
+            Assert.That(content.Contains("ObjectPoolManager.TryResolveActiveRuntime(ref resolved)"), Is.True);
+            Assert.That(content.Contains("_cachedObjectPool = currentService as IObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("_cachedObjectPool = GlobalRegistry.ObjectPoolService;"), Is.False);
+            Assert.That(content.Contains("IObjectPoolService pool = _cachedObjectPool;"), Is.False);
+            }
+            AssertStaticObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "HectonItem.cs")));
+            AssertStaticObjectPoolConsumerUsesLiveResolver(File.ReadAllText(Path.Combine(root, "Assets", "_Project", "Scripts", "Items", "PickupItem.cs")));
         }
 
         [Test]
