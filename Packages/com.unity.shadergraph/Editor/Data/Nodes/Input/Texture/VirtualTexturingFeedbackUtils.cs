@@ -65,10 +65,7 @@ namespace UnityEditor.ShaderGraph
                     {
                         if (keywordPermutationsPerNode[index] == null)
                         {
-                            foreach (var feedbackVar in sgNode.GetFeedbackVariableNames())
-                            {
-                                feedbackVariablesPerPermutation[0].Add(feedbackVar);
-                            }
+                            feedbackVariablesPerPermutation[0].AddRange(sgNode.GetFeedbackVariableNames());
                         }
                         else
                         {
@@ -166,10 +163,8 @@ namespace UnityEditor.ShaderGraph
 
             foreach (var node in subGraphNodes)
             {
-                foreach (var feedbackVar in node.GetFeedbackVariableNames())
-                {
-                    result.Add(feedbackVar);
-                }
+                if (node.asset == null) continue;
+                result.AddRange(node.GetFeedbackVariableNames());
             }
 
             return result;

@@ -751,6 +751,17 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
+        public IEnumerable<string> GetFeedbackVariableNames()
+        {
+            if (asset == null)
+                yield break;
+
+            foreach (var feedbackSlot in asset.vtFeedbackVariables)
+            {
+                yield return GetVariableNameForNode() + "_" + feedbackSlot;
+            }
+        }
+
         public virtual void GenerateNodeFunction(FunctionRegistry registry, GenerationMode generationMode)
         {
             if (asset == null || hasError)
