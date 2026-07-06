@@ -3828,15 +3828,15 @@ namespace Hecton8.Construction
             RecoverHabitatJointsAfterOriginShift(in shiftData);
         }
 
-        public void OnRandomEventStarted(RandomEventType type, float intensity)
+        void IRandomEventListener.OnRandomEventStarted(RandomEventType type, float intensity)
         {
         }
 
-        public void OnRandomEventEnded(RandomEventType type)
+        void IRandomEventListener.OnRandomEventEnded(RandomEventType type)
         {
         }
 
-        public void OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        void IRandomEventListener.OnSeismicShockwave(in SeismicShockwaveEvent payload)
         {
             _habitatGraphManager?.RegisterSeismicVibration(
                 payload.EpicenterWS,
