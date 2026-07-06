@@ -39,10 +39,10 @@ namespace MapMagic.Terrains.GUI
 			[RuntimeInitializeOnLoadMethod, UnityEditor.InitializeOnLoadMethod] 
 			static void Subscribe ()
 			{
-				TerrainTile.OnTileApplied += UpdateTile_OnTileApplied;
+				TerrainTile.OnTileComplete += UpdateTile_OnTileComplete;
 			}
 
-			private static void UpdateTile_OnTileApplied (TerrainTile tile, Products.TileData tileData, Products.StopToken stop)
+			private static void UpdateTile_OnTileComplete (TerrainTile tile, Products.TileData tileData, Products.StopToken stop)
 			{
 				Terrain terrain = tile.GetTerrain(tileData.isDraft);
 				if (terrain == null) return; //seems to be happen when stopping playmode while tile generating

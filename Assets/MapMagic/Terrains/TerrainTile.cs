@@ -41,7 +41,8 @@ namespace MapMagic.Terrains
 		public static Action<TerrainTile, TileData> OnBeforeTilePrepare;
 		public static Action<TerrainTile, TileData, StopToken> OnBeforeTileGenerate;
 		public static Action<TerrainTile, TileData, StopToken> OnTileFinalized; //tile event
-		public static Action<TerrainTile, TileData, StopToken> OnTileApplied;  //TODO: rename to OnTileComplete. OnTileApplied should be called before switching lod
+		public static Action<TerrainTile, TileData, StopToken> OnTileComplete;
+		public static Action<TerrainTile, TileData, StopToken> OnTileApplied;
 		public static Action<MapMagicObject> OnAllComplete;
 		public static Action<TerrainTile, bool, bool> OnLodSwitched;
 		public static Action<TileData> OnPreviewAssigned; //preview tile changed
@@ -874,13 +875,15 @@ namespace MapMagic.Terrains
 						appDat.Apply(det.terrain);
 					}
 
-					//MapMagicObject.OnTileApplied?.Invoke(this, det.data, stop);
+					//MapMagicObject.OnTileComplete?.Invoke(this, det.data, stop);
 
 					det.applyReady = true; //enabling ready before switching lod (otherwise will leave draft)
 
+					OnTileApplied?.Invoke(this, det.data, stop);
+
 					SwitchLod();
 
-					OnTileApplied?.Invoke(this, det.data, stop);
+					OnTileComplete?.Invoke(this, det.data, stop);
 
 					//if (!mapMagic.IsGenerating()) //won't be called since this couroutine still left
 					if (!ThreadManager.IsWorking && CoroutineManager.IsQueueEmpty)
@@ -933,9 +936,11 @@ namespace MapMagic.Terrains
 				{
 					det.applyReady = true; //enabling ready before switching lod (otherwise will leave draft)
 
+					OnTileApplied?.Invoke(this, det.data, stop);
+
 					SwitchLod();
 
-					OnTileApplied?.Invoke(this, det.data, stop);
+					OnTileComplete?.Invoke(this, det.data, stop);
 					
 					//if (!mapMagic.IsGenerating()) //won't be called since this couroutine still left
 					if (!ThreadManager.IsWorking && CoroutineManager.IsQueueEmpty)
