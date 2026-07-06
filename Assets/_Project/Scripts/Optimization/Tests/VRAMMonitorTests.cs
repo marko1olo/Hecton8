@@ -213,5 +213,44 @@ namespace Hecton8.Optimization.Tests
             // Assert
             Assert.That(mockVault.LockReleased, Is.True, "Data vault lock was not released after exception in try block.");
         }
+
+        private class ArgumentExceptionVRAMMonitor : VRAMMonitor
+        {
+            public int Attempts { get; private set; }
+
+            protected override Unity.Profiling.ProfilerRecorder StartNewRecorder(Unity.Profiling.ProfilerCategory category, string statName, int capacity, Unity.Profiling.ProfilerRecorderOptions options)
+            {
+                Attempts++;
+                throw new ArgumentException("Simulated ArgumentException");
+            }
+        }
+
+        [Test]
+        public void TryStartMemoryRecorder_HandlesArgumentException_ReturnsDefault()
+        {
+            var go = new GameObject();
+            go.SetActive(false);
+            var monitor = go.AddComponent<ArgumentExceptionVRAMMonitor>();
+
+            // Get available handles to ensure we request one that actually exists,
+            // so we guarantee StartNewRecorder is called.
+            var availableHandles = new System.Collections.Generic.List<Unity.Profiling.ProfilerRecorderHandle>();
+            Unity.Profiling.ProfilerRecorderHandle.GetAvailable(availableHandles);
+
+            if (availableHandles.Count > 0)
+            {
+                var description = Unity.Profiling.ProfilerRecorderHandle.GetDescription(availableHandles[0]);
+
+                var tryStartMethod = typeof(VRAMMonitor).GetMethod("TryStartMemoryRecorder", BindingFlags.Instance | BindingFlags.NonPublic);
+                var result = tryStartMethod.Invoke(monitor, new object[] { new string[] { description.Name } });
+
+                Assert.That(monitor.Attempts, Is.GreaterThan(0), "StartNewRecorder should have been called.");
+
+                // Should return default (invalid) ProfilerRecorder since all matching attempts threw ArgumentException
+                Assert.That(((Unity.Profiling.ProfilerRecorder)result).Valid, Is.False);
+            }
+
+            UnityEngine.Object.DestroyImmediate(go);
+        }
     }
 }
