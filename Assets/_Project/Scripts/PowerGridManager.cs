@@ -467,6 +467,10 @@ namespace Hecton8.Power
             if (primaryComponentId < 0)
                 primaryComponentId = 0;
 
+            PowerGrid[] newGrids = System.Buffers.ArrayPool<PowerGrid>.Shared.Rent(topology.IslandCount);
+            for (int i = 0; i < topology.IslandCount; i++)
+                newGrids[i] = null;
+
             for (int componentId = 0; componentId < topology.IslandCount; componentId++)
             {
                 if (componentId == primaryComponentId)
@@ -478,23 +482,34 @@ namespace Hecton8.Power
 
                 PowerGrid newGrid = new PowerGrid(componentSize, GlobalRegistry.DataVault);
                 _allGrids.Add(newGrid);
-
-                for (int nodeIndex = topologyNodes.Count - 1; nodeIndex >= 0; nodeIndex--)
-                {
-                    if (grid.GetNodeComponentId(nodeIndex) != componentId)
-                        continue;
-
-                    PowerNode node = topologyNodes[nodeIndex];
-                    if (node == null)
-                        continue;
-
-                    grid.RemoveNode(node);
-                    newGrid.AddNode(node);
-                }
-
-                newGrid.UpdateBalance();
+                newGrids[componentId] = newGrid;
             }
 
+            for (int nodeIndex = topologyNodes.Count - 1; nodeIndex >= 0; nodeIndex--)
+            {
+                int componentId = grid.GetNodeComponentId(nodeIndex);
+                if (componentId == primaryComponentId || componentId < 0 || componentId >= topology.IslandCount)
+                    continue;
+
+                PowerGrid targetGrid = newGrids[componentId];
+                if (targetGrid == null)
+                    continue;
+
+                PowerNode node = topologyNodes[nodeIndex];
+                if (node == null)
+                    continue;
+
+                grid.RemoveNode(node);
+                targetGrid.AddNode(node);
+            }
+
+            for (int componentId = 0; componentId < topology.IslandCount; componentId++)
+            {
+                if (newGrids[componentId] != null)
+                    newGrids[componentId].UpdateBalance();
+            }
+
+            System.Buffers.ArrayPool<PowerGrid>.Shared.Return(newGrids, clearArray: true);
             grid.UpdateBalance();
         }
 
