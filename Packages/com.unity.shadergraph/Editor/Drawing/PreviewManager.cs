@@ -949,7 +949,11 @@ namespace UnityEditor.ShaderGraph.Drawing
                         nodesToCompile.UnionWith(previewsToCompile.Select(x => x.shaderData.node));
                         nodesToCompile.Remove(null);
 
-                        // TODO: not sure if we need to clear BlockNodes when master gets rebuilt?
+                        if (previewsToCompile.Contains(m_MasterRenderData))
+                        {
+                            nodesToCompile.UnionWith(m_Graph.GetNodes<BlockNode>());
+                        }
+
                         m_Messenger.ClearNodesFromProvider(this, nodesToCompile);
 
                         // Force async compile on
