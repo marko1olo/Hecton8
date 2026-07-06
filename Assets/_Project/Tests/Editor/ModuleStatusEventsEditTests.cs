@@ -49,11 +49,19 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(ModuleStatusEvents.HasCascadeFailure(in cascadeFailure));
             Assert.IsFalse(ModuleStatusEvents.IsFlooded(in cascadeFailure));
 
+        }
+
+        [Test]
+        public void IsEnterEvent_ReturnsTrue_OnlyForEnterEventType()
+        {
             ModuleStatusEventPayload enter = new ModuleStatusEventPayload { EventType = (ushort)ModuleStatusEventType.Enter };
             Assert.IsTrue(ModuleStatusEvents.IsEnterEvent(in enter));
 
             ModuleStatusEventPayload exit = new ModuleStatusEventPayload { EventType = (ushort)ModuleStatusEventType.Exit };
             Assert.IsFalse(ModuleStatusEvents.IsEnterEvent(in exit));
+
+            ModuleStatusEventPayload invalid = new ModuleStatusEventPayload { EventType = 255 };
+            Assert.IsFalse(ModuleStatusEvents.IsEnterEvent(in invalid));
         }
 
         [Test]
