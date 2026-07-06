@@ -47,10 +47,6 @@ namespace MapMagic.Brush
 				TreesOps.TreesFromTerrain(terrainCache.terrain, tlist, tileData.area.full.worldPos, tileData.area.full.worldSize, onlyIndexes:onlyIndexes);
 			}
 
-			//if (relativeHeight)
-			//	for (int i=0; i<tlist.count; i++)
-			//		tlist.arr[i].pos.y -= BrushReadObjects.GetTerrainHeight(tlist.arr[i].pos, tileData); //terrain.SampleHeight(pos);
-
 			tileData.StoreProduct(this, tlist);
 		}
 	}
