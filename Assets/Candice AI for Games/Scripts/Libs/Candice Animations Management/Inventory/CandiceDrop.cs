@@ -56,6 +56,13 @@ namespace CandiceAIforGames.AI
         private Renderer[] dropRenderers = Array.Empty<Renderer>();
         private Collider[] dropColliders = Array.Empty<Collider>();
 
+
+        private void Awake()
+        {
+            dropRenderers = GetComponentsInChildren<Renderer>(true);
+            dropColliders = GetComponentsInChildren<Collider>(true);
+        }
+
         void Start() {
             CacheDropComponents();
             candiceUI = new CandiceUI();
@@ -207,11 +214,6 @@ namespace CandiceAIforGames.AI
                     }
                 }
             }
-
-            // COLD ALLOC: Unity component array snapshot for drop consume/deactivate path.
-            dropRenderers = GetComponentsInChildren<Renderer>(true);
-            // COLD ALLOC: Unity component array snapshot for drop consume/deactivate path.
-            dropColliders = GetComponentsInChildren<Collider>(true);
         }
 
         private void ActivateVfx(Vector3 position, float activeSeconds)
