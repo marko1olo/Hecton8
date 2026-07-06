@@ -179,9 +179,11 @@ class GooglePhotosBackup:
                 url = "https://photoslibrary.googleapis.com/v1/albums"
                 params = {"pageSize": 50}
                 while True:
-                    response = self.session.get(url, params=params)
+                    response = self.session.get(url, params=params, allow_redirects=False, timeout=30)
                     response.raise_for_status()
                     data = response.json()
+                    if not isinstance(data, dict):
+                        raise ValueError("Invalid response format from Google Photos API")
                     albums = data.get('albums', [])
                     for album in albums:
                         if album.get('title') == self.album_name:
@@ -200,9 +202,11 @@ class GooglePhotosBackup:
                 album = self.service.albums().create(body=body).execute()
             else:
                 url = "https://photoslibrary.googleapis.com/v1/albums"
-                response = self.session.post(url, json=body)
+                response = self.session.post(url, json=body, allow_redirects=False, timeout=30)
                 response.raise_for_status()
                 album = response.json()
+                if not isinstance(album, dict):
+                    raise ValueError("Invalid response format from Google Photos API")
             
             self.album_id = album.get('id')
             logging.info(f"Created new album '{self.album_name}' with ID: {self.album_id}")
@@ -305,7 +309,7 @@ class GooglePhotosBackup:
         with tqdm(total=file_size, unit='B', unit_scale=True, desc=f"Uploading {filename[:30]}") as pbar:
             wrapped_file = ProgressFile(filepath, pbar)
             try:
-                response = self.session.post(url, headers=headers, data=wrapped_file)
+                response = self.session.post(url, headers=headers, data=wrapped_file, allow_redirects=False, timeout=300)
                 # Ensure we close file descriptor
                 wrapped_file.close()
                 
@@ -345,7 +349,7 @@ class GooglePhotosBackup:
         cursor = conn.cursor()
         
         try:
-            response = self.session.post(url, json=body)
+            response = self.session.post(url, json=body, allow_redirects=False, timeout=30)
             if response.status_code != 200:
                 logging.error(f"Failed to commit batch. HTTP Status: {response.status_code}, Response: {response.text}")
                 # Mark all in batch as failed
@@ -359,7 +363,10 @@ class GooglePhotosBackup:
                 conn.commit()
                 return
 
-            results = response.json().get('newMediaItemResults', [])
+            response_data = response.json()
+            if not isinstance(response_data, dict):
+                raise ValueError("Invalid response format from Google Photos API")
+            results = response_data.get('newMediaItemResults', [])
             
 
             successful_updates = []
