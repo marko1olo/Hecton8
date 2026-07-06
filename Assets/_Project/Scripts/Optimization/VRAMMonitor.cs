@@ -448,6 +448,11 @@ namespace Hecton8.Optimization
                 : VRAMPressureState.Stable;
         }
 
+        protected virtual ProfilerRecorder StartNewRecorder(ProfilerCategory category, string statName, int capacity, ProfilerRecorderOptions options)
+        {
+            return ProfilerRecorder.StartNew(category, statName, capacity, options);
+        }
+
         private ProfilerRecorder TryStartMemoryRecorder(string[] candidates)
         {
             if (candidates == null || candidates.Length == 0)
@@ -466,7 +471,7 @@ namespace Hecton8.Optimization
 
                     try
                     {
-                        return ProfilerRecorder.StartNew(
+                        return StartNewRecorder(
                             description.Category,
                             description.Name,
                             1,
