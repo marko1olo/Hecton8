@@ -875,13 +875,6 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Broadcasts one pressure-impulse payload.</summary>
-        [Obsolete("Use TryNotifyPressureImpulse(in PressureImpulseEvent) so bounded rejection stays visible at the producer.", true)]
-        public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
-        {
-            TryNotifyPressureImpulse(in pressureEvent);
-        }
-
         public static bool TryNotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
         {
             if (_pressureListenerCount <= 0)
