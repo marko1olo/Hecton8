@@ -13257,11 +13257,6 @@ namespace Hecton8.Audio
             return EnqueueCaptionRequest(in request);
         }
 
-        [Obsolete("First-party caption ingress is hash-only. Use TryRaise or TryRaiseHash and handle bounded rejection.", true)]
-        public static void Raise(AudioCaptionRequest request)
-        {
-            TryRaise(in request);
-        }
 
         private static bool CanQueueCaptionHash(uint captionHashId)
         {
