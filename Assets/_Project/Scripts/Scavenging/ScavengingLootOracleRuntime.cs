@@ -1880,13 +1880,20 @@ namespace Hecton8.Scavenging
                 return;
 
 #if UNITY_EDITOR
-            GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
+            ScavengingLootOracleRuntime[] existingHosts = UnityEngine.Object.FindObjectsByType<ScavengingLootOracleRuntime>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            System.Collections.Generic.HashSet<GameObject> validHosts = new System.Collections.Generic.HashSet<GameObject>();
+            for (int i = 0; i < existingHosts.Length; i++)
+            {
+                validHosts.Add(existingHosts[i].gameObject);
+            }
+
+            GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
             for (int i = 0; i < objects.Length; i++)
             {
                 GameObject candidate = objects[i];
                 if (candidate == null ||
                     !string.Equals(candidate.name, HostObjectName, StringComparison.Ordinal) ||
-                    candidate.TryGetComponent<ScavengingLootOracleRuntime>(out _))
+                    validHosts.Contains(candidate))
                 {
                     continue;
                 }
