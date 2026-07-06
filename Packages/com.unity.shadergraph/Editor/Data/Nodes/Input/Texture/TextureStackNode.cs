@@ -67,18 +67,15 @@ namespace UnityEditor.ShaderGraph
                         if (sgNode.asset == null) continue;
                         if (keywordPermutationsPerNode[index] == null)
                         {
-                            foreach (var feedbackSlot in sgNode.asset.vtFeedbackVariables)
-                            {
-                                feedbackVariablesPerPermutation[0].Add(node.GetVariableNameForNode() + "_" + feedbackSlot);
-                            }
+                            feedbackVariablesPerPermutation[0].AddRange(sgNode.GetFeedbackVariableNames());
                         }
                         else
                         {
-                            foreach (var feedbackSlot in sgNode.asset.vtFeedbackVariables)
+                            foreach (var feedbackVar in sgNode.GetFeedbackVariableNames())
                             {
                                 foreach (int perm in keywordPermutationsPerNode[index])
                                 {
-                                    feedbackVariablesPerPermutation[perm].Add(node.GetVariableNameForNode() + "_" + feedbackSlot);
+                                    feedbackVariablesPerPermutation[perm].Add(feedbackVar);
                                 }
                             }
                         }
@@ -169,11 +166,7 @@ namespace UnityEditor.ShaderGraph
             foreach (var node in subGraphNodes)
             {
                 if (node.asset == null) continue;
-                // TODO: subgraph.GetFeedbackVariableNames(...)
-                foreach (var feedbackSlot in node.asset.vtFeedbackVariables)
-                {
-                    result.Add(node.GetVariableNameForNode() + "_" + feedbackSlot);
-                }
+                result.AddRange(node.GetFeedbackVariableNames());
             }
 
             return result;
