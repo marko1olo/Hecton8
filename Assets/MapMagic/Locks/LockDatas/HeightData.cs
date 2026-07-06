@@ -110,22 +110,6 @@ namespace MapMagic.Locks
 		}
 
 
-		/*public float GetHeightDelta (Dictionary<Type,IApplyData> applyDatas)
-		{
-			float lockedAvg = GetAvgInCircle(heightsArr, circle.center-circle.rect.offset, circle.radius);
-			Vector2 lockMinMax = GetMinMaxInRadius(heightsArr, circle.center-circle.rect.offset, circle.radius);
-
-			Matrix terrainMatrix = GetApplyMatrix(applyDatas);
-			if (terrainMatrix == null) return 0;
-			float genAvg = GetAvgInCircle(terrainMatrix, circle.center, circle.radius);
-			//TODO: read directly without loading matrix
-
-			float heightDelta = genAvg - lockedAvg;
-			if (lockMinMax.x + heightDelta < 0) heightDelta = 0 - lockMinMax.x; //lockMin
-			if (lockMinMax.y + heightDelta > 1) heightDelta = 1 - lockMinMax.y; //lockMax
-
-			return heightDelta;
-		}*/
 
 
 		private float GetHeightDelta (Matrix lockMatrix, Matrix genMatrix)
