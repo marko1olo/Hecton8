@@ -325,10 +325,6 @@ namespace Hecton8.Gameplay
             });
         }
 
-        [Obsolete("Use TryRaiseHeatChanged so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseHeatChanged(float heat01, int cutterInstanceId, int rootInstanceId)
-            => TryRaiseHeatChanged(heat01, cutterInstanceId, rootInstanceId);
-
         internal static bool TryRaiseBeamStateChanged(int cutterInstanceId, int rootInstanceId, bool isActive)
         {
             return Enqueue(new LaserCutterEventPayloadSignal
@@ -340,10 +336,6 @@ namespace Hecton8.Gameplay
                 StateFlags = isActive ? LaserCutterEventPayloadSignal.StateFlagBeamActive : (ushort)0
             });
         }
-
-        [Obsolete("Use TryRaiseBeamStateChanged so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseBeamStateChanged(int cutterInstanceId, int rootInstanceId, bool isActive)
-            => TryRaiseBeamStateChanged(cutterInstanceId, rootInstanceId, isActive);
 
         /// <summary>
         /// Tests the beam-active flag in a cutter event payload.
