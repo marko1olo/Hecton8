@@ -206,7 +206,7 @@ Shader ""Hidden/GraphErrorShader2""
                     // Create the compute asset.
                     var computeShader = ShaderUtil.CreateComputeShaderAsset(importContext, generatedComputeShader.codeString);
 
-                    // TODO: ReportErrors for Compute Shader. Will require ShaderUtil.GetComputeShaderMessages.
+                    ReportComputeErrors(graph, computeShader, path, importLog);
 
                     computeShader.name = $"ComputeShader-{generatedComputeShader.shaderName}";
                     importContext.AddObjectToAsset(computeShader.name, computeShader);
@@ -463,7 +463,48 @@ Shader ""Hidden/GraphErrorShader2""
                 var firstError = errors.FirstOrDefault();
                 importLog.LogError($"Shader Graph at {path} has {errCount} error(s), the first is: {firstError}", shader);
             }
-            else if (messages.Length != 0)
+            else if (messages != null && messages.Length != 0)
+            {
+                // otherwise show shader compiler warnings
+                MessageManager.Log(path, messages[0], shader, importLog);
+            }
+            else if (graph.messageManager.nodeMessagesChanged)
+            {
+                // otherwise show node warnings
+                var warnings = graph.messageManager.ErrorStrings((nodeId) => NodeWasUsedByGraph(nodeId, graph), Rendering.ShaderCompilerMessageSeverity.Warning);
+                var warnCount = warnings.Count();
+                var firstWarning = warnings.FirstOrDefault();
+                if (warnCount > 0)
+                    importLog.LogWarning($"Shader Graph at {path} has {warnCount} warning(s), the first is: {firstWarning}", shader);
+            }
+        }
+
+        static void ReportComputeErrors(GraphData graph, ComputeShader shader, string path, AssetImportErrorLog importLog)
+        {
+            // Grab any messages from the shader compiler
+            var messages = ShaderUtil.GetComputeShaderMessages(shader);
+
+            var errors = graph.messageManager.ErrorStrings((nodeId) => NodeWasUsedByGraph(nodeId, graph));
+            int errCount = errors.Count();
+
+            // Find the first compiler message that's an error
+            int firstShaderUtilErrorIndex = -1;
+            if (messages != null)
+                firstShaderUtilErrorIndex = Array.FindIndex(messages, m => (m.severity == Rendering.ShaderCompilerMessageSeverity.Error));
+
+            // Display only one message. Bias towards shader compiler messages over node messages and within that bias errors over warnings.
+            if (firstShaderUtilErrorIndex != -1)
+            {
+                // if shader compiler reported an error, show that
+                MessageManager.Log(path, messages[firstShaderUtilErrorIndex], shader, importLog);
+            }
+            else if (errCount > 0)
+            {
+                // otherwise show node errors
+                var firstError = errors.FirstOrDefault();
+                importLog.LogError($"Shader Graph at {path} has {errCount} error(s), the first is: {firstError}", shader);
+            }
+            else if (messages != null && messages.Length != 0)
             {
                 // otherwise show shader compiler warnings
                 MessageManager.Log(path, messages[0], shader, importLog);
