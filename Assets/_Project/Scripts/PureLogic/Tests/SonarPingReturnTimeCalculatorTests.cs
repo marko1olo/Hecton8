@@ -90,6 +90,44 @@ namespace Hecton8.PureLogic.Tests
         }
 
         [Test]
+        public void Test_DenominatorZero_Case06()
+        {
+            var result = SonarPingReturnTimeCalculator.Compute(1500f, 1500f, 1000f, 0f, -1500f, 4.6f, 1400f, 1600f);
+            Assert.That(result.dopplerShiftedFrequencyHz, Is.EqualTo(0f), "Should return 0 freq if denominator is 0 (target moving towards us at speed of sound)");
+        }
+
+        [Test]
+        public void Test_NegativeClampedSpeed_Case07()
+        {
+            var result = SonarPingReturnTimeCalculator.Compute(1500f, -1500f, 1000f, 0f, 0f, 4.6f, -1600f, -1400f);
+            Assert.That(result.returnTimeSeconds, Is.EqualTo(0f), "Should return 0 time if clamped speed <= 0");
+            Assert.That(result.dopplerShiftedFrequencyHz, Is.EqualTo(0f), "Should return 0 freq if clamped speed <= 0");
+        }
+
+        [TestCase(float.NaN, 1500f, 1000f, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(float.PositiveInfinity, 1500f, 1000f, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, float.NaN, 1000f, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, float.PositiveInfinity, 1000f, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, float.NaN, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, float.PositiveInfinity, 0f, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, float.NaN, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, float.PositiveInfinity, 0f, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, float.NaN, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, float.PositiveInfinity, 4.6f, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, float.NaN, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, float.PositiveInfinity, 1400f, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, 4.6f, float.NaN, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, 4.6f, float.PositiveInfinity, 1600f)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, 4.6f, 1400f, float.NaN)]
+        [TestCase(1500f, 1500f, 1000f, 0f, 0f, 4.6f, 1400f, float.PositiveInfinity)]
+        public void Test_AllInvalidInputs_Case08(float dist, float speed, float freq, float temp, float radVel, float coeff, float minSpeed, float maxSpeed)
+        {
+            var result = SonarPingReturnTimeCalculator.Compute(dist, speed, freq, temp, radVel, coeff, minSpeed, maxSpeed);
+            Assert.That(result.returnTimeSeconds, Is.EqualTo(0f), "NaN or Infinity should return 0 time");
+            Assert.That(result.dopplerShiftedFrequencyHz, Is.EqualTo(0f), "NaN or Infinity should return 0 freq");
+        }
+
+        [Test]
         public void Test_ExtremeInputs_Case05()
         {
             // Arrange
