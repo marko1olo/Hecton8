@@ -9,19 +9,23 @@ namespace UnityEditor.ShaderGraph
         {
             {UnityMatrixType.Model, ObjectToWorld},
             {UnityMatrixType.InverseModel, WorldToObject},
-
-            // TODO: Define the rest.
-            {UnityMatrixType.View, None},
-            {UnityMatrixType.InverseView, None},
-            {UnityMatrixType.Projection, None},
-            {UnityMatrixType.InverseProjection, None},
-            {UnityMatrixType.ViewProjection, None},
-            {UnityMatrixType.InverseViewProjection, None},
+            {UnityMatrixType.View, WorldToView},
+            {UnityMatrixType.InverseView, ViewToWorld},
+            {UnityMatrixType.Projection, ViewToScreen},
+            {UnityMatrixType.InverseProjection, ScreenToView},
+            {UnityMatrixType.ViewProjection, WorldToScreen},
+            {UnityMatrixType.InverseViewProjection, ScreenToWorld},
         };
 
         public static NeededTransform None => new NeededTransform(NeededCoordinateSpace.None, NeededCoordinateSpace.None);
         public static NeededTransform ObjectToWorld => new NeededTransform(NeededCoordinateSpace.Object, NeededCoordinateSpace.World);
         public static NeededTransform WorldToObject => new NeededTransform(NeededCoordinateSpace.World, NeededCoordinateSpace.Object);
+        public static NeededTransform WorldToView => new NeededTransform(NeededCoordinateSpace.World, NeededCoordinateSpace.View);
+        public static NeededTransform ViewToWorld => new NeededTransform(NeededCoordinateSpace.View, NeededCoordinateSpace.World);
+        public static NeededTransform ViewToScreen => new NeededTransform(NeededCoordinateSpace.View, NeededCoordinateSpace.Screen);
+        public static NeededTransform ScreenToView => new NeededTransform(NeededCoordinateSpace.Screen, NeededCoordinateSpace.View);
+        public static NeededTransform WorldToScreen => new NeededTransform(NeededCoordinateSpace.World, NeededCoordinateSpace.Screen);
+        public static NeededTransform ScreenToWorld => new NeededTransform(NeededCoordinateSpace.Screen, NeededCoordinateSpace.World);
 
         public NeededTransform(NeededCoordinateSpace from, NeededCoordinateSpace to)
         {
