@@ -1040,22 +1040,9 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void CoreAudioSystemsUseOnlyUsableAudioServiceRuntime()
+        public void SpatialAudioManagerUsesOnlyUsableAudioServiceRuntime()
         {
             string spatial = Read("Assets/_Project/Scripts/SpatialAudioManager.cs");
-            string vehicleCockpit = Read("Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs");
-            string renderer = Read(RendererPath);
-            string musicDirector = Read(MusicDirectorPath);
-            string soundscape = Read(SoundscapeSystemPath);
-            string acousticZone = Read(AcousticZoneControllerPath);
-            string dynamicSynth = Read(DynamicMusicSynthPath);
-            string audioLog = Read(AudioLogSystemPath);
-            string vocalWarning = Read(VocalWarningSystemPath);
-            string prologue = Read(PrologueAudioPath);
-            string psychosis = Read(DeepPsychosisControllerPath);
-            string footstep = Read(PlayerFootstepAudioPath);
-            string stressVfx = Read(PlayerStressVfxPath);
-
             string spatialRegister = ExtractMethodBody(spatial, "private bool TryRegisterAudioRuntimeServices()");
             string spatialAudioOwnerUsable = ExtractMethodBody(spatial, "private static bool IsAudioServiceOwnerUsable(");
             string spatialVirtualizationOwnerUsable = ExtractMethodBody(spatial, "private static bool IsAudioVirtualizationOwnerUsable(");
@@ -1066,94 +1053,6 @@ namespace Hecton8.Tests.Editor
             string spatialPlayerCriticalUsable = ExtractMethodBody(spatial, "private static bool IsPlayerCriticalAudioSignalSinkUsable(");
             string spatialPrologueQueue = ExtractMethodBody(spatial, "public bool QueuePrologueAudioTransition(");
             string spatialHighSpeedQueue = ExtractMethodBody(spatial, "public bool QueueHighSpeedImpactSignal(");
-
-            string cockpitHotSwap = ExtractMethodBody(vehicleCockpit, "public void OnGlobalRegistryServiceReplaced(");
-            string cockpitColdCache = ExtractMethodBody(vehicleCockpit, "private void CacheRegistryServicesCold()");
-            string cockpitPlayerCriticalCache = ExtractMethodBody(vehicleCockpit, "private void CachePlayerCriticalAudio(");
-            string cockpitPlayerCriticalResolve = ExtractMethodBody(vehicleCockpit, "private IPlayerCriticalSonarEchoReadModel ResolvePlayerCriticalSonarEchoReadModel()");
-            string cockpitPlayerCriticalUsable = ExtractMethodBody(vehicleCockpit, "private static bool IsPlayerCriticalSonarEchoReadModelUsable(");
-            string cockpitSonarUpload = ExtractMethodBody(vehicleCockpit, "private void UploadSonarTapsAndDispatchRadar()");
-
-            string rendererRegister = ExtractMethodBody(renderer, "private bool TryRegisterRuntimeService()");
-            string rendererRuntimeUsable = ExtractMethodBody(renderer, "private static bool IsPlayerCriticalAudioRuntimeUsable(");
-
-            string musicRegister = ExtractMethodBody(musicDirector, "private bool TryRegisterToGlobalRegistry()");
-            string musicRuntimeUsable = ExtractMethodBody(musicDirector, "private static bool IsMusicDirectorRuntimeUsable(");
-            string musicCache = ExtractMethodBody(musicDirector, "private void CacheAudioService(");
-            string musicResolve = ExtractMethodBody(musicDirector, "private IAudioService ResolveAudioService()");
-            string musicUsable = ExtractMethodBody(musicDirector, "private static bool IsAudioServiceUsable(");
-            string musicMixer = ExtractMethodBody(musicDirector, "private AudioMixerGroup ResolveMusicMixerGroup()");
-
-            string soundscapeDrain = ExtractMethodBody(soundscape, "private void DrainSignals()");
-            string soundscapeImpact = ExtractMethodBody(soundscape, "private void HandleImpactSignal(");
-            string soundscapeCache = ExtractMethodBody(soundscape, "private void CacheAudioService(");
-            string soundscapeResolve = ExtractMethodBody(soundscape, "private IAudioService ResolveAudioService()");
-            string soundscapeUsable = ExtractMethodBody(soundscape, "private static bool IsAudioServiceUsable(");
-
-            string acousticCache = ExtractMethodBody(acousticZone, "private void CacheAudioService(");
-            string acousticResolve = ExtractMethodBody(acousticZone, "private IAudioService ResolveAudioService()");
-            string acousticSpatial = ExtractMethodBody(acousticZone, "private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()");
-            string acousticUsable = ExtractMethodBody(acousticZone, "private static bool IsAudioServiceUsable(");
-            string acousticPhysicsRebind = ExtractMethodBody(acousticZone, "private void RebindPhysicsStateEventService(");
-            string acousticPhysicsUsable = ExtractMethodBody(acousticZone, "private static bool IsPhysicsStateEventServiceUsable(");
-
-            string synthCache = ExtractMethodBody(dynamicSynth, "private void CacheAudioService(");
-            string synthResolve = ExtractMethodBody(dynamicSynth, "private IAudioService ResolveAudioService()");
-            string synthUsable = ExtractMethodBody(dynamicSynth, "private static bool IsAudioServiceUsable(");
-            string synthRoute = ExtractMethodBody(dynamicSynth, "private void ApplyAudioHostMixerRoute()");
-
-            string audioLogRegister = ExtractMethodBody(audioLog, "private void TryRegisterService()");
-            string audioLogSystemUsable = ExtractMethodBody(audioLog, "private static bool IsAudioLogSystemUsable(");
-            string audioLogCache = ExtractMethodBody(audioLog, "private void CacheAudioService(");
-            string audioLogResolve = ExtractMethodBody(audioLog, "private IAudioService ResolveAudioService()");
-            string audioLogSinkResolve = ExtractMethodBody(audioLog, "private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()");
-            string audioLogUsable = ExtractMethodBody(audioLog, "private static bool IsAudioServiceUsable(");
-            string audioLogSinkUsable = ExtractMethodBody(audioLog, "private static bool IsNarrativeAudioSinkUsable(");
-            string audioLogQueue = ExtractMethodBody(audioLog, "private bool QueuePlaybackVisualSync(");
-            string audioLogFlush = ExtractMethodBody(audioLog, "private void FlushPendingPlaybackVisualSync()");
-            string audioLogRefreshGlitch = ExtractMethodBody(audioLog, "private void RefreshActiveNarrativeRadioGlitchVisualSync()");
-            string audioLogResetGlitch = ExtractMethodBody(audioLog, "private void FlushPendingNarrativeRadioGlitchReset()");
-
-            string vocalWarningRegister = ExtractMethodBody(vocalWarning, "private bool TryRegisterRuntimeService()");
-            string vocalWarningUsable = ExtractMethodBody(vocalWarning, "private static bool IsVocalWarningSystemUsable(");
-
-            string prologuePublish = ExtractMethodBody(prologue, "private void PublishAudioTransition(");
-            string prologueNeutral = ExtractMethodBody(prologue, "private void PublishNeutralTransitionOnDisable()");
-            string prologueCache = ExtractMethodBody(prologue, "private void CacheAudioService(");
-            string prologueResolve = ExtractMethodBody(prologue, "private IAudioService ResolveAudioService()");
-            string prologueUsable = ExtractMethodBody(prologue, "private static bool IsAudioServiceUsable(");
-
-            string psychosisCache = ExtractMethodBody(psychosis, "private void CacheAudioService(");
-            string psychosisResolve = ExtractMethodBody(psychosis, "private IAudioService ResolveAudioService()");
-            string psychosisUsable = ExtractMethodBody(psychosis, "private static bool IsAudioServiceUsable(");
-            string psychosisCue = ExtractMethodBody(psychosis, "private void PlayPsychosisCue()");
-
-            string footstepHotSwap = ExtractMethodBody(footstep, "public void OnGlobalRegistryServiceReplaced(");
-            string footstepColdCache = ExtractMethodBody(footstep, "private void RefreshColdRegistryReferences()");
-            string footstepCache = ExtractMethodBody(footstep, "private void CacheAudioService(");
-            string footstepResolve = ExtractMethodBody(footstep, "private IAudioService ResolveAudioService()");
-            string footstepUsable = ExtractMethodBody(footstep, "private static bool IsAudioServiceUsable(");
-            string footstepHandle = ExtractMethodBody(footstep, "private void HandleFootstep()");
-
-            string stressHotSwap = ExtractMethodBody(stressVfx, "public void OnGlobalRegistryServiceReplaced(");
-            string stressColdCache = ExtractMethodBody(stressVfx, "private void CacheRegistryServicesCold()");
-            string stressCache = ExtractMethodBody(stressVfx, "private void CacheAudioService(");
-            string stressResolve = ExtractMethodBody(stressVfx, "private IAudioService ResolveAudioService()");
-            string stressUsable = ExtractMethodBody(stressVfx, "private static bool IsAudioServiceUsable(");
-            string stressHeartbeat = ExtractMethodBody(stressVfx, "private void PlayHeartbeat(");
-
-            AssertAudioServiceUsableBody(musicUsable);
-            AssertAudioServiceUsableBody(soundscapeUsable);
-            AssertAudioServiceUsableBody(acousticUsable);
-            AssertAudioServiceUsableBody(synthUsable);
-            AssertAudioServiceUsableBody(audioLogUsable);
-            AssertAudioServiceUsableBody(prologueUsable);
-            AssertAudioServiceUsableBody(psychosisUsable);
-            AssertAudioServiceUsableBody(footstepUsable);
-            AssertAudioServiceUsableBody(stressUsable);
-            StringAssert.Contains("narrativeAudioSink is Behaviour behaviour", audioLogSinkUsable);
-            StringAssert.Contains("return behaviour != null && behaviour.isActiveAndEnabled", audioLogSinkUsable);
-
             StringAssert.Contains("IAudioService registeredAudioService = GlobalRegistry.Audio", spatialRegister);
             StringAssert.Contains("IAudioVirtualizationService registeredVirtualization = GlobalRegistry.AudioVirtualization", spatialRegister);
             StringAssert.Contains("if (IsAudioServiceOwnerUsable(registeredAudioService))", spatialRegister);
@@ -1182,7 +1081,18 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("IPlayerCriticalAudioSignalSink renderer = ResolvePlayerCriticalAudioSignalSink()", spatialHighSpeedQueue);
             Assert.That(spatialPrologueQueue.IndexOf("_cachedPlayerCriticalAudio", StringComparison.Ordinal), Is.LessThan(0));
             Assert.That(spatialHighSpeedQueue.IndexOf("_cachedPlayerCriticalAudio", StringComparison.Ordinal), Is.LessThan(0));
+        }
 
+        [Test]
+        public void VehicleSubOsCockpitRuntimeUsesOnlyUsableAudioServiceRuntime()
+        {
+            string vehicleCockpit = Read("Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs");
+            string cockpitHotSwap = ExtractMethodBody(vehicleCockpit, "public void OnGlobalRegistryServiceReplaced(");
+            string cockpitColdCache = ExtractMethodBody(vehicleCockpit, "private void CacheRegistryServicesCold()");
+            string cockpitPlayerCriticalCache = ExtractMethodBody(vehicleCockpit, "private void CachePlayerCriticalAudio(");
+            string cockpitPlayerCriticalResolve = ExtractMethodBody(vehicleCockpit, "private IPlayerCriticalSonarEchoReadModel ResolvePlayerCriticalSonarEchoReadModel()");
+            string cockpitPlayerCriticalUsable = ExtractMethodBody(vehicleCockpit, "private static bool IsPlayerCriticalSonarEchoReadModelUsable(");
+            string cockpitSonarUpload = ExtractMethodBody(vehicleCockpit, "private void UploadSonarTapsAndDispatchRadar()");
             StringAssert.Contains("CachePlayerCriticalAudio(currentService as IPlayerCriticalSonarEchoReadModel)", cockpitHotSwap);
             StringAssert.Contains("CachePlayerCriticalAudio(GlobalRegistry.PlayerCriticalSonarEcho)", cockpitColdCache);
             StringAssert.Contains("_cachedPlayerCriticalAudio = IsPlayerCriticalSonarEchoReadModelUsable(playerCriticalAudio)", cockpitPlayerCriticalCache);
@@ -1192,16 +1102,19 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return behaviour != null && behaviour.isActiveAndEnabled", cockpitPlayerCriticalUsable);
             StringAssert.Contains("IPlayerCriticalSonarEchoReadModel audioRuntime = ResolvePlayerCriticalSonarEchoReadModel()", cockpitSonarUpload);
             Assert.That(cockpitSonarUpload.IndexOf("IPlayerCriticalSonarEchoReadModel audioRuntime = _cachedPlayerCriticalAudio", StringComparison.Ordinal), Is.LessThan(0));
+        }
 
-            StringAssert.Contains("PlayerCriticalProceduralAudioRenderer registeredInstance = GlobalRegistry.PlayerCriticalAudio", rendererRegister);
-            StringAssert.Contains("!ReferenceEquals(registeredInstance, null)", rendererRegister);
-            StringAssert.Contains("!ReferenceEquals(registeredInstance, this)", rendererRegister);
-            StringAssert.Contains("if (IsPlayerCriticalAudioRuntimeUsable(registeredInstance))", rendererRegister);
-            StringAssert.Contains("Destroy(this);", rendererRegister);
-            StringAssert.Contains("GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", rendererRegister);
-            AssertTextBefore(rendererRegister, "GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", "GlobalRegistry.RegisterPlayerCriticalAudioRuntime(this);");
-            StringAssert.Contains("return renderer != null && renderer.isActiveAndEnabled", rendererRuntimeUsable);
-
+        [Test]
+        public void MusicDirectorUsesOnlyUsableAudioServiceRuntime()
+        {
+            string musicDirector = Read(MusicDirectorPath);
+            string musicRegister = ExtractMethodBody(musicDirector, "private bool TryRegisterToGlobalRegistry()");
+            string musicRuntimeUsable = ExtractMethodBody(musicDirector, "private static bool IsMusicDirectorRuntimeUsable(");
+            string musicCache = ExtractMethodBody(musicDirector, "private void CacheAudioService(");
+            string musicResolve = ExtractMethodBody(musicDirector, "private IAudioService ResolveAudioService()");
+            string musicUsable = ExtractMethodBody(musicDirector, "private static bool IsAudioServiceUsable(");
+            string musicMixer = ExtractMethodBody(musicDirector, "private AudioMixerGroup ResolveMusicMixerGroup()");
+            AssertAudioServiceUsableBody(musicUsable);
             StringAssert.Contains("HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector", musicRegister);
             StringAssert.Contains("!ReferenceEquals(activeDirector, null)", musicRegister);
             StringAssert.Contains("!ReferenceEquals(activeDirector, this)", musicRegister);
@@ -1210,18 +1123,40 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("GlobalRegistry.UnregisterMusicDirectorRuntime(activeDirector);", musicRegister);
             AssertTextBefore(musicRegister, "GlobalRegistry.UnregisterMusicDirectorRuntime(activeDirector);", "GlobalRegistry.RegisterMusicDirectorRuntime(this);");
             StringAssert.Contains("return director != null && director.isActiveAndEnabled", musicRuntimeUsable);
-
             StringAssert.Contains("_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", musicCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", musicResolve);
             StringAssert.Contains("_cachedAudioService = null", musicResolve);
             StringAssert.Contains("IAudioService audioService = ResolveAudioService()", musicMixer);
+        }
 
+        [Test]
+        public void SoundscapeSystemUsesOnlyUsableAudioServiceRuntime()
+        {
+            string soundscape = Read(SoundscapeSystemPath);
+            string soundscapeDrain = ExtractMethodBody(soundscape, "private void DrainSignals()");
+            string soundscapeImpact = ExtractMethodBody(soundscape, "private void HandleImpactSignal(");
+            string soundscapeCache = ExtractMethodBody(soundscape, "private void CacheAudioService(");
+            string soundscapeResolve = ExtractMethodBody(soundscape, "private IAudioService ResolveAudioService()");
+            string soundscapeUsable = ExtractMethodBody(soundscape, "private static bool IsAudioServiceUsable(");
+            AssertAudioServiceUsableBody(soundscapeUsable);
             StringAssert.Contains("_audioService = IsAudioServiceUsable(audioService) ? audioService : null", soundscapeCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", soundscapeResolve);
             StringAssert.Contains("_audioService = null", soundscapeResolve);
             StringAssert.Contains("IAudioService audio = ResolveAudioService()", soundscapeDrain);
             StringAssert.Contains("if (!IsAudioServiceUsable(audio))", soundscapeImpact);
+        }
 
+        [Test]
+        public void AcousticZoneControllerUsesOnlyUsableAudioServiceRuntime()
+        {
+            string acousticZone = Read(AcousticZoneControllerPath);
+            string acousticCache = ExtractMethodBody(acousticZone, "private void CacheAudioService(");
+            string acousticResolve = ExtractMethodBody(acousticZone, "private IAudioService ResolveAudioService()");
+            string acousticSpatial = ExtractMethodBody(acousticZone, "private ISpatialAudioWorldEmitterReadModel ResolveSpatialAudioEmitterReadModel()");
+            string acousticUsable = ExtractMethodBody(acousticZone, "private static bool IsAudioServiceUsable(");
+            string acousticPhysicsRebind = ExtractMethodBody(acousticZone, "private void RebindPhysicsStateEventService(");
+            string acousticPhysicsUsable = ExtractMethodBody(acousticZone, "private static bool IsPhysicsStateEventServiceUsable(");
+            AssertAudioServiceUsableBody(acousticUsable);
             StringAssert.Contains("if (!IsAudioServiceUsable(audioService))", acousticCache);
             StringAssert.Contains("_cachedSpatialAudioEmitterReadModel = null", acousticCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", acousticResolve);
@@ -1229,12 +1164,41 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("if (audioService == null)", acousticSpatial);
             AssertTextBefore(acousticPhysicsRebind, "!IsPhysicsStateEventServiceUsable(_physicsStateEvents)", "_physicsStateEvents.RegisterImpactListener(this);");
             StringAssert.Contains("return physicsStateEvents != null && physicsStateEvents.IsInitialized;", acousticPhysicsUsable);
+        }
 
+        [Test]
+        public void DynamicMusicSynthUsesOnlyUsableAudioServiceRuntime()
+        {
+            string dynamicSynth = Read(DynamicMusicSynthPath);
+            string synthCache = ExtractMethodBody(dynamicSynth, "private void CacheAudioService(");
+            string synthResolve = ExtractMethodBody(dynamicSynth, "private IAudioService ResolveAudioService()");
+            string synthUsable = ExtractMethodBody(dynamicSynth, "private static bool IsAudioServiceUsable(");
+            string synthRoute = ExtractMethodBody(dynamicSynth, "private void ApplyAudioHostMixerRoute()");
+            AssertAudioServiceUsableBody(synthUsable);
             StringAssert.Contains("_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", synthCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", synthResolve);
             StringAssert.Contains("_cachedAudioService = null", synthResolve);
             StringAssert.Contains("IAudioService audioService = ResolveAudioService()", synthRoute);
+        }
 
+        [Test]
+        public void AudioLogSystemUsesOnlyUsableAudioServiceRuntime()
+        {
+            string audioLog = Read(AudioLogSystemPath);
+            string audioLogRegister = ExtractMethodBody(audioLog, "private void TryRegisterService()");
+            string audioLogSystemUsable = ExtractMethodBody(audioLog, "private static bool IsAudioLogSystemUsable(");
+            string audioLogCache = ExtractMethodBody(audioLog, "private void CacheAudioService(");
+            string audioLogResolve = ExtractMethodBody(audioLog, "private IAudioService ResolveAudioService()");
+            string audioLogSinkResolve = ExtractMethodBody(audioLog, "private ISpatialAudioNarrativeRadioSink ResolveNarrativeAudioSink()");
+            string audioLogUsable = ExtractMethodBody(audioLog, "private static bool IsAudioServiceUsable(");
+            string audioLogSinkUsable = ExtractMethodBody(audioLog, "private static bool IsNarrativeAudioSinkUsable(");
+            string audioLogQueue = ExtractMethodBody(audioLog, "private bool QueuePlaybackVisualSync(");
+            string audioLogFlush = ExtractMethodBody(audioLog, "private void FlushPendingPlaybackVisualSync()");
+            string audioLogRefreshGlitch = ExtractMethodBody(audioLog, "private void RefreshActiveNarrativeRadioGlitchVisualSync()");
+            string audioLogResetGlitch = ExtractMethodBody(audioLog, "private void FlushPendingNarrativeRadioGlitchReset()");
+            AssertAudioServiceUsableBody(audioLogUsable);
+            StringAssert.Contains("narrativeAudioSink is Behaviour behaviour", audioLogSinkUsable);
+            StringAssert.Contains("return behaviour != null && behaviour.isActiveAndEnabled", audioLogSinkUsable);
             StringAssert.Contains("AudioLogSystem registeredAudioLogs = GlobalRegistry.AudioLogs", audioLogRegister);
             StringAssert.Contains("!ReferenceEquals(registeredAudioLogs, null)", audioLogRegister);
             StringAssert.Contains("!ReferenceEquals(registeredAudioLogs, this)", audioLogRegister);
@@ -1253,7 +1217,14 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ResolveAudioService()", audioLogFlush);
             StringAssert.Contains("ResolveNarrativeAudioSink()", audioLogRefreshGlitch);
             StringAssert.Contains("ResolveNarrativeAudioSink()", audioLogResetGlitch);
+        }
 
+        [Test]
+        public void VocalWarningSystemUsesOnlyUsableAudioServiceRuntime()
+        {
+            string vocalWarning = Read(VocalWarningSystemPath);
+            string vocalWarningRegister = ExtractMethodBody(vocalWarning, "private bool TryRegisterRuntimeService()");
+            string vocalWarningUsable = ExtractMethodBody(vocalWarning, "private static bool IsVocalWarningSystemUsable(");
             StringAssert.Contains("IVocalWarningSystem registeredVocalWarnings = GlobalRegistry.VocalWarnings", vocalWarningRegister);
             StringAssert.Contains("!ReferenceEquals(registeredVocalWarnings, null)", vocalWarningRegister);
             StringAssert.Contains("!ReferenceEquals(registeredVocalWarnings, this)", vocalWarningRegister);
@@ -1265,25 +1236,70 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("vocalWarningSystem is Behaviour behaviour", vocalWarningUsable);
             StringAssert.Contains("!behaviour.isActiveAndEnabled", vocalWarningUsable);
             StringAssert.Contains("return vocalWarningSystem.IsInitialized", vocalWarningUsable);
+        }
 
+        [Test]
+        public void PrologueAudioUsesOnlyUsableAudioServiceRuntime()
+        {
+            string prologue = Read(PrologueAudioPath);
+            string prologuePublish = ExtractMethodBody(prologue, "private void PublishAudioTransition(");
+            string prologueNeutral = ExtractMethodBody(prologue, "private void PublishNeutralTransitionOnDisable()");
+            string prologueCache = ExtractMethodBody(prologue, "private void CacheAudioService(");
+            string prologueResolve = ExtractMethodBody(prologue, "private IAudioService ResolveAudioService()");
+            string prologueUsable = ExtractMethodBody(prologue, "private static bool IsAudioServiceUsable(");
+            AssertAudioServiceUsableBody(prologueUsable);
             StringAssert.Contains("_audioService = IsAudioServiceUsable(audioService) ? audioService : null", prologueCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", prologueResolve);
             StringAssert.Contains("_audioService = null", prologueResolve);
             StringAssert.Contains("IAudioService audioService = ResolveAudioService()", prologuePublish);
             StringAssert.Contains("TryQueueNeutralTransition(ResolveAudioService())", prologueNeutral);
+        }
 
+        [Test]
+        public void DeepPsychosisControllerUsesOnlyUsableAudioServiceRuntime()
+        {
+            string psychosis = Read(DeepPsychosisControllerPath);
+            string psychosisCache = ExtractMethodBody(psychosis, "private void CacheAudioService(");
+            string psychosisResolve = ExtractMethodBody(psychosis, "private IAudioService ResolveAudioService()");
+            string psychosisUsable = ExtractMethodBody(psychosis, "private static bool IsAudioServiceUsable(");
+            string psychosisCue = ExtractMethodBody(psychosis, "private void PlayPsychosisCue()");
+            AssertAudioServiceUsableBody(psychosisUsable);
             StringAssert.Contains("_audioService = IsAudioServiceUsable(audioService) ? audioService : null", psychosisCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", psychosisResolve);
             StringAssert.Contains("_audioService = null", psychosisResolve);
             StringAssert.Contains("IAudioService audioManager = ResolveAudioService()", psychosisCue);
+        }
 
+        [Test]
+        public void PlayerFootstepAudioUsesOnlyUsableAudioServiceRuntime()
+        {
+            string footstep = Read(PlayerFootstepAudioPath);
+            string footstepHotSwap = ExtractMethodBody(footstep, "public void OnGlobalRegistryServiceReplaced(");
+            string footstepColdCache = ExtractMethodBody(footstep, "private void RefreshColdRegistryReferences()");
+            string footstepCache = ExtractMethodBody(footstep, "private void CacheAudioService(");
+            string footstepResolve = ExtractMethodBody(footstep, "private IAudioService ResolveAudioService()");
+            string footstepUsable = ExtractMethodBody(footstep, "private static bool IsAudioServiceUsable(");
+            string footstepHandle = ExtractMethodBody(footstep, "private void HandleFootstep()");
+            AssertAudioServiceUsableBody(footstepUsable);
             StringAssert.Contains("CacheAudioService(currentService as IAudioService)", footstepHotSwap);
             StringAssert.Contains("CacheAudioService(GlobalRegistry.Audio)", footstepColdCache);
             StringAssert.Contains("_audioService = IsAudioServiceUsable(audioService) ? audioService : null", footstepCache);
             StringAssert.Contains("if (IsAudioServiceUsable(audioService))", footstepResolve);
             StringAssert.Contains("_audioService = null", footstepResolve);
             StringAssert.Contains("IAudioService sam = ResolveAudioService()", footstepHandle);
+        }
 
+        [Test]
+        public void PlayerStressVfxUsesOnlyUsableAudioServiceRuntime()
+        {
+            string stressVfx = Read(PlayerStressVfxPath);
+            string stressHotSwap = ExtractMethodBody(stressVfx, "public void OnGlobalRegistryServiceReplaced(");
+            string stressColdCache = ExtractMethodBody(stressVfx, "private void CacheRegistryServicesCold()");
+            string stressCache = ExtractMethodBody(stressVfx, "private void CacheAudioService(");
+            string stressResolve = ExtractMethodBody(stressVfx, "private IAudioService ResolveAudioService()");
+            string stressUsable = ExtractMethodBody(stressVfx, "private static bool IsAudioServiceUsable(");
+            string stressHeartbeat = ExtractMethodBody(stressVfx, "private void PlayHeartbeat(");
+            AssertAudioServiceUsableBody(stressUsable);
             StringAssert.Contains("CacheAudioService(currentService as IAudioService)", stressHotSwap);
             StringAssert.Contains("CacheAudioService(GlobalRegistry.Audio)", stressColdCache);
             StringAssert.Contains("_cachedAudioService = IsAudioServiceUsable(audioService) ? audioService : null", stressCache);
@@ -1292,6 +1308,23 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("IAudioService audioManager = ResolveAudioService()", stressHeartbeat);
             Assert.That(stressHeartbeat.IndexOf("_cachedAudioService", StringComparison.Ordinal), Is.LessThan(0));
         }
+
+        [Test]
+        public void ProceduralAudioRendererUsesOnlyUsableAudioServiceRuntime()
+        {
+            string renderer = Read(RendererPath);
+            string rendererRegister = ExtractMethodBody(renderer, "private bool TryRegisterRuntimeService()");
+            string rendererRuntimeUsable = ExtractMethodBody(renderer, "private static bool IsPlayerCriticalAudioRuntimeUsable(");
+            StringAssert.Contains("PlayerCriticalProceduralAudioRenderer registeredInstance = GlobalRegistry.PlayerCriticalAudio", rendererRegister);
+            StringAssert.Contains("!ReferenceEquals(registeredInstance, null)", rendererRegister);
+            StringAssert.Contains("!ReferenceEquals(registeredInstance, this)", rendererRegister);
+            StringAssert.Contains("if (IsPlayerCriticalAudioRuntimeUsable(registeredInstance))", rendererRegister);
+            StringAssert.Contains("Destroy(this);", rendererRegister);
+            StringAssert.Contains("GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", rendererRegister);
+            AssertTextBefore(rendererRegister, "GlobalRegistry.UnregisterPlayerCriticalAudioRuntime(registeredInstance);", "GlobalRegistry.RegisterPlayerCriticalAudioRuntime(this);");
+            StringAssert.Contains("return renderer != null && renderer.isActiveAndEnabled", rendererRuntimeUsable);
+        }
+
 
         [Test]
         public void PhysicalDiegeticPanelAudioUsesOnlyUsableAudioServiceRuntime()
