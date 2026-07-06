@@ -771,15 +771,14 @@ namespace Hecton8.Gameplay
 
         private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
         {
-            component = null;
-
-            for (; current != null; current = current.parent)
+            if (current == null)
             {
-                if (current.TryGetComponent(out component))
-                    return true;
+                component = null;
+                return false;
             }
 
-            return false;
+            component = current.GetComponentInParent<T>(true);
+            return component != null;
         }
 
         private void ResolvePlayerMovement()
