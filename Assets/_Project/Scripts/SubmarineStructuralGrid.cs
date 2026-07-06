@@ -1256,19 +1256,19 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
         {
             // Structural grid does not respond directly to power-channel packets.
         }
 
         /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
         {
             // Structural grid does not respond directly to clarity-channel packets.
         }
 
         /// <inheritdoc />
-        public void OnTraumaThresholdCrossed(TraumaLevel level)
+        void Hecton8.Gameplay.IDamageSignalReceiver.OnTraumaThresholdCrossed(TraumaLevel level)
         {
             // Structural grid does not respond directly to discrete trauma thresholds.
         }
