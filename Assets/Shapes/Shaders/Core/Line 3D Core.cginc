@@ -13,9 +13,11 @@ PROP_DEF(float3, _PointEnd)
 PROP_DEF(half, _Thickness)
 PROP_DEF(int, _ThicknessSpace)
 SHAPES_DASH_PROPERTIES
+SHAPES_FILL_PROPERTIES
 UNITY_INSTANCING_BUFFER_END(Props)
 
 #include "../DashUtils.cginc"
+#include "../FillUtils.cginc"
 
 #define IP_dash_coord intp0.x
 #define IP_dash_spacePerPeriod intp0.y
@@ -29,12 +31,9 @@ struct VertexInput {
 struct VertexOutput {
 	float4 pos : SV_POSITION;
 	half4 intp0 : TEXCOORD0;
-	#if defined(CAP_SQUARE)
-		half colorBlend : TEXCOORD1; // needed since we need unclamped color blend value in the frag shader
-	#else
-		half4 color : TEXCOORD1;
-	#endif
-	UNITY_FOG_COORDS(2)
+	half colorBlend : TEXCOORD1;
+	SHAPES_INTERPOLATOR_FILL(2)
+	UNITY_FOG_COORDS(3)
 	UNITY_VERTEX_INPUT_INSTANCE_ID
 	UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -93,15 +92,14 @@ VertexOutput vert(VertexInput v) {
 	    vertPos += (side*2-1) * forward * radius;
 	#endif
 	
-	#if defined(CAP_SQUARE)
+	#if defined(CAP_SQUARE) || defined(CAP_ROUND)
 	    half k = 2 * radius / lineLength + 1;
         half m = -radius / lineLength;
         o.colorBlend = k * side + m;
 	#else
-        half4 colorStart = PROP(_Color);
-        half4 colorEnd = PROP(_ColorEnd); // todo: make the gradient thing be a thing
-	    o.color = lerp( colorStart, colorEnd, side );
+        o.colorBlend = side;
 	#endif
+	o.fillCoords = GetFillCoords( vertPos );
 	
 	// dashes
 	if( IsDashed() ) {
@@ -121,16 +119,15 @@ VertexOutput vert(VertexInput v) {
 FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
 	UNITY_SETUP_INSTANCE_ID(i);
 	 
-    #if defined(CAP_SQUARE)
-        // interpolation of colors is done here because we need to clamp the color blend value in the frag shader
-        // due to that being calculated in the vert shader, but the 0 and 1 crossings are offset from the vert
-        // todo: use a proper cylinder mesh with extra verts for 0 and 1 crossings
+    int fillType = PROP( _FillType );
+    half4 shape_color;
+    if( fillType == FILL_TYPE_NONE ) {
         half4 colorStart = PROP(_Color);
-        half4 colorEnd = PROP(_ColorEnd); // todo: make the gradient thing be a thing
-	    half4 shape_color = lerp( colorStart, colorEnd, saturate(i.colorBlend) );
-    #else
-	    half4 shape_color = i.color;
-    #endif
+        half4 colorEnd = PROP(_ColorEnd);
+        shape_color = lerp( colorStart, colorEnd, saturate(i.colorBlend) );
+    } else {
+        shape_color = GetFillColor( i.fillCoords );
+    }
     
     half shape_mask = 1;
 	DashCoordinates dashCoords;

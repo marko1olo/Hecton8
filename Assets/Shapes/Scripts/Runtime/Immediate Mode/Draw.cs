@@ -66,8 +66,16 @@ namespace Shapes {
 					  sourceMat: ShapesMaterialUtils.GetLineMat( Draw.LineGeometry, endCaps )[Draw.BlendMode],
 					  sourceMesh: ShapesMeshUtils.GetLineMesh( Draw.LineGeometry, endCaps, DetailLevel ) ) ) {
 				MetaMpb.ApplyDashSettings( mpbLine, thickness );
-				mpbLine.color.Add( colorStart.ColorSpaceAdjusted() );
-				mpbLine.colorEnd.Add( colorEnd.ColorSpaceAdjusted() );
+				if( Draw.style.useGradients ) {
+					MetaMpb.ApplyColorOrFill( mpbLine, colorStart );
+				} else {
+					mpbLine.color.Add( colorStart.ColorSpaceAdjusted() );
+					mpbLine.colorEnd.Add( colorEnd.ColorSpaceAdjusted() );
+					mpbLine.fillType.Add( GradientFill.FILL_NONE );
+					mpbLine.fillSpace.Add( default );
+					mpbLine.fillStart.Add( default );
+					mpbLine.fillEnd.Add( default );
+				}
 				mpbLine.pointStart.Add( start );
 				mpbLine.pointEnd.Add( end );
 				mpbLine.thickness.Add( thickness );

@@ -73,7 +73,7 @@ namespace Shapes {
 
 	}
 
-	internal class MpbLine2D : MetaMpb, IDashableMpb {
+	internal class MpbLine2D : MetaMpb, IDashableMpb, IFillableMpb {
 
 		internal readonly List<float> alignment = InitList<float>();
 		internal readonly List<Vector4> colorEnd = InitList<Vector4>();
@@ -82,6 +82,13 @@ namespace Shapes {
 		internal readonly List<float> scaleMode = InitList<float>();
 		internal readonly List<float> thickness = InitList<float>();
 		internal readonly List<float> thicknessSpace = InitList<float>();
+
+		// IFillableMpb
+		List<Vector4> IFillableMpb.fillColorEnd => colorEnd;
+		List<Vector4> IFillableMpb.fillEnd { get; } = InitList<Vector4>();
+		List<float> IFillableMpb.fillSpace { get; } = InitList<float>();
+		List<Vector4> IFillableMpb.fillStart { get; } = InitList<Vector4>();
+		List<float> IFillableMpb.fillType { get; } = InitList<float>();
 
 		// dash boilerplate
 		List<float> IDashableMpb.dashOffset { get; } = InitList<float>();
@@ -104,7 +111,7 @@ namespace Shapes {
 
 	}
 
-	internal class MpbLine3D : MetaMpb, IDashableMpb {
+	internal class MpbLine3D : MetaMpb, IDashableMpb, IFillableMpb {
 
 		internal readonly List<Vector4> colorEnd = InitList<Vector4>();
 		internal readonly List<Vector4> pointEnd = InitList<Vector4>();
@@ -112,6 +119,13 @@ namespace Shapes {
 		internal readonly List<float> scaleMode = InitList<float>();
 		internal readonly List<float> thickness = InitList<float>();
 		internal readonly List<float> thicknessSpace = InitList<float>();
+
+		// IFillableMpb
+		List<Vector4> IFillableMpb.fillColorEnd => colorEnd;
+		List<Vector4> IFillableMpb.fillEnd { get; } = InitList<Vector4>();
+		List<float> IFillableMpb.fillSpace { get; } = InitList<float>();
+		List<Vector4> IFillableMpb.fillStart { get; } = InitList<Vector4>();
+		List<float> IFillableMpb.fillType { get; } = InitList<float>();
 
 		// dash boilerplate
 		List<float> IDashableMpb.dashOffset { get; } = InitList<float>();
