@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -689,32 +690,29 @@ namespace Hecton8.Gameplay
                 LogToolWarning(in messageBuffer);
         }
 
-#if UNITY_EDITOR
+        [Conditional("UNITY_EDITOR")]
         private static void LogToolInfo(string message)
         {
             Hecton8.Core.H8Debug.Log($"[ToolInfo] {message}");
         }
 
+        [Conditional("UNITY_EDITOR")]
         private static void LogToolInfo(in FixedCharBuffer messageBuffer)
         {
             Hecton8.Core.H8Debug.Log($"[ToolInfo] {messageBuffer.ToString()}");
         }
 
+        [Conditional("UNITY_EDITOR")]
         private static void LogToolWarning(string message)
         {
             Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {message}");
         }
 
+        [Conditional("UNITY_EDITOR")]
         private static void LogToolWarning(in FixedCharBuffer messageBuffer)
         {
             Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
         }
-#else
-        private static void LogToolInfo(string message) { }
-        private static void LogToolInfo(in FixedCharBuffer messageBuffer) { }
-        private static void LogToolWarning(string message) { }
-        private static void LogToolWarning(in FixedCharBuffer messageBuffer) { }
-#endif
     }
 }
 
