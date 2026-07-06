@@ -107,6 +107,9 @@ namespace Hecton8.Power
         private PowerGridVaultHandles _jacobiVaultHandles;
         private IDataVault _jacobiVaultOwner;
         private bool _jacobiVaultReady;
+        private bool _isInitialized;
+        private float _timeSinceLastSlowTick;
+        private const float SLOW_TICK_INTERVAL = 1.0f;
         private const float PowerGridColdTickSeconds = PowerGrid.LogisticsTickDeltaTimeSeconds;
         private const float SubmarineThermalGridLowCadenceSeconds = 0.2f;
         private const float SubmarineThermalGridHighCadenceSeconds = 1f / 60f;
@@ -192,6 +195,7 @@ namespace Hecton8.Power
 
         private void Awake()
         {
+            _isInitialized = true;
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
@@ -318,7 +322,16 @@ namespace Hecton8.Power
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!_isInitialized)
+                return;
+
+            _timeSinceLastSlowTick += Time.deltaTime;
+            if (_timeSinceLastSlowTick >= SLOW_TICK_INTERVAL)
+            {
+                _timeSinceLastSlowTick = 0f;
+            }
+
+            float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             _wfcOutpostPowerBoot?.LateFrameTick(now);
             _shinobuLogisticsRouter?.LateFrameTick(now);
             _submarineThermalGridRuntime?.TryCompleteExternalThermalInjectionPostSimulation();
