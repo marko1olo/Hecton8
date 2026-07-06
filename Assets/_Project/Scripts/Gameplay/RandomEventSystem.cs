@@ -196,15 +196,15 @@ namespace Hecton8.Gameplay
         /// <summary>Called when a random event starts.</summary>
         /// <param name="type">Activated event type.</param>
         /// <param name="intensity">Normalized event intensity.</param>
-        void OnRandomEventStarted(RandomEventType type, float intensity);
+        void OnRandomEventStarted(RandomEventType type, float intensity) { }
 
         /// <summary>Called when a random event ends.</summary>
         /// <param name="type">Ended event type.</param>
-        void OnRandomEventEnded(RandomEventType type);
+        void OnRandomEventEnded(RandomEventType type) { }
 
         /// <summary>Called after a seismic shockwave has been queued and flushed.</summary>
         /// <param name="payload">Seismic payload.</param>
-        void OnSeismicShockwave(in SeismicShockwaveEvent payload);
+        void OnSeismicShockwave(in SeismicShockwaveEvent payload) { }
     }
 
     public static class RandomEventEvents

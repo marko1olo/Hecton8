@@ -6080,10 +6080,6 @@ namespace Hecton8.World
             HandleRandomEventStarted(type, intensity);
         }
 
-        void IRandomEventListener.OnRandomEventEnded(RandomEventType type)
-        {
-        }
-
         void IRandomEventListener.OnSeismicShockwave(in SeismicShockwaveEvent payload)
         {
             HandleSeismicShockwave(in payload);
