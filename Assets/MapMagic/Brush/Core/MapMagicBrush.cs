@@ -56,6 +56,7 @@ namespace MapMagic.Brush
 		}
 
 		public Trace trace = new Trace(); //spacing tool
+		public Globals globals = new Globals();
 
 		public Terrain[] terrains = new Terrain[0];
 		public Dictionary<Terrain,TerrainCache> terrainCaches = new Dictionary<Terrain,TerrainCache>();
@@ -172,7 +173,7 @@ namespace MapMagic.Brush
 			{
 				tileData = new TileData();
 				tileData.area = stamp.GetArea(stampTerrains[0]);
-				tileData.globals = new Globals(); //TODO: avoid creating it al the time
+				tileData.globals = globals;
 				tileData.globals.height = stampTerrains[0].terrainData.size.y;
 				tileData.random = preset.graph.random;
 				tileData.isPreview = true;
