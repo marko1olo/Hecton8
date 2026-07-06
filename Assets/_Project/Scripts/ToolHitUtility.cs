@@ -689,32 +689,29 @@ namespace Hecton8.Gameplay
                 LogToolWarning(in messageBuffer);
         }
 
-#if UNITY_EDITOR
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void LogToolInfo(string message)
         {
             Hecton8.Core.H8Debug.Log($"[ToolInfo] {message}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void LogToolInfo(in FixedCharBuffer messageBuffer)
         {
             Hecton8.Core.H8Debug.Log($"[ToolInfo] {messageBuffer.ToString()}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void LogToolWarning(string message)
         {
             Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {message}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private static void LogToolWarning(in FixedCharBuffer messageBuffer)
         {
             Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
         }
-#else
-        private static void LogToolInfo(string message) { }
-        private static void LogToolInfo(in FixedCharBuffer messageBuffer) { }
-        private static void LogToolWarning(string message) { }
-        private static void LogToolWarning(in FixedCharBuffer messageBuffer) { }
-#endif
     }
 }
 
