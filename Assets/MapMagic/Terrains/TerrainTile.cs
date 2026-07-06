@@ -642,7 +642,7 @@ namespace MapMagic.Terrains
 					draft.applyReady = false;
 					draft.generateReady = false;
 
-					EnqueueDraftTask(draft, graph, Priority+1000, "Draft");
+					EnqueueTask(draft, graph, Priority+1000, "Draft");
 				}
 
 				//starting main
@@ -659,7 +659,7 @@ namespace MapMagic.Terrains
 					main.applyReady = false;
 					main.generateReady = false;
 
-					EnqueueMainTask(main, graph, Priority, "Main");
+					EnqueueTask(main, graph, Priority, "Main");
 					//EnqueueTask(main, graph, Priority, "Main");
 				}
 
@@ -667,12 +667,11 @@ namespace MapMagic.Terrains
 			}
 
 
-			private void EnqueueMainTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
-			///TODO: unify enqueue and test. The only difference is in capturing stop
+			private void EnqueueTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
 			{
 				if (det.task == null  ||  !det.task.Enqueued)
 				{
-					Prepare(graph, this, main);
+					Prepare(graph, this, det);
 
 					det.stop = new StopToken();
 					StopToken stop = det.stop; //closure var
@@ -681,22 +680,6 @@ namespace MapMagic.Terrains
 						priority = priority, 
 						name = name + " " + coord };
 					ThreadManager.Enqueue(det.task);
-				}
-				//do nothing if task enqueued
-
-				det.task.priority = priority;
-			}
-
-
-			private void EnqueueDraftTask (DetailLevel det, Graph graph, int priority=0, string name="Task")
-			{
-				if (det.task == null)
-				{
-					det.stop = new StopToken();
-					det.task = new ThreadManager.Task() { 
-						action = ()=>Generate(graph, this, det, det.stop), //graph captured, stop isn't
-						priority = priority, 
-						name = name + " " + coord };
 				}
 
 				det.task.priority = priority;
