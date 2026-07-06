@@ -263,26 +263,12 @@ namespace MapMagic.Products
 						if (subGraph == null)
 							continue;
 
-						//HACK: check biome for outputs is right, but not always work with current clear/ready system
-						//Fails in draft when cleared while generating biome - some internal outputs might not be ready
-						//While biome switches to ready on finish, and it is skipped with next wave of generate (after clear)
-						//So drafts are using hacky simplified check
-						//Update: might work okay with new clear sys
-						if (isDraft)
-						{
-							if (!IsReady(biome.Gen))
-								return false;
-						}
+						TileData subData;
+						if (!subDatas.TryGetValue(biome.Id, out subData))
+							continue;
 
-						else
-						{
-							TileData subData;
-							if (!subDatas.TryGetValue(biome.Id, out subData))
-								continue;
-
-							if (!subData.AllOutputsReady(subGraph, level, inSubs))
-								return false;
-						}
+						if (!subData.AllOutputsReady(subGraph, level, inSubs))
+							return false;
 					}
 
 				return true;
