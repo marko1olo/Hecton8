@@ -259,8 +259,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseOpened so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseOpened(int tab) => TryRaiseOpened(tab);
 
         internal static bool TryRaiseClosed(float duration)
         {
@@ -274,8 +272,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseClosed so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseClosed(float duration) => TryRaiseClosed(duration);
 
         internal static bool TryRaiseTabChanged(int oldTab, int newTab)
         {
@@ -289,8 +285,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseTabChanged so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseTabChanged(int oldTab, int newTab) => TryRaiseTabChanged(oldTab, newTab);
 
         internal static bool TryRaiseLowBatteryShutdown()
         {
@@ -308,8 +302,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseLowBatteryShutdown so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseLowBatteryShutdown() => TryRaiseLowBatteryShutdown();
 
         internal static bool TryRaiseMapChunkExplored(int chunkX, int chunkY)
         {
@@ -327,8 +319,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseMapChunkExplored so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseMapChunkExplored(int chunkX, int chunkY) => TryRaiseMapChunkExplored(chunkX, chunkY);
 
         internal static bool TryRaiseMarkerChanged(uint markerHashId, int markerCount)
         {
@@ -346,8 +336,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseMarkerChanged so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseMarkerChanged(uint markerHashId, int markerCount) => TryRaiseMarkerChanged(markerHashId, markerCount);
 
         internal static bool TryRaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
         {
@@ -365,8 +353,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseLogbookChanged so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseLogbookChanged(int entryCount, uint latestEventHash = 0u) => TryRaiseLogbookChanged(entryCount, latestEventHash);
 
         internal static bool TryRaiseUndoRequest(int framesBack = 1)
         {
@@ -384,8 +370,6 @@ namespace Hecton8.UI
             });
         }
 
-        [System.Obsolete("Use TryRaiseUndoRequest so bounded queue refusal is visible at the producer.", true)]
-        internal static void RaiseUndoRequest(int framesBack = 1) => TryRaiseUndoRequest(framesBack);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
