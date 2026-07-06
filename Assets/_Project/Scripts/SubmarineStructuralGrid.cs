@@ -1256,13 +1256,22 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
-        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
+        public void OnPowerChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
+        {
+            // Structural grid does not respond to power changes.
+        }
 
         /// <inheritdoc />
-        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src) { }
+        public void OnClarityChanged(float prev, float next, Hecton8.Gameplay.HabitatDamageSignal src)
+        {
+            // Structural grid does not respond to clarity changes.
+        }
 
         /// <inheritdoc />
-        public void OnTraumaThresholdCrossed(TraumaLevel level) { }
+        public void OnTraumaThresholdCrossed(TraumaLevel level)
+        {
+            // Structural grid does not respond to trauma events.
+        }
 
         /// <inheritdoc />
         public void OnHullBreach(float3 localPoint, float depth, float pressureDelta)
