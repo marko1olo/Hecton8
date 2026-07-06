@@ -70,5 +70,15 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(float.IsNaN(result[0,0,0]), Is.False);
             Assert.Pass("Verify robust calculation and overflow protection.");
         }
+
+        [Test]
+        public void Test_NullInputs_Case06()
+        {
+            float[,,] validField = new float[2, 2, 2];
+
+            Assert.Throws<ArgumentNullException>(() => FluidPressureJacobiSolver.Solve(null, validField, 1f));
+            Assert.Throws<ArgumentNullException>(() => FluidPressureJacobiSolver.Solve(validField, null, 1f));
+            Assert.Pass("Verify ArgumentNullException is thrown on null fields.");
+        }
     }
 }
