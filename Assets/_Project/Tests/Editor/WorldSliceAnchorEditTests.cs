@@ -54,6 +54,62 @@ namespace Hecton8.Tests.Editor
 
             Object.DestroyImmediate(go);
         }
+        [Test]
+        public void CopyActiveAnchorsTo_NullDestination_ReturnsZero()
+        {
+            Assert.AreEqual(0, WorldSliceAnchor.CopyActiveAnchorsTo(null), "Should return 0 for null destination array.");
+        }
+
+        [Test]
+        public void CopyActiveAnchorsTo_EmptyDestination_ReturnsZero()
+        {
+            WorldSliceAnchor[] empty = new WorldSliceAnchor[0];
+            Assert.AreEqual(0, WorldSliceAnchor.CopyActiveAnchorsTo(empty), "Should return 0 for empty destination array.");
+        }
+
+        [Test]
+        public void CopyActiveAnchorsTo_ValidDestination_CopiesAnchorsAndClearsRest()
+        {
+            // Reset static state for clean test isolation
+            MethodInfo resetMethod = typeof(WorldSliceAnchor).GetMethod("ResetStaticState", BindingFlags.NonPublic | BindingFlags.Static);
+            resetMethod?.Invoke(null, null);
+
+            GameObject go1 = new GameObject("Anchor1");
+            WorldSliceAnchor anchor1 = go1.AddComponent<WorldSliceAnchor>();
+
+            GameObject go2 = new GameObject("Anchor2");
+            WorldSliceAnchor anchor2 = go2.AddComponent<WorldSliceAnchor>();
+
+            WorldSliceAnchor[] dest = new WorldSliceAnchor[5];
+
+            // Fill array with garbage to ensure the rest of the array is cleared
+            GameObject dummyGo = new GameObject("Dummy");
+            WorldSliceAnchor dummy = dummyGo.AddComponent<WorldSliceAnchor>();
+            for (int i = 0; i < dest.Length; i++)
+            {
+                dest[i] = dummy;
+            }
+
+            int count = WorldSliceAnchor.CopyActiveAnchorsTo(dest);
+
+            // AddComponent automatically registers the anchor since OnEnable is called.
+            // 3 total: go1, go2, and dummyGo
+            Assert.AreEqual(3, count, "Should have copied exactly 3 anchors.");
+
+            // The first 3 should be valid anchors
+            Assert.IsNotNull(dest[0], "Copied anchor should not be null.");
+            Assert.IsNotNull(dest[1], "Copied anchor should not be null.");
+            Assert.IsNotNull(dest[2], "Copied anchor should not be null.");
+
+            // The rest of the array should be cleared to null
+            Assert.IsNull(dest[3], "Remaining array elements should be cleared to null.");
+            Assert.IsNull(dest[4], "Remaining array elements should be cleared to null.");
+
+            // Cleanup
+            Object.DestroyImmediate(go1);
+            Object.DestroyImmediate(go2);
+            Object.DestroyImmediate(dummyGo);
+        }
     }
 }
 #endif
