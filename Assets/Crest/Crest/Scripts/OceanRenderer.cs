@@ -343,6 +343,11 @@ namespace Crest
             Automatic,
         }
 
+        [SerializeField]
+        [Tooltip("Threshold for the self-intersection fix. A value of 2 means that when the camera is 2 units above the water, the fix is applied. Default is 2.")]
+        [Predicated("_surfaceSelfIntersectionFixMode", true, (int)SurfaceSelfIntersectionFixMode.Off), DecoratedField]
+        float _surfaceSelfIntersectionFixThreshold = 2f;
+
         [SerializeField, Range(UNDERWATER_CULL_LIMIT_MINIMUM, UNDERWATER_CULL_LIMIT_MAXIMUM)]
         [Tooltip("Proportion of visibility below which ocean will be culled underwater. The larger the number, the closer to the camera the ocean tiles will be culled.")]
         public float _underwaterCullLimit = 0.001f;
@@ -1254,17 +1259,18 @@ namespace Crest
                 var height = ViewerHeightAboveWater;
                 var value = 0f;
 
+                var threshold = _surfaceSelfIntersectionFixThreshold;
                 switch (_surfaceSelfIntersectionFixMode)
                 {
                     case SurfaceSelfIntersectionFixMode.Off:
                         break;
                     case SurfaceSelfIntersectionFixMode.On:
-                        value = height < -2f ? 1f : height > 2f ? -1f : 0f;
+                        value = height < -threshold ? 1f : height > threshold ? -1f : 0f;
                         break;
                     case SurfaceSelfIntersectionFixMode.Automatic:
                         // Skip if UnderwaterRenderer is not full-screen (ocean will be clipped).
                         var skip = UnderwaterRenderer.SkipSurfaceSelfIntersectionFixMode;
-                        value = skip ? 0f : height < -2f ? 1f : height > 2f ? -1f : 0f;
+                        value = skip ? 0f : height < -threshold ? 1f : height > threshold ? -1f : 0f;
                         break;
                 }
 
