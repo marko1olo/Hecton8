@@ -112,8 +112,6 @@ namespace MapMagic.Brush
 			{
 				brush.trace.Release(brush);
 
-				//if (!brush.readStack.Empty)  //recording undo if brush stroked (anything in current stack)
-				//	BrushInspector.current.undo.RecordUndo(brush);
 
 				if (Event.current.button==0) brush.tuneStroke.drawTune = false; //un-pressing tune stroke on mouse up
 
