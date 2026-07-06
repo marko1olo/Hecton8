@@ -189,7 +189,6 @@ namespace MapMagic.Brush
 
 						Cell.EmptyRowPx(4);
 
-						//if (Draw.Button(visible:false))
 						if (!UI.current.layout  &&  Event.current.isMouse  &&  Cell.current.Contains(UI.current.mousePos)  &&  Event.current.type == EventType.MouseDown)
 						{
 							brush.AssignPreset(preset);
