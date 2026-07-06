@@ -307,9 +307,6 @@ namespace MapMagic.Brush
 				if (onlyIndexes != null  &&  !onlyIndexes.Contains(prototypeIndex))
 					continue;
 
-				//if (!data.area.active.Contains(trn.pos)) //skipping out-of-active area
-				//	continue; 
-				//otherwise it will remove the tree (not good for relocation)
 
 				posSettings.MoveRotateScale(ref trn, data);
 
