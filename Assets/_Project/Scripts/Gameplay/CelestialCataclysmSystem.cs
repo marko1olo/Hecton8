@@ -166,14 +166,6 @@ namespace Hecton8.Gameplay
             PublishSolarEmpGlitchGlobals(0f);
         }
 
-        /// <summary>
-        /// Unused seismic listener slot required by the random-event listener contract.
-        /// </summary>
-        /// <param name="payload">Incoming seismic shockwave payload.</param>
-        public void OnSeismicShockwave(in SeismicShockwaveEvent payload)
-        {
-        }
-
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
