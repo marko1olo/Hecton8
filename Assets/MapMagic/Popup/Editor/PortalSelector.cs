@@ -21,10 +21,6 @@ namespace MapMagic.Nodes.GUI
 
 		public static void DrawPortalSelector (Graph graph, IPortalExit<object> portalExit)
 		{
-			//if (MapMagic.instance.guiGens == null) MapMagic.instance.guiGens = MapMagic.instance.gens;
-			//GeneratorsAsset gens = MapMagic.instance.guiGens;
-			//if (MapMagic.instance.guiGens != null) gens = MapMagic.instance.guiGens;
-
 			Type exitType = portalExit.GetType().BaseType.GetGenericArguments()[0];
 
 			if (itemTextStyle == null)
