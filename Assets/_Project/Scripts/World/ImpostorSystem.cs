@@ -2077,11 +2077,32 @@ namespace Hecton8.World
         [MenuItem("Hecton8/LOD System/Batch Bake Impostors")]
         private static void BatchBakeImpostors()
         {
+            MonoScript impostorScript = MonoScript.FromType(typeof(AmplifyImpostors.AmplifyImpostor));
+            if (impostorScript == null)
+            {
+                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] AmplifyImpostor type not found. Aborting batch bake.");
+                return;
+            }
+
+            string impostorScriptPath = AssetDatabase.GetAssetPath(impostorScript);
+            if (string.IsNullOrEmpty(impostorScriptPath))
+            {
+                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Could not resolve AmplifyImpostor script path. Aborting batch bake.");
+                return;
+            }
+
             string[] prefabGuids = AssetDatabase.FindAssets("t:Prefab");
             int bakedCount = 0;
+
             for (int i = 0; i < prefabGuids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(prefabGuids[i]);
+
+                // Fast path: avoid loading the prefab into memory if it doesn't depend on the AmplifyImpostor script (recursive = true to catch variants)
+                string[] dependencies = AssetDatabase.GetDependencies(path, true);
+                if (System.Array.IndexOf(dependencies, impostorScriptPath) == -1)
+                    continue;
+
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab == null || !prefab.TryGetComponent<LODGroup>(out _))
                     continue;
