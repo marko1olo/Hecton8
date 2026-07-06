@@ -155,6 +155,9 @@ namespace Shapes {
 				  "100 = 1 noot is 1% of the screen (default)\n(100 is like vmin in CSS)" )]
 		public int NOOTS_ACROSS_SCREEN = 100;
 
+		[Tooltip( "Disables the clipping of pixels with negative or zero alpha. This allows negative colors, which can be useful for certain cursed blend modes." )]
+		public int ALLOW_NEGATIVE_COLORS = 0;
+
 	}
 
 }
