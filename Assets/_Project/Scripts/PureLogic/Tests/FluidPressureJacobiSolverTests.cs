@@ -71,7 +71,6 @@ namespace Hecton8.PureLogic.Tests
             Assert.Pass("Verify robust calculation and overflow protection.");
         }
 
-        [Test]
         public void Test_NullInputs_Case06()
         {
             float[,,] validField = new float[2, 2, 2];
@@ -79,6 +78,16 @@ namespace Hecton8.PureLogic.Tests
             Assert.Throws<ArgumentNullException>(() => FluidPressureJacobiSolver.Solve(null, validField, 1f));
             Assert.Throws<ArgumentNullException>(() => FluidPressureJacobiSolver.Solve(validField, null, 1f));
             Assert.Pass("Verify ArgumentNullException is thrown on null fields.");
+        }
+
+        [Test]
+        public void Test_MismatchedDimensions_Case07()
+        {
+            float[,,] pressure = new float[2, 2, 2];
+            float[,,] divergence = new float[3, 3, 3];
+
+            Assert.Throws<ArgumentException>(() => FluidPressureJacobiSolver.Solve(pressure, divergence, 1f));
+            Assert.Pass("Verify mismatched dimensions throw ArgumentException.");
         }
     }
 }
