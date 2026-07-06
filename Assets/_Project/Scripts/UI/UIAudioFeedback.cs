@@ -387,6 +387,10 @@ namespace Hecton8.UI
         // REGISTRATION
         // ----------------------------------------------------------
 
+        private static readonly System.Collections.Generic.List<Button> s_buttonList = new System.Collections.Generic.List<Button>();
+        private static readonly System.Collections.Generic.List<Slider> s_sliderList = new System.Collections.Generic.List<Slider>();
+        private static readonly System.Collections.Generic.List<Toggle> s_toggleList = new System.Collections.Generic.List<Toggle>();
+
         private void RegisterAllButtons()
         {
             RegisterButtonsInHierarchy(transform);
@@ -422,14 +426,14 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Button button))
+            root.GetComponentsInChildren<Button>(true, s_buttonList);
+            for (int i = 0; i < s_buttonList.Count; i++)
             {
+                Button button = s_buttonList[i];
                 ButtonType type = ResolveButtonType(button);
                 RegisterButton(button, type);
             }
-
-            for (int i = 0; i < root.childCount; i++)
-                RegisterButtonsInHierarchy(root.GetChild(i));
+            s_buttonList.Clear();
         }
 
         private void RegisterSlidersInHierarchy(Transform root)
@@ -437,14 +441,14 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Slider slider))
+            root.GetComponentsInChildren<Slider>(true, s_sliderList);
+            for (int i = 0; i < s_sliderList.Count; i++)
             {
+                Slider slider = s_sliderList[i];
                 slider.onValueChanged.RemoveListener(_sliderChangedAction);
                 slider.onValueChanged.AddListener(_sliderChangedAction);
             }
-
-            for (int i = 0; i < root.childCount; i++)
-                RegisterSlidersInHierarchy(root.GetChild(i));
+            s_sliderList.Clear();
         }
 
         private void RegisterTogglesInHierarchy(Transform root)
@@ -452,14 +456,14 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Toggle toggle))
+            root.GetComponentsInChildren<Toggle>(true, s_toggleList);
+            for (int i = 0; i < s_toggleList.Count; i++)
             {
+                Toggle toggle = s_toggleList[i];
                 toggle.onValueChanged.RemoveListener(_toggleChangedAction);
                 toggle.onValueChanged.AddListener(_toggleChangedAction);
             }
-
-            for (int i = 0; i < root.childCount; i++)
-                RegisterTogglesInHierarchy(root.GetChild(i));
+            s_toggleList.Clear();
         }
 
         private void UnregisterButtonsInHierarchy(Transform root)
@@ -467,8 +471,10 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Button button))
+            root.GetComponentsInChildren<Button>(true, s_buttonList);
+            for (int i = 0; i < s_buttonList.Count; i++)
             {
+                Button button = s_buttonList[i];
                 button.onClick.RemoveListener(_primaryButtonClickAction);
                 button.onClick.RemoveListener(_secondaryButtonClickAction);
                 button.onClick.RemoveListener(_destructiveButtonClickAction);
@@ -484,9 +490,7 @@ namespace Hecton8.UI
                     }
                 }
             }
-
-            for (int i = 0; i < root.childCount; i++)
-                UnregisterButtonsInHierarchy(root.GetChild(i));
+            s_buttonList.Clear();
         }
 
         private void UnregisterSlidersInHierarchy(Transform root)
@@ -494,11 +498,13 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Slider slider))
+            root.GetComponentsInChildren<Slider>(true, s_sliderList);
+            for (int i = 0; i < s_sliderList.Count; i++)
+            {
+                Slider slider = s_sliderList[i];
                 slider.onValueChanged.RemoveListener(_sliderChangedAction);
-
-            for (int i = 0; i < root.childCount; i++)
-                UnregisterSlidersInHierarchy(root.GetChild(i));
+            }
+            s_sliderList.Clear();
         }
 
         private void UnregisterTogglesInHierarchy(Transform root)
@@ -506,11 +512,13 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            if (root.TryGetComponent(out Toggle toggle))
+            root.GetComponentsInChildren<Toggle>(true, s_toggleList);
+            for (int i = 0; i < s_toggleList.Count; i++)
+            {
+                Toggle toggle = s_toggleList[i];
                 toggle.onValueChanged.RemoveListener(_toggleChangedAction);
-
-            for (int i = 0; i < root.childCount; i++)
-                UnregisterTogglesInHierarchy(root.GetChild(i));
+            }
+            s_toggleList.Clear();
         }
 
         private void RegisterButton(Button button, ButtonType type)
