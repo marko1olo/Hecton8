@@ -38,9 +38,28 @@ namespace UnityEditor.ShaderGraph.ProviderSystem
             cols = -1;
             length = -1;
 
-            // TODO: Array support isn't established yet, if we support multidim this wouldn't work.
-            if (type.Contains('['))
-                return false;
+            int bracketStart = type.IndexOf('[');
+            if (bracketStart >= 0)
+            {
+                int bracketEnd = type.IndexOf(']', bracketStart);
+                if (bracketEnd >= 0)
+                {
+                    string lengthStr = type.Substring(bracketStart + 1, bracketEnd - bracketStart - 1);
+
+                    // TODO: Multidimensional array support isn't established yet, if we support multidim this wouldn't work.
+                    if (lengthStr.Contains(',') || type.IndexOf('[', bracketStart + 1) >= 0)
+                        return false;
+
+                    if (!int.TryParse(lengthStr, out length))
+                        return false;
+
+                    type = type.Substring(0, bracketStart);
+                }
+                else
+                {
+                    return false;
+                }
+            }
 
 
             if (type.StartsWith("uint")) prim = "uint";
