@@ -324,12 +324,6 @@ namespace Hecton8.Core
             }
         }
 
-        [Obsolete("Use TryRaiseFrameTimeSpike(float,float,int) so bounded enqueue refusal is visible.", true)]
-        internal static void RaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
-        {
-            TryRaiseFrameTimeSpike(frameTimeMs, thresholdMs, frameCount);
-        }
-
         internal static bool TryRaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
         {
             return Enqueue(new PerformanceEventPayload
@@ -342,12 +336,6 @@ namespace Hecton8.Core
                 EventType = (ushort)PerformanceEventType.FrameTimeSpike,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseGCAllocExceeded(long,long,int) so bounded enqueue refusal is visible.", true)]
-        internal static void RaiseGCAllocExceeded(long allocatedBytes, long thresholdBytes, int frameCount)
-        {
-            TryRaiseGCAllocExceeded(allocatedBytes, thresholdBytes, frameCount);
         }
 
         internal static bool TryRaiseGCAllocExceeded(long allocatedBytes, long thresholdBytes, int frameCount)
@@ -364,12 +352,6 @@ namespace Hecton8.Core
             });
         }
 
-        [Obsolete("Use TryRaiseJobQueueBacklog(int,int,int) so bounded enqueue refusal is visible.", true)]
-        internal static void RaiseJobQueueBacklog(int pendingJobCount, int thresholdCount, int frameCount)
-        {
-            TryRaiseJobQueueBacklog(pendingJobCount, thresholdCount, frameCount);
-        }
-
         internal static bool TryRaiseJobQueueBacklog(int pendingJobCount, int thresholdCount, int frameCount)
         {
             return Enqueue(new PerformanceEventPayload
@@ -382,16 +364,6 @@ namespace Hecton8.Core
                 EventType = (ushort)PerformanceEventType.JobQueueBacklog,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseSystemDegradation(float,float,int,SystemDegradationLevel) so bounded enqueue refusal is visible.", true)]
-        internal static void RaiseSystemDegradation(
-            float frameTimeMs,
-            float thresholdMs,
-            int frameCount,
-            SystemDegradationLevel level = SystemDegradationLevel.Warning)
-        {
-            TryRaiseSystemDegradation(frameTimeMs, thresholdMs, frameCount, level);
         }
 
         internal static bool TryRaiseSystemDegradation(
