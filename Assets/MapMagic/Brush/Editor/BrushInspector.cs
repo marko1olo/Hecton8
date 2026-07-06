@@ -231,10 +231,6 @@ namespace MapMagic.Brush
 
 							using (Cell.Row)
 							{
-								//using (Cell.LineStd)
-								//	if (Draw.Button("Select"))
-								//		ScriptableAssetExtensions.ShowObjectSelector(typeof(Terrain), 12345, true, onClosed:TrySelectTerrain);
-
 								using (Cell.LineStd)
 									if (Draw.Button("This Component"))
 									{
