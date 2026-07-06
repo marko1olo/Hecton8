@@ -32,7 +32,6 @@ namespace MapMagic.Brush
 
 		public void Apply (TerrainData terrainData)
 		{
-			//if (heightTex != null) terrainData.SetHeightmapTexture(heightTex);
 		}
 	}
 
