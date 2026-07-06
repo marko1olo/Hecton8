@@ -13,6 +13,8 @@ namespace MoreMountains.Tools
 	/// </summary>
 	public class MMSaveLoadManagerMethodBinaryEncrypted : MMSaveLoadManagerEncrypter, IMMSaveLoadManagerMethod
 	{
+		public override string Key { get; set; }
+
 		/// <summary>
 		/// Saves the specified object to disk at the specified location after encrypting it 
 		/// </summary>

@@ -698,7 +698,7 @@ MonoBehaviour:
   FileName: TestObject
   FolderName: MMTest/
   SaveFileExtension: .testObject
-  EncryptionKey: ThisIsTheKey
+  EncryptionKey: ""
   TestSaveButton: 0
   TestLoadButton: 0
   TestResetButton: 0

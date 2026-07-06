@@ -39,7 +39,7 @@ namespace MoreMountains.Tools
 		public string SaveFileExtension = ".testObject";
 		/// the key to use to encrypt the file (if needed)
 		[Tooltip("the key to use to encrypt the file (if needed)")]
-		public string EncryptionKey = "ThisIsTheKey";
+		public string EncryptionKey = "";
 
 		/// Test button
 		[MMInspectorButton("Save")]
@@ -93,6 +93,10 @@ namespace MoreMountains.Tools
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinary();
 					break;
 				case MMSaveLoadManagerMethods.BinaryEncrypted:
+					if (string.IsNullOrEmpty(EncryptionKey))
+					{
+						throw new System.ArgumentNullException(nameof(EncryptionKey), "EncryptionKey cannot be null or empty when using an encrypted save method.");
+					}
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinaryEncrypted();
 					(_saveLoadManagerMethod as MMSaveLoadManagerEncrypter).Key = EncryptionKey;
 					break;
@@ -100,6 +104,10 @@ namespace MoreMountains.Tools
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJson();
 					break;
 				case MMSaveLoadManagerMethods.JsonEncrypted:
+					if (string.IsNullOrEmpty(EncryptionKey))
+					{
+						throw new System.ArgumentNullException(nameof(EncryptionKey), "EncryptionKey cannot be null or empty when using an encrypted save method.");
+					}
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJsonEncrypted();
 					(_saveLoadManagerMethod as MMSaveLoadManagerEncrypter).Key = EncryptionKey;
 					break;
