@@ -46,6 +46,7 @@ namespace Hecton8.Dev
         [SerializeField] private string _debugLastToolName = "None";
         [SerializeField] private bool _debugLastPass;
 
+        private PlayerTool[] _cachedTools;
         private bool _isRunning;
         private const float DefaultSmokeFrameDeltaSeconds = 1f / 60f;
 
@@ -144,6 +145,16 @@ namespace Hecton8.Dev
                 return;
             }
 
+            if (_cachedTools == null || _cachedTools.Length != heldToolPrefabs.Length)
+            {
+                _cachedTools = new PlayerTool[heldToolPrefabs.Length];
+                for (int i = 0; i < heldToolPrefabs.Length; i++)
+                {
+                    if (heldToolPrefabs[i] != null)
+                        heldToolPrefabs[i].TryGetComponent(out _cachedTools[i]);
+                }
+            }
+
             _isRunning = true;
             try
             {
@@ -175,7 +186,9 @@ namespace Hecton8.Dev
 
                     string toolName = prefab.name;
                     _debugLastToolName = toolName;
-                    if (!prefab.TryGetComponent(out PlayerTool prefabTool) || prefabTool.ToolData == null)
+
+                    PlayerTool prefabTool = _cachedTools[i];
+                    if (prefabTool == null || prefabTool.ToolData == null)
                     {
                         Hecton8.Core.H8Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
                         continue;
