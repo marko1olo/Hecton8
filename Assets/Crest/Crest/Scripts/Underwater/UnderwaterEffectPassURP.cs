@@ -286,19 +286,7 @@ namespace Crest
 #endif
 
             // Copy color buffer.
-#if UNITY_2020_3
-            if (Helpers.IsMSAAEnabled(camera))
-            {
-                // Use blit for MSAA. We should be able to use CopyTexture.
-                // Might be the following bug which was resolved in 2021.3:
-                // https://issuetracker.unity3d.com/product/unity/issues/guid/1308132
-                Helpers.Blit(commandBuffer, _temporaryColorTarget, Helpers.UtilityMaterial, (int)Helpers.UtilityPass.CopyColor);
-            }
-            else
-#endif
-            {
-                commandBuffer.CopyTexture(_colorTarget, _temporaryColorTarget);
-            }
+            commandBuffer.CopyTexture(_colorTarget, _temporaryColorTarget);
 
 #if UNITY_6000_0_OR_NEWER
             if (_temporaryColorHandle != null)
