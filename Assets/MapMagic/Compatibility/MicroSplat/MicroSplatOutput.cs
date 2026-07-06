@@ -102,7 +102,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				data.globals.microSplatApplyType==Core.Globals.MicroSplatApplyType.Both)
 			{
 				if (stop!=null && stop.stop) return;
-				byte[][] bytes = MatrixOps.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
+				byte[][] bytes = Matrix.BlendMatrices(data.area.active.rect, matrices, masks, opacities, channelNums);
 				string[] names = new string[bytes.Length];
 				for (int i=0; i<names.Length; i++)
 					names[i] = (data.globals.useCustomControlTextures ? "_CustomControl" : "_Control") + i.ToString();

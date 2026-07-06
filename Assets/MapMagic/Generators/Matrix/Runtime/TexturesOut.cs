@@ -341,7 +341,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			}
 
 			//creating control textures contents
-			byte[][] bytes = MatrixOps.BlendMatrices(data.area.active.rect, matrices, masks, opacities, chNums, normalize:true);
+			byte[][] bytes = Matrix.BlendMatrices(data.area.active.rect, matrices, masks, opacities, chNums, normalize:true);
 
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
