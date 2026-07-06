@@ -673,15 +673,11 @@ namespace Crest
 
             CreateDestroySubSystems();
 
-            // NOTE: Hardcode minimum (2) to avoid breaking server builds and LodData* toggles.
             // Gather the buffer count for shared data.
             BufferCount = 2;
             foreach (var lodData in _lodDatas)
             {
-                if (lodData.enabled)
-                {
-                    BufferCount = Mathf.Max(BufferCount, lodData.BufferCount);
-                }
+                BufferCount = Mathf.Max(BufferCount, lodData.BufferCount);
             }
 
             _perCascadeInstanceData = new BufferedData<PerCascadeInstanceData[]>(BufferCount, () => new PerCascadeInstanceData[LodDataMgr.MAX_LOD_COUNT]);
