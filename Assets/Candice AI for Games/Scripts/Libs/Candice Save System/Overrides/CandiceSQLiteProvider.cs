@@ -370,7 +370,10 @@ namespace CandiceAIforGames.Data
         private string EscapeIdentifier(string identifier)
         {
             if (string.IsNullOrEmpty(identifier)) return identifier;
-            return "\"" + identifier.Replace("\"", "\"\"") + "\"";
+            using (var builder = new SqliteCommandBuilder())
+            {
+                return builder.QuoteIdentifier(identifier);
+            }
         }
 
         public int CreateTable(string tableName, List<CandiceColumnInfo> columnInfos)
