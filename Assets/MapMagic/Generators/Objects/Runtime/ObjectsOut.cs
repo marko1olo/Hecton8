@@ -364,11 +364,8 @@ namespace MapMagic.Nodes.ObjectsGenerators
 				Noise random = new Noise(data.random, output.seed);
 
 				//prototypes
-				//TODO: use GetPrototypes (and skip RemoveNullPrototypes)
-				TreePrototype[] prototypesArr = new TreePrototype[output.prefabs.Length];
-				for (int p=0; p<output.prefabs.Length; p++)
-					prototypesArr[p] = new TreePrototype() { prefab =  output.prefabs[p], bendFactor = output.bendFactor };
-				prototypesList.AddRange(prototypesArr);
+					List<TreePrototype> outputPrototypes = output.GetPrototypes();
+					prototypesList.AddRange(outputPrototypes);
 				
 				//instances
 				for (int t=0; t<trns.count; t++)
@@ -380,8 +377,9 @@ namespace MapMagic.Nodes.ObjectsGenerators
 					
 					output.posSettings.MoveRotateScale(ref trn, data);
 
+						if (outputPrototypes.Count == 0) continue;
 					float rnd = random.Random(trn.hash);
-					int index = (int)(rnd*output.prefabs.Length);
+						int index = (int)(rnd*outputPrototypes.Count);
 						
 					TreeInstance tree = new TreeInstance();
 
@@ -402,7 +400,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 					instancesList.Add(tree);
 				}
 
-				prototypesCount += output.prefabs.Length;
+				prototypesCount += outputPrototypes.Count;
 			}
 
 			//RemoveNullPrototypes(prototypesList, instancesList); //could not be executed in thread
@@ -430,8 +428,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			public void Apply (Terrain terrain)
 			{
 				if (terrain == null || terrain.Equals(null) || terrain.terrainData == null) return;
-				if (treePrototypes.Contains( p=>p.prefab==null ))
-					RemoveNullPrototypes(ref treePrototypes, ref treeInstances);
 
 				if (treePrototypes.Length == 0  &&  terrain.terrainData.treeInstanceCount != 0)
 				{
@@ -449,46 +445,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			public int Resolution {get{ return 0; }}
 		}
 
-
-		public static void RemoveNullPrototypes (List<TreePrototype> prototypes, List<TreeInstance> instances)
-		{
-			Dictionary<int,int> indexToOptimized = new Dictionary<int, int>();
-			
-			int originalPrototypesCount = prototypes.Count;
-			int counter = 0;
-			for (int p=0; p<originalPrototypesCount; p++)
-				if (prototypes[p].prefab != null)
-				{
-					indexToOptimized.Add(p,counter);
-					counter++;
-				}
-
-			for (int p=originalPrototypesCount-1; p>=0; p--)
-				if (prototypes[p].prefab == null)
-					prototypes.RemoveAt(p);
-
-			for (int i=instances.Count-1; i>=0; i--)
-			{
-				if (!indexToOptimized.TryGetValue(instances[i].prototypeIndex, out int optimizedIndex))
-					instances.RemoveAt(i);
-
-				else if (instances[i].prototypeIndex != optimizedIndex)
-				{
-					TreeInstance instance = instances[i];
-					instance.prototypeIndex = optimizedIndex;
-					instances[i] = instance;
-				}
-			}
-		}
-
-		public static void RemoveNullPrototypes (ref TreePrototype[] prototypes, ref TreeInstance[] instances)
-		{
-			List<TreePrototype> prototypesList = new List<TreePrototype>(prototypes);
-			List<TreeInstance> instancesList = new List<TreeInstance>(instances);
-			RemoveNullPrototypes(prototypesList, instancesList);
-			prototypes = prototypesList.ToArray();
-			instances = instancesList.ToArray();
-		}
 
 		public override void ClearApplied (TileData data, Terrain terrain)
 		{
