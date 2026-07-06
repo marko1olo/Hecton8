@@ -25,7 +25,7 @@ namespace Hecton8.PureLogic.Tests
             string result = VoronoiBiomeSeedCalculator.Compute(worldPos, biomeSeedPoints, biomeTypes, noiseBlend);
 
             // Assert: Verify expected output behaviour
-            Assert.AreEqual("BiomeA,1.000", result);
+            Assert.That(result, Is.EqualTo("BiomeA,1.000"));
         }
 
         [Test]
@@ -41,7 +41,7 @@ namespace Hecton8.PureLogic.Tests
             float noiseBlend = 1.0f;
 
             string result = VoronoiBiomeSeedCalculator.Compute(worldPos, biomeSeedPoints, biomeTypes, noiseBlend);
-            Assert.AreEqual("BiomeA,0.500", result); // Because d1 == d2, rawBlend becomes 0.5. (d2-d1)/d2 = 0.
+            Assert.That(result, Is.EqualTo("BiomeA,0.500"));
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace Hecton8.PureLogic.Tests
             float noiseBlend = 0.0f;
 
             string result = VoronoiBiomeSeedCalculator.Compute(worldPos, biomeSeedPoints, biomeTypes, noiseBlend);
-            Assert.AreEqual("BiomeA,1.000", result);
+            Assert.That(result, Is.EqualTo("BiomeA,1.000"));
         }
 
         [Test]
@@ -76,8 +76,8 @@ namespace Hecton8.PureLogic.Tests
             string result2 = VoronoiBiomeSeedCalculator.Compute(worldPos, biomeSeedPoints, biomeTypes, 5.0f);
 
             // Assert
-            Assert.AreEqual("BiomeA,1.000", result1);
-            Assert.AreEqual("BiomeA,1.000", result2);
+            Assert.That(result1, Is.EqualTo("BiomeA,1.000"));
+            Assert.That(result2, Is.EqualTo("BiomeA,1.000"));
         }
 
         [Test]
@@ -99,7 +99,7 @@ namespace Hecton8.PureLogic.Tests
             // Assert
             // When all points are at 0, distances are 0.
             // Our logic: d1=0, d2=0, (d2>0.000001f is false), rawBlend = 1.0f.
-            Assert.AreEqual("BiomeA,1.000", result);
+            Assert.That(result, Is.EqualTo("BiomeA,1.000"));
         }
 
         [Test]
@@ -120,7 +120,7 @@ namespace Hecton8.PureLogic.Tests
 
             // Assert
             // rawBlend = 0.5 + 0.5 * ((10 - 5) / 10) = 0.75
-            Assert.AreEqual("BiomeA,0.750", result);
+            Assert.That(result, Is.EqualTo("BiomeA,0.750"));
         }
 
         [Test]
@@ -142,7 +142,7 @@ namespace Hecton8.PureLogic.Tests
             // Assert: worldPos is float.MaxValue. Distance to float.MinValue will be Infinity.
             // Distance to float.MaxValue will be 0.
             // So closest should be BiomeB.
-            Assert.AreEqual("BiomeB,1.000", result);
+            Assert.That(result, Is.EqualTo("BiomeB,1.000"));
         }
 
         [Test]
@@ -180,6 +180,19 @@ namespace Hecton8.PureLogic.Tests
 
             Assert.Throws<ArgumentException>(() =>
                 VoronoiBiomeSeedCalculator.Compute(Vector3.Zero, new Vector3[]{Vector3.Zero}, new string[]{"A"}, float.PositiveInfinity));
+        }
+
+        [Test]
+        public void Test_Exception_Overflow()
+        {
+            Vector3 worldPos = Vector3.Zero;
+            Vector3[] biomeSeedPoints = new Vector3[] { new Vector3(10, 0, 0) };
+            string[] biomeTypes = new string[] { "BiomeA" };
+
+            // distance calculation throws OverflowException, which is caught and returns float.MaxValue, which means it returns BiomeA,1.000
+            string result = VoronoiBiomeSeedCalculator.Compute(worldPos, biomeSeedPoints, biomeTypes, 0f, (a, b) => throw new OverflowException());
+
+            Assert.That(result, Is.EqualTo("BiomeA,1.000"));
         }
     }
 }

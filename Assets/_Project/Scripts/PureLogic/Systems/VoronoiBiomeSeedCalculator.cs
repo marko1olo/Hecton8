@@ -18,7 +18,7 @@ namespace Hecton8.PureLogic.Systems
         /// <param name="biomeTypes">Parameter representing the biomeTypes (string[]).</param>
         /// <param name="noiseBlend">Parameter representing the noiseBlend (float).</param>
         /// <returns>Returns dominantBiomeType, float (blendFactor) of type string.</returns>
-        public static string Compute(Vector3 worldPos, Vector3[] biomeSeedPoints, string[] biomeTypes, float noiseBlend)
+        public static string Compute(Vector3 worldPos, Vector3[] biomeSeedPoints, string[] biomeTypes, float noiseBlend, Func<Vector3, Vector3, float> distanceFunc = null)
         {
             if (float.IsNaN(worldPos.X) || float.IsNaN(worldPos.Y) || float.IsNaN(worldPos.Z) ||
                 float.IsInfinity(worldPos.X) || float.IsInfinity(worldPos.Y) || float.IsInfinity(worldPos.Z))
@@ -71,7 +71,8 @@ namespace Hecton8.PureLogic.Systems
                 float dist;
                 try
                 {
-                    dist = Vector3.Distance(worldPos, pt);
+                    var distFn = distanceFunc ?? Vector3.Distance;
+                    dist = distFn(worldPos, pt);
                 }
                 catch (OverflowException)
                 {
