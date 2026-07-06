@@ -73,5 +73,22 @@ namespace Hecton8.PureLogic.Kinematics
 
             return direction * magnitude;
         }
+
+        /// <summary>
+        /// Computes/evaluates the mathematical model for a batch of bodies.
+        /// </summary>
+        public static void CalculateBatch(Vector3[] bodyPositions, Vector3 burstCenter, float burstEnergy, float waterDensity, Vector3[] results)
+        {
+            if (bodyPositions == null || results == null)
+            {
+                return;
+            }
+
+            int length = Math.Min(bodyPositions.Length, results.Length);
+            for (int i = 0; i < length; i++)
+            {
+                results[i] = Calculate(bodyPositions[i], burstCenter, burstEnergy, waterDensity);
+            }
+        }
     }
 }
