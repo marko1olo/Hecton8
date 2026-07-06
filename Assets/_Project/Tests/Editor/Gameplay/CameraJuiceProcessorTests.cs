@@ -237,5 +237,24 @@ namespace Hecton8.Tests.Editor.Gameplay
 
             UnityEngine.Object.DestroyImmediate(suit);
         }
+
+        [Test]
+        public void ClearActionBob_ResetsIntensity()
+        {
+            // Arrange
+            var processor = new CameraJuiceProcessor();
+            processor.RegisterActionBob(0.5f, 1f);
+
+            var type = typeof(CameraJuiceProcessor);
+            var intensityField = type.GetField("_actionBobIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            Assert.AreEqual(0.5f, (float)intensityField.GetValue(processor));
+
+            // Act
+            processor.ClearActionBob();
+
+            // Assert
+            Assert.AreEqual(0f, (float)intensityField.GetValue(processor));
+        }
     }
 }
