@@ -101,5 +101,16 @@ namespace Hecton8.PureLogic.Tests
             // Act & Assert
             Assert.Throws<ArgumentException>(() => CaveGraphConnectivityChecker.Check(nodeCount, matrix, out int[] disconnected));
         }
+
+        [Test]
+        public void Test_ExtremeInputs_NullMatrix_Case06()
+        {
+            // Arrange: Setup null matrix
+            int nodeCount = 3;
+            bool[,] matrix = null;
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => CaveGraphConnectivityChecker.Check(nodeCount, matrix, out int[] disconnected));
+        }
     }
 }
