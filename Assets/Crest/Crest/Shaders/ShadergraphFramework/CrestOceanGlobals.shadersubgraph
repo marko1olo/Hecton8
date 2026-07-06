@@ -38,20 +38,6 @@
                 "m_Node": {
                     "m_Id": "fe02a307e89c238b97e65500f054563b"
                 },
-                "m_SlotId": 1
-            },
-            "m_InputSlot": {
-                "m_Node": {
-                    "m_Id": "e899e7631e087c8ba0fe68a1b4fa634e"
-                },
-                "m_SlotId": 2
-            }
-        },
-        {
-            "m_OutputSlot": {
-                "m_Node": {
-                    "m_Id": "fe02a307e89c238b97e65500f054563b"
-                },
                 "m_SlotId": 2
             },
             "m_InputSlot": {
@@ -227,23 +213,6 @@
 {
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "3aaf35962695f58fabcfa045aa94e9b7",
-    "m_Id": 2,
-    "m_DisplayName": "Texels Per Wave",
-    "m_SlotType": 0,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "TexelsPerWave",
-    "m_StageCapability": 3,
-    "m_Value": 0.0,
-    "m_DefaultValue": 0.0,
-    "m_Labels": [
-        "X"
-    ]
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "4c1298f2437df381a8c7e93c52ed7cde",
     "m_Id": 4,
     "m_DisplayName": "Slice Count",
@@ -276,23 +245,6 @@
     "m_Group": {
         "m_Id": ""
     }
-}
-
-{
-    "m_SGVersion": 0,
-    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
-    "m_ObjectId": "8313621b9354458a83c36701e710e9c9",
-    "m_Id": 1,
-    "m_DisplayName": "Texels Per Wave",
-    "m_SlotType": 1,
-    "m_Hidden": false,
-    "m_ShaderOutputName": "TexelsPerWave",
-    "m_StageCapability": 3,
-    "m_Value": 0.0,
-    "m_DefaultValue": 0.0,
-    "m_Labels": [
-        "X"
-    ]
 }
 
 {
@@ -352,9 +304,6 @@
             "m_Id": "247423de6ac3ab89955ad161bdaec498"
         },
         {
-            "m_Id": "3aaf35962695f58fabcfa045aa94e9b7"
-        },
-        {
             "m_Id": "17cb5a7cccf28f83a3fe58bc74e4561d"
         },
         {
@@ -397,9 +346,6 @@
             "m_Id": "1679f866b9da148fb16441b305f54d29"
         },
         {
-            "m_Id": "8313621b9354458a83c36701e710e9c9"
-        },
-        {
             "m_Id": "0f6635154f6d458d9011148b562e84fc"
         },
         {
@@ -421,4 +367,3 @@
     "m_FunctionSource": "59d0f4e7fe106ee43a24fa9703c032d7",
     "m_FunctionBody": "Enter function body here..."
 }
-
