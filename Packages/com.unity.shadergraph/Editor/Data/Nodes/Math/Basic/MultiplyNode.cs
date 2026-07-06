@@ -39,7 +39,7 @@ namespace UnityEditor.ShaderGraph
 
         string GetFunctionName()
         {
-            return $"Unity_Multiply_{FindSlot<MaterialSlot>(Input1SlotId).concreteValueType.ToShaderString()}_{FindSlot<MaterialSlot>(Input2SlotId).concreteValueType.ToShaderString()}";
+            return $"Unity_Multiply_{FindSlot<MaterialSlot>(Input1SlotId).concreteValueType.ToShaderString()}_{FindSlot<MaterialSlot>(Input2SlotId).concreteValueType.ToShaderString()}_{FindSlot<MaterialSlot>(OutputSlotId).concreteValueType.ToShaderString()}";
         }
 
         public sealed override void UpdateNodeAfterDeserialization()
@@ -70,8 +70,7 @@ namespace UnityEditor.ShaderGraph
                     functionName,
                     FindInputSlot<MaterialSlot>(Input1SlotId).concreteValueType.ToShaderString(),
                     FindInputSlot<MaterialSlot>(Input2SlotId).concreteValueType.ToShaderString(),
-                    FindOutputSlot<MaterialSlot>(OutputSlotId).concreteValueType.ToShaderString());     // TODO: should this type be part of the function name?
-                                                                                                        // is output concrete value type related to node's concrete precision??
+                    FindOutputSlot<MaterialSlot>(OutputSlotId).concreteValueType.ToShaderString());
                 using (s.BlockScope())
                 {
                     switch (m_MultiplyType)
