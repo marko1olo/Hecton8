@@ -44,7 +44,7 @@ namespace CandiceAIforGames.AI
             }
         }
 
-        public void ScanForObjects(CandiceDetectionRequest request)
+        public virtual void ScanForObjects(CandiceDetectionRequest request)
         {
             Vector3 center = transform.position;
 
