@@ -1,0 +1,7 @@
+1. Write EditMode tests for `TryQueueWirelessToolDrain` method of `PowerGridManager`.
+2. Ensure we use reflection to set private fields since there's no visible constructor allowing setting state without Unity lifecycle.
+3. Test edge cases:
+    - energyWattSeconds <= 0f
+    - _wirelessToolAvailableEnergyWattSeconds <= 0.0001f
+    - _slowTickFinalizationPending == true
+    - _allGrids == null
