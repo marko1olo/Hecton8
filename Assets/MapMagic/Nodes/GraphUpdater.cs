@@ -68,9 +68,9 @@ namespace MapMagic.Nodes
 
 				/*public string Update150to200 (string src)
 				{
-					string matrixClassName = "Plugins.MatrixWorld";
-					string objectClassName = "Plugins.PosTab";
-					//TODO: should be MapMagic
+					string matrixClassName = "MapMagic.MatrixWorld";
+					string objectClassName = "MapMagic.PosTab";
+
 
 					int headStop = src.IndexOf(">") + 1;
 					string header = src.Remove(headStop,src.Length-headStop);
