@@ -558,24 +558,45 @@ namespace UnityEditor.ShaderGraph
             activeTargets.Sort(targetComparison);
         }
 
-        // TODO: Need a better way to handle this
-        public bool hasVFXCompatibleTarget => activeTargets.Any(o => o.SupportsVFX());
+        public bool hasVFXCompatibleTarget
+        {
+            get
+            {
+                foreach (var target in activeTargets)
+                {
+                    if (target.SupportsVFX())
+                        return true;
+                }
+                return false;
+            }
+        }
 #if VFX_GRAPH_10_0_0_OR_NEWER
         public bool hasVFXTarget
         {
             get
             {
-                bool supports = true;
-                supports &= !isSubGraph;
-                supports &= activeTargets.Any();
-                // Maintain support for VFXTarget and VFX compatible targets.
-                supports &= activeTargets.OfType<VFXTarget>().Any() || hasVFXCompatibleTarget;
-                return supports;
+                if (isSubGraph)
+                    return false;
+
+                foreach (var target in activeTargets)
+                {
+                    if (target is VFXTarget || target.SupportsVFX())
+                        return true;
+                }
+                return false;
             }
         }
 
-        public bool isOnlyVFXTarget => activeTargets.Count() == 1 &&
-        activeTargets.Count(t => t is VFXTarget) == 1;
+        public bool isOnlyVFXTarget
+        {
+            get
+            {
+                if (m_ActiveTargets.Count != 1)
+                    return false;
+
+                return m_ActiveTargets[0].value is VFXTarget;
+            }
+        }
 #else
         public bool isVFXTarget => false;
         public bool isOnlyVFXTarget => false;
