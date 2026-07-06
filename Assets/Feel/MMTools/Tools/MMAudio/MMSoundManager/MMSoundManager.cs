@@ -86,11 +86,11 @@ namespace MoreMountains.Tools
         
 		/// <summary>
 		/// On Start we load and apply our saved settings if needed.
-		/// This is done on Start and not Awake because of a bug in Unity's AudioMixer API
+		/// <code>This is done on Start and not Awake because of a bug in Unity's AudioMixer API</code>
 		/// </summary>
 		protected virtual void Start()
 		{
-			if ((settingsSo != null) && (settingsSo.Settings.AutoLoad))
+			if ((settingsSo != null) && (settingsSo.Settings != null) && (settingsSo.Settings.AutoLoad))
 			{
 				settingsSo.LoadSoundSettings();    
 			}
