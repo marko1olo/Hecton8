@@ -318,7 +318,10 @@ namespace Hecton8.Gameplay
             TryBeginToolUse(deltaTime, false);
         }
 
-        public virtual void ToolTick(float deltaTime) { }
+        public virtual void ToolTick(float deltaTime)
+        {
+            // Optional hook for subclasses to override
+        }
 
         internal void AdvanceRuntimeActiveIntent(float deltaTime)
         {
@@ -586,7 +589,10 @@ namespace Hecton8.Gameplay
             }
         }
 
-        protected virtual void OnToolBrokenWhileUsing() { }
+        protected virtual void OnToolBrokenWhileUsing()
+        {
+            // Optional hook for subclasses to override
+        }
 
         internal ToolRuntimeProfile BuildModularRuntimeProfile()
         {
@@ -635,7 +641,10 @@ namespace Hecton8.Gameplay
             return 0f;
         }
 
-        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile) { }
+        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            // Optional hook for subclasses to override
+        }
 
         protected void SyncModularHeat(float normalizedHeat)
         {
@@ -1009,9 +1018,15 @@ namespace Hecton8.Gameplay
             }
         }
 
-        protected virtual void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService) { }
+        protected virtual void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            // Optional hook for subclasses to override
+        }
 
-        protected virtual void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService) { }
+        protected virtual void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            // Optional hook for subclasses to override
+        }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
