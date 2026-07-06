@@ -5203,35 +5203,29 @@ namespace Hecton8.SaveSystem
         private static bool WriteModule(ref BufferWriter writer, in ModuleDTO value)
         {
             ModuleDTO safeValue = ModuleDTO.SanitizeForPersistence(in value);
+
+            if (!WriteModuleBaseProperties(ref writer, in safeValue))
+                return false;
+
+            if (!WriteModuleRecyclerProperties(ref writer, in safeValue))
+                return false;
+
+            if (!WriteModuleStorageCrateProperties(ref writer, in safeValue))
+                return false;
+
+            if (!WriteModulePhysicalAndStatusProperties(ref writer, in safeValue))
+                return false;
+
+            return WriteModuleCultivationAndFabricatorProperties(ref writer, in safeValue);
+        }
+
+        private static bool WriteModuleBaseProperties(ref BufferWriter writer, in ModuleDTO safeValue)
+        {
             int sorterSlotCount = ClampPairedCollectionCount(
                 safeValue.sorterBufferedSlotCount,
                 ModuleSorterBufferSlotMax,
                 safeValue.sorterBufferedItemIds,
                 safeValue.sorterBufferedQuantities);
-            int recyclerBufferSlotCount = ClampPairedCollectionCount(
-                safeValue.recyclerBufferedSlotCount,
-                ModuleRecyclerBufferSlotMax,
-                safeValue.recyclerBufferedItemIds,
-                safeValue.recyclerBufferedQuantities);
-            int recyclerPendingYieldSlotCount = ClampPairedCollectionCount(
-                safeValue.recyclerPendingYieldSlotCount,
-                ModuleRecyclerPendingYieldSlotMax,
-                safeValue.recyclerPendingYieldItemIds,
-                safeValue.recyclerPendingYieldQuantities);
-            int cultivationSlotCount = ClampPairedCollectionCount(
-                safeValue.cultivationSlotCount,
-                ModuleCultivationSlotMax,
-                safeValue.cultivationSeedItemIds,
-                safeValue.cultivationGeneticsMasks,
-                safeValue.cultivationGrowth01,
-                safeValue.cultivationQuality01);
-            int storageCrateSlotCount = safeValue.storageCrateContentsSerialized
-                ? ClampPairedCollectionCount(
-                    safeValue.storageCrateSlotCount,
-                    ModuleStorageCrateSlotMax,
-                    safeValue.storageCrateItemIds,
-                    safeValue.storageCrateQuantities)
-                : 0;
 
             return writer.WriteString(safeValue.prefabId)
                 && writer.WriteString(safeValue.slottedToolItemId)
@@ -5252,8 +5246,24 @@ namespace Hecton8.SaveSystem
                     ref writer,
                     safeValue.sorterBufferedQuantities,
                     sorterSlotCount,
-                    ModuleSorterBufferSlotMax)
-                && writer.WriteInt(recyclerBufferSlotCount)
+                    ModuleSorterBufferSlotMax);
+        }
+
+        private static bool WriteModuleRecyclerProperties(ref BufferWriter writer, in ModuleDTO safeValue)
+        {
+            int recyclerBufferSlotCount = ClampPairedCollectionCount(
+                safeValue.recyclerBufferedSlotCount,
+                ModuleRecyclerBufferSlotMax,
+                safeValue.recyclerBufferedItemIds,
+                safeValue.recyclerBufferedQuantities);
+
+            int recyclerPendingYieldSlotCount = ClampPairedCollectionCount(
+                safeValue.recyclerPendingYieldSlotCount,
+                ModuleRecyclerPendingYieldSlotMax,
+                safeValue.recyclerPendingYieldItemIds,
+                safeValue.recyclerPendingYieldQuantities);
+
+            return writer.WriteInt(recyclerBufferSlotCount)
                 && WriteRequiredStringArraySlice(
                     ref writer,
                     safeValue.recyclerBufferedItemIds,
@@ -5275,8 +5285,20 @@ namespace Hecton8.SaveSystem
                     ref writer,
                     safeValue.recyclerPendingYieldQuantities,
                     recyclerPendingYieldSlotCount,
-                    ModuleRecyclerPendingYieldSlotMax)
-                && writer.WriteBool(safeValue.storageCrateContentsSerialized)
+                    ModuleRecyclerPendingYieldSlotMax);
+        }
+
+        private static bool WriteModuleStorageCrateProperties(ref BufferWriter writer, in ModuleDTO safeValue)
+        {
+            int storageCrateSlotCount = safeValue.storageCrateContentsSerialized
+                ? ClampPairedCollectionCount(
+                    safeValue.storageCrateSlotCount,
+                    ModuleStorageCrateSlotMax,
+                    safeValue.storageCrateItemIds,
+                    safeValue.storageCrateQuantities)
+                : 0;
+
+            return writer.WriteBool(safeValue.storageCrateContentsSerialized)
                 && writer.WriteInt(storageCrateSlotCount)
                 && WriteRequiredStringArraySlice(
                     ref writer,
@@ -5287,8 +5309,12 @@ namespace Hecton8.SaveSystem
                     ref writer,
                     safeValue.storageCrateQuantities,
                     storageCrateSlotCount,
-                    ModuleStorageCrateSlotMax)
-                && writer.WriteFloat(safeValue.posX)
+                    ModuleStorageCrateSlotMax);
+        }
+
+        private static bool WriteModulePhysicalAndStatusProperties(ref BufferWriter writer, in ModuleDTO safeValue)
+        {
+            return writer.WriteFloat(safeValue.posX)
                 && writer.WriteFloat(safeValue.posY)
                 && writer.WriteFloat(safeValue.posZ)
                 && writer.WriteFloat(safeValue.rotX)
@@ -5303,8 +5329,20 @@ namespace Hecton8.SaveSystem
                 && writer.WriteByte(safeValue.failureMode)
                 && writer.WriteByte(safeValue.health)
                 && writer.WriteFloat(safeValue.floodedReefFloodSeconds)
-                && writer.WriteBool(safeValue.interiorReefInfestationActive)
-                && writer.WriteInt(cultivationSlotCount)
+                && writer.WriteBool(safeValue.interiorReefInfestationActive);
+        }
+
+        private static bool WriteModuleCultivationAndFabricatorProperties(ref BufferWriter writer, in ModuleDTO safeValue)
+        {
+            int cultivationSlotCount = ClampPairedCollectionCount(
+                safeValue.cultivationSlotCount,
+                ModuleCultivationSlotMax,
+                safeValue.cultivationSeedItemIds,
+                safeValue.cultivationGeneticsMasks,
+                safeValue.cultivationGrowth01,
+                safeValue.cultivationQuality01);
+
+            return writer.WriteInt(cultivationSlotCount)
                 && WriteRequiredStringArraySlice(
                     ref writer,
                     safeValue.cultivationSeedItemIds,
