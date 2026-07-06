@@ -318,7 +318,10 @@ namespace Hecton8.Gameplay
             TryBeginToolUse(deltaTime, false);
         }
 
-        public virtual void ToolTick(float deltaTime) { }
+        public virtual void ToolTick(float deltaTime)
+        {
+            // Optional hook for per-frame tool logic.
+        }
 
         internal void AdvanceRuntimeActiveIntent(float deltaTime)
         {
@@ -586,7 +589,10 @@ namespace Hecton8.Gameplay
             }
         }
 
-        protected virtual void OnToolBrokenWhileUsing() { }
+        protected virtual void OnToolBrokenWhileUsing()
+        {
+            // Optional hook for derived tools when broken during use.
+        }
 
         internal ToolRuntimeProfile BuildModularRuntimeProfile()
         {
@@ -635,7 +641,10 @@ namespace Hecton8.Gameplay
             return 0f;
         }
 
-        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile) { }
+        protected virtual void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
+        {
+            // Optional hook for configuring tool capabilities.
+        }
 
         protected void SyncModularHeat(float normalizedHeat)
         {
@@ -1009,9 +1018,15 @@ namespace Hecton8.Gameplay
             }
         }
 
-        protected virtual void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService) { }
+        protected virtual void OnToolRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            // Optional hook for derived tools to respond to registry rebinds.
+        }
 
-        protected virtual void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService) { }
+        protected virtual void OnToolRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
+        {
+            // Optional hook for derived tools to respond to registry replacements.
+        }
 
         void IGlobalRegistryHotSwapRefListener.OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
@@ -1092,7 +1107,10 @@ namespace Hecton8.Gameplay
                 GlobalTelemetryBus.PublishModTelemetry(ToolLifecycleTelemetryHash, markerHash, 1f);
         }
 #else
-        private void PublishLifecycleDebug(uint markerHash) { }
+        private void PublishLifecycleDebug(uint markerHash)
+        {
+            // No-op in release builds.
+        }
 #endif
 
         private void CacheToolItemHash()
