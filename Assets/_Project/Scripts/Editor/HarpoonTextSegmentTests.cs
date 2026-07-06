@@ -49,5 +49,38 @@ namespace Hecton8.Gameplay.Editor.Tests
             Assert.IsTrue(result);
             Assert.AreEqual("Value Test Value", mutableBuffer.ToString());
         }
+
+        [Test]
+        public void FormatStringFloat_WithValidTemplateAndArguments_WritesCorrectly()
+        {
+            var segment = HarpoonLauncherTool.HarpoonTextSegment.FormatStringFloat("Test {0} {1}", "Value", 12.3f);
+            var buffer = new FixedCharBuffer(256);
+            var mutableBuffer = buffer;
+            bool result = segment.TryWrite(ref mutableBuffer);
+            Assert.IsTrue(result);
+            Assert.AreEqual("Test Value 12.3", mutableBuffer.ToString());
+        }
+
+        [Test]
+        public void FormatStringFloatFloat_WithValidTemplateAndArguments_WritesCorrectly()
+        {
+            var segment = HarpoonLauncherTool.HarpoonTextSegment.FormatStringFloatFloat("Test {0} {1} {2}", "Value", 12.3f, 45.6f);
+            var buffer = new FixedCharBuffer(256);
+            var mutableBuffer = buffer;
+            bool result = segment.TryWrite(ref mutableBuffer);
+            Assert.IsTrue(result);
+            Assert.AreEqual("Test Value 12.3 45.6", mutableBuffer.ToString());
+        }
+
+        [Test]
+        public void FormatStringFloatFloat_WithSwappedTokens_WritesCorrectly()
+        {
+            var segment = HarpoonLauncherTool.HarpoonTextSegment.FormatStringFloatFloat("Test {2} {0} {1}", "Value", 12.3f, 45.6f);
+            var buffer = new FixedCharBuffer(256);
+            var mutableBuffer = buffer;
+            bool result = segment.TryWrite(ref mutableBuffer);
+            Assert.IsTrue(result);
+            Assert.AreEqual("Test 45.6 Value 12.3", mutableBuffer.ToString());
+        }
     }
 }
