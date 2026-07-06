@@ -103,14 +103,13 @@ namespace Hecton8.Gameplay
 
         private static bool TryResolveInParents(Transform current, out FieldTargetDescriptor descriptor)
         {
-            descriptor = null;
-
-            for (; current != null; current = current.parent)
+            if (current != null)
             {
-                if (current.TryGetComponent(out descriptor))
-                    return true;
+                descriptor = current.GetComponentInParent<FieldTargetDescriptor>();
+                return descriptor != null;
             }
 
+            descriptor = null;
             return false;
         }
 
