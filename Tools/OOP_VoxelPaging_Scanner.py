@@ -139,8 +139,8 @@ def main() -> int:
             "Dump_1304" not in pager and
             "Dump_1304" not in compression and
             processor.count("Dump_1304_Voxel.bin") == 1 and
-            processor.find("WriteBlackBoxDumpFile(VoxelPagingBlackBoxDumpRelativePath1312") <
-            processor.find("WriteBlackBoxDumpFile(VoxelBlackBoxDumpRelativePath")
+            (idx_b := processor.find("WriteBlackBoxDumpFile(VoxelBlackBoxDumpRelativePath")) != -1 and
+            processor.find("WriteBlackBoxDumpFile(VoxelPagingBlackBoxDumpRelativePath1312") < idx_b
         ),
         "agent1312LayoutValidatorPresent": "ValidateAgent1312PrivateLayouts" in processor,
         "telemetryCarriesDirectorySlot": "DirectorySlot" in pager and "Metrics" in pager and "PagerTelemetryEntry" in pager,
