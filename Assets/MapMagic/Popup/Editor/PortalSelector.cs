@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 //using UnityEngine.Profiling;
 using UnityEditor;
@@ -25,7 +26,9 @@ namespace MapMagic.Nodes.GUI
 			//GeneratorsAsset gens = MapMagic.instance.guiGens;
 			//if (MapMagic.instance.guiGens != null) gens = MapMagic.instance.guiGens;
 
-			Type exitType = portalExit.GetType().BaseType.GetGenericArguments()[0];
+			Type exitType = portalExit.GetType().GetInterfaces()
+				.FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPortalExit<>))
+				?.GetGenericArguments()[0];
 
 			if (itemTextStyle == null)
 			{
@@ -39,8 +42,11 @@ namespace MapMagic.Nodes.GUI
 			{
 				IPortalEnter<object> portalEnter = graph.generators[g] as IPortalEnter<object>;
 				if (portalEnter == null) continue;
-				if (portalEnter.GetType().BaseType.GetGenericArguments()[0] != exitType) continue;
-				//TODO: generic portals
+				Type enterType = portalEnter.GetType().GetInterfaces()
+					.FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPortalEnter<>))
+					?.GetGenericArguments()[0];
+
+				if (enterType != exitType) continue;
 
 				Item item = new Item( portalEnter.Name, 
 					onDraw: (i, r) => EditorGUI.LabelField(r, i.name, itemTextStyle),
