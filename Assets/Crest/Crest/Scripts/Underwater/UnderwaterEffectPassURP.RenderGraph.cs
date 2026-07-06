@@ -48,6 +48,7 @@ namespace Crest
                 builder.SetRenderFunc<PassData>((data, context) =>
                 {
                     var buffer = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                    EnsureRenderGraphTemporaryTargets(data);
                     OnSetup(buffer, data);
                     ExecutePass(context.GetRenderContext(), buffer, data);
                 });
