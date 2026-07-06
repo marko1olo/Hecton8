@@ -314,10 +314,17 @@ namespace UnityEditor.ShaderGraph
                 return;
             }
 
+            var oldSlot = FindSlot<MaterialSlot>(0);
+
             m_Descriptor = MakeCustomBlockField(name, width, interpolation);
 
-            // TODO: Preserve the original slot's value and try to reapply after the slot is updated.
             AddSlotFromControlType(false);
+
+            var newSlot = FindSlot<MaterialSlot>(0);
+            if (oldSlot != null && newSlot != null && oldSlot != newSlot)
+            {
+                newSlot.CopyValuesFrom(oldSlot);
+            }
 
             owner?.ValidateGraph();
         }
