@@ -2989,111 +2989,60 @@ namespace Hecton8.Gameplay
 
         private static string StableText(uint keyHash, string fallback)
         {
-            switch (keyHash)
+            return keyHash switch
             {
-                case H8ToolLocHashes.REPAIR_TOOL_CATEGORY:
-                    return s_locRepairToolCategory ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_TARGET:
-                    return s_locRepairToolHudNoTarget ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED:
-                    return s_locRepairToolHudSealed ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED:
-                    return s_locRepairToolHudRestored ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_INVALID_TARGET:
-                    return s_locRepairToolHudInvalidTarget ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_MODULE:
-                    return s_locRepairToolHudNoModule ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE:
-                    return s_locRepairToolHudNotServiceable ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER:
-                    return s_locRepairToolHudNoPower ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_DRAINING:
-                    return s_locRepairToolHudDraining ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_FLOODED:
-                    return s_locRepairToolHudFlooded ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE:
-                    return s_locRepairToolHudCriticalDamage ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE:
-                    return s_locRepairToolHudHeavyDamage ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_HUD_PATCHING:
-                    return s_locRepairToolHudPatching ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE:
-                    return s_locRepairToolLogStartedTitle ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE:
-                    return s_locRepairToolLogStartedMessage ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE:
-                    return s_locRepairToolLogRestoredTitle ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE:
-                    return s_locRepairToolLogRestoredMessage ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER:
-                    return s_locRepairToolLogDiagNoPower ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING:
-                    return s_locRepairToolLogDiagDraining ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED:
-                    return s_locRepairToolLogDiagFlooded ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_SEALED:
-                    return s_locRepairToolLogDiagSealed ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL:
-                    return s_locRepairToolLogDiagCritical ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY:
-                    return s_locRepairToolLogDiagHeavy ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING:
-                    return s_locRepairToolLogDiagPatching ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC:
-                    return s_locRepairToolLogDiagGeneric ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE:
-                    return s_locRepairToolOperationalActive ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY:
-                    return s_locRepairToolOperationalStandby ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE:
-                    return s_locRepairToolOperationalActiveDirective ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE:
-                    return s_locRepairToolOperationalStandbyDirective ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER:
-                    return s_locRepairToolSummaryNoPower ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING:
-                    return s_locRepairToolSummaryDraining ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED:
-                    return s_locRepairToolSummaryFlooded ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED:
-                    return s_locRepairToolSummarySealed ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL:
-                    return s_locRepairToolSummaryCritical ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY:
-                    return s_locRepairToolSummaryHeavy ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_SUMMARY_PATCHING:
-                    return s_locRepairToolSummaryPatching ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER:
-                    return s_locRepairToolRecommendNoPower ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING:
-                    return s_locRepairToolRecommendDraining ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED:
-                    return s_locRepairToolRecommendFlooded ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED:
-                    return s_locRepairToolRecommendSealed ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL:
-                    return s_locRepairToolRecommendCritical ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY:
-                    return s_locRepairToolRecommendHeavy ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_PATCHING:
-                    return s_locRepairToolRecommendPatching ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED:
-                    return s_locRepairToolPriorityServiceBlocked ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING:
-                    return s_locRepairToolPriorityStabilizing ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE:
-                    return s_locRepairToolPriorityImmediateService ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE:
-                    return s_locRepairToolPriorityServiceComplete ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE:
-                    return s_locRepairToolPriorityCriticalResponse ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE:
-                    return s_locRepairToolPriorityActiveService ?? fallback ?? string.Empty;
-                case H8ToolLocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS:
-                    return s_locRepairToolPriorityFinalPass ?? fallback ?? string.Empty;
-                default:
-                    return fallback ?? string.Empty;
-            }
+                H8ToolLocHashes.REPAIR_TOOL_CATEGORY => s_locRepairToolCategory,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_NO_TARGET => s_locRepairToolHudNoTarget,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED => s_locRepairToolHudSealed,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED => s_locRepairToolHudRestored,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_INVALID_TARGET => s_locRepairToolHudInvalidTarget,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_NO_MODULE => s_locRepairToolHudNoModule,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_NOT_SERVICEABLE => s_locRepairToolHudNotServiceable,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_NO_POWER => s_locRepairToolHudNoPower,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_DRAINING => s_locRepairToolHudDraining,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_FLOODED => s_locRepairToolHudFlooded,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_CRITICAL_DAMAGE => s_locRepairToolHudCriticalDamage,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_HEAVY_DAMAGE => s_locRepairToolHudHeavyDamage,
+                H8ToolLocHashes.REPAIR_TOOL_HUD_PATCHING => s_locRepairToolHudPatching,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE => s_locRepairToolLogStartedTitle,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_MESSAGE => s_locRepairToolLogStartedMessage,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE => s_locRepairToolLogRestoredTitle,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_MESSAGE => s_locRepairToolLogRestoredMessage,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_NO_POWER => s_locRepairToolLogDiagNoPower,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_DRAINING => s_locRepairToolLogDiagDraining,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_FLOODED => s_locRepairToolLogDiagFlooded,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_SEALED => s_locRepairToolLogDiagSealed,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_CRITICAL => s_locRepairToolLogDiagCritical,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_HEAVY => s_locRepairToolLogDiagHeavy,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_PATCHING => s_locRepairToolLogDiagPatching,
+                H8ToolLocHashes.REPAIR_TOOL_LOG_DIAG_GENERIC => s_locRepairToolLogDiagGeneric,
+                H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE => s_locRepairToolOperationalActive,
+                H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY => s_locRepairToolOperationalStandby,
+                H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_ACTIVE_DIRECTIVE => s_locRepairToolOperationalActiveDirective,
+                H8ToolLocHashes.REPAIR_TOOL_OPERATIONAL_STANDBY_DIRECTIVE => s_locRepairToolOperationalStandbyDirective,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER => s_locRepairToolSummaryNoPower,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING => s_locRepairToolSummaryDraining,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED => s_locRepairToolSummaryFlooded,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED => s_locRepairToolSummarySealed,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL => s_locRepairToolSummaryCritical,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY => s_locRepairToolSummaryHeavy,
+                H8ToolLocHashes.REPAIR_TOOL_SUMMARY_PATCHING => s_locRepairToolSummaryPatching,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER => s_locRepairToolRecommendNoPower,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING => s_locRepairToolRecommendDraining,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED => s_locRepairToolRecommendFlooded,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED => s_locRepairToolRecommendSealed,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL => s_locRepairToolRecommendCritical,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY => s_locRepairToolRecommendHeavy,
+                H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_PATCHING => s_locRepairToolRecommendPatching,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED => s_locRepairToolPriorityServiceBlocked,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING => s_locRepairToolPriorityStabilizing,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE => s_locRepairToolPriorityImmediateService,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE => s_locRepairToolPriorityServiceComplete,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE => s_locRepairToolPriorityCriticalResponse,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE => s_locRepairToolPriorityActiveService,
+                H8ToolLocHashes.REPAIR_TOOL_PRIORITY_FINAL_PASS => s_locRepairToolPriorityFinalPass,
+                _ => null
+            } ?? fallback ?? string.Empty;
         }
 
         private static bool AppendText(ref FixedCharBuffer buffer, string value)
