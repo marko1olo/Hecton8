@@ -231,12 +231,6 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        [Obsolete("Atmosphere state producers must use TryRaiseStateChanged and handle bounded enqueue failure.", true)]
-        public static void RaiseStateChanged(EnvironmentState state)
-        {
-            TryRaiseStateChanged(state);
-        }
-
         /// <summary>
         /// Flushes queued atmosphere state changes on the main thread.
         /// </summary>
