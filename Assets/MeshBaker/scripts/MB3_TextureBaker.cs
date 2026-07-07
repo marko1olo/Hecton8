@@ -384,6 +384,7 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
             }
         }
 
+        HashSet<Material> alreadyUsedMats = new HashSet<Material>();
         for (int resMatIdx = 0; resMatIdx < resultMaterialsTexArray.Length; resMatIdx++)
         {
             MB_MultiMaterialTexArray textureArraySliceConfig = resultMaterialsTexArray[resMatIdx];
@@ -419,7 +420,13 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
                     }
                     else
                     {
-                        // TODO check for duplicate source mats.
+                        if (alreadyUsedMats.Contains(sourceMat.sourceMaterial))
+                        {
+                            Debug.LogError("A Material " + sourceMat.sourceMaterial + " appears more than once in the list of source materials in the source material to combined mapping. Each source material must be unique.");
+                            coroutineResult.isFinished = true;
+                            yield break;
+                        }
+                        alreadyUsedMats.Add(sourceMat.sourceMaterial);
                     }
                 }
             }
