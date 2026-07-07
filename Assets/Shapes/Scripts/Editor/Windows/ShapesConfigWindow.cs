@@ -46,7 +46,6 @@ public class ShapesConfigWindow : EditorWindow {
 	SerializedProperty LOCAL_ANTI_ALIASING_QUALITY;
 	SerializedProperty QUAD_INTERPOLATION_QUALITY;
 	SerializedProperty NOOTS_ACROSS_SCREEN;
-	SerializedProperty ALLOW_NEGATIVE_COLORS;
 
 	SerializedObject so; // Config SO
 
@@ -85,7 +84,6 @@ public class ShapesConfigWindow : EditorWindow {
 		LOCAL_ANTI_ALIASING_QUALITY = so.FindProperty( "LOCAL_ANTI_ALIASING_QUALITY" );
 		QUAD_INTERPOLATION_QUALITY = so.FindProperty( "QUAD_INTERPOLATION_QUALITY" );
 		NOOTS_ACROSS_SCREEN = so.FindProperty( "NOOTS_ACROSS_SCREEN" );
-		ALLOW_NEGATIVE_COLORS = so.FindProperty( "ALLOW_NEGATIVE_COLORS" );
 		#if SHAPES_URP
 		urpRenderers = UnityInfo.LoadAllURPRenderData();
 		#endif
@@ -356,7 +354,6 @@ public class ShapesConfigWindow : EditorWindow {
 					EditorGUILayout.PropertyField( LOCAL_ANTI_ALIASING_QUALITY, new GUIContent( "Local AA quality" ) );
 					EditorGUILayout.PropertyField( QUAD_INTERPOLATION_QUALITY, new GUIContent( "Quad interpolation quality" ) );
 					EditorGUILayout.PropertyField( NOOTS_ACROSS_SCREEN, new GUIContent( "Noots across screen" ) );
-					EditorGUILayout.PropertyField( ALLOW_NEGATIVE_COLORS, new GUIContent( "Allow negative colors" ) );
 				}
 
 				GUILayout.Space( 3 );
@@ -381,7 +378,6 @@ public class ShapesConfigWindow : EditorWindow {
 		Define( LOCAL_ANTI_ALIASING_QUALITY, LOCAL_ANTI_ALIASING_QUALITY.enumValueIndex );
 		Define( QUAD_INTERPOLATION_QUALITY, QUAD_INTERPOLATION_QUALITY.enumValueIndex );
 		Define( NOOTS_ACROSS_SCREEN, NOOTS_ACROSS_SCREEN.intValue );
-		Define( ALLOW_NEGATIVE_COLORS, ALLOW_NEGATIVE_COLORS.intValue );
 
 		File.WriteAllLines( path, lines );
 		AssetDatabase.ImportAsset( path );
