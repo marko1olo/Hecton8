@@ -15,6 +15,22 @@ namespace Hecton8.Tests.Editor
         private PlayerToolManager _manager;
         private PlayerInventory _inventory;
 
+        public class DummyPlayerTool : PlayerTool
+        {
+            public float ToolTickDelta { get; private set; }
+
+            public override void ToolTick(float delta)
+            {
+                ToolTickDelta = delta;
+            }
+
+            public override void UsePrimary(float delta) {}
+            public override void UseSecondary(float delta) {}
+
+            protected override void OnHolstered() {}
+            protected override void OnDrawn() {}
+        }
+
         [SetUp]
         public void Setup()
         {
@@ -40,6 +56,76 @@ namespace Hecton8.Tests.Editor
         public void Tick_WithDefaultState_DoesNotThrow()
         {
             Assert.DoesNotThrow(() => _manager.Tick(0.1f));
+        }
+
+        [Test]
+        public void Tick_WithCurrentTool_AdvancesRuntimeClockSeconds()
+        {
+            var toolGo = new GameObject("DummyTool");
+            var tool = toolGo.AddComponent<DummyPlayerTool>();
+
+            var toolField = typeof(PlayerToolManager).GetField("_currentTool", BindingFlags.NonPublic | BindingFlags.Instance);
+            toolField.SetValue(_manager, tool);
+
+            // Set swapState to Raising (2) to skip ToolTick and just test AdvanceRuntimeActiveIntent which updates _toolRuntimeClockSeconds
+            var swapStateField = typeof(PlayerToolManager).GetField("_swapState", BindingFlags.NonPublic | BindingFlags.Instance);
+            swapStateField.SetValue(_manager, 2);
+
+            float delta = 0.5f;
+
+            _manager.Tick(delta);
+
+            var clockField = typeof(PlayerTool).GetField("_toolRuntimeClockSeconds", BindingFlags.NonPublic | BindingFlags.Instance);
+            float clockVal = (float)clockField.GetValue(tool);
+
+            Assert.That(clockVal, Is.EqualTo(delta));
+
+            UnityEngine.Object.DestroyImmediate(toolGo);
+        }
+
+        [Test]
+        public void Tick_WithCurrentToolAndIdleSwapState_CallsToolTick()
+        {
+            var toolGo = new GameObject("DummyTool");
+            var tool = toolGo.AddComponent<DummyPlayerTool>();
+
+            var toolField = typeof(PlayerToolManager).GetField("_currentTool", BindingFlags.NonPublic | BindingFlags.Instance);
+            toolField.SetValue(_manager, tool);
+
+            var swapStateField = typeof(PlayerToolManager).GetField("_swapState", BindingFlags.NonPublic | BindingFlags.Instance);
+            swapStateField.SetValue(_manager, 0);
+
+            float delta = 0.5f;
+
+            _manager.Tick(delta);
+
+            Assert.That(tool.ToolTickDelta, Is.EqualTo(delta));
+
+            UnityEngine.Object.DestroyImmediate(toolGo);
+        }
+
+        [Test]
+        public void Tick_ExternallyDockedTool_ReturnsEarly()
+        {
+            var toolGo = new GameObject("DummyTool");
+            var tool = toolGo.AddComponent<DummyPlayerTool>();
+
+            var toolField = typeof(PlayerToolManager).GetField("_currentTool", BindingFlags.NonPublic | BindingFlags.Instance);
+            toolField.SetValue(_manager, tool);
+
+            var externalDockField = typeof(PlayerToolManager).GetField("_externallyDockedTool", BindingFlags.NonPublic | BindingFlags.Instance);
+            externalDockField.SetValue(_manager, tool);
+
+            var swapStateField = typeof(PlayerToolManager).GetField("_swapState", BindingFlags.NonPublic | BindingFlags.Instance);
+            swapStateField.SetValue(_manager, 0);
+
+            float delta = 0.5f;
+
+            _manager.Tick(delta);
+
+            Assert.That(tool.ToolTickDelta, Is.EqualTo(0f));
+
+            UnityEngine.Object.DestroyImmediate(toolGo);
         }
     }
 }
