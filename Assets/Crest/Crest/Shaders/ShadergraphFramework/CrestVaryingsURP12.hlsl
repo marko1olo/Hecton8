@@ -101,10 +101,10 @@ Varyings BuildVaryings(Attributes input)
     float4 tangentWS = float4(TransformObjectToWorldDir(input.tangentOS.xyz), input.tangentOS.w);
 #endif
 
-    // Do vertex modification in camera relative space (if enabled)
-#ifdef HAVE_VERTEX_MODIFICATION
-    ApplyVertexModification(input, normalWS, positionWS, _TimeParameters.xyz);
-#endif
+    // Do vertex modification in camera relative space
+    #if defined(HAVE_VERTEX_MODIFICATION)
+        ApplyVertexModification(input, normalWS, positionWS, _TimeParameters.xyz);
+    #endif
 
 #ifdef VARYINGS_NEED_POSITION_WS
     output.positionWS = positionWS;
