@@ -109,10 +109,17 @@ Rules:
 - low tier uses depth fog, LUT haze, dither, baked AO, and silhouette composition;
 - raymarching is middle/high/ultra only after proof;
 - fog density varies by depth, biome, silt, current, and interior/exterior state;
+- **Red Light Absorption & Inky Water**: Ocean water must not render as tropical blue. Water is a dark, heavy inky-gray, utilizing volumetric fog with Red Light Absorption (red wavelength light is absorbed exponentially with depth, leaving only decolorized, greenish-blue, dead Abyssal visuals below 200m).
 - caustics are allowed only where light physically has reason to exist;
 - underwater visibility must preserve one readable route cue.
 
 Reject empty black screens, bright aquarium haze, and fog used to hide bad assets.
+
+## Diegetic UI & Material Wear
+
+- **Diegetic UI Raycast Click Mapping**: Standard overlay UI canvases (`Screen Space - Overlay`) are strictly banned. Terminal screens must render on in-world 3D textures. User interactions must map from camera center physics raycasts directly to the UV coordinates of the target screen.
+- **PBR Wear & Corrosion**: All database structures, submarine hulls, and suit models must utilize galvanic corrosion, wear, leak, and scratch masks to enforce the utilitarian NASA-punk aesthetic.
+
 
 ## Lighting And Shadows
 
@@ -217,6 +224,41 @@ Reject:
 - screenshots that hide bad models behind darkness.
 - surface, photic-shallow, or medium-depth captures below the Subnautica-level visual floor.
 
+## Automation Blindness & Goodhart's Law Rule
+
+**Python validators and automated scripts are banned from evaluating Beauty Renders.**
+
+The historical failure mode: a validator checked for "no black pixels (RGB < 15)". Instead of fixing the PBR shader, the system disabled ACES Tonemapping, removed Exponential Depth Fog (Abyss atmosphere), and cranked Ambient Light to flat `Color(0.8, 0.8, 0.8)`. This destroyed micro-shadows, killed volume, and turned NASA-Punk into cheap mobile graphics.
+
+**Validator scope boundaries:**
+
+- `analyze_terrain.py` and similar tools: ALLOWED to analyze raw X-Ray maps (`GetHeights`, `GetSteepness` exports), gradient variance, seam detection, and structural data.
+- Python validators: BANNED from analyzing final shaded screenshots / Beauty Renders.
+- Beauty quality assessment: ONLY via Multimodal Vision (agent eyes) with ACES Tonemapping active, DirectionalLight Soft Shadows active, and Exponential Depth Fog active. Agent must describe specific pixels and features seen, not just "looks good".
+
+**Signs of Goodhart Optimization (immediate reject):**
+
+- ACES Tonemapping disabled.
+- Ambient Light set to flat grey or white for "darkness fix".
+- Exponential Depth Fog removed to "pass pixel check".
+- Directional light intensity raised to hide shadow bugs.
+- Any post-process feature disabled to satisfy an automated metric.
+
+**Required validator output** (when validators ARE used for structural checks): raw numeric data (height variance, seam delta, slope histogram), not color descriptions.
+
+## Offline Bake vs Runtime Generation Law
+
+**Runtime procedural 3D mesh generation is banned** (except Marching Cubes voxels running in background Burst threads).
+
+Flora (coral, kelp, seagrass), base props, tools, ore nodes, and fauna meshes are generated **offline in the Editor** via `WorldProceduralCoralMeshBuilder` and similar tools. The Editor script generates N unique high-poly variants, computes Tangents (required for PBR normal mapping), and saves them as `.asset` prefabs on disk.
+
+At runtime: `ProceduralScatterDirector` uses `BatchRendererGroup` (BRG) with `Graphics.RenderMeshIndirect`. The CPU provides `NativeArray<float4x4>` positions. A Compute Shader performs frustum culling. The survivors draw in a single GPU indirect call.
+
+**`GameObject.Instantiate` is banned for scatter.** Each GameObject has a Transform that calls into C++ native objects on every mutation. 100,000 objects = CPU hierarchy death.
+
+**`Graphics.RenderMeshInstanced` is banned for high-count scatter** — it lacks indirect draw support and caps at 1023 instances. Only `Graphics.RenderMeshIndirect` through BRG is acceptable.
+
 ## Acceptance Sentence
 
 Rendering is accepted only when it preserves route readability, sells pressure and material truth, scales continuously, proves its cost, and makes HECTON-8 look expensive through controlled premium approximations instead of brute-force effects.
+

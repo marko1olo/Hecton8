@@ -10,7 +10,7 @@ using Hecton8.World;
 
 public static class CleanRoomTerrainTest
 {
-    private const string ArtifactDir = "C:/Users/Admin/.gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/";
+    private const string ArtifactDir = "C:/Users/Admin/.gemini/antigravity/brain/4da41d18-38fe-4fa6-931d-7cd8abcc82e8/";
 
     [MenuItem("Hecton8/Clean Room Terrain Test")]
     public static void RunTest()
@@ -255,6 +255,38 @@ public static class CleanRoomTerrainTest
 
         // Cleanup temporary profile
         Object.DestroyImmediate(profile);
+
+        // X-Ray Export for Center Chunk
+        Terrain centerTerrain = terrains[1, 1];
+        TerrainData centerData = centerTerrain.terrainData;
+        int res = centerData.heightmapResolution;
+        float[,] centerHeights = centerData.GetHeights(0, 0, res, res);
+        
+        Texture2D heightTex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        Texture2D slopeTex = new Texture2D(res, res, TextureFormat.RGB24, false);
+        
+        for (int y = 0; y < res; y++)
+        {
+            for (int x = 0; x < res; x++)
+            {
+                float h = centerHeights[y, x];
+                heightTex.SetPixel(x, y, new Color(h, h, h));
+                
+                // Approximate slope by sampling neighbors (or just read steepness directly)
+                float normX = (float)x / (res - 1);
+                float normY = (float)y / (res - 1);
+                float steepness = centerData.GetSteepness(normX, normY) / 90f; 
+                slopeTex.SetPixel(x, y, new Color(steepness, steepness, steepness));
+            }
+        }
+        heightTex.Apply();
+        slopeTex.Apply();
+        
+        File.WriteAllBytes(Path.Combine(ArtifactDir, "CleanRoom_XRay_Height.png"), heightTex.EncodeToPNG());
+        File.WriteAllBytes(Path.Combine(ArtifactDir, "CleanRoom_XRay_Slope.png"), slopeTex.EncodeToPNG());
+        Object.DestroyImmediate(heightTex);
+        Object.DestroyImmediate(slopeTex);
+        Debug.Log("[CleanRoom] X-Ray matrices exported.");
 
         // 5. Refresh AssetDatabase
         AssetDatabase.Refresh();

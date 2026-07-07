@@ -79,7 +79,9 @@ Required:
 - collision arbitration so the player does not hit duplicate colliders;
 - unified raycast route for tools and interaction;
 - LOD synchronization;
-- AUP/floating-origin safety.
+- AUP/floating-origin safety;
+- **SurfaceProtectionMeters & Heightmap Protection**: To prevent 3D voxel carving from punching gaping holes through the 2D heightmap, the carving density must fade to zero within `30 meters` of the terrain surface (`depthToTerrainSurface < 30f`, scale density via `smoothstep`).
+- **CaveMouthCandidate Masks**: Exiting voxel caves onto the 2D surface is allowed strictly through designated `CaveMouthCandidate` masks using transition meshes (collars/seams) to cover the geometry junction.
 
 ## SDF Collision Read Model
 

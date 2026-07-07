@@ -630,7 +630,11 @@ It does not prove:
 - final art quality;
 - shipping feature scope.
 
-Runtime claims still require current artifacts.
+    Runtime claims still require current artifacts.
+
+## Common Sense Engineering (AI Cognitive Blindspots)
+
+These 18 unwritten laws of Unity development are now binding architectural constraints. They have been moved to `COMMON_SENSE.md` to ensure they are loaded by all agents regardless of the domain. You must read `COMMON_SENSE.md` as part of your standard Task Intake.
 
 ------------------
 If you're making

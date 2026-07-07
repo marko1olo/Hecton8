@@ -1,0 +1,81 @@
+{
+  "merged_clean": [
+    {
+      "branch": "origin/pr/1180",
+      "info": []
+    },
+    {
+      "branch": "origin/pr/1183",
+      "info": []
+    },
+    {
+      "branch": "origin/pr/1260",
+      "info": []
+    },
+    {
+      "branch": "origin/pr/1371",
+      "info": []
+    },
+    {
+      "branch": "origin/rename-temp-enter-mapmagic-11210757310524524180",
+      "info": []
+    },
+    {
+      "branch": "origin/test-improvement-warmup-presets-17784224564211466334",
+      "info": []
+    }
+  ],
+  "merged_resolved": [
+    {
+      "branch": "origin/add-tests-optimizebatch34-display-18357422311198427243",
+      "info": [
+        "Tools/test_OptimizeBatch34AlphaPngSources.py: union"
+      ]
+    },
+    {
+      "branch": "origin/fix-portal-selector-423259409201378681",
+      "info": [
+        "Assets/MapMagic/Popup/Editor/PortalSelector.cs: ours"
+      ]
+    },
+    {
+      "branch": "origin/jules-13108514452983466804-8da57b0b",
+      "info": [
+        "Assets/_Project/Scripts/PureLogic/Systems/VoronoiBiomeSeedCalculator.cs: ours"
+      ]
+    },
+    {
+      "branch": "origin/jules-15455089113774342545-ed0e6661",
+      "info": [
+        "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json: ours"
+      ]
+    },
+    {
+      "branch": "origin/jules-object-pool-warmup-tests-7339194142481736593",
+      "info": [
+        "Assets/_Project/Scripts/Core/Tests/ObjectPoolManagerTests.cs: union"
+      ]
+    },
+    {
+      "branch": "origin/perf/vector3-distance-10177139736755075942",
+      "info": [
+        "Assets/Technie/PhysicsCreator/Scripts/Fitters/RotatedCapsuleFitter.cs: ours"
+      ]
+    },
+    {
+      "branch": "origin/pr/1337",
+      "info": [
+        "Assets/MapMagic/Nodes/Portals.cs: ours"
+      ]
+    },
+    {
+      "branch": "origin/pr/1370",
+      "info": [
+        "Assets/_Project/Scripts/Core/Tests/ObjectPoolManagerTests.cs: union"
+      ]
+    }
+  ],
+  "aborted_manual": [],
+  "aborted": [],
+  "commit_failed": []
+}

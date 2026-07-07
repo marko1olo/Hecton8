@@ -57,9 +57,15 @@ Warnings must be sparse, prioritized, and physical:
 - use cadence and tone by priority;
 - suppress spam;
 - pair critical warnings with UI/haptic where appropriate;
-- fail closed if warning data is stale.
+- fail closed if warning data is stale;
+- **Bitchin' Betty prioritized queue**: The vocal warning system must resolve using a priority queue. A higher-priority warning (e.g., `CRUSH DEPTH CRITICAL`, Priority 1) must immediately interrupt and mute a lower-priority message (e.g., `Inventory Full`, Priority 10) instead of overlapping.
+- **Strict EventID Routing**: Calling warnings or sound events using string lookups is strictly banned to prevent heap allocations. Events must pass a numeric `uint EventID` through SPSC queues.
 
 Suit voice should be disciplined, not chatty. It should sound like expensive equipment under stress, not a joke machine.
+
+## 3b. Underwater DSP & Propagation
+
+- **Low-Pass DSP Filtering**: Banned using simple `AudioSource.PlayOneShot` for distant environmental or creature sounds. Distant sounds must pass through a low-pass DSP filter simulating exponential high-frequency absorption with distance. High frequencies are absorbed faster, leaving low-frequency basaltic/metallic vibrations at depth.
 
 ## 4. Creature Audio
 

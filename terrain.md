@@ -153,3 +153,143 @@ Reject:
 ## Acceptance Sentence
 
 Terrain is accepted only when it creates readable routes, credible geology, deterministic scatter, scalable detail, cheap collision/navigation truth, and proof across compact and high-tier views.
+
+## Terrain Math & Slope Rules
+
+[RULE] Coordinate Wrap Protection: Using coordinate-reflecting functions like `math.abs(wrapX - period)` in generation algorithms is strictly banned. This produces a Triangle Wave domain input for fractal noise, causing mirror symmetry (kaleidoscope effect) across chunk borders. Continuous coordinate wrapping must be achieved via signed modulo (`math.fmod`) exclusively, preserving direction sign. Raw `worldPos.x` / `worldPos.z` combined with AUP sector seed is the preferred base domain.
+
+[RULE] Steepness & Splatmap Mappings: Ban early slope map saturation (e.g. `slope * 4.5f` which turns everything > 12.5 deg into rock, making sand appear only on a billiard-table flat surface). Use `math.saturate(slope * 0.6f)` and smoothstep ranges. The canonical H8 splatmap formula:
+
+```csharp
+float steepSlope = math.smoothstep(0.16f, 0.28f, sample.Slope01); // 15-25 deg transition
+float verySteep  = math.smoothstep(0.40f, 0.70f, sample.Slope01); // >45 deg full rock
+float rockBase   = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f));
+float finalRock  = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
+```
+
+Geological masks must account for macro-zones: in fault lines bare rock must appear even at low slope; on the shelf sand may persist on slopes up to 20 degrees.
+
+## Multi-Scale Geology Manifesto
+
+HECTON-8 seafloor is not a noise field — it is physically aggressive, tactile geology that affects KCC kinematics, cover calculations, and flora simulation. Generation in `WorldMacroGeologyFields.cs` is split into four mathematically strict Burst-compiled layers:
+
+### Macro-Scale (1–10 km): Tectonic Structure
+
+Owner: low-frequency `FractalSimplexNoise` with mild Domain Warping (perturb input coordinates by a secondary low-amplitude noise before sampling). Domain Warping avoids perfectly round or square tectonic shapes. This layer forms the Base Depth — the continental shelf vs. abyss boundary. **No Domain Warping on chunk seam coordinates** — only apply warping after the worldPos is confirmed continuous via fmod.
+
+### Meso-Scale (100 m – 1 km): Canyons & Erosion
+
+Owner: inverted `RidgedMultifractal01` **subtracted** from shelf height, creating deep V-shaped canyons. Canyon edges are softened via `math.smoothstep`. This layer produces the readable trench and ravine routes players navigate. Output must produce branching dendritic drainage patterns visible on a 1 km slope X-Ray card — a blurry smear means the frequency or amplitude is wrong.
+
+### Micro-Meso Scale (10–100 m): Geological Terraces (Strata)
+
+Owner: smoothed height quantization formula:
+
+```csharp
+// terraceErosion = high-freq noise injected BEFORE dividing by step scale
+// Without it, strata edges are perfectly straight lines (Minecraft topographic map look)
+float noisy = depth + terraceErosion;
+float terrace = math.floor(noisy / terraceScale) * terraceScale
+              + math.smoothstep(0f, 1f, math.frac(noisy / terraceScale)) * terraceScale;
+```
+
+Terracing is applied **only through a slope mask** — not on vertical cliffs (already rock), not on flat plains (already sediment). Strata must appear on mid-angle geology only.
+
+### Micro-Scale (< 1 m): Physical Grit (Osyp' — Rock Scree)
+
+We do NOT fake surface micro-detail through normal maps alone. On the height mesh itself we add/subtract a high-frequency `RidgedMultifractal` with amplitude **1.5–3.5 metres** strictly through HardRock and Scree slope masks.
+
+Rationale: the KCC uses `CapsuleCast` against `TerrainCollider`. On a flat mesh the player slides over rock like ice. Physical micro-bumps make the KCC stumble realistically. Shadow Cascades cast real micro-shadows at low sun angles, adding volume that a normal map cannot reproduce.
+
+Proof gate: a 100 m slope X-Ray card (GetSteepness export) must show dense red-black noise on hard rock slopes — proving the mesh is deformed by math, not painted by normal maps.
+
+## HectonTerrain Shader Doctrine
+
+Shader: `HectonTerrain.shader`. Mode: Single-Pass with 8-layer `Texture2DArray` (Albedo, Normal, Mask).
+
+### Biplanar Mapping (Required on Slopes > 45°)
+
+Standard planar UV on XZ produces catastrophic texture stretching on vertical faces. Triplanar is too expensive. Required approach:
+
+1. Convert surface normal to World Space in HLSL.
+2. Take `abs(normalWS)` and find the two strongest axes (discard the weakest).
+3. Sample `Texture2DArray` twice, blend by axis weights.
+
+This gives 2 texture fetches vs 3 for triplanar, with no stretching on cliff faces.
+
+### Anti-Tiling Macro Noise (Required)
+
+`_HectonUVScale` is set for high density (10–20 m per tile). At bird's-eye view this creates a checkerboard. Fix: sample a second pass of the same texture with UV **rotated 60 degrees**, then blend the two by a very low-frequency fractal noise mask (`HectonMacroNoise(worldPos.xz)`). Result: readable close up, non-repeating from above.
+
+### Height-Based Blending (Required at biome transitions)
+
+Alpha blending produces smearing at material boundaries. At ShellSand / HardRock transitions:
+
+```hlsl
+// Read Displacement channel (Alpha in Albedo or Blue in MaskMap)
+float depthA = textureHeightA + splatWeightA;
+float depthB = textureHeightB + splatWeightB;
+float blend  = saturate((depthA - depthB) / contrastBias + 0.5);
+```
+
+This makes sand granules appear only in rock crevices — a sharp, photorealistic AAA seam.
+
+### Texture2DArray Baker Rule
+
+Source PBR textures may differ in resolution (512×512, 1024×1024). `Texture2DArray.SetPixels()` will crash on size mismatch. Required approach (`BakeDeepSeaTerrainArrays.cs`): blit every source texture via `Graphics.Blit` into a temporary `RenderTexture` at uniform target size (1024×1024), then read pixels from there into the array. This GPU-powered resize pipeline must be run before build and before any terrain validation session.
+
+## X-Ray Matrix Protocol
+
+We do not trust shaded 3D screenshots for terrain validation. An agent MUST produce raw data exports via `TerrainData.GetHeights()` and `GetSteepness()` stitched into unified PNG maps (9-chunk 1536×1536). These X-Ray maps are the only accepted terrain truth.
+
+| Scale | Map | What to look for | Failure signature |
+|---|---|---|---|
+| **10 km** (Macro) | Heightmap + Slope | No perfectly straight red/black lines at chunk borders (those = seams) | Straight lines across borders = coordinate drift bug |
+| **1 km** (Meso) | Slope | Branching dendritic ravines (red veins on black) | Blurry grey smear = frequency/amplitude wrong |
+| **100 m** (Micro) | Slope | Dense red-black noise on hard rock slopes (1–3 m amplitude grit) | Smooth gradient = Grit not applied; KCC will slide |
+
+Python validators may only evaluate X-Ray maps (raw height/slope arrays). They are **banned from evaluating Beauty Renders** — beauty assessment is Multimodal Vision (AI eyes) only, with mandatory ACES tonemapping, soft shadows, and Exponential Depth Fog enabled.
+
+## Clean Room Testing Protocol
+
+Testing on `02_HECTON_WORLD` is banned — bootstrapper overhead and system coupling make it unreliable. Isolated testing scene or `020_RENDER_SANDBOX_V2` only.
+
+Required `CleanRoomTerrainTest.cs` / `NakedTerrainProtocolRunner.cs` setup:
+
+1. Destroy all cameras and lights in scene.
+2. Create `NTP_Camera` (SolidColor background, `Color(0.02, 0.03, 0.05)`).
+3. Create `DirectionalLight` (Intensity 1.8, Color.white, `LightShadows.Soft`, Pitch 35° for long micro-shadows).
+4. Create `GlobalVolume` with **ACES tonemapping** — never disable ACES to pass a pixel check.
+5. Initialize MapMagic graph, subscribe to `EditorApplication.update` state machine.
+6. Wait condition: `Terrain.activeTerrains.Length == 9` AND every terrain has `alphamapTextureCount > 0` AND every terrain has an active `TerrainCollider` AND 200+ stable frames of full quiescence.
+7. Only after 200-frame quiet window: render via `UniversalRenderPipeline.SubmitRenderRequest`.
+
+**Anti-Hallucination Camera Raycast**: Before rendering beauty shots, cast `Physics.SphereCast` (radius 2 m) from the target point toward the camera. If the cast hits a `TerrainCollider`, shift camera 5 m along the hit normal. This permanently eliminates black-screen-inside-rock bugs.
+
+**No `-nographics` flag ever**: MapMagic uses Compute Shaders and `Graphics.Blit` for splatmap layer composition. Without a GPU context these return zeros. The only valid batch test mode is Play Mode or Editor Play with GPU context.
+
+## Zero-GC Terrain Height Reads
+
+**Banned at runtime:** `Terrain.SampleHeight()` and `TerrainData.GetHeights()` are managed-allocation calls. Banned in all hot game loops (creature AI depth queries, player spawner, AbyssalThermalManager pressure queries, etc.).
+
+**Required architecture:**
+
+1. On chunk generation complete (or chunk stream-in), the terrain subsystem copies its height data via a Burst job into a flat unmanaged buffer.
+2. That buffer is registered in `GlobalDataVault` under `BufferID.WorldTerrainHeights`.
+3. Any external gameplay system (e.g. `HectonPlayerSpawner`, shark AI depth queries, `AbyssalThermalManager`) requests a **Read-Only generation handle** from `GlobalDataVault`. It reads height at XZ coordinates via pure O(1) index math inside its own `IJobParallelFor`, then immediately releases the handle.
+4. On chunk unload: height buffer handle is disposed, DataVault entry cleared.
+
+This guarantees 100% thread-safety, zero main-thread blocking, and zero GC allocations.
+
+## Stale Artifact Rule
+
+Before every Unity session that produces terrain screenshots or exports: delete all `.png` files in the artifact output directory and all `.log` files in the Logs directory via `Remove-Item -Force`. No file = no hallucination. An agent that reads a yesterday's `Naked_Macro_10km.png` and writes a report from it must be treated as producing a fabricated result.
+
+## Atomic File Delete Rule (Pre-Run Mandatory)
+
+```powershell
+# Run this BEFORE every Unity terrain bake/test session
+Remove-Item -Path "C:\hades\Hecton8\Docs\GeneratedAssets\Terrain\*.png" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\hades\Hecton8\Logs\*.log" -Force -ErrorAction SilentlyContinue
+```
+

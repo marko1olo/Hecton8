@@ -77,6 +77,8 @@ Required:
 
 - non-negative path costs;
 - threat-grid or voxel snapshot reads instead of live physics raycasts in jobs;
+- **3D Sparse Voxel Octree (SVO) A* Pathfinding**: Aquatic macro-navigation must use a multi-threaded A* algorithm traversing a разреженный воксельный октодерево (SVO) on Burst (checking `SDF > 0` for navigable void water), instead of a 2.5D surface NavMesh.
+- **Steering Boids Micro-Movement**: Micro-movements and local obstacle avoidance must use data-oriented steering behaviors (Boids) and direct local SDF density checks.
 - A* only where needed;
 - weighted A* for distance LOD;
 - flow-field fallback for distant entities;
@@ -85,6 +87,7 @@ Required:
 
 Forbidden:
 
+- **NavMeshAgent Ban**: Using Unity `NavMeshAgent` or standard 2D NavMesh components is strictly banned (they cannot support 3D vertical movement and dynamic voxel caverns).
 - Bezier smoothing that cuts through geometry;
 - live `Physics.Raycast` inside path jobs;
 - direct path recalculation every frame;
@@ -159,6 +162,46 @@ Reject:
 - AI reports without active counts, tick cadence, token budget, path cost, and load-shed behavior;
 - horror that comes only from a scripted scream.
 
+## Vertex Animation Textures (VAT) Doctrine — Fauna Animation
+
+Agents assigned fauna or swarm animation must NOT use `Animator` components or `SkinnedMeshRenderer`.
+
+**Why:** 10,000 SkinnedMeshRenderers destroy the CPU on bone matrix calculation before the GPU even starts rendering. Animator runs on the main thread. This kills Zero-GC and 60 FPS targets in one move.
+
+**Required: Vertex Animation Textures (VAT)**
+
+Small fauna (fish schools, rays, microorganisms, jellyfish): animation is baked into a texture (position offsets per vertex per frame) in Houdini or Blender. The creature shader reads that texture and displaces vertices on the GPU. The CPU knows only a `float3` position passed via `BatchRendererGroup`. Main thread cost: zero.
+
+**Required: Procedural IK for Leviathans**
+
+Large creatures (tentacles, spider crabs, multi-limb horrors) use procedural IK computed in a Burst job — no skeleton, no `Animator`. Algorithms: FABRIK (Forward And Backward Reaching Inverse Kinematics) or CCD (Cyclic Coordinate Descent). Joints are `float3` positions in a `NativeArray`. The job produces final joint positions that conform to the voxel terrain surface each frame.
+
+**Swarm agent exam:** Any external agent assigned scatter or fauna animation must demonstrate understanding of BRG and VAT before receiving the task. An agent proposing `Animator` or `SkinnedMeshRenderer` for mass fauna is immediately reassigned.
+
+## Zero-GC UI: The Babel Protocol
+
+`SuitHUDV4CanvasOverlay.cs` (369 KB) was caught doing `text = "Depth: " + depth.ToString()` 60 times per second. Each concatenation allocates a new `string` on the managed heap. At 60 Hz, Garbage Collector runs every ~60 seconds with 20 ms spikes. In a VR headset this induces nausea.
+
+**Banned in all hot UI paths:**
+
+- `string.Format(...)` with numeric args.
+- `text = "Label: " + value.ToString()`.
+- `TextMeshPro.text = ...` with any string concatenation.
+
+**Required: Babel Protocol**
+
+```csharp
+// REQUIRED pattern for hot numeric HUD elements:
+Span<char> buf = stackalloc char[32];
+depth.TryFormat(buf, out int len, "F1");
+_tmpText.SetCharArray(buf.Slice(0, len)); // zero allocations
+```
+
+Use `ReadOnlySpan<char>`, `stackalloc`, and `CharBufferPool` for all hot HUD text. Numbers are formatted via `int.TryFormat` / `float.TryFormat` directly into the buffer, then fed to `TextMeshPro.SetCharArray()`. Zero allocations, 60 Hz safe.
+
+**Diegetic Terminal Click Mapping:** Standard `Screen Space - Overlay` Canvas is banned. Terminal screens render as `RenderTexture` on in-world 3D objects. User interaction: `Physics.Raycast` from camera center (VR: from finger tip), convert hit UV to screen coordinates, emit synthetic click. Full immersion, zero overlay UI.
+
 ## Acceptance Sentence
 
 AI is accepted only when it is bounded, readable, data-owned, fair under pressure, scalable across hardware, and capable of creating dread through systems instead of cheap triggers.
+

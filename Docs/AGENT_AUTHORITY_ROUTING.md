@@ -6,6 +6,14 @@ Owner: DOCS_ACTUALIZATION
 
 Purpose: make every agent load the right authority files without losing rules, skipping domain bibles, or turning ordinary work into bureaucracy.
 
+# HECTON-8 Agent Authority Routing
+
+Status: STATIC_POLICY
+Evidence class: STATIC_DOC
+Owner: DOCS_ACTUALIZATION
+
+Purpose: make every agent load the right authority files without losing rules, skipping domain bibles, or turning ordinary work into bureaucracy.
+
 ## Prime Rule
 
 No rule, constraint, rejection gate, product vision lock, proof requirement, or workflow exception may be deleted merely because it is noisy. If a rule file is split, shortened, mirrored, or regenerated, the removed text must first be preserved in a named live source, route bible, mandate file, generated snapshot source, or explicit archive with provenance.
@@ -17,14 +25,18 @@ Routing reduces context noise. It does not weaken authority.
 Every non-trivial HECTON-8 task starts with this sequence:
 
 1. Read root `AGENTS.md`.
-2. Classify the task domain and risk class.
-3. Read `PROJECT_BIBLES.md` for root route selection when the task is major, player-facing, design-facing, system-facing, or ambiguous.
-4. Read `VISION_LOCKS.md` when the user asks for product direction, ambiguity resolution, route priority, taste conflict, or scope interpretation.
-5. Read `TASTE.md` for player-visible work, plus the matching root route bible from `PROJECT_BIBLES.md`.
-6. Read `.agents-skills/README.md` and exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
-7. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, or stale logs.
+2. Read `COMMON_SENSE.md` to load the 18 architectural AI cognitive constraints (Thread safety, Unity GC, physics, etc). You must obey these implicitly.
+3. Read `Docs\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` to verify the task aligns with the current V0 playable milestone and native ownership debt reduction.
+4. Classify the task domain and risk class.
+5. Read `PROJECT_BIBLES.md` for root route selection when the task is major, player-facing, design-facing, system-facing, or ambiguous.
+6. Read `Docs\SYSTEMS_CONTRACTS.md` if the task involves non-asset runtime systems, architecture, signals, data vaults, or core memory.
+7. Read `VISION_LOCKS.md` when the user asks for product direction, ambiguity resolution, route priority, taste conflict, or scope interpretation.
+8. Read `TASTE.md` for player-visible work, plus the matching root route bible from `PROJECT_BIBLES.md`.
+9. Read `.agents-skills/README.md` and exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
+10. Read `Docs\QUALITY_GATES.md` before claiming a task is VERIFIED or COMPLETE to ensure all necessary proof artifacts (profiler, GC, visual parity, NativeMemory) are generated.
+11. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, or stale logs.
 
-Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip the full intake, but they must not contradict the authority spine.
+Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip the full intake, but they must not contradict the authority spine. **CRITICAL SUBAGENT RULE:** Subagents modifying any `.cs`, `.shader`, `.prefab`, or `.asset` files are strictly forbidden from using this "trivial task" bypass. They MUST read `COMMON_SENSE.md`.
 
 Authority files, route bibles, mandate files, and important task documents must be read as complete documents before meaning is evaluated. Text search is a navigation and audit tool only.
 

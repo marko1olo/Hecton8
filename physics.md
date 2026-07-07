@@ -87,6 +87,8 @@ Character and vehicle environment collision route:
 
 - terrain, voxel cave, tunnel, and large geology traversal collision uses baked voxel/terrain colliders or an approved SDF read model/DataVault snapshot owned by the voxel/terrain route;
 - hot movement and vehicle loops must not run synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains as the primary environment collision truth;
+- **Speculative KCC & Normal Sliding**: Player and submarine movements must not use active Rigidbody physics or direct Force updates. Movement must run speculative KCC SweepTests (`CapsuleCastNonAlloc` scheduled in Burst jobs) to predict next-frame hits and slide along normal vectors to prevent getting stuck in voxel seams/gaps.
+- **Swarm KCC Isolation**: Flocking and boid movements must execute collision queries and displacement offsets in a single isolated Burst job using AUP coordinates, returning displacement vectors (banning `OnCollisionEnter` on the main thread entirely).
 - `RaycastCommand.ScheduleBatch` or bounded `Physics.*NonAlloc` casts are allowed for tool contact, interaction probing, scanner/sonar utility, or strict one-off diagnostics only when the owner phase, cadence, static buffers, and profiler/GC proof are named;
 - if a temporary cast route is used while SDF/collider bake proof is missing, report it as `PENDING VERIFICATION` or explicit migration debt, not final collision architecture.
 
@@ -142,6 +144,61 @@ Reject:
 - decorative damage with no channel state;
 - physics reports without profiler/GC proof.
 
+## Vector Flow Fields (Hydrothermal Vents & Currents)
+
+Thermal vents and underwater currents must NOT use `ParticleSystem` + `OnTriggerEnter` damage zones. That is cheap and architecturally wrong.
+
+**Required: 3D Vector Field Grid (Domain 19 — Abyssal Flow Fields)**
+
+- A 3D sparse grid of `float3` vectors represents current directions and magnitudes around vents, canyons, and ruins.
+- `HydrodynamicKccRuntime` (player KCC) reads this grid each physics tick. If the player enters a hydrothermal upwelling column, they are physically displaced upward by the vector + receive thermal damage. Zero `OnTriggerEnter`. Pure coordinate math.
+- `HectonTerrain.shader` reads the same vector grid to shift UV coordinates of silt and suspended particulate, making currents visually manifest in the world surface.
+- Fauna AI reads the SDF field directly from `GlobalDataVault` for current-aware pathfinding and boid drift.
+
+**No `OnTriggerEnter` allowed for area hazard effects.** Area effects are computed by evaluating the vector field at the entity's AUP position each frame.
+
+## Survival Physiology Math
+
+HECTON-8 is NASA-Punk Action-Survival. We reject the 16-tissue Bühlmann decompression model (academic overengineering). We reject Navier-Stokes fluid equations. Elegant, arcade-hardcore Burst math only.
+
+**Crush Depth (hull / suit integrity):**
+
+```csharp
+// overDepth = current depth - safe depth limit (metres)
+// Exponential curve: slow near limit, accelerating well beyond
+float crushDamageRate = overDepth * math.rsqrt(math.max(0.001f, overDepth));
+```
+
+Presentation consequences (not optional): hull stress audio (low-frequency groan), visor crack decals (Shader/Decals growing), energy drain for pressure compensation. These must be driven by the integrity channel scalar — not a separate damage system.
+
+**Hypoxia (Nitrogen Narcosis at extreme depth / low O2):**
+
+Low oxygen does not just reduce HP. It causes:
+
+1. Input drift: control response becomes "sticky" (multiply player input vector by `math.lerp(1f, 0.4f, hypoxiaLevel)` before applying to KCC).
+2. Shader hallucinations: a fullscreen distortion/grain pass activated at `hypoxiaLevel > 0.6f`, scaled by `GlobalQualityWeight`.
+
+These are purely mathematical state scalars consumed by HUD, KCC, and VFX — no MonoBehaviour polling, no scene search.
+
+## External Swarm Physics Testing Mandate
+
+When external Jules agents write physics math (pressure damage, KCC force contributions, structural integrity):
+
+**Fuzz Testing required:** Tests must feed `NaN`, `Infinity`, negative values, and zero arrays into every function. If `CalculateDamage(-1000f)` throws an exception or returns NaN — the PR is rejected.
+
+**MathGuard required:** Every division must be guarded:
+
+```csharp
+// WRONG:
+float result = value / divisor;
+
+// REQUIRED:
+float result = value * math.rcp(math.max(math.EPSILON, divisor));
+```
+
+Every `snoise` call must receive coordinates looped via `math.fmod`. This is non-negotiable architecture — not a style preference.
+
 ## Acceptance Sentence
 
 Physics is accepted only when it is bounded, phase-owned, deterministic, readable to the player, and more useful than a cheaper premium presentation approximation.
+

@@ -190,7 +190,75 @@ If only static inspection was performed, label the work `STATIC_SOURCE_REVIEWED`
 
 Compact uses narrower payloads, lower capacities, fewer optional telemetry fields, and stricter dirty-page uploads. Middle keeps full gameplay truth with conservative telemetry. High and Ultra may add presentation or diagnostic payloads only outside gameplay truth structs unless an owner proves cache cost.
 
+## CSV Data Monolith Compiler (H8BIN)
+
+All static configuration files (recipes, parameters, balance values, spawn configurations) must be stored as plain CSV files in `Docs/Data/`. 
+
+- **Data Compiler (`H8DataMonolithCompiler.cs`)**: During build/editor compile time, this parser compiles all CSVs, validates structural references, and serializes them into a single, contiguous binary file `static_data.h8bin` (aligned to 64-byte Cache-lines, compressed via LZ4).
+- **Runtime Zero-GC Load**: The bootstrapper maps `static_data.h8bin` directly to memory at startup. `GlobalDataVault` reads these parameters via zero-cost pointer casting to unmanaged structs (`ref struct`). JSON parsing, PlayerPrefs, XML, or reflection-based deserialization in runtime is strictly banned.
+- **Baker Pipeline Enforcement**: If an agent makes any edits to balance values or CSV files, they MUST trigger the corresponding Baker script in the editor to rebuild `static_data.h8bin`. Failing to run the Baker means runtime batch tests will run stale cached data.
+
+## Save System: Atomic Persistence (SaveManager)
+
+Save format is binary only. JSON, PlayerPrefs, EasySave3, XML, and Reflection-based serialization are permanently banned.
+
+**LZ4 + XXHash3:** Save data is packed into binary blocks, compressed with LZ4, and verified with XXHash3 checksum. On load, if the checksum fails the save is corrupt — automatically fall back to `.bak`.
+
+**Delta-Persistence only:** The world is procedural. We never serialize every stone position. We serialize `WorldSeed` and player-produced deltas (mined holes, collected resources, constructed modules, discovered nodes). Every system writing to SaveManager MUST produce flat unmanaged `struct` DTOs with no Reflection dependency.
+
+**Atomic Write (power-cut safe):**
+
+1. Write new data to `.tmp` file.
+2. Verify the `.tmp` is complete and XXHash3 passes.
+3. Rename current `.sav` → `.bak`.
+4. Rename `.tmp` → `.sav`.
+
+We never overwrite the active save directly. Player progress loss from a crash is unacceptable.
+
+## AUP Habitat Grid (Base Building)
+
+Agents writing base building must not use `Vector3` world coordinates or `Instantiate` to place modules.
+
+Every `float` world coordinate drifts when the Floating Origin (AUP) shifts. If a base is tied to Unity world coords, the Origin Shift tears it apart or teleports it off screen.
+
+**Required architecture:**
+
+- Base stored as a directed graph in `GlobalDataVault` (each room: `int64x3` sector + `float3` local offset).
+- On Origin Shift, `GameBootstrapper` broadcasts `RebaseSignal`. The construction system intercepts the signal and bulk-shifts all visual proxies (MeshRenderers) by the delta.
+- **Structural Integrity** is a pure Burst `IJob`: `mass_of_modules - reinforcements - crush_depth_penalty = structural_value`. Returns a float. No `MonoBehaviour`, no `Physics.OverlapSphere`, no scene search.
+
+## Co-op Merkle State Sync & Rollback Netcode
+
+The reason HECTON-8 is DOD / DataVault-first is not only 60 FPS — it is network determinism.
+
+**Snapshot serialization:** All gameplay state (`GlobalDataVault` `NativeArray` contents) is serialized by `MemCpy`. No OOP, no Transform, no Rigidbody state. Snapshot cost is proportional to buffer size, not scene complexity.
+
+**Merkle Tree verification:** State arrays are hashed with `XXH3_128`. A Merkle tree is built from those hashes. The server compares tree roots with clients. Only divergent leaves trigger a Delta packet.
+
+**Rollback:** On server correction, roll back `DataVault` to N frames prior (N ≤ 10), apply the authoritative input, re-simulate those frames in Burst. Cost: near-zero because Burst re-simulation of 10 frames is sub-millisecond.
+
+**External Swarm Rule (Jules agents):** Any pure-C# gameplay logic written by external agents must accept `Tick` (frame index) as a parameter and be callable 50× per frame for rollback re-simulation. `Time.deltaTime` is banned in hot simulation paths — only the passed `fixedDeltaTime` parameter is valid.
+
+## Anti-Mock / Anti-Hollow System Protocol
+
+Agents produce hollow implementations: a pretty interface `ICraftingSystem`, a class `CraftingManager`, and inside `CraftItem()`:
+
+```csharp
+// TODO: Implement actual inventory check
+Debug.Log("Item crafted successfully!");
+return true;
+```
+
+The project compiles. An `ExitCode 0` script reports PASS. The system is a Potemkin village — discovered only when the next system tries to integrate with it.
+
+**Banned tokens in HECTON-8 gameplay code:** `TODO`, `NotImplementedException`, `Mock`, `Fake`, `stub`, `placeholder`.
+
+**Rule:** An agent that cannot write full integration writes a **pure C# mathematical function** (no Unity API), fully parameterized, fully tested with NUnit (`Assert.AreEqual(expected, Calculate(...))`). The function must work completely. A skeletal interface with empty body is grounds for PR rejection. TDD is mandatory for every implemented mechanic.
+
+**Dead Variable Rule:** Computed values must be applied. A `float radiationDamage` that is calculated but never subtracted from player health is a logical hallucination. Code reviews and Adversarial Agent reviews must specifically check that every calculated variable reaches its consumer.
+
 ## Rejection Gates
+
 
 Reject:
 
