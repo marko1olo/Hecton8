@@ -37,5 +37,57 @@ namespace CandiceAIforGames.AI.Tests
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void WithinAttackRange_NoTarget_ReturnsFalse()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            controller.AttackTarget = null;
+
+            Assert.IsFalse(controller.WithinAttackRange());
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void WithinAttackRange_TargetOutOfRange_ReturnsFalse()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            var targetGo = new GameObject("Target");
+            controller.AttackTarget = targetGo;
+            controller.AttackRange = 5f;
+
+            go.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(10f, 0f, 0f);
+
+            Assert.IsFalse(controller.WithinAttackRange());
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(targetGo);
+        }
+
+        [Test]
+        public void WithinAttackRange_TargetInRange_ReturnsTrueAndSetsLookPoint()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            var targetGo = new GameObject("Target");
+            controller.AttackTarget = targetGo;
+            controller.AttackRange = 5f;
+
+            go.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(3f, 0f, 0f);
+
+            Assert.IsTrue(controller.WithinAttackRange());
+            Assert.AreEqual(targetGo.transform.position, controller.LookPoint);
+
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(targetGo);
+        }
     }
 }
