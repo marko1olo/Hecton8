@@ -71,7 +71,7 @@ namespace MapMagic.Products
 					//taking finalize, apply, height by reference from parent data
 
 					subData.lastVersion = new Dictionary<ulong, ulong>();
-					subData.products = new Dictionary<ulong, object>();
+					subData.progress = new Dictionary<ulong, float>();
 					subData.prepare = new Dictionary<ulong, object>();
 					subData.products = new Dictionary<ulong, object>();
 					subData.outputs = new Dictionary<ulong, (object, object, object)>();
