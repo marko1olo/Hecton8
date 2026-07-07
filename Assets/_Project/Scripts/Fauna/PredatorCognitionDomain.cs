@@ -2092,7 +2092,37 @@ namespace Hecton8.AI
         {
             ValidateAbiLayout();
 
-            if (_cores.IsCreated &&
+            if (AreCoreCognitionVaultBuffersCreated())
+            {
+                return true;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsAllocationLocked)
+                return false;
+
+            AllocateCoreCognitionVaultBuffers();
+
+            if (!VerifyCoreCognitionVaultBuffersResolved())
+            {
+                ReleaseCoreCognitionVaultHandles();
+                _activeSlotCount = 0;
+                return false;
+            }
+
+            ClearCoreCognitionVaultBuffers();
+            InitializeMesofaunaVaultBuffersCold();
+#if UNITY_EDITOR
+            TryLoadMesofaunaSpeciesProfilesCsvCold();
+#endif
+            _activeSlotCount = 0;
+            return true;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static bool AreCoreCognitionVaultBuffersCreated()
+        {
+            return _cores.IsCreated &&
                 _controls.IsCreated &&
                 _inputs.IsCreated &&
                 _outputs.IsCreated &&
@@ -2145,15 +2175,11 @@ namespace Hecton8.AI
                 _mesofaunaSpeciesProfileCount.IsCreated &&
                 _mesofaunaCsvScratch.IsCreated &&
                 _mesofaunaTargetHashBucketHeads.IsCreated &&
-                _mesofaunaTargetHashNext.IsCreated)
-            {
-                return true;
-            }
+                _mesofaunaTargetHashNext.IsCreated;
+        }
 
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsAllocationLocked)
-                return false;
-
+        private static void AllocateCoreCognitionVaultBuffers()
+        {
             _cores = GetVaultArray<CognitionCore>(
                 BufferID.PredatorCognitionCores,
                 Capacity,
@@ -2424,9 +2450,12 @@ namespace Hecton8.AI
                 Capacity,
                 SystemID.AICognition,
                 NativeArrayOptions.UninitializedMemory);
+        }
 
-            bool resolvedAll =
-                _cores.IsCreated &&
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        private static bool VerifyCoreCognitionVaultBuffersResolved()
+        {
+            return _cores.IsCreated &&
                 _controls.IsCreated &&
                 _inputs.IsCreated &&
                 _outputs.IsCreated &&
@@ -2480,20 +2509,6 @@ namespace Hecton8.AI
                 _mesofaunaCsvScratch.IsCreated &&
                 ResolveMesofaunaTargetHashBucketHeads().IsCreated &&
                 ResolveMesofaunaTargetHashNext().IsCreated;
-            if (!resolvedAll)
-            {
-                ReleaseCoreCognitionVaultHandles();
-                _activeSlotCount = 0;
-                return false;
-            }
-
-            ClearCoreCognitionVaultBuffers();
-            InitializeMesofaunaVaultBuffersCold();
-#if UNITY_EDITOR
-            TryLoadMesofaunaSpeciesProfilesCsvCold();
-#endif
-            _activeSlotCount = 0;
-            return true;
         }
 
         private static void ReleaseCoreCognitionVaultHandles()
