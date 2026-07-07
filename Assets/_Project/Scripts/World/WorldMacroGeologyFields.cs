@@ -357,62 +357,7 @@ namespace Hecton8.World
             float basinMask = math.saturate((1f - shelfMask) * (1f - ridgeMask) * (1f - trenchMask));
             depth += basinMask * p.BasinDepthMeters;
 
-            // 6. ABYSSAL SEAMOUNTS / GUYOTS (warpedPos deforms perfect circular shapes)
-            float2 seamountCell = math.floor(warpedPos * 0.0003f); // 3.3km grid
-            float2 frac = warpedPos * 0.0003f - seamountCell;
-            float minDist = 8.0f;
-            float2 seamountHash = new float2(0, 0);
-            float2 seamountCenterLocal = new float2(0, 0);
-            
-            for (int y = -1; y <= 1; y++)
-            {
-                for (int x = -1; x <= 1; x++)
-                {
-                    float2 neighbor = new float2(x, y);
-                    float2 pointHash = Hash2((int)(seamountCell.x + neighbor.x), (int)(seamountCell.y + neighbor.y), p.Seed ^ 0x5EA30447u);
-                    float2 seamountDiff = neighbor + pointHash - frac;
-                    float dist = math.length(seamountDiff);
-                    if (dist < minDist)
-                    {
-                        minDist = dist;
-                        seamountHash = pointHash;
-                        seamountCenterLocal = seamountDiff; // vector from current warpedPos to seamount center
-                    }
-                }
-            }
-            
-            float seamountProfile = math.saturate(1f - minDist * 2f);
-            if (seamountProfile > 0f)
-            {
-                // Volcanic exponential profile
-                float volProfile = math.exp(-minDist * 6.0f);
-                
-                float isGuyot = HashToUnitFloat(Hash(unchecked((int)(seamountHash.x * 1000f)), unchecked((int)(seamountHash.y * 1000f)), 0x123456)) > 0.5f ? 1f : 0f;
-                
-                if (isGuyot > 0f)
-                {
-                    // Guyot: Flat top
-                    volProfile = math.min(volProfile, 0.4f);
-                }
-                else
-                {
-                    // Caldera (Depression at the very center)
-                    float calderaProfile = 1f - math.smoothstep(0f, 0.045f, minDist);
-                    volProfile -= calderaProfile * 0.3f * seamountProfile;
-                }
-                
-                // Radial Erosional Gullies (seam-free organic branching using normalized direction and warpedPos phase shift)
-                float2 dir = minDist > 0.0001f ? seamountCenterLocal / minDist : new float2(1f, 0f);
-                float gullyPattern = (FractalSimplexNoise01(dir * 3.8f + warpedPos * 0.0005f, p.Seed ^ 0x901177Au) * 2f - 1f);
-                float gullyProfile = 1f - math.abs(gullyPattern);
-                gullyProfile = math.pow(gullyProfile, 3.0f); // Sharper cuts
-                
-                // Gullies only form on the flanks
-                float flankMask = math.smoothstep(0.05f, 0.3f, minDist) * math.smoothstep(0.4f, 0.25f, minDist);
-                volProfile -= gullyProfile * flankMask * 0.15f;
-                
-                depth -= math.saturate(volProfile) * basinMask * 2600f;
-            }
+            ApplySeamounts(ref depth, warpedPos, basinMask, p.Seed);
 
             // 3. INTERNAL PLATE FEATURES (Highlands & Warps)
             float provinceRelief = math.smoothstep(0.36f, 0.92f, FractalNoise01(warpedPos * 0.00006f, p.Seed ^ 0x21DA7F47u));
@@ -481,69 +426,8 @@ namespace Hecton8.World
             // Pits subtract from sediment depth. Max pit depth is 6m.
             float pitDepth = pitProfile * pitFieldMask * sedimentDepth * 6f;
             
-            // METEOR CRATERS PASS (with rim-warping to prevent perfect mathematical circles)
-            float craterDepthDelta = 0f;
-            float craterMask = 0f;
-            
-            float craterGridSize = 2000f;
-            int2 craterCell = new int2((int)math.floor(warpedPos.x / craterGridSize), (int)math.floor(warpedPos.y / craterGridSize));
-            
-            for (int dz = -1; dz <= 1; dz++)
-            {
-                for (int dx = -1; dx <= 1; dx++)
-                {
-                    int2 craterNeighborCell = craterCell + new int2(dx, dz);
-                    uint h = Hash(craterNeighborCell.x, craterNeighborCell.y, unchecked((int)(p.Seed ^ 0x9B3A21EFu)));
-                    
-                    // ~15% chance of a crater in this 2km cell
-                    float probability = HashToUnitFloat(h ^ 0x12345678u);
-                    if (probability > 0.15f) continue;
-                    
-                    float cx = (craterNeighborCell.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
-                    float cz = (craterNeighborCell.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
-                    
-                    // Radius between 120m and 600m
-                    float radius = math.lerp(120f, 600f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.5f)); 
-                    
-                    float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
-                    if (dist > radius * 2.0f) continue;
-                    
-                    // rimWarp: deforms the crater radius so it is NOT a perfect circle
-                    float rimWarp = (FractalSimplexNoise01(warpedPos * 0.015f, h ^ 0xDEADBEEFu) * 2f - 1f) * 0.06f;
-                    float normalizedDist = dist / radius + rimWarp;
-                    
-                    // Crater Cavity
-                    float bowl = 1f - math.smoothstep(0f, 1f, normalizedDist); 
-                    bowl = math.pow(bowl, 1.5f); // Flatten the center due to sedimentation
-                    
-                    // Crater Rim
-                    float rimProfile = math.max(0f, 1f - math.abs(normalizedDist - 1f) * 2.5f);
-                    rimProfile = math.smoothstep(0f, 1f, rimProfile);
-                    
-                    // Central Peak (only in large craters)
-                    float peak = 0f;
-                    if (radius > 1200f) {
-                        float peakRadius = radius * 0.15f;
-                        peak = 1f - math.smoothstep(0f, peakRadius, dist);
-                        peak = math.smoothstep(0f, 1f, peak) * 0.4f;
-                    }
-                    
-                    // Rim Erosion Noise
-                    float angle = math.atan2(warpedPos.y - cz, warpedPos.x - cx);
-                    float rimErosion = FractalNoise01(new float2(angle * 4.0f, radius), h ^ 0xDEADBEEFu);
-                    rimProfile *= (0.4f + rimErosion * 0.6f);
-                    
-                    float maxDepth = radius * 0.18f;
-                    float maxRimHeight = radius * 0.08f;
-                    
-                    craterDepthDelta += bowl * maxDepth;     // Depress (add to depth)
-                    craterDepthDelta -= peak * maxDepth;     // Raise peak (subtract from depth)
-                    craterDepthDelta -= rimProfile * maxRimHeight; // Raise rim
-                    
-                    craterMask = math.max(craterMask, bowl);
-                }
-            }
-            depth += craterDepthDelta;
+            float craterMask;
+            ApplyMeteorCraters(ref depth, out craterMask, warpedPos, p.Seed);
             
             depth -= (addedHeight - pitDepth);
 
@@ -551,53 +435,7 @@ namespace Hecton8.World
                 depth = -260f + (depth + 260f) * 0.42f;
             depth = math.clamp(depth, -620f, p.HadalDepthMeters);
 
-            // TECTONIC TERRACING — Localized Geological Strata
-            //
-            // ROOT CAUSE OF MINECRAFT LOOK:
-            //   Old step=18-55m on 400m mountain = 7-22 terraces covering 90% surface → Minecraft.
-            //   Old patchMask = max(0.15, smoothstep(0.1,0.65,...)) → covers 85%+ of surface → Minecraft.
-            //   Old blend = terraceStrength * patchMask ≈ 0.6-0.9 → full replacement → Minecraft.
-            //
-            // REAL GEOLOGY:
-            //   3-5 wide benches (100-180m each) on specific slope aspects, 25-35% coverage, rest smooth.
-            //
-            float terraceStrength = math.saturate(shelfBreakMask * 0.8f + ridgeMask * 0.4f + faultMask * 0.5f);
-            if (terraceStrength > 0.05f)
-            {
-                // STEP 1: LARGE STEPS → only 3-5 terraces on a 400m mountain.
-                // 80-180m: wide geological platforms, not pixel-height Minecraft slabs.
-                float dynamicTerraceScale = math.lerp(80.0f, 180.0f,
-                    FractalSimplexNoise01(warpedNorm * 3.0f, p.Seed ^ 0x112233u));
-
-                // STEP 2: STRATA TILT via pos (meters). 50m per km = 1-2 step shifts across mountain.
-                float2 tiltDir = math.normalize(new float2(
-                    FractalSimplexNoise01(warpedNorm * 1.8f, p.Seed ^ 0xAB12CD34u) * 2f - 1f,
-                    FractalSimplexNoise01(warpedNorm * 1.8f, p.Seed ^ 0x56EF78ABu) * 2f - 1f
-                ));
-                float strataCoord = depth + math.dot(tiltDir, pos) * 0.05f;
-
-                // STEP 3: EROSION at mountain scale. ±60m+±25m on 80-180m steps = 0.33-0.75 step shift.
-                // Merges/kills whole terraces in patches rather than just wiggling edges.
-                float terraceErosionC = (FractalSimplexNoise01(warpedNorm * 80.0f,  p.Seed ^ 0x99AA88BBu) * 2f - 1f) * 60.0f;
-                float terraceErosionF = (FractalSimplexNoise01(warpedNorm * 250.0f, p.Seed ^ 0x77CC4411u) * 2f - 1f) * 25.0f;
-                float terraceErosion  = terraceErosionC + terraceErosionF;
-
-                // STEP 4: QUANTIZE with sharp cliff wall at top of step.
-                float hPhase = (strataCoord + terraceErosion) / dynamicTerraceScale;
-                float fStep  = math.frac(hPhase);
-                float sStep  = math.smoothstep(0.55f, 0.88f, fStep);
-
-                float terracedCoord = (math.floor(hPhase) + sStep) * dynamicTerraceScale - terraceErosion;
-                float terracedDepth = terracedCoord - math.dot(tiltDir, pos) * 0.05f;
-
-                // STEP 5: AGGRESSIVE PATCHINESS — only ~30% of mountain gets terracing.
-                // smoothstep(0.60, 0.92) with NO floor: passes only top 32% of noise distribution.
-                float terracePatchMask = math.smoothstep(0.60f, 0.92f,
-                    FractalSimplexNoise01(warpedNorm * 4.5f, p.Seed ^ 0x992211AAu));
-
-                // STEP 6: MAX BLEND 0.55 — macro shape always reads through.
-                depth = math.lerp(depth, terracedDepth, terraceStrength * terracePatchMask * 0.55f);
-            }
+            ApplyTectonicTerracing(ref depth, shelfBreakMask, ridgeMask, faultMask, warpedNorm, pos, p.Seed);
 
             // TALUS / SCREE ACCUMULATION
             float rockBase  = math.saturate(ridgeMask * 0.7f + faultMask * 0.4f + math.saturate((1f - shelfMask) * 1.5f) * 0.3f);
@@ -619,6 +457,188 @@ namespace Hecton8.World
                 Crater = math.saturate(craterMask)
             };
             return p.WaterSurfaceY - depth;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplySeamounts(ref float depth, float2 warpedPos, float basinMask, uint seed)
+        {
+                // 6. ABYSSAL SEAMOUNTS / GUYOTS (warpedPos deforms perfect circular shapes)
+                float2 seamountCell = math.floor(warpedPos * 0.0003f); // 3.3km grid
+                float2 frac = warpedPos * 0.0003f - seamountCell;
+                float minDist = 8.0f;
+                float2 seamountHash = new float2(0, 0);
+                float2 seamountCenterLocal = new float2(0, 0);
+
+                for (int y = -1; y <= 1; y++)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        float2 neighbor = new float2(x, y);
+                        float2 pointHash = Hash2((int)(seamountCell.x + neighbor.x), (int)(seamountCell.y + neighbor.y), seed ^ 0x5EA30447u);
+                        float2 seamountDiff = neighbor + pointHash - frac;
+                        float dist = math.length(seamountDiff);
+                        if (dist < minDist)
+                        {
+                            minDist = dist;
+                            seamountHash = pointHash;
+                            seamountCenterLocal = seamountDiff; // vector from current warpedPos to seamount center
+                        }
+                    }
+                }
+
+                float seamountProfile = math.saturate(1f - minDist * 2f);
+                if (seamountProfile > 0f)
+                {
+                    // Volcanic exponential profile
+                    float volProfile = math.exp(-minDist * 6.0f);
+
+                    float isGuyot = HashToUnitFloat(Hash(unchecked((int)(seamountHash.x * 1000f)), unchecked((int)(seamountHash.y * 1000f)), 0x123456)) > 0.5f ? 1f : 0f;
+
+                    if (isGuyot > 0f)
+                    {
+                        // Guyot: Flat top
+                        volProfile = math.min(volProfile, 0.4f);
+                    }
+                    else
+                    {
+                        // Caldera (Depression at the very center)
+                        float calderaProfile = 1f - math.smoothstep(0f, 0.045f, minDist);
+                        volProfile -= calderaProfile * 0.3f * seamountProfile;
+                    }
+
+                    // Radial Erosional Gullies (seam-free organic branching using normalized direction and warpedPos phase shift)
+                    float2 dir = minDist > 0.0001f ? seamountCenterLocal / minDist : new float2(1f, 0f);
+                    float gullyPattern = (FractalSimplexNoise01(dir * 3.8f + warpedPos * 0.0005f, seed ^ 0x901177Au) * 2f - 1f);
+                    float gullyProfile = 1f - math.abs(gullyPattern);
+                    gullyProfile = math.pow(gullyProfile, 3.0f); // Sharper cuts
+
+                    // Gullies only form on the flanks
+                    float flankMask = math.smoothstep(0.05f, 0.3f, minDist) * math.smoothstep(0.4f, 0.25f, minDist);
+                    volProfile -= gullyProfile * flankMask * 0.15f;
+
+                    depth -= math.saturate(volProfile) * basinMask * 2600f;
+                }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyMeteorCraters(ref float depth, out float craterMask, float2 warpedPos, uint seed)
+        {
+                // METEOR CRATERS PASS (with rim-warping to prevent perfect mathematical circles)
+                float craterDepthDelta = 0f;
+                craterMask = 0f;
+
+                float craterGridSize = 2000f;
+                int2 craterCell = new int2((int)math.floor(warpedPos.x / craterGridSize), (int)math.floor(warpedPos.y / craterGridSize));
+
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int2 craterNeighborCell = craterCell + new int2(dx, dz);
+                        uint h = Hash(craterNeighborCell.x, craterNeighborCell.y, unchecked((int)(seed ^ 0x9B3A21EFu)));
+
+                        // ~15% chance of a crater in this 2km cell
+                        float probability = HashToUnitFloat(h ^ 0x12345678u);
+                        if (probability > 0.15f) continue;
+
+                        float cx = (craterNeighborCell.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
+                        float cz = (craterNeighborCell.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
+
+                        // Radius between 120m and 600m
+                        float radius = math.lerp(120f, 600f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.5f));
+
+                        float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
+                        if (dist > radius * 2.0f) continue;
+
+                        // rimWarp: deforms the crater radius so it is NOT a perfect circle
+                        float rimWarp = (FractalSimplexNoise01(warpedPos * 0.015f, h ^ 0xDEADBEEFu) * 2f - 1f) * 0.06f;
+                        float normalizedDist = dist / radius + rimWarp;
+
+                        // Crater Cavity
+                        float bowl = 1f - math.smoothstep(0f, 1f, normalizedDist);
+                        bowl = math.pow(bowl, 1.5f); // Flatten the center due to sedimentation
+
+                        // Crater Rim
+                        float rimProfile = math.max(0f, 1f - math.abs(normalizedDist - 1f) * 2.5f);
+                        rimProfile = math.smoothstep(0f, 1f, rimProfile);
+
+                        // Central Peak (only in large craters)
+                        float peak = 0f;
+                        if (radius > 1200f) {
+                            float peakRadius = radius * 0.15f;
+                            peak = 1f - math.smoothstep(0f, peakRadius, dist);
+                            peak = math.smoothstep(0f, 1f, peak) * 0.4f;
+                        }
+
+                        // Rim Erosion Noise
+                        float angle = math.atan2(warpedPos.y - cz, warpedPos.x - cx);
+                        float rimErosion = FractalNoise01(new float2(angle * 4.0f, radius), h ^ 0xDEADBEEFu);
+                        rimProfile *= (0.4f + rimErosion * 0.6f);
+
+                        float maxDepth = radius * 0.18f;
+                        float maxRimHeight = radius * 0.08f;
+
+                        craterDepthDelta += bowl * maxDepth;     // Depress (add to depth)
+                        craterDepthDelta -= peak * maxDepth;     // Raise peak (subtract from depth)
+                        craterDepthDelta -= rimProfile * maxRimHeight; // Raise rim
+
+                        craterMask = math.max(craterMask, bowl);
+                    }
+                }
+                depth += craterDepthDelta;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void ApplyTectonicTerracing(ref float depth, float shelfBreakMask, float ridgeMask, float faultMask, float2 warpedNorm, float2 pos, uint seed)
+        {
+                // TECTONIC TERRACING — Localized Geological Strata
+                //
+                // ROOT CAUSE OF MINECRAFT LOOK:
+                //   Old step=18-55m on 400m mountain = 7-22 terraces covering 90% surface → Minecraft.
+                //   Old patchMask = max(0.15, smoothstep(0.1,0.65,...)) → covers 85%+ of surface → Minecraft.
+                //   Old blend = terraceStrength * patchMask ≈ 0.6-0.9 → full replacement → Minecraft.
+                //
+                // REAL GEOLOGY:
+                //   3-5 wide benches (100-180m each) on specific slope aspects, 25-35% coverage, rest smooth.
+                //
+                float terraceStrength = math.saturate(shelfBreakMask * 0.8f + ridgeMask * 0.4f + faultMask * 0.5f);
+                if (terraceStrength > 0.05f)
+                {
+                    // STEP 1: LARGE STEPS → only 3-5 terraces on a 400m mountain.
+                    // 80-180m: wide geological platforms, not pixel-height Minecraft slabs.
+                    float dynamicTerraceScale = math.lerp(80.0f, 180.0f,
+                        FractalSimplexNoise01(warpedNorm * 3.0f, seed ^ 0x112233u));
+
+                    // STEP 2: STRATA TILT via pos (meters). 50m per km = 1-2 step shifts across mountain.
+                    float2 tiltDir = math.normalize(new float2(
+                        FractalSimplexNoise01(warpedNorm * 1.8f, seed ^ 0xAB12CD34u) * 2f - 1f,
+                        FractalSimplexNoise01(warpedNorm * 1.8f, seed ^ 0x56EF78ABu) * 2f - 1f
+                    ));
+                    float strataCoord = depth + math.dot(tiltDir, pos) * 0.05f;
+
+                    // STEP 3: EROSION at mountain scale. ±60m+±25m on 80-180m steps = 0.33-0.75 step shift.
+                    // Merges/kills whole terraces in patches rather than just wiggling edges.
+                    float terraceErosionC = (FractalSimplexNoise01(warpedNorm * 80.0f,  seed ^ 0x99AA88BBu) * 2f - 1f) * 60.0f;
+                    float terraceErosionF = (FractalSimplexNoise01(warpedNorm * 250.0f, seed ^ 0x77CC4411u) * 2f - 1f) * 25.0f;
+                    float terraceErosion  = terraceErosionC + terraceErosionF;
+
+                    // STEP 4: QUANTIZE with sharp cliff wall at top of step.
+                    float hPhase = (strataCoord + terraceErosion) / dynamicTerraceScale;
+                    float fStep  = math.frac(hPhase);
+                    float sStep  = math.smoothstep(0.55f, 0.88f, fStep);
+
+                    float terracedCoord = (math.floor(hPhase) + sStep) * dynamicTerraceScale - terraceErosion;
+                    float terracedDepth = terracedCoord - math.dot(tiltDir, pos) * 0.05f;
+
+                    // STEP 5: AGGRESSIVE PATCHINESS — only ~30% of mountain gets terracing.
+                    // smoothstep(0.60, 0.92) with NO floor: passes only top 32% of noise distribution.
+                    float terracePatchMask = math.smoothstep(0.60f, 0.92f,
+                        FractalSimplexNoise01(warpedNorm * 4.5f, seed ^ 0x992211AAu));
+
+                    // STEP 6: MAX BLEND 0.55 — macro shape always reads through.
+                    depth = math.lerp(depth, terracedDepth, terraceStrength * terracePatchMask * 0.55f);
+                }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
