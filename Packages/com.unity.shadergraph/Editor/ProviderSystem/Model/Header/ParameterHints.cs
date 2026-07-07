@@ -409,32 +409,6 @@ namespace UnityEditor.ShaderGraph.ProviderSystem.Hints
                 return false;
             }
 
-            // TODO: The underlying type shouldn't matter, but SG only supports these configurations at the moment.
-            switch ((string)value)
-            {
-                case Param.Ref.kUV:
-                    if (obj.ShaderType.Name != "half2" && obj.ShaderType.Name != "float2")
-                    {
-                        msg = $"'{(string)value}' expects floating point vector of length 2, but found '{obj.ShaderType.Name}'.";
-                        return false;
-                    }
-                    break;
-                case Param.Ref.kVertexColor:
-                case Param.Ref.kScreenPosition:
-                    if (obj.ShaderType.Name != "half4" && obj.ShaderType.Name != "float4")
-                    {
-                        msg = $"'{(string)value}' expects floating point vector of length 4, but found '{obj.ShaderType.Name}'.";
-                        return false;
-                    }
-                    break;
-                default:
-                    if (obj.ShaderType.Name != "half3" && obj.ShaderType.Name != "float3")
-                    {
-                        msg = $"'{(string)value}' expects floating point vector of length 3, but found '{obj.ShaderType.Name}'.";
-                        return false;
-                    }
-                    break;
-            }
             return true;
         }
     }
