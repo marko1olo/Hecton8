@@ -55,13 +55,28 @@ namespace Hecton8.PureLogic.Systems
                     for (int z = 0; z < resZ; z++)
                     {
                         Vector3 voxelWorldPos = new Vector3(x, y, z) * voxelStep;
+                        float currentDensity = densityField[x, y, z];
 
-                        float distToCenter = Vector3.Distance(voxelWorldPos, sphereCenter);
+                        // If the distance to the sphere is strictly outside the influence radius of the blend,
+                        // the smooth subtraction will return the original density. We can early-out with squared distance.
+                        float R = blendRadius + safeSphereRadius - currentDensity;
+                        if (R <= 0f)
+                        {
+                            resultField[x, y, z] = currentDensity;
+                            continue;
+                        }
+
+                        float distSq = Vector3.DistanceSquared(voxelWorldPos, sphereCenter);
+                        if (distSq >= R * R)
+                        {
+                            resultField[x, y, z] = currentDensity;
+                            continue;
+                        }
+
+                        float distToCenter = (float)Math.Sqrt(distSq);
 
                         // SDSphere
                         float sphereDist = distToCenter - safeSphereRadius;
-
-                        float currentDensity = densityField[x, y, z];
 
                         // We want to subtract the sphere from the base density.
                         // SmoothSubtractionQuadratic(distCarve, distBase, k) = SmoothMaxQuadratic(distBase, -distCarve, k)
