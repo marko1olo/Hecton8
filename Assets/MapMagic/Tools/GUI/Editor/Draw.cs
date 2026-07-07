@@ -33,7 +33,9 @@ namespace Den.Tools.GUI
 
 		#region Fast Fields
 
-			public static void Label (string label, GUIStyle style=null, string tooltip=null) //TODO: optimize style?
+			private static GUIContent labelContent = new GUIContent();
+
+			public static void Label (string label, GUIStyle style=null, string tooltip=null)
 			{
 				if (UI.current.layout) return;
 				if (UI.current.optimizeElements && !UI.current.IsInWindow()) return;
@@ -45,16 +47,21 @@ namespace Den.Tools.GUI
 
 				if (Cell.current.disabled) UnityEditor.EditorGUI.BeginDisabledGroup(true); //BeginDisabledGroup performs some action on (false) anyways - do un-disable in disabled block
 				
+				labelContent.text = label;
+
 				if (tooltip != null)
 				{
 					if (tooltip == label)
 						tooltip = label + " "; //silly Unity doesn't show tooltip if it matches label
 
-					GUIContent gUIContent = new GUIContent(label, tooltip);
-					EditorGUI.LabelField(rect, gUIContent, style:style);
+					labelContent.tooltip = tooltip;
+					EditorGUI.LabelField(rect, labelContent, style:style);
 				}
 				else
-					EditorGUI.LabelField(rect, label, style:style);
+				{
+					labelContent.tooltip = null;
+					EditorGUI.LabelField(rect, labelContent, style:style);
+				}
 				
 				if (Cell.current.disabled) UnityEditor.EditorGUI.EndDisabledGroup();
 			}
@@ -1708,7 +1715,9 @@ namespace Den.Tools.GUI
 
 					if (cursor != 0 && !Cell.current.disabled) UnityEditor.EditorGUIUtility.AddCursorRect (rect, cursor);
 					if (style == null) style = UI.current.styles.button;
-					style.Draw(rect, new GUIContent(label), isHover:false, isActive:false, on:pressedButton==Cell.current, hasKeyboardFocus:false);
+					labelContent.text = label;
+					labelContent.tooltip = null;
+					style.Draw(rect, labelContent, isHover:false, isActive:false, on:pressedButton==Cell.current, hasKeyboardFocus:false);
 					if (Cell.current.disabled) UnityEditor.EditorGUI.EndDisabledGroup();
 				}
 
@@ -2273,7 +2282,10 @@ namespace Den.Tools.GUI
 				Rect rect = Cell.current.GetRect(UI.current.scrollZoom, padding:fieldPadding);
 				if (style==null) style = UI.current.styles.label;
 
-				float width = style.CalcSize( new GUIContent(label) ).x;
+				labelContent.text = label;
+				labelContent.tooltip = null;
+
+				float width = style.CalcSize( labelContent ).x;
 				rect.x += rect.width - width;
 				rect.width = width;
 				rect.x -= rightOffset * (UI.current.scrollZoom!=null ? UI.current.scrollZoom.zoom.x : 0);
@@ -2292,7 +2304,7 @@ namespace Den.Tools.GUI
 
 				else EditorGUI.DrawRect(backRect, new Color(0,0,0,0.8f));
 				
-				EditorGUI.LabelField(rect, label, style:style);
+				EditorGUI.LabelField(rect, labelContent, style:style);
 			}
 
 
