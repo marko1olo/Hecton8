@@ -2131,8 +2131,7 @@ namespace Den.Tools.Matrices {
 			/// Fills all of the unmasked areas with extended src values
 			/// Supports mask AA (note that transparent mask values should be fully filled in src, like the opaque ones)
 			{
-				if (src==dst)
-					throw new Exception("MatrixOps: same matrix is used as src and dst at the same time");
+				bool srcEqualsDst = src == dst;
 
 				//downscaling 
 				//pretty similar to GenerateMips
@@ -2176,7 +2175,7 @@ namespace Den.Tools.Matrices {
 				for (int m=mips.Length-2; m>=0; m--)
 				{
 					Matrix prevMip = mips[m+1];
-					tmp = m!=0 ? new Matrix(mips[m].rect) : dst; //last iteration mixing to dst
+					tmp = (m!=0 || srcEqualsDst) ? new Matrix(mips[m].rect) : dst; //last iteration mixing to dst
 					tmpMask = new Matrix(mips[m].rect);
 
 					GaussianBlur(prevMip, 0.5f);
@@ -2186,6 +2185,12 @@ namespace Den.Tools.Matrices {
 
 					mips[m] = tmp;
 					maskMips[m] = tmpMask;
+				}
+
+				if (srcEqualsDst)
+				{
+					for (int i=0; i<dst.arr.Length; i++)
+						dst.arr[i] = mips[0].arr[i];
 				}
 			}
 
