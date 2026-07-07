@@ -354,6 +354,8 @@ namespace MapMagic.Nodes.GUI
 			//if (Event.current.type != EventType.MouseDown) return false;
 			//if (!Cell.current.Rect.Extended(10).Contains(UI.mousePos)) return false;
 
+			float mouseX = UI.current.mousePos.x;
+
 			for (int s=0; s<curve.points.Length-1; s++)
 			{
 				Curve.Node prevNode = curve.points[s];
@@ -361,10 +363,23 @@ namespace MapMagic.Nodes.GUI
 				float range = nextNode.pos.x - prevNode.pos.x;
 				float start = prevNode.pos.x;
 
+				// Skip segment if mouse is outside its horizontal range
+				float startPixel = ToCell(new Vector2(start, 0)).x;
+				float endPixel = ToCell(new Vector2(nextNode.pos.x, 0)).x;
+				if (mouseX < startPixel - addRange || mouseX > endPixel + addRange)
+					continue;
+
 				int numAddRects = (int)(range * Cell.current.finalSize.x / addRectDensity) + 2;
 				
 				for (int i=0; i<numAddRects-1; i++)
 				{
+					float prevX = Mathf.Lerp(startPixel, endPixel, 1f*i / (numAddRects-1));
+					float nextX = Mathf.Lerp(startPixel, endPixel, 1f*(i+1) / (numAddRects-1));
+
+					// Skip rect if mouse is outside its horizontal range
+					if (mouseX < prevX - addRange || mouseX > nextX + addRange)
+						continue;
+
 					float time = 1f*i / (numAddRects-1);
 					float val = Den.Tools.Curve.EvaluatePrecise(prevNode,nextNode,time);
 					Vector2 prev = ToCell( new Vector2(start + time*range,val) );
@@ -406,6 +421,9 @@ namespace MapMagic.Nodes.GUI
 
 							return true;
 						}
+
+						// If we only hovered, we don't need to process the rest of the curve parts since we've already drawn the cursor rect
+						return false;
 					}
 				}
 			}
