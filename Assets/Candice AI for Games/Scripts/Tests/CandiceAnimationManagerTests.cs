@@ -287,5 +287,49 @@ namespace CandiceAIforGames.Tests
 
             UnityEngine.Object.DestroyImmediate(otherObj);
         }
+
+        [Test]
+        public void Animate_ProcessesScheduledVfx_DisablesVfxWhenTimePassed()
+        {
+            var animator = _go.AddComponent<Animator>();
+            _manager.TemplateAnimator = animator;
+            animator.runtimeAnimatorController = new AnimatorOverrideController();
+            _manager.InitializeAnimations();
+
+            var vfxParent = new GameObject("VSFX");
+            vfxParent.transform.SetParent(_go.transform);
+            var vfxChild = new GameObject("TestVfx");
+            vfxChild.tag = "CandiceVSFX";
+            vfxChild.transform.SetParent(vfxParent.transform);
+
+            typeof(CandiceAnimationManager).GetMethod("CacheVfxSlots", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(_manager, null);
+            typeof(CandiceAnimationManager).GetMethod("ActivateVfxByName", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(_manager, new object[] { "TestVfx", Vector3.zero, 0.0001f });
+
+            Assert.That(vfxChild.activeSelf, Is.True);
+
+            float[] vfxDisableAt = (float[])typeof(CandiceAnimationManager).GetField("_vfxDisableAt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(_manager);
+            vfxDisableAt[0] = -1f;
+
+            _manager.Animate();
+
+            Assert.That(vfxChild.activeSelf, Is.False);
+        }
+
+        [Test]
+        public void Animate_ProcessesGenericCombo_TriggersComboWhenTimePassed()
+        {
+            var animator = _go.AddComponent<Animator>();
+            _manager.TemplateAnimator = animator;
+            animator.runtimeAnimatorController = new AnimatorOverrideController();
+            _manager.InitializeAnimations();
+
+            typeof(CandiceAnimationManager).GetMethod("ScheduleGenericCombo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(_manager, new object[] { 1, 0f });
+            typeof(CandiceAnimationManager).GetField("_pendingGenericComboAt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(_manager, -1f);
+
+            _manager.Animate();
+
+            bool pending = (bool)typeof(CandiceAnimationManager).GetField("_pendingGenericCombo", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(_manager);
+            Assert.That(pending, Is.False);
+        }
     }
 }
