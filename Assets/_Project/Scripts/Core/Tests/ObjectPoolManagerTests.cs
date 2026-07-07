@@ -1,3 +1,4 @@
+using UnityEngine.TestTools;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -173,4 +174,36 @@ namespace Hecton8.Core.Tests
 
             Object.DestroyImmediate(prefab);
     }
+
+        public async System.Threading.Tasks.Task WarmupPresetsAsync_LogsErrorAndRecovers_OnException()
+            var registryGo = new GameObject("TestRegistry");
+                var registry = registryGo.AddComponent<PrefabRegistry>();
+                typeof(PrefabRegistry).GetField("s_activeRuntimeInstance", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).SetValue(null, registry);
+
+                var warmupEntriesType = typeof(ObjectPoolManager).GetNestedType("WarmupEntry", System.Reflection.BindingFlags.NonPublic);
+                var warmupEntriesArray = System.Array.CreateInstance(warmupEntriesType, 1);
+                var entry = System.Activator.CreateInstance(warmupEntriesType);
+
+                var dummyPrefab = new GameObject("DummyPrefab");
+                warmupEntriesType.GetField("prefab", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).SetValue(entry, dummyPrefab);
+                warmupEntriesType.GetField("count", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).SetValue(entry, 1);
+
+                warmupEntriesArray.SetValue(entry, 0);
+
+                typeof(ObjectPoolManager).GetField("warmupPresets", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(_manager, warmupEntriesArray);
+
+                UnityEngine.Object.DestroyImmediate(dummyPrefab);
+
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex(@"\[ObjectPoolManager\] WarmupPresetsAsync crashed:.*"));
+
+                var token = new System.Threading.CancellationToken();
+                var task = _manager.WarmupPresetsAsync(10.0, token);
+                bool result = await task;
+
+                Assert.IsFalse(result, "WarmupPresetsAsync should return false when an exception occurs.");
+
+                var completedField = typeof(ObjectPoolManager).GetField("_warmupPresetsCompleted", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                bool isCompleted = (bool)completedField.GetValue(_manager);
+                Assert.IsTrue(isCompleted, "_warmupPresetsCompleted should be true after an exception.");
+                UnityEngine.Object.DestroyImmediate(registryGo);
 }
