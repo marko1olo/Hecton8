@@ -1,0 +1,73 @@
+{
+  "merged_clean": [
+    {
+      "branch": "origin/pr/1324",
+      "info": []
+    },
+    {
+      "branch": "origin/pr/1334",
+      "info": []
+    },
+    {
+      "branch": "origin/refactor-margins-world-space-11099311229120697031",
+      "info": []
+    },
+    {
+      "branch": "origin/test-attack-melee-10579508630436208881",
+      "info": []
+    },
+    {
+      "branch": "origin/test-biome-sampler-cache-improvements-200985106104323577",
+      "info": []
+    },
+    {
+      "branch": "origin/test/biome-sampler-cache-5774632264602700665",
+      "info": []
+    },
+    {
+      "branch": "origin/test/candicesavesystem-savetofile-12583551861467027226",
+      "info": []
+    }
+  ],
+  "merged_resolved": [
+    {
+      "branch": "origin/add-tests-within-attack-range-14474955157311610083",
+      "info": [
+        "Assets/Candice AI for Games/Tests/Editor/CandiceAIControllerTests.cs: union"
+      ]
+    },
+    {
+      "branch": "origin/pr/1331",
+      "info": [
+        "Assets/Candice AI for Games/Tests/Editor/CandiceAIControllerTests.cs: union"
+      ]
+    },
+    {
+      "branch": "origin/pr/1375",
+      "info": [
+        "Assets/_Project/Scripts/Tests/BiomeSamplerCacheTests.cs: union"
+      ]
+    },
+    {
+      "branch": "origin/pr/1379",
+      "info": [
+        "Assets/_Project/Scripts/Tests/BiomeSamplerCacheTests.cs: union"
+      ]
+    },
+    {
+      "branch": "origin/pr/1386",
+      "info": [
+        "Assets/MapMagic/Brush/Core/Stamp.cs: ours"
+      ]
+    },
+    {
+      "branch": "origin/pr/1392",
+      "info": [
+        "Assets/Candice AI for Games/Scripts/Tests/CandiceSaveSystemTests.cs: union"
+      ]
+    }
+  ],
+  "aborted_manual": [],
+  "aborted": [],
+  "commit_failed": []
+}
