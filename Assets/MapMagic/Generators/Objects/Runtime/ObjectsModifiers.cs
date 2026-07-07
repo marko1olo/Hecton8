@@ -720,7 +720,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			CoordRect blobRect = new CoordRect(mapCoord-mapRadius, new Coord(mapRadius*2 + 1, mapRadius*2 + 1));
 
 			Curve curve = new Curve(fallof);
-			InstanceRandom noise = new InstanceRandom(noiseSize, 512, 12345, 123); //TODO: use normal noise instead
+			Noise noise = new Noise(12345 + 123, 512);
 
 			CoordRect intersection = CoordRect.Intersected(canvas.rect, blobRect);
 			Coord center = blobRect.Center;
@@ -739,7 +739,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 				if (noiseAmount > 0.001f)
 				{
 					float maxNoise = percent; if (percent > 0.5f) maxNoise = 1-percent;
-					result += (noise.Fractal(x,z)*2 - 1) * maxNoise * noiseAmount;
+					result += (noise.Fractal(x,z,noiseSize)*2 - 1) * maxNoise * noiseAmount;
 				}
 
 				//canvas[x,z] = Mathf.Max(result*val, canvas[x,z]);
