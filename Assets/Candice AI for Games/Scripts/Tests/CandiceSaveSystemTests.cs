@@ -39,4 +39,29 @@ namespace CandiceAIforGames.Tests
             Assert.That(actualDbName, Is.EqualTo(newDbName), "The databaseName field was not updated correctly when SQLite provider is active.");
         }
     }
+using System;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+[TestFixture]
+    private const string LegacyFileSerializationDisabledMessage = "Candice legacy file serialization is disabled. Vendor file saves are quarantined; use the first-party save authority.";
+
+    [SetUp]
+    public void SetUp()
+        var field = typeof(CandiceSaveSystem).GetField("s_loggedLegacyFileSerializationDisabled", BindingFlags.NonPublic | BindingFlags.Static);
+        if (field != null)
+            field.SetValue(null, false);
+
+    public void SaveToFile_LogsWarning_WhenCalled()
+
+        LogAssert.Expect(LogType.Warning, LegacyFileSerializationDisabledMessage);
+
+        saveSystem.SaveToFile(new object(), "test_file.bin");
+
+    public void SaveToFile_DoesNotLogWarning_WhenCalledMultipleTimes()
+
+        LogAssert.Expect(LogType.Warning, LegacyFileSerializationDisabledMessage);
+        saveSystem.SaveToFile(new object(), "test_file.bin");
+
+        saveSystem.SaveToFile(new object(), "test_file.bin");
 }
