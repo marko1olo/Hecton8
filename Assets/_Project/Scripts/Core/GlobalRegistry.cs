@@ -8060,330 +8060,295 @@ namespace Hecton8.Core
         }
 
         [Preserve]
+        private static readonly System.Collections.Generic.Dictionary<Type, GlobalRegistryServiceSlot> _serviceSlotMap = new System.Collections.Generic.Dictionary<Type, GlobalRegistryServiceSlot>
+        {
+            { typeof(IInputDeterminismService), GlobalRegistryServiceSlot.Input },
+            { typeof(IInputService), GlobalRegistryServiceSlot.Input },
+            { typeof(IInputBindingService), GlobalRegistryServiceSlot.InputBinding },
+            { typeof(INativeInputManagerRuntime), GlobalRegistryServiceSlot.NativeInputManagerRuntime },
+            { typeof(RaycastBatchHelper), GlobalRegistryServiceSlot.RaycastBatchRuntime },
+            { typeof(IPhysicsService), GlobalRegistryServiceSlot.Physics },
+            { typeof(IAudioService), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioImpactEmitterReadModel), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioWorldEmitterReadModel), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioListenerCaveReadModel), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioBinauralEmitterReadModel), GlobalRegistryServiceSlot.Audio },
+            { typeof(IMeteorShowerAudioSink), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioLowPassPlayback), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioEnvironmentModulationSink), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioSfxMixerRouteReadModel), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioNarrativeRadioSink), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioInventoryRunawaySink), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioHarvestPlaybackSink), GlobalRegistryServiceSlot.Audio },
+            { typeof(ISpatialAudioWeatherPlaybackSink), GlobalRegistryServiceSlot.Audio },
+            { typeof(IPlayerCriticalAudioSignalSink), GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime },
+            { typeof(IPlayerCriticalSonarEchoReadModel), GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime },
+            { typeof(IAudioVirtualizationService), GlobalRegistryServiceSlot.AudioVirtualization },
+            { typeof(IToolAcousticCueService), GlobalRegistryServiceSlot.AcousticZoneRuntime },
+            { typeof(ISceneService), GlobalRegistryServiceSlot.Scene },
+            { typeof(ISaveService), GlobalRegistryServiceSlot.Save },
+            { typeof(IAsyncPersistenceService), GlobalRegistryServiceSlot.Save },
+            { typeof(IUIService), GlobalRegistryServiceSlot.UI },
+            { typeof(IModalWindowService), GlobalRegistryServiceSlot.ModalWindowRuntime },
+            { typeof(IARWaypointService), GlobalRegistryServiceSlot.ARWaypointRuntime },
+            { typeof(ISpatialTriggerSystem), GlobalRegistryServiceSlot.SpatialTriggerRuntime },
+            { typeof(IObjectPoolService), GlobalRegistryServiceSlot.ObjectPool },
+            { typeof(ObjectPoolManager), GlobalRegistryServiceSlot.ObjectPool },
+            { typeof(IPlayerRuntimeContext), GlobalRegistryServiceSlot.Player },
+            { typeof(HectonPlayerMotor), GlobalRegistryServiceSlot.PlayerMotor },
+            { typeof(IPlayerSeatLockMotorSink), GlobalRegistryServiceSlot.PlayerMotor },
+            { typeof(IPlayerMovementContracts), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerMovementPoseReadModel), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerMovementForceSink), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerMovementTraumaSink), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerMovementEnvironmentSink), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerMovementSonarEmitter), GlobalRegistryServiceSlot.PlayerMovementContracts },
+            { typeof(IPlayerInventoryService), GlobalRegistryServiceSlot.PlayerInventory },
+            { typeof(IModularEquipmentService), GlobalRegistryServiceSlot.ModularEquipment },
+            { typeof(IPlayerSensoryService), GlobalRegistryServiceSlot.PlayerSensory },
+            { typeof(IEnvironmentRuntimeContext), GlobalRegistryServiceSlot.Environment },
+            { typeof(IChemicalInfluenceReadModel), GlobalRegistryServiceSlot.ChemicalInfluenceRuntime },
+            { typeof(IOrganicToolHitService), GlobalRegistryServiceSlot.DestructibleOrganicRuntime },
+            { typeof(IWeatherService), GlobalRegistryServiceSlot.Weather },
+            { typeof(ISeismicDirector), GlobalRegistryServiceSlot.SeismicDirectorRuntime },
+            { typeof(IHectonOceanKinematicsService), GlobalRegistryServiceSlot.OceanKinematics },
+            { typeof(IPowerGridService), GlobalRegistryServiceSlot.PowerGrid },
+            { typeof(ISubmarineRuntimeContext), GlobalRegistryServiceSlot.Submarine },
+            { typeof(ISubmarineState), GlobalRegistryServiceSlot.SubmarineState },
+            { typeof(ISubmarineHullBreachReadModel), GlobalRegistryServiceSlot.SubmarineHullBreach },
+            { typeof(IInertialNavigationService), GlobalRegistryServiceSlot.InertialNavigationRuntime },
+            { typeof(IDockingAutopilotService), GlobalRegistryServiceSlot.DockingAutopilotRuntime },
+            { typeof(ProceduralLadderClimbRuntime), GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime },
+            { typeof(IInteractionSignalService), GlobalRegistryServiceSlot.InteractionSignals },
+            { typeof(IDebrisService), GlobalRegistryServiceSlot.Debris },
+            { typeof(IDebrisComputeService), GlobalRegistryServiceSlot.DebrisComputeRuntime },
+            { typeof(IAmbientBiotaService), GlobalRegistryServiceSlot.AmbientBiotaRuntime },
+            { typeof(IEcosystemDirectorService), GlobalRegistryServiceSlot.EcosystemDirector },
+            { typeof(IFaunaSim), GlobalRegistryServiceSlot.FaunaSimulation },
+            { typeof(IThermodynamicsService), GlobalRegistryServiceSlot.ThermodynamicsService },
+            { typeof(IFluidSim), GlobalRegistryServiceSlot.FluidSimulation },
+            { typeof(ILogisticsService), GlobalRegistryServiceSlot.Logistics },
+            { typeof(IHabitatGraphService), GlobalRegistryServiceSlot.Logistics },
+            { typeof(IConstructionParasiteGraphService), GlobalRegistryServiceSlot.Logistics },
+            { typeof(IHabitatDeconstructionSystem), GlobalRegistryServiceSlot.HabitatDeconstructionRuntime },
+            { typeof(IFluidPipeGraphService), GlobalRegistryServiceSlot.FluidPipeGraph },
+            { typeof(IGasDynamicsSolver), GlobalRegistryServiceSlot.GasDynamicsRuntime },
+            { typeof(IWorldGenService), GlobalRegistryServiceSlot.WorldGen },
+            { typeof(IWorldSeedProvider), GlobalRegistryServiceSlot.WorldSeedProvider },
+            { typeof(IBiomePhysicsInfluenceReadModel), GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime },
+            { typeof(WorldProceduralFieldSampler), GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime },
+            { typeof(IBrineFluidDensityReadModel), GlobalRegistryServiceSlot.ResourceDistributionRuntime },
+            { typeof(ResourceDistributionDirector), GlobalRegistryServiceSlot.ResourceDistributionRuntime },
+            { typeof(ITerrainHeightSampleReadModel), GlobalRegistryServiceSlot.MapMagicVegetationRuntime },
+            { typeof(IVegetationThreatReadModel), GlobalRegistryServiceSlot.MapMagicVegetationRuntime },
+            { typeof(IVegetationThreatPulseSink), GlobalRegistryServiceSlot.MapMagicVegetationRuntime },
+            { typeof(HectonMapMagicVegetationBridge), GlobalRegistryServiceSlot.MapMagicVegetationRuntime },
+            { typeof(WorldGenerativeGeologyTerrainSeamApplier), GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime },
+            { typeof(WorldGenerativeGeologyVoxelBridgeDirector), GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime },
+            { typeof(HectonVoxelEngine), GlobalRegistryServiceSlot.VoxelEngineRuntime },
+            { typeof(BiomeMatrixDirector), GlobalRegistryServiceSlot.BiomeMatrixRuntime },
+            { typeof(HectonUnderwaterVisuals), GlobalRegistryServiceSlot.UnderwaterVisualsRuntime },
+            { typeof(IGIRelaySystem), GlobalRegistryServiceSlot.GIRelayRuntime },
+            { typeof(IWakeDisplacementService), GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime },
+            { typeof(IProceduralSwayDirector), GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime },
+            { typeof(IEncounterDirectorService), GlobalRegistryServiceSlot.EncounterDirector },
+            { typeof(IQuestSystem), GlobalRegistryServiceSlot.QuestSystem },
+            { typeof(ISceneTransitionWorldResidencyBridge), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(IRuntimeWatchdogWorldHealthBridge), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(INutrientThermalVentReadModel), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(IFaunaPersistentWorldStateService), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(IPersistentDroppedItemRegistry), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(PersistentWorldRegistry), GlobalRegistryServiceSlot.PersistentWorldRegistry },
+            { typeof(WorldStateManager), GlobalRegistryServiceSlot.WorldStateRuntime },
+            { typeof(IPDALogbookService), GlobalRegistryServiceSlot.PDALogbook },
+            { typeof(IProfileService), GlobalRegistryServiceSlot.Profile },
+            { typeof(ICelestialSkyDirectionReadModel), GlobalRegistryServiceSlot.CelestialEngineRuntime },
+            { typeof(ICelestialResonanceReadModel), GlobalRegistryServiceSlot.CelestialEngineRuntime },
+            { typeof(HectonCelestialEngine), GlobalRegistryServiceSlot.CelestialEngineRuntime },
+            { typeof(IOrbitalDirector), GlobalRegistryServiceSlot.OrbitalDirectorRuntime },
+            { typeof(IPrologueSequenceService), GlobalRegistryServiceSlot.PrologueSequenceRuntime },
+            { typeof(EclipseGameplaySystem), GlobalRegistryServiceSlot.EclipseGameplayRuntime },
+            { typeof(RandomEventSystem), GlobalRegistryServiceSlot.RandomEventRuntime },
+            { typeof(IAbyssalFlowGpuReadModel), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IFluidAdvectionRenderGraphDispatchSource), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IAnalyticalFlowReadModel), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IAmbientCurrentReadModel), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IFluidSurfaceCurrentReadModel), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IFluidBubbleBurstSink), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IFluidCurrentWriteSink), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(IBuoyancyObjectRegistry), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(HectonFluidEngine), GlobalRegistryServiceSlot.FluidRuntime },
+            { typeof(AbyssalThermalManager), GlobalRegistryServiceSlot.ThermodynamicsRuntime },
+            { typeof(INarrativeDiscoveryReadModel), GlobalRegistryServiceSlot.NarrativeDirectorRuntime },
+            { typeof(HectonNarrativeDirector), GlobalRegistryServiceSlot.NarrativeDirectorRuntime },
+            { typeof(CorporateOrderSystem), GlobalRegistryServiceSlot.CorporateOrderRuntime },
+            { typeof(QuestManager), GlobalRegistryServiceSlot.QuestRuntime },
+            { typeof(CullingManager), GlobalRegistryServiceSlot.CullingRuntime },
+            { typeof(LODSystemManager), GlobalRegistryServiceSlot.LODSystemRuntime },
+            { typeof(IDynamicResolutionRuntime), GlobalRegistryServiceSlot.DynamicResolutionRuntime },
+            { typeof(DynamicResolutionScaler), GlobalRegistryServiceSlot.DynamicResolutionRuntime },
+            { typeof(IResolutionScalerService), GlobalRegistryServiceSlot.ResolutionScalerService },
+            { typeof(ImpostorSystem), GlobalRegistryServiceSlot.ImpostorRuntime },
+            { typeof(IDepthZoneReadModel), GlobalRegistryServiceSlot.DepthZoneRuntime },
+            { typeof(DepthZoneDirector), GlobalRegistryServiceSlot.DepthZoneRuntime },
+            { typeof(HectonBiolumManager), GlobalRegistryServiceSlot.BiolumManagerRuntime },
+            { typeof(HectonBiolumController), GlobalRegistryServiceSlot.BiolumControllerRuntime },
+            { typeof(IBabelLocalization), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationTextReadModel), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationTextExpansionReadModel), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationLanguageControl), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationStressPresentationReadModel), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationMadnessPresentationReadModel), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationStressHudRefreshSink), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(IPdaCorrosionPresentationSink), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(ILocalizationTransientOverrideSink), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(LocalizationManager), GlobalRegistryServiceSlot.LocalizationRuntime },
+            { typeof(IAudioLogRuntime), GlobalRegistryServiceSlot.AudioLogRuntime },
+            { typeof(AudioLogSystem), GlobalRegistryServiceSlot.AudioLogRuntime },
+            { typeof(CrashTelemetryBuffer), GlobalRegistryServiceSlot.CrashTelemetryRuntime },
+            { typeof(PlayerCriticalProceduralAudioRenderer), GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime },
+            { typeof(IVocalWarningSystem), GlobalRegistryServiceSlot.VocalWarningRuntime },
+            { typeof(VocalWarningSystem), GlobalRegistryServiceSlot.VocalWarningRuntime },
+            { typeof(IAcousticZoneReadModel), GlobalRegistryServiceSlot.AcousticZoneRuntime },
+            { typeof(IAcousticZoneMadnessCueSink), GlobalRegistryServiceSlot.AcousticZoneRuntime },
+            { typeof(AcousticZoneController), GlobalRegistryServiceSlot.AcousticZoneRuntime },
+            { typeof(ISurfaceWeatherReadModel), GlobalRegistryServiceSlot.SurfaceWeatherRuntime },
+            { typeof(HectonSurfaceWeatherDirector), GlobalRegistryServiceSlot.SurfaceWeatherRuntime },
+            { typeof(IAtlasSignalReadModel), GlobalRegistryServiceSlot.AtlasSignalRuntime },
+            { typeof(IAtlasSignalDecodeSink), GlobalRegistryServiceSlot.AtlasSignalRuntime },
+            { typeof(AtlasSignalSystem), GlobalRegistryServiceSlot.AtlasSignalRuntime },
+            { typeof(IFirstHourReadModel), GlobalRegistryServiceSlot.FirstHourRuntime },
+            { typeof(FirstHourDirector), GlobalRegistryServiceSlot.FirstHourRuntime },
+            { typeof(IEmergencyRelayRouteReadModel), GlobalRegistryServiceSlot.EmergencyRelayRuntime },
+            { typeof(EmergencyServiceRelayDirector), GlobalRegistryServiceSlot.EmergencyRelayRuntime },
+            { typeof(IAtmosphereRenderSettingsBridge), GlobalRegistryServiceSlot.AtmosphereRuntime },
+            { typeof(IAtmosphereReadModel), GlobalRegistryServiceSlot.AtmosphereRuntime },
+            { typeof(HectonAtmosphereManager), GlobalRegistryServiceSlot.AtmosphereRuntime },
+            { typeof(ITerrainProvider), GlobalRegistryServiceSlot.TerrainProviderRuntime },
+            { typeof(MapMagicBridge), GlobalRegistryServiceSlot.MapMagicRuntime },
+            { typeof(IAbyssalFlowVolumeReadModel), GlobalRegistryServiceSlot.MapMagicVegetationRuntime },
+            { typeof(ScavengePopulator), GlobalRegistryServiceSlot.ScavengePopulatorRuntime },
+            { typeof(ModWorldPersistenceManager), GlobalRegistryServiceSlot.ModWorldPersistenceRuntime },
+            { typeof(IModdingBridge), GlobalRegistryServiceSlot.ModdingBridgeRuntime },
+            { typeof(RunModifierController), GlobalRegistryServiceSlot.RunModifierRuntime },
+            { typeof(IMetaCampaignService), GlobalRegistryServiceSlot.MetaCampaignRuntime },
+            { typeof(MigrationDirector), GlobalRegistryServiceSlot.MigrationDirectorRuntime },
+            { typeof(BasePollutionManager), GlobalRegistryServiceSlot.BasePollutionRuntime },
+            { typeof(EntityChangeManager), GlobalRegistryServiceSlot.EntityChangeManagerRuntime },
+            { typeof(PerformanceMonitor), GlobalRegistryServiceSlot.PerformanceMonitorRuntime },
+            { typeof(IBeaconNetworkService), GlobalRegistryServiceSlot.BeaconNetworkRuntime },
+            { typeof(BeaconNetworkSystem), GlobalRegistryServiceSlot.BeaconNetworkRuntime },
+            { typeof(IScanLogService), GlobalRegistryServiceSlot.ScanLogRuntime },
+            { typeof(ScanLogSystem), GlobalRegistryServiceSlot.ScanLogRuntime },
+            { typeof(IToolDurabilityService), GlobalRegistryServiceSlot.ToolDurabilityRuntime },
+            { typeof(ToolDurabilitySystem), GlobalRegistryServiceSlot.ToolDurabilityRuntime },
+            { typeof(ToolHapticsRuntime), GlobalRegistryServiceSlot.ToolHapticsRuntime },
+            { typeof(IVRSomaticProvider), GlobalRegistryServiceSlot.VRSomaticProvider },
+            { typeof(ILoreUnlockReadModel), GlobalRegistryServiceSlot.LoreDatabaseRuntime },
+            { typeof(ILoreDatabaseReadModel), GlobalRegistryServiceSlot.LoreDatabaseRuntime },
+            { typeof(ILoreUnlockSink), GlobalRegistryServiceSlot.LoreDatabaseRuntime },
+            { typeof(LoreDatabaseManager), GlobalRegistryServiceSlot.LoreDatabaseRuntime },
+            { typeof(IPlayerExpressionReadModel), GlobalRegistryServiceSlot.PlayerExpressionRuntime },
+            { typeof(PlayerExpressionManager), GlobalRegistryServiceSlot.PlayerExpressionRuntime },
+            { typeof(IPlayerActionInterruptSink), GlobalRegistryServiceSlot.PlayerActionRuntime },
+            { typeof(SpectrumSystem), GlobalRegistryServiceSlot.SpectrumRuntime },
+            { typeof(UserOptionsPersistence), GlobalRegistryServiceSlot.UserOptionsRuntime },
+            { typeof(IAssetLifecyclePressureSink), GlobalRegistryServiceSlot.AssetLifecycleRuntime },
+            { typeof(AssetLifecycleGovernor), GlobalRegistryServiceSlot.AssetLifecycleRuntime },
+            { typeof(AssetLoadDispatcher), GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime },
+            { typeof(IVramBudgetReadModel), GlobalRegistryServiceSlot.VRAMMonitorRuntime },
+            { typeof(IVramBudgetSampleSink), GlobalRegistryServiceSlot.VRAMMonitorRuntime },
+            { typeof(VRAMMonitor), GlobalRegistryServiceSlot.VRAMMonitorRuntime },
+            { typeof(IVramPressureReadModel), GlobalRegistryServiceSlot.VRAMPressureRuntime },
+            { typeof(IVramPressureSampleSink), GlobalRegistryServiceSlot.VRAMPressureRuntime },
+            { typeof(IVramPressureMipBiasSink), GlobalRegistryServiceSlot.VRAMPressureRuntime },
+            { typeof(VRAMPressureMonitor), GlobalRegistryServiceSlot.VRAMPressureRuntime },
+            { typeof(RenderTextureLifecycleTracker), GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime },
+            { typeof(RenderTexturePool), GlobalRegistryServiceSlot.RenderTexturePoolRuntime },
+            { typeof(IFluidDecalPresentationSink), GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime },
+            { typeof(AbyssalFluidDecalManager), GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime },
+            { typeof(ISargassumDragReadModel), GlobalRegistryServiceSlot.SargassumDragRuntime },
+            { typeof(SargassumGlobalDragManager), GlobalRegistryServiceSlot.SargassumDragRuntime },
+            { typeof(ISargassumCutWriteService), GlobalRegistryServiceSlot.SargassumCutRuntime },
+            { typeof(SargassumCutManager), GlobalRegistryServiceSlot.SargassumCutRuntime },
+            { typeof(IMicroFaunaPresentationPulseSink), GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime },
+            { typeof(SargassumMicroFaunaBoids), GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime },
+            { typeof(HectonFloatingOrigin), GlobalRegistryServiceSlot.FloatingOriginRuntime },
+            { typeof(IConnectionSplineBatchRendererService), GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime },
+            { typeof(ConnectionSplineBatchRenderer), GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime },
+            { typeof(ISoundscapeTierReadModel), GlobalRegistryServiceSlot.SoundscapeRuntime },
+            { typeof(SoundscapeSystem), GlobalRegistryServiceSlot.SoundscapeRuntime },
+            { typeof(IEnvironmentalStrainReadModel), GlobalRegistryServiceSlot.EnvironmentalStrainRuntime },
+            { typeof(IEnvironmentalStrainIndustrialSink), GlobalRegistryServiceSlot.EnvironmentalStrainRuntime },
+            { typeof(EnvironmentalStrainManager), GlobalRegistryServiceSlot.EnvironmentalStrainRuntime },
+            { typeof(EcosystemHealthDirector), GlobalRegistryServiceSlot.EcosystemHealthRuntime },
+            { typeof(IFaunaWorldSeedReadModel), GlobalRegistryServiceSlot.FaunaGeneticsRuntime },
+            { typeof(FaunaGeneticsManager), GlobalRegistryServiceSlot.FaunaGeneticsRuntime },
+            { typeof(PlayerExplorationTracker), GlobalRegistryServiceSlot.PlayerExplorationRuntime },
+            { typeof(DynamicDifficultyDirector), GlobalRegistryServiceSlot.DynamicDifficultyRuntime },
+            { typeof(HectonDiscoveryManager), GlobalRegistryServiceSlot.DiscoveryRuntime },
+            { typeof(IResourceScarcityReadModel), GlobalRegistryServiceSlot.ResourceScarcityRuntime },
+            { typeof(ResourceScarcityDirector), GlobalRegistryServiceSlot.ResourceScarcityRuntime },
+            { typeof(FieldOperationLogSystem), GlobalRegistryServiceSlot.FieldOperationLogRuntime },
+            { typeof(PDAExchangeSystem), GlobalRegistryServiceSlot.PDAExchangeRuntime },
+            { typeof(PlayerActionController), GlobalRegistryServiceSlot.PlayerActionRuntime },
+            { typeof(PDAMarkerRegistry), GlobalRegistryServiceSlot.PDAMarkerRuntime },
+            { typeof(PDAIntrusionManager), GlobalRegistryServiceSlot.PDAIntrusionRuntime },
+            { typeof(AmbientWaterMotionManager), GlobalRegistryServiceSlot.AmbientWaterMotionRuntime },
+            { typeof(SuitUpgradeManager), GlobalRegistryServiceSlot.SuitUpgradeRuntime },
+            { typeof(UIAudioFeedback), GlobalRegistryServiceSlot.UIAudioFeedbackRuntime },
+            { typeof(UITooltip), GlobalRegistryServiceSlot.UITooltipRuntime },
+            { typeof(LoadingScreenController), GlobalRegistryServiceSlot.LoadingScreenRuntime },
+            { typeof(IEndingRuntimeService), GlobalRegistryServiceSlot.EndingRuntime },
+            { typeof(EndingSystem), GlobalRegistryServiceSlot.EndingRuntime },
+            { typeof(IAtlas6DirectiveCommandSink), GlobalRegistryServiceSlot.Atlas6DirectiveRuntime },
+            { typeof(Atlas6DirectiveSystem), GlobalRegistryServiceSlot.Atlas6DirectiveRuntime },
+            { typeof(IHazardZoneReadModel), GlobalRegistryServiceSlot.HazardZoneRuntime },
+            { typeof(HazardZoneManager), GlobalRegistryServiceSlot.HazardZoneRuntime },
+            { typeof(MissionManager), GlobalRegistryServiceSlot.MissionRuntime },
+            { typeof(HectonRockManager), GlobalRegistryServiceSlot.RockManagerRuntime },
+            { typeof(ICameraJuiceSystem), GlobalRegistryServiceSlot.CameraJuiceRuntime },
+            { typeof(CameraJuiceSystem), GlobalRegistryServiceSlot.CameraJuiceRuntime },
+            { typeof(HectonMusicDirector), GlobalRegistryServiceSlot.MusicDirectorRuntime },
+            { typeof(SubtitleManager), GlobalRegistryServiceSlot.SubtitleRuntime },
+            { typeof(AtlasSignalDecoder), GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime },
+            { typeof(ScrapManager), GlobalRegistryServiceSlot.ScrapRuntime },
+            { typeof(AutonomousExtractorSystem), GlobalRegistryServiceSlot.AutonomousExtractorRuntime },
+            { typeof(VisorRTManager), GlobalRegistryServiceSlot.VisorRTRuntime },
+            { typeof(CameraRTManager), GlobalRegistryServiceSlot.CameraRTRuntime },
+            { typeof(PostFXRTManager), GlobalRegistryServiceSlot.PostFXRTRuntime },
+            { typeof(UIRTManager), GlobalRegistryServiceSlot.UIRTRuntime },
+            { typeof(SettingsManager), GlobalRegistryServiceSlot.SettingsRuntime },
+            { typeof(RuntimeWatchdog), GlobalRegistryServiceSlot.RuntimeWatchdogRuntime },
+            { typeof(GameTickManager), GlobalRegistryServiceSlot.TickManager },
+            { typeof(SystemDispatcher), GlobalRegistryServiceSlot.Dispatcher },
+            { typeof(RenderDispatcher), GlobalRegistryServiceSlot.RenderDispatcher },
+            { typeof(GlobalPhysicsStateManager), GlobalRegistryServiceSlot.PhysicsStateManager },
+            { typeof(IPhysicsStateEventService), GlobalRegistryServiceSlot.PhysicsStateManager },
+            { typeof(IPhysicsCullingOverseer), GlobalRegistryServiceSlot.PhysicsStateManager },
+            { typeof(IDataVault), GlobalRegistryServiceSlot.DataVault },
+            { typeof(ICablePhysics132Service), GlobalRegistryServiceSlot.CablePhysics132Runtime },
+            { typeof(GlobalDataVault), GlobalRegistryServiceSlot.DataVault },
+            { typeof(IMacroDatabaseService), GlobalRegistryServiceSlot.MacroDatabase },
+            { typeof(ICausticsService), GlobalRegistryServiceSlot.CausticsRuntime },
+            { typeof(IJobAdmissionService), GlobalRegistryServiceSlot.JobAdmissionRuntime },
+            { typeof(ISimulationBucketer), GlobalRegistryServiceSlot.SimulationBucketerRuntime },
+            { typeof(IStreamingBackpressureService), GlobalRegistryServiceSlot.StreamingBackpressureRuntime },
+            { typeof(IFoveatedSimulationDirector), GlobalRegistryServiceSlot.FoveatedSimulationDirector },
+            { typeof(IHardwareThermalService), GlobalRegistryServiceSlot.HardwareThermalService },
+            { typeof(IGroundRadarService), GlobalRegistryServiceSlot.GroundRadarRuntime },
+            { typeof(IWorldResourceSpawnerReadModel), GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime },
+            { typeof(IInstanceCullingService), GlobalRegistryServiceSlot.InstanceCullingRuntime },
+            { typeof(IOutpostGenerationService), GlobalRegistryServiceSlot.OutpostGenerationRuntime },
+        };
+
+        [Preserve]
         private static GlobalRegistryServiceSlot ResolveServiceSlotCold(Type serviceType)
         {
-            if (serviceType == typeof(IInputDeterminismService)) return GlobalRegistryServiceSlot.Input;
-            if (serviceType == typeof(IInputService)) return GlobalRegistryServiceSlot.Input;
-            if (serviceType == typeof(IInputBindingService)) return GlobalRegistryServiceSlot.InputBinding;
-            if (serviceType == typeof(INativeInputManagerRuntime)) return GlobalRegistryServiceSlot.NativeInputManagerRuntime;
-            if (serviceType == typeof(RaycastBatchHelper)) return GlobalRegistryServiceSlot.RaycastBatchRuntime;
-            if (serviceType == typeof(IPhysicsService)) return GlobalRegistryServiceSlot.Physics;
-            if (serviceType == typeof(IAudioService) ||
-                serviceType == typeof(ISpatialAudioImpactEmitterReadModel) ||
-                serviceType == typeof(ISpatialAudioWorldEmitterReadModel) ||
-                serviceType == typeof(ISpatialAudioListenerCaveReadModel) ||
-                serviceType == typeof(ISpatialAudioBinauralEmitterReadModel) ||
-                serviceType == typeof(IMeteorShowerAudioSink) ||
-                serviceType == typeof(ISpatialAudioLowPassPlayback) ||
-                serviceType == typeof(ISpatialAudioEnvironmentModulationSink) ||
-                serviceType == typeof(ISpatialAudioSfxMixerRouteReadModel) ||
-                serviceType == typeof(ISpatialAudioNarrativeRadioSink) ||
-                serviceType == typeof(ISpatialAudioInventoryRunawaySink) ||
-                serviceType == typeof(ISpatialAudioHarvestPlaybackSink) ||
-                serviceType == typeof(ISpatialAudioWeatherPlaybackSink))
+            if (_serviceSlotMap.TryGetValue(serviceType, out var slot))
             {
-                return GlobalRegistryServiceSlot.Audio;
+                return slot;
             }
-            if (serviceType == typeof(IPlayerCriticalAudioSignalSink) ||
-                serviceType == typeof(IPlayerCriticalSonarEchoReadModel))
-            {
-                return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
-            }
-            if (serviceType == typeof(IAudioVirtualizationService)) return GlobalRegistryServiceSlot.AudioVirtualization;
-            if (serviceType == typeof(IToolAcousticCueService)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
-            if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
-            if (serviceType == typeof(ISaveService)) return GlobalRegistryServiceSlot.Save;
-            if (serviceType == typeof(IAsyncPersistenceService)) return GlobalRegistryServiceSlot.Save;
-            if (serviceType == typeof(IUIService)) return GlobalRegistryServiceSlot.UI;
-            if (serviceType == typeof(IModalWindowService)) return GlobalRegistryServiceSlot.ModalWindowRuntime;
-            if (serviceType == typeof(IARWaypointService)) return GlobalRegistryServiceSlot.ARWaypointRuntime;
-            if (serviceType == typeof(ISpatialTriggerSystem)) return GlobalRegistryServiceSlot.SpatialTriggerRuntime;
-            if (serviceType == typeof(IObjectPoolService) || serviceType == typeof(ObjectPoolManager)) return GlobalRegistryServiceSlot.ObjectPool;
-            if (serviceType == typeof(IPlayerRuntimeContext)) return GlobalRegistryServiceSlot.Player;
-            if (serviceType == typeof(HectonPlayerMotor) ||
-                serviceType == typeof(IPlayerSeatLockMotorSink))
-            {
-                return GlobalRegistryServiceSlot.PlayerMotor;
-            }
-            if (serviceType == typeof(IPlayerMovementContracts) ||
-                serviceType == typeof(IPlayerMovementPoseReadModel) ||
-                serviceType == typeof(IPlayerMovementForceSink) ||
-                serviceType == typeof(IPlayerMovementTraumaSink) ||
-                serviceType == typeof(IPlayerMovementEnvironmentSink) ||
-                serviceType == typeof(IPlayerMovementSonarEmitter))
-            {
-                return GlobalRegistryServiceSlot.PlayerMovementContracts;
-            }
-            if (serviceType == typeof(IPlayerInventoryService)) return GlobalRegistryServiceSlot.PlayerInventory;
-            if (serviceType == typeof(IModularEquipmentService)) return GlobalRegistryServiceSlot.ModularEquipment;
-            if (serviceType == typeof(IPlayerSensoryService)) return GlobalRegistryServiceSlot.PlayerSensory;
-            if (serviceType == typeof(IEnvironmentRuntimeContext)) return GlobalRegistryServiceSlot.Environment;
-            if (serviceType == typeof(IChemicalInfluenceReadModel)) return GlobalRegistryServiceSlot.ChemicalInfluenceRuntime;
-            if (serviceType == typeof(IOrganicToolHitService)) return GlobalRegistryServiceSlot.DestructibleOrganicRuntime;
-            if (serviceType == typeof(IWeatherService)) return GlobalRegistryServiceSlot.Weather;
-            if (serviceType == typeof(ISeismicDirector)) return GlobalRegistryServiceSlot.SeismicDirectorRuntime;
-            if (serviceType == typeof(IHectonOceanKinematicsService)) return GlobalRegistryServiceSlot.OceanKinematics;
-            if (serviceType == typeof(IPowerGridService)) return GlobalRegistryServiceSlot.PowerGrid;
-            if (serviceType == typeof(ISubmarineRuntimeContext)) return GlobalRegistryServiceSlot.Submarine;
-            if (serviceType == typeof(ISubmarineState)) return GlobalRegistryServiceSlot.SubmarineState;
-            if (serviceType == typeof(ISubmarineHullBreachReadModel)) return GlobalRegistryServiceSlot.SubmarineHullBreach;
-            if (serviceType == typeof(IInertialNavigationService)) return GlobalRegistryServiceSlot.InertialNavigationRuntime;
-            if (serviceType == typeof(IDockingAutopilotService)) return GlobalRegistryServiceSlot.DockingAutopilotRuntime;
-            if (serviceType == typeof(ProceduralLadderClimbRuntime)) return GlobalRegistryServiceSlot.ProceduralLadderClimbRuntime;
-            if (serviceType == typeof(IInteractionSignalService)) return GlobalRegistryServiceSlot.InteractionSignals;
-            if (serviceType == typeof(IDebrisService)) return GlobalRegistryServiceSlot.Debris;
-            if (serviceType == typeof(IDebrisComputeService)) return GlobalRegistryServiceSlot.DebrisComputeRuntime;
-            if (serviceType == typeof(IAmbientBiotaService)) return GlobalRegistryServiceSlot.AmbientBiotaRuntime;
-            if (serviceType == typeof(IEcosystemDirectorService)) return GlobalRegistryServiceSlot.EcosystemDirector;
-            if (serviceType == typeof(IFaunaSim)) return GlobalRegistryServiceSlot.FaunaSimulation;
-            if (serviceType == typeof(IThermodynamicsService)) return GlobalRegistryServiceSlot.ThermodynamicsService;
-            if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
-            if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
-            if (serviceType == typeof(IHabitatGraphService)) return GlobalRegistryServiceSlot.Logistics;
-            if (serviceType == typeof(IConstructionParasiteGraphService)) return GlobalRegistryServiceSlot.Logistics;
-            if (serviceType == typeof(IHabitatDeconstructionSystem)) return GlobalRegistryServiceSlot.HabitatDeconstructionRuntime;
-            if (serviceType == typeof(IFluidPipeGraphService)) return GlobalRegistryServiceSlot.FluidPipeGraph;
-            if (serviceType == typeof(IGasDynamicsSolver)) return GlobalRegistryServiceSlot.GasDynamicsRuntime;
-            if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
-            if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
-            if (serviceType == typeof(IBiomePhysicsInfluenceReadModel)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
-            if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
-            if (serviceType == typeof(IBrineFluidDensityReadModel)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
-            if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
-            if (serviceType == typeof(ITerrainHeightSampleReadModel) ||
-                serviceType == typeof(IVegetationThreatReadModel) ||
-                serviceType == typeof(IVegetationThreatPulseSink) ||
-                serviceType == typeof(HectonMapMagicVegetationBridge))
-            {
-                return GlobalRegistryServiceSlot.MapMagicVegetationRuntime;
-            }
-            if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
-            if (serviceType == typeof(WorldGenerativeGeologyVoxelBridgeDirector)) return GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime;
-            if (serviceType == typeof(HectonVoxelEngine)) return GlobalRegistryServiceSlot.VoxelEngineRuntime;
-            if (serviceType == typeof(BiomeMatrixDirector)) return GlobalRegistryServiceSlot.BiomeMatrixRuntime;
-            if (serviceType == typeof(HectonUnderwaterVisuals)) return GlobalRegistryServiceSlot.UnderwaterVisualsRuntime;
-            if (serviceType == typeof(IGIRelaySystem)) return GlobalRegistryServiceSlot.GIRelayRuntime;
-            if (serviceType == typeof(IWakeDisplacementService)) return GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime;
-            if (serviceType == typeof(IProceduralSwayDirector)) return GlobalRegistryServiceSlot.ProceduralSwayDirectorRuntime;
-            if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
-            if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
-            if (serviceType == typeof(ISceneTransitionWorldResidencyBridge)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(IRuntimeWatchdogWorldHealthBridge)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(INutrientThermalVentReadModel)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(IFaunaPersistentWorldStateService)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(IPersistentDroppedItemRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
-            if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
-            if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
-            if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
-            if (serviceType == typeof(ICelestialSkyDirectionReadModel) ||
-                serviceType == typeof(ICelestialResonanceReadModel)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
-            if (serviceType == typeof(HectonCelestialEngine)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
-            if (serviceType == typeof(IOrbitalDirector)) return GlobalRegistryServiceSlot.OrbitalDirectorRuntime;
-            if (serviceType == typeof(IPrologueSequenceService)) return GlobalRegistryServiceSlot.PrologueSequenceRuntime;
-            if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
-            if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
-            if (serviceType == typeof(IAbyssalFlowGpuReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IFluidAdvectionRenderGraphDispatchSource)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IAnalyticalFlowReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IAmbientCurrentReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IFluidSurfaceCurrentReadModel)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IFluidBubbleBurstSink)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IFluidCurrentWriteSink)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(IBuoyancyObjectRegistry)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
-            if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
-            if (serviceType == typeof(INarrativeDiscoveryReadModel) ||
-                serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
-            if (serviceType == typeof(CorporateOrderSystem)) return GlobalRegistryServiceSlot.CorporateOrderRuntime;
-            if (serviceType == typeof(QuestManager)) return GlobalRegistryServiceSlot.QuestRuntime;
-            if (serviceType == typeof(CullingManager)) return GlobalRegistryServiceSlot.CullingRuntime;
-            if (serviceType == typeof(LODSystemManager)) return GlobalRegistryServiceSlot.LODSystemRuntime;
-            if (serviceType == typeof(IDynamicResolutionRuntime)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
-            if (serviceType == typeof(DynamicResolutionScaler)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
-            if (serviceType == typeof(IResolutionScalerService)) return GlobalRegistryServiceSlot.ResolutionScalerService;
-            if (serviceType == typeof(ImpostorSystem)) return GlobalRegistryServiceSlot.ImpostorRuntime;
-            if (serviceType == typeof(IDepthZoneReadModel) ||
-                serviceType == typeof(DepthZoneDirector))
-            {
-                return GlobalRegistryServiceSlot.DepthZoneRuntime;
-            }
-            if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
-            if (serviceType == typeof(HectonBiolumController)) return GlobalRegistryServiceSlot.BiolumControllerRuntime;
-            if (serviceType == typeof(IBabelLocalization)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationTextReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationTextExpansionReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationLanguageControl)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationStressPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationMadnessPresentationReadModel)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationStressHudRefreshSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(IPdaCorrosionPresentationSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(ILocalizationTransientOverrideSink)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
-            if (serviceType == typeof(IAudioLogRuntime)) return GlobalRegistryServiceSlot.AudioLogRuntime;
-            if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
-            if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
-            if (serviceType == typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
-            if (serviceType == typeof(IVocalWarningSystem)) return GlobalRegistryServiceSlot.VocalWarningRuntime;
-            if (serviceType == typeof(VocalWarningSystem)) return GlobalRegistryServiceSlot.VocalWarningRuntime;
-            if (serviceType == typeof(IAcousticZoneReadModel) ||
-                serviceType == typeof(IAcousticZoneMadnessCueSink) ||
-                serviceType == typeof(AcousticZoneController))
-            {
-                return GlobalRegistryServiceSlot.AcousticZoneRuntime;
-            }
-
-            if (serviceType == typeof(ISurfaceWeatherReadModel) ||
-                serviceType == typeof(HectonSurfaceWeatherDirector))
-            {
-                return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
-            }
-            if (serviceType == typeof(IAtlasSignalReadModel) ||
-                serviceType == typeof(IAtlasSignalDecodeSink)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
-            if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
-            if (serviceType == typeof(IFirstHourReadModel)) return GlobalRegistryServiceSlot.FirstHourRuntime;
-            if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
-            if (serviceType == typeof(IEmergencyRelayRouteReadModel) ||
-                serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
-            if (serviceType == typeof(IAtmosphereRenderSettingsBridge) ||
-                serviceType == typeof(IAtmosphereReadModel))
-            {
-                return GlobalRegistryServiceSlot.AtmosphereRuntime;
-            }
-            if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
-            if (serviceType == typeof(ITerrainProvider)) return GlobalRegistryServiceSlot.TerrainProviderRuntime;
-            if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
-            if (serviceType == typeof(IAbyssalFlowVolumeReadModel)) return GlobalRegistryServiceSlot.MapMagicVegetationRuntime;
-            if (serviceType == typeof(ScavengePopulator)) return GlobalRegistryServiceSlot.ScavengePopulatorRuntime;
-            if (serviceType == typeof(ModWorldPersistenceManager)) return GlobalRegistryServiceSlot.ModWorldPersistenceRuntime;
-            if (serviceType == typeof(IModdingBridge)) return GlobalRegistryServiceSlot.ModdingBridgeRuntime;
-            if (serviceType == typeof(RunModifierController)) return GlobalRegistryServiceSlot.RunModifierRuntime;
-            if (serviceType == typeof(IMetaCampaignService)) return GlobalRegistryServiceSlot.MetaCampaignRuntime;
-            if (serviceType == typeof(MigrationDirector)) return GlobalRegistryServiceSlot.MigrationDirectorRuntime;
-            if (serviceType == typeof(BasePollutionManager)) return GlobalRegistryServiceSlot.BasePollutionRuntime;
-            if (serviceType == typeof(EntityChangeManager)) return GlobalRegistryServiceSlot.EntityChangeManagerRuntime;
-            if (serviceType == typeof(PerformanceMonitor)) return GlobalRegistryServiceSlot.PerformanceMonitorRuntime;
-            if (serviceType == typeof(IBeaconNetworkService) ||
-                serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
-            if (serviceType == typeof(IScanLogService) ||
-                serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
-            if (serviceType == typeof(IToolDurabilityService) ||
-                serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
-            if (serviceType == typeof(ToolHapticsRuntime)) return GlobalRegistryServiceSlot.ToolHapticsRuntime;
-            if (serviceType == typeof(IVRSomaticProvider)) return GlobalRegistryServiceSlot.VRSomaticProvider;
-            if (serviceType == typeof(ILoreUnlockReadModel) ||
-                serviceType == typeof(ILoreDatabaseReadModel) ||
-                serviceType == typeof(ILoreUnlockSink)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
-            if (serviceType == typeof(LoreDatabaseManager)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
-            if (serviceType == typeof(IPlayerExpressionReadModel)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
-            if (serviceType == typeof(PlayerExpressionManager)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
-            if (serviceType == typeof(IPlayerActionInterruptSink)) return GlobalRegistryServiceSlot.PlayerActionRuntime;
-            if (serviceType == typeof(SpectrumSystem)) return GlobalRegistryServiceSlot.SpectrumRuntime;
-            if (serviceType == typeof(UserOptionsPersistence)) return GlobalRegistryServiceSlot.UserOptionsRuntime;
-            if (serviceType == typeof(IAssetLifecyclePressureSink) ||
-                serviceType == typeof(AssetLifecycleGovernor)) return GlobalRegistryServiceSlot.AssetLifecycleRuntime;
-            if (serviceType == typeof(AssetLoadDispatcher)) return GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime;
-            if (serviceType == typeof(IVramBudgetReadModel) ||
-                serviceType == typeof(IVramBudgetSampleSink) ||
-                serviceType == typeof(VRAMMonitor)) return GlobalRegistryServiceSlot.VRAMMonitorRuntime;
-            if (serviceType == typeof(IVramPressureReadModel) ||
-                serviceType == typeof(IVramPressureSampleSink) ||
-                serviceType == typeof(IVramPressureMipBiasSink) ||
-                serviceType == typeof(VRAMPressureMonitor)) return GlobalRegistryServiceSlot.VRAMPressureRuntime;
-            if (serviceType == typeof(RenderTextureLifecycleTracker)) return GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime;
-            if (serviceType == typeof(RenderTexturePool)) return GlobalRegistryServiceSlot.RenderTexturePoolRuntime;
-            if (serviceType == typeof(IFluidDecalPresentationSink) ||
-                serviceType == typeof(AbyssalFluidDecalManager)) return GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime;
-            if (serviceType == typeof(ISargassumDragReadModel) ||
-                serviceType == typeof(SargassumGlobalDragManager))
-            {
-                return GlobalRegistryServiceSlot.SargassumDragRuntime;
-            }
-            if (serviceType == typeof(ISargassumCutWriteService)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
-            if (serviceType == typeof(SargassumCutManager)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
-            if (serviceType == typeof(IMicroFaunaPresentationPulseSink) ||
-                serviceType == typeof(SargassumMicroFaunaBoids))
-            {
-                return GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime;
-            }
-            if (serviceType == typeof(HectonFloatingOrigin)) return GlobalRegistryServiceSlot.FloatingOriginRuntime;
-            if (serviceType == typeof(IConnectionSplineBatchRendererService) ||
-                serviceType == typeof(ConnectionSplineBatchRenderer))
-            {
-                return GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime;
-            }
-            if (serviceType == typeof(ISoundscapeTierReadModel) ||
-                serviceType == typeof(SoundscapeSystem))
-            {
-                return GlobalRegistryServiceSlot.SoundscapeRuntime;
-            }
-            if (serviceType == typeof(IEnvironmentalStrainReadModel) ||
-                serviceType == typeof(IEnvironmentalStrainIndustrialSink) ||
-                serviceType == typeof(EnvironmentalStrainManager))
-            {
-                return GlobalRegistryServiceSlot.EnvironmentalStrainRuntime;
-            }
-            if (serviceType == typeof(EcosystemHealthDirector)) return GlobalRegistryServiceSlot.EcosystemHealthRuntime;
-            if (serviceType == typeof(IFaunaWorldSeedReadModel) ||
-                serviceType == typeof(FaunaGeneticsManager)) return GlobalRegistryServiceSlot.FaunaGeneticsRuntime;
-            if (serviceType == typeof(PlayerExplorationTracker)) return GlobalRegistryServiceSlot.PlayerExplorationRuntime;
-            if (serviceType == typeof(DynamicDifficultyDirector)) return GlobalRegistryServiceSlot.DynamicDifficultyRuntime;
-            if (serviceType == typeof(HectonDiscoveryManager)) return GlobalRegistryServiceSlot.DiscoveryRuntime;
-            if (serviceType == typeof(IResourceScarcityReadModel) ||
-                serviceType == typeof(ResourceScarcityDirector)) return GlobalRegistryServiceSlot.ResourceScarcityRuntime;
-            if (serviceType == typeof(FieldOperationLogSystem)) return GlobalRegistryServiceSlot.FieldOperationLogRuntime;
-            if (serviceType == typeof(PDAExchangeSystem)) return GlobalRegistryServiceSlot.PDAExchangeRuntime;
-            if (serviceType == typeof(PlayerActionController)) return GlobalRegistryServiceSlot.PlayerActionRuntime;
-            if (serviceType == typeof(PDAMarkerRegistry)) return GlobalRegistryServiceSlot.PDAMarkerRuntime;
-            if (serviceType == typeof(PDAIntrusionManager)) return GlobalRegistryServiceSlot.PDAIntrusionRuntime;
-            if (serviceType == typeof(AmbientWaterMotionManager)) return GlobalRegistryServiceSlot.AmbientWaterMotionRuntime;
-            if (serviceType == typeof(SuitUpgradeManager)) return GlobalRegistryServiceSlot.SuitUpgradeRuntime;
-            if (serviceType == typeof(UIAudioFeedback)) return GlobalRegistryServiceSlot.UIAudioFeedbackRuntime;
-            if (serviceType == typeof(UITooltip)) return GlobalRegistryServiceSlot.UITooltipRuntime;
-            if (serviceType == typeof(LoadingScreenController)) return GlobalRegistryServiceSlot.LoadingScreenRuntime;
-            if (serviceType == typeof(IEndingRuntimeService) ||
-                serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
-            if (serviceType == typeof(IAtlas6DirectiveCommandSink) ||
-                serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
-            if (serviceType == typeof(IHazardZoneReadModel)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
-            if (serviceType == typeof(HazardZoneManager)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
-            if (serviceType == typeof(MissionManager)) return GlobalRegistryServiceSlot.MissionRuntime;
-            if (serviceType == typeof(HectonRockManager)) return GlobalRegistryServiceSlot.RockManagerRuntime;
-            if (serviceType == typeof(ICameraJuiceSystem) || serviceType == typeof(CameraJuiceSystem)) return GlobalRegistryServiceSlot.CameraJuiceRuntime;
-            if (serviceType == typeof(HectonMusicDirector)) return GlobalRegistryServiceSlot.MusicDirectorRuntime;
-            if (serviceType == typeof(SubtitleManager)) return GlobalRegistryServiceSlot.SubtitleRuntime;
-            if (serviceType == typeof(AtlasSignalDecoder)) return GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime;
-            if (serviceType == typeof(ScrapManager)) return GlobalRegistryServiceSlot.ScrapRuntime;
-            if (serviceType == typeof(AutonomousExtractorSystem)) return GlobalRegistryServiceSlot.AutonomousExtractorRuntime;
-            if (serviceType == typeof(VisorRTManager)) return GlobalRegistryServiceSlot.VisorRTRuntime;
-            if (serviceType == typeof(CameraRTManager)) return GlobalRegistryServiceSlot.CameraRTRuntime;
-            if (serviceType == typeof(PostFXRTManager)) return GlobalRegistryServiceSlot.PostFXRTRuntime;
-            if (serviceType == typeof(UIRTManager)) return GlobalRegistryServiceSlot.UIRTRuntime;
-            if (serviceType == typeof(SettingsManager)) return GlobalRegistryServiceSlot.SettingsRuntime;
-            if (serviceType == typeof(RuntimeWatchdog)) return GlobalRegistryServiceSlot.RuntimeWatchdogRuntime;
-            if (serviceType == typeof(GameTickManager)) return GlobalRegistryServiceSlot.TickManager;
-            if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
-            if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;
-            if (serviceType == typeof(GlobalPhysicsStateManager) ||
-                serviceType == typeof(IPhysicsStateEventService) ||
-                serviceType == typeof(IPhysicsCullingOverseer))
-            {
-                return GlobalRegistryServiceSlot.PhysicsStateManager;
-            }
-            if (serviceType == typeof(IDataVault)) return GlobalRegistryServiceSlot.DataVault;
-            if (serviceType == typeof(ICablePhysics132Service)) return GlobalRegistryServiceSlot.CablePhysics132Runtime;
-            if (serviceType == typeof(GlobalDataVault)) return GlobalRegistryServiceSlot.DataVault;
-            if (serviceType == typeof(IMacroDatabaseService)) return GlobalRegistryServiceSlot.MacroDatabase;
-            if (serviceType == typeof(ICausticsService)) return GlobalRegistryServiceSlot.CausticsRuntime;
-            if (serviceType == typeof(IJobAdmissionService)) return GlobalRegistryServiceSlot.JobAdmissionRuntime;
-            if (serviceType == typeof(ISimulationBucketer)) return GlobalRegistryServiceSlot.SimulationBucketerRuntime;
-            if (serviceType == typeof(IStreamingBackpressureService)) return GlobalRegistryServiceSlot.StreamingBackpressureRuntime;
-            if (serviceType == typeof(IFoveatedSimulationDirector)) return GlobalRegistryServiceSlot.FoveatedSimulationDirector;
-            if (serviceType == typeof(IHardwareThermalService)) return GlobalRegistryServiceSlot.HardwareThermalService;
-            if (serviceType == typeof(IGroundRadarService)) return GlobalRegistryServiceSlot.GroundRadarRuntime;
-            if (serviceType == typeof(IWorldResourceSpawnerReadModel)) return GlobalRegistryServiceSlot.WorldResourceSpawnerRuntime;
-            if (serviceType == typeof(IInstanceCullingService)) return GlobalRegistryServiceSlot.InstanceCullingRuntime;
-            if (serviceType == typeof(IOutpostGenerationService)) return GlobalRegistryServiceSlot.OutpostGenerationRuntime;
             return GlobalRegistryServiceSlot.Unknown;
         }
 
