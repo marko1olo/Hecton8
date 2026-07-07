@@ -335,6 +335,15 @@ namespace Hecton8.Core
 
         private static void VerifySaveLayouts()
         {
+            VerifySaveVoxelLayouts();
+            VerifySaveEntityLayouts();
+            VerifySaveStateLayouts();
+            VerifySaveMerkleLayouts();
+            VerifySaveStorageLayouts();
+        }
+
+        private static void VerifySaveVoxelLayouts()
+        {
             string save = SaveLayoutNamespace;
             string saveVoxelDeltaRun5 = save + "SaveVoxelDeltaRun5";
             AssertSize(saveVoxelDeltaRun5, 8);
@@ -437,6 +446,11 @@ namespace Hecton8.Core
             AssertOffset(voxelMock, "SchemaHash", 8);
             AssertOffset(voxelMock, "Seed", 16);
             AssertOffset(voxelMock, "Version", 24);
+        }
+
+        private static void VerifySaveEntityLayouts()
+        {
+            string save = SaveLayoutNamespace;
 
             string entityHeader = save + "EntityDeltaHeaderDTO";
             AssertSize(entityHeader, 32);
@@ -511,6 +525,11 @@ namespace Hecton8.Core
 
             AssertSize(save + "PackedEntityState32", 8);
             AssertSize(save + "PackedSuitUpgradeState64", 8);
+        }
+
+        private static void VerifySaveStateLayouts()
+        {
+            string save = SaveLayoutNamespace;
 
             string quantizedLocal = save + "QuantizedLocalHalf3";
             AssertSize(quantizedLocal, 8);
@@ -617,6 +636,11 @@ namespace Hecton8.Core
             AssertOffset(saveHeader, "HashHeader64", 48);
             AssertOffset(saveHeader, "MasterStateHashLo", 56);
             AssertOffset(saveHeader, "MasterStateHashHi", 64);
+        }
+
+        private static void VerifySaveMerkleLayouts()
+        {
+            string save = SaveLayoutNamespace;
 
             string merkleNode = save + "MerkleNodeDTO";
             AssertSize(merkleNode, 32);
@@ -724,6 +748,11 @@ namespace Hecton8.Core
             AssertOffset(emergency, "Checksum", 56);
             AssertOffset(emergency, "Version", 60);
             AssertOffset(emergency, "HeaderBytes", 62);
+        }
+
+        private static void VerifySaveStorageLayouts()
+        {
+            string save = SaveLayoutNamespace;
 
             string flood = save + "HabitatFloodStateDTO";
             AssertSize(flood, 32);
@@ -802,6 +831,7 @@ namespace Hecton8.Core
             AssertSize(save + "AbsoluteUniversePositionV7", 36);
             AssertSize(save + "PayloadPrefixV7", 60);
             AssertSize(save + "PayloadPrefixV8", 72);
+
         }
 
         private static void VerifyPersistentWorldLayouts()
