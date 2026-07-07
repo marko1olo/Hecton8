@@ -128,6 +128,9 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			int candidatesNum = (int)(uniformity*100);
 			if (candidatesNum < 1) candidatesNum = 1;
 			
+			int seedX = (int)(offset.x + size.x/2);
+			int seedZ = (int)(offset.z + size.z/2);
+
 			for (int i=0; i<count; i++)
 			{
 				if (stop!=null && stop.stop) return;
@@ -138,8 +141,8 @@ namespace MapMagic.Nodes.ObjectsGenerators
 				
 				for (int c=0; c<candidatesNum; c++)
 				{
-					float candidateX = (offset.x+1) + (rnd.Random((int)posTab.pos.x, (int)posTab.pos.z, i*candidatesNum+c, 0)*(size.x-2.01f)); //TODO: do not use pos since it changes between preview/full
-					float candidateZ = (offset.z+1) + (rnd.Random((int)posTab.pos.x, (int)posTab.pos.z, i*candidatesNum+c, 1)*(size.z-2.01f));
+					float candidateX = (offset.x+1) + (rnd.Random(seedX, seedZ, i*candidatesNum+c, 0)*(size.x-2.01f));
+					float candidateZ = (offset.z+1) + (rnd.Random(seedX, seedZ, i*candidatesNum+c, 1)*(size.z-2.01f));
 
 					//checking if candidate is the furthest one
 					Transition closest = posTab.Closest(candidateX, candidateZ, minDist:0.001f);
