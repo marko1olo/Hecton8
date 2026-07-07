@@ -599,6 +599,15 @@ namespace Hecton8.Core
 
         private static void InitializeCategorySignalLanes()
         {
+            InitializeCategorySignalLanes_Batch1();
+            InitializeCategorySignalLanes_Batch2();
+            InitializeCategorySignalLanes_Batch3();
+            InitializeCategorySignalLanes_Batch4();
+            InitializeCategorySignalLanes_Batch5();
+            InitializeCategorySignalLanes_Batch6();
+        }
+        private static void InitializeCategorySignalLanes_Batch1()
+        {
             SignalBus<InputStateSignal>.Configure(InputStateSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(InputStateSignal)));
             SignalBus<InputStateSignal>.EnsureInitialized();
             SignalBus<PlayerInputSignal>.Configure(PlayerInputSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerInputSignal)));
@@ -673,6 +682,10 @@ namespace Hecton8.Core
             SignalBus<PlayerStateSignal>.EnsureInitialized();
             SignalBus<SurvivalVitalsChangedSignal>.Configure(SurvivalVitalsChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SurvivalVitalsChangedSignal)));
             SignalBus<SurvivalVitalsChangedSignal>.EnsureInitialized();
+        }
+
+        private static void InitializeCategorySignalLanes_Batch2()
+        {
             SignalBus<PlayerStressSignal>.Configure(PlayerStressSignalCapacity, maxFrameSignals: PlayerStressSignalCapacity, lowTierFrameSignals: 32, laneHash: ComputeStableSignalLaneHash(nameof(PlayerStressSignal)));
             SignalBus<PlayerStressSignal>.EnsureInitialized();
             SignalBus<DropPodLandedSignal>.Configure(DropPodLandedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(DropPodLandedSignal)));
@@ -739,6 +752,10 @@ namespace Hecton8.Core
             SignalBus<HUDNotificationSignal>.EnsureInitialized();
             SignalBus<SaveCompletedSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveCompletedSignal)));
             SignalBus<SaveCompletedSignal>.EnsureInitialized();
+        }
+
+        private static void InitializeCategorySignalLanes_Batch3()
+        {
             SignalBus<SaveStatusSignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveStatusSignal)));
             SignalBus<SaveStatusSignal>.EnsureInitialized();
             SignalBus<SaveMetadataReadySignal>.Configure(SaveLifecycleSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(SaveMetadataReadySignal)));
@@ -793,6 +810,10 @@ namespace Hecton8.Core
             SignalBus<MacroDatabaseSectorHydrationSignal>.EnsureInitialized();
             SignalBus<WfcOutpostGeneratedSignal>.Configure(WfcOutpostGeneratedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostGeneratedSignal)));
             SignalBus<WfcOutpostGeneratedSignal>.EnsureInitialized();
+        }
+
+        private static void InitializeCategorySignalLanes_Batch4()
+        {
             SignalBus<WfcOutpostStateChangedSignal>.Configure(128, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostStateChangedSignal)));
             SignalBus<WfcOutpostStateChangedSignal>.EnsureInitialized();
             SignalBus<WfcOutpostDoorPowerSignal>.Configure(WfcOutpostDoorPowerSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(WfcOutpostDoorPowerSignal)));
@@ -863,6 +884,10 @@ namespace Hecton8.Core
             SignalBus<PlayerActionProgressSignal>.EnsureInitialized();
             SignalBus<PlayerActionCompletedSignal>.Configure(PlayerActionCompletedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCompletedSignal)));
             SignalBus<PlayerActionCompletedSignal>.EnsureInitialized();
+        }
+
+        private static void InitializeCategorySignalLanes_Batch5()
+        {
             SignalBus<PlayerActionCancelledSignal>.Configure(PlayerActionCancelledSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(PlayerActionCancelledSignal)));
             SignalBus<PlayerActionCancelledSignal>.EnsureInitialized();
             SignalBus<ScanLogChangedSignal>.Configure(ScanLogChangedSignalCapacity, laneHash: ComputeStableSignalLaneHash(nameof(ScanLogChangedSignal)));
@@ -912,6 +937,10 @@ namespace Hecton8.Core
             SignalBus<MockRockCollisionSignal>.EnsureInitialized();
             SignalBus<MacroCollisionSignal>.Configure(16, maxFrameSignals: 32, lowTierFrameSignals: 8, laneHash: ComputeStableSignalLaneHash(nameof(MacroCollisionSignal)));
             SignalBus<MacroCollisionSignal>.EnsureInitialized();
+        }
+
+        private static void InitializeCategorySignalLanes_Batch6()
+        {
             SignalBus<WakeRequestSignal>.Configure(16, maxFrameSignals: 16, lowTierFrameSignals: 8, laneHash: ComputeStableSignalLaneHash(nameof(WakeRequestSignal)));
             SignalBus<WakeRequestSignal>.EnsureInitialized();
             // Wide endpoint telemetry: keep normal cadence until this splits into compact truth plus visual sidecar.
@@ -930,6 +959,7 @@ namespace Hecton8.Core
             SignalBus<DockingFailedSignal>.Configure(64, laneHash: ComputeStableSignalLaneHash(nameof(DockingFailedSignal)));
             SignalBus<DockingFailedSignal>.EnsureInitialized();
         }
+
 
         private static void ConfigureDebugSignalLane()
         {
