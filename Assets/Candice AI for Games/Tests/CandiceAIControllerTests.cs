@@ -181,6 +181,22 @@ namespace CandiceAIforGames.AI.Tests
             Assert.That(pendingAttack, Is.False);
         }
 
+        [Test]
+        public void AddRegistrationListener_AddsActionToReadyStateListeners()
+        {
+            bool listenerCalled = false;
+            System.Action<bool, int> mockListener = (isRegistered, agentId) => { listenerCalled = true; };
+
+            _controller.AddRegistrationListener(mockListener);
+
+            var fieldInfo = typeof(CandiceAIController).GetField("readyStateListeners", BindingFlags.NonPublic | BindingFlags.Instance);
+            var readyStateListeners = (System.Collections.Generic.List<System.Action<bool, int>>)fieldInfo.GetValue(_controller);
+
+            Assert.That(readyStateListeners, Is.Not.Null);
+            Assert.That(readyStateListeners.Count, Is.EqualTo(1));
+            Assert.That(readyStateListeners[0], Is.EqualTo(mockListener));
+        }
+
         private void SetPrivateField(object obj, string fieldName, object value)
         {
             var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
