@@ -139,7 +139,16 @@ namespace MoreMountains.Feedbacks
 					return;
 				}
 				
-				PlayFeedbacks();
+				// if we are in the very first frames, we delay our play for 2 frames to avoid Unity bugs
+				if (Time.frameCount < 2)
+				{
+					_lastOnEnableFrame = 2;
+					StartCoroutine(PlayFeedbacksAfterFrames(2));
+				}
+				else
+				{
+					PlayFeedbacks();
+				}
 			}
 		}
 
