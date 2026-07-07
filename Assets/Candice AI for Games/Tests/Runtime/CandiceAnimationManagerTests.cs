@@ -85,5 +85,24 @@ namespace CandiceAIforGames.AI.Tests
         {
             Assert.Throws<UnityException>(() => _manager.EvaluateInput("invalid_button_123", false, false, false));
         }
+
+        [Test]
+        public void StandardInputCall_ThrowsUnityExceptionForInvalidButton()
+        {
+            Assert.Throws<UnityException>(() => _manager.StandardInputCall("invalid_button_123"));
+        }
+
+        [Test]
+        public void StandardInputCall_DoesNotThrowForValidButton()
+        {
+            Assert.DoesNotThrow(() => _manager.StandardInputCall("Jump"));
+        }
+
+        [Test]
+        public void StandardInputCall_ReturnsFalseWhenNotPressed()
+        {
+            // Assuming we aren't currently simulating an input press, this should be false.
+            Assert.IsFalse(_manager.StandardInputCall("Jump"));
+        }
     }
 }
