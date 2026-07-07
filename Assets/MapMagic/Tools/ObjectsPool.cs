@@ -250,21 +250,35 @@ namespace Den.Tools
 					ArrayTools.RemoveAt(ref pools, i);
 				}
 
-			//creating the dictionary of used prototypes/pools
-			//TODO: use ClearPrortotypes?
-			Dictionary<Prototype,Pool> usedPools = new Dictionary<Prototype,Pool>(pools.Length);//, new PrototypeComparer());
+			// identify prototypes that are no longer used
+			HashSet<Prototype> newPrototypes = new HashSet<Prototype>(prototypes);
+			List<Prototype> prototypesToClear = new List<Prototype>();
 			for (int i=0; i<pools.Length; i++)
-				if (!usedPools.ContainsKey(pools[i].prototype)) //avoiding two pools with one prototype (could be created when duplicating obj out node)
-					usedPools.Add(pools[i].prototype, pools[i]);
+			{
+				if (!newPrototypes.Contains(pools[i].prototype))
+					prototypesToClear.Add(pools[i].prototype);
+			}
 
-			//reposition
+			// clear them using the existing method
+			ClearPrototypes(prototypesToClear.ToArray());
+
+			// reposition
 			Pool[] newPools = new Pool[prototypes.Length];
+			List<Pool> remainingPools = new List<Pool>(pools);
+
 			for (int i=0; i<prototypes.Length; i++)
 			{
-				if (usedPools.TryGetValue(prototypes[i], out Pool pool))
-					usedPools.Remove(prototypes[i]);
+				int index = remainingPools.FindIndex(p => p.prototype == prototypes[i]);
+				Pool pool;
+				if (index >= 0)
+				{
+					pool = remainingPools[index];
+					remainingPools.RemoveAt(index);
+				}
 				else
+				{
 					pool = new Pool(prototypes[i]);
+				}
 
 				//other than instantiateClones and allowReposition (they are in comparer) should be copied
 				pool.prototype.regardPrefabRotation = prototypes[i].regardPrefabRotation;
@@ -273,10 +287,11 @@ namespace Den.Tools
 				newPools[i] = pool;
 			}
 
-			//clearing unused
-			if (usedPools.Count != 0)
-				foreach (var kvp in usedPools)
-					kvp.Value.Clear();
+			// clearing unused duplicates
+			for (int i=0; i<remainingPools.Count; i++)
+			{
+				remainingPools[i].Clear();
+			}
 
 			pools = newPools;
 		}
