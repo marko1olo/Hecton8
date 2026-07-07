@@ -1280,16 +1280,24 @@ namespace MapMagic.Nodes.ObjectsGenerators
 		{
 			for (int i=0; i<iterations; i++)
 			{
-				//flooring coordiantes
-				//TODO: use built-in matrix operations
-				Coord pos = stratum.WorldToPixel(trn.pos.x, trn.pos.z);
+				float percentX = (trn.pos.x - stratum.worldPos.x) / stratum.worldSize.x;
+				float percentZ = (trn.pos.z - stratum.worldPos.z) / stratum.worldSize.z;
 
-				if (!stratum.rect.Contains(pos.x, pos.z, 1.0001f)) break;
+				float mapX = percentX*(stratum.rect.size.x-1) + stratum.rect.offset.x;
+				float mapZ = percentZ*(stratum.rect.size.z-1) + stratum.rect.offset.z;
 
-				float heightMXMZ = stratum[pos.x, pos.z];
-				float heightPXMZ = stratum[pos.x+1, pos.z];
-				float heightMXPZ = stratum[pos.x, pos.z+1];
-				float heightPXPZ = stratum[pos.x+1, pos.z+1];
+				int posx = (int)mapX; if (mapX<0) posx--;
+				int posz = (int)mapZ; if (mapZ<0) posz--;
+
+				float xPercent = mapX - posx;
+				float zPercent = mapZ - posz;
+
+				if (!stratum.rect.Contains(posx, posz, 1.0001f)) break;
+
+				float heightMXMZ = stratum[posx, posz];
+				float heightPXMZ = stratum[posx+1, posz];
+				float heightMXPZ = stratum[posx, posz+1];
+				float heightPXPZ = stratum[posx+1, posz+1];
 
 				float xNormal1 = heightMXPZ-heightPXPZ; //Mathf.Atan(heightPXPZ-heightMXPZ) / halfPi;
 				float xNormal2 = heightMXMZ-heightPXMZ; //Mathf.Atan(heightPXMZ-heightMXMZ) / halfPi;
@@ -1303,8 +1311,11 @@ namespace MapMagic.Nodes.ObjectsGenerators
 
 				if (delta < stopDelta) continue;
 
-				float xNormal = (xNormal1+xNormal2)/2f;
-				float zNormal = (zNormal1+zNormal2)/2f; //TODO: use smooth interpolation
+				float smoothX = Mathf.SmoothStep(0f, 1f, xPercent);
+				float smoothZ = Mathf.SmoothStep(0f, 1f, zPercent);
+
+				float xNormal = xNormal2*(1-smoothZ) + xNormal1*smoothZ;
+				float zNormal = zNormal2*(1-smoothX) + zNormal1*smoothX;
 
 				trn.pos.x += xNormal*(terrainHeight*moveFactor); 
 				trn.pos.z += zNormal*(terrainHeight*moveFactor); 
