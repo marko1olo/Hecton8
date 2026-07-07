@@ -82,7 +82,7 @@ PROP_DEF(int, _DashSnap)
     #endif
     
     #if ALLOW_NEGATIVE_COLORS == 0
-        clip(outColor.a - VERY_SMOL); // todo: this disallows negative colors, which, might be bad? idk
+        clip(shape_mask - VERY_SMOL);
     #endif
 
     #ifdef BLEND_FADE_TO_BLACK
