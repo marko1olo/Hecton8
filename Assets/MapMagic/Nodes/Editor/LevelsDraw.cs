@@ -4,11 +4,14 @@ using UnityEngine;
 using Den.Tools;
 using Den.Tools.GUI;
 using MapMagic.Nodes;
+using Den.Tools.Matrices;
 
 namespace MapMagic.Nodes.GUI
 {
 	public static class LevelsDraw
-	{	
+	{
+		private static Matrix curveMatrix = new Matrix(new CoordRect(0,0,100,1));
+
 		public const float diamondHeight = 15;
 		public const int uiWidth = 140;
 		public const int uiCurveHeight = 70;
@@ -396,13 +399,28 @@ namespace MapMagic.Nodes.GUI
 		{
 			if (posArray == null) posArray = new Vector3[5];
 
+			if (curveMatrix.arr.Length < posArray.Length)
+				curveMatrix = new Matrix(new CoordRect(0,0,posArray.Length,1));
+
+			curveMatrix.count = posArray.Length;
 			for (int i=1; i<posArray.Length-1; i++)
 			{
 				float p = 1f * (i-1) / (posArray.Length-3);
 				p = 3*p*p - 2*p*p*p;
 
 				float x = inMin + p*(inMax-inMin);
-				float y = LevelsFn(x, inMin, inMax, gamma, outMin, outMax);
+				curveMatrix.arr[i] = x;
+			}
+
+			curveMatrix.Levels(inMin, inMax, gamma, outMin, outMax);
+
+			for (int i=1; i<posArray.Length-1; i++)
+			{
+				float p = 1f * (i-1) / (posArray.Length-3);
+				p = 3*p*p - 2*p*p*p;
+
+				float x = inMin + p*(inMax-inMin);
+				float y = curveMatrix.arr[i];
 
 				x = Cell.current.worldPosition.x + x*(Cell.current.finalSize.x-1); 
 				y = Cell.current.worldPosition.y + (1-y)*(Cell.current.finalSize.y-1) + 1;
@@ -422,10 +440,23 @@ namespace MapMagic.Nodes.GUI
 			Cell cell=null)
 		{
 			Vector3[] posArray = new Vector3[100];
+
+			if (curveMatrix.arr.Length < posArray.Length)
+				curveMatrix = new Matrix(new CoordRect(0,0,posArray.Length,1));
+
+			curveMatrix.count = posArray.Length;
 			for (int i=0; i<posArray.Length; i++)
 			{
 				float x = 1f*i / posArray.Length;
-				float y = LevelsFn(x, inMin, inMax, gamma, outMin, outMax);
+				curveMatrix.arr[i] = x;
+			}
+
+			curveMatrix.Levels(inMin, inMax, gamma, outMin, outMax);
+
+			for (int i=0; i<posArray.Length; i++)
+			{
+				float x = 1f*i / posArray.Length;
+				float y = curveMatrix.arr[i];
 
 				x = Cell.current.worldPosition.x + x*(Cell.current.finalSize.x-1); 
 				y = Cell.current.worldPosition.y + (1-y)*(Cell.current.finalSize.y-1) + 1;
@@ -435,37 +466,6 @@ namespace MapMagic.Nodes.GUI
 
 			UnityEditor.Handles.color = Color.red;
 			UnityEditor.Handles.DrawAAPolyLine(2, posArray);
-		}
-
-		private static float LevelsFn (float val, float inMin, float inMax, float gamma, float outMin, float outMax)
-		/// Copy of Matrix.Levels (TODO: use shader, matrix and it's array, and call matrix.Levels)
-		{
-			//preliminary clamping
-			if (val < inMin) return outMin;
-			if (val > inMax) return outMax;
-
-			//input
-			float inDelta = inMax - inMin;
-			if (inDelta != 0)
-				val = (val-inMin) / inDelta;
-			else
-				val = inMin;
-
-			//gamma
-			if (gamma>1.00001f || gamma<0.9999f)  // gamma != 1
-			{
-				if (gamma<1) val = Mathf.Pow(val, gamma);
-				else val = Mathf.Pow(val, 1/(2-gamma));
-			}
-
-			//output
-			float outDelta = outMax - outMin;
-			if (outDelta != 0)
-				val = outMin + val * outDelta;
-			else
-				val = outMin;
-
-			return val;
 		}
 	}
 }
