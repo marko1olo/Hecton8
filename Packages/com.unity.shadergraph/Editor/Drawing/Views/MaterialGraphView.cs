@@ -13,9 +13,6 @@ using UnityEditor.ShaderGraph.Internal;
 using UnityEditor.ShaderGraph.Serialization;
 using UnityEngine.UIElements;
 using Edge = UnityEditor.Experimental.GraphView.Edge;
-#if UNITY_6000_5_OR_NEWER
-using UnityEngine.Assemblies;
-#endif
 using Node = UnityEditor.Experimental.GraphView.Node;
 using UnityEngine.Pool;
 
@@ -39,22 +36,7 @@ namespace UnityEditor.ShaderGraph.Drawing
 
             this.viewTransformChanged += OnTransformChanged;
 
-            // Get reference to GraphView assembly
-            Assembly graphViewAssembly = null;
-#if UNITY_6000_5_OR_NEWER
-            foreach (var assembly in CurrentAssemblies.GetLoadedAssemblies())
-#else
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-#endif
-            {
-                var assemblyName = assembly.GetName().ToString();
-                if (assemblyName.Contains("GraphView"))
-                {
-                    graphViewAssembly = assembly;
-                }
-            }
-
-            Type graphViewType = graphViewAssembly?.GetType("UnityEditor.Experimental.GraphView.GraphView");
+            Type graphViewType = typeof(GraphView);
             // Cache the method info for this function to be used through application lifetime
             m_UndoRedoPerformedMethodInfo = graphViewType?.GetMethod("UndoRedoPerformed",
                 BindingFlags.FlattenHierarchy | BindingFlags.Instance | BindingFlags.NonPublic,
