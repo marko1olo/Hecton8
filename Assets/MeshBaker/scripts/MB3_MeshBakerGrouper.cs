@@ -230,7 +230,15 @@ namespace DigitalOpus.MB.Core
                 }
             }
 
-            //todo warn for no objects and no Texture Bake Result
+            if (tb.GetObjectsToCombine().Count == 0)
+            {
+                Debug.LogWarning("No objects to combine. Please add some objects to the MB3_TextureBaker.");
+            }
+            if (tb.textureBakeResults == null)
+            {
+                Debug.LogWarning("No Texture Bake Result. Please set one on the MB3_TextureBaker.");
+            }
+
             Dictionary<string, List<Renderer>> cell2objs = FilterIntoGroups(tb.GetObjectsToCombine(), d);
 
             if (d.clusterOnLMIndex)
