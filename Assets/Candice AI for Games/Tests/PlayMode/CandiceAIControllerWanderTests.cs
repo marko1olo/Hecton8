@@ -18,7 +18,7 @@ namespace CandiceAI.Tests
         {
             _aiManagerObj = new GameObject("CandiceAIManager");
             _aiManager = _aiManagerObj.AddComponent<CandiceAIManager>();
-            _aiManagerObj.AddComponent<CandiceGrid>(); // Required by FindTarget
+            _aiManager.grid = _aiManagerObj.AddComponent<CandiceGrid>(); // Required by FindTarget
 
             _controllerObj = new GameObject("CandiceAIController");
             _controller = _controllerObj.AddComponent<CandiceAIController>();
@@ -63,6 +63,8 @@ namespace CandiceAI.Tests
             // we will need to verify the outcome using mainTarget since switchWanderTarget is private
             _controller.MainTarget = null;
 
+            typeof(CandiceAIController).GetField("switchWanderTarget", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(_controller, false);
+
             // Act
             _controller.Wander();
 
@@ -79,6 +81,8 @@ namespace CandiceAI.Tests
             _controller.wanderTarget = _wanderTargetObj;
             _controllerObj.transform.position = Vector3.zero;
             _wanderTargetObj.transform.position = new Vector3(4f, 0, 0); // sqrMagnitude = 16 < 25
+
+            typeof(CandiceAIController).GetField("switchWanderTarget", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(_controller, false);
 
             // Act
             _controller.Wander();
@@ -115,6 +119,8 @@ namespace CandiceAI.Tests
 
             _wanderTargetObj.transform.position = new Vector3(10f, 0, 0);
             _controller.MainTarget = null;
+
+            typeof(CandiceAIController).GetField("switchWanderTarget", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(_controller, false);
 
             // Act
             _controller.Wander();
