@@ -3552,6 +3552,8 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("NativeMemorySentinel.Unregister(_pendingSignalsSentinelId);", disposePendingSignals);
             StringAssert.Contains("_pendingSignalsSentinelId = 0;", disposePendingSignals);
             StringAssert.Contains("finally", disposePendingSignals);
+            StringAssert.Contains("if (firstException == null)", disposePendingSignals);
+            StringAssert.Contains("firstException = exception;", disposePendingSignals);
             Assert.Less(
                 disposePendingSignals.IndexOf("NativeMemorySentinel.Unregister(_pendingSignalsSentinelId);", StringComparison.Ordinal),
                 disposePendingSignals.IndexOf("_pendingSignals.Dispose();", StringComparison.Ordinal));
