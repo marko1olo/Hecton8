@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 using CandiceAIforGames.AI;
+using System.Reflection;
 
 namespace CandiceAIforGames.AI.Tests
 {
@@ -58,6 +59,15 @@ namespace CandiceAIforGames.AI.Tests
             controller.AttackTarget = null;
 
             Assert.IsFalse(controller.WithinAttackRange());
+        public void AttackMelee_WithAttackAnimation_SetsIsAttackingTrue()
+            var go = new GameObject();
+
+            controller.AttackMelee();
+
+            Assert.IsTrue(controller.IsAttacking);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsFalse(pendingAttack);
 
             Object.DestroyImmediate(go);
         }
@@ -114,6 +124,34 @@ namespace CandiceAIforGames.AI.Tests
             Assert.AreEqual(targetGo.transform.position, controller.LookPoint);
 
             Object.DestroyImmediate(targetGo);
+        public void AttackMelee_WithoutAttackAnimation_SchedulesPendingAttack()
+            var go = new GameObject();
+
+            controller.AttackMelee();
+
+            Assert.IsTrue(controller.IsAttacking);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsTrue(pendingAttack);
+
+            var pendingAttackRangedField = typeof(CandiceAIController).GetField("_pendingAttackIsRanged", BindingFlags.NonPublic | BindingFlags.Instance);
+            bool isRanged = (bool)pendingAttackRangedField.GetValue(controller);
+            Assert.IsFalse(isRanged);
+
+
+        public void AttackMelee_WhenAlreadyAttacking_DoesNothing()
+            var go = new GameObject();
+            controller.IsAttacking = true;
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", BindingFlags.NonPublic | BindingFlags.Instance);
+            pendingAttackField.SetValue(controller, false);
+
+            controller.AttackMelee();
+
+            Assert.IsTrue(controller.IsAttacking);
+
+            Assert.IsFalse(pendingAttack);
+
         }
     }
 }
