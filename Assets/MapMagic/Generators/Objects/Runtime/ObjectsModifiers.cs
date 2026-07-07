@@ -666,9 +666,10 @@ namespace MapMagic.Nodes.ObjectsGenerators
 	public class BlobGenerator : Generator, IOutlet<MatrixWorld>
 	{
 		[Val(name="Objects", priority=2)]	public readonly Inlet<PosTab> objectsIn = new Inlet<PosTab>();
-		[Val(name="Canvas", priority=2)]	public readonly Inlet<MatrixWorld> canvasIn = new Inlet<MatrixWorld>();  //TODO: canvas could be applied with blend
+		[Val(name="Canvas", priority=2)]	public readonly Inlet<MatrixWorld> canvasIn = new Inlet<MatrixWorld>();
 		[Val(name="Mask", priority=2)]		public readonly Inlet<MatrixWorld> maskIn = new Inlet<MatrixWorld>();
 
+		[Val("Blend Algorithm")]			public MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm blendAlgorithm = MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add;
 		[Val(name="Intensity")]		public float intensity = 1f;
 		[Val(name="Radius")]		public float radius = 10;
 		[Val(name="Size Factor")]	public float sizeFactor = 0;
@@ -690,8 +691,8 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			if (src != null) dst = (MatrixWorld)src.Clone(); 
 			else dst = new MatrixWorld(area.full.resolution, area.full.position, area.full.size);
 
-			foreach (Transition obj in objects.AllObjs())
-				DrawBlob(dst, obj.pos.x, obj.pos.z, intensity, radius, fallof, noiseAmount, noiseSize);
+				foreach (Transition obj in objects.AllObjs())
+					DrawBlob(dst, obj.pos.x, obj.pos.z, intensity, radius, fallof, noiseAmount, noiseSize, blendAlgorithm);
 
 			MatrixWorld mask = results.GetProduct<MatrixWorld>(maskIn);
 			if (mask != null) MatrixWorld.Mask(src, dst, mask);
@@ -713,7 +714,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			return data.products.Exists(this);
 		}
 
-		public static void DrawBlob (MatrixWorld canvas, float posX, float posZ, float val, float radius, AnimationCurve fallof, float noiseAmount=0, float noiseSize=20)
+		public static void DrawBlob (MatrixWorld canvas, float posX, float posZ, float val, float radius, AnimationCurve fallof, float noiseAmount=0, float noiseSize=20, MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm blendAlgorithm = MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add)
 		{
 			Coord mapCoord = new Coord(canvas.WorldToMap(posX), canvas.WorldToMap(posZ));
 			int mapRadius = canvas.WorldToMap(radius);
@@ -742,8 +743,24 @@ namespace MapMagic.Nodes.ObjectsGenerators
 					result += (noise.Fractal(x,z)*2 - 1) * maxNoise * noiseAmount;
 				}
 
-				//canvas[x,z] = Mathf.Max(result*val, canvas[x,z]);
-				canvas[x,z] = val*result + canvas[x,z]*(1-result);
+				float dstVal = canvas[x,z];
+				float srcVal = val;
+				float blendedVal = dstVal;
+				switch (blendAlgorithm)
+				{
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.mix: blendedVal = srcVal; break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add: blendedVal = dstVal + srcVal; break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.subtract: blendedVal = dstVal - srcVal; break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.multiply: blendedVal = dstVal * srcVal; break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.divide: blendedVal = srcVal != 0 ? dstVal / srcVal : dstVal; break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.difference: blendedVal = Mathf.Abs(dstVal - srcVal); break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.min: blendedVal = Mathf.Min(dstVal, srcVal); break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.max: blendedVal = Mathf.Max(dstVal, srcVal); break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.overlay: blendedVal = dstVal < 0.5f ? 2*dstVal*srcVal : 1 - 2*(1-dstVal)*(1-srcVal); break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.hardLight: blendedVal = srcVal < 0.5f ? 2*dstVal*srcVal : 1 - 2*(1-dstVal)*(1-srcVal); break;
+					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.softLight: blendedVal = (1-2*srcVal)*dstVal*dstVal + 2*srcVal*dstVal; break;
+				}
+				canvas[x,z] = blendedVal*result + dstVal*(1-result);
 			}
 		}
 	}*/
