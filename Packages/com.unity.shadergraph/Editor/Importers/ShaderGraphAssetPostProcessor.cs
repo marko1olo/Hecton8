@@ -66,7 +66,7 @@ namespace UnityEditor.ShaderGraph
 
                 // to workaround a bug with LoadAllAssetsAtPath(), which crashes if the asset has not yet been imported
                 // we first call LoadAssetAtPath<>, which handles assets not yet imported by returning null
-                if (AssetDatabase.LoadAssetAtPath<Shader>(assetPath) != null)
+                if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath) != null)
                 {
                     var oldArtifacts = AssetDatabase.LoadAllAssetsAtPath(assetPath);
                     foreach (var artifact in oldArtifacts)
