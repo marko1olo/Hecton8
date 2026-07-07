@@ -3189,7 +3189,9 @@ namespace GPUInstancer
                 newShaderText = newShaderText.Substring(0, foundIndex + searchStart.Length) + additionTextStart + newShaderText.Substring(foundIndex + searchStart.Length, newShaderText.Length - foundIndex - searchStart.Length);
 
                 foundIndex = newShaderText.IndexOf(searchEnd, lastIndex);
-                lastIndex = foundIndex + searchStart.Length + additionTextEnd.Length + 1;
+                if (foundIndex == -1)
+                    break;
+                lastIndex = foundIndex + searchEnd.Length + additionTextEnd.Length + 1;
                 newShaderText = newShaderText.Substring(0, foundIndex) + additionTextEnd + newShaderText.Substring(foundIndex, newShaderText.Length - foundIndex);
             }
             #endregion CGPROGRAM
@@ -3231,7 +3233,9 @@ namespace GPUInstancer
                 newShaderText = newShaderText.Substring(0, foundIndex + searchStart.Length) + additionTextStart + newShaderText.Substring(foundIndex + searchStart.Length, newShaderText.Length - foundIndex - searchStart.Length);
 
                 foundIndex = newShaderText.IndexOf(searchEnd, lastIndex);
-                lastIndex = foundIndex + searchStart.Length + additionTextEnd.Length + 1;
+                if (foundIndex == -1)
+                    break;
+                lastIndex = foundIndex + searchEnd.Length + additionTextEnd.Length + 1;
                 newShaderText = newShaderText.Substring(0, foundIndex) + additionTextEnd + newShaderText.Substring(foundIndex, newShaderText.Length - foundIndex);
             }
             #endregion HLSLPROGRAM
