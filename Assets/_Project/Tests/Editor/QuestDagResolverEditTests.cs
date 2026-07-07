@@ -349,5 +349,44 @@ namespace Hecton8.Tests.Editor
             Assert.GreaterOrEqual(afterIndex, 0, "Missing expected text: " + after);
             Assert.Less(beforeIndex, afterIndex, before + " must appear before " + after);
         }
+
+        [Test]
+        public void ResolverConstructor_RegistrationFailureThrowsAndCleansUpSpatialHash()
+        {
+            using (GlobalDataVault vault = GlobalDataVault.Create(64, 16L * 1024L * 1024L))
+            {
+                int sentinelCapacity = 1024;
+                NativeQueue<int>[] paddingQueues = new NativeQueue<int>[sentinelCapacity];
+                int[] paddingIds = new int[sentinelCapacity];
+
+                for (int i = 0; i < sentinelCapacity; i++)
+                {
+                    paddingQueues[i] = new NativeQueue<int>(Allocator.Persistent);
+                    paddingIds[i] = NativeMemorySentinel.RegisterNativeQueueInstance(paddingQueues[i], 1, "Fill", "P" + i, NativeAllocationLifetime.Session);
+                }
+
+                try
+                {
+                    InvalidOperationException ex = Assert.Throws<InvalidOperationException>(() =>
+                    {
+                        using (QuestDagResolverService resolver = new QuestDagResolverService(vault))
+                        {
+                        }
+                    });
+
+                    Assert.That(ex.Message, Does.Contain("Native memory sentinel registration failed"));
+                }
+                finally
+                {
+                    for (int i = 0; i < sentinelCapacity; i++)
+                    {
+                        if (paddingIds[i] > 0)
+                            NativeMemorySentinel.Unregister(paddingIds[i]);
+                        if (paddingQueues[i].IsCreated)
+                            paddingQueues[i].Dispose();
+                    }
+                }
+            }
+        }
     }
 }
