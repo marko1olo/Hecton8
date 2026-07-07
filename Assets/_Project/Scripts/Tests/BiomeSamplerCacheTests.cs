@@ -259,6 +259,96 @@ namespace Hecton8.World.Tests
             Assert.That(updatedCenter, Is.EqualTo(initialCenter - shiftOffset));
             Assert.That(updatedDebugCenter, Is.EqualTo(debugInitialCenter - shiftOffset));
             Assert.That(updatedSamplePosition, Is.EqualTo(new Vector3(15f, 0f, 15f) - shiftOffset));
+        public void TryGetCachedSample_SamplesNull_ReturnsFalse()
+            samplesField.SetValue(_biomeSamplerCache, null);
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.False);
+            Assert.That(sample, Is.EqualTo(default(BiomeSamplerCache.CachedSample)));
+
+        public void TryGetCachedSample_SampleCountZero_ReturnsFalse()
+            samplesField.SetValue(_biomeSamplerCache, new BiomeSamplerCache.CachedSample[1]);
+
+            sampleCountField.SetValue(_biomeSamplerCache, 0);
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.False);
+
+        public void TryGetCachedSample_CacheNotReady_ReturnsFalse()
+            samplesField.SetValue(_biomeSamplerCache, new BiomeSamplerCache.CachedSample[1]);
+
+
+            FieldInfo debugCacheReadyField = typeof(BiomeSamplerCache).GetField("_debugCacheReady", BindingFlags.NonPublic | BindingFlags.Instance);
+            debugCacheReadyField.SetValue(_biomeSamplerCache, false);
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.False);
+
+        public void TryGetCachedSample_NoNearestSampleFound_ReturnsFalse()
+            var samples = new BiomeSamplerCache.CachedSample[1];
+            samples[0] = new BiomeSamplerCache.CachedSample
+                position = new Vector3(10f, 0f, 10f),
+                isValid = 1
+            };
+
+            samplesField.SetValue(_biomeSamplerCache, samples);
+
+
+            FieldInfo debugCacheReadyField = typeof(BiomeSamplerCache).GetField("_debugCacheReady", BindingFlags.NonPublic | BindingFlags.Instance);
+            debugCacheReadyField.SetValue(_biomeSamplerCache, true);
+
+            FieldInfo cellSizeField = typeof(BiomeSamplerCache).GetField("cellSize", BindingFlags.NonPublic | BindingFlags.Instance);
+            cellSizeField.SetValue(_biomeSamplerCache, 10f); // maxDistance = 7.5f
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.False);
+
+        public void TryGetCachedSample_NearestSampleFoundButInvalid_ReturnsFalse()
+            var samples = new BiomeSamplerCache.CachedSample[1];
+            samples[0] = new BiomeSamplerCache.CachedSample
+                position = Vector3.zero,
+                isValid = 0
+            };
+
+            samplesField.SetValue(_biomeSamplerCache, samples);
+
+
+            FieldInfo debugCacheReadyField = typeof(BiomeSamplerCache).GetField("_debugCacheReady", BindingFlags.NonPublic | BindingFlags.Instance);
+            debugCacheReadyField.SetValue(_biomeSamplerCache, true);
+
+            FieldInfo cellSizeField = typeof(BiomeSamplerCache).GetField("cellSize", BindingFlags.NonPublic | BindingFlags.Instance);
+            cellSizeField.SetValue(_biomeSamplerCache, 10f);
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.False);
+
+        public void TryGetCachedSample_NearestSampleFoundAndValid_ReturnsTrue()
+            var samples = new BiomeSamplerCache.CachedSample[1];
+            samples[0] = new BiomeSamplerCache.CachedSample
+                position = Vector3.zero,
+                isValid = 1,
+                biomeIndex = 42
+            };
+
+            samplesField.SetValue(_biomeSamplerCache, samples);
+
+
+            FieldInfo debugCacheReadyField = typeof(BiomeSamplerCache).GetField("_debugCacheReady", BindingFlags.NonPublic | BindingFlags.Instance);
+            debugCacheReadyField.SetValue(_biomeSamplerCache, true);
+
+            FieldInfo cellSizeField = typeof(BiomeSamplerCache).GetField("cellSize", BindingFlags.NonPublic | BindingFlags.Instance);
+            cellSizeField.SetValue(_biomeSamplerCache, 10f);
+
+            bool result = _biomeSamplerCache.TryGetCachedSample(Vector3.zero, out BiomeSamplerCache.CachedSample sample);
+
+            Assert.That(result, Is.True);
+            Assert.That(sample.isValid, Is.EqualTo(1));
+            Assert.That(sample.biomeIndex, Is.EqualTo(42));
         }
     }
 }
