@@ -359,13 +359,17 @@ namespace Crest
         }
 
 #if UNITY_6000_0_OR_NEWER && UNITY_2023_3_OR_NEWER
-        void EnsureRenderGraphTemporaryTargets(UniversalCameraData cameraData)
+        void EnsureRenderGraphTemporaryTargets(PassData passData)
         {
+            var cameraData = passData.cameraData;
             var descriptor = cameraData.cameraTargetDescriptor;
             descriptor.msaaSamples = 1;
             descriptor.depthBufferBits = 0;
             descriptor.depthStencilFormat = GraphicsFormat.None;
 
+            var size = passData.colorTargetHandle.RT.GetScaledSize();
+            descriptor.width = size.x;
+            descriptor.height = size.y;
             _temporaryColorHandle ??= RTHandles.Alloc(descriptor);
             RenderingUtils.ReAllocateHandleIfNeeded(ref _temporaryColorHandle, descriptor);
             _temporaryColorTarget = new RenderTargetIdentifier(_temporaryColorHandle, 0, CubemapFace.Unknown, -1);
@@ -385,6 +389,9 @@ namespace Crest
             descriptor.SetMSAASamples(cameraData.camera);
             descriptor.bindMS = descriptor.msaaSamples > 1;
 
+            size = passData.depthTargetHandle.RT.GetScaledSize();
+            descriptor.width = size.x;
+            descriptor.height = size.y;
             _depthStencilHandle ??= RTHandles.Alloc(descriptor);
             RenderingUtils.ReAllocateHandleIfNeeded(ref _depthStencilHandle, descriptor);
             _depthStencilTarget = new RenderTargetIdentifier(_depthStencilHandle, 0, CubemapFace.Unknown, -1);
