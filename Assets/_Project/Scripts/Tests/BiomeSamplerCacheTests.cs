@@ -167,5 +167,98 @@ namespace Hecton8.World.Tests
                 if (previousPlayerObj != null) Object.DestroyImmediate(previousPlayerObj);
             }
         }
+
+        [Test]
+        public void OnOriginShift_InactiveComponent_DoesNotApplyOffset()
+        {
+            _gameObject.SetActive(false);
+
+            FieldInfo lastCenterPositionField = typeof(BiomeSamplerCache).GetField("_lastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+            Vector3 initialCenter = new Vector3(10f, 0f, 10f);
+            lastCenterPositionField.SetValue(_biomeSamplerCache, initialCenter);
+            typeof(BiomeSamplerCache).GetField("_hasLastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_biomeSamplerCache, true);
+
+            var shiftData = new OriginShiftEventData(new Vector3(5f, 0f, 5f), Vector3.zero, Vector3.zero, 0, 0);
+
+            _biomeSamplerCache.OnOriginShift(in shiftData);
+
+            Vector3 updatedCenter = (Vector3)lastCenterPositionField.GetValue(_biomeSamplerCache);
+            Assert.That(updatedCenter, Is.EqualTo(initialCenter));
+        }
+
+        [Test]
+        public void OnOriginShift_InvalidOffset_DoesNotApplyOffset()
+        {
+            _gameObject.SetActive(true);
+
+            FieldInfo lastCenterPositionField = typeof(BiomeSamplerCache).GetField("_lastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+            Vector3 initialCenter = new Vector3(10f, 0f, 10f);
+            lastCenterPositionField.SetValue(_biomeSamplerCache, initialCenter);
+            typeof(BiomeSamplerCache).GetField("_hasLastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_biomeSamplerCache, true);
+
+            var shiftData = new OriginShiftEventData(new Vector3(float.NaN, 0f, 5f), Vector3.zero, Vector3.zero, 0, 0);
+
+            _biomeSamplerCache.OnOriginShift(in shiftData);
+
+            Vector3 updatedCenter = (Vector3)lastCenterPositionField.GetValue(_biomeSamplerCache);
+            Assert.That(updatedCenter, Is.EqualTo(initialCenter));
+        }
+
+        [Test]
+        public void OnOriginShift_NearZeroOffset_DoesNotApplyOffset()
+        {
+            _gameObject.SetActive(true);
+
+            FieldInfo lastCenterPositionField = typeof(BiomeSamplerCache).GetField("_lastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+            Vector3 initialCenter = new Vector3(10f, 0f, 10f);
+            lastCenterPositionField.SetValue(_biomeSamplerCache, initialCenter);
+            typeof(BiomeSamplerCache).GetField("_hasLastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_biomeSamplerCache, true);
+
+            var shiftData = new OriginShiftEventData(new Vector3(0.005f, 0f, 0.005f), Vector3.zero, Vector3.zero, 0, 0); // sqrMagnitude = 0.00005 < 0.0001f
+
+            _biomeSamplerCache.OnOriginShift(in shiftData);
+
+            Vector3 updatedCenter = (Vector3)lastCenterPositionField.GetValue(_biomeSamplerCache);
+            Assert.That(updatedCenter, Is.EqualTo(initialCenter));
+        }
+
+        [Test]
+        public void OnOriginShift_ValidOffset_AppliesOffsetToCachedState()
+        {
+            _gameObject.SetActive(true);
+
+            FieldInfo lastCenterPositionField = typeof(BiomeSamplerCache).GetField("_lastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo debugLastCenterPositionField = typeof(BiomeSamplerCache).GetField("_debugLastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo samplesField = typeof(BiomeSamplerCache).GetField("_samples", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo sampleCountField = typeof(BiomeSamplerCache).GetField("_sampleCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo hasLastCenterPositionField = typeof(BiomeSamplerCache).GetField("_hasLastCenterPosition", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            Vector3 initialCenter = new Vector3(10f, 0f, 10f);
+            Vector3 debugInitialCenter = new Vector3(20f, 0f, 20f);
+
+            lastCenterPositionField.SetValue(_biomeSamplerCache, initialCenter);
+            debugLastCenterPositionField.SetValue(_biomeSamplerCache, debugInitialCenter);
+            hasLastCenterPositionField.SetValue(_biomeSamplerCache, true);
+
+            var samplesArray = new BiomeSamplerCache.CachedSample[1];
+            samplesArray[0] = new BiomeSamplerCache.CachedSample { position = new Vector3(15f, 0f, 15f) };
+
+            samplesField.SetValue(_biomeSamplerCache, samplesArray);
+            sampleCountField.SetValue(_biomeSamplerCache, 1);
+
+            Vector3 shiftOffset = new Vector3(100f, 0f, 100f);
+            var shiftData = new OriginShiftEventData(shiftOffset, Vector3.zero, Vector3.zero, 0, 0);
+
+            _biomeSamplerCache.OnOriginShift(in shiftData);
+
+            Vector3 updatedCenter = (Vector3)lastCenterPositionField.GetValue(_biomeSamplerCache);
+            Vector3 updatedDebugCenter = (Vector3)debugLastCenterPositionField.GetValue(_biomeSamplerCache);
+            var updatedSamplesArray = (BiomeSamplerCache.CachedSample[])samplesField.GetValue(_biomeSamplerCache);
+            Vector3 updatedSamplePosition = updatedSamplesArray[0].position;
+
+            Assert.That(updatedCenter, Is.EqualTo(initialCenter - shiftOffset));
+            Assert.That(updatedDebugCenter, Is.EqualTo(debugInitialCenter - shiftOffset));
+            Assert.That(updatedSamplePosition, Is.EqualTo(new Vector3(15f, 0f, 15f) - shiftOffset));
+        }
     }
 }
