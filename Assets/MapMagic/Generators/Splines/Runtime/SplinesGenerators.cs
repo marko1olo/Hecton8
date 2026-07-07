@@ -557,17 +557,7 @@ namespace MapMagic.Nodes.SplinesGenerators
 
 			//blending line heights with terrain heights
 			if (stop!=null && stop.stop) return null;
-			for (int i=0; i<srcHeights.arr.Length; i++)  //TODO: replace with matrix mix
-			{
-				float dist = lineDistances.arr[i];
-				if (dist == 0) { lineHeights.arr[i] = srcHeights.arr[i]; continue; }
-				if (1-dist < flat) continue;
-
-				float percent = dist / (1-flat);
-				percent = 3*percent*percent - 2*percent*percent*percent;
-
-				lineHeights.arr[i] = lineHeights.arr[i]*percent + srcHeights.arr[i]*(1-percent);
-			}
+			lineHeights.Mix(srcHeights, lineDistances, 0, 1-flat, maskInvert:true, fallof:true, opacity:1);
 
 			//applying detail
 			if (detailMatrix != null)
