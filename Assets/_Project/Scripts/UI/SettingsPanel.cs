@@ -598,17 +598,17 @@ namespace Hecton8.UI
 
         private Transform CreateMenuStyleRowCold(Transform parent)
         {
-            GameObject rowObject = new GameObject("Row_MenuVisualStyle", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional main-menu settings style row.
+            GameObject rowObject = new GameObject("Row_MenuVisualStyle", typeof(RectTransform)); // COLD ALLOC: optional main-menu settings style row.
             rowObject.transform.SetParent(parent, false);
 
-            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            RectTransform rowRect = (RectTransform)rowObject.transform;
             rowRect.localScale = Vector3.one;
 
-            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            LayoutElement rowLayout = rowObject.AddComponent<LayoutElement>();
             rowLayout.minHeight = 34f;
             rowLayout.preferredHeight = 36f;
 
-            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            HorizontalLayoutGroup rowGroup = rowObject.AddComponent<HorizontalLayoutGroup>();
             rowGroup.childAlignment = TextAnchor.MiddleLeft;
             rowGroup.childControlHeight = true;
             rowGroup.childControlWidth = true;
@@ -665,17 +665,17 @@ namespace Hecton8.UI
 
         private Transform CreateMenuConceptRowCold(Transform parent)
         {
-            GameObject rowObject = new GameObject("Row_MenuVisualConcept", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional main-menu settings concept row.
+            GameObject rowObject = new GameObject("Row_MenuVisualConcept", typeof(RectTransform)); // COLD ALLOC: optional main-menu settings concept row.
             rowObject.transform.SetParent(parent, false);
 
-            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            RectTransform rowRect = (RectTransform)rowObject.transform;
             rowRect.localScale = Vector3.one;
 
-            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            LayoutElement rowLayout = rowObject.AddComponent<LayoutElement>();
             rowLayout.minHeight = 34f;
             rowLayout.preferredHeight = 36f;
 
-            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            HorizontalLayoutGroup rowGroup = rowObject.AddComponent<HorizontalLayoutGroup>();
             rowGroup.childAlignment = TextAnchor.MiddleLeft;
             rowGroup.childControlHeight = true;
             rowGroup.childControlWidth = true;
@@ -732,17 +732,17 @@ namespace Hecton8.UI
 
         private Transform CreateAccessibilityTextScaleRowCold(Transform parent)
         {
-            GameObject rowObject = new GameObject("Row_TextScale", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional accessibility text-scale row.
+            GameObject rowObject = new GameObject("Row_TextScale", typeof(RectTransform)); // COLD ALLOC: optional accessibility text-scale row.
             rowObject.transform.SetParent(parent, false);
 
-            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            RectTransform rowRect = (RectTransform)rowObject.transform;
             rowRect.localScale = Vector3.one;
 
-            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            LayoutElement rowLayout = rowObject.AddComponent<LayoutElement>();
             rowLayout.minHeight = 34f;
             rowLayout.preferredHeight = 36f;
 
-            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            HorizontalLayoutGroup rowGroup = rowObject.AddComponent<HorizontalLayoutGroup>();
             rowGroup.childAlignment = TextAnchor.MiddleLeft;
             rowGroup.childControlHeight = true;
             rowGroup.childControlWidth = true;
@@ -794,17 +794,17 @@ namespace Hecton8.UI
 
         private Transform CreateAccessibilityMotionScaleRowCold(Transform parent)
         {
-            GameObject rowObject = new GameObject("Row_UiMotionScale", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional accessibility motion row.
+            GameObject rowObject = new GameObject("Row_UiMotionScale", typeof(RectTransform)); // COLD ALLOC: optional accessibility motion row.
             rowObject.transform.SetParent(parent, false);
 
-            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            RectTransform rowRect = (RectTransform)rowObject.transform;
             rowRect.localScale = Vector3.one;
 
-            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            LayoutElement rowLayout = rowObject.AddComponent<LayoutElement>();
             rowLayout.minHeight = 34f;
             rowLayout.preferredHeight = 36f;
 
-            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            HorizontalLayoutGroup rowGroup = rowObject.AddComponent<HorizontalLayoutGroup>();
             rowGroup.childAlignment = TextAnchor.MiddleLeft;
             rowGroup.childControlHeight = true;
             rowGroup.childControlWidth = true;
@@ -857,10 +857,10 @@ namespace Hecton8.UI
 
         private static Slider CreateScalarSliderCold(Transform parent, string name, float minValue, float maxValue, float defaultValue)
         {
-            GameObject sliderObject = new GameObject(name, typeof(RectTransform), typeof(Slider)); // COLD ALLOC: optional accessibility slider.
+            GameObject sliderObject = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: optional accessibility slider.
             sliderObject.transform.SetParent(parent, false);
 
-            Slider slider = sliderObject.GetComponent<Slider>();
+            Slider slider = sliderObject.AddComponent<Slider>();
             slider.minValue = minValue;
             slider.maxValue = maxValue;
             slider.value = defaultValue;
@@ -877,7 +877,7 @@ namespace Hecton8.UI
 
             GameObject fillAreaObject = new GameObject("Fill Area", typeof(RectTransform)); // COLD ALLOC: optional slider fill area.
             fillAreaObject.transform.SetParent(sliderObject.transform, false);
-            RectTransform fillAreaRect = fillAreaObject.GetComponent<RectTransform>();
+            RectTransform fillAreaRect = (RectTransform)fillAreaObject.transform;
             fillAreaRect.anchorMin = Vector2.zero;
             fillAreaRect.anchorMax = Vector2.one;
             fillAreaRect.offsetMin = new Vector2(9f, 0f);
@@ -893,7 +893,7 @@ namespace Hecton8.UI
 
             GameObject handleAreaObject = new GameObject("Handle Slide Area", typeof(RectTransform)); // COLD ALLOC: optional slider handle area.
             handleAreaObject.transform.SetParent(sliderObject.transform, false);
-            RectTransform handleAreaRect = handleAreaObject.GetComponent<RectTransform>();
+            RectTransform handleAreaRect = (RectTransform)handleAreaObject.transform;
             handleAreaRect.anchorMin = Vector2.zero;
             handleAreaRect.anchorMax = Vector2.one;
             handleAreaRect.offsetMin = new Vector2(9f, 0f);
@@ -916,10 +916,10 @@ namespace Hecton8.UI
 
         private static Image CreateSliderImageCold(Transform parent, string name, Color color)
         {
-            GameObject imageObject = new GameObject(name, typeof(RectTransform), typeof(Image)); // COLD ALLOC: optional slider image.
+            GameObject imageObject = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: optional slider image.
             imageObject.transform.SetParent(parent, false);
 
-            Image image = imageObject.GetComponent<Image>();
+            Image image = imageObject.AddComponent<Image>();
             image.color = color;
             return image;
         }
@@ -935,13 +935,13 @@ namespace Hecton8.UI
 
         private static Button CreateMenuStyleButtonCold(Transform parent, string name, ReadOnlySpan<char> label)
         {
-            GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button)); // COLD ALLOC: optional settings row button.
+            GameObject buttonObject = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: optional settings row button.
             buttonObject.transform.SetParent(parent, false);
 
-            Image image = buttonObject.GetComponent<Image>();
+            Image image = buttonObject.AddComponent<Image>();
             image.color = new Color(0.075f, 0.145f, 0.155f, 0.86f);
 
-            Button button = buttonObject.GetComponent<Button>();
+            Button button = buttonObject.AddComponent<Button>();
             button.targetGraphic = image;
             ColorBlock colors = button.colors;
             colors.normalColor = new Color(0.075f, 0.145f, 0.155f, 0.86f);
@@ -963,10 +963,10 @@ namespace Hecton8.UI
 
         private static TMP_Text CreateMenuStyleTextCold(Transform parent, string name, ReadOnlySpan<char> value, TextAlignmentOptions alignment, float fontSize)
         {
-            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)); // COLD ALLOC: optional settings row TMP text.
+            GameObject textObject = new GameObject(name, typeof(RectTransform)); // COLD ALLOC: optional settings row TMP text.
             textObject.transform.SetParent(parent, false);
 
-            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI text = textObject.AddComponent<TextMeshProUGUI>();
             text.font = TMP_Settings.defaultFontAsset;
             text.fontSize = fontSize;
             text.alignment = alignment;
