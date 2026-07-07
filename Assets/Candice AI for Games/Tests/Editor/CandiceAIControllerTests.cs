@@ -37,5 +37,49 @@ namespace CandiceAIforGames.AI.Tests
 
             Object.DestroyImmediate(go);
         }
+
+        [Test]
+        public void AttackRanged_WithAnimationAndNotAttacking_SetsIsAttackingAndDoesNotSchedulePendingAttack()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            controller.HasAttackAnimation = true;
+            controller.IsAttacking = false;
+
+            controller.AttackRanged();
+
+            Assert.That(controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(controller);
+            Assert.That(pendingAttack, Is.False);
+
+            Object.DestroyImmediate(go);
+        }
+
+        [Test]
+        public void AttackRanged_WithoutAnimationAndNotAttacking_SetsIsAttackingAndSchedulesPendingAttack()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            controller.HasAttackAnimation = false;
+            controller.IsAttacking = false;
+
+            controller.AttackRanged();
+
+            Assert.That(controller.IsAttacking, Is.True);
+
+            var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            bool pendingAttack = (bool)pendingAttackField.GetValue(controller);
+            Assert.That(pendingAttack, Is.True);
+
+            var pendingAttackIsRangedField = typeof(CandiceAIController).GetField("_pendingAttackIsRanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            bool pendingAttackIsRanged = (bool)pendingAttackIsRangedField.GetValue(controller);
+            Assert.That(pendingAttackIsRanged, Is.True);
+
+            Object.DestroyImmediate(go);
+        }
     }
 }
