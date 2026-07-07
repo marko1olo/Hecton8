@@ -180,6 +180,12 @@ namespace CandiceAIforGames.AI.Tests
             bool pendingAttack = (bool)pendingAttackField.GetValue(_controller);
             Assert.That(pendingAttack, Is.False);
         }
+        [Test]
+        public void GetPickaxe_DoesNothing_DoesNotThrow()
+        {
+            Assert.DoesNotThrow(() => _controller.GetPickaxe());
+        }
+
 
         private void SetPrivateField(object obj, string fieldName, object value)
         {
