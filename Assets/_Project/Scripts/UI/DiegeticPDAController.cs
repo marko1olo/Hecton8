@@ -91,6 +91,8 @@ namespace Hecton8.UI
         private readonly List<Collider> _tabletVisibilityColliders = new List<Collider>(TabletColliderDiscoveryCapacity);
         // COLD ALLOC: List<CanvasGroup>(8) - reusable PDA tablet visibility cache - owner: DiegeticPDAController
         private readonly List<CanvasGroup> _tabletVisibilityCanvasGroups = new List<CanvasGroup>(TabletCanvasGroupDiscoveryCapacity);
+        // COLD ALLOC: List<Component>(64) - reusable PDA tablet visibility cache block - owner: DiegeticPDAController
+        private readonly List<Component> _tabletVisibilityComponents = new List<Component>(TabletRendererDiscoveryCapacity + TabletColliderDiscoveryCapacity + TabletCanvasGroupDiscoveryCapacity);
 
         private bool _tabsRouted;
         private bool _registeredToTickManager;
@@ -672,9 +674,23 @@ namespace Hecton8.UI
             _tabletVisibilityRenderers.Clear();
             _tabletVisibilityColliders.Clear();
             _tabletVisibilityCanvasGroups.Clear();
-            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityRenderers);
-            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityColliders);
-            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityCanvasGroups);
+            _tabletVisibilityComponents.Clear();
+
+            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityComponents);
+
+            int compCount = _tabletVisibilityComponents.Count;
+            for (int i = 0; i < compCount; i++)
+            {
+                Component comp = _tabletVisibilityComponents[i];
+                if (comp is Renderer renderer)
+                    _tabletVisibilityRenderers.Add(renderer);
+                else if (comp is Collider collider)
+                    _tabletVisibilityColliders.Add(collider);
+                else if (comp is CanvasGroup canvasGroup)
+                    _tabletVisibilityCanvasGroups.Add(canvasGroup);
+            }
+
+            _tabletVisibilityComponents.Clear();
         }
 
         private void SetTabletVisible(bool visible)
