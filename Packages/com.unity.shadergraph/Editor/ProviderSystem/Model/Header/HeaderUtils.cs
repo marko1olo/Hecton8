@@ -324,10 +324,13 @@ namespace UnityEditor.ShaderGraph.ProviderSystem
             // TODO: DYNAMIC HINT only supports float, float2, float3, float4 and half, half2, half3, half4
             if (dynamicLength >= 1 && dynamicLength <= 4)
             {
-                string halfType = $"half{(dynamicLength == 1 ? null : dynamicLength)}";
-                string floatType = $"float{(dynamicLength == 1 ? null : dynamicLength)}";
-                newType = System.Text.RegularExpressions.Regex.Replace(newType, "half[1-4]|half", halfType);
-                newType = System.Text.RegularExpressions.Regex.Replace(newType, "float[1-4]|float", floatType);
+                if (System.Text.RegularExpressions.Regex.IsMatch(newType, @"^(float|half)[1-4]?$"))
+                {
+                    string halfType = $"half{(dynamicLength == 1 ? null : dynamicLength.ToString())}";
+                    string floatType = $"float{(dynamicLength == 1 ? null : dynamicLength.ToString())}";
+                    newType = System.Text.RegularExpressions.Regex.Replace(newType, "^half[1-4]?$", halfType);
+                    newType = System.Text.RegularExpressions.Regex.Replace(newType, "^float[1-4]?$", floatType);
+                }
             }
 
             if (precisionToken != null)
