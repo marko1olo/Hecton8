@@ -24,7 +24,7 @@ namespace Hecton8.Tests
         {
             if (_suitData != null)
             {
-                Object.DestroyImmediate(_suitData);
+                UnityEngine.Object.DestroyImmediate(_suitData);
             }
         }
 
@@ -110,6 +110,36 @@ namespace Hecton8.Tests
             // Expected norm is math.saturate((7 - 2) / max(12 - 2, 0.1f)) = 5 / 10 = 0.5f
             // Expected _collisionShakeY = -0.5 * 0.05 = -0.025f
             Assert.AreEqual(-0.025f, shakeY, 0.001f);
+        }
+
+        [Test]
+        public void Initialize_ResetsStateToNeutral()
+        {
+            // Set up initial state with some dirty values using reflection
+            typeof(CameraJuiceProcessor).GetField("_bobTimer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_processor, 10f);
+            typeof(CameraJuiceProcessor).GetField("_bobIntensity", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_processor, 0.5f);
+            typeof(CameraJuiceProcessor).GetField("_currentRoll", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_processor, 5f);
+            typeof(CameraJuiceProcessor).GetField("_momentumPitch", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_processor, 2f);
+            typeof(CameraJuiceProcessor).GetField("_wasSubmerged", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(_processor, true);
+
+            // Call Initialize
+            _processor.Initialize(true);
+
+            // Assert that the state is reset
+            Assert.AreEqual(0f, (float)typeof(CameraJuiceProcessor).GetField("_bobTimer", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+            Assert.AreEqual(0f, (float)typeof(CameraJuiceProcessor).GetField("_bobIntensity", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+            Assert.AreEqual(0f, (float)typeof(CameraJuiceProcessor).GetField("_currentRoll", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+            Assert.AreEqual(0f, (float)typeof(CameraJuiceProcessor).GetField("_momentumPitch", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+            Assert.IsFalse((bool)typeof(CameraJuiceProcessor).GetField("_wasSubmerged", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+
+            // Assert roll sign
+            Assert.AreEqual(-1f, (float)typeof(CameraJuiceProcessor).GetField("_rollSign", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
+
+            // Call Initialize with false
+            _processor.Initialize(false);
+
+            // Assert roll sign
+            Assert.AreEqual(1f, (float)typeof(CameraJuiceProcessor).GetField("_rollSign", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_processor));
         }
     }
 }
