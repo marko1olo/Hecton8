@@ -203,6 +203,13 @@ namespace CandiceAIforGames.AI.Tests
             Assert.That(readyStateListeners[0], Is.EqualTo(mockListener));
         }
 
+        [Test]
+        public void OnBTComplete_DoesNotThrow()
+        {
+            var data = new CandiceBehaviorTreeEventData("TestAction", CandiceBTEventTypes.EVENT_TYPE_COMPLETE, CandiceBehaviorStates.SUCCESS);
+            Assert.DoesNotThrow(() => _controller.OnBTComplete(data));
+        }
+
         private void SetPrivateField(object obj, string fieldName, object value)
         {
             var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
