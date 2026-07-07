@@ -122,5 +122,55 @@ namespace Hecton8.Core.Tests
             }
         }
 
+
+        public void Warmup_ValidPrefab_PreAllocatesCorrectAmount()
+            GameObject prefabRegistryGo = new GameObject("[PrefabRegistry]");
+            prefabRegistryGo.AddComponent<PrefabRegistry>();
+
+            GameObject prefab = new GameObject("TestPrefab");
+            int warmupCount = 5;
+
+            _manager.Warmup(prefab, warmupCount);
+
+            var poolsField = typeof(ObjectPoolManager).GetField("_pools", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(poolsField, "Could not find _pools field");
+
+            var poolsDict = poolsField.GetValue(_manager) as System.Collections.IDictionary;
+            Assert.IsNotNull(poolsDict, "Pools dictionary should be initialized");
+            Assert.AreEqual(1, poolsDict.Count, "There should be one pool created.");
+
+            // Extract the available queue from the pool
+            var enumerator = poolsDict.GetEnumerator();
+            enumerator.MoveNext();
+            var poolInstance = enumerator.Value;
+
+            var poolType = poolInstance.GetType();
+            var availableField = poolType.GetField("available", BindingFlags.Public | BindingFlags.Instance);
+            var availableQueue = availableField.GetValue(poolInstance) as System.Collections.ICollection;
+
+            Assert.IsNotNull(availableQueue, "Available queue should not be null.");
+            Assert.AreEqual(warmupCount, availableQueue.Count, $"Pool queue should have {warmupCount} instances pre-allocated.");
+
+            // Teardown objects
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(prefabRegistryGo);
+
+        public void Warmup_NullPrefab_DoesNotThrow()
+            // Act & Assert
+            Assert.DoesNotThrow(() => _manager.Warmup((GameObject)null, 5));
+
+        public void Warmup_ZeroOrNegativeCount_DoesNotAllocate()
+            GameObject prefab = new GameObject("TestPrefab");
+
+            _manager.Warmup(prefab, 0);
+            _manager.Warmup(prefab, -5);
+
+            var poolsField = typeof(ObjectPoolManager).GetField("_pools", BindingFlags.NonPublic | BindingFlags.Instance);
+            var poolsDict = poolsField.GetValue(_manager) as System.Collections.IDictionary;
+
+            if (poolsDict != null)
+                Assert.AreEqual(0, poolsDict.Count, "Should not create a pool for 0 or negative count");
+
+            Object.DestroyImmediate(prefab);
     }
 }
