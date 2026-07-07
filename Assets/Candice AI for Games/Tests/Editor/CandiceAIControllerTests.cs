@@ -40,6 +40,7 @@ namespace CandiceAIforGames.AI.Tests
 
         [Test]
         public void AttackRanged_WithAnimationAndNotAttacking_SetsIsAttackingAndDoesNotSchedulePendingAttack()
+        public void WithinAttackRange_NoTarget_ReturnsFalse()
         {
             var go = new GameObject("CandiceAIControllerTest");
             var controller = go.AddComponent<CandiceAIController>();
@@ -54,12 +55,16 @@ namespace CandiceAIforGames.AI.Tests
             var pendingAttackField = typeof(CandiceAIController).GetField("_pendingAttack", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             bool pendingAttack = (bool)pendingAttackField.GetValue(controller);
             Assert.That(pendingAttack, Is.False);
+            controller.AttackTarget = null;
+
+            Assert.IsFalse(controller.WithinAttackRange());
 
             Object.DestroyImmediate(go);
         }
 
         [Test]
         public void AttackRanged_WithoutAnimationAndNotAttacking_SetsIsAttackingAndSchedulesPendingAttack()
+        public void WithinAttackRange_TargetOutOfRange_ReturnsFalse()
         {
             var go = new GameObject("CandiceAIControllerTest");
             var controller = go.AddComponent<CandiceAIController>();
@@ -80,6 +85,35 @@ namespace CandiceAIforGames.AI.Tests
             Assert.That(pendingAttackIsRanged, Is.True);
 
             Object.DestroyImmediate(go);
+            var targetGo = new GameObject("Target");
+            controller.AttackTarget = targetGo;
+            controller.AttackRange = 5f;
+
+            go.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(10f, 0f, 0f);
+
+            Assert.IsFalse(controller.WithinAttackRange());
+
+            Object.DestroyImmediate(targetGo);
+        }
+
+        [Test]
+        public void WithinAttackRange_TargetInRange_ReturnsTrueAndSetsLookPoint()
+        {
+            var go = new GameObject("CandiceAIControllerTest");
+            var controller = go.AddComponent<CandiceAIController>();
+
+            var targetGo = new GameObject("Target");
+            controller.AttackTarget = targetGo;
+            controller.AttackRange = 5f;
+
+            go.transform.position = Vector3.zero;
+            targetGo.transform.position = new Vector3(3f, 0f, 0f);
+
+            Assert.IsTrue(controller.WithinAttackRange());
+            Assert.AreEqual(targetGo.transform.position, controller.LookPoint);
+
+            Object.DestroyImmediate(targetGo);
         }
     }
 }
