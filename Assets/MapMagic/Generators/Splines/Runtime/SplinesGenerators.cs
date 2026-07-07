@@ -520,10 +520,9 @@ namespace MapMagic.Nodes.SplinesGenerators
 
 			//line heights matrix
 			if (stop!=null && stop.stop) return null;
-			MatrixWorld lineHeightsSrc = new MatrixWorld(srcHeights.rect, srcHeights.worldPos, srcHeights.worldSize);
-			SplineMatrixOps.Stroke(splineSys, lineHeightsSrc, padOnePixel:true);
-			MatrixWorld lineHeights = new MatrixWorld(lineHeightsSrc); //TODO: use same src/dst matrix in padding
-			MatrixOps.PaddingMipped(lineHeightsSrc, lineContours, lineHeights);
+			MatrixWorld lineHeights = new MatrixWorld(srcHeights.rect, srcHeights.worldPos, srcHeights.worldSize);
+			SplineMatrixOps.Stroke(splineSys, lineHeights, padOnePixel:true);
+			MatrixOps.PaddingMipped(lineHeights, lineContours, lineHeights);
 
 
 			//distances matrix
@@ -636,10 +635,9 @@ namespace MapMagic.Nodes.SplinesGenerators
 
 			//line heights matrix
 			if (stop!=null && stop.stop) return null;
-			MatrixWorld lineHeightsSrc = new MatrixWorld(srcHeights.rect, srcHeights.worldPos, srcHeights.worldSize);
-			SplineMatrixOps.Stroke(splineSys, lineHeightsSrc, padOnePixel:true);
-			MatrixWorld lineHeights = new MatrixWorld(lineHeightsSrc); //TODO: use same src/dst matrix in padding
-			MatrixOps.PaddingMipped(lineHeightsSrc, lineContours, lineHeights);
+			MatrixWorld lineHeights = new MatrixWorld(srcHeights.rect, srcHeights.worldPos, srcHeights.worldSize);
+			SplineMatrixOps.Stroke(splineSys, lineHeights, padOnePixel:true);
+			MatrixOps.PaddingMipped(lineHeights, lineContours, lineHeights);
 
 
 			//distances matrix
