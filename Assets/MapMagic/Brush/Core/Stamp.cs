@@ -20,11 +20,11 @@ namespace MapMagic.Brush
 
 		public float radius;
 		public float hardness;
-		public int margins; //TODO: make it world since it always affected by pixelSize. Or radius-related
+		public float margins;
 
-		public Vector2D Min => pos-radius; //-margins
-		public Vector2D Max => pos+radius; //+margins
-		public Vector2D Size => new Vector2D(radius*2);
+		public Vector2D Min => pos-radius-margins;
+		public Vector2D Max => pos+radius+margins;
+		public Vector2D Size => new Vector2D((radius+margins)*2);
 
 
 
@@ -39,7 +39,7 @@ namespace MapMagic.Brush
 			Vector2D worldPos = ((Vector2D)pixelRect.offset+0.5f) * pixelSize;  //+0.5 since world grid start from half-pixel
 			Vector2D worldSize = ((Vector2D)pixelRect.size-1f) * pixelSize;		//and ends with half-pixel, so there is 1 pixel less
 
-			return new Area(worldPos, worldSize, pixelRect, margins);
+			return new Area(worldPos, worldSize, pixelRect, Mathf.CeilToInt(margins / pixelSize.x));
 		}
 
 

@@ -25,7 +25,7 @@ namespace MapMagic.Brush
 
 		public float radius = 100;
 		public float hardness = 0.5f;
-		public int margins = 0;
+		public float margins = 0;
 		public float spacing = 0.25f;
 
 		public Override ovd = new Override();
