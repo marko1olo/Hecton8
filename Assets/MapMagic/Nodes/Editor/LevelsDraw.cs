@@ -46,8 +46,18 @@ namespace MapMagic.Nodes.GUI
 						Draw.Texture(null, histogramMat);
 					}
 
-					DrawCurve(inMin, inMax, gamma, outMin, outMax, posArray);
-					//CheckCurve(min, max, gamma);
+					// DrawCurve
+					Material curveMat = UI.current.textures.GetMaterial("Hidden/DPLayout/Curve");
+					curveMat.SetVector("_Forecolor", new Vector4(0,0,0,1));
+					curveMat.SetVector("_CurveRect", Cell.current.GetRect(UI.current.scrollZoom).ToV4());
+
+					Den.Tools.Matrices.Matrix matrix = new Den.Tools.Matrices.Matrix(new Den.Tools.CoordRect(0,0,256,1));
+					for (int i=0; i<256; i++) matrix.arr[i] = 1f*i/256f;
+					matrix.Levels(inMin, inMax, gamma, outMin, outMax);
+
+					curveMat.SetFloatArray("_Curve", matrix.arr);
+					Draw.Texture(null, curveMat);
+
 				}
 
 				//right slider
@@ -388,84 +398,5 @@ namespace MapMagic.Nodes.GUI
 		}
 
 
-		private static void DrawCurve (
-			float inMin, float inMax,  //in percent, 0-1
-			float gamma, //0-2, 1 is empty
-			float outMin, float outMax, 
-			Vector3[] posArray = null) 
-		{
-			if (posArray == null) posArray = new Vector3[5];
-
-			for (int i=1; i<posArray.Length-1; i++)
-			{
-				float p = 1f * (i-1) / (posArray.Length-3);
-				p = 3*p*p - 2*p*p*p;
-
-				float x = inMin + p*(inMax-inMin);
-				float y = LevelsFn(x, inMin, inMax, gamma, outMin, outMax);
-
-				x = Cell.current.worldPosition.x + x*(Cell.current.finalSize.x-1); 
-				y = Cell.current.worldPosition.y + (1-y)*(Cell.current.finalSize.y-1) + 1;
-
-				posArray[i] = UI.current.scrollZoom.ToScreen( new Vector2(x,y) );
-			}
-
-			posArray[0] = UI.current.scrollZoom.ToScreen( new Vector2(Cell.current.worldPosition.x, Cell.current.worldPosition.y+Cell.current.finalSize.y*(1-outMin)) );
-			posArray[posArray.Length-1] = UI.current.scrollZoom.ToScreen( new Vector2(Cell.current.worldPosition.x+Cell.current.finalSize.x, Cell.current.worldPosition.y+Cell.current.finalSize.y*(1-outMax)) );
-
-			UnityEditor.Handles.color = Color.black;
-			UnityEditor.Handles.DrawAAPolyLine(2, posArray);
-		}
-
-		private static void CheckCurve (
-			float inMin, float inMax, float gamma, float outMin, float outMax,
-			Cell cell=null)
-		{
-			Vector3[] posArray = new Vector3[100];
-			for (int i=0; i<posArray.Length; i++)
-			{
-				float x = 1f*i / posArray.Length;
-				float y = LevelsFn(x, inMin, inMax, gamma, outMin, outMax);
-
-				x = Cell.current.worldPosition.x + x*(Cell.current.finalSize.x-1); 
-				y = Cell.current.worldPosition.y + (1-y)*(Cell.current.finalSize.y-1) + 1;
-
-				posArray[i] = UI.current.scrollZoom.ToScreen( new Vector2(x,y) );
-			}
-
-			UnityEditor.Handles.color = Color.red;
-			UnityEditor.Handles.DrawAAPolyLine(2, posArray);
-		}
-
-		private static float LevelsFn (float val, float inMin, float inMax, float gamma, float outMin, float outMax)
-		/// Copy of Matrix.Levels (TODO: use shader, matrix and it's array, and call matrix.Levels)
-		{
-			//preliminary clamping
-			if (val < inMin) return outMin;
-			if (val > inMax) return outMax;
-
-			//input
-			float inDelta = inMax - inMin;
-			if (inDelta != 0)
-				val = (val-inMin) / inDelta;
-			else
-				val = inMin;
-
-			//gamma
-			if (gamma>1.00001f || gamma<0.9999f)  // gamma != 1
-			{
-				if (gamma<1) val = Mathf.Pow(val, gamma);
-				else val = Mathf.Pow(val, 1/(2-gamma));
-			}
-
-			//output
-			float outDelta = outMax - outMin;
-			if (outDelta != 0)
-				val = outMin + val * outDelta;
-			else
-				val = outMin;
-
-			return val;
-		}
-	}
+}
 }
