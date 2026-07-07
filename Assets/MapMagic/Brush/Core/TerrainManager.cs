@@ -303,7 +303,18 @@ namespace MapMagic.Brush
 				stampTerrains[0] = closestTerrain;
 			}
 
-			//TODO: excluding terrains that have improper resolutions
+			//excluding terrains that have improper resolutions
+			if (stampTerrains.Count > 1)
+			{
+				Terrain refTerrain = stampTerrains[0];
+				for (int i = stampTerrains.Count - 1; i >= 1; i--)
+				{
+					if (!CheckTerrain(refTerrain, stampTerrains[i], out string _))
+					{
+						stampTerrains.RemoveAt(i);
+					}
+				}
+			}
 
 			return stampTerrains.ToArray();
 		}
