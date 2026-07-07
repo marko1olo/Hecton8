@@ -374,6 +374,7 @@ if (GraphicsSettings.defaultRenderPipeline != null) {
          tex = new Texture2D(2, 2, TextureFormat.RGBA32, true, true);
          tex.LoadImage(tempTex.EncodeToPNG());
          GameObject.DestroyImmediate(tempTex);
+         RenderTexture.ReleaseTemporary(rt);
       }
 
       static Texture2DArray cachedArray = null;
