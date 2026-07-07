@@ -41,7 +41,7 @@ namespace MoreMountains.Tools
 		/// <param name="sKey"></param>
 		protected virtual void Encrypt(Stream inputStream, Stream outputStream, string sKey)
 		{
-			RijndaelManaged algorithm = new RijndaelManaged();
+			Aes algorithm = Aes.Create();
 			Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, Encoding.ASCII.GetBytes(_saltText));
 
 			algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
@@ -59,7 +59,7 @@ namespace MoreMountains.Tools
 		/// <param name="sKey"></param>
 		protected virtual void Decrypt(Stream inputStream, Stream outputStream, string sKey)
 		{
-			RijndaelManaged algorithm = new RijndaelManaged();
+			Aes algorithm = Aes.Create();
 			Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, Encoding.ASCII.GetBytes(_saltText));
 
 			algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
