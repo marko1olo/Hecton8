@@ -460,7 +460,7 @@ namespace DigitalOpus.MB.Core
                     gridVector.y = Mathf.Floor((gridVector.y - d.origin.y) / d.cellSize.y) * d.cellSize.y;
                     gridVector.z = Mathf.Floor((gridVector.z - d.origin.z) / d.cellSize.z) * d.cellSize.z;
                     List<Renderer> objs = null;
-                    string gridVectorStr = gridVector.ToString();
+                    string gridVectorStr = gridVector.ToString("F5");
                     if (cell2objs.ContainsKey(gridVectorStr))
                     {
                         objs = cell2objs[gridVectorStr];
