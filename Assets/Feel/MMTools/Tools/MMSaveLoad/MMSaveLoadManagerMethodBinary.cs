@@ -4,7 +4,6 @@ using UnityEngine;
 using System.IO;
 using System.Text;
 using System.Security.Cryptography;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MoreMountains.Tools
 {
@@ -20,8 +19,9 @@ namespace MoreMountains.Tools
 		/// <param name="saveFile"></param>
 		public void Save(object objectToSave, FileStream saveFile)
 		{
-			BinaryFormatter formatter = new BinaryFormatter();
-			formatter.Serialize(saveFile, objectToSave);
+			string json = JsonUtility.ToJson(objectToSave);
+			byte[] bytes = Encoding.UTF8.GetBytes(json);
+			saveFile.Write(bytes, 0, bytes.Length);
 			saveFile.Close();
 		}
 
@@ -34,9 +34,10 @@ namespace MoreMountains.Tools
 		public object Load(System.Type objectType, FileStream saveFile)
 		{
 			object savedObject;
-			BinaryFormatter formatter = new BinaryFormatter();
-			formatter.Binder = new MMSecureSerializationBinder(objectType);
-			savedObject = formatter.Deserialize(saveFile);
+			byte[] bytes = new byte[saveFile.Length];
+			saveFile.Read(bytes, 0, (int)saveFile.Length);
+			string json = Encoding.UTF8.GetString(bytes);
+			savedObject = JsonUtility.FromJson(json, objectType);
 			saveFile.Close();
 			return savedObject;
 		}
