@@ -41,8 +41,6 @@ namespace Hecton8.Dev
             "Assets/_Project/Prefabs/Items/Tools/Item_Tool_SeafloorDrill_World.prefab",
         };
 
-        [System.NonSerialized] private bool _rebuildQueued;
-
         private void Reset()
         {
             ActiveAuthoringInstance = this;
@@ -67,7 +65,6 @@ namespace Hecton8.Dev
             if (ReferenceEquals(ActiveAuthoringInstance, this))
                 ActiveAuthoringInstance = null;
             EditorApplication.delayCall -= TryRebuildAfterReset;
-            _rebuildQueued = false;
         }
 
         [ContextMenu("Rebuild Tool Staging")]
@@ -91,8 +88,6 @@ namespace Hecton8.Dev
 
         private void TryRebuildAfterReset()
         {
-            _rebuildQueued = false;
-
             if (this == null || gameObject == null || !IsEditorRebuildSafe())
                 return;
 
@@ -101,10 +96,8 @@ namespace Hecton8.Dev
 
         private void QueueRebuildAfterReset()
         {
-            if (_rebuildQueued || !IsEditorRebuildSafe())
+            if (!IsEditorRebuildSafe())
                 return;
-
-            _rebuildQueued = true;
             EditorApplication.delayCall -= TryRebuildAfterReset;
             EditorApplication.delayCall += TryRebuildAfterReset;
         }
