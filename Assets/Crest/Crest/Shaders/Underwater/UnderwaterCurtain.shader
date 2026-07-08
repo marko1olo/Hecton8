@@ -63,6 +63,8 @@ Shader "Crest/Underwater Curtain"
 
 			#define MAX_OFFSET 5.0
 
+			float _HeightOffset;
+
 			struct Attributes
 			{
 				float3 positionOS : POSITION;
