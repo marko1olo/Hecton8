@@ -61,6 +61,16 @@ namespace Hecton8.Editor.Build
 
         private static string RunGit(params string[] arguments)
         {
+            if (arguments == null || arguments.Length == 0)
+                return "unknown";
+
+            string command = arguments[0];
+            if (command != "rev-parse" && command != "status")
+            {
+                Debug.LogWarning("[BuildInfoPreprocess] Unauthorized git command: " + command);
+                return "unknown";
+            }
+
             try
             {
                 ProcessStartInfo info = new ProcessStartInfo
