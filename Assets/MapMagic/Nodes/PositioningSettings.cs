@@ -102,7 +102,7 @@ namespace MapMagic.Nodes
 					skip = biomeFactor < 0.5f;
 					break;
 				case BiomeBlend.Random:
-					float rnd = random.Random((int)trs.pos.x, (int)trs.pos.y); //TODO: use id?
+					float rnd = random.Random(trs.hash);
 					if (biomeFactor > 0.5f) rnd = 1-rnd;
 					skip = biomeFactor < rnd;
 					break;
