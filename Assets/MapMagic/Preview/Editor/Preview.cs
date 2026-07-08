@@ -203,7 +203,7 @@ namespace MapMagic.Previews
 		static void Subscribe ()
 		{
 			/// Assigning height preview on height change
-			Graph.OnOutputFinalized += (type, data, applyData, stop) =>
+			Graph.OnBeforeApplyAssign += (type, data, applyData, stop) =>
 			{
 				if (data.isPreview && typeof(Nodes.MatrixGenerators.HeightOutput200).IsAssignableFrom(type))
 					heightOutputPreview.SetObject(data.heights, data.area);

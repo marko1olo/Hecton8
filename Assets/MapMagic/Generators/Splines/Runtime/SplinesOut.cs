@@ -76,7 +76,7 @@ namespace MapMagic.Nodes.SplinesGenerators
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			ApplyData applyData = new ApplyData() {spline=mergedSpline};
-			Graph.OnOutputFinalized?.Invoke(typeof(SplineOutput200), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(SplineOutput200), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
 		

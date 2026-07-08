@@ -196,7 +196,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
-			Graph.OnOutputFinalized?.Invoke(typeof(HeightOutput200), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(HeightOutput200), data, applyData, stop);
 			data.MarkApply(applyData);
 
 			#if MM_DEBUG

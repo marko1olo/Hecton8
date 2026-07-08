@@ -127,7 +127,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 					propData = data.globals.microSplatPropData as MicroSplatPropData,
 				};
 
-				Graph.OnOutputFinalized?.Invoke(typeof(CustomShaderOutput200), data, applyData, stop);
+				Graph.OnBeforeApplyAssign?.Invoke(typeof(CustomShaderOutput200), data, applyData, stop);
 				data.MarkApply(applyData);
 			}
 
@@ -154,7 +154,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 					propData = data.globals.microSplatPropData as MicroSplatPropData,
 					texArrCfg = data.globals.microSplatTexArrConfig as TextureArrayConfig};
 
-				Graph.OnOutputFinalized?.Invoke(typeof(CustomShaderOutput200), data, applyData, stop);
+				Graph.OnBeforeApplyAssign?.Invoke(typeof(CustomShaderOutput200), data, applyData, stop);
 				data.MarkApply(applyData);
 			}
 

@@ -164,7 +164,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			ApplyData applyData = new ApplyData() { splats=splats3D, prototypes=prototypes };
-			Graph.OnOutputFinalized?.Invoke(typeof(TexturesOutput200), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(TexturesOutput200), data, applyData, stop);
 			data.MarkApply(applyData);
 
 			#if MM_DEBUG
@@ -351,7 +351,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				textureBaseMapDistance = 10000000, //no base map
 				textureNames = (string[])controlTextureNames.Clone() };
 
-			Graph.OnOutputFinalized?.Invoke(typeof(CustomShaderOutput200), data, controlTexturesData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(CustomShaderOutput200), data, controlTexturesData, stop);
 			data.MarkApply(controlTexturesData);
 		}
 
@@ -572,7 +572,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				textureNames = colorNames,
 				textureFormat = TextureFormat.RGBA32 };
 
-			Graph.OnOutputFinalized?.Invoke(typeof(DirectTexturesOutput200), data, controlTexturesData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(DirectTexturesOutput200), data, controlTexturesData, stop);
 			data.MarkApply(controlTexturesData);
 		}
 
@@ -753,7 +753,7 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			if (stop!=null && stop.stop) return;
 			var controlTexturesData = new ApplyData() {dict = dict};
 
-			Graph.OnOutputFinalized?.Invoke(typeof(DirectMatricesOutput200), data, controlTexturesData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(DirectMatricesOutput200), data, controlTexturesData, stop);
 			data.MarkApply(controlTexturesData);
 		}
 

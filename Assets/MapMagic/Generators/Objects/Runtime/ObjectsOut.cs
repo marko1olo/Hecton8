@@ -132,7 +132,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 		[UnityEditor.InitializeOnLoadMethod]
 		#endif
 		[RuntimeInitializeOnLoadMethod] 
-		static void Subscribe () => Graph.OnOutputFinalized += FinalizeIfHeightFinalized;
+		static void Subscribe () => Graph.OnBeforeApplyAssign += FinalizeIfHeightFinalized;
 		static void FinalizeIfHeightFinalized (Type type, TileData tileData, IApplyData applyData, StopToken stop)
 		{
 			if (type == typeof(MatrixGenerators.HeightOutput200))
@@ -198,7 +198,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 				transitions=objs.Values.ToArray(), 
 				terrainHeight = data.globals.height,
 				objsPerIteration = data.globals.objectsNumPerFrame};
-			Graph.OnOutputFinalized?.Invoke(typeof(ObjectsOutput), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(ObjectsOutput), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
 
@@ -333,7 +333,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 		[UnityEditor.InitializeOnLoadMethod]
 		#endif
 		[RuntimeInitializeOnLoadMethod] 
-		static void Subscribe () => Graph.OnOutputFinalized += FinalizeIfHeightFinalized;
+		static void Subscribe () => Graph.OnBeforeApplyAssign += FinalizeIfHeightFinalized;
 		static void FinalizeIfHeightFinalized (Type type, TileData tileData, IApplyData applyData, StopToken stop)
 		{
 			if (type == typeof(MatrixGenerators.HeightOutput200))
@@ -408,7 +408,7 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			ApplyTreesData applyData = new ApplyTreesData() { treePrototypes=prototypesList.ToArray(), treeInstances=instancesList.ToArray() };
-			Graph.OnOutputFinalized?.Invoke(typeof(TreesOutput), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(TreesOutput), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
 

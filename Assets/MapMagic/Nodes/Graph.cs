@@ -33,7 +33,7 @@ namespace MapMagic.Nodes
 		public static Action<Graph, TileData> OnBeforeClearPrepareGenerate; //called on any significant generate-related action
 		public static Action<Generator, TileData> OnBeforeNodeCleared;
 		public static Action<Generator, TileData> OnAfterNodeGenerated;
-		public static Action<Type, TileData, IApplyData, StopToken> OnOutputFinalized; //TODO: rename onAfterFinalize? onBeforeApplyAssign?
+		public static Action<Type, TileData, IApplyData, StopToken> OnBeforeApplyAssign;
 
 		public bool guiShowDependent;
 		public bool guiShowShared;
@@ -1041,7 +1041,7 @@ namespace MapMagic.Nodes
 					//	data.MarkFinalize(ObjectsGenerators.ObjectsOutput.finalizeAction, stop);
 					//	data.MarkFinalize(ObjectsGenerators.TreesOutput.finalizeAction, stop);
 					//}
-					//can't use ObjectsGenerators since they are in the other module. Using OnOutputFinalized event instead.
+					//can't use ObjectsGenerators since they are in the other module. Using OnBeforeApplyAssign event instead.
 
 					if (stop!=null && stop.stop) 
 					{ 
