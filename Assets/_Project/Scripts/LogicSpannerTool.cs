@@ -43,7 +43,6 @@ namespace Hecton8.Gameplay
         private SpannerState _state;
         private BaseModule _selectedSource;
         private ILogisticsService _constructionLogistics;
-        private int _selectedSourceModuleHashId;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — logic spanner HUD staging buffer — owner: LogicSpannerTool
 
         private enum SpannerState : byte
@@ -113,7 +112,6 @@ namespace Hecton8.Gameplay
             if (_selectedSource == null)
             {
                 _selectedSource = targetModule;
-                _selectedSourceModuleHashId = targetModuleHashId;
                 _state = SpannerState.SourceArmed;
                 PublishInfo(SourceArmedMessage);
                 return;
@@ -133,7 +131,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_selectedSourceModuleHashId == 0)
+            if (_selectedSource.CachedModuleHashId == 0)
             {
                 PublishWarning(InvalidTargetMessage);
                 ClearSelectionInternal();
@@ -150,7 +148,6 @@ namespace Hecton8.Gameplay
 
             _state = SpannerState.LinkCommitted;
             _selectedSource = null;
-            _selectedSourceModuleHashId = 0;
             QueueToolHapticFeedback(math.max(0.1f, GetRuntimePowerScalar(1f)), 1f);
             PublishInfo(LinkCreatedMessage);
         }
@@ -311,7 +308,6 @@ namespace Hecton8.Gameplay
         private void ClearSelectionInternal()
         {
             _selectedSource = null;
-            _selectedSourceModuleHashId = 0;
             _state = SpannerState.Idle;
         }
 
