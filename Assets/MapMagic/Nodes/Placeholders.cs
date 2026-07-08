@@ -20,6 +20,7 @@ namespace MapMagic.Nodes
 			public string type = null;
 			public string[] fields = null;
 			public Serializer.Value[] values = null;
+			public UnityEngine.Object uniObj = null;
 
 			public static explicit operator Serializer.Object (SerObject src)
 			{
@@ -27,6 +28,7 @@ namespace MapMagic.Nodes
 				dst.type = src.type;
 				dst.fields = src.fields;
 				dst.values = src.values;
+				dst.uniObj = src.uniObj;
 				return dst;
 			}
 
@@ -36,6 +38,7 @@ namespace MapMagic.Nodes
 				dst.type = src.type;
 				dst.fields = src.fields;
 				dst.values = src.values;
+				dst.uniObj = src.uniObj;
 				return dst;
 			}
 		}
@@ -47,7 +50,8 @@ namespace MapMagic.Nodes
 			[NonSerialized] public string[] origFields = new string[0];
 			[NonSerialized] public Serializer.Value[] origValues = new Serializer.Value[0];
 
-			//TODO: does not serialize UnityObject references
+			[NonSerialized] public UnityEngine.Object origUniObj;
+
 			//TODO: does not serialize layers or multi-inlet links
 
 			public override void Generate (TileData data, StopToken stop) { }
@@ -82,6 +86,7 @@ namespace MapMagic.Nodes
 
 				origFields = fieldsList.ToArray();
 				origValues = valuesList.ToArray();
+				origUniObj = serObj.uniObj;
 			}
 
 
@@ -93,6 +98,7 @@ namespace MapMagic.Nodes
 
 				ArrayTools.Append(ref serObj.fields, origFields);
 				ArrayTools.Append(ref serObj.values, origValues); 
+				serObj.uniObj = origUniObj;
 			}
 		}
 

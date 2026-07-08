@@ -1,2 +1,0 @@
-Current SRP: URP_Medium (PC_RPAsset)
-Default SRP: URP_Medium (PC_RPAsset)
