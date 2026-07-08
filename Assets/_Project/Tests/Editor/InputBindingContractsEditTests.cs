@@ -857,15 +857,10 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void UserOptionsConsumersIgnoreStaleRuntimeOwners()
+        public void SettingsManagerIgnoresStaleRuntimeOwners()
         {
             string settings = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "UI", "SettingsManager.cs"));
-            string localization = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "LocalizationManager.cs"));
-            string modSettings = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "ModdingAPI", "ModSettingsRegistry.cs"));
-            string pauseMenu = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "UI", "PauseMenuController.cs"));
             settings = settings.Replace("\r\n", "\n");
-            localization = localization.Replace("\r\n", "\n");
-            modSettings = modSettings.Replace("\r\n", "\n");
 
             StringAssert.Contains("IsUserOptionsPersistenceUsable", settings);
             StringAssert.Contains("persistence.IsServiceReady", settings);
@@ -947,6 +942,13 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(ownerReturnIfStillDirtyIndex, ownerFlushIndex, ownerChangedBody);
             Assert.Greater(ownerApplyAfterFlushIndex, ownerReturnIfStillDirtyIndex, ownerChangedBody);
             Assert.Greater(ownerLoadCleanIndex, ownerApplyAfterFlushIndex, ownerChangedBody);
+        }
+
+        [Test]
+        public void LocalizationManagerIgnoresStaleRuntimeOwners()
+        {
+            string localization = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "LocalizationManager.cs"));
+            localization = localization.Replace("\r\n", "\n");
 
             StringAssert.Contains("CacheUserOptions(GlobalRegistry.UserOptions, applyOwnerChange: false);", localization);
             StringAssert.Contains("ResolveUserOptionsPersistence", localization);
@@ -1027,6 +1029,13 @@ namespace Hecton8.Tests.Editor
                 "return;",
                 "_currentLanguage = loadedLanguage;",
                 "PublishVisualLanguageState();"));
+        }
+
+        [Test]
+        public void ModSettingsRegistryIgnoresStaleRuntimeOwners()
+        {
+            string modSettings = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "ModdingAPI", "ModSettingsRegistry.cs"));
+            modSettings = modSettings.Replace("\r\n", "\n");
 
             StringAssert.Contains("CacheUserOptions(GlobalRegistry.UserOptions);", modSettings);
             StringAssert.Contains("ResolveUserOptions()", modSettings);
@@ -1116,6 +1125,12 @@ namespace Hecton8.Tests.Editor
             string modStageAllBody = modSettings.Substring(modStageAllIndex, modStageEntryIndex - modStageAllIndex);
             StringAssert.Contains("for (int i = 0; i < _entries.Count; i++)", modStageAllBody);
             StringAssert.Contains("StageEntry(options, _entries[i]);", modStageAllBody);
+        }
+
+        [Test]
+        public void PauseMenuControllerIgnoresStaleRuntimeOwners()
+        {
+            string pauseMenu = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "UI", "PauseMenuController.cs"));
 
             StringAssert.Contains("Hecton8.Input.UserOptionsPersistence userOptions = Hecton8.Core.GlobalRegistry.UserOptions;", pauseMenu);
             StringAssert.Contains("userOptions.IsServiceReady", pauseMenu);
