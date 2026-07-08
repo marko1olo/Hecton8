@@ -535,15 +535,20 @@ public partial class MicroSplatShaderGUI : ShaderGUI
          int n = modules.Count;
          if (n > 1)
          {
-            System.Random rnd = new System.Random((int)(UnityEngine.Random.value * 1000)); 
-            while (n > 1)
-            {  
-               n--;  
-               int k = rnd.Next(n + 1);  
-               var value = modules[k];  
-               modules[k] = modules[n];  
-               modules[n] = value;  
-            } 
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+               byte[] randomBytes = new byte[4];
+               while (n > 1)
+               {
+                  n--;
+                  rng.GetBytes(randomBytes);
+                  uint randomValue = System.BitConverter.ToUInt32(randomBytes, 0);
+                  int k = (int)(randomValue % (uint)(n + 1));
+                  var value = modules[k];
+                  modules[k] = modules[n];
+                  modules[n] = value;
+               }
+            }
          }
       }
        
