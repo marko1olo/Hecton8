@@ -21,7 +21,6 @@ namespace Hecton8.Editor
         private Dictionary<string, SaveSlotMaintenanceRecord> _maintenanceRecords = new Dictionary<string, SaveSlotMaintenanceRecord>(32, StringComparer.OrdinalIgnoreCase);
         private Vector2 _scrollPos;
         private bool _autoRefresh = true;
-        private float _lastRefreshTime;
         private string _lastAuditSummary = string.Empty;
         private string _lastRepairSummary = string.Empty;
         private Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>(MaxCachedThumbnails, StringComparer.OrdinalIgnoreCase);
@@ -60,8 +59,6 @@ namespace Hecton8.Editor
                 if (record != null)
                     _maintenanceRecords[_slots[i].slotName] = record;
             }
-
-            _lastRefreshTime = Time.realtimeSinceStartup;
         }
 
         private void OnGUI()

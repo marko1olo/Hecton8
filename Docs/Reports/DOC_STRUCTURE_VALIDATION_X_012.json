@@ -2,7 +2,7 @@
   "schema": "hecton8.doc_structure.v1",
   "docScope": "authority_spine",
   "repoRoot": "/app",
-  "activeDocCount": 282,
+  "activeDocCount": 283,
   "allowedRootTextDocs": [
     "3DMODEL_EQUIPMENT_PROPS.md",
     "3DMODEL_FAUNA.md",
@@ -244,6 +244,7 @@
     "Docs/AGENTS_RULE_DETAIL_LEDGER.md",
     "Docs/AGENT_AUTHORITY_ROUTING.md",
     "Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md",
+    "Docs/ARCHITECTURE/MACRO_GEOLOGY_STABLE_BASELINE.md",
     "Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md",
     "Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md",
     "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
