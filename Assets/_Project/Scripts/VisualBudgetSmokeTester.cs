@@ -32,18 +32,6 @@ namespace Hecton8.Dev
         [Tooltip("Emit a pass log with sampled graphics and RenderTexture budget values.")]
         [SerializeField] private bool verboseLogging = false;
 
-#pragma warning disable CS0414
-        [Header("Debug")]
-        [SerializeField] private int _debugRunCount;
-        [SerializeField] private bool _debugLastPass;
-        [SerializeField] private string _debugLastIssue = string.Empty;
-        [SerializeField] private float _debugGraphicsDriverMemoryMb;
-        [SerializeField] private float _debugGraphicsBudgetMb;
-        [SerializeField] private float _debugTrackedRenderTextureMemoryMb;
-        [SerializeField] private float _debugVisorRenderTextureMemoryMb;
-        [SerializeField] private float _debugPostFxRenderTextureMemoryMb;
-        [SerializeField] private float _debugUiRenderTextureMemoryMb;
-#pragma warning restore CS0414
 
         // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — visual budget Visor RT query — owner: VisualBudgetSmokeTester
         private readonly List<RenderTextureAllocationRecord> _visorRtRecords = new List<RenderTextureAllocationRecord>(64);
@@ -83,9 +71,6 @@ namespace Hecton8.Dev
         /// <returns>True when all sampled visual memory buckets remain under budget.</returns>
         public bool RunSmokePass()
         {
-            _debugRunCount++;
-            _debugLastPass = false;
-            _debugLastIssue = string.Empty;
 
             long graphicsDriverBytes = ReadGraphicsDriverMemoryBytes();
             VRAMBudgetThresholds runtimeThresholds = VRAMBudgetThresholds.RuntimeDefault;
@@ -95,32 +80,25 @@ namespace Hecton8.Dev
                 out long postFxRtBytes,
                 out long uiRtBytes);
 
-            _debugGraphicsDriverMemoryMb = BytesToMegabytes(graphicsDriverBytes);
-            _debugGraphicsBudgetMb = BytesToMegabytes(graphicsBudgetBytes);
-            _debugTrackedRenderTextureMemoryMb = BytesToMegabytes(trackedRtBytes);
-            _debugVisorRenderTextureMemoryMb = BytesToMegabytes(visorRtBytes);
-            _debugPostFxRenderTextureMemoryMb = BytesToMegabytes(postFxRtBytes);
-            _debugUiRenderTextureMemoryMb = BytesToMegabytes(uiRtBytes);
 
             if (graphicsDriverBytes > 0L && graphicsDriverBytes > graphicsBudgetBytes)
-                return Fail("graphics-driver-vram-hard-ceiling");
+                return Fail("graphics-driver-vram-hard-ceiling", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
             if (graphicsDriverBytes > 0L && graphicsDriverBytes > (long)(graphicsBudgetBytes * VramGuardRatio))
-                return Fail("graphics-driver-vram-guard-ratio");
+                return Fail("graphics-driver-vram-guard-ratio", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
             if (trackedRtBytes > ResolveBudgetBytes(runtimeThresholds.RenderTextureMemoryBudgetBytes, CompactRtDepthBudgetBytes))
-                return Fail("render-texture-depth-budget");
+                return Fail("render-texture-depth-budget", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
             if (visorRtBytes > ResolveBudgetBytes(runtimeThresholds.VisorRTBudgetBytes, CompactVisorRtBudgetBytes))
-                return Fail("visor-rt-budget");
+                return Fail("visor-rt-budget", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
             if (postFxRtBytes > ResolveBudgetBytes(runtimeThresholds.PostFXRTBudgetBytes, CompactPostFxBudgetBytes))
-                return Fail("postfx-rt-budget");
+                return Fail("postfx-rt-budget", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
             if (uiRtBytes > ResolveBudgetBytes(runtimeThresholds.UIRTBudgetBytes, CompactUiRtBudgetBytes))
-                return Fail("ui-rt-budget");
+                return Fail("ui-rt-budget", graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
 
-            _debugLastPass = true;
             LogPass(graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
             return true;
         }
@@ -203,19 +181,24 @@ namespace Hecton8.Dev
             return profileBudgetBytes > 0L ? profileBudgetBytes : compactFallbackBytes;
         }
 
-        private bool Fail(string issue)
+        private bool Fail(
+            string issue,
+            long graphicsDriverBytes,
+            long graphicsBudgetBytes,
+            long trackedRtBytes,
+            long visorRtBytes,
+            long postFxRtBytes,
+            long uiRtBytes)
         {
-            _debugLastIssue = issue;
-            _debugLastPass = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _reportBuilder.Clear();
             _reportBuilder.Append("[VisualBudgetSmoke] FAIL issue=").Append(issue)
-                .Append(" graphics=").Append(_debugGraphicsDriverMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("/")
-                .Append(_debugGraphicsBudgetMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" rt=").Append(_debugTrackedRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" visor=").Append(_debugVisorRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" postfx=").Append(_debugPostFxRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" ui=").Append(_debugUiRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
+                .Append(" graphics=").Append(BytesToMegabytes(graphicsDriverBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("/")
+                .Append(BytesToMegabytes(graphicsBudgetBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" rt=").Append(BytesToMegabytes(trackedRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" visor=").Append(BytesToMegabytes(visorRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" postfx=").Append(BytesToMegabytes(postFxRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" ui=").Append(BytesToMegabytes(uiRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
             Hecton8.Core.H8Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
