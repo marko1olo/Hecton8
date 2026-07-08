@@ -1034,88 +1034,43 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ResourceRecyclerModule_PersistsAndEjectsBufferedAndPendingOutput()
+        public void SaveData_PersistsModuleData()
         {
             string saveData = ReadProjectFile("Assets/_Project/Scripts/SaveData.cs");
             string saveCodec = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs");
             string saveMigration = ReadProjectFile("Assets/_Project/Scripts/SaveDataMigration.cs");
-            string constructionManager = ReadProjectFile("Assets/_Project/Scripts/ConstructionManager.cs");
-            string baseModule = ReadProjectFile("Assets/_Project/Scripts/BaseModule.cs");
-            string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
-            string deepDrill = ReadProjectFile("Assets/_Project/Scripts/Construction/DeepDrillModule.cs");
-            string resourceRecycler = ReadProjectFile("Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs");
-            string fabricator = ReadProjectFile("Assets/_Project/Scripts/Fabricator.cs");
-            string cultivationManager = ReadProjectFile("Assets/_Project/Scripts/Construction/CultivationManager.cs");
-            string playerInventory = ReadProjectFile("Assets/_Project/Scripts/PlayerInventory.cs");
-            string populate = ExtractMethodBody(resourceRecycler, "internal void PopulateSaveData(ref ModuleDTO dto)");
-            string restore = ExtractMethodBody(resourceRecycler, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
-            string deepDrillRestore = ExtractMethodBody(deepDrill, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
-            string canEject = ExtractMethodBody(resourceRecycler, "internal bool CanEjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, Vector3 dropPosition)");
-            string eject = ExtractMethodBody(resourceRecycler, "internal bool EjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)");
-            string countPersistentDropCandidate = ExtractMethodBody(resourceRecycler, "private static int CountPersistentWorldDropCandidate(");
-            string populateFabricator = ExtractMethodBody(fabricator, "internal void PopulateSaveData(ref ModuleDTO dto)");
-            string restoreFabricator = ExtractMethodBody(fabricator, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
-            string populateCultivation = ExtractMethodBody(cultivationManager, "public void PopulateSaveData(ref ModuleDTO moduleDto, ItemCatalog itemCatalog)");
-            string restoreCultivation = ExtractMethodBody(cultivationManager, "public void RestoreFromSaveData(ModuleDTO moduleDto, ItemCatalog itemCatalog)");
-            string canEjectFabricator = ExtractMethodBody(fabricator, "internal bool CanEjectPendingCraftOutput(");
-            string ejectFabricator = ExtractMethodBody(fabricator, "internal bool EjectPendingCraftOutput(");
-            string canEjectCultivation = ExtractMethodBody(cultivationManager, "internal bool CanEjectCultivationContents(");
-            string ejectCultivation = ExtractMethodBody(cultivationManager, "internal bool EjectCultivationContents(");
-            string buildCultivationBatch = ExtractMethodBody(cultivationManager, "private int BuildCultivationEjectionBatch(");
-            string canAcceptStateBatch = ExtractMethodBody(playerInventory, "private bool CanAcceptQuantityWithStateBatch(");
-            string canStackStatefulItemAt = ExtractMethodBody(playerInventory, "private bool CanStackStatefulItemAt(");
-            string append = ExtractMethodBody(resourceRecycler, "private void AppendRecyclerBufferedSaveSlot(ref ModuleDTO dto, ItemData item, int quantity)");
-            string clearBuffer = ExtractMethodBody(resourceRecycler, "private void ClearBufferedInputState()");
-            string constructionSave = ExtractMethodBody(constructionManager, "public void PopulateSaveData(SaveData data)");
-            string constructionLoad = ExtractMethodBody(constructionManager, "public void LoadFromSaveData(SaveData data)");
-            string deconstructFlow = ExtractMethodBody(constructionManager, "private void ProcessDeconstructionRequestAfterRayValidated");
-            string deconstructTransaction = ExtractMethodBody(constructionManager, "private bool ExecuteDeconstructionTransaction(", 1);
-            string baseEject = ExtractMethodBody(baseModule, "private bool EjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, ref Vector3 dropPosition)");
-            string baseCanDrop = ExtractMethodBody(baseModule, "internal bool CanDropItemQuantityToInventoryOrWorld(", 1);
-            string baseCanSpawnPooledWorldItemFallback = ExtractMethodBody(baseModule, "internal bool CanSpawnPooledWorldItemFallback(");
-            string baseDrop = ExtractMethodBody(baseModule, "internal int DropItemQuantityToInventoryOrWorld(");
-            string baseRegisterPersistentDrop = ExtractMethodBody(baseModule, "private bool TryRegisterPersistentDroppedItemQuantity(");
-            string baseSpawnPooledWorldItem = ExtractMethodBody(baseModule, "private bool SpawnPooledWorldItem(");
-            string worldCanRegisterDrop = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(ItemData itemData, int quantity)");
-            string worldCanRegisterDropAtPosition = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)");
-            string worldCanRegisterDropByHash = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity)");
-            string worldTryRegisterDropStateful = ExtractMethodBody(persistentWorldRegistry, "private bool TryRegisterDroppedItemStateful(");
-            string worldCanResolveDropRuntimePosition = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemRuntimePosition(Vector3 runtimePosition)");
-            string worldCanResolveDropScatterEnvelope = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemScatterEnvelope(Vector3 runtimePosition)");
-            string worldCanResolveDropLiftedSample = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemLiftedSample(");
             string writeModule = ExtractMethodBody(saveCodec, "private static bool WriteModule(ref BufferWriter writer, in ModuleDTO value)");
             string readModule = ExtractMethodBody(saveCodec, "private static bool ReadModule(ref BufferReader reader, int version, out ModuleDTO value)");
 
-            StringAssert.Contains("public const int ResourceRecyclerModulePersistenceVersion = 79;", saveData);
-            StringAssert.Contains("public const int FabricatorPendingOutputPersistenceVersion = 81;", saveData);
-            StringAssert.Contains("public const int CultivationSeedHashPersistenceVersion = 82;", saveData);
-            StringAssert.Contains("public const int CelestialLightPhasePersistenceVersion = 84;", saveData);
-            StringAssert.Contains("public const int ProceduralTerrainIdentityContractPersistenceVersion = 85;", saveData);
-            StringAssert.Contains("CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion", saveData);
-            StringAssert.Contains("public const int MaxRecyclerBufferedSlots = 8;", saveData);
-            StringAssert.Contains("public const int MaxRecyclerPendingYieldSlots = 16;", saveData);
-            StringAssert.Contains("public int recyclerBufferedSlotCount;", saveData);
-            StringAssert.Contains("public string[] recyclerBufferedItemIds;", saveData);
-            StringAssert.Contains("public int[] recyclerBufferedQuantities;", saveData);
-            StringAssert.Contains("public string recyclerActiveSourceItemId;", saveData);
-            StringAssert.Contains("public int recyclerPendingYieldSlotCount;", saveData);
-            StringAssert.Contains("public string[] recyclerPendingYieldItemIds;", saveData);
-            StringAssert.Contains("public int[] recyclerPendingYieldQuantities;", saveData);
-            StringAssert.Contains("public int[] cultivationSeedItemHashIds;", saveData);
-            StringAssert.Contains("public string fabricatorPendingOutputItemId;", saveData);
-            StringAssert.Contains("public int fabricatorPendingOutputQuantity;", saveData);
-            StringAssert.Contains("public int fabricatorPendingOutputTotalQuantity;", saveData);
-            StringAssert.Contains("public bool HasRecyclerSaveCapacity()", saveData);
-            StringAssert.Contains("ResolveRecyclerBufferPersistenceSlotCount", saveData);
-            StringAssert.Contains("ResolveRecyclerPendingYieldPersistenceSlotCount", saveData);
-            StringAssert.Contains("SanitizeRecyclerBufferedQuantitiesCopyOnWrite", saveData);
-            StringAssert.Contains("SanitizeRecyclerPendingYieldQuantitiesInPlace", saveData);
-
-            StringAssert.Contains("private const int ResourceRecyclerModuleSaveVersion = SaveData.ResourceRecyclerModulePersistenceVersion;", saveCodec);
-            StringAssert.Contains("private const int FabricatorPendingOutputSaveVersion = SaveData.FabricatorPendingOutputPersistenceVersion;", saveCodec);
-            StringAssert.Contains("private const int CultivationSeedHashSaveVersion = SaveData.CultivationSeedHashPersistenceVersion;", saveCodec);
-            StringAssert.Contains("private const int ModuleRecyclerBufferSlotMax = 8;", saveCodec);
-            StringAssert.Contains("private const int ModuleRecyclerPendingYieldSlotMax = 16;", saveCodec);
+            StringAssert.Contains("public const int ResourceRecyclerModulePersistenceVersion = 79;", saveData);;
+            StringAssert.Contains("public const int FabricatorPendingOutputPersistenceVersion = 81;", saveData);;
+            StringAssert.Contains("public const int CultivationSeedHashPersistenceVersion = 82;", saveData);;
+            StringAssert.Contains("public const int CelestialLightPhasePersistenceVersion = 84;", saveData);;
+            StringAssert.Contains("public const int ProceduralTerrainIdentityContractPersistenceVersion = 85;", saveData);;
+            StringAssert.Contains("CurrentVersion = ProceduralTerrainIdentityContractPersistenceVersion", saveData);;
+            StringAssert.Contains("public const int MaxRecyclerBufferedSlots = 8;", saveData);;
+            StringAssert.Contains("public const int MaxRecyclerPendingYieldSlots = 16;", saveData);;
+            StringAssert.Contains("public int recyclerBufferedSlotCount;", saveData);;
+            StringAssert.Contains("public string[] recyclerBufferedItemIds;", saveData);;
+            StringAssert.Contains("public int[] recyclerBufferedQuantities;", saveData);;
+            StringAssert.Contains("public string recyclerActiveSourceItemId;", saveData);;
+            StringAssert.Contains("public int recyclerPendingYieldSlotCount;", saveData);;
+            StringAssert.Contains("public string[] recyclerPendingYieldItemIds;", saveData);;
+            StringAssert.Contains("public int[] recyclerPendingYieldQuantities;", saveData);;
+            StringAssert.Contains("public int[] cultivationSeedItemHashIds;", saveData);;
+            StringAssert.Contains("public string fabricatorPendingOutputItemId;", saveData);;
+            StringAssert.Contains("public int fabricatorPendingOutputQuantity;", saveData);;
+            StringAssert.Contains("public int fabricatorPendingOutputTotalQuantity;", saveData);;
+            StringAssert.Contains("public bool HasRecyclerSaveCapacity()", saveData);;
+            StringAssert.Contains("ResolveRecyclerBufferPersistenceSlotCount", saveData);;
+            StringAssert.Contains("ResolveRecyclerPendingYieldPersistenceSlotCount", saveData);;
+            StringAssert.Contains("SanitizeRecyclerBufferedQuantitiesCopyOnWrite", saveData);;
+            StringAssert.Contains("SanitizeRecyclerPendingYieldQuantitiesInPlace", saveData);;
+            StringAssert.Contains("private const int ResourceRecyclerModuleSaveVersion = SaveData.ResourceRecyclerModulePersistenceVersion;", saveCodec);;
+            StringAssert.Contains("private const int FabricatorPendingOutputSaveVersion = SaveData.FabricatorPendingOutputPersistenceVersion;", saveCodec);;
+            StringAssert.Contains("private const int CultivationSeedHashSaveVersion = SaveData.CultivationSeedHashPersistenceVersion;", saveCodec);;
+            StringAssert.Contains("private const int ModuleRecyclerBufferSlotMax = 8;", saveCodec);;
+            StringAssert.Contains("private const int ModuleRecyclerPendingYieldSlotMax = 16;", saveCodec);;
             Assert.IsTrue(ContainsTokensInOrder(
                 writeModule,
                 "int recyclerBufferSlotCount = ClampPairedCollectionCount(",
@@ -1131,14 +1086,14 @@ namespace Hecton8.Tests.Editor
                 "writer.WriteInt(recyclerPendingYieldSlotCount)",
                 "safeValue.recyclerPendingYieldItemIds",
                 "safeValue.recyclerPendingYieldQuantities",
-                "writer.WriteFloat(safeValue.posX)"));
+                "writer.WriteFloat(safeValue.posX)"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 writeModule,
                 "safeValue.cultivationQuality01",
                 "writer.WriteStructArraySlice(safeValue.cultivationSeedItemHashIds, cultivationSlotCount)",
                 "writer.WriteString(safeValue.fabricatorPendingOutputItemId)",
                 "writer.WriteInt(safeValue.fabricatorPendingOutputQuantity)",
-                "writer.WriteInt(safeValue.fabricatorPendingOutputTotalQuantity);"));
+                "writer.WriteInt(safeValue.fabricatorPendingOutputTotalQuantity);"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 readModule,
                 "if (version >= ResourceRecyclerModuleSaveVersion)",
@@ -1153,7 +1108,7 @@ namespace Hecton8.Tests.Editor
                 "value.recyclerBufferedSlotCount = 0;",
                 "value.recyclerActiveSourceItemId = string.Empty;",
                 "value.recyclerPendingYieldSlotCount = 0;",
-                "ok = reader.ReadFloat(out value.posX)"));
+                "ok = reader.ReadFloat(out value.posX)"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 readModule,
                 "if (version >= CultivationSeedHashSaveVersion)",
@@ -1162,15 +1117,29 @@ namespace Hecton8.Tests.Editor
                 "reader.ReadString(out value.fabricatorPendingOutputItemId)",
                 "reader.ReadInt(out value.fabricatorPendingOutputQuantity)",
                 "reader.ReadInt(out value.fabricatorPendingOutputTotalQuantity)",
-                "ModuleDTO.SanitizeForPersistenceInPlace(ref value);"));
-            StringAssert.Contains("module.recyclerBufferedItemIds.Length == ModuleDTO.MaxRecyclerBufferedSlots", saveMigration);
-            StringAssert.Contains("module.recyclerPendingYieldQuantities.Length == ModuleDTO.MaxRecyclerPendingYieldSlots", saveMigration);
-            StringAssert.Contains("private static bool BackfillCultivationSeedHashIds(ref ModuleDTO module)", saveMigration);
-            StringAssert.Contains("module.cultivationSeedItemHashIds[i] = seedHashId;", saveMigration);
-            StringAssert.Contains("steps.Add(\"construction cultivation seed hashes repaired\");", saveMigration);
-            StringAssert.Contains("private void ClearRecyclerRuntimeStateForRestore()", resourceRecycler);
-            StringAssert.Contains("private static bool HasSavedRecyclerState(in ModuleDTO dto)", resourceRecycler);
-            StringAssert.Contains("private bool CanResolveRecyclerRestoreState(in ModuleDTO dto, ItemCatalog itemCatalog)", resourceRecycler);
+                "ModuleDTO.SanitizeForPersistenceInPlace(ref value);"));;
+            StringAssert.Contains("module.recyclerBufferedItemIds.Length == ModuleDTO.MaxRecyclerBufferedSlots", saveMigration);;
+            StringAssert.Contains("module.recyclerPendingYieldQuantities.Length == ModuleDTO.MaxRecyclerPendingYieldSlots", saveMigration);;
+            StringAssert.Contains("private static bool BackfillCultivationSeedHashIds(ref ModuleDTO module)", saveMigration);;
+            StringAssert.Contains("module.cultivationSeedItemHashIds[i] = seedHashId;", saveMigration);;
+            StringAssert.Contains("steps.Add(\"construction cultivation seed hashes repaired\");", saveMigration);;
+        }
+
+        [Test]
+        public void ResourceRecyclerModule_PersistsAndEjectsBufferedAndPendingOutput()
+        {
+            string resourceRecycler = ReadProjectFile("Assets/_Project/Scripts/Economy/ResourceRecyclerModule.cs");
+            string populate = ExtractMethodBody(resourceRecycler, "internal void PopulateSaveData(ref ModuleDTO dto)");
+            string restore = ExtractMethodBody(resourceRecycler, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
+            string canEject = ExtractMethodBody(resourceRecycler, "internal bool CanEjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, Vector3 dropPosition)");
+            string eject = ExtractMethodBody(resourceRecycler, "internal bool EjectBufferedContents(BaseModule owner, PlayerInventory inventory, IObjectPoolService pool, ref Vector3 dropPosition)");
+            string countPersistentDropCandidate = ExtractMethodBody(resourceRecycler, "private static int CountPersistentWorldDropCandidate(");
+            string append = ExtractMethodBody(resourceRecycler, "private void AppendRecyclerBufferedSaveSlot(ref ModuleDTO dto, ItemData item, int quantity)");
+            string clearBuffer = ExtractMethodBody(resourceRecycler, "private void ClearBufferedInputState()");
+
+            StringAssert.Contains("private void ClearRecyclerRuntimeStateForRestore()", resourceRecycler);;
+            StringAssert.Contains("private static bool HasSavedRecyclerState(in ModuleDTO dto)", resourceRecycler);;
+            StringAssert.Contains("private bool CanResolveRecyclerRestoreState(in ModuleDTO dto, ItemCatalog itemCatalog)", resourceRecycler);;
             Assert.IsTrue(ContainsTokensInOrder(
                 restore,
                 "bool hasSavedRecyclerState = HasSavedRecyclerState(in dto);",
@@ -1183,13 +1152,11 @@ namespace Hecton8.Tests.Editor
                 "ClearRecyclerRuntimeStateForRestore();",
                 "int bufferSlotCountToRestore = Mathf.Min(",
                 "_bufferItems[i] = item;",
-                "_bufferQuantities[i] = quantity;"));
-            int recyclerResolveIndex = restore.IndexOf("CanResolveRecyclerRestoreState(in dto, itemCatalog)", StringComparison.Ordinal);
-            int recyclerCommitClearIndex = restore.IndexOf("ClearRecyclerRuntimeStateForRestore();", recyclerResolveIndex, StringComparison.Ordinal);
-            Assert.That(recyclerCommitClearIndex, Is.GreaterThan(recyclerResolveIndex));
-            Assert.That(restore, Does.Not.Contain("ClearBufferedInputState();\r\n            ClearPendingOutput();"));
-
-            StringAssert.Contains("using Hecton8.Economy;", constructionManager);
+                "_bufferQuantities[i] = quantity;"));;
+            int recyclerResolveIndex = restore.IndexOf("CanResolveRecyclerRestoreState(in dto, itemCatalog)", StringComparison.Ordinal);;
+            int recyclerCommitClearIndex = restore.IndexOf("ClearRecyclerRuntimeStateForRestore();", recyclerResolveIndex, StringComparison.Ordinal);;
+            Assert.That(recyclerCommitClearIndex, Is.GreaterThan(recyclerResolveIndex));;
+            Assert.That(restore, Does.Not.Contain("ClearBufferedInputState();\r\n            ClearPendingOutput();"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 constructionSave,
                 "if (module.TryGetComponent(out DeepDrillModule deepDrill))",
@@ -1198,7 +1165,7 @@ namespace Hecton8.Tests.Editor
                 "resourceRecycler.PopulateSaveData(ref moduleDto);",
                 "if (module.TryGetComponent(out Fabricator fabricator))",
                 "fabricator.PopulateSaveData(ref moduleDto);",
-                "if (module.TryGetComponent(out CultivationManager cultivationManager))"));
+                "if (module.TryGetComponent(out CultivationManager cultivationManager))"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 constructionLoad,
                 "if (!CanResolveConstructionItemReferencesForLoad(in dto, data.version, count, itemCatalog))",
@@ -1211,119 +1178,7 @@ namespace Hecton8.Tests.Editor
                 "resourceRecycler.RestoreFromSaveData(moduleDto, itemCatalog);",
                 "if (module.TryGetComponent(out Fabricator fabricator))",
                 "fabricator.RestoreFromSaveData(moduleDto, itemCatalog);",
-                "if (module.TryGetComponent(out CultivationManager cultivationManager))"));
-            StringAssert.Contains("private static bool CanResolveConstructionItemReferencesForLoad(", constructionManager);
-            StringAssert.Contains("private static bool CanResolveModuleItemReferencesForLoad(", constructionManager);
-            StringAssert.Contains("private static bool ModuleRequiresItemCatalogForLoad(in ModuleDTO dto, int version)", constructionManager);
-            StringAssert.Contains("private static bool CanResolveSavedItemArray(", constructionManager);
-            StringAssert.Contains("private static bool HasCultivationSeedItemsRequiringCatalog(in ModuleDTO dto, int version)", constructionManager);
-            StringAssert.Contains("private static bool CanResolveCultivationSeedItems(ItemCatalog itemCatalog, in ModuleDTO dto, int version)", constructionManager);
-            StringAssert.Contains("private static bool HasSavedCultivationSeedHashId(in ModuleDTO dto, int slotIndex, int version)", constructionManager);
-            StringAssert.Contains("!CanResolveOptionalItemId(itemCatalog, dto.pipeInFlightItemId, dto.pipeInFlightAmount)", constructionManager);
-            StringAssert.Contains("!CanResolveOptionalItemId(itemCatalog, dto.fabricatorPendingOutputItemId, dto.fabricatorPendingOutputQuantity)", constructionManager);
-            StringAssert.Contains("dto.storageCrateContentsSerialized &&", constructionManager);
-            StringAssert.Contains("HasSavedItemArrayEntries(", constructionManager);
-            StringAssert.Contains("dto.storageCrateItemIds", constructionManager);
-            Assert.IsTrue(ContainsTokensInOrder(
-                deepDrillRestore,
-                "float restoredCycleTimer = Mathf.Clamp(",
-                "bool hasSavedBufferedOutput =",
-                "dto.drillBufferedAmount > 0",
-                "!string.IsNullOrWhiteSpace(dto.drillBufferedItemId);",
-                "if (!hasSavedBufferedOutput)",
-                "ClearBufferedOutputState();",
-                "_cycleTimer = restoredCycleTimer;",
-                "if (itemCatalog == null)",
-                "return;",
-                "ItemData item = itemCatalog.FindById(dto.drillBufferedItemId);",
-                "if (item == null)",
-                "return;",
-                "ClearBufferedOutputState();",
-                "_cycleTimer = restoredCycleTimer;",
-                "_bufferedItem = item;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                deconstructFlow,
-                "PlayerInventory hostedContentInventory = null;",
-                "if (!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool))",
-                "if (!module.TryBeginAuthoritativeDeconstruction())",
-                "if (!ExecuteDeconstructionTransaction(",
-                "hostedContentInventory,",
-                "pool,",
-                "module.CancelAuthoritativeDeconstruction();",
-                "if (targetNodeIndex >= 0)",
-                "MarkDeconstructionEdgesSevered(targetNodeIndex)",
-                "PublishDeconstructionVfx(in request);",
-                "module.PrepareForDeconstructionPoolReturn();",
-                "pool.Despawn(module.gameObject);"));
-            Assert.That(deconstructFlow, Does.Not.Contain("if (!module.EjectHostedContentsForDeconstruction(hostedContentInventory, pool))"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                deconstructTransaction,
-                "int refundCommandCount = counters[DeconstructionRefundCommandCountIndex];",
-                "if (module == null ||",
-                "!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool) ||",
-                "!module.EjectHostedContentsForDeconstruction(hostedContentInventory, pool))",
-                "return false;",
-                "int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount, refundCommands, lootCaches, counters);",
-                "int publishedOverflowLootCacheCount = PublishOverflowLootCaches(lootCaches, counters);",
-                "int rejectedOverflowLootCacheCount = math.max(0, overflowLootCacheCount - publishedOverflowLootCacheCount);",
-                "ReadLastDeconstructionTelemetry(",
-                "rejectedOverflowLootCacheCount,"));
-            StringAssert.Contains("using Hecton8.Economy;", baseModule);
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseCanDrop,
-                "if (itemHashId == 0 || quantity <= 0)",
-                "return false;",
-                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
-                "if (itemCatalog == null)",
-                "return false;",
-                "ItemData itemData = itemCatalog.FindByHash(itemHashId);",
-                "if (itemData == null)",
-                "return false;",
-                "if (playerInventory != null &&",
-                "playerInventory.CanAcceptItemQuantity(itemHashId, quantity))",
-                "return true;",
-                "if (!IsFiniteRuntimePosition(dropPosition))",
-                "return false;",
-                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
-                "persistentWorldRegistry.CanRegisterDroppedItem(itemData, quantity, dropPosition)",
-                "return true;",
-                "return false;"));
-            Assert.That(baseCanDrop, Does.Not.Contain("playerInventory.Grid != null"));
-            Assert.That(baseCanDrop, Does.Not.Contain("CanSpawnPooledWorldItemFallback"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseCanSpawnPooledWorldItemFallback,
-                "if (itemHashId == 0 || pool == null || !IsFiniteRuntimePosition(position))",
-                "return false;",
-                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
-                "itemCatalog.FindByHash(itemHashId) != null",
-                "worldItemPrefab != null",
-                "worldItemPrefab.TryGetComponent(out HectonItem _)"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseDrop,
-                "bool persistentDropUnavailable = false;",
-                "int remainingQuantity = quantity - delivered;",
-                "TryRegisterPersistentDroppedItemQuantity(itemHashId, remainingQuantity, dropPosition, playerInventory)",
-                "delivered += remainingQuantity;",
-                "persistentDropUnavailable = true;",
-                "SpawnPooledWorldItem(itemHashId, dropPosition, pool, playerInventory)"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseRegisterPersistentDrop,
-                "if (itemHashId == 0 || quantity <= 0)",
-                "return false;",
-                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
-                "if (itemCatalog == null)",
-                "return false;",
-                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
-                "persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, quantity, position);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseSpawnPooledWorldItem,
-                "if (!IsFiniteRuntimePosition(position))",
-                "return false;",
-                "if (worldItemPrefab == null)",
-                "return false;",
-                "if (pool == null)",
-                "return false;"));
-            Assert.That(baseSpawnPooledWorldItem, Does.Not.Contain("TryRegisterDroppedItem"));
+                "if (module.TryGetComponent(out CultivationManager cultivationManager))"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 canEject,
                 "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
@@ -1353,7 +1208,7 @@ namespace Hecton8.Tests.Editor
                 "pool",
                 "dropPosition",
                 "persistentWorldRegistry);",
-                "persistentWorldRegistry.CanRegisterDroppedItemBatch(persistentWorldDropCandidateCount);"));
+                "persistentWorldRegistry.CanRegisterDroppedItemBatch(persistentWorldDropCandidateCount);"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 countPersistentDropCandidate,
                 "if (owner == null || persistentWorldRegistry == null || item == null || quantity <= 0)",
@@ -1363,203 +1218,9 @@ namespace Hecton8.Tests.Editor
                 "(inventory == null || !inventory.CanAcceptItemQuantity(itemHashId, quantity))",
                 "persistentWorldRegistry.CanRegisterDroppedItem(item, quantity, dropPosition)",
                 "? 1",
-                ": 0;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                populateFabricator,
-                "dto.fabricatorPendingOutputItemId = string.Empty;",
-                "dto.fabricatorPendingOutputQuantity = 0;",
-                "dto.fabricatorPendingOutputTotalQuantity = 0;",
-                "if (!HasPendingCraftOutput)",
-                "return;",
-                "ItemData result = _pendingCraftOutputItem;",
-                "dto.fabricatorPendingOutputItemId = persistentId;",
-                "dto.fabricatorPendingOutputQuantity = quantity;",
-                "dto.fabricatorPendingOutputTotalQuantity = math.max(quantity, _pendingCraftOutputTotalQuantity);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                restoreFabricator,
-                "int quantity = math.max(0, dto.fabricatorPendingOutputQuantity);",
-                "if (quantity <= 0)",
-                "ClearPendingCraftOutput();",
-                "return;",
-                "if (itemCatalog == null || string.IsNullOrWhiteSpace(itemId))",
-                "return;",
-                "ItemData result = itemCatalog.FindById(itemId);",
-                "if (result == null)",
-                "return;",
-                "ClearPendingCraftOutput();",
-                "_pendingCraftOutputItem = result;",
-                "_pendingCraftOutputQuantity = quantity;",
-                "_pendingCraftOutputTotalQuantity = math.max(quantity, dto.fabricatorPendingOutputTotalQuantity);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                populateCultivation,
-                "int[] seedHashIds = moduleDto.cultivationSeedItemHashIds;",
-                "ItemData item = itemCatalog != null ? itemCatalog.FindByHash(slot.SeedItemHashId) : null;",
-                "seedIds[writeIndex] = item != null && !string.IsNullOrWhiteSpace(item.PersistentId)",
-                "seedHashIds[writeIndex] = slot.SeedItemHashId;",
-                "moduleDto.cultivationSlotCount = writeIndex;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                restoreCultivation,
-                "int safeCount = ResolveCultivationRestoreCount(in moduleDto);",
-                "if (safeCount <= 0 || !HasSavedCultivationRestoreState(in moduleDto, safeCount))",
-                "ClearSlots();",
-                "if (!CanResolveCultivationRestoreState(in moduleDto, itemCatalog, safeCount))",
-                "return;",
-                "ClearSlots();",
-                "int itemHashId = ResolveSavedCultivationSeedHashId(in moduleDto, itemCatalog, i, persistentId);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                canEjectFabricator,
-                "if (!HasPendingCraftOutput)",
-                "return true;",
-                "ItemData result = _pendingCraftOutputItem;",
-                "int itemHashId = ComputeItemHash(result);",
-                "int quantity = math.max(1, _pendingCraftOutputQuantity);",
-                "inventory.CanAcceptItemQuantity(itemHashId, quantity)",
-                "PersistentWorldRegistry registry = _persistentWorldRegistry;",
-                "IsFiniteRuntimePosition(dropPosition)",
-                "registry.CanRegisterDroppedItem(result, quantity, dropPosition);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                ejectFabricator,
-                "if (!CanEjectPendingCraftOutput(inventory, dropPosition))",
-                "return false;",
-                "inventory.CanAcceptItemQuantity(itemHashId, quantity)",
-                "inventory.TryAddItem(itemHashId, quantity)",
-                "ClearPendingCraftOutput();",
-                "registry.TryRegisterDroppedItem(result, quantity, dropPosition)",
-                "ClearPendingCraftOutput();",
-                "dropPosition.x += 0.3f;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                canEjectCultivation,
-                "Span<int> itemHashIds = stackalloc int[MaxCultivationSlots];",
-                "Span<int> quantities = stackalloc int[MaxCultivationSlots];",
-                "Span<ulong> geneticsMasks = stackalloc ulong[MaxCultivationSlots];",
-                "Span<ushort> qualityMillis = stackalloc ushort[MaxCultivationSlots];",
-                "int occupiedCount = BuildCultivationEjectionBatch(itemHashIds, quantities, geneticsMasks, qualityMillis);",
-                "inventory.CanAcceptItemWithStateBatch(itemHashIds, geneticsMasks, qualityMillis, occupiedCount)",
-                "ItemCatalog itemCatalog = ResolveEjectionItemCatalog(inventory);",
-                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
-                "ItemData item = itemCatalog.FindByHash(itemHashIds[i]);",
-                "persistentWorldRegistry.CanRegisterDroppedItem(item, quantities[i], dropPosition)",
-                "persistentWorldRegistry.CanRegisterDroppedItemBatch(occupiedCount);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                ejectCultivation,
-                "if (!CanEjectCultivationContents(owner, inventory, dropPosition))",
-                "return false;",
-                "ulong geneticsMask = SanitizeGeneticsMask(slot.GeneticsMask);",
-                "ushort qualityMilli = ResolveCultivationQualityMilli(slot.Quality01);",
-                "inventory.TryAddItemWithState(slot.SeedItemHashId, geneticsMask, qualityMilli)",
-                "_slots[i] = default;",
-                "persistentWorldRegistry.TryRegisterDroppedItemWithState(",
-                "geneticsMask",
-                "qualityMilli",
-                "_slots[i] = default;",
-                "dropPosition.x += 0.3f;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                buildCultivationBatch,
-                "Span<ulong> geneticsMasks",
-                "Span<ushort> qualityMillis",
-                "CultivationSlotState slot = _slots[i];",
-                "int itemHashId = slot.SeedItemHashId;",
-                "if (itemHashId == 0)",
-                "continue;",
-                "itemHashIds[count] = itemHashId;",
-                "quantities[count] = 1;",
-                "geneticsMasks[count] = SanitizeGeneticsMask(slot.GeneticsMask);",
-                "qualityMillis[count] = ResolveCultivationQualityMilli(slot.Quality01);",
-                "count++;"));
-            StringAssert.Contains("public bool CanAcceptItemWithStateBatch(", playerInventory);
-            Assert.IsTrue(ContainsTokensInOrder(
-                canAcceptStateBatch,
-                "CopyNativeArray(_stackCounts, _scavengeSimStackCounts);",
-                "_grid.CopyOccupiedMask(_simulationOccupiedCells);",
-                "byte compressedGenetics = CompressItemGenetics(geneticsMasks[groupIndex]);",
-                "ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMillis[groupIndex]);",
-                "!CanStackStatefulItemAt(anchorIndex, resolvedStateFlags, compressedGenetics, resolvedQualityMilli)",
-                "TryReservePlacementInSimulation(in descriptor)",
-                "return true;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                canStackStatefulItemAt,
-                "_itemStateFlags[anchorIndex] == itemStateFlags",
-                "_itemGenetics[anchorIndex] == geneticsMask",
-                "NormalizeQualityMilli(_qualityMilli[anchorIndex]) == qualityMilli"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanRegisterDrop,
-                "if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))",
-                "return false;",
-                "return ComputePersistentIdHash(persistentId) != 0UL &&",
-                "CanAppendDroppedItemState();"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanRegisterDropAtPosition,
-                "if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))",
-                "return false;",
-                "return ComputePersistentIdHash(persistentId) != 0UL &&",
-                "CanAppendDroppedItemState() &&",
-                "CanResolveDroppedItemRuntimePosition(runtimePosition);"));
-            StringAssert.Contains("private bool CanAppendDroppedItemState()", persistentWorldRegistry);
-            StringAssert.Contains("internal bool CanRegisterDroppedItemBatch(int recordCount)", persistentWorldRegistry);
-            StringAssert.Contains("public int Count => ReadCount();", persistentWorldRegistry);
-            StringAssert.Contains("private bool CanAppendDroppedItemState(int recordCount)", persistentWorldRegistry);
-            StringAssert.Contains("long requiredRecordCount = nextRecordIndex + recordCount;", persistentWorldRegistry);
-            StringAssert.Contains("CanGenerateDroppedItemInstanceUidBatch(recordCount)", persistentWorldRegistry);
-            StringAssert.Contains("requiredRecordCount <= _records.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("(long)_recordsByChunk.Count + recordCount <= _recordsByChunk.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("(long)_deltaRecords.Length + recordCount <= _deltaRecords.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("(long)_deltaRecordIndexByEntityId.Count + recordCount <= _deltaRecordIndexByEntityId.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("(long)_guidToPoolIndex.Count + recordCount <= _guidToPoolIndex.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("(long)_entityStateByInstanceUid.Count + recordCount <= _entityStateByInstanceUid.Capacity", persistentWorldRegistry);
-            StringAssert.Contains("private static bool CanGenerateDroppedItemInstanceUidBatch(int recordCount)", persistentWorldRegistry);
-            StringAssert.Contains("int counterSnapshot = Volatile.Read(ref _nextInstanceUidCounter);", persistentWorldRegistry);
-            StringAssert.Contains("long requiredSequence = (long)counterSnapshot + recordCount;", persistentWorldRegistry);
-            StringAssert.Contains("requiredSequence <= InstanceUidCounterMask", persistentWorldRegistry);
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldTryRegisterDropStateful,
-                "!CanRegisterDroppedItemData(itemData, quantity, out string persistentId)",
-                "!CanAppendDroppedItemState()",
-                "ulong persistentIdHash = ComputePersistentIdHash(persistentId);",
-                "TryGenerateInstanceUid(itemData, persistentIdHash, out uint instanceUid)"));
-            StringAssert.Contains("private bool CanResolveDroppedItemRuntimePosition(Vector3 runtimePosition)", persistentWorldRegistry);
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanResolveDropRuntimePosition,
-                "if (!CanResolveDroppedItemRuntimePositionSample(runtimePosition))",
-                "return false;",
-                "return CanResolveDroppedItemScatterEnvelope(runtimePosition);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanResolveDropScatterEnvelope,
-                "DropScatterMinLiftMeters",
-                "DropScatterMaxLiftMeters",
-                "for (uint directionIndex = 0u; directionIndex < 8u; directionIndex++)",
-                "ResolveScatterPlanarDirection(directionIndex << 29)",
-                "return true;"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanResolveDropLiftedSample,
-                "sample.x += directionX * DropScatterRadiusMeters;",
-                "sample.y += liftMeters;",
-                "sample.z += directionZ * DropScatterRadiusMeters;",
-                "return CanResolveDroppedItemRuntimePositionSample(sample);"));
-            StringAssert.Contains("private bool CanResolveDroppedItemRuntimePositionSample(Vector3 runtimePosition)", persistentWorldRegistry);
-            StringAssert.Contains("AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters)", persistentWorldRegistry);
-            StringAssert.Contains("AbsoluteUniversePosition.IsValidChunkId(chunkId)", persistentWorldRegistry);
-            Assert.That(worldCanRegisterDropAtPosition, Does.Not.Contain("TryGenerateInstanceUid"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                worldCanRegisterDropByHash,
-                "if (itemHashId == 0 || itemCatalog == null)",
-                "return false;",
-                "return CanRegisterDroppedItem(itemCatalog.FindByHash(itemHashId), quantity);"));
-            Assert.IsTrue(ContainsTokensInOrder(
-                baseEject,
-                "bool allDelivered = true;",
-                "if (TryGetComponent(out LogisticsSorterModule sorterModule))",
-                "allDelivered &= sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);",
-                "if (TryGetComponent(out ResourceRecyclerModule recyclerModule))",
-                "allDelivered &= recyclerModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);",
-                "if (TryGetComponent(out Fabricator fabricator))",
-                "allDelivered &= fabricator.EjectPendingCraftOutput(playerInventory, ref dropPosition);",
-                "if (TryGetComponent(out CultivationManager cultivationManager))",
-                "allDelivered &= cultivationManager.EjectCultivationContents(this, playerInventory, ref dropPosition);",
-                "if (TryGetComponent(out LogisticsPipeNode pipeNode)",
-                "return allDelivered;"));
-
-            StringAssert.Contains("using Hecton8.SaveSystem;", resourceRecycler);
-            StringAssert.Contains("using Hecton8.Gameplay;", resourceRecycler);
+                ": 0;"));;
+            StringAssert.Contains("using Hecton8.SaveSystem;", resourceRecycler);;
+            StringAssert.Contains("using Hecton8.Gameplay;", resourceRecycler);;
             Assert.IsTrue(ContainsTokensInOrder(
                 populate,
                 "dto.recyclerBufferedSlotCount = 0;",
@@ -1572,7 +1233,7 @@ namespace Hecton8.Tests.Editor
                 "if (!_hasPendingOutput || _pendingYield == null || _pendingYieldCount <= 0)",
                 "dto.recyclerActiveSourceItemId = _activeSourceItem != null ? _activeSourceItem.PersistentId : string.Empty;",
                 "dto.recyclerPendingYieldItemIds[slot] = stack.Item.PersistentId;",
-                "dto.recyclerPendingYieldQuantities[slot] = stack.Amount;"));
+                "dto.recyclerPendingYieldQuantities[slot] = stack.Amount;"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 append,
                 "string itemId = item.PersistentId;",
@@ -1584,7 +1245,7 @@ namespace Hecton8.Tests.Editor
                 "return;",
                 "dto.recyclerBufferedItemIds[slot] = itemId;",
                 "dto.recyclerBufferedQuantities[slot] = quantity;",
-                "dto.recyclerBufferedSlotCount++;"));
+                "dto.recyclerBufferedSlotCount++;"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 restore,
                 "ClearBufferedInputState();",
@@ -1601,7 +1262,7 @@ namespace Hecton8.Tests.Editor
                 "_activeSourceItem = !string.IsNullOrWhiteSpace(dto.recyclerActiveSourceItemId)",
                 "_pendingYield = _pendingYieldScratch;",
                 "_hasPendingOutput = true;",
-                "_debugHasPendingOutput = true;"));
+                "_debugHasPendingOutput = true;"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 eject,
                 "bool stoppedProcessingAfterSourceEject = false;",
@@ -1634,14 +1295,398 @@ namespace Hecton8.Tests.Editor
                 "_isProcessing = false;",
                 "if (wasProcessing && (allDelivered || stoppedProcessingAfterSourceEject))",
                 "NotifyGridBalanceChanged();",
-                "return allDelivered;"));
+                "return allDelivered;"));;
             Assert.IsTrue(ContainsTokensInOrder(
                 clearBuffer,
                 "for (int i = 0; i < MaxBufferSlots; i++)",
                 "_bufferItems[i] = null;",
                 "_bufferQuantities[i] = 0;",
                 "_bufferedItemCount = 0;",
-                "_debugBufferedItemCount = 0;"));
+                "_debugBufferedItemCount = 0;"));;
+        }
+
+        [Test]
+        public void ConstructionManager_LoadsAndSavesModuleState()
+        {
+            string constructionManager = ReadProjectFile("Assets/_Project/Scripts/ConstructionManager.cs");
+            string constructionSave = ExtractMethodBody(constructionManager, "public void PopulateSaveData(SaveData data)");
+            string constructionLoad = ExtractMethodBody(constructionManager, "public void LoadFromSaveData(SaveData data)");
+            string deconstructFlow = ExtractMethodBody(constructionManager, "private void ProcessDeconstructionRequestAfterRayValidated");
+            string deconstructTransaction = ExtractMethodBody(constructionManager, "private bool ExecuteDeconstructionTransaction(", 1);
+
+            StringAssert.Contains("using Hecton8.Economy;", constructionManager);;
+            StringAssert.Contains("private static bool CanResolveConstructionItemReferencesForLoad(", constructionManager);;
+            StringAssert.Contains("private static bool CanResolveModuleItemReferencesForLoad(", constructionManager);;
+            StringAssert.Contains("private static bool ModuleRequiresItemCatalogForLoad(in ModuleDTO dto, int version)", constructionManager);;
+            StringAssert.Contains("private static bool CanResolveSavedItemArray(", constructionManager);;
+            StringAssert.Contains("private static bool HasCultivationSeedItemsRequiringCatalog(in ModuleDTO dto, int version)", constructionManager);;
+            StringAssert.Contains("private static bool CanResolveCultivationSeedItems(ItemCatalog itemCatalog, in ModuleDTO dto, int version)", constructionManager);;
+            StringAssert.Contains("private static bool HasSavedCultivationSeedHashId(in ModuleDTO dto, int slotIndex, int version)", constructionManager);;
+            StringAssert.Contains("!CanResolveOptionalItemId(itemCatalog, dto.pipeInFlightItemId, dto.pipeInFlightAmount)", constructionManager);;
+            StringAssert.Contains("!CanResolveOptionalItemId(itemCatalog, dto.fabricatorPendingOutputItemId, dto.fabricatorPendingOutputQuantity)", constructionManager);;
+            StringAssert.Contains("dto.storageCrateContentsSerialized &&", constructionManager);;
+            StringAssert.Contains("HasSavedItemArrayEntries(", constructionManager);;
+            StringAssert.Contains("dto.storageCrateItemIds", constructionManager);;
+            Assert.IsTrue(ContainsTokensInOrder(
+                deconstructFlow,
+                "PlayerInventory hostedContentInventory = null;",
+                "if (!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool))",
+                "if (!module.TryBeginAuthoritativeDeconstruction())",
+                "if (!ExecuteDeconstructionTransaction(",
+                "hostedContentInventory,",
+                "pool,",
+                "module.CancelAuthoritativeDeconstruction();",
+                "if (targetNodeIndex >= 0)",
+                "MarkDeconstructionEdgesSevered(targetNodeIndex)",
+                "PublishDeconstructionVfx(in request);",
+                "module.PrepareForDeconstructionPoolReturn();",
+                "pool.Despawn(module.gameObject);"));;
+            Assert.That(deconstructFlow, Does.Not.Contain("if (!module.EjectHostedContentsForDeconstruction(hostedContentInventory, pool))"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                deconstructTransaction,
+                "int refundCommandCount = counters[DeconstructionRefundCommandCountIndex];",
+                "if (module == null ||",
+                "!module.CanEjectHostedContentsForDeconstruction(hostedContentInventory, pool) ||",
+                "!module.EjectHostedContentsForDeconstruction(hostedContentInventory, pool))",
+                "return false;",
+                "int returnedCount = ApplyRefundCommandsOrOverflow(in request, inventory, refundCommandCount, refundCommands, lootCaches, counters);",
+                "int publishedOverflowLootCacheCount = PublishOverflowLootCaches(lootCaches, counters);",
+                "int rejectedOverflowLootCacheCount = math.max(0, overflowLootCacheCount - publishedOverflowLootCacheCount);",
+                "ReadLastDeconstructionTelemetry(",
+                "rejectedOverflowLootCacheCount,"));;
+        }
+
+        [Test]
+        public void BaseModule_DropsAndEjectsHostedModuleContents()
+        {
+            string baseModule = ReadProjectFile("Assets/_Project/Scripts/BaseModule.cs");
+            string baseEject = ExtractMethodBody(baseModule, "private bool EjectHostedModuleContents(PlayerInventory playerInventory, IObjectPoolService pool, ref Vector3 dropPosition)");
+            string baseCanDrop = ExtractMethodBody(baseModule, "internal bool CanDropItemQuantityToInventoryOrWorld(", 1);
+            string baseCanSpawnPooledWorldItemFallback = ExtractMethodBody(baseModule, "internal bool CanSpawnPooledWorldItemFallback(");
+            string baseDrop = ExtractMethodBody(baseModule, "internal int DropItemQuantityToInventoryOrWorld(");
+            string baseRegisterPersistentDrop = ExtractMethodBody(baseModule, "private bool TryRegisterPersistentDroppedItemQuantity(");
+            string baseSpawnPooledWorldItem = ExtractMethodBody(baseModule, "private bool SpawnPooledWorldItem(");
+
+            StringAssert.Contains("using Hecton8.Economy;", baseModule);;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseCanDrop,
+                "if (itemHashId == 0 || quantity <= 0)",
+                "return false;",
+                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
+                "if (itemCatalog == null)",
+                "return false;",
+                "ItemData itemData = itemCatalog.FindByHash(itemHashId);",
+                "if (itemData == null)",
+                "return false;",
+                "if (playerInventory != null &&",
+                "playerInventory.CanAcceptItemQuantity(itemHashId, quantity))",
+                "return true;",
+                "if (!IsFiniteRuntimePosition(dropPosition))",
+                "return false;",
+                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
+                "persistentWorldRegistry.CanRegisterDroppedItem(itemData, quantity, dropPosition)",
+                "return true;",
+                "return false;"));;
+            Assert.That(baseCanDrop, Does.Not.Contain("playerInventory.Grid != null"));;
+            Assert.That(baseCanDrop, Does.Not.Contain("CanSpawnPooledWorldItemFallback"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseCanSpawnPooledWorldItemFallback,
+                "if (itemHashId == 0 || pool == null || !IsFiniteRuntimePosition(position))",
+                "return false;",
+                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
+                "itemCatalog.FindByHash(itemHashId) != null",
+                "worldItemPrefab != null",
+                "worldItemPrefab.TryGetComponent(out HectonItem _)"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseDrop,
+                "bool persistentDropUnavailable = false;",
+                "int remainingQuantity = quantity - delivered;",
+                "TryRegisterPersistentDroppedItemQuantity(itemHashId, remainingQuantity, dropPosition, playerInventory)",
+                "delivered += remainingQuantity;",
+                "persistentDropUnavailable = true;",
+                "SpawnPooledWorldItem(itemHashId, dropPosition, pool, playerInventory)"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseRegisterPersistentDrop,
+                "if (itemHashId == 0 || quantity <= 0)",
+                "return false;",
+                "ItemCatalog itemCatalog = ResolveItemCatalog(playerInventory);",
+                "if (itemCatalog == null)",
+                "return false;",
+                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
+                "persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, quantity, position);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseSpawnPooledWorldItem,
+                "if (!IsFiniteRuntimePosition(position))",
+                "return false;",
+                "if (worldItemPrefab == null)",
+                "return false;",
+                "if (pool == null)",
+                "return false;"));;
+            Assert.That(baseSpawnPooledWorldItem, Does.Not.Contain("TryRegisterDroppedItem"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                baseEject,
+                "bool allDelivered = true;",
+                "if (TryGetComponent(out LogisticsSorterModule sorterModule))",
+                "allDelivered &= sorterModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);",
+                "if (TryGetComponent(out ResourceRecyclerModule recyclerModule))",
+                "allDelivered &= recyclerModule.EjectBufferedContents(this, playerInventory, pool, ref dropPosition);",
+                "if (TryGetComponent(out Fabricator fabricator))",
+                "allDelivered &= fabricator.EjectPendingCraftOutput(playerInventory, ref dropPosition);",
+                "if (TryGetComponent(out CultivationManager cultivationManager))",
+                "allDelivered &= cultivationManager.EjectCultivationContents(this, playerInventory, ref dropPosition);",
+                "if (TryGetComponent(out LogisticsPipeNode pipeNode)",
+                "return allDelivered;"));;
+        }
+
+        [Test]
+        public void Fabricator_PersistsAndEjectsPendingOutput()
+        {
+            string fabricator = ReadProjectFile("Assets/_Project/Scripts/Fabricator.cs");
+            string populateFabricator = ExtractMethodBody(fabricator, "internal void PopulateSaveData(ref ModuleDTO dto)");
+            string restoreFabricator = ExtractMethodBody(fabricator, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
+            string canEjectFabricator = ExtractMethodBody(fabricator, "internal bool CanEjectPendingCraftOutput(");
+            string ejectFabricator = ExtractMethodBody(fabricator, "internal bool EjectPendingCraftOutput(");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                populateFabricator,
+                "dto.fabricatorPendingOutputItemId = string.Empty;",
+                "dto.fabricatorPendingOutputQuantity = 0;",
+                "dto.fabricatorPendingOutputTotalQuantity = 0;",
+                "if (!HasPendingCraftOutput)",
+                "return;",
+                "ItemData result = _pendingCraftOutputItem;",
+                "dto.fabricatorPendingOutputItemId = persistentId;",
+                "dto.fabricatorPendingOutputQuantity = quantity;",
+                "dto.fabricatorPendingOutputTotalQuantity = math.max(quantity, _pendingCraftOutputTotalQuantity);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                restoreFabricator,
+                "int quantity = math.max(0, dto.fabricatorPendingOutputQuantity);",
+                "if (quantity <= 0)",
+                "ClearPendingCraftOutput();",
+                "return;",
+                "if (itemCatalog == null || string.IsNullOrWhiteSpace(itemId))",
+                "return;",
+                "ItemData result = itemCatalog.FindById(itemId);",
+                "if (result == null)",
+                "return;",
+                "ClearPendingCraftOutput();",
+                "_pendingCraftOutputItem = result;",
+                "_pendingCraftOutputQuantity = quantity;",
+                "_pendingCraftOutputTotalQuantity = math.max(quantity, dto.fabricatorPendingOutputTotalQuantity);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                canEjectFabricator,
+                "if (!HasPendingCraftOutput)",
+                "return true;",
+                "ItemData result = _pendingCraftOutputItem;",
+                "int itemHashId = ComputeItemHash(result);",
+                "int quantity = math.max(1, _pendingCraftOutputQuantity);",
+                "inventory.CanAcceptItemQuantity(itemHashId, quantity)",
+                "PersistentWorldRegistry registry = _persistentWorldRegistry;",
+                "IsFiniteRuntimePosition(dropPosition)",
+                "registry.CanRegisterDroppedItem(result, quantity, dropPosition);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                ejectFabricator,
+                "if (!CanEjectPendingCraftOutput(inventory, dropPosition))",
+                "return false;",
+                "inventory.CanAcceptItemQuantity(itemHashId, quantity)",
+                "inventory.TryAddItem(itemHashId, quantity)",
+                "ClearPendingCraftOutput();",
+                "registry.TryRegisterDroppedItem(result, quantity, dropPosition)",
+                "ClearPendingCraftOutput();",
+                "dropPosition.x += 0.3f;"));;
+        }
+
+        [Test]
+        public void CultivationManager_PersistsAndEjectsCultivationContents()
+        {
+            string cultivationManager = ReadProjectFile("Assets/_Project/Scripts/Construction/CultivationManager.cs");
+            string populateCultivation = ExtractMethodBody(cultivationManager, "public void PopulateSaveData(ref ModuleDTO moduleDto, ItemCatalog itemCatalog)");
+            string restoreCultivation = ExtractMethodBody(cultivationManager, "public void RestoreFromSaveData(ModuleDTO moduleDto, ItemCatalog itemCatalog)");
+            string canEjectCultivation = ExtractMethodBody(cultivationManager, "internal bool CanEjectCultivationContents(");
+            string ejectCultivation = ExtractMethodBody(cultivationManager, "internal bool EjectCultivationContents(");
+            string buildCultivationBatch = ExtractMethodBody(cultivationManager, "private int BuildCultivationEjectionBatch(");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                populateCultivation,
+                "int[] seedHashIds = moduleDto.cultivationSeedItemHashIds;",
+                "ItemData item = itemCatalog != null ? itemCatalog.FindByHash(slot.SeedItemHashId) : null;",
+                "seedIds[writeIndex] = item != null && !string.IsNullOrWhiteSpace(item.PersistentId)",
+                "seedHashIds[writeIndex] = slot.SeedItemHashId;",
+                "moduleDto.cultivationSlotCount = writeIndex;"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                restoreCultivation,
+                "int safeCount = ResolveCultivationRestoreCount(in moduleDto);",
+                "if (safeCount <= 0 || !HasSavedCultivationRestoreState(in moduleDto, safeCount))",
+                "ClearSlots();",
+                "if (!CanResolveCultivationRestoreState(in moduleDto, itemCatalog, safeCount))",
+                "return;",
+                "ClearSlots();",
+                "int itemHashId = ResolveSavedCultivationSeedHashId(in moduleDto, itemCatalog, i, persistentId);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                canEjectCultivation,
+                "Span<int> itemHashIds = stackalloc int[MaxCultivationSlots];",
+                "Span<int> quantities = stackalloc int[MaxCultivationSlots];",
+                "Span<ulong> geneticsMasks = stackalloc ulong[MaxCultivationSlots];",
+                "Span<ushort> qualityMillis = stackalloc ushort[MaxCultivationSlots];",
+                "int occupiedCount = BuildCultivationEjectionBatch(itemHashIds, quantities, geneticsMasks, qualityMillis);",
+                "inventory.CanAcceptItemWithStateBatch(itemHashIds, geneticsMasks, qualityMillis, occupiedCount)",
+                "ItemCatalog itemCatalog = ResolveEjectionItemCatalog(inventory);",
+                "PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;",
+                "ItemData item = itemCatalog.FindByHash(itemHashIds[i]);",
+                "persistentWorldRegistry.CanRegisterDroppedItem(item, quantities[i], dropPosition)",
+                "persistentWorldRegistry.CanRegisterDroppedItemBatch(occupiedCount);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                ejectCultivation,
+                "if (!CanEjectCultivationContents(owner, inventory, dropPosition))",
+                "return false;",
+                "ulong geneticsMask = SanitizeGeneticsMask(slot.GeneticsMask);",
+                "ushort qualityMilli = ResolveCultivationQualityMilli(slot.Quality01);",
+                "inventory.TryAddItemWithState(slot.SeedItemHashId, geneticsMask, qualityMilli)",
+                "_slots[i] = default;",
+                "persistentWorldRegistry.TryRegisterDroppedItemWithState(",
+                "geneticsMask",
+                "qualityMilli",
+                "_slots[i] = default;",
+                "dropPosition.x += 0.3f;"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                buildCultivationBatch,
+                "Span<ulong> geneticsMasks",
+                "Span<ushort> qualityMillis",
+                "CultivationSlotState slot = _slots[i];",
+                "int itemHashId = slot.SeedItemHashId;",
+                "if (itemHashId == 0)",
+                "continue;",
+                "itemHashIds[count] = itemHashId;",
+                "quantities[count] = 1;",
+                "geneticsMasks[count] = SanitizeGeneticsMask(slot.GeneticsMask);",
+                "qualityMillis[count] = ResolveCultivationQualityMilli(slot.Quality01);",
+                "count++;"));;
+        }
+
+        [Test]
+        public void PersistentWorldRegistry_ResolvesDroppedItemRuntimePosition()
+        {
+            string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
+            string worldCanRegisterDrop = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(ItemData itemData, int quantity)");
+            string worldCanRegisterDropAtPosition = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)");
+            string worldCanRegisterDropByHash = ExtractMethodBody(persistentWorldRegistry, "internal bool CanRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity)");
+            string worldTryRegisterDropStateful = ExtractMethodBody(persistentWorldRegistry, "private bool TryRegisterDroppedItemStateful(");
+            string worldCanResolveDropRuntimePosition = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemRuntimePosition(Vector3 runtimePosition)");
+            string worldCanResolveDropScatterEnvelope = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemScatterEnvelope(Vector3 runtimePosition)");
+            string worldCanResolveDropLiftedSample = ExtractMethodBody(persistentWorldRegistry, "private bool CanResolveDroppedItemLiftedSample(");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanRegisterDrop,
+                "if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))",
+                "return false;",
+                "return ComputePersistentIdHash(persistentId) != 0UL &&",
+                "CanAppendDroppedItemState();"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanRegisterDropAtPosition,
+                "if (!CanRegisterDroppedItemData(itemData, quantity, out string persistentId))",
+                "return false;",
+                "return ComputePersistentIdHash(persistentId) != 0UL &&",
+                "CanAppendDroppedItemState() &&",
+                "CanResolveDroppedItemRuntimePosition(runtimePosition);"));;
+            StringAssert.Contains("private bool CanAppendDroppedItemState()", persistentWorldRegistry);;
+            StringAssert.Contains("internal bool CanRegisterDroppedItemBatch(int recordCount)", persistentWorldRegistry);;
+            StringAssert.Contains("public int Count => ReadCount();", persistentWorldRegistry);;
+            StringAssert.Contains("private bool CanAppendDroppedItemState(int recordCount)", persistentWorldRegistry);;
+            StringAssert.Contains("long requiredRecordCount = nextRecordIndex + recordCount;", persistentWorldRegistry);;
+            StringAssert.Contains("CanGenerateDroppedItemInstanceUidBatch(recordCount)", persistentWorldRegistry);;
+            StringAssert.Contains("requiredRecordCount <= _records.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("(long)_recordsByChunk.Count + recordCount <= _recordsByChunk.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("(long)_deltaRecords.Length + recordCount <= _deltaRecords.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("(long)_deltaRecordIndexByEntityId.Count + recordCount <= _deltaRecordIndexByEntityId.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("(long)_guidToPoolIndex.Count + recordCount <= _guidToPoolIndex.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("(long)_entityStateByInstanceUid.Count + recordCount <= _entityStateByInstanceUid.Capacity", persistentWorldRegistry);;
+            StringAssert.Contains("private static bool CanGenerateDroppedItemInstanceUidBatch(int recordCount)", persistentWorldRegistry);;
+            StringAssert.Contains("int counterSnapshot = Volatile.Read(ref _nextInstanceUidCounter);", persistentWorldRegistry);;
+            StringAssert.Contains("long requiredSequence = (long)counterSnapshot + recordCount;", persistentWorldRegistry);;
+            StringAssert.Contains("requiredSequence <= InstanceUidCounterMask", persistentWorldRegistry);;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldTryRegisterDropStateful,
+                "!CanRegisterDroppedItemData(itemData, quantity, out string persistentId)",
+                "!CanAppendDroppedItemState()",
+                "ulong persistentIdHash = ComputePersistentIdHash(persistentId);",
+                "TryGenerateInstanceUid(itemData, persistentIdHash, out uint instanceUid)"));;
+            StringAssert.Contains("private bool CanResolveDroppedItemRuntimePosition(Vector3 runtimePosition)", persistentWorldRegistry);;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanResolveDropRuntimePosition,
+                "if (!CanResolveDroppedItemRuntimePositionSample(runtimePosition))",
+                "return false;",
+                "return CanResolveDroppedItemScatterEnvelope(runtimePosition);"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanResolveDropScatterEnvelope,
+                "DropScatterMinLiftMeters",
+                "DropScatterMaxLiftMeters",
+                "for (uint directionIndex = 0u; directionIndex < 8u; directionIndex++)",
+                "ResolveScatterPlanarDirection(directionIndex << 29)",
+                "return true;"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanResolveDropLiftedSample,
+                "sample.x += directionX * DropScatterRadiusMeters;",
+                "sample.y += liftMeters;",
+                "sample.z += directionZ * DropScatterRadiusMeters;",
+                "return CanResolveDroppedItemRuntimePositionSample(sample);"));;
+            StringAssert.Contains("private bool CanResolveDroppedItemRuntimePositionSample(Vector3 runtimePosition)", persistentWorldRegistry);;
+            StringAssert.Contains("AbsoluteUniversePosition.ResolveChunkId(in position, chunkSizeMeters)", persistentWorldRegistry);;
+            StringAssert.Contains("AbsoluteUniversePosition.IsValidChunkId(chunkId)", persistentWorldRegistry);;
+            Assert.That(worldCanRegisterDropAtPosition, Does.Not.Contain("TryGenerateInstanceUid"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                worldCanRegisterDropByHash,
+                "if (itemHashId == 0 || itemCatalog == null)",
+                "return false;",
+                "return CanRegisterDroppedItem(itemCatalog.FindByHash(itemHashId), quantity);"));;
+        }
+
+        [Test]
+        public void PlayerInventory_CanAcceptQuantityWithStateBatch()
+        {
+            string playerInventory = ReadProjectFile("Assets/_Project/Scripts/PlayerInventory.cs");
+            string canAcceptStateBatch = ExtractMethodBody(playerInventory, "private bool CanAcceptQuantityWithStateBatch(");
+            string canStackStatefulItemAt = ExtractMethodBody(playerInventory, "private bool CanStackStatefulItemAt(");
+
+            StringAssert.Contains("public bool CanAcceptItemWithStateBatch(", playerInventory);;
+            Assert.IsTrue(ContainsTokensInOrder(
+                canAcceptStateBatch,
+                "CopyNativeArray(_stackCounts, _scavengeSimStackCounts);",
+                "_grid.CopyOccupiedMask(_simulationOccupiedCells);",
+                "byte compressedGenetics = CompressItemGenetics(geneticsMasks[groupIndex]);",
+                "ushort resolvedQualityMilli = NormalizeQualityMilli(qualityMillis[groupIndex]);",
+                "!CanStackStatefulItemAt(anchorIndex, resolvedStateFlags, compressedGenetics, resolvedQualityMilli)",
+                "TryReservePlacementInSimulation(in descriptor)",
+                "return true;"));;
+            Assert.IsTrue(ContainsTokensInOrder(
+                canStackStatefulItemAt,
+                "_itemStateFlags[anchorIndex] == itemStateFlags",
+                "_itemGenetics[anchorIndex] == geneticsMask",
+                "NormalizeQualityMilli(_qualityMilli[anchorIndex]) == qualityMilli"));;
+        }
+
+        [Test]
+        public void DeepDrillModule_RestoresBufferedOutput()
+        {
+            string deepDrill = ReadProjectFile("Assets/_Project/Scripts/Construction/DeepDrillModule.cs");
+            string deepDrillRestore = ExtractMethodBody(deepDrill, "internal void RestoreFromSaveData(ModuleDTO dto, ItemCatalog itemCatalog)");
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                deepDrillRestore,
+                "float restoredCycleTimer = Mathf.Clamp(",
+                "bool hasSavedBufferedOutput =",
+                "dto.drillBufferedAmount > 0",
+                "!string.IsNullOrWhiteSpace(dto.drillBufferedItemId);",
+                "if (!hasSavedBufferedOutput)",
+                "ClearBufferedOutputState();",
+                "_cycleTimer = restoredCycleTimer;",
+                "if (itemCatalog == null)",
+                "return;",
+                "ItemData item = itemCatalog.FindById(dto.drillBufferedItemId);",
+                "if (item == null)",
+                "return;",
+                "ClearBufferedOutputState();",
+                "_cycleTimer = restoredCycleTimer;",
+                "_bufferedItem = item;"));;
         }
 
         [Test]

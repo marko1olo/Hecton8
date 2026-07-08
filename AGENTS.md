@@ -123,7 +123,7 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [RULE] MapMagic & Batchmode Graphics Protocol: Running MapMagic/Compute Shader generation tests with `-nographics` in batchmode is strictly banned (Compute Shaders/Graphics.Blit return zeros without GPU context). Use state-machine polling via `EditorApplication.update` to wait for stable frames (Terrain length == 9, alphamaps loaded, active TerrainCollider on all chunks) and at least 200+ frames of complete silence before capturing diagnostic renders or screenshots.
 
-[RULE] Terrain Mathematics & Generation Bible: For all tasks involving terrain math, heightmaps, coordinate wrapping, slope mapping, splatmaps, or biome masks, the agent MUST load, read, and strictly follow the domain rules in [terrain.md](file:///C:/hades/Hecton8/terrain.md).
+[RULE] Terrain Mathematics & Generation Bible: For all tasks involving terrain math, heightmaps, coordinate wrapping, slope mapping, splatmaps, or biome masks, the agent MUST load, read, and strictly follow the domain rules in [terrain.md](terrain.md).
 
 [RULE] Data-Driven Configuration Rule: Ban JSON parsing or reflection lookups (`GetProperty`/`SetValue`) for runtime settings. Configuration must follow the unmanaged pipeline: ScriptableObject Facade -> baked `.h8bin` binary -> direct cast to unmanaged DTO -> applied via MaterialPropertyBlock.
 

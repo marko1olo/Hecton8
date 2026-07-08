@@ -5,9 +5,6 @@ Evidence class: STATIC_DOC
 Owner: DOCS_ACTUALIZATION
 
 Purpose: make every agent load the right authority files without losing rules, skipping domain bibles, or turning ordinary work into bureaucracy.
-
-# HECTON-8 Agent Authority Routing
-
 Status: STATIC_POLICY
 Evidence class: STATIC_DOC
 Owner: DOCS_ACTUALIZATION
