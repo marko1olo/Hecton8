@@ -41,7 +41,6 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugGraphicsBudgetMb;
         [SerializeField] private float _debugTrackedRenderTextureMemoryMb;
         [SerializeField] private float _debugVisorRenderTextureMemoryMb;
-        [SerializeField] private float _debugPostFxRenderTextureMemoryMb;
         [SerializeField] private float _debugUiRenderTextureMemoryMb;
 #pragma warning restore CS0414
 
@@ -99,7 +98,6 @@ namespace Hecton8.Dev
             _debugGraphicsBudgetMb = BytesToMegabytes(graphicsBudgetBytes);
             _debugTrackedRenderTextureMemoryMb = BytesToMegabytes(trackedRtBytes);
             _debugVisorRenderTextureMemoryMb = BytesToMegabytes(visorRtBytes);
-            _debugPostFxRenderTextureMemoryMb = BytesToMegabytes(postFxRtBytes);
             _debugUiRenderTextureMemoryMb = BytesToMegabytes(uiRtBytes);
 
             if (graphicsDriverBytes > 0L && graphicsDriverBytes > graphicsBudgetBytes)
@@ -214,7 +212,7 @@ namespace Hecton8.Dev
                 .Append(_debugGraphicsBudgetMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" rt=").Append(_debugTrackedRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" visor=").Append(_debugVisorRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" postfx=").Append(_debugPostFxRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
+                .Append(" postfx=").Append(BytesToMegabytes(postFxRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" ui=").Append(_debugUiRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
             Hecton8.Core.H8Debug.LogError(_reportBuilder.ToString(), this);
 #endif

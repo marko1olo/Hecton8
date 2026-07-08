@@ -1,5 +1,4 @@
-🧪 [Add missing error test for TryWriteBlackBoxSnapshotCold in AmbientBiotaDirector]
-
-🎯 What: Addressed the missing error test for the try-finally block where `NativeFaultDumpWriter.CreateTransientPayload` is called inside `AmbientBiotaDirector.TryWriteBlackBoxSnapshotCold()`.
-📊 Coverage: Added `AmbientBiotaDirectorExceptionEditTests.cs` to test the scenario where a `NullReferenceException` is artificially forced, confirming that the transient payload correctly disposes via the `finally` block even when an exception interrupts the payload population.
-✨ Result: Ensured that transient native collections do not leak memory during a fault dump write failure, which is important for system robustness.
+🎯 **What:** Removed unused private field `_debugPostFxRenderTextureMemoryMb` from `VisualBudgetSmokeTester.cs`
+💡 **Why:** Reduces dead code, cleaning up the class and avoiding warning suppression where unnecessary. The variable was assigned but never used except inside a string builder block where it could be just inline computed. This improves code health.
+✅ **Verification:** Ran `Tools/RunFullVerifySweep.py` to ensure build passes and all unity projects generate. No issues. Checked usages in codebase.
+✨ **Result:** Cleaned up code and improved code health.
