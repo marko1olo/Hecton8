@@ -23,12 +23,14 @@ namespace Shapes {
 		void OnEnable() {
 			shapeGroupsInScene++;
 			IsEnabled = true;
+			isDirty = true;
 			UpdateChildShapes();
 		}
 
 		void OnDisable() {
 			shapeGroupsInScene--;
 			IsEnabled = false;
+			isDirty = true;
 			UpdateChildShapes();
 		}
 
@@ -41,14 +43,27 @@ namespace Shapes {
 			}
 		}
 
-		void OnValidate() => UpdateChildShapes();
+		void OnValidate() {
+			isDirty = true;
+			UpdateChildShapes();
+		}
 
-		static List<ShapeRenderer> tempShapes = new List<ShapeRenderer>();
+		void OnTransformChildrenChanged() {
+			isDirty = true;
+		}
+
+		bool isDirty = true;
+		List<ShapeRenderer> cachedShapes = new List<ShapeRenderer>();
 
 		void UpdateChildShapes() {
-			GetComponentsInChildren<ShapeRenderer>( false, tempShapes );
-			foreach( ShapeRenderer shape in tempShapes )
-				shape.UpdateAllMaterialProperties();
+			if (isDirty) {
+				GetComponentsInChildren<ShapeRenderer>( false, cachedShapes );
+				isDirty = false;
+			}
+
+			foreach( ShapeRenderer shape in cachedShapes )
+				if (shape != null)
+					shape.UpdateAllMaterialProperties();
 		}
 	}
 
