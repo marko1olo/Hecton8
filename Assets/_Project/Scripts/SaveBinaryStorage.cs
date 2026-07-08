@@ -5699,19 +5699,90 @@ namespace Hecton8.SaveSystem
             }
 
             int payloadCursor = cursor + saveDataLength;
-            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+            if (!TryReadIndexedPackedQuestSectionV8(rawPtr, metadataRawLength, in header, ref payloadCursor, out packedQuestHeader, out packedQuestStateWords, out error))
                 return false;
+            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
+                header.Version,
+                playerDialogueChoiceFlags,
+                packedQuestStateWords);
+
+            if (!TryReadIndexedEcosystemSectionV8(rawPtr, metadataRawLength, header.Version, ref payloadCursor, out ecosystemSectorStates, out error))
+                return false;
+            int voxelByteLength = math.max(0, metadataRawLength - payloadCursor);
+            if (voxelByteLength > 0)
+            {
+                if (!voxelDeltaSnapshotDestination.IsCreated || voxelDeltaSnapshotDestination.Length < voxelByteLength)
+                {
+                    error = "Indexed voxel delta snapshot destination is too small.";
+                    return false;
+                }
+
+                void* voxelDestinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshotDestination);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(voxelDestinationPtr, voxelDeltaSnapshotDestination.Length, AddByteOffset(rawPtr, payloadCursor), voxelByteLength))
+                {
+                    error = "Indexed voxel delta snapshot copy exceeded destination bounds.";
+                    return false;
+                }
+
+                voxelDeltaSnapshotBytes = voxelByteLength;
+            }
+
+            if (!TryReadIndexedPersistentWorldDeltasV8(absolutePath, in prefix, sectorEntries, ref mapping, out persistentWorldDeltas, out indexedBackupRecoveryUsed, out error))
+                return false;
+
+            rawPayloadLength = metadataRawLength;
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Indexed save payload contains an invalid player AUP position.";
+                return false;
+            }
+
+            metadata = new SaveMetadata
+            {
+                SlotName = slotName,
+                GameVersion = gameVersion,
+                Timestamp = ToUtcTicks(header.TimestampUnixMs),
+                PlayTimeSeconds = prefix.PlayTimeSeconds,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
+                PlayerPosition = playerPosition,
+                Checksum = FormatPayloadChecksum(in header)
+            };
+            return true;
+        }
+
+        private static unsafe bool TryReadIndexedPackedQuestSectionV8(
+            byte* rawPtr,
+            int metadataRawLength,
+            in SaveFileHeader header,
+            ref int payloadCursor,
+            out QuestSaveHeader packedQuestHeader,
+            out uint[] packedQuestStateWords,
+            out string error)
+        {
+            error = string.Empty;
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+            {
+                packedQuestHeader = default;
+                packedQuestStateWords = null;
+                return false;
+            }
+
             if (packedQuestWordCount > 0)
             {
                 if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
                 {
+                    packedQuestHeader = default;
+                    packedQuestStateWords = null;
                     error = "Indexed packed quest section header is truncated.";
                     return false;
                 }
 
                 packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
                 if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
+                {
+                    packedQuestStateWords = null;
                     return false;
+                }
 
                 packedQuestStateWords = new uint[packedQuestWordCount];
                 payloadCursor += PackedQuestStateSectionHeaderSize;
@@ -5747,28 +5818,39 @@ namespace Hecton8.SaveSystem
                 packedQuestHeader = default;
                 packedQuestStateWords = Array.Empty<uint>();
             }
-            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
-                header.Version,
-                playerDialogueChoiceFlags,
-                packedQuestStateWords);
 
-            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            return true;
+        }
+
+        private static unsafe bool TryReadIndexedEcosystemSectionV8(
+            byte* rawPtr,
+            int metadataRawLength,
+            int headerVersion,
+            ref int payloadCursor,
+            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            out string error)
+        {
+            error = string.Empty;
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(headerVersion);
             if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
             {
+                ecosystemSectorStates = null;
                 error = "Indexed ecosystem section header is truncated.";
                 return false;
             }
 
             EcosystemSectionHeader ecosystemHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, payloadCursor), ecosystemHeaderSize);
             if (!TryConvertSectionCount(ecosystemHeader.RecordCount, out int ecosystemRecordCount) ||
-                !TryComputeEcosystemSectionLength(ecosystemRecordCount, header.Version, out int ecosystemSectionLength))
+                !TryComputeEcosystemSectionLength(ecosystemRecordCount, headerVersion, out int ecosystemSectionLength))
             {
+                ecosystemSectorStates = null;
                 error = "Indexed ecosystem section header exceeds supported bounds.";
                 return false;
             }
 
             if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
             {
+                ecosystemSectorStates = null;
                 error = "Indexed ecosystem section exceeds the metadata payload bounds.";
                 return false;
             }
@@ -5788,24 +5870,21 @@ namespace Hecton8.SaveSystem
             }
 
             payloadCursor += ecosystemSectionLength;
-            int voxelByteLength = math.max(0, metadataRawLength - payloadCursor);
-            if (voxelByteLength > 0)
-            {
-                if (!voxelDeltaSnapshotDestination.IsCreated || voxelDeltaSnapshotDestination.Length < voxelByteLength)
-                {
-                    error = "Indexed voxel delta snapshot destination is too small.";
-                    return false;
-                }
+            return true;
+        }
 
-                void* voxelDestinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(voxelDeltaSnapshotDestination);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(voxelDestinationPtr, voxelDeltaSnapshotDestination.Length, AddByteOffset(rawPtr, payloadCursor), voxelByteLength))
-                {
-                    error = "Indexed voxel delta snapshot copy exceeded destination bounds.";
-                    return false;
-                }
-
-                voxelDeltaSnapshotBytes = voxelByteLength;
-            }
+        private static unsafe bool TryReadIndexedPersistentWorldDeltasV8(
+            string absolutePath,
+            in PayloadPrefixInfo prefix,
+            SectorEntry[] sectorEntries,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            out PersistentWorldDeltaRecord[] persistentWorldDeltas,
+            out bool indexedBackupRecoveryUsed,
+            out string error)
+        {
+            persistentWorldDeltas = null;
+            indexedBackupRecoveryUsed = false;
+            error = string.Empty;
 
             NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
                 256,
@@ -5901,24 +5980,6 @@ namespace Hecton8.SaveSystem
                     ref aggregatedWorldDeltasSentinelId,
                     IndexedSectorAggregatedWorldDeltasScratchLabel);
             }
-
-            rawPayloadLength = metadataRawLength;
-            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
-            {
-                error = "Indexed save payload contains an invalid player AUP position.";
-                return false;
-            }
-
-            metadata = new SaveMetadata
-            {
-                SlotName = slotName,
-                GameVersion = gameVersion,
-                Timestamp = ToUtcTicks(header.TimestampUnixMs),
-                PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
-                PlayerPosition = playerPosition,
-                Checksum = FormatPayloadChecksum(in header)
-            };
             return true;
         }
 
