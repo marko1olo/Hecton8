@@ -366,28 +366,16 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("half alpha = min(0.82h, saturate(color.a * _Alpha * input.color.a * noise * alphaScale));", waterVolume);
         }
 
-        [Test]
-        public void RuntimeConsumersBindThroughCelestialLightReadModel()
+        private string GetScriptContent(string relativePath)
         {
             string root = Directory.GetCurrentDirectory();
-            string celestial = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/HectonCelestialEngine.cs"));
-            string seismic = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs"));
-            string water = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs"));
-            string waterTuner = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs"));
-            string waterValidator = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/WaterOpticsLayoutValidator.cs"));
-            string playerFlashlight = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/PlayerFlashlight.cs"));
-            string modularEquipment = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/ModularEquipmentEngine.cs"));
-            string caustics = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs"));
-            string biolum = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs"));
-            string globalWeather = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs"));
-            string surfaceWeather = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs"));
-            string audio = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs"));
-            string audioTuner = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Audio/Editor/AdaptiveAudioTunerWindow.cs"));
-            string shadows = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs"));
-            string arWaypoints = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/UI/ARWaypointOverlay.cs"));
-            string suitAdvisory = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/UI/SuitAdvisoryController.cs"));
-            string worldReadability = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/World/WorldReadabilityDirector.cs"));
-            string orbitalRelativity = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs"));
+            return File.ReadAllText(Path.Combine(root, relativePath));
+        }
+
+        [Test]
+        public void CelestialBindsThroughCelestialLightReadModel()
+        {
+            string celestial = GetScriptContent("Assets/_Project/Scripts/HectonCelestialEngine.cs");
 
             StringAssert.Contains("PublishCelestialLightReadabilitySnapshot", celestial);
             StringAssert.Contains("TryClaimCelestialRuntimeAuthority", celestial);
@@ -413,10 +401,24 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("ResolveCelestialQualityFromUnityTier", celestial);
             StringAssert.Contains("case 1: return 0.55f", celestial);
             StringAssert.Contains("case 6: return 1.00f", celestial);
+        }
+
+        [Test]
+        public void SeismicBindsThroughCelestialLightReadModel()
+        {
+            string seismic = GetScriptContent("Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs");
+
             StringAssert.Contains("private ICelestialRuntimeSnapshotReadModel _celestialSnapshotReadModel;", seismic);
             StringAssert.Contains("ReadPublishedCelestialSnapshot()", seismic);
             StringAssert.Contains("IsCelestialSnapshotReadable(in published)", seismic);
             StringAssert.DoesNotContain("GlobalRegistry.PublishCelestialRuntimeSnapshot(in celestial)", seismic);
+        }
+
+        [Test]
+        public void WaterBindsThroughCelestialLightReadModel()
+        {
+            string water = GetScriptContent("Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs");
+
             StringAssert.Contains("ICelestialLightReadabilityReadModel", water);
             StringAssert.Contains("public const uint TelemetryFlagCelestialLightMissing = 1u << 8", water);
             StringAssert.Contains("public const uint TelemetryFlagCelestialLightFallback = 1u << 9", water);
@@ -441,6 +443,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("math.max(128f, visibility * travelCompression)", water);
             StringAssert.Contains("MaxReadableWaterLightColor = 1f", water);
             StringAssert.Contains("MaxReadableWaterLightIntensity = 1.25f", water);
+        }
+
+        [Test]
+        public void WaterTunerBindsThroughCelestialLightReadModel()
+        {
+            string waterTuner = GetScriptContent("Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs");
+
             StringAssert.Contains("_telemetryStatus", waterTuner);
             StringAssert.Contains("WaterOpticsRuntime.TelemetryFlagCelestialLightMissing", waterTuner);
             StringAssert.Contains("WaterOpticsRuntime.TelemetryFlagCelestialLightFallback", waterTuner);
@@ -455,6 +464,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("Celestial light bridge: night phase", waterTuner);
             StringAssert.Contains("Celestial light bridge: twilight phase", waterTuner);
             StringAssert.Contains("Celestial light bridge: bound", waterTuner);
+        }
+
+        [Test]
+        public void WaterValidatorBindsThroughCelestialLightReadModel()
+        {
+            string waterValidator = GetScriptContent("Assets/_Project/Scripts/Rendering/WaterOptics/Editor/WaterOpticsLayoutValidator.cs");
+
             StringAssert.Contains("HasCelestialReadabilityBridge", waterValidator);
             StringAssert.Contains("Celestial readability bridge", waterValidator);
             StringAssert.Contains("CelestialLightReadabilityUtilityPath", waterValidator);
@@ -465,6 +481,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("WaterOpticsRuntime.TelemetryFlagCelestialLightQualityReduced", waterValidator);
             StringAssert.Contains("WaterOpticsRuntime.TelemetryFlagCelestialLightTwilight", waterValidator);
             StringAssert.Contains("WaterOpticsRuntime.TelemetryFlagCelestialLightNight", waterValidator);
+        }
+
+        [Test]
+        public void PlayerFlashlightBindsThroughCelestialLightReadModel()
+        {
+            string playerFlashlight = GetScriptContent("Assets/_Project/Scripts/PlayerFlashlight.cs");
+
             StringAssert.Contains("ICelestialLightReadabilityReadModel", playerFlashlight);
             StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", playerFlashlight);
             StringAssert.Contains("ResolveCelestialArtificialLightPressure01", playerFlashlight);
@@ -477,14 +500,35 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("readModel is Behaviour behaviour", playerFlashlight);
             StringAssert.Contains("IsCelestialLightReadModelUsable(fallback) ? fallback : null", playerFlashlight);
             StringAssert.DoesNotContain("_celestialLightReadModel = IsCelestialLightReadModelUsable(readModel)", playerFlashlight);
+        }
+
+        [Test]
+        public void ModularEquipmentBindsThroughCelestialLightReadModel()
+        {
+            string modularEquipment = GetScriptContent("Assets/_Project/Scripts/ModularEquipmentEngine.cs");
+
             StringAssert.Contains("flashlight.PresentationRange", modularEquipment);
             StringAssert.Contains("flashlight.PresentationIntensity", modularEquipment);
+        }
+
+        [Test]
+        public void CausticsBindsThroughCelestialLightReadModel()
+        {
+            string caustics = GetScriptContent("Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs");
+
             StringAssert.Contains("FlagCelestialLightBound", caustics);
             StringAssert.Contains("ResolveCausticsIntensityMultiplier", caustics);
             StringAssert.Contains("IsCelestialLightReadModelUsable", caustics);
             StringAssert.Contains("readModel is Behaviour behaviour", caustics);
             StringAssert.Contains("IsCelestialLightReadModelUsable(fallback) ? fallback : null", caustics);
             StringAssert.DoesNotContain("_celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;", caustics);
+        }
+
+        [Test]
+        public void BiolumBindsThroughCelestialLightReadModel()
+        {
+            string biolum = GetScriptContent("Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs");
+
             StringAssert.Contains("_cachedCelestialLight", biolum);
             StringAssert.Contains("ResolveCelestialRuntimeSnapshotReadModel", biolum);
             StringAssert.Contains("ResolveCelestialLightReadModel", biolum);
@@ -503,6 +547,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("IsTransformUsable(_cachedCameraTransform)", biolum);
             StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", biolum);
             StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", biolum);
+        }
+
+        [Test]
+        public void GlobalWeatherBindsThroughCelestialLightReadModel()
+        {
+            string globalWeather = GetScriptContent("Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs");
+
             StringAssert.Contains("ICelestialRuntimeSnapshotReadModel", globalWeather);
             StringAssert.Contains("CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel)", globalWeather);
             StringAssert.Contains("IsCelestialRuntimeSnapshotReadModelUsable", globalWeather);
@@ -514,10 +565,24 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("readModel is Behaviour behaviour", globalWeather);
             StringAssert.DoesNotContain("_cachedPlayerContext = currentService as IPlayerRuntimeContext;", globalWeather);
             StringAssert.DoesNotContain("IPlayerRuntimeContext playerContext = _cachedPlayerContext;", globalWeather);
+        }
+
+        [Test]
+        public void SurfaceWeatherBindsThroughCelestialLightReadModel()
+        {
+            string surfaceWeather = GetScriptContent("Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs");
+
             StringAssert.Contains("CacheCelestialEngine(currentService as HectonCelestialEngine)", surfaceWeather);
             StringAssert.Contains("ResolveCachedCelestialEngine", surfaceWeather);
             StringAssert.Contains("IsCelestialEngineUsable", surfaceWeather);
             StringAssert.Contains("engine != null && (!Application.isPlaying || engine.isActiveAndEnabled)", surfaceWeather);
+        }
+
+        [Test]
+        public void AudioBindsThroughCelestialLightReadModel()
+        {
+            string audio = GetScriptContent("Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs");
+
             StringAssert.Contains("ResolveCelestialLightReadability", audio);
             StringAssert.Contains("light.DeepDarkness01", audio);
             StringAssert.Contains("light.ArtificialLightWeight01", audio);
@@ -535,18 +600,39 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TelemetryFlagCelestialLightNight", audio);
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseNight", audio);
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseTwilight", audio);
+        }
+
+        [Test]
+        public void AudioTunerBindsThroughCelestialLightReadModel()
+        {
+            string audioTuner = GetScriptContent("Assets/_Project/Scripts/Audio/Editor/AdaptiveAudioTunerWindow.cs");
+
             StringAssert.Contains("DrawCelestialLightTelemetry", audioTuner);
             StringAssert.Contains("TelemetryFlagCelestialLightMissing", audioTuner);
             StringAssert.Contains("TelemetryFlagCelestialLightQualityReduced", audioTuner);
             StringAssert.Contains("TelemetryFlagCelestialLightTwilight", audioTuner);
             StringAssert.Contains("TelemetryFlagCelestialLightNight", audioTuner);
             StringAssert.Contains("Celestial light bridge", audioTuner);
+        }
+
+        [Test]
+        public void ShadowsBindsThroughCelestialLightReadModel()
+        {
+            string shadows = GetScriptContent("Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs");
+
             StringAssert.Contains("LightReadabilitySnapshot", shadows);
             StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", shadows);
             StringAssert.Contains("IsCelestialLightReadModelUsable", shadows);
             StringAssert.Contains("readModel is Behaviour behaviour", shadows);
             StringAssert.Contains("IsCelestialLightReadModelUsable(fallback) ? fallback : null", shadows);
             StringAssert.DoesNotContain("_celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;", shadows);
+        }
+
+        [Test]
+        public void ArWaypointsBindsThroughCelestialLightReadModel()
+        {
+            string arWaypoints = GetScriptContent("Assets/_Project/Scripts/UI/ARWaypointOverlay.cs");
+
             StringAssert.Contains("ICelestialLightReadabilityReadModel", arWaypoints);
             StringAssert.Contains("ResolveWaypointLightAlphaMultiplier", arWaypoints);
             StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", arWaypoints);
@@ -557,6 +643,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseNight", arWaypoints);
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseTwilight", arWaypoints);
             StringAssert.DoesNotContain("_celestialLightReadModel = GlobalRegistry.CelestialLightReadabilityReadModel;", arWaypoints);
+        }
+
+        [Test]
+        public void SuitAdvisoryBindsThroughCelestialLightReadModel()
+        {
+            string suitAdvisory = GetScriptContent("Assets/_Project/Scripts/UI/SuitAdvisoryController.cs");
+
             StringAssert.Contains("ICelestialLightReadabilityReadModel", suitAdvisory);
             StringAssert.Contains("EvaluateCelestialVisibilityAdvisory", suitAdvisory);
             StringAssert.Contains("ResolveCelestialVisibilityAdvisory01", suitAdvisory);
@@ -578,6 +671,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("[System.Diagnostics.Conditional(\"DEVELOPMENT_BUILD\")]", suitAdvisory);
             StringAssert.Contains("SuitAdvisory.CelestialVisibility.Fallback", suitAdvisory);
             StringAssert.Contains("SuitAdvisory.CelestialVisibility.Artificial", suitAdvisory);
+        }
+
+        [Test]
+        public void WorldReadabilityBindsThroughCelestialLightReadModel()
+        {
+            string worldReadability = GetScriptContent("Assets/_Project/Scripts/World/WorldReadabilityDirector.cs");
+
             StringAssert.Contains("ICelestialLightReadabilityReadModel", worldReadability);
             StringAssert.Contains("GlobalRegistryServiceSlot.CelestialEngineRuntime", worldReadability);
             StringAssert.Contains("ResetCelestialLightGuidanceState();", worldReadability);
@@ -606,6 +706,13 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseTwilight", worldReadability);
             StringAssert.Contains("CelestialLightReadabilityFlags.LightPhaseNight", worldReadability);
             StringAssert.Contains("Optics are unstable. Trust instrument depth, sonar, and beacon routes.", worldReadability);
+        }
+
+        [Test]
+        public void OrbitalRelativityBindsThroughCelestialLightReadModel()
+        {
+            string orbitalRelativity = GetScriptContent("Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs");
+
             StringAssert.Contains("ResolveCelestialRuntimeSnapshotReadModel", orbitalRelativity);
             StringAssert.Contains("CacheCelestialRuntimeSnapshotReadModel(currentService as ICelestialRuntimeSnapshotReadModel)", orbitalRelativity);
             StringAssert.Contains("CacheCelestialRuntimeSnapshotReadModel(GlobalRegistry.CelestialRuntimeSnapshotReadModel)", orbitalRelativity);
