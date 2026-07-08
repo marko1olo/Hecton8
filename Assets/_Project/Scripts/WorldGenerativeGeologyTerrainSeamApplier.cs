@@ -698,6 +698,159 @@ namespace Hecton8.World
             }
         }
 
+        private void PopulateNativePlans(
+            List<WorldGenerativeGeologySeamPlan> plans,
+            int hybridPlanCount,
+            in double3 terrainAbsolutePosition,
+            Vector3 terrainPosition,
+            NativeArray<HybridTerrainSeamPlanNative> nativePlans)
+        {
+            int writeIndex = 0;
+            for (int i = 0; i < plans.Count && writeIndex < hybridPlanCount; i++)
+            {
+                WorldGenerativeGeologySeamPlan plan = plans[i];
+                if (!IsHybridTerrainPlan(in plan))
+                    continue;
+
+                Vector3 contact = plan.TerrainContactPosition;
+                Vector3 voxelCenter = plan.RuntimeVoxelVolumeCenter;
+                Vector3 voxelSize = plan.voxelVolumeSize;
+                float3 localContact = ResolveTerrainLocalContactPosition(
+                    in plan,
+                    in terrainAbsolutePosition,
+                    contact,
+                    terrainPosition);
+                float3 localVoxelCenter = ResolveTerrainLocalVoxelCenter(
+                    in plan,
+                    in terrainAbsolutePosition,
+                    voxelCenter,
+                    terrainPosition);
+                nativePlans[writeIndex++] = new HybridTerrainSeamPlanNative
+                {
+                    TerrainLocalContactPosition = localContact,
+                    TerrainLocalVoxelCenter = localVoxelCenter,
+                    VoxelSize = new float3(
+                        Mathf.Max(0.5f, voxelSize.x),
+                        Mathf.Max(0.5f, voxelSize.y),
+                        Mathf.Max(0.5f, voxelSize.z)),
+                    SeamBlendRadius = Mathf.Max(1f, plan.seamBlendRadius),
+                    TerrainBlendWeight = Mathf.Clamp01(plan.terrainBlendWeight),
+                    CaveBlendWeight = Mathf.Clamp01(plan.caveBlendWeight),
+                    SuggestedTerrainRaise = Mathf.Max(0f, plan.suggestedTerrainRaise),
+                    SuggestedTerrainCut = Mathf.Max(0f, plan.suggestedTerrainCut),
+                    TerrainDelta = plan.terrainDelta,
+                    RidgeSignal = Mathf.Clamp01(plan.ridgeSignal),
+                    CanyonSignal = Mathf.Clamp01(plan.canyonSignal),
+                    CompositionPotential = Mathf.Clamp01(plan.compositionPotential)
+                };
+            }
+        }
+
+        private JobHandle ScheduleHybridTerrainJobs(
+            TerrainApplyState state,
+            RectInt applyRect,
+            int sampleCount,
+            bool maskDetailActive,
+            bool visualSamplingSuppressed,
+            float globalQualityWeight,
+            NativeArray<float> baselineHeights,
+            NativeArray<ushort> quantizedHeightmap,
+            NativeArray<HybridTerrainSeamPlanNative> nativePlans,
+            NativeArray<float> patchHeights,
+            NativeArray<byte> blendMask,
+            NativeArray<float3> normals,
+            Vector3 terrainSize)
+        {
+            HybridSdfHeightmapProjectionJob projectionJob = new HybridSdfHeightmapProjectionJob
+            {
+                BaselineHeights01 = baselineHeights,
+                QuantizedHeightSamples = quantizedHeightmap,
+                Plans = nativePlans,
+                PatchHeights01 = patchHeights,
+                BlendMask = blendMask,
+                HeightmapResolution = state.heightmapResolution,
+                PatchX = applyRect.x,
+                PatchZ = applyRect.y,
+                PatchWidth = applyRect.width,
+                PatchHeight = applyRect.height,
+                HeightmapInvMaxIndex = 1f / Mathf.Max(1, state.heightmapResolution - 1),
+                TerrainPosition = float3.zero,
+                TerrainSize = (float3)terrainSize,
+                VisualSamplingSuppressed = visualSamplingSuppressed ? (byte)1 : (byte)0
+            };
+            InjectGlobalQualityWeight(ref projectionJob, globalQualityWeight);
+
+            JobHandle projectionHandle = projectionJob.Schedule(sampleCount, 64);
+            JobHandle finalHandle = projectionHandle;
+            if (maskDetailActive)
+            {
+                float cellSizeX = terrainSize.x / Mathf.Max(1, state.heightmapResolution - 1);
+                float cellSizeZ = terrainSize.z / Mathf.Max(1, state.heightmapResolution - 1);
+                HybridTerrainSeamNormalJob normalJob = new HybridTerrainSeamNormalJob
+                {
+                    PatchHeights01 = patchHeights,
+                    Normals = normals,
+                    PatchWidth = applyRect.width,
+                    PatchHeight = applyRect.height,
+                    CellSizeX = cellSizeX,
+                    CellSizeZ = cellSizeZ,
+                    HeightScale = terrainSize.y
+                };
+                HybridTerrainSeamMaskDetailJob detailJob = new HybridTerrainSeamMaskDetailJob
+                {
+                    Normals = normals,
+                    BlendMask = blendMask,
+                    EnableDetail = 1
+                };
+                InjectGlobalQualityWeight(ref detailJob, globalQualityWeight);
+
+                JobHandle normalHandle = normalJob.Schedule(sampleCount, 64, projectionHandle);
+                finalHandle = detailJob.Schedule(sampleCount, 64, normalHandle);
+            }
+
+            return finalHandle;
+        }
+
+        private void ApplyHybridTerrainPatchResults(
+            RectInt applyRect,
+            NativeArray<float> patchHeights,
+            NativeArray<byte> blendMask,
+            float[,] patch,
+            out float minHeight01,
+            out float maxHeight01,
+            out float maxBlend01,
+            out bool faulted,
+            out bool changedHeightSample)
+        {
+            minHeight01 = 1f;
+            maxHeight01 = 0f;
+            maxBlend01 = 0f;
+            faulted = false;
+            changedHeightSample = false;
+            for (int z = 0; z < applyRect.height; z++)
+            {
+                int rowOffset = z * applyRect.width;
+                for (int x = 0; x < applyRect.width; x++)
+                {
+                    int index = rowOffset + x;
+                    float height01 = patchHeights[index];
+                    float sourceHeight01 = patch[z, x];
+                    if (float.IsNaN(height01) || float.IsInfinity(height01))
+                    {
+                        height01 = sourceHeight01;
+                        faulted = true;
+                    }
+
+                    height01 = Mathf.Clamp01(height01);
+                    changedHeightSample |= Mathf.Abs(height01 - sourceHeight01) > 0.00001f;
+                    patch[z, x] = height01;
+                    minHeight01 = Mathf.Min(minHeight01, height01);
+                    maxHeight01 = Mathf.Max(maxHeight01, height01);
+                    maxBlend01 = Mathf.Max(maxBlend01, blendMask[index] * (1f / 255f));
+                }
+            }
+        }
+
         private bool TryApplyHybridTerrainProjection(
             TerrainApplyState state,
             RectInt applyRect,
@@ -771,92 +924,22 @@ namespace Hecton8.World
                     return false;
                 }
 
-                int writeIndex = 0;
-                for (int i = 0; i < plans.Count && writeIndex < hybridPlanCount; i++)
-                {
-                    WorldGenerativeGeologySeamPlan plan = plans[i];
-                    if (!IsHybridTerrainPlan(in plan))
-                        continue;
+                PopulateNativePlans(plans, hybridPlanCount, in terrainAbsolutePosition, terrainPosition, nativePlans);
 
-                    Vector3 contact = plan.TerrainContactPosition;
-                    Vector3 voxelCenter = plan.RuntimeVoxelVolumeCenter;
-                    Vector3 voxelSize = plan.voxelVolumeSize;
-                    float3 localContact = ResolveTerrainLocalContactPosition(
-                        in plan,
-                        in terrainAbsolutePosition,
-                        contact,
-                        terrainPosition);
-                    float3 localVoxelCenter = ResolveTerrainLocalVoxelCenter(
-                        in plan,
-                        in terrainAbsolutePosition,
-                        voxelCenter,
-                        terrainPosition);
-                    nativePlans[writeIndex++] = new HybridTerrainSeamPlanNative
-                    {
-                        TerrainLocalContactPosition = localContact,
-                        TerrainLocalVoxelCenter = localVoxelCenter,
-                        VoxelSize = new float3(
-                            Mathf.Max(0.5f, voxelSize.x),
-                            Mathf.Max(0.5f, voxelSize.y),
-                            Mathf.Max(0.5f, voxelSize.z)),
-                        SeamBlendRadius = Mathf.Max(1f, plan.seamBlendRadius),
-                        TerrainBlendWeight = Mathf.Clamp01(plan.terrainBlendWeight),
-                        CaveBlendWeight = Mathf.Clamp01(plan.caveBlendWeight),
-                        SuggestedTerrainRaise = Mathf.Max(0f, plan.suggestedTerrainRaise),
-                        SuggestedTerrainCut = Mathf.Max(0f, plan.suggestedTerrainCut),
-                        TerrainDelta = plan.terrainDelta,
-                        RidgeSignal = Mathf.Clamp01(plan.ridgeSignal),
-                        CanyonSignal = Mathf.Clamp01(plan.canyonSignal),
-                        CompositionPotential = Mathf.Clamp01(plan.compositionPotential)
-                    };
-                }
-
-                HybridSdfHeightmapProjectionJob projectionJob = new HybridSdfHeightmapProjectionJob
-                {
-                    BaselineHeights01 = baselineHeights,
-                    QuantizedHeightSamples = quantizedHeightmap,
-                    Plans = nativePlans,
-                    PatchHeights01 = patchHeights,
-                    BlendMask = blendMask,
-                    HeightmapResolution = state.heightmapResolution,
-                    PatchX = applyRect.x,
-                    PatchZ = applyRect.y,
-                    PatchWidth = applyRect.width,
-                    PatchHeight = applyRect.height,
-                    HeightmapInvMaxIndex = 1f / Mathf.Max(1, state.heightmapResolution - 1),
-                    TerrainPosition = float3.zero,
-                    TerrainSize = (float3)terrainSize,
-                    VisualSamplingSuppressed = visualSamplingSuppressed ? (byte)1 : (byte)0
-                };
-                InjectGlobalQualityWeight(ref projectionJob, globalQualityWeight);
-
-                JobHandle projectionHandle = projectionJob.Schedule(sampleCount, 64);
-                JobHandle finalHandle = projectionHandle;
-                if (maskDetailActive)
-                {
-                    float cellSizeX = terrainSize.x / Mathf.Max(1, state.heightmapResolution - 1);
-                    float cellSizeZ = terrainSize.z / Mathf.Max(1, state.heightmapResolution - 1);
-                    HybridTerrainSeamNormalJob normalJob = new HybridTerrainSeamNormalJob
-                    {
-                        PatchHeights01 = patchHeights,
-                        Normals = normals,
-                        PatchWidth = applyRect.width,
-                        PatchHeight = applyRect.height,
-                        CellSizeX = cellSizeX,
-                        CellSizeZ = cellSizeZ,
-                        HeightScale = terrainSize.y
-                    };
-                    HybridTerrainSeamMaskDetailJob detailJob = new HybridTerrainSeamMaskDetailJob
-                    {
-                        Normals = normals,
-                        BlendMask = blendMask,
-                        EnableDetail = 1
-                    };
-                    InjectGlobalQualityWeight(ref detailJob, globalQualityWeight);
-
-                    JobHandle normalHandle = normalJob.Schedule(sampleCount, 64, projectionHandle);
-                    finalHandle = detailJob.Schedule(sampleCount, 64, normalHandle);
-                }
+                JobHandle finalHandle = ScheduleHybridTerrainJobs(
+                    state,
+                    applyRect,
+                    sampleCount,
+                    maskDetailActive,
+                    visualSamplingSuppressed,
+                    globalQualityWeight,
+                    baselineHeights,
+                    quantizedHeightmap,
+                    nativePlans,
+                    patchHeights,
+                    blendMask,
+                    normals,
+                    terrainSize);
 
                 // COLD SYNC JOB: Unity Terrain SetHeightsDelayLOD requires CPU patch data; this path is bounded to SlowTick/chunk seam work, not frame Tick.
                 using (TerrainProjectionFenceMarker.Auto())
@@ -872,33 +955,16 @@ namespace Hecton8.World
                     }
                 }
 
-                float minHeight01 = 1f;
-                float maxHeight01 = 0f;
-                float maxBlend01 = 0f;
-                bool faulted = false;
-                bool changedHeightSample = false;
-                for (int z = 0; z < applyRect.height; z++)
-                {
-                    int rowOffset = z * applyRect.width;
-                    for (int x = 0; x < applyRect.width; x++)
-                    {
-                        int index = rowOffset + x;
-                        float height01 = patchHeights[index];
-                        float sourceHeight01 = patch[z, x];
-                        if (float.IsNaN(height01) || float.IsInfinity(height01))
-                        {
-                            height01 = sourceHeight01;
-                            faulted = true;
-                        }
-
-                        height01 = Mathf.Clamp01(height01);
-                        changedHeightSample |= Mathf.Abs(height01 - sourceHeight01) > 0.00001f;
-                        patch[z, x] = height01;
-                        minHeight01 = Mathf.Min(minHeight01, height01);
-                        maxHeight01 = Mathf.Max(maxHeight01, height01);
-                        maxBlend01 = Mathf.Max(maxBlend01, blendMask[index] * (1f / 255f));
-                    }
-                }
+                ApplyHybridTerrainPatchResults(
+                    applyRect,
+                    patchHeights,
+                    blendMask,
+                    patch,
+                    out float minHeight01,
+                    out float maxHeight01,
+                    out float maxBlend01,
+                    out bool faulted,
+                    out bool changedHeightSample);
 
                 QueueVoxelBlendMaskTextureUpload(terrain, applyRect, blendMask, seamExpensiveWeight);
                 ReleaseHybridTerrainMutationGuard(terrainSeamGuardVault, terrainSeamGuardMask);
