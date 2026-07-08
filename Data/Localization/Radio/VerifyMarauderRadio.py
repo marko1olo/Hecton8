@@ -46,7 +46,9 @@ def fnv1a_u32_utf16le(text: str) -> int:
 
 
 def canonical_hash(payload: Any) -> int:
-    canonical = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
     return fnv1a_u32_utf16le(canonical)
 
 
@@ -66,7 +68,9 @@ def read_json(path: Path) -> Any:
         return json.load(handle)
 
 
-def verify_json_hashes(raw: list[dict[str, Any]], clean: list[dict[str, Any]], dictionary: dict[str, Any]) -> dict[str, Any]:
+def verify_json_hashes(
+    raw: list[dict[str, Any]], clean: list[dict[str, Any]], dictionary: dict[str, Any]
+) -> dict[str, Any]:
     errors: list[str] = []
     collisions: list[str] = []
     seen: dict[int, tuple[str, str]] = {}
@@ -93,16 +97,32 @@ def verify_json_hashes(raw: list[dict[str, Any]], clean: list[dict[str, Any]], d
                 errors.append(f"{label}.{line_id} line hash mismatch")
             if entry["SpeakerHash"] != fnv1a_u32_utf16le(entry["Speaker"]):
                 errors.append(f"{label}.{line_id} speaker hash mismatch")
-            if entry["RequiredGlobalStateHash"] != fnv1a_u32_utf16le(entry["RequiredGlobalState"]):
+            if entry["RequiredGlobalStateHash"] != fnv1a_u32_utf16le(
+                entry["RequiredGlobalState"]
+            ):
                 errors.append(f"{label}.{line_id} state hash mismatch")
             add(f"{label}.{line_id}.Text", entry["HashID"], entry["Text"])
-            add(f"{label}.{line_id}.LowTierText", entry["LowTierHashID"], entry["LowTierText"])
+            add(
+                f"{label}.{line_id}.LowTierText",
+                entry["LowTierHashID"],
+                entry["LowTierText"],
+            )
             add(f"{label}.{line_id}.LineID", entry["LineIDHash"], line_id)
-            add(f"{label}.{line_id}.State", entry["RequiredGlobalStateHash"], entry["RequiredGlobalState"])
+            add(
+                f"{label}.{line_id}.State",
+                entry["RequiredGlobalStateHash"],
+                entry["RequiredGlobalState"],
+            )
 
     for character in dictionary["Characters"]:
-        add(f"speaker.{character['Speaker']}", character["HashID"], character["Speaker"])
-        add(f"callsign.{character['Callsign']}", character["CallsignHash"], character["Callsign"])
+        add(
+            f"speaker.{character['Speaker']}", character["HashID"], character["Speaker"]
+        )
+        add(
+            f"callsign.{character['Callsign']}",
+            character["CallsignHash"],
+            character["Callsign"],
+        )
     for slang in dictionary["Slang"]:
         add(f"slang.{slang['Term']}", slang["HashID"], slang["Term"])
 
@@ -114,7 +134,13 @@ def verify_json_hashes(raw: list[dict[str, Any]], clean: list[dict[str, Any]], d
     }
 
 
-def verify_binary(path: Path, raw: list[dict[str, Any]], clean: list[dict[str, Any]], dictionary: dict[str, Any], layout: dict[str, Any]) -> dict[str, Any]:
+def verify_binary(
+    path: Path,
+    raw: list[dict[str, Any]],
+    clean: list[dict[str, Any]],
+    dictionary: dict[str, Any],
+    layout: dict[str, Any],
+) -> dict[str, Any]:
     blob = path.read_bytes()
     errors: list[str] = []
     if len(blob) < BINARY_HEADER_SIZE:
@@ -125,7 +151,12 @@ def verify_binary(path: Path, raw: list[dict[str, Any]], clean: list[dict[str, A
     record_count, record_size = header[3], header[4]
     table_offset, payload_offset, payload_length = header[5], header[6], header[7]
     flags = header[8]
-    raw_hash, clean_hash, dictionary_hash, layout_hash = header[9], header[10], header[11], header[12]
+    raw_hash, clean_hash, dictionary_hash, layout_hash = (
+        header[9],
+        header[10],
+        header[11],
+        header[12],
+    )
 
     if magic != BINARY_MAGIC:
         errors.append(f"magic mismatch {magic!r}")
@@ -170,7 +201,9 @@ def verify_binary(path: Path, raw: list[dict[str, Any]], clean: list[dict[str, A
 
     previous_hash = -1
     for i in range(record_count):
-        record = BINARY_RECORD_STRUCT.unpack_from(blob, table_offset + (i * BINARY_RECORD_SIZE))
+        record = BINARY_RECORD_STRUCT.unpack_from(
+            blob, table_offset + (i * BINARY_RECORD_SIZE)
+        )
         hash_id = record[0]
         if hash_id <= previous_hash:
             errors.append(f"record {i} hash sort violation")
@@ -257,7 +290,9 @@ def verify_source_hygiene() -> dict[str, Any]:
             errors.append(f"struct format lacks explicit Little-endian marker: {fmt}")
     direct_pack_calls = re.search(r"\bstruct\.pack\(", source) is not None
     if direct_pack_calls:
-        errors.append("direct struct.pack call found; use predeclared Little-endian Struct instances")
+        errors.append(
+            "direct struct.pack call found; use predeclared Little-endian Struct instances"
+        )
 
     binary_files = sorted(list(ROOT.glob("*.h8bin")) + list(ROOT.glob("*.bin")))
     binary_alignment: dict[str, int] = {}
@@ -265,18 +300,24 @@ def verify_source_hygiene() -> dict[str, Any]:
         size = binary_file.stat().st_size
         binary_alignment[binary_file.name] = size % BINARY_ALIGNMENT
         if size % BINARY_ALIGNMENT:
-            errors.append(f"{binary_file.name} length is not {BINARY_ALIGNMENT}-byte aligned")
+            errors.append(
+                f"{binary_file.name} length is not {BINARY_ALIGNMENT}-byte aligned"
+            )
 
     return {
         "StructFormats": struct_formats,
-        "ExplicitLittleEndianStructs": all(fmt.startswith("<") for fmt in struct_formats),
+        "ExplicitLittleEndianStructs": all(
+            fmt.startswith("<") for fmt in struct_formats
+        ),
         "DirectStructPackCalls": direct_pack_calls,
         "BinaryFileAlignmentRemainders": binary_alignment,
         "Errors": errors,
     }
 
 
-def verify_lore_tone(raw: list[dict[str, Any]], dictionary: dict[str, Any]) -> dict[str, Any]:
+def verify_lore_tone(
+    raw: list[dict[str, Any]], dictionary: dict[str, Any]
+) -> dict[str, Any]:
     errors: list[str] = []
     slang_terms = [slang["Term"].lower() for slang in dictionary["Slang"]]
     all_text = " ".join(entry["Text"].lower() for entry in raw)
@@ -284,7 +325,14 @@ def verify_lore_tone(raw: list[dict[str, Any]], dictionary: dict[str, Any]) -> d
     if missing_slang:
         errors.append(f"unused slang terms: {missing_slang}")
 
-    sterile_tokens = ("clean sci-fi", "laser sword", "galactic", "warp", "quantum drive", "plasma rifle")
+    sterile_tokens = (
+        "clean sci-fi",
+        "laser sword",
+        "galactic",
+        "warp",
+        "quantum drive",
+        "plasma rifle",
+    )
     sterile_hits = [token for token in sterile_tokens if token in all_text]
     if sterile_hits:
         errors.append(f"sterile/off-tone tokens found: {sterile_hits}")
@@ -303,12 +351,29 @@ def verify_lore_tone(raw: list[dict[str, Any]], dictionary: dict[str, Any]) -> d
     }
 
 
-def run_recipe_monte_carlo(steps: int = 1_000_000, seed: int = 0x8A6B5D31) -> dict[str, Any]:
+def run_recipe_monte_carlo(
+    steps: int = 1_000_000, seed: int = 0x8A6B5D31
+) -> dict[str, Any]:
     path = PROJECT_ROOT / "Data" / "Economy" / "Recipes.json"
     data = read_json(path)
     reclaim = float(data["deconstruction"]["normal_reclaim_ratio"])
-    values = {item["item_id"]: float(item["baseline_value_units"]) for item in data["item_values"]}
+    values = {
+        item["item_id"]: float(item["baseline_value_units"])
+        for item in data["item_values"]
+    }
     recipes = data["recipes"]
+    for r in recipes:
+        r["parsed_ingredients"] = tuple(
+            (ing["item_id"], float(ing["quantity"])) for ing in r["ingredients"]
+        )
+        r["parsed_result_id"] = r["result"]["item_id"]
+        r["parsed_result_qty"] = float(r["result"]["quantity"])
+    for r in recipes:
+        r["parsed_ingredients"] = tuple(
+            (ing["item_id"], float(ing["quantity"])) for ing in r["ingredients"]
+        )
+        r["parsed_result_id"] = r["result"]["item_id"]
+        r["parsed_result_qty"] = float(r["result"]["quantity"])
     produced = {recipe["result"]["item_id"] for recipe in recipes}
     primitives = [item_id for item_id in values if item_id not in produced]
     initial_primitive_units = 10_000.0
@@ -332,23 +397,33 @@ def run_recipe_monte_carlo(steps: int = 1_000_000, seed: int = 0x8A6B5D31) -> di
             recipe = None
             for _attempt in range(16):
                 candidate = recipes[rng.randrange(len(recipes))]
-                if all(inventory.get(ing["item_id"], 0.0) + 1e-9 >= float(ing["quantity"]) for ing in candidate["ingredients"]):
+                can_craft = True
+                for ing_id, ing_qty in candidate["parsed_ingredients"]:
+                    if inventory.get(ing_id, 0.0) + 1e-9 < ing_qty:
+                        can_craft = False
+                        break
+                if can_craft:
                     recipe = candidate
                     break
             if recipe is not None:
-                for ing in recipe["ingredients"]:
-                    inventory[ing["item_id"]] = inventory.get(ing["item_id"], 0.0) - float(ing["quantity"])
-                result = recipe["result"]
-                inventory[result["item_id"]] = inventory.get(result["item_id"], 0.0) + float(result["quantity"])
+                for ing_id, ing_qty in recipe["parsed_ingredients"]:
+                    inventory[ing_id] = inventory.get(ing_id, 0.0) - ing_qty
+                inventory[recipe["parsed_result_id"]] = (
+                    inventory.get(recipe["parsed_result_id"], 0.0)
+                    + recipe["parsed_result_qty"]
+                )
                 craft_count += 1
         else:
-            candidates = [recipe for recipe in recipes if inventory.get(recipe["result"]["item_id"], 0.0) >= 1.0]
+            candidates = [
+                recipe
+                for recipe in recipes
+                if inventory.get(recipe["parsed_result_id"], 0.0) >= 1.0
+            ]
             if candidates:
                 recipe = candidates[rng.randrange(len(candidates))]
-                result = recipe["result"]
-                inventory[result["item_id"]] -= 1.0
-                for ing in recipe["ingredients"]:
-                    inventory[ing["item_id"]] = inventory.get(ing["item_id"], 0.0) + (float(ing["quantity"]) * reclaim)
+                inventory[recipe["parsed_result_id"]] -= 1.0
+                for ing_id, ing_qty in recipe["parsed_ingredients"]:
+                    inventory[ing_id] = inventory.get(ing_id, 0.0) + (ing_qty * reclaim)
                 deconstruct_count += 1
 
         current_base_value = base_value()
@@ -358,12 +433,17 @@ def run_recipe_monte_carlo(steps: int = 1_000_000, seed: int = 0x8A6B5D31) -> di
             errors.append("non-finite base value")
             break
         if current_base_value > initial_base_value + 1e-6:
-            errors.append(f"base resource value grew: {current_base_value} > {initial_base_value}")
+            errors.append(
+                f"base resource value grew: {current_base_value} > {initial_base_value}"
+            )
             break
 
     static_recipe_errors: list[str] = []
     for recipe in recipes:
-        ingredient_value = sum(values[ing["item_id"]] * float(ing["quantity"]) for ing in recipe["ingredients"])
+        ingredient_value = sum(
+            values[ing["item_id"]] * float(ing["quantity"])
+            for ing in recipe["ingredients"]
+        )
         reclaimed_value = ingredient_value * reclaim
         if reclaimed_value >= ingredient_value:
             static_recipe_errors.append(f"{recipe['recipe_id']} reclaim is non-lossy")
@@ -394,7 +474,9 @@ def main() -> int:
     layout = read_json(ROOT / "marauder_radio_interceptions.layout.json")
 
     hash_report = verify_json_hashes(raw, clean, dictionary)
-    binary_report = verify_binary(ROOT / "marauder_radio_interceptions.h8bin", raw, clean, dictionary, layout)
+    binary_report = verify_binary(
+        ROOT / "marauder_radio_interceptions.h8bin", raw, clean, dictionary, layout
+    )
     source_hygiene_report = verify_source_hygiene()
     lore_tone_report = verify_lore_tone(raw, dictionary)
     economy_report = run_recipe_monte_carlo()
