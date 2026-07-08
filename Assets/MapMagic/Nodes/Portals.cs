@@ -104,8 +104,11 @@ namespace MapMagic.Nodes
 		{ 
 			if (enter != null   &&  !stop.stop)
 			{
-				data.StoreProduct(this, data.ReadInletProduct(enter));
-				//TODO: clone?
+				T product = data.ReadInletProduct(enter);
+				if (product is ICloneable cloneable)
+					data.StoreProduct(this, (T)cloneable.Clone());
+				else
+					data.StoreProduct(this, product);
 			}
 		}
 
