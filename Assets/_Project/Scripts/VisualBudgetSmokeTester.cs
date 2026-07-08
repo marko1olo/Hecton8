@@ -34,9 +34,6 @@ namespace Hecton8.Dev
 
 #pragma warning disable CS0414
         [Header("Debug")]
-        [SerializeField] private int _debugRunCount;
-        [SerializeField] private bool _debugLastPass;
-        [SerializeField] private string _debugLastIssue = string.Empty;
         [SerializeField] private float _debugGraphicsDriverMemoryMb;
         [SerializeField] private float _debugGraphicsBudgetMb;
         [SerializeField] private float _debugTrackedRenderTextureMemoryMb;
@@ -83,9 +80,6 @@ namespace Hecton8.Dev
         /// <returns>True when all sampled visual memory buckets remain under budget.</returns>
         public bool RunSmokePass()
         {
-            _debugRunCount++;
-            _debugLastPass = false;
-            _debugLastIssue = string.Empty;
 
             long graphicsDriverBytes = ReadGraphicsDriverMemoryBytes();
             VRAMBudgetThresholds runtimeThresholds = VRAMBudgetThresholds.RuntimeDefault;
@@ -120,7 +114,6 @@ namespace Hecton8.Dev
             if (uiRtBytes > ResolveBudgetBytes(runtimeThresholds.UIRTBudgetBytes, CompactUiRtBudgetBytes))
                 return Fail("ui-rt-budget");
 
-            _debugLastPass = true;
             LogPass(graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
             return true;
         }
@@ -205,8 +198,6 @@ namespace Hecton8.Dev
 
         private bool Fail(string issue)
         {
-            _debugLastIssue = issue;
-            _debugLastPass = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _reportBuilder.Clear();
             _reportBuilder.Append("[VisualBudgetSmoke] FAIL issue=").Append(issue)
