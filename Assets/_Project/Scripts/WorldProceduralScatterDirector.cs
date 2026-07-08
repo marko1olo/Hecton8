@@ -5669,308 +5669,294 @@ namespace Hecton8.World
             ref int predatorSpawnCount,
             out int injectedSpawnPlacements)
         {
-            injectedSpawnPlacements = 0;
-            WorldProceduralPattern pattern = rescueContext.Pattern;
-            HectonBiomeMatrixProfile biomeProfile = rescueContext.BiomeProfile;
-            int clusterBudget = rescueContext.ClusterBudget;
-            int structureStride = rescueContext.StructureStride;
-            int spawnStride = rescueContext.SpawnStride;
-            int structureBudget = rescueContext.StructureBudget;
-            int spawnBudget = rescueContext.SpawnBudget;
-            int[] layerPlacementCounts = rescueContext.LayerPlacementCounts;
-            int[] clusterAccentCounts = rescueContext.ClusterAccentCounts;
-            int[] structureAccentCounts = rescueContext.StructureAccentCounts;
-            ScatterCandidate[] layerTopCandidates = rescueContext.LayerTopCandidates;
-            bool[] layerTopValid = rescueContext.LayerTopValid;
-            Dictionary<string, int>[] layerFamilyCounts = rescueContext.LayerFamilyCounts;
-            Dictionary<string, int>[] layerBiomeCounts = rescueContext.LayerBiomeCounts;
-            CandidateMap groundCandidates = rescueContext.GroundCandidates;
-            CandidateMap clusterCandidates = rescueContext.ClusterCandidates;
-            Dictionary<long, ScatterCandidate> structureCandidates = rescueContext.StructureCandidates;
-            Dictionary<long, ScatterCandidate> spawnCandidates = rescueContext.SpawnCandidates;
-            CandidateMap clusterFertileCandidates = rescueContext.ClusterFertileCandidates;
-            CandidateMap clusterNestCandidates = rescueContext.ClusterNestCandidates;
-            CandidateMap clusterResourceCandidates = rescueContext.ClusterResourceCandidates;
-            CandidateMap clusterShelterCandidates = rescueContext.ClusterShelterCandidates;
-            CandidateMap clusterHazardCandidates = rescueContext.ClusterHazardCandidates;
-            CandidateMap clusterDebrisCandidates = rescueContext.ClusterDebrisCandidates;
-            CandidateMap clusterRockCandidates = rescueContext.ClusterRockCandidates;
-            CandidateMap structureNaturalCandidates = rescueContext.StructureNaturalCandidates;
-            CandidateMap structureTechCandidates = rescueContext.StructureTechCandidates;
-            CandidateMap structureCaveCandidates = rescueContext.StructureCaveCandidates;
-            CandidateMap structureBioCandidates = rescueContext.StructureBioCandidates;
-            CandidateMap passiveSpawnCandidates = rescueContext.PassiveSpawnCandidates;
-            CandidateMap predatorSpawnCandidates = rescueContext.PredatorSpawnCandidates;
+            InjectRescueGroundPlacements(in rescueContext);
+            InjectRescueClusterPlacements(in rescueContext, ref passiveSpawnCount, ref predatorSpawnCount);
+            InjectRescueStructurePlacements(in rescueContext, ref passiveSpawnCount, ref predatorSpawnCount);
+            InjectRescueSpawnPlacements(in rescueContext, ref passiveSpawnCount, ref predatorSpawnCount, out injectedSpawnPlacements);
+        }
+
+        private void InjectRescueGroundPlacements(in ScatterRescueContext rescueContext)
+        {
             int groundLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Ground;
-            int minimumGroundCount = ResolveMinimumGroundPlacements(pattern, biomeProfile);
-            if (layerPlacementCounts[groundLayerIndex] < minimumGroundCount)
+            int minimumGroundCount = ResolveMinimumGroundPlacements(rescueContext.Pattern, rescueContext.BiomeProfile);
+            if (rescueContext.LayerPlacementCounts[groundLayerIndex] < minimumGroundCount)
             {
                 int added = InjectGroundCandidates(
-                    minimumGroundCount - layerPlacementCounts[groundLayerIndex],
-                    groundCandidates,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[groundLayerIndex] += added;
+                    minimumGroundCount - rescueContext.LayerPlacementCounts[groundLayerIndex],
+                    rescueContext.GroundCandidates,
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[groundLayerIndex] += added;
             }
+        }
 
+        private void InjectRescueClusterPlacements(in ScatterRescueContext rescueContext, ref int passiveSpawnCount, ref int predatorSpawnCount)
+        {
             int clusterLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Cluster;
-            if (biomeProfile != null && layerPlacementCounts[clusterLayerIndex] > 0)
+            if (rescueContext.BiomeProfile != null && rescueContext.LayerPlacementCounts[clusterLayerIndex] > 0)
             {
                 RebuildOccupiedCellBuffer(WorldPrefabFamilyProfile.ScatterLayer.Cluster);
 
                 int added = InjectPreferredClusterFamilyCandidates(
-                    pattern,
-                    biomeProfile,
-                    Mathf.Max(1, clusterBudget),
-                    clusterCandidates,
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    Mathf.Max(1, rescueContext.ClusterBudget),
+                    rescueContext.ClusterCandidates,
                     false,
-                    layerPlacementCounts,
-                    clusterAccentCounts,
-                    structureAccentCounts,
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.ClusterAccentCounts,
+                    rescueContext.StructureAccentCounts,
                     passiveSpawnCount,
                     predatorSpawnCount,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[clusterLayerIndex] += added;
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[clusterLayerIndex] += added;
 
                 added = InjectServiceClusterAccentCandidates(
-                    pattern,
-                    biomeProfile,
-                    Mathf.Max(1, clusterBudget),
-                    clusterCandidates,
-                    clusterResourceCandidates,
-                    clusterDebrisCandidates,
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    Mathf.Max(1, rescueContext.ClusterBudget),
+                    rescueContext.ClusterCandidates,
+                    rescueContext.ClusterResourceCandidates,
+                    rescueContext.ClusterDebrisCandidates,
                     false,
-                    layerPlacementCounts,
-                    clusterAccentCounts,
-                    structureAccentCounts,
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.ClusterAccentCounts,
+                    rescueContext.StructureAccentCounts,
                     passiveSpawnCount,
                     predatorSpawnCount,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[clusterLayerIndex] += added;
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[clusterLayerIndex] += added;
 
                 added = InjectLandmarkCorridorClusterAccentCandidates(
-                    pattern,
-                    biomeProfile,
-                    Mathf.Max(1, clusterBudget),
-                    clusterCandidates,
-                    clusterResourceCandidates,
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    Mathf.Max(1, rescueContext.ClusterBudget),
+                    rescueContext.ClusterCandidates,
+                    rescueContext.ClusterResourceCandidates,
                     false,
-                    layerPlacementCounts,
-                    clusterAccentCounts,
-                    structureAccentCounts,
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.ClusterAccentCounts,
+                    rescueContext.StructureAccentCounts,
                     passiveSpawnCount,
                     predatorSpawnCount,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[clusterLayerIndex] += added;
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[clusterLayerIndex] += added;
             }
 
-            int minimumClusterCount = ResolveMinimumClusterPlacements(pattern, biomeProfile);
-            if (layerPlacementCounts[clusterLayerIndex] < minimumClusterCount)
+            int minimumClusterCount = ResolveMinimumClusterPlacements(rescueContext.Pattern, rescueContext.BiomeProfile);
+            if (rescueContext.LayerPlacementCounts[clusterLayerIndex] < minimumClusterCount)
             {
-                int added = UsesPatternAccentQuotas(pattern)
+                int added = UsesPatternAccentQuotas(rescueContext.Pattern)
                     ? InjectPatternClusterAccentCandidates(
-                        pattern,
-                        biomeProfile,
-                        Mathf.Max(1, clusterBudget),
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
+                        Mathf.Max(1, rescueContext.ClusterBudget),
                         minimumClusterCount,
-                        clusterCandidates,
-                        clusterFertileCandidates,
-                        clusterNestCandidates,
-                        clusterResourceCandidates,
-                        clusterShelterCandidates,
-                        clusterHazardCandidates,
-                        clusterDebrisCandidates,
-                        clusterRockCandidates,
-                        layerPlacementCounts,
-                        clusterAccentCounts,
-                        structureAccentCounts,
+                        rescueContext.ClusterCandidates,
+                        rescueContext.ClusterFertileCandidates,
+                        rescueContext.ClusterNestCandidates,
+                        rescueContext.ClusterResourceCandidates,
+                        rescueContext.ClusterShelterCandidates,
+                        rescueContext.ClusterHazardCandidates,
+                        rescueContext.ClusterDebrisCandidates,
+                        rescueContext.ClusterRockCandidates,
+                        rescueContext.LayerPlacementCounts,
+                        rescueContext.ClusterAccentCounts,
+                        rescueContext.StructureAccentCounts,
                         passiveSpawnCount,
                         predatorSpawnCount,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts)
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts)
                     : InjectClusterCandidates(
-                        pattern,
-                        biomeProfile,
-                        minimumClusterCount - layerPlacementCounts[clusterLayerIndex],
-                        Mathf.Max(1, clusterBudget),
-                        clusterCandidates,
-                        clusterAccentCounts,
-                        structureAccentCounts,
-                    layerPlacementCounts,
-                    passiveSpawnCount,
-                    predatorSpawnCount,
-                    true,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[clusterLayerIndex] += added;
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
+                        minimumClusterCount - rescueContext.LayerPlacementCounts[clusterLayerIndex],
+                        Mathf.Max(1, rescueContext.ClusterBudget),
+                        rescueContext.ClusterCandidates,
+                        rescueContext.ClusterAccentCounts,
+                        rescueContext.StructureAccentCounts,
+                        rescueContext.LayerPlacementCounts,
+                        passiveSpawnCount,
+                        predatorSpawnCount,
+                        true,
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[clusterLayerIndex] += added;
             }
+        }
 
+        private void InjectRescueStructurePlacements(in ScatterRescueContext rescueContext, ref int passiveSpawnCount, ref int predatorSpawnCount)
+        {
             int structureLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Structure;
-            if (biomeProfile != null)
+            if (rescueContext.BiomeProfile != null)
             {
                 List<ScatterCandidate> orderedStructureCandidates = _windowOrderedCandidates;
-                FillOrderedCandidateBuffer(structureCandidates, orderedStructureCandidates);
+                FillOrderedCandidateBuffer(rescueContext.StructureCandidates, orderedStructureCandidates);
 
                 int added = InjectPreferredStructureFamilyCandidates(
-                    pattern,
-                    biomeProfile,
-                    structureStride,
-                    Mathf.Max(1, structureBudget),
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    rescueContext.StructureStride,
+                    Mathf.Max(1, rescueContext.StructureBudget),
                     orderedStructureCandidates,
-                    layerPlacementCounts,
-                    structureAccentCounts,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[structureLayerIndex] += added;
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.StructureAccentCounts,
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[structureLayerIndex] += added;
 
                 added = InjectServiceStructureDomainCandidates(
-                    pattern,
-                    biomeProfile,
-                    structureStride,
-                    Mathf.Max(1, structureBudget),
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    rescueContext.StructureStride,
+                    Mathf.Max(1, rescueContext.StructureBudget),
                     orderedStructureCandidates,
-                    layerPlacementCounts,
-                    structureAccentCounts,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[structureLayerIndex] += added;
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.StructureAccentCounts,
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[structureLayerIndex] += added;
 
                 added = InjectRuinPlacementModeCandidates(
-                    pattern,
-                    biomeProfile,
-                    structureStride,
-                    Mathf.Max(1, structureBudget),
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    rescueContext.StructureStride,
+                    Mathf.Max(1, rescueContext.StructureBudget),
                     orderedStructureCandidates,
-                    layerPlacementCounts,
-                    structureAccentCounts,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[structureLayerIndex] += added;
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.StructureAccentCounts,
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[structureLayerIndex] += added;
             }
 
-            int minimumStructureCount = ResolveMinimumStructurePlacements(pattern, biomeProfile);
-            if (layerPlacementCounts[structureLayerIndex] < minimumStructureCount)
+            int minimumStructureCount = ResolveMinimumStructurePlacements(rescueContext.Pattern, rescueContext.BiomeProfile);
+            if (rescueContext.LayerPlacementCounts[structureLayerIndex] < minimumStructureCount)
             {
-                int added = UsesPatternAccentQuotas(pattern)
+                int added = UsesPatternAccentQuotas(rescueContext.Pattern)
                     ? InjectPatternStructureAccentCandidates(
-                        pattern,
-                        biomeProfile,
-                        structureStride,
-                        Mathf.Max(1, structureBudget),
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
+                        rescueContext.StructureStride,
+                        Mathf.Max(1, rescueContext.StructureBudget),
                         minimumStructureCount,
-                        structureCandidates,
-                        structureNaturalCandidates,
-                        structureTechCandidates,
-                        structureCaveCandidates,
-                        structureBioCandidates,
-                        layerPlacementCounts,
-                        structureAccentCounts,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts)
+                        rescueContext.StructureCandidates,
+                        rescueContext.StructureNaturalCandidates,
+                        rescueContext.StructureTechCandidates,
+                        rescueContext.StructureCaveCandidates,
+                        rescueContext.StructureBioCandidates,
+                        rescueContext.LayerPlacementCounts,
+                        rescueContext.StructureAccentCounts,
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts)
                     : InjectWindowCandidates(
-                        minimumStructureCount - layerPlacementCounts[structureLayerIndex],
-                        structureStride,
-                        Mathf.Max(1, structureBudget),
-                        structureCandidates,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts,
-                        layerPlacementCounts,
-                        structureAccentCounts,
+                        minimumStructureCount - rescueContext.LayerPlacementCounts[structureLayerIndex],
+                        rescueContext.StructureStride,
+                        Mathf.Max(1, rescueContext.StructureBudget),
+                        rescueContext.StructureCandidates,
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts,
+                        rescueContext.LayerPlacementCounts,
+                        rescueContext.StructureAccentCounts,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount,
-                        pattern,
-                        biomeProfile,
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
                         WorldPrefabFamilyProfile.ScatterLayer.Structure);
-                layerPlacementCounts[structureLayerIndex] += added;
+                rescueContext.LayerPlacementCounts[structureLayerIndex] += added;
             }
+        }
 
+        private void InjectRescueSpawnPlacements(in ScatterRescueContext rescueContext, ref int passiveSpawnCount, ref int predatorSpawnCount, out int injectedSpawnPlacements)
+        {
+            injectedSpawnPlacements = 0;
             int spawnLayerIndex = (int)WorldPrefabFamilyProfile.ScatterLayer.Spawn;
-            if (biomeProfile != null)
+            if (rescueContext.BiomeProfile != null)
             {
                 List<ScatterCandidate> orderedSpawnCandidates = _windowOrderedCandidates;
-                FillOrderedCandidateBuffer(spawnCandidates, orderedSpawnCandidates);
+                FillOrderedCandidateBuffer(rescueContext.SpawnCandidates, orderedSpawnCandidates);
 
                 int added = InjectPreferredSpawnFamilyCandidates(
-                    pattern,
-                    biomeProfile,
-                    spawnStride,
-                    Mathf.Max(1, spawnBudget),
+                    rescueContext.Pattern,
+                    rescueContext.BiomeProfile,
+                    rescueContext.SpawnStride,
+                    Mathf.Max(1, rescueContext.SpawnBudget),
                     orderedSpawnCandidates,
-                    layerPlacementCounts,
-                    structureAccentCounts,
+                    rescueContext.LayerPlacementCounts,
+                    rescueContext.StructureAccentCounts,
                     ref passiveSpawnCount,
                     ref predatorSpawnCount,
-                    layerTopCandidates,
-                    layerTopValid,
-                    layerFamilyCounts,
-                    layerBiomeCounts);
-                layerPlacementCounts[spawnLayerIndex] += added;
+                    rescueContext.LayerTopCandidates,
+                    rescueContext.LayerTopValid,
+                    rescueContext.LayerFamilyCounts,
+                    rescueContext.LayerBiomeCounts);
+                rescueContext.LayerPlacementCounts[spawnLayerIndex] += added;
                 injectedSpawnPlacements += added;
             }
 
-            int minimumSpawnCount = ResolveMinimumSpawnPlacements(pattern, biomeProfile);
-            if (layerPlacementCounts[spawnLayerIndex] < minimumSpawnCount)
+            int minimumSpawnCount = ResolveMinimumSpawnPlacements(rescueContext.Pattern, rescueContext.BiomeProfile);
+            if (rescueContext.LayerPlacementCounts[spawnLayerIndex] < minimumSpawnCount)
             {
-                int added = UsesPatternAccentQuotas(pattern)
+                int added = UsesPatternAccentQuotas(rescueContext.Pattern)
                     ? InjectPatternSpawnCandidates(
-                        pattern,
-                        biomeProfile,
-                        spawnStride,
-                        Mathf.Max(1, spawnBudget),
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
+                        rescueContext.SpawnStride,
+                        Mathf.Max(1, rescueContext.SpawnBudget),
                         minimumSpawnCount,
-                        spawnCandidates,
-                        passiveSpawnCandidates,
-                        predatorSpawnCandidates,
-                        layerPlacementCounts,
-                        structureAccentCounts,
+                        rescueContext.SpawnCandidates,
+                        rescueContext.PassiveSpawnCandidates,
+                        rescueContext.PredatorSpawnCandidates,
+                        rescueContext.LayerPlacementCounts,
+                        rescueContext.StructureAccentCounts,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts)
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts)
                     : InjectWindowCandidates(
-                        minimumSpawnCount - layerPlacementCounts[spawnLayerIndex],
-                        spawnStride,
-                        Mathf.Max(1, spawnBudget),
-                        spawnCandidates,
-                        layerTopCandidates,
-                        layerTopValid,
-                        layerFamilyCounts,
-                        layerBiomeCounts,
-                        layerPlacementCounts,
-                        structureAccentCounts,
+                        minimumSpawnCount - rescueContext.LayerPlacementCounts[spawnLayerIndex],
+                        rescueContext.SpawnStride,
+                        Mathf.Max(1, rescueContext.SpawnBudget),
+                        rescueContext.SpawnCandidates,
+                        rescueContext.LayerTopCandidates,
+                        rescueContext.LayerTopValid,
+                        rescueContext.LayerFamilyCounts,
+                        rescueContext.LayerBiomeCounts,
+                        rescueContext.LayerPlacementCounts,
+                        rescueContext.StructureAccentCounts,
                         ref passiveSpawnCount,
                         ref predatorSpawnCount,
-                        pattern,
-                        biomeProfile,
+                        rescueContext.Pattern,
+                        rescueContext.BiomeProfile,
                         WorldPrefabFamilyProfile.ScatterLayer.Spawn);
-                layerPlacementCounts[spawnLayerIndex] += added;
+                rescueContext.LayerPlacementCounts[spawnLayerIndex] += added;
                 injectedSpawnPlacements += added;
             }
         }
