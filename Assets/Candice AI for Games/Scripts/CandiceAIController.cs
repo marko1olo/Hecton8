@@ -339,13 +339,11 @@ namespace CandiceAIforGames.AI
             }
             if (is3D)
             {
-                TryGetComponent<Collider>(out var collider);
-                col = collider;
+                col = GetComponent<Collider>();
             }
             else
             {
-                TryGetComponent<Collider2D>(out var collider2D);
-                col = collider2D;
+                col = GetComponent<Collider2D>();
             }
 
             InitialiseRuntimeModules();
