@@ -4,6 +4,7 @@ using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -33,6 +34,12 @@ namespace Hecton8.World
         private const int SectorHashGridCount = 9;
         private const int SpawnCounterCount = 7;
         private const int IndirectArgsCount = 1;
+        private const int OreProxyPhysicsCapacity = 128;
+        private const int OrePromotionScanBatch = 256;
+        private const float OrePromotionDistanceMeters = 25f;
+        private const float OreDemotionDistanceMeters = 30f;
+        private const float OrePromotionDistanceSq = OrePromotionDistanceMeters * OrePromotionDistanceMeters;
+        private const float OreDemotionDistanceSq = OreDemotionDistanceMeters * OreDemotionDistanceMeters;
         private const uint OreProceduralVertexCount = 36u;
         private const int ClearedCandidateSlot = -1;
         private const uint TelemetryDumpMagic = 0x47454F38u; // GEO8
@@ -83,6 +90,7 @@ namespace Hecton8.World
         [Header("Runtime References")]
         [SerializeField, Tooltip("Optional cached player transform; auto-resolved through the player runtime context if empty.")] private Transform playerTransform;
         [SerializeField, Tooltip("Optional cached MapMagic bridge for terrain height and biome sampling.")] private MapMagicBridge mapMagicBridge;
+        [SerializeField, Tooltip("Pooled lightweight ResourceNode collider proxy promoted only near the player.")] private GameObject resourceProxyPrefab;
 
         [Header("Rendering")]
         [SerializeField, Tooltip("Legacy mesh reference retained for scene compatibility; procedural ore rendering expands vertices in shader.")] private Mesh oreMesh;
@@ -162,6 +170,7 @@ namespace Hecton8.World
         private int _distributionRuleCount;
         private uint _lastTelemetryFrameWritten;
         private uint _simulationFrameCounter;
+        private int _proxyPromotionScanCursor;
         private int2 _currentSector;
         private long _currentSectorHash;
         private int _currentBiomeId;
@@ -183,6 +192,18 @@ namespace Hecton8.World
 
         private bool _depletionCacheInitialized;
         private IDataVault _pendingDataVault;
+        private IObjectPoolService _objectPool;
+        private GameObject _runtimeResourceProxyPrefab;
+        private readonly OreProxySlot[] _oreProxySlots = new OreProxySlot[OreProxyPhysicsCapacity];
+
+        private struct OreProxySlot
+        {
+            public int OreIndex;
+            public uint OreHash;
+            public float4x4 DormantMatrix;
+            public GameObject Instance;
+            public Transform Transform;
+        }
 
         private struct SpawnStagingScratchBuffers : IDisposable
         {
@@ -487,6 +508,7 @@ namespace Hecton8.World
                     _drawBounds = drawBounds;
                     _telemetryFirstOrePosition = firstOrePosition;
                     _telemetryFirstNodeHash = firstNodeHash;
+                    DespawnPromotedOreProxy(oreIndex);
                     PublishDepletionSignals(in acquiredSignal, in depletionSignal);
                     QueueIndirectArgsGpu(in indirectArgs);
                     _renderUploadDirty = true;
@@ -707,6 +729,12 @@ namespace Hecton8.World
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
+            {
+                _objectPool = currentService as IObjectPoolService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -742,6 +770,7 @@ namespace Hecton8.World
             if (_spawnJobScheduled)
                 return;
 
+            ProcessOreProxyPromotionBatch(_lastPlayerRuntimePosition);
             WriteTelemetrySample(0u);
         }
 
@@ -782,6 +811,8 @@ namespace Hecton8.World
             _activeMatrixBuffer = null;
             _pendingIndirectArgsGpu = default;
             _pendingIndirectArgsGpuDirty = false;
+            DespawnAllPromotedOreProxies();
+            _proxyPromotionScanCursor = 0;
             _pendingRuntimeShift = default;
             _lastPlayerRuntimePosition = default;
             _hasPendingRuntimeShift = false;
@@ -826,6 +857,31 @@ namespace Hecton8.World
 
             if (_terrainProvider == null && mapMagicBridge != null)
                 _terrainProvider = mapMagicBridge;
+
+            if (_objectPool == null)
+                _objectPool = GlobalRegistry.ObjectPoolService;
+
+            CacheResourceProxyPrefabCold();
+        }
+
+        private void CacheResourceProxyPrefabCold()
+        {
+            if (_runtimeResourceProxyPrefab == null && resourceProxyPrefab != null)
+                _runtimeResourceProxyPrefab = resourceProxyPrefab;
+
+            if (_runtimeResourceProxyPrefab == null || _objectPool == null || _objectPool.HasPool(_runtimeResourceProxyPrefab))
+                return;
+
+            _objectPool.Warmup(_runtimeResourceProxyPrefab, OreProxyPhysicsCapacity);
+        }
+
+        private GameObject ResolveResourceProxyPrefab()
+        {
+            if (_runtimeResourceProxyPrefab != null)
+                return _runtimeResourceProxyPrefab;
+
+            _runtimeResourceProxyPrefab = resourceProxyPrefab;
+            return _runtimeResourceProxyPrefab;
         }
 
         private bool RefreshCachedPlayerRuntimeReference()
@@ -2525,6 +2581,8 @@ namespace Hecton8.World
 
         private void ClearPresentationState(bool forgetLoadedSector, bool rewriteIndirectArgs)
         {
+            DespawnAllPromotedOreProxies();
+            _proxyPromotionScanCursor = 0;
             _activeOreCount = 0;
             _renderInstanceCount = 0;
             _localTitaniumCount = 0;
@@ -2724,6 +2782,8 @@ namespace Hecton8.World
             depletionSignal.Operation = 1;
             depletionSignal.Flags = 0;
 
+            RestoreAllPromotedOreMatrices(views.OreMatrices);
+            DespawnAllPromotedOreProxies();
             ClearRenderedSlot(views, deterministicSlot, oreIndex);
             _depletedCullCount = math.max(0, _depletedCullCount + 1);
             CompactRenderedRows(views);
@@ -2788,19 +2848,20 @@ namespace Hecton8.World
             int titaniumCount = 0;
             for (int readIndex = 0; readIndex < sourceCount; readIndex++)
             {
-                if (!IsMatrixActiveForShader(views.OreMatrices[readIndex]))
+                int sourceOreType = views.OreTypes.IsCreated && (uint)readIndex < (uint)views.OreTypes.Length
+                    ? views.OreTypes[readIndex]
+                    : 0;
+                bool matrixActive = IsMatrixActiveForShader(views.OreMatrices[readIndex]);
+                if (sourceOreType == 0 && !matrixActive)
                     continue;
 
                 if (writeIndex != readIndex)
                     MoveRenderedRow(views, readIndex, writeIndex);
 
-                int oreType = views.OreTypes.IsCreated && (uint)writeIndex < (uint)views.OreTypes.Length
-                    ? views.OreTypes[writeIndex]
-                    : 0;
-                if (oreType != 0)
+                if (sourceOreType != 0)
                 {
                     authoritativeCount++;
-                    if (oreType == OreTypeTitanium)
+                    if (sourceOreType == OreTypeTitanium)
                         titaniumCount++;
                 }
                 else
@@ -2966,6 +3027,7 @@ namespace Hecton8.World
             if (!math.any(totalShift != new float3(0f)))
                 return false;
 
+            ShiftPromotedOreProxyDormantMatrices(totalShift);
             if (_renderInstanceCount > 0 && views.OreMatrices.IsCreated)
             {
                 int safeCount = math.min(_renderInstanceCount, views.OreMatrices.Length);
@@ -3011,6 +3073,261 @@ namespace Hecton8.World
                 _telemetryFirstOrePosition -= totalShift;
 
             _renderUploadDirty = true;
+        }
+
+        private void ProcessOreProxyPromotionBatch(float3 playerPosition)
+        {
+            if (!math.all(math.isfinite(playerPosition)) || _renderInstanceCount <= 0 || HasPendingOreReadDependency())
+                return;
+
+            if (!TryLockVaultRuntimeShiftBuffers())
+                return;
+
+            try
+            {
+                if (!TryOpenExistingBuffer(in _orePositionsHandle, _oreCapacity, out NativeArray<float3> orePositions) ||
+                !TryOpenExistingBuffer(in _oreTypesHandle, _oreCapacity, out NativeArray<int> oreTypes) ||
+                !TryOpenExistingBuffer(in _oreMatricesHandle, _oreCapacity, out NativeArray<float4x4> oreMatrices) ||
+                !TryOpenExistingBuffer(in _candidateSlotsHandle, _oreCapacity, out NativeArray<int> candidateSlots))
+            {
+                return;
+            }
+
+            int scanCount = math.min(_renderInstanceCount, math.min(orePositions.Length, math.min(oreTypes.Length, math.min(oreMatrices.Length, candidateSlots.Length))));
+            if (scanCount <= 0)
+                return;
+
+            int cursor = math.clamp(_proxyPromotionScanCursor, 0, scanCount - 1);
+            int budget = math.min(OrePromotionScanBatch, scanCount);
+            for (int step = 0; step < budget; step++)
+            {
+                int oreIndex = cursor + step;
+                if (oreIndex >= scanCount)
+                    oreIndex -= scanCount;
+
+                ProcessOreProxyPromotionSlot(oreIndex, playerPosition, orePositions, oreTypes, oreMatrices, candidateSlots);
+            }
+
+            _proxyPromotionScanCursor = cursor + budget;
+            if (_proxyPromotionScanCursor >= scanCount)
+                _proxyPromotionScanCursor -= scanCount;
+            }
+            finally
+            {
+                UnlockVaultWriteBuffers();
+            }
+        }
+
+        private void ProcessOreProxyPromotionSlot(
+            int oreIndex,
+            float3 playerPosition,
+            NativeArray<float3> orePositions,
+            NativeArray<int> oreTypes,
+            NativeArray<float4x4> oreMatrices,
+            NativeArray<int> candidateSlots)
+        {
+            if ((uint)oreIndex >= (uint)oreTypes.Length || oreTypes[oreIndex] == 0)
+            {
+                DespawnPromotedOreProxy(oreIndex);
+                return;
+            }
+
+            float3 orePosition = orePositions[oreIndex];
+            if (!math.all(math.isfinite(orePosition)))
+            {
+                DespawnPromotedOreProxy(oreIndex);
+                return;
+            }
+
+            float distanceSq = math.lengthsq(orePosition - playerPosition);
+            if (!math.isfinite(distanceSq))
+                return;
+
+            int proxySlot = FindOreProxySlot(oreIndex);
+            if (proxySlot >= 0)
+            {
+                if (distanceSq > OreDemotionDistanceSq)
+                    DemoteOreProxySlot(proxySlot, oreMatrices, oreIndex);
+                else
+                    RefreshPromotedOreProxy(proxySlot, orePosition);
+                return;
+            }
+
+            if (distanceSq <= OrePromotionDistanceSq)
+                PromoteOreProxy(oreIndex, orePosition, oreMatrices, candidateSlots);
+        }
+
+        private void PromoteOreProxy(int oreIndex, float3 orePosition, NativeArray<float4x4> oreMatrices, NativeArray<int> candidateSlots)
+        {
+            GameObject proxyPrefab = ResolveResourceProxyPrefab();
+            if (proxyPrefab == null || _objectPool == null)
+                return;
+
+            int slot = FindFreeOreProxySlot();
+            if (slot < 0)
+                return;
+
+            Vector3 runtimePosition = ToVector3(orePosition);
+            GameObject instance = _objectPool.Spawn(proxyPrefab, runtimePosition, Quaternion.identity, false);
+            if (instance == null)
+                return;
+
+            Transform instanceTransform = instance.transform;
+            instanceTransform.position = runtimePosition;
+            instance.layer = HectonLayerMasks.VoxelProxy;
+            if (_objectPool.TryGetPooledComponent(instance, out ResourceNode node) && node != null)
+            {
+                node.SetUniqueId(BuildOreProxyUniqueId(oreIndex, candidateSlots));
+                node.RefreshRuntimeSpatialRegistration();
+            }
+
+            _oreProxySlots[slot] = new OreProxySlot
+            {
+                OreIndex = oreIndex,
+                OreHash = ComputeOreProxyHash(oreIndex, candidateSlots),
+                DormantMatrix = oreMatrices[oreIndex],
+                Instance = instance,
+                Transform = instanceTransform
+            };
+
+            SetOreMatrixActive(oreMatrices, oreIndex, false, default);
+            _renderUploadDirty = true;
+        }
+
+        private void DemoteOreProxySlot(int slot, NativeArray<float4x4> oreMatrices, int oreIndex)
+        {
+            if ((uint)slot >= (uint)_oreProxySlots.Length)
+                return;
+
+            OreProxySlot proxy = _oreProxySlots[slot];
+            if (proxy.Instance != null && _objectPool != null)
+                _objectPool.Despawn(proxy.Instance);
+
+            _oreProxySlots[slot] = default;
+            SetOreMatrixActive(oreMatrices, oreIndex, true, proxy.DormantMatrix);
+            _renderUploadDirty = true;
+        }
+
+        private void RefreshPromotedOreProxy(int slot, float3 orePosition)
+        {
+            if ((uint)slot >= (uint)_oreProxySlots.Length)
+                return;
+
+            Transform proxyTransform = _oreProxySlots[slot].Transform;
+            if (proxyTransform != null)
+                proxyTransform.position = ToVector3(orePosition);
+        }
+
+        private void DespawnPromotedOreProxy(int oreIndex)
+        {
+            int slot = FindOreProxySlot(oreIndex);
+            if (slot < 0)
+                return;
+
+            OreProxySlot proxy = _oreProxySlots[slot];
+            if (proxy.Instance != null && _objectPool != null)
+                _objectPool.Despawn(proxy.Instance);
+            _oreProxySlots[slot] = default;
+        }
+
+        private void DespawnAllPromotedOreProxies()
+        {
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                OreProxySlot proxy = _oreProxySlots[i];
+                if (proxy.Instance != null && _objectPool != null)
+                    _objectPool.Despawn(proxy.Instance);
+                _oreProxySlots[i] = default;
+            }
+        }
+
+        private void RestoreAllPromotedOreMatrices(NativeArray<float4x4> oreMatrices)
+        {
+            if (!oreMatrices.IsCreated)
+                return;
+
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                OreProxySlot proxy = _oreProxySlots[i];
+                if (proxy.Instance == null || (uint)proxy.OreIndex >= (uint)oreMatrices.Length)
+                    continue;
+
+                oreMatrices[proxy.OreIndex] = proxy.DormantMatrix;
+            }
+        }
+
+        private void ShiftPromotedOreProxyDormantMatrices(float3 totalShift)
+        {
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                OreProxySlot proxy = _oreProxySlots[i];
+                if (proxy.Instance == null)
+                    continue;
+
+                float4 c3 = proxy.DormantMatrix.c3;
+                proxy.DormantMatrix.c3 = new float4(c3.x - totalShift.x, c3.y - totalShift.y, c3.z - totalShift.z, c3.w);
+                _oreProxySlots[i] = proxy;
+            }
+        }
+
+        private int FindOreProxySlot(int oreIndex)
+        {
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                if (_oreProxySlots[i].Instance != null && _oreProxySlots[i].OreIndex == oreIndex)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int FindFreeOreProxySlot()
+        {
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                if (_oreProxySlots[i].Instance == null)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void SetOreMatrixActive(NativeArray<float4x4> oreMatrices, int oreIndex, bool active, float4x4 dormantMatrix)
+        {
+            if (!oreMatrices.IsCreated || (uint)oreIndex >= (uint)oreMatrices.Length)
+                return;
+
+            if (!active)
+            {
+                oreMatrices[oreIndex] = default;
+                return;
+            }
+
+            float4x4 matrix = dormantMatrix;
+            if (!math.all(math.isfinite(matrix.c0)) ||
+                !math.all(math.isfinite(matrix.c1)) ||
+                !math.all(math.isfinite(matrix.c2)) ||
+                !math.all(math.isfinite(matrix.c3)))
+            {
+                return;
+            }
+
+            oreMatrices[oreIndex] = matrix;
+        }
+
+        private uint ComputeOreProxyHash(int oreIndex, NativeArray<int> candidateSlots)
+        {
+            int deterministicSlot = candidateSlots.IsCreated && (uint)oreIndex < (uint)candidateSlots.Length
+                ? candidateSlots[oreIndex]
+                : oreIndex;
+            if (deterministicSlot < 0)
+                deterministicSlot = oreIndex;
+            return ComputeOreHash(_currentSectorHash, deterministicSlot);
+        }
+
+        private string BuildOreProxyUniqueId(int oreIndex, NativeArray<int> candidateSlots)
+        {
+            return "ore_proxy_" + ComputeOreProxyHash(oreIndex, candidateSlots).ToString("X8");
         }
 
         private void UploadRenderMatrices()
@@ -3343,6 +3660,59 @@ namespace Hecton8.World
             hash *= 1099511628211UL;
             hash ^= math.asuint(player.x) ^ ((ulong)math.asuint(player.y) << 16) ^ ((ulong)math.asuint(player.z) << 32);
             return hash;
+        }
+
+        public bool TryDepletePromotedProxy(string uniqueId, out uint oreHash, out uint itemHash, out float3 depletedPosition)
+        {
+            oreHash = 0u;
+            itemHash = 0u;
+            depletedPosition = default;
+            if (!TryParseOreProxyHash(uniqueId, out uint targetOreHash))
+                return false;
+
+            for (int i = 0; i < _oreProxySlots.Length; i++)
+            {
+                OreProxySlot proxy = _oreProxySlots[i];
+                if (proxy.Instance == null || proxy.OreHash != targetOreHash)
+                    continue;
+
+                return TryMarkOreDepleted(proxy.OreIndex, out oreHash, out itemHash, out depletedPosition);
+            }
+
+            return false;
+        }
+
+        private static bool TryParseOreProxyHash(string uniqueId, out uint oreHash)
+        {
+            oreHash = 0u;
+            if (string.IsNullOrEmpty(uniqueId) || uniqueId.Length != 18)
+                return false;
+
+            if (uniqueId[0] != 'o' || uniqueId[1] != 'r' || uniqueId[2] != 'e' || uniqueId[3] != '_' ||
+                uniqueId[4] != 'p' || uniqueId[5] != 'r' || uniqueId[6] != 'o' || uniqueId[7] != 'x' || uniqueId[8] != 'y' || uniqueId[9] != '_')
+            {
+                return false;
+            }
+
+            uint parsed = 0u;
+            for (int i = 10; i < 18; i++)
+            {
+                char c = uniqueId[i];
+                uint nibble;
+                if ((uint)(c - '0') <= 9u)
+                    nibble = (uint)(c - '0');
+                else if ((uint)(c - 'A') <= 5u)
+                    nibble = (uint)(c - 'A' + 10);
+                else if ((uint)(c - 'a') <= 5u)
+                    nibble = (uint)(c - 'a' + 10);
+                else
+                    return false;
+
+                parsed = (parsed << 4) | nibble;
+            }
+
+            oreHash = parsed;
+            return true;
         }
 
         private uint AdvanceSimulationFrameId()

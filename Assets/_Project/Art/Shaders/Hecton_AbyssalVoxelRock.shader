@@ -438,12 +438,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 safePositionOS = HectonVoxelRockFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
             float3 safeAbsolutePositionWS = HectonVoxelRockFiniteOr(input.absolutePositionWS.xyz, safePositionOS);
             float3 safeNormalOS = HectonCoreLitSafeNormalize(HectonVoxelRockFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0)) + float3(0.0, 0.0001, 0.0));
-            half seamMask = saturate(max(HectonVoxelRockFiniteSaturate(input.color.a, 0.0h), HectonVoxelRockFiniteSaturate(input.dirtyBlendUv2.y, 0.0h)));
+            half seamMask = HectonVoxelRockFiniteSaturate(input.dirtyBlendUv2.y, 0.0h);
             float displacement = ResolveOrganicVertexDisplacement(safeAbsolutePositionWS, safeNormalOS, seamMask);
             displacement += ResolveCaveMouthVertexDisplacement(
                 safeAbsolutePositionWS,
                 safeNormalOS,
-                HectonVoxelRockFiniteSaturate(input.color.a, 0.0h),
+                0.0h,
                 HectonVoxelRockFiniteSaturate(input.dirtyBlendUv2.y, 0.0h));
             displacement = HectonVoxelRockFiniteOr(displacement, 0.0);
             return safePositionOS + safeNormalOS * displacement;
@@ -716,6 +716,59 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half3 primaryNormalWS = SampleDominantAxisNormalAtUv(ResolveAxisProjectionUv(positionWS, primaryAxis), primaryAxis, baseNormalWS);
             half3 secondaryNormalWS = SampleDominantAxisNormalAtUv(ResolveAxisProjectionUv(positionWS, secondaryAxis), secondaryAxis, baseNormalWS);
             return lerp(primaryNormalWS, secondaryNormalWS, secondaryWeight);
+        }
+
+        half3 DecodeVoxelArrayNormal(half3 packedNormal)
+        {
+            half2 xy = packedNormal.rg * 2.0h - 1.0h;
+            half z = sqrt(max(1.0e-4h, 1.0h - dot(xy, xy)));
+            return SafeNormalize3(half3(xy, z));
+        }
+
+        half3 ResolveVoxelTriplanarWeights(half3 normalWS)
+        {
+            float sharpness = max(_VoxelTriplanarSharpness, 1.0);
+            float3 axis = pow(max(abs((float3)normalWS), float3(0.001, 0.001, 0.001)), sharpness);
+            return (half3)(axis * rcp(max(axis.x + axis.y + axis.z, 0.0001)));
+        }
+
+        float2 ResolveVoxelTriplanarUv(float3 positionWS, int axis)
+        {
+            float scale = max(_VoxelTriplanarScale, 0.0001);
+            if (axis == 0)
+                return positionWS.zy * scale;
+            if (axis == 2)
+                return positionWS.xy * scale;
+            return positionWS.xz * scale;
+        }
+
+        half3 VoxelArrayNormalToWorld(half3 tangentNormal, int axis, half3 baseNormalWS)
+        {
+            half3 normalSign = sign(baseNormalWS);
+            if (axis == 0)
+                return SafeNormalize3(half3(tangentNormal.z * normalSign.x, tangentNormal.y, tangentNormal.x));
+            if (axis == 2)
+                return SafeNormalize3(half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z));
+            return SafeNormalize3(half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y));
+        }
+
+        half3 SampleVoxelArrayAlbedo(float3 positionWS, half3 weights, float layerIndex)
+        {
+            half3 sx = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_AlbedoArray, ResolveVoxelTriplanarUv(positionWS, 0), layerIndex).rgb;
+            half3 sy = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_AlbedoArray, ResolveVoxelTriplanarUv(positionWS, 1), layerIndex).rgb;
+            half3 sz = SAMPLE_TEXTURE2D_ARRAY(_AlbedoArray, sampler_AlbedoArray, ResolveVoxelTriplanarUv(positionWS, 2), layerIndex).rgb;
+            return sx * weights.x + sy * weights.y + sz * weights.z;
+        }
+
+        half3 SampleVoxelArrayNormalWS(float3 positionWS, half3 baseNormalWS, half3 weights, float layerIndex)
+        {
+            half3 tx = DecodeVoxelArrayNormal(SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_NormalArray, ResolveVoxelTriplanarUv(positionWS, 0), layerIndex).rgb);
+            half3 ty = DecodeVoxelArrayNormal(SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_NormalArray, ResolveVoxelTriplanarUv(positionWS, 1), layerIndex).rgb);
+            half3 tz = DecodeVoxelArrayNormal(SAMPLE_TEXTURE2D_ARRAY(_NormalArray, sampler_NormalArray, ResolveVoxelTriplanarUv(positionWS, 2), layerIndex).rgb);
+            half3 nx = VoxelArrayNormalToWorld(tx, 0, baseNormalWS);
+            half3 ny = VoxelArrayNormalToWorld(ty, 1, baseNormalWS);
+            half3 nz = VoxelArrayNormalToWorld(tz, 2, baseNormalWS);
+            return SafeNormalize3(nx * weights.x + ny * weights.y + nz * weights.z);
         }
 
         half EvaluateGlobalCutMask(float3 positionWS)
@@ -1034,8 +1087,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 coarseNormalWS = SafeNormalize3(input.normalWS);
                 half3 baseNormalWS = ResolveScreenSpaceSmoothedVoxelNormal(coarseNormalWS, input.positionWS, input.curvature);
                 half4 color = input.terrainSplatColor;
-                half vertexCaveAo = 1.0h;
-                half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, input.bakedAmbientOcclusion);
+                half2 materialWeights = max(color.rg, half2(0.0h, 0.0h));
+                half materialWeightSum = materialWeights.x + materialWeights.y;
+                materialWeights = materialWeightSum > 0.0001h ? materialWeights * rcp(materialWeightSum) : half2(0.0h, 1.0h);
+                half vertexCaveAo = saturate(max(color.a, input.bakedAmbientOcclusion));
+                half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, vertexCaveAo);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
                 half damageVolumeMask = globalCutMask >= 0.999h ? 0.0h : EvaluateDamageVolumeMask(input.positionWS);
@@ -1043,6 +1099,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 ApplyDearLieCarveClip(cutMask, input.positionCS.xy);
 
                 half4 baseSample = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
+                half3 triplanarWeights = ResolveVoxelTriplanarWeights(baseNormalWS);
+                half3 sandAlbedo = SampleVoxelArrayAlbedo(samplePositionWS, triplanarWeights, _VoxelSandArrayIndex);
+                half3 rockAlbedo = SampleVoxelArrayAlbedo(samplePositionWS, triplanarWeights, _VoxelRockArrayIndex);
+                half sampledArrayValid = step(0.006h, dot(sandAlbedo + rockAlbedo, half3(0.2126h, 0.7152h, 0.0722h)));
+                baseSample.rgb = lerp(baseSample.rgb, lerp(sandAlbedo, rockAlbedo, materialWeights.y), sampledArrayValid);
                 half4 packedMask = SampleCinematicAxisColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, baseNormalWS);
                 HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
                 half geologyBlend = saturate((half)_GeologyStrataBlend);
@@ -1066,7 +1127,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half scarMask = FastVoxelPower01(saturate(cutMask), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask = 0.0h;
                 half recentHeatAge01 = 1.0h;
-                half3 boostedNormalWS = dominantNormalWS * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
+                half3 sandNormalWS = SampleVoxelArrayNormalWS(samplePositionWS, baseNormalWS, triplanarWeights, _VoxelSandArrayIndex);
+                half3 rockNormalWS = SampleVoxelArrayNormalWS(samplePositionWS, baseNormalWS, triplanarWeights, _VoxelRockArrayIndex);
+                half3 triplanarNormalWS = SafeNormalize3(lerp(sandNormalWS, rockNormalWS, materialWeights.y));
+                half3 boostedNormalWS = lerp(dominantNormalWS, triplanarNormalWS, saturate((half)_VoxelArrayNormalStrength * sampledArrayValid));
+                boostedNormalWS *= lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
                 half3 normalWS = SafeNormalize3(baseNormalWS + boostedNormalWS);
                 normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
                 half skirtBlend = 1.0h - skirtCoverage;
@@ -1081,7 +1146,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 freshAlbedo = baseSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
                 freshAlbedo = lerp(freshAlbedo, (half3)_CutScarColor.rgb, scarMask * 0.45h);
                 albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
-                albedo *= lerp(1.0h, vertexCaveAo, saturate(input.terrainSplatColor.a) * 0.24h);
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
                 albedo = lerp(albedo, lerp(albedo, _CurvatureWearTint.rgb, 0.4h), convexMask * _CurvatureEdgeWearStrength);
                 albedo *= 1.0h - cavityMask * (_CurvatureCavityDarkenStrength * 0.32h);
@@ -1091,13 +1155,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 thermalColor = lerp(_CutScarWarmColor.rgb, _CutScarColor.rgb, saturate(1.0h - recentHeatAge01 * 0.9h));
                 albedo = lerp(albedo, thermalColor, recentHeatMask * 0.18h);
 
-                albedo *= (color.r + color.g);
 
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
                 smoothness = saturate(smoothness + bakedOreMetallic * geologyBlend * (half)_GeologyOreGlintStrength * 0.12h);
                 half ambientOcclusion = saturate(noisyBakedAo * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
-                half caveMouthDistanceAo = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
+                half caveMouthDistanceAo = saturate(input.skirtAlpha);
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
                 half bakedSedimentDust = saturate(bakedSedimentMask * smoothstep(0.55h, 0.92h, saturate(normalWS.y)) * (half)_GeologySedimentStrength);
@@ -1113,7 +1176,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 }
                 HectonCoreLitApplyEnvironmentalWear(samplePositionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
                 half dissolveMalfunction = ApplyChunkDissolveMalfunction(input.positionCS, samplePositionWS, albedo, smoothness);
-                half caveMouthPulse = ResolveCaveMouthPhosphorPulse(samplePositionWS, saturate(max(input.terrainSplatColor.a, input.skirtAlpha)));
+                half caveMouthPulse = ResolveCaveMouthPhosphorPulse(samplePositionWS, saturate(input.skirtAlpha));
                 albedo = lerp(albedo, (half3)_ChunkDissolvePhosphorTint.rgb, caveMouthPulse * 0.08h);
 
                 half3 litColor = EvaluateLighting(input.positionWS, input.positionCS, normalWS, SafeNormalize3(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);

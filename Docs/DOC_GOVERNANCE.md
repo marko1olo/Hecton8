@@ -31,6 +31,8 @@ Purpose: keep active docs small, source-backed, and free of work-log noise.
 Root may contain these active text anchors and standing route bibles:
 
 - `AGENTS.md`
+- `CLAUDE.md` as the Claude Code shim only, not divergent project law
+- `COMMON_SENSE.md` as common HECTON-8 engineering law routed by the authority spine
 - `PROJECT_BIBLES.md`
 - `VISION_LOCKS.md`
 - `TASTE.md`

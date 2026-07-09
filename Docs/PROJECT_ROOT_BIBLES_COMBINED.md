@@ -166,6 +166,8 @@ Required:
 
 - non-negative path costs;
 - threat-grid or voxel snapshot reads instead of live physics raycasts in jobs;
+- **3D Sparse Voxel Octree (SVO) A* Pathfinding**: Aquatic macro-navigation must use a multi-threaded A* algorithm traversing a разреженный воксельный октодерево (SVO) on Burst (checking `SDF > 0` for navigable void water), instead of a 2.5D surface NavMesh.
+- **Steering Boids Micro-Movement**: Micro-movements and local obstacle avoidance must use data-oriented steering behaviors (Boids) and direct local SDF density checks.
 - A* only where needed;
 - weighted A* for distance LOD;
 - flow-field fallback for distant entities;
@@ -174,6 +176,7 @@ Required:
 
 Forbidden:
 
+- **NavMeshAgent Ban**: Using Unity `NavMeshAgent` or standard 2D NavMesh components is strictly banned (they cannot support 3D vertical movement and dynamic voxel caverns).
 - Bezier smoothing that cuts through geometry;
 - live `Physics.Raycast` inside path jobs;
 - direct path recalculation every frame;
@@ -247,6 +250,45 @@ Reject:
 - swarms built from individual GameObjects;
 - AI reports without active counts, tick cadence, token budget, path cost, and load-shed behavior;
 - horror that comes only from a scripted scream.
+
+## Vertex Animation Textures (VAT) Doctrine — Fauna Animation
+
+Agents assigned fauna or swarm animation must NOT use `Animator` components or `SkinnedMeshRenderer`.
+
+**Why:** 10,000 SkinnedMeshRenderers destroy the CPU on bone matrix calculation before the GPU even starts rendering. Animator runs on the main thread. This kills Zero-GC and 60 FPS targets in one move.
+
+**Required: Vertex Animation Textures (VAT)**
+
+Small fauna (fish schools, rays, microorganisms, jellyfish): animation is baked into a texture (position offsets per vertex per frame) in Houdini or Blender. The creature shader reads that texture and displaces vertices on the GPU. The CPU knows only a `float3` position passed via `BatchRendererGroup`. Main thread cost: zero.
+
+**Required: Procedural IK for Leviathans**
+
+Large creatures (tentacles, spider crabs, multi-limb horrors) use procedural IK computed in a Burst job — no skeleton, no `Animator`. Algorithms: FABRIK (Forward And Backward Reaching Inverse Kinematics) or CCD (Cyclic Coordinate Descent). Joints are `float3` positions in a `NativeArray`. The job produces final joint positions that conform to the voxel terrain surface each frame.
+
+**Swarm agent exam:** Any external agent assigned scatter or fauna animation must demonstrate understanding of BRG and VAT before receiving the task. An agent proposing `Animator` or `SkinnedMeshRenderer` for mass fauna is immediately reassigned.
+
+## Zero-GC UI: The Babel Protocol
+
+`SuitHUDV4CanvasOverlay.cs` (369 KB) was caught doing `text = "Depth: " + depth.ToString()` 60 times per second. Each concatenation allocates a new `string` on the managed heap. At 60 Hz, Garbage Collector runs every ~60 seconds with 20 ms spikes. In a VR headset this induces nausea.
+
+**Banned in all hot UI paths:**
+
+- `string.Format(...)` with numeric args.
+- `text = "Label: " + value.ToString()`.
+- `TextMeshPro.text = ...` with any string concatenation.
+
+**Required: Babel Protocol**
+
+```csharp
+// REQUIRED pattern for hot numeric HUD elements:
+Span<char> buf = stackalloc char[32];
+depth.TryFormat(buf, out int len, "F1");
+_tmpText.SetCharArray(buf.Slice(0, len)); // zero allocations
+```
+
+Use `ReadOnlySpan<char>`, `stackalloc`, and `CharBufferPool` for all hot HUD text. Numbers are formatted via `int.TryFormat` / `float.TryFormat` directly into the buffer, then fed to `TextMeshPro.SetCharArray()`. Zero allocations, 60 Hz safe.
+
+**Diegetic Terminal Click Mapping:** Standard `Screen Space - Overlay` Canvas is banned. Terminal screens render as `RenderTexture` on in-world 3D objects. User interaction: `Physics.Raycast` from camera center (VR: from finger tip), convert hit UV to screen coordinates, emit synthetic click. Full immersion, zero overlay UI.
 
 ## Acceptance Sentence
 
@@ -587,7 +629,75 @@ If only static inspection was performed, label the work `STATIC_SOURCE_REVIEWED`
 
 Compact uses narrower payloads, lower capacities, fewer optional telemetry fields, and stricter dirty-page uploads. Middle keeps full gameplay truth with conservative telemetry. High and Ultra may add presentation or diagnostic payloads only outside gameplay truth structs unless an owner proves cache cost.
 
+## CSV Data Monolith Compiler (H8BIN)
+
+All static configuration files (recipes, parameters, balance values, spawn configurations) must be stored as plain CSV files in `Docs/Data/`. 
+
+- **Data Compiler (`H8DataMonolithCompiler.cs`)**: During build/editor compile time, this parser compiles all CSVs, validates structural references, and serializes them into a single, contiguous binary file `static_data.h8bin` (aligned to 64-byte Cache-lines, compressed via LZ4).
+- **Runtime Zero-GC Load**: The bootstrapper maps `static_data.h8bin` directly to memory at startup. `GlobalDataVault` reads these parameters via zero-cost pointer casting to unmanaged structs (`ref struct`). JSON parsing, PlayerPrefs, XML, or reflection-based deserialization in runtime is strictly banned.
+- **Baker Pipeline Enforcement**: If an agent makes any edits to balance values or CSV files, they MUST trigger the corresponding Baker script in the editor to rebuild `static_data.h8bin`. Failing to run the Baker means runtime batch tests will run stale cached data.
+
+## Save System: Atomic Persistence (SaveManager)
+
+Save format is binary only. JSON, PlayerPrefs, EasySave3, XML, and Reflection-based serialization are permanently banned.
+
+**LZ4 + XXHash3:** Save data is packed into binary blocks, compressed with LZ4, and verified with XXHash3 checksum. On load, if the checksum fails the save is corrupt — automatically fall back to `.bak`.
+
+**Delta-Persistence only:** The world is procedural. We never serialize every stone position. We serialize `WorldSeed` and player-produced deltas (mined holes, collected resources, constructed modules, discovered nodes). Every system writing to SaveManager MUST produce flat unmanaged `struct` DTOs with no Reflection dependency.
+
+**Atomic Write (power-cut safe):**
+
+1. Write new data to `.tmp` file.
+2. Verify the `.tmp` is complete and XXHash3 passes.
+3. Rename current `.sav` → `.bak`.
+4. Rename `.tmp` → `.sav`.
+
+We never overwrite the active save directly. Player progress loss from a crash is unacceptable.
+
+## AUP Habitat Grid (Base Building)
+
+Agents writing base building must not use `Vector3` world coordinates or `Instantiate` to place modules.
+
+Every `float` world coordinate drifts when the Floating Origin (AUP) shifts. If a base is tied to Unity world coords, the Origin Shift tears it apart or teleports it off screen.
+
+**Required architecture:**
+
+- Base stored as a directed graph in `GlobalDataVault` (each room: `int64x3` sector + `float3` local offset).
+- On Origin Shift, `GameBootstrapper` broadcasts `RebaseSignal`. The construction system intercepts the signal and bulk-shifts all visual proxies (MeshRenderers) by the delta.
+- **Structural Integrity** is a pure Burst `IJob`: `mass_of_modules - reinforcements - crush_depth_penalty = structural_value`. Returns a float. No `MonoBehaviour`, no `Physics.OverlapSphere`, no scene search.
+
+## Co-op Merkle State Sync & Rollback Netcode
+
+The reason HECTON-8 is DOD / DataVault-first is not only 60 FPS — it is network determinism.
+
+**Snapshot serialization:** All gameplay state (`GlobalDataVault` `NativeArray` contents) is serialized by `MemCpy`. No OOP, no Transform, no Rigidbody state. Snapshot cost is proportional to buffer size, not scene complexity.
+
+**Merkle Tree verification:** State arrays are hashed with `XXH3_128`. A Merkle tree is built from those hashes. The server compares tree roots with clients. Only divergent leaves trigger a Delta packet.
+
+**Rollback:** On server correction, roll back `DataVault` to N frames prior (N ≤ 10), apply the authoritative input, re-simulate those frames in Burst. Cost: near-zero because Burst re-simulation of 10 frames is sub-millisecond.
+
+**External Swarm Rule (Jules agents):** Any pure-C# gameplay logic written by external agents must accept `Tick` (frame index) as a parameter and be callable 50× per frame for rollback re-simulation. `Time.deltaTime` is banned in hot simulation paths — only the passed `fixedDeltaTime` parameter is valid.
+
+## Anti-Mock / Anti-Hollow System Protocol
+
+Agents produce hollow implementations: a pretty interface `ICraftingSystem`, a class `CraftingManager`, and inside `CraftItem()`:
+
+```csharp
+// TODO: Implement actual inventory check
+Debug.Log("Item crafted successfully!");
+return true;
+```
+
+The project compiles. An `ExitCode 0` script reports PASS. The system is a Potemkin village — discovered only when the next system tries to integrate with it.
+
+**Banned tokens in HECTON-8 gameplay code:** `TODO`, `NotImplementedException`, `Mock`, `Fake`, `stub`, `placeholder`.
+
+**Rule:** An agent that cannot write full integration writes a **pure C# mathematical function** (no Unity API), fully parameterized, fully tested with NUnit (`Assert.AreEqual(expected, Calculate(...))`). The function must work completely. A skeletal interface with empty body is grounds for PR rejection. TDD is mandatory for every implemented mechanic.
+
+**Dead Variable Rule:** Computed values must be applied. A `float radiationDamage` that is calculated but never subtracted from player health is a logical hallucination. Code reviews and Adversarial Agent reviews must specifically check that every calculated variable reaches its consumer.
+
 ## Rejection Gates
+
 
 Reject:
 
@@ -920,6 +1030,8 @@ Character and vehicle environment collision route:
 
 - terrain, voxel cave, tunnel, and large geology traversal collision uses baked voxel/terrain colliders or an approved SDF read model/DataVault snapshot owned by the voxel/terrain route;
 - hot movement and vehicle loops must not run synchronous `SphereCast`, `CapsuleCast`, or `Raycast` chains as the primary environment collision truth;
+- **Speculative KCC & Normal Sliding**: Player and submarine movements must not use active Rigidbody physics or direct Force updates. Movement must run speculative KCC SweepTests (`CapsuleCastNonAlloc` scheduled in Burst jobs) to predict next-frame hits and slide along normal vectors to prevent getting stuck in voxel seams/gaps.
+- **Swarm KCC Isolation**: Flocking and boid movements must execute collision queries and displacement offsets in a single isolated Burst job using AUP coordinates, returning displacement vectors (banning `OnCollisionEnter` on the main thread entirely).
 - `RaycastCommand.ScheduleBatch` or bounded `Physics.*NonAlloc` casts are allowed for tool contact, interaction probing, scanner/sonar utility, or strict one-off diagnostics only when the owner phase, cadence, static buffers, and profiler/GC proof are named;
 - if a temporary cast route is used while SDF/collider bake proof is missing, report it as `PENDING VERIFICATION` or explicit migration debt, not final collision architecture.
 
@@ -974,6 +1086,60 @@ Reject:
 - fluid simulation where scalar state is enough;
 - decorative damage with no channel state;
 - physics reports without profiler/GC proof.
+
+## Vector Flow Fields (Hydrothermal Vents & Currents)
+
+Thermal vents and underwater currents must NOT use `ParticleSystem` + `OnTriggerEnter` damage zones. That is cheap and architecturally wrong.
+
+**Required: 3D Vector Field Grid (Domain 19 — Abyssal Flow Fields)**
+
+- A 3D sparse grid of `float3` vectors represents current directions and magnitudes around vents, canyons, and ruins.
+- `HydrodynamicKccRuntime` (player KCC) reads this grid each physics tick. If the player enters a hydrothermal upwelling column, they are physically displaced upward by the vector + receive thermal damage. Zero `OnTriggerEnter`. Pure coordinate math.
+- `HectonTerrain.shader` reads the same vector grid to shift UV coordinates of silt and suspended particulate, making currents visually manifest in the world surface.
+- Fauna AI reads the SDF field directly from `GlobalDataVault` for current-aware pathfinding and boid drift.
+
+**No `OnTriggerEnter` allowed for area hazard effects.** Area effects are computed by evaluating the vector field at the entity's AUP position each frame.
+
+## Survival Physiology Math
+
+HECTON-8 is NASA-Punk Action-Survival. We reject the 16-tissue Bühlmann decompression model (academic overengineering). We reject Navier-Stokes fluid equations. Elegant, arcade-hardcore Burst math only.
+
+**Crush Depth (hull / suit integrity):**
+
+```csharp
+// overDepth = current depth - safe depth limit (metres)
+// Exponential curve: slow near limit, accelerating well beyond
+float crushDamageRate = overDepth * math.rsqrt(math.max(0.001f, overDepth));
+```
+
+Presentation consequences (not optional): hull stress audio (low-frequency groan), visor crack decals (Shader/Decals growing), energy drain for pressure compensation. These must be driven by the integrity channel scalar — not a separate damage system.
+
+**Hypoxia (Nitrogen Narcosis at extreme depth / low O2):**
+
+Low oxygen does not just reduce HP. It causes:
+
+1. Input drift: control response becomes "sticky" (multiply player input vector by `math.lerp(1f, 0.4f, hypoxiaLevel)` before applying to KCC).
+2. Shader hallucinations: a fullscreen distortion/grain pass activated at `hypoxiaLevel > 0.6f`, scaled by `GlobalQualityWeight`.
+
+These are purely mathematical state scalars consumed by HUD, KCC, and VFX — no MonoBehaviour polling, no scene search.
+
+## External Swarm Physics Testing Mandate
+
+When external Jules agents write physics math (pressure damage, KCC force contributions, structural integrity):
+
+**Fuzz Testing required:** Tests must feed `NaN`, `Infinity`, negative values, and zero arrays into every function. If `CalculateDamage(-1000f)` throws an exception or returns NaN — the PR is rejected.
+
+**MathGuard required:** Every division must be guarded:
+
+```csharp
+// WRONG:
+float result = value / divisor;
+
+// REQUIRED:
+float result = value * math.rcp(math.max(math.EPSILON, divisor));
+```
+
+Every `snoise` call must receive coordinates looped via `math.fmod`. This is non-negotiable architecture — not a style preference.
 
 ## Acceptance Sentence
 
@@ -1321,10 +1487,17 @@ Rules:
 - low tier uses depth fog, LUT haze, dither, baked AO, and silhouette composition;
 - raymarching is middle/high/ultra only after proof;
 - fog density varies by depth, biome, silt, current, and interior/exterior state;
+- **Red Light Absorption & Inky Water**: Ocean water must not render as tropical blue. Water is a dark, heavy inky-gray, utilizing volumetric fog with Red Light Absorption (red wavelength light is absorbed exponentially with depth, leaving only decolorized, greenish-blue, dead Abyssal visuals below 200m).
 - caustics are allowed only where light physically has reason to exist;
 - underwater visibility must preserve one readable route cue.
 
 Reject empty black screens, bright aquarium haze, and fog used to hide bad assets.
+
+## Diegetic UI & Material Wear
+
+- **Diegetic UI Raycast Click Mapping**: Standard overlay UI canvases (`Screen Space - Overlay`) are strictly banned. Terminal screens must render on in-world 3D textures. User interactions must map from camera center physics raycasts directly to the UV coordinates of the target screen.
+- **PBR Wear & Corrosion**: All database structures, submarine hulls, and suit models must utilize galvanic corrosion, wear, leak, and scratch masks to enforce the utilitarian NASA-punk aesthetic.
+
 
 ## Lighting And Shadows
 
@@ -1428,6 +1601,40 @@ Reject:
 - render features with no proof artifact;
 - screenshots that hide bad models behind darkness.
 - surface, photic-shallow, or medium-depth captures below the Subnautica-level visual floor.
+
+## Automation Blindness & Goodhart's Law Rule
+
+**Python validators and automated scripts are banned from evaluating Beauty Renders.**
+
+The historical failure mode: a validator checked for "no black pixels (RGB < 15)". Instead of fixing the PBR shader, the system disabled ACES Tonemapping, removed Exponential Depth Fog (Abyss atmosphere), and cranked Ambient Light to flat `Color(0.8, 0.8, 0.8)`. This destroyed micro-shadows, killed volume, and turned NASA-Punk into cheap mobile graphics.
+
+**Validator scope boundaries:**
+
+- `analyze_terrain.py` and similar tools: ALLOWED to analyze raw X-Ray maps (`GetHeights`, `GetSteepness` exports), gradient variance, seam detection, and structural data.
+- Python validators: BANNED from analyzing final shaded screenshots / Beauty Renders.
+- Beauty quality assessment: ONLY via Multimodal Vision (agent eyes) with ACES Tonemapping active, DirectionalLight Soft Shadows active, and Exponential Depth Fog active. Agent must describe specific pixels and features seen, not just "looks good".
+
+**Signs of Goodhart Optimization (immediate reject):**
+
+- ACES Tonemapping disabled.
+- Ambient Light set to flat grey or white for "darkness fix".
+- Exponential Depth Fog removed to "pass pixel check".
+- Directional light intensity raised to hide shadow bugs.
+- Any post-process feature disabled to satisfy an automated metric.
+
+**Required validator output** (when validators ARE used for structural checks): raw numeric data (height variance, seam delta, slope histogram), not color descriptions.
+
+## Offline Bake vs Runtime Generation Law
+
+**Runtime procedural 3D mesh generation is banned** (except Marching Cubes voxels running in background Burst threads).
+
+Flora (coral, kelp, seagrass), base props, tools, ore nodes, and fauna meshes are generated **offline in the Editor** via `WorldProceduralCoralMeshBuilder` and similar tools. The Editor script generates N unique high-poly variants, computes Tangents (required for PBR normal mapping), and saves them as `.asset` prefabs on disk.
+
+At runtime: `ProceduralScatterDirector` uses `BatchRendererGroup` (BRG) with `Graphics.RenderMeshIndirect`. The CPU provides `NativeArray<float4x4>` positions. A Compute Shader performs frustum culling. The survivors draw in a single GPU indirect call.
+
+**`GameObject.Instantiate` is banned for scatter.** Each GameObject has a Transform that calls into C++ native objects on every mutation. 100,000 objects = CPU hierarchy death.
+
+**`Graphics.RenderMeshInstanced` is banned for high-count scatter** — it lacks indirect draw support and caps at 1023 instances. Only `Graphics.RenderMeshIndirect` through BRG is acceptable.
 
 ## Acceptance Sentence
 
@@ -1973,7 +2180,9 @@ Required:
 - collision arbitration so the player does not hit duplicate colliders;
 - unified raycast route for tools and interaction;
 - LOD synchronization;
-- AUP/floating-origin safety.
+- AUP/floating-origin safety;
+- **SurfaceProtectionMeters & Heightmap Protection**: To prevent 3D voxel carving from punching gaping holes through the 2D heightmap, the carving density must fade to zero within `30 meters` of the terrain surface (`depthToTerrainSurface < 30f`, scale density via `smoothstep`).
+- **CaveMouthCandidate Masks**: Exiting voxel caves onto the 2D surface is allowed strictly through designated `CaveMouthCandidate` masks using transition meshes (collars/seams) to cover the geometry junction.
 
 ## SDF Collision Read Model
 
@@ -3557,6 +3766,145 @@ Reject:
 
 Terrain is accepted only when it creates readable routes, credible geology, deterministic scatter, scalable detail, cheap collision/navigation truth, and proof across compact and high-tier views.
 
+## Terrain Math & Slope Rules
+
+[RULE] Coordinate Wrap Protection: Using coordinate-reflecting functions like `math.abs(wrapX - period)` in generation algorithms is strictly banned. This produces a Triangle Wave domain input for fractal noise, causing mirror symmetry (kaleidoscope effect) across chunk borders. Continuous coordinate wrapping must be achieved via signed modulo (`math.fmod`) exclusively, preserving direction sign. Raw `worldPos.x` / `worldPos.z` combined with AUP sector seed is the preferred base domain.
+
+[RULE] Steepness & Splatmap Mappings: Ban early slope map saturation (e.g. `slope * 4.5f` which turns everything > 12.5 deg into rock, making sand appear only on a billiard-table flat surface). Use `math.saturate(slope * 0.6f)` and smoothstep ranges. The canonical H8 splatmap formula:
+
+```csharp
+float steepSlope = math.smoothstep(0.16f, 0.28f, sample.Slope01); // 15-25 deg transition
+float verySteep  = math.smoothstep(0.40f, 0.70f, sample.Slope01); // >45 deg full rock
+float rockBase   = math.saturate((hardRock * 0.72f) + (ridge * 0.44f) + (sample.FaultMask * 0.24f) - (sediment * 0.22f));
+float finalRock  = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
+```
+
+Geological masks must account for macro-zones: in fault lines bare rock must appear even at low slope; on the shelf sand may persist on slopes up to 20 degrees.
+
+## Multi-Scale Geology Manifesto
+
+HECTON-8 seafloor is not a noise field — it is physically aggressive, tactile geology that affects KCC kinematics, cover calculations, and flora simulation. Generation in `WorldMacroGeologyFields.cs` is split into four mathematically strict Burst-compiled layers:
+
+### Macro-Scale (1–10 km): Tectonic Structure
+
+Owner: low-frequency `FractalSimplexNoise` with mild Domain Warping (perturb input coordinates by a secondary low-amplitude noise before sampling). Domain Warping avoids perfectly round or square tectonic shapes. This layer forms the Base Depth — the continental shelf vs. abyss boundary. **No Domain Warping on chunk seam coordinates** — only apply warping after the worldPos is confirmed continuous via fmod.
+
+### Meso-Scale (100 m – 1 km): Canyons & Erosion
+
+Owner: inverted `RidgedMultifractal01` **subtracted** from shelf height, creating deep V-shaped canyons. Canyon edges are softened via `math.smoothstep`. This layer produces the readable trench and ravine routes players navigate. Output must produce branching dendritic drainage patterns visible on a 1 km slope X-Ray card — a blurry smear means the frequency or amplitude is wrong.
+
+### Micro-Meso Scale (10–100 m): Geological Terraces (Strata)
+
+Owner: smoothed height quantization formula:
+
+```csharp
+// terraceErosion = high-freq noise injected BEFORE dividing by step scale
+// Without it, strata edges are perfectly straight lines (Minecraft topographic map look)
+float noisy = depth + terraceErosion;
+float terrace = math.floor(noisy / terraceScale) * terraceScale
+              + math.smoothstep(0f, 1f, math.frac(noisy / terraceScale)) * terraceScale;
+```
+
+Terracing is applied **only through a slope mask** — not on vertical cliffs (already rock), not on flat plains (already sediment). Strata must appear on mid-angle geology only.
+
+### Micro-Scale (< 1 m): Physical Grit (Osyp' — Rock Scree)
+
+We do NOT fake surface micro-detail through normal maps alone. On the height mesh itself we add/subtract a high-frequency `RidgedMultifractal` with amplitude **1.5–3.5 metres** strictly through HardRock and Scree slope masks.
+
+Rationale: the KCC uses `CapsuleCast` against `TerrainCollider`. On a flat mesh the player slides over rock like ice. Physical micro-bumps make the KCC stumble realistically. Shadow Cascades cast real micro-shadows at low sun angles, adding volume that a normal map cannot reproduce.
+
+Proof gate: a 100 m slope X-Ray card (GetSteepness export) must show dense red-black noise on hard rock slopes — proving the mesh is deformed by math, not painted by normal maps.
+
+## HectonTerrain Shader Doctrine
+
+Shader: `HectonTerrain.shader`. Mode: Single-Pass with 8-layer `Texture2DArray` (Albedo, Normal, Mask).
+
+### Biplanar Mapping (Required on Slopes > 45°)
+
+Standard planar UV on XZ produces catastrophic texture stretching on vertical faces. Triplanar is too expensive. Required approach:
+
+1. Convert surface normal to World Space in HLSL.
+2. Take `abs(normalWS)` and find the two strongest axes (discard the weakest).
+3. Sample `Texture2DArray` twice, blend by axis weights.
+
+This gives 2 texture fetches vs 3 for triplanar, with no stretching on cliff faces.
+
+### Anti-Tiling Macro Noise (Required)
+
+`_HectonUVScale` is set for high density (10–20 m per tile). At bird's-eye view this creates a checkerboard. Fix: sample a second pass of the same texture with UV **rotated 60 degrees**, then blend the two by a very low-frequency fractal noise mask (`HectonMacroNoise(worldPos.xz)`). Result: readable close up, non-repeating from above.
+
+### Height-Based Blending (Required at biome transitions)
+
+Alpha blending produces smearing at material boundaries. At ShellSand / HardRock transitions:
+
+```hlsl
+// Read Displacement channel (Alpha in Albedo or Blue in MaskMap)
+float depthA = textureHeightA + splatWeightA;
+float depthB = textureHeightB + splatWeightB;
+float blend  = saturate((depthA - depthB) / contrastBias + 0.5);
+```
+
+This makes sand granules appear only in rock crevices — a sharp, photorealistic AAA seam.
+
+### Texture2DArray Baker Rule
+
+Source PBR textures may differ in resolution (512×512, 1024×1024). `Texture2DArray.SetPixels()` will crash on size mismatch. Required approach (`BakeDeepSeaTerrainArrays.cs`): blit every source texture via `Graphics.Blit` into a temporary `RenderTexture` at uniform target size (1024×1024), then read pixels from there into the array. This GPU-powered resize pipeline must be run before build and before any terrain validation session.
+
+## X-Ray Matrix Protocol
+
+We do not trust shaded 3D screenshots for terrain validation. An agent MUST produce raw data exports via `TerrainData.GetHeights()` and `GetSteepness()` stitched into unified PNG maps (9-chunk 1536×1536). These X-Ray maps are the only accepted terrain truth.
+
+| Scale | Map | What to look for | Failure signature |
+|---|---|---|---|
+| **10 km** (Macro) | Heightmap + Slope | No perfectly straight red/black lines at chunk borders (those = seams) | Straight lines across borders = coordinate drift bug |
+| **1 km** (Meso) | Slope | Branching dendritic ravines (red veins on black) | Blurry grey smear = frequency/amplitude wrong |
+| **100 m** (Micro) | Slope | Dense red-black noise on hard rock slopes (1–3 m amplitude grit) | Smooth gradient = Grit not applied; KCC will slide |
+
+Python validators may only evaluate X-Ray maps (raw height/slope arrays). They are **banned from evaluating Beauty Renders** — beauty assessment is Multimodal Vision (AI eyes) only, with mandatory ACES tonemapping, soft shadows, and Exponential Depth Fog enabled.
+
+## Clean Room Testing Protocol
+
+Testing on `02_HECTON_WORLD` is banned — bootstrapper overhead and system coupling make it unreliable. Isolated testing scene or `020_RENDER_SANDBOX_V2` only.
+
+Required `CleanRoomTerrainTest.cs` / `NakedTerrainProtocolRunner.cs` setup:
+
+1. Destroy all cameras and lights in scene.
+2. Create `NTP_Camera` (SolidColor background, `Color(0.02, 0.03, 0.05)`).
+3. Create `DirectionalLight` (Intensity 1.8, Color.white, `LightShadows.Soft`, Pitch 35° for long micro-shadows).
+4. Create `GlobalVolume` with **ACES tonemapping** — never disable ACES to pass a pixel check.
+5. Initialize MapMagic graph, subscribe to `EditorApplication.update` state machine.
+6. Wait condition: `Terrain.activeTerrains.Length == 9` AND every terrain has `alphamapTextureCount > 0` AND every terrain has an active `TerrainCollider` AND 200+ stable frames of full quiescence.
+7. Only after 200-frame quiet window: render via `UniversalRenderPipeline.SubmitRenderRequest`.
+
+**Anti-Hallucination Camera Raycast**: Before rendering beauty shots, cast `Physics.SphereCast` (radius 2 m) from the target point toward the camera. If the cast hits a `TerrainCollider`, shift camera 5 m along the hit normal. This permanently eliminates black-screen-inside-rock bugs.
+
+**No `-nographics` flag ever**: MapMagic uses Compute Shaders and `Graphics.Blit` for splatmap layer composition. Without a GPU context these return zeros. The only valid batch test mode is Play Mode or Editor Play with GPU context.
+
+## Zero-GC Terrain Height Reads
+
+**Banned at runtime:** `Terrain.SampleHeight()` and `TerrainData.GetHeights()` are managed-allocation calls. Banned in all hot game loops (creature AI depth queries, player spawner, AbyssalThermalManager pressure queries, etc.).
+
+**Required architecture:**
+
+1. On chunk generation complete (or chunk stream-in), the terrain subsystem copies its height data via a Burst job into a flat unmanaged buffer.
+2. That buffer is registered in `GlobalDataVault` under `BufferID.WorldTerrainHeights`.
+3. Any external gameplay system (e.g. `HectonPlayerSpawner`, shark AI depth queries, `AbyssalThermalManager`) requests a **Read-Only generation handle** from `GlobalDataVault`. It reads height at XZ coordinates via pure O(1) index math inside its own `IJobParallelFor`, then immediately releases the handle.
+4. On chunk unload: height buffer handle is disposed, DataVault entry cleared.
+
+This guarantees 100% thread-safety, zero main-thread blocking, and zero GC allocations.
+
+## Stale Artifact Rule
+
+Before every Unity session that produces terrain screenshots or exports: delete all `.png` files in the artifact output directory and all `.log` files in the Logs directory via `Remove-Item -Force`. No file = no hallucination. An agent that reads a yesterday's `Naked_Macro_10km.png` and writes a report from it must be treated as producing a fabricated result.
+
+## Atomic File Delete Rule (Pre-Run Mandatory)
+
+```powershell
+# Run this BEFORE every Unity terrain bake/test session
+Remove-Item -Path "C:\hades\Hecton8\Docs\GeneratedAssets\Terrain\*.png" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\hades\Hecton8\Logs\*.log" -Force -ErrorAction SilentlyContinue
+```
+
 ## 22 - UI_DIEGETIC_HUD_STANDARDS.md
 
 Source: `UI_DIEGETIC_HUD_STANDARDS.md`
@@ -3975,6 +4323,12 @@ Rejected:
 `GlobalQualityWeight` may scale screen material richness, scanline fidelity, background scene detail, route-instrument density, transition smoothness, archival corruption layers, and optional diagnostic overlays. It must not change command order, save/load truth, settings semantics, accessibility availability, input navigation, or text readability.
 
 Compact menus must still read as a physical HECTON-8 instrument, not a plain flat launcher. Middle may add stronger panel material and route telemetry. High may add richer boot/verify transitions. Ultra may add cinematic console material, live background response, and layered archive damage only if it remains readable and zero-GC in runtime menu paths.
+
+## 11A. Runtime And Hot-Path Boundary
+
+Menu runtime code consumes snapshots and owner events from save, settings, input, localization, accessibility, build-profile, and route-state owners. It must not poll those owners every frame, search scenes, parse strings, allocate formatted text, rebuild layout, churn render textures/cameras, or run decorative animation loops in hot menu paths.
+
+Allowed runtime menu updates are bounded: explicit state change, input focus change, archive verification event, settings apply/rollback, localization refresh, route handoff, or profiled transition. Runtime menu paths that change cameras, render textures, text, animation, save/load views, or settings rows require profiler/GC proof before acceptance.
 
 ## 12. Menu QA Gates
 
@@ -6068,15 +6422,19 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 For non-trivial HECTON-8 work:
 
 1. Read this file.
-2. Classify the task domain and risk class.
-3. Read `Docs\AGENT_AUTHORITY_ROUTING.md`.
-4. Read `PROJECT_BIBLES.md` for major, player-facing, design-facing, system-facing, or ambiguous work.
-5. Read `VISION_LOCKS.md` for product direction, ambiguity, route priority, taste conflict, or scope interpretation.
-6. Read `TASTE.md` for player-visible work, plus the matching route bible from `PROJECT_BIBLES.md`.
-7. Read `.agents-skills\README.md` and exactly 2-8 task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
-8. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
+2. Read `COMMON_SENSE.md` to load the 18 architectural AI cognitive constraints.
+3. Read `Docs\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` to verify the task aligns with the V0 playable milestone.
+4. Classify the task domain and risk class.
+5. Read `Docs\AGENT_AUTHORITY_ROUTING.md`.
+6. Read `PROJECT_BIBLES.md` for major, player-facing, design-facing, system-facing, or ambiguous work.
+7. Read `Docs\SYSTEMS_CONTRACTS.md` if the task involves non-asset runtime systems, architecture, signals, data vaults, or core memory.
+8. Read `VISION_LOCKS.md` for product direction, ambiguity, route priority, taste conflict, or scope interpretation.
+9. Read `TASTE.md` for player-visible work, plus the matching route bible from `PROJECT_BIBLES.md`.
+10. Read `.agents-skills\README.md` and exactly 2-8 task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
+11. Read `Docs\QUALITY_GATES.md` before claiming a task is VERIFIED or COMPLETE to ensure all necessary proof artifacts (profiler, GC, visual parity, NativeMemory) are generated.
+12. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
 
-Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine.
+Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine. **CRITICAL SUBAGENT RULE:** Subagents modifying any `.cs`, `.shader`, `.prefab`, or `.asset` files are strictly forbidden from using this "trivial task" bypass. They MUST read `COMMON_SENSE.md`.
 
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
@@ -6138,6 +6496,38 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 ## Evidence Law
 
 [RULE] Status is `PENDING VERIFICATION` until fresh evidence exists. Unity import, Unity Console, Play Mode, profiler, GCMonitor, Frame Debugger, RenderDoc, screenshot/capture, player build, device run, save/load proof, and user approval are evidence. Docs, static scans, local `dotnet build`, and agent confidence are not runtime proof.
+
+[RULE] Never Trust Automated Assertions Alone: Exit Code 0 or the presence of a screenshot file does NOT prove the interface is functional. A test script might capture a blank page, 404, 500, or `ERR_CONNECTION_REFUSED` and exit with 0. Test scripts must verify the HTTP response status (strictly `200 OK`). Any status other than 200 must cause the test script to fail explicitly.
+
+[RULE] Strict Healthcheck & Port Wait-on: Never launch automated browser tests (Puppeteer, Playwright) "into the void". Poll the local host until the server is responsive, starting the dev server in the background if it is down.
+
+[RULE] Mandatory VLM Vision Audit: The agent must inspect visual renders with its own multi-modal vision. After generating screenshots, open and read the image files using the model's visual modality. Write down a textual description of what is actually visible. A verification report without a visual description is a compliance failure.
+
+[RULE] Global Lookup Before Creating Files: Before writing any new file, helper, hook, utility, or component, perform a comprehensive project search using `grep_search` or `list_dir`. Check if similar functionality already exists under a different name.
+
+[RULE] Integrity Audit on Refactoring: When bulk-deleting or merging files, verify that complex mathematical formulas, algorithms, or utility calculations are not lost. Run `git diff` or review deleted file history before finalizing.
+
+[RULE] Strict Production Build Gate: The final step of any task must be running the full production compiler/typechecker (e.g., `tsc --noEmit`, `npm run typecheck`, or `npm run build` / `dotnet build`). Any warnings or errors from the compiler must be treated as critical failures and fixed.
+
+[RULE] YAML Serialization & Asset Integrity (No Textual Edits): Banned modifying `.unity` (scene) or `.prefab` asset files as raw text using Python scripts, regex, or shell commands. Direct textual edits damage FileIDs/GUID structures. All scene or prefab manipulations must occur via C# Editor scripts (`PrefabUtility`, `AssetDatabase`, `EditorSceneManager`).
+
+[RULE] Sandbox Firewall Rule (Automated Test Safety): Automated test runners and scripts are strictly forbidden from calling `EditorSceneManager.SaveScene`, `PrefabUtility.SaveAsPrefabAsset`, or `EditorUtility.SetDirty` on production assets to prevent wiping level-designer changes. Any runtime adjustments must occur in-memory only.
+
+[RULE] Relative Path Requirement (No Hardcoded Absolute Paths): Hardcoding absolute developer paths (e.g., `C:\Users\Admin\...` or `C:\Users\danat\...`) in python or C# scripts is strictly banned. All screenshot, log, config, and data directories must be resolved relatively from the project root using `Application.dataPath` or `../`.
+
+[RULE] MapMagic & Batchmode Graphics Protocol: Running MapMagic/Compute Shader generation tests with `-nographics` in batchmode is strictly banned (Compute Shaders/Graphics.Blit return zeros without GPU context). Use state-machine polling via `EditorApplication.update` to wait for stable frames (Terrain length == 9, alphamaps loaded, active TerrainCollider on all chunks) and at least 200+ frames of complete silence before capturing diagnostic renders or screenshots.
+
+[RULE] Terrain Mathematics & Generation Bible: For all tasks involving terrain math, heightmaps, coordinate wrapping, slope mapping, splatmaps, or biome masks, the agent MUST load, read, and strictly follow the domain rules in [terrain.md](file:///C:/hades/Hecton8/terrain.md).
+
+[RULE] Data-Driven Configuration Rule: Ban JSON parsing or reflection lookups (`GetProperty`/`SetValue`) for runtime settings. Configuration must follow the unmanaged pipeline: ScriptableObject Facade -> baked `.h8bin` binary -> direct cast to unmanaged DTO -> applied via MaterialPropertyBlock.
+
+[RULE] Zero-GC Scatter & Animation Protocol: Ban `GameObject.Instantiate` and Animator components for mass objects. Kelps, corals, and fish must use offline baked Vertex Animation Textures (VAT) and BatchRendererGroup (BRG) indirect rendering.
+
+[RULE] Memory Management & Chunk Dispose: Memory buffers and NativeArrays allocated during chunk generation must be manually freed. Subscribing to streaming pager events (like `OnChunkUnloaded`) and calling `.Dispose()` on NativeArrays is mandatory to prevent RAM exhaustion.
+
+[FORBID] Context Bloat & Direct Media Reading (CLAUDE CODE ONLY): Claude Code agents must never read raw `.png` or binary image files directly into the prompt context via file tools (this bloats session history and causes Cloudflare 502/504 Bad Gateway timeouts on the proxy). Gemini/Antigravity agents are fully allowed to read and inspect these files as their native context window and direct API connections handle large multimodal payloads without crashes.
+[FORBID] Reading Huge Log Files in Full (CLAUDE CODE ONLY): Claude Code must not read raw text log files (such as `.log` or `.txt` generated by compilers or test runners) in full if they exceed 10 KB or 100 lines. Instead, it must extract compiler errors and relevant warnings using selective terminal commands like `grep`, `findstr`, `Select-String`, or check only the last 30 lines (tail) to keep the active context clean. Gemini/Antigravity agents are exempt from this limit.
+
 
 [FORBID] Fake metrics, fake completion, optimism language, "should work", "problem solved" without evidence, "covered without literal implementation", and microsecond tables without profiler context.
 
@@ -6455,6 +6845,20 @@ During work, conduct a self-audit for:
 2. "Optimism": Using phrases like "everything should work now" or assuming success without proof.
 - Verdict: If you see garbage, unfinished, or unverified work, go back and force yourself to redo/rewrite it.
 - No Second-Guessing: If you "think it is better this way" contrary to common sense, agreements, or objective data, it is a critical failure.
+
+## Agent Tooling Abuse & Hallucination Prevention
+
+[RULE] PowerShell String Hell: NEVER use `powershell -Command` with complex multiline string replacement (e.g., `(Get-Content).Replace()`). Use Python scripts for complex string manipulations OR use `replace_file_content`/`multi_replace_file_content` via the Antigravity API natively.
+
+[RULE] Context Suicide: Reading entire logs (e.g. `Editor.log`) into the context window is BANNED. Read logs ONLY via `Get-Content -Tail 50` or using `grep_search` with context `-C 5`. Do not burn token quota on system garbage.
+
+[RULE] The Nuking Anti-Pattern (Surgical Patching Only): Do not overwrite entire large files (like 1500 lines) just to change a few lines. You must use `multi_replace_file_content` or `replace_file_content` to find specific blocks and replace only them.
+
+[RULE] Atomic File Delete Rule: Before ANY automated Unity batchmode test or render run, all `.png` diagnostic artifacts and `.log` files in the output directory must be physically deleted using `Remove-Item -Force`. This prevents hallucinatory visual checks against old screenshots.
+
+[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic.
+
+[RULE] Test-Driven Logic Verification (No Dead Variables): Avoid "Logical Hallucinations" where you write complex math (e.g., `radiationDamage`) but forget to apply it to the actual state. For every new mechanical calculation, you MUST generate an EditMode test (e.g., `Assert.AreEqual(expected, Calculate(...))`) to mathematically prove the variable is consumed and works correctly.
 
 ## 35 - TASTE.md
 
@@ -7092,7 +7496,11 @@ It does not prove:
 - final art quality;
 - shipping feature scope.
 
-Runtime claims still require current artifacts.
+    Runtime claims still require current artifacts.
+
+## Common Sense Engineering (AI Cognitive Blindspots)
+
+These 18 unwritten laws of Unity development are now binding architectural constraints. They have been moved to `COMMON_SENSE.md` to ensure they are loaded by all agents regardless of the domain. You must read `COMMON_SENSE.md` as part of your standard Task Intake.
 
 ------------------
 If you're making
@@ -11437,9 +11845,15 @@ Warnings must be sparse, prioritized, and physical:
 - use cadence and tone by priority;
 - suppress spam;
 - pair critical warnings with UI/haptic where appropriate;
-- fail closed if warning data is stale.
+- fail closed if warning data is stale;
+- **Bitchin' Betty prioritized queue**: The vocal warning system must resolve using a priority queue. A higher-priority warning (e.g., `CRUSH DEPTH CRITICAL`, Priority 1) must immediately interrupt and mute a lower-priority message (e.g., `Inventory Full`, Priority 10) instead of overlapping.
+- **Strict EventID Routing**: Calling warnings or sound events using string lookups is strictly banned to prevent heap allocations. Events must pass a numeric `uint EventID` through SPSC queues.
 
 Suit voice should be disciplined, not chatty. It should sound like expensive equipment under stress, not a joke machine.
+
+## 3b. Underwater DSP & Propagation
+
+- **Low-Pass DSP Filtering**: Banned using simple `AudioSource.PlayOneShot` for distant environmental or creature sounds. Distant sounds must pass through a low-pass DSP filter simulating exponential high-frequency absorption with distance. High frequencies are absorbed faster, leaving low-frequency basaltic/metallic vibrations at depth.
 
 ## 4. Creature Audio
 
@@ -12461,6 +12875,12 @@ Build UI and VFX may present state but must not invent power, oxygen, storage, p
 Build previews, ghost meshes, holograms, comfort props, status screens, sparks, condensation, alarms, wetness, damage decals, and construction VFX are presentation-only. They may show authoritative construction/logistics/physics snapshots; they must not own resource counts, recipe completion, oxygen, pressure, power, storage, module damage, route unlocks, or save state.
 
 Placement helpers may reject impossible placements only by reading the construction owner, physics proxy state, and logistics rules. They must not create alternate placement truth inside UI, VFX, or editor-preview logic.
+
+## 8B. Runtime And Hot-Path Boundary
+
+Construction runtime paths must use cached owner interfaces, fixed-capacity records, typed events/signals, and authoritative snapshots from construction, logistics, inventory, physics, persistence, and streaming owners. Build placement, logistics updates, storage/inventory cadence, network-state presentation, and damage/flood feedback must not allocate heap objects, format strings, search scenes, poll global services, or create alternate UI/VFX truth in repeated paths.
+
+Expensive preview, ghost, graph, and network recalculation work belongs to explicit state-change events, cold authoring checks, or bounded owner cadence. If construction runtime, placement, logistics, storage, or preview code changes, acceptance requires allocation/query-route evidence and the matching proof artifacts in this bible.
 
 ## 9. GlobalQualityWeight Scaling
 

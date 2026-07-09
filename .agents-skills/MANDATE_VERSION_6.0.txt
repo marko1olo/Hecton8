@@ -36,7 +36,7 @@ Current native bindings expose baseline compress/decompress only. Dictionary API
 [BROKEN] `Graphics.SetDescriptorSet` is not a valid project/managed Unity API from current evidence.
 Use SRP Batcher, GPU Resident Drawer, GraphicsBuffer, Texture2DArray, and RenderGraph resource declaration instead.
 
-[UPDATED] Live `PROJECT_ATLAS.md` now exists at repo root, with detailed static asmdef graph mirrored in `Docs/PROJECT_ATLAS.md`.
+[UPDATED] Live atlas authority is `Docs/PROJECT_ATLAS.md`; deprecated root-compatible mirrors are historical only.
 Status remains PENDING VERIFICATION until Unity import and compile graph are green.
 
 [PENDING] Terrain Streaming Virtual Texturing is not proven active.

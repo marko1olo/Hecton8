@@ -28,15 +28,19 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 For non-trivial HECTON-8 work:
 
 1. Read this file.
-2. Classify the task domain and risk class.
-3. Read `Docs\AGENT_AUTHORITY_ROUTING.md`.
-4. Read `PROJECT_BIBLES.md` for major, player-facing, design-facing, system-facing, or ambiguous work.
-5. Read `VISION_LOCKS.md` for product direction, ambiguity, route priority, taste conflict, or scope interpretation.
-6. Read `TASTE.md` for player-visible work, plus the matching route bible from `PROJECT_BIBLES.md`.
-7. Read `.agents-skills\README.md` and exactly 2-8 task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
-8. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
+2. Read `COMMON_SENSE.md` to load the 18 architectural AI cognitive constraints.
+3. Read `Docs\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` to verify the task aligns with the V0 playable milestone.
+4. Classify the task domain and risk class.
+5. Read `Docs\AGENT_AUTHORITY_ROUTING.md`.
+6. Read `PROJECT_BIBLES.md` for major, player-facing, design-facing, system-facing, or ambiguous work.
+7. Read `Docs\SYSTEMS_CONTRACTS.md` if the task involves non-asset runtime systems, architecture, signals, data vaults, or core memory.
+8. Read `VISION_LOCKS.md` for product direction, ambiguity, route priority, taste conflict, or scope interpretation.
+9. Read `TASTE.md` for player-visible work, plus the matching route bible from `PROJECT_BIBLES.md`.
+10. Read `.agents-skills\README.md` and exactly 2-8 task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work.
+11. Read `Docs\QUALITY_GATES.md` before claiming a task is VERIFIED or COMPLETE to ensure all necessary proof artifacts (profiler, GC, visual parity, NativeMemory) are generated.
+12. Read live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
 
-Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine.
+Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine. **CRITICAL SUBAGENT RULE:** Subagents modifying any `.cs`, `.shader`, `.prefab`, or `.asset` files are strictly forbidden from using this "trivial task" bypass. They MUST read `COMMON_SENSE.md`.
 
 Technical report means an audit, policy review, architecture review, proof review, route review, or durable technical artifact. It does not mean the ordinary final chat summary after a code, asset, content, or docs task.
 
@@ -98,6 +102,38 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 ## Evidence Law
 
 [RULE] Status is `PENDING VERIFICATION` until fresh evidence exists. Unity import, Unity Console, Play Mode, profiler, GCMonitor, Frame Debugger, RenderDoc, screenshot/capture, player build, device run, save/load proof, and user approval are evidence. Docs, static scans, local `dotnet build`, and agent confidence are not runtime proof.
+
+[RULE] Never Trust Automated Assertions Alone: Exit Code 0 or the presence of a screenshot file does NOT prove the interface is functional. A test script might capture a blank page, 404, 500, or `ERR_CONNECTION_REFUSED` and exit with 0. Test scripts must verify the HTTP response status (strictly `200 OK`). Any status other than 200 must cause the test script to fail explicitly.
+
+[RULE] Strict Healthcheck & Port Wait-on: Never launch automated browser tests (Puppeteer, Playwright) "into the void". Poll the local host until the server is responsive, starting the dev server in the background if it is down.
+
+[RULE] Mandatory VLM Vision Audit: The agent must inspect visual renders with its own multi-modal vision. After generating screenshots, open and read the image files using the model's visual modality. Write down a textual description of what is actually visible. A verification report without a visual description is a compliance failure.
+
+[RULE] Global Lookup Before Creating Files: Before writing any new file, helper, hook, utility, or component, perform a comprehensive project search using `grep_search` or `list_dir`. Check if similar functionality already exists under a different name.
+
+[RULE] Integrity Audit on Refactoring: When bulk-deleting or merging files, verify that complex mathematical formulas, algorithms, or utility calculations are not lost. Run `git diff` or review deleted file history before finalizing.
+
+[RULE] Strict Production Build Gate: The final step of any task must be running the full production compiler/typechecker (e.g., `tsc --noEmit`, `npm run typecheck`, or `npm run build` / `dotnet build`). Any warnings or errors from the compiler must be treated as critical failures and fixed.
+
+[RULE] YAML Serialization & Asset Integrity (No Textual Edits): Banned modifying `.unity` (scene) or `.prefab` asset files as raw text using Python scripts, regex, or shell commands. Direct textual edits damage FileIDs/GUID structures. All scene or prefab manipulations must occur via C# Editor scripts (`PrefabUtility`, `AssetDatabase`, `EditorSceneManager`).
+
+[RULE] Sandbox Firewall Rule (Automated Test Safety): Automated test runners and scripts are strictly forbidden from calling `EditorSceneManager.SaveScene`, `PrefabUtility.SaveAsPrefabAsset`, or `EditorUtility.SetDirty` on production assets to prevent wiping level-designer changes. Any runtime adjustments must occur in-memory only.
+
+[RULE] Relative Path Requirement (No Hardcoded Absolute Paths): Hardcoding absolute developer paths (e.g., `C:\Users\Admin\...` or `C:\Users\danat\...`) in python or C# scripts is strictly banned. All screenshot, log, config, and data directories must be resolved relatively from the project root using `Application.dataPath` or `../`.
+
+[RULE] MapMagic & Batchmode Graphics Protocol: Running MapMagic/Compute Shader generation tests with `-nographics` in batchmode is strictly banned (Compute Shaders/Graphics.Blit return zeros without GPU context). Use state-machine polling via `EditorApplication.update` to wait for stable frames (Terrain length == 9, alphamaps loaded, active TerrainCollider on all chunks) and at least 200+ frames of complete silence before capturing diagnostic renders or screenshots.
+
+[RULE] Terrain Mathematics & Generation Bible: For all tasks involving terrain math, heightmaps, coordinate wrapping, slope mapping, splatmaps, or biome masks, the agent MUST load, read, and strictly follow the domain rules in [terrain.md](file:///C:/hades/Hecton8/terrain.md).
+
+[RULE] Data-Driven Configuration Rule: Ban JSON parsing or reflection lookups (`GetProperty`/`SetValue`) for runtime settings. Configuration must follow the unmanaged pipeline: ScriptableObject Facade -> baked `.h8bin` binary -> direct cast to unmanaged DTO -> applied via MaterialPropertyBlock.
+
+[RULE] Zero-GC Scatter & Animation Protocol: Ban `GameObject.Instantiate` and Animator components for mass objects. Kelps, corals, and fish must use offline baked Vertex Animation Textures (VAT) and BatchRendererGroup (BRG) indirect rendering.
+
+[RULE] Memory Management & Chunk Dispose: Memory buffers and NativeArrays allocated during chunk generation must be manually freed. Subscribing to streaming pager events (like `OnChunkUnloaded`) and calling `.Dispose()` on NativeArrays is mandatory to prevent RAM exhaustion.
+
+[FORBID] Context Bloat & Direct Media Reading (CLAUDE CODE ONLY): Claude Code agents must never read raw `.png` or binary image files directly into the prompt context via file tools (this bloats session history and causes Cloudflare 502/504 Bad Gateway timeouts on the proxy). Gemini/Antigravity agents are fully allowed to read and inspect these files as their native context window and direct API connections handle large multimodal payloads without crashes.
+[FORBID] Reading Huge Log Files in Full (CLAUDE CODE ONLY): Claude Code must not read raw text log files (such as `.log` or `.txt` generated by compilers or test runners) in full if they exceed 10 KB or 100 lines. Instead, it must extract compiler errors and relevant warnings using selective terminal commands like `grep`, `findstr`, `Select-String`, or check only the last 30 lines (tail) to keep the active context clean. Gemini/Antigravity agents are exempt from this limit.
+
 
 [FORBID] Fake metrics, fake completion, optimism language, "should work", "problem solved" without evidence, "covered without literal implementation", and microsecond tables without profiler context.
 
@@ -415,3 +451,17 @@ During work, conduct a self-audit for:
 2. "Optimism": Using phrases like "everything should work now" or assuming success without proof.
 - Verdict: If you see garbage, unfinished, or unverified work, go back and force yourself to redo/rewrite it.
 - No Second-Guessing: If you "think it is better this way" contrary to common sense, agreements, or objective data, it is a critical failure.
+
+## Agent Tooling Abuse & Hallucination Prevention
+
+[RULE] PowerShell String Hell: NEVER use `powershell -Command` with complex multiline string replacement (e.g., `(Get-Content).Replace()`). Use Python scripts for complex string manipulations OR use `replace_file_content`/`multi_replace_file_content` via the Antigravity API natively.
+
+[RULE] Context Suicide: Reading entire logs (e.g. `Editor.log`) into the context window is BANNED. Read logs ONLY via `Get-Content -Tail 50` or using `grep_search` with context `-C 5`. Do not burn token quota on system garbage.
+
+[RULE] The Nuking Anti-Pattern (Surgical Patching Only): Do not overwrite entire large files (like 1500 lines) just to change a few lines. You must use `multi_replace_file_content` or `replace_file_content` to find specific blocks and replace only them.
+
+[RULE] Atomic File Delete Rule: Before ANY automated Unity batchmode test or render run, all `.png` diagnostic artifacts and `.log` files in the output directory must be physically deleted using `Remove-Item -Force`. This prevents hallucinatory visual checks against old screenshots.
+
+[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic.
+
+[RULE] Test-Driven Logic Verification (No Dead Variables): Avoid "Logical Hallucinations" where you write complex math (e.g., `radiationDamage`) but forget to apply it to the actual state. For every new mechanical calculation, you MUST generate an EditMode test (e.g., `Assert.AreEqual(expected, Calculate(...))`) to mathematically prove the variable is consumed and works correctly.

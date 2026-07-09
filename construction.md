@@ -133,6 +133,12 @@ Build previews, ghost meshes, holograms, comfort props, status screens, sparks, 
 
 Placement helpers may reject impossible placements only by reading the construction owner, physics proxy state, and logistics rules. They must not create alternate placement truth inside UI, VFX, or editor-preview logic.
 
+## 8B. Runtime And Hot-Path Boundary
+
+Construction runtime paths must use cached owner interfaces, fixed-capacity records, typed events/signals, and authoritative snapshots from construction, logistics, inventory, physics, persistence, and streaming owners. Build placement, logistics updates, storage/inventory cadence, network-state presentation, and damage/flood feedback must not allocate heap objects, format strings, search scenes, poll global services, or create alternate UI/VFX truth in repeated paths.
+
+Expensive preview, ghost, graph, and network recalculation work belongs to explicit state-change events, cold authoring checks, or bounded owner cadence. If construction runtime, placement, logistics, storage, or preview code changes, acceptance requires allocation/query-route evidence and the matching proof artifacts in this bible.
+
 ## 9. GlobalQualityWeight Scaling
 
 Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:

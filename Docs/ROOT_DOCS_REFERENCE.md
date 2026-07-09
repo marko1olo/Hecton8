@@ -10,6 +10,8 @@ Evidence class: STATIC_DOC / STATIC_FILESYSTEM
 The repository root may contain these active text anchors and standing route bibles:
 
 - `AGENTS.md`
+- `CLAUDE.md` as the Claude Code shim only, not divergent project law
+- `COMMON_SENSE.md` as common HECTON-8 engineering law routed by the authority spine
 - `PROJECT_BIBLES.md`
 - `VISION_LOCKS.md`
 - `TASTE.md`
@@ -32,6 +34,9 @@ Pre-cleanup verbose root copies from `Docs/DEPRECATED/Root_Bloat_X_012_2026-05-2
 ## Active Entry Points
 
 - `Docs/README.md` - active documentation map.
+- `AGENTS.md` - canonical root agent law.
+- `CLAUDE.md` - Claude Code shim that routes to project authority and does not override it.
+- `COMMON_SENSE.md` - common HECTON-8 engineering law for Unity/runtime pitfalls.
 - `Docs/PROJECT_BASELINE.md` - stable project baseline and documentation boundary.
 - `PROJECT_BIBLES.md` - standing root route-bible index and domain-bible selection map.
 - `VISION_LOCKS.md` - product vision locks and ambiguity-resolution authority.

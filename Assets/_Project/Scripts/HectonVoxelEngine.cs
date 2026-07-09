@@ -719,6 +719,18 @@ public struct MCRawVertex
     private uint _pad0;
 }
 
+[StructLayout(LayoutKind.Explicit, Size = 80)]
+public struct VoxelSurfaceVertex
+{
+    [FieldOffset(0)] public float3 Position;
+    [FieldOffset(12)] public float3 Normal;
+    [FieldOffset(24)] public Color32 Color;
+    [FieldOffset(28)] public float4 BakedOcclusionUv1;
+    [FieldOffset(44)] public float4 DirtyBlendUv2;
+    [FieldOffset(60)] public float4 RuntimePositionWS;
+    [FieldOffset(76)] private uint _pad0;
+}
+
 [StructLayout(LayoutKind.Explicit, Size = 24)]
 public struct VoxelModifiedCellEntry
 {
@@ -905,6 +917,16 @@ public struct VoxelDensityJob : IJobParallelFor
 
         float3 seedOffset = ResolveSeedOffset(WorldSeed);
         float caveSdf = EvaluateGyroidCellularCaveSdf(p, seedOffset);
+        if (HasAuthoredCaveSdfPayload())
+        {
+            EvaluateCaveSDF(wp, out float graphSmoothCaveSdf, out float graphFinalCaveSdf);
+            float authoredCaveSdf = math.select(graphSmoothCaveSdf, graphFinalCaveSdf, math.isfinite(graphFinalCaveSdf));
+            if (math.isfinite(authoredCaveSdf))
+            {
+                float graphBlend = math.max(voxelStep * 3.0f, 1.5f);
+                caveSdf = SmoothMinQuadratic(caveSdf, authoredCaveSdf, graphBlend);
+            }
+        }
 
         float depthBelowSurface = terrainH - wp.y;
         float protectionDepth = math.max(SurfaceProtectionMeters, voxelStep * 2.0f);
@@ -919,6 +941,36 @@ public struct VoxelDensityJob : IJobParallelFor
 
         smoothDensityValue = carvedDensity;
         finalDensityValue = carvedDensity;
+        ApplyAlienBiomeSdfModifier(wp, ref smoothDensityValue, ref finalDensityValue);
+        smoothDensityValue = ApplyModifiedCellDensity(wp, smoothDensityValue);
+        finalDensityValue = ApplyModifiedCellDensity(wp, finalDensityValue);
+        smoothDensityValue = ApplyEdgeSeal(wp, smoothDensityValue);
+        finalDensityValue = ApplyEdgeSeal(wp, finalDensityValue);
+    }
+
+    bool HasAuthoredCaveSdfPayload()
+    {
+        return (caveNodes.IsCreated && caveNodes.Length > 0) ||
+            (caveTunnels.IsCreated && caveTunnels.Length > 0) ||
+            (caveEntrances.IsCreated && caveEntrances.Length > 0) ||
+            (caveStructures.IsCreated && caveStructures.Length > 0);
+    }
+
+    float ApplyModifiedCellDensity(float3 wp, float densityValue)
+    {
+        if (!TryResolveModifiedCell(ResolveAbsoluteCell(wp), out VoxelModifiedCell cell))
+            return densityValue;
+
+        float deltaDensity = (float)cell.Density;
+        if (!math.isfinite(deltaDensity))
+            return densityValue;
+
+        if ((cell.Flags & DeltaModeReplace) != 0)
+            return deltaDensity;
+
+        return (cell.Flags & DeltaModeAdditive) != 0
+            ? math.max(densityValue, deltaDensity)
+            : math.min(densityValue, deltaDensity);
     }
 
     void ApplyAlienBiomeSdfModifier(float3 wp, ref float smoothDensityValue, ref float finalDensityValue)
@@ -1305,77 +1357,96 @@ public struct VoxelDensityJob : IJobParallelFor
         smoothCaveDist = 99999f;
         finalCaveDist = 99999f;
 
-        if (TryGetPartitionRange(nodeBucketOffsets, nodeBucketIndices, wp, out int nodeStart, out int nodeEnd))
+        if (caveNodes.IsCreated && caveNodes.Length > 0)
         {
-            for (int i = nodeStart; i < nodeEnd; i++)
+            if (TryGetPartitionRange(nodeBucketOffsets, nodeBucketIndices, wp, out int nodeStart, out int nodeEnd))
             {
-                int nodeIndex = nodeBucketIndices[i];
-                if ((uint)nodeIndex >= (uint)caveNodes.Length)
-                    continue;
+                for (int i = nodeStart; i < nodeEnd; i++)
+                {
+                    int nodeIndex = nodeBucketIndices[i];
+                    if ((uint)nodeIndex >= (uint)caveNodes.Length)
+                        continue;
 
-                CaveNode nodeSource = caveNodes[nodeIndex];
-                if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
-                    continue;
+                    CaveNode nodeSource = caveNodes[nodeIndex];
+                    if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
+                        continue;
 
-                EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
+                    EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
+                    smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
+                    finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
+                }
             }
-        }
-        else
-        {
-            for (int i = 0; i < caveNodes.Length; i++)
+            else
             {
-                CaveNode nodeSource = caveNodes[i];
-                if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
-                    continue;
+                for (int i = 0; i < caveNodes.Length; i++)
+                {
+                    CaveNode nodeSource = caveNodes[i];
+                    if (!TryResolveSafeNode(in nodeSource, out CaveNode node))
+                        continue;
 
-                EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
-            }
-        }
-
-        if (TryGetPartitionRange(tunnelBucketOffsets, tunnelBucketIndices, wp, out int tunnelStart, out int tunnelEnd))
-        {
-            for (int i = tunnelStart; i < tunnelEnd; i++)
-            {
-                int tunnelIndex = tunnelBucketIndices[i];
-                if ((uint)tunnelIndex >= (uint)caveTunnels.Length)
-                    continue;
-
-                CaveTunnel tunnelSource = caveTunnels[tunnelIndex];
-                if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
-                    continue;
-
-                float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
-            }
-        }
-        else
-        {
-            for (int i = 0; i < caveTunnels.Length; i++)
-            {
-                CaveTunnel tunnelSource = caveTunnels[i];
-                if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
-                    continue;
-
-                float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
-                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
-                finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
+                    EvaluateRoom(warpedPos, absoluteWp, node, out float smoothNodeDist, out float finalNodeDist);
+                    smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothNodeDist, node.blendRadius);
+                    finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalNodeDist, node.blendRadius);
+                }
             }
         }
 
-        for (int i = 0; i < caveEntrances.Length; i++)
+        if (caveTunnels.IsCreated && caveTunnels.Length > 0)
         {
-            float entranceDist = EvaluateEntrance(warpedPos, caveEntrances[i]);
-            smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, entranceDist, caveParams.entranceBlendK);
-            finalCaveDist = SmoothMinQuadratic(finalCaveDist, entranceDist, caveParams.entranceBlendK);
+            if (TryGetPartitionRange(tunnelBucketOffsets, tunnelBucketIndices, wp, out int tunnelStart, out int tunnelEnd))
+            {
+                for (int i = tunnelStart; i < tunnelEnd; i++)
+                {
+                    int tunnelIndex = tunnelBucketIndices[i];
+                    if ((uint)tunnelIndex >= (uint)caveTunnels.Length)
+                        continue;
+
+                    CaveTunnel tunnelSource = caveTunnels[tunnelIndex];
+                    if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
+                        continue;
+
+                    float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
+                    smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
+                    finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < caveTunnels.Length; i++)
+                {
+                    CaveTunnel tunnelSource = caveTunnels[i];
+                    if (!TryResolveSafeTunnel(in tunnelSource, out CaveTunnel tunnel))
+                        continue;
+
+                    float tunnelDist = EvaluateTunnel(warpedPos, absoluteWp, wp, tunnel);
+                    smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, tunnelDist, tunnel.blendRadius);
+                    finalCaveDist = SmoothMinQuadratic(finalCaveDist, tunnelDist, tunnel.blendRadius);
+                }
+            }
+        }
+
+        if (caveEntrances.IsCreated && caveEntrances.Length > 0)
+        {
+            float entranceBlend = math.max(caveParams.entranceBlendK, voxelStep);
+            for (int i = 0; i < caveEntrances.Length; i++)
+            {
+                float entranceDist = EvaluateEntrance(warpedPos, caveEntrances[i]);
+                smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, entranceDist, entranceBlend);
+                finalCaveDist = SmoothMinQuadratic(finalCaveDist, entranceDist, entranceBlend);
+            }
+        }
+
+        if (caveStructures.IsCreated && caveStructures.Length > 0)
+        {
+            EvaluateStructuresSDF(wp, out float smoothStructDist, out float finalStructDist);
+            float structureBlend = math.max(caveParams.structureBlendK, voxelStep);
+            smoothCaveDist = SmoothMinQuadratic(smoothCaveDist, smoothStructDist, structureBlend);
+            finalCaveDist = SmoothMinQuadratic(finalCaveDist, finalStructDist, structureBlend);
         }
 
         float baseFinalCaveDist = finalCaveDist;
-        if (math.abs(baseFinalCaveDist) < caveParams.noiseEvalDistance)
+        float noiseEvalDistance = math.max(caveParams.noiseEvalDistance, voxelStep);
+        if (caveEntrances.IsCreated && caveEntrances.Length > 0 && math.abs(baseFinalCaveDist) < noiseEvalDistance)
         {
             float mouthPerturbationMask = EvaluateCaveMouthSdfPerturbationMask(wp);
             if (mouthPerturbationMask > 0.0001f)
@@ -2220,29 +2291,26 @@ public struct VoxelDensityJob : IJobParallelFor
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    //  FLOOR FLATTENING — Makes room bottoms more walkable
+    //  ORGANIC FLOOR DEPOSITION — Passable rubble and sediment, not flat highways
     // ════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Flatten the bottom portion of a room.
-    /// Only affects the lower 30% of the room height.
-    /// Outside the room (dist > 0), has no effect.</summary>
+    /// <summary>Biases only the bottom room band toward an uneven depositional floor.</summary>
     static float ApplyFloorFlattening(float sdfDist, float3 p, float3 roomCenter,
                                        float roomRadiusY, float flatness)
     {
         float floorY = roomCenter.y - roomRadiusY;
         float heightAboveFloor = p.y - floorY;
-
-        // Only affect low region inside the room
         float floorZone = roomRadiusY * 0.3f;
-        if (heightAboveFloor > 0f && heightAboveFloor < floorZone && sdfDist < 0f)
-        {
-            // Blend between curved SDF and a flat plane
-            float blend = math.smoothstep(0f, floorZone, heightAboveFloor);
-            float flatPlane = heightAboveFloor - floorZone * 0.3f;
-            return math.lerp(flatPlane, sdfDist, math.lerp(1f - flatness, 1f, blend));
-        }
+        if (heightAboveFloor <= 0f || heightAboveFloor >= floorZone || sdfDist >= 0f)
+            return sdfDist;
 
-        return sdfDist;
+        float floorMask = 1f - math.smoothstep(0f, floorZone, heightAboveFloor);
+        float dunePhase = p.x * 0.23f + p.z * 0.17f + roomCenter.x * 0.031f - roomCenter.z * 0.027f;
+        float dune = (math.sin(dunePhase) * 0.5f + math.sin(dunePhase * 1.71f + 1.37f) * 0.25f + 0.75f) * roomRadiusY * 0.035f;
+        float rubble = RidgedMultifractal(p * 0.31f + roomCenter * 0.071f, 0xD3A17E5u, 2) * roomRadiusY * 0.025f;
+        float organicPlane = heightAboveFloor - floorZone * 0.18f + (dune + rubble) * floorMask;
+        float passableBlend = math.saturate(flatness) * floorMask;
+        return math.lerp(sdfDist, organicPlane, passableBlend);
     }
 
     private const float Tau = 6.2831853f;
@@ -4106,6 +4174,116 @@ public struct VoxelColorJob : IJobParallelFor
 //  ensuring save system consistency regardless of parallel execution order.
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+public struct VoxelPackSurfaceVertexJob : IJobParallelFor
+{
+    [ReadOnly, NoAlias] public NativeArray<float3> positions;
+    [ReadOnly, NoAlias] public NativeArray<float3> normals;
+    [ReadOnly, NoAlias] public NativeArray<float> ambientOcclusionValues;
+    [ReadOnly, NoAlias] public NativeArray<float> curvatureValues;
+    [ReadOnly, NoAlias] public NativeArray<float> skirtAlphaValues;
+    [ReadOnly, NoAlias] public NativeArray<float> dirtyBlendValues;
+    [WriteOnly, NoAlias] public NativeArray<VoxelSurfaceVertex> surfaceVertices;
+    public int vertexCount;
+    public float3 boundsMin;
+    public float3 boundsMax;
+    public float3 runtimePositionOffset;
+
+    public void Execute(int index)
+    {
+        if (!surfaceVertices.IsCreated || index < 0 || index >= vertexCount || index >= surfaceVertices.Length)
+            return;
+
+        float3 localPosition = positions.IsCreated && index < positions.Length && IsFinite(positions[index])
+            ? positions[index]
+            : float3.zero;
+        float3 normal = normals.IsCreated && index < normals.Length
+            ? NormalizeFiniteOrUp(normals[index])
+            : new float3(0f, 1f, 0f);
+        float3 runtimePosition = localPosition + runtimePositionOffset;
+        if (!IsFinite(runtimePosition))
+            runtimePosition = localPosition;
+
+        float ao = ambientOcclusionValues.IsCreated && index < ambientOcclusionValues.Length
+            ? SaturateFinite(ambientOcclusionValues[index], 1f)
+            : 1f;
+        float dirtyBlend = dirtyBlendValues.IsCreated && index < dirtyBlendValues.Length
+            ? SaturateFinite(dirtyBlendValues[index], 0f)
+            : 0f;
+        float skirtAlpha = skirtAlphaValues.IsCreated && index < skirtAlphaValues.Length
+            ? SaturateFinite(skirtAlphaValues[index], 0f)
+            : 0f;
+        float curvature = curvatureValues.IsCreated && index < curvatureValues.Length
+            ? SaturateFinite(curvatureValues[index], 0.5f)
+            : 0.5f;
+        float chunkBorderStitch = ResolveChunkBorderStitchWeight(localPosition, boundsMin, boundsMax);
+        byte aoByte = (byte)math.clamp((int)math.round(ao * 255f), 0, 255);
+
+        surfaceVertices[index] = new VoxelSurfaceVertex
+        {
+            Position = localPosition,
+            Normal = normal,
+            Color = normal.y > 0.6f ? new Color32(255, 0, 0, aoByte) : new Color32(0, 255, 0, aoByte),
+            BakedOcclusionUv1 = new float4(0f, 0f, 0f, ao),
+            DirtyBlendUv2 = new float4(dirtyBlend, skirtAlpha, curvature, chunkBorderStitch),
+            RuntimePositionWS = new float4(runtimePosition.x, runtimePosition.y, runtimePosition.z, runtimePosition.y)
+        };
+    }
+
+    private static float ResolveChunkBorderStitchWeight(float3 localPosition, float3 min, float3 max)
+    {
+        float3 size = math.max(max - min, new float3(0.0001f));
+        float3 edgeDistance = math.max(new float3(0f), math.min(localPosition - min, max - localPosition));
+        float nearestEdgeDistance = math.cmin(edgeDistance);
+        float stitchWidth = math.max(math.cmin(size) * 0.0625f, 0.25f);
+        return math.saturate(1f - nearestEdgeDistance / stitchWidth);
+    }
+
+    private static float3 NormalizeFiniteOrUp(float3 value)
+    {
+        if (!IsFinite(value))
+            return new float3(0f, 1f, 0f);
+
+        float lengthSq = math.lengthsq(value);
+        return math.isfinite(lengthSq) && lengthSq > 0.000001f
+            ? value * math.rsqrt(lengthSq)
+            : new float3(0f, 1f, 0f);
+    }
+
+    private static float SaturateFinite(float value, float fallback)
+    {
+        return math.isfinite(value) ? math.saturate(value) : fallback;
+    }
+
+    private static bool IsFinite(float3 value)
+    {
+        return math.all(math.isfinite(value));
+    }
+}
+
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+public struct VoxelSanitizeTriangleIndexJob : IJobParallelFor
+{
+    public int vertexCount;
+    public int indexCount;
+    [NoAlias] public NativeArray<int> triangleIndices;
+    [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> densityFaultFlags;
+
+    public void Execute(int index)
+    {
+        if (!triangleIndices.IsCreated || index < 0 || index >= indexCount || index >= triangleIndices.Length)
+            return;
+
+        int value = triangleIndices[index];
+        if ((uint)value < (uint)vertexCount)
+            return;
+
+        triangleIndices[index] = 0;
+        if (densityFaultFlags.IsCreated && (uint)VoxelDensityPipelineFaultSlots.WeldOutput < (uint)densityFaultFlags.Length)
+            densityFaultFlags[VoxelDensityPipelineFaultSlots.WeldOutput] = 1;
+    }
+}
+
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDirtyBlendJob : IJobParallelFor
 {
     [ReadOnly, NoAlias] public NativeArray<float3> positions;
@@ -4613,6 +4791,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     const int ScratchLaneMeshEdgeVertexY = 16;
     const int ScratchLaneMeshEdgeVertexZ = 17;
     const int ScratchLaneMeshWeldedCounter = 18;
+    const int ScratchLaneMeshSurfaceVertices = 55;
     const int ScratchLaneMeshNormals = 19;
     const int ScratchLaneMeshCurvatureValues = 20;
     const int ScratchLaneMeshAmbientOcclusionValues = 21;
@@ -5144,6 +5323,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public VaultGenerationHandle<int> MeshEdgeVertexYHandle; public int MeshEdgeVertexYCapacity;
         public VaultGenerationHandle<int> MeshEdgeVertexZHandle; public int MeshEdgeVertexZCapacity;
         public VaultGenerationHandle<int> MeshWeldedCounterHandle; public int MeshWeldedCounterCapacity;
+        public VaultGenerationHandle<VoxelSurfaceVertex> MeshSurfaceVerticesHandle; public int MeshSurfaceVerticesCapacity;
         public VaultGenerationHandle<float3> MeshNormalsHandle; public int MeshNormalsCapacity;
         public VaultGenerationHandle<float> MeshCurvatureValuesHandle; public int MeshCurvatureValuesCapacity;
         public VaultGenerationHandle<float> MeshAmbientOcclusionValuesHandle; public int MeshAmbientOcclusionValuesCapacity;
@@ -5205,6 +5385,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshEdgeVertexYHandle, ref MeshEdgeVertexYCapacity);
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshEdgeVertexZHandle, ref MeshEdgeVertexZCapacity);
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshWeldedCounterHandle, ref MeshWeldedCounterCapacity);
+            HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshSurfaceVerticesHandle, ref MeshSurfaceVerticesCapacity);
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshNormalsHandle, ref MeshNormalsCapacity);
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshCurvatureValuesHandle, ref MeshCurvatureValuesCapacity);
             HectonVoxelEngine.ReleaseStreamingScratchHandle(releaseVault, ref MeshAmbientOcclusionValuesHandle, ref MeshAmbientOcclusionValuesCapacity);
@@ -5301,6 +5482,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public NativeArray<int> MeshEdgeVertexY => Slot != null ? Resolve(in Slot.MeshEdgeVertexYHandle, Slot.MeshEdgeVertexYCapacity) : default;
         public NativeArray<int> MeshEdgeVertexZ => Slot != null ? Resolve(in Slot.MeshEdgeVertexZHandle, Slot.MeshEdgeVertexZCapacity) : default;
         public NativeArray<int> MeshWeldedCounter => Slot != null ? Resolve(in Slot.MeshWeldedCounterHandle, Slot.MeshWeldedCounterCapacity) : default;
+        public NativeArray<VoxelSurfaceVertex> MeshSurfaceVertices => Slot != null ? Resolve(in Slot.MeshSurfaceVerticesHandle, Slot.MeshSurfaceVerticesCapacity) : default;
         public NativeArray<float3> MeshNormals => Slot != null ? Resolve(in Slot.MeshNormalsHandle, Slot.MeshNormalsCapacity) : default;
         public NativeArray<float> MeshCurvatureValues => Slot != null ? Resolve(in Slot.MeshCurvatureValuesHandle, Slot.MeshCurvatureValuesCapacity) : default;
         public NativeArray<float> MeshAmbientOcclusionValues => Slot != null ? Resolve(in Slot.MeshAmbientOcclusionValuesHandle, Slot.MeshAmbientOcclusionValuesCapacity) : default;
@@ -5443,6 +5625,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public double3 AbsoluteUniverseOffsetAtStartDouble;
         public uint ShiftEpochAtStart;
         public float TerrainHeightCenter;
+        public bool UseConstantTerrainHeight;
+        public float ConstantTerrainHeight;
         public int LODLevel;
         public int GridDimension;
         public float VoxelStep;
@@ -5492,6 +5676,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public NativeArray<MCRawVertex> RawVertices => ScratchLease.MeshRawVertices;
         public NativeArray<float3> WeldedPositions => ScratchLease.MeshWeldedPositions;
         public NativeArray<int> TriangleIndices => ScratchLease.MeshTriangleIndices;
+        public NativeArray<VoxelSurfaceVertex> SurfaceVertices => ScratchLease.MeshSurfaceVertices;
         public NativeArray<int> EdgeVertexX => ScratchLease.MeshEdgeVertexX;
         public NativeArray<int> EdgeVertexY => ScratchLease.MeshEdgeVertexY;
         public NativeArray<int> EdgeVertexZ => ScratchLease.MeshEdgeVertexZ;
@@ -10137,8 +10322,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!TryPrepareModifiedCellsForPipeline(data))
             return false;
 
-        float fallbackHeight = data.TerrainHeightCenter;
-        HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
+        float fallbackHeight = data.UseConstantTerrainHeight ? data.ConstantTerrainHeight : data.TerrainHeightCenter;
+        HectonMapMagicVegetationBridge vegetationBridge = data.UseConstantTerrainHeight ? null : _vegetationBridge;
         double3 absoluteGridOriginDouble = new double3(data.VolumeOrigin.x, 0d, data.VolumeOrigin.z) + data.AbsoluteUniverseOffsetAtStartDouble;
         chunkGenerationFrameStart = await FillTerrainHeightGridForPipelineAsync(
             data,
@@ -10959,7 +11144,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     int hi = ix + iz * data.PtsX;
 
                     double3 absoluteSampleAup = new double3(wx, 0d, wz) + data.AbsoluteUniverseOffsetAtStartDouble;
-                    if (mapMagicBridge != null &&
+                    if (vegetationBridge != null &&
+                        mapMagicBridge != null &&
                         hasCurrentOriginAup &&
                         TryResolveRuntimeVector3FromAup(absoluteSampleAup, currentOriginAup, out Vector3 runtimeSamplePosition) &&
                         mapMagicBridge.TryGetHeight(runtimeSamplePosition.x, runtimeSamplePosition.z, out float sampledHeight))
@@ -11467,6 +11653,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                TryAppendStreamingScratchBufferLockId(slot.MeshEdgeVertexYHandle.BufferID, ref bufferIds) &&
                TryAppendStreamingScratchBufferLockId(slot.MeshEdgeVertexZHandle.BufferID, ref bufferIds) &&
                TryAppendStreamingScratchBufferLockId(slot.MeshWeldedCounterHandle.BufferID, ref bufferIds) &&
+               TryAppendStreamingScratchBufferLockId(slot.MeshSurfaceVerticesHandle.BufferID, ref bufferIds) &&
                TryAppendStreamingScratchBufferLockId(slot.MeshNormalsHandle.BufferID, ref bufferIds) &&
                TryAppendStreamingScratchBufferLockId(slot.MeshCurvatureValuesHandle.BufferID, ref bufferIds) &&
                TryAppendStreamingScratchBufferLockId(slot.MeshAmbientOcclusionValuesHandle.BufferID, ref bufferIds) &&
@@ -11648,6 +11835,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshEdgeVertexY, edgeVertexCountY, ref slot.MeshEdgeVertexYHandle, ref slot.MeshEdgeVertexYCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshEdgeVertexZ, edgeVertexCountZ, ref slot.MeshEdgeVertexZHandle, ref slot.MeshEdgeVertexZCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshWeldedCounter, 1, ref slot.MeshWeldedCounterHandle, ref slot.MeshWeldedCounterCapacity, true) &&
+               TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshSurfaceVertices, meshRawScratchCapacity, ref slot.MeshSurfaceVerticesHandle, ref slot.MeshSurfaceVerticesCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshNormals, meshRawScratchCapacity, ref slot.MeshNormalsHandle, ref slot.MeshNormalsCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshCurvatureValues, meshRawScratchCapacity, ref slot.MeshCurvatureValuesHandle, ref slot.MeshCurvatureValuesCapacity) &&
                TryEnsureStreamingScratchArray(slot, slotIndex, ScratchLaneMeshAmbientOcclusionValues, meshRawScratchCapacity, ref slot.MeshAmbientOcclusionValuesHandle, ref slot.MeshAmbientOcclusionValuesCapacity) &&
@@ -11845,6 +12033,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 return false;
             }
 
+            NativeArray<VoxelSurfaceVertex> surfaceVertices = lease.MeshSurfaceVertices;
             NativeArray<float3> normals = lease.MeshNormals;
             NativeArray<float> curvatureValues = lease.MeshCurvatureValues;
             NativeArray<float> ambientOcclusionValues = lease.MeshAmbientOcclusionValues;
@@ -11852,7 +12041,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             NativeArray<float> skirtAlphaValues = lease.MeshSkirtAlphaValues;
             NativeArray<float> dirtyBlendValues = lease.MeshDirtyBlendValues;
             NativeArray<Color32> colors = lease.MeshColors;
-            if (!normals.IsCreated || normals.Length < safeWeldedCount ||
+            if (!surfaceVertices.IsCreated || surfaceVertices.Length < safeWeldedCount ||
+                !normals.IsCreated || normals.Length < safeWeldedCount ||
                 !curvatureValues.IsCreated || curvatureValues.Length < safeWeldedCount ||
                 !ambientOcclusionValues.IsCreated || ambientOcclusionValues.Length < safeWeldedCount ||
                 !biomeValues.IsCreated || biomeValues.Length < safeWeldedCount ||
@@ -12898,18 +13088,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
-    struct VoxelSurfaceVertex
-    {
-        [FieldOffset(0)] public Vector3 Position;
-        [FieldOffset(12)] public Vector3 Normal;
-        [FieldOffset(24)] public Color32 Color;
-        [FieldOffset(28)] public Vector4 BakedOcclusionUv1;
-        [FieldOffset(44)] public Vector4 DirtyBlendUv2;
-        [FieldOffset(60)] public Vector4 RuntimePositionWS;
-        [FieldOffset(76)] private uint _pad0;
-    }
-
     [StructLayout(LayoutKind.Explicit, Size = 16)]
     struct VoxelColliderVertex
     {
@@ -12995,6 +13173,17 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return new Bounds(center, size);
     }
 
+    static Bounds CalculateVolumeLocalBounds(float3 volumeOrigin, float volumeHalfExtent)
+    {
+        float safeHalfExtent = math.isfinite(volumeHalfExtent) && volumeHalfExtent > 0f ? volumeHalfExtent : 0.5f;
+        float3 min = volumeOrigin;
+        float3 size = new float3(safeHalfExtent * 2f);
+        if (!IsFiniteFloat3(min) || !IsFiniteFloat3(size))
+            return new Bounds(Vector3.zero, Vector3.one * math.max(0.01f, safeHalfExtent * 2f));
+
+        return new Bounds(min + size * 0.5f, math.max(size, new float3(0.01f)));
+    }
+
     static float ResolveChunkBorderStitchWeight(float3 localPosition, Bounds bounds)
     {
         float3 min = (float3)bounds.min;
@@ -13066,21 +13255,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
     }
 
-    static bool UploadSurfaceMesh(
+    static unsafe bool UploadSurfaceMesh(
         Mesh mesh,
-        NativeArray<float3> positions,
-        NativeArray<float3> normals,
-        NativeArray<Color32> colors,
-        NativeArray<float> ambientOcclusionValues,
-        NativeArray<float> curvatureValues,
-        NativeArray<float> skirtAlphaValues,
-        NativeArray<float> dirtyBlendValues,
+        NativeArray<VoxelSurfaceVertex> surfaceVertices,
         NativeArray<int> triangleIndices,
         int vertexCount,
         int triangleIndexCount,
-        float3 runtimePositionOffset)
+        Bounds bounds)
     {
-        if (!CanUploadMeshData(mesh, positions, triangleIndices, vertexCount, triangleIndexCount))
+        if (!CanUploadSurfaceMeshData(mesh, surfaceVertices, triangleIndices, vertexCount, triangleIndexCount))
         {
             ReportVoxelInvalidMeshUpload();
             return false;
@@ -13091,9 +13274,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         try
         {
             Mesh.MeshData meshData = meshDataArray[0];
-            bool invalidMeshData = false;
-            Bounds bounds = CalculatePositionBounds(positions, vertexCount, out invalidMeshData);
-            float3 fallbackPosition = (float3)bounds.center;
             meshData.SetVertexBufferParams(
                 vertexCount,
                 new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
@@ -13107,63 +13287,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
 
             NativeArray<VoxelSurfaceVertex> vertexData = meshData.GetVertexData<VoxelSurfaceVertex>();
-            for (int i = 0; i < vertexCount; i++)
-            {
-                float3 localPosition = positions[i];
-                if (!IsFiniteFloat3(localPosition))
-                {
-                    invalidMeshData = true;
-                    localPosition = fallbackPosition;
-                }
-
-                float3 normal = normals.IsCreated && i < normals.Length
-                    ? NormalizeFiniteOrUp(normals[i], ref invalidMeshData)
-                    : new float3(0f, 1f, 0f);
-                float3 runtimePosition = localPosition + runtimePositionOffset;
-                if (!IsFiniteFloat3(runtimePosition))
-                {
-                    invalidMeshData = true;
-                    runtimePosition = localPosition;
-                }
-
-                float chunkBorderStitch = ResolveChunkBorderStitchWeight(localPosition, bounds);
-                Color32 vertColor = colors.IsCreated && i < colors.Length
-                    ? colors[i]
-                    : (normal.y > 0.6f ? new Color32(255, 0, 0, 255) : new Color32(0, 255, 0, 255));
-                vertexData[i] = new VoxelSurfaceVertex
-                {
-                    Position = localPosition,
-                    Normal = normal,
-                    Color = vertColor,
-                    BakedOcclusionUv1 = new Vector4(
-                        0f,
-                        0f,
-                        0f,
-                        ambientOcclusionValues.IsCreated && i < ambientOcclusionValues.Length
-                            ? SanitizeFinite01(ambientOcclusionValues[i], 1f, ref invalidMeshData)
-                            : 1f),
-                    // UV2.w gates shader-only seam stitching; UV3.w carries the shared AUP border height.
-                    DirtyBlendUv2 = new Vector4(
-                        dirtyBlendValues.IsCreated && i < dirtyBlendValues.Length ? SanitizeFinite01(dirtyBlendValues[i], 0f, ref invalidMeshData) : 0f,
-                        skirtAlphaValues.IsCreated && i < skirtAlphaValues.Length ? SanitizeFinite01(skirtAlphaValues[i], 0f, ref invalidMeshData) : 0f,
-                        curvatureValues.IsCreated && i < curvatureValues.Length ? SanitizeFinite01(curvatureValues[i], 0.5f, ref invalidMeshData) : 0.5f,
-                        chunkBorderStitch),
-                    RuntimePositionWS = new Vector4(runtimePosition.x, runtimePosition.y, runtimePosition.z, runtimePosition.y)
-                };
-            }
+            NativeArray<VoxelSurfaceVertex>.Copy(surfaceVertices, 0, vertexData, 0, vertexCount);
 
             NativeArray<uint> indexData = meshData.GetIndexData<uint>();
-            for (int i = 0; i < triangleIndexCount; i++)
-            {
-                int triangleIndex = triangleIndices[i];
-                if ((uint)triangleIndex >= (uint)vertexCount)
-                {
-                    invalidMeshData = true;
-                    triangleIndex = 0;
-                }
-
-                indexData[i] = (uint)triangleIndex;
-            }
+            UnsafeUtility.MemCpy(
+                indexData.GetUnsafePtr(),
+                triangleIndices.GetUnsafeReadOnlyPtr(),
+                (long)triangleIndexCount * UnsafeUtility.SizeOf<int>());
 
             meshData.subMeshCount = 1;
             meshData.SetSubMesh(0, new SubMeshDescriptor(0, triangleIndexCount, MeshTopology.Triangles)
@@ -13175,8 +13305,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);
             applied = true;
             mesh.bounds = bounds;
-            if (invalidMeshData)
-                ReportVoxelInvalidMeshUpload();
             return true;
         }
         finally
@@ -13277,6 +13405,18 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                triangleIndexCount <= triangleIndices.Length;
     }
 
+    private static bool CanUploadSurfaceMeshData(Mesh mesh, NativeArray<VoxelSurfaceVertex> surfaceVertices, NativeArray<int> triangleIndices, int vertexCount, int triangleIndexCount)
+    {
+        return mesh != null &&
+               surfaceVertices.IsCreated &&
+               triangleIndices.IsCreated &&
+               vertexCount >= 3 &&
+               triangleIndexCount >= 3 &&
+               (triangleIndexCount % 3) == 0 &&
+               vertexCount <= surfaceVertices.Length &&
+               triangleIndexCount <= triangleIndices.Length;
+    }
+
     GameObject SpawnVolume()
     {
         if (TryResolveCachedObjectPool(out IObjectPoolService pool) && voxelVolumePrefab != null)
@@ -13306,17 +13446,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     }
 
     Mesh BuildWeldedMeshNative(GameObject go,
-                               NativeArray<float3> positions,
-                               NativeArray<float3> normals,
-                               NativeArray<Color32> colors,
-                               NativeArray<float> ambientOcclusionValues,
-                               NativeArray<float> curvatureValues,
-                               NativeArray<float> skirtAlphaValues,
-                               NativeArray<float> dirtyBlendValues,
+                               NativeArray<VoxelSurfaceVertex> surfaceVertices,
                                NativeArray<int> triangleIndices,
                                int triIndexCount,
                                int vertCount,
-                                float3 runtimePositionOffset,
+                                Bounds bounds,
                                 Material mat,
                                 Mesh reservedSurfaceMesh = null,
                                 HectonVoxelVolume volume = null)
@@ -13354,7 +13488,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             mesh.Clear();
         }
 
-        if (!UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, curvatureValues, skirtAlphaValues, dirtyBlendValues, triangleIndices, vertCount, triIndexCount, runtimePositionOffset))
+        if (!UploadSurfaceMesh(mesh, surfaceVertices, triangleIndices, vertCount, triIndexCount, bounds))
             return null;
 
         if (attachAcquiredMesh)
@@ -13406,7 +13540,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     return false;
 
                 useProjectedLocalPositions = projectionScratchState > 0;
-                float3 localVolumeOrigin = projectionState.ProjectRuntimePositionToLocal((Vector3)data.VolumeOrigin, data.AbsoluteUniverseOffsetAtStartDouble);
+                float3 localVolumeOrigin = useProjectedLocalPositions
+                    ? projectionState.ProjectRuntimePositionToLocal((Vector3)data.VolumeOrigin, data.AbsoluteUniverseOffsetAtStartDouble)
+                    : data.VolumeOrigin;
                 HectonVoxelVolume volume = data.SourceVolume;
 
                 if (NeedsVoxelSurfaceMeshAcquire(go, volume) &&
@@ -13428,20 +13564,42 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     NativeArray<float3> meshLocalPositions = useProjectedLocalPositions
                         ? data.ScratchLease.ProjectedLocalPositions
                         : data.WeldedPositions;
+                    Bounds meshBounds = CalculateVolumeLocalBounds(localVolumeOrigin, data.VolumeHalfExtent);
+                    float3 meshBoundsMin = (float3)meshBounds.min;
+                    float3 meshBoundsMax = (float3)meshBounds.max;
+                    JobHandle packSurfaceHandle = new VoxelPackSurfaceVertexJob
+                    {
+                        positions = meshLocalPositions,
+                        normals = data.Normals,
+                        ambientOcclusionValues = data.AmbientOcclusionValues,
+                        curvatureValues = data.CurvatureValues,
+                        skirtAlphaValues = data.SkirtAlphaValues,
+                        dirtyBlendValues = data.DirtyBlendValues,
+                        surfaceVertices = data.SurfaceVertices,
+                        vertexCount = data.WeldedCount,
+                        boundsMin = meshBoundsMin,
+                        boundsMax = meshBoundsMax,
+                        runtimePositionOffset = projectionState.RuntimePositionOffset
+                    }.Schedule(data.WeldedCount, JOB_BATCH);
+                    JobHandle sanitizeIndicesHandle = new VoxelSanitizeTriangleIndexJob
+                    {
+                        vertexCount = data.WeldedCount,
+                        indexCount = data.RawCount,
+                        triangleIndices = data.TriangleIndices,
+                        densityFaultFlags = data.ScratchLease.DensityFaultFlags
+                    }.Schedule(data.RawCount, JOB_BATCH);
+                    JobHandle uploadPrepHandle = JobHandle.CombineDependencies(packSurfaceHandle, sanitizeIndicesHandle);
+                    await AwaitForJobCompletionAsync(uploadPrepHandle, ct, "surface vertex pack");
+                    if (ct.IsCancellationRequested)
+                        return false;
 
                     mesh = BuildWeldedMeshNative(
                         go,
-                        meshLocalPositions,
-                        data.Normals,
-                        data.Colors,
-                        data.AmbientOcclusionValues,
-                        data.CurvatureValues,
-                        data.SkirtAlphaValues,
-                        data.DirtyBlendValues,
+                        data.SurfaceVertices,
                         data.TriangleIndices,
                         data.RawCount,
                         data.WeldedCount,
-                        projectionState.RuntimePositionOffset,
+                        meshBounds,
                         voxelMaterial,
                         reservedSurfaceMesh,
                         volume);
@@ -14401,6 +14559,89 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             (int)math.clamp(chunkZ, (double)int.MinValue, (double)int.MaxValue));
         return true;
     }
+
+#if UNITY_EDITOR
+    internal static bool TryRunCleanRoomDensityPreview(
+        int gridDimension,
+        float voxelStep,
+        Vector3 worldCenter,
+        float constantTerrainHeight,
+        uint seed,
+        NativeArray<float> density,
+        NativeArray<float> smoothDensity,
+        NativeArray<int> faultFlags)
+    {
+        int gridDim = math.clamp(gridDimension, 16, 128);
+        int pts = gridDim + 1;
+        int total = pts * pts * pts;
+        if (!density.IsCreated || !smoothDensity.IsCreated || density.Length < total || smoothDensity.Length < total)
+            return false;
+
+        NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+        NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+        try
+        {
+            for (int i = 0; i < terrainHeights.Length; i++)
+                terrainHeights[i] = constantTerrainHeight;
+
+            float3 actualSize = new float3(gridDim, gridDim, gridDim) * voxelStep;
+            float3 origin = (float3)worldCenter - actualSize * 0.5f;
+            var handle = new VoxelDensityJob
+            {
+                ptsX = pts,
+                ptsY = pts,
+                ptsZ = pts,
+                volumeOrigin = origin,
+                voxelStep = voxelStep,
+                terrainHeights = terrainHeights,
+                gridBiome = gridBiome,
+                caveNodes = default,
+                caveTunnels = default,
+                caveEntrances = default,
+                caveStructures = default,
+                craterStamps = default,
+                modifiedCells = default,
+                modifiedCellBucketHeads = default,
+                modifiedCellNext = default,
+                nodeBucketOffsets = default,
+                nodeBucketIndices = default,
+                tunnelBucketOffsets = default,
+                tunnelBucketIndices = default,
+                density = density,
+                smoothDensity = smoothDensity,
+                densityFaultFlags = faultFlags,
+                caveParams = default,
+                absoluteNoiseOffset = float3.zero,
+                absoluteCellOffset = double3.zero,
+                partitionDimX = 1,
+                partitionDimY = 1,
+                partitionDimZ = 1,
+                partitionOrigin = origin,
+                partitionInvCellSize = new float3(1f / math.max(gridDim * voxelStep, 0.01f)),
+                sealMargin = 0f,
+                lodLevel = 0,
+                lodTransitionBand = 0f,
+                enableBiomeSdfModifiers = 0,
+                PrimaryFrequency = 0.012f,
+                SecondaryFrequency = 0.017f,
+                CarveStrengthMeters = 28.0f,
+                CaveThreshold = 0.65f,
+                MaxCrustDepthMeters = 400.0f,
+                SurfaceProtectionMeters = 30.0f,
+                StrataLayerThicknessMeters = 24.0f,
+                StrataShelvingStrength = 0.4f,
+                WorldSeed = seed
+            }.Schedule(total, JOB_BATCH);
+            handle.Complete();
+            return true;
+        }
+        finally
+        {
+            if (terrainHeights.IsCreated) terrainHeights.Dispose();
+            if (gridBiome.IsCreated) gridBiome.Dispose();
+        }
+    }
+#endif
 
     bool TryRegisterPipelineSpawnPointsFromScratch(
         VoxelPipelineData data,

@@ -31,9 +31,9 @@ If a route bible does not force an agent to make a better object, scene, system,
 
 ## Authority Scope
 
-Only this index, `VISION_LOCKS.md`, and files listed in `Routes` below are standing root bible authorities. Other root markdown files may be work plans, issue lists, generated playbooks, temporary reports, or historical snapshots; read them only when the task, a route bible, or the edited file directly references them.
+Only this index, `VISION_LOCKS.md`, and files listed in `Routes` below are standing root bible authorities. `AGENTS.md`, `CLAUDE.md`, and `COMMON_SENSE.md` remain root agent-law, tool-shim, and common-engineering authority anchors routed by the authority spine; they are not domain route bibles and do not expand the route-bible set. Other root markdown files may be work plans, issue lists, generated playbooks, temporary reports, or historical snapshots; read them only when the task, a route bible, or the edited file directly references them.
 
-This is the explicit documentation-governance exception for standing root route bibles. It does not allow root reports, prompts, status files, work logs, generated evidence, task-progress prose, or temporary scan counters.
+This is the explicit documentation-governance exception for standing root route bibles and root authority anchors. It does not allow root reports, prompts, status files, work logs, generated evidence, task-progress prose, or temporary scan counters.
 
 Procedural asset package pipeline authority is root `PROCEDURAL_ASSET_PIPELINE.md`. `Docs/PROCEDURAL_ASSET_PIPELINE.md` is a non-binding supporting/historical duplicate unless a later source-backed governance patch promotes or removes it.
 

@@ -1,6 +1,7 @@
 using System.Threading;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Gameplay.Atlas6Liability;
@@ -540,6 +541,9 @@ namespace Hecton8.Scavenging
             if (capabilityMask != 0u && !CanApplyToolCapability(capabilityMask))
                 return;
 
+            if (TryRouteProceduralOreProxyDepletion())
+                return;
+
             _lastLootOracleToolMask = ResolveLootOracleToolMask((InteractionEffectType)signal.EffectType);
             if (ShouldTriggerSteamExplosion(in signal))
             {
@@ -572,6 +576,20 @@ namespace Hecton8.Scavenging
                 Vector3.up,
                 allowIncrementalYield: true,
                 allowImpactDebris: true);
+        }
+
+        private bool TryRouteProceduralOreProxyDepletion()
+        {
+            if (string.IsNullOrEmpty(uniqueId) || !uniqueId.StartsWith("ore_proxy_", System.StringComparison.Ordinal))
+                return false;
+
+            IWorldResourceSpawnerCommandModel spawner = GlobalRegistry.WorldResourceSpawner as IWorldResourceSpawnerCommandModel;
+            if (spawner == null || !spawner.TryDepletePromotedProxy(uniqueId, out _, out _, out _))
+                return false;
+
+            _isDepleted = true;
+            _despawnRequested = true;
+            return true;
         }
 
         private bool CanApplyToolCapability(uint capabilityMask)

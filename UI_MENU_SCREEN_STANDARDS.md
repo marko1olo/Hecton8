@@ -178,6 +178,12 @@ Rejected:
 
 Compact menus must still read as a physical HECTON-8 instrument, not a plain flat launcher. Middle may add stronger panel material and route telemetry. High may add richer boot/verify transitions. Ultra may add cinematic console material, live background response, and layered archive damage only if it remains readable and zero-GC in runtime menu paths.
 
+## 11A. Runtime And Hot-Path Boundary
+
+Menu runtime code consumes snapshots and owner events from save, settings, input, localization, accessibility, build-profile, and route-state owners. It must not poll those owners every frame, search scenes, parse strings, allocate formatted text, rebuild layout, churn render textures/cameras, or run decorative animation loops in hot menu paths.
+
+Allowed runtime menu updates are bounded: explicit state change, input focus change, archive verification event, settings apply/rollback, localization refresh, route handoff, or profiled transition. Runtime menu paths that change cameras, render textures, text, animation, save/load views, or settings rows require profiler/GC proof before acceptance.
+
 ## 12. Menu QA Gates
 
 Reject if:

@@ -637,6 +637,11 @@ namespace Hecton8.World
         bool TryMarkOreDepleted(int oreIndex, out uint oreHash, out uint itemHash, out float3 depletedPosition);
 
         /// <summary>
+        /// Marks a promoted pooled ore proxy as depleted through its stable proxy id without exposing the concrete spawner type to interaction nodes.
+        /// </summary>
+        bool TryDepletePromotedProxy(string uniqueId, out uint oreHash, out uint itemHash, out float3 depletedPosition);
+
+        /// <summary>
         /// Reports a completed scanner sweep to the unmanaged player ecosystem telemetry row.
         /// </summary>
         void ReportScannerSweepResult(int detectedOreCount, float sweptDistanceMeters, uint frame);

@@ -58,8 +58,10 @@ Purpose: stable execution order for moving HECTON-8 toward a measurable runtime 
 7. Prove first playable route.
    - Runtime/content work should remove a blocker for the first 20 minutes.
    - No broad system expansion without route value or owner-debt reduction.
-   - Current static new-game spine: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
-   - Current V0 proof target: Copper Wire route from boot/world/swim/copper/quest/craft to save/load restored state.
+   - Current production handoff route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`.
+   - `01_ORBIT` is enabled/static-visible, but remains a standalone/YELLOW prologue route until its route card is GREEN and root scene-flow authority is updated.
+   - Current product-facing V0 proof target: spectacular semi-open shallow first-20 route from boot/world/swim/resource/tool/craft-or-repair-or-build/hazard to save/load restored state.
+   - Copper/Copper Wire is an allowed candidate resource/crafting chain inside that route, not the whole first-20 identity.
 
 8. Harden presentation with budgeted fakes.
    - Use saved CPU/GPU budget to buy better visuals.

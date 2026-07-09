@@ -657,6 +657,8 @@ def main() -> int:
 
     allowed_root_docs = {
         "AGENTS.md",
+        "CLAUDE.md",
+        "COMMON_SENSE.md",
         "PROJECT_BIBLES.md",
         "VISION_LOCKS.md",
         "TASTE.md",

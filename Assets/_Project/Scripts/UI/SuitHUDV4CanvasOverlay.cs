@@ -6701,6 +6701,8 @@ namespace Hecton8.UI
             int copyLength = math.min(source.Length, buffer.Length);
             for (int i = 0; i < copyLength; i++)
                 buffer[i] = source[i];
+            if (source.Length > buffer.Length && buffer.Length > 0)
+                buffer[buffer.Length - 1] = '!';
 
             length = copyLength;
         }
@@ -6713,6 +6715,8 @@ namespace Hecton8.UI
             int copyLength = math.min(source.Length, destination.Length);
             for (int i = 0; i < copyLength; i++)
                 destination[i] = source[i];
+            if (source.Length > destination.Length && destination.Length > 0)
+                destination[destination.Length - 1] = '!';
 
             return copyLength;
         }
@@ -6740,6 +6744,12 @@ namespace Hecton8.UI
                 hash = unchecked((hash * 397) ^ character);
             }
 
+            if (source.Length > buffer.Length && buffer.Length > 0)
+            {
+                buffer[buffer.Length - 1] = '!';
+                hash = unchecked((hash * 397) ^ '!');
+            }
+
             length = copyLength;
             version = copyLength == 0 ? 0 : hash;
         }
@@ -6757,13 +6767,19 @@ namespace Hecton8.UI
 
         private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
         {
-            if (buffer != null)
+            int safeRequired = math.max(0, requiredLength);
+            if (buffer == null || buffer.Length == 0)
+            {
+                buffer = s_sharedOversizedHudTextBuffer;
+                return;
+            }
+
+            if (safeRequired <= buffer.Length)
                 return;
 
-            if (Application.isPlaying)
-                return;
-
-            buffer = s_sharedOversizedHudTextBuffer;
+            int markerIndex = buffer.Length - 1;
+            if (markerIndex >= 0)
+                buffer[markerIndex] = '!';
         }
 
         private static void CopySpan(ReadOnlySpan<char> source, char[] destination, ref int destinationIndex)
@@ -6771,9 +6787,15 @@ namespace Hecton8.UI
             if (source.Length == 0 || destination == null || destinationIndex >= destination.Length)
                 return;
 
-            int count = math.min(source.Length, destination.Length - destinationIndex);
+            int available = destination.Length - destinationIndex;
+            int count = math.min(source.Length, available);
             for (int i = 0; i < count; i++)
                 destination[destinationIndex++] = source[i];
+            if (source.Length > available && destination.Length > 0)
+            {
+                destination[destination.Length - 1] = '!';
+                destinationIndex = destination.Length;
+            }
         }
 
         private static void Stretch(RectTransform rect, float left, float right, float top, float bottom)

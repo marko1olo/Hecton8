@@ -6,14 +6,6 @@ Owner: DOCS_ACTUALIZATION
 
 Purpose: make every agent load the right authority files without losing rules, skipping domain bibles, or turning ordinary work into bureaucracy.
 
-# HECTON-8 Agent Authority Routing
-
-Status: STATIC_POLICY
-Evidence class: STATIC_DOC
-Owner: DOCS_ACTUALIZATION
-
-Purpose: make every agent load the right authority files without losing rules, skipping domain bibles, or turning ordinary work into bureaucracy.
-
 ## Prime Rule
 
 No rule, constraint, rejection gate, product vision lock, proof requirement, or workflow exception may be deleted merely because it is noisy. If a rule file is split, shortened, mirrored, or regenerated, the removed text must first be preserved in a named live source, route bible, mandate file, generated snapshot source, or explicit archive with provenance.

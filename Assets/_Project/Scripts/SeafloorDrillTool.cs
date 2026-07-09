@@ -182,7 +182,7 @@ namespace Hecton8.Gameplay
                     origin,
                     drillDirection,
                     runtimeRange,
-                    HectonLayerMasks.ResolveSurfaceInteractionLayerMask(drillMask.value),
+                    ResolveDrillSurfaceMask(),
                     triggerInteraction,
                     out InteractionSurfaceHit hit) ||
                 hit.collider == null)
@@ -229,6 +229,11 @@ namespace Hecton8.Gameplay
 
             deliveredPower = runtimePower;
             return true;
+        }
+
+        private int ResolveDrillSurfaceMask()
+        {
+            return HectonLayerMasks.ResolveSurfaceInteractionLayerMask(drillMask.value) | HectonLayerMasks.VoxelProxyLayerMask;
         }
 
         private bool TryResolveDrillRay(out Vector3 origin, out Vector3 direction)

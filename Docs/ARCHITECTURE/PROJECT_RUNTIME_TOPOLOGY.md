@@ -212,12 +212,14 @@ Route rules:
 
 ## First Route To Prove
 
-The product spine is not "all systems compile". It is the Copper Wire V0 route:
+The product spine is not "all systems compile". It is the spectacular semi-open shallow first-20 route defined by `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` and `FIRST_20_MINUTES_ROUTE_BRIEF.md`.
+
+Copper/Copper Wire remains a useful candidate starter chain inside that route, not the whole V0 identity:
 
 ```text
-boot -> world load -> safe exit -> swim -> oxygen/depth/pressure
+boot -> world load -> semi-open beautiful shallow exit -> swim -> oxygen/depth/pressure
 -> find copper -> collect Data_Copper -> quest_copper_sample
--> craft Recipe_CopperWire -> save -> load -> return to same state
+-> craft Recipe_CopperWire or stronger verified route improvement -> save -> load -> return to same state
 ```
 
 Read before product/runtime work:

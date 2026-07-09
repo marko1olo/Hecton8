@@ -1,0 +1,85 @@
+# HECTON-8 Claude Code Shim
+
+This file adapts the existing Gemini/Antigravity routing rules for Claude Code. It is a thin shim, not divergent project law. If this file conflicts with HECTON-8 project authority, project authority wins.
+
+## Claude-only context budget rule
+
+This section is Claude-specific and must not change Gemini/Antigravity/Codex behavior.
+
+Do not load the full HECTON-8 authority stack on every message. Use staged intake:
+
+1. Always start with this `CLAUDE.md` shim and the exact user request.
+2. For quick chat, narrow file lookup, typo fixes, or scoped read-only exploration, do not read the whole authority stack. Read only the directly needed files and do not claim HECTON-8 compliance beyond that scope.
+3. Before non-trivial code, architecture, rendering, gameplay, asset, data, proof, or technical-report work, escalate to staged authority intake: `AGENTS.md`, `COMMON_SENSE.md`, runtime master plan, `Docs\AGENT_AUTHORITY_ROUTING.md`, `PROJECT_BIBLES.md`, and the minimum matching route bible(s). Do not read mandate bodies at this stage unless a specific mandate is needed for the concrete edit/review.
+4. Read `VISION_LOCKS.md` only for product direction, ambiguity, priority, taste conflict, or scope interpretation.
+5. Read `TASTE.md` only for player-visible work or taste review.
+6. Read `Docs\SYSTEMS_CONTRACTS.md` only for non-asset runtime systems, architecture, signals, data vaults, or core memory.
+7. Read `Docs\QUALITY_GATES.md` only before claiming `VERIFIED`/`COMPLETE`, designing proof, or judging evidence.
+8. Mandate bodies are just-in-time only for Claude. First use `.agents-skills\README.md` as an index to identify whether a specific mandate is truly required. Read a heavy mandate file only when the task is about that exact domain or when a concrete source edit/review would violate unknown mandate details without it. Never read mandate files for chat, lookup, planning, broad orientation, typo fixes, or unrelated scoped exploration.
+
+If staged intake leaves authority unread, final chat must say the task was handled with scoped/static intake and name any unverified authority/proof area. This is context-budget discipline, not permission to lower standards.
+
+## Authority spine
+
+For all HECTON-8 work, read and obey the nearest live authority in this order:
+
+1. `C:\hades\Hecton8\AGENTS.md` — canonical HECTON-8 agent law.
+2. `C:\hades\Hecton8\COMMON_SENSE.md` — architectural AI cognitive constraints for non-trivial work.
+3. `C:\hades\Hecton8\Docs\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` — V0 playable milestone alignment for non-trivial work.
+4. `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md` — required routing protocol for non-trivial tasks.
+5. `C:\hades\Hecton8\PROJECT_BIBLES.md` — domain/bible selection for major, player-facing, design-facing, system-facing, or ambiguous work.
+6. `C:\hades\Hecton8\Docs\SYSTEMS_CONTRACTS.md` — non-asset runtime systems, architecture, signals, data vaults, or core memory.
+7. `C:\hades\Hecton8\VISION_LOCKS.md` — product direction, ambiguity resolution, route priority, taste conflicts, or scope interpretation.
+8. `C:\hades\Hecton8\TASTE.md` — player-visible work.
+9. Matching route bible(s) from `PROJECT_BIBLES.md`.
+10. `.agents-skills\README.md` as the mandate index; read individual mandate files only just-in-time when a concrete edit/review/proof step requires that exact mandate domain. Do not pre-read `2-8` mandate bodies by default.
+11. `Docs\QUALITY_GATES.md` before claiming `VERIFIED` or `COMPLETE`.
+12. Live source/assets/proof for the edited owner route before trusting reports, generated snapshots, task files, old logs, or archives.
+
+Mandate rule for Claude agents and subagents: do not read heavy mandate bodies by default. Use `.agents-skills\README.md` as the lightweight index. Read a mandate file only when the current concrete task needs that exact domain rule for a source edit, architecture decision, rendering/gameplay/asset/data change, proof design, or technical report. If the mandate is not directly needed, leave it unread and state scoped/static intake if relevant. Subagents must not be told to read mandates unless their narrow scope specifically requires those mandate domains.
+
+Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip full intake, but they must not contradict the authority spine. Subagents modifying `.cs`, `.shader`, `.prefab`, or `.asset` files must not use the trivial-task bypass and must read `COMMON_SENSE.md`.
+
+## HECTON-8 operating constraints
+
+- Read authority files, route bibles, mandate files, and important task documents as complete documents before evaluating meaning. Search is navigation and audit only.
+- Current source, current assets, current route bibles, current mandates, and fresh proof outrank dated reports, generated snapshots, task files, old logs, prompt fragments, and archives.
+- Every non-trivial HECTON-8 task should end in one primary useful class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or explicit `POLICY_DOC` when requested.
+- For non-trivial tasks, final chat should include a concise authority receipt: `Authority used: ...`.
+- Do not create status/rationale/log artifacts for ordinary work unless the user explicitly asks for batch/logging/orchestration or supplies an agent ID.
+- Internal Claude subagents are expensive and disabled by default for ordinary HECTON-8 work. Use no subagents unless they materially reduce risk or context load; maximum `1-2` Claude subagents per task unless the user explicitly asks for more. Never spawn broad subagent fleets from Claude.
+- Do not preload authority-file contents into a Claude subagent prompt. Give the subagent a narrow scope, exact files to inspect, and a short instruction to read only the needed live authority/source files itself. Subagents must not receive pasted `AGENTS.md`, route bible, or mandate bodies unless the user explicitly asks for that cost.
+- If a subagent is used, the primary Claude agent remains responsible for selecting scope, merging evidence-backed findings, and verifying final claims. Subagent output is evidence input, not authority.
+- Do not read `HECTON8_ORCHESTRATOR.md`, `.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1` merely because internal Claude subagents are used.
+
+## Product and proof standard
+
+- Three-pillar acceptance: graphics, optimization, and gameplay must all pass. Beautiful but empty is rejected. Fast but flat is rejected. Complex gameplay that runs badly or looks cheap is rejected.
+- HECTON-8 targets AA commercial Unity 6000.4 URP quality with continuous scalability from compact hardware to high/ultra/XR lanes.
+- Zero GC in hot runtime paths is non-negotiable.
+- `GlobalQualityWeight` is continuous from minimum survival presentation to visual overkill; it must not alter gameplay truth ownership, DTO layout, save identity, authority route, or deterministic state ownership.
+- Premium approximation first. Simulate only gameplay truth.
+- Status remains `PENDING VERIFICATION` until fresh evidence exists. Docs, static scans, local builds, and agent confidence are not Unity/player/profiler/device proof.
+- Separate static/code-review-only conclusions from Unity/player/profiler/device-verified results.
+- Never claim release-ready, platform-ready, optimized, AAA, VR-ready, modding-ready, or similar public readiness without matching proof artifacts.
+
+## Player-visible taste standard
+
+- For water, terrain, sky, flora, UI, VFX, lighting, camera, materials, surface route, or hero biome work, inspect the mandatory reference folder before design, implementation, review, or proof: `Docs\mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)`.
+- Surface, sky, Aegir, moons, clouds, coastline, ocean surface, photic shallows, and medium-depth hero routes must look Subnautica-level or better. That is the floor, not the ceiling.
+- Darkness/noir belongs to depth, caves, interiors, storms, pressure events, and temporary eclipse windows. Do not use darkness, fog, bloom, post, or grading to hide primitive terrain, weak textures, unfinished sky/celestial art, flat water, or low-detail assets.
+- Generated assets are accepted only when they look authored and have proper proof for mesh, material, LOD, collision, and import route where applicable.
+- If the same visual failure repeats twice, declare `VISUAL_ROUTE_INVALID` and recover/replace the base route owner before cosmetic polish.
+
+## Claude-specific guardrails
+
+- Do not persist raw CSRF tokens, account tokens, API keys, or secrets in memory, reports, prompts, or chat.
+- Do not read huge logs in full. Extract relevant errors/warnings or read bounded tails.
+- Do not read raw binary/media files into prompt context unless the task requires direct visual inspection and the file is a user-supplied screenshot or a bounded relevant artifact.
+- Do not overwrite entire large files for small changes; patch surgically.
+- Do not edit Unity `.unity` scenes or `.prefab` assets as raw YAML text unless the current authority explicitly allows that narrow operation and FileID/GUID/property alignment is proven. Prefer Unity editor tooling for scene/prefab mutation.
+- Before heavy Unity, dotnet, import, profiler, or build actions, obey the HECTON-8 process gates in `AGENTS.md`.
+
+## Communication standard
+
+Be direct, factual, technically demanding, and honest. No fake verification, no optimism without evidence, no sugarcoating, no sycophancy. If work remains unverified, say exactly what proof is missing.

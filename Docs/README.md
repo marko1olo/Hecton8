@@ -47,6 +47,9 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 
 | Need | Read |
 |---|---|
+| Canonical agent law | `AGENTS.md` |
+| Claude Code shim and scoped-intake discipline | `CLAUDE.md` |
+| Common Unity/runtime engineering constraints | `COMMON_SENSE.md` |
 | Agent task intake, no-loss rule routing, and tool-surface delegation | `Docs/AGENT_AUTHORITY_ROUTING.md` |
 | No-loss detail source for former monolithic `AGENTS.md` clauses | `Docs/AGENTS_RULE_DETAIL_LEDGER.md` |
 | Root bible routing and domain bible selection | `PROJECT_BIBLES.md` |
