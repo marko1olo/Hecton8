@@ -1,5 +1,6 @@
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -2027,12 +2028,15 @@ namespace Hecton8.Construction
         private static float ResolveStepCost(int3 current, int3 neighbor, float3 world, float cell)
         {
             float textureSeamBias = math.frac((world.x + (world.z * 0.37f)) * 0.0625f);
-            System.Numerics.Vector3 fromNode = new System.Numerics.Vector3(current.x, current.y, current.z);
-            System.Numerics.Vector3 toNode = new System.Numerics.Vector3(neighbor.x, neighbor.y, neighbor.z);
+            int3 delta = math.abs(neighbor - current);
+            int distanceSq = (delta.x * delta.x) + (delta.y * delta.y) + (delta.z * delta.z);
+            float distance = distanceSq == 1 ? 1f : distanceSq == 2 ? 1.41421356f : distanceSq == 3 ? 1.73205081f : math.sqrt(math.max(0f, distanceSq));
             float verticalHazard = current.y != neighbor.y ? (VerticalPenalty - 1f) * cell : 0f;
             float seamHazard = math.abs(textureSeamBias - 0.5f) * 0.02f;
-            float[] hazards = new float[] { verticalHazard, seamHazard };
-            return global::Hecton8.PureLogic.Systems.DronePathfindCostCalculator.Compute(fromNode, toNode, hazards, cell);
+            float hazardSum = math.max(0f, verticalHazard) + math.max(0f, seamHazard);
+            float safeBaseCost = math.max(0f, cell);
+            float result = (distance * safeBaseCost) + hazardSum;
+            return math.isfinite(result) && result >= 0f ? result : float.MaxValue;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

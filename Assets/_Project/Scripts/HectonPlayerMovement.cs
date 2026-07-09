@@ -1638,7 +1638,7 @@ namespace Hecton8.Gameplay
 
         private uint PlayerSignalSourceId => unchecked((uint)EntityId.ToULong(GetEntityId()));
 
-        private float ResolveAuthoritativeBodyMassKg()
+        internal float ResolveAuthoritativeBodyMassKg()
         {
             float mass = _authoritativeBodyMassKg;
             return math.isfinite(mass) ? math.max(0.01f, mass) : HydrostaticExitMassReferenceKg;
@@ -14803,39 +14803,40 @@ namespace Hecton8.Gameplay
 #endif
     
         #region JulesLink_CrouchCapsuleLerp
-        private static void JulesLink_CrouchCapsuleLerp() { _ = typeof(Hecton8.PureLogic.Systems.CrouchCapsuleLerp); }
+        private static void JulesLink_CrouchCapsuleLerp() { _ = typeof(Hecton8.PureLogic.Kinematics.CrouchCapsuleLerp); }
         #endregion
 
         #region JulesLink_WallSlideFrictionCalculator
-        private static void JulesLink_WallSlideFrictionCalculator() { _ = typeof(Hecton8.PureLogic.Systems.WallSlideFrictionCalculator); }
+        private static void JulesLink_WallSlideFrictionCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.WallSlideFrictionCalculator); }
         #endregion
 
         #region JulesLink_LedgeGrabImpulseCalculator
-        private static void JulesLink_LedgeGrabImpulseCalculator() { _ = typeof(Hecton8.PureLogic.Systems.LedgeGrabImpulseCalculator); }
+        private static void JulesLink_LedgeGrabImpulseCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.LedgeGrabImpulseCalculator); }
         #endregion
 
         #region JulesLink_WaterSurfaceTransitionDragCalculator
-        private static void JulesLink_WaterSurfaceTransitionDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.WaterSurfaceTransitionDragCalculator); }
+        private static void JulesLink_WaterSurfaceTransitionDragCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.WaterSurfaceTransitionDragCalculator); }
         #endregion
 
         #region JulesLink_EquipmentHydrodynamicDragCalculator
-        private static void JulesLink_EquipmentHydrodynamicDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.EquipmentHydrodynamicDragCalculator); }
+        private static void JulesLink_EquipmentHydrodynamicDragCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.EquipmentHydrodynamicDragCalculator); }
         #endregion
 
         #region JulesLink_ThermalVentUpdraftForce
-        private static void JulesLink_ThermalVentUpdraftForce() { _ = typeof(Hecton8.PureLogic.Systems.ThermalVentUpdraftForce); }
+        private static void JulesLink_ThermalVentUpdraftForce() { _ = typeof(Hecton8.PureLogic.Kinematics.ThermalVentUpdraftForce); }
         #endregion
 
         #region JulesLink_ParasiteLatchDragCalculator
-        private static void JulesLink_ParasiteLatchDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ParasiteLatchDragCalculator); }
+        private static void JulesLink_ParasiteLatchDragCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.ParasiteLatchDragCalculator); }
         #endregion
 
         #region JulesLink_VehicleEmergencyEjectionVector
-        private static void JulesLink_VehicleEmergencyEjectionVector() { _ = typeof(Hecton8.PureLogic.Systems.VehicleEmergencyEjectionVector); }
+        private static void JulesLink_VehicleEmergencyEjectionVector() { _ = typeof(Hecton8.PureLogic.Kinematics.VehicleEmergencyEjectionVector); }
         #endregion
-}
 
-        #region JulesLink_NitrogenNarcosisCriticalDepthCalculator
+#region JulesLink_NitrogenNarcosisCriticalDepthCalculator
         private static void JulesLink_NitrogenNarcosisCriticalDepthCalculator() { _ = typeof(Hecton8.PureLogic.Systems.NitrogenNarcosisCriticalDepthCalculator); }
         #endregion
+
+}
 }

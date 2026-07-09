@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
@@ -6453,7 +6454,7 @@ namespace Hecton8.Physics
 
     
         #region JulesLink_FluidVelocityFieldDragCalculator
-        private static void JulesLink_FluidVelocityFieldDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FluidVelocityFieldDragCalculator); }
+        private static void JulesLink_FluidVelocityFieldDragCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.FluidVelocityFieldDragCalculator); }
         #endregion
 }
 }

@@ -39,12 +39,22 @@ namespace Hecton8.Power.Editor
 
         private class ScannerContext
         {
-        private readonly string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-        private readonly string scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
-        private readonly string reportPath = Path.GetFullPath(Path.Combine(projectRoot, ReportRelativePath));
-        private readonly string binaryLedgerPath = Path.Combine(projectRoot, "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md");
-        private readonly string runtimeAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef");
-        private readonly string editorAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/Editor/Hecton8.Power.BatteryChargerLogistics.Editor.asmdef");
+            private readonly string projectRoot;
+            private readonly string scriptsRoot;
+            private readonly string reportPath;
+            private readonly string binaryLedgerPath;
+            private readonly string runtimeAsmdefPath;
+            private readonly string editorAsmdefPath;
+
+            public ScannerContext()
+            {
+                projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                scriptsRoot = Path.Combine(Application.dataPath, "_Project/Scripts");
+                reportPath = Path.GetFullPath(Path.Combine(projectRoot, ReportRelativePath));
+                binaryLedgerPath = Path.Combine(projectRoot, "Docs/ARCHITECTURE/BINARY_PAYLOAD_INTEGRATION_LEDGER.md");
+                runtimeAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef");
+                editorAsmdefPath = Path.Combine(Application.dataPath, "_Project/Scripts/Power/Editor/Hecton8.Power.BatteryChargerLogistics.Editor.asmdef");
+            }
 
         private int chargerFiles = 0;
         private int updateLoops = 0;

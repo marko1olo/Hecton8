@@ -2001,7 +2001,7 @@ namespace Hecton8.Physics.Exosuit
 #endif
     
         #region JulesLink_ArmReachIkSolver
-        private static void JulesLink_ArmReachIkSolver() { _ = typeof(Hecton8.PureLogic.Systems.ArmReachIkSolver); }
+        private static void JulesLink_ArmReachIkSolver() { _ = typeof(Hecton8.PureLogic.Kinematics.ArmReachIkSolver); }
         #endregion
 }
 }

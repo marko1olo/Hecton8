@@ -717,7 +717,7 @@ namespace Hecton8.Audio
         }
     
         #region JulesLink_ThrusterEfficiencyVsPressureCalculator
-        private static void JulesLink_ThrusterEfficiencyVsPressureCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ThrusterEfficiencyVsPressureCalculator); }
+        private static void JulesLink_ThrusterEfficiencyVsPressureCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.ThrusterEfficiencyVsPressureCalculator); }
         #endregion
 }
 }

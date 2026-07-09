@@ -71,10 +71,11 @@ namespace Shapes {
 				} else {
 					mpbLine.color.Add( colorStart.ColorSpaceAdjusted() );
 					mpbLine.colorEnd.Add( colorEnd.ColorSpaceAdjusted() );
-					mpbLine.fillType.Add( GradientFill.FILL_NONE );
-					mpbLine.fillSpace.Add( default );
-					mpbLine.fillStart.Add( default );
-					mpbLine.fillEnd.Add( default );
+					var fillable = (IFillableMpb)mpbLine;
+					fillable.fillType.Add( GradientFill.FILL_NONE );
+					fillable.fillSpace.Add( default );
+					fillable.fillStart.Add( default );
+					fillable.fillEnd.Add( default );
 				}
 				mpbLine.pointStart.Add( start );
 				mpbLine.pointEnd.Add( end );
@@ -478,7 +479,7 @@ namespace Shapes {
 			                   (tmp.textInfo != null && tmp.textInfo.meshInfo != null && tmp.textInfo.meshInfo.Length > 0 && tmp.textInfo.meshInfo[0].vertexCount > 0);
 
 			if( hasMainMesh ) {
-				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: disposeId ) ) {
+				using( new IMDrawer( mpbText, tmp.fontSharedMaterial, tmp.mesh, drawType: drawType, allowInstancing: false ) ) {
 					// will draw on dispose
 				}
 			}
@@ -500,7 +501,7 @@ namespace Shapes {
 					if( sm.mesh != null && sm.mesh.vertexCount > 0 ) {
 						// We need to use the original drawType so it handles TextPooledAuto/Persistent correctly,
 						// but pass the submeshDisposeId which might be -1 if the main mesh already took the auto-dispose ID.
-						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false, textAutoDisposeId: submeshDisposeId ) ) {
+						using( new IMDrawer( mpbText, sm.sharedMaterial, sm.mesh, drawType: drawType, allowInstancing: false ) ) {
 							// will draw on dispose
 						}
 						hasAnySubmesh = true;

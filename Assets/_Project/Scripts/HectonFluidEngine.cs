@@ -9901,11 +9901,11 @@ namespace Hecton8.Physics
 #endif
     
         #region JulesLink_AbyssalVortexAngularTorqueCalculator
-        private static void JulesLink_AbyssalVortexAngularTorqueCalculator() { _ = typeof(Hecton8.PureLogic.Systems.AbyssalVortexAngularTorqueCalculator); }
+        private static void JulesLink_AbyssalVortexAngularTorqueCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.AbyssalVortexAngularTorqueCalculator); }
         #endregion
 
         #region JulesLink_MaelstromSpatialWarpPullCalculator
-        private static void JulesLink_MaelstromSpatialWarpPullCalculator() { _ = typeof(Hecton8.PureLogic.Systems.MaelstromSpatialWarpPullCalculator); }
+        private static void JulesLink_MaelstromSpatialWarpPullCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.MaelstromSpatialWarpPullCalculator); }
         #endregion
 }
 

@@ -191,32 +191,5 @@ namespace Technie.PhysicsCreator
 			Vector3 localSpace = outputLocalSpace.InverseTransformPoint(worldSpace);
 			return localSpace;
 		}
-
-		public Vector3[] GetBoneSpaceVertices(Transform bone)
-		{
-			Vector3[] boneSpaceVertices = new Vector3[vertices.Length];
-
-			if (skinnedRenderer != null)
-			{
-				Transform[] bones = skinnedRenderer.bones;
-				Matrix4x4[] bindPose = srcMesh.bindposes;
-
-				for (int i = 0; i < vertices.Length; i++)
-				{
-					boneSpaceVertices[i] = ApplyBindPoseWeighted(vertices[i], weights[i], bindPose, bones, bone);
-				}
-			}
-			else if (rigidRenderer != null)
-			{
-				for (int i = 0; i < vertices.Length; i++)
-				{
-					Vector3 worldSpace = rigidRenderer.transform.TransformPoint(modelSpaceVertices[i]);
-					boneSpaceVertices[i] = bone.InverseTransformPoint(worldSpace);
-				}
-			}
-
-			return boneSpaceVertices;
-		}
 	}
-	
 } // namespace Technie.PhysicsCreator

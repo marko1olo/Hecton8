@@ -8,7 +8,7 @@ using UnityEditor.ShaderGraph.Drawing;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    public class TargetPropertyGUIContext : VisualElement
+    internal class TargetPropertyGUIContext : VisualElement
     {
         const int kIndentWidthInPixel = 15;
 

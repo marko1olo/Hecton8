@@ -1626,8 +1626,6 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float3 NormalizeOrDefault(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);

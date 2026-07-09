@@ -1125,6 +1125,7 @@ namespace Hecton8.UI
             {
                 RectTransform rect = _driftRects[i];
                 if (rect != null)
+                {
                     Vector3 currentPos = rect.anchoredPosition3D;
                     Vector3 expectedPos = _driftBaseAnchoredPositions[i];
                     expectedPos.x += _driftAppliedOffsets[i];
@@ -1135,6 +1136,7 @@ namespace Hecton8.UI
                     {
                         rect.anchoredPosition3D = _driftBaseAnchoredPositions[i];
                     }
+                }
 
                 _driftTargets[i] = null;
                 _driftRects[i] = null;

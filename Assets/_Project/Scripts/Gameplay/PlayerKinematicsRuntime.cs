@@ -102,6 +102,12 @@ namespace Hecton8.Gameplay
         public byte SdfGradientProbeRequested;
         public uint Frame;
         public uint RuntimeFlags;
+        public float DepthMeters;
+        public float SuitIntegrity01;
+        public float DragDepthScaleMax;
+        public float DragBrokenSuitMultiplier;
+        public float MaxDragClamp;
+        public float DragMathEpsilon;
 
         internal const byte SdfSampleModeAxis6 = 0;
         internal const byte SdfSampleModeTetra4 = 1;
@@ -1234,6 +1240,18 @@ namespace Hecton8.Gameplay
                     activeMaelstromCount = fluidMaelstromCount;
                 }
 
+                float suitIntegrity = 1f;
+                if (_dataVault != null)
+                {
+                    if (_dataVault.TryGetGenerationHandle<Hecton8.Core.Contracts.Physiology.SuitIntegrityDTO>(BufferID.ShinobuSuitIntegrityStates, out var handle))
+                    {
+                        if (_dataVault.TryReadOnlyHandle(in handle, out NativeArray<Hecton8.Core.Contracts.Physiology.SuitIntegrityDTO>.ReadOnly states) && states.Length > 0)
+                        {
+                            suitIntegrity = states[0].CurrentIntegrity01;
+                        }
+                    }
+                }
+
                 var bodyJob = new PlayerKinematicsBodyJob
                 {
                     Positions = _positions,
@@ -1267,7 +1285,13 @@ namespace Hecton8.Gameplay
                     Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     RuntimeFlags = ResolveBodyFlags(ladderActive, inSolid) |
                                    math.select(0u, BodyFlagMaelstromActive, activeMaelstromCount > 0) |
-                                  math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult))
+                                   math.select(0u, BodyFlagSdfSqueezeIntervention, SdfSqueezeResult.IsResultActive(in sdfSqueezeResult)),
+                    DepthMeters = math.max(0f, -bodyPosition.y),
+                    SuitIntegrity01 = suitIntegrity,
+                    DragDepthScaleMax = 100f,
+                    DragBrokenSuitMultiplier = 2f,
+                    MaxDragClamp = 100000f,
+                    DragMathEpsilon = 0.0001f
                 };
                 // HOT SCALAR CONTROL KERNEL: one-player KCC truth is consumed this fixed tick.
                 // Direct Execute removes IJob.Run scheduler sync without the fake schedule-then-complete anti-pattern.
@@ -4596,7 +4620,7 @@ namespace Hecton8.Gameplay
 
     
         #region JulesLink_StrafeAngleBlendWeightCalculator
-        private static void JulesLink_StrafeAngleBlendWeightCalculator() { _ = typeof(Hecton8.PureLogic.Systems.StrafeAngleBlendWeightCalculator); }
+        private static void JulesLink_StrafeAngleBlendWeightCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.StrafeAngleBlendWeightCalculator); }
         #endregion
 }
 }

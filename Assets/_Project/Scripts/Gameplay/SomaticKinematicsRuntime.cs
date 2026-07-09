@@ -2769,8 +2769,6 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 Forward(Quaternion rotation)
         {
             quaternion q = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);

@@ -558,8 +558,10 @@ namespace Hecton8.UI
 
             distanceMeters = RoundApproximateAupDistanceMeters(in originAup, in nearestAup);
 
-            Vector3 originPos = new Vector3((float)originAup.DoubleX, (float)originAup.DoubleY, (float)originAup.DoubleZ);
-            Vector3 targetPos = new Vector3((float)nearestAup.DoubleX, (float)nearestAup.DoubleY, (float)nearestAup.DoubleZ);
+            Unity.Mathematics.double3 originD3 = originAup.ToAbsoluteDouble3();
+            Unity.Mathematics.double3 targetD3 = nearestAup.ToAbsoluteDouble3();
+            Vector3 originPos = new Vector3((float)originD3.x, (float)originD3.y, (float)originD3.z);
+            Vector3 targetPos = new Vector3((float)targetD3.x, (float)targetD3.y, (float)targetD3.z);
             if (UnityEngine.Physics.Linecast(originPos, targetPos, out UnityEngine.RaycastHit hit))
             {
                 float distanceToObstacle = hit.distance;

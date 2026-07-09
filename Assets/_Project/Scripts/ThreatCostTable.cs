@@ -106,7 +106,7 @@ namespace Hecton8.Systems.AI
         }
     
         #region JulesLink_ThreatCostMultiplier
-        private static void JulesLink_ThreatCostMultiplier() { _ = typeof(Hecton8.PureLogic.Systems.ThreatCostMultiplier); }
+        private static void JulesLink_ThreatCostMultiplier() { _ = typeof(Hecton8.PureLogic.Ecosystem.ThreatCostMultiplier); }
         #endregion
 }
 }

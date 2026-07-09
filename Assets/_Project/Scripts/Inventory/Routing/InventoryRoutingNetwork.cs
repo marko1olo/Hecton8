@@ -1729,13 +1729,8 @@ namespace Hecton8.Inventory
                 }
             }
 
-            int[] stackCounts = new int[] { (int)destQty };
-            int[] mergeResult = Hecton8.PureLogic.Systems.StackMergePriorityCalculator.Compute(
-                stackCounts,
-                (int)maxStack,
-                (int)reqQty
-            );
-            return mergeResult[1] > 0;
+            uint availableSpace = maxStack > destQty ? maxStack - destQty : 0u;
+            return reqQty > availableSpace;
         }
     }
 

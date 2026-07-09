@@ -3404,14 +3404,8 @@ namespace Hecton8.AI.Ecosystem
             float radius = math.max(0.25f, math.max(tuning.FeedingRadius, best.FeedingRadius));
             float radiusSq = math.max(0.0001f, radius * radius);
             float atten = 1f - math.saturate(bestDistSq / radiusSq);
-            s_symbiosisPopulations[0] = 1f;
-            s_symbiosisPopulations[1] = 1f;
-            s_symbiosisInteraction[0, 0] = tuning.FeedingRate * bestRate * SimulationTickDelta * math.max(0.05f, atten);
-            s_symbiosisInteraction[0, 1] = 0f;
-            s_symbiosisInteraction[1, 0] = 0f;
-            s_symbiosisInteraction[1, 1] = 0f;
-            float[] benefits = Hecton8.PureLogic.Ecosystem.SymbiosisBenefitMatrixCalculator.Compute(s_symbiosisPopulations, s_symbiosisInteraction);
-            float transfer = math.min(best.Biomass, benefits[0]);
+            float benefit0 = tuning.FeedingRate * bestRate * SimulationTickDelta * math.max(0.05f, atten);
+            float transfer = math.min(best.Biomass, benefit0);
             if (!math.isfinite(transfer) || transfer <= 0f)
                 return;
 

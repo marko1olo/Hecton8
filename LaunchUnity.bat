@@ -1,1 +1,1 @@
-"C:\Program Files\Unity\Hub\Editor\6000.4.10f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod Hecton8.EditorTools.H8_ScreenshotTaker.TakeScreenshotAndExit -logFile "C:\hades\Hecton8\Logs\InteractiveScreenshot.log"
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod Hecton8.EditorTools.H8_ScreenshotTaker.TakeScreenshotAndExit -logFile "C:\hades\Hecton8\Logs\InteractiveScreenshot.log"

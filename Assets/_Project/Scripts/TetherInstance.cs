@@ -3177,7 +3177,7 @@ namespace Hecton8.Physics
                 float3 gravity = math.lengthsq(tuning.Gravity) > 0.000001f && math.all(math.isfinite(tuning.Gravity))
                     ? tuning.Gravity
                     : defaultGravity;
-                float3 flowAcceleration = ToFloat3(ResolveVerletFlowAcceleration(payloadCurrentAcceleration));
+                float3 flowAcceleration = (float3)(ResolveVerletFlowAcceleration(payloadCurrentAcceleration));
                 MockWorldSampler worldSampler = BuildVerletWorldSampler(payloadLocal, flowAcceleration);
                 float velocityDamping = tuning.FluidFriction > 0f && math.isfinite(tuning.FluidFriction)
                     ? math.saturate(tuning.FluidFriction)
@@ -3713,7 +3713,7 @@ namespace Hecton8.Physics
             TetherTensionSignal signal = default;
             signal.AnchorAup = anchorAup;
             signal.PayloadAup = payloadAup;
-            signal.DirectionToPayload = ToFloat3(direction);
+            signal.DirectionToPayload = (float3)direction;
             signal.TetherId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             signal.FrameIndex = unchecked((uint)_currentSimulationFrameIndex);
             signal.TensionForce = peakTension;
@@ -4488,8 +4488,8 @@ namespace Hecton8.Physics
             if (readModel == null || voxelEngine == null)
                 return false;
 
-            float3 origin3 = ToFloat3(origin);
-            float3 direction3 = ToFloat3(direction);
+            float3 origin3 = (float3)origin;
+            float3 direction3 = (float3)direction;
             if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
                     readModel,
                     origin3,

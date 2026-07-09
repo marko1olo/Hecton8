@@ -206,7 +206,7 @@ Shader ""Hidden/GraphErrorShader2""
                     // Create the compute asset.
                     var computeShader = ShaderUtil.CreateComputeShaderAsset(importContext, generatedComputeShader.codeString);
 
-                    ReportComputeErrors(graph, computeShader, path, importLog);
+                    ReportComputeErrors(graph, computeShader, path, importErrorLog);
 
                     computeShader.name = $"ComputeShader-{generatedComputeShader.shaderName}";
                     importContext.AddObjectToAsset(computeShader.name, computeShader);

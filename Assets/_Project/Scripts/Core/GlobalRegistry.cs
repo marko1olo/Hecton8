@@ -8467,7 +8467,7 @@ namespace Hecton8.Core
         #endregion
 
         #region JulesLink_BloomTriggerThresholdCalculator
-        private static void JulesLink_BloomTriggerThresholdCalculator() { _ = typeof(Hecton8.PureLogic.Systems.BloomTriggerThresholdCalculator); }
+        private static void JulesLink_BloomTriggerThresholdCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.BloomTriggerThresholdCalculator); }
         #endregion
 }
 }

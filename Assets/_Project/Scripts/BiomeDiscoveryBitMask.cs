@@ -158,7 +158,7 @@ namespace Hecton8.SaveSystem
         }
     
         #region JulesLink_BiomeDiscoveryBitmaskTracker
-        private static void JulesLink_BiomeDiscoveryBitmaskTracker() { _ = typeof(Hecton8.PureLogic.Systems.BiomeDiscoveryBitmaskTracker); }
+        private static void JulesLink_BiomeDiscoveryBitmaskTracker() { _ = typeof(Hecton8.PureLogic.Ecosystem.BiomeDiscoveryBitmaskTracker); }
         #endregion
 }
 }

@@ -9888,7 +9888,7 @@ namespace Hecton8.Construction
             return hub != null ? hub.DockPosition : Vector3.zero;
         }
 
-        private static float3 (float3)(double3 value)
+        private static float3 SafeCastToFloat3(double3 value)
         {
             if (!IsFiniteDouble3(value) || math.any(math.abs(value) > (double)float.MaxValue))
                 return new float3(float.NaN);
@@ -9910,7 +9910,7 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(localDelta)))
                 return false;
 
-            runtimePosition = (float3)(localDelta);
+            runtimePosition = SafeCastToFloat3(localDelta);
             return IsFiniteFloat3(runtimePosition);
         }
 

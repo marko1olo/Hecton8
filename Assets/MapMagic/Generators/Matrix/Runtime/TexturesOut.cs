@@ -550,20 +550,8 @@ namespace MapMagic.Nodes.MatrixGenerators {
 			
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
-						//convert colors to bytes
-			byte[][] textureBytes = new byte[colors.Length][];
-			for (int i = 0; i < colors.Length; i++)
-			{
-				if (colors[i] == null) continue;
-				textureBytes[i] = new byte[colors[i].Length * 4];
-				for (int p = 0; p < colors[i].Length; p++)
-				{
-					textureBytes[i][p*4] = (byte)(colors[i][p].r * 255f);
-					textureBytes[i][p*4+1] = (byte)(colors[i][p].g * 255f);
-					textureBytes[i][p*4+2] = (byte)(colors[i][p].b * 255f);
-					textureBytes[i][p*4+3] = (byte)(colors[i][p].a * 255f);
-				}
-			}
+			
+			byte[][] textureBytes = bytes;
 
 			var controlTexturesData = new ApplyData() {
 

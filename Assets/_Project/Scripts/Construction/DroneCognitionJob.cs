@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Unity.Burst;

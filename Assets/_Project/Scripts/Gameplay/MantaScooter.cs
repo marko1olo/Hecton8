@@ -2760,7 +2760,7 @@ namespace Hecton8.Gameplay
 #endif
     
         #region JulesLink_ScooterThrustCurveCalculator
-        private static void JulesLink_ScooterThrustCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ScooterThrustCurveCalculator); }
+        private static void JulesLink_ScooterThrustCurveCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.ScooterThrustCurveCalculator); }
         #endregion
 }
 }

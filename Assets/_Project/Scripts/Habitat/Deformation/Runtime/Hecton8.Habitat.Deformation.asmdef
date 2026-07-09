@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Habitat.Deformation",
     "references": [
         "Hecton8.Bootstrap.Contracts",
+        "Hecton8.PureLogic",
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
         "Hecton8.Core.Memory",

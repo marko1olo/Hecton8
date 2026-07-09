@@ -2302,6 +2302,7 @@ namespace Hecton8.Optimization
 
         private void EvaluateAddressableTtlAndQueueReleases()
         {
+            OnEvaluateAddressableTtlAndQueueReleases?.Invoke();
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
                     out NativeArray<float> ttl,
@@ -3972,6 +3973,7 @@ namespace Hecton8.Optimization
 
         private void ReportColdTickBudgetIfNeeded(long startTicks)
         {
+            OnReportColdTickBudgetIfNeeded?.Invoke(startTicks);
             long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
             double elapsedMilliseconds = elapsedTicks * 1000d / Stopwatch.Frequency;
             if (elapsedMilliseconds <= ColdTickWarningMilliseconds)

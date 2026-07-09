@@ -1,4 +1,4 @@
-﻿//////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MicroSplat
 // Copyright (c) Jason Booth
 //////////////////////////////////////////////////////
@@ -477,7 +477,6 @@ public partial class MicroSplatShaderGUI : ShaderGUI
       }
       
       public IRenderLoopAdapter renderLoop = null;
-      }
 
       public string Compile (string[] features, string name, string baseName = null, AuxShader auxShader = null)
       {

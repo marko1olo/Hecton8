@@ -7,6 +7,10 @@ namespace Hecton8.Gameplay
 {
     internal static class ContextualPhysicalIkMath
     {
+        public static float3 ToFloat3(Vector3 value) => (float3)value;
+        public static float3 ToFloat3(double3 value) => (float3)value;
+        public static float3 ToFloat3(float3 value) => value;
+
         private const float MinimumLengthSq = 0.00000001f;
         private const float MinimumDistance = 0.0001f;
 

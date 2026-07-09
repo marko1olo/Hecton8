@@ -1,6 +1,22 @@
 using NUnit.Framework;
 using System;
-using System.Numerics;
+using Hecton8.PureLogic.Systems;
+
+namespace Hecton8.PureLogic.Tests
+{
+    [TestFixture]
+    public class CoreTempEquilibriumSolverTests
+    {
+        private const float DefaultCoolingRate = 0.006f;
+        private const float DefaultMinTemp = 20f;
+        private const float DefaultMaxTemp = 42f;
+
+        [Test]
+        public void Test_Normal_Case01()
+        {
+            float result = CoreTempEquilibriumSolver.Solve(37f, 20f, 0.5f, 10f, DefaultCoolingRate, DefaultMinTemp, DefaultMaxTemp);
+            Assert.That(result, Is.GreaterThan(20f));
+            Assert.That(result, Is.LessThan(37f));
         }
 
         [Test]

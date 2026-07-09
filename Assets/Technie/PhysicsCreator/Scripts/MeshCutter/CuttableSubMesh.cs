@@ -18,7 +18,6 @@ namespace Technie.PhysicsCreator
 		private List<Vector2> uv5s;
 		private List<Vector2> uv6s;
 		private List<Vector2> uv7s;
-		private List<Vector4> tangents;
 
 		public CuttableSubMesh(bool hasNormals, bool hasColours, bool hasUvs, bool hasUv1, bool hasUv2, bool hasUv3, bool hasUv4, bool hasUv5, bool hasUv6, bool hasUv7, bool hasTangents)
 		{
@@ -217,11 +216,6 @@ namespace Technie.PhysicsCreator
 		public bool HasUv7()
 		{
 			return uv7s != null;
-		}
-
-		public bool HasTangents()
-		{
-			return tangents != null;
 		}
 
 		public void CopyVertex(int srcIndex, CuttableSubMesh srcMesh)

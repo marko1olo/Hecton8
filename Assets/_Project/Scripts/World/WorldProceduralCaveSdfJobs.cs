@@ -7,23 +7,15 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Burst kernel that evaluates true 3D volumetric noise to carve cave networks into the base SDF.
-    /// This runs after the SDF has been snapped to the terrain heightmap.
-    ///
-    /// Cave generation uses Swiss Cheese model (two independent 3D ridged-noise fields intersected)
-    /// to produce interconnected tunnels/chambers rather than uniform Swiss-cheese holes.
-    ///
-    /// Geological integration:
-    /// - Caves form preferentially along fault zones and shelf breaks (tectonic weakness).
-    /// - Caves avoid the open water column (density &lt; 0) and deep core rock (density &gt; MaxCrustDepthMeters).
-    /// - Near-surface voxels are protected by a smooth fade to prevent terrain surface breakup.
-    /// - Vertical strata shelving creates natural cave floors via periodic density restoration.
-    /// - Seed offsets use modulo arithmetic to stay within safe snoise coordinate range.
+    /// Burst kernel that evaluates continuous 3D cave SDFs and subtracts them from the terrain-owned density field.
+    /// The terrain heightmap produces the base density first; this job is the sole owner of procedural cave carving.
     /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct ProceduralCaveSdfCarveJob : IJobParallelFor
     {
+        private const float Tau = 6.2831853071795864769f;
+
         /// <summary>SDF density array. Positive means solid rock, negative means air/water.</summary>
         [NoAlias] public NativeArray<float> Sdf;
 
@@ -33,16 +25,16 @@ namespace Hecton8.World
         public float VoxelSizeMeters;
         public double3 SdfOriginAup;
 
-        /// <summary>Base frequency for the primary cave worm noise (meters^-1). Good range: 0.008..0.020.</summary>
+        /// <summary>Base gyroid frequency in meters^-1. Good range: 0.008..0.020.</summary>
         public float PrimaryFrequency;
 
-        /// <summary>Base frequency for the secondary cave worm noise. Should differ from primary to create intersections.</summary>
+        /// <summary>Base cellular chamber frequency in meters^-1. Good range: 0.006..0.018.</summary>
         public float SecondaryFrequency;
 
-        /// <summary>How aggressively the noise carves the SDF. Units: meters of density subtracted at full cave mask.</summary>
+        /// <summary>Maximum cave radius/strength in density meters.</summary>
         public float CarveStrengthMeters;
 
-        /// <summary>Threshold for the combined noise. Higher = fewer caves. Good range: 0.55..0.75.</summary>
+        /// <summary>Rarity threshold. Higher values narrow the gyroid pores and shrink cellular chambers.</summary>
         public float CaveThreshold;
 
         /// <summary>Maximum depth INTO solid rock (density) where caves can form. Beyond this, the voxel is deep core.</summary>
@@ -54,7 +46,7 @@ namespace Hecton8.World
         /// <summary>Vertical period of geological strata shelving (meters). Creates flat cave floors.</summary>
         public float StrataLayerThicknessMeters;
 
-        /// <summary>How much strata shelving pushes density back (meters). Higher = flatter cave floors.</summary>
+        /// <summary>Y-domain strata compression strength. Interpreted as a fraction of layer thickness.</summary>
         public float StrataShelvingStrength;
 
         /// <summary>World-global seed. Must be the SAME for all chunks so the noise field is continuous.</summary>
@@ -62,150 +54,199 @@ namespace Hecton8.World
 
         public void Execute(int index)
         {
-            float currentDensity = Sdf[index];
-
-            // Early-out 1: Do not touch the water column or barely-solid surface.
-            // SurfaceProtectionMeters creates a fade zone near the terrain surface to prevent breakup.
-            if (currentDensity < SurfaceProtectionMeters)
+            float originalDensity = Sdf[index];
+            if (!math.isfinite(originalDensity))
                 return;
 
-            // Early-out 2: Do not waste cycles carving deep core rock that the player will never reach.
-            if (currentDensity > MaxCrustDepthMeters)
+            if (!math.isfinite(CarveStrengthMeters) || CarveStrengthMeters <= 0.0001f)
                 return;
 
-            // Decompose flat index -> (x, y, z)
+            // Positive density is physical depth below the heightmap-owned terrain surface.
+            float depthBelowSurface = originalDensity;
+            if (depthBelowSurface <= SurfaceProtectionMeters)
+                return;
+
+            float safeMaxDepth = math.max(SurfaceProtectionMeters + 1.0f, MaxCrustDepthMeters);
+            if (depthBelowSurface >= safeMaxDepth)
+                return;
+
             int slice = SdfWidth * SdfHeight;
             int z = index / slice;
             int rem = index - z * slice;
             int y = rem / SdfWidth;
             int x = rem - y * SdfWidth;
 
-            // Absolute universe position
             double absX = SdfOriginAup.x + x * (double)VoxelSizeMeters;
             double absY = SdfOriginAup.y + y * (double)VoxelSizeMeters;
             double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
 
-            // Wrap coordinates into safe snoise range.
-            // We use fmod with a large period that is NOT a power of 2 to avoid tiling artifacts.
-            // 4096.0 * 1.618... ≈ 6627.0 — irrational-ish period breaks grid alignment.
+            // Wrap coordinates into the stable simplex/cellular range while preserving continuity inside the wrap period.
             const double wrapPeriod = 6627.0;
             float3 p = new float3(
                 (float)Fmod(absX, wrapPeriod),
                 (float)Fmod(absY, wrapPeriod),
-                (float)Fmod(absZ, wrapPeriod)
-            );
+                (float)Fmod(absZ, wrapPeriod));
 
-            // Seed offsets: keep them small and within the wrap period.
-            // Use bitwise extraction from the seed to generate small, deterministic offsets.
-            float seedOffX = ((WorldSeed & 0xFFu) - 128f) * 0.5f;         // -64..+63.5
-            float seedOffY = (((WorldSeed >> 8) & 0xFFu) - 128f) * 0.5f;  // -64..+63.5
-            float seedOffZ = (((WorldSeed >> 16) & 0xFFu) - 128f) * 0.5f; // -64..+63.5
-            float3 seedOffset = new float3(seedOffX, seedOffY, seedOffZ);
-
-            // === Primary Worm Field (horizontal-biased tunnels) ===
-            float primary = EvaluateRidgedWorm(p + seedOffset, PrimaryFrequency, 1.0f);
-
-            // === Secondary Worm Field (vertical-biased fissures) ===
-            // Rotate the coordinate space to create an independent noise field that intersects the primary.
-            float3 p2 = new float3(p.z + seedOffset.z * 1.7f, p.x + seedOffset.x * 1.3f, p.y + seedOffset.y * 0.9f);
-            float secondary = EvaluateRidgedWorm(p2, SecondaryFrequency, 0.7f);
-
-            // Swiss Cheese intersection: cave exists where BOTH worm fields are high.
-            // This creates tunnels at the intersection of two independent noise ridges.
-            float combined = primary * secondary;
-
-            // Threshold with soft transition
-            float caveMask = math.smoothstep(CaveThreshold - 0.05f, CaveThreshold + 0.05f, combined);
-
-            // No cave? Don't touch the density at all.
-            if (caveMask < 0.001f)
+            float3 seedOffset = ResolveSeedOffset(WorldSeed);
+            float caveSdf = EvaluateGyroidCellularCaveSdf(p, seedOffset);
+            if (!math.isfinite(caveSdf))
                 return;
 
-            // Depth-based fade: caves get smaller and rarer deeper into the rock.
-            // This prevents massive voids deep underground while allowing large chambers near the surface.
-            float depthFraction = math.saturate(currentDensity / MaxCrustDepthMeters);
-            float depthFade = 1.0f - depthFraction * depthFraction; // Quadratic fade
+            // Smooth anti-spike shield: cave influence is exactly zero at the protected surface shell,
+            // then rises with C1 smoothstep over the next 15 meters of rock.
+            float surfaceFade = math.smoothstep(
+                SurfaceProtectionMeters,
+                SurfaceProtectionMeters + 15.0f,
+                depthBelowSurface);
 
-            // Surface protection fade: smooth transition near the terrain surface.
-            // Prevents caves from cleanly slicing through the surface and creating ugly holes.
-            float surfaceFade = math.smoothstep(SurfaceProtectionMeters, SurfaceProtectionMeters + 8.0f, currentDensity);
+            float depthFraction = math.saturate(depthBelowSurface / safeMaxDepth);
+            float depthFade = 1.0f - depthFraction * depthFraction;
+            float caveInfluence = math.saturate(surfaceFade * depthFade);
+            if (caveInfluence <= 0.0001f)
+                return;
 
-            // Combined carve strength
-            float carve = caveMask * CarveStrengthMeters * depthFade * surfaceFade;
+            // Fade cave amplitude by moving the cave SDF out of the subtraction band instead of clamping density.
+            float safeCarveStrength = math.max(CarveStrengthMeters, VoxelSizeMeters);
+            float effectiveCaveSdf = math.lerp(safeCarveStrength, caveSdf, caveInfluence);
 
-            // Strata shelving: periodic vertical density restoration.
+            float booleanBlendRadius = math.max(math.max(VoxelSizeMeters * 2.5f, 2.0f), safeCarveStrength * 0.18f);
+            if (effectiveCaveSdf >= booleanBlendRadius)
+                return;
+
+            // Standard SDF subtraction is smax(A, -B). The project density convention is inverted
+            // (positive = solid), so the terrain and result are negated around the canonical operation.
+            float terrainStandardSdf = -originalDensity;
+            float carvedStandardSdf = Smax(terrainStandardSdf, -effectiveCaveSdf, booleanBlendRadius);
+            float newDensity = -carvedStandardSdf;
+
+            // Failsafe: procedural caves are only allowed to remove terrain-owned rock, never add it.
+            Sdf[index] = math.min(newDensity, originalDensity);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float EvaluateGyroidCellularCaveSdf(float3 p, float3 seedOffset)
+        {
+            float primaryFrequency = math.max(math.abs(PrimaryFrequency), 0.0005f);
+            float secondaryFrequency = math.max(math.abs(SecondaryFrequency), 0.0005f);
+            float safeCarveStrength = math.max(CarveStrengthMeters, math.max(VoxelSizeMeters, 1.0f));
+
+            float warpFrequency = math.max(primaryFrequency * 0.47f, 0.0005f);
+            float warpAmplitude = math.clamp(safeCarveStrength * 0.35f, 2.0f, 22.0f);
+            float3 warpedPos = ApplyDomainWarp(p, seedOffset, warpFrequency, warpAmplitude);
+
             float strataThickness = math.max(4.0f, StrataLayerThicknessMeters);
-            float strataPhase = (float)absY / strataThickness;
-            float strataFrac = math.abs(math.frac(strataPhase) * 2.0f - 1.0f);
-            
-            // Only push density back at layer boundaries. 
-            float strataRestore = (1.0f - strataFrac) * StrataShelvingStrength * caveMask * surfaceFade;
-            
-            // Final density modification.
-            float targetDensity = currentDensity - carve + strataRestore;
+            float strataFrequency = Tau / strataThickness;
+            float strataAmplitude = math.clamp(StrataShelvingStrength * strataThickness, 0.0f, strataThickness * 0.45f);
+            warpedPos.y += math.sin((warpedPos.y + seedOffset.y) * strataFrequency) * strataAmplitude;
 
-            // === CRITICAL SAFETY NET & ORGANIC BLENDING ===
-            // Use Polynomial Smooth Minimum (smin) to organically blend the cave SDF with the base terrain SDF.
-            float smoothedDensity = Smin(currentDensity, targetDensity, 5.0f);
-            
-            // PREVENT CHUNK BOUNDARY TEARS: Smin(A,A) shifts density by -k/4. 
-            // We must mask out this shift in solid/air chunks where carve is zero to perfectly align with skipped chunks.
-            float caveInfluence = math.saturate(caveMask * surfaceFade * 100.0f);
-            float newDensity = math.lerp(currentDensity, smoothedDensity, caveInfluence);
-            
-            // We also must clamp to currentDensity to NEVER add rock that didn't exist in the base terrain
-            newDensity = math.min(newDensity, currentDensity);
-            
-            Sdf[index] = newDensity;
+            float rarity = math.saturate(CaveThreshold);
+
+            float3 gyroidPos = (warpedPos + seedOffset * 0.37f) * primaryFrequency * Tau;
+            float gyroid = math.sin(gyroidPos.x) * math.cos(gyroidPos.y) +
+                           math.sin(gyroidPos.y) * math.cos(gyroidPos.z) +
+                           math.sin(gyroidPos.z) * math.cos(gyroidPos.x);
+            float gyroidBand = math.lerp(0.62f, 0.26f, rarity);
+            float gyroidMetricScale = math.max(1.0f / (primaryFrequency * Tau), VoxelSizeMeters);
+            float gyroidSdf = (math.abs(gyroid) - gyroidBand) * gyroidMetricScale;
+
+            float chamberFrequency = math.max(secondaryFrequency * 0.55f, 0.0005f);
+            float chamberDistance = CellularDistance(warpedPos + seedOffset * 1.91f, chamberFrequency, WorldSeed ^ 0xC0A55123u);
+            float chamberNoise = noise.snoise((warpedPos + seedOffset * 2.73f) * chamberFrequency * 1.83f);
+            float chamberRadius = math.lerp(0.42f, 0.20f, rarity) + chamberNoise * 0.055f;
+            chamberRadius = math.clamp(chamberRadius, 0.14f, 0.48f);
+            float chamberSdf = (chamberDistance - chamberRadius) / chamberFrequency;
+
+            float reefNoise = noise.snoise((warpedPos + seedOffset * 4.11f) * primaryFrequency * 2.67f) * safeCarveStrength * 0.08f;
+            return math.min(gyroidSdf, chamberSdf) + reefNoise;
         }
 
-        /// <summary>
-        /// Evaluates a 3-octave ridged multifractal in 3D.
-        /// Returns a value where high = ridge centerline (potential tunnel).
-        /// The verticalBias parameter stretches the noise vertically to create
-        /// horizontal-biased tunnels (1.0 = isotropic, &lt;1.0 = more horizontal).
-        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float EvaluateRidgedWorm(float3 p, float frequency, float verticalBias)
+        private static float3 ApplyDomainWarp(float3 p, float3 seedOffset, float frequency, float amplitude)
         {
-            float3 scale = new float3(1.0f, verticalBias, 1.0f);
-
-            // Octave 0: base tunnels
-            float3 p0 = p * scale * frequency;
-            float n0 = 1.0f - math.abs(noise.snoise(p0));
-            n0 *= n0; // Square to sharpen ridges into thin tunnel centerlines
-
-            // Octave 1: medium detail (lacunarity 2.17, gain 0.5)
-            float3 p1 = p * scale * (frequency * 2.17f) + 7.31f;
-            float n1 = 1.0f - math.abs(noise.snoise(p1));
-            n1 *= n1;
-
-            // Octave 2: fine detail (lacunarity 4.71, gain 0.25)
-            float3 p2 = p * scale * (frequency * 4.71f) + 13.97f;
-            float n2 = 1.0f - math.abs(noise.snoise(p2));
-            n2 *= n2;
-
-            // Weight-modulated sum: successive octaves are modulated by the previous.
-            // This creates connected tunnels rather than isolated pockets.
-            float weight = 1.0f;
-            float total = n0 * weight;
-            weight = math.saturate(n0 * 2.0f);
-            total += n1 * 0.5f * weight;
-            weight = math.saturate(n1 * 2.0f);
-            total += n2 * 0.25f * weight;
-
-            // Normalize to approximately 0..1
-            return total / 1.75f;
+            float3 q = (p + seedOffset) * frequency;
+            float wx = noise.snoise(q + new float3(17.31f, 41.17f, -11.73f));
+            float wy = noise.snoise(q + new float3(-29.19f, 7.83f, 53.41f));
+            float wz = noise.snoise(q + new float3(61.07f, -23.59f, 5.29f));
+            return p + new float3(wx, wy, wz) * amplitude;
         }
 
-        /// <summary>
-        /// Polynomial Smooth Minimum (smin) for organic SDF composition.
-        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float Smin(float a, float b, float k)
+        private static float CellularDistance(float3 p, float frequency, uint seed)
         {
-            float h = math.saturate(0.5f + 0.5f * (b - a) / k);
-            return math.lerp(b, a, h) - k * h * (1.0f - h);
+            float3 cellPos = p * frequency;
+            int3 baseCell = new int3(
+                (int)math.floor(cellPos.x),
+                (int)math.floor(cellPos.y),
+                (int)math.floor(cellPos.z));
+            float3 frac = cellPos - new float3(baseCell.x, baseCell.y, baseCell.z);
+
+            float nearestSq = 99999.0f;
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        int3 neighbor = baseCell + new int3(dx, dy, dz);
+                        float3 feature = Hash3ToUnitFloat3(neighbor, seed);
+                        float3 diff = new float3(dx, dy, dz) + feature - frac;
+                        nearestSq = math.min(nearestSq, math.lengthsq(diff));
+                    }
+                }
+            }
+
+            return math.sqrt(nearestSq);
+        }
+
+        /// <summary>Polynomial smooth maximum. Canonical SDF subtraction uses smax(A, -B).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smax(float a, float b, float k)
+        {
+            float width = math.max(k, 0.0001f);
+            float h = math.saturate(0.5f + 0.5f * (a - b) / width);
+            return math.lerp(b, a, h) + width * h * (1.0f - h);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveSeedOffset(uint seed)
+        {
+            float seedOffX = ((seed & 0xFFu) - 128f) * 0.5f;
+            float seedOffY = (((seed >> 8) & 0xFFu) - 128f) * 0.5f;
+            float seedOffZ = (((seed >> 16) & 0xFFu) - 128f) * 0.5f;
+            return new float3(seedOffX, seedOffY, seedOffZ);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 Hash3ToUnitFloat3(int3 cell, uint seed)
+        {
+            uint hx = Hash(cell.x, cell.y, cell.z, seed ^ 0x9E3779B9u);
+            uint hy = Hash(cell.x, cell.y, cell.z, seed ^ 0xBB67AE85u);
+            uint hz = Hash(cell.x, cell.y, cell.z, seed ^ 0x3C6EF372u);
+            return new float3(HashToUnitFloat(hx), HashToUnitFloat(hy), HashToUnitFloat(hz));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Hash(int x, int y, int z, uint seed)
+        {
+            unchecked
+            {
+                uint h = seed;
+                h ^= (uint)x * 0x8DA6B343u;
+                h ^= (uint)y * 0xD8163841u;
+                h ^= (uint)z * 0xCB1AB31Fu;
+                h ^= h >> 16;
+                h *= 0x7FEB352Du;
+                h ^= h >> 15;
+                h *= 0x846CA68Bu;
+                h ^= h >> 16;
+                return h;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float HashToUnitFloat(uint hash)
+        {
+            return (hash & 0x00FFFFFFu) * (1.0f / 16777216.0f);
         }
 
         /// <summary>
@@ -215,8 +256,7 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double Fmod(double value, double period)
         {
-            double result = value - math.floor(value / period) * period;
-            return result;
+            return value - math.floor(value / period) * period;
         }
     }
 }

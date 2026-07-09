@@ -5667,15 +5667,15 @@ namespace Hecton8.AI
         }
     
         #region JulesLink_FaunaSensoryDetectionRangeCalculator
-        private static void JulesLink_FaunaSensoryDetectionRangeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FaunaSensoryDetectionRangeCalculator); }
+        private static void JulesLink_FaunaSensoryDetectionRangeCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaSensoryDetectionRangeCalculator); }
         #endregion
 
         #region JulesLink_FaunaPheromoneTrackingVector
-        private static void JulesLink_FaunaPheromoneTrackingVector() { _ = typeof(Hecton8.PureLogic.Systems.FaunaPheromoneTrackingVector); }
+        private static void JulesLink_FaunaPheromoneTrackingVector() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaPheromoneTrackingVector); }
         #endregion
 
         #region JulesLink_FaunaPatrolPathSmootherCalculator
-        private static void JulesLink_FaunaPatrolPathSmootherCalculator() { _ = typeof(Hecton8.PureLogic.Systems.FaunaPatrolPathSmootherCalculator); }
+        private static void JulesLink_FaunaPatrolPathSmootherCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaPatrolPathSmootherCalculator); }
         #endregion
 }
 }

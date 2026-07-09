@@ -2860,7 +2860,7 @@ namespace Hecton8.Gameplay
         {
             return (int)((packedMeta >> MetaDetailIndexShift) & MetaDetailIndexMask);
         }
-    
+
         #region JulesLink_ProjectileDamageFalloffCalculator
         private static void JulesLink_ProjectileDamageFalloffCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ProjectileDamageFalloffCalculator); }
         #endregion
@@ -2876,9 +2876,9 @@ namespace Hecton8.Gameplay
         #region JulesLink_BleedStackDecayModel
         private static void JulesLink_BleedStackDecayModel() { _ = typeof(Hecton8.PureLogic.Systems.BleedStackDecayModel); }
         #endregion
-}
 
         #region JulesLink_WaterPressureWeaponMultiplier
         private static void JulesLink_WaterPressureWeaponMultiplier() { _ = typeof(Hecton8.PureLogic.Systems.WaterPressureWeaponMultiplier); }
         #endregion
+    }
 }

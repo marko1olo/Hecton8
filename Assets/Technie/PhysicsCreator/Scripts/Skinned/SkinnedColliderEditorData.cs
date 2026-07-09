@@ -181,9 +181,9 @@ namespace Technie.PhysicsCreator.Skinned
 		public void SetSelection(BonePhysicsData bone)
 
 		{
-			for (int i=0; i<boneJointData.Count; i++)
+			for (int i=0; i<boneData.Count; i++)
 			{
-				if (boneJointData[i] == bone)
+				if (boneData[i] == bone)
 				{
 					selectedBoneIndex = i;
 					selectedHullIndex = INVALID_INDEX;
@@ -221,8 +221,8 @@ namespace Technie.PhysicsCreator.Skinned
 		public BonePhysicsData GetSelectedBone()
 
 		{
-			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneJointData.Count)
-				return boneJointData[selectedBoneIndex];
+			if (selectedBoneIndex >= 0 && selectedBoneIndex < boneData.Count)
+				return boneData[selectedBoneIndex];
 			else
 				return null;
 		}
@@ -323,7 +323,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public void Add(BonePhysicsData data)
 
 		{
-			boneJointData.Add(data);
+			boneData.Add(data);
 
 			MarkDirty();
 		}
@@ -332,7 +332,7 @@ namespace Technie.PhysicsCreator.Skinned
 		public void Remove(BonePhysicsData data)
 
 		{
-			boneJointData.Remove(data);
+			boneData.Remove(data);
 
 			MarkDirty();
 		}

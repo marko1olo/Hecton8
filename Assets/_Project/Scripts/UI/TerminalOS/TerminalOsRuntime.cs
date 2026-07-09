@@ -3967,8 +3967,6 @@ namespace Hecton8.UI
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 ToVector3(float3 value)
         {
             return new Vector3(value.x, value.y, value.z);

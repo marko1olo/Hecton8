@@ -1,11 +1,13 @@
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    [System.Obsolete("DO NOT USE. Legacy job leaking weights. Awaiting PILLAR 1 8-layer architecture.", true)]
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WorldProceduralTerrainSlopeCavitySplatmapJob : IJobParallelFor
     {
@@ -147,14 +149,20 @@ namespace Hecton8.World
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct WorldTerrainSurfaceMaterialMaskJob : IJobParallelFor
     {
+        [ReadOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray<float> HeightBufferMeters;
         [WriteOnly, NoAlias] public NativeArray<float4> Primary;
         [WriteOnly, NoAlias] public NativeArray<float4> Secondary;
         [WriteOnly, NoAlias] public NativeArray<float4> Control1;
         [WriteOnly, NoAlias] public NativeArray<float4> Control2;
+        [WriteOnly, NoAlias] public NativeArray<float> Slope01;
+        [WriteOnly, NoAlias] public NativeArray<float> Curvature01;
+        [WriteOnly, NoAlias] public NativeArray<int> DominantMaterialIndex;
 
         public int Width;
         public int Height;
+        public int HeightBufferResolution;
         public float CellSizeMeters;
+        public float HeightCellSizeMeters;
         public double2 WorldOriginXZ;
         public WorldMacroGeologyParams MacroGeologyParams;
         public float MaskContrast;
@@ -170,12 +178,48 @@ namespace Hecton8.World
             }
 
             int safeWidth = math.max(1, Width);
+            int safeHeight = math.max(1, Height);
             int x = index % safeWidth;
             int z = index / safeWidth;
+            if (z >= safeHeight)
+                return;
+
             float safeCellSize = math.max(0.001f, CellSizeMeters);
             float absoluteX = (float)(WorldOriginXZ.x + x * (double)safeCellSize);
             float absoluteZ = (float)(WorldOriginXZ.y + z * (double)safeCellSize);
-            WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(absoluteX, absoluteZ, in MacroGeologyParams);
+            int requiredHeightSamples = math.max(0, HeightBufferResolution) * math.max(0, HeightBufferResolution);
+            bool useCachedHeightBuffer = HeightBufferMeters.IsCreated && HeightBufferResolution > 1 && HeightBufferMeters.Length >= requiredHeightSamples;
+            WorldMacroGeologySample sample;
+            if (useCachedHeightBuffer)
+            {
+                float safeHeightCellSize = math.max(0.001f, HeightCellSizeMeters > 0f ? HeightCellSizeMeters : safeCellSize);
+                float center = ReadHeightMeters(x, z);
+                float west = ReadHeightMeters(math.max(0, x - 1), z);
+                float east = ReadHeightMeters(math.min(HeightBufferResolution - 1, x + 1), z);
+                float south = ReadHeightMeters(x, math.max(0, z - 1));
+                float north = ReadHeightMeters(x, math.min(HeightBufferResolution - 1, z + 1));
+                float dx = (east - west) / (safeHeightCellSize * 2f);
+                float dz = (north - south) / (safeHeightCellSize * 2f);
+                float slope = math.sqrt(math.max(0f, dx * dx + dz * dz));
+                float slope01 = math.saturate(slope / 1.25f);
+                float laplacian = (west + east + south + north - center * 4f) / math.max(0.001f, safeHeightCellSize * safeHeightCellSize);
+                float positiveCurvature01 = math.saturate(math.max(0f, laplacian) * 280f);
+                float negativeCurvature01 = math.saturate(math.max(0f, -laplacian) * 280f);
+                float curvature01 = math.saturate(math.abs(laplacian) * 280f);
+                sample = WorldMacroGeologyFields.EvaluateWithCachedDifferentials(
+                    absoluteX,
+                    absoluteZ,
+                    in MacroGeologyParams,
+                    center,
+                    slope01,
+                    curvature01,
+                    positiveCurvature01,
+                    negativeCurvature01);
+            }
+            else
+            {
+                sample = WorldMacroGeologyFields.Evaluate(absoluteX, absoluteZ, in MacroGeologyParams);
+            }
             WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(
                 in sample,
                 absoluteX,
@@ -206,6 +250,48 @@ namespace Hecton8.World
             WorldTerrainControlMapSplats splats = WorldTerrainSurfaceMaterialResolver.ResolveControlSplats(in weights);
             Control1[index] = splats.Control1;
             Control2[index] = splats.Control2;
+
+            if (Slope01.IsCreated && (uint)index < (uint)Slope01.Length)
+                Slope01[index] = sample.Slope01;
+            if (Curvature01.IsCreated && (uint)index < (uint)Curvature01.Length)
+                Curvature01[index] = sample.Curvature01;
+            if (DominantMaterialIndex.IsCreated && (uint)index < (uint)DominantMaterialIndex.Length)
+                DominantMaterialIndex[index] = ResolveDominantMaterialIndex(in weights);
+        }
+
+        private static int ResolveDominantMaterialIndex(in WorldTerrainSurfaceMaterialWeights weights)
+        {
+            int index = 0;
+            float best = weights.ShellSand;
+            SelectDominant(weights.LimestoneShelf, 1, ref best, ref index);
+            SelectDominant(weights.ClaySilt, 2, ref best, ref index);
+            SelectDominant(weights.HardRock, 3, ref best, ref index);
+            SelectDominant(weights.BrineSaltCrust, 4, ref best, ref index);
+            SelectDominant(weights.ManganeseNodulePlain, 5, ref best, ref index);
+            SelectDominant(weights.ReefRubble, 6, ref best, ref index);
+            SelectDominant(weights.SeepCrust, 7, ref best, ref index);
+            return index;
+        }
+
+        private static void SelectDominant(float value, int candidate, ref float best, ref int index)
+        {
+            if (value <= best)
+                return;
+
+            best = value;
+            index = candidate;
+        }
+
+        private float ReadHeightMeters(int x, int z)
+        {
+            int safeResolution = math.max(1, HeightBufferResolution);
+            int hx = math.clamp(x, 0, safeResolution - 1);
+            int hz = math.clamp(z, 0, safeResolution - 1);
+            int i = hz * safeResolution + hx;
+            if (!HeightBufferMeters.IsCreated || (uint)i >= (uint)HeightBufferMeters.Length)
+                return 0f;
+
+            return HeightBufferMeters[i];
         }
 
         private WorldTerrainMesoDetailParams ResolveMesoDetailParams(float cellSizeMeters)

@@ -1,5 +1,13 @@
 using System;
 using System.Numerics;
+
+namespace Hecton8.PureLogic.Systems
+{
+    /// <summary>
+    /// Computes/evaluates the mathematical model.
+    /// </summary>
+    public static class CoreTempEquilibriumSolver
+    {
         /// <summary>
         /// Computes/evaluates the mathematical model.
         /// </summary>
@@ -40,7 +48,7 @@ using System.Numerics;
             float x3 = x2 * x;
             float numerator = 1f - (0.5f * x) + (0.1f * x2) - ((1f / 120f) * x3);
             float denominator = 1f + (0.5f * x) + (0.1f * x2) + ((1f / 120f) * x3);
-
+            return 1f - (numerator / denominator);
         }
     }
 }

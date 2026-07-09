@@ -4415,7 +4415,7 @@ namespace Hecton8.World
 
     
         #region JulesLink_DepositDepletionCurveCalculator
-        private static void JulesLink_DepositDepletionCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.DepositDepletionCurveCalculator); }
+        private static void JulesLink_DepositDepletionCurveCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.DepositDepletionCurveCalculator); }
         #endregion
 }
 }

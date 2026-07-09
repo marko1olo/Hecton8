@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.World;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;

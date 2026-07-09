@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -93,7 +93,6 @@ namespace Technie.PhysicsCreator
 			bool hasUv5 = inputSubMesh.HasUv5();
 			bool hasUv6 = inputSubMesh.HasUv6();
 			bool hasUv7 = inputSubMesh.HasUv7();
-			bool hasTangents = inputSubMesh.HasTangents();
 
 			CuttableSubMesh frontSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasUv2, hasUv3, hasUv4, hasUv5, hasUv6, hasUv7, hasTangents);
 			CuttableSubMesh backSubMesh = new CuttableSubMesh(hasNormals, hasColours, hasUvs, hasUv1, hasUv2, hasUv3, hasUv4, hasUv5, hasUv6, hasUv7, hasTangents);

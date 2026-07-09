@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Burst;

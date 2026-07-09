@@ -150,6 +150,10 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float4> secondary = default;
             NativeArray<float4> control1 = default;
             NativeArray<float4> control2 = default;
+            NativeArray<float> heightBufferFallback = default;
+            NativeArray<float> slopeFallback = default;
+            NativeArray<float> curvatureFallback = default;
+            NativeArray<int> dominantFallback = default;
             int primaryRegistrationId = 0;
             int secondaryRegistrationId = 0;
             int control1RegistrationId = 0;
@@ -163,6 +167,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                 secondary = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 control1 = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 control2 = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                heightBufferFallback = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                slopeFallback = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                curvatureFallback = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                dominantFallback = new NativeArray<int>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 primaryRegistrationId = RegisterPersistentArray(primary, PrimaryLabel);
                 secondaryRegistrationId = RegisterPersistentArray(secondary, SecondaryLabel);
                 control1RegistrationId = RegisterPersistentArray(control1, Control1Label);
@@ -170,13 +178,19 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 var job = new WorldTerrainSurfaceMaterialMaskJob
                 {
+                    HeightBufferMeters = heightBufferFallback,
                     Primary = primary,
                     Secondary = secondary,
                     Control1 = control1,
                     Control2 = control2,
+                    Slope01 = slopeFallback,
+                    Curvature01 = curvatureFallback,
+                    DominantMaterialIndex = dominantFallback,
                     Width = width,
                     Height = height,
+                    HeightBufferResolution = 0,
                     CellSizeMeters = ResolveCellSizeMeters(shellSand),
+                    HeightCellSizeMeters = ResolveCellSizeMeters(shellSand),
                     WorldOriginXZ = new double2(shellSand.worldPos.x, shellSand.worldPos.z),
                     MacroGeologyParams = BuildMacroGeologyParams(),
                     MaskContrast = math.isfinite(maskContrast) ? math.max(0.05f, maskContrast) : 1f
@@ -222,6 +236,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (scheduled)
                     DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
+                if (dominantFallback.IsCreated) dominantFallback.Dispose();
+                if (curvatureFallback.IsCreated) curvatureFallback.Dispose();
+                if (slopeFallback.IsCreated) slopeFallback.Dispose();
+                if (heightBufferFallback.IsCreated) heightBufferFallback.Dispose();
                 DisposeTracked(ref primary, ref primaryRegistrationId);
                 DisposeTracked(ref secondary, ref secondaryRegistrationId);
                 DisposeTracked(ref control1, ref control1RegistrationId);

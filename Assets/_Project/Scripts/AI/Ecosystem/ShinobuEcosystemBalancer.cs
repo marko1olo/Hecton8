@@ -4729,7 +4729,7 @@ namespace Hecton8.AI.Ecosystem
         }
     
         #region JulesLink_ExtinctionRiskIndexCalculator
-        private static void JulesLink_ExtinctionRiskIndexCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ExtinctionRiskIndexCalculator); }
+        private static void JulesLink_ExtinctionRiskIndexCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.ExtinctionRiskIndexCalculator); }
         #endregion
 }
 

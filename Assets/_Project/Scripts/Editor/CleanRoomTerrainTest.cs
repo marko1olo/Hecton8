@@ -1,295 +1,944 @@
+using System;
 using System.IO;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
+using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-using Hecton8.World;
+using Object = UnityEngine.Object;
 
-public static class CleanRoomTerrainTest
+namespace Hecton8.Editor
 {
-    private const string ArtifactDir = "C:/Users/Admin/.gemini/antigravity/brain/4da41d18-38fe-4fa6-931d-7cd8abcc82e8/";
-
-    [MenuItem("Hecton8/Clean Room Terrain Test")]
-    public static void RunTest()
+    public static class CleanRoomTerrainTest
     {
-        Debug.Log("[CleanRoom] Starting Clean Room Terrain Test...");
+        private const int GridRadius = 1;
+        private const int TerrainGridSize = 3;
+        private const int HeightResolution = 1025;
+        private const int AlphaResolution = 1024;
+        private const int TerrainLayerCount = 8;
+        private const float ChunkSizeMeters = 1000f;
+        private const float TerrainHeightRangeMeters = 5200f;
+        private const float TerrainBaseY = -5000f;
+        private const float MinTerrainHeightMeters = -5000f;
+        private const float MaxTerrainHeightMeters = 200f;
 
-        // 1. Create a new empty scene
-        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
-        Debug.Log("[CleanRoom] Created empty scene.");
-
-        // 2. Setup lighting and PBR
-        // Ambient Flat Color
-        RenderSettings.ambientMode = AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.1f, 0.15f, 0.2f);
-        RenderSettings.fog = false;
-
-        // Directional Light
-        GameObject lightGo = new GameObject("TRT_Sun");
-        Light sun = lightGo.AddComponent<Light>();
-        sun.type = LightType.Directional;
-        sun.color = Color.white;
-        sun.intensity = 1.8f;
-        sun.shadows = LightShadows.Soft;
-        lightGo.transform.rotation = Quaternion.Euler(40f, 65f, 0f);
-        Debug.Log("[CleanRoom] Configured Directional Light and Ambient.");
-
-        // Global Volume with ACES
-        GameObject volumeGo = new GameObject("TRT_GlobalVolume");
-        var volume = volumeGo.AddComponent<Volume>();
-        volume.isGlobal = true;
-        volume.priority = 100;
-        
-        var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-        volume.profile = profile;
-        
-        var tonemapping = profile.Add<Tonemapping>();
-        tonemapping.mode.Override(TonemappingMode.ACES);
-
-        var exposure = profile.Add<ColorAdjustments>();
-        exposure.postExposure.Override(3.2f); // Lift brightness for dark deep-sea albedos
-        exposure.contrast.Override(-10f);     // Soften contrast for readability
-        Debug.Log("[CleanRoom] Configured Global Volume with ACES.");
-
-        // Load Shader and Textures
-        Shader shader = Shader.Find("Hecton8/URP/Terrain_TextureArray");
-        if (shader == null)
+        [MenuItem("Hecton8/Tests/Clean Room Terrain")]
+        public static void RunTest()
         {
-            shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Shaders/HectonTerrain.shader");
-        }
-        if (shader == null)
-        {
-            Debug.LogError("[CleanRoom] Failed to find HectonTerrain shader!");
-            return;
+            ExecuteInternal(exitOnFinish: false);
         }
 
-        Material baseMat = new Material(shader);
-        baseMat.name = "CleanRoomTerrainMaterial";
-
-        Texture2DArray albedo = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_AlbedoArray.asset");
-        Texture2DArray normal = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/DeepSea_NormalArray.asset");
-        Texture2DArray mask = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
-
-        if (albedo == null) Debug.LogWarning("[CleanRoom] DeepSea_AlbedoArray.asset not found!");
-        if (normal == null) Debug.LogWarning("[CleanRoom] DeepSea_NormalArray.asset not found!");
-        if (mask == null)   Debug.LogWarning("[CleanRoom] Terrain_MaskArray.asset not found!");
-
-        baseMat.SetTexture("_AlbedoArray", albedo);
-        baseMat.SetTexture("_NormalArray", normal);
-        baseMat.SetTexture("_MaskArray", mask);
-        baseMat.SetFloat("_HectonUVScale", 400f);
-        baseMat.SetFloat("_HectonTriplanarBlend", 8f);
-        baseMat.EnableKeyword("_NORMALMAP");
-        baseMat.EnableKeyword("_MASKMAP");
-        baseMat.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
-
-        // Load Terrain Layers
-        TerrainLayer[] layers = new TerrainLayer[3];
-        layers[0] = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/_Project/Art/TEXTURES/Terrain Textures/sand/L_Sand.terrainlayer");
-        layers[1] = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/_Project/Art/TEXTURES/Terrain Textures/gravel/L_Gravel.terrainlayer");
-        layers[2] = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/_Project/Art/TEXTURES/Terrain Textures/rocks/L_Rocks.terrainlayer");
-
-        if (layers[0] == null) Debug.LogWarning("[CleanRoom] Sand terrain layer not found!");
-        if (layers[2] == null) Debug.LogWarning("[CleanRoom] Rock terrain layer not found!");
-
-        // 3. Generate 3x3 Terrains
-        int chunkRes = 513;
-        int alphaRes = 512;
-        float chunkSize = 1000f;
-        float heightRange = 4000f;
-
-        WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(880031);
-        p.WaterSurfaceY = 0f;
-
-        Terrain[,] terrains = new Terrain[3, 3];
-
-        for (int row = -1; row <= 1; row++)
+        public static void Execute()
         {
-            for (int col = -1; col <= 1; col++)
+            ExecuteInternal(exitOnFinish: true);
+        }
+
+        private static void ExecuteInternal(bool exitOnFinish)
+        {
+            int exitCode = 0;
+            VolumeProfile profile = null;
+            try
             {
-                float posX = col * chunkSize;
-                float posZ = row * chunkSize;
+                string artifactDir = ResolveArtifactDirectory();
+                Directory.CreateDirectory(artifactDir);
+                Debug.Log($"[CleanRoom] Starting clean-room terrain proof. Artifacts: {artifactDir}");
 
-                GameObject terrainGo = new GameObject($"CleanRoom_Terrain_{row + 1}_{col + 1}");
-                terrainGo.transform.position = new Vector3(posX, -4000f, posZ);
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+                Selection.activeGameObject = null;
+                Selection.objects = Array.Empty<Object>();
 
-                Terrain terrain = terrainGo.AddComponent<Terrain>();
-                TerrainCollider collider = terrainGo.AddComponent<TerrainCollider>();
+                ConfigureLighting(out profile);
+                Material baseMaterial = BuildBaseTerrainMaterial();
+                TerrainLayer[] terrainLayers = BuildTerrainLayers();
+                WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(WorldMacroGeologyFields.DefaultAuthoringSeed);
+                macroParams.WaterSurfaceY = 0f;
+                macroParams.DetailProbeMeters = 16f;
 
-                TerrainData td = new TerrainData();
-                td.heightmapResolution = chunkRes;
-                td.alphamapResolution = alphaRes;
-                td.size = new Vector3(chunkSize, heightRange, chunkSize);
-                td.terrainLayers = layers;
+                UnityEngine.Terrain[,] terrains = new UnityEngine.Terrain[TerrainGridSize, TerrainGridSize];
+                float[,] centerWorldHeights = null;
+                float[,] centerSlope = null;
+                float[,] centerCurvature = null;
+                int[,] centerMaterial = null;
 
-                terrain.terrainData = td;
-                collider.terrainData = td;
-                terrain.basemapDistance = 100000.0f; // Prevent fallback to URP Lit Basemap
-
-                terrains[row + 1, col + 1] = terrain;
-
-                Debug.Log($"[CleanRoom] Generating terrain row={row}, col={col}...");
-
-                // Populate Heights
-                float[,] heights = new float[chunkRes, chunkRes];
-                Parallel.For(0, chunkRes, z =>
+                for (int row = -GridRadius; row <= GridRadius; row++)
                 {
-                    float localZ = (float)z / (chunkRes - 1) * chunkSize;
-                    float worldZ = posZ + localZ;
-                    for (int x = 0; x < chunkRes; x++)
+                    for (int col = -GridRadius; col <= GridRadius; col++)
                     {
-                        float localX = (float)x / (chunkRes - 1) * chunkSize;
-                        float worldX = posX + localX;
+                        float originX = col * ChunkSizeMeters;
+                        float originZ = row * ChunkSizeMeters;
+                        UnityEngine.Terrain terrain = BuildTerrainChunk(
+                            row,
+                            col,
+                            originX,
+                            originZ,
+                            in macroParams,
+                            terrainLayers,
+                            baseMaterial,
+                            row == 0 && col == 0,
+                            out float[,] worldHeights,
+                            out float[,] slope01,
+                            out float[,] curvature01,
+                            out int[,] dominantMaterial);
 
-                        float h = WorldMacroGeologyFields.EvaluateHeightMeters(worldX, worldZ, in p);
-                        float h_norm = (h + 4000f) / 4000f;
-                        heights[z, x] = math.clamp(h_norm, 0f, 1f);
+                        terrains[row + GridRadius, col + GridRadius] = terrain;
+                        if (row == 0 && col == 0)
+                        {
+                            centerWorldHeights = worldHeights;
+                            centerSlope = slope01;
+                            centerCurvature = curvature01;
+                            centerMaterial = dominantMaterial;
+                        }
                     }
-                });
-                td.SetHeights(0, 0, heights);
+                }
 
-                // Populate Alphamaps (Splatmaps)
-                float[,,] alphamaps = new float[alphaRes, alphaRes, 3];
-                Parallel.For(0, alphaRes, z =>
+                StitchTerrainGrid(terrains);
+                Camera camera = BuildCamera();
+                ExportSplatmapComposite(terrains, Path.Combine(artifactDir, "Debug_Splatmap_3x3.png"));
+                RenderBeauty(camera, Path.Combine(artifactDir, "CleanRoom_Beauty.png"));
+                BiomeTransitionShot transitionShot = FindBiomeTransitionShot(terrains, in macroParams);
+                RenderTransitionBeauty(camera, transitionShot, Path.Combine(artifactDir, "Naked_Biome_Transition.png"));
+                ExportXRayMaps(artifactDir, centerWorldHeights, centerSlope, centerCurvature, centerMaterial);
+
+                Debug.Log("[CleanRoom] Clean-room terrain proof complete.");
+            }
+            catch (Exception ex)
+            {
+                exitCode = 1;
+                Debug.LogError($"[CleanRoom] FAILURE: {ex}");
+            }
+            finally
+            {
+                if (profile != null)
+                    Object.DestroyImmediate(profile);
+
+                if (exitOnFinish && Application.isBatchMode)
+                    EditorApplication.Exit(exitCode);
+            }
+        }
+
+        private static string ResolveProjectRoot()
+        {
+            return Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        }
+
+        private static string ResolveArtifactDirectory()
+        {
+            return Path.Combine(ResolveProjectRoot(), "Docs", "Reports", "CleanRoom");
+        }
+
+        private static void ConfigureLighting(out VolumeProfile profile)
+        {
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color(0.045f, 0.065f, 0.085f, 1f);
+            RenderSettings.fog = false;
+
+            GameObject sunGo = new GameObject("CleanRoom_WhiteSun");
+            Light sun = sunGo.AddComponent<Light>();
+            sun.type = LightType.Directional;
+            sun.color = Color.white;
+            sun.intensity = 2.35f;
+            sun.shadows = LightShadows.Soft;
+            sunGo.transform.rotation = Quaternion.Euler(42f, 53f, 0f);
+
+            GameObject fillGo = new GameObject("CleanRoom_AbyssFill");
+            Light fill = fillGo.AddComponent<Light>();
+            fill.type = LightType.Directional;
+            fill.color = new Color(0.40f, 0.60f, 0.82f, 1f);
+            fill.intensity = 0.38f;
+            fill.shadows = LightShadows.None;
+            fillGo.transform.rotation = Quaternion.Euler(18f, -135f, 0f);
+
+            GameObject volumeGo = new GameObject("CleanRoom_ACESVolume");
+            Volume volume = volumeGo.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 100;
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            volume.profile = profile;
+
+            Tonemapping tonemapping = profile.Add<Tonemapping>();
+            tonemapping.mode.Override(TonemappingMode.ACES);
+            ColorAdjustments color = profile.Add<ColorAdjustments>();
+            color.postExposure.Override(2.55f);
+            color.contrast.Override(-8f);
+            color.saturation.Override(4f);
+        }
+
+        private static Material BuildBaseTerrainMaterial()
+        {
+            Material source = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
+            Material material;
+            if (source != null)
+            {
+                material = new Material(source);
+            }
+            else
+            {
+                Shader shader = Shader.Find("Hecton8/URP/Terrain_TextureArray");
+                if (shader == null)
+                    shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/_Project/Shaders/HectonTerrain.shader");
+                if (shader == null)
+                    throw new InvalidOperationException("Hecton terrain shader could not be loaded.");
+
+                material = new Material(shader);
+            }
+
+            material.name = "CleanRoomTerrainMaterial_Runtime";
+            Texture2DArray albedo = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_AlbedoArray.asset");
+            Texture2DArray normal = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_NormalArray.asset");
+            Texture2DArray mask = AssetDatabase.LoadAssetAtPath<Texture2DArray>("Assets/_SourceData/Terrain/TextureArrays/Terrain_MaskArray.asset");
+            if (albedo != null) material.SetTexture("_AlbedoArray", albedo);
+            if (normal != null) material.SetTexture("_NormalArray", normal);
+            if (mask != null) material.SetTexture("_MaskArray", mask);
+            material.SetFloat("_HectonUVScale", 400f);
+            material.SetFloat("_HectonTriplanarBlend", 8f);
+            if (material.HasProperty("_HectonMacroVariationStrength"))
+                material.SetFloat("_HectonMacroVariationStrength", 1.0f);
+            material.EnableKeyword("_NORMALMAP");
+            material.EnableKeyword("_MASKMAP");
+            material.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
+            return material;
+        }
+
+        private static TerrainLayer[] BuildTerrainLayers()
+        {
+            string[] candidatePaths =
+            {
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/sand/L_Sand.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/gravel/L_Gravel.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/silt/L_Silt.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/rocks/L_Rocks.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/salt/L_Salt.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/nodules/L_Nodules.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/reef/L_ReefRubble.terrainlayer",
+                "Assets/_Project/Art/TEXTURES/Terrain Textures/seep/L_SeepCrust.terrainlayer"
+            };
+
+            TerrainLayer[] layers = new TerrainLayer[TerrainLayerCount];
+            for (int i = 0; i < layers.Length; i++)
+            {
+                TerrainLayer loaded = AssetDatabase.LoadAssetAtPath<TerrainLayer>(candidatePaths[i]);
+                layers[i] = loaded != null ? loaded : CreateTransientLayer(i);
+            }
+
+            return layers;
+        }
+
+        private static TerrainLayer CreateTransientLayer(int index)
+        {
+            Color[] colors =
+            {
+                new Color(0.55f, 0.58f, 0.52f),
+                new Color(0.45f, 0.50f, 0.46f),
+                new Color(0.25f, 0.32f, 0.40f),
+                new Color(0.16f, 0.18f, 0.21f),
+                new Color(0.68f, 0.62f, 0.50f),
+                new Color(0.08f, 0.08f, 0.09f),
+                new Color(0.42f, 0.45f, 0.40f),
+                new Color(0.26f, 0.20f, 0.15f)
+            };
+
+            Texture2D texture = new Texture2D(4, 4, TextureFormat.RGBA32, false, true);
+            texture.hideFlags = HideFlags.HideAndDontSave;
+            Color color = colors[math.clamp(index, 0, colors.Length - 1)];
+            for (int y = 0; y < 4; y++)
+            {
+                for (int x = 0; x < 4; x++)
+                    texture.SetPixel(x, y, color * (0.92f + ((x + y) & 1) * 0.10f));
+            }
+            texture.Apply();
+
+            TerrainLayer layer = new TerrainLayer
+            {
+                name = $"CleanRoom_FallbackLayer_{index}",
+                diffuseTexture = texture,
+                tileSize = new Vector2(4f, 4f),
+                smoothness = 0.18f,
+                metallic = 0f,
+                normalScale = 1f,
+                maskMapRemapMax = new Vector4(1f, 1f, 1f, 1f)
+            };
+            layer.hideFlags = HideFlags.HideAndDontSave;
+            return layer;
+        }
+
+        private static UnityEngine.Terrain BuildTerrainChunk(
+            int row,
+            int col,
+            float originX,
+            float originZ,
+            in WorldMacroGeologyParams macroParams,
+            TerrainLayer[] layers,
+            Material baseMaterial,
+            bool exportDiagnostics,
+            out float[,] worldHeights,
+            out float[,] slope01,
+            out float[,] curvature01,
+            out int[,] dominantMaterial)
+        {
+            GameObject terrainGo = new GameObject($"CleanRoom_Terrain_{row}_{col}");
+            terrainGo.transform.position = new Vector3(originX, TerrainBaseY, originZ);
+
+            UnityEngine.Terrain terrain = terrainGo.AddComponent<UnityEngine.Terrain>();
+            TerrainCollider collider = terrainGo.AddComponent<TerrainCollider>();
+            TerrainData terrainData = new TerrainData
+            {
+                heightmapResolution = HeightResolution,
+                alphamapResolution = AlphaResolution,
+                size = new Vector3(ChunkSizeMeters, TerrainHeightRangeMeters, ChunkSizeMeters),
+                terrainLayers = layers
+            };
+            terrain.terrainData = terrainData;
+            collider.terrainData = terrainData;
+            terrain.basemapDistance = 100000f;
+
+            WorldMacroGeologyParams localMacroParams = macroParams;
+            float[,] heights01 = new float[HeightResolution, HeightResolution];
+            float[,] localWorldHeights = exportDiagnostics ? new float[HeightResolution, HeightResolution] : null;
+            float[,] localSlope01 = exportDiagnostics ? new float[AlphaResolution, AlphaResolution] : null;
+            float[,] localCurvature01 = exportDiagnostics ? new float[AlphaResolution, AlphaResolution] : null;
+            int[,] localDominantMaterial = exportDiagnostics ? new int[AlphaResolution, AlphaResolution] : null;
+            float[,,] alphamaps = new float[AlphaResolution, AlphaResolution, TerrainLayerCount];
+            int heightSampleCount = HeightResolution * HeightResolution;
+            int alphaSampleCount = AlphaResolution * AlphaResolution;
+            int diagnosticSampleCount = exportDiagnostics ? alphaSampleCount : 1;
+            NativeArray<float> heightBuffer = default;
+            NativeArray<float4> primary = default;
+            NativeArray<float4> secondary = default;
+            NativeArray<float4> control1 = default;
+            NativeArray<float4> control2 = default;
+            NativeArray<float> slopeBuffer = default;
+            NativeArray<float> curvatureBuffer = default;
+            NativeArray<int> dominantBuffer = default;
+            try
+            {
+                heightBuffer = new NativeArray<float>(heightSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                primary = new NativeArray<float4>(alphaSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                secondary = new NativeArray<float4>(alphaSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                control1 = new NativeArray<float4>(alphaSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                control2 = new NativeArray<float4>(alphaSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                slopeBuffer = new NativeArray<float>(diagnosticSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                curvatureBuffer = new NativeArray<float>(diagnosticSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                dominantBuffer = new NativeArray<int>(diagnosticSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                var heightJob = new CleanRoomMacroHeightBufferJob
                 {
-                    float localZ = (float)z / (alphaRes - 1) * chunkSize;
-                    float worldZ = posZ + localZ;
-                    for (int x = 0; x < alphaRes; x++)
+                    HeightBufferMeters = heightBuffer,
+                    Resolution = HeightResolution,
+                    ChunkSizeMeters = ChunkSizeMeters,
+                    WorldOriginXZ = new double2(originX, originZ),
+                    MacroGeologyParams = localMacroParams
+                };
+                heightJob.Schedule(heightSampleCount, ResolveJobBatchCount(heightSampleCount)).Complete();
+
+                var splatJob = new WorldTerrainSurfaceMaterialMaskJob
+                {
+                    HeightBufferMeters = heightBuffer,
+                    Primary = primary,
+                    Secondary = secondary,
+                    Control1 = control1,
+                    Control2 = control2,
+                    Slope01 = slopeBuffer,
+                    Curvature01 = curvatureBuffer,
+                    DominantMaterialIndex = dominantBuffer,
+                    Width = AlphaResolution,
+                    Height = AlphaResolution,
+                    HeightBufferResolution = HeightResolution,
+                    CellSizeMeters = ChunkSizeMeters / (HeightResolution - 1),
+                    HeightCellSizeMeters = ChunkSizeMeters / (HeightResolution - 1),
+                    WorldOriginXZ = new double2(originX, originZ),
+                    MacroGeologyParams = localMacroParams,
+                    MaskContrast = 1f
+                };
+                splatJob.Schedule(alphaSampleCount, ResolveJobBatchCount(alphaSampleCount)).Complete();
+
+                CopyHeightBufferToManaged(heightBuffer, heights01, localWorldHeights);
+                CopyControlBuffersToManaged(control1, control2, alphamaps, slopeBuffer, curvatureBuffer, dominantBuffer, localSlope01, localCurvature01, localDominantMaterial);
+            }
+            finally
+            {
+                if (dominantBuffer.IsCreated) dominantBuffer.Dispose();
+                if (curvatureBuffer.IsCreated) curvatureBuffer.Dispose();
+                if (slopeBuffer.IsCreated) slopeBuffer.Dispose();
+                if (control2.IsCreated) control2.Dispose();
+                if (control1.IsCreated) control1.Dispose();
+                if (secondary.IsCreated) secondary.Dispose();
+                if (primary.IsCreated) primary.Dispose();
+                if (heightBuffer.IsCreated) heightBuffer.Dispose();
+            }
+
+            worldHeights = localWorldHeights;
+            slope01 = localSlope01;
+            curvature01 = localCurvature01;
+            dominantMaterial = localDominantMaterial;
+            terrainData.SetHeightsDelayLOD(0, 0, heights01);
+            terrainData.SetAlphamaps(0, 0, alphamaps);
+
+            Material material = new Material(baseMaterial);
+            material.name = $"CleanRoomTerrainMaterial_{row}_{col}";
+            Texture2D[] controlTextures = terrainData.alphamapTextures;
+            if (controlTextures.Length > 0 && controlTextures[0] != null)
+                material.SetTexture("_Control", controlTextures[0]);
+            if (controlTextures.Length > 1 && controlTextures[1] != null)
+                material.SetTexture("_Control1", controlTextures[1]);
+            if (controlTextures.Length > 2 && controlTextures[2] != null)
+                material.SetTexture("_Control2", controlTextures[2]);
+            material.SetFloat("_NumLayersCount", terrainData.alphamapLayers);
+            material.SetVector("_TerrainSize", new Vector4(terrainData.size.x, terrainData.size.y, terrainData.size.z, 0f));
+            terrain.materialTemplate = material;
+            terrain.Flush();
+            return terrain;
+        }
+
+        private static int ResolveJobBatchCount(int cellCount)
+        {
+            return math.max(32, math.min(256, math.max(1, cellCount / 1024)));
+        }
+
+        private static void CopyHeightBufferToManaged(NativeArray<float> heightBuffer, float[,] heights01, float[,] worldHeights)
+        {
+            float invRange = 1f / math.max(0.0001f, MaxTerrainHeightMeters - MinTerrainHeightMeters);
+            for (int z = 0; z < HeightResolution; z++)
+            {
+                int rowBase = z * HeightResolution;
+                for (int x = 0; x < HeightResolution; x++)
+                {
+                    float heightMeters = heightBuffer[rowBase + x];
+                    if (worldHeights != null)
+                        worldHeights[z, x] = heightMeters;
+                    heights01[z, x] = math.saturate((heightMeters - MinTerrainHeightMeters) * invRange);
+                }
+            }
+        }
+
+        private static void CopyControlBuffersToManaged(
+            NativeArray<float4> control1,
+            NativeArray<float4> control2,
+            float[,,] alphamaps,
+            NativeArray<float> slopeBuffer,
+            NativeArray<float> curvatureBuffer,
+            NativeArray<int> dominantBuffer,
+            float[,] slope01,
+            float[,] curvature01,
+            int[,] dominantMaterial)
+        {
+            for (int z = 0; z < AlphaResolution; z++)
+            {
+                int rowBase = z * AlphaResolution;
+                for (int x = 0; x < AlphaResolution; x++)
+                {
+                    int i = rowBase + x;
+                    float4 c1 = control1[i];
+                    float4 c2 = control2[i];
+                    alphamaps[z, x, 0] = c1.x;
+                    alphamaps[z, x, 1] = c1.y;
+                    alphamaps[z, x, 2] = c1.z;
+                    alphamaps[z, x, 3] = c1.w;
+                    alphamaps[z, x, 4] = c2.x;
+                    alphamaps[z, x, 5] = c2.y;
+                    alphamaps[z, x, 6] = c2.z;
+                    alphamaps[z, x, 7] = c2.w;
+                    if (slope01 != null && slopeBuffer.IsCreated)
+                        slope01[z, x] = slopeBuffer[i];
+                    if (curvature01 != null && curvatureBuffer.IsCreated)
+                        curvature01[z, x] = curvatureBuffer[i];
+                    if (dominantMaterial != null && dominantBuffer.IsCreated)
+                        dominantMaterial[z, x] = dominantBuffer[i];
+                }
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct CleanRoomMacroHeightBufferJob : IJobParallelFor
+        {
+            [WriteOnly, NoAlias] public NativeArray<float> HeightBufferMeters;
+            public int Resolution;
+            public float ChunkSizeMeters;
+            public double2 WorldOriginXZ;
+            public WorldMacroGeologyParams MacroGeologyParams;
+
+            public void Execute(int index)
+            {
+                int safeResolution = math.max(1, Resolution);
+                if ((uint)index >= (uint)HeightBufferMeters.Length)
+                    return;
+
+                int x = index % safeResolution;
+                int z = index / safeResolution;
+                float pitch = ChunkSizeMeters / math.max(1, safeResolution - 1);
+                float worldX = (float)(WorldOriginXZ.x + x * (double)pitch);
+                float worldZ = (float)(WorldOriginXZ.y + z * (double)pitch);
+                HeightBufferMeters[index] = WorldMacroGeologyFields.EvaluateHeightMeters(worldX, worldZ, in MacroGeologyParams);
+            }
+        }
+
+        private static void StitchTerrainGrid(UnityEngine.Terrain[,] terrains)
+        {
+            for (int r = 0; r < TerrainGridSize; r++)
+            {
+                for (int c = 0; c < TerrainGridSize; c++)
+                {
+                    UnityEngine.Terrain left = c > 0 ? terrains[r, c - 1] : null;
+                    UnityEngine.Terrain right = c < TerrainGridSize - 1 ? terrains[r, c + 1] : null;
+                    UnityEngine.Terrain bottom = r > 0 ? terrains[r - 1, c] : null;
+                    UnityEngine.Terrain top = r < TerrainGridSize - 1 ? terrains[r + 1, c] : null;
+                    terrains[r, c].SetNeighbors(left, top, right, bottom);
+                }
+            }
+        }
+
+        private static Camera BuildCamera()
+        {
+            GameObject cameraGo = new GameObject("CleanRoom_Camera");
+            Camera camera = cameraGo.AddComponent<Camera>();
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.005f, 0.010f, 0.016f, 1f);
+            camera.transform.position = new Vector3(260f, 850f, -920f);
+            camera.transform.LookAt(new Vector3(0f, TerrainBaseY + 2700f, 0f));
+            camera.nearClipPlane = 0.5f;
+            camera.farClipPlane = 12000f;
+            camera.fieldOfView = 42f;
+            UniversalAdditionalCameraData urp = cameraGo.AddComponent<UniversalAdditionalCameraData>();
+            urp.renderPostProcessing = true;
+            urp.renderShadows = true;
+            return camera;
+        }
+
+        private static void RenderBeauty(Camera camera, string path)
+        {
+            CaptureCamera(camera, path, 1920, 1080);
+            Debug.Log($"[CleanRoom] Beauty render written: {path}");
+        }
+
+        private static void RenderTransitionBeauty(Camera camera, in BiomeTransitionShot shot, string path)
+        {
+            Vector3 horizontalNormal = new Vector3(shot.Normal.x, 0f, shot.Normal.z);
+            if (horizontalNormal.sqrMagnitude < 0.0001f)
+                horizontalNormal = new Vector3(0f, 0f, -1f);
+            horizontalNormal.Normalize();
+            Vector3 tangent = Vector3.Cross(Vector3.up, horizontalNormal).normalized;
+            if (tangent.sqrMagnitude < 0.0001f)
+                tangent = Vector3.right;
+
+            camera.transform.position = shot.Position + horizontalNormal * 4.2f + tangent * 1.4f + Vector3.up * 2.3f;
+            camera.transform.LookAt(shot.Position - horizontalNormal * 1.6f + Vector3.up * 0.55f);
+            camera.nearClipPlane = 0.08f;
+            camera.farClipPlane = 900f;
+            camera.fieldOfView = 54f;
+            camera.orthographic = false;
+
+            GameObject sunGo = GameObject.Find("CleanRoom_WhiteSun");
+            Quaternion originalSunRot = Quaternion.identity;
+            if (sunGo != null)
+            {
+                originalSunRot = sunGo.transform.rotation;
+                sunGo.transform.rotation = Quaternion.Euler(65f, 15f, 0f);
+            }
+
+            GameObject keyGo = new GameObject("CleanRoom_TransitionKey");
+            Light key = keyGo.AddComponent<Light>();
+            key.type = LightType.Point;
+            key.color = Color.white;
+            key.intensity = 8.5f;
+            key.range = 25f;
+            key.shadows = LightShadows.None;
+            keyGo.transform.position = camera.transform.position + Vector3.up * 2.0f;
+
+            CaptureCamera(camera, path, 1920, 1080);
+            Object.DestroyImmediate(keyGo);
+
+            if (sunGo != null)
+            {
+                sunGo.transform.rotation = originalSunRot;
+            }
+
+            float totalSum = shot.ShellSand + shot.LimestoneShelf + shot.ClaySilt + shot.HardRock +
+                             shot.BrineSaltCrust + shot.ManganeseNodulePlain + shot.ReefRubble + shot.SeepCrust;
+            Debug.Log(FormattableString.Invariant($"[BiomeTransition] Sum={totalSum:0.000} ShellSand={shot.ShellSand:0.000} LimestoneShelf={shot.LimestoneShelf:0.000} ClaySilt={shot.ClaySilt:0.000} HardRock={shot.HardRock:0.000} BrineSaltCrust={shot.BrineSaltCrust:0.000} ManganeseNodulePlain={shot.ManganeseNodulePlain:0.000} ReefRubble={shot.ReefRubble:0.000} SeepCrust={shot.SeepCrust:0.000}"));
+            Debug.Log($"[CleanRoom] Biome transition render written: {path} score={shot.Score:0.000} " +
+                      $"sand={shot.ShellSand:0.000} silt={shot.ClaySilt:0.000} rock={shot.HardRock:0.000} limestone={shot.LimestoneShelf:0.000} " +
+                      $"brine={shot.BrineSaltCrust:0.000} nodule={shot.ManganeseNodulePlain:0.000} reef={shot.ReefRubble:0.000} seep={shot.SeepCrust:0.000} " +
+                      $"totalSum={totalSum:0.000} sum={totalSum:0.000} pos={shot.Position}");
+        }
+
+        private static void CaptureCamera(Camera camera, string path, int width, int height)
+        {
+            RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = 1
+            };
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            RenderTexture previous = RenderTexture.active;
+            camera.targetTexture = rt;
+            camera.Render();
+            RenderTexture.active = rt;
+            texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            texture.Apply(false);
+            camera.targetTexture = null;
+            RenderTexture.active = previous;
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            Object.DestroyImmediate(rt);
+        }
+
+        private static BiomeTransitionShot FindBiomeTransitionShot(UnityEngine.Terrain[,] terrainGrid, in WorldMacroGeologyParams macroParams)
+        {
+            BiomeTransitionShot best = default;
+            best.Score = -1f;
+            foreach (UnityEngine.Terrain terrain in terrainGrid)
+            {
+                if (terrain == null || terrain.terrainData == null)
+                    continue;
+
+                TerrainData td = terrain.terrainData;
+                int steps = 96;
+                for (int z = 4; z < steps - 4; z++)
+                {
+                    float nz = z / (float)(steps - 1);
+                    float worldZ = terrain.transform.position.z + nz * td.size.z;
+                    for (int x = 4; x < steps - 4; x++)
                     {
-                        float localX = (float)x / (alphaRes - 1) * chunkSize;
-                        float worldX = posX + localX;
+                        float nx = x / (float)(steps - 1);
+                        float worldX = terrain.transform.position.x + nx * td.size.x;
+                        WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(worldX, worldZ, in macroParams);
+                        WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(in sample, worldX, worldZ, macroParams.Seed);
+                        WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(macroParams.Seed);
+                        mesoParams.PreviewExtentMeters = ChunkSizeMeters;
+                        mesoParams.MaxMesoDeltaMeters = 24f;
+                        WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(in sample, worldX, worldZ, in mesoParams);
+                        weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
 
-                        float h = WorldMacroGeologyFields.EvaluateHeightMeters(worldX, worldZ, in p);
-                        float hRight = WorldMacroGeologyFields.EvaluateHeightMeters(worldX + 1f, worldZ, in p);
-                        float hUp = WorldMacroGeologyFields.EvaluateHeightMeters(worldX, worldZ + 1f, in p);
+                        float sediment = math.max(weights.ShellSand, weights.ClaySilt);
+                        float rock = weights.HardRock;
+                        float balance = 1f - math.abs(sediment - rock);
+                        float topology = math.saturate(sample.NegativeCurvature01 * 0.48f + sample.PositiveCurvature01 * 0.48f + sample.Slope01 * 0.28f);
+                        float threshold = math.saturate(math.min(sediment, rock) * 2.0f);
+                        float score = balance * 0.35f + topology * 0.45f + threshold * 0.20f;
+                        if (sediment < 0.18f || rock < 0.18f)
+                            score *= 0.35f;
+                        if (score <= best.Score)
+                            continue;
 
-                        float dx = hRight - h;
-                        float dz = hUp - h;
-                        float slopeDegrees = math.atan(math.sqrt(dx * dx + dz * dz)) * Mathf.Rad2Deg;
-
-                        float rockWeight = math.smoothstep(15f, 25f, slopeDegrees);
-                        float sandWeight = 1f - rockWeight;
-
-                        alphamaps[z, x, 0] = sandWeight;
-                        alphamaps[z, x, 1] = 0f;
-                        alphamaps[z, x, 2] = rockWeight;
+                        Vector3 normal = td.GetInterpolatedNormal(nx, nz);
+                        float height = td.GetInterpolatedHeight(nx, nz) + terrain.transform.position.y;
+                        best = new BiomeTransitionShot
+                        {
+                            Position = new Vector3(worldX, height, worldZ),
+                            Normal = normal,
+                            Score = score,
+                            ShellSand = weights.ShellSand,
+                            LimestoneShelf = weights.LimestoneShelf,
+                            ClaySilt = weights.ClaySilt,
+                            HardRock = weights.HardRock,
+                            BrineSaltCrust = weights.BrineSaltCrust,
+                            ManganeseNodulePlain = weights.ManganeseNodulePlain,
+                            ReefRubble = weights.ReefRubble,
+                            SeepCrust = weights.SeepCrust
+                        };
                     }
-                });
-                td.SetAlphamaps(0, 0, alphamaps);
-
-                // Setup Material Instance
-                Material chunkMat = new Material(baseMat);
-                chunkMat.name = baseMat.name + "_" + terrainGo.name;
-
-                Texture2D[] alphamapsTex = td.alphamapTextures;
-                if (alphamapsTex.Length > 0 && alphamapsTex[0] != null) chunkMat.SetTexture("_Control", alphamapsTex[0]);
-                if (alphamapsTex.Length > 1 && alphamapsTex[1] != null) chunkMat.SetTexture("_Control1", alphamapsTex[1]);
-                if (alphamapsTex.Length > 2 && alphamapsTex[2] != null) chunkMat.SetTexture("_Control2", alphamapsTex[2]);
-
-                chunkMat.SetFloat("_NumLayersCount", td.alphamapLayers);
-                chunkMat.SetVector("_TerrainSize", new Vector4(td.size.x, td.size.y, td.size.z, 0));
-
-                terrain.materialTemplate = chunkMat;
-                terrain.Flush();
+                }
             }
+
+            if (best.Score < 0f)
+                best = new BiomeTransitionShot { Position = new Vector3(0f, TerrainBaseY + 2500f, 0f), Normal = Vector3.up, Score = 0f };
+            return best;
         }
 
-        // Stitch Terrains
-        for (int r = 0; r < 3; r++)
+        private static void ExportSplatmapComposite(UnityEngine.Terrain[,] terrainGrid, string path)
         {
-            for (int c = 0; c < 3; c++)
+            const int tilePixels = 512;
+            int gridRows = terrainGrid.GetLength(0);
+            int gridCols = terrainGrid.GetLength(1);
+            int width = tilePixels * gridCols;
+            int height = tilePixels * gridRows;
+            NativeArray<Color32> pixels = default;
+            NativeArray<float4> control1 = default;
+            NativeArray<float4> control2 = default;
+            try
             {
-                Terrain left = (c > 0) ? terrains[r, c - 1] : null;
-                Terrain right = (c < 2) ? terrains[r, c + 1] : null;
-                Terrain bottom = (r > 0) ? terrains[r - 1, c] : null;
-                Terrain top = (r < 2) ? terrains[r + 1, c] : null;
-                terrains[r, c].SetNeighbors(left, top, right, bottom);
+                pixels = new NativeArray<Color32>(width * height, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                for (int row = 0; row < gridRows; row++)
+                {
+                    for (int col = 0; col < gridCols; col++)
+                    {
+                        UnityEngine.Terrain terrain = terrainGrid[row, col];
+                        if (terrain == null || terrain.terrainData == null)
+                            continue;
+
+                        TerrainData td = terrain.terrainData;
+                        int alphaResolution = td.alphamapResolution;
+                        int alphaCount = alphaResolution * alphaResolution;
+                        control1 = new NativeArray<float4>(alphaCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                        control2 = new NativeArray<float4>(alphaCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                        float[,,] alpha = td.GetAlphamaps(0, 0, alphaResolution, alphaResolution);
+                        CopyAlphaToControls(alpha, control1, control2, alphaResolution);
+                        var job = new CleanRoomSplatCompositeTileJob
+                        {
+                            Control1 = control1,
+                            Control2 = control2,
+                            Pixels = pixels,
+                            AlphaResolution = alphaResolution,
+                            TilePixels = tilePixels,
+                            ImageWidth = width,
+                            TileOriginX = col * tilePixels,
+                            TileOriginY = row * tilePixels
+                        };
+                        job.Schedule(tilePixels * tilePixels, ResolveJobBatchCount(tilePixels * tilePixels)).Complete();
+                        control2.Dispose();
+                        control2 = default;
+                        control1.Dispose();
+                        control1 = default;
+                    }
+                }
+
+                WriteColor32Png(path, pixels, width, height);
             }
-        }
-        Debug.Log("[CleanRoom] Terrains generated and stitched.");
-
-        // 4. Camera and rendering
-        GameObject camGo = new GameObject("TRT_Camera");
-        Camera cam = camGo.AddComponent<Camera>();
-        cam.transform.position = new Vector3(150f, 320f, -420f);
-        cam.transform.LookAt(new Vector3(0f, -1500f, 0f));
-        cam.nearClipPlane = 0.5f;
-        cam.farClipPlane = 10000f;
-
-        var urpCamData = camGo.AddComponent<UniversalAdditionalCameraData>();
-        urpCamData.renderPostProcessing = true;
-
-        // Clear selection to avoid wireframe outlines
-        Selection.activeGameObject = null;
-        Selection.objects = new UnityEngine.Object[0];
-
-        // Direct screenshot rendering
-        if (!Directory.Exists(ArtifactDir))
-        {
-            Directory.CreateDirectory(ArtifactDir);
-        }
-
-        string filename = Path.Combine(ArtifactDir, "CleanRoom_Beauty.png");
-
-        RenderTexture rt = new RenderTexture(1920, 1080, 24);
-        cam.targetTexture = rt;
-        Texture2D tex = new Texture2D(1920, 1080, TextureFormat.RGB24, false);
-        
-        cam.Render();
-        
-        RenderTexture.active = rt;
-        tex.ReadPixels(new Rect(0, 0, 1920, 1080), 0, 0);
-        tex.Apply();
-        
-        cam.targetTexture = null;
-        RenderTexture.active = null;
-        Object.DestroyImmediate(rt);
-        
-        File.WriteAllBytes(filename, tex.EncodeToPNG());
-        Object.DestroyImmediate(tex);
-        
-        Debug.Log($"[CleanRoom] Screenshot saved to: {filename}");
-
-        // Cleanup temporary profile
-        Object.DestroyImmediate(profile);
-
-        // X-Ray Export for Center Chunk
-        Terrain centerTerrain = terrains[1, 1];
-        TerrainData centerData = centerTerrain.terrainData;
-        int res = centerData.heightmapResolution;
-        float[,] centerHeights = centerData.GetHeights(0, 0, res, res);
-        
-        Texture2D heightTex = new Texture2D(res, res, TextureFormat.RGB24, false);
-        Texture2D slopeTex = new Texture2D(res, res, TextureFormat.RGB24, false);
-        
-        for (int y = 0; y < res; y++)
-        {
-            for (int x = 0; x < res; x++)
+            finally
             {
-                float h = centerHeights[y, x];
-                heightTex.SetPixel(x, y, new Color(h, h, h));
-                
-                // Approximate slope by sampling neighbors (or just read steepness directly)
-                float normX = (float)x / (res - 1);
-                float normY = (float)y / (res - 1);
-                float steepness = centerData.GetSteepness(normX, normY) / 90f; 
-                slopeTex.SetPixel(x, y, new Color(steepness, steepness, steepness));
+                if (control2.IsCreated) control2.Dispose();
+                if (control1.IsCreated) control1.Dispose();
+                if (pixels.IsCreated) pixels.Dispose();
+            }
+            Debug.Log($"[CleanRoom] Splatmap composite written: {path}");
+        }
+
+        private static void CopyAlphaToControls(float[,,] alpha, NativeArray<float4> control1, NativeArray<float4> control2, int resolution)
+        {
+            for (int z = 0; z < resolution; z++)
+            {
+                int rowBase = z * resolution;
+                for (int x = 0; x < resolution; x++)
+                {
+                    int i = rowBase + x;
+                    control1[i] = new float4(alpha[z, x, 0], alpha[z, x, 1], alpha[z, x, 2], alpha[z, x, 3]);
+                    control2[i] = new float4(alpha[z, x, 4], alpha[z, x, 5], alpha[z, x, 6], alpha[z, x, 7]);
+                }
             }
         }
-        heightTex.Apply();
-        slopeTex.Apply();
-        
-        File.WriteAllBytes(Path.Combine(ArtifactDir, "CleanRoom_XRay_Height.png"), heightTex.EncodeToPNG());
-        File.WriteAllBytes(Path.Combine(ArtifactDir, "CleanRoom_XRay_Slope.png"), slopeTex.EncodeToPNG());
-        Object.DestroyImmediate(heightTex);
-        Object.DestroyImmediate(slopeTex);
-        Debug.Log("[CleanRoom] X-Ray matrices exported.");
 
-        // 5. Refresh AssetDatabase
-        AssetDatabase.Refresh();
-        Debug.Log("[CleanRoom] Done.");
+        private struct BiomeTransitionShot
+        {
+            public Vector3 Position;
+            public Vector3 Normal;
+            public float Score;
+            public float ShellSand;
+            public float LimestoneShelf;
+            public float ClaySilt;
+            public float HardRock;
+            public float BrineSaltCrust;
+            public float ManganeseNodulePlain;
+            public float ReefRubble;
+            public float SeepCrust;
+        }
+
+        private static void ExportXRayMaps(
+            string artifactDir,
+            float[,] heights,
+            float[,] slope,
+            float[,] curvature,
+            int[,] material)
+        {
+            if (heights == null || slope == null || curvature == null || material == null)
+                throw new InvalidOperationException("Center diagnostic buffers were not generated.");
+
+            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Height.png"), heights, MinTerrainHeightMeters, MaxTerrainHeightMeters);
+            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Slope.png"), slope, 0f, 1f);
+            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Curvature.png"), curvature, 0f, 1f);
+            WriteMaterialMap(Path.Combine(artifactDir, "CleanRoom_XRay_MaterialDominant.png"), material);
+        }
+
+        private static void WriteScalarMap(string path, float[,] values, float min, float max)
+        {
+            int height = values.GetLength(0);
+            int width = values.GetLength(1);
+            NativeArray<float> source = default;
+            NativeArray<Color32> pixels = default;
+            try
+            {
+                int length = width * height;
+                source = new NativeArray<float>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                pixels = new NativeArray<Color32>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                CopyScalarToNative(values, source, width, height);
+                var job = new CleanRoomScalarXRayPixelsJob
+                {
+                    Values = source,
+                    Pixels = pixels,
+                    Min = min,
+                    InvRange = 1f / math.max(0.0001f, max - min)
+                };
+                job.Schedule(length, ResolveJobBatchCount(length)).Complete();
+                WriteColor32Png(path, pixels, width, height);
+            }
+            finally
+            {
+                if (pixels.IsCreated) pixels.Dispose();
+                if (source.IsCreated) source.Dispose();
+            }
+            Debug.Log($"[CleanRoom] X-Ray written: {path}");
+        }
+
+        private static void WriteMaterialMap(string path, int[,] material)
+        {
+            int height = material.GetLength(0);
+            int width = material.GetLength(1);
+            NativeArray<int> source = default;
+            NativeArray<Color32> pixels = default;
+            try
+            {
+                int length = width * height;
+                source = new NativeArray<int>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                pixels = new NativeArray<Color32>(length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                CopyMaterialToNative(material, source, width, height);
+                var job = new CleanRoomMaterialXRayPixelsJob
+                {
+                    Materials = source,
+                    Pixels = pixels
+                };
+                job.Schedule(length, ResolveJobBatchCount(length)).Complete();
+                WriteColor32Png(path, pixels, width, height);
+            }
+            finally
+            {
+                if (pixels.IsCreated) pixels.Dispose();
+                if (source.IsCreated) source.Dispose();
+            }
+            Debug.Log($"[CleanRoom] Material X-Ray written: {path}");
+        }
+
+        private static void CopyScalarToNative(float[,] values, NativeArray<float> target, int width, int height)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                int rowBase = y * width;
+                for (int x = 0; x < width; x++)
+                    target[rowBase + x] = values[y, x];
+            }
+        }
+
+        private static void CopyMaterialToNative(int[,] values, NativeArray<int> target, int width, int height)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                int rowBase = y * width;
+                for (int x = 0; x < width; x++)
+                    target[rowBase + x] = values[y, x];
+            }
+        }
+
+        private static void WriteColor32Png(string path, NativeArray<Color32> pixels, int width, int height)
+        {
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
+            NativeArray<byte> png = default;
+            try
+            {
+                texture.SetPixelData(pixels, 0);
+                texture.Apply(false, true);
+                png = ImageConversion.EncodeNativeArrayToPNG(pixels, GraphicsFormat.R8G8B8A8_UNorm, (uint)width, (uint)height, 0u);
+                if (!png.IsCreated || png.Length == 0)
+                    throw new InvalidOperationException($"Native PNG encode returned no bytes for {path}.");
+
+                WriteNativeBytes(path, png);
+            }
+            finally
+            {
+                if (png.IsCreated) png.Dispose();
+                Object.DestroyImmediate(texture);
+            }
+        }
+
+        private static unsafe void WriteNativeBytes(string path, NativeArray<byte> bytes)
+        {
+            unsafe
+            {
+                byte* pointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 65536, FileOptions.SequentialScan);
+                stream.Write(new ReadOnlySpan<byte>(pointer, bytes.Length));
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct CleanRoomSplatCompositeTileJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<float4> Control1;
+            [ReadOnly, NoAlias] public NativeArray<float4> Control2;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<Color32> Pixels;
+            public int AlphaResolution;
+            public int TilePixels;
+            public int ImageWidth;
+            public int TileOriginX;
+            public int TileOriginY;
+
+            public void Execute(int index)
+            {
+                int px = index % TilePixels;
+                int py = index / TilePixels;
+                int ax = math.clamp((int)math.round(px / (float)math.max(1, TilePixels - 1) * (AlphaResolution - 1)), 0, AlphaResolution - 1);
+                int ay = math.clamp((int)math.round(py / (float)math.max(1, TilePixels - 1) * (AlphaResolution - 1)), 0, AlphaResolution - 1);
+                int ai = ay * AlphaResolution + ax;
+                float4 c1 = math.saturate(Control1[ai]);
+                float4 c2 = math.saturate(Control2[ai]);
+                float3 color = new float3(
+                    c1.x * 0.78f + c1.y * 0.40f + c2.x * 0.85f + c2.z * 0.45f,
+                    c1.z * 0.52f + c1.x * 0.68f + c2.z * 0.62f + c1.y * 0.46f + c2.w * 0.18f,
+                    c1.w * 0.92f + c1.z * 0.90f + c2.y * 0.55f + c2.w * 0.22f);
+                color = math.saturate(color);
+                int outputIndex = (TileOriginY + py) * ImageWidth + TileOriginX + px;
+                Pixels[outputIndex] = new Color32(
+                    (byte)math.clamp((int)math.round(color.x * 255f), 0, 255),
+                    (byte)math.clamp((int)math.round(color.y * 255f), 0, 255),
+                    (byte)math.clamp((int)math.round(color.z * 255f), 0, 255),
+                    255);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct CleanRoomScalarXRayPixelsJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<float> Values;
+            [WriteOnly, NoAlias] public NativeArray<Color32> Pixels;
+            public float Min;
+            public float InvRange;
+
+            public void Execute(int index)
+            {
+                float v = math.saturate((Values[index] - Min) * InvRange);
+                byte b = (byte)math.clamp((int)math.round(v * 255f), 0, 255);
+                Pixels[index] = new Color32(b, b, b, 255);
+            }
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        private struct CleanRoomMaterialXRayPixelsJob : IJobParallelFor
+        {
+            [ReadOnly, NoAlias] public NativeArray<int> Materials;
+            [WriteOnly, NoAlias] public NativeArray<Color32> Pixels;
+
+            public void Execute(int index)
+            {
+                Pixels[index] = ResolveColor(math.clamp(Materials[index], 0, 7));
+            }
+
+            private static Color32 ResolveColor(int material)
+            {
+                switch (material)
+                {
+                    case 0: return new Color32(199, 194, 158, 255);
+                    case 1: return new Color32(148, 173, 148, 255);
+                    case 2: return new Color32(56, 97, 148, 255);
+                    case 3: return new Color32(20, 23, 28, 255);
+                    case 4: return new Color32(217, 184, 122, 255);
+                    case 5: return new Color32(5, 5, 8, 255);
+                    case 6: return new Color32(140, 158, 128, 255);
+                    default: return new Color32(122, 56, 31, 255);
+                }
+            }
+        }
     }
 }

@@ -7,10 +7,10 @@ using UnityEditor.ShaderGraph.Serialization;
 namespace UnityEditor.ShaderGraph
 {
     [Serializable, GenerationAPI] // TODO: Public
-    public abstract class SubTarget : JsonObject
+    internal abstract class SubTarget : JsonObject
     {
-        public abstract Type targetType { get; }
-        public Target target { get; set; }
+        internal abstract Type targetType { get; }
+        internal Target target { get; set; }
         public string displayName { get; set; }
         public bool isHidden { get; set; }
         public abstract bool IsActive();
@@ -31,15 +31,15 @@ namespace UnityEditor.ShaderGraph
         }
 
         // Call after SubTarget parent Target has been deserialized and Subtarget.target has been set to a non-null value.
-        public virtual void OnAfterParentTargetDeserialized() { }
+        internal virtual void OnAfterParentTargetDeserialized() { }
 
         virtual internal IEnumerable<(string key, string value)> SearchTerms => null;
     }
 
     [GenerationAPI] // TODO: Public
-    public abstract class SubTarget<T> : SubTarget where T : Target
+    internal abstract class SubTarget<T> : SubTarget where T : Target
     {
-        public override Type targetType => typeof(T);
+        internal override Type targetType => typeof(T);
 
         public new T target
         {

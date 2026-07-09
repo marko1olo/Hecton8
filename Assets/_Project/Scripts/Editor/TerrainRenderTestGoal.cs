@@ -11,7 +11,7 @@ namespace Hecton8.Editor
 {
     public static class TerrainRenderTestGoal
     {
-        private const string ArtifactDir = "C:/Users/Admin/.gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/";
+        private static string ArtifactDir => Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile), ".gemini", "antigravity", "brain", "b6e71691-fc84-4a99-b966-d958a949352e").Replace('\\', '/') + "/";
         private const string ScenePath   = "Assets/_Project/Scenes/020_RENDER_SANDBOX_V2.unity";
         private const int    ExpectedTerrains = 9;        // 3x3 grid
         private const int    TimeoutLoops     = 72000;    // 72000 * 50ms = 60 min hard cap

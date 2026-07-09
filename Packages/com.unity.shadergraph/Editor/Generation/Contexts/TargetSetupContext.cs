@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    public class TargetSetupContext
+    internal class TargetSetupContext
     {
         public List<SubShaderDescriptor> subShaders { get; private set; }
 

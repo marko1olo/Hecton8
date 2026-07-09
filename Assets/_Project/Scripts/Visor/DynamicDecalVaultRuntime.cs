@@ -13,6 +13,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using Hecton8.World;
 
 namespace Hecton8.Visor
 {

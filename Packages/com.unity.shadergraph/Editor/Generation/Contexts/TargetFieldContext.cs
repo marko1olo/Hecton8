@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    public class TargetFieldContext
+    internal class TargetFieldContext
     {
         public List<ConditionalField> conditionalFields { get; private set; }
         public PassDescriptor pass { get; private set; }

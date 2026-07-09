@@ -398,8 +398,8 @@ namespace Hecton8.World
                 64,
                 densityHandle);
 
-            // Carve 3D Volumetric Procedural Caves into the SDF
-            // Uses a Swiss Cheese model with strata shelving for geologically plausible tunnels
+            // Carve 3D Volumetric Procedural Caves into the SDF.
+            // Uses gyroid reef networks plus cellular chambers; all cave subtraction is centralized here.
             var caveJob = new ProceduralCaveSdfCarveJob
             {
                 Sdf = sdf,
@@ -408,16 +408,16 @@ namespace Hecton8.World
                 SdfDepth = safeSdfDepth,
                 VoxelSizeMeters = safeVoxelSize,
                 SdfOriginAup = sdfOriginAup,
-                
+
                 PrimaryFrequency = 0.012f,
-                SecondaryFrequency = 0.017f, // Slightly higher frequency for intersection
-                CarveStrengthMeters = 0.0f, // [NTP FIX] Disable volumetric cave carving
-                CaveThreshold = 0.65f,       // Higher threshold for Swiss Cheese intersection
+                SecondaryFrequency = 0.017f,
+                CarveStrengthMeters = 28.0f,
+                CaveThreshold = 0.65f,
                 MaxCrustDepthMeters = 400.0f,
-                SurfaceProtectionMeters = 50.0f, // 50m protection zone to prevent surface breakup and black holes
-                StrataLayerThicknessMeters = 24.0f, // Shelves every 24m vertically
-                StrataShelvingStrength = 0.4f,   // Moderate shelf flattening
-                
+                SurfaceProtectionMeters = 50.0f,
+                StrataLayerThicknessMeters = 24.0f,
+                StrataShelvingStrength = 0.4f,
+
                 // We use a global fixed seed here since HectonAnomalyEngine doesn't receive a WorldSeed.
                 // In a production call, this should be wired up to the Map/World seed.
                 // For now, this static seed guarantees continuous cave networks across chunks.

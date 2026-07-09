@@ -1302,7 +1302,7 @@ namespace Hecton8.Ecosystem
         }
     
         #region JulesLink_NutrientCycleSinkCalculator
-        private static void JulesLink_NutrientCycleSinkCalculator() { _ = typeof(Hecton8.PureLogic.Systems.NutrientCycleSinkCalculator); }
+        private static void JulesLink_NutrientCycleSinkCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.NutrientCycleSinkCalculator); }
         #endregion
 }
 

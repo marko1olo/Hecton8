@@ -973,18 +973,6 @@ namespace UnityEditor.ShaderGraph
                 m_DropdownSelectedEntries.Add(value);
             }
         }
-        public IEnumerable<string> GetFeedbackVariableNames()
-        {
-            if (asset == null)
-            {
-                yield break;
-            }
-
-            foreach (var feedbackSlot in asset.vtFeedbackVariables)
-            {
-                yield return GetVariableNameForNode() + "_" + feedbackSlot;
-            }
-        }
 
 
         public override void Dispose()

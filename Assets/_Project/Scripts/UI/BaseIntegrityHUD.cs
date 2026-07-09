@@ -494,6 +494,12 @@ namespace Hecton8.UI
         public static bool TryRaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
             => Enqueue(BaseIntegrityEventType.Emergency, failureMode, integrity);
 
+        public static bool TryRaiseBreached()
+            => Enqueue(BaseIntegrityEventType.Breached, BaseModuleFailureMode.None, 0f);
+
+        public static bool TryRaiseAirQualityWarning(float airQuality)
+            => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQuality);
+
 
 
         /// <summary>

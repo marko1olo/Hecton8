@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Hecton8.Core.Contracts"
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core"
     ],
     "includePlatforms": [
         "Editor"
@@ -17,7 +18,7 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
+        "NEVER_COMPILE_TESTS"
     ],
     "versionDefines": [],
     "noEngineReferences": false

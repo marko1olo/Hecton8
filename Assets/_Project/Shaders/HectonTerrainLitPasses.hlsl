@@ -418,13 +418,16 @@ void SplatmapFragment(
 
 #if defined(_NORMALMAP) && !defined(ENABLE_TERRAIN_PERPIXEL_NORMAL)
     normalWS = TransformTangentToWorld(normalTS, half3x3(IN.tangent.xyz, IN.bitangent.xyz, IN.normal.xyz));
-#endif
-
     normalWS = NormalizeNormalPerPixel(normalWS);
+#elif !defined(_NORMALMAP)
+    normalWS = NormalizeNormalPerPixel(normalWS);
+#endif
 
     InputData inputData;
     InitializeInputData(IN, normalTS, inputData);
+#if !defined(_NORMALMAP) || !defined(ENABLE_TERRAIN_PERPIXEL_NORMAL)
     inputData.normalWS = normalWS;
+#endif
     inputData.viewDirectionWS = viewDirWS;
 
     SurfaceData surfaceData = (SurfaceData)0;

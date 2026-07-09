@@ -2408,7 +2408,7 @@ namespace Hecton8.Systems.AI
         }
     
         #region JulesLink_FaunaObstacleAvoidanceVector
-        private static void JulesLink_FaunaObstacleAvoidanceVector() { _ = typeof(Hecton8.PureLogic.Systems.FaunaObstacleAvoidanceVector); }
+        private static void JulesLink_FaunaObstacleAvoidanceVector() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaObstacleAvoidanceVector); }
         #endregion
 }
 }

@@ -344,10 +344,10 @@ public class HectonPlayerSpawner : MonoBehaviour
 #endif
             enabled = false;
         }
+    }
 
-        LogSpawner($"[HectonPlayerSpawner-DEBUG] Awake FINISHED. InstanceID={this.GetHashCode()}, playerRigidbody is {(System.Object.ReferenceEquals(playerRigidbody, null) ? "REAL_NULL" : (playerRigidbody == null ? "DESTROYED" : "VALID"))}");
-
-
+    public async Awaitable SpawnPlayerAsync(System.Threading.CancellationToken ct)
+    {
         if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

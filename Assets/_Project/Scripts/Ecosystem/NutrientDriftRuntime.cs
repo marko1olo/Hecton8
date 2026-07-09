@@ -1568,11 +1568,11 @@ namespace Hecton8.Ecosystem
         }
     
         #region JulesLink_UpwellingNutrientFluxCalculator
-        private static void JulesLink_UpwellingNutrientFluxCalculator() { _ = typeof(Hecton8.PureLogic.Systems.UpwellingNutrientFluxCalculator); }
+        private static void JulesLink_UpwellingNutrientFluxCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.UpwellingNutrientFluxCalculator); }
         #endregion
 
         #region JulesLink_MarineSnowFluxCalculator
-        private static void JulesLink_MarineSnowFluxCalculator() { _ = typeof(Hecton8.PureLogic.Systems.MarineSnowFluxCalculator); }
+        private static void JulesLink_MarineSnowFluxCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.MarineSnowFluxCalculator); }
         #endregion
 }
 

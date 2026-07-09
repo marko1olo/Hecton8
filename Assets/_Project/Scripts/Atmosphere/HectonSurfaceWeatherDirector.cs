@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Unity.Burst;
 using Unity.Collections;
@@ -18,6 +18,7 @@ using NASAPunk.Visor;
 using UnityEngine;
 using HectonOceanSurfaceWeatherState = global::Hecton8.Core.Contracts.HectonOceanSurfaceWeatherState;
 using HectonOceanSurfaceWeatherStateFlags = global::Hecton8.Core.Contracts.HectonOceanSurfaceWeatherStateFlags;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using IHectonOceanKinematics = global::Hecton8.Core.Contracts.IHectonOceanKinematics;
 #if UNITY_EDITOR
 using UnityEditor;

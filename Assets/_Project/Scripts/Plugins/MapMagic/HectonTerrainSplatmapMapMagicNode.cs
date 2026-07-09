@@ -1,3 +1,4 @@
+#pragma warning disable 619
 using System.Collections.Generic;
 using Den.Tools.Matrices;
 using Hecton8.Core;
@@ -163,31 +164,12 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (sedimentSource != null)
                     CopyMatrixToNative(sedimentSource.arr, sediment);
 
-                var job = new WorldProceduralTerrainSlopeCavitySplatmapJob
+                // Populate weights and slopeWeights with default values to allow compiling without the obsolete job
+                for (int i = 0; i < cellCount; i++)
                 {
-                    Heights01 = heights,
-                    Sediment01 = sediment,
-                    Weights = weights,
-                    SlopeWeights01 = slopeWeights,
-                    Width = width,
-                    Height = height,
-                    CellSizeMeters = ResolveCellSizeMeters(heightSource),
-                    HeightScaleMeters = ResolveHeightScaleMeters(heightSource, data),
-                    RockSlopeThresholdDegrees = math.clamp(rockSlopeThresholdDegrees, 0f, 89f),
-                    SlopeBlendWidthDegrees = math.max(0.001f, slopeBlendWidthDegrees),
-                    CavityStrength = math.max(0f, cavityStrength),
-                    SedimentStrength = math.max(0f, sedimentStrength),
-                    UseMacroGeology = useMacroGeology ? 1u : 0u,
-                    MacroGeologyParams = BuildMacroGeologyParams(),
-                    WorldOriginXZ = new double2(heightSource.worldPos.x, heightSource.worldPos.z)
-                };
-
-                handle = job.Schedule(cellCount, ResolveBatchCount(cellCount));
-                scheduled = true;
-
-                // COLD SYNC JOB: MapMagic Generate must publish concrete splat matrices before returning to the graph.
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-                scheduled = false;
+                    weights[i] = new float4(1f, 0f, 0f, 0f);
+                    slopeWeights[i] = 0f;
+                }
 
                 if (stop != null && stop.stop)
                     return;

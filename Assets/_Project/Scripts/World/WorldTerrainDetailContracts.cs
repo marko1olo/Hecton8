@@ -143,7 +143,7 @@ namespace Hecton8.World
 
     public static class WorldTerrainSurfaceMaterialResolver
     {
-        public const uint ContractVersion = 1u;
+        public const uint ContractVersion = 3u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static WorldTerrainSurfaceMaterialWeights Resolve(
@@ -154,6 +154,9 @@ namespace Hecton8.World
         {
             float slope = math.saturate(sample.Slope01);
             float flat = 1f - slope;
+            float positiveCurvature = math.saturate(sample.PositiveCurvature01);
+            float negativeCurvature = math.saturate(sample.NegativeCurvature01);
+            float signedCurvature = positiveCurvature - negativeCurvature;
             float shallow = 1f - math.saturate((sample.DepthMeters - 40f) / 420f);
             float upperWater = 1f - math.saturate((sample.DepthMeters - 500f) / 1250f);
             float abyss = math.saturate((sample.DepthMeters - 1200f) / 2300f);
@@ -173,35 +176,42 @@ namespace Hecton8.World
             float tributary = math.saturate(sample.TributaryCanyonMask);
             float provinceJitter = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x51A7E531u, 900f);
             float localPatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0xB34ACE21u, 240f);
+            float finePatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x6E9CF5A1u, 72f);
+            float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
+            float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
+            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
+            float shellShelfPool = math.smoothstep(0.74f, 0.96f, flat) * math.smoothstep(0.58f, 0.92f, curvatureNeutral) * shallow * math.saturate(shelf * 0.76f + terrace * 0.20f + upperWater * 0.12f) * (1f - math.smoothstep(0.18f, 0.50f, negativeCurvature));
 
-            // CALIBRATED SPLATMAP MATH
-            // With slope01 = tan(theta) * 0.6:
-            // 45 deg -> ~0.60
-            float steepSlope = math.smoothstep(0.35f, 0.55f, sample.Slope01);
-            float verySteep = math.smoothstep(0.50f, 0.80f, sample.Slope01);
-            
-            // Hard rock dominates completely on steep walls
-            float rockBase = math.saturate((hardRock * 0.5f) + (ridge * 0.3f) + (sample.FaultMask * 0.2f) - (sediment * 0.3f));
-            float finalRock = math.saturate(math.max(rockBase, steepSlope) + verySteep * 2f);
+            float flatFloor = math.smoothstep(0.54f, 0.90f, flat);
+            float angleOfRepose = 1f - math.smoothstep(0.36f, 0.62f, slope);
+            float steepSlope = math.smoothstep(0.34f, 0.56f, slope);
+            float verySteep = math.smoothstep(0.56f, 0.84f, slope);
+            float convexScrape = math.smoothstep(0.18f, 0.72f, positiveCurvature) * math.smoothstep(0.28f, 0.68f, slope);
+            float exposedRidge = math.saturate(ridge * 0.36f + sample.FaultMask * 0.30f + hardRock * 0.56f + verySteep * 0.42f);
+            float finalRock = math.saturate(math.max(convexScrape * 1.35f, steepSlope * (0.56f + positiveCurvature * 0.48f + verySteep * 0.36f)) + exposedRidge - negativeCurvature * flatFloor * 0.32f - sediment * angleOfRepose * 0.18f);
+            finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f);
 
-            // Add high contrast to sand vs silt patches using noise
-            float patchContrast = math.smoothstep(0.3f, 0.7f, localPatch);
-
-            // Depth dependent base (Sand on shelf, Silt in abyss)
-            float depthLerp = math.saturate((sample.DepthMeters - 200f) / 1800f);
-            float baseSand = math.lerp(0.85f, 0.1f, depthLerp);
-            float baseSilt = math.lerp(0.1f, 0.85f, depthLerp);
+            float concaveFloor = math.smoothstep(0.14f, 0.66f, negativeCurvature) * flatFloor * angleOfRepose;
+            float concavityDeposit = math.saturate(concaveFloor * 1.08f + slump * 0.34f + tributary * 0.34f + basin * 0.24f + sediment * 0.30f - convexScrape * 0.58f - finalRock * 0.34f);
+            float patchContrast = math.smoothstep(0.28f, 0.72f, localPatch);
+            float shellHash = math.smoothstep(0.18f, 0.82f, finePatch);
+            float depthLerp = math.saturate((sample.DepthMeters - 180f) / 1900f);
+            float baseSand = math.lerp(0.88f, 0.08f, depthLerp);
+            float baseSilt = math.lerp(0.08f, 0.88f, depthLerp);
+            float sedimentRoom = math.saturate(1f - finalRock);
+            float shallowFlatSand = shallow * flatFloor * angleOfRepose * (1f - math.smoothstep(0.18f, 0.58f, negativeCurvature));
+            float convexSandScour = math.saturate(convexScrape * 0.78f + positiveCurvature * steepSlope * 0.44f + signedCurvature * 0.18f);
 
             WorldTerrainSurfaceMaterialWeights weights = new WorldTerrainSurfaceMaterialWeights
             {
-                ShellSand = math.saturate((baseSand * flat + patchContrast * 0.25f + terrace * 0.2f) * (1f - finalRock)),
-                LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f)) * (1f - finalRock)),
-                ClaySilt = math.saturate((baseSilt * flat + (1f - patchContrast) * 0.25f + basin * 0.3f) * (1f - finalRock)),
+                ShellSand = math.saturate((baseSand * angleOfRepose * (0.50f + patchContrast * 0.30f) + shallowFlatSand * 0.42f + shelf * shallow * 0.24f + terrace * angleOfRepose * 0.10f + shellHash * shelf * 0.08f + shellShelfPool * 1.18f) * sedimentRoom * (1f - concavityDeposit * 0.55f) * (1f - convexSandScour * 0.72f) * (1f - concaveSiltDominance * 0.38f) * (1f - ridgeRockDominance * 0.54f)),
+                LimestoneShelf = math.saturate((shelf * (0.24f + shelfBreak * 0.28f) + ridge * shallow * 0.12f + terrace * shelf * 0.16f) * sedimentRoom * (1f - trench * 0.48f) * (1f - concavityDeposit * 0.22f) * (1f - ridgeRockDominance * 0.18f)),
+                ClaySilt = math.saturate((baseSilt * flatFloor * (0.46f + (1f - patchContrast) * 0.30f) + concavityDeposit * 0.86f + negativeCurvature * flatFloor * 0.42f + concaveSiltDominance * 1.24f + basin * abyss * 0.18f + tributary * 0.14f) * sedimentRoom * (1f - convexScrape * 0.70f) * (1f - ridgeRockDominance * 0.48f)),
                 HardRock = finalRock,
-                BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (math.smoothstep(2200f, 2800f, sample.DepthMeters) * basin * 0.12f)) * (1f - finalRock)),
-                ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f) * (1f - finalRock)),
-                ReefRubble = math.saturate(reef * shallow * upperWater * (0.82f + localPatch * 0.38f) * (1f - trench * 0.72f) * (1f - finalRock)),
-                SeepCrust = math.saturate(seep * (0.72f + tributary * 0.32f + erosion * 0.24f) * (1f - shelf * 0.24f) * (1f - finalRock))
+                BrineSaltCrust = math.saturate(((trench * (0.50f + abyss * 0.38f)) + (math.smoothstep(2200f, 2800f, sample.DepthMeters) * basin * 0.12f)) * (1f - finalRock * 0.78f) * (1f - concavityDeposit * 0.18f)),
+                ManganeseNodulePlain = math.saturate(nodule * abyss * flatFloor * (0.70f + provinceJitter * 0.26f) * (1f - trench * 0.58f) * sedimentRoom * (1f - convexScrape * 0.48f)),
+                ReefRubble = math.saturate(reef * shallow * upperWater * (0.74f + localPatch * 0.36f) * (1f - trench * 0.72f) * (1f - finalRock * 0.65f) * (1f - concavityDeposit * 0.24f)),
+                SeepCrust = math.saturate(seep * (0.64f + tributary * 0.30f + erosion * 0.24f) * (1f - shelf * 0.24f) * (0.28f + sedimentRoom * 0.72f))
             };
 
             return NormalizeOrFallback(weights, in sample);
@@ -220,13 +230,17 @@ namespace Hecton8.World
             float slump = math.saturate(meso.SlumpScarMask);
             float tributary = math.saturate(meso.TributaryCanyonMask);
             float anchor = math.saturate(meso.VoxelAnchorMask);
+            float roughness = math.saturate(meso.ScatterRoughnessMask);
+            float concavity = math.saturate(slump * 0.52f + tributary * 0.36f + sediment * 0.28f);
+            float mesoRockScrape = math.saturate(talus * 0.48f + anchor * 0.36f + roughness * 0.28f);
+            float mesoSedimentPocket = math.saturate(concavity * 0.72f + sediment * 0.24f - mesoRockScrape * 0.30f);
 
-            weights.HardRock = math.saturate(weights.HardRock + talus * 0.16f + anchor * 0.12f);
-            weights.LimestoneShelf = math.saturate(weights.LimestoneShelf + terrace * 0.10f);
-            weights.ClaySilt = math.saturate(weights.ClaySilt + sediment * 0.14f + slump * 0.10f + tributary * 0.06f);
-            weights.ShellSand = math.saturate(weights.ShellSand + rubble * 0.08f + (1f - sediment) * reef * 0.06f);
-            weights.ReefRubble = math.saturate(weights.ReefRubble + rubble * 0.18f + reef * 0.20f);
-            weights.SeepCrust = math.saturate(weights.SeepCrust + tributary * meso.SeepEligibilityMask * 0.12f);
+            weights.HardRock = math.saturate(weights.HardRock + mesoRockScrape * 0.18f - mesoSedimentPocket * 0.08f);
+            weights.LimestoneShelf = math.saturate(weights.LimestoneShelf + terrace * 0.08f + reef * 0.03f - mesoSedimentPocket * 0.03f);
+            weights.ClaySilt = math.saturate(weights.ClaySilt + mesoSedimentPocket * 0.22f + sediment * 0.05f);
+            weights.ShellSand = math.saturate(weights.ShellSand + rubble * 0.04f + (1f - sediment) * reef * 0.05f - concavity * 0.06f - mesoRockScrape * 0.07f);
+            weights.ReefRubble = math.saturate(weights.ReefRubble + rubble * 0.16f + reef * 0.18f);
+            weights.SeepCrust = math.saturate(weights.SeepCrust + tributary * meso.SeepEligibilityMask * 0.12f + anchor * meso.SeepEligibilityMask * 0.04f);
 
             return Normalize(weights);
         }
@@ -299,15 +313,17 @@ namespace Hecton8.World
 
             if (total <= 0.0001f || !math.isfinite(total))
             {
-                float rock = math.saturate(sample.Slope01);
-                float silt = math.saturate((1f - rock) * sample.SedimentMask);
-                float sand = math.saturate((1f - rock) * (1f - silt));
-                total = math.max(0.0001f, sand + silt + rock);
+                float slopeDegrees = math.degrees(math.atan(math.max(0f, sample.Slope01) * 1.25f));
                 return new WorldTerrainSurfaceMaterialWeights
                 {
-                    ShellSand = sand / total,
-                    ClaySilt = silt / total,
-                    HardRock = rock / total
+                    ShellSand = slopeDegrees > 35f ? 0f : 1f,
+                    LimestoneShelf = 0f,
+                    ClaySilt = 0f,
+                    HardRock = slopeDegrees > 35f ? 1f : 0f,
+                    BrineSaltCrust = 0f,
+                    ManganeseNodulePlain = 0f,
+                    ReefRubble = 0f,
+                    SeepCrust = 0f
                 };
             }
 
@@ -536,19 +552,8 @@ namespace Hecton8.World
             float rockErosion = (ridged1 * 0.7f + ridged2 * 0.3f) * math.saturate(talus + (slope * 2f));
             float rockDelta = -rockErosion * (4f + 16f * detailGate);
 
-            // [MICRO-GEOLOGY CALIBRATION] Add Sand ripples (Micro-dunes) for sediment areas
-            float waveScale = 12f;
-            float waveDir = 0.785398f; // 45 degrees
-            float2 waveVec = new float2(math.cos(waveDir), math.sin(waveDir));
-            float dotPos = absoluteX * waveVec.x + absoluteZ * waveVec.y;
-            float sineWave = math.sin(dotPos * (3.14159f * 2f / waveScale));
-            float rippleJitter = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xABCDEF12u, waveScale * 1.5f);
-            // Warped sine wave for natural looking underwater current ripples
-            float dunes = math.saturate((sineWave + 1f) * 0.5f + (rippleJitter - 0.5f));
-            float duneDelta = (dunes - 0.5f) * (1.8f + 2.5f * detailGate) * sediment;
-
             float delta = math.clamp(
-                terraceDelta + channelDelta + slumpDelta + talusDelta + rubbleDelta + reefDelta + rockDelta + duneDelta,
+                terraceDelta + channelDelta + slumpDelta + talusDelta + rubbleDelta + reefDelta + rockDelta,
                 -maxDelta,
                 maxDelta);
 

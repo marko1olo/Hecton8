@@ -2240,7 +2240,7 @@ namespace Hecton8.Systems.AI
         }
     
         #region JulesLink_SpawnCooldownGate
-        private static void JulesLink_SpawnCooldownGate() { _ = typeof(Hecton8.PureLogic.Systems.SpawnCooldownGate); }
+        private static void JulesLink_SpawnCooldownGate() { _ = typeof(Hecton8.PureLogic.Ecosystem.SpawnCooldownGate); }
         #endregion
 }
 

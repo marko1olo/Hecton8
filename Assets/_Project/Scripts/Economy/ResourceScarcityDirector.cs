@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
@@ -1194,7 +1194,7 @@ namespace Hecton8.Economy
         }
     
         #region JulesLink_ScarcityPriceSpikeCalculator
-        private static void JulesLink_ScarcityPriceSpikeCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ScarcityPriceSpikeCalculator); }
+        private static void JulesLink_ScarcityPriceSpikeCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.ScarcityPriceSpikeCalculator); }
         #endregion
 }
 }

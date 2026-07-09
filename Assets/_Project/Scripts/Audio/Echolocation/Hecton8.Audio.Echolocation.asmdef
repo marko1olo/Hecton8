@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Audio.Echolocation",
     "references": [
         "Hecton8.Core.Contracts",
+        "Hecton8.PureLogic",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

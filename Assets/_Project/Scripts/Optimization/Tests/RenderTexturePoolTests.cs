@@ -1,5 +1,4 @@
 using NUnit.Framework;
-using NUnit.Framework.Legacy;
 using UnityEngine;
 using System.Reflection;
 using System.Collections.Generic;
@@ -23,7 +22,7 @@ namespace Hecton8.Optimization.Tests
     {
         public bool IsRenderTextureMemoryOverBudget { get; set; }
         public bool IsTotalVRAMOverBudget { get; set; }
-        public object PressureStateCode { get; set; }
+        public byte PressureStateCode { get; set; }
 
         // Stubs for remaining interface members
         public long TextureMemoryBytes { get; }

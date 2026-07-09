@@ -2639,11 +2639,11 @@ namespace Hecton8.AI.GPU
 #endif
     
         #region JulesLink_FlockingBoidSeparationVector
-        private static void JulesLink_FlockingBoidSeparationVector() { _ = typeof(Hecton8.PureLogic.Systems.FlockingBoidSeparationVector); }
+        private static void JulesLink_FlockingBoidSeparationVector() { _ = typeof(Hecton8.PureLogic.Ecosystem.FlockingBoidSeparationVector); }
         #endregion
 
         #region JulesLink_FlockingBoidCohesionVector
-        private static void JulesLink_FlockingBoidCohesionVector() { _ = typeof(Hecton8.PureLogic.Systems.FlockingBoidCohesionVector); }
+        private static void JulesLink_FlockingBoidCohesionVector() { _ = typeof(Hecton8.PureLogic.Ecosystem.FlockingBoidCohesionVector); }
         #endregion
 }
 }

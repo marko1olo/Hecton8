@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -3778,9 +3779,10 @@ namespace Hecton8.World
             hash = (hash ^ d) * 16777619u;
             return hash == 0u ? 1u : hash;
         }
-    }
 
-        #region JulesLink_ChemicalDiffusionSolver
+#region JulesLink_ChemicalDiffusionSolver
         private static void JulesLink_ChemicalDiffusionSolver() { _ = typeof(Hecton8.PureLogic.Systems.ChemicalDiffusionSolver); }
         #endregion
+
+    }
 }

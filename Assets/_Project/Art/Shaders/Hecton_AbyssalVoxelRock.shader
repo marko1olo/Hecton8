@@ -5,6 +5,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [MainTexture] _Base_Map ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _Normal_Map ("Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _Mask_Map ("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
+        [NoScaleOffset] _AlbedoArray ("Voxel Albedo Array", 2DArray) = "" {}
+        [NoScaleOffset] _NormalArray ("Voxel Normal Array", 2DArray) = "" {}
+        _VoxelSandArrayIndex ("Voxel Sand Array Index", Float) = 0
+        _VoxelRockArrayIndex ("Voxel Rock Array Index", Float) = 3
+        _VoxelTriplanarScale ("Voxel Triplanar Scale", Float) = 0.08
+        _VoxelTriplanarSharpness ("Voxel Triplanar Sharpness", Range(1, 12)) = 5
+        _VoxelArrayNormalStrength ("Voxel Array Normal Strength", Range(0, 1)) = 0.85
         [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
@@ -188,6 +195,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _LocalCausticStrength;
             float _LocalCausticScale;
             float _LocalCausticSpeed;
+            float _VoxelSandArrayIndex;
+            float _VoxelRockArrayIndex;
+            float _VoxelTriplanarScale;
+            float _VoxelTriplanarSharpness;
+            float _VoxelArrayNormalStrength;
         CBUFFER_END
 
         float4 _SargassumCutMaskWorldRect;
@@ -214,6 +226,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_Normal_Map);
         TEXTURE2D(_Mask_Map);
         SAMPLER(sampler_Mask_Map);
+        TEXTURE2D_ARRAY(_AlbedoArray);
+        SAMPLER(sampler_AlbedoArray);
+        TEXTURE2D_ARRAY(_NormalArray);
+        SAMPLER(sampler_NormalArray);
         TEXTURE2D(_FreshRockAlbedoMap);
         SAMPLER(sampler_FreshRockAlbedoMap);
         TEXTURE2D(_FreshRockNormalMap);
@@ -1017,10 +1033,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 float3 samplePositionWS = input.absolutePositionWS;
                 half3 coarseNormalWS = SafeNormalize3(input.normalWS);
                 half3 baseNormalWS = ResolveScreenSpaceSmoothedVoxelNormal(coarseNormalWS, input.positionWS, input.curvature);
-                half vertexBurnMask = step(0.999h, saturate(input.terrainSplatColor.r)) * saturate(input.freshCutBlend);
-                half vertexCaveAoRaw = saturate(dot(input.terrainSplatColor.rgb, half3(0.3333h, 0.3333h, 0.3334h)));
-                half vertexCaveAoBurnSafe = saturate((input.terrainSplatColor.g + input.terrainSplatColor.b) * 0.5h);
-                half vertexCaveAo = lerp(vertexCaveAoRaw, vertexCaveAoBurnSafe, vertexBurnMask);
+                half4 color = input.terrainSplatColor;
+                half vertexCaveAo = 1.0h;
                 half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, input.bakedAmbientOcclusion);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
@@ -1048,8 +1062,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                     decodedMask.smoothness = lerp(decodedMask.smoothness, 1.0h - bakedRoughness, geologyBlend);
                     decodedMask.occlusion = lerp(decodedMask.occlusion, min(decodedMask.occlusion, bakedAmbientOcclusion), geologyBlend);
                 }
-                half freshCutMask = saturate(max(max(input.freshCutBlend, vertexBurnMask), cutMask));
-                half scarMask = FastVoxelPower01(saturate(max(cutMask, vertexBurnMask)), max(_CutScarSharpness, 0.5h));
+                half freshCutMask = saturate(max(input.freshCutBlend, cutMask));
+                half scarMask = FastVoxelPower01(saturate(cutMask), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask = 0.0h;
                 half recentHeatAge01 = 1.0h;
                 half3 boostedNormalWS = dominantNormalWS * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
@@ -1076,6 +1090,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half3 thermalColor = lerp(_CutScarWarmColor.rgb, _CutScarColor.rgb, saturate(1.0h - recentHeatAge01 * 0.9h));
                 albedo = lerp(albedo, thermalColor, recentHeatMask * 0.18h);
+
+                albedo *= (color.r + color.g);
 
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));

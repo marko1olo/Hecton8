@@ -4069,8 +4069,6 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector3 ResolveDominantAxisDirection(Vector3 direction)
         {
             float3 value3 = new float3(direction.x, direction.y, direction.z);

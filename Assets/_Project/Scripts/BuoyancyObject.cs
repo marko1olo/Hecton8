@@ -820,7 +820,7 @@ namespace Hecton8.Physics
 #endif
     
         #region JulesLink_SubmergedBuoyancyForce
-        private static void JulesLink_SubmergedBuoyancyForce() { _ = typeof(Hecton8.PureLogic.Systems.SubmergedBuoyancyForce); }
+        private static void JulesLink_SubmergedBuoyancyForce() { _ = typeof(Hecton8.PureLogic.Kinematics.SubmergedBuoyancyForce); }
         #endregion
 }
 }

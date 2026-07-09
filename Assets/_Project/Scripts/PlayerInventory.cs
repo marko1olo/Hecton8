@@ -506,32 +506,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        public struct ItemState
-        {
-            public ulong GeneticsMask;
-            public ushort QualityMilli;
-            public ushort StateFlags;
-            public bool HasExplicitStateFlags;
 
-            public ItemState(ulong geneticsMask, ushort qualityMilli)
-            {
-                GeneticsMask = geneticsMask;
-                QualityMilli = qualityMilli;
-                StateFlags = 0;
-                HasExplicitStateFlags = false;
-            }
-
-            public ItemState(ulong geneticsMask, ushort qualityMilli, ushort stateFlags)
-            {
-                GeneticsMask = geneticsMask;
-                QualityMilli = qualityMilli;
-                StateFlags = stateFlags;
-                HasExplicitStateFlags = true;
-            }
-
-            public ItemState(uint geneticsMask, ushort qualityMilli) : this((ulong)geneticsMask, qualityMilli) { }
-            public ItemState(uint geneticsMask, ushort qualityMilli, ushort stateFlags) : this((ulong)geneticsMask, qualityMilli, stateFlags) { }
-        }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         public struct CraftReservation
@@ -1905,7 +1880,7 @@ namespace Hecton8.Inventory
             return false;
         }
 
-        internal virtual bool TryRemoveFirstMatchingItemByHash(int itemHashId)
+        internal bool TryRemoveFirstMatchingItemByHash(int itemHashId)
         {
             if (!TryFindFirstAnchorByHash(itemHashId, out int anchorIndex) || _grid == null)
                 return false;

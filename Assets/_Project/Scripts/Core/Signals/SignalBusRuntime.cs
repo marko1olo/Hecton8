@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -5236,13 +5236,14 @@ namespace Hecton8.Core.Contracts.Signals
             value = fallback;
             return true;
         }
-    }
 
-        #region JulesLink_SignalPrioritySortCalculator
+#region JulesLink_SignalPrioritySortCalculator
         private static void JulesLink_SignalPrioritySortCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SignalPrioritySortCalculator); }
         #endregion
 
         #region JulesLink_FixedCapacityRingBuffer
         private static void JulesLink_FixedCapacityRingBuffer() { _ = typeof(Hecton8.PureLogic.Systems.FixedCapacityRingBuffer); }
         #endregion
+
+    }
 }

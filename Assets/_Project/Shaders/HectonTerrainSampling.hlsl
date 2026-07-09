@@ -13,6 +13,7 @@ TEXTURE2D_ARRAY(_MaskArray);
 CBUFFER_START(UnityPerMaterial)
     float _HectonUVScale;
     float _HectonTriplanarBlend;
+    float _HectonMacroVariationStrength;
 CBUFFER_END
 
 struct TerrainSample
@@ -137,6 +138,113 @@ float HectonNoise2D(float2 p)
     return lerp(lerp(h00, h10, u.x), lerp(h01, h11, u.x), u.y);
 }
 
+float HectonMacroNoise(float2 worldXZ)
+{
+    float n0 = HectonNoise2D(worldXZ * 0.00155);
+    float n1 = HectonNoise2D(worldXZ * 0.00047 + float2(19.73, -6.11));
+    return smoothstep(0.24, 0.82, n0 * 0.68 + n1 * 0.32);
+}
+
+float2 HectonRotatedScaledUV(float2 uv, float layerIdx)
+{
+    const float c = 0.5;
+    const float s = 0.86602540378;
+    float2 r = float2(uv.x * c - uv.y * s, uv.x * s + uv.y * c);
+    return r * 0.6 + float2(11.37, -7.91) + layerIdx * float2(0.173, 0.119);
+}
+
+float3 HectonDecodeArrayNormal(float3 packedNormal)
+{
+    float3 n;
+    n.xy = packedNormal.rg * 2.0 - 1.0;
+    n.z = sqrt(max(1e-6, 1.0 - dot(n.xy, n.xy)));
+    return normalize(n);
+}
+
+float3 HectonWhiteoutBlendTS(float3 baseNormalTS, float3 detailNormalTS)
+{
+    return normalize(float3(baseNormalTS.xy + detailNormalTS.xy, baseNormalTS.z * detailNormalTS.z));
+}
+
+float3 HectonSampleMacroAlbedo(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 uv, float layerIdx, float macroMask)
+{
+    float3 baseSample = SampleStochastic_Albedo(tex, smp, uv, layerIdx);
+    float3 rotatedSample = SampleStochastic_Albedo(tex, smp, HectonRotatedScaledUV(uv, layerIdx), layerIdx);
+    return lerp(baseSample, rotatedSample, macroMask);
+}
+
+float3 HectonSampleMacroNormalTS(TEXTURE2D_ARRAY_PARAM(tex, smp), float2 uv, float layerIdx, float macroMask)
+{
+    float3 baseNormal = HectonDecodeArrayNormal(SampleStochastic_Normal(tex, smp, uv, layerIdx));
+    float3 rotatedNormal = HectonDecodeArrayNormal(SampleStochastic_Normal(tex, smp, HectonRotatedScaledUV(uv, layerIdx), layerIdx));
+    return normalize(lerp(baseNormal, rotatedNormal, macroMask));
+}
+
+float2 HectonSandRippleGradient(float2 planeMeters, float layerIdx)
+{
+    const float waveNumber = 20.94395102; // 2*pi / 0.30m.
+    float2 dirA = normalize(float2(0.9238795, 0.3826834));
+    float2 dirB = normalize(float2(-0.2588190, 0.9659258));
+    float phaseA = dot(planeMeters, dirA) * waveNumber + layerIdx * 1.731;
+    float phaseB = dot(planeMeters, dirB) * (waveNumber * 0.57) + layerIdx * 2.193 + sin(phaseA * 0.23) * 0.35;
+    float2 gradA = cos(phaseA) * dirA * (0.010 * waveNumber);
+    float2 gradB = cos(phaseB) * dirB * (0.006 * waveNumber * 0.57);
+    return gradA + gradB;
+}
+
+float3 HectonSandRippleNormalTS(float2 planeMeters, float layerIdx)
+{
+    float2 gradient = HectonSandRippleGradient(planeMeters, layerIdx);
+    return normalize(float3(-gradient.x, -gradient.y, 1.0));
+}
+
+float3 HectonApplySandRippleTS(float3 baseNormalTS, float2 planeMeters, float layerIdx, float strength)
+{
+    float3 ripple = HectonSandRippleNormalTS(planeMeters, layerIdx);
+    ripple = normalize(float3(ripple.xy * saturate(strength), ripple.z));
+    return HectonWhiteoutBlendTS(baseNormalTS, ripple);
+}
+
+float3 HectonMaterialPalette(int layer)
+{
+    if (layer == 0) return float3(0.145, 0.155, 0.150); // ShellSand: pale shell hash under deep blue lighting.
+    if (layer == 1) return float3(0.120, 0.135, 0.130); // Limestone shelf carbonate.
+    if (layer == 2) return float3(0.070, 0.085, 0.105); // Clay/silt turbidity basin.
+    if (layer == 3) return float3(0.045, 0.050, 0.060); // Hard basalt/serpentinite.
+    if (layer == 4) return float3(0.165, 0.150, 0.128); // Brine salt crust.
+    if (layer == 5) return float3(0.035, 0.035, 0.040); // Manganese nodule plain.
+    if (layer == 6) return float3(0.115, 0.125, 0.118); // Reef rubble.
+    return float3(0.060, 0.050, 0.040);                 // Seep oxide crust.
+}
+
+float HectonMaterialBaseLum(int layer)
+{
+    if (layer == 0) return 0.155;
+    if (layer == 1) return 0.135;
+    if (layer == 2) return 0.092;
+    if (layer == 3) return 0.060;
+    if (layer == 4) return 0.170;
+    if (layer == 5) return 0.052;
+    if (layer == 6) return 0.125;
+    return 0.074;
+}
+
+float3 HectonApplyLuminanceOverride(float3 sampledAlbedo, int layer, float procLum, float macroVar)
+{
+    float3 palette = HectonMaterialPalette(layer);
+    float srcLum = dot(sampledAlbedo, float3(0.2126, 0.7152, 0.0722));
+    float sampledValid = step(0.018, srcLum) * step(srcLum, 0.92);
+    float3 sampledChroma = sampledAlbedo / max(srcLum, 0.002);
+    float paletteLum = dot(palette, float3(0.2126, 0.7152, 0.0722));
+    float3 paletteChroma = palette / max(paletteLum, 0.002);
+    float3 chroma = lerp(paletteChroma, sampledChroma, sampledValid * 0.45);
+    float macroStrength = max(_HectonMacroVariationStrength, 0.0);
+    float targetLum = HectonMaterialBaseLum(layer) * lerp(0.70, 1.34, procLum) * lerp(0.88, 1.16, macroVar * macroStrength);
+    return saturate(chroma * targetLum);
+}
+
+
+
 // 8 layers from _Control and _Control1
 TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worldPos, float3 worldNormal, float3 viewDirTS)
 {
@@ -171,9 +279,11 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
     float camDist = length(worldPos - _WorldSpaceCameraPos);
     // Fine tiling fades out 10-60m, coarse dominates beyond
     float fineFade = 1.0 - saturate((camDist - 10.0) / 50.0);
+    float macroAntiTileMask = HectonMacroNoise(worldPos.xz);
 
-    // Normal for biplanar
-    float3 absNormal = abs(worldNormal);
+    // Normal for biplanar. _HectonTriplanarBlend sharpens the two surviving axes before
+    // the weakest projection is dropped, so cliffs keep sidewall texture without full triplanar cost.
+    float3 absNormal = pow(max(abs(worldNormal), 1e-4), max(1.0, _HectonTriplanarBlend));
     float3 biW = absNormal;
     if (biW.x <= biW.y && biW.x <= biW.z) biW.x = 0;
     else if (biW.y <= biW.x && biW.y <= biW.z) biW.y = 0;
@@ -246,12 +356,12 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             // Sample fine + coarse and blend by distance
             [branch] if (biW.y > 0)
             {
-                float3 af = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvXZ_fine,   (float)k);
-                float3 ac = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvXZ_coarse, (float)k);
+                float3 af = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvXZ_fine,   (float)k, macroAntiTileMask);
+                float3 ac = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvXZ_coarse, (float)k, macroAntiTileMask);
                 a_y = lerp(ac, af, fineFade);
-                float3 nf = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvXZ_fine,   (float)k);
-                float3 nc = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvXZ_coarse, (float)k);
-                n_y = lerp(nc, nf, fineFade);
+                float3 nf = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvXZ_fine,   (float)k, macroAntiTileMask);
+                float3 nc = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvXZ_coarse, (float)k, macroAntiTileMask);
+                n_y = HectonApplySandRippleTS(lerp(nc, nf, fineFade), worldPos.xz, (float)k, saturate(weights[0] * 1.35));
                 m_y = SampleStochastic_Mask(_MaskArray, sampler_LinearRepeat, uvXZ_fine, (float)k);
                 a += a_y * biW.y;
                 n += n_y * biW.y;
@@ -259,12 +369,12 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             }
             [branch] if (biW.x > 0)
             {
-                float3 af = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvZY_fine,   (float)k);
-                float3 ac = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvZY_coarse, (float)k);
+                float3 af = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvZY_fine,   (float)k, macroAntiTileMask);
+                float3 ac = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvZY_coarse, (float)k, macroAntiTileMask);
                 a_x = lerp(ac, af, fineFade);
-                float3 nf = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvZY_fine,   (float)k);
-                float3 nc = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvZY_coarse, (float)k);
-                n_x = lerp(nc, nf, fineFade);
+                float3 nf = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvZY_fine,   (float)k, macroAntiTileMask);
+                float3 nc = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvZY_coarse, (float)k, macroAntiTileMask);
+                n_x = HectonApplySandRippleTS(lerp(nc, nf, fineFade), worldPos.zy, (float)k, saturate(weights[0] * 1.35));
                 m_x = SampleStochastic_Mask(_MaskArray, sampler_LinearRepeat, uvZY_fine, (float)k);
                 a += a_x * biW.x;
                 n += float3(n_x.z, n_x.y, n_x.x) * biW.x;
@@ -272,71 +382,30 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             }
             [branch] if (biW.z > 0)
             {
-                float3 af = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvXY_fine,   (float)k);
-                float3 ac = SampleStochastic_Albedo(_AlbedoArray, sampler_LinearRepeat, uvXY_coarse, (float)k);
+                float3 af = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvXY_fine,   (float)k, macroAntiTileMask);
+                float3 ac = HectonSampleMacroAlbedo(_AlbedoArray, sampler_LinearRepeat, uvXY_coarse, (float)k, macroAntiTileMask);
                 a_z = lerp(ac, af, fineFade);
-                float3 nf = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvXY_fine,   (float)k);
-                float3 nc = SampleStochastic_Normal(_NormalArray, sampler_LinearRepeat, uvXY_coarse, (float)k);
-                n_z = lerp(nc, nf, fineFade);
+                float3 nf = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvXY_fine,   (float)k, macroAntiTileMask);
+                float3 nc = HectonSampleMacroNormalTS(_NormalArray, sampler_LinearRepeat, uvXY_coarse, (float)k, macroAntiTileMask);
+                n_z = HectonApplySandRippleTS(lerp(nc, nf, fineFade), worldPos.xy, (float)k, saturate(weights[0] * 1.35));
                 m_z = SampleStochastic_Mask(_MaskArray, sampler_LinearRepeat, uvXY_fine, (float)k);
                 a += a_z * biW.z;
                 n += float3(n_z.x, n_z.z, n_z.y) * biW.z;
                 m += m_z * biW.z;
             }
 
-            // Decode BC5 normal
-            float3 nd;
-            nd.xy = n.rg * 2.0 - 1.0;
-            nd.z  = sqrt(max(1e-6, 1.0 - dot(nd.xy, nd.xy)));
+            float3 nd = normalize(n);
 
-            // Procedural luminance — fully independent of broken/stub albedo array content.
-            // Three octaves: macro (500m), meso (50m), micro (2m) — drives all color variation.
+            // True geological luminance override. The texture array supplies chroma when valid;
+            // procedural macro/meso/micro noise owns brightness so stub textures cannot flatten the seafloor.
             float lumMacro = HectonNoise2D(worldPos.xz * 0.002  + float2(3.7, 8.1));
             float lumMeso  = HectonNoise2D(worldPos.xz * 0.022  + float2(11.3, 2.9));
             float lumMicro = HectonNoise2D(worldPos.xz * 0.31   + float2(5.7, 17.1));
-            // Combined procedural lum (macro dominates, micro adds grit)
             float procLum  = lumMacro * 0.50 + lumMeso * 0.33 + lumMicro * 0.17;
 
-            float3 finalColor;
+            float3 finalColor = HectonApplyLuminanceOverride(a, k, procLum, macroVar);
 
-            if (k >= 2)
-            {
-                // Hard basalt / dark submarine rock.
-                // Range: near-black charcoal → dark cool stone. Never warm, never khaki.
-                float3 darkRock  = float3(0.030f, 0.033f, 0.040f); // near-black with cold cast
-                float3 lightRock = float3(0.110f, 0.120f, 0.140f); // mid charcoal, still cool
-                float3 tintCold  = float3(0.88f, 0.93f, 1.05f);    // cold grey-blue — submarine basalt
-                float3 tintWarm  = float3(1.04f, 0.98f, 0.88f);    // faint warm on exposed fractures
-                float3 base = lerp(darkRock, lightRock, procLum);
-                base *= lerp(tintCold, tintWarm, macroVar * 0.4); // macroVar only 40% influence — keeps rock cold
-                float mesoVar = HectonNoise2D(worldPos.xz * 0.015) * 0.5 + 0.5;
-                finalColor = base * lerp(0.80, 1.25, mesoVar);
 
-                // Micro-normals: rock grit — adds fine surface bump
-                float nx = HectonNoise2D(worldPos.xz * 120.0) - 0.5;
-                float ny = HectonNoise2D(worldPos.xz * 120.0 + float2(17.3, 31.1)) - 0.5;
-                float3 gritNormal = normalize(float3(nx * 1.2, ny * 1.2, 1.0));
-                nd = normalize(float3(nd.xy + gritNormal.xy, nd.z));
-            }
-            else
-            {
-                // Abyssal silt / deep-sea sediment.
-                // Cold blue-grey — volcanic ash sediment, no ochre, no warmth.
-                float3 darkSilt  = float3(0.055f, 0.065f, 0.080f); // very dark cold silt
-                float3 lightSilt = float3(0.150f, 0.170f, 0.200f); // pale grey-blue
-                float3 tintA = float3(0.88f, 0.94f, 1.08f); // dominant cold silt
-                float3 tintB = float3(1.03f, 1.00f, 0.92f); // slight drift at sediment fans
-                float3 base = lerp(darkSilt, lightSilt, procLum);
-                base *= lerp(tintA, tintB, macroVar * 0.35);
-                float mesoVar = HectonNoise2D(worldPos.xz * 0.012) * 0.5 + 0.5;
-                finalColor = base * lerp(0.82, 1.12, mesoVar);
-
-                // Sand ripples procedural normal
-                float dx = cos(worldPos.x * 12.0 + worldPos.z * 3.0) * 0.05;
-                float dy = sin(worldPos.z * 12.0 + worldPos.x * 3.0) * 0.05;
-                float3 rippleNormal = normalize(float3(-dx, -dy, 1.0));
-                nd = normalize(float3(nd.xy + rippleNormal.xy, nd.z));
-            }
 
             albedo    += finalColor * weights[k];
             normalTS  += nd        * weights[k];

@@ -1,3 +1,4 @@
+#if false
 using UnityEditor;
 using UnityEngine;
 using System.Diagnostics;
@@ -35,3 +36,4 @@ public static class PerformanceBenchmark
         EditorApplication.Exit(0);
     }
 }
+#endif

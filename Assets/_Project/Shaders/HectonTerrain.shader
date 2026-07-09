@@ -46,6 +46,7 @@ Shader "Hecton8/URP/Terrain_TextureArray"
 
         _HectonUVScale("Hecton UV Scale", Float) = 1.0
         _HectonTriplanarBlend("Hecton Triplanar Blend", Float) = 2.0
+        _HectonMacroVariationStrength("Hecton Macro Variation Strength", Range(0, 2)) = 1.0
     }
 
     HLSLINCLUDE

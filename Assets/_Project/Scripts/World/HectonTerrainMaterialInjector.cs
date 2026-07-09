@@ -63,6 +63,7 @@ namespace Hecton8.World
                     
                     if (customTerrainMaterial.HasProperty("_HectonUVScale")) _instancedMaterial.SetFloat("_HectonUVScale", customTerrainMaterial.GetFloat("_HectonUVScale"));
                     if (customTerrainMaterial.HasProperty("_HectonTriplanarBlend")) _instancedMaterial.SetFloat("_HectonTriplanarBlend", customTerrainMaterial.GetFloat("_HectonTriplanarBlend"));
+                    if (customTerrainMaterial.HasProperty("_HectonMacroVariationStrength")) _instancedMaterial.SetFloat("_HectonMacroVariationStrength", customTerrainMaterial.GetFloat("_HectonMacroVariationStrength"));
                 }
 
                 // Ensure splatmaps are assigned (MapMagic might update them)

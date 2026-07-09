@@ -508,78 +508,9 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteSaveData(SaveData data, ref BufferWriter writer)
         {
-            return WriteSaveDataCore(data, ref writer)
-                && WriteSaveDataWorld(data, ref writer)
-                && WriteSaveDataNarrativeAndMeta(data, ref writer)
-                && WriteSaveDataSettingsAndProcedural(data, ref writer);
-        }
+            if (data == null)
+                return false;
 
-        private static bool WriteSaveDataCore(SaveData data, ref BufferWriter writer)
-        {
-            double totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
-
-            return writer.WriteInt(data.version)
-                && writer.WriteStruct(data.contractVersionHashLo)
-                && writer.WriteStruct(data.contractVersionHashHi)
-                && writer.WriteString(data.timestamp ?? string.Empty)
-                && writer.WriteDouble(totalPlayTime)
-                && WriteSaveDataState(data, ref writer)
-                && WriteSaveDataProgress(data, ref writer, narrativeDiscoveryCount, narrativeDiscoverySourceCount, lastDiscoveredBiomeId)
-                && WriteSaveDataPlayer(data, ref writer, corporatePendingOrderSourceCount, firstHourSessionTime, endingChoice, endingComplete, endingConditionMet, suitUpgradeMask)
-                && WriteSaveDataWorld(data, ref writer);
-        }
-
-        private static bool WriteSaveDataState(SaveData data, ref BufferWriter writer)
-        {
-            return WritePlayerStats(ref writer, data.playerStats)
-                && WriteInventory(ref writer, data)
-                && WriteWorldState(ref writer, data.worldState)
-                && WriteProceduralWorldState(ref writer, data.proceduralWorldState)
-                && WriteConstruction(ref writer, data.construction)
-                && WriteScanLog(ref writer, data.scanLog)
-                && WriteBarter(ref writer, data.barter)
-                && WriteFieldOperationLog(ref writer, data.fieldOperations)
-                && WriteBeaconNetwork(ref writer, data.beaconNetwork)
-                && WriteExplorationMap(ref writer, data.explorationMap)
-                && WritePdaLogbook(ref writer, data.pdaLogbook)
-                && WritePdaMarkers(ref writer, data.pdaMarkers)
-                && WritePdaAdvisories(ref writer, data.pdaAdvisories)
-                && WriteProceduralLore(ref writer, data.proceduralLore)
-                && WriteAchievementRegistry(ref writer, data.achievements)
-                && WriteRunModifiers(ref writer, data.runModifiers);
-        }
-
-        private static bool WriteSaveDataWorld(SaveData data, ref BufferWriter writer)
-        {
-            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
-                data.lastDiscoveredBiomeId,
-                data.discoveredBiomeIds,
-                data.discoveredBiomeBitWords);
-
-            return WriteMetaCampaign(ref writer, data.metaCampaign)
-                && WriteResourceScarcity(ref writer, data.resourceScarcity)
-                && WriteEnvironmentalStrain(ref writer, data.environmentalStrain)
-                && WriteEcosystemState(ref writer, data.ecosystemState)
-                && WriteExternalScavengerSites(ref writer, data.externalScavengerSites)
-                && WriteHazardZoneRuntime(ref writer, data.hazardZones);
-        }
-
-        private static bool WriteSaveDataProgress(
-            SaveData data,
-            ref BufferWriter writer,
-            int narrativeDiscoveryCount,
-            int narrativeDiscoverySourceCount,
-            int lastDiscoveredBiomeId)
-        {
-            return WriteStringFloatDictionary(ref writer, data.toolDurabilityMap, SaveData.MaxToolDurabilityRecords)
-                && WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)
-                && WriteDiscoveredBiomeHashSet(ref writer, data.discoveredBiomeIds)
-                && WriteDiscoveredBiomeBitWords(ref writer, data.discoveredBiomeBitWords)
-                && writer.WriteInt(lastDiscoveredBiomeId);
-        }
-
-        private static bool WriteSaveDataNarrativeAndMeta(SaveData data, ref BufferWriter writer)
-        {
             int narrativeDiscoverySourceCount = ClampCollectionCount(
                 data.narrativeDiscoveryCount,
                 data.narrativeDiscoveryIds,
@@ -600,7 +531,61 @@ namespace Hecton8.SaveSystem
             bool endingConditionMet = data.endingConditionMet || endingComplete;
             ulong suitUpgradeMask = SanitizeSuitUpgradeMask(data.suitUpgradeMask);
 
-            return writer.WriteInt(narrativeDiscoveryCount)
+            return writer.WriteInt(data.version)
+                && writer.WriteStruct(data.contractVersionHashLo)
+                && writer.WriteStruct(data.contractVersionHashHi)
+                && writer.WriteString(data.timestamp ?? string.Empty)
+                && WriteSaveDataState(data, ref writer)
+                && WriteSaveDataProgress(data, ref writer, narrativeDiscoveryCount, narrativeDiscoverySourceCount)
+                && WriteSaveDataPlayer(data, ref writer, corporatePendingOrderSourceCount, firstHourSessionTime, endingChoice, endingComplete, endingConditionMet, suitUpgradeMask)
+                && WriteSaveDataWorld(data, ref writer);
+        }
+
+        private static bool WriteSaveDataState(SaveData data, ref BufferWriter writer)
+        {
+            double totalPlayTime = SanitizeNonNegativeFinite(data.totalPlayTime);
+            return writer.WriteDouble(totalPlayTime)
+                && WritePlayerStats(ref writer, data.playerStats)
+                && WriteInventory(ref writer, data)
+                && WriteWorldState(ref writer, data.worldState)
+                && WriteProceduralWorldState(ref writer, data.proceduralWorldState)
+                && WriteConstruction(ref writer, data.construction)
+                && WriteScanLog(ref writer, data.scanLog)
+                && WriteBarter(ref writer, data.barter)
+                && WriteFieldOperationLog(ref writer, data.fieldOperations)
+                && WriteBeaconNetwork(ref writer, data.beaconNetwork)
+                && WriteExplorationMap(ref writer, data.explorationMap)
+                && WritePdaLogbook(ref writer, data.pdaLogbook)
+                && WritePdaMarkers(ref writer, data.pdaMarkers)
+                && WritePdaAdvisories(ref writer, data.pdaAdvisories)
+                && WriteProceduralLore(ref writer, data.proceduralLore)
+                && WriteAchievementRegistry(ref writer, data.achievements)
+                && WriteRunModifiers(ref writer, data.runModifiers)
+                && WriteMetaCampaign(ref writer, data.metaCampaign)
+                && WriteResourceScarcity(ref writer, data.resourceScarcity)
+                && WriteEnvironmentalStrain(ref writer, data.environmentalStrain)
+                && WriteEcosystemState(ref writer, data.ecosystemState)
+                && WriteExternalScavengerSites(ref writer, data.externalScavengerSites)
+                && WriteHazardZoneRuntime(ref writer, data.hazardZones);
+        }
+
+        private static bool WriteSaveDataProgress(
+            SaveData data,
+            ref BufferWriter writer,
+            int narrativeDiscoveryCount,
+            int narrativeDiscoverySourceCount)
+        {
+            int lastDiscoveredBiomeId = NormalizeLastDiscoveredBiomeId(
+                data.lastDiscoveredBiomeId,
+                data.discoveredBiomeIds,
+                data.discoveredBiomeBitWords);
+
+            return WriteStringFloatDictionary(ref writer, data.toolDurabilityMap, SaveData.MaxToolDurabilityRecords)
+                && WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)
+                && WriteDiscoveredBiomeHashSet(ref writer, data.discoveredBiomeIds)
+                && WriteDiscoveredBiomeBitWords(ref writer, data.discoveredBiomeBitWords)
+                && writer.WriteInt(lastDiscoveredBiomeId)
+                && writer.WriteInt(narrativeDiscoveryCount)
                 && WriteNonBlankStringArraySlice(
                     ref writer,
                     data.narrativeDiscoveryIds,
@@ -7431,9 +7416,8 @@ namespace Hecton8.SaveSystem
 
                 return true;
             }
-        }
-    
-        #region JulesLink_HuffmanRleSaveDataCompressorCalculator
+
+#region JulesLink_HuffmanRleSaveDataCompressorCalculator
         private static void JulesLink_HuffmanRleSaveDataCompressorCalculator() { _ = typeof(Hecton8.PureLogic.Systems.HuffmanRleSaveDataCompressorCalculator); }
         #endregion
 
@@ -7445,4 +7429,6 @@ namespace Hecton8.SaveSystem
         #region JulesLink_SaveDeltaCompressDiffCalculator
         private static void JulesLink_SaveDeltaCompressDiffCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SaveDeltaCompressDiffCalculator); }
         #endregion
+
+        }
 }

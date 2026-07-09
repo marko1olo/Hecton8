@@ -162,8 +162,6 @@ namespace MapMagic.Brush.Undo
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
 		public MapMagicBrush brush;
 
-		public MapMagicBrush brush;
-
 		//private Stack<Set> sets = new Stack<Set>();  //we've got to remove first items from it, so using list instead
 		[SerializeField] private List< Dictionary<Terrain,TerrainUndoData> > sets = new List< Dictionary<Terrain,TerrainUndoData> >();
 
@@ -354,8 +352,6 @@ namespace MapMagic.Brush.Undo
 		const int numChunksPerTerrain = 8; //number*number of chunks in terrain
 		const string undoName = "Brush Stroke";
 		public string lastUndoName;  //the last undo group name (kept to know it on UndoRedoPerformed)
-		public MapMagicBrush brush;
-
 		public MapMagicBrush brush;
 
 		//private Stack<Set> sets = new Stack<Set>();  //we've got to remove first items from it, so using list instead

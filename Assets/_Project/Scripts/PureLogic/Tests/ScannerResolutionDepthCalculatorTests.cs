@@ -64,19 +64,19 @@ namespace Hecton8.PureLogic.Tests
         public void Test_ClampedBounds_Case06()
         {
             // Negative maxScanRange
-            float resultNegRange = ScannerResolutionDepthCalculator.Compute(10f, -50f, 10f, 10f);
+            float resultNegRange = ScannerResolutionDepthCalculator.ComputeSqr(10f, -50f, 10f, 10f);
             Assert.That(resultNegRange, Is.EqualTo(0f));
 
             // targetDistance greater than maxScanRange
-            float resultOutRange = ScannerResolutionDepthCalculator.Compute(150f, 100f, 10f, 10f);
+            float resultOutRange = ScannerResolutionDepthCalculator.ComputeSqr(150f, 100f, 10f, 10f);
             Assert.That(resultOutRange, Is.EqualTo(0f));
 
             // targetDistance exactly equal to maxScanRange
-            float resultExactRange = ScannerResolutionDepthCalculator.Compute(100f, 100f, 10f, 10f);
+            float resultExactRange = ScannerResolutionDepthCalculator.ComputeSqr(100f, 100f, 10f, 10f);
             Assert.That(resultExactRange, Is.EqualTo(0f));
 
             // negative scanner power
-            float resultNegPower = ScannerResolutionDepthCalculator.Compute(10f, 100f, 10f, -50f);
+            float resultNegPower = ScannerResolutionDepthCalculator.ComputeSqr(10f, 100f, 10f, -50f);
             Assert.That(resultNegPower, Is.EqualTo(0f));
         }
     }

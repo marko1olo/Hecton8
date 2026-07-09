@@ -699,6 +699,11 @@ public static class MCTables
 public struct CubeDensities
 {
     public float d0, d1, d2, d3, d4, d5, d6, d7;
+    public CubeDensities(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
+    {
+        this.d0 = d0; this.d1 = d1; this.d2 = d2; this.d3 = d3;
+        this.d4 = d4; this.d5 = d5; this.d6 = d6; this.d7 = d7;
+    }
 }
 
 [StructLayout(LayoutKind.Explicit, Size = 24)]
@@ -812,6 +817,17 @@ public struct VoxelDensityJob : IJobParallelFor
     public float lodTransitionBand;
     public int enableBiomeSdfModifiers;
 
+    // ── Procedural Cave Parameters ──
+    public float PrimaryFrequency;
+    public float SecondaryFrequency;
+    public float CarveStrengthMeters;
+    public float CaveThreshold;
+    public float MaxCrustDepthMeters;
+    public float SurfaceProtectionMeters;
+    public float StrataLayerThicknessMeters;
+    public float StrataShelvingStrength;
+    public uint WorldSeed;
+
     // ── Output ──
     [WriteOnly, NoAlias] public NativeArray<float> density;
     [WriteOnly, NoAlias] public NativeArray<float> smoothDensity;
@@ -877,84 +893,32 @@ public struct VoxelDensityJob : IJobParallelFor
 
     void EvaluateDensityAt(float3 wp, out float smoothDensityValue, out float finalDensityValue)
     {
-        bool structureOnlyMode = caveParams.structureOnlyMode != 0;
         float terrainH = SampleTerrainHeight(wp.xz);
-        float terrainDensity = structureOnlyMode
-            ? -1f
-            : VoxelSeamDirector.ComputeTerrainDensity(terrainH, wp.y);
+        float terrainDensity = VoxelSeamDirector.ComputeTerrainDensity(terrainH, wp.y);
 
-        smoothDensityValue = terrainDensity;
-        finalDensityValue = terrainDensity;
+        double3 wpAup = new double3(wp.x, wp.y, wp.z) + absoluteCellOffset;
+        const double wrapPeriod = 6627.0;
+        float3 p = new float3(
+            (float)Fmod(wpAup.x, wrapPeriod),
+            (float)Fmod(wpAup.y, wrapPeriod),
+            (float)Fmod(wpAup.z, wrapPeriod));
 
-        float smoothCaveSdf = 1f;
-        float finalCaveSdf = 1f;
-        if (!structureOnlyMode)
-        {
-            EvaluateCaveSDF(wp, out smoothCaveSdf, out finalCaveSdf);
+        float3 seedOffset = ResolveSeedOffset(WorldSeed);
+        float caveSdf = EvaluateGyroidCellularCaveSdf(p, seedOffset);
 
-            if (smoothCaveSdf < caveParams.shellThickness)
-                smoothDensityValue = SmoothSubtractionQuadratic(-smoothCaveSdf, terrainDensity, caveParams.shellThickness);
+        float depthBelowSurface = terrainH - wp.y;
+        float protectionDepth = math.max(SurfaceProtectionMeters, voxelStep * 2.0f);
+        float protected01 = math.saturate(depthBelowSurface / protectionDepth);
+        float smoothProtected = protected01 * protected01 * (3f - protected01 * 2f);
+        float exponentialProtected = 1f - math.exp(-protected01 * protected01 * 5.25f);
+        float surfaceFade = math.saturate(smoothProtected * exponentialProtected);
+        float effectiveCaveSdf = math.lerp(CarveStrengthMeters, caveSdf, surfaceFade);
 
-            if (finalCaveSdf < caveParams.shellThickness)
-                finalDensityValue = SmoothSubtractionQuadratic(-finalCaveSdf, terrainDensity, caveParams.shellThickness);
-        }
+        float blendK = math.max(voxelStep * 2.5f, 2.0f);
+        float carvedDensity = -SmoothSubtractionQuadratic(effectiveCaveSdf, -terrainDensity, blendK);
 
-        if (!structureOnlyMode && caveEntrances.Length > 0)
-        {
-            float entranceSkirtSDF = EvaluateEntranceSkirtSDF(wp);
-            if (entranceSkirtSDF < caveParams.entranceBlendK)
-            {
-                float skirtBlend = caveParams.entranceBlendK * 0.45f;
-                smoothDensityValue = SmoothMaxQuadratic(smoothDensityValue, -entranceSkirtSDF, skirtBlend);
-                finalDensityValue = SmoothMaxQuadratic(finalDensityValue, -entranceSkirtSDF, skirtBlend);
-            }
-        }
-
-        if (caveStructures.Length > 0 && (structureOnlyMode || smoothCaveSdf < 0f || finalCaveSdf < 0f))
-        {
-            EvaluateStructuresSDF(wp, out float smoothStructureSdf, out float finalStructureSdf);
-            if (smoothStructureSdf < caveParams.structureBlendK)
-                smoothDensityValue = SmoothMaxQuadratic(smoothDensityValue, -smoothStructureSdf, caveParams.structureBlendK);
-
-            if (finalStructureSdf < caveParams.structureBlendK)
-                finalDensityValue = SmoothMaxQuadratic(finalDensityValue, -finalStructureSdf, caveParams.structureBlendK);
-        }
-
-        if (craterStamps.IsCreated && craterStamps.Length > 0)
-        {
-            smoothDensityValue = EvaluateCraterModifiers(wp, smoothDensityValue);
-            finalDensityValue = EvaluateCraterModifiers(wp, finalDensityValue);
-        }
-
-        ApplyAlienBiomeSdfModifier(wp, ref smoothDensityValue, ref finalDensityValue);
-
-        if (modifiedCells.IsCreated &&
-            modifiedCellCount > 0 &&
-            TryResolveModifiedCell(ResolveAbsoluteCell(wp), out VoxelModifiedCell storedCell))
-        {
-            float deltaDensity = (float)storedCell.Density;
-            if ((storedCell.Flags & DeltaModeReplace) != 0)
-            {
-                smoothDensityValue = deltaDensity;
-                finalDensityValue = deltaDensity;
-            }
-            else if ((storedCell.Flags & DeltaModeAdditive) != 0)
-            {
-                smoothDensityValue = math.max(smoothDensityValue, deltaDensity);
-                finalDensityValue = math.max(finalDensityValue, deltaDensity);
-            }
-            else
-            {
-                smoothDensityValue = math.min(smoothDensityValue, deltaDensity);
-                finalDensityValue = math.min(finalDensityValue, deltaDensity);
-            }
-        }
-
-        if (!structureOnlyMode)
-        {
-            smoothDensityValue = ApplyEdgeSeal(wp, smoothDensityValue);
-            finalDensityValue = ApplyEdgeSeal(wp, finalDensityValue);
-        }
+        smoothDensityValue = carvedDensity;
+        finalDensityValue = carvedDensity;
     }
 
     void ApplyAlienBiomeSdfModifier(float3 wp, ref float smoothDensityValue, ref float finalDensityValue)
@@ -2280,6 +2244,171 @@ public struct VoxelDensityJob : IJobParallelFor
 
         return sdfDist;
     }
+
+    private const float Tau = 6.2831853f;
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private float EvaluateGyroidCellularCaveSdf(float3 p, float3 seedOffset)
+    {
+        float primaryFrequency = math.max(math.abs(PrimaryFrequency), 0.0005f);
+        float secondaryFrequency = math.max(math.abs(SecondaryFrequency), 0.0005f);
+        float safeCarveStrength = math.max(CarveStrengthMeters, math.max(voxelStep, 1.0f));
+
+        float warpFrequency = math.max(primaryFrequency * 0.47f, 0.0005f);
+        float warpAmplitude = math.clamp(safeCarveStrength * 0.35f, 2.0f, 22.0f);
+        float3 warpedPos = ApplyGyroidDomainWarp(p, seedOffset, warpFrequency, warpAmplitude);
+
+        float strataThickness = math.max(4.0f, StrataLayerThicknessMeters);
+        float strataFrequency = Tau / strataThickness;
+        float strataAmplitude = math.clamp(StrataShelvingStrength * strataThickness, 0.0f, strataThickness * 0.45f);
+        warpedPos.y += math.sin((warpedPos.y + seedOffset.y) * strataFrequency) * strataAmplitude;
+
+        float rarity = math.saturate(CaveThreshold * 0.86f);
+
+        float3 gyroidPos = (warpedPos + seedOffset * 0.37f) * primaryFrequency * Tau;
+        float sinX = math.sin(gyroidPos.x);
+        float sinY = math.sin(gyroidPos.y);
+        float sinZ = math.sin(gyroidPos.z);
+        float cosX = math.cos(gyroidPos.x);
+        float cosY = math.cos(gyroidPos.y);
+        float cosZ = math.cos(gyroidPos.z);
+        float gyroid = sinX * cosY + sinY * cosZ + sinZ * cosX;
+        float gyroidBand = math.lerp(0.70f, 0.34f, rarity);
+        float gyroidMetricScale = math.max(1.0f / (primaryFrequency * Tau), voxelStep);
+        float gyroidSdf = (math.abs(gyroid) - gyroidBand) * gyroidMetricScale;
+
+        float chamberFrequency = math.max(secondaryFrequency * 0.55f, 0.0005f);
+        float3 chamberPos = warpedPos + seedOffset * 1.91f;
+        chamberPos.y = (chamberPos.y - seedOffset.y) * 0.58f + seedOffset.y;
+        float chamberDistance = CellularDistance(chamberPos, chamberFrequency, WorldSeed ^ 0xC0A55123u);
+        float chamberNoise = noise.snoise((chamberPos + seedOffset * 0.82f) * chamberFrequency * 1.83f);
+        float chamberRadius = math.lerp(0.48f, 0.25f, rarity) + chamberNoise * 0.055f;
+        chamberRadius = math.clamp(chamberRadius, 0.18f, 0.52f);
+        float chamberSdf = (chamberDistance - chamberRadius) / chamberFrequency;
+
+        float gyroidYD = cosY * cosZ - sinX * sinY;
+        float strataSlope = math.cos((warpedPos.y + seedOffset.y) * strataFrequency);
+        float floorProxy = math.saturate(0.5f + (gyroidYD * 0.34f + strataSlope * 0.18f));
+        floorProxy = floorProxy * floorProxy * (3f - floorProxy * 2f);
+        float nearSurfaceMask = 1f - math.saturate(math.min(math.abs(gyroidSdf), math.abs(chamberSdf)) / math.max(safeCarveStrength * 0.45f, voxelStep));
+
+        float dunePhase = (warpedPos.x + seedOffset.x * 3.1f) * 0.055f + (warpedPos.z - seedOffset.z * 2.7f) * 0.041f;
+        float dune = (math.sin(dunePhase) * 0.62f + math.sin(dunePhase * 1.73f + 1.91f) * 0.38f) * safeCarveStrength * 0.035f;
+        float rubbleNoise = RidgedMultifractal(warpedPos * 0.075f + seedOffset * 0.13f, WorldSeed ^ 0x71C9D3A5u, 3);
+        float depositionalNoise = (dune + (rubbleNoise - 0.55f) * safeCarveStrength * 0.045f) * floorProxy * nearSurfaceMask;
+
+        float wallCeilingMask = (1f - floorProxy) * nearSurfaceMask;
+        float wallGrit = (RidgedMultifractal(warpedPos * 0.19f + seedOffset * 0.41f, WorldSeed ^ 0xBADC0DEu, 3) - 0.5f) *
+            math.min(safeCarveStrength * 0.065f, math.max(voxelStep * 0.65f, 0.35f)) * wallCeilingMask;
+        float reefNoise = noise.snoise((warpedPos + seedOffset * 4.11f) * primaryFrequency * 2.67f) * safeCarveStrength * 0.045f * wallCeilingMask;
+
+        return math.min(gyroidSdf, chamberSdf) + depositionalNoise + wallGrit + reefNoise;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float3 ApplyGyroidDomainWarp(float3 p, float3 seedOffset, float frequency, float amplitude)
+    {
+        float3 q = (p + seedOffset) * frequency;
+        float wx = noise.snoise(q + new float3(17.31f, 41.17f, -11.73f));
+        float wy = noise.snoise(q + new float3(-29.19f, 7.83f, 53.41f));
+        float wz = noise.snoise(q + new float3(61.07f, -23.59f, 5.29f));
+        return p + new float3(wx, wy, wz) * amplitude;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float RidgedMultifractal(float3 p, uint seed, int octaves)
+    {
+        float seedOffset = (seed & 0xFFFFu) * 0.000173f;
+        float3 q = p + new float3(seedOffset, seedOffset * 1.37f, -seedOffset * 0.73f);
+        float amplitude = 0.5f;
+        float sum = 0f;
+        float norm = 0f;
+        for (int i = 0; i < 4; i++)
+        {
+            if (i >= octaves)
+                break;
+
+            float ridge = 1f - math.abs(noise.snoise(q));
+            sum += ridge * ridge * amplitude;
+            norm += amplitude;
+            q = q * 2.07f + new float3(17.13f, -9.71f, 5.43f);
+            amplitude *= 0.52f;
+        }
+
+        return sum / math.max(norm, 0.0001f);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float CellularDistance(float3 p, float frequency, uint seed)
+    {
+        float3 cellPos = p * frequency;
+        int3 baseCell = new int3(
+            (int)math.floor(cellPos.x),
+            (int)math.floor(cellPos.y),
+            (int)math.floor(cellPos.z));
+        float3 frac = cellPos - new float3(baseCell.x, baseCell.y, baseCell.z);
+
+        float nearestSq = 99999.0f;
+        for (int dz = -1; dz <= 1; dz++)
+        {
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    int3 neighbor = baseCell + new int3(dx, dy, dz);
+                    float3 feature = Hash3ToUnitFloat3(neighbor, seed);
+                    float3 diff = new float3(dx, dy, dz) + feature - frac;
+                    nearestSq = math.min(nearestSq, math.lengthsq(diff));
+                }
+            }
+        }
+
+        return math.sqrt(nearestSq);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float3 Hash3ToUnitFloat3(int3 cell, uint seed)
+    {
+        uint hx = Hash((uint)cell.x ^ seed ^ 0x9E3779B9u);
+        uint hy = Hash((uint)cell.y ^ hx ^ 0x58F2C779u);
+        uint hz = Hash((uint)cell.z ^ hy ^ 0x1F2A7D8Bu);
+        return new float3(
+            HashToUnitFloat(hx),
+            HashToUnitFloat(hy),
+            HashToUnitFloat(hz));
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static uint Hash(uint h)
+    {
+        h ^= h >> 16;
+        h *= 0x85EBCA6Bu;
+        h ^= h >> 13;
+        h *= 0xC2B2AE35u;
+        h ^= h >> 16;
+        return h;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float HashToUnitFloat(uint hash)
+    {
+        return (hash & 0x00FFFFFFu) * (1.0f / 16777216.0f);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static double Fmod(double value, double period)
+    {
+        return value - math.floor(value / period) * period;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static float3 ResolveSeedOffset(uint seed)
+    {
+        float seedOffX = ((seed & 0xFFu) - 128f) * 0.5f;
+        float seedOffY = (((seed >> 8) & 0xFFu) - 128f) * 0.5f;
+        float seedOffZ = (((seed >> 16) & 0xFFu) - 128f) * 0.5f;
+        return new float3(seedOffX, seedOffY, seedOffZ);
+    }
 }
 
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2523,15 +2652,7 @@ public struct VoxelChunkBoundsContentJob : IJob
     }
 }
 
-public readonly struct CubeDensities
-{
-    public readonly float d0, d1, d2, d3, d4, d5, d6, d7;
-    public CubeDensities(float d0, float d1, float d2, float d3, float d4, float d5, float d6, float d7)
-    {
-        this.d0 = d0; this.d1 = d1; this.d2 = d2; this.d3 = d3;
-        this.d4 = d4; this.d5 = d5; this.d6 = d6; this.d7 = d7;
-    }
-}
+
 
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2748,15 +2869,10 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
             d7 = D(cx, cy + 1, cz + 1)
         };
 
-
-
-
-        CubeDensities densities = new CubeDensities(d0: d0, d1: d1, d2: d2, d3: d3, d4: d4, d5: d5, d6: d6, d7: d7);
-
         int cubeIndex = ResolveCubeIndex(in densities);
 
 
-        int edgeBits = Hecton8.PureLogic.Systems.MarchingCubesLookupTable.Calculate((byte)cubeIndex, d0, d1, d2, d3, d4, d5, d6, d7, 0f);
+        int edgeBits = Hecton8.PureLogic.Systems.MarchingCubesLookupTable.Calculate((byte)cubeIndex, densities.d0, densities.d1, densities.d2, densities.d3, densities.d4, densities.d5, densities.d6, densities.d7, 0f);
         if (edgeBits == 0) return;
 
         int vertCount = cellVertexCounts[cellIdx];
@@ -3201,7 +3317,9 @@ public struct VoxelNormalJob : IJobParallelFor
 
         float cavityMask = SaturateFinite((0.5f - curvature01) * 2f);
         float overheadMask = SaturateFinite(0.5f - normal.y * 0.5f);
-        ambientOcclusionValues[idx] = SaturateFinite(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
+        float neighborAo = SaturateFinite(gradientAndAo.w - cavityMask * 0.24f - overheadMask * 0.12f);
+        float raymarchAo = ResolveTwoStepSdfAo(wp, normal);
+        ambientOcclusionValues[idx] = SaturateFinite(math.min(neighborAo, raymarchAo));
     }
 
     bool HasCompleteDensityField()
@@ -3237,6 +3355,57 @@ public struct VoxelNormalJob : IJobParallelFor
         float invLen = math.rcp(math.max(maxAxis + midAxis * 0.375f + minAxis * 0.25f, 0.0001f));
         float3 normalized = value * invLen;
         return math.select(new float3(0f, 1f, 0f), normalized, math.isfinite(maxAxis) && maxAxis > 0.0001f && IsFinite(normalized));
+    }
+
+    float ResolveTwoStepSdfAo(float3 position, float3 normal)
+    {
+        float d1 = SampleDensityTrilinear((position + normal * 1.5f - volumeOrigin) * invVoxelStep);
+        float d2 = SampleDensityTrilinear((position + normal * 3.5f - volumeOrigin) * invVoxelStep);
+        if (!math.isfinite(d1) || !math.isfinite(d2))
+            return 1f;
+
+        float nearSolid = math.smoothstep(-2.0f, 6.0f, d1);
+        float farSolid = math.smoothstep(-2.0f, 6.0f, d2);
+        return SaturateFinite(1f - nearSolid * 0.72f - farSolid * 0.28f);
+    }
+
+    float SampleDensityTrilinear(float3 sample)
+    {
+        if (!IsFinite(sample))
+            return float.NaN;
+
+        sample = math.clamp(sample, new float3(0f), new float3(ptsX - 1f, ptsY - 1f, ptsZ - 1f));
+        int x0 = (int)math.floor(sample.x);
+        int y0 = (int)math.floor(sample.y);
+        int z0 = (int)math.floor(sample.z);
+        int x1 = math.min(x0 + 1, ptsX - 1);
+        int y1 = math.min(y0 + 1, ptsY - 1);
+        int z1 = math.min(z0 + 1, ptsZ - 1);
+        float fx = sample.x - x0;
+        float fy = sample.y - y0;
+        float fz = sample.z - z0;
+
+        float c000 = DensityAt(x0, y0, z0);
+        float c100 = DensityAt(x1, y0, z0);
+        float c010 = DensityAt(x0, y1, z0);
+        float c110 = DensityAt(x1, y1, z0);
+        float c001 = DensityAt(x0, y0, z1);
+        float c101 = DensityAt(x1, y0, z1);
+        float c011 = DensityAt(x0, y1, z1);
+        float c111 = DensityAt(x1, y1, z1);
+
+        float c00 = math.lerp(c000, c100, fx);
+        float c10 = math.lerp(c010, c110, fx);
+        float c01 = math.lerp(c001, c101, fx);
+        float c11 = math.lerp(c011, c111, fx);
+        float c0 = math.lerp(c00, c10, fy);
+        float c1 = math.lerp(c01, c11, fy);
+        return math.lerp(c0, c1, fz);
+    }
+
+    float DensityAt(int x, int y, int z)
+    {
+        return densityField[x + y * densityStrideY + z * densityStrideZ];
     }
 
     float4 SampleNearestGridGradientAndAo(int x, int y, int z)
@@ -3682,7 +3851,7 @@ public struct VoxelColorJob : IJobParallelFor
 
     public double3 absoluteCellOffset;
 
-    [WriteOnly, NoAlias] public NativeArray<Color> colors;
+    [WriteOnly, NoAlias] public NativeArray<Color32> colors;
     [NoAlias] public NativeArray<float> skirtAlphaValues;
 
     public void Execute(int idx)
@@ -3703,16 +3872,9 @@ public struct VoxelColorJob : IJobParallelFor
             return;
         }
 
-        float3 safeVolumeCenter = IsFinite(volumeCenter) ? volumeCenter : p;
-        float safeHalfExtent = ClampFinite(volumeHalfExtent, 1f, 1f, MaxSafeColorVolumeExtent);
-        float distFromCenterSq = math.lengthsq(p - safeVolumeCenter);
-        float distFromCenterSq01 = math.isfinite(distFromCenterSq)
-            ? SaturateFinite(distFromCenterSq / (safeHalfExtent * safeHalfExtent))
-            : 1f;
         float localizedAo = ambientOcclusionValues.IsCreated && idx < ambientOcclusionValues.Length
             ? SaturateFinite(ambientOcclusionValues[idx])
             : 1f;
-        float caveCenterAo = SaturateFinite(0.52f + distFromCenterSq01 * 0.48f) * localizedAo;
 
         float terrainSkirt = 0f;
         long terrainGridLength = (long)ptsX * ptsZ;
@@ -3746,22 +3908,16 @@ public struct VoxelColorJob : IJobParallelFor
         }
 
         float skirtAlpha = SaturateFinite(math.max(terrainSkirt, lodEdgeSkirt));
-        float4 colorPayload = new float4(caveCenterAo, caveCenterAo, caveCenterAo, 0f);
-        if (TryResolveCaveMouthTerrainColor(p, out float4 terrainSplatColor, out float splatWeight))
-        {
-            float terrainLuma = SaturateFinite(math.dot(terrainSplatColor.xyz, new float3(0.299f, 0.587f, 0.114f)));
-            float mouthAo = SaturateFinite(math.lerp(caveCenterAo, math.min(caveCenterAo, terrainLuma), splatWeight));
-            colorPayload.xyz = new float3(mouthAo);
-            colorPayload.w = splatWeight;
-        }
-
-        if (IsModifiedSdfCell(p))
-            colorPayload.x = 1f;
-
         if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
             skirtAlphaValues[idx] = math.max(SaturateFinite(skirtAlphaValues[idx]), skirtAlpha);
 
-        colors[idx] = new Color(colorPayload.x, colorPayload.y, colorPayload.z, colorPayload.w);
+        float3 normal = normals.IsCreated && idx < normals.Length && IsFinite(normals[idx])
+            ? normals[idx]
+            : new float3(0f, 1f, 0f);
+        byte aoByte = (byte)math.clamp((int)math.round(localizedAo * 255f), 0, 255);
+        colors[idx] = normal.y > 0.6f
+            ? new Color32(255, 0, 0, aoByte)
+            : new Color32(0, 255, 0, aoByte);
     }
 
     void WriteClearColor(int idx)
@@ -3769,7 +3925,7 @@ public struct VoxelColorJob : IJobParallelFor
         if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
             skirtAlphaValues[idx] = 0f;
 
-        colors[idx] = Color.clear;
+        colors[idx] = new Color32(0, 255, 0, 255);
     }
 
     bool IsModifiedSdfCell(float3 position)
@@ -4052,6 +4208,7 @@ public struct VoxelSpawnPointJob : IJob
 
     [ReadOnly, NoAlias] public NativeArray<float3> positions;
     [ReadOnly, NoAlias] public NativeArray<float3> normals;
+    [ReadOnly, NoAlias] public NativeArray<float> ambientOcclusionValues;
 
     /// <summary>Volume center for interior depth calculation.</summary>
     public float3 volumeCenter;
@@ -4112,6 +4269,12 @@ public struct VoxelSpawnPointJob : IJob
         float safeFloorNormalThreshold = ClampFinite(floorNormalThreshold, 0.75f, -1f, 1f);
         float upDot = math.dot(normal, new float3(0, 1, 0));
         if (!math.isfinite(upDot) || upDot < safeFloorNormalThreshold)
+            return;
+
+        float openness = ambientOcclusionValues.IsCreated && idx < ambientOcclusionValues.Length
+            ? ClampFinite(ambientOcclusionValues[idx], 0f, 0f, 1f)
+            : 1f;
+        if (openness < 0.42f)
             return;
 
         // ── Filter 2: Interior depth ──
@@ -4987,7 +5150,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public VaultGenerationHandle<float> MeshBiomeValuesHandle; public int MeshBiomeValuesCapacity;
         public VaultGenerationHandle<float> MeshSkirtAlphaValuesHandle; public int MeshSkirtAlphaValuesCapacity;
         public VaultGenerationHandle<float> MeshDirtyBlendValuesHandle; public int MeshDirtyBlendValuesCapacity;
-        public VaultGenerationHandle<Color> MeshColorsHandle; public int MeshColorsCapacity;
+        public VaultGenerationHandle<Color32> MeshColorsHandle; public int MeshColorsCapacity;
         public VaultGenerationHandle<float3> ProjectedLocalPositionsHandle; public int ProjectedLocalPositionsCapacity;
         public VaultGenerationHandle<int> SpatialBucketCountsHandle; public int SpatialBucketCountsCapacity;
         public VaultGenerationHandle<int> SpatialBucketWriteHeadsHandle; public int SpatialBucketWriteHeadsCapacity;
@@ -5144,7 +5307,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public NativeArray<float> MeshBiomeValues => Slot != null ? Resolve(in Slot.MeshBiomeValuesHandle, Slot.MeshBiomeValuesCapacity) : default;
         public NativeArray<float> MeshSkirtAlphaValues => Slot != null ? Resolve(in Slot.MeshSkirtAlphaValuesHandle, Slot.MeshSkirtAlphaValuesCapacity) : default;
         public NativeArray<float> MeshDirtyBlendValues => Slot != null ? Resolve(in Slot.MeshDirtyBlendValuesHandle, Slot.MeshDirtyBlendValuesCapacity) : default;
-        public NativeArray<Color> MeshColors => Slot != null ? Resolve(in Slot.MeshColorsHandle, Slot.MeshColorsCapacity) : default;
+        public NativeArray<Color32> MeshColors => Slot != null ? Resolve(in Slot.MeshColorsHandle, Slot.MeshColorsCapacity) : default;
         public NativeArray<float3> ProjectedLocalPositions => Slot != null ? Resolve(in Slot.ProjectedLocalPositionsHandle, Slot.ProjectedLocalPositionsCapacity) : default;
         public NativeArray<int> SpatialBucketCounts => Slot != null ? Resolve(in Slot.SpatialBucketCountsHandle, Slot.SpatialBucketCountsCapacity) : default;
         public NativeArray<int> SpatialBucketWriteHeads => Slot != null ? Resolve(in Slot.SpatialBucketWriteHeadsHandle, Slot.SpatialBucketWriteHeadsCapacity) : default;
@@ -5338,7 +5501,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public NativeArray<float> BiomeValues => ScratchLease.MeshBiomeValues;
         public NativeArray<float> SkirtAlphaValues => ScratchLease.MeshSkirtAlphaValues;
         public NativeArray<float> DirtyBlendValues => ScratchLease.MeshDirtyBlendValues;
-        public NativeArray<Color> Colors => ScratchLease.MeshColors;
+        public NativeArray<Color32> Colors => ScratchLease.MeshColors;
         public NativeArray<CaveSpawnData> SpawnPointList => ScratchLease.SpawnPointListScratch;
         public NativeArray<int> SpawnPointCountBuffer => ScratchLease.SpawnPointCountScratch;
         public int SpawnPointCount => SpawnPointCountBuffer.IsCreated && SpawnPointCountBuffer.Length > 0 ? SpawnPointCountBuffer[0] : 0;
@@ -9304,7 +9467,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             deltaAup,
             new double3(-RuntimeAupLocalClampMeters),
             new double3(RuntimeAupLocalClampMeters));
-        localDelta = ToFloat3(deltaAup);
+        localDelta = (float3)deltaAup;
         return IsFiniteFloat3(localDelta);
     }
 
@@ -9383,7 +9546,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         const double NoiseWrapPeriodMeters = 4096.0d;
         double3 wrapped = absoluteAup - math.floor(absoluteAup / NoiseWrapPeriodMeters) * NoiseWrapPeriodMeters;
-        return ToFloat3(wrapped);
+        return (float3)wrapped;
     }
 
     private static bool TryResolveRuntimeVector3FromAup(double3 targetAup, double3 originAup, out Vector3 runtimePosition)
@@ -10104,7 +10267,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             enableBiomeSdfModifiers = ResolveBiomeSdfModifierEnabled(data.LODLevel),
             density = densityField,
             smoothDensity = smoothDensityField,
-            densityFaultFlags = densityFaultFlags
+            densityFaultFlags = densityFaultFlags,
+            PrimaryFrequency = 0.012f,
+            SecondaryFrequency = 0.017f,
+            CarveStrengthMeters = 28.0f,
+            CaveThreshold = 0.65f,
+            MaxCrustDepthMeters = 400.0f,
+            SurfaceProtectionMeters = 30.0f,
+            StrataLayerThicknessMeters = 24.0f,
+            StrataShelvingStrength = 0.4f,
+            WorldSeed = data.Seed
         }.Schedule(data.TotalPts, JOB_BATCH);
         long anomalySolveStartTimestamp = Stopwatch.GetTimestamp();
 
@@ -10624,6 +10796,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             {
                 positions = data.WeldedPositions,
                 normals = data.Normals,
+                ambientOcclusionValues = data.AmbientOcclusionValues,
                 volumeCenter = data.WorldCenter,
                 volumeHalfExtent = data.VolumeHalfExtent,
                 floorNormalThreshold = 0.75f,
@@ -10633,7 +10806,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 spawnPoints = spawnPoints,
                 spawnPointCount = spawnPointCount,
                 spawnPointCapacity = spawnPoints.Length
-            }.Schedule(normalHandle);
+            }.Schedule(seamNormalHandle);
 
             phase5Handle = JobHandle.CombineDependencies(phase5Handle, spawnHandle);
         }
@@ -11678,7 +11851,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             NativeArray<float> biomeValues = lease.MeshBiomeValues;
             NativeArray<float> skirtAlphaValues = lease.MeshSkirtAlphaValues;
             NativeArray<float> dirtyBlendValues = lease.MeshDirtyBlendValues;
-            NativeArray<Color> colors = lease.MeshColors;
+            NativeArray<Color32> colors = lease.MeshColors;
             if (!normals.IsCreated || normals.Length < safeWeldedCount ||
                 !curvatureValues.IsCreated || curvatureValues.Length < safeWeldedCount ||
                 !ambientOcclusionValues.IsCreated || ambientOcclusionValues.Length < safeWeldedCount ||
@@ -12897,7 +13070,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         Mesh mesh,
         NativeArray<float3> positions,
         NativeArray<float3> normals,
-        NativeArray<Color> colors,
+        NativeArray<Color32> colors,
         NativeArray<float> ambientOcclusionValues,
         NativeArray<float> curvatureValues,
         NativeArray<float> skirtAlphaValues,
@@ -12954,11 +13127,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 }
 
                 float chunkBorderStitch = ResolveChunkBorderStitchWeight(localPosition, bounds);
+                Color32 vertColor = colors.IsCreated && i < colors.Length
+                    ? colors[i]
+                    : (normal.y > 0.6f ? new Color32(255, 0, 0, 255) : new Color32(0, 255, 0, 255));
                 vertexData[i] = new VoxelSurfaceVertex
                 {
                     Position = localPosition,
                     Normal = normal,
-                    Color = (Color32)(colors.IsCreated && i < colors.Length ? SanitizeFiniteColor(colors[i], ref invalidMeshData) : Color.white),
+                    Color = vertColor,
                     BakedOcclusionUv1 = new Vector4(
                         0f,
                         0f,
@@ -13132,7 +13308,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     Mesh BuildWeldedMeshNative(GameObject go,
                                NativeArray<float3> positions,
                                NativeArray<float3> normals,
-                               NativeArray<Color> colors,
+                               NativeArray<Color32> colors,
                                NativeArray<float> ambientOcclusionValues,
                                NativeArray<float> curvatureValues,
                                NativeArray<float> skirtAlphaValues,

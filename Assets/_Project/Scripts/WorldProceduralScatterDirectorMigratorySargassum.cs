@@ -1116,9 +1116,10 @@ namespace Hecton8.World
 
             return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
         }
-    }
 
-        #region JulesLink_SargassumKelpGrowthCurveCalculator
-        private static void JulesLink_SargassumKelpGrowthCurveCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SargassumKelpGrowthCurveCalculator); }
+#region JulesLink_SargassumKelpGrowthCurveCalculator
+        private static void JulesLink_SargassumKelpGrowthCurveCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.SargassumKelpGrowthCurveCalculator); }
         #endregion
+
+    }
 }

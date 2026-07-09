@@ -5165,19 +5165,19 @@ namespace Hecton8.Physics.KCC
         }
     
         #region JulesLink_ThermoclineResistanceCalculator
-        private static void JulesLink_ThermoclineResistanceCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ThermoclineResistanceCalculator); }
+        private static void JulesLink_ThermoclineResistanceCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.ThermoclineResistanceCalculator); }
         #endregion
 
         #region JulesLink_PressureCrushDamageModel
-        private static void JulesLink_PressureCrushDamageModel() { _ = typeof(Hecton8.PureLogic.Systems.PressureCrushDamageModel); }
+        private static void JulesLink_PressureCrushDamageModel() { _ = typeof(Hecton8.PureLogic.Kinematics.PressureCrushDamageModel); }
         #endregion
 
         #region JulesLink_OceanCurrentDragCalculator
-        private static void JulesLink_OceanCurrentDragCalculator() { _ = typeof(Hecton8.PureLogic.Systems.OceanCurrentDragCalculator); }
+        private static void JulesLink_OceanCurrentDragCalculator() { _ = typeof(Hecton8.PureLogic.Kinematics.OceanCurrentDragCalculator); }
         #endregion
 
         #region JulesLink_BuoyancyDensityRatioMath
-        private static void JulesLink_BuoyancyDensityRatioMath() { _ = typeof(Hecton8.PureLogic.Systems.BuoyancyDensityRatioMath); }
+        private static void JulesLink_BuoyancyDensityRatioMath() { _ = typeof(Hecton8.PureLogic.Kinematics.BuoyancyDensityRatioMath); }
         #endregion
 }
 }

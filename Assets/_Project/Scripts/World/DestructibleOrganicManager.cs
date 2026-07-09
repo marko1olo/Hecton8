@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System;
 using System.Threading;
+using static Hecton8.Core.UnityMathematicsExtensions;
 using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton8.Core;
