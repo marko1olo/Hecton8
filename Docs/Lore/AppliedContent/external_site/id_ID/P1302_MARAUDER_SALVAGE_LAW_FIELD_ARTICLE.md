@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Artikel Lapangan Hukum Salvage Marauder
 
-Kata Marauder harus terasa tidak nyaman. Itu bukan kelas romantis dan bukan jabatan bersih. Di HECTON-8, Marauder lahir ketika hukum bergerak lebih cepat sebagai dokumen daripada sebagai bantuan. Sistem klaim membutuhkan seseorang yang bisa masuk ke aset mati atau disengketakan, mengambil nilai, menyentuh properti terkontaminasi, menerima risiko pribadi, dan meninggalkan cukup catatan agar kantor lain bisa berpura-pura semuanya terkendali.
+Kata Marauder seharusnya terasa tersangkut di tenggorokan. Itu bukan label fantasi kuasa. Itu gelar yang diciptakan sistem hukum perbatasan ketika butuh seseorang menyentuh aset rusak tanpa mengakui bahwa aset itu dulu tempat kerja penuh manusia.
 
-Itu membuat pemain terbuka secara moral sejak menit pertama. Kau bukan ksatria yang datang menyelamatkan koloni. Kau pemulung profesional dengan prosedur lama Deep Reach di tangan, jendela utang di atas kepala, dan samudra penuh orang yang sudah coba dipipihkan buku besar menjadi kategori. Horornya bukan kau menjarah. Horornya adalah menjarah mungkin satu-satunya tindakan yang masih diakui sistem.
+            HECTON-8 memakai Marauder agar tindakan pemain tetap bermuatan moral. Kau menjarah karena oksigen, utang, dan alat membuatnya perlu. Kau juga mendokumentasikan karena benda yang kau curi mungkin satu-satunya bukti yang bertahan dari air, tekanan, dan pembersihan korporat. Marauder yang baik tidak bersih. Ia tahu beda antara mengosongkan ruangan dan menjaga apa yang ruangan itu buktikan.
 
-Bahasa lapangan Marauder tumbuh dari tekanan itu. Cincin hitam bukan vandalisme jika memberitahu penyelam berikutnya bahwa pemilik resmi berbohong. Garis pada sebab kematian berstempel bukan sentimental jika menunjuk sertifikat pompa yang hilang. Nama pekerja di samping tanda rute bisa punya bobot hukum lebih besar daripada memorial yang dipoles.
+            Budaya lapangan lahir dari kontradiksi itu. Tanda dinding, label dicoret, nama pekerja, panah tekanan, dan singkatan jelek membentuk hukum kedua di bawah hukum resmi. Ia kasar karena bahasa sopan sudah gagal. Ia cepat karena tak ada yang membaca manual klaim saat bulkhead bernapas.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/id_ID. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Collision-Fractured Moon
 
-HECTON-8 formed inside the Aegir system and was later cracked by a glancing collision. The wound did not split the moon apart. It lifted crustal shelves, opened brine faults, fed vent corridors, and left old floor reachable through rare pressure windows. Salvage maps follow that damage because the safest routes are old injuries with water inside them.
+HECTON-8 is not a stolen world dropped into Aegir for mystery. It formed here, then a glancing collision opened it without killing it. The wound lifted shelves, cracked brine basins, heated fault ladders, and left pressure-glass seams where the moon tried to close around its own ocean. That old damage still decides where a hull can descend, where sound bends, where vents stay alive, and where buried colony evidence can surface. Salvage maps follow injuries because on HECTON-8 the safest route is often the old break that did not quite heal.
 
 ## Scanner
 
-Old crust sample. The moon was made in Aegir's debris belt, then opened by an impact wide enough for the ocean to remember.
+Crust sample. HECTON-8 formed in Aegir's debris belt, then took an oblique impact wide enough for the ocean to remember.
 
 ## Terminal
 
-ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust, hot fault ladders, brine basins, pressure-glass seams, uneven access to deep floor.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
@@ -35,6 +35,6 @@ It was born here. Then something hit hard enough to give the sea a map.
 
 ## Field Note
 
-A captured-moon myth is too clean. HECTON-8 carries a local wound: crust lifted, brine salted, vents still paying interest.
+The captured-moon story is too clean. This place was born local, broken local, and billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/en_US. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zatopiona geologia"
+title: "Utopiona geologia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zatopiona geologia
+# Utopiona geologia
 
-Geologia HECTON-8 to język rozgrywki: szelf, zatopione pokoje, kaniony, solanka, ciepło i otchłań. Seedy przesuwają trasy, nie prawdę fizyczną.
+Utopiona geologia uczy ruchu na HECTON-8. Grzbiety osłaniają. Zapadłe szelfy zbierają salvage i duszący muł. Kaniony wzmacniają prąd. Zasłony solanki zginają sonar i pływalność. Blizny ventów mogą utwardzić uszczelniacz albo go ugotować. Trasa jest tymczasową interpretacją skały, wody, ciepła i ciśnienia.
 
 ## Scanner
 
-Warstwowy szelf, kaniony, schody solanki i kominy. Księżyc uczy zejścia terenem, nie bramami.
+Wykryto warstwowy szelf, lejek kanionu, schody solanki, bliznę ventu i odsłonięcie mułu. Teren to routing ciśnienia, nie tło.
 
 ## Terminal
 
-Prognoza: zawalenia szelfu, lejki kanionów, kurtyny gęstości, pióropusze termiczne, muł.
+PROGNOZA GŁĘBI: załamanie szelfu, lejkowanie kanionu serwisowego, zasłony gęstości solanki, pióropusze termiczne, odsłonięcie mułu abisalnego. Pewność trasy spada po sztormie lub cięciach salvage.
 
 ## Audio
 
-Czytaj skałę, zanim zażądasz zwycięstwa od skafandra.
+Przeczytaj skałę, zanim poprosisz skafander o zwycięstwo.
 
 ## Field Note
 
-Najbezpieczniejsza trasa jest odczytem, nie korytarzem.
+Najbezpieczniejsza droga jest odczytem, nie korytarzem.
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/pl_PL. -->

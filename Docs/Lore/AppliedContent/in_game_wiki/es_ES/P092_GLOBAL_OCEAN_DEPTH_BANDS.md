@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bandas globales de profundidad oceanica
 
-El oceano de HECTON-8 se lee por bandas, no por una sola linea de fondo. La plataforma fotica aun permite luz, restos, floraciones y pilotos descuidados. La plataforma industrial sostiene arrecifes de cables, jaulas de tuberia y viejas cubiertas de carga. Mas abajo, las escaleras de salmuera doblan sonar y lastre. Los campos abisales castigan las reparaciones. La cuenca Atlas hace que la presion parezca jurisdiccion.
+El ocean de HECTON-8 no es one long fall to a bottom. Es un stack of laws. El photic shelf aun permite light, algae, broken habitat skin y bad decisions corregibles. El industrial shelf es pipe cages, cable reef, loading decks y machines that answer late. Las brine stairs bend sound and ballast hasta que una route puede estar near and unreachable a la vez. Los abyssal machine fields castigan repairs con cold patience. El Atlas basin es mas profundo que danger; alli pressure becomes jurisdiction.
 
 ## Scanner
 
-Carta de profundidad. La primera plataforma perdona mal lastre; el agua baja cobra cada error en presion, calor y silencio.
+Depth chart. The first shelf perdona poor ballast; lower water factura every mistake en pressure, heat, noise y silence.
 
 ## Terminal
 
-BANDAS: 0-250 m plataforma fotica de saqueo; 250-1200 m plataforma industrial y arrecife de cables; 1200-2800 m escalera/canon de salmuera; 2800-4300 m campo abisal de maquinas; 4300-5600 m cuenca Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Cada cien metros te quitan una costumbre.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-La profundidad en HECTON-8 es ley, clima, frontera y hambre con el mismo numero.
+Depth en HECTON-8 es law, weather, border y hunger vistiendo el mismo number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/es_ES. -->

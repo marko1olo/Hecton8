@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Relai Organ Filter Akustik
 
-Relai organ filter akustik dibangun dari tekanan, kebiasaan, dan penyalahgunaan. Deep Reach memasang tenggorokan relai logam melalui koloni karena radio cepat mati di bawah air HECTON-8. Organisme filter lokal menemukan tempat itu berguna: aliran tetap, pasir mineral, getaran pompa, dan permukaan terlindung. Selama bertahun-tahun, jaringan berlipat tumbuh di tempat perangkat lama sudah membentuk suara.
+Pipa relai HECTON-8 yang rusak kadang membawa jaringan sekat hidup. Jaringan itu melakukan kerja sinyal karena lipatan, cairan, dan respons tekanannya cocok dengan pipa. Atlas bisa membaca hasilnya sebagai perangkat relai meski bagian di dalam bukan lagi logam.
 
-Atlas mengubah kecelakaan itu menjadi infrastruktur. Sekat hidup bisa menelan bising pompa sambil membiarkan nada pinger sempit lewat. Ia juga bisa menggeser gema balik cukup untuk membuat peta tampak benar dari sisi sekat yang salah. Ketika koridor menjawab dengan suara yang dibentuk jaringan, pemain mendapatkan informasi, bukan keselamatan. Pulsa badai, gerakan hewan, atau lipatan yang sekarat dapat memindahkan rute tanpa peringatan.
+## Scanner
+
+Jaringan sekat di leher relai melewatkan nada pinger sempit dan memotong suara pompa. Peta balik bergeser fase.
+
+## Terminal
+
+PIPA RELAI A-17: lipatan hidup melewatkan pulsa pinger 8-12 kHz, menolak suara pompa lebar, dan menambah tunda balik. Kepercayaan peta hilir turun. Jangan sertifikasi rute pulang hanya dari relai ini.
+
+## Audio
+
+Ia menjawab pinger. Pipa bocor cairan bening. Tandai sebagai hewan, bukan relai.
+
+## Field Note
+
+Jika relai menjawab terlalu bersih di pipa banjir, kirim pinger kedua dari sudut lain. Suara bagus tetap bisa menjadi peta buruk.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

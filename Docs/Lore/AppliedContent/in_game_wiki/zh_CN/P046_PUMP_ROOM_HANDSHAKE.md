@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 泵房阀门握手
 
-泵的握手，是一间进水房间接受本地控制的时刻。它给你通路，也会把水、噪声和压力送到路线的另一段。把干地面当成安全前，先读进水篮、出水脉冲和返回走廊的水锤声。早期P-63泵房教会一种维修习惯：机器能让一个隔舱好转，同时让回家的路变坏。
+pump handshake是被淹没的机器重新接受local hand的瞬间。它让人感觉获得control，因为floor退水，lamp不再漂，route似乎打开了。危险在于，HECTON-8上的water从不消失；它只是被转移到另一个compromise。intake baskets会抓住capsule foam、旧gloves、shell grit和torn labels。outlets会唤醒那些有理由保持安静的corridors。正确习惯是把pump读成一场trade：一个room开始呼吸，另一个room开始knock。
 
 ## Scanner
 
-本地污水泵接受手轮输入。进水篮被投放舱泡沫污染；出水脉冲正在给返回走廊B加压。
+local sump接受handwheel input。capsule foam堵住intake basket；outlet pulse正爬向Return Corridor B。
 
 ## Terminal
 
-P-63 集水控制 / 本地握手：手轮权限已接受。远程覆盖被拒绝。进水以低流量恢复。RETURN CORRIDOR B 出口压力上升；仅在检查下游舱门后重启。
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted。Remote override denied。Intake flow restored at low rate。Outlet pressure rising in RETURN CORRIDOR B。只有在downstream hatch check和hammer interval count之后才允许restart。
 
 ## Audio
 
-阀门接上了。出口在敲。还不能叫安全。
+Valve took。outlet在敲。现在还不能叫safe。
 
 ## Field Note
 
-干燥的泵房也能淹掉回路。拆阀门前先听出水管有没有水锤。
+干燥的floor不是solved room。去听那个为它付账的corridor。
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/zh_CN. -->

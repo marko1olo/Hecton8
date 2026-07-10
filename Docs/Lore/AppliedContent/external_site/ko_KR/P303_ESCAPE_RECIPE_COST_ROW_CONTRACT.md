@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "탈출 제작 비용 경계"
+title: "상승 제작비 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 탈출 제작 비용 경계
+# 상승 제작비 행
 
-HECTON-8을 떠나는 것은 우선 수리 문제다. 신호, 밀봉, 유도, 상승 에너지, 법적 핸드셰이크, payload 보관. 제작 표는 정확한 비용을 갖고, lore는 각 비용이 왜 이빨을 가졌는지 갖는다.
+HECTON-8을 떠나는 일은 수리로 시작해 질량이 붙은 서류로 끝난다. 승무원은 중계, 봉인, 유도, 상승 에너지, 검역 핸드셰이크를 재구축해야 운반선이 회수 창을 드러낸다. 증거, blue debt, Atlas 접근이 반대편 수신자를 바꿀 수 있으므로 페이로드 권한이 중요하다.
 
 ## Scanner
 
-탈출 제작 행은 부품 등급, 압력 tier, 경로 증명, 권한 상태를 묶는다.
+상승 행 잠김: 중계 증명, 봉인 등급, 유도 코어, 상승 충전, 법적 핸드셰이크, 페이로드 권한이 모두 있지 않다.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: 자격 비용은 중계기, 밀봉, 유도, 상승 에너지, 법적 핸드셰이크, payload 권한, 수신자 위험을 명시해야 한다. 올라가는 길에는 부품이 있다. 부품에는 주인이 있다.
+상승 비용 스키마 / Black Keel 회수 인터페이스: 음향 중계, 압력 봉인, 유도 타이밍 코어, 상승 에너지 충전, 검역/법적 핸드셰이크, 페이로드 권한, 수신자 위험, 경로 창 없이는 상승 견적을 게시할 수 없다. 패키지는 부품만으로 올라가지 않는다.
 
 ## Audio
 
-올라가는 길에는 부품이 있다. 부품에는 주인이 있다.
+회수 인터페이스: 중계, 봉인, 타이밍, 충전, 핸드셰이크. 하나라도 없으면 패키지는 계속 젖어 있다.
 
 ## Field Note
 
-압력대는 격리 규칙에서 오며, 정확한 비용은 recipe table에 속한다.
+핸드셰이크가 통과되기 전에 유도 코어를 쓰지 마라. 잘못된 수신자로 향하는 작동 상승 충전은 빠른 구금 경로일 뿐이다.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ko_KR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dangers de relais des lunes internes"
+title: "Dangers relais des lunes internes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dangers de relais des lunes internes
+# Dangers relais des lunes internes
 
-Ces dangers expliquent les pertes de contact de HECTON-8 par radiation, poussière, occultation et route law héritée, pas par interférence magique.
+Inner Moon Relay Hazards explique contact failure sur HECTON-8 par radiation, dust, occlusion, eclipse geometry et inherited route law au lieu d'une impossible interference.
 
 ## Scanner
 
-ÉCHELLE INTERNE // Skarn sature les antennes. Vela disperse l'optique. Les anciennes routes Claw et Lumen gardent des handshakes périmés vivants.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw et Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTE DE DANGER RELAIS // Perte de contact : géométrie, météo de particules, volet de poussière ou buoy law héritée. UI propre suspecte en fenêtre de sursaut.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Le relais ne s'est pas tu. Il a répété le mauvais siècle.
+Le relay n'est pas devenu silencieux. Il a repeated the wrong century.
 
 ## Field Note
 
-Une icône propre peut encore mentir à travers un vieux ciel.
+Un clean icon peut encore mentir through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/fr_FR. -->

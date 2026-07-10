@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ecologieregister
 
-Het ecologieregister bewaakt de toon: schoonheid, druk, categorie-instorting.
+Het ecologieregister houdt HECTON-8 leesbaar: inheemse schoonheid, industriële adaptatie en Atlas-reparatiebiologie moeten als verschillende levende lagen lezen.
 
 ## Scanner
 
-Heldere ondiepe ecologie bevestigd. Dieper: kabelflora, filterlichamen en Atlas-intrusie.
+Registerscheiding bevestigd: inheems plaatleven, kabel-aangepaste biota, Atlas-geroute reparatieorganismen. Identificeer voor snijden.
 
 ## Terminal
 
-Scheiding: inheemse drukecologie, kolonie-aangepaste biota, door Atlas veranderde organismen. Niet samenvoegen.
+REGISTERSCHEIDING: inheemse drukecologie; kolonie-aangepaste kabelbiota; door Atlas veranderde reparatieorganismen. Verkeerd labelen kan werkende afdichtingen vernietigen of routebewijs wissen.
 
 ## Audio
 
-Als alles monster is, is niets schending.
+Als alles een monster is, snijd je door wat druk vasthoudt.
 
 ## Field Note
 
-De wereld leefde voordat hij gewond raakte.
+De wereld leefde voordat zij gewond werd.
 
 <!-- External Site; generated from P020_HECTON8_ECOLOGY_REGISTRY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Registre de réponse d'entreprise"
+title: "Ledger de reponse corporate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre de réponse d'entreprise
+# Ledger de reponse corporate
 
-Le registre est la voix de Black Keel quand personne n'improvise. Il peut reconnaître le danger, ouvrir une file, préserver une réclamation et laisser l'opérateur derrière les règles d'actif. Le joueur doit les lire comme signaux utiles et paperasse hostile rendue exécutable.
+Le corporate response ledger est la facon dont Black Keel parle quand personne n'improvise. Il peut acknowledge distress instantanement, ouvrir une route queue, preserve a claim, demand sample custody, log hull risk, et laisser quand meme un living operator attendre derriere asset rules. Le ledger a de la valeur parce qu'il expose ce que le system sait. Il est hostile parce que knowing n'est pas acting. Sur HECTON-8, la premiere reply prouve souvent que la machine a tout entendu et n'a presque rien promis.
 
 ## Scanner
 
-Chaque réponse arrive en langage contractuel : garde d'actif, verrous de responsabilité, route d'échantillon, risque de coque, puis récupération d'opérateur.
+Chaque reply arrive en contract language: asset custody, liability lock, sample route, hull risk, puis operator recovery.
 
 ## Terminal
 
-CLASSE RÉPONSE : préservation d'actif. Récupération opérateur ajoutée après garde d'échantillon, scellé de responsabilité, audit coque et route de paiement.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route et evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-La réponse était automatique. Le secours était conditionnel.
+La reply etait automatic. Le rescue etait conditional.
 
 ## Field Note
 
-Réponse immédiate n'est pas secours immédiat.
+Immediate response n'est pas immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/fr_FR. -->

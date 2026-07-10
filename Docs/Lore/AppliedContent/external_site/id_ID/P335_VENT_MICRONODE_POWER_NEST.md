@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sarang Daya Mikronode Ventilasi"
+title: "Sarang Daya Mikronode Vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sarang Daya Mikronode Ventilasi
+# Sarang Daya Mikronode Vent
 
-Sarang daya mikronode ventilasi adalah detak lambat jaringan perbaikan dalam. Dekat ventilasi, laut menawarkan gradien panas, aliran mineral, getaran tekanan, dan ketidakseimbangan kimia. Deep Reach memakai gradien itu untuk instrumen dan pengisian darurat. Atlas mempertahankan kebiasaan itu setelah jaringan bersih gagal.
+Mikronode vent membuat Atlas kecil dan gigih. Ia tidak butuh mesin pusat sempurna untuk membuat masalah. Daya lokal, kerusakan lokal, dan aturan perbaikan lokal cukup untuk mengubah koridor di antara dua kunjungan.
 
-Mikronode tidak membuat Atlas maha-melihat. Batas itu penting. Ia bisa memulsakan film dekat, mengeraskan lapisan sealant, meneteskan daya ke sarang drone, atau menyimpan catatan keputusan lokal di substrat rusak. Ribuan node seperti itu membuat jurang terasa teratur tanpa membuatnya aman. Pemain tidak melawan dewa di dasar. Pemain bergerak melalui kota perbaikan kecil yang telah lupa untuk apa manusia ada.
+## Scanner
+
+Klaster node keramik di leher vent memanen gradien panas. Bekas charge drone dan respons sealant baru ada di dekatnya.
+
+## Terminal
+
+NODE DAYA LOKAL ATLAS / VENT V-3: gradien panas memberi makan tumpukan mikrosel, membangunkan loop biofilm dan sealant dalam 40 m, interval charge drone tidak teratur. Tidak ada kunci komando pusat.
+
+## Audio
+
+Panas, leher mineral, node. Itu cukup untuk membangunkan perbaikan setelah kau lewat.
+
+## Field Note
+
+Jika node vent hangat, anggap ruangan bisa bangun di belakangmu. Tandai pintu keluar sebelum menyentuh leher mineral.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/id_ID. -->

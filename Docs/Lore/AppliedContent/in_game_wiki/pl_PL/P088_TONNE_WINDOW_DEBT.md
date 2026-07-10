@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dług okna tonowego"
+title: "Dlug okna tonazowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dług okna tonowego
+# Dlug okna tonazowego
 
-Dług okna tonowego to moment, w którym fizyka staje się finansami. Black Keel nie ma nieskończonego marginesu udźwigu, paliwa tranzytowego ani czystej objętości kwarantanny. Każdy kilogram podniesiony z HECTON-8 konkuruje z każdym kilogramem potrzebnym, by utrzymać operatora przy życiu. Miernik długu czyni carriera okrutnym bez łamania hard science: ratunek jest możliwy, ale budżet trasy wciąż pyta, co zasługuje na masę.
+Dlug okna tonazowego to miejsce, gdzie HECTON-8 przestaje byc tylko horrorem, a staje sie orbital logistics. Black Keel ma skonczony lift margin, skonczony clean volume, skonczona oxygen reserve i route price przy kazdym kilogramie. Spare tank, sealed sample, damaged suit, proof case, body i crate of salvage rywalizuja w tym samym oknie. System wydaje sie okrutny, bo jest dokladny. Nie musi udawac, ze rescue jest niemozliwy. Po prostu wciaz pyta, co trasa moze sobie pozwolic podniesc.
 
 ## Scanner
 
-Miernik okna masy. Każdy kilogram pomocy ma cenę trasy.
+Mass-window ledger. Pomoc ma wage, zanim ma jezyk.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: margines recovery burn zawężony. Masa ekstrakcji operatora koliduje z zapieczętowanym payloadem, rezerwą balastu, długiem tlenu i custody próbki kwarantanny. Ręczny override wymaga opłaconego priorytetu lub dowodu zagrożenia.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass koliduje z sealed payload, ballast reserve, oxygen debt, quarantine sample volume i hull patch inventory. Manual priority wymaga paid override, verified hazard proof albo custody reclassification.
 
 ## Audio
 
-Statek może zabrać ciebie albo to, co znalazłeś. Woli liczbę.
+Statek moze podniesc zycie. Pytanie brzmi, co jeszcze ledger kaze mu niesc.
 
 ## Field Note
 
-Tlen, balast, dowód, payload, ciało: carrier waży je, zanim zważy litość.
+Oxygen, ballast, proof, samples, hull patch, body: carrier wycenia litosc w kilogramach.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/pl_PL. -->

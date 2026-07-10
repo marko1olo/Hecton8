@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przekaźnik akustycznego organu filtrującego"
+title: "Przekaźnik z akustycznym organem filtrującym"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przekaźnik akustycznego organu filtrującego
+# Przekaźnik z akustycznym organem filtrującym
 
-Przekaźnik akustycznego organu filtrującego powstaje z ciśnienia, nawyku i nadużycia. Deep Reach prowadziło metalowe gardziele przekaźników przez kolonię, bo radio szybko umiera pod wodą HECTON-8. Lokalne organizmy filtrujące znalazły tam dobre miejsce: stały przepływ, mineralny żwir, drgania pomp i osłonięte powierzchnie. Przez lata fałdowana tkanka rosła tam, gdzie stary sprzęt już kształtował dźwięk.
+Uszkodzone rury przekaźnikowe HECTON-8 czasem niosą żywą tkankę przegrody. Tkanka wykonuje pracę sygnału, bo jej fałdy, płyn i reakcja na ciśnienie pasują do rury. Atlas może odczytać wynik jako sprzęt przekaźnikowy, choć część w środku nie jest już metalem.
 
-Atlas zamienia ten przypadek w infrastrukturę. Żywa przegroda może połknąć hałas pompy i przepuścić wąski ton pingera. Może też przesunąć odpowiedź na tyle, by mapa wyglądała na prawdziwą z niewłaściwej strony grodzi. Gdy korytarz odpowiada głosem uformowanym przez tkankę, gracz zdobył informację, nie bezpieczeństwo. Impulsy burzy, ruch zwierząt albo umierający fałd mogą przesunąć trasę bez ostrzeżenia.
+## Scanner
+
+Tkanka przegrody w gardle przekaźnika przepuszcza wąski ton pingera i ucina hałas pomp. Mapa powrotu ma przesuniętą fazę.
+
+## Terminal
+
+RURA PRZEKAŹNIKA A-17: żywe fałdy przepuszczają impulsy pingera 8-12 kHz, odrzucają szeroki hałas pomp i dodają opóźnienie powrotu. Zaufanie do mapy poniżej obniżone. Nie certyfikować trasy powrotnej wyłącznie z tego przekaźnika.
+
+## Audio
+
+Odpowiedziało pingerowi. Z rury cieknie przezroczysty płyn. Oznacz jako zwierzę, nie przekaźnik.
+
+## Field Note
+
+Jeśli przekaźnik odpowiada zbyt czysto w zalanej rurze, puść drugi pinger z innego kąta. Dobry dźwięk nadal może być złą mapą.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pl_PL. -->

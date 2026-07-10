@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, operator tempa ventilasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, operator tempa ventilasi
 
-ID LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres membumikan industri HECTON-8 pada keterampilan, bukan bahan ajaib. Bukti tempa menunjukkan kaca tekanan, cincin segel, dan liner keramik tidak lahir sebagai loot. Semua dikerjakan, ditolak, diberi label ulang, dan dibuat cukup aman agar orang lain percaya di bawah air.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dosier: Lian Torres. Sarung panas, timer siklus, dan baki tolak cocok dengan batch kaca tekanan yang sama.
 
 ## Terminal
 
-ID LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+TEMPA VENTILASI V-9 / TORRES, LIAN: baki tolak menyimpan cincin segel retak, kaca tekanan keruh, dan tiga kupon panas berlebih bertanda. Catatan batch: kegagalan mengajar segel berikutnya hanya jika kegagalan tetap diberi label.
 
 ## Audio
 
-ID LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres menyimpan bagian buruk. Di tempat tempa, lantai bersih berarti seseorang membuang pelajaran.
 
 ## Field Note
 
-ID LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Gunakan Torres dekat prop tempa ventilasi, resep kaca tekanan, cincin segel tolak, dan meja upgrade yang membutuhkan sejarah terlihat dari bagian gagal.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/id_ID. -->

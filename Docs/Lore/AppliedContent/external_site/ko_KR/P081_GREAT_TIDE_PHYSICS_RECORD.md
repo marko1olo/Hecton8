@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "대조석 물리 기록"
+title: "Great Tide 물리 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 대조석 물리 기록
+# Great Tide 물리 기록
 
-대조석 물리 기록은 재난을 정직하게 붙잡는다. HECTON-8은 조석 공명, 얼음 붕괴, 폭풍 해일, 산업 열 방출에 취약했다. Deep Reach의 죄는 가짜 마법 원인이 아니라 margin, evacuation capacity, decision priority에 보인다.
+Great Tide 물리 기록은 참사를 정직하게 남긴다. HECTON-8은 이미 위험했다. Aegir의 봄철 기하가 바다를 끌어당겼고, 빙권은 선반을 짓눌렀으며, 폭풍 중첩은 일정 여유를 지웠고, 식민지의 열은 봉인된 배수를 거꾸로 밀었다. Deep Reach의 죄는 그 뒤에 있다. 상승 예비를 미래 비용으로 미루고, Atlas 연속성을 지키며, 인간의 몸을 낮은 우선순위의 질량으로 계산했다.
 
-대조석 물리 기록은 HECTON-8 재난 논리를 정의한다. 바다는 물리적으로 위험했고, 기업 범죄는 낙관적 margin으로 설계한 데 있었다. 부드럽게 말하지 마라. 실제 물리가 사람을 죽였고, Deep Reach는 그 물리에 희생자를 배정했다.
+Great Tide 물리 기록은 HECTON-8의 재난 논리를 정한다. 달 규모의 바다는 측정 가능한 물리, 기업의 낙관, 미뤄진 대피 능력, 보호된 연속성 장비가 만나 치명적이 되었다. 이걸 신화로 만들지 마라. 사람을 죽인 것은 물리다. Deep Reach는 그 물리 앞에 사람들이 서 있게 했다.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/ko_KR. -->

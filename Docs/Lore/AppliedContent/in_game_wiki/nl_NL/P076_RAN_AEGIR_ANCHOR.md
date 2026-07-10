@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir Anker"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegir Anker
+# Ran / Aegir Anchor
 
-Ran verankert het Aegir-systeem als een normale K-klasse ster, geen dode lamp en geen bovennatuurlijke bron van duisternis. HECTON-8 kan heldere ondiepten hebben omdat licht bestaat.
-
-De horror begint wanneer atmosfeer, storm, mineraalwater, diepte en industrieel slib dat licht sneller wissen dan een reddingscontract kan reageren. Boven water is het systeem astronomisch. Onder water wordt elke lumen gehuurde tijd.
+Ran verankert Aegir als gewone K-class star: oud, oranje, stabiel en onverschillig. Dat telt, want HECTON-8 is niet donker door magic. Shallows kunnen shine. Weather kan wit flitsen boven de sea. Een worker op een surface raft kon nog omhoog kijken en weten dat er een sun was. Horror begint wanneer atmosphere, storm shear, mineral water, depth en industrial silt dat light sneller uitgeven dan een carrier een rescue window kan factureren. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-K-klasse sterplaat. Ran brandt normaal. Aegir is zwakker dan Sol, maar de duisternis hier komt van diepte, weer en schuld.
+K-class star plate. Ran brandt normaal; de deep hier is niet supernatural, alleen te ver onder weather, water en debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Oranje-dwerglicht ondersteunt oppervlaktewerk. Stormverstrooiing, eclipsgeometrie en oceaantroebelheid drukken afdalingsleesbaarheid onder de veiligheidsmarge.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity en industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-De ster is aanwezig. Hij kan je alleen niet naar beneden volgen.
+De star is aanwezig. Ze kan alleen niet follow you down.
 
 ## Field Note
 
-Een echte ster is genoeg. De oceaan doet de rest.
+Een real star is genoeg. De ocean doet de rest.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/nl_NL. -->

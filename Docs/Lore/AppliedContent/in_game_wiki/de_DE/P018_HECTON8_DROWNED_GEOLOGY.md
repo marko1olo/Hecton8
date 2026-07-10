@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ertrunkene Geologie
 
-HECTON-8-Geologie ist Gameplay-Sprache: Schelfüberleben, ertrunkene Räume, Canyons, Sole, Hitze und Abyss. Seeds verschieben Wege, nicht Wahrheit.
+Ertrunkene Geologie lehrt Bewegung auf HECTON-8. Rücken schützen. Eingestürzte Schelfe sammeln Bergungsgut und erstickenden Schlick. Canyons verstärken Strömung. Solevorhänge biegen Sonar und Auftrieb. Ventnarben können Dichtstoff härten oder kochen. Eine Route ist eine vorläufige Deutung von Fels, Wasser, Wärme und Druck.
 
 ## Scanner
 
-Geschichtete Schelfe, Canyons, Salztreppen und Schlote. Der Mond lehrt Abstieg durch Gelände, nicht Tore.
+Geschichteter Schelf, Canyontrichter, Soletreppe, Ventnarbe und Schlickfreilegung erkannt. Gelände ist Druckrouting, kein Hintergrund.
 
 ## Terminal
 
-Prognose: Schelfbruch, Canyon-Trichter, Dichteschleier, Thermalfahnen, Abyssalschlick.
+TIEFENPROGNOSE: Schelfkollaps, Service-Canyon-Trichter, Sole-Dichtevorhänge, thermische Fahnen, abyssale Schlickfreilegung. Routenvertrauen sinkt nach Sturmflut oder Bergungsschnitten.
 
 ## Audio
 
-Lies den Fels, bevor der Anzug gewinnen soll.
+Lies den Fels, bevor du den Anzug gewinnen lässt.
 
 ## Field Note
 
-Der sicherste Weg ist eine Lesart, kein Korridor.
+Der sicherste Weg ist eine Lesung, kein Korridor.
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/de_DE. -->

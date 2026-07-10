@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Kollisionsgebrochener Mond
 
-HECTON-8 war kein umherziehender Koerper, der fuer Spektakel eingefangen wurde. Er wuchs in Aegirs eigenem Truemmerguertel, kuehlte zu einem geschichteten Ozeanmond ab und erhielt dann einen schraegen Treffer, der die Kruste verformte, ohne die Welt zu loeschen. Der Einschlag hob Schelfe, senkte Becken und oeffnete lange Stoerungsleitern, in denen heisse Chemie noch immer durch Salzwasser zieht. Gezeitenresonanz hielt diese Wunden nach der Bindung offen. Darum hat der Ozean lesbare Narben: Salzlaugencanyons, Schlotessen, Druckglasadern, freiliegende Ruecken und seltene Fenster zum alten Grund.
+Collision-Fractured Moon definiert HECTON-8 als local Aegir body, dessen ocean routes, vents, brine basins und salvage windows aus impact scars und tidal heat stammen.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, dann traf ihn ein oblique impact breit genug, damit der ocean ihn erinnert.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Dann traf etwas hard genug, um give the sea a map.
+
+## Field Note
+
+Die captured-moon story ist zu sauber. Dieser Ort war born local, broken local und billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/de_DE. -->

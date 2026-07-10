@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "압력 유리 형성"
+title: "Pressure Glass 형성"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 압력 유리 형성
+# Pressure Glass 형성
 
-압력 유리는 Marauder의 blue debt와 Deep Reach의 Xenon-Omega 언어 뒤에 있는 기술명이다. 압력, 희가스 포켓, 염수, 광물, 열, 변형 생물이 만나는 곳에서 형성된다.
+Pressure glass는 마로더의 푸른 빚과 Deep Reach의 Xenon-Omega 언어 뒤에 있는 현장명이다. 귀가스 주머니, 광물 결함, 뜨거운 염수, 변형된 생물, 폭력적인 압력 이력이 충분히 오래 함께 남아 격자를 기억으로 잠글 때만 형성된다.
 
-압력 유리 형성은 Xenon-Omega를 마법 광석이 아니라 Atlas, containment, computation과 연결된 물질 생태로 만든다. 이것은 광석이 아니다. 어디서 만들어졌는지 기억하는 과정이다.
+Pressure Glass 형성은 Xenon-Omega를 물질 생태로 바꾼다. 압력이 만든 기질이며, 격리, 계산, Atlas 연속성, salvage 위험과 연결된다. 이것은 광석이 아니다. 자신에게 일어난 일을 기억하는 장소다.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ko_KR. -->

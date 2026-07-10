@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ciclo de feedback de fauna com sensores"
+title: "Loop de fauna com etiqueta sensora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ciclo de feedback de fauna com sensores
+# Loop de fauna com etiqueta sensora
 
-Fauna com sensores não são soldados controlados. Essa distinção importa. Os programas de marcação da Deep Reach começaram como ciência de campo e logística comuns: acompanhar migração, tolerância à pressão, exposição à contaminação e densidade de rotas. Anos depois, as tags já não são equipamento limpo. Concha cresce ao redor delas. Tecido cicatricial as desalinha. Tampas minerais mudam seu sinal.
+Um animal com etiqueta sensora não é fantoche. É vida selvagem com instrumento corporativo ainda respondendo sob concha e cicatriz. Isso basta para Atlas confundir movimento com atualização ambiental, e basta para a rota de um mergulhador mudar sem o animal notar.
 
-Atlas ainda lê o retorno. Um herbívoro ferido cruzando uma passarela inundada pode parecer uma pesquisa de pressão. Um predador carregando uma tag antiga pode fazer um corredor parecer ocupado por risco de infraestrutura. O animal continua sendo ele mesmo, mas o sistema ao redor trata movimento como dado. Isso dá aos encontros com fauna uma segunda lâmina: comportamento de sobrevivência também pode ser feedback de manutenção.
+## Scanner
+
+Etiqueta Deep Reach antiga sob crescimento de concha no flanco esquerdo. Pacotes de movimento ainda pingam a rede de manutenção.
+
+## Terminal
+
+LOOP DE ETIQUETA DE FAUNA / DR-2147-MIG: pacotes de pressão, movimento e contaminação aceitos como telemetria ambiental. Intenção animal não analisada. Alarmes de rota podem seguir caminho de migração.
+
+## Audio
+
+Não está caçando você. A etiqueta ainda pode abrir a porta errada.
+
+## Field Note
+
+Se fauna etiquetada cruza um pátio de relés, espere antes de confiar nos alarmes. O animal pode ter ido; o estado da rota ainda pode estar alcançando.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pt_BR. -->

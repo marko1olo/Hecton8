@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Batas Data Pembayaran Akhir"
+title: "Baris Catatan Bayaran Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Data Pembayaran Akhir
+# Baris Catatan Bayaran Akhir
 
-Ending HECTON-8 mencatat siapa menerima bukti, kustodi apa yang didapat, apa yang dibayar, dan biaya apa yang belum selesai. Angka bisa menutup satu baris kontrak. Ia tidak bisa menutup samudra.
+Akhir HECTON-8 dicatat menurut penerima dan kustodi. Catatan menyebut apa yang keluar dari laut, siapa yang menerimanya, bukti apa yang bertahan, apa yang dibayar, dan apa yang tetap dibatasi. Bayaran bisa menutup satu baris akun sementara klaim, karantina, atau ekologi tetap terbuka.
 
 ## Scanner
 
-Baris akhir mengikat penerima, kustodi, keadaan bukti, pembayaran, dan konsekuensi belum selesai.
+Baris hasil tertunda: penerima, rute muatan, status bukti, bayaran, tunda karantina, dan konsekuensi belum selesai belum ditutup.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: baris membutuhkan rute payload, penerima, keadaan bukti, pembayaran material, konsekuensi legal, delay karantina, dan biaya belum selesai. Kredit tidak menutup tempat kejahatan.
+SKEMA BAYARAN AKHIR / cek penerima dossier: jangan tutup catatan sebelum rute muatan, penerima, status bukti, bayaran material, penyesuaian lien, tunda karantina, konsekuensi ekologis, dan biaya belum selesai tertulis. Kredit dilepas setelah kustodi, bukan sebelumnya.
 
 ## Audio
 
-Kredit tidak menutup tempat kejahatan.
+Relai dossier: penerima menerima kustodi. Jam karantina mulai sebelum kredit bersih.
 
 ## Field Note
 
-Credit value, quarantine delay, dan dossier flags dicatat hanya setelah receiver dan evidence state jelas.
+Jangan sebut akhir sudah dibayar sebelum penerima disebut. Penerima salah, masa depan salah; laut sama, tagihan beda.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/id_ID. -->

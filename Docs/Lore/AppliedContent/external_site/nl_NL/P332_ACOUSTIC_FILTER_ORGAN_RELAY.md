@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Akoestisch filterorgaanrelais"
+title: "Akoestisch filterorgaan-relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Akoestisch filterorgaanrelais
+# Akoestisch filterorgaan-relais
 
-Een akoestisch filterorgaanrelais ontstaat uit druk, gewoonte en misbruik. Deep Reach legde metalen relaiskelen door de kolonie omdat radio snel sterft onder HECTON-8-water. Lokale filterorganismen vonden die kelen nuttig: constante stroming, mineraalgruis, pompstrilling en beschermde oppervlakken. Jarenlang groeide gevouwen weefsel waar oude hardware geluid al vormde.
+Beschadigde HECTON-8-relaispijpen dragen soms levend baffleweefsel. Het weefsel doet signaalwerk omdat plooien, vloeistof en drukreactie bij de pijp passen. Atlas kan het resultaat als relaishardware lezen, ook wanneer het onderdeel binnenin geen metaal meer is.
 
-Atlas verandert dat ongeluk in infrastructuur. Een levende baffle kan pompgeruis inslikken en een smalle pinger-toon doorlaten. Hij kan de terugkeer ook net genoeg verschuiven om een kaart waar te laten lijken vanaf de verkeerde kant van een schot. Wanneer een gang antwoordt met een stem gevormd door weefsel, heeft de speler informatie gewonnen, geen veiligheid. Stormpulsen, dierbeweging of een stervende plooi kunnen de route zonder waarschuwing verplaatsen.
+## Scanner
+
+Baffleweefsel in de relaiskeel laat een smalle pingertoon door en snijdt pompgeruis. Terugkeerkaart is faseverschoven.
+
+## Terminal
+
+RELAISPIJP A-17: levende plooien laten 8-12 kHz pingerpulsen door, weigeren breed pompgeruis en voegen terugkeervertraging toe. Kaartvertrouwen stroomafwaarts verlaagd. Terugroute niet certificeren op dit relais alleen.
+
+## Audio
+
+Het antwoordde op de pinger. De pijp lekt heldere vloeistof. Markeer als dier, niet als relais.
+
+## Field Note
+
+Als een relais in een overstroomde pijp te schoon antwoordt, stuur een tweede pinger vanuit een andere hoek. Goed geluid kan nog steeds een slechte kaart zijn.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/nl_NL. -->

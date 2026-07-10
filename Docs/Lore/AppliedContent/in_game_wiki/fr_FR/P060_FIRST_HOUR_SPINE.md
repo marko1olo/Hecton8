@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Colonne de la première heure
 
-La première heure ne doit pas commencer dans le noir. Elle commence par une voix de contrat, une descente endommagée, la gestion du souffle, de l’eau peu profonde et lumineuse, puis le besoin concret de relancer une pompe. La beauté fait partie du piège : HECTON-8 doit paraître désirable avant que ses papiers deviennent mortels. Ensuite, la colonne d’ouverture transforme la survie en preuve. Le premier abri est utile mais compromis ; le paquet d’incident nettoyé sonne trop propre ; la première cicatrice de réparation Atlas montre câble, métal d’outil et résidu vivant pressés dans une seule décision de maintenance. Le joueur apprend la boucle de base par l’action, pas par l’exposé : respirer, réparer, lire, douter, descendre.
+La première heure ne commence pas dans le noir. Elle commence avec une voix de contrat, une descente abîmée, la gestion du souffle, une eau claire de hauts-fonds et le besoin pratique de redémarrer une pompe. La beauté fait partie du piège : HECTON-8 doit paraître désirable avant que sa paperasse devienne mortelle. La première route transforme la survie en preuve. La première salle abritée est utile mais compromise ; le paquet d'accident aseptisé sonne trop propre ; la première cicatrice Atlas montre câble, métal d'outil et résidu vivant pressés dans un même joint fonctionnel.
 
 ## Scanner
 
-Contrat, descente endommagée, air, hauts-fonds lumineux, abri de pompe, mensonge nettoyé, puis première cicatrice de réparation utilisant la vie comme joint.
+Contrat, largage endommagé, air, hauts-fonds lumineux, abri de pompe, mensonge aseptisé, puis première cicatrice de réparation qui utilise la vie comme joint.
 
 ## Terminal
 
-ANNEXE PEU PROFONDE : redémarrage manuel de pompe valide. Paquet d’incident Deep Reach en cache. Croissance de réparation Atlas détectée autour d’un câble, d’un fragment d’outil et d’un résidu biologique.
+SHALLOW ANNEX : redémarrage manuel de pompe valide. Paquet d'incident Deep Reach mis en cache. Croissance de réparation Atlas détectée autour de câble, fragment d'outil et résidu biologique.
 
 ## Audio
 
-La première pièce sûre n’est pas propre. Elle retient seulement son souffle mieux que toi.
+La première pièce sûre n'est pas propre. Elle retient seulement mieux son souffle que toi.
 
 ## Field Note
 
-L’ouverture doit être belle avant de devenir accusatrice.
+L'ouverture doit être belle avant de commencer à accuser.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/fr_FR. -->

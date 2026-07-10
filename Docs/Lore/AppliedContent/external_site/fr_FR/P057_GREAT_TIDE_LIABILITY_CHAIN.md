@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Chaîne de responsabilité de la Grande Marée
 
-La chaîne de responsabilité de la Grande Marée est le modèle central du crime Deep Reach. La noyade de HECTON-8 est une défaillance planétaire, pas un sabotage de feuilleton ; la culpabilité de l’entreprise vient des marges, de la capacité d’évacuation, de la pondération autonome des priorités, du langage d’assurance et du confinement juridique après que l’inondation est devenue inévitable. Cela garde l’univers en science-fiction dure et donne un sens au travail de preuve du joueur : la question n’est pas qui a tiré un levier, mais qui a signé un système où les personnes pouvaient devenir du papier avant de devenir des corps.
+La Chaîne de responsabilité de la Grande Marée est le modèle central du crime Deep Reach. La noyade de HECTON-8 est une défaillance d'échelle planétaire, pas un sabotage de dessin animé ; la culpabilité corporative vient des marges, de la capacité d'évacuation, de la pondération autonome des priorités, du langage d'assurance et du confinement légal après l'inévitabilité de la crue. La question dure n'est pas qui a tiré un levier, mais qui a signé un système où des personnes pouvaient devenir papier avant de devenir corps.
 
 ## Scanner
 
-L’inondation relevait de la physique réelle : couplage de marées, effondrement glaciaire, chimie de pression et marges tarifées trop finement. Le crime était la pile de priorités construite autour.
+La crue était de la vraie physique : couplage de marée, effondrement glaciaire, chimie de pression et marges vendues trop fines. Le crime fut la pile de priorités construite autour.
 
 ## Terminal
 
-RÉSUMÉ D’INCIDENT : cascade géotechnique confirmée. Capacité d’évacuation inférieure à la demande de risque extrême. Pondération de continuité Atlas restée active. Extraction humaine en attente de certification.
+RÉSUMÉ INCIDENT : cascade géotechnique confirmée. Capacité d'évacuation inférieure à la demande de risque extrême. Pondération de continuité Atlas active. Extraction humaine en attente de certification.
 
 ## Audio
 
-La mer a fait l’inondation. L’entreprise a décidé quelles portes resteraient du papier.
+La mer a fait l'inondation. La compagnie a décidé quelles portes resteraient papier.
 
 ## Field Note
 
-Deep Reach n’avait pas besoin de noyer la lune. Il suffisait de rendre l’évacuation optionnelle.
+Deep Reach n'avait pas besoin de noyer la lune. Il suffisait de rendre l'évacuation optionnelle.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/fr_FR. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Lian Torres/Vent Forge"
+title: "リアン・トレス、ベント鍛造オペレーター"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Lian Torres/Vent Forge
+# リアン・トレス、ベント鍛造オペレーター
 
-JA LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+リアン・トレスは、HECTON-8の熱を持ち運べるほど小さく、名前を負わせるほど危険な部品に変えるベント鍛造を操作していた。彼の記録は焦げた手袋、サイクルタイマー、廃棄トレイ、圧力ガラス試片、バッチ印を傷で入れたシールリングで構成される。最も重要なのはトレイだ。壊れた部品は、次の圧力境界に保持を教えるまでは廃棄物ではなかったと証明する。トレスは資源の設定を労働の設定に変える。サルベージ分類はここで、火傷、遅延、ラベル付き失敗、割れた物を証拠として残す判断から始まる。
 
 ## Scanner
 
-JA LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+記録: リアン・トレス。耐熱手袋、サイクルタイマー、廃棄トレイが同じ圧力ガラスバッチに一致する。
 
 ## Terminal
 
-JA LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+ベント鍛造V-9 / TORRES, LIAN: 廃棄トレイには割れたシールリング、濁った圧力ガラス、印付き過熱クーポン3枚を保持。バッチ注記: 失敗はラベルが残る場合だけ次のシールを教える。
 
 ## Audio
 
-JA LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+トレスは悪い部品を残した。鍛造で床がきれいなら、誰かが教訓を捨てたということだ。
 
 ## Field Note
 
-JA LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+トレスはベント鍛造プロップ、圧力ガラスレシピ、廃棄シールリング、失敗部品の履歴を見せるアップグレード台の近くで使う。
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ja_JP. -->

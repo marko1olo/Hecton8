@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Primera voz de Black Keel
 
-La primera voz de Black Keel llega al jugador como audio dañado y texto limpio. No es compañera ni discurso de villano. Es un monitor carrier haciendo lo que fue construido para hacer: confirmar señal, preservar opciones de ruta, ordenar obligaciones y evitar promesas. La voz sirve porque entrega información dura. Asusta porque cada frase correcta deja el rescate condicionado.
+La primera voz de Black Keel debe sentirse util antes de sentirse cruel. El carrier confirma la senal, filtra corrupted audio, abre un text channel y entrega informacion que puede mantener con vida al operator. Nunca miente diciendo que es un amigo. No gasta energia en calidez. Su terror viene de la competencia: cada frase es correcta, cada warning importa, y cada respuesta correcta deja la extraction condicional. La voz no es malvada. Es como suena el rescue despues de que el rescue fue vendido a un ledger.
 
 ## Scanner
 
-Caché de voz del carrier. Audio cortado, texto limpio, simpatía ausente.
+Cache de voz del carrier. Audio rasgado por pressure noise; text channel lo bastante limpio para facturar.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: canal de audio degradado. Canal de texto válido. Supervivencia del operador reconocida. Prioridad de recuperación sin resolver, pendiente de payload, cuarentena, lien e integridad de señal.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity y mass-window balance.
 
 ## Audio
 
-Señal de operador adquirida. No confundas reconocimiento con rescate.
+Operator signal acquired. No confundas acknowledgement con rescue.
 
 ## Field Note
 
-La primera frase útil llega con una clase de facturación detrás.
+La primera frase util no consuela. Clasifica.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/es_ES. -->

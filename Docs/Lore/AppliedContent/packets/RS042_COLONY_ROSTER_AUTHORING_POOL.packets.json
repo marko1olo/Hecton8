@@ -27,13 +27,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Worker Roster Size Rule",
-          "scanner": "Seventy-two names is not flavor text. It is the colony's memory budget: enough hands to make the place feel worked, few enough that a locker, repair tag, and last shift can point back to the same person.",
-          "field_note": "If a name cannot return later with a job attached, cut it from the roster.",
-          "terminal": "ROSTER RULE: The live roster carries 72 worker identities. Twenty-four are anchor names that can recur across lockers, ledgers, damaged tools, permission stamps, and audio fragments. Forty-eight are seed-role names for replay variation. A generated name may move evidence order; it may not become disposable filler.",
-          "audio": "A name becomes evidence when the room can prove the job.",
-          "in_game_wiki": "The Worker Roster Size Rule keeps the abandoned colony readable. HECTON-8 must feel inhabited by crews, not populated by random plaques, so the roster is deliberately small enough for repetition to matter. Anchor workers return in lockers, pump tags, triage sheets, route permissions, and damaged work objects. Seed-role workers fill the wider run with variation, but they still carry a job, a place, and a last task. The rule prevents two failures at once: anonymous ruins with no human weight, and uncontrolled name spam that makes every death feel procedurally cheap.",
-          "external_site": "Worker Roster Size Rule is the population contract for readable colony evidence. It gives HECTON-8 72 worker identities: 24 anchors for recurring narrative proof and 48 seed-role identities for replay variation. The player should slowly recognize names because the world repeats them with work attached: a locker, a tool, a route stamp, a repair order, a final audio tag. The colony feels larger than the cast, but the evidence stays authored enough to remember."
+          "title": "Worker Roster Ledger Limit",
+          "scanner": "Roster ledger frame. Seventy-two active worker identities. Names repeat across lockers, route stamps, pump tags and last-shift audio.",
+          "field_note": "Do not trust a loose name. Match it to a job card, room, tool or water count before it enters the board.",
+          "terminal": "ROSTER LEDGER LIMIT\nActive worker identities: 72\nAnchor names: 24 / repeat across lockers, ledgers, damaged tools, route permits, audio fragments\nSeed-role names: 48 / variation pool\nRule: no name enters route evidence without job, place and last task.",
+          "audio": "Name on board. Job card missing. Hold it out of the count.",
+          "in_game_wiki": "The worker roster ledger keeps HECTON-8's human evidence small enough to follow. Seventy-two active identities is enough for crews, lockers and shift boards without turning every wall into disposable names. Twenty-four anchor workers recur across pump tags, route permits, meal chits, damaged tools and audio fragments. Forty-eight seed-role workers widen the run while still carrying a job, a place and a last task.\n\nThe ledger's job is evidence control. A name without a room is decoration. A name with a job card, a water count and a damaged tool can return later as proof that somebody changed the record.",
+          "external_site": "The worker roster ledger limits HECTON-8 to readable human evidence: 72 worker identities tied to jobs, rooms, tools and last-shift records instead of disposable name spam."
         },
         "ru_RU": {
           "title": "Правило размера рабочего списка",
@@ -337,13 +337,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Anchor Worker Name Set A",
-          "scanner": "Early names must come back through work, not speeches. The shallow route teaches memory by repetition.",
-          "field_note": "Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.",
-          "terminal": "ANCHOR SET A: shallow and industrial-shelf recurrence. Each name should bind to one tool, one route permission, one damaged work object, and one later contradiction. These names are the player's first proof that the colony was a workplace before it became salvage.",
-          "audio": "Do not mourn the name until the tool tells you why.",
-          "in_game_wiki": "Anchor Worker Name Set A is the first human layer the player should start recognizing. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, and Pavel Sorn belong to shallow and industrial-shelf evidence. Their names should not arrive as biographies. They should arrive on a locker label, a pump tag, a route permission, a stained meal chit, a cracked tool case, then return later in a record that changes the meaning. Set A makes the colony feel lived-in before the deeper conspiracy is clear.",
-          "external_site": "Anchor Worker Name Set A defines the early recurring colony names for HECTON-8. These eight workers are not lore trivia; they are memory handles. The player meets them through objects and labor first, then slowly sees how the same names cross maintenance records, permissions, damage reports, and audio fragments. Set A keeps the first hours human without stopping the game for exposition."
+          "title": "Shallow Worker Roster Strip",
+          "scanner": "Water-stained roster strip. Eight names repeat across lockers, pump tags and route permits: Mara Venn; Juno Kade; Ren Okoye; Sahana Iqbal; Lian Torres; Oskar Neumann; Aya Morita; Pavel Sorn.",
+          "field_note": "Do not read the names as memorials yet. Read the objects they signed: pump, locker, food chit, route permit, tool case.",
+          "terminal": "SHIFT ROSTER A / P63 SHALLOWS\nMara Venn: pump lockout K-12\nJuno Kade: board tally / water short\nRen Okoye: tool case R-4\nSahana Iqbal: meal chit witness\nLian Torres: route permit denied\nOskar Neumann: seal tape issue\nAya Morita: locker tag recovered\nPavel Sorn: pressure bunk unclaimed",
+          "audio": "Kade owes the water board three ticks. Venn says don't wipe it. Somebody is changing the count.",
+          "in_game_wiki": "The shallow roster is a shift-board fragment, not a biography page. Eight names repeat across lockers, pump tags, meal chits, water tallies and early route permits: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita and Pavel Sorn.\n\nTheir first use is physical. A name appears on a pump lockout, a tool case, a denied permit or a tally that does not match the room. Later records can change the meaning. The first contact stays local: who signed the object, what job it touched, and which count somebody changed.",
+          "external_site": "The shallow worker roster introduces recurring names through objects, not biography. Lockers, pump tags and route permits make HECTON-8 a workplace before it becomes a case file."
         },
         "ru_RU": {
           "title": "Якорный набор имен рабочих A",

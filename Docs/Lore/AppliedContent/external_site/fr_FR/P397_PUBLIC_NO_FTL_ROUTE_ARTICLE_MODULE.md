@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Délai de route sans FTL
 
-HECTON-8 n'a pas de canal de secours instantané. Aegir a été atteint par precursor probes, beam infrastructure, pellet-fusion freight et systèmes de freinage qui traitent l'urgence comme une contrainte de masse de plus. Un message peut arriver avant le matériel qui le rendrait utile. Un carrier peut reconnaître ton existence, évaluer ton payload et tenir un valid claim sans pouvoir dépenser de descent mass sous la mauvaise weather, le mauvais relay angle ou la mauvaise custody window. La copie publique de voyage doit garder cela visible, car l'isolement ici est produit par ingénierie, droit et logistique ensemble. Black Keel peut être proche légalement et inaccessible physiquement. Ce délai explique pourquoi le joueur répare encore les joints à la main après la réponse du relay.
+HECTON-8 n'a pas de canal de secours instantané. Le trafic humain vers Aegir repose sur cartes de sondes précurseurs, infrastructure de faisceau, fret à fusion-pellets, systèmes de freinage, fenêtres de transporteurs et remises de garde légales. L'urgence n'annule pas la masse. Un vaisseau peut chiffrer une charge, accepter une réclamation et garder ton dossier tout en manquant d'allocation de descente pour déplacer un objet utile dans l'eau. C'est pourquoi le jeu traite la communication comme preuve, pas comme secours. Une réponse prouve que quelqu'un a entendu l'urgence. Elle ne colmate pas un joint, ne déplace pas un bathydrop et ne raccourcit pas une mauvaise fenêtre orbitale.
 
 ## Scanner
 
-Archive de transit. Le trafic Aegir dépend des precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody et délais juridiques.
+Enregistrement de transit. Le trafic Aegir dépend des cartes de sondes, voies de faisceau, fret à fusion-pellets, masse de freinage, âge des paquets, garde relais et fenêtres de descente météo.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // LIMITE DE TRANSIT. FTL absent. Ansible absent. Un secours vivant exige transfert physique, braking architecture, carrier position, descent mass et local window valide.
+NOEUD D'ARCHIVE PUBLIC // LIMITE DE TRANSIT. FTL : absent. Ansible : absent. Un secours vivant exige position de transporteur, allocation de freinage, masse de descente, météo locale et fenêtre de garde non expirée.
 
 ## Audio
 
-L'aide peut être juridiquement présente et physiquement éloignée de plusieurs années.
+Un transporteur peut enregistrer ton urgence et rester à des années de masse.
 
 ## Field Note
 
-Note de Maraudeur : quand le relay répond, demande l'âge de la réponse et quelle masse elle peut déplacer.
+Note de Maraudeur : chaque réponse de secours exige quatre nombres : âge du paquet, masse du transporteur, créneau de freinage, fenêtre de descente.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/fr_FR. -->

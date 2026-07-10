@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegirアンカー"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegirアンカー
+# Ran / Aegir Anchor
 
-RanはAegir系を通常のK級星として固定する。死んだ灯でも超自然の暗闇の源でもない。光が存在するから、HECTON-8には明るい浅瀬があり得る。
-
-恐怖は、大気、嵐、鉱物水、深度、産業シルトが救助契約の反応より速くその光を消す場所で始まる。水上では天文学である。水下では、すべてのルーメンが借り物の時間になる。
+RanはAegirを普通のK-class starとして固定する。古く、橙色で、安定し、無関心だ。これは重要だ。HECTON-8の暗さはmagicではないからである。shallowsはshineできる。weatherはseaの上で白く閃く。surface raftのworkerは見上げればsunがあるとまだ知ることができた。horrorは、atmosphere、storm shear、mineral water、depth、industrial siltが、carrierがrescue windowを請求するより速くlightを使い潰す所から始まる。above the waterではastronomyはclean。below itではevery lumen becomes rented time。
 
 ## Scanner
 
-K級星プレート。Ranは正常に燃える。AegirはSolより暗いが、ここの闇は深度、天候、負債から来る。
+K-class star plate。Ranは通常通り燃えている。このdeepはsupernaturalではなく、weather、water、debtの下に遠すぎるだけだ。
 
 ## Terminal
 
-RAN NAV ANCHOR // 橙色矮星の照明は表面作業を支える。嵐の散乱、食の幾何、海の濁りが降下視認性を安全余白の下へ押し込む。
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows。Storm scatter、eclipse geometry、mineral turbidity、industrial silt reduce descent visibility below contract safety margin。
 
 ## Audio
 
-星はある。ただ、あなたを追って下りては来られない。
+starはそこにある。ただdownへはついて来られない。
 
 ## Field Note
 
-本物の星で十分だ。残りは海が行う。
+real starで十分だ。残りはoceanがやる。
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/ja_JP. -->

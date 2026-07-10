@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Konzern-Antwortledger"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Konzern-Antwortledger
+# Corporate Response Ledger
 
-Der Ledger ist Black Keels Sprache, wenn niemand improvisiert. Er kann Gefahr anerkennen, eine Warteschlange öffnen, einen Anspruch sichern und den Operator dennoch hinter Assetregeln warten lassen. Antwortledger sind zugleich nützliche Signale und feindlicher Papierkram, der ausführbar wurde.
+Das corporate response ledger ist Black Keels Sprache, wenn niemand improvisiert. Es kann distress sofort acknowledge, eine route queue offnen, preserve a claim, demand sample custody, log hull risk und trotzdem einen living operator hinter asset rules warten lassen. Das ledger ist wertvoll, weil es offenlegt, was das system weiss. Es ist feindlich, weil knowing nicht acting ist. Auf HECTON-8 ist die erste reply oft der Beweis, dass die machine alles gehort und fast nichts versprochen hat.
 
 ## Scanner
 
-Jede Antwort kommt in Vertragssprache: Assetverwahrung, Haftungssperren, Probenroute, Rumpfrisiko, dann Operatorbergung.
+Jede reply kommt in contract language: asset custody, liability lock, sample route, hull risk, dann operator recovery.
 
 ## Terminal
 
-ANTWORTKLASSE: Asseterhalt. Operatorbergung angehängt nach Probenverwahrung, Haftungssiegel, Rumpfaudit und Zahlungsroute.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route und evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-Die Antwort war automatisch. Die Rettung war bedingt.
+Die reply war automatic. Der rescue war conditional.
 
 ## Field Note
 
-Sofortige Antwort ist keine sofortige Rettung.
+Immediate response ist nicht immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/de_DE. -->

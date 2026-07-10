@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rejestr odpowiedzi korporacyjnej"
+title: "Corporate response ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rejestr odpowiedzi korporacyjnej
+# Corporate response ledger
 
-Rejestr to sposób mówienia Black Keel, kiedy nikt nie improwizuje. Może uznać zagrożenie, otworzyć kolejkę, zachować roszczenie i nadal zostawić operatora za regułami aktywów. Gracz czyta je jako użyteczne sygnały i wrogi papier, który stał się wykonywalny.
+Corporate response ledger to sposob, w jaki Black Keel mowi, gdy nikt nie improwizuje. Moze natychmiast acknowledge distress, otworzyc route queue, preserve a claim, demand sample custody, log hull risk i nadal zostawic living operator za asset rules. Ledger jest wartosciowy, bo pokazuje, co system wie. Jest wrogi, bo knowing to nie acting. Na HECTON-8 pierwsza reply czesto dowodzi, ze machine uslyszala wszystko i obiecala prawie nic.
 
 ## Scanner
 
-Każda odpowiedź przychodzi językiem kontraktu: piecza aktywów, blokady odpowiedzialności, trasa próbki, ryzyko kadłuba, potem odzysk operatora.
+Kazda reply przychodzi w contract language: asset custody, liability lock, sample route, hull risk, potem operator recovery.
 
 ## Terminal
 
-KLASA ODPOWIEDZI: zachowanie aktywów. Odzysk operatora dodany po pieczy próbki, pieczęci odpowiedzialności, audycie kadłuba i trasie płatności.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route i evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-Odpowiedź była automatyczna. Ratunek był warunkowy.
+Reply byla automatic. Rescue byl conditional.
 
 ## Field Note
 
-Natychmiastowa odpowiedź nie jest natychmiastowym ratunkiem.
+Immediate response to nie immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/pl_PL. -->

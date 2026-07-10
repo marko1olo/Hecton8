@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zimne roszczenia zewnętrznych księżyców"
+title: "Cold claims zewnetrznych ksiezycow"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zimne roszczenia zewnętrznych księżyców
+# Cold claims zewnetrznych ksiezycow
 
-Zimne roszczenia zewnętrznych księżyców dowodzą, że Aegir jest systemem, nie jednym nawiedzonym księżycem. Nieudane prospekty solanki, uśpione metalowe trasy i martwe beacony tworzą ekonomię salvage, która wciąga Marauderów do sieci ruchu.
-
-Liczy się nie dystans, lecz wzorzec. Trasa może być martwa i nadal rozliczalna. Beacon może powtarzać kustodię bez żywej załogi. HECTON-8 jest najgorszym widocznym przypadkiem, ale nie pierwszym miejscem, gdzie Aegir nauczył się księgować stratę jako infrastrukturę.
+Outer moon cold claims dowodza, ze Aegir to system, nie one haunted ocean. Failed brine prospects, mothballed metal routes, cold caches i beacons with no living crew stworzyly salvage economy, zanim HECTON-8 stal sie nazwa, ktora wszyscy whisper. Najwazniejszy jest pattern. Route moze byc dead i still billable. Beacon moze repeat custody into empty space. Company moze learn, ze loss becomes cheaper, gdy jest filed as infrastructure. HECTON-8 to worst visible case, nie first lesson.
 
 ## Scanner
 
-Zewnętrzny beacon roszczeniowy. Nie wszystko martwe w Aegir leży na HECTON-8.
+Outer claim beacon. Nie kazde dead thing in Aegir jest na HECTON-8.
 
 ## Terminal
 
-ARCHIWUM ZEWNĘTRZNEJ DRABINY // Prospekt solanki Thorne zawiódł. Trasa eksportowa Anvil uśpiona. Beacon Mute powtarza ping kustodii bez deklaracji aktywnej załogi.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir nauczył się tracić ludzi, zanim HECTON-8 skończył lekcję.
+Aegir nauczyl sie lose people, zanim HECTON-8 skonczyl lesson.
 
 ## Field Note
 
-Zimne roszczenia czynią Marauderów możliwymi. Uczą też firmy, jak grzebać wzorce.
+Cold claims czynia marauders mozliwymi. Ucza tez companies, jak bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/pl_PL. -->

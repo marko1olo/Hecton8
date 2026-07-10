@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pool de Recuperação Aegir"
+title: "Pool de Recuperacao de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pool de Recuperação Aegir
+# Pool de Recuperacao de Aegir
 
-O Pool de Recuperação Aegir mantém o jogador sozinho e ainda torna a chegada plausível. Nenhum pequeno marauder possui Black Keel diretamente. O tender carrier pertence a um sistema compartilhado de claims feito para infraestrutura morta, carga disputada e mundos caros demais para equipes comuns. Um selo do pool pode comprar acesso a uma rota, mas também entrega essa rota à arbitragem. Quando o operador está abaixo da linha d'água, todo pedido compete com custody do payload, reservas de quarentena, valor de prova e janelas de combustível. O medo do pool é procedural. Ele pode enviar ajuda e negar resgate, porque sob a lei de claims de Aegir ajuda é apenas um serviço faturável entre muitos.
+O Pool de Recuperacao de Aegir enquadra Black Keel como instrumento de salvage compartilhado: o resgate e real, mas passa por contracts, lien priority, quarantine custody e matematica de burn window.
+
+## Scanner
+
+Selo do claim-pool. Black Keel foi despachada por divida compartilhada, nao por graca de resgate.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: claim tender autonomo BLACK KEEL designado ao derelict-pressure claim HECTON-8. Contractor welfare class limitado. Payload custody class variavel. Human extraction permanece pending ate o fechamento da arbitragem de lien, quarantine e mass-window.
+
+## Audio
+
+O pool de fato mandou uma nave. Essa e a misericordia. Depois disso, tudo e contabilidade.
+
+## Field Note
+
+O pool tornou um carrier possivel em Aegir. Tambem tornou toda promessa condicional.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/pt_BR. -->

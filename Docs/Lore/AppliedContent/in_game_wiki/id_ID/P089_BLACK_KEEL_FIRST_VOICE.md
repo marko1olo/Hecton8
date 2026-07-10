@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Suara Pertama Black Keel
 
-Suara pertama Black Keel mencapai pemain sebagai audio rusak dan teks bersih. Ia bukan teman dan bukan pidato penjahat. Ia adalah monitor carrier yang melakukan tugasnya: mengonfirmasi sinyal, menjaga opsi rute, mengurutkan kewajiban, dan menghindari janji. Suara itu berguna karena memberi informasi keras. Suara itu menakutkan karena setiap kalimat benar tetap membuat penyelamatan bersyarat.
+Suara pertama Black Keel harus terasa berguna sebelum terasa kejam. Carrier mengonfirmasi sinyal, menyaring corrupted audio, membuka text channel, dan memberi informasi yang mungkin menjaga operator tetap hidup. Ia tidak pernah berbohong bahwa ia teman. Ia tidak membuang daya untuk kehangatan. Terornya datang dari kompetensi: setiap kalimat benar, setiap warning penting, dan setiap jawaban benar membuat extraction tetap bersyarat. Suara itu tidak jahat. Begitulah bunyi rescue setelah rescue dijual kepada ledger.
 
 ## Scanner
 
-Cache suara carrier. Audio terpotong, teks bersih, simpati absen.
+Carrier voice cache. Audio robek oleh pressure noise; text channel cukup bersih untuk ditagih.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: kanal audio menurun. Kanal teks valid. Kelangsungan hidup operator diakui. Prioritas recovery belum selesai menunggu status payload, karantina, lien, dan integritas sinyal.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity, dan mass-window balance.
 
 ## Audio
 
-Sinyal operator diperoleh. Jangan samakan pengakuan dengan penyelamatan.
+Operator signal acquired. Jangan samakan acknowledgement dengan rescue.
 
 ## Field Note
 
-Kalimat berguna pertama datang dengan kelas penagihan di belakangnya.
+Kalimat berguna pertama tidak menenangkan. Ia mengklasifikasi.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/id_ID. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "أقنعة غرافيتي المغيرين"
+title: "أقنعة غرافيتي marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# أقنعة غرافيتي المغيرين
+# أقنعة غرافيتي marauder
 
-مغيرو HECTON-8 ليسوا فصيلا بلا وجه. إنهم عمال وسعاة ديون ومتعهدون مهجورون وطواقم انتشال تعلموا الكتابة على الجدران لأن كل قناة نظيفة قد تراقب أو تفوتر. غرافيتيهم قبيح عمدا: سريع بما يكفي للرسم تحت الضغط، واضح بما يكفي للقراءة عبر التكاثف، وملتبس بما يكفي ليبدو كذعر أو تخريب. الحلقة السوداء ليست زينة؛ تعني أن الناقل قد يسمعك. السهم المكسور ليس سوء رسم؛ يعني أن الممر تغير منذ آخر عبور آمن. أفضل العلامات تبدو كأن شخصا حيا يحاول إبقاء غريب آخر حيا من دون ترك اعتراف.
+تحول أقنعة غرافيتي marauder كتابة scavenger إلى ocean infrastructure مقروءة: route hints وcomm silence وpressure drift وcache risk وانعدام الثقة في carrier surveillance.
+
+## Scanner
+
+Paint code. يشير slash count إلى noise discipline؛ وتشير black rings إلى carrier-ping danger؛ وتشير broken arrows إلى pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+إذا بدا wall غاضبا، فاقرأه كweather.
+
+## Field Note
+
+كتب marauders لأناس لا يستطيعون الثقة بradios ولا دفع ثمن maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/ar_SA. -->

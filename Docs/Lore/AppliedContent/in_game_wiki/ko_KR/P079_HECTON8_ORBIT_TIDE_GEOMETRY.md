@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 궤도 / 조석 기하"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 궤도 / 조석 기하
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8의 궤도는 Great Tide가 정치가 되기 전에 믿을 만하게 만든다. 공명이 바다를 당겼다. 얼음 응력과 폭풍 해일이 대륙붕을 눌렀다. 산업 열과 막힌 배수가 식민지 시스템을 잘못된 시간에 밀어붙이게 했다.
-
-죄는 Deep Reach가 물리를 발명한 것이 아니다. 죄는 Atlas continuity, 보험 화물, 노동 계급을 중심으로 대피 수학을 짠 뒤, 죽은 사람들을 허용 가능한 예측 오차라고 부른 것이다.
+HECTON-8의 orbit은 Great Tide가 political이 되기 전에 believable하게 만든다. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water는 colony math가 margins를 원한 곳에 물을 쌓았고, industrial heat는 sealed drainage가 wrong hour에 sea와 싸우게 했다. crime은 Deep Reach가 invented physics한 것이 아니다. crime은 evacuation math가 Atlas continuity, insured payloads, labor classes, claim loss를 중심으로 built되었고 dead가 filed as forecast error되었다는 점이다.
 
 ## Scanner
 
-조석 기하 모델 // 공명, 얼음 응력, 폭풍 해일, 열 방출이 대피 예측을 초과했다. Atlas continuity 플래그가 철수 우선권을 덮어썼다.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT TIDE 사슬 // 궤도 강제가 해양 하중을 증폭했다. 인공 열 방출과 봉인된 배수가 조석 사건을 식민지 실패로 바꾸었다.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-물리가 문을 열었다. Deep Reach가 누가 나갈지 결정했다.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-달은 미워하지 않고도 식민지를 익사시킬 수 있다.
+moon은 미워하지 않고도 drown a colony할 수 있다.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ko_KR. -->

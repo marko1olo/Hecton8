@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Conductive Biofilm Repair Bus
 
-Conductive biofilm forms where cracked cable jackets leak copper salts, heat, and weak current into HECTON-8 water. It is not a mind. It is a living conductor good enough for Atlas to treat as a repair bus. A damaged line can read healthy while the film carries only a thin diagnostic pulse across the wound.
+Conductive biofilm grows where cracked cable jackets leak copper salts, warmth, and weak current into HECTON-8 water. The film can carry enough signal for Atlas to mark a dead line as usable. A panel may wake for a few seconds, a lock may flash green, and the real cable may still fail under load.
 
 ## Scanner
 
-Green-black film crosses the cable wound. Leakage is weak, patterned, and still moving.
+Green-black film bridges the split cable jacket. Low current returns through wet growth; continuity reading is unreliable.
 
 ## Terminal
 
-ATLAS TRACE: microbial film bridges exposed contacts, slows copper loss, and returns false-continuity pulses. Certified line repair not present.
+ATLAS MAINTENANCE TRACE / LINE K-44: exposed copper, saline growth, low heat leak. Biofilm bridge reduces corrosion and returns false-continuity pulses. Do not route pump control through this line.
 
 ## Audio
 
-Do not trust the green light. The cable is alive enough to lie.
+Pinger comes through the slime. Power does too. Do not call that repaired.
 
 ## Field Note
 
-Early Atlas scar: useful, quiet, and wrong enough to teach scanner distrust.
+If a dead panel wakes through green film, tag the route temporary. Cut power before you put a tool into the jacket.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/en_US. -->

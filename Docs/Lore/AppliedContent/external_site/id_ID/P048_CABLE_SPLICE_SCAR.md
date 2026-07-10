@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Bekas Sambungan Kabel"
+title: "Bekas Cable Splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bekas Sambungan Kabel
+# Bekas Cable Splice
 
-Bekas sambungan kabel menunjukkan horor perbaikan HECTON-8 pada volume rendah. Kabel servis terpotong, kru koloni hilang, dan perbaikan nonstandar tetap menjaga sirkuit hidup. Pemain membaca kegunaan sebelum niat.
+Cable splice scars memperlihatkan repair horror HECTON-8 dengan volume rendah: damaged service line terus bekerja setelah human procedure, signoff, dan material rules gagal.
 
 ## Scanner
 
-Sambungan nonstandar. Isolasi tumbuh kembali di sekitar kabel servis setelah routing manusia gagal; tag Atlas-6 parsial dan otoritas maintenance hilang.
+Nonstandard splice. Insulation regrew di sekitar service cable setelah human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: splice manusia gagal terbuka. Perbaikan kontinuitas otonom diterima untuk mempertahankan beban relay. Pola berulang di node cable reef dengan kehilangan isolasi lebih rendah dan tanpa tanda tangan pekerja.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Seseorang memperbaiki kabel setelah dokumen berhenti. Atau sesuatu.
+Seseorang fixed the cable setelah paperwork stopped. Atau sesuatu.
 
 ## Field Note
 
-Berguna dulu. Salah nanti. Begitulah perbaikan Atlas memperkenalkan diri.
+Useful dulu. Wrong nanti. Begitulah Atlas repairs memperkenalkan diri.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/id_ID. -->

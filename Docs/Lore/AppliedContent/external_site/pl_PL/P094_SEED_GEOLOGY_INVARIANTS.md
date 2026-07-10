@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Niezmienniki geologii seeda"
+title: "Inwarianty geologii survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Niezmienniki geologii seeda
+# Inwarianty geologii survey
 
-Kazdy run zlomiarzy na HECTON-8 moze pokazac inna droge przez rane. Kanion moze otworzyc sie wczesniej, rafa kabli ukryc bezpieczna kieszen, bloom przepchnac faune na trase, ktora poprzednio byla pusta, a lancuch dowodow moze wyplynac w nowej kolejnosci. Fizyka ksiezyca nie resetuje sie dla zabawy. Aegir pozostaje gwiazda glowna. HECTON-8 pozostaje w drabinie orbitalnej. Great Tide trzyma interwal. Pasma glebokosci stoja w tej samej brutalnej kolejnosci. Blue debt zachowuje cisnienie. Atlas zostaje przy najglebszym basenie.
+Survey Geology Invariants pozwala HECTON-8 miec changing charts i route uncertainty, zachowujac fixed astronomy, depth order, Great Tide logic, blue-debt behavior i Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. Salvage chart moze disagree with itself; moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+Later chart moze bury evidence differently. Nie moze rewrite gravity, tide ani guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/pl_PL. -->

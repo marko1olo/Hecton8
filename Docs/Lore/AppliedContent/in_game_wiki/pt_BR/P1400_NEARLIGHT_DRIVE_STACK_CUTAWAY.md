@@ -9,34 +9,32 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Propulsion Syllabus
 spoiler_tier: 1
-title: "Corte do conjunto de propulsão quase-luz"
+title: "Corte do drive stack nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corte do conjunto de propulsão quase-luz
+# Corte do drive stack nearlight
 
-O corte da Barnard Yards é seco porque foi feito para contratados, não para passageiros. Um casco classe Atlas não começa a viagem quando os motores de bordo acendem. Começa quando uma matriz de feixe gasta potência numa vela, quando uma trilha de pellets é liberada, quando a massa capturada chega à garganta fusão-elétrica e quando o livro do escudo aceita que poeira vai lixar proteção cara por anos.
-
-O meio da viagem é um problema de calor com gente dormindo dentro. Nervuras radiadoras, baias criogênicas, oficinas, berços de perfuração e carga classificada para pressão competem pelas mesmas margens. A chegada não é uma queima de vitória; é outra máquina contratual. Carretéis de vela magnética, peles de aerofrenagem, janelas receptoras e software de custódia decidem quem pode gastar o slot local de frenagem. Por isso a Black Keel pode precificar uma passagem de salvamento sobre Aegir sem virar resgate. Um cargueiro quase-luz se move quando infraestrutura de rota, orçamento térmico, direitos de frenagem e propriedade se alinham. Um Marauder preso é só uma linha de conta, a menos que a rota seja forçada a contá-lo.
+Uma nave nearlight não é uma tocha mágica parafusada no casco. O drive stack é uma rota inteira tornada física: beam arrays gastam potência antes da partida, pellet lanes colocam massa capturável onde a nave pode beber, fusion-electric throats transformam combustível em eletricidade e calor, escudos aceitam perda de poeira, radiadores passam anos jogando calor fora, e hardware de frenagem importa tanto quanto aceleração.
 
 ## Scanner
 
-CORTE DO CONJUNTO DE PROPULSÃO // Placa de serviço Barnard Yards. Garfo de vela de feixe, captador de pellets, garganta fusão-elétrica, escudo de sombra, nervuras radiadoras, carretel de vela magnética, pele de aerofrenagem e medidor de custódia têm o mesmo número de rota estampado.
+CORTE DRIVE STACK // placa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, nervuras radiador, magsail spool, aerobrake skin e custody meter compartilham um número de rota.
 
 ## Terminal
 
-CONJUNTO DE TRÂNSITO ATLAS // Matrizes externas de feixe fornecem o empurrão de partida. Trilhas de pellets alimentam massa capturada na garganta fusão-elétrica. Gelo de escudo e carbono recebem perda por poeira. Nervuras radiadoras pagam calor por anos. Velas magnéticas, peles de aerofrenagem e direitos de receptor decidem se a carga pode parar.
+ATLAS TRANSIT STACK // Empuxo de partida: beam array externo. Alimentação de cruzeiro: captura pellet lane. Conversão: fusion-electric throat. Controle de perdas: gelo de escudo, carbono, nervuras radiador. Autoridade de chegada: magsail spool, aerobrake skin, slot receptor, ledger custody.
 
 ## Audio
 
-Pare de chamar o cone de motor. O motor é a rota, o calor rejeitado e quem possui o slot de frenagem.
+Pare de chamar o cone de motor. O motor é a rota, o calor residual e quem possui o slot de frenagem.
 
 ## Field Note
 
-A placa põe calor antes de empuxo. Boa placa. Tripulações baratas morrem na margem do radiador antes de se gabar da velocidade.
+A placa coloca calor antes de empuxo. Boa placa. Tripulações baratas morrem na margem do radiador antes de se gabar de velocidade.
 
 <!-- In-Game Wiki; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/pt_BR. -->

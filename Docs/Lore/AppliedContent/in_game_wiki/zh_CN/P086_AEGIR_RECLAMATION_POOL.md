@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir回收池"
+title: "Aegir回收联营池"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir回收池
+# Aegir回收联营池
 
-Aegir回收池是Black Keel背后的公共salvage外壳。它让小型marauder执照无需拥有私人行星际carrier,也能抵达Aegir废弃索取点。这笔交易既有用又有毒:同一个能派出补给艇的池,也决定活着的操作员、封存payload、隔离锁或证据包,哪一个值得下一次burn。
+Aegir回收联营池是一层salvage外壳，让小型licensed marauders也能接触Black Keel。任何independent operator都不可能为了一个废弃卫星，独自购买、供燃并合法维持一艘interplanetary claim carrier。联营池通过汇总旧claims、死亡航线、保险lien和排队的recovery contracts来解决这个问题。它有用，因为它真的存在。它有毒，因为启动carrier的同一份ledger也会决定carrier被允许重视什么：sealed sample、proof bundle、quarantine lock、仍在呼吸的身体，或者离开HECTON-8的下一个burn window。
 
 ## Scanner
 
-索取池印章。Black Keel是按航线债务分配的,不是送给操作员的礼物。
+共同claim池印记。Black Keel是由共享债务派出的，不是救援恩赐。
 
 ## Terminal
 
-AEGIR RECLAMATION POOL:自主补给艇Black Keel分配给废弃压力索取HECTON-8。船员福利等级:承包人。payload custody等级:可变优先。人类撤出在回收池仲裁关闭前保持有条件。
+AEGIR RECLAMATION POOL: 自主claim tender BLACK KEEL已分配至HECTON-8 derelict-pressure claim。contractor福利等级受限。payload custody等级可变。Human extraction需等待lien、quarantine与mass-window arbitration关闭。
 
 ## Audio
 
-回收池拥有航线。你靠活得足够久来租用答案。
+联营池确实派来了一艘船。这就是仁慈。之后的一切都是账目。
 
 ## Field Note
 
-共享池让救援更便宜、更慢,也让每个签署方更容易否认责任。
+联营池让Aegir里的carrier成为可能，也让每一句承诺都有条件。
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/zh_CN. -->

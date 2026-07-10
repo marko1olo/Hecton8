@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Montaje de la cadena de escape
 
-Montaje de la cadena de escape es la columna de ingeniería de la campaña. HECTON-8 no ofrece una extracción limpia a superficie tras la primera reparación; la salida se vuelve un conjunto de componentes físicos, legales y probatorios distribuidos por infraestructura ahogada. Eso da al largo descenso una razón práctica y otra moral: el jugador no solo abandona el océano, sino que monta una ruta que demuestra por qué la colonia nunca tuvo una salida justa.
+Montaje de la cadena de escape es la columna de ingeniería de la campaña. HECTON-8 no ofrece extracción limpia a la superficie tras la primera reparación; partir se vuelve un conjunto de componentes físicos, legales y probatorios distribuidos por infraestructura ahogada. Eso da al largo descenso una razón práctica y una moral: la salida debe construirse con piezas de la misma colonia a la que se le negó una salida justa.
 
 ## Scanner
 
-La salida exige seis pruebas duras: relé, sello, guía, carga de ascenso, enlace legal y una carga que el transportista no pueda ignorar.
+La partida requiere seis pruebas duras: relé, sello, guiado, carga de ascenso, apretón legal y payload que el carrier no pueda ignorar.
 
 ## Terminal
 
-PAQUETE DE ASCENSO: columna de relé acústico ausente. Calificación del anillo de abrazadera insuficiente. Núcleo de guía ausente. Cuna de carga vacía. Enlace de cuarentena sin resolver. Carga de evidencia opcional, pero altera la autoridad de recuperación.
+ASCENT PACKAGE: falta acoustic relay spine. Rating de clamp ring insuficiente. Guidance core ausente. Charge cradle vacío. Quarantine handshake sin resolver. Evidence payload altera recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ No reparas la cápsula. Construyes la primera salida honesta que la colonia nunc
 
 ## Field Note
 
-La ruta hacia arriba se construye con piezas que nunca fueron pensadas para que los trabajadores se marcharan solos.
+La ruta hacia arriba se construye con piezas que nunca debían dejar salir solos a los trabajadores.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/es_ES. -->

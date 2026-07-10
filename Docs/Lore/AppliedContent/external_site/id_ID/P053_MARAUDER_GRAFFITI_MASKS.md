@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Topeng Grafiti Marauder"
+title: "Masker Grafiti Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Topeng Grafiti Marauder
+# Masker Grafiti Marauder
 
-Marauder HECTON-8 bukan faksi perampok tanpa wajah. Mereka pekerja, pelari utang, kontraktor yang ditinggalkan, dan kru salvage yang belajar menulis di dinding karena setiap kanal bersih bisa diawasi atau ditagih. Grafiti mereka sengaja buruk: cukup cepat dicat saat panik, cukup jelas dibaca lewat kondensasi, dan cukup ambigu agar tampak seperti vandalisme. Cincin hitam bukan hiasan. Itu berarti kapal induk mungkin mendengarmu. Panah patah bukan gambar jelek. Itu berarti koridor berubah sejak lintasan aman terakhir.
+Masker Grafiti Marauder mengubah scavenger writing menjadi ocean infrastructure yang terbaca: route hints, comm silence, pressure drift, cache risk, dan ketidakpercayaan pada carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count menandai noise discipline; black rings menandai carrier-ping danger; broken arrows menandai pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Jika wall terlihat marah, bacalah sebagai weather.
+
+## Field Note
+
+Marauders menulis untuk orang yang tidak bisa percaya radios dan tidak mampu membeli maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/id_ID. -->

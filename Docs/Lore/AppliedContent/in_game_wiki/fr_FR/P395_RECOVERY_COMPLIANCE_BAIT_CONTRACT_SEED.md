@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Graine de contrat appât de conformité de récupération"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Recovery Compliance Bait Contract Seed
+# Graine de contrat appât de conformité de récupération
 
-FR LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Les contrats appâts de conformité de récupération se présentent comme des missions de sauvetage généreuses, mais la chaîne de réception penche déjà vers Deep Reach. La prime est réelle. Le coût, c'est l'obligation cachée de révéler l'endroit où l'épave, l'étiquette de cadavre, la caisse d'échantillons ou la machine scellée ont été trouvées.
 
 ## Scanner
 
-FR LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Graine de contrat : appât de conformité de récupération. Forte prime, chaîne de réception contaminée, exigence de coordonnées dissimulée.
 
 ## Terminal
 
-FR LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+GRAINE APPÂT : prime augmentée, récepteur de conformité masqué, clause de coordonnées cachée, pression de rétention active, routage Deep Reach probable.
 
 ## Audio
 
-FR LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Un tampon de secours achète la confiance du quai plus vite qu'une arme.
 
 ## Field Note
 
-FR LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Note de maraudeur : si le boulot paie trop proprement, vérifie à qui appartient la serviette.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/fr_FR. -->

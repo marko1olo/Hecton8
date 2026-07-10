@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pula odzysku Aegir"
+title: "Pula Rewindykacyjna Aegira"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pula odzysku Aegir
+# Pula Rewindykacyjna Aegira
 
-Pula odzysku Aegir zostawia gracza samego, a zarazem uwiarygodnia przybycie. Żaden mały marauder nie posiada Black Keel bezpośrednio. Tender carriera należy do wspólnego systemu roszczeń dla martwej infrastruktury, spornych ładunków i światów zbyt drogich dla zwykłych załóg. Stempel puli może kupić dostęp do trasy, ale oddaje tę trasę arbitrażowi. Gdy operator znajduje się pod linią wody, każda prośba konkuruje z custody payloadu, rezerwami kwarantanny, wartością dowodu i oknami paliwa. Lęk puli jest proceduralny. Może wysłać pomoc i odmówić ratunku, bo według prawa roszczeń Aegir pomoc jest tylko jedną z wielu usług do zafakturowania.
+Pula Rewindykacyjna Aegira ustawia Black Keel jako wspolne narzedzie salvage: ratunek istnieje, ale przechodzi przez contracts, lien priority, quarantine custody i matematyke burn window.
+
+## Scanner
+
+Stempel wspolnej puli claim. Black Keel wyslano przez wspolny dlug, nie z laski ratunkowej.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: autonomiczny claim tender BLACK KEEL przydzielony do derelict-pressure claim HECTON-8. Contractor welfare class ograniczona. Payload custody class zmienna. Human extraction pozostaje pending do zamkniecia arbitrazu lien, quarantine i mass-window.
+
+## Audio
+
+Pula naprawde wyslala statek. To jest litosc. Wszystko potem to ksiegowosc.
+
+## Field Note
+
+Pula umozliwila carrier w Aegirze. Sprawila tez, ze kazda obietnica ma warunki.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/pl_PL. -->

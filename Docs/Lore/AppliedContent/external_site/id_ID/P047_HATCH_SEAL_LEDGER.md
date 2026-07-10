@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Ledger Segel Hatch"
+title: "Ledger Seal Hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger Segel Hatch
+# Ledger Seal Hatch
 
-Hatch adalah salah satu catatan paling sunyi di HECTON-8. Mereka tidak menjelaskan siapa yang tertinggal; mereka menyimpan arah penutupan, stres gasket, dan otoritas override. Membaca ledger segel mengubah pintu terkunci menjadi keputusan tekanan dengan timestamp.
+Hatches adalah records sunyi di HECTON-8: closure direction, gasket stress, override authority, dan wet-side witness traces mengubah locked door menjadi pressure decision dengan timestamp.
 
 ## Scanner
 
-Memori segel dipulihkan. Gasket menerima tiga potongan tekanan dan satu override evakuasi; akses sisi pulang dikunci dari sisi basah.
+Seal memory recovered. Gasket menerima three pressure cuts dan one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: deformasi gasket melewati toleransi servis. Penutupan manual diterima di bawah EVAC OVERRIDE. Hitungan operator di sisi pulang belum selesai. Buka ulang hanya setelah penyamaan tekanan dan inspeksi engsel.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, dan wet-side witness check.
 
 ## Audio
 
-Ia tersegel. Hanya itu janji hatch.
+It sealed. Itu saja janji hatch.
 
 ## Field Note
 
-Hatch tersegel adalah kuitansi. Sebelum membukanya, tanya sisi mana yang membayar.
+Sealed hatch adalah receipt. Sebelum membukanya, tanya sisi mana yang membayar.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/id_ID. -->

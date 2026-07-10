@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Escalera lunar de Aegir
 
-La escalera lunar de Aegir mantiene a HECTON-8 dentro de un sistema físico. Las lunas internas crean radiación y peligros de relé; las medias guardan metal, hielo, boyas de ruta y viejos depósitos; las externas llevan claims fríos y balizas muertas.
-
-HECTON-8 no es la luna más interna ni la más lejana. Es la luna que todavía paga. Por eso el resto de la escalera toca sus ventanas de rescate, salvage law y rutas de señal.
+La Aegir moon ladder mantiene HECTON-8 dentro de un working sky. Skarn lanza charged weather sobre antennas. Vela sheds ice and dust hacia optical routes. Claw y Lumen mantienen old buoy logic alive. Thorne failed quietly. Anvil fed metal hasta que la route stopped paying. Kestrel cuts relay lines en los peores angles. Mute repeats ownership into nobody's hands. HECTON-8 no es la primera moon de la chain ni la ultima. Es la que conserva drowned infrastructure con suficiente value para que ships, insurers y marauders discutan por windows.
 
 ## Scanner
 
-Carta de escalera lunar. HECTON-8 es un peligro activo en un sistema móvil, no un nivel aislado.
+Moon ladder chart. HECTON-8 es one working hazard in a moving system, no un isolated ocean level.
 
 ## Terminal
 
-LUNAS PRINCIPALES DE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modelo de transfer y eclipse adjunto.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay y custody windows attached.
 
 ## Audio
 
-El mapa tiene más lunas que misericordia.
+La map tiene mas moons que mercy.
 
 ## Field Note
 
-Skarn quema. Vela suelta hielo. Anvil alimenta metal. Kestrel corta relés. HECTON se ahoga.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/es_ES. -->

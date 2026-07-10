@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "打捞工具托管"
+title: "打捞工具监管"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 打捞工具托管
+# 打捞工具监管
 
-打捞工具不是中立装备。切割器、补片器和制造机坞可以记录谁打开面板、修复线路或移动样本。那份日志可能保护证据、附加 payout 权利，或加强对玩家的 claim。工具托管就是分钟级生存触碰更大打捞经济的地方。
+HECTON-8上的salvage tools是survival gear，但并不innocent。cutter打开panel。patcher seals a line。fabricator dock prints a clamp，让air继续moving。同一个action也可能write custody：谁used the tool，什么被opened，sample pouch是否attached，以及哪个claim token owns the next argument。这条record可以protect evidence，也可以tighten debt。残酷之处在于，refusing the tool有时比accepting its witness更快kill。
 
 ## Scanner
 
-工具坞保存一份封存托管日志。最后一次切割、维修和样本袋都绑定到Keelmark claim令牌。
+tool dock保存sealed custody log。last cut、repair和sample pouch都 tied to a Keelmark claim token。
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12：切割器使用在 salvage claim 下接受。维修动作已见证。样本权利附着到 Keelmark Mutual 令牌。证据导出与物料 payout 路线冲突。
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim。Repair action witnessed。Sample rights attached to Keelmark Mutual token。Evidence export conflicts with material payout route。
 
 ## Audio
 
-每一次有用的切割都会留下证人。
+Every useful cut leaves a witness.
 
 ## Field Note
 
-切割器能在同一刀里救你的空气，也卖掉你的双手。叫它属于你之前，先看它记录什么。
+cutter能在同一stroke里save your air并sell your hands。在叫它 yours 之前，先检查它records什么。
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/zh_CN. -->

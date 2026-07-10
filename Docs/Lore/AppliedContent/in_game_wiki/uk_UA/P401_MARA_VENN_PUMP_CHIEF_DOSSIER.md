@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Mara Venn/Pump Chief"
+title: "Мара Венн, начальниця насосної"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Mara Venn/Pump Chief
+# Мара Венн, начальниця насосної
 
-UK LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+Мара Венн була начальницею насосної, яка втримала нижній анекс живим після того, як впускні лічильники почали брехати. Її досьє складене з робочих речей: солоного жетона, дошки ритму з ручними позначками, водного журналу з правкою прес-чорнилом і руків'я байпаса, згладженого повторним використанням. Разом вони показують працівницю, яка змусила колонію визнати: втрата води не була фоновим шумом. Це була обчислювана поломка машини, прив'язана до людських легень.
 
 ## Scanner
 
-UK LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Досьє: Мара Венн. Край жетона, дошка ритму й виправлений водний журнал вказують на насосну P-63.
 
 ## Terminal
 
-UK LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+НАСОСНА P-63 / ВЕНН, МАРА: руків'я байпаса відполіроване крізь шар рукавиць; дошку ритму закріплено біля позначок втрат на впуску. Виправлення в журналі переводить зниклу воду з декоративного витоку в навантаження машини.
 
 ## Audio
 
-UK LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Венн не залишила прощання. Вона залишила ритм на дошці насосів, щоб налякані люди могли рахувати наступний вдих.
 
 ## Field Note
 
-UK LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Ставити докази Венн біля насосних ритмів, водних журналів і руків'їв байпаса. Її предмети мають змушувати гравця чути інфраструктуру як дихання.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/uk_UA. -->

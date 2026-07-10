@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Ressourcenstapel
 
-Der Ressourcenstapel zeigt HECTON-8 als Druckökonomie. Xenon-Omega ist der strategische Gipfel, nicht die ganze Welt.
+Der Ressourcenstapel rahmt HECTON-8 als Druckökonomie: Xenon-Omega ist die strategische Spitze, nicht die ganze Welt.
 
 ## Scanner
 
-Stapel: Rifffaser, Laugensalze, Relaiskerne, Druckventile, blue debt, pressure glass, Atlas-Gitter.
+Stapel gelesen: Rifffaser, Solesalze, Relaiskerne, Druckventile, Ventkatalysatoren, blaue Schuld, Pressure Glass, Atlas-Gitter.
 
 ## Terminal
 
-Wertmodell: Überlebensbiota, menschlicher Salvage, Routenhardware, Druckchemie, blue debt, pressure glass, continuity substrate.
+WERTMODELL: Überlebensbiota, menschliche Bergung, Routenhardware, Druckchemie, blaue Schuld, Pressure Glass, Kontinuitätssubstrat. Stapel nicht auf ein Wundermaterial reduzieren.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Wenn der Carrier Masse vor Namen verlangt, weißt du, wem der Vertrag gehört.
 
 ## Field Note
 
-Nichts hier ist nur Beute.
+Nichts hier ist nur Beute. Jede Probe gehört zu einer Druckökonomie.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/de_DE. -->

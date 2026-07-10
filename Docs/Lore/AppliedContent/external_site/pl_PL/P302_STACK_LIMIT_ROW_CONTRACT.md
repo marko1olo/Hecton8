@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Granica danych limitu stosu"
+title: "Wiersz limitu stosu ciśnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica danych limitu stosu
+# Wiersz limitu stosu ciśnieniowego
 
-Presja ekwipunku w HECTON-8 pochodzi z zamknięcia, certyfikacji i skażonej masy. Gra może pokazać proste stosy, ale lore mówi, czemu stos jest bezpieczny, czemu pęka i czemu ocean nie dba o ikony.
+Na HECTON-8 presja ekwipunku zaczyna się od pojemników. Załogi mogą ciasno pakować złom, ale próbki ciśnieniowe, skażone części i uszczelniony sprzęt trasowy układają się tylko wtedy, gdy pasują rating naczynia, masa, tożsamość i znaki skażenia. Mały odprysk może zablokować więcej ładunku niż duża płyta.
 
 ## Scanner
 
-Wiersz stosu odrzuca kupy ikon: klasa naczynia, ciśnienie, skażenie i masa decydują o liczbie.
+Żądanie stosu odrzucone: klasa naczynia, rating ciśnienia, etap skażenia, opłata okna masy i tożsamość manifestu nie pasują.
 
 ## Terminal
 
-STACK CONTRACT: liczba w stosie wymaga typu naczynia, ratingu ciśnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia i stabilnej tożsamości zapisu. Skrzynia nie jest naczyniem ciśnieniowym.
+SCHEMAT PRZYJĘCIA STOSU / biurko ładunkowe Black Keel: liczba w stosie wymaga typu naczynia, ciśnienia znamionowego, certyfikatu uszczelnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia, okna masy objętej zastawem i stabilnej tożsamości manifestu. Etykieta skrzyni nie certyfikuje zamknięcia.
 
 ## Audio
 
-Skrzynia nie jest naczyniem ciśnieniowym.
+Biurko ładunkowe: stos odrzucony. Skrzynia jest oceniona do podnoszenia, nie do nadzoru ciśnieniowego.
 
 ## Field Note
 
-Limity stosów pozostają table-owned i stabilne dla save identity.
+Nigdy nie układaj nieznanych próbek dla oszczędności miejsca. Jedno złe uszczelnienie robi z całej kupy ładunek kwarantanny, a przewoźnik i tak policzy masę.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/pl_PL. -->

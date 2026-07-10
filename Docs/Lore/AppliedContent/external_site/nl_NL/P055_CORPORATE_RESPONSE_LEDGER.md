@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bedrijfsrespons-grootboek"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bedrijfsrespons-grootboek
+# Corporate Response Ledger
 
-Het bedrijfsrespons-grootboek is geen schurkenmonoloog. Het is kouder. Het is een machinaal leesbare belofte dat Black Keel zal reageren, maar alleen in de volgorde die zijn contracten herkennen. Assetbewaring eerst. Aansprakelijkheidszegel tweede. Rompaudit, monsterroute, betaalroute, dan operatorberging als de wachtrij het toestaat. De speler kan deze grootboeken gebruiken als aanwijzing, sleutel en hefboom omdat het systeem voorspelbaar is. Die voorspelbaarheid is de aanklacht: HECTON-8 werd niet verlaten door één slechte beslissing, maar door een responsstack die bleef werken terwijl mensen lading met lagere prioriteit werden.
+Corporate Response Ledger registreert de harde limiet van Black Keel-hulp: response speed, rescue priority, evidence custody, asset preservation en debt settlement blijven aparte systems.
+
+## Scanner
+
+Elke reply komt in contract language: asset custody, liability lock, sample route, hull risk, daarna operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route en evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+De reply was automatic. De rescue was conditional.
+
+## Field Note
+
+Immediate response is geen immediate rescue.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/nl_NL. -->

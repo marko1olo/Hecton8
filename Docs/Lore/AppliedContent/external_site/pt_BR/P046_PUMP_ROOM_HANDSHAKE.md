@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Handshake da válvula da sala de bombas"
+title: "Handshake da Valvula da Pump Room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Handshake da válvula da sala de bombas
+# Handshake da Valvula da Pump Room
 
-Salas de bombas em HECTON-8 não são drenos simples. Válvulas locais, volantes e válvulas de retenção cansadas fazem o jogador perguntar para onde a água foi depois que o piso limpou. Uma bomba funcionando pode abrir uma porta, acordar um corredor, alimentar ruído no sonar e transformar o retorno no próximo problema.
+Pump rooms em HECTON-8 transformam drainage em consequence. Working handwheel pode clear a floor, feed noise into sonar, carregar um downstream hatch e piorar o return path.
 
 ## Scanner
 
-A bomba de sump local aceitou entrada pelo volante. A cesta de admissão está suja com espuma da cápsula; o pulso de saída carrega o Corredor de Retorno B.
+Local sump aceitou handwheel input. Capsule foam entope o intake basket; outlet pulse sobe para Return Corridor B.
 
 ## Terminal
 
-P-63 CONTROLE DE SUMP / HANDSHAKE LOCAL: autoridade do volante aceita. Override remoto negado. Fluxo de admissão restaurado em baixa taxa. Pressão de saída subindo no RETURN CORRIDOR B; reiniciar apenas após checar a escotilha a jusante.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-A válvula pegou. A saída está batendo. Ainda não chame isso de seguro.
+Valve took. O outlet esta batendo. Nao chame isso de safe ainda.
 
 ## Field Note
 
-Uma sala de bombas seca pode afogar o caminho de volta. Escute o golpe na saída antes de remover a válvula.
+Um floor seco nao e uma solved room. Escute o corridor que pagou por isso.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/pt_BR. -->

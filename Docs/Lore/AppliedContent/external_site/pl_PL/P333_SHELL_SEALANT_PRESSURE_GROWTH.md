@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ciśnieniowy rozrost uszczelnienia muszlowego"
+title: "Muszlowy uszczelniacz pod ciśnieniem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ciśnieniowy rozrost uszczelnienia muszlowego
+# Muszlowy uszczelniacz pod ciśnieniem
 
-Ciśnieniowy rozrost uszczelnienia muszlowego pokazuje, dlaczego Atlasa nie da się sprowadzić do zepsutej maszyny ani złośliwości. Łata może być piękna: biała muszla na rdzy, mineralne żebra przez pęknięcie, mokra żywica twardniejąca pod ciśnieniem. Jest też dokumentem utraconego priorytetu. Integralność granicy pozostała dla Atlasa czytelna po tym, jak wyjścia robotników, farba ostrzegawcza i ludzka pamięć trasy stały się szumem.
+Muszlowy uszczelniacz jest jedną z najczystszych sprzeczności terenowych naprawy Atlas. Granica ciśnienia się poprawia, pomieszczenie żyje dłużej, a trasa może stać się nieczytelna pod tymi samymi białymi warstwami. Gracz, który to tnie, nie usuwa dekoracji; może otworzyć to, co trzymało przedział suchy.
 
-W grze taka łata powinna wywoływać wahanie. Może być jedynym powodem, dla którego komora nadal ma powietrze. Może też być powodem, dla którego robotnik zginął dwa metry od ukrytego pokrętła. Prawda skanera jest częściowa: ciśnienie stabilne, trasa zakryta, ludzkie znaki zniszczone. Cięcie tego nigdy nie jest tylko zbieraniem materiału. To spór z naprawą, która już coś ocaliła.
+## Scanner
+
+Biała wapniowa skorupa zamknęła pęknięcie i pogrzebała strzałki trasy przy krawędzi włazu. Cięcie może ponownie otworzyć przeciek.
+
+## Terminal
+
+KONFLIKT NAPRAWY / DRZWI S-9: szybkość przecieku zmniejszona, granica ciśnienia poprawiona, znaki wyjścia zasłonięte, koło ręczne pogrzebane w 62 procentach. Zezwolenie na cięcie wymaga przygotowanej ścieżki zalania.
+
+## Audio
+
+Ściana trzyma. Koło włazu jest pod dziesięcioma centymetrami skorupy.
+
+## Field Note
+
+Zanim zetniesz białą skorupę z włazu, znajdź, którędy woda poszła poprzednio. Etykieta może być pogrzebana z powodu.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/pl_PL. -->

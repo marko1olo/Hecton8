@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Orbita HECTON-8 / geometria pływów"
+title: "Orbita / geometria plywow HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Orbita HECTON-8 / geometria pływów
+# Orbita / geometria plywow HECTON-8
 
-Orbita / geometria pływów HECTON-8 to twarda warstwa katastrofy SF: pływy, ciepło i ciśnienie najpierw łamią kolonię; priorytet korporacji robi z awarii zbrodnię.
+HECTON-8 Orbit / Tide Geometry to hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage i pressure najpierw lamia colony; corporate priority turns failure into crime.
 
 ## Scanner
 
-MODEL PŁYWÓW // Rezonans, stres lodu, sztormowy napór i zrzut ciepła przekroczyły prognozę ewakuacji. Flagi Atlas continuity nadpisały odwrót.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge i heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-ŁAŃCUCH GREAT TIDE // Wymuszenie orbitalne wzmocniło obciążenie oceanu. Sztuczny zrzut ciepła i zamknięty drenaż zmieniły pływ w awarię kolonii.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge i sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Fizyka otworzyła drzwi. Deep Reach zdecydowało, kto przez nie wyjdzie.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Księżyc może utopić kolonię bez nienawiści.
+Moon moze drown a colony bez nienawisci.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/pl_PL. -->

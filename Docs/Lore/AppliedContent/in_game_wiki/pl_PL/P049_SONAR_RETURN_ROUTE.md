@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Sonarowa trasa powrotna"
+title: "Sonar return route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sonarowa trasa powrotna
+# Sonar return route
 
-Latarnia powrotna zapisuje, jak brzmiała trasa, gdy ostatnio była bezpieczna. Nie obiecuje, że taka pozostała. Fala sztormowa, luźny kabel, ruchomy muł, fauna i świeże cięcia salvage mogą zgiąć powrót sonaru bez kasowania korytarza. Przed niesieniem ładunku albo zejściem głębiej pinguj linię. Jeśli ton się przesunął, schowaj ładunek albo oznacz drugą drogę.
+Return beacon zapisuje, jak route brzmiala, kiedy byla last safe. Nie obiecuje, ze route stayed safe. Na HECTON-8 safety ma dzwiek: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass i door flexed under pressure moga bend the return bez erased corridor. Return route to work. Ping before loading i cache the load, jesli echo wraca z inna shape.
 
 ## Scanner
 
-Latarnia powrotna nieaktualna. Stary bezpieczny ping nie pasuje już do echa korytarza; masa ładunku spowolni okno odwrotu.
+Return beacon stale. Old safe ping nie pasuje juz do corridor echo; cargo mass spowolni retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: ostatnie czyste echo nieważne. Ping Black Keel odebrany z niską pewnością. Dryf przeszkód i gęstość mułu przekraczają tolerancję mapy. Oznaczyć drugą linię przed wydobyciem ładunku.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density i cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Trasa nadal tam jest. Echo nie jest takie samo.
+The route is still there. Echo nie jest takie samo.
 
 ## Field Note
 
-Pinguj przed załadunkiem. Jeśli droga do domu zmieniła się przy pustych rękach, nie wybaczy pełnego plecaka.
+Ping before loading. Jesli way home changed, gdy hands byly empty, nie wybaczy full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/pl_PL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Crecimiento de sellante de concha a presión
 
-El crecimiento de sellante de concha a presión es el error más limpio de Atlas: la reparación funciona. Capas de silicato cálcico y resina biopolimérica cierran una fractura, sostienen presión estática y salvan una sala que debía ahogarse. El mismo crecimiento puede enterrar etiquetas, manillas, flechas de tiza, arañazos y la última ruta humana por la estación.
+El crecimiento de sellante de concha puede salvar una sala y encerrar a una persona en la misma hora. Capas de calcio-silicato y resina cierran una fractura, bajan el caudal de fuga y dan a Atlas una reparación medible. El crecimiento no comprueba si ha tapado una flecha de ruta, una etiqueta de presión o el único volante manual.
 
 ## Scanner
 
-Sellante en capas cierra la fractura y entierra marcas de ruta de trabajadores bajo concha blanca.
+La concha blanca de calcio cerró la fractura y enterró flechas de ruta junto al borde de la escotilla. Cortar puede reabrir la fuga.
 
 ## Terminal
 
-CONFLICTO DE REPARACIÓN: fuga reducida, frontera de presión mejorada, marcas de salida ocultas. Cortar la concha puede reabrir una ruta de inundación.
+CONFLICTO DE REPARACIÓN / PUERTA S-9: caudal de fuga reducido, frontera de presión mejorada, marcas de salida ocultas, volante manual enterrado al 62 por ciento. Autorización de corte requiere ruta de inundación preparada.
 
 ## Audio
 
-La sala sobrevivió. La salida no.
+La pared aguanta. El volante de la escotilla está bajo diez centímetros de concha.
 
 ## Field Note
 
-Ideal en puertas, pasos de arrastre y decisiones de presión donde reparar y dañar son el mismo objeto.
+Antes de cortar concha blanca de una escotilla, busca adónde fue el agua la última vez. La etiqueta puede estar enterrada por algo.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/es_ES. -->

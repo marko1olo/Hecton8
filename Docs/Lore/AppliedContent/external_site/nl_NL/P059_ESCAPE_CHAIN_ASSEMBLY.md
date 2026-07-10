@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Montage van de ontsnappingsketen"
+title: "Assemblage van de ontsnappingsketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Montage van de ontsnappingsketen
+# Assemblage van de ontsnappingsketen
 
-Montage van de ontsnappingsketen is de technische ruggengraat van de campagne. HECTON-8 biedt na de eerste reparatie geen schone extractie naar het oppervlak; vertrek wordt een set fysieke, juridische en bewijscomponenten verspreid door verdronken infrastructuur. Dat geeft de lange afdaling een praktische en morele reden: de speler verlaat niet alleen de oceaan, maar monteert een route die bewijst waarom de kolonie nooit een eerlijke uitgang had.
+Assemblage van de ontsnappingsketen is de technische ruggengraat van de campagne. HECTON-8 biedt na de eerste reparatie geen schone oppervlakte-extractie; vertrek wordt een set fysieke, juridische en bewijzende componenten verspreid over verdronken infrastructuur. Dat geeft de lange afdaling een praktische en morele reden: de uitgang moet worden gebouwd uit delen van dezelfde kolonie die nooit een eerlijke uitgang kreeg.
 
 ## Scanner
 
-Vertrek vraagt zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handdruk en een vracht die de drager niet kan negeren.
+Vertrek vereist zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handshake en een payload die de carrier niet kan negeren.
 
 ## Terminal
 
-OPSTIJGPAKKET: akoestische relaisspine ontbreekt. Klemmingsringclassificatie onvoldoende. Geleidingskern afwezig. Laadwieg leeg. Quarantainehanddruk onopgelost. Bewijsvracht optioneel, maar verandert herstelautoriteit.
+ASCENT PACKAGE: acoustic relay spine ontbreekt. clamp ring-rating onvoldoende. guidance core afwezig. charge cradle leeg. quarantine handshake onopgelost. evidence payload verandert recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Je repareert de capsule niet. Je bouwt de eerste eerlijke uitgang die de kolonie
 
 ## Field Note
 
-De weg omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
+De route omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Lian Torres/Vent Forge"
+title: "ליאן טורס, מפעיל מחשלת נביעה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Lian Torres/Vent Forge
+# ליאן טורס, מפעיל מחשלת נביעה
 
-HE LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+ליאן טורס הפעיל מחשלת נביעה שבה החום של HECTON-8 הפך לחלקים קטנים דיים לנשיאה ומסוכנים דיים כדי לחייב שם. התיק שלו עשוי מכפפה חרוכה, טיימר מחזור, מגש דחייה, קופוני זכוכית לחץ וטבעות איטום עם סימני אצווה שרוטים. המגש חשוב מכול: הוא מוכיח שחלקים שבורים לא היו פסולת לפני שלימדו את גבול הלחץ הבא כיצד להחזיק. טורס הופך Lore של משאבים ל-Lore של עבודה. קטגוריות salvage מתחילות כאן ככוויות, עיכובים, כשלים מתויגים והחלטה לשמור ראיה למה שנסדק.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+תיק: ליאן טורס. כפפת חום, טיימר מחזור ומגש דחייה תואמים לאותה אצוות זכוכית לחץ.
 
 ## Terminal
 
-HE LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+מחשלת נביעה V-9 / TORRES, LIAN: מגש הדחייה שמר טבעות איטום סדוקות, זכוכית לחץ עכורה ושלושה קופוני התחממות יתר מסומנים. הערת אצווה: הכשל מלמד את האיטום הבא רק אם הכשל נשאר מתויג.
 
 ## Audio
 
-HE LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+טורס שמר את החלקים הרעים. במחשלת, רצפה נקייה אמרה שמישהו זרק את השיעור.
 
 ## Field Note
 
-HE LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+להשתמש בטורס ליד אביזרי מחשלת נביעה, מתכוני זכוכית לחץ, טבעות איטום דחויות ושולחנות שדרוג שצריכים היסטוריה נראית של חלקים שכשלו.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/he_IL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "資源産出データ境界"
+title: "資源産出受入行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 資源産出データ境界
+# 資源産出受入行
 
-HECTON-8 の資源価値はラベルではなく連鎖だ。数値はテーブルが所有するが、その数値が存在する理由は fiction が持つ。誰が、どの圧力で、どの保管印で採り、ルートがその鉱脈をあとどれだけ安全に削れるのか。
+HECTON-8周辺のサルベージ台帳は、鉱物名だけで値を付けない。産出記録にはサンプル種別、圧力帯、ルート保管、枯渇状態、汚染段階、パケットハッシュが必要だ。それがそろうまで掲示価値は信用されない。圧力履歴のないサンプルは未払いの質量。
 
 ## Scanner
 
-産出行は裸の価値を拒否する: 分類、圧力帯、保管、枯渇、hash が一致しなければならない。
+サンプル行未完了：圧力履歴、保管等級、枯渇状態、汚染段階、パケットハッシュが一致していない。
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: packet hash、資源分類、圧力帯、保管等級、希少度曲線、枯渇挙動なしに数値は受理されない。圧力履歴のないサンプルは価値ではなく証拠。
+産出受入スキーマ / Aegir Reclamation Pool：資源クラス、圧力帯、保管等級、希少度曲線、枯渇挙動、汚染段階、パケット証人ハッシュがそろうまで価値計上を拒否。袋入りの石は、圧力ルートが証明されるまでただの質量。
 
 ## Audio
 
-圧力履歴のないサンプルに価値はない。
+Black Keel：圧力ルートと保管ハッシュ確認後にサンプル保留を受理。それまではバラスト扱い。
 
 ## Field Note
 
-産出数値は、圧力帯、保管等級、枯渇挙動、packet hash が一致するまで暫定。
+行に圧力帯がないなら値段交渉はするな。死荷重に入れ、容器を封印したまま、保管が通ってからブローカーに払わせろ。
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ja_JP. -->

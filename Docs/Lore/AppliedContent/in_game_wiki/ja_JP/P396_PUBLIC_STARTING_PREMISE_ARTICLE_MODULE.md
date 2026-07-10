@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder開始請求"
+title: "マローダー開始請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder開始請求
+# マローダー開始請求
 
-冒頭記録は、プレイヤーを債務圧力下の訓練済みオペレーターとして置く。観光客でも選ばれた相続人でも家族の復讐者でもない。ポンプ、シール、ルート用紙、Deep Reachの略語を、残骸がその用紙と食い違い始める前から理解している人物だ。最初の一時間は実務に固定される: bathydropを封じ、圧力を戻し、破損機械を読み、貨物を回収し、どの公式文がすでに嘘なのか判断する。
+最初のHECTON-8記録は、観光客や選ばれた生存者を紹介しない。リーエン圧力下の訓練済みオペレーターを名指しする。最初のハッチが開く前から、ポンプ略記、シール警告、避難タグ、Deep Reachの責任文句を読める人物だ。開始作業は具体的である。バシドロップを塞ぐ。圧力を確認する。P-63棚をスキャンする。シール経路が読めてから機械を再起動する。支払われるなら貨物を、保管時計に耐えるなら証拠を回収する。
 
 ## Scanner
 
-公開claim記録。開始ルートは、Deep Reachのfield-systems経験を持つ債務下のMarauder、損傷したbathydrop、P-63上空のBlack Keel回収窓を示す。
+公開請求記録。Black Keelのリーエンファイルは、元Deep Reachフィールドシステム専門員、損傷したバシドロップ、経路P-63、閉じる保管窓を記載している。
 
 ## Terminal
 
-公開アーカイブノード // 開始請求。契約者記録: 元Deep Reach field-systems専門員。現状: lien下のMarauder。ルート: Black Keel recovery claim、P-63棚への降下、custody window閉鎖前の証拠と貨物の返送。
+公開アーカイブノード // BLACK KEEL CLAIM BK-P63-2190。状態: リーエン拘束マローダー。旧許可: Deep Reachフィールドシステム / 避難インフラ。成果物: 現地保管T+06:40前の貨物質量および採用可能な証拠。
 
 ## Audio
 
-HECTON-8を見物に来たのではない。よく知っている書類へ戻ってきたのだ。
+契約書は昔の略語を知っている。それは真実を話すこととは別だ。
 
 ## Field Note
 
-Marauderメモ: 契約はお前の過去を知っている。それで正直になるわけではない。
+マローダー記録: 請求ファイルが自分の許可レベルを知っているなら、支払いより先に省略を読め。
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ja_JP. -->

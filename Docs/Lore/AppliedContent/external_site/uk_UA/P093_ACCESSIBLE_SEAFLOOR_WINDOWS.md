@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Доступні вікна морського дна
 
-Більша частина морського дна HECTON-8 недоступна звичайній сміливості. Тиск будує стіну раніше, ніж з'являється ґрунт. Доступні вікна - винятки: рвані місця, де зруйнований шельф, оголений гребінь, прогрітий жерловий шрам або щільний ропний стовп змінюють криву спуску. Це не безпечні печери. Це вузькі угоди з геологією. Екіпаж може торкнутися старої кори, підняти мінерали, вирощені тиском, знайти запечатане залізо колонії або прочитати поховану подію, перш ніж океан знову закриє маршрут.
+Accessible Seafloor Windows - rare pressure breaks, де HECTON-8 exposes ancient floor, high-risk salvage, mineral seams і evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Тут shell tore thin enough, щоб crawler touched old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Більша частина moon keeps its floor as a pressure secret. Windows - exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/uk_UA. -->

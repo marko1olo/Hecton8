@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Juno Kade/Relay"
+title: "جونو كيد، موثق المرحل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Juno Kade/Relay
+# جونو كيد، موثق المرحل
 
-AR LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+عمل جونو كيد على مكتب الترحيل حيث اصطدم قانون HECTON-8 بسرعة الضوء. ختمه، وسلّم الحزم، وشريط الشاهد، وخدوش الصينية تظهر عملا مبنيا للتأخير: اجعل الحقيقة جسما، واختم من لمسها، واحفظها سليمة حتى يتسلمها ناقل أو مستقبل. الدليل لا يعد بالإنقاذ. يشرح لماذا تظل الشهادة مهمة في نظام تصل فيه كل رسالة بعد أن يبرد الجسد.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+ملف: جونو كيد. وجه الختم، وصينية الحزم، وشريط الشاهد تحمل علامة الحفظ نفسها من نافذة متأخرة.
 
 ## Terminal
 
-AR LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+ساحة الترحيل A-17 / KADE, JUNO: ختم الحزم الصادرة بعد كل نافذة ناقل. ضغط الختم وغبار الصينية وشريط الشاهد تؤكد الحفظ حتى حين يتجاوز زمن الرد زمن الإنقاذ.
 
 ## Audio
 
-AR LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+كان كيد يوثق حقائق ستصل متأخرة جدا لإنقاذ أحد، ومع ذلك كان عليها أن تنجو من الرحلة.
 
 ## Field Note
 
-AR LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+استخدم كيد قرب ساعات نوافذ الاتصال وصواني الحزم وأختام التوثيق وكشف الأدلة المتأخر. يجب أن يجعل ملفه المسافة قانونية لا مجرد فكرة.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ar_SA. -->

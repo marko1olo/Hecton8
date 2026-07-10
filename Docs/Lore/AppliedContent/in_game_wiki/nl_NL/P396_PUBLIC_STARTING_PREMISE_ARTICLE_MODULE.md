@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder-startclaim"
+title: "Startclaim van de Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder-startclaim
+# Startclaim van de Marauder
 
-Het openingsrecord zet de speler neer als getrainde operator onder schulddruk. Geen toerist, gekozen erfgenaam of familiewreker; deze persoon begrijpt pompen, afdichtingen, routeformulieren en Deep Reach-afkortingen voordat het wrak die formulieren tegenspreekt. Het eerste uur blijft praktisch: bathydrop afdichten, druk herstellen, beschadigde machines lezen, vracht bergen en beslissen welke officiële regels al liegen.
+Het eerste HECTON-8-record introduceert geen toerist of gekozen overlever. Het noemt een getrainde operator onder schulddruk: iemand die pompafkortingen, afdichtingswaarschuwingen, evacuatielabels en Deep Reach-aansprakelijkheidszinnen al leest voordat het eerste luik opengaat. Het beginwerk is concreet. De bathydrop dichten. Druk bevestigen. Het P-63-plateau scannen. Machines pas herstarten wanneer het afdichtpad klopt. Vracht bergen als die betaalt, en bewijs als het de bewaarklok overleeft.
 
 ## Scanner
 
-Publiek claimrecord. De openingsroute identificeert een Marauder met schulddruk, Deep Reach field-systems-verleden, beschadigde bathydrop en Black Keel-herstelvenster boven P-63.
+Openbaar claimrecord. Het Black Keel-panddossier noemt een voormalige Deep Reach-veldsystemenspecialist, een beschadigde bathydrop, route P-63 en een sluitend bewaarnster.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // STARTCLAIM. Contractantdossier: voormalig Deep Reach field-systems-specialist. Huidige status: Marauder onder lien. Route: Black Keel recovery claim, afdaling naar P-63 shelf, terugkeer met bewijs en vracht voor sluiting van custody window.
+OPENBARE ARCHIEFKNOOP // BLACK KEEL CLAIM BK-P63-2190. Status: pandgebonden Marauder. Eerdere vrijgave: Deep Reach-veldsystemen / evacuatie-infrastructuur. Levering: vrachtmassa plus toelaatbaar bewijs vóór lokale bewaring T+06:40.
 
 ## Audio
 
-Je bezoekt HECTON-8 niet. Je keert terug naar papierwerk dat je te goed kent.
+Het contract kent je oude afkortingen. Dat is niet hetzelfde als de waarheid vertellen.
 
 ## Field Note
 
-Marauder-notitie: het contract kent je verleden. Daar wordt het niet eerlijk van.
+Marauder-notitie: als een claimdossier je vrijgaveniveau kent, lees dan de weglatingen vóór de uitbetaling.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/nl_NL. -->

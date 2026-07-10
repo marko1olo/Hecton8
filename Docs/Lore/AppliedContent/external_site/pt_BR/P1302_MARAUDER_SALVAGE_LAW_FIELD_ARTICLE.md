@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Artigo de Campo sobre Lei de Salvage Marauder
 
-A palavra Marauder deve soar desconfortável. Não é uma classe romântica nem um cargo limpo. Em HECTON-8, um Marauder surge quando a lei viaja mais rápido como papelada do que como ajuda. O sistema de reivindicações precisa de alguém que entre em um ativo morto ou disputado, recupere valor, toque propriedade contaminada, aceite risco pessoal e deixe registros suficientes para outros escritórios fingirem controle.
+A palavra Marauder deve engasgar. Não é rótulo de fantasia de poder. É o título que um sistema jurídico de fronteira inventa quando precisa que alguém toque um ativo arruinado sem admitir que esse ativo era um local de trabalho cheio de gente.
 
-Isso deixa o jogador moralmente exposto desde o primeiro minuto. Você não é um cavaleiro vindo salvar uma colônia. Você é um catador profissional com procedimento antigo da Deep Reach nas mãos, uma janela de dívida acima da cabeça e um oceano cheio de pessoas que os livros já tentaram esmagar em categorias. O horror não é você saquear. O horror é que saquear talvez seja a única ação que o sistema ainda reconhece.
+            HECTON-8 usa Marauders para manter as ações do jogador moralmente carregadas. Você saqueia porque oxigênio, dívida e ferramentas tornam isso necessário. Você também documenta porque os objetos roubados podem ser as únicas provas que sobrevivem à água, pressão e limpeza corporativa. Um bom Marauder não é limpo. Ele sabe a diferença entre desmontar uma sala e preservar o que a sala prova.
 
-A linguagem de campo Marauder nasceu dessa pressão. Um anel preto não é vandalismo se avisa o próximo mergulhador de que o dono oficial mente. Um corte sobre uma causa de morte carimbada não é sentimento se aponta para certificado de bomba ausente. Um nome de trabalhador ao lado de marca de rota pode ter mais força legal que um memorial polido.
+            A cultura de campo vem dessa contradição. Marcas em parede, etiquetas riscadas, nomes de trabalhadores, setas de pressão e taquigrafia feia formam uma segunda lei sob a oficial. É rude porque a linguagem educada já falhou. É rápida porque ninguém lê manual de reivindicação enquanto uma antepara respira.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/pt_BR. -->

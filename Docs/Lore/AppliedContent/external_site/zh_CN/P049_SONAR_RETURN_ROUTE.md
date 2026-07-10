@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "声呐返回路线"
+title: "声呐返程路线"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 声呐返回路线
+# 声呐返程路线
 
-HECTON-8的导航把回程当成工作，而不是安慰。陈旧信标仍可能指向正确走廊，同时藏起新障碍、移动淤泥床，或一扇改变回声的压力门。
+Sonar return routes让navigation成为持续任务：stale beacons可能指向right corridor，同时隐藏new silt、obstruction drift、fauna movement或pressure-door changes。
 
 ## Scanner
 
-返回信标已陈旧。旧安全 ping 不再匹配走廊回声；货物质量会拖慢撤离窗口。
+return beacon stale。old safe ping不再匹配corridor echo；cargo mass会拖慢retreat window。
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09：最后一次干净回声无效。Black Keel ping 低置信接收。障碍漂移和淤泥密度超过地图公差。货物抽取前标记第二条线。
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid。Black Keel ping received at low confidence。Obstruction drift、silt density和cargo mass exceed map tolerance。extraction前mark secondary line。
 
 ## Audio
 
-路线还在。回声已经不同。
+route仍在那里。echo已经不同。
 
 ## Field Note
 
-装载前先 ping。空手时回家的路已经变了，满包时它不会原谅你。
+loading之前先ping。如果way home在hands empty时changed，它不会原谅full pack。
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/zh_CN. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Provas de Responsabilidade Deep Reach"
+title: "Provas de responsabilidade da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Provas de Responsabilidade Deep Reach
+# Provas de responsabilidade da Deep Reach
 
-A Deep Reach é culpada porque o desastre de HECTON-8 pode ser natural e mal administrado ao mesmo tempo. O oceano forneceu força real: tide resonance, cryosphere shear, storm stacking e pressure failure. A companhia forneceu margins finas, authorization tardia, quarantine delay, Atlas priority rules e papelada limpa o suficiente para sobreviver às pessoas que descrevia. As provas mais fortes são físicas e procedurais: uma porta mantida por executive authority, uma sensor tolerance alterada antes do fechamento da janela, uma fila atrasada por legal clearance, um loss ledger convertendo trabalhadores em claim categories enquanto a água ainda se movia. O jogador aprende a desconfiar da linguagem oficial comparando-a a amassados, relógios e rotas.
+O caso público contra a Deep Reach é mais forte quando mantém o oceano real. HECTON-8 não foi destruída por conspiração caricata nem ciência impossível. Foi atingida por condições que a empresa modelou, precificou, atrasou e depois descreveu numa linguagem capaz de sobreviver ao tribunal melhor que trabalhadores sobreviveram à pressão. A prova útil é física e procedimental: folhas de tolerância alteradas, retenções de rota, janelas de evacuação atrasadas, rótulos de quarentena, tabelas de prioridade Atlas e livros de perda que transformavam nomes em categorias de reivindicação enquanto a água ainda se movia pelas salas. A Deep Reach não precisou inventar o desastre. Precisou de assinaturas suficientes para que a resposta mais barata parecesse autorizada.
 
 ## Scanner
 
-Registro de liability. Física real de marés, margin risk aceito, atraso de evacuação, quarantine holds, Atlas weighting e linguagem de perda sanitizada convergem na mesma cadeia de provas.
+Registro de responsabilidade. A força de maré é real; mudanças de margem assinadas, retenções de quarentena, filas de evacuação, pesos Atlas e linguagem de perda carregam a parte evitável.
 
 ## Terminal
 
-NÓ DE ARQUIVO PÚBLICO // PROVAS DE LIABILITY. Great Tide aceito. Revisão aberta para sensor margins, atraso de evacuation queue, quarantine holds, Atlas weighting, worker classification e loss conversion.
+NÓ DE ARQUIVO PÚBLICO // REVISÃO DE RESPONSABILIDADE DR-H8. Força natural aceita. Campos abertos: margem de sensor, autoridade de porta, atraso de fila, retenção de quarentena, ponderação Atlas, conversão de trabalhador em categoria de reivindicação.
 
 ## Audio
 
-Um desastre pode ser natural e ainda carregar assinaturas.
+A maré quebrou aço. As assinaturas decidiram quais portas ficavam fechadas.
 
 ## Field Note
 
-Nota de Marauder: não discuta com a maré. Discuta com as assinaturas ao lado dela.
+Nota de Marauder: nunca discuta que a maré foi falsa. Coloque as assinaturas ao lado do relógio de maré.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pt_BR. -->

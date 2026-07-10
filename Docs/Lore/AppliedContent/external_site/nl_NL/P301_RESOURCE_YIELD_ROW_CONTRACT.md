@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Datagrens van hulpbronopbrengst"
+title: "Acceptatieregel voor opbrengst"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datagrens van hulpbronopbrengst
+# Acceptatieregel voor opbrengst
 
-Hulpbronwaarde in HECTON-8 is een keten, geen label. De tabel bezit het getal, maar de fictie bezit waarom het bestaat: wie het monster nam, onder welke druk, met welke bewaringsstempel en hoeveel van die ader de route nog veilig kan strippen.
+Bergingsboeken rond HECTON-8 prijzen mineralen niet alleen op naam. Een opbrengstrecord heeft monsterklasse, drukband, routebewaring, uitputtingsstatus, besmettingsfase en pakkethash nodig voordat de geplaatste waarde te vertrouwen is. Een monster zonder drukgeschiedenis is onbetaalde massa.
 
 ## Scanner
 
-Opbrengstrij weigert losse waarde: klasse, drukband, bewaring, uitputting en hash moeten overeenkomen.
+Monsterregel onvolledig: drukgeschiedenis, bewaargraad, uitputtingsstatus, besmettingsfase en pakkethash komen niet overeen.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: geen getal wordt geaccepteerd zonder packet hash, hulpbronklasse, drukband, bewaringsgraad, zeldzaamheidscurve en uitputtingsgedrag. Een monster zonder drukgeschiedenis is bewijs, geen waarde.
+OPBRENGST-INNAME SCHEMA / Aegir Reclamation Pool: waardeplaatsing weigeren tot grondstofklasse, drukband, bewaargraad, zeldzaamheidscurve, uitputtingsgedrag, besmettingsfase en pakketgetuigehash aanwezig zijn. Steen in een zak is massa tot de drukroute bewezen is.
 
 ## Audio
 
-Een monster zonder drukgeschiedenis is geen waarde.
+Black Keel: monsterbewaring geaccepteerd na drukroute en bewaarhash. Tot dan reist het als ballast.
 
 ## Field Note
 
-Opbrengstcijfers blijven voorlopig tot drukband, bewaringsgraad, uitputtingsgedrag en packet hash overeenkomen.
+Heeft de regel geen drukband, onderhandel dan niet over prijs. Zet het bij dode massa, houd de container verzegeld en laat de broker betalen zodra bewaring vrij is.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach優先フック"
+title: "Deep Reach優先hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach優先フック
+# Deep Reach優先hook
 
-優先フックは、植民地が沈黙した後もDeep Reachを危険に保つ最も清潔な方法だ。会社は遠隔の奇跡でBlack Keelを操縦する必要がない。carrierがまだ認識する古い証明書、Atlasアクセスに結びついたcontinuity規則、特定の危険条件で請負人の身体より上位になるpayload区分があれば足りる。経路はわずかに動かせる。封印ケースはキューを上がれる。隔離ロックは閉じたまま残り、操作者の酸素残量は別の債務項目になる。結果は妨害より冷たい。システムは書かれた通りに動き、Deep Reachは災害後も残る部品の中へ自分を書き込む方法を学んだ。
+Deep Reach優先hookはcorporate pressureをlegacy certificates、quarantine clauses、Atlas tokens、payload priority、evidence custodyに接地し、不可能なinstant commandに頼らない。
+
+## Scanner
+
+古いcertificate hook。clauseをまだ所有しているなら、Deep Reachにbridgeは要らない。
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificateはAegir claim law下でpayload recovery、quarantine lock、Atlas access token、evidence suppression queue、sealed infrastructure proofを前進させる可能性あり。verified hazard proofがcustody valueを超えない限りHuman extraction priority unchanged。
+
+## Audio
+
+答えを操るのに、彼らがbridgeに立つ必要はない。
+
+## Field Note
+
+conspiracyより清潔だ。paperworkが署名者たちより長く生き残った。
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/ja_JP. -->

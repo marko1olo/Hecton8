@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, notário de retransmissão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Juno Kade/Relay
+# Juno Kade, notário de retransmissão
 
-PT LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Juno Kade transforma a ausência de FTL em ocupação humana. Ele é a pessoa entre pânico e registro: o notário de retransmissão que garante que um pedido de evacuação, uma negação de rota ou uma marca de morte atravesse distância interestelar sem virar boato.
 
 ## Scanner
 
-PT LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossiê: Juno Kade. Face do selo, bandeja de pacotes e fita de testemunha levam a mesma marca de custódia de janela tardia.
 
 ## Terminal
 
-PT LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+PÁTIO DE RETRANSMISSÃO A-17 / KADE, JUNO: pacotes de saída carimbados após cada janela de portador. Pressão do selo, poeira da bandeja e fita de testemunha confirmam custódia mesmo quando o tempo de resposta excede o de resgate.
 
 ## Audio
 
-PT LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade certificava fatos que chegariam tarde demais para salvar alguém e ainda precisavam sobreviver à viagem.
 
 ## Field Note
 
-PT LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Usar Kade perto de relógios de janela de comunicação, bandejas de pacote, selos notariais e revelações de prova atrasada. O dossiê dele deve tornar a distância legal, não abstrata.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/pt_BR. -->

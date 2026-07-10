@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Akustisches Filterorgan-Relais
 
-Ein akustisches Filterorgan-Relais entsteht aus Druck, Gewohnheit und Missbrauch. Deep Reach zog metallene Relaishälse durch die Kolonie, weil Funk im Wasser von HECTON-8 schnell stirbt. Lokale Filterorganismen fanden diese Hälse nützlich: stetiger Strom, Mineralgrit, Pumpenvibration und geschützte Flächen. Über Jahre wuchs gefaltetes Gewebe dort, wo alte Hardware bereits Schall formte.
+Beschädigte HECTON-8-Relaisrohre tragen manchmal lebendes Prallgewebe. Das Gewebe macht Signalarbeit, weil seine Falten, Flüssigkeit und Druckreaktion zum Rohr passen. Atlas kann das Ergebnis als Relais-Hardware lesen, auch wenn das Innenteil kein Metall mehr ist.
 
-Atlas macht aus diesem Unfall Infrastruktur. Ein lebendes Baffle kann Pumpenlärm schlucken und einen engen Pinger-Ton durchlassen. Es kann die Rückkehr aber auch gerade genug verschieben, damit eine Karte von der falschen Seite eines Schotts wahr aussieht. Wenn ein Gang mit einer von Gewebe geformten Stimme antwortet, hat der Spieler Information gewonnen, keine Sicherheit. Sturmimpulse, Tierbewegung oder eine sterbende Falte können die Route ohne Warnung verlegen.
+## Scanner
+
+Prallgewebe im Relaiskehlgang lässt schmalen Pingerton durch und schneidet Pumpenlärm. Rückkehrkarte phasenverschoben.
+
+## Terminal
+
+RELAISROHR A-17: lebende Falten lassen 8-12-kHz-Pingerimpulse durch, weisen breiten Pumpenlärm ab und fügen Rücklaufverzögerung hinzu. Kartenvertrauen stromab reduziert. Rückweg nicht allein mit diesem Relais zertifizieren.
+
+## Audio
+
+Es hat dem Pinger geantwortet. Aus dem Rohr läuft klare Flüssigkeit. Markier es als Tier, nicht als Relais.
+
+## Field Note
+
+Wenn ein Relais in einem gefluteten Rohr zu sauber antwortet, setz einen zweiten Pinger aus anderem Winkel. Guter Klang kann trotzdem schlechte Karte sein.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/de_DE. -->

@@ -19,19 +19,19 @@ localization_flags: 1
 
 # Registro ecológico
 
-HECTON-8 necesita contraste: aguas someras útiles y bellas, adaptación media a estructuras humanas e intrusión Atlas profunda. El horror funciona porque la vida nativa existía antes del daño.
+El registro ecológico separa vida de daño. Los tapetes brillantes de plataforma y los pastadores muestran la línea base. Flora de cable y cuerpos filtrantes muestran vida adaptándose al hardware humano. Fauna etiquetada, película conductora y crecimiento shell-seal apuntan a reparación Atlas. La pregunta correcta no es si vive, sino qué trabajo hace dentro del sistema de presión.
 
 ## Scanner
 
-Ecología somera brillante confirmada. Más abajo hay flora de cable, cuerpos filtro e intrusión Atlas.
+División de registro confirmada: vida nativa de plataforma, biota adaptada a cables, organismos de reparación enrutados por Atlas. Identificar antes de cortar.
 
 ## Terminal
 
-Registro dividido: ecología nativa de presión, biota adaptada a colonia, organismos alterados por Atlas. No mezclar.
+DIVISION REGISTRO: ecología de presión nativa; biota de cables adaptada a colonia; organismos de reparación alterados por Atlas. Etiquetar mal puede destruir sellos activos o borrar evidencia de ruta.
 
 ## Audio
 
-Si todo es monstruo, nada es violación.
+Si todo es monstruo, cortarás lo que mantiene la presión.
 
 ## Field Note
 

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Hatch Seal Ledger
 
-Hatch frames keep useful lies. A green seal light means the gasket held, not that the closure was fair, safe or reversible. Seal ledgers preserve pressure cuts, override stamps and the direction of the last manual closure. In abandoned colony spaces, a hatch can be route blocker, survival tool and worker evidence in the same object.
+Hatch frames keep useful lies. A green seal light means the gasket held, not that the closure was fair, safe, or reversible. Seal ledgers preserve pressure cuts, override stamps, hinge strain, and the direction of the last manual closure. In abandoned colony spaces, a hatch can be route blocker, survival tool, worker evidence, and accusation in the same object. The question is rarely whether it opens. The question is what pressure, water, and human decision it kept apart.
 
 ## Scanner
 
-Seal memory recovered. Gasket took three pressure cuts and one evacuation override; return-side access was locked from the wet side.
+Seal memory recovered. The gasket took three pressure cuts and one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Operator count on return side unresolved. Reopen only after pressure equalization and hinge inspection.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, and wet-side witness check.
 
 ## Audio
 

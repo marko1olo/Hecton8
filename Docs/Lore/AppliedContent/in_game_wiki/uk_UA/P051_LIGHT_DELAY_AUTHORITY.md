@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Влада світлової затримки
 
-На HECTON-8 немає ansible і немає живого командного голосу з орбіти. Повідомлення йдуть зі швидкістю світла, потім втрачають ще час у буферах, штормових вікнах, геометрії ретрансляторів і правилах опіки носія. Гравець читає кожну відповідь як старий доказ, а не наказ.
+HECTON-8 не має ansible, дружнього голосу, що нахилився з орбіти, і способу зробити десять світлових років милосердними. Messages рухаються зі швидкістю світла, а потім втрачають ще час на relay geometry, storm scatter, buffer law і custody queues Black Keel. Transmission може бути чесною й водночас надто старою, щоб їй коритися. Поверхня рано вчить правилу: кожна remote answer спершу evidence, потім instruction, і ніколи comfort. Якщо стіна, вода й pressure суперечать message, перемагає local world.
 
 ## Scanner
 
-Кеш ретрансляційної щогли: виклик пішов чисто, а потім чекав за світлом, законом черги, штормовим розсіюванням і лінією видимості Aegir.
+Relay mast cache. Виклик вийшов чисто, а тоді чекав за light, queue law, storm scatter і Aegir line-of-sight.
 
 ## Terminal
 
-ПОВНОВАЖЕННЯ ЗВ'ЯЗКУ: односторонню затримку підтверджено. Штормове розсіювання високе. Черга ретранслятора під пріоритетом опіки. Локальна влада виживання активна.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.
 
 ## Audio
 
-Відповідь іде. Це ще не робить її порятунком.
+Відповідь іде. Це ще не rescue.
 
 ## Field Note
 
-Перший крик ніхто не цензурував. Фізика несла його досить повільно, щоб політика встигла наздогнати.
+Перший scream ніхто не цензурував. Physics несла його досить повільно, щоб policy встигла наздогнати.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/uk_UA. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bereikbare zeebodemvensters"
+title: "Bereikbare Seafloor Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bereikbare zeebodemvensters
+# Bereikbare Seafloor Windows
 
-Het grootste deel van HECTON-8s zeebodem is met gewone moed onbereikbaar. Druk bouwt een muur voordat de bodem verschijnt. Bereikbare vensters zijn de uitzonderingen: gescheurde plaatsen waar een ingestorte richel, open rug, verhit bronlitteken of dichte pekelkolom de daalcurve verandert. Het zijn geen veilige grotten. Het zijn nauwe afspraken met geologie. Een bemanning kan oude korst raken, drukmineralen bergen, verzegelde koloniehardware vinden of een begraven gebeurtenis lezen voordat de oceaan de route sluit.
+Accessible Seafloor Windows zijn rare pressure breaks waar HECTON-8 ancient floor, high-risk salvage, mineral seams en evidence normally sealed below lethal water blootlegt.
+
+## Scanner
+
+Exposed ridge marker. Hier scheurde de shell thin enough zodat een crawler old floor kan aanraken without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Het grootste deel van de moon houdt zijn floor als pressure secret. De windows zijn exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/nl_NL. -->

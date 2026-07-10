@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Defaillance de confinement par pression"
+title: "Echec de pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Defaillance de confinement par pression
+# Echec de pressure containment
 
-Le blue debt n'est pas un tresor maudit. C'est une memoire materielle sous pression. Le residu Xenon-Omega reste utile tant que son reseau croit etre encore profond, froid et comprime. Sortez-le trop vite, stockez-le mal, laissez le cisaillement de signal entrer dans le caisson, et l'echantillon commence a ceder par etapes lisibles. D'abord vient la derive: les metres mentent, la resonance tremble, les alarmes se contredisent. Puis le reseau fracture. La saumure entre. La biologie suit la chimie. A l'etape 4, la valeur est morte, mais la contamination vit.
+Pressure Containment Failure definit les handling stages du blue debt, reliant resource value a depth, pressure memory, bloom contamination, route planning et salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear et bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Un sample peut valoir une fortune a une depth et become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/fr_FR. -->

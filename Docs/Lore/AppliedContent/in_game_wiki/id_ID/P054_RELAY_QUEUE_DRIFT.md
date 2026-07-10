@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Drift Antrean Relai"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drift Antrean Relai
+# Relay Queue Drift
 
-Komunikasi tertunda berbahaya karena bisa tetap akurat pada waktu yang salah. Peringatan kapal induk dapat menyebut katup nyata, kebocoran nyata, dan rute nyata yang sudah berubah oleh tekanan. Pemain harus membandingkan umur paket dengan bukti lokal sebelum percaya pada otoritas jauh.
+Relay queue drift adalah bentuk kejujuran paling mematikan di HECTON-8. Delayed carrier packet bisa menjelaskan real valve, real safe door, real low-current corridor, dan real leak yang sudah bergerak. Order itu tidak palsu; ia milik ruangan yang telah diubah pressure, flooding, silt, heat, atau collapse. Field practice yang baik bukan pembangkangan demi pembangkangan. Itu membandingkan packet age dengan wet paint, fresh salt, door strain, pump sound, dan arah yang ingin ditempuh loose debris.
 
 ## Scanner
 
-Stempel relai lebih tua daripada kebocoran yang disebutnya; instruksi itu benar untuk ruangan yang sudah tidak ada.
+Relay stamp lebih tua daripada leak yang disebutnya. Instruction itu benar untuk room yang sudah tidak ada.
 
 ## Terminal
 
-DRIFT ANTREAN: umur paket melebihi validitas rute. Bukti lokal mengungguli instruksi kapal induk sampai jendela relai segar terbuka.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction sampai fresh relay window terbuka. Treat delayed route orders as archival kecuali pressure, door state, dan waterline cocok.
 
 ## Audio
 
-Pesannya benar. Itu masalahnya.
+Message itu benar. Itulah masalahnya.
 
 ## Field Note
 
-Kebenaran yang terlambat masih bisa membunuh.
+Truth yang terlambat masih bisa membunuh.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/id_ID. -->

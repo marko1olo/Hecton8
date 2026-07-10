@@ -19,17 +19,15 @@ localization_flags: 0
 
 # Aegir Moon Ladder
 
-The Aegir moon ladder keeps HECTON-8 inside a physical system. Inner moons create radiation and relay hazards; middle moons hold metal, ice, route buoys and old depots; outer moons carry cold claims and dead beacons.
-
-HECTON-8 is neither the innermost moon nor the farthest. It is the moon that still pays. That is why the rest of the ladder keeps touching its rescue windows, salvage law and signal routes.
+The Aegir moon ladder keeps HECTON-8 inside a working sky. Skarn throws charged weather across antennas. Vela sheds ice and dust into optical routes. Claw and Lumen keep old buoy logic alive. Thorne failed quietly. Anvil fed metal until the route stopped paying. Kestrel cuts relay lines at the worst angles. Mute repeats ownership into nobody's hands. HECTON-8 is not the first moon in the chain and not the last. It is the one whose drowned infrastructure still has enough value to keep ships, insurers, and marauders arguing over windows.
 
 ## Scanner
 
-Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated ocean level.
 
 ## Terminal
 
-MAJOR AEGIR MOONS // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, and custody windows attached.
 
 ## Audio
 

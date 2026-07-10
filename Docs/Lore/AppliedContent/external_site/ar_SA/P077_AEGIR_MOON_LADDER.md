@@ -19,22 +19,22 @@ localization_flags: 1
 
 # سلم أقمار Aegir
 
-يمنح سلم أقمار Aegir قمر HECTON-8 طبقة فلك محلية نافعة: أقمار أخرى تفسر نوافذ المسار وclaims الميتة وشائعات salvage وتوقيت الاسترداد الفاشل.
+يعطي Aegir Moon Ladder قمر HECTON-8 local astronomy layer: other moons تشكل transfer timing وeclipse dark وrelay loss وsalvage rumors وcold claims وfailed recovery windows.
 
 ## Scanner
 
-خريطة سلم الأقمار. HECTON-8 خطر عامل في نظام متحرك، وليس مستوى معزولاً.
+Moon ladder chart. HECTON-8 هو one working hazard in a moving system، وليس isolated ocean level.
 
 ## Terminal
 
-أقمار AEGIR الكبرى // H1 Skarn، H2 Vela، H3 Claw، H4 Lumen، H5 Thorne، H6 Anvil، H7 Kestrel، H8 HECTON، H9 Mute. نموذج transfer وeclipse مرفق.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, and custody windows attached.
 
 ## Audio
 
-في الخريطة أقمار أكثر من الرحمة.
+في map أقمار أكثر من mercy.
 
 ## Field Note
 
-Skarn يحرق. Vela تسقط الجليد. Anvil يطعم المعدن. Kestrel يقطع المرحلات. HECTON يغرق.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/ar_SA. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Борг тонна-вікна"
+title: "Борг тоннажного вікна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Борг тонна-вікна
+# Борг тоннажного вікна
 
-Борг тонна-вікна — точка, де фізика стає фінансами. У Black Keel немає нескінченного запасу підйому, транзитного палива чи чистого карантинного об'єму. Кожен кілограм, піднятий з HECTON-8, конкурує з кожним кілограмом, потрібним, щоб оператор лишився живим. Лічильник боргу робить carrier жорстоким, не ламаючи hard science: порятунок можливий, але бюджет маршруту знову питає, що заслуговує маси.
+Борг тоннажного вікна - це місце, де HECTON-8 перестає бути лише історією жаху й стає orbital logistics. Black Keel має скінченний lift margin, скінченний clean volume, скінченний oxygen reserve і route price для кожного кілограма. Spare tank, sealed sample, damaged suit, proof case, body і crate of salvage змагаються в одному вікні. Система здається жорстокою, бо вона точна. Їй не треба вдавати, що rescue неможливий. Вона просто знову питає, що маршрут може дозволити собі підняти.
 
 ## Scanner
 
-Лічильник масового вікна. Кожен кілограм допомоги має ціну маршруту.
+Mass-window ledger. Допомога має вагу ще до того, як має мову.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: запас recovery burn звужено. Маса вилучення оператора конфліктує із запечатаним payload, баластним резервом, кисневим боргом і custody карантинного зразка. Ручний override вимагає оплаченого пріоритету або доказу небезпеки.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass конфліктує з sealed payload, ballast reserve, oxygen debt, quarantine sample volume і hull patch inventory. Manual priority потребує paid override, verified hazard proof або custody reclassification.
 
 ## Audio
 
-Корабель може забрати тебе або те, що ти знайшов. Він воліє число.
+Корабель може підняти життя. Питання в тому, що ще ledger змусить його нести.
 
 ## Field Note
 
-Кисень, баласт, доказ, payload, тіло: carrier зважує їх раніше, ніж милість.
+Oxygen, ballast, proof, samples, hull patch, body: carrier рахує милість кілограмами.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/uk_UA. -->

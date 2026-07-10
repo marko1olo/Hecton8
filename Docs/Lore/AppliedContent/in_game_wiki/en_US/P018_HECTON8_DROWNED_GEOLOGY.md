@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Drowned Geology
 
-The geology scan is a route read. Exposed ridges usually give shallow shelter; collapsed shelves collect salvage and silt; canyon funnels amplify current; brine curtains bend sonar and buoyancy; vent scars can cure sealant or cook it. Use terrain shape to decide when to cache cargo, when to mark a second line and when a depth upgrade is not optional.
+Drowned geology is how HECTON-8 teaches movement. Ridges shelter. Collapsed shelves collect salvage and choking silt. Canyons amplify current. Brine curtains bend sonar and buoyancy. Vent scars can cure sealant or cook it. A route is a temporary interpretation of rock, water, heat, and pressure.
 
 ## Scanner
 
-Layered shelf, canyon funnel, brine stair and vent scar detected. Treat terrain as pressure routing, not background.
+Layered shelf, canyon funnel, brine stair, vent scar, and silt exposure detected. Terrain is pressure routing, not background.
 
 ## Terminal
 
-DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence falls after storm surge.
+DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence decays after storm surge or salvage cuts.
 
 ## Audio
 

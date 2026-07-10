@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Wereldwijde oceaandieptebanden"
+title: "Globale Oceaan-Dieptebanden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Wereldwijde oceaandieptebanden
+# Globale Oceaan-Dieptebanden
 
-HECTON-8s oceaan lees je in banden, niet als een enkele bodemlijn. De fotische richel laat nog licht, wrakken, algen en roekeloze piloten toe. De industriële richel draagt kabelrif, pijpkooien en oude laadplatforms. Daaronder buigen pekeltrappen sonar en ballast. Abyssale machinevelden straffen reparaties. In het Atlas-bekken voelt druk als jurisdictie.
+HECTON-8's ocean is geen one long fall to a bottom. Het is een stack of laws. De photic shelf laat nog light, algae, broken habitat skin en corrigeerbare bad decisions toe. De industrial shelf is pipe cages, cable reef, loading decks en machines that answer late. Brine stairs bend sound and ballast tot een route tegelijk near and unreachable kan zijn. Abyssal machine fields straffen repairs met cold patience. Atlas basin is dieper dan danger; daar wordt pressure becomes jurisdiction.
 
 ## Scanner
 
-Dieptekaart. De eerste richel vergeeft slechte ballast; lager water factureert elke fout in druk, hitte en stilte.
+Depth chart. The first shelf vergeeft poor ballast; lower water factureert every mistake in pressure, heat, noise en silence.
 
 ## Terminal
 
-BANDEN: 0-250 m fotische bergingsrichel; 250-1200 m industriële richel en kabelrif; 1200-2800 m pekeltrap/canyon; 2800-4300 m abyssaal machineveld; 4300-5600 m Atlas-bekken.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Elke honderd meter neemt een gewoonte van je af.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Diepte op HECTON-8 is wet, weer, grens en honger met hetzelfde getal.
+Depth op HECTON-8 is law, weather, border en hunger met hetzelfde number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/nl_NL. -->

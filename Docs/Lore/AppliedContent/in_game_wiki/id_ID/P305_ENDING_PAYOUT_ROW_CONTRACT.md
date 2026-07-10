@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Batas Data Pembayaran Akhir"
+title: "Baris Catatan Bayaran Akhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Data Pembayaran Akhir
+# Baris Catatan Bayaran Akhir
 
-Batas ini menjaga ending sebagai catatan pertukaran, bukan skor kemenangan. Pembayaran penting, tetapi kustodi, bukti publik, karantina, utang, dan hak penerima bertindak setelah pemain pergi juga penting.
+Baris bayaran akhir menyimpan transaksi yang benar-benar kau buat. Keluar material bisa membersihkan sebagian lien sambil mengembalikan koordinat ke Recovery Compliance. Rilis ledger publik bisa melindungi nama dan menghilangkan kendali atas bukti. Pemutusan Atlas atau karantina mengubah penerima sebelum mengubah angka.
 
 ## Scanner
 
-Baris akhir mengikat penerima, kustodi, keadaan bukti, pembayaran, dan konsekuensi belum selesai.
+Baris hasil tertunda: penerima, rute muatan, status bukti, bayaran, tunda karantina, dan konsekuensi belum selesai belum ditutup.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: baris membutuhkan rute payload, penerima, keadaan bukti, pembayaran material, konsekuensi legal, delay karantina, dan biaya belum selesai. Kredit tidak menutup tempat kejahatan.
+SKEMA BAYARAN AKHIR / cek penerima dossier: jangan tutup catatan sebelum rute muatan, penerima, status bukti, bayaran material, penyesuaian lien, tunda karantina, konsekuensi ekologis, dan biaya belum selesai tertulis. Kredit dilepas setelah kustodi, bukan sebelumnya.
 
 ## Audio
 
-Kredit tidak menutup tempat kejahatan.
+Relai dossier: penerima menerima kustodi. Jam karantina mulai sebelum kredit bersih.
 
 ## Field Note
 
-Credit value, quarantine delay, dan dossier flags dicatat hanya setelah receiver dan evidence state jelas.
+Jangan sebut akhir sudah dibayar sebelum penerima disebut. Penerima salah, masa depan salah; laut sama, tagihan beda.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/id_ID. -->

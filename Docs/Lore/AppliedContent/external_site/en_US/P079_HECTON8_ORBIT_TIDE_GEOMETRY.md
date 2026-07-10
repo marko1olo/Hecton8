@@ -19,15 +19,15 @@ localization_flags: 0
 
 # HECTON-8 Orbit / Tide Geometry
 
-HECTON-8 Orbit / Tide Geometry is the hard-sci-fi disaster layer: tides, heat and pressure break the colony first; corporate priority turns failure into crime.
+HECTON-8 Orbit / Tide Geometry is the hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage, and pressure break the colony first; corporate priority turns failure into crime.
 
 ## Scanner
 
-TIDE GEOMETRY MODEL // Resonance, ice stress, storm surge and heat discharge exceeded evacuation forecast. Atlas continuity flags overrode retreat priority.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, and heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT TIDE CHAIN // Orbital forcing amplified ocean load. Artificial heat discharge and sealed drainage converted a tide event into colony failure.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, and sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 

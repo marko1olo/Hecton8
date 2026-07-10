@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Opóźnienie trasy bez FTL
 
-HECTON-8 nie ma kanału natychmiastowego ratunku. System Aegir osiągnięto przez precursor probes, beam infrastructure, pellet-fusion freight i układy hamowania, które traktują pilność jako kolejne ograniczenie masy. Wiadomość może przyjść przed sprzętem, który uczyniłby ją użyteczną. Carrier może uznać twoje istnienie, wycenić payload i trzymać valid claim, a nadal nie móc wydać descent mass przy złej weather, relay angle lub custody window. Publiczny tekst podróży musi utrzymać to ograniczenie widoczne, bo izolacja tutaj powstaje z inżynierii, prawa i logistyki naraz. Black Keel może być blisko prawnie i nieosiągalny fizycznie. To opóźnienie wyjaśnia, czemu gracz nadal naprawia uszczelnienia ręcznie po odpowiedzi relay.
+HECTON-8 nie ma kanału natychmiastowego ratunku. Ruch ludzi do Aegir składa się z map sond prekursorowych, infrastruktury pasów wiązki, frachtu fuzji pelletowej, systemów hamowania, okien nośników i prawnych przekazań przechowania. Pilność nie kasuje masy. Statek może wycenić ładunek, przyjąć roszczenie i trzymać twój zapis, a jednocześnie nie mieć przydziału zejścia, by przenieść do wody jeden użyteczny przedmiot. Dlatego gra traktuje komunikację jako dowód, nie ratunek. Odpowiedź dowodzi, że ktoś usłyszał alarm. Nie łata uszczelki, nie przesuwa bathydropu i nie skraca złego okna orbitalnego.
 
 ## Scanner
 
-Zapis tranzytowy. Ruch Aegir zależy od precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody i opóźnienia prawnego.
+Zapis tranzytu. Ruch Aegir zależy od map sond, pasów wiązki, frachtu fuzji pelletowej, masy hamowania, wieku pakietu, przechowania przekaźnikowego i okien zejścia przy pogodzie.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // GRANICA TRANZYTU. Brak FTL. Brak Ansible. Żywy ratunek wymaga fizycznego transferu, braking architecture, carrier position, descent mass i ważnego local window.
+PUBLICZNY WĘZEŁ ARCHIWUM // LIMIT TRANZYTU. FTL: brak. Ansible: brak. Żywy ratunek wymaga pozycji nośnika, przydziału hamowania, masy zejścia, lokalnej pogody i niewygasłego okna przechowania.
 
 ## Audio
 
-Pomoc może być obecna prawnie i fizycznie oddalona o lata.
+Nośnik może zapisać twój alarm i nadal być o lata masy dalej.
 
 ## Field Note
 
-Notatka Maraudera: gdy relay odpowie, zapytaj, ile lat ma odpowiedź i jaką masę może ruszyć.
+Notatka Maraudera: każda odpowiedź ratunkowa potrzebuje czterech liczb: wiek pakietu, masa nośnika, slot hamowania, okno zejścia.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/pl_PL. -->

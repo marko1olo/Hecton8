@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dług okna tonowego"
+title: "Dlug okna tonazowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dług okna tonowego
+# Dlug okna tonazowego
 
-Okno tonowe to wycinek pojemności carriera mierzony masą, czasem burn, objętością kwarantanny i priorytetem prawnym. Dla operatora przypomina dług, bo każdy użyteczny obiekt z HECTON-8 trafia do tego samego ledger co ciało, które go znalazło. Zapieczętowana skrzynia może być lekka i prawnie ciężka. Stojak próbek może kosztować mało masy i żądać czystej objętości. Ekstrakcja człowieka wydaje się oczywista, dopóki balast, rezerwa tlenu i payload custody nie zużyją dostępnego okna. Ekonomia HECTON-8 staje się fizyczna zamiast abstrakcyjna. Gracz nie jest karany fałszywym miernikiem moralnym. Gracz tkwi w maszynie, która wycenia przetrwanie paliwem, masą, skażeniem i papierami.
+Dlug okna tonazowego zmienia przetrwanie w twarde logistics: extraction, oxygen, samples, salvage, quarantine volume i burn margin zajmuja to samo priced mass window.
+
+## Scanner
+
+Mass-window ledger. Pomoc ma wage, zanim ma jezyk.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass koliduje z sealed payload, ballast reserve, oxygen debt, quarantine sample volume i hull patch inventory. Manual priority wymaga paid override, verified hazard proof albo custody reclassification.
+
+## Audio
+
+Statek moze podniesc zycie. Pytanie brzmi, co jeszcze ledger kaze mu niesc.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: carrier wycenia litosc w kilogramach.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/pl_PL. -->

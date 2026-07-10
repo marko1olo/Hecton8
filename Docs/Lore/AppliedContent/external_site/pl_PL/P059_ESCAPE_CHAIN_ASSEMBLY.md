@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Montaż łańcucha ucieczki
 
-Montaż łańcucha ucieczki jest inżynieryjnym kręgosłupem kampanii. HECTON-8 nie daje czystej ewakuacji na powierzchnię po pierwszej naprawie; odejście staje się zestawem fizycznych, prawnych i dowodowych komponentów rozsianych po zatopionej infrastrukturze. To daje długiemu zejściu powód praktyczny i moralny: gracz nie tylko opuszcza ocean, ale montuje trasę, która dowodzi, dlaczego kolonia nigdy nie miała uczciwego wyjścia.
+Montaż łańcucha ucieczki to inżynieryjny kręgosłup kampanii. HECTON-8 nie oferuje czystej ekstrakcji powierzchniowej po pierwszej naprawie; odlot staje się zestawem fizycznych, prawnych i dowodowych komponentów rozrzuconych po zatopionej infrastrukturze. Długi zjazd dostaje praktyczny i moralny powód: wyjście musi zostać zbudowane z części tej samej kolonii, której odmówiono uczciwego wyjścia.
 
 ## Scanner
 
-Odlot wymaga sześciu twardych dowodów: przekaźnika, uszczelnienia, naprowadzania, ładunku wznoszenia, prawnego uzgodnienia i ładunku, którego przewoźnik nie może zignorować.
+Odlot wymaga sześciu twardych dowodów: przekaźnika, uszczelnienia, naprowadzania, ładunku wznoszenia, prawnego handshake i payloadu, którego carrier nie zignoruje.
 
 ## Terminal
 
-PAKIET WZNOSZENIA: brak akustycznego kręgosłupa przekaźnikowego. Ocena pierścienia zaciskowego niewystarczająca. Brak rdzenia naprowadzania. Kołyska ładunku pusta. Uzgodnienie kwarantanny nierozwiązane. Ładunek dowodowy opcjonalny, ale zmienia władzę odzysku.
+ASCENT PACKAGE: brak acoustic relay spine. Ocena clamp ring niewystarczająca. Guidance core nieobecny. Charge cradle pusty. Quarantine handshake nierozwiązany. Evidence payload zmienia recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Nie naprawiasz kapsuły. Budujesz pierwsze uczciwe wyjście, którego kolonia ni
 
 ## Field Note
 
-Droga w górę powstaje z części, których nigdy nie projektowano po to, by robotnicy mogli odejść samodzielnie.
+Droga w górę składa się z części, które nigdy nie miały pozwolić robotnikom odejść samodzielnie.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/pl_PL. -->

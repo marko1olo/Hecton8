@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Mara Venn/Pump Chief"
+title: "مارا فين، رئيسة المضخات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Mara Venn/Pump Chief
+# مارا فين، رئيسة المضخات
 
-AR LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+كانت مارا فين رئيسة المضخات التي أبقت الملحق السفلي حيا حين بدأت عدادات السحب تكذب. يتكون ملفها من أدوات عمل: شارة أكلها الملح، لوح إيقاع بعلامات يدوية، سجل ماء مصحح بحبر الضغط، ومقبض تجاوز صار أملس من كثرة الاستخدام. معا تكشف هذه الأشياء عاملة أجبرت المستعمرة على الاعتراف بأن فقد الماء لم يكن ضجيجا خلفيا. كان عطلا قابلا للعد في آلة مربوطة برئات البشر.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+ملف: مارا فين. حافة الشارة، ولوح الإيقاع، وسجل الماء المصحح كلها تشير إلى غرفة المضخات P-63.
 
 ## Terminal
 
-AR LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+غرفة المضخات P-63 / VENN, MARA: مقبض التجاوز مصقول عبر طبقات القفاز؛ لوح الإيقاع مثبت قرب علامات فقد السحب. تصحيح السجل يحول الماء المفقود من تسرب خلفي إلى حمل آلة.
 
 ## Audio
 
-AR LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+لم تترك فين وداعا. تركت إيقاعا على لوحة المضخات كي يعد الناس الخائفون النفس التالي.
 
 ## Field Note
 
-AR LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+توضع أدلة فين قرب ألغاز إيقاع المضخات وسجلات الماء ومقابض التجاوز. يجب أن تجعل أدواتها اللاعب يسمع البنية التحتية كأنها تنفس.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ar_SA. -->

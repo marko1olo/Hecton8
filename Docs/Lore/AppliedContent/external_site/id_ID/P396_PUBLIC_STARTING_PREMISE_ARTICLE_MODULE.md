@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Klaim Awal Marauder"
+title: "Klaim awal Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Klaim Awal Marauder
+# Klaim awal Marauder
 
-Berkas Black Keel pertama tentang HECTON-8 tampak seperti pekerjaan salvage sampai bahasanya sendiri mulai menuduh dirinya. Marauder berutang menerima rute itu karena lien nyata dan jendela pemulihan sempit. Masa lalunya di Deep Reach field-systems langsung penting: prosedur tekanan, singkatan maintenance, frasa liability, dan tag evakuasi sudah akrab sebelum menjadi bukti. Black Keel memberi akses, bukan belas kasihan. Penurunan dimulai dengan kerja konkret di sekitar P-63: tambal bathydrop, periksa segel, pindai shelf, nyalakan ulang mesin, ambil muatan atau bukti, lalu pergi sebelum orbital timing dan legal custody menutup claim. Tarikannya adalah pengenalan profesional: pemain melihat bagian ketika bahasa rapi dan kerusakan fisik menceritakan kisah berbeda.
+HECTON-8 dimulai dengan kontrak yang cukup akrab untuk berbahaya. Black Keel memberi Marauder terikat utang akses ke rute pemulihan di atas P-63, bukan janji penyelamatan. Catatan itu memakai kosakata Deep Reach karena karakter pemain dulu bekerja di dalamnya: sistem lapangan, infrastruktur evakuasi, prosedur tekanan, formulir rute, bukti sah. Masa lalu itu mengubah jam pertama. Panel rusak bukan pemandangan. Tag terkoreksi bukan hiasan teks. Frasa liabilitas yang rapi bisa dibandingkan dengan penyok, jam, status pintu, atau tanda orang hilang. Penurunan dimulai sebagai salvage berbayar dan menjadi pengenalan profesional: kertas mengenal ruangan, dan ruangan membuktikan kertas telah dibersihkan.
 
 ## Scanner
 
-Catatan claim publik. Rute pembuka mengidentifikasi Marauder terlilit utang dengan riwayat Deep Reach field-systems, bathydrop rusak, dan jendela pemulihan Black Keel di atas P-63.
+Catatan klaim publik. File lien Black Keel menyebut mantan spesialis sistem lapangan Deep Reach, bathydrop rusak, rute P-63, dan jendela kustodi yang menutup.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // KLAIM AWAL. Catatan kontraktor: mantan spesialis Deep Reach field-systems. Status kini: Marauder di bawah lien. Rute: recovery claim Black Keel, turun ke shelf P-63, kembali membawa bukti dan muatan sebelum custody window tertutup.
+NODE ARSIP PUBLIK // BLACK KEEL CLAIM BK-P63-2190. Status: Marauder terikat lien. Izin lama: sistem lapangan Deep Reach / infrastruktur evakuasi. Serahan: massa kargo plus bukti sah sebelum kustodi lokal T+06:40.
 
 ## Audio
 
-Kau tidak sedang berwisata ke HECTON-8. Kau kembali ke berkas yang terlalu kau kenal.
+Kontrak tahu singkatan lamamu. Itu tidak sama dengan mengatakan kebenaran.
 
 ## Field Note
 
-Catatan Marauder: kontrak itu mengenal masa lalumu. Itu tidak membuatnya jujur.
+Catatan Marauder: jika file klaim tahu level izinmu, baca yang dihilangkan sebelum pembayaran.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach责任证据
 
-Deep Reach有责，正因为HECTON-8灾难可以同时是自然事件和糟糕管理的结果。海洋提供了真实力量：tide resonance、cryosphere shear、storm stacking和pressure failure。公司提供了过薄margins、迟到authorization、quarantine delay、Atlas priority rules，以及足够干净、能比被描述者活得更久的文书。最强的证据既物理又程序化：被executive authority锁住的门，在窗口关闭前改动的sensor tolerance，为legal clearance延误的队列，水还在移动时就把工人转成claim categories的loss ledger。玩家通过把官方语言同凹痕、时钟和路线对照，学会不信任它。
+针对Deep Reach的公开案件，在保持海洋真实时最有力。HECTON-8不是被卡通阴谋或不可能科学摧毁的。它遭遇的是公司建模、定价、延迟，然后用比工人更能活过压力的法律语言描述的条件。有用证据既是物理的，也是流程的：被改动的容差表、路线扣留、延迟撤离窗口、隔离标签、Atlas优先级表，以及水还在房间里流动时把姓名变成索赔类别的损失账本。Deep Reach不必发明灾难。它只需要足够签名，让更便宜的回应看起来已获授权。
 
 ## Scanner
 
-liability记录。真实潮汐物理、被接受的margin risk、撤离延迟、quarantine holds、Atlas weighting和被清洗过的损失语言汇入同一证据链。
+责任记录。潮汐力真实存在；签署过的裕度变更、隔离扣留、撤离队列、Atlas权重和损失措辞承载可避免部分。
 
 ## Terminal
 
-公共档案节点 // LIABILITY证据。Great Tide已确认。sensor margins、evacuation queue延迟、quarantine holds、Atlas weighting、worker classification和loss conversion仍在审查。
+公共档案节点 // 责任审查 DR-H8。自然力已接受。开放字段：传感器裕度、门权限、队列延迟、隔离扣留、Atlas权重、工人到索赔类别转换。
 
 ## Audio
 
-灾难可以是自然的，同时仍带着签名。
+潮水折断钢铁。签名决定哪些门继续关着。
 
 ## Field Note
 
-Marauder笔记：不要同潮汐争辩。去同旁边的签名争辩。
+掠夺者笔记：别争辩潮汐是假的。把签名放到潮汐时钟旁。
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/zh_CN. -->

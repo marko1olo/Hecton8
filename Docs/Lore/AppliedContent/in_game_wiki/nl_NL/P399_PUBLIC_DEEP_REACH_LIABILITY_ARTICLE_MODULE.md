@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach-aansprakelijkheidsbewijs
 
-De liability van Deep Reach werkt omdat de vloed geen nepnatuurkunde nodig heeft. De Great Tide was echt. Voorkombare schade verschijnt in margins, klokken, access holds en records die arbeiders tot categorieën opschoonden voordat iemand kon worden geborgen.
+Deep Reach-aansprakelijkheid heeft geen valse fysica nodig. De Grote Getijgolf trof HECTON-8 met echte oceaankracht: resonantie, cryosfeerschuiving, stormstapeling en drukfalen. De vermijdbare schade ligt naast die kracht in documenten en kamers. Een marge werd na een sensorwaarschuwing geaccepteerd. Een deur bleef onder uitvoerende bevoegdheid. Een rij wachtte op juridische vrijgave. Atlas-weging hield machines boven mensen in het verkeerde venster. De bewijsketen werkt omdat het water eerlijk is en het papierwerk niet.
 
 ## Scanner
 
-Liability-record. Echte getijdenfysica, geaccepteerd margin risk, evacuatievertraging, quarantine holds, Atlas weighting en opgeschoonde verliestaal komen samen in dezelfde bewijsketen.
+Aansprakelijkheidsrecord. Getijkracht is echt; ondertekende marge-aanpassingen, quarantaineholds, evacuatierijen, Atlas-gewichten en verlieswoorden dragen het vermijdbare deel.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // LIABILITY-BEWIJS. Great Tide geaccepteerd. Review open voor sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification en loss conversion.
+OPENBARE ARCHIEFKNOOP // AANSPRAKELIJKHEIDSONDERZOEK DR-H8. Natuurkracht geaccepteerd. Open velden: sensormarge, deurbevoegdheid, rijvertraging, quarantainehold, Atlas-weging, werker-naar-claimconversie.
 
 ## Audio
 
-Een ramp kan natuurlijk zijn en toch handtekeningen dragen.
+Het getij brak staal. De handtekeningen bepaalden welke deuren dicht bleven.
 
 ## Field Note
 
-Marauder-notitie: discussieer niet met het getij. Discussieer met de handtekeningen ernaast.
+Marauder-notitie: betwist nooit dat het getij echt was. Leg de handtekeningen naast de getijklok.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/nl_NL. -->

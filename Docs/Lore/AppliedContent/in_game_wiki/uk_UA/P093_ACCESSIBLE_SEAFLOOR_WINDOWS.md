@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Доступні вікна морського дна
 
-Доступні вікна морського дна - місця, де зламана кора HECTON-8 ненадовго знижує ціну спуску. Вони виникають біля зруйнованих шельфів, оголених гребенів, повторно прогрітих жерлових шрамів і ропних стовпів, які несуть тиск інакше, ніж відкрита вода. Вікно все одно смертельне, якщо поспішати. Воно дає контакт зі старим дном, рідкісними мінеральними жилами, похованим колоніальним залізом і доказами, які головний океан розчавив би поза досяжністю.
+Accessible seafloor windows - не safe places. Це rare permissions, written by broken geology. Collapsed shelf lowers the descent angle. Reheated brine column carries pressure differently на кілька hundred meters. Exposed ridge дає sonar hold shape там, де open water swallow it. Через ці windows old floor стає reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines і evidence, яке main ocean тримав би out of human range. Rush a window - і воно closes with the same pressure that made it valuable.
 
 ## Scanner
 
-Маркер оголеного гребеня. Тут оболонка розірвалася досить тонко, щоб краулер торкнувся старого дна й не став пастою.
+Exposed ridge marker. Тут shell tore thin enough, щоб crawler touched old floor without becoming paste.
 
 ## Terminal
 
-КРИТЕРІЇ ВІКНА: губа тріснутої кори, ропний стовп із повторним нагрівом від жерла, рампа зруйнованого шельфу, стабільне сонарне повернення, кишеня тиску нижче червоної лінії костюма. Позначати лише для повільної здобичі.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-Море дає торкатися дна через вікна, а не там, де ти відчув хоробрість.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Більша частина місяця тримає своє дно як таємницю тиску. Вікна - винятки із зубами.
+Більша частина moon keeps its floor as a pressure secret. Windows - exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/uk_UA. -->

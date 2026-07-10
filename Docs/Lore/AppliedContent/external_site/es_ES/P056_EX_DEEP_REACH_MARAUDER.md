@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Merodeador ex Deep Reach
 
-Merodeador ex Deep Reach define el canon del jugador. El jugador es un antiguo especialista corporativo en sistemas de campo e infraestructura de evacuación, empujado al salvamento independiente por deuda o lista negra, y devuelto a HECTON-8 bajo custodia de Black Keel. El drama nace del reconocimiento profesional: la luna responde con procedimientos que el jugador entendía, y cada cerradura familiar vuelve más difícil tratar la mentira corporativa como el accidente de otros.
+Merodeador ex Deep Reach fija presión biográfica sin convertir HECTON-8 en destino. El operador central de salvage es un antiguo especialista corporativo en sistemas de campo e infraestructura de evacuación, empujado al salvage independiente por deuda o lista negra y devuelto bajo custodia de Black Keel. El drama nace del reconocimiento profesional: la luna responde con procedimientos que la mano entendió alguna vez, y cada cerradura familiar vuelve más difícil tratar la mentira corporativa como accidente ajeno.
 
 ## Scanner
 
-La vieja cerradura de Deep Reach no comprueba tu nombre. Reconoce el ritmo de tu secuencia de reparación.
+La vieja cerradura de Deep Reach no comprueba un nombre. Reconoce el ritmo de una reparación de campo.
 
 ## Terminal
 
-RASTRO DE CREDENCIAL: antiguo contrato de sistemas de campo. Acceso a infraestructura de evacuación revocado. Estado de salvamento aceptado bajo custodia de deuda del fondo de reclamaciones.
+RASTRO DE CREDENCIAL: antiguo contrato de sistemas de campo. Acceso a infraestructura de evacuación revocado. Estado de salvage aceptado bajo custodia de deuda del fondo de reclamaciones.
 
 ## Audio
 

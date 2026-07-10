@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach 책임 증거
 
-Deep Reach의 liability는 홍수가 가짜 물리를 필요로 하지 않기 때문에 작동한다. Great Tide는 실제였다. 막을 수 있었던 피해는 margins, 시계, access holds, 그리고 누구도 회수되기 전에 노동자를 범주로 정리한 기록에 나타난다.
+Deep Reach 책임에는 가짜 물리가 필요 없다. 대조수는 공명, 빙권 전단, 폭풍 중첩, 압력 실패라는 실제 해양 힘으로 HECTON-8을 쳤다. 막을 수 있었던 피해는 그 힘 옆의 문서와 방에 남아 있다. 센서 경고 뒤 여유값이 승인되었다. 문은 집행 권한 아래 닫혀 있었다. 대기열은 법적 허가를 기다렸다. 잘못된 창구에서 Atlas 가중치는 사람보다 기계를 높게 분류했다. 증거 사슬이 작동하는 이유는 물은 정직하고 서류는 그렇지 않기 때문이다.
 
 ## Scanner
 
-liability 기록. 실제 조석 물리, 승인된 margin risk, 대피 지연, quarantine holds, Atlas weighting, 정리된 손실 언어가 같은 증거 사슬로 모인다.
+책임 기록. 조석 힘은 실제다. 서명된 여유 변경, 격리 보류, 대피 대기열, Atlas 가중치, 손실 문구가 막을 수 있었던 부분을 담는다.
 
 ## Terminal
 
-공개 아카이브 노드 // LIABILITY 증거. Great Tide 인정. sensor margins, evacuation queue 지연, quarantine holds, Atlas weighting, worker classification, loss conversion은 검토 중.
+공개 기록 노드 // 책임 검토 DR-H8. 자연력 인정. 열린 필드: 센서 여유, 문 권한, 대기열 지연, 격리 보류, Atlas 가중치, 작업자-청구 분류 전환.
 
 ## Audio
 
-재난은 자연적일 수 있고 동시에 서명을 가질 수 있다.
+조수는 강철을 부쉈다. 어떤 문이 닫힌 채 남을지는 서명이 정했다.
 
 ## Field Note
 
-Marauder 메모: 조수와 다투지 마라. 그 옆의 서명과 다퉈라.
+마라우더 메모: 조수가 가짜였다고 다투지 마라. 조석 시계 옆에 서명을 놓아라.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ko_KR. -->

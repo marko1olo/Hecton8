@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Custódia de ferramenta de salvage"
+title: "Custodia de Ferramenta Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custódia de ferramenta de salvage
+# Custodia de Ferramenta Salvage
 
-Ferramentas de salvage não são equipamento neutro. Cutters, patchers e docks de fabricador podem registrar quem abriu um painel, reparou uma linha ou moveu uma amostra. Esse log pode proteger evidência, anexar direitos de payout ou fortalecer o claim contra o jogador. Custódia de ferramenta é onde a sobrevivência minuto a minuto toca a economia maior de salvage.
+Salvage tools em HECTON-8 sao survival gear, mas nao sao innocent. Um cutter abre um panel. Um patcher seals a line. Um fabricator dock prints a clamp que keeps air moving. A mesma action tambem pode write custody: quem used the tool, o que foi opened, se um sample pouch foi attached e qual claim token owns the next argument. Esse record pode protect evidence ou tighten debt. A parte cruel e que refusing the tool pode kill faster do que accepting its witness.
 
 ## Scanner
 
-O dock da ferramenta guarda um log de custódia selado. Último corte, reparo e bolsa de amostra estão ligados a um token de claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair e sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: uso do cutter aceito sob salvage claim. Ação de reparo testemunhada. Direitos de amostra anexados ao token Keelmark Mutual. Exportação de evidência conflita com rota de payout material.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Todo corte útil deixa uma testemunha.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Um cutter pode salvar seu ar e vender suas mãos no mesmo golpe. Veja o que ele registra antes de chamá-lo de seu.
+Um cutter pode save your air e sell your hands no mesmo stroke. Confira o que ele records antes de chama-lo de seu.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/pt_BR. -->

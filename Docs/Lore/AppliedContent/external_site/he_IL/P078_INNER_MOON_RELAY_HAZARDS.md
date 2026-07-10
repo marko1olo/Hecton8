@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "סכנות ממסר של ירחים פנימיים"
+title: "סכנות relay של הירחים הפנימיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סכנות ממסר של ירחים פנימיים
+# סכנות relay של הירחים הפנימיים
 
-הסכנות מסבירות אובדן קשר ב-HECTON-8 דרך קרינה, אבק, הסתרה ו-route law בירושה, לא דרך קסם.
+Inner Moon Relay Hazards מסבירים contact failure ב-HECTON-8 דרך radiation, dust, occlusion, eclipse geometry ו-inherited route law במקום impossible interference.
 
 ## Scanner
 
-סולם פנימי // Skarn מרווה אנטנות. Vela מפזרת אופטיקה. נתיבי Claw ו-Lumen ישנים מחזיקים handshakes שפג תוקפם.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw ו-Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-הערת סכנת ממסר // אובדן קשר יכול להיות גאומטריה, מזג אוויר חלקיקים, תריס אבק או buoy law בירושה. חשוד ב-UI נקי בזמן חלונות נחשול.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-הממסר לא השתתק. הוא חזר על המאה הלא נכונה.
+ה-relay לא השתתק. הוא repeated the wrong century.
 
 ## Field Note
 
-אייקון נקי עדיין יכול לשקר דרך שמים ישנים.
+Clean icon עדיין יכול לשקר through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/he_IL. -->

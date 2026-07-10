@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep Reach 우선순위 훅"
+title: "Deep Reach Priority Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach 우선순위 훅
+# Deep Reach Priority Hook
 
-우선순위 훅은 식민지가 침묵한 뒤에도 Deep Reach를 위험하게 유지하는 가장 깨끗한 방법이다. 회사는 원격 기적으로 Black Keel을 조종할 필요가 없다. carrier가 아직 인식하는 오래된 인증서, Atlas 접근과 연결된 continuity 규칙, 특정 위험 조건에서 계약자 몸보다 앞서는 payload 등급만 있으면 된다. 그걸로 충분하다. 경로는 조금 움직일 수 있다. 봉인 상자는 대기열에서 올라갈 수 있다. 격리 잠금은 닫힌 채 남고 오퍼레이터의 산소 수치는 또 다른 부채 항목이 된다. 결과는 사보타주보다 차갑다. 시스템은 쓰인 대로 작동하고, Deep Reach는 재난 후에도 살아남는 부품 안에 자신을 써 넣는 법을 배웠다.
+Deep Reach Priority Hook은 corporate pressure를 불가능한 instant command가 아니라 legacy certificates, quarantine clauses, Atlas tokens, payload priority, evidence custody에 고정한다.
+
+## Scanner
+
+오래된 certificate hook. clause가 아직 Deep Reach의 것이라면 bridge는 필요 없다.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate는 Aegir claim law 아래 payload recovery, quarantine lock, Atlas access token, evidence suppression queue, sealed infrastructure proof를 앞당길 수 있음. verified hazard proof가 custody value를 넘지 않는 한 Human extraction priority unchanged.
+
+## Audio
+
+답을 조종하기 위해 그들이 bridge에 서 있을 필요는 없다.
+
+## Field Note
+
+conspiracy보다 깨끗하다. paperwork가 그것에 서명한 사람들보다 오래 살아남았다.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/ko_KR. -->

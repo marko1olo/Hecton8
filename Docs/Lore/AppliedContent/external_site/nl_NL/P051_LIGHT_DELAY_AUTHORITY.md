@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lichtvertragingsgezag"
+title: "Lichtvertragingsautoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lichtvertragingsgezag
+# Lichtvertragingsautoriteit
 
-Een noodoproep op HECTON-8 is een fysieke vracht betekenis. Hij verlaat een verdronken mast, kruist de ruimte van Aegir met lichtsnelheid, wacht in relaisbuffers en bereikt Black Keel via een wachtrij die risico al kan prijzen. De eerste vertraging is eerlijke afstand. De latere vertragingen zijn menselijk: bewaarklasse, stormvensters, aansprakelijkheidstaal en de gewoonte van de drager om eerst het asset te beantwoorden. Daarom kan een antwoord technisch vers zijn en toch nutteloos in een drukruimte die instort.
+Lichtvertragingsautoriteit definieert HECTON-8-communicatie als fysiek, vertraagd en contract-filtered: distance, weather, relay buffers en custody queues bepalen wanneer een signal usable wordt.
+
+## Scanner
+
+Relay mast cache. De call vertrok schoon, wachtte daarna achter light, queue law, storm scatter en Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active tot fresh signal window override bevestigt.
+
+## Audio
+
+Het antwoord komt eraan. Dat maakt het geen rescue.
+
+## Field Note
+
+Niemand censureerde de eerste scream. Physics droeg hem traag genoeg zodat policy kon inhalen.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/nl_NL. -->

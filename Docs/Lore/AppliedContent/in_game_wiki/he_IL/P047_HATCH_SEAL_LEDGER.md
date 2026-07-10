@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "יומן איטום האץ'"
+title: "Ledger של אטם hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# יומן איטום האץ'
+# Ledger של אטם hatch
 
-מסגרות האץ' שומרות שקרים שימושיים. אור איטום ירוק אומר שהאטם החזיק, לא שהסגירה הייתה הוגנת, בטוחה או הפיכה. יומני איטום שומרים חיתוכי לחץ, חותמות override ואת כיוון הסגירה הידנית האחרונה. בחללי מושבה נטושים, האץ' יכול להיות מחסום מסלול, כלי הישרדות וראיית עובדים באותו גוף.
+Hatch frames שומרים שקרים מועילים. Green seal light אומר שה-gasket החזיק, לא שה-closure היה fair, safe או reversible. Seal ledgers שומרים pressure cuts, override stamps, hinge strain ואת ה-direction של ה-manual closure האחרון. ב-abandoned colony spaces, hatch יכול להיות route blocker, survival tool, worker evidence ו-accusation באותו עצם. השאלה לעיתים רחוקות היא אם הוא נפתח. השאלה היא אילו pressure, water ו-human decision הוא הפריד.
 
 ## Scanner
 
-זיכרון איטום שוחזר. האטם ספג שלושה חיתוכי לחץ ו-override פינוי אחד; גישת צד החזרה ננעלה מהצד הרטוב.
+Seal memory recovered. ה-gasket ספג three pressure cuts ו-one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: עיוות אטם מעל סבולת שירות. סגירה ידנית התקבלה תחת EVAC OVERRIDE. ספירת מפעילים בצד החזרה לא פתורה. לפתוח מחדש רק אחרי השוואת לחץ ובדיקת צירים.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection ו-wet-side witness check.
 
 ## Audio
 
-הוא נאטם. זה כל מה שההאץ' הבטיח.
+It sealed. זה כל מה שה-hatch הבטיח.
 
 ## Field Note
 
-האץ' אטום הוא קבלה. לפני פתיחה, שאל איזה צד שילם.
+Sealed hatch הוא receipt. לפני פתיחה, שאל איזה צד שילם.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/he_IL. -->

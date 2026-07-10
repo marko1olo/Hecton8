@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Astronomy And Claim Primer
 spoiler_tier: 0
-title: "Libro de Autoridad de Nombres Ran / Aegir"
+title: "Registro de Autoridad de Nombres Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Libro de Autoridad de Nombres Ran / Aegir
+# Registro de Autoridad de Nombres Ran / Aegir
 
-HECTON-8 usa varios nombres porque varias autoridades intentan poseer la misma agua. Ran es la estrella: ancla astronómica y nombre para física de ruta. Aegir es el gigante gaseoso, el cielo padre y la abreviatura de oficinas de reclamación. RAN-B:H8 es la clave de catálogo: fría, asegurable y ordenable. HECTON-8 es el nombre de campo donde el jugador sangra.
+HECTON-8 tiene demasiados nombres porque demasiadas oficinas querían una forma limpia de poseer agua sucia. Ran es la estrella. Úsalo cuando el documento hable de luz, rutas, retraso de portador o navegación. Aegir es el gigante gaseoso. Úsalo cuando alguien quiere que la luna desaparezca dentro de un sistema de reclamación mayor, un cielo, un cuerpo padre o un grupo de activos. RAN-B:H8 es la clave lunar asegurada, el nombre que un libro ordena sin recordar quién vivió allí. HECTON-8 es el nombre de campo, pegado a escaleras mojadas, bordes de escotilla, tableros de ruta y puertas de presión.
 
-La diferencia importa. Una placa que dice Ran habla de luz, distancia y tránsito. Un memorando de Deep Reach que dice Aegir suele hablar de propiedad y continuidad. Un recibo Black Keel con RAN-B:H8 pone precio a un registro lunar específico. Una nota Marauder con HECTON-8 habla de habitaciones, cuerpos, puertas de presión y un océano al que no le importan los nombres legales.
+            Los nombres no son intercambiables. Son huellas. Una oficina de ruta que dice Ran probablemente navega. Un memorando Deep Reach que dice Aegir suele proteger propiedad a escala de sistema. Un recibo Black Keel con RAN-B:H8 convierte el lugar en objeto facturable. Una nota obrera con HECTON-8 no es jerga ni nostalgia. Es testimonio desde el nivel donde el océano mató personas compartimento por compartimento.
+
+            La buena evidencia conserva el nombre encontrado. Normalizar demasiado pronto puede destruir motivo. Una orden de cuarentena que dice activo Aegir puede ocultar un fallo local ampliando el marco. Una cotización salvage que dice RAN-B:H8 puede quitar memoria para que la luna pase por seguros sin duelo.
+
+            Por eso la PDA conserva conflictos de nombres. El conflicto le dice al jugador quién hablaba, qué quería contar y qué quería enterrar.
 
 ## Scanner
 
-PLACA DE RUTA RESUELTA // Ran es la estrella anfitriona. Aegir es el gigante y la abreviatura del sistema de reclamación. RAN-B:H8 es la clave de catálogo de HECTON-8.
+AUTORIDAD DE NOMBRE RESUELTA // Ran: estrella anfitriona y ancla de ruta. Aegir: gigante gaseoso y paraguas de reclamación. RAN-B:H8: clave lunar asegurada. HECTON-8: nombre de campo para agua, colonia y daño vivido. Conserva la etiqueta fuente.
 
 ## Terminal
 
-AVISO DE NORMALIZACIÓN DE CATÁLOGO // Abreviatura AEGIR aceptada para índice del sistema de reclamación. Use RAN-B:H8 para el registro lunar asegurado y HECTON-8 para la superficie operativa de campo.
+ADVERTENCIA DE NORMALIZACIÓN // No convierta testimonio obrero de origen HECTON-8 en lenguaje de activo AEGIR sin nota testigo. RAN-B:H8 solo para registro lunar asegurado. Ran queda como contexto de física de ruta.
 
 ## Audio
 
-Resolvedor de catálogo Black Keel: Ran es fuente de luz, Aegir es cielo reclamante, HECTON-8 es donde la factura se moja.
+Resolvedor Black Keel: cuando cambia el nombre, se movió la factura. Guarda el nombre viejo hasta saber a quién beneficia.
 
 ## Field Note
 
-Si un abogado dice Aegir cuando la placa dice RAN-B:H8, mira qué columna se volvió más barata.
+Si el agua mató a alguien, llámalo HECTON-8 antes de que los abogados lo enjuaguen en Aegir.
 
 <!-- In-Game Wiki; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/es_ES. -->

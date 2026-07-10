@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "吨窗债务"
+title: "吨位窗口债务"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 吨窗债务
+# 吨位窗口债务
 
-吨窗债务是物理变成金融的地方。Black Keel没有无限升力余量、无限中转燃料或无限清洁隔离体积。从HECTON-8带上的每一公斤,都与维持操作员生命所需的每一公斤竞争。债务计让carrier显得残酷,却不破坏硬科幻:救援可能存在,但航线预算不停追问什么值得获得质量。
+吨位窗口债务是HECTON-8不再只是恐怖故事、而变成orbital logistics的地方。Black Keel的lift margin有限，clean volume有限，oxygen reserve有限，每一公斤都附带route price。spare tank、sealed sample、damaged suit、proof case、body和crate of salvage都在同一窗口内竞争。系统显得残酷，是因为它精确。它不需要假装rescue不可能。它只是不断追问：这条路线负担得起把什么抬上去。
 
 ## Scanner
 
-质量窗口计。每一公斤帮助都有航线价格。
+mass-window账本。帮助在拥有语言之前先拥有重量。
 
 ## Terminal
 
-TONNE-WINDOW LEDGER:recovery burn余量收窄。操作员撤出质量与封存payload、压载储备、氧债和隔离样本custody冲突。手动override需要付费优先或危险证明。
+TONNE-WINDOW LEDGER: recovery burn margin narrowed。Extraction mass与sealed payload、ballast reserve、oxygen debt、quarantine sample volume和hull patch inventory冲突。Manual priority需要paid override、verified hazard proof或custody reclassification。
 
 ## Audio
 
-船可以带走你,也可以带走你找到的东西。它更喜欢一个数字。
+船能举起一条命。问题是ledger还让它背上什么。
 
 ## Field Note
 
-氧气、压载、证据、payload、身体:carrier在衡量仁慈之前先衡量它们。
+oxygen、ballast、proof、samples、hull patch、body：carrier用公斤给仁慈定价。
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/zh_CN. -->

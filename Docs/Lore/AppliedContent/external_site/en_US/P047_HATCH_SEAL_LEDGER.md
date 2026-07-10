@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Hatch Seal Ledger
 
-Hatches are one of HECTON-8's quietest records. They do not explain who was left behind; they store closure direction, gasket stress and override authority. Reading a seal ledger turns a locked door into a pressure decision with a timestamp.
+Hatches are quiet records on HECTON-8: closure direction, gasket stress, override authority, and wet-side witness traces turn a locked door into a pressure decision with a timestamp.
 
 ## Scanner
 
-Seal memory recovered. Gasket took three pressure cuts and one evacuation override; return-side access was locked from the wet side.
+Seal memory recovered. The gasket took three pressure cuts and one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Operator count on return side unresolved. Reopen only after pressure equalization and hinge inspection.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, and wet-side witness check.
 
 ## Audio
 

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Routenleiter des Sole-Canyons"
+title: "Routenleiter des Solecanyons"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Routenleiter des Sole-Canyons
+# Routenleiter des Solecanyons
 
-Sole-Canyons machen Tiefenfortschritt physisch. Dichte Schichten, Mineralwände, Wärmelecks und akustische Verzerrung zeigen, warum tiefere Reise bessere Instrumente und Druckdisziplin braucht.
+Solecanyons machen Tiefe zu einer Substanz. Dichte Salzflüsse liegen im Ozean wie Böden, Spiegel und Fallen. Eine saubere Route besteht aus Dichtemarkern, Ballastfenstern, Relaisprüfungen und disziplinierten Winkeln, nicht aus Mut. Die tieferen Schichten lehren den Wert der Instrumente: Sonar kann den Raum darüber spiegeln, Auftrieb kann lügen, und der Anzug kann recht haben, während das Meer widerspricht.
 
 ## Scanner
 
-Sole-Dichtemarker. Der Abstieg ist Chemie mit Wänden.
+Dichtemarker bestätigt. Die Route ist kein Korridor; sie ist Chemie mit Wänden.
 
 ## Terminal
 
-SOLE-CANYON-KONTROLLE: Dichtegrenze stabil genug für gestuften Abstieg. Warnung: akustische Relaisverzerrung, Fahrzeugauftriebsfehler und falsche Böden unter 1800 m erwartet.
+SOLECANYON-KONTROLLE: Dichtegrenze stabil für gestuften Abstieg. Erwartete Gefahren unter 1800 m: Akustikrelais-Verzerrung, Fahrzeugauftriebsfehler, Sensor-Falschbodenereignisse.
 
 ## Audio
 

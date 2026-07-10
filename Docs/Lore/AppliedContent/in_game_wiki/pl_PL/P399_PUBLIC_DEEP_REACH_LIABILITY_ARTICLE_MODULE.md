@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Dowody odpowiedzialności Deep Reach
 
-Liability Deep Reach działa, bo powódź nie potrzebuje fałszywej fizyki. Great Tide był prawdziwy. Szkoda możliwa do uniknięcia pojawia się w margins, zegarach, access holds i zapisach, które czyściły pracowników w kategorie, zanim kogokolwiek dało się odzyskać.
+Odpowiedzialność Deep Reach nie wymaga fałszywej fizyki. Wielki Pływ uderzył HECTON-8 prawdziwą siłą oceanu: rezonansem, ścinaniem kriosfery, spiętrzeniem burz i awarią ciśnienia. Szkoda możliwa do uniknięcia leży obok tej siły w dokumentach i pomieszczeniach. Margines przyjęto po ostrzeżeniu czujnika. Drzwi zostały pod władzą wykonawczą. Kolejka czekała na zgodę prawną. Ważenie Atlas w złym oknie trzymało maszyny wyżej niż ludzi. Łańcuch dowodów działa, bo woda jest uczciwa, a dokumenty nie.
 
 ## Scanner
 
-Zapis liability. Realna fizyka pływów, zaakceptowane margin risk, opóźnienie ewakuacji, quarantine holds, Atlas weighting i oczyszczony język strat schodzą się w jednym łańcuchu dowodów.
+Zapis odpowiedzialności. Siła pływu jest realna; podpisane zmiany marginesów, zatrzymania kwarantanny, kolejki ewakuacji, wagi Atlas i język strat niosą część możliwą do uniknięcia.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // DOWODY LIABILITY. Great Tide przyjęty. Przegląd otwarty dla sensor margins, opóźnienia evacuation queue, quarantine holds, Atlas weighting, worker classification i loss conversion.
+PUBLICZNY WĘZEŁ ARCHIWUM // PRZEGLĄD ODPOWIEDZIALNOŚCI DR-H8. Siła naturalna przyjęta. Pola otwarte: margines czujnika, uprawnienie drzwi, opóźnienie kolejki, zatrzymanie kwarantanny, ważenie Atlas, konwersja pracownika na kategorię roszczenia.
 
 ## Audio
 
-Katastrofa może być naturalna i nadal nieść podpisy.
+Pływ złamał stal. Podpisy zdecydowały, które drzwi zostały zamknięte.
 
 ## Field Note
 
-Notatka Maraudera: nie kłóć się z pływem. Kłóć się z podpisami obok.
+Notatka Maraudera: nie twierdź, że pływ był fałszywy. Połóż podpisy obok zegara pływu.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lua fraturada por colisao"
+title: "Lua Fraturada por Colisao"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lua fraturada por colisao
+# Lua Fraturada por Colisao
 
-HECTON-8 nao foi um corpo errante capturado para espetaculo. Ela se agregou no proprio cinturao de detritos de Aegir, esfriou como lua oceanica em camadas e depois recebeu uma colisao obliqua que deformou a crosta sem apagar o mundo. O impacto ergueu prateleiras, afundou bacias e abriu longas escadas de falha onde quimica quente ainda circula em agua salgada. A ressonancia de mares manteve essas feridas ativas apos o travamento orbital. Por isso o oceano tem cicatrizes legiveis: canions de salmoura, forjas de respiradouro, veios de vidro de pressao, cristas expostas e janelas raras para o fundo antigo.
+Collision-Fractured Moon define HECTON-8 como local Aegir body cujas ocean routes, vents, brine basins e salvage windows vêm de impact scars e tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, depois sofreu um oblique impact amplo o bastante para o ocean lembrar.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Depois algo bateu hard o bastante para give the sea a map.
+
+## Field Note
+
+A captured-moon story e limpa demais. Este lugar e born local, broken local e billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/pt_BR. -->

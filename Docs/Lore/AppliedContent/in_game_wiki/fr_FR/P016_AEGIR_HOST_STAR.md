@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Étoile hôte d’Aegir"
+title: "Etoile hôte d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Étoile hôte d’Aegir
+# Etoile hôte d'Aegir
 
-Aegir orbite une étoile orange-jaune de type K. HECTON-8 n’est pas sombre faute de lumière; l’obscurité vient de la profondeur, des tempêtes, des éclipses, du limon, de la pression et de l’industrie brisée.
+Aegir orbite une primaire ordinaire de type K. HECTON-8 n'est pas sombre parce que l'étoile échoue ; elle le devient par colonne d'eau, turbidité de tempête, calendrier d'éclipse, limon, pression et industrie brisée. La lumière de surface peut nourrir la vie de plateau pendant que l'abysse reste un angle mort légal et physique.
 
 ## Scanner
 
-Lumière primaire de type K confirmée. La surface reçoit de la lumière; profondeur, tempêtes et éclipses font l’obscurité.
+Primaire de type K confirmée. Il y a de la lumière dans le système ; profondeur, tempêtes, éclipses et dette font l'obscurité.
 
 ## Terminal
 
-Éphéméride Ran/Aegir: naine K, paquets interstellaires retardés, aucun vecteur de sauvetage FTL. Toute aide est locale.
+EPHEMERIDES RAN/AEGIR : naine K primaire, sortie photosphérique stable, paquets interstellaires retardés, aucun vecteur de secours FTL. Traiter l'aide comme locale jusqu'à arrivée de masse.
 
 ## Audio
 
-La lumière atteint le plateau. Pas le problème.
+La lumière stellaire atteint le plateau. Elle n'atteint pas le problème.
 
 ## Field Note
 
-L’horreur n’est pas l’étoile. C’est l’océan.
+L'horreur n'est pas l'étoile. Elle est là où l'océan change la lumière en rumeur.
 
 <!-- In-Game Wiki; generated from P016_AEGIR_HOST_STAR/fr_FR. -->

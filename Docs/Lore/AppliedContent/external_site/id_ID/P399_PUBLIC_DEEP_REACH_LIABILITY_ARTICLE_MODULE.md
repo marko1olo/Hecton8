@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bukti Tanggung Jawab Deep Reach"
+title: "Bukti liabilitas Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bukti Tanggung Jawab Deep Reach
+# Bukti liabilitas Deep Reach
 
-Deep Reach bersalah karena bencana HECTON-8 dapat alami sekaligus dikelola buruk. Samudra menyediakan gaya nyata: tide resonance, cryosphere shear, storm stacking, dan pressure failure. Perusahaan menyediakan margins tipis, authorization terlambat, quarantine delay, Atlas priority rules, dan berkas yang cukup rapi untuk hidup lebih lama daripada orang yang digambarkannya. Bukti terkuat bersifat fisik dan prosedural: pintu ditahan executive authority, sensor tolerance diubah sebelum jendela tertutup, antrean ditunda demi legal clearance, loss ledger mengubah pekerja menjadi claim categories saat air masih bergerak. Pemain belajar tidak mempercayai bahasa resmi dengan mencocokkannya pada penyok, jam, dan rute.
+Kasus publik terhadap Deep Reach paling kuat saat menjaga laut tetap nyata. HECTON-8 tidak dihancurkan oleh komplotan kartun atau sains mustahil. Ia dihantam kondisi yang dimodelkan, dihargai, ditunda, lalu dijelaskan perusahaan dalam bahasa yang lebih mampu bertahan di pengadilan daripada pekerja bertahan dari tekanan. Bukti berguna bersifat fisik dan prosedural: lembar toleransi yang diubah, tahanan rute, jendela evakuasi tertunda, label karantina, tabel prioritas Atlas, dan buku kehilangan yang mengubah nama menjadi kategori klaim saat air masih bergerak melalui ruangan. Deep Reach tidak perlu menciptakan bencana. Ia butuh cukup tanda tangan agar respons lebih murah tampak berwenang.
 
 ## Scanner
 
-Catatan liability. Fisika pasang nyata, margin risk yang diterima, tunda evakuasi, quarantine holds, Atlas weighting, dan bahasa kerugian yang dirapikan bertemu dalam rantai bukti yang sama.
+Catatan liabilitas. Gaya pasang nyata; perubahan margin bertanda tangan, tahanan karantina, antrean evakuasi, bobot Atlas, dan bahasa kehilangan membawa bagian yang bisa dicegah.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // BUKTI LIABILITY. Great Tide diterima. Tinjauan tetap terbuka untuk sensor margins, tunda evacuation queue, quarantine holds, Atlas weighting, worker classification, dan loss conversion.
+NODE ARSIP PUBLIK // TINJAUAN LIABILITAS DR-H8. Gaya alam diterima. Kolom terbuka: margin sensor, otoritas pintu, penundaan antrean, tahanan karantina, pembobotan Atlas, konversi pekerja ke kategori klaim.
 
 ## Audio
 
-Bencana bisa alami dan tetap memiliki tanda tangan.
+Pasang mematahkan baja. Tanda tangan menentukan pintu mana yang tetap tertutup.
 
 ## Field Note
 
-Catatan Marauder: jangan berdebat dengan pasang. Berdebatlah dengan tanda tangan di sampingnya.
+Catatan Marauder: jangan perdebatkan bahwa pasang itu palsu. Letakkan tanda tangan di samping jam pasang.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/id_ID. -->

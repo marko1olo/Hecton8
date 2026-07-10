@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pętla sprzężenia zwrotnego fauny z sensorami"
+title: "Pętla sprzężenia fauny z tagiem czujnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pętla sprzężenia zwrotnego fauny z sensorami
+# Pętla sprzężenia fauny z tagiem czujnika
 
-Fauna z sensorami nie jest kontrolowanymi żołnierzami. Ta różnica ma znaczenie. Programy znakowania Deep Reach zaczęły się jako zwykła nauka terenowa i logistyka: śledzenie migracji, tolerancji ciśnienia, skażenia i gęstości tras. Po latach tagi nie są już czystym sprzętem. Muszla obrasta je, tkanka bliznowata przesuwa, a mineralne czapy zmieniają sygnał.
+Zwierzę z tagiem nie jest marionetką. To dzika fauna z korporacyjnym instrumentem, który nadal odpowiada pod skorupą i blizną. To wystarcza, by Atlas pomylił ruch z aktualizacją środowiska, i by trasa nurka zmieniła się bez wiedzy zwierzęcia.
 
-Atlas nadal czyta powrót. Ranny roślinożerca przechodzący przez zalany pomost może wyglądać jak pomiar ciśnienia. Drapieżnik z dawnym tagiem może sprawić, że korytarz wygląda na zajęty przez ryzyko infrastruktury. Zwierzę pozostaje sobą, ale system wokół niego traktuje ruch jak dane. Spotkania z fauną dostają drugi ostrze: zachowanie przetrwania może być także sprzężeniem konserwacji.
+## Scanner
+
+Stary tag Deep Reach pod narostem muszlowym na lewym boku. Pakiety ruchu wciąż pingują sieć konserwacji.
+
+## Terminal
+
+PĘTLA TAGU FAUNY / DR-2147-MIG: pakiety ciśnienia, ruchu i skażenia przyjęte jako telemetria środowiskowa. Intencja zwierzęcia nieparsowana. Alarmy trasy mogą iść za ścieżką migracji.
+
+## Audio
+
+To na ciebie nie poluje. Jego tag nadal może otworzyć złe drzwi.
+
+## Field Note
+
+Jeśli tagowana fauna przechodzi przez dziedziniec przekaźników, poczekaj, zanim zaufasz alarmom. Zwierzę może już zniknąć; stan trasy może jeszcze je doganiać.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pl_PL. -->

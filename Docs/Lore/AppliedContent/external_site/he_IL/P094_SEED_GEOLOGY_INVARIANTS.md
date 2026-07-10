@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "קבועי גיאולוגיית זרע"
+title: "אינווריאנטים גאולוגיים של survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# קבועי גיאולוגיית זרע
+# אינווריאנטים גאולוגיים של survey
 
-כל ריצת חילוץ ב-HECTON-8 יכולה לחשוף נתיב אחר דרך הפצע. קניון עשוי להיפתח מוקדם יותר, שונית כבלים יכולה להסתיר כיס בטוח, bloom יכול לדחוף בעלי חיים לנתיב שהיה ריק, ושרשרת ראיות יכולה לצוף בסדר חדש. הפיזיקה של הירח לא מתאפסת למען בידור. Aegir נשאר הכוכב הראשי. HECTON-8 נשאר בסולם המסלול שלו. Great Tide שומר מרווח. רצועות העומק נשארות באותו סדר אכזרי. blue debt שומר התנהגות לחץ. Atlas נשאר קשור לאגן העמוק ביותר.
+Survey Geology Invariants מאפשרים ל-HECTON-8 changing charts ו-route uncertainty תוך שמירת fixed astronomy, depth order, Great Tide logic, blue-debt behavior ו-Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. ה-salvage chart יכול disagree with itself; ה-moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+Later chart יכול bury evidence differently. הוא לא יכול rewrite gravity, tide או guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/he_IL. -->

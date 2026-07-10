@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Catatan Fisika Great Tide
 
-Catatan Fisika Great Tide menjaga bencana tetap jujur. HECTON-8 rentan terhadap resonansi pasang, runtuh es, surge badai dan buangan panas. Kesalahan Deep Reach terlihat pada margin, kapasitas evakuasi dan prioritas keputusan, bukan pada sebab magis palsu.
+Catatan Fisika Great Tide menjaga bencana tetap jujur. HECTON-8 sudah berbahaya: geometri musim semi Aegir menarik laut, kriosfer membebani paparan, tumpukan badai menghapus margin jadwal, dan panas koloni mendorong drainase tersegel ke arah salah. Kesalahan Deep Reach datang setelah fisika. Mereka menunda cadangan naik sebagai biaya masa depan, melindungi kontinuitas Atlas, dan menghitung tubuh sebagai massa prioritas rendah.
 
-Catatan Fisika Great Tide menetapkan logika bencana HECTON-8: laut berbahaya secara fisik, dan kejahatan korporatnya adalah merancang dengan margin optimistis sampai sistem sebesar bulan menagih utang. Jangan dilunakkan: fisika nyata membunuh orang, dan Deep Reach memastikan fisika itu punya korban.
+Catatan Fisika Great Tide menetapkan logika bencana HECTON-8: samudra seukuran bulan menjadi mematikan ketika fisika terukur bertemu optimisme korporat, evakuasi tertunda, dan perangkat kontinuitas yang dilindungi. Jangan jadikan ini mistik. Fisika membunuh orang. Deep Reach memastikan fisika punya kerumunan korban.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/id_ID. -->

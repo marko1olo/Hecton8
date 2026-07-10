@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Sahana Iqbal/Triage"
+title: "סהאנה איקבל, מכונאית טריאז'"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Sahana Iqbal/Triage
+# סהאנה איקבל, מכונאית טריאז'
 
-HE LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+סהאנה איקבל תיקנה מכונות בחדר שבו עובדים פצועים חיכו ששמותיהם יעלו במסילה. התיק שלה קושר הערות מומנט לתגי מיטות, מחסניות סקרבר, פתקי עתודת חמצן וסרט הסגר כתום. החפצים הופכים את עיכוב Deep Reach לפיזי: אותו לוח שהגביל מתח ברגים גם החליט איזה גוף, שסתום או מסנן יקבל טיפול לפני ירידת הלחץ הבאה. העבודה של איקבל אינה רחמים בכתב גדול. זו יד שבוחרת את הסדר הפחות קטלני בזמן שהסדר הרשמי משתנה.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+תיק: סהאנה איקבל. לוח מומנט, תגי מיטות וסרט הסגר חולקים סדר המתנה אחד.
 
 ## Terminal
 
-HE LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+מפרץ טריאז' C-2 / IQBAL, SAHANA: מגבלות מומנט מוצבות ליד תגי עתודת חמצן. כלים, מיטות ומחסניות סקרבר בתור על אותה מסילה. שפת ההסגר הזיזה שוב את קו ההגעה.
 
 ## Audio
 
-HE LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+איקבל תיקנה את מה שיכלה להגיע אליו. הלוח המשיך להחליט מה נחשב בר הגעה.
 
 ## Field Note
 
-HE LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+להשתמש באיקבל בלולאות תיקון הסגר, מסדרונות מרפאה, תורי חמצן וכל ממשק שבו בחירת מכונה עולה בבירור בזמן אנושי.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/he_IL. -->

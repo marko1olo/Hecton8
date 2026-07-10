@@ -19,7 +19,9 @@ localization_flags: 0
 
 # Barnard Mark
 
-The first Barnard mark on HECTON-8 is small enough to miss: a tool stamp, a locker tag, a supply habit, a scar left by cheap yard steel. That is why it matters. The moon stops being a remote contract when familiar work marks begin appearing beside evacuation holds, worker names, and failed route permissions.
+The first Barnard mark is small: a left-hand tool stamp, a locker hinge with the wrong alloy, a cheap yard cut on a pressure clamp. It is not Deep Reach issue. Somebody brought Barnard hardware down before the current operator.
+
+That matters because Barnard work has habits Deep Reach does not specify: reused clamps, third-owner cutters, left-hand stamps, bad heat treat hidden under clean paint. When those marks appear beside evacuation holds and failed route permits, HECTON-8 stops being a distant contract and becomes a workplace tied to the operator's own salvage culture.
 
 ## Scanner
 
@@ -35,6 +37,6 @@ That cut is Barnard. Cheap alloy, left-hand stamp, bad heat treat. Whoever broug
 
 ## Field Note
 
-You can shrug off a dead corporation. A wrench from your own yard is harder to leave in the mud.
+Barnard left-hand stamp. Third-owner wrench. Bad heat treat. Do not clean the mud from the mark until the scan locks it.
 
 <!-- In-Game Wiki; generated from P003_BARNARD_MARK/en_US. -->

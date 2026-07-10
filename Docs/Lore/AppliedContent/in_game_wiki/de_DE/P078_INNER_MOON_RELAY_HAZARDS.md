@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relaisgefahren der inneren Monde"
+title: "Innere-Mond-Relay-Gefahren"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisgefahren der inneren Monde
+# Innere-Mond-Relay-Gefahren
 
-Relaisgefahren der inneren Monde machen Kontaktverlust physisch. Skarn-ausgerichteter Surge kann Antennen korrumpieren, ohne sie zu töten. Velas Staub und Eis schließen Optik, während die Route weiter Existenz behauptet.
-
-Claw und Lumen sind schlimmer, weil sie alte Routenlogik tragen. Ein Handshake kann formal gültig und operativ nutzlos sein. Darum kann Black Keel ein Paket loggen, custody halten und trotzdem einen Körper im Wasser lassen.
+Inner moon relay hazards machen failed contact physisch statt bequem. Skarn-aligned surges konnen antennas corrupt, ohne killing them. Vela dust and ice konnen optics shutter, wahrend die route noch reports itself as open. Claw und Lumen sind schlimmer, weil sie old buoy logic carry: Ein handshake kann formally valid und operationally useless sein. Darum kann Black Keel log a packet, preserve custody und trotzdem ein human signal waiting in water lassen. Das system musste nicht go mute. Es musste nur answer from the wrong sky.
 
 ## Scanner
 
-INNERE LEITER // Skarn sättigt Antennen. Vela streut Optik. Alte Claw- und Lumen-Routen halten veraltete Handshakes lebendig.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw und Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-RELAISGEFAHR-NOTIZ // Kontaktverlust kann Geometrie, Teilchenwetter, Staub-Shutter oder geerbtes buoy law sein. Saubere UI in Surge-Fenstern verdächtigen.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Das Relais schwieg nicht. Es wiederholte das falsche Jahrhundert.
+Das relay wurde nicht still. Es repeated the wrong century.
 
 ## Field Note
 
-Ein sauberes Icon kann durch alten Himmel lügen.
+Ein clean icon kann noch durch old sky lugen.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/de_DE. -->

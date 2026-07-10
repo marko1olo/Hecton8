@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Granica ryzyka i nagrody kontraktu"
+title: "Wiersz ryzyka/nagrody kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica ryzyka i nagrody kontraktu
+# Wiersz ryzyka/nagrody kontraktu
 
-Regrywalność HECTON-8 nie jest odziedziczoną mocą. To gorszy kontrakt, ciaśniejsze okno, wcześniejsze żądanie dowodu i nośnik, który pamięta, które części ciebie wciąż są zastawem.
+Kontrakty Marauder wokół Aegir wyceniają niebezpieczeństwo, zanim ktoś otworzy właz. Ciężar zastawu, okno odzysku, żądanie nadzoru, kolejność dowodów, ekspozycja kwarantanny i waga klauzuli decydują, czemu dwa przejścia przez ten sam wrak czują się inaczej. Oferta przerzuca odpowiedzialność na nurka, zanim właz się otworzy.
 
 ## Scanner
 
-Wiersz kontraktu wiąże zastaw, okno burzy, porządek dozoru, pułap wypłaty i wagę klauzuli.
+Wiersz oferty wrogi: ciężar zastawu, okno burzy, nakaz nadzoru, głębokość dowodów, sufit wypłaty i waga klauzuli Deep Reach są powiązane.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: wiersze wymagają ciężaru zastawu, pułapu wypłaty, okna burzy, dozoru próbki, porządku dowodów i wagi klauzuli Deep Reach. Kontrakt jest pierwszym drapieżnikiem.
+SCHEMAT RYZYKA KONTRAKTU / Aegir Reclamation Pool: publikować nagrodę dopiero po zapisaniu ciężaru zastawu, sufitu wypłaty, okna burzy lub orbity, żądania nadzoru próbki, głębokości kolejności dowodów, ekspozycji kwarantanny i wagi klauzuli Deep Reach. Przyznanie trasy jest warunkowe, dopóki przewoźnik nie przyjmie podziału odpowiedzialności.
 
 ## Audio
 
-Kontrakt jest pierwszym drapieżnikiem.
+Black Keel: nowa oferta opublikowana. Wyższa wypłata, krótsze okno burzy, nadzór próbki najpierw. Przeczytaj klauzulę przed zanurzeniem.
 
 ## Field Note
 
-Zmiany nagrody należą do wiersza kontraktu, nie improwizowanego tekstu lore.
+Jeśli nagroda skacze, znajdź klauzulę, która się przesunęła. Zwykle chodzi o nadzór, pogodę, kwarantannę albo cudzy problem z dowodem.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pl_PL. -->

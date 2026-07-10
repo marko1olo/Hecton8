@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Jendela Dasar Laut yang Bisa Dicapai"
+title: "Jendela Seafloor yang Dapat Dicapai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Jendela Dasar Laut yang Bisa Dicapai
+# Jendela Seafloor yang Dapat Dicapai
 
-Sebagian besar dasar laut HECTON-8 tidak bisa dicapai dengan keberanian biasa. Tekanan membangun dinding sebelum dasar terlihat. Jendela yang bisa dicapai adalah pengecualian: tempat robek di mana paparan runtuh, punggung terbuka, bekas ventilasi panas, atau kolom brine padat mengubah kurva turun. Itu bukan gua aman. Itu perjanjian sempit dengan geologi. Kru bisa menyentuh kerak tua, mengambil mineral tumbuh-tekanan, menemukan perangkat koloni tersegel, atau membaca peristiwa terkubur sebelum laut menutup rute lagi.
+Accessible Seafloor Windows adalah rare pressure breaks tempat HECTON-8 exposes ancient floor, high-risk salvage, mineral seams, dan evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Di sini shell robek thin enough agar crawler bisa touch old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Sebagian besar moon menyimpan floor sebagai pressure secret. Windows adalah exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/id_ID. -->

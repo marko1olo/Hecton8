@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Retraso de ruta sin FTL"
+title: "Demora de ruta sin FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Retraso de ruta sin FTL
+# Demora de ruta sin FTL
 
-La distancia es una regla de supervivencia en la ruta Aegir. Ley, deuda y packets antiguos pueden alcanzar al jugador mucho antes que un carrier, tender, repuesto o rescatista humano. La respuesta del relay no cancela el trabajo de presión delante de ti; solo prueba que alguien puso tu claim en una cola.
+La distancia es un límite operativo en la ruta de Aegir. Un paquete puede adelantar a una nave. Una respuesta legal puede llegar a HECTON-8 antes que la pieza, tripulación de apoyo, botella de presión o rescatador humano que haría útil esa respuesta. Por eso el contacto de relevo cambia el papeleo antes de cambiar la sala a tu alrededor. Cuando el archivo diga que la ayuda reconoció la reclamación, comprueba edad del paquete, masa del portador, ranura de frenado y clima de descenso local antes de fiarte de la frase.
 
 ## Scanner
 
-Registro de tránsito. El tráfico Aegir depende de precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody y demora legal.
+Registro de tránsito. El tráfico de Aegir depende de cartas de sondas, carriles de haz, carga de fusión de pellets, masa de frenado, edad de paquete, custodia de relevo y ventanas de descenso con clima.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // LÍMITE DE TRÁNSITO. FTL ausente. Ansible ausente. El rescate vivo requiere traslado físico, braking architecture, carrier position, descent mass y una local window válida.
+NODO DE ARCHIVO PÚBLICO // LÍMITE DE TRÁNSITO. FTL: ausente. Ansible: ausente. Rescate en vivo requiere posición de portador, asignación de frenado, masa de descenso, clima local y una ventana de custodia no vencida.
 
 ## Audio
 
-La ayuda puede estar presente en lo legal y a años de distancia en lo físico.
+Un portador puede registrar tu emergencia y seguir a años de masa.
 
 ## Field Note
 
-Nota de Marauder: cuando responda el relay, pregunta cuántos años tiene la respuesta y qué masa puede mover.
+Nota de Merodeador: toda respuesta de rescate necesita cuatro números: edad del paquete, masa del portador, ranura de frenado, ventana de descenso.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/es_ES. -->

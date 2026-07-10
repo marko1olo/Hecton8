@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Registre physique de la Grande Marée"
+title: "Archive physique de la Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre physique de la Grande Marée
+# Archive physique de la Great Tide
 
-Le Registre physique de la Grande Marée garde la catastrophe honnête. HECTON-8 était vulnérable à la résonance de marée, à l'effondrement de glace, aux surcotes et aux rejets thermiques. La culpabilité de Deep Reach se lit dans les marges, la capacité d'évacuation et les priorités de décision, pas dans une fausse cause magique.
+L'archive physique de la Great Tide garde la catastrophe honnête. HECTON-8 était déjà dangereuse : la géométrie printanière d'Aegir tirait la mer, la cryosphère chargeait les plateaux, les tempêtes mangeaient les marges de planning, et la chaleur coloniale repoussait les drains scellés. La faute de Deep Reach vient ensuite. Elle a repoussé la réserve d'ascension, protégé la continuité Atlas et traité les corps comme une masse moins prioritaire.
 
 ## Scanner
 
-Le modèle d'inondation est intact. La mer n'avait pas besoin d'un méchant, seulement de marges mauvaises.
+Le modèle de crue est intact. L'océan n'avait pas besoin de méchanceté. De mauvaises marges, des drains scellés et des cadres qui maintiennent le quart suffisaient.
 
 ## Terminal
 
-MODÈLE GRANDE MARÉE: cisaillement cryosphérique, levée océanique résonante, rejet thermique artificiel et empilement d'orages dépassent l'enveloppe d'évacuation sûre d'un facteur 3,7. Réserve d'ascension indépendante: non financée.
+MODELE GREAT TIDE : cisaillement de cryosphère, soulèvement océanique résonant, rejet thermique industriel et empilement de tempêtes ont dépassé l'enveloppe d'évacuation sûre d'un facteur 3.7. Réserve d'ascension indépendante : non financée. Réserve de continuité Atlas : protégée.
 
 ## Audio
 
-Le rapport avait raison. C'est pour cela qu'ils l'ont enterré.
+Le rapport disait vrai. C'est pour cela qu'il a disparu.
 
 ## Field Note
 
-N'adoucis pas: une vraie physique a tué des gens, et Deep Reach lui a donné des victimes.
+N'en fais pas un mythe. La physique a tué. Deep Reach a veillé à placer une foule devant elle.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/fr_FR. -->

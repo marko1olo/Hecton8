@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegirs Heimatstern"
+title: "Aegirs Wirtsstern"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegirs Heimatstern
+# Aegirs Wirtsstern
 
-Aegir umkreist einen orange-gelben K-Stern. HECTON-8 ist nicht dunkel, weil Licht fehlt; Meerestiefe, Sturmwasser, Finsternisse, Schlick, Druck und zerbrochene Industrie machen es dunkel.
+Aegir umkreist einen normalen K-Typ-Primärstern. HECTON-8 ist nicht dunkel, weil der Stern versagt; dunkel wird es durch Wassersäule, Sturmtrübung, Finsterniszeiten, Schlick, Druck und gebrochene Industrie. Oberflächenlicht kann Schelfleben nähren, während der Abgrund ein juristischer und physischer Blindfleck bleibt.
 
 ## Scanner
 
-K-Typ-Primärlicht bestätigt. Oberfläche hat Licht; Tiefe, Stürme und Finsternisse erzeugen Dunkelheit.
+K-Typ-Primär bestätigt. Es gibt Licht im System; Tiefe, Stürme, Finsternisse und Schuld erledigen die Dunkelheit.
 
 ## Terminal
 
-Ran/Aegir-Ephemeride: K-Zwerg, verzögerte interstellare Pakete, kein FTL-Rettungsvektor. Jede Hilfe ist lokal.
+RAN/AEGIR-EPHEMERIS: K-Zwerg-Primär, stabile Photosphärenleistung, verzögerte interstellare Paketklasse, kein FTL-Rettungsvektor. Hilfe lokal behandeln, bis Masse ankommt.
 
 ## Audio
 
-Sternlicht erreicht das Schelf. Es erreicht nicht das Problem.
+Sternlicht erreicht den Schelf. Es erreicht nicht das Problem.
 
 ## Field Note
 
-Der Schrecken ist nicht der Stern. Es ist der Ozean.
+Der Stern ist nicht der Schrecken. Der Schrecken liegt dort, wo der Ozean Licht zum Gerücht macht.
 
 <!-- In-Game Wiki; generated from P016_AEGIR_HOST_STAR/de_DE. -->

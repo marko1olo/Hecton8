@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Geología ahogada
 
-La geología ahogada explica rejugabilidad mediante terreno, salmuera, calor y presión.
+La geología ahogada hace que las rutas seguras caduquen: tormentas, deriva de limo, desplazamiento de salmuera y daños de salvamento pueden convertir la ruta de ayer en trampa.
 
 ## Scanner
 
-Plataformas, cañones, escaleras de salmuera y ventilas. La luna enseña descenso por terreno, no por puertas.
+Plataforma estratificada, embudo de cañón, escalera de salmuera, cicatriz de respiradero y exposición de limo detectadas. El terreno es enrutado de presión, no fondo.
 
 ## Terminal
 
-Pronóstico: colapso de plataforma, embudos, cortinas de densidad, plumas térmicas, limo abisal.
+PRONOSTICO DE PROFUNDIDAD: colapso de plataforma, embudo de cañón de servicio, cortinas de densidad de salmuera, plumas térmicas, exposición de limo abisal. La confianza de ruta decae tras marejada o cortes de salvamento.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Lee la roca antes de pedirle al traje que gane.
 
 ## Field Note
 
-La ruta segura es una lectura, no un pasillo.
+La ruta más segura es una lectura, no un pasillo.
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/es_ES. -->

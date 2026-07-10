@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "企業応答台帳"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 企業応答台帳
+# Corporate Response Ledger
 
-台帳は、誰も即興していないときのBlack Keelの話し方だ。危険を認め、待ち行列を開き、請求権を保全し、それでも操作者を資産規則の後ろに置く。応答台帳は有用な信号であり、実行可能になった敵対的書類でもある。
+corporate response ledgerは、誰もimprovisingしていない時にBlack Keelが話す方法である。即座にdistressをacknowledgeし、route queueを開き、claimをpreserveし、sample custodyを要求し、hull riskをlogし、それでもliving operatorをasset rulesの後ろに待たせることができる。ledgerが価値を持つのはsystemが何を知っているかを暴くからだ。敵対的なのはknowingがactingと同じではないからだ。HECTON-8で最初のreplyはしばしば、machineがすべてを聞き、ほとんど何も約束しなかった証拠になる。
 
 ## Scanner
 
-すべての返答は契約語で届く。資産保管、責任ロック、サンプル経路、船体リスク、そして操作者回収。
+すべてのreplyはcontract languageで届く。asset custody、liability lock、sample route、hull risk、その後operator recovery。
 
 ## Terminal
 
-応答区分: 資産保全。操作者回収はサンプル保管、責任封印、船体監査、支払い経路の後に追加。
+RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route、evidence retention。Automated acknowledgement valid。Rescue priority unresolved。
 
 ## Audio
 
-返答は自動だった。救助は条件付きだった。
+replyはautomaticだった。rescueはconditionalだった。
 
 ## Field Note
 
-即時応答は即時救助ではない。
+immediate responseはimmediate rescueではない。
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ja_JP. -->

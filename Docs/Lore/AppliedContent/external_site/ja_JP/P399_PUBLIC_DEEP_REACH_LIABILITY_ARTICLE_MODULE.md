@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach責任証拠
 
-Deep Reachが有責なのは、HECTON-8の災害が自然であり、同時にひどく管理されたものでもあり得るからだ。海は本物の力を出した。tide resonance、cryosphere shear、storm stacking、pressure failure。会社が出したのは薄いmargins、遅いauthorization、quarantine delay、Atlas priority rules、そして記述された人々より長く残るほど整った書類だった。最も強い証拠は物理的かつ手続き的だ。executive authorityで保持されたドア、窓が閉じる前に変えられたsensor tolerance、legal clearanceのために遅らされた列、水がまだ動いている間に労働者をclaim categoriesへ変換するloss ledger。プレイヤーは、へこみ、時計、ルートと照合して公式語を疑うようになる。
+Deep Reachへの公開訴追は、海を本物のままにした時に最も強い。HECTON-8を壊したのは漫画的な陰謀や不可能科学ではない。会社がモデル化し、値付けし、遅らせ、その後、作業者が圧力を生き延びるより長く法廷を生き延びる言葉で記述した条件だった。有用な証拠は物理的かつ手続き的だ。変更された許容シート、経路保留、遅延した避難窓、隔離ラベル、Atlas優先表、水がまだ部屋を流れている間に名前を請求分類へ変えた損失台帳。Deep Reachは災害を発明する必要がなかった。安い対応を承認済みに見せる署名があれば足りた。
 
 ## Scanner
 
-liability記録。実在の潮汐物理、承認されたmargin risk、避難遅延、quarantine holds、Atlas weighting、整えられた損失文が同じ証拠連鎖に集まる。
+責任記録。潮汐力は本物。署名済みマージン変更、隔離保留、避難列、Atlas重み、損失文言が防げた部分を運ぶ。
 
 ## Terminal
 
-公開アーカイブノード // LIABILITY証拠。Great Tideは受理済み。sensor margins、evacuation queue遅延、quarantine holds、Atlas weighting、worker classification、loss conversionは審査継続。
+公開アーカイブノード // 責任審査 DR-H8。自然力は受理済み。未決項目: センサーマージン、扉権限、列遅延、隔離保留、Atlas重み、作業者から請求分類への変換。
 
 ## Audio
 
-災害は自然でありながら、署名を持つことがある。
+潮は鋼を折った。どの扉を閉じたままにするかは署名が決めた。
 
 ## Field Note
 
-Marauderメモ: 潮とは争うな。その横の署名と争え。
+マローダー記録: 潮が偽物だったと争うな。潮時計の横に署名を置け。
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ja_JP. -->

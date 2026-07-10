@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Grondstoffenstapel
 
-HECTON-8 is geen maan met één grondstof. Vroege materialen houden leven, salvage opent routes, pekel leert druk, en blue debt is alleen de hoogste verleiding.
+HECTON-8 is geen maan met één grondstof. Vroege materialen houden ademhaling en reparatie mogelijk. Salvage opent verzegelde routes. Pekel en ventchemie leren druk. Blauwe schuld en pressure glass staan hoger in de claimketen, maar hun waarde klopt pas omdat kleinere materialen de operator lang genoeg in leven houden om ze te bereiken.
 
 ## Scanner
 
-Stapel: rifvezel, pekelzouten, relay-kernen, drukventielen, blue debt, pressure glass, Atlas-rooster.
+Stapel gelezen: rifvezel, pekelzouten, relaiskernen, drukkleppen, ventkatalysatoren, blauwe schuld, pressure glass, Atlas-rooster.
 
 ## Terminal
 
-Waarde: overlevingsbiota, menselijke salvage, routehardware, drukchemie, blue debt, pressure glass, continuity substrate.
+WAARDEMODEL: overlevingsbiota, menselijke salvage, routehardware, drukchemie, blauwe schuld, pressure glass, continuïteitssubstraat. Stapel niet tot één wondermateriaal reduceren.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Als de carrier massa vóór namen vraagt, weet je wie het contract bezit.
 
 ## Field Note
 
-Niets hier is alleen buit.
+Niets hier is alleen buit. Elke sample hoort bij een drukeconomie.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/nl_NL. -->

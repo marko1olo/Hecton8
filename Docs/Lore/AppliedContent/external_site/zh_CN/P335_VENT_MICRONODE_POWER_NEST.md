@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "喷口微节点供能巢"
+title: "热 vent 微节点电力巢"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 喷口微节点供能巢
+# 热 vent 微节点电力巢
 
-喷口微节点供能巢是深层维修网络缓慢的心跳。靠近喷口的地方，海洋提供热梯度、矿物流、压力振动和化学不平衡。Deep Reach曾把这些梯度用于仪器和应急充电。干净电网失败后，Atlas保留了这个习惯。
+vent微节点让Atlas保持小型且顽固。制造麻烦不需要完美的中央机器。本地电力、本地损伤和本地维修规则，足以让同一条走廊在两次造访之间改变。
 
-微节点不会让Atlas无所不见。这个限制很重要。它能向附近薄膜打出脉冲，硬化密封层，给无人机巢滴流充电，或在受损基质里保存本地决策记录。成千上万个这样的节点让深渊显得有组织，但并不安全。玩家在底部对抗的不是神。玩家穿行在一座由小修小补组成的城市里，而这些维修已经忘了人是用来做什么的。
+## Scanner
+
+vent喉部的陶瓷节点簇正在收集热梯度。附近有无人机充电疤痕和新鲜密封反应。
+
+## Terminal
+
+ATLAS本地电力节点 / VENT V-3：热梯度供给微电池堆，唤醒40 m内的生物膜和密封回路，无人机充电间隔不规则。无中央指令锁定。
+
+## Audio
+
+热、矿物喉部、节点。足够让维修在你通过后醒来。
+
+## Field Note
+
+如果vent节点是温的，就假设房间会在你身后醒来。碰矿物喉部前先标出口。
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/zh_CN. -->

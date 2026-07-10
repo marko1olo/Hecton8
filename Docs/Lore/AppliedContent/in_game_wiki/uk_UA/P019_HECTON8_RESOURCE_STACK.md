@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Стек ресурсів"
+title: "Ресурсний стек"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Стек ресурсів
+# Ресурсний стек
 
-HECTON-8 не місяць одного ресурсу. Ранні матеріали тримають гравця живим, salvage відкриває маршрути, brine навчає тиску, а blue debt лише вершина спокуси.
+HECTON-8 не місяць одного ресурсу. Ранні матеріали дають дихати й лагодити. Salvage відкриває запечатані маршрути. Розсіл і жерлова хімія вчать тиску. Синій борг і pressure glass стоять вище в ланцюгу claim, але їхня цінність має сенс тільки тому, що менші матеріали тримають оператора живим достатньо довго, щоб до них дійти.
 
 ## Scanner
 
-Стек: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.
+Стек прочитано: рифове волокно, солі розсолу, ядра ретрансляторів, pressure valves, жерлові каталізатори, синій борг, pressure glass, решітка Atlas.
 
 ## Terminal
 
-Цінність: біота виживання, людський salvage, route hardware, хімія тиску, blue debt, pressure glass, continuity substrate.
+МОДЕЛЬ ЦІННОСТІ: біота виживання, людський salvage, маршрутне залізо, хімія тиску, синій борг, pressure glass, субстрат безперервності. Не зводити стек до одного диво-матеріалу.
 
 ## Audio
 
-Якщо carrier питає масу раніше за імена, ти знаєш, кому належить контракт.
+Якщо carrier просить масу раніше за імена, ти знаєш, хто володіє контрактом.
 
 ## Field Note
 
-Тут немає просто луту.
+Тут ніщо не просто здобич. Кожний зразок належить економіці тиску.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/uk_UA. -->

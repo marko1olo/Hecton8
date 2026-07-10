@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ton-vensterschuld"
+title: "Tonnenvenster-Schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ton-vensterschuld
+# Tonnenvenster-Schuld
 
-Een ton-venster is een stuk carriercapaciteit gemeten in massa, burn-timing, quarantainevolume en juridische prioriteit. Voor de operator voelt het als schuld, omdat elk nuttig object van HECTON-8 in hetzelfde ledger komt als het lichaam dat het vond. Een verzegelde kist kan licht zijn en juridisch zwaar. Een monsterrek kan weinig massa kosten en toch schoon volume eisen. Menselijke extractie lijkt vanzelfsprekend tot ballast, zuurstofreserve en payload custody het beschikbare venster al hebben opgebruikt. HECTON-8s economie wordt fysiek in plaats van abstract. De speler wordt niet gestraft door een valse moraalmeter. De speler zit vast in een machine die overleven prijst via brandstof, massa, besmetting en papier.
+Tonnenvenster-Schuld verandert overleven in harde logistics: extraction, oxygen, samples, salvage, quarantine volume en burn margin bezetten hetzelfde priced mass window.
+
+## Scanner
+
+Mass-window ledger. Hulp heeft gewicht voordat ze taal heeft.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass botst met sealed payload, ballast reserve, oxygen debt, quarantine sample volume en hull patch inventory. Manual priority vereist paid override, verified hazard proof of custody reclassification.
+
+## Audio
+
+Het schip kan een leven tillen. De vraag is wat het ledger het nog laat dragen.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: de carrier prijst genade per kilogram.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/nl_NL. -->

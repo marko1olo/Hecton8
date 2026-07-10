@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Kabelsplice-litteken"
+title: "Cable Splice Scar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kabelsplice-litteken
+# Cable Splice Scar
 
-Een kabelsplice-litteken is een vroege Atlas-6-spoor dat nog op onderhoud lijkt. De reparatie houdt stroom door een beschadigde servicelijn, maar het materiaal past niet bij kolonieprocedure en de aftekening ontbreekt. Deze littekens horen te verschijnen voordat het reparatienetwerk biologisch aanvoelt: nuttig, specifiek en licht verkeerd.
+Een cable splice scar is een van de eerste Atlas traces die nog voor maintenance kunnen doorgaan. De line is broken, de official repair absent, en power keeps moving toch. Het material rond de wound is geen flesh en geen normal insulation; het gedraagt zich als een answer grown around a question nobody filed. Early scars moeten bijna helpful voelen. Lights return. A relay wakes. A door gets one more cycle. Het ongemak komt later, wanneer dezelfde repair logic verschijnt waar no hand could have reached en no work order was ever written.
 
 ## Scanner
 
-Niet-standaard splice. Isolatie groeide opnieuw rond een servicekabel nadat menselijke routing faalde; Atlas-6-tag is gedeeltelijk en onderhoudsautoriteit ontbreekt.
+Nonstandard splice. Insulation regrew rond een service cable nadat human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: menselijke splice faalde open. Autonome continuïteitsreparatie geaccepteerd om relaislast te behouden. Patroon herhaalt bij kabelrifknooppunten met lager isolatieverlies en zonder arbeiderssignatuur.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Iemand repareerde de kabel nadat het papierwerk stopte. Of iets.
+Iemand fixed the cable nadat paperwork stopped. Of iets deed het.
 
 ## Field Note
 
-Eerst nuttig. Later verkeerd. Zo stellen Atlas-reparaties zich voor.
+Eerst useful. Later wrong. Zo stellen Atlas repairs zich voor.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/nl_NL. -->

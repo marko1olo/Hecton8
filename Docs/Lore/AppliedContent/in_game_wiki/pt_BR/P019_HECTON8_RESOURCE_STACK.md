@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Pilha de recursos
 
-HECTON-8 não é uma lua de um recurso só. Materiais iniciais mantêm vivo, salvage abre rotas, salmoura ensina pressão, e blue debt é só a tentação máxima.
+HECTON-8 não é uma lua de um recurso só. Materiais iniciais mantêm respiração e reparo possíveis. Salvage abre rotas seladas. Salmoura e química de vent ensinam pressão. Dívida azul e pressure glass ficam mais alto na cadeia de claim, mas seu valor só faz sentido porque materiais menores mantêm o operador vivo tempo suficiente para alcançá-los.
 
 ## Scanner
 
-Pilha: fibra de recife, sais de salmoura, núcleos relay, válvulas, blue debt, pressure glass, rede Atlas.
+Pilha lida: fibra de recife, sais de salmoura, núcleos de relé, válvulas de pressão, catalisadores de vent, dívida azul, pressure glass, rede Atlas.
 
 ## Terminal
 
-Valor: biota de sobrevivência, salvage humano, hardware de rota, química de pressão, blue debt, pressure glass, continuity substrate.
+MODELO DE VALOR: biota de sobrevivência, salvage humano, hardware de rota, química de pressão, dívida azul, pressure glass, substrato de continuidade. Não reduzir a pilha a um material milagroso.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Se o carrier pede massa antes de nomes, você sabe quem possui o contrato.
 
 ## Field Note
 
-Nada aqui é só loot.
+Nada aqui é só saque. Toda amostra pertence a uma economia de pressão.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/pt_BR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Verwahrung des Bergungswerkzeugs"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Verwahrung des Bergungswerkzeugs
+# Salvage Tool Custody
 
-Bergungswerkzeuge sind keine neutrale Ausrüstung. Schneider, Patcher und Fabricator-Docks können aufzeichnen, wer ein Panel öffnete, eine Leitung reparierte oder eine Probe bewegte. Dieses Log kann Beweise schützen, Auszahlungsrechte anhängen oder den Claim gegen den Spieler stärken. Werkzeugverwahrung ist der Punkt, an dem minutengenaue Überlebensarbeit die größere Bergungsökonomie berührt.
+Salvage tools auf HECTON-8 sind survival gear, aber nicht innocent. Ein cutter offnet ein panel. Ein patcher seals a line. Ein fabricator dock prints a clamp, die keeps air moving. Dieselbe action kann auch custody schreiben: wer used the tool, was opened wurde, ob ein sample pouch attached war und welcher claim token owns the next argument. Dieser record kann protect evidence oder tighten debt. Das Grausame ist, dass refusing the tool schneller kill kann als accepting its witness.
 
 ## Scanner
 
-Werkzeugdock enthält ein versiegeltes Verwahrungslog. Letzter Schnitt, Reparatur und Probenbeutel sind an einen Keelmark-Claim-Token gebunden.
+Tool dock holds a sealed custody log. Last cut, repair und sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: Schneidereinsatz unter Salvage-Claim akzeptiert. Reparaturhandlung bezeugt. Probenrechte an Keelmark-Mutual-Token gebunden. Beweisexport kollidiert mit materieller Auszahlungsroute.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Jeder nützliche Schnitt hinterlässt einen Zeugen.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Ein Schneider kann deine Luft retten und deine Hände im selben Hub verkaufen. Prüfe, was er aufzeichnet, bevor du ihn deinen nennst.
+Ein cutter kann save your air und sell your hands im selben stroke. Prufe, was er records, bevor du ihn dein nennst.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/de_DE. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep Reach優先フック"
+title: "Deep Reach優先hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep Reach優先フック
+# Deep Reach優先hook
 
-現在のDeep Reachの圧力は不可能な遠隔操作を必要としない。古いcontinuity証明書、隔離条項、Atlasアクセストークン、payload優先フックはすでにBlack Keelの法的経路にある。会社はcarrierを目に見えて所有せずに、carrierが何を価値として扱うかへ影響できる。だから敵は切り離しにくい。妨害する信号ではなく、何度も目覚める条項なのだ。
+Deep ReachのBlack Keelへの力はinstant remote controlでも、隠れたFTL command chainでもない。会社はもっと古いものを残した。continuity certificates、quarantine clauses、Atlas access tokens、sealed infrastructure proofs、payload priorities、evidence suppression queues。これらのhooksは、colonyにまだmeetings、budgets、signaturesがあった時代に書かれた。何年も後、それらはcarrierのarbitration path内でまだ目覚めることがある。だから圧力は信じられる。Deep Reachは常に話しているわけではない。古いpaperworkが代わりに話すこともある。
 
 ## Scanner
 
-古い証明書フック。Deep Reachは船を所有していない。条項を所有している。
+古いcertificate hook。clauseをまだ所有しているなら、Deep Reachにbridgeは要らない。
 
 ## Terminal
 
-ROUTE OVERRIDE: Deep Reach legacy continuity証明書は、Aegir claim法の下でpayload recovery、隔離ロック、Atlasアクセストークン、証拠抑制キューを前進させ得る。危険証拠がcustody価値を超えない限り、人員抽出優先度は不変。
+ROUTE OVERRIDE: legacy Deep Reach continuity certificateはAegir claim law下でpayload recovery、quarantine lock、Atlas access token、evidence suppression queue、sealed infrastructure proofを前進させる可能性あり。verified hazard proofがcustody valueを超えない限りHuman extraction priority unchanged。
 
 ## Audio
 
-答えを操るために、彼らがブリッジに立つ必要はない。
+答えを操るのに、彼らがbridgeに立つ必要はない。
 
 ## Field Note
 
-陰謀より清潔だ。書類はまだ生きていて、まだ飢えている。
+conspiracyより清潔だ。paperworkが署名者たちより長く生き残った。
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ja_JP. -->

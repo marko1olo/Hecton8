@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tangga Rute Ngarai Brine
 
-Ngarai brine membuat progres kedalaman menjadi fisik. Lapisan padat, dinding mineral, bocor panas dan distorsi akustik mengajari pemain mengapa perjalanan lebih dalam butuh instrumen dan disiplin tekanan yang lebih baik.
+Ngarai brine mengubah kedalaman menjadi zat. Sungai garam padat berada di dalam laut seperti lantai, cermin, dan perangkap. Rute bersih dibangun dari penanda densitas, jendela ballast, pemeriksaan relai, dan disiplin sudut, bukan keberanian. Lapisan lebih dalam mengajarkan mengapa instrumen penting: sonar bisa memantulkan ruang di atas, apung bisa berbohong, dan suit bisa benar sementara laut menolak.
 
 ## Scanner
 
-Penanda kerapatan brine. Rute turun adalah kimia yang memiliki dinding.
+Penanda densitas terkonfirmasi. Rute ini bukan koridor; ini kimia dengan dinding.
 
 ## Terminal
 
-KONTROL NGARAI BRINE: antarmuka kerapatan cukup stabil untuk turun bertahap. Peringatan: distorsi relay akustik, kesalahan apung kendaraan dan lantai palsu di bawah 1800 m.
+KONTROL NGARAI BRINE: antarmuka densitas stabil untuk turun bertahap. Bahaya di bawah 1800 m: distorsi relai akustik, galat apung kendaraan, peristiwa lantai palsu sensor.
 
 ## Audio
 
-Ngarai adalah tangga dari air yang salah.
+Ngarai itu tangga dari air yang salah.
 
 ## Field Note
 
-Kamu tidak berenang melewati ngarai. Kamu bernegosiasi dengan lapisan yang lebih berat dari setelanmu.
+Kamu tidak berenang melewati ngarai. Kamu bernegosiasi dengan lapisan yang lebih berat daripada suit.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/id_ID. -->

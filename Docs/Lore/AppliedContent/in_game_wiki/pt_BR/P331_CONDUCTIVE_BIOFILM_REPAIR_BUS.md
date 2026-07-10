@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Barramento de reparo por biofilme condutor"
+title: "Barramento de reparo por biofilme condutivo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Barramento de reparo por biofilme condutor
+# Barramento de reparo por biofilme condutivo
 
-O biofilme condutor surge onde capas de cabo rachadas vazam sais de cobre, calor e corrente fraca para a água de HECTON-8. Não é uma mente. É um condutor vivo útil o bastante para Atlas tratá-lo como barramento de reparo. Uma linha danificada pode parecer saudável enquanto o filme carrega apenas um pulso fino de diagnóstico pela ferida.
+Biofilme condutivo cresce onde capas de cabo rachadas vazam sais de cobre, calor e corrente fraca na água de HECTON-8. O filme pode carregar sinal suficiente para Atlas marcar uma linha morta como utilizável. Um painel pode acordar por segundos, uma trava piscar verde, e o cabo real ainda falhar sob carga.
 
 ## Scanner
 
-Filme verde-negro atravessa a ferida do cabo. A fuga é fraca, padronizada e ainda se move.
+Filme verde-escuro atravessa a capa rompida do cabo. Corrente baixa retorna pelo crescimento molhado; leitura de continuidade não é confiável.
 
 ## Terminal
 
-RASTRO ATLAS: filme microbiano fecha contato exposto, reduz perda de cobre e devolve pulsos falsos de continuidade. Não há reparo de linha certificado.
+RASTRO DE MANUTENÇÃO ATLAS / LINHA K-44: cobre exposto, crescimento salino, baixa fuga de calor. A ponte de biofilme reduz corrosão e devolve pulsos falsos de continuidade. Não rotear controle de bomba por esta linha.
 
 ## Audio
 
-Não confie na luz verde. Esse cabo está vivo o suficiente para mentir.
+O pinger passa pelo limo. A energia também. Não chame isso de reparo.
 
 ## Field Note
 
-Cicatriz Atlas inicial: útil, silenciosa e errada o bastante para ensinar desconfiança do scanner.
+Se um painel morto acorda pelo filme verde, marque a rota como temporária. Corte a energia antes de pôr ferramenta na capa.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pt_BR. -->

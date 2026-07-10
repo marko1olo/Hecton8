@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Contractzaad: herstelcompliance-lokker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Recovery Compliance Bait Contract Seed
+# Contractzaad: herstelcompliance-lokker
 
-NL LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Recovery Compliance-lokcontracten komen binnen als royaal bergingswerk, maar de ontvangersketen is al naar Deep Reach toe gebogen. De uitbetaling is echt. De prijs is de verborgen plicht om te melden waar het wrak, het lijklabel, de monsterkist of de verzegelde machine is gevonden.
 
 ## Scanner
 
-NL LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Contractzaad: herstelcompliance-lokker. Hoge uitbetaling, besmette ontvangersketen, verborgen coördinateneis.
 
 ## Terminal
 
-NL LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+LOKZAAD: uitbetaling verhoogd, Recovery Compliance-ontvanger gemaskeerd, coördinatenclausule verborgen, inhoudingsdruk actief, Deep Reach-routering waarschijnlijk.
 
 ## Audio
 
-NL LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Een reddingsstempel koopt dokvertrouwen sneller dan een wapen.
 
 ## Field Note
 
-NL LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Marauder-notitie: als de klus te schoon betaalt, kijk dan van wie de handdoek is.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/nl_NL. -->

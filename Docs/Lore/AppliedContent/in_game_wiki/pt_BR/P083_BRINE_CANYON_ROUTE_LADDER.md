@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Escada de Rota do Cânion de Salmoura"
+title: "Escada de rota do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escada de Rota do Cânion de Salmoura
+# Escada de rota do cânion de salmoura
 
-Cânions de salmoura tornam física a progressão de profundidade. Camadas densas, paredes minerais, vazamentos térmicos e distorção acústica ensinam por que viagens mais profundas exigem instrumentos melhores e disciplina de pressão.
+Cânions de salmoura transformam profundidade em substância. Rios densos de sal ficam dentro do oceano como pisos, espelhos e armadilhas. Uma rota limpa é feita de marcadores de densidade, janelas de lastro, checagens de relé e disciplina de ângulo, não de coragem. As camadas profundas ensinam por que instrumentos importam: sonar pode refletir a sala acima, flutuabilidade pode mentir e o traje pode estar certo enquanto o mar discorda.
 
 ## Scanner
 
-Marcador de densidade de salmoura. A descida é química com paredes.
+Marcador de densidade confirmado. A rota não é corredor; é química com paredes.
 
 ## Terminal
 
-CONTROLE DO CÂNION DE SALMOURA: interface de densidade estável para descida em estágios. Aviso: distorção de relay acústico, erro de flutuabilidade do veículo e eventos de piso falso abaixo de 1800 m.
+CONTROLE CÂNION DE SALMOURA: interface de densidade estável para descida em estágios. Perigos esperados abaixo de 1800 m: distorção de relé acústico, erro de flutuabilidade do veículo, eventos de falso piso nos sensores.
 
 ## Audio
 

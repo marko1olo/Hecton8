@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "מסלול חזרה בסונאר"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מסלול חזרה בסונאר
+# Sonar Return Route
 
-משואת חזרה מתעדת איך נשמע מסלול כשהיה בטוח בפעם האחרונה. היא לא מבטיחה שהוא נשאר בטוח. גל סערה, כבל רופף, סחף נע, fauna וחתכי salvage חדשים יכולים לכופף החזרת סונאר בלי למחוק את המסדרון. לפני נשיאת מטען או ירידה עמוקה יותר, שלח ping לקו. אם הטון זז, אחסן את המטען או סמן דרך שנייה הביתה.
+Return beacon מתעד איך route נשמע כשהיה last safe. הוא אינו מבטיח שה-route stayed safe. ב-HECTON-8, ל-safety יש צליל: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass ו-door flexed under pressure יכולים bend the return בלי erased corridor. Return route הוא work. Ping before loading, ו-cache the load אם ה-echo חוזר עם shape אחר.
 
 ## Scanner
 
-משואת חזרה מיושנת. ping בטוח ישן כבר אינו תואם את הד המסדרון; מסת מטען תאט את חלון הנסיגה.
+Return beacon stale. Old safe ping כבר לא תואם את corridor echo; cargo mass יאט את retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: הד נקי אחרון לא תקף. ping מ-Black Keel התקבל באמון נמוך. סחיפת מכשולים וצפיפות סחף מעל סבולת מפה. סמן קו משני לפני חילוץ מטען.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density ו-cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-המסלול עדיין שם. ההד אינו אותו הדבר.
+The route is still there. ה-echo אינו אותו דבר.
 
 ## Field Note
 
-שלח ping לפני טעינה. אם הדרך הביתה השתנתה כשהידיים היו ריקות, היא לא תסלח לתיק מלא.
+Ping before loading. אם way home changed כשה-hands היו empty, הוא לא יסלח ל-full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/he_IL. -->

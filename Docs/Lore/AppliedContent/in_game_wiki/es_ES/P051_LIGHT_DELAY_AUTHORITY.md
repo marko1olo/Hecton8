@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Autoridad de retardo lumínico"
+title: "Autoridad de retraso-luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autoridad de retardo lumínico
+# Autoridad de retraso-luz
 
-HECTON-8 no tiene ansible ni voz de mando en vivo desde órbita. Los mensajes viajan a velocidad de la luz y después pierden más tiempo en colas, ventanas de tormenta, geometría de relés y reglas de custodia del portador. Cada respuesta es prueba vieja, no orden.
+HECTON-8 no tiene ansible, ni una voz amistosa inclinada desde la orbita, ni una forma de volver misericordiosos diez anos luz. Los messages viajan a velocidad de la luz, luego pierden mas tiempo en relay geometry, storm scatter, buffer law y custody queues de Black Keel. Una transmission puede ser honesta y aun asi demasiado vieja para obedecerla. La superficie ensena pronto esa regla: cada remote answer es evidence primero, instruction despues, y nunca comfort. Si la pared, el agua y la pressure contradicen el message, gana el local world.
 
 ## Scanner
 
-Caché del mástil de relé: la llamada salió limpia y luego esperó detrás de la luz, la ley de cola, la dispersión de tormenta y la línea visual de Aegir.
+Cache de relay mast. La llamada salio limpia, luego espero tras light, queue law, storm scatter y Aegir line-of-sight.
 
 ## Terminal
 
-AUTORIDAD COM: demora unidireccional verificada. Dispersión de tormenta alta. Cola de relé bajo prioridad de custodia. Autoridad local de supervivencia activa.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active hasta que fresh signal window confirme override.
 
 ## Audio
 
-La respuesta viene. Eso no la convierte en rescate.
+La respuesta viene. Eso no la convierte en rescue.
 
 ## Field Note
 
-Nadie censuró el primer grito. La física lo llevó lo bastante despacio para que la política lo alcanzara.
+Nadie censuro el primer scream. La physics lo movio lo bastante despacio para que la policy lo alcanzara.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/es_ES. -->

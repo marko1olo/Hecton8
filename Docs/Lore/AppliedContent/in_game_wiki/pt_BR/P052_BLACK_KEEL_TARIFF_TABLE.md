@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Tabela tarifária da Black Keel"
+title: "Tabela Tarifaria da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tabela tarifária da Black Keel
+# Tabela Tarifaria da Black Keel
 
-O apoio da Black Keel é útil, mas nunca neutro. Socorro, amostras, oxigênio, lacres de responsabilidade, recuperação de operador e dano de casco entram em filas diferentes. O jogador pode explorar essas regras, mas elas também mostram por que a ajuda vem com preço.
+O support da Black Keel e util porque o carrier realmente move gear, guarda oxygen, passa warnings e abre route options. Nunca e neutro porque cada support action entra numa tariff table antes de virar help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery e body recovery sao line items diferentes com priority speeds diferentes. A tabela nao e mal oculto. Na pratica e pior: uma price list legivel para momentos que nao deveriam ter preco.
 
 ## Scanner
 
-A placa cobra socorro, custódia de amostra, reserva de oxigênio, equipamento de pressão e recuperação de corpo como itens separados.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage e body recovery ficam em linhas separadas.
 
 ## Terminal
 
-CLASSE TARIFÁRIA: emergência de salvamento. Adendo de bem-estar pendente. Custódia de amostra verificada avança prioridade de saída em dois níveis de cobrança.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies ate lien arbitration resolves.
 
 ## Audio
 
-Há desconto para evidência e sobretaxa para respirar.
+Existe discount para evidence e surcharge para breathing.
 
 ## Field Note
 
-A classe mais rápida não é resgate. É propriedade verificada subindo.
+A classe mais rapida nao e rescue. E verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/pt_BR. -->

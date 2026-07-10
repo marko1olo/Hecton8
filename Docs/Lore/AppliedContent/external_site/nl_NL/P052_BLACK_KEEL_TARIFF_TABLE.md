@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keel-tarieftabel"
+title: "Black Keel Tarieftabel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel-tarieftabel
+# Black Keel Tarieftabel
 
-De tarieftabel is de duidelijkste plek waar HECTON-8 het stille deel hardop zegt. Black Keel kan de speler horen, gevaar indelen en pakketten door het systeem bewegen, maar elke handeling wordt eerst een factuurcategorie. Een bewaard monster kan sneller reizen dan een ademende operator. Een verzegelde lockbox kan de route eerder verhogen dan een gewond lichaam. Dit is geen toneelkwaad; het is een grootboek dat doet waarvoor het gebouwd is. De wreedheid is praktisch: de speler leert overleven door dezelfde economische grammatica te misbruiken die de kolonie wegwerpbaar maakte.
+Black Keel Tarieftabel toont de carrier economy rond HECTON-8, waar distress traffic concurreert met sample custody, oxygen, debt, proof en asset protection.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage en body recovery staan op aparte regels.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies tot lien arbitration resolves.
+
+## Audio
+
+Er is discount voor evidence en surcharge voor breathing.
+
+## Field Note
+
+De snelste class is geen rescue. Het is verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/nl_NL. -->

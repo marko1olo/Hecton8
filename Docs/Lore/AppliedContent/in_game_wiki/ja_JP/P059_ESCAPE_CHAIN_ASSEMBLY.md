@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "脱出連鎖の組み立て"
+title: "脱出チェーン組立"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 脱出連鎖の組み立て
+# 脱出チェーン組立
 
-脱出は組み立て連鎖であり、一台の修理済み乗り物ではない。損傷した投下パッケージはプレイヤーを生かすことはできるが、それだけで信用される上昇経路は作れない。帰還には、水と嵐の雑音を越えて届く音響中継スパイン、上昇を破裂に変えない圧力シール、HECTON-8 の局所危険を生き延びる誘導コア、上昇エネルギー、隔離と法的確認、そして回収記録に力を持ちたいなら Black Keel が値引きできない証拠ペイロードが必要になる。各部品が快適圏より深くにあるのは、元のシステムが資産を動かすためのもので、置き去りにされた作業員を自分の条件で去らせるためのものではなかったからだ。
+脱出は組立チェーンであり、単一の修理済み機体ではない。損傷した降下パッケージは身体を生かせるが、信頼された上昇を単独では作れない。帰路には、水と嵐のノイズを抜けて聞こえる acoustic relay spine、上昇を破裂に変えない pressure seal、HECTON-8 の局地危険を生き延びる guidance core、ascent-energy charge、quarantine/legal handshake、そして Black Keel の回収権限を変えられるだけ強い evidence payload が必要だ。各部品は物理であり、法であり、道徳でもある。
 
 ## Scanner
 
-出発には六つの硬い証明が要る。中継、シール、誘導、上昇チャージ、法的ハンドシェイク、そしてキャリアが無視できないペイロード。
+出発には六つの硬い証明が要る: リレー、シール、誘導、上昇チャージ、法的ハンドシェイク、そして carrier が無視できない payload。
 
 ## Terminal
 
-上昇パッケージ：音響中継スパイン欠落。クランプリング等級不足。誘導コア不在。チャージクレードル空。隔離ハンドシェイク未解決。証拠ペイロードは任意だが回収権限を変える。
+ASCENT PACKAGE: acoustic relay spine 欠損。clamp ring 定格不足。guidance core 不在。charge cradle 空。quarantine handshake 未解決。evidence payload は recovery authority を変える。
 
 ## Audio
 
-カプセルを直すのではない。コロニーが一度も持てなかった最初の誠実な出口を作るのだ。
+カプセルを修理するのではない。コロニーが持てなかった最初の正直な出口を組むのだ。
 
 ## Field Note
 
-上へ向かう道は、作業員を自力で去らせるためには作られなかった部品から組む。
+上への経路は、作業員が自力で去るために作られたわけではない部品から組まれる。
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/ja_JP. -->

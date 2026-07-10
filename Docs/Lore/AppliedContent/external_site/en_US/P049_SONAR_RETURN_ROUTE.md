@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Sonar Return Route
 
-Navigation in HECTON-8 treats the return path as work, not comfort. A stale beacon can still point to the right corridor while hiding a new obstruction, a shifted silt bed or a pressure door that changed the echo.
+Sonar return routes make navigation a continuing task: stale beacons can point to the right corridor while hiding new silt, obstruction drift, fauna movement, or pressure-door changes.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Return beacon stale. Old safe ping no longer matches the corridor echo; cargo ma
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift and silt density exceed map tolerance. Mark secondary line before cargo extraction.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, and cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The route is still there. The echo is not the same.
 
 ## Field Note
 
-Ping before you load. If the way home changed while your hands were empty, it will not forgive a full pack.
+Ping before loading. If the way home changed while your hands were empty, it will not forgive a full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/en_US. -->

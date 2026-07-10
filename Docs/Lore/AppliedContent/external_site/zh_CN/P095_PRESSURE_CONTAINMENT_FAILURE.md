@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 压力封存失效
 
-Blue debt不是被诅咒的宝物，而是压力下的物质记忆。Xenon-Omega残留物只有在晶格相信自己仍处于深处、寒冷、受压时才有用。取出太快、存放太差，或让信号剪切渗入匣体，样本就会按可读阶段失效。首先是漂移：仪表撒谎，共振颤动，封存警报互相争吵。然后晶格断裂。盐卤进入。生物跟随化学。到阶段4，价值已经死亡，污染仍然活着。
+Pressure Containment Failure定义blue debt handling stages，把resource value连接到depth、pressure memory、bloom contamination、route planning和salvage liability。
+
+## Scanner
+
+casket stage chart。blue debt通过pressure memory、signal shear和bloom失效；superstition wastes oxygen。
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+sample并不恨你。它只是trying to be back where it formed。
+
+## Field Note
+
+sample在一个depth可能worth a fortune，十米之后就become a liability。
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/zh_CN. -->

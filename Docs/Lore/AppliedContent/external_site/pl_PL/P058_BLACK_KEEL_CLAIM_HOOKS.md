@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Haki roszczeniowe Black Keel"
+title: "Haki roszczeń Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Haki roszczeniowe Black Keel
+# Haki roszczeń Black Keel
 
-Haki roszczeniowe Black Keel wyznaczają presję otwarcia. Black Keel nie jest teatralnym statkiem złoczyńcy; to przewoźnik związany ekonomią puli roszczeń, prawem kwarantanny i uśpionymi dźwigniami Deep Reach. Problem gracza jest jednocześnie praktyczny i moralny: głos nad oceanem może usłyszeć wezwanie pomocy, ale droga do domu musi stać się cenna, certyfikowalna i prawnie niewygodna do zignorowania.
+Haki roszczeń Black Keel definiują początkową presję nad HECTON-8. Black Keel nie jest statkiem złoczyńcy; to carrier związany ekonomią claim-pool, prawem kwarantanny i uśpioną dźwignią Deep Reach. Problem jest jednocześnie praktyczny i moralny: głos nad oceanem może słyszeć distress, lecz droga do domu musi stać się wartościowa, certyfikowalna i prawnie niewygodna do zignorowania.
 
 ## Scanner
 
-W manifeście Black Keel jest sprzętem puli roszczeń, a w klauzulach dźwignią Deep Reach.
+Black Keel jest w manifeście sprzętem claim-pool, a w klauzulach dźwignią Deep Reach.
 
 ## Terminal
 
-NADZÓR PRZEWOŹNIKA: odzysk operatora dozwolony po triage ładunku, bramie kwarantanny, certyfikacie trasy i oczyszczeniu odpowiedzialności. Pieczęć priorytetu Deep Reach zachowana w uśpionych klauzulach.
+CARRIER CUSTODY: odzysk operatora dozwolony po triage payloadu, bramie kwarantanny, certyfikacie trasy i oczyszczeniu odpowiedzialności. Pieczęć priorytetu Deep Reach zachowana w uśpionych klauzulach.
 
 ## Audio
 
-Może cię słyszeć. Musi tylko najpierw wycenić odpowiedź.
+Może usłyszeć. Po prostu najpierw musi wycenić odpowiedź.
 
 ## Field Note
 
-Statek nie jest zły. Jest wydzierżawiony kontraktowi, który umie być okrutny, nie brzmiąc jak żywa istota.
+Statek nie jest zły. Jest wynajęty kontraktowi, który umie być zły bez brzmienia jak żywa istota.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/pl_PL. -->

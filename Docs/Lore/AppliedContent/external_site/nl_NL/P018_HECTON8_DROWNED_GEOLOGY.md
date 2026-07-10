@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Verdronken geologie
 
-Verdronken geologie maakt herspeelbaarheid uit terrein, pekel, hitte en druk.
+Verdronken geologie maakt veilige paden tijdelijk: stormen, slibdrift, pekelverschuiving en salvage-schade kunnen de route van gisteren in een val veranderen.
 
 ## Scanner
 
-Gelaagde plateaus, canyons, pekeltrappen en vents. De maan leert afdalen via terrein, niet poorten.
+Gelaagde plaat, klooftrechter, pekeltrap, ventlitteken en slibblootstelling gedetecteerd. Terrein is drukrouting, geen achtergrond.
 
 ## Terminal
 
-Voorspelling: plateau-instorting, canyon-trechters, dichtheidsgordijnen, thermische pluimen, abyssaal slib.
+DIEPTEVOORSPELLING: plaatinstorting, servicekloof-trechtering, pekel-dichtheidsgordijnen, thermische pluimen, abyssale slibblootstelling. Routevertrouwen vervalt na stormvloed of salvage-sneden.
 
 ## Audio
 
-Lees de rots voordat je het pak laat winnen.
+Lees de rots voordat je het pak vraagt te winnen.
 
 ## Field Note
 
-De veilige route is een lezing, geen gang.
+De veiligste route is een lezing, geen gang.
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/nl_NL. -->

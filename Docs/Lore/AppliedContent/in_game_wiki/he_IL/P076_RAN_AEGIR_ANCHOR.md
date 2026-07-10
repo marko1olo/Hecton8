@@ -19,24 +19,22 @@ localization_flags: 1
 
 # עוגן Ran / Aegir
 
-Ran מעגן את מערכת Aegir ככוכב רגיל מסוג K, לא כמנורה מתה ולא כמקור חושך על-טבעי. ל-HECTON-8 יכולים להיות רדודים בהירים כי אור קיים.
-
-האימה מתחילה כשאטמוספרה, סערה, מים מינרליים, עומק ובוצה תעשייתית מוחקים את האור מהר יותר מחוזה חילוץ. מעל המים המערכת אסטרונומית. מתחת למים כל לומן הופך לזמן שכור.
+Ran מעגנת את Aegir כ-K-class star רגילה: ישנה, כתומה, יציבה ואדישה. זה חשוב מפני ש-HECTON-8 אינו חשוך בגלל magic. Shallows יכולים shine. Weather יכול להבהיק לבן מעל ה-sea. Worker על surface raft עדיין היה יכול להביט למעלה ולדעת שיש sun. ה-horror מתחיל כאשר atmosphere, storm shear, mineral water, depth ו-industrial silt מבזבזים את ה-light מהר יותר מכפי ש-carrier יכול לחייב rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-לוח כוכב מסוג K. Ran בוער כרגיל. Aegir עמום מ-Sol, אבל החושך כאן מגיע מעומק, מזג אוויר וחוב.
+K-class star plate. Ran בוערת כרגיל; ה-deep כאן אינו supernatural, אלא פשוט רחוק מדי מתחת ל-weather, water ו-debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // תאורת ננס כתום תומכת בעבודת שטח. פיזור סערה, גאומטריית ליקוי ועכירות האוקיינוס מורידים קריאות ירידה מתחת לשולי הבטיחות.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity ו-industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-הכוכב קיים. הוא פשוט לא יכול לעקוב אחריך למטה.
+ה-star קיימת. היא פשוט לא יכולה follow you down.
 
 ## Field Note
 
-כוכב אמיתי אחד מספיק. האוקיינוס עושה את השאר.
+Real star מספיקה. ה-ocean עושה את השאר.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/he_IL. -->

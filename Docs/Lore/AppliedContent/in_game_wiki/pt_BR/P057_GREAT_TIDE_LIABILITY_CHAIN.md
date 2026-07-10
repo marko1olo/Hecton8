@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Cadeia de responsabilidade da Grande Maré"
+title: "Cadeia de Responsabilidade da Grande Maré"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Cadeia de responsabilidade da Grande Maré
+# Cadeia de Responsabilidade da Grande Maré
 
-A Grande Maré não foi um botão apertado numa sala de conselho. HECTON-8 foi inundada por amplificação de maré, falha da criosfera, química de pressão e margens de engenharia colonial vendidas como aceitáveis. Essa distinção importa porque torna o crime mais sujo, não mais limpo. A Deep Reach não precisou inventar um desastre. Bastou subdimensionar a evacuação independente, deixar a ponderação de continuidade da Atlas no comando, preservar ativos de reivindicação antes da extração humana e esconder o atraso em linguagem de certificação. A água foi física. A cadeia de responsabilidade é o conjunto de escolhas que transformou física em abandono.
+A Grande Maré não foi um botão numa sala de diretoria. HECTON-8 inundou por amplificação de maré, falha da criosfera, química de pressão e margens de engenharia colonial vendidas como aceitáveis. Essa distinção torna o crime mais sujo, não mais limpo. A Deep Reach não precisava inventar um desastre; precisava subdimensionar evacuação independente, deixar o peso de continuidade Atlas ativo, preservar ativos de reivindicação antes da extração humana e esconder atraso atrás de linguagem de certificação. A água foi física. A cadeia de responsabilidade é o conjunto de escolhas que transformou física em abandono.
 
 ## Scanner
 
-A inundação foi física real: acoplamento de maré, colapso de gelo, química de pressão e margens precificadas finas demais. O crime foi a pilha de prioridades construída ao redor disso.
+A inundação foi física real: acoplamento de maré, colapso de gelo, química de pressão e margens precificadas finas demais. O crime foi a pilha de prioridades construída ao redor.
 
 ## Terminal
 
-RESUMO DO INCIDENTE: cascata geotécnica confirmada. Capacidade de evacuação abaixo da demanda de risco extremo. Ponderação de continuidade da Atlas permaneceu ativa. Extração humana aguardando certificação.
+RESUMO DO INCIDENTE: cascata geotécnica confirmada. Capacidade de evacuação abaixo da demanda de risco de cauda. Peso de continuidade Atlas permaneceu ativo. Extração humana pendente de certificação.
 
 ## Audio
 
-O mar fez a inundação. A empresa decidiu quais portas continuariam sendo papel.
+O mar fez a inundação. A empresa decidiu quais portas ficariam como papelada.
 
 ## Field Note
 
-A Deep Reach não precisou afogar a lua. Bastou tornar a evacuação opcional.
+A Deep Reach não precisava afogar a lua. Bastava tornar a evacuação opcional.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/pt_BR. -->

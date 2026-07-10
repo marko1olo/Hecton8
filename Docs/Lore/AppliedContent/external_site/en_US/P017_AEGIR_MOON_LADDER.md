@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Aegir Moon Ladder
 
-Aegir's moon ladder makes HECTON-8 part of a moving recovery problem. Other moons shape tide phase, carrier waits, relay shadows and the cost of leaving.
+Aegir's moon ladder turns the sky into an operational map: other moons shape tide, signal, carrier custody, and the narrow chances to leave.
 
 ## Scanner
 
-Moon ladder resolved: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel and Mute distort route timing.
+Moon ladder resolved: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel and Mute bend the windows.
 
 ## Terminal
 
-AEGIR ROUTE NOTE: HECTON-8 sits after Kestrel. Relay shadow, tide phase and carrier window must match before payload ascent.
+AEGIR ROUTE NOTE: HECTON-8 follows Kestrel in the working ladder. Relay shadow, tide phase, radiation band, and Black Keel transfer geometry must align before mass ascent.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Count Kestrel before you trust the window.
 
 ## Field Note
 
-The sky is a work schedule. Miss one moon shadow and the carrier is just a rumor.
+The sky is a work schedule. Miss one shadow and the carrier becomes a rumor.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/en_US. -->

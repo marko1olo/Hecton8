@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Місячна драбина Aegir
 
-Місячна драбина Aegir утримує HECTON-8 у фізичній системі. Внутрішні місяці створюють радіаційні й ретрансляційні небезпеки; середні тримають метал, лід, маршрутні буї і старі склади; зовнішні несуть холодні claims і мертві маяки.
-
-HECTON-8 не найближчий місяць і не найдальший. Це місяць, який досі платить. Тому решта драбини постійно торкається його вікон порятунку, salvage law і маршрутів сигналу.
+Aegir moon ladder тримає HECTON-8 у working sky. Skarn кидає charged weather через antennas. Vela sheds ice and dust в optical routes. Claw і Lumen keep old buoy logic alive. Thorne failed quietly. Anvil fed metal, доки route stopped paying. Kestrel cuts relay lines під найгіршими angles. Mute repeats ownership into nobody's hands. HECTON-8 не перша moon у chain і не остання. Це moon, чия drowned infrastructure все ще має достатньо value, щоб ships, insurers і marauders сперечались за windows.
 
 ## Scanner
 
-Мапа місячної драбини. HECTON-8 є робочою небезпекою в рухомій системі, а не ізольованим рівнем.
+Moon ladder chart. HECTON-8 - one working hazard in a moving system, а не isolated ocean level.
 
 ## Terminal
 
-ГОЛОВНІ МІСЯЦІ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer та eclipse додана.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay і custody windows attached.
 
 ## Audio
 
-На мапі більше місяців, ніж милості.
+У map більше moons, ніж mercy.
 
 ## Field Note
 
-Skarn пече. Vela скидає лід. Anvil годує металом. Kestrel ріже ретранслятори. HECTON тоне.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/uk_UA. -->

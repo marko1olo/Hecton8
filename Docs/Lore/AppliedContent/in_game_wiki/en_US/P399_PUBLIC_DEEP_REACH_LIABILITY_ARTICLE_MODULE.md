@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Liability Evidence
 
-Deep Reach liability works because the flood does not need fake physics. The Great Tide was real. The preventable damage appears in margins, clocks, access holds and records that cleaned workers into categories before anyone could recover them.
+Deep Reach liability does not require fake physics. The Great Tide hit HECTON-8 with real ocean force: resonance, cryosphere shear, storm stacking, and pressure failure. The preventable damage sits beside that force in documents and rooms. A margin was accepted after a sensor warning. A door stayed under executive authority. A queue waited for legal clearance. Atlas weighting kept machinery classed higher than people in the wrong window. The evidence chain works because the water is honest and the paperwork is not.
 
 ## Scanner
 
-Liability record. Real tide physics, accepted margin risk, evacuation delay, quarantine holds, Atlas weighting and sanitized loss language converge in the same evidence chain.
+Liability record. Tide force is real; signed margin changes, quarantine holds, evacuation queues, Atlas weights, and loss language carry the preventable part.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification and loss conversion.
+PUBLIC ARCHIVE NODE // LIABILITY REVIEW DR-H8. Natural force accepted. Open fields: sensor margin, door authority, queue delay, quarantine hold, Atlas weighting, worker-to-claim conversion.
 
 ## Audio
 
-A disaster can be natural and still have signatures on it.
+The tide broke steel. The signatures decided which doors stayed closed.
 
 ## Field Note
 
-Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauder note: never argue that the tide was false. Put the signatures beside the tide clock.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/en_US. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Pita Kedalaman Samudra Global
 
-Samudra HECTON-8 dibaca sebagai pita, bukan satu garis dasar. Paparan fotik masih memberi cahaya, rongsokan, alga, dan ruang untuk pilot ceroboh. Paparan industri membawa karang kabel, kandang pipa, dan dek muat tua. Di bawahnya, tangga brine membelokkan sonar dan ballast. Ladang mesin abisal menghukum perbaikan. Basin Atlas membuat tekanan terasa seperti yurisdiksi.
+Ocean HECTON-8 bukan one long fall to a bottom. Ia stack of laws. Photic shelf masih mengizinkan light, algae, broken habitat skin, dan bad decisions yang bisa diperbaiki. Industrial shelf adalah pipe cages, cable reef, loading decks, dan machines that answer late. Brine stairs bend sound and ballast sampai route bisa near and unreachable sekaligus. Abyssal machine fields menghukum repairs dengan cold patience. Atlas basin lebih dalam dari danger; di sana pressure becomes jurisdiction.
 
 ## Scanner
 
-Peta kedalaman. Paparan pertama memaafkan ballast buruk; air lebih bawah menagih tiap kesalahan dengan tekanan, panas, dan sunyi.
+Depth chart. The first shelf memaafkan poor ballast; lower water menagih every mistake dalam pressure, heat, noise, dan silence.
 
 ## Terminal
 
-PITA: 0-250 m paparan fotik salvage; 250-1200 m paparan industri dan karang kabel; 1200-2800 m tangga/ngarai brine; 2800-4300 m ladang mesin abisal; 4300-5600 m basin Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Setiap seratus meter mengambil satu kebiasaan darimu.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Kedalaman di HECTON-8 adalah hukum, cuaca, batas, dan lapar dengan angka yang sama.
+Depth di HECTON-8 adalah law, weather, border, dan hunger memakai number yang sama.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/id_ID. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Batas Data Limit Stack"
+title: "Baris Batas Tumpukan Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Data Limit Stack
+# Baris Batas Tumpukan Tekanan
 
-Tekanan inventaris di HECTON-8 datang dari penahanan, sertifikasi, dan massa terkontaminasi. Game dapat menampilkan stack sederhana, tetapi lore menjelaskan mengapa stack aman, mengapa rusak, dan mengapa samudra tidak peduli pada ikon item.
+Di HECTON-8, tekanan inventaris dimulai dari wadah. Kru salvage bisa memadatkan rongsokan, tetapi sampel tekanan, bagian terkontaminasi, dan perangkat rute tersegel hanya menumpuk bila rating bejana, massa, identitas, dan tanda kontaminasi cocok. Serpihan kecil bisa memblokir lebih banyak kargo daripada pelat besar.
 
 ## Scanner
 
-Baris stack menolak tumpukan ikon: kelas wadah, rating tekanan, kontaminasi, dan massa menentukan jumlah.
+Permintaan tumpukan ditolak: kelas bejana, rating tekanan, tahap kontaminasi, biaya jendela massa, dan identitas manifes tidak cocok.
 
 ## Terminal
 
-STACK CONTRACT: jumlah stack membutuhkan tipe wadah, rating tekanan, tahap kontaminasi, kelas massa, tier peringatan, dan identitas save-stable. Peti bukan bejana tekanan.
+SKEMA MASUK TUMPUKAN / meja kargo Black Keel: jumlah tumpukan memerlukan tipe bejana, tekanan terukur, sertifikat segel, tahap kontaminasi, kelas massa, tingkat peringatan, jendela massa lien, dan identitas manifes stabil. Label peti tidak mensertifikasi penahanan.
 
 ## Audio
 
-Peti bukan bejana tekanan.
+Meja kargo: tumpukan ditolak. Peti dinilai untuk angkat, bukan untuk kustodi tekanan.
 
 ## Field Note
 
-Limit stack tetap table-owned dan stabil untuk save identity.
+Jangan pernah menumpuk sampel tak dikenal demi ruang. Satu segel buruk membuat seluruh tumpukan jadi kargo karantina, dan carrier tetap menagih massanya.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/id_ID. -->

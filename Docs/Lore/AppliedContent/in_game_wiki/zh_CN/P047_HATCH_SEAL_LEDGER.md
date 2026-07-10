@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 舱门密封账本
 
-舱门框保存有用的谎言。绿色密封灯只说明垫圈撑住了，并不说明这次关闭公平、安全或可逆。密封账本保留压力切断、覆盖印记和最后一次手动关闭的方向。在废弃殖民空间里，一扇舱门可以同时是路线阻断、生存工具和工人证据。
+Hatch frames保存有用的谎言。green seal light意味着gasket撑住了，不意味着closure公平、安全或可逆。Seal ledgers保存pressure cuts、override stamps、hinge strain以及最后一次manual closure的direction。在abandoned colony spaces里，hatch可以同时是route blocker、survival tool、worker evidence和accusation。问题很少只是它能不能打开。问题是它曾把哪些pressure、water和human decision隔开。
 
 ## Scanner
 
-已恢复密封记忆。垫圈承受三次压力切断和一次撤离覆盖；返回侧通路从积水侧被锁定。
+seal memory recovered。gasket承受过three pressure cuts和one evacuation override；return-side access从wet side被locked。
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17：垫圈变形超过维护公差。手动关闭在 EVAC OVERRIDE 下接受。返回侧操作员数量未解决。仅在压力平衡和铰链检查后重新开启。
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance。Manual closure accepted under EVAC OVERRIDE。Return-side count unresolved。只有在pressure equalization、hinge inspection和wet-side witness check后才允许reopen。
 
 ## Audio
 
-它密封了。舱门只承诺了这一点。
+It sealed。这就是hatch承诺的全部。
 
 ## Field Note
 
-密封舱门是一张收据。打开前先问是哪一侧付了账。
+sealed hatch是一张receipt。打开之前，先问是哪一侧付了账。
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/zh_CN. -->

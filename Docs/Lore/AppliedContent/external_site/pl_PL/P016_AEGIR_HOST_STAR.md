@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Gwiazda macierzysta Aegir"
+title: "Gwiazda macierzysta Aegira"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gwiazda macierzysta Aegir
+# Gwiazda macierzysta Aegira
 
-Gwiazda Aegir utrzymuje HECTON-8 w hard sci-fi: światło istnieje, a presja pochodzi z wody, dystansu, okien orbitalnych i porzucenia.
+Gwiazda Aegira utrzymuje HECTON-8 w twardej fantastyce naukowej: światło istnieje, ale presja przetrwania wynika z głębi oceanu, czasu orbitalnego, opóźnienia światła i porzucenia.
 
 ## Scanner
 
-Potwierdzono światło gwiazdy typu K. Powierzchnia ma światło; ciemność robią głębia, sztormy i zaćmienia.
+Potwierdzono gwiazdę główną typu K. W układzie jest światło; ciemność robią głębia, sztormy, zaćmienia i dług.
 
 ## Terminal
 
-Efemeryda Ran/Aegir: karzeł K, opóźnione pakiety międzygwiezdne, brak wektora ratunku FTL. Każda pomoc jest lokalna.
+EFEMERYDY RAN/AEGIR: karzeł K jako gwiazda główna, stabilne wyjście fotosfery, opóźnione pakiety międzygwiezdne, brak wektora ratunku FTL. Pomoc traktować jako lokalną, dopóki nie dotrze masa.
 
 ## Audio
 
-Światło gwiazdy sięga szelfu. Nie sięga problemu.
+Światło gwiazdy dociera do szelfu. Nie dociera do problemu.
 
 ## Field Note
 
-Grozą nie jest gwiazda. Grozą jest ocean.
+Grozą nie jest gwiazda. Groza jest tam, gdzie ocean zmienia światło w plotkę.
 
 <!-- External Site; generated from P016_AEGIR_HOST_STAR/pl_PL. -->

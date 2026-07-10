@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Deuda de ventana-tonelada
 
-Una ventana-tonelada es una porción de capacidad del carrier medida en masa, momento de burn, volumen de cuarentena y prioridad legal. Para el operador se siente como deuda porque cada objeto útil de HECTON-8 entra en el mismo libro que el cuerpo que lo encontró. Una caja sellada puede ser ligera y legalmente pesada. Un soporte de muestras puede costar poca masa y exigir volumen limpio. Una extracción humana parece obvia hasta que el lastre, la reserva de oxígeno y la custodia de payload ya gastaron la ventana disponible. Así la economía de HECTON-8 se vuelve física, no abstracta. El jugador no recibe castigo de un falso medidor moral. El jugador queda atrapado dentro de una máquina que pone precio a la supervivencia con combustible, masa, contaminación y papeles.
+La deuda de ventana-tonelada convierte la supervivencia en logistics dura: extraction, oxygen, samples, salvage, quarantine volume y burn margin ocupan la misma priced mass window.
+
+## Scanner
+
+Ledger de mass-window. La ayuda tiene peso antes de tener lenguaje.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass en conflicto con sealed payload, ballast reserve, oxygen debt, quarantine sample volume y hull patch inventory. Manual priority requiere paid override, verified hazard proof o custody reclassification.
+
+## Audio
+
+La nave puede levantar una vida. La pregunta es que mas obliga a cargar el ledger.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: el carrier pone precio a la misericordia por kilogramo.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/es_ES. -->

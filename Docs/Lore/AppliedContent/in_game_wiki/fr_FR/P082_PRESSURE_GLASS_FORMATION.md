@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Formation du verre de pression"
+title: "Formation du pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Formation du verre de pression
+# Formation du pressure glass
 
-Le verre de pression est le nom technique derrière la blue debt des Marauders et le langage Xenon-Omega de Deep Reach. Il se forme là où pression, poches de gaz noble, saumure, minéraux, chaleur et biologie altérée se rejoignent.
+Le pressure glass est le nom de terrain derrière la dette bleue des marauders et le langage Xenon-Omega de Deep Reach. Il ne se forme que là où poches de gaz noble, défauts minéraux, saumure chaude, biologie altérée et histoire de pression violente restent ensemble assez longtemps pour verrouiller un treillis en mémoire.
 
 ## Scanner
 
-Treillis de dette bleue. Gaz noble, saumure, défauts minéraux et historique de pression enfermés dans une erreur coûteuse.
+Treillis de dette bleue. Gaz noble, saumure, défauts minéraux, cycles thermiques et histoire de pression soudés en une cicatrice coûteuse.
 
 ## Terminal
 
-SUBSTRAT DE CONTINUITÉ XO: treillis de défauts/clathrates riche en xénon stabilisé par chimie de saumure, cycles thermiques et résidu catalytique biologique. Risque de dépressurisation: dérive du signal, fracture et floraison contaminante.
+SUBSTRAT DE CONTINUITE XO : treillis clathrate/défaut riche en xénon, stabilisé par chimie de saumure, cycles thermiques et résidu de catalyse biologique. Risques de dépressurisation : dérive de signal, fracture, bloom contaminant.
 
 ## Audio
 
-Voilà pourquoi ils sont revenus. Pas pour de l'or: pour une cicatrice lisible par machine.
+Voilà pourquoi ils sont revenus. Pas de l'or. Une plaie lisible.
 
 ## Field Note
 
-Ce n'est pas du minerai. C'est un processus qui se souvient de son lieu de naissance.
+Ce n'est pas du minerai. C'est un lieu qui se souvient de ce qu'on lui a fait.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/fr_FR. -->

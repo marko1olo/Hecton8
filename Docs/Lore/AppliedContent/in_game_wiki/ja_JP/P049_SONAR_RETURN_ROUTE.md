@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "ソナー帰還ルート"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ソナー帰還ルート
+# Sonar Return Route
 
-帰還ビーコンは、ルートが最後に安全だった時の音を記録する。安全が続くとは約束しない。嵐の押し波、緩んだケーブル、動くシルト、 fauna、新しいサルベージ切断は、通路を消さずにソナー帰還を曲げる。貨物を運ぶ前、または深く進む前にラインへピンを打て。音が変わったなら荷を隠すか、二本目の帰路を印す。
+return beaconはrouteが最後にsafeだった時にどう聞こえたかを記録する。routeがsafeのままだとは約束しない。HECTON-8ではsafetyには音がある。clear edges、clean delay、low bandで歌うloose metalがないこと、tailを飲むsiltがないこと。storm surge、cut cable、moving fauna、fresh salvage mass、pressureでflexedしたdoorは、corridorを消さずにreturnを曲げることがある。return routeはworkだ。loading前にpingし、echoが違うshapeで戻るならloadをcacheせよ。
 
 ## Scanner
 
-帰還ビーコンは古い。過去の安全ピンが通路の現在エコーと一致しない。貨物質量で退避窓が遅くなる。
+return beacon stale。old safe pingはcorridor echoと一致しない。cargo massはretreat windowを遅くする。
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: 最終クリーンエコー無効。Black Keelピンを低信頼で受信。障害物ドリフトとシルト密度が地図許容値超過。貨物回収前に二次ラインを標識せよ。
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid。Black Keel ping received at low confidence。Obstruction drift、silt density、cargo mass exceed map tolerance。extraction前にsecondary lineをmark。
 
 ## Audio
 
-ルートはまだある。エコーが同じではない。
+routeはまだある。echoは同じではない。
 
 ## Field Note
 
-積む前にピンを打て。手が空の時に帰路が変わったなら、満載の背中は許されない。
+loadingの前にpingせよ。handsがemptyの間にway home changedしたなら、full packを許さない。
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/ja_JP. -->

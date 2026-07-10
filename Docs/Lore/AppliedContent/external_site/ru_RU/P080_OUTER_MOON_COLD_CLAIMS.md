@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Холодные претензии внешних лун"
+title: "Холодные claims внешних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Холодные претензии внешних лун
+# Холодные claims внешних лун
 
-Холодные претензии внешних лун расширяют Aegir за пределы HECTON-8: мертвые маршруты, холодные тайники и брошенные маяки питают salvage-право и скрывают повторяющиеся потери.
+Outer Moon Cold Claims расширяют Aegir beyond HECTON-8: dead routes, cold caches, abandoned beacons и billable loss питают salvage law и corporate denial.
 
 ## Scanner
 
-Маяк внешней претензии. Не все мертвое в Aegir лежит на HECTON-8.
+Outer claim beacon. Не каждое dead thing in Aegir находится на HECTON-8.
 
 ## Terminal
 
-АРХИВ ВНЕШНЕЙ ЛЕСТНИЦЫ // Соляной проспект Thorne провален. Экспортный маршрут Anvil законсервирован. Маяк Mute повторяет ping опеки без заявления активного экипажа.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir научилась терять людей до того, как HECTON-8 закончила урок.
+Aegir научился lose people раньше, чем HECTON-8 закончил lesson.
 
 ## Field Note
 
-Холодные претензии делают мародеров возможными. Они же учат компании хоронить закономерности.
+Cold claims делают marauders возможными. Они же учат companies bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/ru_RU. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Registre de joint d’écoutille"
+title: "Ledger de joint de hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre de joint d’écoutille
+# Ledger de joint de hatch
 
-Les cadres d’écoutille gardent des mensonges utiles. Un voyant de joint vert signifie que le joint a tenu, pas que la fermeture était juste, sûre ou réversible. Les registres de joint conservent les coupures de pression, les tampons d’override et la direction de la dernière fermeture manuelle. Dans la colonie abandonnée, une écoutille peut être à la fois obstacle de route, outil de survie et preuve de travailleur.
+Les hatch frames gardent des mensonges utiles. Un green seal light signifie que le gasket a tenu, pas que la closure etait fair, safe ou reversible. Les seal ledgers conservent pressure cuts, override stamps, hinge strain et la direction de la derniere manual closure. Dans les abandoned colony spaces, un hatch peut etre route blocker, survival tool, worker evidence et accusation dans le meme objet. La question est rarement de savoir s'il s'ouvre. La question est quelle pressure, quelle water et quelle human decision il a separees.
 
 ## Scanner
 
-Mémoire de joint récupérée. Le joint a subi trois coupures de pression et un override d’évacuation; l’accès côté retour a été verrouillé depuis le côté mouillé.
+Seal memory recovered. Le gasket a pris three pressure cuts et one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / CADRE H-17 : déformation du joint au-dessus de la tolérance de service. Fermeture manuelle acceptée sous EVAC OVERRIDE. Compte d’opérateurs côté retour non résolu. Réouverture seulement après égalisation de pression et inspection des charnières.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection et wet-side witness check.
 
 ## Audio
 
-Elle a scellé. C’est tout ce que l’écoutille promettait.
+It sealed. C'est tout ce que le hatch a promis.
 
 ## Field Note
 
-Une écoutille scellée est un reçu. Avant de l’ouvrir, demande quel côté a payé.
+Un sealed hatch est un receipt. Avant de l'ouvrir, demande quel cote a paye.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/fr_FR. -->

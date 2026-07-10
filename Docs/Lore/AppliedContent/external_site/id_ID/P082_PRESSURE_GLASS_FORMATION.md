@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Pembentukan Kaca Tekanan"
+title: "Pembentukan Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pembentukan Kaca Tekanan
+# Pembentukan Pressure Glass
 
-Kaca tekanan adalah nama teknis di balik blue debt para Marauder dan bahasa Xenon-Omega Deep Reach. Ia terbentuk saat tekanan, kantong gas mulia, brine, mineral, panas dan biologi yang berubah bertemu.
+Pressure glass adalah nama lapangan di balik utang biru marauder dan bahasa Xenon-Omega Deep Reach. Ia hanya terbentuk ketika kantong gas mulia, cacat mineral, brine panas, biologi yang berubah, dan sejarah tekanan keras bertahan bersama cukup lama untuk mengunci kisi menjadi memori.
 
-Pembentukan Kaca Tekanan menjadikan Xenon-Omega ekologi material hard-sci-fi, bukan bijih ajaib. Ini bukan bijih. Ini proses yang mengingat tempat pembuatannya.
+Pembentukan pressure glass mengubah Xenon-Omega menjadi ekologi material: substrat buatan tekanan yang terkait containment, komputasi, kontinuitas Atlas, dan risiko salvage. Ini bukan bijih. Ini tempat yang mengingat apa yang terjadi padanya.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/id_ID. -->

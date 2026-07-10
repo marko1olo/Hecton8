@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 光延迟权限
 
-HECTON-8没有ansible，也没有来自轨道的实时指挥声音。消息以光速移动，然后在缓冲队列、风暴窗口、中继几何和载体托管规则中继续丢失时间。玩家把每个回答当作旧证据，而不是命令。
+HECTON-8没有ansible，没有轨道上俯身关照的友好声音，也没有办法让十光年变得仁慈。messages以光速移动，然后又在relay geometry、storm scatter、buffer law和Black Keel custody queues里损失时间。transmission可以诚实，却仍然老到不值得服从。地表很早就教会这条规则：每一个remote answer首先是evidence，其次才是instruction，永远不是comfort。如果墙、水和pressure与message相冲突，local world胜出。
 
 ## Scanner
 
-中继桅杆缓存：呼叫干净发出，然后在光速、队列法规、风暴散射和Aegir视线后面等待。
+relay mast cache。call离开发射端时很干净，然后被light、queue law、storm scatter和Aegir line-of-sight压在后面。
 
 ## Terminal
 
-通信权限：单向延迟已验证。风暴散射高。中继队列处于托管优先级。本地生存权限保持活动。
+COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。Local survival authority remains active，直到fresh signal window确认override。
 
 ## Audio
 
-回复正在路上。这不等于救援。
+回复正在路上。那不等于rescue。
 
 ## Field Note
 
-没有人审查第一声尖叫。物理把它带得足够慢，让政策追了上来。
+第一声scream没有被审查。只是physics慢到足以让policy追上来。
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/zh_CN. -->

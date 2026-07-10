@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "脱出連鎖の組み立て"
+title: "脱出チェーン組立"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 脱出連鎖の組み立て
+# 脱出チェーン組立
 
-脱出連鎖の組み立てはキャンペーンの工学的背骨である。HECTON-8 は最初の修理後にきれいな水面回収を与えない。出発は沈んだインフラに分散した物理、法、証拠の構成部品になる。これにより長い下降には実務的理由と道徳的理由が生まれる。プレイヤーは海を去るだけではなく、コロニーがなぜ公正な出口を持てなかったかを証明する経路を組み立てる。
+脱出チェーン組立はキャンペーンの工学的背骨である。HECTON-8 は最初の修理後に清潔な地表回収を用意しない。出発は、沈んだインフラ全体に散った物理的、法的、証拠的部品の集合になる。長い下降には実用的理由と道徳的理由が生まれる。出口は、公平な出口を拒まれた同じコロニーの部品から作られなければならない。
 
 ## Scanner
 
-出発には六つの硬い証明が要る。中継、シール、誘導、上昇チャージ、法的ハンドシェイク、そしてキャリアが無視できないペイロード。
+出発には六つの硬い証明が要る: リレー、シール、誘導、上昇チャージ、法的ハンドシェイク、そして carrier が無視できない payload。
 
 ## Terminal
 
-上昇パッケージ：音響中継スパイン欠落。クランプリング等級不足。誘導コア不在。チャージクレードル空。隔離ハンドシェイク未解決。証拠ペイロードは任意だが回収権限を変える。
+ASCENT PACKAGE: acoustic relay spine 欠損。clamp ring 定格不足。guidance core 不在。charge cradle 空。quarantine handshake 未解決。evidence payload は recovery authority を変える。
 
 ## Audio
 
-カプセルを直すのではない。コロニーが一度も持てなかった最初の誠実な出口を作るのだ。
+カプセルを修理するのではない。コロニーが持てなかった最初の正直な出口を組むのだ。
 
 ## Field Note
 
-上へ向かう道は、作業員を自力で去らせるためには作られなかった部品から組む。
+上への経路は、作業員が自力で去るために作られたわけではない部品から組まれる。
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/ja_JP. -->

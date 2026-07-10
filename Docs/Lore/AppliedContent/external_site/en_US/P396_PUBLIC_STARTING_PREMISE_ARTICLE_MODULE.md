@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Marauder Starting Claim
 
-The first Black Keel file on HECTON-8 reads like salvage work until the wording starts to accuse itself. A debt-bound Marauder accepts the route because the lien is real and the recovery window is narrow. Their Deep Reach field-systems past matters immediately: pressure procedure, maintenance shorthand, liability phrases and evacuation tags are familiar before they become evidence. Black Keel offers access, not mercy. The descent begins with concrete work around P-63: patch the bathydrop, check seals, scan the shelf, restart machinery, recover cargo or proof, and leave before orbital timing and legal custody close around the claim. The hook is professional recognition. The player can see where polished language and physical damage tell different stories.
+HECTON-8 begins with a contract that looks familiar enough to be dangerous. Black Keel gives a debt-bound Marauder access to a recovery route over P-63, not a rescue promise. The record uses Deep Reach vocabulary because the player character used to work inside that vocabulary: field systems, evacuation infrastructure, pressure procedure, route forms, admissible proof. That past changes the first hour. A bad panel is not scenery. A corrected tag is not flavor text. A polished liability phrase can be compared against a dent, a clock, a door state, or a missing person mark. The descent starts as paid salvage and turns into professional recognition: the paperwork knows the room, and the room proves the paperwork has been cleaned.
 
 ## Scanner
 
-Public claim record. The opening route identifies a debt-bound Marauder with Deep Reach field-systems history, a damaged bathydrop and a Black Keel recovery window over P-63.
+Public claim record. Black Keel lien file names a former Deep Reach field-systems specialist, a damaged bathydrop, route P-63, and a closing custody window.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor record: former Deep Reach field-systems specialist. Current status: lien-bound Marauder. Route: Black Keel recovery claim, P-63 shelf descent, evidence and cargo return before custody window close.
+PUBLIC ARCHIVE NODE // BLACK KEEL CLAIM BK-P63-2190. Status: lien-bound Marauder. Prior clearance: Deep Reach field systems / evacuation infrastructure. Deliverable: cargo mass plus admissible proof before local custody T+06:40.
 
 ## Audio
 
-You are not sightseeing on HECTON-8. You are returning to paperwork you know too well.
+The contract knows your old abbreviations. That is not the same as telling the truth.
 
 ## Field Note
 
-Marauder note: the contract knows your past. That does not make it honest.
+Marauder note: if a claim file knows your clearance level, read the omissions before you read the payout.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/en_US. -->

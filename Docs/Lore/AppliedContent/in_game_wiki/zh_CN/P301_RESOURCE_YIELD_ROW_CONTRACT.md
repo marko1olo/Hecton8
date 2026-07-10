@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "资源产出数据边界"
+title: "资源产出接收行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 资源产出数据边界
+# 资源产出接收行
 
-资源产出数据边界防止资源价格变成松散的设定话。 在 HECTON-8，矿物在每个深度并不等值：压力历史、路线监管和枯竭行为决定样本是货币、证据，还是受污染压舱物。
+产出行决定资源何时从散碎废料变成可付款货物。HECTON-8样本的价值会随深度、容器额定、污染阶段和保管证明方改变。密封盐水路线中的谐振blue debt碎片，不等同于裂袋里洗过的浅架碎屑。
 
 ## Scanner
 
-产出行拒绝松散价值：类别、压力带、监管、枯竭和 hash 必须一致。
+样本行未完成：压力历史、保管等级、耗竭状态、污染阶段和数据包哈希并不一致。
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT：没有 packet hash、资源类别、压力带、监管等级、稀有度曲线和枯竭行为，任何数字都不被接受。没有压力历史的样本是证据，不是价值。
+产出接收模式 / Aegir Reclamation Pool：资源类别、压力带、保管等级、稀有曲线、耗竭行为、污染阶段和数据包见证哈希缺失时，不得登记价值。袋装石块在压力路线得到证明前只是质量。
 
 ## Audio
 
-没有压力历史的样本没有价值。
+Black Keel：样本在压力路线和保管哈希确认后接收。此前按压舱质量运输。
 
 ## Field Note
 
-在 pressure band、custody grade、depletion behavior 和 packet hash 一致前，yield 数字保持临时状态。
+如果行里没有压力带，就别谈价格。放进死质量，保持容器封口，等保管通过后让经纪人付款。
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/zh_CN. -->

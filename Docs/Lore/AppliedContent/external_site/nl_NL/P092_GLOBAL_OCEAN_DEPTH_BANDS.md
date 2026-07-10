@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Wereldwijde oceaandieptebanden"
+title: "Globale Oceaan-Dieptebanden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Wereldwijde oceaandieptebanden
+# Globale Oceaan-Dieptebanden
 
-HECTON-8 is geen vlakke oceaan met diepere cijfers. Het is een verticaal land met grenzen in druk. Van 0 tot 250 meter geeft de fotische bergingsrichel nog licht, algen, zachte wrakken en ruimte voor eerste fouten. Van 250 tot 1200 meter beginnen industriële richel en kabelrif: gescheurde ankers, pijpframes, relaisbotten en oude bedrijfsroutes. Van 1200 tot 2800 meter buigen pekeltrappen sonar en verbergen ze hitte. Van 2800 tot 4300 meter wordt repareren onderhandelen met machinevelden. Van 4300 tot 5600 meter verandert Atlas druk in gezag.
+Global Ocean Depth Bands structureren HECTON-8 exploration, salvage, biology, sound, pressure en route risk van bright shelf tot Atlas basin.
+
+## Scanner
+
+Depth chart. The first shelf vergeeft poor ballast; lower water factureert every mistake in pressure, heat, noise en silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth op HECTON-8 is law, weather, border en hunger met hetzelfde number.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/nl_NL. -->

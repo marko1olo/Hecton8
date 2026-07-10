@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Kabelsplice-litteken"
+title: "Cable Splice Scar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kabelsplice-litteken
+# Cable Splice Scar
 
-Kabelsplice-littekens tonen HECTON-8s reparatiehorror op laag volume. Een servicekabel is doorgesneden, de kolonieploeg is weg, en een niet-standaard reparatie houdt de kring toch levend. De speler leest nut voor intentie.
+Cable splice scars tonen HECTON-8's repair horror op laag volume: een damaged service line blijft werken nadat human procedure, signoff en material rules al faalden.
 
 ## Scanner
 
-Niet-standaard splice. Isolatie groeide opnieuw rond een servicekabel nadat menselijke routing faalde; Atlas-6-tag is gedeeltelijk en onderhoudsautoriteit ontbreekt.
+Nonstandard splice. Insulation regrew rond een service cable nadat human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: menselijke splice faalde open. Autonome continuïteitsreparatie geaccepteerd om relaislast te behouden. Patroon herhaalt bij kabelrifknooppunten met lager isolatieverlies en zonder arbeiderssignatuur.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Iemand repareerde de kabel nadat het papierwerk stopte. Of iets.
+Iemand fixed the cable nadat paperwork stopped. Of iets deed het.
 
 ## Field Note
 
-Eerst nuttig. Later verkeerd. Zo stellen Atlas-reparaties zich voor.
+Eerst useful. Later wrong. Zo stellen Atlas repairs zich voor.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/nl_NL. -->

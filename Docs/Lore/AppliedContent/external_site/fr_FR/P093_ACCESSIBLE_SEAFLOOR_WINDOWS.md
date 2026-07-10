@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Fenetres accessibles du plancher marin"
+title: "Fenetres de seafloor accessibles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fenetres accessibles du plancher marin
+# Fenetres de seafloor accessibles
 
-La plupart du plancher marin de HECTON-8 reste hors de portee du courage ordinaire. La pression construit un mur avant que le fond n'apparaisse. Les fenetres accessibles sont les exceptions: endroits dechires ou un plateau effondre, une crete exposee, une cicatrice d'event rechauffee ou une colonne dense de saumure modifie la courbe de descente. Ce ne sont pas des grottes sures. Ce sont de petits accords avec la geologie. Un equipage peut toucher l'ancienne croute, recuperer des mineraux nes sous pression, trouver du materiel colonial scelle ou lire un evenement enterre avant que l'ocean referme la route.
+Accessible Seafloor Windows sont des rare pressure breaks ou HECTON-8 expose ancient floor, high-risk salvage, mineral seams et evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Ici la shell s'est dechiree assez thin pour qu'un crawler touche old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+La plupart de la moon garde son floor comme pressure secret. Les windows sont des exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/fr_FR. -->

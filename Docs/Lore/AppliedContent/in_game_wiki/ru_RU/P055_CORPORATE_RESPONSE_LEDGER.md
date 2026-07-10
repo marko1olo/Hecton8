@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Реестр корпоративного ответа"
+title: "Corporate response ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Реестр корпоративного ответа
+# Corporate response ledger
 
-Реестр — это язык Black Keel, когда никто не импровизирует. Он может признать опасность, открыть очередь, сохранить претензию и все равно оставить оператора ждать за правилами активов. Игрок должен читать реестры ответа как полезные сигналы и враждебную бумажную работу, ставшую исполняемой.
+Corporate response ledger - язык Black Keel в моменты, когда никто не improvising. Он может мгновенно acknowledge distress, открыть route queue, preserve a claim, demand sample custody, log hull risk и все равно оставить living operator ждать за asset rules. Ledger ценен тем, что показывает, что system знает. Он враждебен тем, что knowing не равно acting. На HECTON-8 первый reply часто является доказательством: machine услышала все и почти ничего не обещала.
 
 ## Scanner
 
-Каждый ответ приходит языком контракта: опека активов, замки ответственности, маршрут образца, риск корпуса, затем возврат оператора.
+Каждый reply приходит contract language: asset custody, liability lock, sample route, hull risk, потом operator recovery.
 
 ## Terminal
 
-КЛАСС ОТВЕТА: сохранение активов. Возврат оператора добавлен после опеки образца, печати ответственности, аудита корпуса и маршрута оплаты.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route и evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-Ответ был автоматическим. Спасение было условным.
+Reply был automatic. Rescue был conditional.
 
 ## Field Note
 
-Немедленный ответ — не немедленное спасение.
+Immediate response - не immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ru_RU. -->

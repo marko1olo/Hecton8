@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Resource Yield Data Boundary"
+title: "Resource Yield Acceptance Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Resource Yield Data Boundary
+# Resource Yield Acceptance Row
 
-Resource value in HECTON-8 is a chain, not a label. The table owns the number, but the fiction owns why the number exists: who took the sample, under what pressure, with which custody stamp, and how much of that seam the route can still safely strip.
+Salvage ledgers around HECTON-8 do not price minerals by name alone. A yield record needs sample class, pressure band, route custody, depletion state, contamination stage, and packet hash before the posted value is trusted. A sample without pressure history is unpaid mass.
 
 ## Scanner
 
-Yield row rejects loose value: class, pressure band, custody, depletion, and hash must agree.
+Sample row incomplete: pressure history, custody grade, depletion state, contamination stage, and packet hash do not all agree.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: no number accepted without packet hash, resource class, pressure band, custody grade, rarity curve, and depletion behavior. A sample without pressure history is evidence, not value.
+YIELD INTAKE SCHEMA / Aegir Reclamation Pool: reject value posting until resource class, pressure band, custody grade, rarity curve, depletion behavior, contamination stage, and packet witness hash are present. Bagged rock is mass until the pressure route is proven.
 
 ## Audio
 
-A sample without pressure history is not a value.
+Black Keel: sample hold accepted after pressure route and custody hash. Until then it rides as ballast.
 
 ## Field Note
 
-Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+If the row has no pressure band, do not argue price. Put it in dead mass, keep the container sealed, and make the broker pay after custody clears.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/en_US. -->

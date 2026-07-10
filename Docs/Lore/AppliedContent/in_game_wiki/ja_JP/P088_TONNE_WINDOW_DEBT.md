@@ -19,22 +19,22 @@ localization_flags: 1
 
 # トン窓債務
 
-トン窓債務は、物理が金融になる地点だ。Black Keelには無限の揚力余白も、無限の輸送燃料も、無限の清浄隔離容積もない。HECTON-8から上げる全キログラムが、操作者を生かす全キログラムと競合する。債務メーターはhard scienceを壊さずにcarrierを残酷にする。救助は可能だが、経路予算は何が質量に値するかを問い続ける。
+トン窓債務は、HECTON-8が単なる恐怖譚ではなくorbital logisticsになる場所である。Black Keelには有限のlift margin、有限のclean volume、有限のoxygen reserveがあり、すべてのキログラムにroute priceが付く。spare tank、sealed sample、damaged suit、proof case、body、crate of salvageは同じ窓の中で競合する。制度が残酷に感じられるのは、それが正確だからだ。rescueが不可能だと装う必要はない。ただ、航路が何を持ち上げる余裕を持つのかを問い続ける。
 
 ## Scanner
 
-質量窓メーター。助けの一キログラムごとに経路価格がある。
+mass-window ledger。助けは言葉を持つ前に重さを持つ。
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: recovery burn余白縮小。操作者抽出質量が封印payload、バラスト予備、酸素債務、隔離サンプルcustodyと競合。手動overrideには有償優先または危険証拠が必要。
+TONNE-WINDOW LEDGER: recovery burn margin narrowed。Extraction massはsealed payload、ballast reserve、oxygen debt、quarantine sample volume、hull patch inventoryと競合。Manual priorityにはpaid override、verified hazard proof、またはcustody reclassificationが必要。
 
 ## Audio
 
-船は君か、君が見つけたものを運べる。船は数字を好む。
+船は命を持ち上げられる。問題はledgerがほかに何を積ませるかだ。
 
 ## Field Note
 
-酸素、バラスト、証拠、payload、身体。carrierは慈悲を量る前にそれらを量る。
+oxygen、ballast、proof、samples、hull patch、body。carrierは慈悲をキログラムで値付けする。
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ja_JP. -->

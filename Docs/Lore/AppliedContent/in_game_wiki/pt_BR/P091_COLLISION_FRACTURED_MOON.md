@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lua fraturada por colisao"
+title: "Lua Fraturada por Colisao"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lua fraturada por colisao
+# Lua Fraturada por Colisao
 
-HECTON-8 se formou no sistema de Aegir e depois foi rachada por uma colisao de raspao. A ferida nao partiu a lua. Ela ergueu prateleiras de crosta, abriu falhas de salmoura, alimentou corredores termais e deixou solo antigo acessivel por janelas raras de pressao. Mapas de resgate seguem esse dano, porque as rotas seguras sao feridas antigas cheias de agua.
+HECTON-8 nao e um stolen world largado em Aegir por mystery. Ele formed here, entao uma glancing collision opened it without killing it. A wound levantou shelves, cracked brine basins, aqueceu fault ladders e deixou pressure-glass seams onde a moon tentou close around its own ocean. Esse old damage ainda decide onde um hull pode descend, onde sound bends, onde vents stay alive e onde buried colony evidence pode surface. Salvage maps seguem injuries porque em HECTON-8 a safest route muitas vezes e o old break that did not quite heal.
 
 ## Scanner
 
-Amostra de crosta antiga. A lua nasceu no cinturao de detritos de Aegir, depois um impacto a abriu o bastante para o oceano lembrar.
+Crust sample. HECTON-8 formed in Aegir's debris belt, depois sofreu um oblique impact amplo o bastante para o ocean lembrar.
 
 ## Terminal
 
-MODELO DE ORIGEM: acrecao ao redor de Aegir, impacto obliquo posterior, ressonancia de mares apos travamento. Resultado: crosta em degraus, escadas de falha quentes, bacias de salmoura, veios de vidro de pressao, acesso irregular ao fundo profundo.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Nasceu aqui. Depois algo bateu forte o suficiente para dar um mapa ao mar.
+It was born here. Depois algo bateu hard o bastante para give the sea a map.
 
 ## Field Note
 
-O mito de uma lua capturada seria limpo demais. HECTON-8 carrega uma ferida local: crosta erguida, salmoura mais pesada, respiradouros ainda cobrando juros.
+A captured-moon story e limpa demais. Este lugar e born local, broken local e billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/pt_BR. -->

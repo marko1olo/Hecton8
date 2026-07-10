@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Batas Biaya Resep Kabur"
+title: "Baris Biaya Resep Naik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Biaya Resep Kabur
+# Baris Biaya Resep Naik
 
-Meninggalkan HECTON-8 pertama-tama adalah masalah perbaikan: sinyal, seal, panduan, energi naik, handshake legal, dan kustodi payload. Tabel resep membawa biaya tepat; lore membawa alasan setiap biaya punya gigi.
+Meninggalkan HECTON-8 dimulai sebagai perbaikan dan berakhir sebagai dokumen dengan massa terikat. Kru harus membangun ulang relai, segel, panduan, energi naik, dan handshake karantina sebelum carrier membuka jendela pemulihan. Otoritas muatan penting karena bukti, blue debt, atau akses Atlas bisa mengubah penerima di sisi lain.
 
 ## Scanner
 
-Baris resep kabur mengikat kelas komponen, tier tekanan, bukti rute, dan keadaan otoritas.
+Baris naik terkunci: bukti relai, tingkat segel, inti panduan, muatan naik, handshake hukum, dan otoritas muatan belum lengkap.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: biaya sah harus menyebut relai, seal, panduan, energi naik, handshake legal, otoritas payload, dan risiko penerima. Jalan naik punya bagian; bagian punya pemilik.
+SKEMA BIAYA NAIK / antarmuka pemulihan Black Keel: kutipan naik tidak boleh muncul tanpa relai akustik, segel tekanan, inti waktu panduan, muatan energi naik, handshake karantina/hukum, otoritas muatan, risiko penerima, dan jendela rute. Paket tidak bisa naik hanya dengan komponen.
 
 ## Audio
 
-Jalan naik punya bagian. Bagian punya pemilik.
+Antarmuka pemulihan: relai, segel, waktu, muatan, handshake. Kurang satu membuat paket tetap basah.
 
 ## Field Note
 
-Pressure band datang dari aturan containment; biaya tepat milik recipe table.
+Jangan habiskan inti panduan sebelum handshake lolos. Muatan naik yang bekerja dengan penerima salah hanya jalan cepat ke kustodi.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/id_ID. -->

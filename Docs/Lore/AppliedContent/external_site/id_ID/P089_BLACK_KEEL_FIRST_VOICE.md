@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Suara Pertama Black Keel
 
-Suara pertama Black Keel harus terasa seperti pintu yang hanya terbuka setengah. Audionya rusak, kanal teksnya bersih, dan carrier tidak membuang kata untuk penghiburan. Ketidakhadiran itu penting. AI ramah akan melunakkan laut. Penjahat dramatis akan membuat bahaya terlalu manusiawi. Black Keel lebih berguna daripada keduanya karena mengatakan kebenaran dalam format yang tetap menolak rasa aman. Sinyal diperoleh. Kelangsungan hidup diakui. Recovery belum selesai. Pemain belajar bahwa didengar bukan berarti diselamatkan, dan satu-satunya suara di atas air terikat pada ledger yang belum dilihat pemain.
+Suara Pertama Black Keel menetapkan nada carrier: presisi, rusak, membantu, bersyarat secara finansial, dan tidak pernah hadir secara emosional.
+
+## Scanner
+
+Carrier voice cache. Audio robek oleh pressure noise; text channel cukup bersih untuk ditagih.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity, dan mass-window balance.
+
+## Audio
+
+Operator signal acquired. Jangan samakan acknowledgement dengan rescue.
+
+## Field Note
+
+Kalimat berguna pertama tidak menenangkan. Ia mengklasifikasi.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/id_ID. -->

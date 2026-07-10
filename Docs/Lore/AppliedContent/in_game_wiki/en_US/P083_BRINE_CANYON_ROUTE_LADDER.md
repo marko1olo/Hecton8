@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Brine Canyon Route Ladder
 
-Brine canyons make depth progression physical. Dense brine layers, mineral walls, thermal leaks and acoustic distortion create routes that teach the player why deeper travel requires better instruments and better pressure discipline.
+Brine canyons turn depth into a substance. Dense salt rivers sit inside the ocean like floors, mirrors, and traps. A clean route is built from density markers, ballast windows, relay checks, and disciplined angles, not bravery. The deeper layers teach why instruments matter: sonar can reflect the room above, buoyancy can lie, and the suit can be correct while the sea disagrees.
 
 ## Scanner
 
-Brine density marker. The descent route is chemistry with walls.
+Density marker confirmed. The route is not a corridor; it is chemistry with walls.
 
 ## Terminal
 
-BRINE CANYON CONTROL: density interface stable enough for staged descent. Warning: acoustic relay distortion, vehicle buoyancy error and sensor false-floor events expected below 1800 m.
+BRINE CANYON CONTROL: density interface stable for staged descent. Expected hazards below 1800 m: acoustic relay distortion, vehicle buoyancy error, sensor false-floor events.
 
 ## Audio
 

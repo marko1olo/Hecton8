@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Roster Size Rule"
+title: "Worker Roster Ledger Limit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Roster Size Rule
+# Worker Roster Ledger Limit
 
-Worker Roster Size Rule is the population contract for readable colony evidence. It gives HECTON-8 72 worker identities: 24 anchors for recurring narrative proof and 48 seed-role identities for replay variation. The player should slowly recognize names because the world repeats them with work attached: a locker, a tool, a route stamp, a repair order, a final audio tag. The colony feels larger than the cast, but the evidence stays authored enough to remember.
+The worker roster ledger limits HECTON-8 to readable human evidence: 72 worker identities tied to jobs, rooms, tools and last-shift records instead of disposable name spam.
 
 ## Scanner
 
-Seventy-two names is not flavor text. It is the colony's memory budget: enough hands to make the place feel worked, few enough that a locker, repair tag, and last shift can point back to the same person.
+Roster ledger frame. Seventy-two active worker identities. Names repeat across lockers, route stamps, pump tags and last-shift audio.
 
 ## Terminal
 
-ROSTER RULE: The live roster carries 72 worker identities. Twenty-four are anchor names that can recur across lockers, ledgers, damaged tools, permission stamps, and audio fragments. Forty-eight are seed-role names for replay variation. A generated name may move evidence order; it may not become disposable filler.
+ROSTER LEDGER LIMIT
+Active worker identities: 72
+Anchor names: 24 / repeat across lockers, ledgers, damaged tools, route permits, audio fragments
+Seed-role names: 48 / variation pool
+Rule: no name enters route evidence without job, place and last task.
 
 ## Audio
 
-A name becomes evidence when the room can prove the job.
+Name on board. Job card missing. Hold it out of the count.
 
 ## Field Note
 
-If a name cannot return later with a job attached, cut it from the roster.
+Do not trust a loose name. Match it to a job card, room, tool or water count before it enters the board.
 
 <!-- External Site; generated from P206_WORKER_ROSTER_SIZE_RULE/en_US. -->

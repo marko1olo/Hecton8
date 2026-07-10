@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Орбіта HECTON-8 / геометрія припливу"
+title: "Орбіта / припливна геометрія HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Орбіта HECTON-8 / геометрія припливу
+# Орбіта / припливна геометрія HECTON-8
 
-Орбіта HECTON-8 / геометрія припливу є жорстким науково-фантастичним шаром катастрофи: припливи, тепло і тиск спершу ламають колонію; корпоративний пріоритет робить відмову злочином.
+HECTON-8 Orbit / Tide Geometry - hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage і pressure спершу ламають colony; corporate priority turns failure into crime.
 
 ## Scanner
 
-МОДЕЛЬ ПРИПЛИВНОЇ ГЕОМЕТРІЇ // Резонанс, льодовий стрес, штормовий нагін і тепловий скид перевищили прогноз евакуації. Прапори Atlas continuity перекрили пріоритет відступу.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge і heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-ЛАНЦЮГ GREAT TIDE // Орбітальне примушення посилило океанське навантаження. Штучний тепловий скид і замкнений дренаж перетворили приплив на відмову колонії.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge і sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Фізика відкрила двері. Deep Reach вирішила, хто вийде через них.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Місяць може втопити колонію без ненависті.
+Moon може drown a colony без ненависті.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/uk_UA. -->

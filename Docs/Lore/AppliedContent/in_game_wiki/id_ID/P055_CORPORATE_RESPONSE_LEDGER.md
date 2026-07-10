@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Buku Besar Respons Korporat"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Buku Besar Respons Korporat
+# Corporate Response Ledger
 
-Buku besar adalah cara Black Keel berbicara saat tidak ada yang berimprovisasi. Ia bisa mengakui bahaya, membuka antrean, menjaga klaim, dan tetap membiarkan operator menunggu di belakang aturan aset. Pemain harus membaca ledger sebagai sinyal berguna dan birokrasi musuh yang bisa dieksekusi.
+Corporate response ledger adalah cara Black Keel berbicara ketika tidak ada yang improvising. Ia bisa langsung acknowledge distress, membuka route queue, preserve a claim, demand sample custody, log hull risk, dan tetap membiarkan living operator menunggu di belakang asset rules. Ledger itu berharga karena memperlihatkan apa yang diketahui system. Ia bermusuhan karena knowing tidak sama dengan acting. Di HECTON-8, reply pertama sering menjadi bukti bahwa machine mendengar semuanya dan hampir tidak menjanjikan apa pun.
 
 ## Scanner
 
-Setiap balasan tiba dalam bahasa kontrak: kustodi aset, kunci liabilitas, rute sampel, risiko lambung, lalu pemulihan operator.
+Setiap reply tiba dalam contract language: asset custody, liability lock, sample route, hull risk, lalu operator recovery.
 
 ## Terminal
 
-KELAS RESPONS: preservasi aset. Pemulihan operator ditambahkan setelah kustodi sampel, segel liabilitas, audit lambung, dan rute pembayaran.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, dan evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-Balasannya otomatis. Penyelamatannya bersyarat.
+Reply itu automatic. Rescue itu conditional.
 
 ## Field Note
 
-Respons langsung bukan penyelamatan langsung.
+Immediate response bukan immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/id_ID. -->

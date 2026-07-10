@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Feedbacklus van sensorgemerkte fauna"
+title: "Feedbacklus van sensorgetagde fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feedbacklus van sensorgemerkte fauna
+# Feedbacklus van sensorgetagde fauna
 
-Sensorgemerkte fauna zijn geen gecontroleerde soldaten. Dat verschil telt. Deep Reach-tagprogramma's begonnen als gewone veldwetenschap en logistiek: migratie, drukbestendigheid, contaminatieblootstelling en routedichtheid volgen. Jaren later zijn de tags geen schone apparatuur meer. Schelp groeit eromheen. Littekenweefsel trekt ze uit lijn. Minerale doppen veranderen het signaal.
+Een sensorgetagd dier is geen pop. Het is wildleven met een bedrijfsinstrument dat nog antwoordt onder schelp en littekenweefsel. Dat is genoeg voor Atlas om beweging te lezen als milieu-update, en genoeg om de route van een duiker te veranderen zonder dat het dier het merkt.
 
-Atlas leest de terugkeer nog steeds. Een gewonde grazer die een overstroomde loopbrug kruist kan lijken op een druksurvey. Een roofdier met een oude tag kan een gang bezet doen lijken door infrastructuurrisico. Het dier blijft zichzelf, maar het systeem eromheen behandelt beweging als data. Zo krijgt een ontmoeting met fauna een tweede snede: overlevingsgedrag kan ook onderhoudsfeedback zijn.
+## Scanner
+
+Oude Deep Reach-tag onder schelpgroei op linkerflank. Bewegingspakketten pingen nog het onderhoudsnet.
+
+## Terminal
+
+FAUNA-TAGLUS / DR-2147-MIG: druk-, bewegings- en besmettingspakketten geaccepteerd als milieutelemetrie. Dierintentie niet geparset. Routealarmen kunnen migratiepad volgen.
+
+## Audio
+
+Het jaagt niet op jou. De tag kan nog steeds de verkeerde deur openen.
+
+## Field Note
+
+Als getagde fauna een relaiswerf kruist, wacht voordat je de alarmen vertrouwt. Het dier kan weg zijn; de routestatus kan nog bezig zijn met inhalen.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/nl_NL. -->

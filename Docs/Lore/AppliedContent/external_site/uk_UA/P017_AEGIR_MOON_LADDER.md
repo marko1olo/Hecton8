@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Місячна драбина Aegir
 
-Місячна драбина Aegir робить ігровий місяць частиною рухомої системи. Інші місяці формують припливи, очікування carrier, тіні relay і ціну виходу.
+Місячна драбина Aegir перетворює небо на операційну карту: інші місяці формують приплив, сигнал, custody carrier і вузькі шанси піти.
 
 ## Scanner
 
-Послідовність місяців: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Місячну драбину розв'язано: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel і Mute гнуть вікна.
 
 ## Terminal
 
-HECTON-8 це Aegir-VIII: не внутрішній і не найдальший. Резонанс Rake і тінь Pale змінюють припливи та пакети.
+МАРШРУТНА НОТАТКА AEGIR: HECTON-8 іде після Kestrel у робочій драбині. Тінь ретранслятора, фаза припливу, радіаційна смуга й геометрія передачі Black Keel мають збігтися до підйому маси.
 
 ## Audio
 
-Порахуй місяці, перш ніж вірити вікну.
+Спершу порахуй Kestrel, потім вір вікну.
 
 ## Field Note
 
-Небо тут механізм, а не декорація.
+Небо - робочий розклад. Пропусти одну тінь, і carrier стане чуткою.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/uk_UA. -->

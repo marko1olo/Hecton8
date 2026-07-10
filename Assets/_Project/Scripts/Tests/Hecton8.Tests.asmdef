@@ -4,12 +4,7 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "Hecton8.Core",
-        "Hecton8.World",
-        "Hecton8.Gameplay",
-        "Hecton8.Building",
-        "Hecton8.Power",
-        "Hecton8.Construction"
+        "Hecton8.Core"
     ],
     "includePlatforms": [
         "Editor"

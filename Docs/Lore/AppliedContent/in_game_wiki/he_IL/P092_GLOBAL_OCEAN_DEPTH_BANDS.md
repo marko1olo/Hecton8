@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "רצועות עומק האוקיינוס"
+title: "רצועות עומק האוקיינוס הגלובלי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# רצועות עומק האוקיינוס
+# רצועות עומק האוקיינוס הגלובלי
 
-את האוקיינוס של HECTON-8 קוראים ברצועות, לא במספר קרקעית יחיד. המדף הפוטי עדיין מאפשר אור, גרוטאות, אצות וטייסים רשלנים. המדף התעשייתי נושא שונית כבלים, כלובי צינורות וסיפוני טעינה ישנים. מתחתיו מדרגות מלח מכופפות סונאר ונטל. שדות מכונות תהומיים מענישים תיקונים. באגן Atlas הלחץ מרגיש כמו סמכות.
+ה-ocean של HECTON-8 אינו one long fall to a bottom. הוא stack of laws. ה-photic shelf עדיין מאפשר light, algae, broken habitat skin ו-bad decisions שאפשר לתקן. ה-industrial shelf הוא pipe cages, cable reef, loading decks ו-machines that answer late. Brine stairs מכופפות sound and ballast עד ש-route יכול להיות near and unreachable בו זמנית. Abyssal machine fields מענישים repairs ב-cold patience. Atlas basin עמוק יותר מ-danger; שם pressure becomes jurisdiction.
 
 ## Scanner
 
-תרשים עומק. המדף הראשון סולח לנטל גרוע; מים נמוכים מחייבים כל טעות בלחץ, חום ושקט.
+Depth chart. ה-first shelf סולח ל-poor ballast; ה-lower water מחייב כל every mistake ב-pressure, heat, noise ו-silence.
 
 ## Terminal
 
-רצועות: 0-250 מ' מדף פוטי לחילוץ; 250-1200 מ' מדף תעשייתי ושונית כבלים; 1200-2800 מ' מדרגות/קניון תמיסת מלח; 2800-4300 מ' שדה מכונות תהומי; 4300-5600 מ' אגן Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-כל מאה מטר לוקחים ממך הרגל אחד.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-עומק ב-HECTON-8 הוא חוק, מזג אוויר, גבול ורעב באותו מספר.
+Depth ב-HECTON-8 הוא law, weather, border ו-hunger עם אותו number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/he_IL. -->

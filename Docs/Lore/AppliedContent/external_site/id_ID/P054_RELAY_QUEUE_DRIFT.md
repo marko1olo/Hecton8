@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Drift Antrean Relai"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drift Antrean Relai
+# Relay Queue Drift
 
-Drift Antrean Relai adalah perbedaan antara kebenaran dan kegunaan. HECTON-8 tidak butuh statis palsu atau gangguan ajaib untuk membuat komunikasi menakutkan. Pesan bisa tiba utuh, terotentikasi, dan sempurna untuk ruangan tiga puluh menit lalu. Lalu air menggeser hatch, tekanan membengkokkan rangka, pertumbuhan Atlas menutup retakan yang salah, dan instruksi yang sama menjadi jebakan. Pemain bukan memeriksa apakah sistem berbohong, tetapi apakah sistem terlalu tua untuk dipercaya.
+Relay Queue Drift menjadikan message age variabel survival: remote orders dapat true, stale, dan lethal pada saat yang sama.
+
+## Scanner
+
+Relay stamp lebih tua daripada leak yang disebutnya. Instruction itu benar untuk room yang sudah tidak ada.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction sampai fresh relay window terbuka. Treat delayed route orders as archival kecuali pressure, door state, dan waterline cocok.
+
+## Audio
+
+Message itu benar. Itulah masalahnya.
+
+## Field Note
+
+Truth yang terlambat masih bisa membunuh.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/id_ID. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Route-ladder van de Pekelkloof"
+title: "Routeladder van de pekelkloof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route-ladder van de Pekelkloof
+# Routeladder van de pekelkloof
 
-Pekelkloven maken diepteprogressie fysiek. Dichte lagen, mineraalmuren, warmtelekken en akoestische vervorming leren waarom diepere reizen betere instrumenten en drukdiscipline vragen.
+Pekelkloven maken diepte tot substantie. Dichte zoutrivieren liggen in de oceaan als vloeren, spiegels en vallen. Een schone route wordt gebouwd met dichtheidsmarkers, ballastvensters, relaiscontroles en hoekdiscipline, niet met moed. De diepere lagen leren waarom instrumenten tellen: sonar kan de ruimte erboven spiegelen, drijfvermogen kan liegen, en het pak kan gelijk hebben terwijl de zee weigert.
 
 ## Scanner
 
-Pekeldichtheidsmarkering. De afdaling is chemie met muren.
+Dichtheidsmarker bevestigd. De route is geen gang; het is chemie met muren.
 
 ## Terminal
 
-PEKELKLOOF-CONTROLE: dichtheidsinterface stabiel genoeg voor gefaseerde afdaling. Waarschuwing: akoestische relaisvervorming, voertuigdrijfkrachtfout en valse vloeren onder 1800 m verwacht.
+PEKELKLOOF-CONTROLE: dichtheidsgrens stabiel voor gefaseerde afdaling. Verwachte gevaren onder 1800 m: vervorming akoestisch relais, drijffout voertuig, sensor-vloerfantomen.
 
 ## Audio
 

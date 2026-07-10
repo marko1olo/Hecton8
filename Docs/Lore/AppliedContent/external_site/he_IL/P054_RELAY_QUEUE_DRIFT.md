@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "סחיפת תור ממסר"
+title: "סטיית relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סחיפת תור ממסר
+# סטיית relay queue
 
-סחיפת תור ממסר היא ההבדל בין אמת לשימושיות. HECTON-8 אינה צריכה רעש מזויף או הפרעה קסומה כדי להפוך תקשורת למפחידה. הודעה יכולה להגיע שלמה, מאומתת ונכונה לגמרי לחדר כפי שהיה לפני שלושים דקות. ואז מים מזיזים פתח, לחץ מכופף מסגרת, צמיחת Atlas אוטמת את הסדק הלא נכון, ואותה הוראה נעשית מלכודת. השחקן אינו בודק אם המערכת משקרת, אלא אם היא כבר זקנה מדי לאמון.
+Relay Queue Drift הופך message age למשתנה הישרדות: remote orders יכולות להיות true, stale ו-lethal בו זמנית.
+
+## Scanner
+
+Relay stamp ישן יותר מה-leak שהוא מציין. ה-instruction היה נכון עבור room שכבר אינו קיים.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction עד ש-fresh relay window נפתח. Treat delayed route orders as archival אלא אם pressure, door state ו-waterline תואמים.
+
+## Audio
+
+ה-message נכון. זו הבעיה.
+
+## Field Note
+
+Truth מאוחרת עדיין יכולה להרוג.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/he_IL. -->

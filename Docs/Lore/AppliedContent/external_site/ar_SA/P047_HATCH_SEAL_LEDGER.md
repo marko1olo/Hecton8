@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "سجل إحكام الفتحة"
+title: "سجل ختم hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سجل إحكام الفتحة
+# سجل ختم hatch
 
-الفتحات من أهدأ سجلات HECTON-8. لا تشرح من بقي خلفها؛ تخزن اتجاه الإغلاق وإجهاد الحشية وسلطة override. قراءة سجل الإحكام تحول بابا مقفلا إلى قرار ضغط له وقت.
+Hatches في HECTON-8 هي records صامتة: closure direction وgasket stress وoverride authority وwet-side witness traces تحول locked door إلى pressure decision مع timestamp.
 
 ## Scanner
 
-تمت استعادة ذاكرة الإحكام. تحملت الحشية ثلاث قطعات ضغط وتجاوز إخلاء واحد؛ تم قفل الوصول من جانب العودة من الجهة المغمورة.
+Seal memory recovered. تحمل gasket ثلاث pressure cuts وone evacuation override؛ كان return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: تشوه الحشية فوق سماحية الخدمة. إغلاق يدوي مقبول تحت EVAC OVERRIDE. عدد المشغلين على جانب العودة غير محسوم. لا يفتح إلا بعد مساواة الضغط وفحص المفصلات.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, and wet-side witness check.
 
 ## Audio
 
-أحكمت الإغلاق. هذا كل ما وعدت به الفتحة.
+It sealed. هذا كل ما وعد به hatch.
 
 ## Field Note
 
-الفتحة المحكمة إيصال. قبل أن تفتحها، اسأل أي جانب دفع الثمن.
+Sealed hatch هو receipt. قبل فتحه، اسأل أي جانب دفع.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/ar_SA. -->

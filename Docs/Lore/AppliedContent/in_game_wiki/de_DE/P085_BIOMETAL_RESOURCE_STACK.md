@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Biometall-Ressourcenstapel
 
-Der Ressourcenstapel verhindert, dass HECTON-8 auf ein magisches Material schrumpft. Xenon-Omega zählt, aber der Mond hat auch Metalle, Salze, Schlotchemie, Druckkeramik, Biofasern, Photoproteine, salvage und Atlas-verändertes Biometall.
+Der Ressourcenstapel verhindert, dass HECTON-8 auf ein magisches Material schrumpft. Blaue Schuld zählt, aber der Mond zahlt auch in Sulfidmetallen, Salzen, Edelgasen, Keramik, Katalysatoren, Biofasern, Photoproteinen, Bergungshardware und Atlas-verändertem Biometall. Gewalt ergibt Sinn, weil Wert verteilt ist: viele kleine Gründe zu schneiden, markieren, verstecken, zurückkehren und lügen.
 
 ## Scanner
 
-Ressourcenbrett. Blue debt steht oben, aber der Rest des Mondes ist immer noch profitabel genug zum Töten.
+Ressourcentafel geborgen. Blaue Schuld steht oben. Der Rest des Mondes ist immer noch profitabel genug, um dafür zu töten.
 
 ## Terminal
 
-HECTON-8-RESSOURCENSTAPEL: Sulfidmetalle, Salze, Edelgastaschen, Druckkeramik, Schlotkatalysatoren, Biofasern, Photoproteine, salvage hardware, Atlas-verändertes Biometall und XO continuity substrate.
+HECTON-8-STAPEL: Sulfidmetalle, Salze, Edelgastaschen, Druckkeramik, Ventkatalysatoren, Biofasern, Photoproteine, Bergungshardware, Atlas-verändertes Biometall, XO-Kontinuitätssubstrat.
 
 ## Audio
 
-Ein einziges Wundererz wäre faul. HECTON-8 hat eine ganze Ökonomie aus Druckwunden.
+Ein Wundererz wäre faul. HECTON-8 hat eine ganze Ökonomie aus Druckwunden.
 
 ## Field Note
 
-Wenn jede Probe Xenon-Omega sagt, wird die Welt dumm. Zähle auch die anderen Gründe.
+Wenn jede Probe Xenon-Omega sagt, wird die Welt flach. Zähle auch die kleineren Gründe, aus denen Menschen starben.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/de_DE. -->

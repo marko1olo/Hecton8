@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Lune fracturee par collision
 
-HECTON-8 s'est formee dans le systeme d'Aegir puis une collision rasante l'a fendue. La blessure n'a pas detruit la lune. Elle a souleve des plateaux crustaux, ouvert des failles de saumure, nourri des couloirs hydrothermaux et laisse l'ancien plancher accessible par de rares fenetres de pression. Les cartes de recuperation suivent ce dommage, car les routes les plus sures sont de vieilles blessures remplies d'eau.
+HECTON-8 n'est pas un stolen world jete dans Aegir pour mystery. Il formed here, puis une glancing collision l'a opened without killing it. La wound a leve des shelves, cracked brine basins, chauffe des fault ladders et laisse des pressure-glass seams la ou la moon essayait de close around its own ocean. Cet old damage decide encore ou un hull peut descend, ou sound bends, ou vents stay alive et ou buried colony evidence peut surface. Les salvage maps suivent les injuries, parce que sur HECTON-8 la safest route est souvent l'old break that did not quite heal.
 
 ## Scanner
 
-Echantillon de vieille croute. La lune s'est formee dans la ceinture de debris d'Aegir, puis un impact l'a ouverte assez grand pour que l'ocean s'en souvienne.
+Crust sample. HECTON-8 formed in Aegir's debris belt, puis a pris un oblique impact assez large pour que l'ocean s'en souvienne.
 
 ## Terminal
 
-MODELE D'ORIGINE: accretion autour d'Aegir, impact oblique ulterieur, resonance mareale apres verrouillage. Resultats: croute en marches, failles chaudes, bassins de saumure, veines de verre de pression, acces inegal au plancher profond.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Elle est nee ici. Puis quelque chose a frappe assez fort pour donner une carte a la mer.
+It was born here. Puis quelque chose a frappe assez hard pour give the sea a map.
 
 ## Field Note
 
-Le mythe d'une lune capturee serait trop propre. HECTON-8 porte une blessure locale: croute soulevee, saumure alourdie, events qui paient encore leurs interets.
+La captured-moon story est trop propre. Ce lieu est born local, broken local, et billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/fr_FR. -->

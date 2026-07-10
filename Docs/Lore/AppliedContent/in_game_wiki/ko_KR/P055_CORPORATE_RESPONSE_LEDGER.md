@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "기업 응답 장부"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 기업 응답 장부
+# Corporate Response Ledger
 
-장부는 아무도 임기응변하지 않을 때 Black Keel이 말하는 방식이다. 위험을 인정하고, 대기열을 열고, 청구권을 보존하면서도 운영자를 자산 규칙 뒤에 둘 수 있다. 플레이어는 응답 장부를 유용한 신호이자 실행 가능한 적대적 서류로 읽어야 한다.
+corporate response ledger는 아무도 improvising하지 않을 때 Black Keel이 말하는 방식이다. 그것은 즉시 distress를 acknowledge하고, route queue를 열고, preserve a claim, demand sample custody, log hull risk를 수행하면서도 living operator를 asset rules 뒤에 기다리게 할 수 있다. ledger는 system이 무엇을 아는지 드러내기 때문에 가치가 있다. 하지만 hostile하다. knowing은 acting과 같지 않기 때문이다. HECTON-8에서 첫 reply는 machine이 모든 것을 들었고 거의 아무것도 약속하지 않았다는 증거가 되곤 한다.
 
 ## Scanner
 
-모든 답장은 계약 언어로 온다. 자산 보관, 책임 잠금, 샘플 경로, 선체 위험, 그다음 운영자 회수.
+모든 reply는 contract language로 도착한다. asset custody, liability lock, sample route, hull risk, 그 다음 operator recovery.
 
 ## Terminal
 
-응답 등급: 자산 보존. 운영자 회수는 샘플 보관, 책임 봉인, 선체 감사, 지불 경로 뒤에 첨부.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-답장은 자동이었다. 구조는 조건부였다.
+reply는 automatic이었다. rescue는 conditional이었다.
 
 ## Field Note
 
-즉각 응답은 즉각 구조가 아니다.
+Immediate response는 immediate rescue가 아니다.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ko_KR. -->

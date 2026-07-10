@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Custody Keelmark Mutual
 
-Keelmark Mutual est l'enveloppe assurance-custody qui laisse Black Keel opérer dans Aegir sans autorité humaine de secours sur place. Sur le papier, ce n'est pas Deep Reach. En pratique, un vieil underwriting peut être orienté par celui qui possède le bon priority hook, car chaque corps, outil, échantillon et caisse scellée se trouve déjà dans un calendrier de risque avant que l'opérateur demande de l'aide.
+Keelmark Mutual est l'enveloppe insurance-custody derriere le comportement de Black Keel. Ce n'est pas Deep Reach sous un masque, ni un service secret de rescue. Keelmark existe pour garder les claim tenders legaux, finances et assures quand personne dans Aegir ne peut repondre a un appel direct. Cela le rend plus froid qu'un mechant. La policy ne hait pas l'operator; elle le definit simplement comme debt, vessel risk, payload interface, quarantine exposure et possible witness. Une fois ces categories en place, chaque demande doit les traverser.
 
 ## Scanner
 
-Enveloppe d'assurance intacte. Keelmark possède le lien avant de posséder le corps.
+Balise d'underwriting intacte. Keelmark n'a pas besoin de malveillance quand le lien a deja des dents.
 
 ## Terminal
 
-KEELMARK MUTUAL : lien claim-tender actif. Dette opérateur, risque vaisseau, custody payload et réserve de quarantaine groupés sous calendrier d'underwriting distant. Statut de détresse sans suspension du lien.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve et recovery proof groupes sous remote underwriting schedule. Distress status ne suspend ni lien ni custody order.
 
 ## Audio
 
-La police est plus vieille que ton appel de détresse.
+La policy est plus vieille que le distress call. Elle a eu plus de temps pour apprendre la route.
 
 ## Field Note
 
-L'assureur n'est pas un cerveau caché. C'est pire : un calendrier qui n'a jamais eu à se soucier.
+Pas de mastermind dans une piece noire. Seulement un schedule assez vieux pour survivre a la culpabilite.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/fr_FR. -->

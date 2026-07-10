@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Зерно контракту-приманки Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Recovery Compliance Bait Contract Seed
+# Зерно контракту-приманки Recovery Compliance
 
-UK LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Контракти-приманки Recovery Compliance приходять як щедрі завдання на аварійне повернення, але ланцюг приймання вже зігнутий у бік Deep Reach. Виплата справжня. Ціна — прихований обов'язок розкрити, де знайдено уламок, жетон тіла, ящик зразків або запечатану машину.
 
 ## Scanner
 
-UK LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Зерно контракту: приманка Recovery Compliance. Висока виплата, забруднений ланцюг приймання, прихована вимога координат.
 
 ## Terminal
 
-UK LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+ЗЕРНО-ПРИМАНКА: виплату підвищено, приймача Recovery Compliance замасковано, пункт розкриття координат приховано, тиск за утримання активний, маршрутизація Deep Reach імовірна.
 
 ## Audio
 
-UK LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Рятувальна печатка купує довіру доку швидше, ніж зброя.
 
 ## Field Note
 
-UK LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Нотатка мародера: якщо робота платить надто чисто, перевір, кому належить рушник.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/uk_UA. -->

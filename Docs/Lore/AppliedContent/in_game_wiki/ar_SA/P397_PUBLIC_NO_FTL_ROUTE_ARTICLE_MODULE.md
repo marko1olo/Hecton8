@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "تأخر مسار بلا FTL"
+title: "تأخير المسار بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تأخر مسار بلا FTL
+# تأخير المسار بلا FTL
 
-المسافة قاعدة بقاء على طريق Aegir. القانون والدين وpackets القديمة قد تصل إلى اللاعب قبل carrier أو tender أو قطعة غيار أو منقذ بشري بوقت طويل. رد relay لا يلغي عمل الضغط أمامك؛ إنه يثبت فقط أن أحدا وضع claim في طابور.
+المسافة حد تشغيلي على مسار Aegir. قد تسبق الحزمة السفينة. قد تصل إجابة قانونية إلى HECTON-8 قبل القطعة الاحتياطية أو طاقم tender أو أسطوانة الضغط أو المنقذ الذي يجعلها مفيدة. لذلك يغير اتصال المرحل الورق قبل أن يغير الغرفة حولك. عندما يقول الأرشيف إن المساعدة اعترفت بالمطالبة، تحقق من عمر الحزمة وكتلة الناقل وفتحة الكبح وطقس الهبوط المحلي قبل أن تثق بالجملة.
 
 ## Scanner
 
-سجل عبور. حركة Aegir تعتمد على precursor probes وbeam lanes وpellet-fusion freight وbraking mass وpacket age وrelay custody والتأخير القانوني.
+سجل عبور. تعتمد حركة Aegir على خرائط المسابير، وممرات الحزم، وشحن pellet-fusion، وكتلة الكبح، وعمر الحزمة، وحفظ المرحل، ونوافذ الهبوط المتأثرة بالطقس.
 
 ## Terminal
 
-عقدة الأرشيف العام // حد العبور. لا يوجد FTL. لا يوجد Ansible. الإنقاذ الحي يحتاج نقلا ماديا وbraking architecture وcarrier position وdescent mass وlocal window صالحة.
+عقدة أرشيف عامة // حد العبور. FTL: غير موجود. Ansible: غير موجود. الإنقاذ الحي يتطلب موقع الناقل، وتخصيص الكبح، وكتلة الهبوط، والطقس المحلي، ونافذة حفظ لم تنته.
 
 ## Audio
 
-قد تكون المساعدة حاضرة قانونيا وبعيدة ماديا لسنوات.
+يمكن للناقل تسجيل طارئك ويبقى على مسافة سنوات من الكتلة.
 
 ## Field Note
 
-ملاحظة Marauder: عندما يجيب relay، اسأل عن عمر الجواب وعن الكتلة التي يستطيع تحريكها.
+ملاحظة Marauder: كل إجابة إنقاذ تحتاج أربعة أرقام: عمر الحزمة، كتلة الناقل، فتحة الكبح، نافذة الهبوط.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ar_SA. -->

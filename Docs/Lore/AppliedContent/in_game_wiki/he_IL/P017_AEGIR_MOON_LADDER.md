@@ -19,22 +19,22 @@ localization_flags: 1
 
 # סולם הירחים של Aegir
 
-סולם הירחים של Aegir כולל סמני קרינה, גופי relay, claims מותשים, סכנות תהודה, HECTON-8, ירחי אחסון קרים וגופים חיצוניים. HECTON-8 חשוב כי הוא בין אוקיינוס חי ללחץ מסלולי.
+הירחים של Aegir הם מכונת נתיבים. שמותיהם אינם קישוט בשמיים; הם קובעים צללים, שתיקת ממסר, שלב גאות, המתנת carrier ועלות הזזת מסה. HECTON-8 הוא Aegir-VIII בסולם העבודה, יקר מפני שלחץ האוקיינוס וגאומטריית הממסרים הופכים גם חילוץ וגם נטישה ליקרים.
 
 ## Scanner
 
-רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+סולם הירחים נפתר: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel ו-Mute מכופפים חלונות.
 
 ## Terminal
 
-HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.
+הערת נתיב AEGIR: HECTON-8 בא אחרי Kestrel בסולם העבודה. צל ממסר, שלב גאות, רצועת קרינה וגאומטריית העברה של Black Keel חייבים להתיישר לפני עליית מסה.
 
 ## Audio
 
-ספור את הירחים לפני שאתה סומך על חלון.
+ספר את Kestrel לפני שאתה מאמין לחלון.
 
 ## Field Note
 
-השמים הם מנגנון, לא תפאורה.
+השמיים הם לוח עבודה. פספסת צל אחד וה-carrier נהיה שמועה.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/he_IL. -->

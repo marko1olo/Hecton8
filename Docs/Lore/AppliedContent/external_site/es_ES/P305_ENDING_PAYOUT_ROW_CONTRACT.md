@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Límite de datos de pago final"
+title: "Fila de registro de pago final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Límite de datos de pago final
+# Fila de registro de pago final
 
-Los finales de HECTON-8 registran quién recibió la prueba, qué custodia ganó, qué pagó y qué coste queda sin resolver. Un número puede cerrar una línea de contrato. No puede cerrar el océano.
+Los finales de HECTON-8 se registran por receptor y custodia. El registro nombra qué salió del océano, quién lo recibió, qué pruebas sobrevivieron, qué se pagó y qué sigue restringido. Un pago puede cerrar una partida mientras la reclamación, la cuarentena o la ecología siguen abiertas.
 
 ## Scanner
 
-La fila de final ata receptor, custodia, estado de prueba, pago y consecuencia sin resolver.
+Fila de resultado pendiente: receptor, ruta de carga útil, estado de pruebas, pago, retraso de cuarentena y consecuencia sin resolver no están cerrados.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: las filas requieren ruta de payload, receptor, estado de prueba, pago material, consecuencia legal, demora de cuarentena y coste no resuelto. Los créditos no cierran una escena del crimen.
+ESQUEMA DE PAGO FINAL / comprobación de receptor de dossier: no cerrar registro hasta escribir ruta de carga útil, receptor, estado de pruebas, pago material, ajuste de gravamen, retraso de cuarentena, consecuencia ecológica y coste sin resolver. Los créditos se liberan después de la custodia, no antes.
 
 ## Audio
 
-Los créditos no cierran una escena del crimen.
+Relé de dossier: el receptor aceptó custodia. El reloj de cuarentena empieza antes de que despeje el crédito.
 
 ## Field Note
 
-Credit value, quarantine delay y dossier flags solo se registran después de aclarar receptor y estado de prueba.
+No llames pagado a un final hasta nombrar receptor. Receptor equivocado, futuro equivocado; mismo océano, otra factura.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/es_ES. -->

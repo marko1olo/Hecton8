@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, Relaisnotar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Juno Kade/Relay
+# Juno Kade, Relaisnotar
 
-DE LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Juno Kade macht die No-FTL-Prämisse zu einem menschlichen Beruf. Er steht zwischen Panik und Akte: der Relaisnotar, der dafür sorgt, dass Evakuierungsanspruch, Routenverweigerung oder Todesmarke interstellare Entfernung überqueren, ohne Gerücht zu werden.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Siegelfläche, Paketablage und Zeugenband tragen dieselbe Verwahrmarke eines späten Fensters.
 
 ## Terminal
 
-DE LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+RELAISHOF A-17 / KADE, JUNO: ausgehende Pakete nach jedem Trägerfenster gestempelt. Siegeldruck, Ablagestaub und Zeugenband bestätigen Verwahrung, selbst wenn Antwortzeit Rettungszeit übersteigt.
 
 ## Audio
 
-DE LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade beglaubigte Fakten, die zu spät ankommen würden, um jemanden zu retten, und die Reise trotzdem überstehen mussten.
 
 ## Field Note
 
-DE LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Kade bei Kommunikationsfenster-Uhren, Paketablagen, Notarsiegeln und verspäteten Belegenthüllungen einsetzen. Sein Dossier soll Entfernung rechtlich statt abstrakt wirken lassen.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/de_DE. -->

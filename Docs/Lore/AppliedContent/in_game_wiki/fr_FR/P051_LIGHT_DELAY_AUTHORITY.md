@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Autorité du délai lumineux"
+title: "Autorite du delai-lumiere"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autorité du délai lumineux
+# Autorite du delai-lumiere
 
-HECTON-8 n'a pas d'ansible ni de voix de commandement en direct depuis l'orbite. Les messages avancent à la vitesse de la lumière, puis perdent encore du temps dans les files, les fenêtres de tempête, la géométrie relais et les règles de garde du transporteur. Chaque réponse est une vieille preuve, pas un ordre.
+HECTON-8 n'a pas d'ansible, pas de voix amicale penchee depuis l'orbite, et aucun moyen de rendre dix annees-lumiere misericordieuses. Les messages se deplacent a la vitesse de la lumiere, puis perdent encore du temps dans relay geometry, storm scatter, buffer law et les custody queues de Black Keel. Une transmission peut etre honnete et deja trop vieille pour etre suivie. La surface l'apprend tot: chaque remote answer est d'abord evidence, ensuite instruction, jamais comfort. Si le mur, l'eau et la pressure contredisent le message, le local world gagne.
 
 ## Scanner
 
-Cache du mât relais : l'appel est parti net, puis il a attendu derrière la lumière, la loi de file, la diffusion de tempête et la ligne de vue d'Aegir.
+Cache de relay mast. L'appel est parti propre, puis a attendu derriere light, queue law, storm scatter et Aegir line-of-sight.
 
 ## Terminal
 
-AUTORITÉ COM : délai aller confirmé. Diffusion de tempête élevée. File relais sous priorité de garde. Autorité locale de survie active.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active jusqu'a confirmation d'override par fresh signal window.
 
 ## Audio
 
-La réponse arrive. Ce n'est pas encore un secours.
+La reponse arrive. Cela n'en fait pas un rescue.
 
 ## Field Note
 
-Personne n'a censuré le premier cri. La physique l'a porté assez lentement pour que la politique le rattrape.
+Personne n'a censure le premier scream. La physics l'a porte assez lentement pour que la policy le rattrape.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/fr_FR. -->

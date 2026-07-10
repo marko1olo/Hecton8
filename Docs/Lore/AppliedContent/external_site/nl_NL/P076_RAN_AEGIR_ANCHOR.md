@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir Anker"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegir Anker
+# Ran / Aegir Anchor
 
-Ran / Aegir Anker legt HECTON-8s visuele smaak vast: harde sciencefiction met zwakker zonlicht boven, vijandige druk en schuld beneden.
+Ran / Aegir Anchor grondt HECTON-8's visual logic: dimmer hard-sci-fi sunlight above, daarna depth, weather, turbidity, pressure en debt below.
 
 ## Scanner
 
-K-klasse sterplaat. Ran brandt normaal. Aegir is zwakker dan Sol, maar de duisternis hier komt van diepte, weer en schuld.
+K-class star plate. Ran brandt normaal; de deep hier is niet supernatural, alleen te ver onder weather, water en debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Oranje-dwerglicht ondersteunt oppervlaktewerk. Stormverstrooiing, eclipsgeometrie en oceaantroebelheid drukken afdalingsleesbaarheid onder de veiligheidsmarge.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity en industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-De ster is aanwezig. Hij kan je alleen niet naar beneden volgen.
+De star is aanwezig. Ze kan alleen niet follow you down.
 
 ## Field Note
 
-Een echte ster is genoeg. De oceaan doet de rest.
+Een real star is genoeg. De ocean doet de rest.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/nl_NL. -->

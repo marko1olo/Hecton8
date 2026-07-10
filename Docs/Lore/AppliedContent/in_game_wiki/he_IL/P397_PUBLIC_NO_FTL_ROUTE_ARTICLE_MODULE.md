@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "עיכוב מסלול ללא FTL"
+title: "עיכוב נתיב ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# עיכוב מסלול ללא FTL
+# עיכוב נתיב ללא FTL
 
-מרחק הוא כלל הישרדות במסלול Aegir. חוק, חוב ו-packets ישנים יכולים להגיע אל השחקן הרבה לפני carrier, tender, חלק חילוף או מציל אנושי. תשובת relay לא מבטלת את עבודת הלחץ מולך; היא רק מוכיחה שמישהו הכניס את ה-claim שלך לתור.
+מרחק הוא גבול הפעלה בנתיב Aegir. חבילה יכולה להשיג ספינה. תשובה משפטית יכולה להגיע ל-HECTON-8 לפני החלק, צוות ה-tender, בקבוק הלחץ או המחלץ שיהפכו אותה למועילה. לכן קשר ממסר משנה ניירת לפני שהוא משנה את החדר סביבך. כשהארכיון אומר שעזרה הכירה בתביעה, בדוק גיל חבילה, מסת נשא, חריץ בלימה ומזג אוויר מקומי לירידה לפני שתאמין למשפט.
 
 ## Scanner
 
-רשומת מעבר. תנועת Aegir תלויה ב-precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody ועיכוב משפטי.
+רשומת מעבר. תעבורת Aegir תלויה במפות גשושיות, נתיבי אלומה, מטען היתוך גלולות, מסת בלימה, גיל חבילה, משמורת ממסר וחלונות ירידה מוכי מזג אוויר.
 
 ## Terminal
 
-צומת ארכיון ציבורי // גבול מעבר. אין FTL. אין Ansible. הצלה חיה דורשת transfer פיזי, braking architecture, carrier position, descent mass ו-local window תקף.
+צומת ארכיון ציבורי // גבול מעבר. FTL: חסר. Ansible: חסר. חילוץ חי דורש מיקום נשא, הקצאת בלימה, מסת ירידה, מזג אוויר מקומי וחלון משמורת שלא פג.
 
 ## Audio
 
-עזרה יכולה להיות נוכחת משפטית ורחוקה פיזית בשנים.
+נשא יכול לרשום את מצב החירום שלך ועדיין להיות במרחק שנות מסה.
 
 ## Field Note
 
-הערת Marauder: כשה-relay עונה, שאל בן כמה המענה ואיזו מסה הוא באמת יכול להזיז.
+הערת Marauder: כל תשובת חילוץ צריכה ארבעה מספרים: גיל חבילה, מסת נשא, חריץ בלימה, חלון ירידה.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/he_IL. -->

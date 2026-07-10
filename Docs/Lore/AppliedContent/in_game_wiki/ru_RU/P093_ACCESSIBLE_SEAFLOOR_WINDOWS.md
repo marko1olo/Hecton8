@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Доступные окна морского дна
 
-Доступные окна морского дна - места, где сломанная кора HECTON-8 ненадолго снижает цену спуска. Они появляются у рухнувших шельфов, обнаженных гребней, повторно прогретых жерловых шрамов и рапных столбов, которые несут давление иначе, чем открытая вода. Окно все равно смертельно, если торопиться. Оно дает контакт со старым дном, редкими минеральными жилами, закопанным колониальным железом и уликами, которые главный океан раздавил бы вне досягаемости.
+Accessible seafloor windows - не safe places. Это rare permissions, written by broken geology. Collapsed shelf lowers the descent angle. Reheated brine column carries pressure differently на несколько hundred meters. Exposed ridge дает sonar hold shape там, где open water swallow it. Через такие windows old floor становится reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines и evidence, которое main ocean держал бы out of human range. Rush a window - и оно closes with the same pressure that made it valuable.
 
 ## Scanner
 
-Маркер обнаженного гребня. Здесь оболочка порвалась достаточно тонко, чтобы краулер коснулся старого дна и не стал пастой.
+Exposed ridge marker. Здесь shell tore thin enough, чтобы crawler touched old floor without becoming paste.
 
 ## Terminal
 
-КРИТЕРИИ ОКНА: губа треснувшей коры, рапный столб с повторным нагревом от жерла, рампа рухнувшего шельфа, стабильный сонарный возврат, карман давления ниже красной линии костюма. Помечать только для медленной добычи.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-Море дает трогать дно через окна, а не там, где ты почувствовал храбрость.
+Sea lets you touch bottom in windows, не wherever you feel brave.
 
 ## Field Note
 
-Большая часть луны держит свое дно как тайну давления. Окна - исключения с зубами.
+Большая часть moon keeps its floor as a pressure secret. Windows - exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ru_RU. -->

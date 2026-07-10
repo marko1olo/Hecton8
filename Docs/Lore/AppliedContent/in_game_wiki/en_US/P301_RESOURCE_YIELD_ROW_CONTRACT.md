@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Resource Yield Data Boundary"
+title: "Resource Yield Acceptance Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Resource Yield Data Boundary
+# Resource Yield Acceptance Row
 
-Resource Yield Data Boundary keeps resource prices from becoming loose lore. On HECTON-8, a mineral is not worth the same thing at every depth: pressure history, route custody, and depletion behavior decide whether a sample is currency, evidence, or contaminated ballast.
+Yield rows decide when a resource becomes payable cargo instead of loose scrap. HECTON-8 samples change value with depth, container rating, contamination stage, and who can prove custody. A harmonic blue-debt chip from a sealed brine route is not the same row as a rinsed shelf flake in a cracked pouch.
 
 ## Scanner
 
-Yield row rejects loose value: class, pressure band, custody, depletion, and hash must agree.
+Sample row incomplete: pressure history, custody grade, depletion state, contamination stage, and packet hash do not all agree.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: no number accepted without packet hash, resource class, pressure band, custody grade, rarity curve, and depletion behavior. A sample without pressure history is evidence, not value.
+YIELD INTAKE SCHEMA / Aegir Reclamation Pool: reject value posting until resource class, pressure band, custody grade, rarity curve, depletion behavior, contamination stage, and packet witness hash are present. Bagged rock is mass until the pressure route is proven.
 
 ## Audio
 
-A sample without pressure history is not a value.
+Black Keel: sample hold accepted after pressure route and custody hash. Until then it rides as ballast.
 
 ## Field Note
 
-Yield numbers stay provisional until pressure band, custody grade, depletion behavior, and packet hash agree.
+If the row has no pressure band, do not argue price. Put it in dead mass, keep the container sealed, and make the broker pay after custody clears.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/en_US. -->

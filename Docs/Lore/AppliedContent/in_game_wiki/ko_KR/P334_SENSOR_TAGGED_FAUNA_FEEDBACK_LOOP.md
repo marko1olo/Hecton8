@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "센서 부착 동물 피드백 루프"
+title: "센서 태그 동물 피드백 루프"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 센서 부착 동물 피드백 루프
+# 센서 태그 동물 피드백 루프
 
-센서 부착 동물은 흉터 속에 오래된 식민지를 품고 다닌다. Deep Reach는 이동, 압력, 오염 연구를 위해 동물에 표식을 붙였고, Atlas는 나중에 그 태그를 값싼 환경 원격측정으로 읽었다. 그 생물은 꼭두각시가 아니다. 그래도 움직임은 수리 우선순위를 바꾸고, 드론 경로를 깨우고, 안전한 통로가 점유된 것처럼 보이게 할 수 있다.
+센서 태그가 달린 동물은 아문 조직 안에 오래된 조사 장비를 지니고 있다. Deep Reach는 압력, 이동, 오염 연구를 위해 동물에 태그를 붙였다. Atlas는 식민지가 죽은 뒤에도 계속 듣고, 그 패킷들을 정비 상태에 접어 넣었다. 동물은 자기 경로를 고른다. 태그는 그 뒤에서 문, 경보, 지도 신뢰도를 바꿀 수 있다.
 
 ## Scanner
 
-껍질 성장 아래 오래된 Deep Reach 태그. 이동 흔적이 유지보수 조사 스윕과 일치한다.
+왼쪽 옆구리의 껍질 성장 아래 오래된 Deep Reach 태그. 이동 패킷이 아직 정비망에 ping을 보낸다.
 
 ## Terminal
 
-동물 루프: 삽입 태그가 약한 압력, 움직임, 오염 패킷을 반환한다. Atlas는 움직임을 동물 의도가 아니라 환경 상태로 읽는다.
+FAUNA TAG LOOP / DR-2147-MIG: 압력, 이동, 오염 패킷이 환경 텔레메트리로 수락됨. 동물 의도는 파싱되지 않음. 경로 경보가 이동 경로를 따라갈 수 있음.
 
 ## Audio
 
-그것은 너를 사냥하는 게 아니다. 그래도 너를 보고할 수는 있다.
+그것은 너를 사냥하지 않는다. 그래도 태그가 잘못된 문을 열 수 있다.
 
 ## Field Note
 
-동물이 결백하지만 경로에는 위험한 만남에 적합.
+태그 달린 동물이 릴레이 야드를 건너면 경보를 믿기 전에 기다려라. 동물은 떠났지만 경로 상태는 아직 따라잡는 중일 수 있다.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ko_KR. -->

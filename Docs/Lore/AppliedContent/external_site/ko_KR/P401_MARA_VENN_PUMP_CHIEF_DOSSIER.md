@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "KO LOC HOLD: Mara Venn/Pump Chief"
+title: "마라 벤, 펌프 책임자"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# KO LOC HOLD: Mara Venn/Pump Chief
+# 마라 벤, 펌프 책임자
 
-KO LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+마라 벤은 연설이 아니라 절차로 HECTON-8을 붙든다. 펌프실 증거는 그녀를 동상으로 만들지 않는다. 생존이 어떻게 계산되고 다투어졌으며, Deep Reach가 부속구역을 이미 부채로 부르던 때에도 한 작업자의 자리로 열려 있었는지 보여 준다.
 
 ## Scanner
 
-KO LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+기록: 마라 벤. 배지 모서리, 박자판, 수정된 물 장부가 모두 P-63 펌프실을 가리킨다.
 
 ## Terminal
 
-KO LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+펌프실 P-63 / VENN, MARA: 우회 손잡이는 장갑층 너머로 닳아 윤이 난다. 박자판은 흡입 손실 표시 옆에 고정되어 있다. 장부 수정은 사라진 물을 배경 누수가 아니라 기계 부하로 바꾼다.
 
 ## Audio
 
-KO LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+벤은 작별을 남기지 않았다. 겁먹은 사람들이 다음 숨을 셀 수 있도록 펌프판에 박자를 남겼다.
 
 ## Field Note
 
-KO LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+벤의 증거는 펌프 박자 퍼즐, 물 장부, 우회 손잡이 근처에 둔다. 그녀의 물건은 기반 시설을 호흡처럼 들리게 해야 한다.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ko_KR. -->

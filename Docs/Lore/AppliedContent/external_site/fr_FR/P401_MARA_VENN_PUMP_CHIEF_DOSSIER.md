@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, cheffe des pompes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, cheffe des pompes
 
-FR LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Mara Venn ancre HECTON-8 par la procédure, pas par le discours. Les preuves de la salle des pompes ne font pas d'elle une statue ; elles montrent comment la survie fut comptée, contestée et tenue ouverte par quelqu'un dont le poste continuait quand Deep Reach appelait déjà l'annexe un passif.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier : Mara Venn. Bord de badge, tableau de cadence et registre d'eau corrigé mènent tous à la salle des pompes P-63.
 
 ## Terminal
 
-FR LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+SALLE DES POMPES P-63 / VENN, MARA : poignée de dérivation polie à travers les gants ; tableau de cadence fixé près des pertes d'admission. La correction du registre transforme l'eau manquante, de fuite décorative, en charge machine.
 
 ## Audio
 
-FR LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn n'a pas laissé d'adieu. Elle a laissé un rythme sur le tableau des pompes pour que les gens terrifiés comptent le prochain souffle.
 
 ## Field Note
 
-FR LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Placer les preuves de Venn près des énigmes de rythme de pompe, registres d'eau et poignées de dérivation. Ses objets doivent faire entendre l'infrastructure comme une respiration.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/fr_FR. -->

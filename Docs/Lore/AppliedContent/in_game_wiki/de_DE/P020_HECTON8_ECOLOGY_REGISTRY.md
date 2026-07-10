@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ökologieregister
 
-HECTON-8 braucht Kontrast: helle nützliche Flachzonen, mittlere Anpassung an Menschenstrukturen, tiefe Atlas-Intrusion. Horror wirkt, weil natives Leben vorher existierte.
+Das Ökologieregister trennt Leben von Schaden. Helle Schelfmatten und Weider zeigen die Basis. Kabelflora und Filterkörper zeigen Leben, das sich an Menschenhardware anpasst. Sensorgetaggte Fauna, leitfähiger Film und Shell-Seal-Wuchs deuten auf Atlas-Reparaturrouting. Die richtige Frage ist nicht, ob etwas lebt, sondern welche Arbeit es im Drucksystem erledigt.
 
 ## Scanner
 
-Helle Flachwasserökologie bestätigt. Tiefer: Kabelflora, Filterkörper und Atlas-Reparatureingriff.
+Registertrennung bestätigt: natives Schelfleben, kabelangepasste Biota, Atlas-geroutete Reparaturorganismen. Vor dem Schneiden identifizieren.
 
 ## Terminal
 
-Registertrennung: native Druckökologie, kolonienadaptierte Biota, Atlas-veränderte Reparaturorganismen. Nicht mischen.
+REGISTERTEILUNG: native Druckökologie; kolonial angepasste Kabelbiota; Atlas-veränderte Reparaturorganismen. Falsche Etikettierung kann arbeitende Dichtungen zerstören oder Routenbeweise löschen.
 
 ## Audio
 
-Wenn alles Monster ist, ist nichts Verletzung.
+Wenn alles ein Monster ist, schneidest du das durch, was Druck hält.
 
 ## Field Note
 
-Die Welt lebte, bevor sie verletzt wurde.
+Die Welt lebte, bevor sie verwundet wurde.
 
 <!-- In-Game Wiki; generated from P020_HECTON8_ECOLOGY_REGISTRY/de_DE. -->

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # First Hour Spine
 
-The first hour should not begin in darkness. It begins with a contract voice, a damaged descent, breath management, bright shallow water and the practical need to restart a pump. Beauty is part of the trap: HECTON-8 has to look worth wanting before its paperwork becomes lethal. The opening spine then turns survival into evidence. The first sheltered room is useful but compromised; the sanitized accident packet sounds too clean; the first Atlas repair scar shows cable, tool metal and living residue pressed into one maintenance decision. The player learns the basic loop through action, not exposition: breathe, repair, read, doubt, go deeper.
+The first hour does not begin in darkness. It begins with a contract voice, a damaged descent, breath management, bright shallow water and the practical need to restart a pump. Beauty is part of the trap: HECTON-8 has to look worth wanting before its paperwork becomes lethal. The opening route turns survival into evidence. The first sheltered room is useful but compromised; the sanitized accident packet sounds too clean; the first Atlas repair scar shows cable, tool metal and living residue pressed into one working seal.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ The first safe room is not clean. It is only holding its breath better than you 
 
 ## Field Note
 
-The opening must be beautiful before it becomes accusing.
+The opening has to be beautiful before it starts accusing.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/en_US. -->

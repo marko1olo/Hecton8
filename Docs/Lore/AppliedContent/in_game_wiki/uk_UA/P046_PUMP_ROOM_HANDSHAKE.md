@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Рукостискання клапана насосної
 
-Рукостискання насоса починається, коли затоплена кімната приймає локальне керування. Воно дає доступ, але переносить воду, шум і тиск в іншу частину маршруту. Дивись на впускний кошик, вихідний імпульс і стукіт зворотного коридору, перш ніж вважати суху підлогу безпекою. Ранні насосні P-63 вчать головної звички ремонту: машина може поліпшити один відсік і погіршити дорогу додому.
+Pump handshake - мить, коли втоплена машина знову приймає local hand. Це схоже на control, бо floor очищується, lamp перестає плавати, а route ніби відкривається. Небезпека в тому, що water на HECTON-8 ніколи не зникає; її переносять в інший compromise. Intake baskets ловлять capsule foam, старі gloves, shell grit і torn labels. Outlets будять corridors, які мовчали не просто так. Правильна звичка - читати pump як trade: одна room дихає, інша починає knock.
 
 ## Scanner
 
-Локальний трюмний насос прийняв ввід із маховика. Впускний кошик забруднений піною капсули; вихідний імпульс навантажує зворотний коридор B.
+Local sump прийняв handwheel input. Capsule foam забиває intake basket; outlet pulse піднімається в Return Corridor B.
 
 ## Terminal
 
-P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНЕ ПОГОДЖЕННЯ: маховик прийнято. Дистанційну команду відхилено. Впуск відновлено на низькій витраті. Тиск виходу зростає в RETURN CORRIDOR B; перезапуск тільки після перевірки нижнього люка.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Клапан узяв. Вихід стукає. Не називай це безпечним.
+Valve took. Outlet стукає. Safe це ще не стало.
 
 ## Field Note
 
-Суха насосна може втопити шлях назад. Послухай удар у вихідній лінії, перш ніж знімати клапан.
+Сухий floor - ще не solved room. Слухай corridor, який за нього заплатив.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/uk_UA. -->

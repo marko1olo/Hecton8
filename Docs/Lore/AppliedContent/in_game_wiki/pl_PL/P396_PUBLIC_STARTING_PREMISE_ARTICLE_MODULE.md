@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Początkowe roszczenie Maraudera
 
-Zapis otwierający ustawia gracza jako wyszkolonego operatora pod presją długu. To nie turysta, wybrany spadkobierca ani rodzinny mściciel; rozumie pompy, uszczelnienia, formularze tras i skróty Deep Reach, zanim wrak zacznie tym formularzom przeczyć. Pierwsza godzina zostaje praktyczna: uszczelnić bathydrop, przywrócić ciśnienie, odczytać uszkodzone maszyny, odzyskać ładunek i ustalić, które oficjalne linie już kłamią.
+Pierwszy zapis HECTON-8 nie przedstawia turysty ani wybranego ocalałego. Wskazuje wyszkolonego operatora pod presją długu: kogoś, kto czyta skróty pomp, ostrzeżenia uszczelnień, etykiety ewakuacyjne i formuły odpowiedzialności Deep Reach, zanim otworzy się pierwszy właz. Początkowa praca jest konkretna. Załatać bathydrop. Potwierdzić ciśnienie. Zeskanować półkę P-63. Uruchamiać maszyny dopiero, gdy ścieżka uszczelnienia ma sens. Odzyskać ładunek, jeśli płaci, i dowód, jeśli przetrwa zegar przechowania.
 
 ## Scanner
 
-Publiczny zapis claim. Trasa otwarcia wskazuje zadłużonego Maraudera z przeszłością Deep Reach field-systems, uszkodzony bathydrop i okno odzysku Black Keel nad P-63.
+Publiczny zapis roszczenia. Akta zastawu Black Keel wskazują byłego specjalistę systemów terenowych Deep Reach, uszkodzony bathydrop, trasę P-63 i zamykające się okno przechowania.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // ROSZCZENIE POCZĄTKOWE. Akta kontraktora: były specjalista Deep Reach field-systems. Status bieżący: Marauder pod lien. Trasa: recovery claim Black Keel, zejście na shelf P-63, zwrot dowodu i ładunku przed zamknięciem custody window.
+PUBLICZNY WĘZEŁ ARCHIWUM // BLACK KEEL CLAIM BK-P63-2190. Status: Marauder związany zastawem. Dawne uprawnienia: systemy terenowe Deep Reach / infrastruktura ewakuacji. Dostawa: masa ładunku plus dopuszczalny dowód przed lokalnym przechowaniem T+06:40.
 
 ## Audio
 
-Nie zwiedzasz HECTON-8. Wracasz do papierów, które znasz zbyt dobrze.
+Kontrakt zna twoje stare skróty. To nie znaczy, że mówi prawdę.
 
 ## Field Note
 
-Notatka Maraudera: kontrakt zna twoją przeszłość. To nie czyni go uczciwym.
+Notatka Maraudera: jeśli akta roszczenia znają twój poziom uprawnień, najpierw czytaj pominięcia, potem wypłatę.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/pl_PL. -->

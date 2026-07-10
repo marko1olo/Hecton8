@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ecology Registry
 
-The ecology registry separates native life, colony-adapted biota and Atlas-routed repair organisms so beauty, pressure and damage remain legible.
+The ecology registry keeps HECTON-8 legible: native beauty, industrial adaptation, and Atlas repair biology must read as different living layers.
 
 ## Scanner
 
-Ecology split confirmed: native shelf life, cable-adapted biota and Atlas-routed repair organisms. Identify category before harvesting.
+Registry split confirmed: native shelf life, cable-adapted biota, Atlas-routed repair organisms. Identify before cutting.
 
 ## Terminal
 
-REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals.
+REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals or erase route evidence.
 
 ## Audio
 

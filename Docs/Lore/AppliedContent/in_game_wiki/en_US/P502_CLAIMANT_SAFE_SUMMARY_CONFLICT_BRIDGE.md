@@ -19,25 +19,26 @@ localization_flags: 0
 
 # Claim-Safe Summary Conflict
 
-A claim-safe summary is not a shorter truth. It is an authorized redaction for a claim route. It can remove worker names, blur coordinates, replace injury detail with a payout category, change held to queued, or list only the office allowed to answer public mail. Some removals protect living crews, medical privacy, or an unfinished recovery route. Others protect Deep Reach from a custody problem. The conflict between summary and raw object is evidence because the cut itself has an owner, a timing mark, and a beneficiary.
+A claim-safe summary is a public handling copy for a claim route. It can remove worker names, blur coordinates, replace injury detail with a payout category, change held to queued, or show only the office allowed to answer public mail. Some cuts protect living crews, medical privacy or unfinished recovery. Other cuts protect Deep Reach from custody exposure.
 
-Read the summary beside the object that forced it: tag sleeve, audio cassette, sample bag, pressure-door log, suit ring, or tray photo. Keep the omission list visible. Ask what was removed, which legal risk marker it maps to, who requested the redaction, and whether the object can restore context without inventing names or coordinates. If the raw object proves more than the summary says, preserve the gap. Do not fill it with a clean sentence.
+Read the summary beside the object that forced it: tag sleeve, audio cassette, sample bag, pressure-door log, suit ring or tray photo. Keep the omission list visible. The key questions are physical: what field is missing, who requested the cut, when the cut entered custody, and whether the raw object restores context without guessing. If the object proves more than the summary says, preserve the gap.
 
 ## Scanner
 
-CLAIM-SAFE SUMMARY CONFLICT // Public summary omits fields still present in raw object. Required: omission list, redaction requester, legal risk marker, object route.
+CLAIM-SAFE SUMMARY // Public copy omits fields visible on raw object. Required: omission list, requester, legal risk mark, object route, custody timestamp.
 
 ## Terminal
 
 CLAIM-SAFE SUMMARY CONFLICT
-Summary is cleared for public handling. Raw object is not.
-Do not restore names, coordinates, or injury detail from guesswork.
-Required next proof: omission list, requester, legal risk marker, object route, custody timestamp.
+Public summary: cleared
+Raw object: restricted
+Do not restore names, coordinates or injury detail from guesswork.
+Next proof: omission list; requester; legal risk marker; object route; custody timestamp
 Action: keep summary and raw object linked until the omission has an owner.
 
 ## Audio
 
-The summary is cleared. The object is not. Keep the missing fields on the screen.
+Summary cleared. Raw object restricted. Keep the blank fields visible.
 
 ## Field Note
 

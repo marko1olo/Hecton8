@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "圧力ガラス形成"
+title: "Pressure Glass形成"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 圧力ガラス形成
+# Pressure Glass形成
 
-圧力ガラスは、Marauderのblue debtとDeep ReachのXenon-Omega語彙の裏にある技術名である。圧力、希ガスポケット、塩水、鉱物、熱、改変生物が交差する場所で形成される。
+Pressure glassは、マローダーの青い債務とDeep ReachのXenon-Omega語彙の背後にある現場名だ。希ガスポケット、鉱物欠陥、熱い塩水、変質した生物、暴力的な圧力履歴が十分長く一緒に残り、格子を記憶へ固定した場所でしか形成されない。
 
-圧力ガラス形成はXenon-Omegaを魔法鉱石ではなく、Atlas、封じ込め、計算に結びつく物質生態へ変える。 これは鉱石ではない。どこで作られたかを記憶する過程だ。
+Pressure Glass形成はXenon-Omegaを物質生態に変える。封じ込め、計算、Atlas連続性、サルベージ危険に結びついた圧力由来の基質である。 これは鉱石ではない。何をされたかを覚えている場所だ。
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ja_JP. -->

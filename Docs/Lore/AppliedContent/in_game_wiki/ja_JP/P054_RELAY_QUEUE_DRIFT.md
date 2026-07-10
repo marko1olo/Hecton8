@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "リレー待ち行列ドリフト"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# リレー待ち行列ドリフト
+# Relay Queue Drift
 
-遅延通信は、間違った時刻に正確であり続けるから危険だ。キャリア警告は実在するバルブ、実在する漏水、実在したルートを述べるかもしれないが、そのルートは圧力ですでに変わっている。遠隔権限を信じる前に、パケット年齢と現地証拠を比べる必要がある。
+Relay queue driftはHECTON-8で最も致命的な正直さである。delayed carrier packetはreal valve、real safe door、real low-current corridor、そしてすでに移動したreal leakを描写しうる。orderは偽物ではない。pressure、flooding、silt、heat、collapseによって変わった部屋に属しているだけだ。良いfield practiceとは反抗そのものではない。packet ageをwet paint、fresh salt、door strain、pump sound、loose debrisが転がりたがる方向と比べることだ。
 
 ## Scanner
 
-リレー印は、それが名指す漏水より古い。その指示は、もう存在しない部屋には正しかった。
+relay stampは名指しするleakより古い。instructionはもう存在しないroomに対して正しかった。
 
 ## Terminal
 
-待ち行列ドリフト: パケット年齢がルート有効性を超過。新しいリレー窓が開くまで、現地証拠がキャリア指示を上回る。
+QUEUE DRIFT: packet age exceeds route validity。fresh relay window opensまでLocal evidence outranks carrier instruction。pressure、door state、waterlineが一致しない限りdelayed route ordersはarchivalとして扱うこと。
 
 ## Audio
 
-メッセージは正しい。それが問題だ。
+messageは正しい。それが問題だ。
 
 ## Field Note
 
-遅れて届いた真実でも人を殺せる。
+遅れて届くtruthでも殺せる。
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/ja_JP. -->

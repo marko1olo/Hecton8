@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "סכנות ממסר של ירחים פנימיים"
+title: "סכנות relay של הירחים הפנימיים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סכנות ממסר של ירחים פנימיים
+# סכנות relay של הירחים הפנימיים
 
-סכנות ממסר של ירחים פנימיים הופכות כשל קשר לפיזי. נחשול מיושר ל-Skarn יכול להשחית אנטנות בלי להרוג אותן. אבק וקרח של Vela סוגרים אופטיקה בזמן שהנתיב עוד טוען שהוא קיים.
-
-Claw ו-Lumen גרועים יותר כי הם נושאים לוגיקת נתיב ישנה. handshake יכול להיות תקף פורמלית וחסר ערך תפעולית. לכן Black Keel יכול לרשום חבילה, לשמור custody ועדיין להשאיר גוף במים.
+Inner moon relay hazards הופכים failed contact לפיזי ולא נוח. Skarn-aligned surges יכולים corrupt antennas בלי killing them. Vela dust and ice יכולים shutter optics בזמן שה-route עדיין reports itself as open. Claw ו-Lumen גרועים יותר כי הם carry old buoy logic: handshake יכול להיות formally valid ו-operationally useless. לכן Black Keel יכול log a packet, preserve custody ועדיין להשאיר human signal waiting in water. ה-system לא היה צריך go mute. הוא רק היה צריך answer from the wrong sky.
 
 ## Scanner
 
-סולם פנימי // Skarn מרווה אנטנות. Vela מפזרת אופטיקה. נתיבי Claw ו-Lumen ישנים מחזיקים handshakes שפג תוקפם.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw ו-Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-הערת סכנת ממסר // אובדן קשר יכול להיות גאומטריה, מזג אוויר חלקיקים, תריס אבק או buoy law בירושה. חשוד ב-UI נקי בזמן חלונות נחשול.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-הממסר לא השתתק. הוא חזר על המאה הלא נכונה.
+ה-relay לא השתתק. הוא repeated the wrong century.
 
 ## Field Note
 
-אייקון נקי עדיין יכול לשקר דרך שמים ישנים.
+Clean icon עדיין יכול לשקר through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/he_IL. -->

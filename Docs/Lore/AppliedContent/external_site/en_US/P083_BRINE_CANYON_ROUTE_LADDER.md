@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Brine Canyon Route Ladder
 
-The Brine Canyon Route Ladder turns descent into chemistry. Dense salt rivers sit inside the ocean like floors, mirrors and traps. A diver can cross what looks like open water and suddenly find the suit arguing with a heavier liquid layer. Sonar may report a false floor because the brine reflected the room above it.
+Brine canyons turn depth into a substance. Dense salt rivers sit inside the ocean like floors, mirrors, and traps. A clean route is built from density markers, ballast windows, relay checks, and disciplined angles, not bravery. The deeper layers teach why instruments matter: sonar can reflect the room above, buoyancy can lie, and the suit can be correct while the sea disagrees.
 
-Good routes are not straight lines. They are density markers, ballast windows, relay checks and angle changes. The canyon teaches the player that depth is not only meters. Depth is discipline: how long a vehicle can hold trim, when to ping again, and when a shortcut is only wrong water pretending to be a road.
+Brine Canyon Route Ladder frames HECTON-8 descent as chemical geography: density, current, mineral walls, and sound decide which routes are survivable. You do not swim through the canyon. You negotiate with layers heavier than your suit.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/en_US. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8 Orbit / Getijdengeometrie"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 Orbit / Getijdengeometrie
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8s orbit maakt de Great Tide geloofwaardig voordat hij politiek wordt. Resonantie trok aan de oceaan. Ijsstress en stormvloed belastten de platen. Industriewarmte en geblokkeerde drainage lieten koloniesystemen op het verkeerde uur terugduwen.
-
-De misdaad is niet dat Deep Reach fysica uitvond. De misdaad is evacuatierekenen rond Atlas continuity, verzekerde ladingen en arbeidsklassen, waarna de doden een acceptabele voorspellingsfout werden genoemd.
+HECTON-8's orbit maakt de Great Tide believable voordat hij political wordt. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water waar colony math margins wilde, en industrial heat liet sealed drainage fight the sea at the wrong hour. De crime is niet dat Deep Reach invented physics. De crime is dat evacuation math werd built around Atlas continuity, insured payloads, labor classes en claim loss, waarna de dead werden filed as forecast error.
 
 ## Scanner
 
-GETIJDENMODEL // Resonantie, ijsstress, stormvloed en warmteafvoer overschreden evacuatieprognose. Atlas-continuity vlaggen overschreven terugtrekprioriteit.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge en heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT TIDE KETEN // Orbitale forcing versterkte oceaanlast. Kunstmatige warmteafvoer en verzegelde drainage veranderden een getij in koloniemislukking.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge en sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Fysica opende de deur. Deep Reach besloot wie erdoor mocht.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Een maan kan een kolonie verdrinken zonder haar te haten.
+Een moon kan drown a colony zonder haar te haten.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/nl_NL. -->

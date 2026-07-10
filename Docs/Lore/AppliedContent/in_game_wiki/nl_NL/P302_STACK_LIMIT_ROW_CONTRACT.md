@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Datagrens van stapellimiet"
+title: "Drukstapellimietregel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datagrens van stapellimiet
+# Drukstapellimietregel
 
-De grens houdt inventaris fysiek. Items stapelen alleen wanneer container, drukrating, massa en besmettingsstaat dezelfde route kunnen overleven zonder tegen het savebestand te liegen.
+Stapellimieten zijn fysieke vrachtregels. Twee gereedschappen kunnen een bak delen; twee drukmonsters delen geen verhaal als één zegel gebarsten is of één tag Atlas-compatibel geluid draagt. Black Keel rekent massa door een orbitvenster en weigert stapels waardoor het manifest zou liegen over insluiting.
 
 ## Scanner
 
-Stapelrij weigert iconenhopen: vatklasse, drukrating, besmetting en massa bepalen aantal.
+Stapelaanvraag geweigerd: vatklasse, drukrating, besmettingsfase, massa-vensterheffing en manifestidentiteit passen niet.
 
 ## Terminal
 
-STACK CONTRACT: stapelaantal vereist vattype, drukrating, besmettingsfase, massaklasse, waarschuwingstier en save-stabiele identiteit. Een krat is geen drukvat.
+STAPEL-INNAME SCHEMA / Black Keel-vrachtbalie: stapeltelling vereist vattype, nominale druk, zegelcertificaat, besmettingsfase, massaklasse, waarschuwingsniveau, retentie-massavenster en stabiele manifestidentiteit. Een kratlabel certificeert geen insluiting.
 
 ## Audio
 
-Een krat is geen drukvat.
+Vrachtbalie: stapel geweigerd. De krat is goedgekeurd om te hijsen, niet voor drukbewaring.
 
 ## Field Note
 
-Stapellimieten blijven table-owned en stabiel voor save identity.
+Stapel nooit onbekende monsters om ruimte te sparen. Eén slecht zegel maakt de hele stapel quarantainelading, en de carrier rekent de massa toch.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/nl_NL. -->

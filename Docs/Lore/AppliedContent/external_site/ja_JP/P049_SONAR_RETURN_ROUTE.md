@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ソナー帰還ルート"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ソナー帰還ルート
+# Sonar Return Route
 
-HECTON-8のナビゲーションでは、帰路は慰めではなく作業だ。古いビーコンは正しい通路を示しながら、新しい障害物、移動したシルト床、エコーを変えた圧力扉を隠すことがある。
+Sonar return routesはnavigationを継続作業にする。stale beaconsはright corridorを指しながらnew silt、obstruction drift、fauna movement、pressure-door changesを隠しうる。
 
 ## Scanner
 
-帰還ビーコンは古い。過去の安全ピンが通路の現在エコーと一致しない。貨物質量で退避窓が遅くなる。
+return beacon stale。old safe pingはcorridor echoと一致しない。cargo massはretreat windowを遅くする。
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: 最終クリーンエコー無効。Black Keelピンを低信頼で受信。障害物ドリフトとシルト密度が地図許容値超過。貨物回収前に二次ラインを標識せよ。
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid。Black Keel ping received at low confidence。Obstruction drift、silt density、cargo mass exceed map tolerance。extraction前にsecondary lineをmark。
 
 ## Audio
 
-ルートはまだある。エコーが同じではない。
+routeはまだある。echoは同じではない。
 
 ## Field Note
 
-積む前にピンを打て。手が空の時に帰路が変わったなら、満載の背中は許されない。
+loadingの前にpingせよ。handsがemptyの間にway home changedしたなら、full packを許さない。
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/ja_JP. -->

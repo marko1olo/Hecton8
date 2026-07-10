@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "חוב חלון-טון"
+title: "חוב חלון-טונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# חוב חלון-טון
+# חוב חלון-טונה
 
-חוב חלון-טון הוא המקום שבו פיזיקה הופכת לכספים. ל-Black Keel אין שולי הרמה אינסופיים, דלק מעבר אינסופי או נפח הסגר נקי ללא גבול. כל קילוגרם שעולה מ-HECTON-8 מתחרה בכל קילוגרם הדרוש להשאיר את המפעיל בחיים. מד החוב עושה את ה-carrier אכזרי בלי לשבור מדע קשיח: חילוץ אפשרי, אבל תקציב הנתיב ממשיך לשאול מה ראוי למסה.
+חוב חלון-טונה הוא המקום שבו HECTON-8 מפסיק להיות רק סיפור אימה והופך ל-orbital logistics. ל-Black Keel יש lift margin סופי, clean volume סופי, oxygen reserve סופי, ו-route price לכל קילוגרם. Spare tank, sealed sample, damaged suit, proof case, body ו-crate of salvage מתחרים באותו חלון. המערכת מרגישה אכזרית מפני שהיא מדויקת. היא לא צריכה להעמיד פנים ש-rescue בלתי אפשרי. היא רק ממשיכה לשאול מה הנתיב יכול להרשות לעצמו להרים.
 
 ## Scanner
 
-מד חלון מסה. לכל קילוגרם של עזרה יש מחיר נתיב.
+Mass-window ledger. לעזרה יש משקל לפני שיש לה שפה.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: שולי recovery burn הצטמצמו. מסת חילוץ מפעיל מתנגשת עם payload חתום, עתודת זבורית, חוב חמצן ו-custody של דגימת הסגר. עקיפה ידנית דורשת עדיפות בתשלום או הוכחת סכנה.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass מתנגש עם sealed payload, ballast reserve, oxygen debt, quarantine sample volume ו-hull patch inventory. Manual priority דורש paid override, verified hazard proof או custody reclassification.
 
 ## Audio
 
-הספינה יכולה לשאת אותך או את מה שמצאת. היא מעדיפה מספר.
+הספינה יכולה להרים חיים. השאלה היא מה עוד ה-ledger מכריח אותה לשאת.
 
 ## Field Note
 
-חמצן, זבורית, ראיה, payload, גוף: ה-carrier שוקל אותם לפני שהוא שוקל רחמים.
+Oxygen, ballast, proof, samples, hull patch, body: ה-carrier מתמחר רחמים לפי קילוגרם.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/he_IL. -->

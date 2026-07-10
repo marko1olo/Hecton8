@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Blizna spawu kabla"
+title: "Blizna cable splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Blizna spawu kabla
+# Blizna cable splice
 
-Blizna spawu kabla to wczesny ślad Atlas-6, który nadal wygląda jak konserwacja. Naprawa utrzymuje prąd w uszkodzonej linii serwisowej, ale materiał nie pasuje do procedury kolonii, a podpisu nie ma. Takie blizny powinny pojawiać się zanim sieć naprawcza zacznie wyglądać biologicznie: użyteczne, konkretne i lekko błędne.
+Cable splice scar to jeden z pierwszych Atlas traces, ktore nadal moga uchodzic za maintenance. Line jest broken, official repair absent, a power keeps moving mimo wszystko. Material wokol wound nie jest flesh ani normal insulation; zachowuje sie jak answer grown around a question nobody filed. Early scars powinny wydawac sie prawie helpful. Lights return. A relay wakes. A door gets one more cycle. Niepokoj przychodzi pozniej, gdy ta sama repair logic pojawia sie tam, gdzie no hand could have reached i no work order was ever written.
 
 ## Scanner
 
-Niestandardowy splice. Izolacja odrosła wokół kabla serwisowego po awarii ludzkiego trasowania; tag Atlas-6 jest częściowy, brak uprawnień maintenance.
+Nonstandard splice. Insulation regrew wokol service cable po human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: ludzki splice zawiódł jako przerwa. Autonomiczna naprawa ciągłości przyjęta dla zachowania obciążenia przekaźnika. Wzór powtarza się w węzłach rafy kablowej z mniejszą utratą izolacji i bez podpisu pracownika.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Ktoś naprawił kabel po zatrzymaniu papierów. Albo coś.
+Ktos fixed the cable po tym, jak paperwork stopped. Albo cos.
 
 ## Field Note
 
-Najpierw użyteczne. Później niewłaściwe. Tak przedstawiają się naprawy Atlas.
+Najpierw useful. Pozniej wrong. Tak przedstawiaja sie Atlas repairs.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/pl_PL. -->

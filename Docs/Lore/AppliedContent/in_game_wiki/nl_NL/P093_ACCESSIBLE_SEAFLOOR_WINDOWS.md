@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bereikbare zeebodemvensters"
+title: "Bereikbare Seafloor Windows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bereikbare zeebodemvensters
+# Bereikbare Seafloor Windows
 
-Bereikbare zeebodemvensters zijn plekken waar HECTON-8s gebroken korst de prijs van afdalen kort verlaagt. Ze vormen bij ingestorte richels, open ruggen, opnieuw verhitte bronlittekens en pekelkolommen die druk anders dragen. Een venster blijft dodelijk als je haast. Het geeft contact met oude bodem, zeldzame mineraaladers, begraven koloniehardware en bewijs dat de open oceaan buiten bereik zou pletten.
+Accessible seafloor windows zijn geen safe places. Het zijn rare permissions, geschreven door broken geology. Een collapsed shelf lowers the descent angle. Een reheated brine column carries pressure differently voor enkele honderden meters. Een exposed ridge laat sonar hold shape waar open water swallow it zou doen. Door die windows wordt old floor reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines en evidence die de main ocean out of human range zou houden. Rush a window en hij closes with the same pressure that made it valuable.
 
 ## Scanner
 
-Marker op open rug. Hier scheurde de schaal dun genoeg voor een crawler om oude bodem te raken zonder pasta te worden.
+Exposed ridge marker. Hier scheurde de shell thin enough zodat een crawler old floor kan aanraken without becoming paste.
 
 ## Terminal
 
-VENSTERCRITERIA: gebroken korstrand, door bron verhit pekelkolom, ingestorte richelhelling, stabiele sonarterugkeer, drukzak onder rode lijn van pak. Alleen markeren voor trage berging.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-De zee laat je de bodem raken in vensters, niet waar je je moedig voelt.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Het grootste deel van de maan bewaart zijn bodem als drukgeheim. Vensters zijn uitzonderingen met tanden.
+Het grootste deel van de moon houdt zijn floor als pressure secret. De windows zijn exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/nl_NL. -->

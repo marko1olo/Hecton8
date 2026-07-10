@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Door botsing gebroken maan"
+title: "Door Botsing Gebroken Maan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Door botsing gebroken maan
+# Door Botsing Gebroken Maan
 
-HECTON-8 vormde zich in het Aegir-systeem en werd later door een schampende botsing gespleten. De wond brak de maan niet uiteen. Ze tilde korstplaten op, opende pekelbreuken, voedde thermische gangen en liet oude bodem bereikbaar via zeldzame drukvensters. Bergingskaarten volgen die schade, omdat veilige routes oude verwondingen met water erin zijn.
+HECTON-8 is geen stolen world dat voor mystery in Aegir werd gedropt. Het formed here, daarna opened een glancing collision it without killing it. De wound tilde shelves op, cracked brine basins, verwarmde fault ladders en liet pressure-glass seams achter waar de moon probeerde close around its own ocean. Die old damage bepaalt nog steeds waar een hull kan descend, waar sound bends, waar vents stay alive en waar buried colony evidence kan surface. Salvage maps volgen injuries omdat op HECTON-8 de safest route vaak de old break that did not quite heal is.
 
 ## Scanner
 
-Oud korstmonster. De maan ontstond in Aegirs puingordel en werd daarna opengebroken door een inslag groot genoeg voor de oceaan om te onthouden.
+Crust sample. HECTON-8 formed in Aegir's debris belt, kreeg daarna een oblique impact breed genoeg voor de ocean om te onthouden.
 
 ## Terminal
 
-OORSPRONGSMODEL: accretie rond Aegir, latere schuine inslag, getijdenresonantie na vergrendeling. Resultaat: getrapte korst, hete breukladders, pekelbekkens, drukglasaders, ongelijke toegang tot diepe bodem.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Hij werd hier geboren. Toen sloeg iets hard genoeg om de zee een kaart te geven.
+It was born here. Daarna raakte iets hard genoeg om give the sea a map.
 
 ## Field Note
 
-Een verhaal over een gevangen maan is te schoon. HECTON-8 draagt een lokale wond: opgetilde korst, verzwaard pekelwater, bronnen die nog rente innen.
+De captured-moon story is te schoon. Deze plek was born local, broken local en billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/nl_NL. -->

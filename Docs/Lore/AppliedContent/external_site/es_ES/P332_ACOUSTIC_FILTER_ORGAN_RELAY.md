@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relé de órgano filtro acústico"
+title: "Relé de órgano filtrante acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relé de órgano filtro acústico
+# Relé de órgano filtrante acústico
 
-Un relé de órgano filtro acústico se fabrica con presión, costumbre y mal uso. Deep Reach tendió gargantas de relé metálicas por la colonia porque la radio muere deprisa bajo el agua de HECTON-8. Los organismos filtradores locales encontraron útil ese lugar: flujo constante, polvo mineral, vibración de bombas y superficies protegidas. Durante años, el tejido plegado creció donde el hardware viejo ya moldeaba el sonido.
+Los tubos de relé dañados de HECTON-8 a veces llevan tejido vivo de bafle. El tejido hace trabajo de señal porque sus pliegues, fluido y respuesta a presión encajan con el tubo. Atlas puede leer el resultado como hardware de relé aunque la pieza interior ya no sea metal.
 
-Atlas convierte ese accidente en infraestructura. Un bafle vivo puede tragarse el ruido de una bomba y dejar pasar un tono estrecho del pinger. También puede desplazar el retorno lo justo para que un mapa parezca cierto desde el lado equivocado de un mamparo. Cuando un corredor contesta con voz formada por tejido, el jugador ha ganado información, no seguridad. Pulsos de tormenta, movimiento animal o un pliegue moribundo pueden mover la ruta sin aviso.
+## Scanner
+
+Tejido de bafle en la garganta del relé deja pasar un tono estrecho de pinger y corta ruido de bomba. Mapa de retorno desfasado.
+
+## Terminal
+
+TUBO DE RELÉ A-17: pliegues vivos pasan pulsos pinger de 8-12 kHz, rechazan ruido ancho de bomba y añaden retardo de retorno. Confianza del mapa aguas abajo reducida. No certificar ruta de vuelta solo con este relé.
+
+## Audio
+
+Respondió al pinger. El tubo pierde fluido claro. Márcalo como animal, no como relé.
+
+## Field Note
+
+Si un relé responde demasiado limpio en un tubo inundado, lanza un segundo pinger desde otro ángulo. Buen sonido aún puede ser mal mapa.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/es_ES. -->

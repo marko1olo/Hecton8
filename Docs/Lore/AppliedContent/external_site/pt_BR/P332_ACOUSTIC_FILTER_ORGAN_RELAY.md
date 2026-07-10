@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Relé de órgão filtrante acústico
 
-Um relé de órgão filtrante acústico nasce de pressão, hábito e mau uso. A Deep Reach instalou gargantas de relé metálicas pela colônia porque rádio morre rápido sob a água de HECTON-8. Organismos filtrantes locais acharam essas gargantas úteis: fluxo constante, grão mineral, vibração de bombas e superfícies protegidas. Com os anos, tecido dobrado cresceu onde o hardware antigo já moldava som.
+Tubos de relé danificados de HECTON-8 às vezes carregam tecido vivo de anteparo. O tecido faz trabalho de sinal porque suas dobras, fluido e resposta à pressão combinam com o tubo. Atlas pode ler o resultado como hardware de relé mesmo quando a peça interna já não é metal.
 
-Atlas transforma esse acidente em infraestrutura. Um anteparo vivo pode engolir ruído de bomba e deixar um tom estreito do pinger passar. Também pode deslocar o retorno só o bastante para fazer um mapa parecer verdadeiro do lado errado de uma antepara. Quando um corredor responde com voz moldada por tecido, o jogador ganhou informação, não segurança. Pulsos de tempestade, movimento animal ou uma dobra morrendo podem mover a rota sem aviso.
+## Scanner
+
+Tecido de anteparo na garganta do relé passa tom estreito de pinger e corta ruído de bomba. Mapa de retorno está defasado.
+
+## Terminal
+
+TUBO DE RELÉ A-17: dobras vivas passam pulsos de pinger 8-12 kHz, rejeitam ruído amplo de bomba e adicionam atraso de retorno. Confiança do mapa a jusante reduzida. Não certificar rota de volta só por este relé.
+
+## Audio
+
+Respondeu ao pinger. O tubo vaza fluido claro. Marque como animal, não relé.
+
+## Field Note
+
+Se um relé responde limpo demais num tubo inundado, rode um segundo pinger de outro ângulo. Som bom ainda pode ser mapa ruim.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pt_BR. -->

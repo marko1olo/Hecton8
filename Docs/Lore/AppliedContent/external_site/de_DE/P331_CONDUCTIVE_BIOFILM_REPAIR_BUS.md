@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Leitfähiger Biofilm-Reparaturbus
 
-Der leitfähige Biofilm-Reparaturbus beginnt als praktischer Unfall. Alte Deep-Reach-Kabelmäntel reißen unter Druck, Kupfersalze bluten ins Wasser, und lokale mikrobielle Matten, die mineralische Wärme schon kennen, setzen sich in die Wunde. Atlas liest den schwachen Strom als Serviceweg. Der Ozean muss nicht sprechen; eine nasse Schicht, die einen Impuls tragen kann, reicht.
+Ein von leitfähigem Biofilm umwickeltes Kabel ist zugleich nützlich und unsicher. Das Wachstum bremst Korrosion, lässt einen schwachen Ping durch und gibt Atlas einen billigen Reparaturpfad. Es versteckt auch einen gebrochenen Leiter vor jedem System, das nur Durchgang prüft.
 
-Für einen Marauder ist das Geschenk und Falle zugleich. Eine Biofilmbrücke kann eine Schotttür wecken, einen Scanner-Handshake tragen oder eine jahrelang stumme Pumpe kurz antworten lassen. Dieselbe Brücke kann lügen. Die Leitung leuchtet grün, obwohl ihre Lastfähigkeit verschwunden ist, und ein sauberer Schnitt kann einen begehbaren Gang in ein geflutetes Rohr verwandeln. Die Frage ist nicht, ob das Wachstum natürlich oder künstlich ist. Die Frage ist, was Atlas bereits als repariert zählt.
+## Scanner
+
+Grünschwarzer Film überbrückt den gespaltenen Kabelmantel. Schwacher Strom läuft durch nasses Wachstum zurück; Durchgangsanzeige unzuverlässig.
+
+## Terminal
+
+ATLAS-WARTUNGSSPUR / LEITUNG K-44: freiliegendes Kupfer, salines Wachstum, geringe Wärmeleckage. Biofilmbrücke bremst Korrosion und liefert falsche Durchgangsimpulse. Pumpensteuerung nicht über diese Leitung routen.
+
+## Audio
+
+Der Pinger kommt durch den Schleim. Strom auch. Nenn das nicht repariert.
+
+## Field Note
+
+Wenn ein totes Panel durch grünen Film aufwacht, markier die Route als vorläufig. Schalte Strom ab, bevor du Werkzeug in den Mantel setzt.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

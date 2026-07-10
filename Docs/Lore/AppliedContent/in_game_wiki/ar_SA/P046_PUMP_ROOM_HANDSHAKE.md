@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "مصافحة صمام غرفة المضخات"
+title: "مصافحة صمام pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# مصافحة صمام غرفة المضخات
+# مصافحة صمام pump room
 
-مصافحة المضخة هي اللحظة التي تقبل فيها غرفة غارقة التحكم المحلي. تمنحك دخولا، لكنها تنقل الماء والضجيج والضغط إلى جزء آخر من الطريق. اقرأ سلة السحب ونبضة الخروج وطرق ممر العودة قبل أن تعتبر الأرض الجافة أمانا. غرف P-63 الأولى تعلم عادة الإصلاح الأساسية: يمكن لآلة أن تحسن مقصورة وتفسد طريق الرجوع.
+Pump handshake هو لحظة تقبل فيها آلة غارقة local hand من جديد. يبدو ذلك كcontrol لأن floor ينكشف، وتتوقف lamp عن السباحة، وتبدو route مفتوحة. الخطر أن water لا تختفي أبدا على HECTON-8؛ بل تنقل إلى compromise آخر. تلتقط intake baskets كل capsule foam وgloves قديمة وshell grit وtorn labels. توقظ outlets corridors كانت صامتة لسبب. العادة الصحيحة هي قراءة pump كtrade: room تتنفس، وأخرى تبدأ knock.
 
 ## Scanner
 
-قبلت مضخة التجميع المحلية إدخال العجلة اليدوية. سلة السحب ملوثة برغوة الكبسولة؛ نبضة الخروج تضغط على ممر العودة B.
+قبل local sump إدخال handwheel. يسد capsule foam سلة intake؛ يرتفع outlet pulse نحو Return Corridor B.
 
 ## Terminal
 
-P-63 تحكم التجميع / مصافحة محلية: تم قبول سلطة العجلة اليدوية. رفض تجاوز التحكم البعيد. عاد تدفق السحب بمعدل منخفض. ضغط الخروج يرتفع في RETURN CORRIDOR B؛ لا تعيد التشغيل إلا بعد فحص الفتحة التالية.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-الصمام قبل. خط الخروج يطرق. لا تسمه آمنا بعد.
+Valve took. الoutlet يطرق. لا تسم هذا safe بعد.
 
 ## Field Note
 
-غرفة مضخات جافة قد تغرق طريق الرجوع. اسمع طرق الخروج قبل أن تفك الصمام.
+floor جاف ليس solved room. استمع إلى corridor الذي دفع ثمنه.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/ar_SA. -->

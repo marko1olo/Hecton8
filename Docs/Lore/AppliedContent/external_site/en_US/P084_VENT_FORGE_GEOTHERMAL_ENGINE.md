@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Vent Forge Geothermal Engine
 
-A vent forge is geology behaving like industrial equipment before humans arrive. Heat pulse, poison, pressure and mineral flow can cure ceramics, anneal pressure glass and preheat emergency ascent charges. The same pulse can boil a suit seam, lie to an oxygen sensor and push corrosive bloom through a work volume.
+Vent forges connect geology to work. Their pulses can cure ceramics, reset pressure seals, anneal pressure glass, and preheat ascent charges, but every useful cycle is also a hazard rhythm. Boiling shear attacks seams, false oxygen fools instruments, corrosive bloom enters open housings, and nearby life moves before the operator understands why.
 
-This is why HECTON-8's crafting economy should feel dangerous instead of decorative. The resource node is also weather. The work window is also a hazard rhythm. Fauna move around those pulses, Deep Reach built around them, and Marauders learn that a useful vent is never safe just because it powers the tool.
+Vent Forge Geothermal Engine shows why HECTON-8 is valuable and lethal: the moon was industrial before humans arrived. Every useful vent is also a machine for punishing bad timing.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/en_US. -->

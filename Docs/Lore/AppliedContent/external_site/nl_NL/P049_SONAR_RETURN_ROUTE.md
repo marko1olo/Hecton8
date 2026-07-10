@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Sonar-terugkeerroute"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sonar-terugkeerroute
+# Sonar Return Route
 
-Navigatie in HECTON-8 behandelt de terugweg als werk, niet als comfort. Een oud baken kan nog steeds naar de juiste gang wijzen terwijl het een nieuw obstakel, een verschoven slibbed of een drukdeur verbergt die de echo veranderde.
+Sonar return routes maken navigation tot doorlopend werk: stale beacons kunnen naar de right corridor wijzen terwijl ze new silt, obstruction drift, fauna movement of pressure-door changes verbergen.
 
 ## Scanner
 
-Terugkeerbaken verouderd. Oude veilige ping komt niet meer overeen met de gangecho; vrachtmassa vertraagt het terugtrekvenster.
+Return beacon stale. Old safe ping past niet meer bij corridor echo; cargo mass vertraagt de retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: laatste schone echo ongeldig. Black Keel-ping ontvangen met lage betrouwbaarheid. Obstakeldrift en slibdichtheid boven kaarttolerantie. Markeer secundaire lijn vóór vrachtextractie.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density en cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-De route is er nog. De echo is niet hetzelfde.
+The route is still there. De echo is niet hetzelfde.
 
 ## Field Note
 
-Ping voordat je laadt. Als de weg naar huis veranderde terwijl je handen leeg waren, vergeeft hij geen volle rugzak.
+Ping before loading. Als way home changed terwijl hands empty waren, vergeeft hij geen full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/nl_NL. -->

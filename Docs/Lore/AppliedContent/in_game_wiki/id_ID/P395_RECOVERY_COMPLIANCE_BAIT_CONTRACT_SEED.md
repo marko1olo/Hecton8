@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Benih Kontrak Umpan Kepatuhan Pemulihan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Recovery Compliance Bait Contract Seed
+# Benih Kontrak Umpan Kepatuhan Pemulihan
 
-ID LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Kontrak umpan Kepatuhan Pemulihan datang sebagai pekerjaan salvage yang murah hati, tetapi rantai penerimanya sudah condong ke Deep Reach. Bayarannya nyata. Biayanya adalah kewajiban tersembunyi untuk mengungkap tempat bangkai, tag jenazah, peti sampel, atau mesin tersegel ditemukan.
 
 ## Scanner
 
-ID LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Benih kontrak: umpan Kepatuhan Pemulihan. Bayaran tinggi, rantai penerima tercemar, tuntutan koordinat tersembunyi.
 
 ## Terminal
 
-ID LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+BENIH UMPAN: bayaran dinaikkan, penerima Kepatuhan Pemulihan disamarkan, klausul pembukaan koordinat disembunyikan, tekanan penahanan aktif, rute Deep Reach mungkin.
 
 ## Audio
 
-ID LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Stempel penyelamatan bisa membeli kepercayaan dermaga lebih cepat daripada senjata.
 
 ## Field Note
 
-ID LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Catatan marauder: kalau pekerjaannya membayar terlalu bersih, periksa siapa pemilik handuknya.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/id_ID. -->

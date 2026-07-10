@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Місячна драбина Aegir
 
-Місячна драбина Aegir дає HECTON-8 робочу локальну астрономію: інші місяці пояснюють маршрутні вікна, мертві claims, чутки salvage і провалений час повернення.
+Aegir Moon Ladder дає HECTON-8 local astronomy layer: other moons shape transfer timing, eclipse dark, relay loss, salvage rumors, cold claims і failed recovery windows.
 
 ## Scanner
 
-Мапа місячної драбини. HECTON-8 є робочою небезпекою в рухомій системі, а не ізольованим рівнем.
+Moon ladder chart. HECTON-8 - one working hazard in a moving system, а не isolated ocean level.
 
 ## Terminal
 
-ГОЛОВНІ МІСЯЦІ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer та eclipse додана.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay і custody windows attached.
 
 ## Audio
 
-На мапі більше місяців, ніж милості.
+У map більше moons, ніж mercy.
 
 ## Field Note
 
-Skarn пече. Vela скидає лід. Anvil годує металом. Kestrel ріже ретранслятори. HECTON тоне.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/uk_UA. -->

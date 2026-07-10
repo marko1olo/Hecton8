@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, cartógrafo de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, cartógrafo de salmoura
 
-PT LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Ren Okoye mapeava as camadas de salmoura de HECTON-8 como estradas de trabalho, não como cenário. O quadro sobrevivente, as esferas de densidade manchadas, as marcas do painel de pinos e as fichas de rota com carimbo de pressão mostram um cartógrafo corrigindo corredores oficiais com a própria água como testemunha. Seus mapas explicam por que os caminhos mais seguros da colônia muitas vezes viviam fora do quadro de permissões: a salmoura se movia mais rápido que a aprovação, e quem carregava ferramentas precisava confiar na última sondagem acima da última assinatura.
 
 ## Scanner
 
-PT LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossiê: Ren Okoye. Esferas de densidade, cortes no quadro e marcas de fio descrevem uma rota que se moveu durante a noite.
 
 ## Terminal
 
-PT LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+MESA DE MAPA DE SALMOURA / OKOYE, REN: corrente segura deslocada 3,2 m para leste após inversão de densidade. O quadro de permissões ainda lista o corredor de ontem. Marcas de rota dos trabalhadores substituem a rota da gestão até a próxima sondagem.
 
 ## Audio
 
-PT LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye desenhava estradas em água que não queria guardar o desenho.
 
 ## Field Note
 
-PT LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Usar Okoye para revelações de rota de salmoura, navegação por densidade e contradições do quadro de permissões. Suas provas devem dar razões concretas para desconfiar de mapas antigos.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/pt_BR. -->

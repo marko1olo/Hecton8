@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 到達可能な海底窓
 
-HECTON-8の海底の大半は普通の勇気では届かない。底が見える前に圧力が壁を作る。到達可能な窓は例外だ。崩落棚、露出尾根、熱を戻した噴出口傷、濃い塩水柱が下降曲線を変える裂け目である。安全な洞窟ではない。地質との狭い取引だ。乗員は古い地殻に触れ、圧力育ちの鉱物を回収し、封じた植民地機材を見つけ、海がまた道を閉じる前に埋もれた出来事を読む。
+Accessible Seafloor Windowsは、HECTON-8がancient floor、high-risk salvage、mineral seams、lethal water下に封じられたevidenceを露出するrare pressure breaksである。
+
+## Scanner
+
+exposed ridge marker。ここではshellが薄く裂け、crawlerがpasteにならずにold floorへ触れられる。
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline。Slow salvage only。
+
+## Audio
+
+seaはwindowsでbottomに触れさせる。勇気のある場所ならどこでも、ではない。
+
+## Field Note
+
+moonの大半はfloorをpressure secretとして保つ。windowsはexceptions with teethだ。
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ja_JP. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Grenze für Vertragsrisiko und Belohnung"
+title: "Vertragszeile Risiko/Belohnung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Grenze für Vertragsrisiko und Belohnung
+# Vertragszeile Risiko/Belohnung
 
-Replayability in HECTON-8 ist keine geerbte Macht. Es ist ein schlechterer Vertrag, ein engeres Fenster, eine frühere Beweisforderung und ein Träger, der sich merkt, welche Teile von dir noch Sicherheit sind.
+Marauder-Verträge um Aegir bepreisen Gefahr, bevor jemand eine Luke öffnet. Pfandschwere, Bergungsfenster, Verwahrungsforderung, Beweisreihenfolge, Quarantäneexposition und Klauselgewicht erklären, warum zwei Läufe durch dasselbe Wrack anders wirken können. Das Angebot legt Haftung auf den Taucher, bevor die Luke aufgeht.
 
 ## Scanner
 
-Vertragszeile bindet Pfandrecht, Sturmfenster, Verwahrungsordnung, Auszahlungslimit und Klauselgewicht.
+Angebotszeile feindlich: Pfandschwere, Sturmfenster, Verwahrungsordnung, Beweistiefe, Auszahlungsgrenze und Deep-Reach-Klauselgewicht sind gekoppelt.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: Zeilen erfordern Pfandrechtschwere, Auszahlungslimit, Sturmfenster, Probenverwahrung, Beweisordnung und Deep-Reach-Klauselgewicht. Der Vertrag ist der erste Räuber.
+VERTRAGSRISIKO-SCHEMA / Aegir Reclamation Pool: Belohnung erst buchen, wenn Pfandschwere, Auszahlungsgrenze, Sturm- oder Orbitfenster, Probenverwahrungsforderung, Beweisordnungstiefe, Quarantäneexposition und Deep-Reach-Klauselgewicht erfasst sind. Routenzuteilung bleibt bedingt, bis der Träger die Haftungsaufteilung annimmt.
 
 ## Audio
 
-Der Vertrag ist der erste Räuber.
+Black Keel: neues Angebot gebucht. Höhere Auszahlung, kürzeres Sturmfenster, Probenverwahrung zuerst. Lies die Klausel, bevor du tauchst.
 
 ## Field Note
 
-Belohnungsänderungen gehören in die Vertragszeile, nicht in improvisierten Loretext.
+Springt die Belohnung, such die Klausel, die sich bewegt hat. Meistens ist es Verwahrung, Wetter, Quarantäne oder das Beweisproblem eines anderen.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/de_DE. -->

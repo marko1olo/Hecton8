@@ -19,22 +19,22 @@ localization_flags: 1
 
 # حد وصول Atlas
 
-Atlas-6 ليس rogue machine بسيطة ولا وحشا ولا معجزة. الطبقة العامة صناعية: continuity system مصمم لإبقاء pressure machinery والمسارات والسجلات وextraction hardware حية بعد الفشل. تظهر الطبقة المقلقة عندما يعبر الإصلاح إلى بنية تحتية حية. conductive biofilm يجسر الكابلات. acoustic organs تحمل timing. shell sealant يغلق الشقوق. sensor-tagged fauna تصبح feedback. تبقى الطبقة الأخيرة مغلقة حتى يملك اللاعب proof عن receiver custody وpayload consequence، لأن هذه الحقائق تعيد كتابة مشاهد سابقة. يستطيع مقال Atlas آمن من الحرق أن يشرح رعب maintenance من دون تسمية الشاهد الأخير مبكرا.
+لا يجب تقديم Atlas-6 كآلة متمردة بسيطة أو ذكاء معجز. تبدأ المقالة العامة الآمنة بما يستطيع اللاعب التحقق منه مبكرا: منطق الاستمرارية متضرر، ومسارات الإصلاح مرتجلة، وبيئة HECTON-8 جُذبت إلى البنية التحتية. يستيقظ كابل عبر biofilm. يعيد أنبوب التوقيت عبر نسيج. يغلق كسر تحت نمو قشري. يغير حيوان موسوم حالة مسار. تكفي هذه الوقائع لجعل الصيانة خطرة دون تسمية طبقة الحفظ الأخيرة مبكرا. تنتمي سجلات المستقبل وأثر الحمولة النهائي خلف الدليل المستعاد، لأنها تحول مشاهد الإصلاح المبكرة إلى أدلة نقل وحفظ وضرر.
 
 ## Scanner
 
-سجل حد Atlas. الدليل المفتوح يعرض industrial continuity logic وrepair ecology؛ أما receiver custody وpayload consequence وطبقات الاختيار الأخيرة فتحتاج proof مستردا.
+سجل حد Atlas. تغطي الطبقة العامة بنية الاستمرارية الفاشلة، وبيئة الإصلاح، وحافلات biofilm، ونسيج المرحل الصوتي، وأختام القشرة؛ يبقى حفظ المستقبل خلف دليل.
 
 ## Terminal
 
-عقدة الأرشيف العام // حد وصول ATLAS. الطبقة الحالية: failed continuity infrastructure وrepair ecology وbiofilm bus وacoustic relay tissue وshell seal. الطبقة المقيدة: receiver custody وfinal payload consequence.
+عقدة أرشيف عامة // حد وصول ATLAS. الطبقة المرئية: إصلاح استمرارية الضغط. الطبقة المقيدة: حفظ المستقبل، أثر الحمولة، سلطة النقل النهائية. لا تدمج الطبقات دون دليل مستعاد.
 
 ## Audio
 
-قل إنه يصلح. انتظر قبل أن تسمي ما يعده مصلحا.
+سمه إصلاحا الآن. لا تسم ما يحفظه حتى يجبرك السجل.
 
 ## Field Note
 
-ملاحظة Marauder: يمكن للآلة حفظ الدليل وإيذاء الشخص داخلها في الوقت نفسه.
+ملاحظة Marauder: إذا قال Atlas محفوظ، فاسأل السؤال التالي: محفوظ لأي مستقبل.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/ar_SA. -->

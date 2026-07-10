@@ -19,7 +19,9 @@ localization_flags: 0
 
 # Crash Shelf
 
-The bathy-drop was a descent tool, not a rescue craft. It was built to enter Aegir's weather, punch into HECTON-8's ocean, shed heat, and keep one worker breathing until the first shelter came online. Impact took the ascent package with it. The remaining shell is crude, loud, and valuable: pressure frame, ceramic scraps, battery ribs, dry cavities, half-dead uplink. The shelf around it is bright enough to look gentle, but every useful object is also evidence. Black Keel knows a claim is alive. It has not yet decided what that claim is worth.
+The bathy-drop was a descent package, not a return craft. It entered Aegir weather, dumped heat through ceramic, and kept one operator alive long enough to raise a shelter. Impact removed the ascent package. What remains is ugly and useful: pressure frame, vitrified ceramic, battery ribs, dry cavities, fractured uplink.
+
+The shelf around the wreck is bright enough to look safe. It is not safe. Every useful piece has a second value as evidence: part number, impact angle, missing ascent bolts, Black Keel handshake log. The first job is shelter. The second is not destroying the record while staying alive.
 
 ## Scanner
 
@@ -35,6 +37,6 @@ Black Keel handshake received. Operator alive. Recovery authority unresolved. Ho
 
 ## Field Note
 
-Do not strip the drop shell to a frame. The first base on HECTON-8 is whatever keeps rain out, pressure in, and tools dry.
+Leave the crush frame bolted. Pull ceramic, battery ribs and dry boxes only after the first seal holds.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/en_US. -->

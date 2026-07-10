@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Якір Ran / Aegir
 
-Ran закріплює систему Aegir як нормальну зорю K-класу, а не мертвий ліхтар і не джерело надприродної темряви. HECTON-8 може мати яскраве мілководдя, бо світло існує.
-
-Жах починається там, де атмосфера, шторм, мінеральна вода, глибина і промисловий мул стирають це світло швидше, ніж рятувальний контракт встигає реагувати. Над водою система астрономічна. Під водою кожен люмен стає орендованим часом.
+Ran тримає Aegir як звичайна K-class star: стара, помаранчева, стабільна й байдужа. Це важливо, бо HECTON-8 темний не через magic. Shallows можуть shine. Weather може спалахувати білим над sea. Worker на surface raft ще міг підняти голову й знати, що sun є. Horror починається там, де atmosphere, storm shear, mineral water, depth і industrial silt витрачають light швидше, ніж carrier може виставити rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-Зоряна таблиця K-класу. Ran горить нормально. Aegir тьмяніший за Sol, але темрява тут приходить від глибини, погоди і боргу.
+K-class star plate. Ran горить нормально; deep тут не supernatural, а просто надто далеко під weather, water і debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Світло помаранчевого карлика підтримує поверхневі роботи. Штормове розсіювання, геометрія затемнень і каламутність океану опускають видимість спуску нижче безпечної межі.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity і industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Зоря на місці. Вона просто не може спуститися за тобою.
+Star present. Вона просто не може follow you down.
 
 ## Field Note
 
-Справжньої зорі достатньо. Решту робить океан.
+Real star достатньо. Решту робить ocean.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/uk_UA. -->

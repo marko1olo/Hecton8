@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Gastster van Aegir"
+title: "Aegirs gastster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gastster van Aegir
+# Aegirs gastster
 
-De gastster van Aegir houdt HECTON-8 bij harde sciencefiction: licht bestaat, de overlevingsdruk komt uit water, afstand, baanvensters en zakelijke verlating.
+Aegirs gastster houdt HECTON-8 harde sciencefiction: licht bestaat, maar overlevingsdruk komt uit oceaandiepte, orbitale timing, lichtvertraging en verlatenheid.
 
 ## Scanner
 
-Primair licht van K-type bevestigd. Het oppervlak heeft licht; diepte, stormen en eclipsen maken het donker.
+K-type hoofdster bevestigd. Er is licht in het systeem; diepte, stormen, eclipsen en schuld doen het donkere werk.
 
 ## Terminal
 
-Ran/Aegir-efemeride: K-dwerg, vertraagde interstellaire pakketten, geen FTL-reddingsvector. Alle hulp is lokaal.
+RAN/AEGIR-EPHEMERIS: K-dwerg hoofdster, stabiele fotosferische output, vertraagde interstellaire pakketklasse, geen FTL-reddingsvector. Behandel hulp als lokaal tot massa arriveert.
 
 ## Audio
 
-Sterlicht bereikt het plateau. Niet het probleem.
+Sterlicht bereikt de plaat. Het bereikt het probleem niet.
 
 ## Field Note
 
-De ster is niet de horror. De oceaan is dat.
+De ster is niet de horror. De horror ligt waar de oceaan licht in gerucht verandert.
 
 <!-- External Site; generated from P016_AEGIR_HOST_STAR/nl_NL. -->

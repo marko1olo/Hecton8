@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir月梯"
+title: "Aegir卫星阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir月梯
+# Aegir卫星阶梯
 
-Aegir月梯给HECTON-8可用的本地天文学：其他卫星解释航线窗口、死亡claims、salvage传闻和失败回收时机。
+Aegir卫星阶梯赋予HECTON-8 local astronomy layer：other moons塑造transfer timing、eclipse dark、relay loss、salvage rumors、cold claims和failed recovery windows。
 
 ## Scanner
 
-月梯图。HECTON-8是运动系统中的工作危险，不是孤立关卡。
+moon ladder chart。HECTON-8是moving system里的one working hazard，不是isolated ocean level。
 
 ## Terminal
 
-AEGIR主要卫星 // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。附transfer和eclipse模型。
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。Transfer、eclipse、relay和custody windows attached。
 
 ## Audio
 
-地图上的月亮比怜悯更多。
+map里的moons比mercy更多。
 
 ## Field Note
 
-Skarn燃烧。Vela脱落冰。Anvil供应金属。Kestrel切断relay。HECTON下沉。
+Skarn burns。Vela sheds ice。Anvil feeds metal。Kestrel cuts relays。HECTON drowns。
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/zh_CN. -->

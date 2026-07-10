@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bus de reparación de biopelícula conductora"
+title: "Bus de reparación por biopelícula conductora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bus de reparación de biopelícula conductora
+# Bus de reparación por biopelícula conductora
 
-El bus de reparación de biopelícula conductora empieza con un accidente práctico. Las cubiertas viejas de Deep Reach se abren bajo presión, las sales de cobre sangran al agua y las mantas microbianas locales, ya adaptadas al calor mineral, se asientan en la herida. Atlas lee la corriente débil como una ruta de servicio. No necesita que el océano hable; le basta una película mojada capaz de llevar un pulso.
+Un cable envuelto en biopelícula conductora es útil e inseguro a la vez. El crecimiento frena la corrosión, pasa un ping débil y da a Atlas una ruta barata de reparación. También oculta un conductor roto a cualquier sistema que solo compruebe continuidad.
 
-Para un saqueador, eso es regalo y trampa. Un puente de biopelícula puede despertar una puerta sellada, llevar un apretón de manos de escáner o hacer que una bomba muda conteste después de años. El mismo puente también puede mentir. La línea puede brillar en verde aunque haya perdido capacidad de carga, y un corte limpio puede convertir un corredor respirable en un tubo inundado. La pregunta no es si el crecimiento es natural o artificial. La pregunta es qué ha contado Atlas como reparado.
+## Scanner
+
+Película verde-negra puentea la cubierta partida del cable. La baja corriente vuelve por el crecimiento húmedo; la continuidad no es fiable.
+
+## Terminal
+
+RASTRO DE MANTENIMIENTO ATLAS / LÍNEA K-44: cobre expuesto, crecimiento salino, baja fuga térmica. El puente de biopelícula reduce corrosión y devuelve pulsos falsos de continuidad. No enrutar control de bomba por esta línea.
+
+## Audio
+
+El pinger pasa por la baba. La energía también. No llames a eso reparación.
+
+## Field Note
+
+Si un panel muerto despierta por película verde, marca la ruta como temporal. Corta energía antes de meter una herramienta en la cubierta.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/es_ES. -->

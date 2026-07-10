@@ -19,22 +19,22 @@ localization_flags: 1
 
 # סולם הירחים של Aegir
 
-סולם הירחים של Aegir נותן ל-HECTON-8 אסטרונומיה מקומית שימושית: ירחים אחרים מסבירים חלונות נתיב, claims מתים, שמועות salvage ותזמון שחזור שנכשל.
+Aegir Moon Ladder נותן ל-HECTON-8 local astronomy layer: other moons מעצבים transfer timing, eclipse dark, relay loss, salvage rumors, cold claims ו-failed recovery windows.
 
 ## Scanner
 
-מפת סולם ירחים. HECTON-8 הוא סכנת עבודה במערכת נעה, לא שלב מבודד.
+Moon ladder chart. HECTON-8 הוא one working hazard in a moving system, לא isolated ocean level.
 
 ## Terminal
 
-ירחי AEGIR הראשיים // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. מודל transfer ו-eclipse מצורף.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay ו-custody windows attached.
 
 ## Audio
 
-במפה יש יותר ירחים מרחמים.
+ל-map יש יותר moons מאשר mercy.
 
 ## Field Note
 
-Skarn שורף. Vela משילה קרח. Anvil מזינה מתכת. Kestrel חותך ממסרים. HECTON טובע.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/he_IL. -->

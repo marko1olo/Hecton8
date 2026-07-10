@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "淹没地质"
+title: "沉没地质"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 淹没地质
+# 沉没地质
 
-HECTON-8的地质是玩法语言：陆架生存、淹没房间、峡谷漏斗、盐水密度、热路线和深渊暴露。种子能移动路线，但不改变物理真相。
+沉没地质教人如何在HECTON-8移动。山脊提供遮蔽。坍塌陆架收集打捞物和窒息淤泥。峡谷放大水流。盐水帘弯折声呐和浮力。喷口伤痕能固化密封剂，也能把它煮坏。路线是对岩石、水、热和压力的临时解释。
 
 ## Scanner
 
-分层陆架、峡谷、盐水阶梯和热液几何。月球用地形教下潜，不用关卡门。
+检测到分层陆架、峡谷漏斗、盐水阶梯、喷口伤痕和淤泥暴露。地形是压力路线，不是背景。
 
 ## Terminal
 
-深度预报：陆架坍塌、峡谷漏斗、盐水密度幕、热羽流、深渊淤泥。
+深度预报：陆架坍塌、服务峡谷汇流、盐水密度帘、热羽流、深渊淤泥暴露。风暴增水或打捞切割后，路线可信度衰减。
 
 ## Audio
 
-先读岩层，再让潜服赢。
+先读岩石，再要求潜服取胜。
 
 ## Field Note
 
-最安全的路线是一种读法，不是一条走廊。
+最安全的路是一种读数，不是一条走廊。
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/zh_CN. -->

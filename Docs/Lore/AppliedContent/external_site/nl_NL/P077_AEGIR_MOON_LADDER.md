@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir Maanladder"
+title: "Aegir Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Maanladder
+# Aegir Moon Ladder
 
-Aegir Maanladder geeft HECTON-8 bruikbare lokale astronomie: andere manen verklaren routevensters, dode claims, salvage-geruchten en mislukte recoverytiming.
+Aegir Moon Ladder geeft HECTON-8 een local astronomy layer: other moons vormen transfer timing, eclipse dark, relay loss, salvage rumors, cold claims en failed recovery windows.
 
 ## Scanner
 
-Maanladderkaart. HECTON-8 is een werkend gevaar in een bewegend systeem, geen geïsoleerd level.
+Moon ladder chart. HECTON-8 is one working hazard in a moving system, geen isolated ocean level.
 
 ## Terminal
 
-BELANGRIJKE AEGIR-MANEN // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer- en eclipsmodel bijgevoegd.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay en custody windows attached.
 
 ## Audio
 
-De kaart heeft meer manen dan genade.
+De map heeft meer moons dan mercy.
 
 ## Field Note
 
-Skarn brandt. Vela werpt ijs af. Anvil voedt metaal. Kestrel snijdt relais. HECTON verdrinkt.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/nl_NL. -->

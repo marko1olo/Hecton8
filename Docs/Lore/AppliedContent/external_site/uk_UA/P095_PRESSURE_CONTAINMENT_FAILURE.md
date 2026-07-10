@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Відмова утримання тиску"
+title: "Відмова pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Відмова утримання тиску
+# Відмова pressure containment
 
-Blue debt - не проклятий скарб. Це матеріальна пам'ять під тиском. Залишок Xenon-Omega корисний, доки його ґратка вірить, що вона ще глибоко, холодно й стиснута. Витягни надто швидко, зберігай погано або дай зсуву сигналу пролізти в капсулу, і зразок почне ламатися читаними стадіями. Спершу приходить дрейф: метри брешуть, резонанс тремтить, тривоги утримання сперечаються. Потім ламається ґратка. Входить ропа. Біологія йде за хімією. На стадії 4 цінність мертва, але зараження живе.
+Pressure Containment Failure задає handling stages blue debt, пов'язуючи resource value з depth, pressure memory, bloom contamination, route planning і salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear і bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Sample може бути worth a fortune at one depth і become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/uk_UA. -->

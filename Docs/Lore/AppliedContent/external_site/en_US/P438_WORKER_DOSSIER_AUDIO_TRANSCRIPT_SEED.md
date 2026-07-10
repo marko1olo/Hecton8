@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Dossier Audio Transcript"
+title: "Worker Dossier Audio Strip"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,14 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Dossier Audio Transcript
+# Worker Dossier Audio Strip
 
-## A Colony Before It Becomes Evidence
+## Worker Audio Strip WKR-A
 
-The worker dossier audio should not introduce victims as shrine objects. It should let them work. A pump chief checks a valve. A relay notary complains about a board. A medic argues with a water ledger. A fabricator logs a tool certificate because the tool matters more than any speech about courage.
+The recovered strip starts with routine. Pump room still breathing. Locker seal stuck. Water count short. Tell Kade the board lied. No memorial language is needed. The line works because the speaker is still inside the job and still expects somebody to act on the next shift.
 
-That routine is what gives the ruins weight. The player should hear names before memorials, jobs before tragedy, and small irritations before the larger lie closes around them. HECTON-8 was not a stage built for the Marauder. It was a workplace with habits, grudges, jokes, debt notices and pressure math.
+Worker dossier audio should stay this narrow at the surface level: name, task, object, fault. A pump chief checks a valve. A medic argues with the water ledger. A fabricator logs a tool certificate because the tool is needed before the door can open. HECTON-8 was a workplace with habits, grudges, bad math and pressure rules before it became a case file.
 
-This layer also protects the canon from melodrama. There is no family hook making the player special. The guilt is professional. You recognize procedures, badges and bad decisions because you belonged to this kind of system, and now the system is speaking through drowned work orders.
+The transcript matters when later records reuse the same names on route holds, meal chits, damaged lockers and witness tags. The player does not need a speech about loss. The board count is wrong, Kade's name repeats, and somebody tried to keep the chalk from being wiped.
 
 <!-- External Site; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/en_US. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kait Klaim Black Keel
 
-Kait Klaim Black Keel menetapkan tekanan pembuka. Black Keel bukan kapal penjahat teatrikal; ia karrier yang terikat ekonomi pool klaim, hukum karantina, dan tuas tidur Deep Reach. Masalah pemain praktis sekaligus moral: suara di atas samudra bisa mendengar panggilan darurat, tetapi rute pulang harus dibuat bernilai, tersertifikasi, dan secara hukum tidak nyaman untuk diabaikan.
+Kait Klaim Black Keel mendefinisikan tekanan awal di atas HECTON-8. Black Keel bukan kapal penjahat; ia carrier yang terikat ekonomi claim-pool, hukum karantina, dan leverage Deep Reach dorman. Masalahnya praktis sekaligus moral: suara di atas laut dapat mendengar distress, tetapi rute pulang harus menjadi bernilai, tersertifikasi, dan secara hukum menyulitkan untuk diabaikan.
 
 ## Scanner
 
-Di manifes, Black Keel adalah perangkat pool klaim; di klausul, ia adalah tuas Deep Reach.
+Black Keel adalah perangkat claim-pool di manifes dan leverage Deep Reach di klausul.
 
 ## Terminal
 
-PENGAWASAN KARRIER: pemulihan operator diizinkan setelah triase muatan, gerbang karantina, sertifikat rute, dan pembersihan tanggung jawab. Segel prioritas Deep Reach dipertahankan dalam klausul tidur.
+CARRIER CUSTODY: pemulihan operator diizinkan setelah triage payload, gerbang karantina, sertifikat rute, dan pembersihan tanggung jawab. Segel prioritas Deep Reach tersimpan di klausul dorman.
 
 ## Audio
 
-Ia bisa mendengarmu. Ia hanya harus memberi harga pada jawabannya terlebih dahulu.
+Ia bisa mendengar. Ia hanya harus memberi harga jawaban lebih dulu.
 
 ## Field Note
 
-Kapal itu tidak jahat. Ia disewakan kepada kontrak yang tahu cara menjadi kejam tanpa terdengar hidup.
+Kapal itu tidak jahat. Ia disewa kontrak yang tahu cara menjadi jahat tanpa terdengar hidup.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/id_ID. -->

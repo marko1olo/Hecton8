@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8 궤도 / 조석 기하"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8 궤도 / 조석 기하
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8 궤도 / 조석 기하는 하드 SF 재난층이다. 조석, 열, 압력이 먼저 식민지를 부수고 기업 우선순위가 실패를 범죄로 바꾼다.
+HECTON-8 Orbit / Tide Geometry는 hard-sci-fi disaster layer다. orbital forcing, ice stress, heat, drainage, pressure가 먼저 colony를 부수고 corporate priority가 failure를 crime으로 바꾼다.
 
 ## Scanner
 
-조석 기하 모델 // 공명, 얼음 응력, 폭풍 해일, 열 방출이 대피 예측을 초과했다. Atlas continuity 플래그가 철수 우선권을 덮어썼다.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT TIDE 사슬 // 궤도 강제가 해양 하중을 증폭했다. 인공 열 방출과 봉인된 배수가 조석 사건을 식민지 실패로 바꾸었다.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-물리가 문을 열었다. Deep Reach가 누가 나갈지 결정했다.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-달은 미워하지 않고도 식민지를 익사시킬 수 있다.
+moon은 미워하지 않고도 drown a colony할 수 있다.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ko_KR. -->

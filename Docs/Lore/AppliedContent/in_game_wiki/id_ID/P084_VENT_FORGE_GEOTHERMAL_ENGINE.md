@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Mesin Geotermal Tempa Vent"
+title: "Mesin Geotermal Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mesin Geotermal Tempa Vent
+# Mesin Geotermal Vent Forge
 
-Tempa vent menghubungkan geologi dengan crafting, bertahan hidup dan horor. Ia memberi panas dan siklus tekanan untuk keramik, seal dan kaca tekanan, tetapi siklus yang sama membuat kantong mendidih, pembacaan oksigen palsu, awan korosif dan migrasi fauna.
+Vent forge menghubungkan geologi dengan kerja. Pulsanya dapat mengeraskan keramik, mereset seal tekanan, meng-anneal pressure glass, dan memanaskan muatan naik, tetapi setiap siklus berguna juga ritme bahaya. Shear mendidih menyerang jahitan, oksigen palsu menipu instrumen, bloom korosif masuk ke housing terbuka, dan kehidupan sekitar bergerak sebelum operator tahu sebabnya.
 
 ## Scanner
 
-Manifold tempa vent. Panas, racun dan tenaga memakai pipa yang sama.
+Manifold vent forge. Panas, racun, tekanan, dan daya berbagi pipa yang sama.
 
 ## Terminal
 
-MESIN GEOTERMAL: pulsa vent cocok untuk curing keramik, anneal kaca tekanan dan pemanas awal muatan naik darurat. Risiko paparan: shear mendidih, positif oksigen palsu dan bloom korosif.
+MESIN GEOTERMAL: pulsa vent cocok untuk curing keramik, anneal pressure glass, reset seal, dan pemanasan awal muatan naik darurat. Risiko paparan: shear mendidih, oksigen palsu, bloom korosif, migrasi fauna.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Vent tidak peduli kamu menyebutnya daya atau cuaca.
 
 ## Field Note
 
-Setiap vent berguna juga mesin yang menghukum timing buruk.
+Setiap vent berguna juga mesin untuk menghukum timing buruk.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/id_ID. -->

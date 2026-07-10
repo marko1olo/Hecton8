@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Rejestr ekologii
 
-Rejestr ekologii chroni ton: piękno, presja, rozpad kategorii.
+Rejestr ekologii utrzymuje HECTON-8 czytelnym: rodzime piękno, adaptacja przemysłowa i biologia napraw Atlas muszą czytać się jako różne żywe warstwy.
 
 ## Scanner
 
-Potwierdzono jasną płytką ekologię. Głębiej widać florę kablową, ciała filtrujące i ingerencję Atlas.
+Podział rejestru potwierdzony: rodzime życie szelfu, biota dostosowana do kabli, organizmy naprawcze routowane przez Atlas. Rozpoznaj przed cięciem.
 
 ## Terminal
 
-Podział: natywna ekologia ciśnienia, biota adaptowana do kolonii, organizmy zmienione przez Atlas. Nie mieszać.
+PODZIAŁ REJESTRU: rodzima ekologia ciśnienia; kolonijna biota kablowa; organizmy naprawcze zmienione przez Atlas. Zła etykieta może zniszczyć działające uszczelnienie albo wymazać dowód trasy.
 
 ## Audio
 
-Jeśli wszystko jest potworem, nic nie jest naruszeniem.
+Jeśli wszystko jest potworem, przetniesz to, co trzyma ciśnienie.
 
 ## Field Note
 
-Świat żył, zanim został zraniony.
+Świat był żywy, zanim go zraniono.
 
 <!-- External Site; generated from P020_HECTON8_ECOLOGY_REGISTRY/pl_PL. -->

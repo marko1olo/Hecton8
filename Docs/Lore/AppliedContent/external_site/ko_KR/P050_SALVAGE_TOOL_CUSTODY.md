@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "인양 도구 보관"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 인양 도구 보관
+# Salvage Tool Custody
 
-HECTON-8에서 도구는 생존 장비이자 계약 증인이 될 수 있다. salvage 보관 로그는 절단, 수리, 샘플을 claim 토큰에 묶어 유용한 행동을 이후 증거, 부채, payout 압력의 일부로 만든다.
+Salvage tool custody는 minute-to-minute survival을 claim economy와 묶는다. cuts, repairs, patches, samples는 evidence, payout pressure, Keelmark debt가 될 수 있다.
 
 ## Scanner
 
-도구 독에 봉인된 보관 로그가 있다. 마지막 절단, 수리, 샘플 파우치는 Keelmark claim 토큰에 묶여 있다.
+tool dock이 sealed custody log를 보관한다. last cut, repair, sample pouch는 Keelmark claim token에 tied.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: 커터 사용이 salvage claim 아래 수락. 수리 행동 증언됨. 샘플 권리 Keelmark Mutual 토큰에 첨부. 증거 수출은 물질 payout 경로와 충돌.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-쓸모 있는 절단은 모두 증인을 남긴다.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-커터는 한 번의 획으로 공기를 살리고 네 손을 팔 수 있다. 네 것이라 부르기 전에 무엇을 기록하는지 확인해라.
+cutter는 같은 stroke로 save your air하고 sell your hands할 수 있다. yours라고 부르기 전에 무엇을 records하는지 확인하라.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/ko_KR. -->

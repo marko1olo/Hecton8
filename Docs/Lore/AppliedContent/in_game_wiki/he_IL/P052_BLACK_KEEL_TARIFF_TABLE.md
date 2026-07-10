@@ -19,22 +19,22 @@ localization_flags: 1
 
 # טבלת התעריפים של Black Keel
 
-התמיכה של Black Keel שימושית, אך לעולם אינה ניטרלית. מצוקה, דגימות, חמצן, חותמות אחריות, חילוץ מפעיל ונזק גוף נכנסים לתורים שונים. השחקן יכול לנצל את הכללים האלה, אך אותם כללים מראים למה עזרה תמיד מגיעה עם תג מחיר.
+Black Keel support מועיל מפני שה-carrier באמת מזיז gear, שומר oxygen, מעביר warnings ופותח route options. הוא לעולם לא ניטרלי כי כל support action נכנס ל-tariff table לפני שהוא הופך ל-help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery ו-body recovery הם line items נפרדים עם priority speeds שונות. הטבלה אינה רוע נסתר. בפועל היא גרועה יותר: price list קריא לרגעים שלא אמור להיות להם מחיר.
 
 ## Scanner
 
-הלוח מתמחר מצוקה, משמורת דגימות, עתודת חמצן, ציוד לחץ וחילוץ גוף כשורות נפרדות.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage ו-body recovery יושבים בשורות נפרדות.
 
 ## Terminal
 
-מחלקת תעריף: חירום חילוץ. נספח רווחה ממתין. משמורת דגימה מאומתת מקדמת עדיפות יציאה בשתי דרגות חיוב.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies עד ש-lien arbitration resolves.
 
 ## Audio
 
-יש הנחה על ראיות ותוספת מחיר על נשימה.
+יש discount עבור evidence ו-surcharge עבור breathing.
 
 ## Field Note
 
-המחלקה המהירה ביותר אינה הצלה. היא רכוש מאומת שעולה למעלה.
+ה-class המהיר ביותר אינו rescue. הוא verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/he_IL. -->

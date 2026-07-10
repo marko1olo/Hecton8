@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Druckcontainment-Ausfall"
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druckcontainment-Ausfall
+# Pressure Containment Failure
 
-Blue debt ist kein verfluchter Schatz. Es ist Materialgedaechtnis unter Druck. Xenon-Omega-Rueckstand bleibt nuetzlich, solange sein Gitter glaubt, tief, kalt und komprimiert zu sein. Zu schnelle Entnahme, schlechte Lagerung oder Signalscherung im Casket starten lesbare Ausfallstufen. Zuerst kommt Drift: Messwerte luegen, Resonanz zittert, Containment-Alarme widersprechen einander. Dann bricht das Gitter. Salzlauge tritt ein. Biologie folgt der Chemie. In Stufe 4 ist die Probe als Wert tot, aber als Kontamination lebendig.
+Pressure Containment Failure definiert blue debt handling stages und bindet resource value an depth, pressure memory, bloom contamination, route planning und salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear und bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Ein sample kann an einer depth ein Vermogen wert sein und ten meters later become a liability.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/de_DE. -->

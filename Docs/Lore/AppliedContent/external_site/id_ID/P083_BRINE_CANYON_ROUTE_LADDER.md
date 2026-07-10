@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Tangga Rute Ngarai Brine
 
-Ngarai brine membuat progres kedalaman menjadi fisik. Lapisan padat, dinding mineral, bocor panas dan distorsi akustik mengajari pemain mengapa perjalanan lebih dalam butuh instrumen dan disiplin tekanan yang lebih baik.
+Ngarai brine mengubah kedalaman menjadi zat. Sungai garam padat berada di dalam laut seperti lantai, cermin, dan perangkap. Rute bersih dibangun dari penanda densitas, jendela ballast, pemeriksaan relai, dan disiplin sudut, bukan keberanian. Lapisan lebih dalam mengajarkan mengapa instrumen penting: sonar bisa memantulkan ruang di atas, apung bisa berbohong, dan suit bisa benar sementara laut menolak.
 
-Tangga Rute Ngarai Brine adalah struktur eksplorasi inti HECTON-8: bukan lorong, melainkan geografi kimia tempat kerapatan, arus dan suara membentuk progres. Kamu tidak berenang melewati ngarai. Kamu bernegosiasi dengan lapisan yang lebih berat dari setelanmu.
+Tangga Rute Ngarai Brine membingkai turun di HECTON-8 sebagai geografi kimia: densitas, arus, dinding mineral, dan suara menentukan rute yang bisa selamat. Kamu tidak berenang melewati ngarai. Kamu bernegosiasi dengan lapisan yang lebih berat daripada suit.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/id_ID. -->

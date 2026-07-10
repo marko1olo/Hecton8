@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Falha de contencao de pressao"
+title: "Falha de Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Falha de contencao de pressao
+# Falha de Pressure Containment
 
-Blue debt nao e tesouro amaldiçoado. E memoria material sob pressao. Residuo Xenon-Omega fica util enquanto sua rede acredita que ainda esta profunda, fria e comprimida. Remova rapido demais, armazene mal ou deixe cisalhamento de sinal entrar no cofre, e a amostra começa a falhar em estagios legiveis. Primeiro vem a deriva: medidores mentem, ressonancia treme, alarmes de contencao discutem. Depois a rede fratura. A salmoura entra. A biologia segue a quimica. No estagio 4, o valor morreu, mas a contaminacao vive.
+Pressure Containment Failure define handling stages de blue debt, ligando resource value a depth, pressure memory, bloom contamination, route planning e salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear e bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Um sample pode worth a fortune at one depth e become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pt_BR. -->

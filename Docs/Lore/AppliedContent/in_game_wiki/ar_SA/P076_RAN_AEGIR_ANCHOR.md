@@ -19,24 +19,22 @@ localization_flags: 1
 
 # مرساة Ran / Aegir
 
-يثبت Ran نظام Aegir كنجم طبيعي من الفئة K، لا كمصباح ميت ولا كمصدر ظلام خارق. يمكن أن تكون ضحالات HECTON-8 مضيئة لأن الضوء موجود.
-
-يبدأ الرعب عندما تمحو الغلاف الجوي والعاصفة والماء المعدني والعمق والطمي الصناعي ذلك الضوء أسرع مما يستطيع عقد الإنقاذ أن يستجيب. فوق الماء النظام فلكي. تحت الماء يصبح كل لومن وقتاً مستأجراً.
+يرسي Ran نظام Aegir كK-class star عادية: قديمة، برتقالية، ثابتة، وغير مبالية. هذا مهم لأن HECTON-8 ليس مظلما بسبب magic. يمكن للshallows أن shine. يمكن للweather أن يومض أبيض فوق sea. كان يمكن لworker على surface raft أن ينظر إلى الأعلى ويعرف أن هناك sun. يبدأ horror عندما تستهلك atmosphere وstorm shear وmineral water وdepth وindustrial silt ذلك light أسرع مما يستطيع carrier أن يحاسب rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-لوحة نجم من الفئة K. Ran يحترق بشكل طبيعي. Aegir أخفت من Sol، لكن الظلمة هنا تأتي من العمق والطقس والدين.
+K-class star plate. يحترق Ran طبيعيا؛ الdeep هنا ليس supernatural، بل بعيد جدا تحت weather وwater وdebt.
 
 ## Terminal
 
-RAN NAV ANCHOR // ضوء قزم برتقالي يدعم عمل السطح. تشتت العواصف وهندسة الكسوف وعكارة المحيط تخفض قراءة الهبوط دون هامش الأمان.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter وeclipse geometry وmineral turbidity وindustrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-النجم موجود. لكنه لا يستطيع أن يتبعك إلى الأسفل.
+الstar موجودة. لكنها لا تستطيع follow you down.
 
 ## Field Note
 
-نجم حقيقي يكفي. المحيط يتولى الباقي.
+تكفي real star. يفعل ocean الباقي.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/ar_SA. -->

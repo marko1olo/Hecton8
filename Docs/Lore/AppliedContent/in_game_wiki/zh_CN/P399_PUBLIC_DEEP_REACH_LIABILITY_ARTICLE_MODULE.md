@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach责任证据
 
-Deep Reach的liability成立，因为洪水不需要虚假物理。Great Tide是真实的。可避免的损害出现在margins、时钟、access holds，以及在任何人被回收前就把工人清理成类别的记录里。
+Deep Reach责任不需要伪造物理。大潮用真实海洋力量击中了HECTON-8：共振、冰圈剪切、风暴叠加和压力失效。可避免的损害就在这股力量旁边，留在文件和房间里。传感器警告后裕度仍被接受。门留在执行权限下。队列等待法律许可。错误窗口中，Atlas权重把机器列在人之上。证据链成立，是因为水诚实，而文件不是。
 
 ## Scanner
 
-liability记录。真实潮汐物理、被接受的margin risk、撤离延迟、quarantine holds、Atlas weighting和被清洗过的损失语言汇入同一证据链。
+责任记录。潮汐力真实存在；签署过的裕度变更、隔离扣留、撤离队列、Atlas权重和损失措辞承载可避免部分。
 
 ## Terminal
 
-公共档案节点 // LIABILITY证据。Great Tide已确认。sensor margins、evacuation queue延迟、quarantine holds、Atlas weighting、worker classification和loss conversion仍在审查。
+公共档案节点 // 责任审查 DR-H8。自然力已接受。开放字段：传感器裕度、门权限、队列延迟、隔离扣留、Atlas权重、工人到索赔类别转换。
 
 ## Audio
 
-灾难可以是自然的，同时仍带着签名。
+潮水折断钢铁。签名决定哪些门继续关着。
 
 ## Field Note
 
-Marauder笔记：不要同潮汐争辩。去同旁边的签名争辩。
+掠夺者笔记：别争辩潮汐是假的。把签名放到潮汐时钟旁。
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/zh_CN. -->

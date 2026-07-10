@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Invariantes geologicas de semilla"
+title: "Invariantes geologicas de survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Invariantes geologicas de semilla
+# Invariantes geologicas de survey
 
-Cada saqueo en HECTON-8 puede abrir una ruta distinta por la herida. Un canon puede aparecer antes, un arrecife de cables ocultar una bolsa segura, un bloom empujar fauna a una ruta antes vacia, y una cadena de pruebas salir en otro orden. La fisica de la luna no se reinicia para entretener. Aegir sigue como estrella primaria. HECTON-8 sigue en su escalera orbital. Great Tide mantiene su intervalo. Las bandas de profundidad quedan apiladas en el mismo orden brutal. Blue debt conserva su conducta bajo presion. Atlas sigue atado a la cuenca mas profunda.
+Survey Geology Invariants permite a HECTON-8 sostener changing charts y route uncertainty mientras conserva fixed astronomy, depth order, Great Tide logic, blue-debt behavior y Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. El salvage chart puede disagree with itself; la moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+Una later chart puede bury evidence differently. No puede rewrite gravity, tide ni guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/es_ES. -->

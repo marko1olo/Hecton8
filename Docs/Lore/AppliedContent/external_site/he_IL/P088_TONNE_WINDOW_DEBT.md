@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "חוב חלון-טון"
+title: "חוב חלון-טונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# חוב חלון-טון
+# חוב חלון-טונה
 
-חלון-טון הוא פרוסה של קיבולת carrier הנמדדת במסה, תזמון burn, נפח הסגר ועדיפות משפטית. למפעיל זה מרגיש כמו חוב כי כל חפץ שימושי מ-HECTON-8 נכנס לאותו ספר עם הגוף שמצא אותו. תיבה חתומה יכולה להיות קלה אך כבדה משפטית. מתקן דגימות יכול לעלות מעט מסה ולדרוש נפח נקי. חילוץ אדם נראה מובן מאליו עד שזבורית, עתודת חמצן ו-payload custody כבר בזבזו את החלון הזמין. כך כלכלת HECTON-8 נעשית פיזית ולא מופשטת. השחקן אינו נענש במד מוסר מזויף. השחקן לכוד במכונה שמתמחרת הישרדות דרך דלק, מסה, זיהום וניירת.
+חוב חלון-טונה הופך הישרדות ל-logistics קשיחה: extraction, oxygen, samples, salvage, quarantine volume ו-burn margin תופסים את אותו priced mass window.
+
+## Scanner
+
+Mass-window ledger. לעזרה יש משקל לפני שיש לה שפה.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass מתנגש עם sealed payload, ballast reserve, oxygen debt, quarantine sample volume ו-hull patch inventory. Manual priority דורש paid override, verified hazard proof או custody reclassification.
+
+## Audio
+
+הספינה יכולה להרים חיים. השאלה היא מה עוד ה-ledger מכריח אותה לשאת.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: ה-carrier מתמחר רחמים לפי קילוגרם.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/he_IL. -->

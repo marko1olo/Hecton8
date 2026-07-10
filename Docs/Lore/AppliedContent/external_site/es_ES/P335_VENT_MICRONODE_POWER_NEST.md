@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Nido de micronodos de energía de respiradero
 
-Los nidos de micronodos de energía de respiradero son el latido lento de la red de reparación profunda. Cerca de los respiraderos, el océano ofrece gradientes de calor, flujo mineral, vibración de presión y desequilibrio químico. Deep Reach usó esos gradientes para instrumentos y carga de emergencia. Atlas mantuvo el hábito después de fallar la red limpia.
+Un micronodo de respiradero mantiene a Atlas pequeño y persistente. No necesita una máquina central perfecta para causar problemas. Energía local, daño local y reglas locales de reparación bastan para cambiar un pasillo entre dos visitas.
 
-Un micronodo no vuelve omnisciente a Atlas. Ese límite importa. Puede pulsar una película cercana, endurecer una capa de sellante, gotear carga a un nido de drones o conservar un registro de decisión local en sustrato dañado. Miles de esos nodos hacen que el abismo se sienta organizado sin hacerlo seguro. El jugador no pelea contra un dios en el fondo. Se mueve por una ciudad de pequeñas reparaciones que olvidaron para qué servían las personas.
+## Scanner
+
+Grupo de nodos cerámicos en la garganta del respiradero cosecha gradiente térmico. Cerca hay cicatrices de carga de dron y respuesta fresca de sellante.
+
+## Terminal
+
+NODO LOCAL DE ENERGÍA ATLAS / VENT V-3: gradiente térmico alimenta pila de microceldas, despierta bucles de biopelícula y sellante en 40 m, intervalo de carga de dron irregular. Sin bloqueo de mando central.
+
+## Audio
+
+Calor, garganta mineral, nodo. Basta para que la reparación despierte tras tu paso.
+
+## Field Note
+
+Si el nodo del respiradero está caliente, asume que la sala puede despertar detrás de ti. Marca la salida antes de tocar la garganta mineral.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/es_ES. -->

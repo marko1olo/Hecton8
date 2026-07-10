@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Great Tide Physics Record
 
-The Great Tide Physics Record is not an excuse for Deep Reach. It is the reason the excuse fails. Aegir spring geometry, cryosphere shear, resonant ocean lift, industrial heat discharge and storm stacking made HECTON-8 dangerous in ways the colony could measure. The model did not need perfect certainty; it showed that the evacuation envelope was already broken.
+The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was already dangerous: Aegir's spring geometry pulled on the sea, the cryosphere loaded the shelves, storm stacking erased schedule margin, and colony heat pushed sealed drainage backward. Deep Reach's crime comes after the physics. It kept lift reserve as a future cost, guarded Atlas continuity, and treated bodies as lower priority mass.
 
-The crime lives in the margins. Independent ascent reserve was not funded. Lift capacity was treated as a future budget line. Public language later called the flood unreadable, but the buried record says otherwise: the ocean was real, the physics was real, and the victims were created by choosing optimism as policy.
+Great Tide Physics Record defines HECTON-8's disaster logic: a moon-scale ocean became lethal because measurable physics met corporate optimism, deferred evacuation capacity, and protected continuity hardware. Do not make this mystical. Physics killed people. Deep Reach made sure physics had a crowd.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/en_US. -->

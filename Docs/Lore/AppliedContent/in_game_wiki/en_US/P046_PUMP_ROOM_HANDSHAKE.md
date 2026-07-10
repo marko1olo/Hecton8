@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Pump Room Valve Handshake
 
-A pump handshake is the moment a drowned room accepts local control. It gives access, but it also moves water, noise and pressure into another part of the route. Read the intake basket, outlet pulse and return-corridor hammer before treating a dry floor as safety. Early P-63 pump rooms teach the core repair habit: a machine can improve one compartment while making the way home worse.
+A pump handshake is the moment a drowned machine accepts a local hand again. It feels like control because the floor clears, the lamp stops swimming, and the route seems to open. The danger is that water never disappears on HECTON-8; it is moved into another compromise. Intake baskets catch capsule foam, old gloves, shell grit, and torn labels. Outlets wake corridors that were quiet for a reason. The right habit is to read the pump as a trade: one room breathes, another begins to knock.
 
 ## Scanner
 
-Local sump pump accepted handwheel input. Intake basket is fouled with capsule foam; outlet pulse is loading Return Corridor B.
+Local sump accepted handwheel input. Capsule foam clogs the intake basket; outlet pulse is climbing into Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B; restart only with downstream hatch checked.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Valve took. Outlet is knocking. Do not call this safe yet.
 
 ## Field Note
 
-A dry pump room can drown the way back. Listen for hammer in the outlet before you strip the valve.
+A dry floor is not a solved room. Listen for the corridor that paid for it.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/en_US. -->

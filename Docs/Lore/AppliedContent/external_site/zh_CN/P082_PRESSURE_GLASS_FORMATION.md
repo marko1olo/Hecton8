@@ -19,8 +19,8 @@ localization_flags: 1
 
 # 压力玻璃形成
 
-压力玻璃是Marauder所说blue debt和Deep Reach的Xenon-Omega语言背后的技术名称。它在压力、惰性气体囊、卤水、矿物、热和改造生物相遇处形成。
+压力玻璃是掠夺者蓝债和Deep Reach的Xenon-Omega语言背后的现场名称。只有在惰性气体囊、矿物缺陷、热盐水、改造生物和暴烈压力历史长期共处，足以把晶格锁进记忆时，它才会形成。
 
-压力玻璃形成把Xenon-Omega变成硬科幻材料生态，而不是魔法矿石。它连接Atlas、封存和计算。 这不是矿石。它是会记住生成地点的过程。
+压力玻璃形成把Xenon-Omega变成材料生态：一种由压力制造、连接封存、计算、Atlas连续性和打捞风险的基质。 这不是矿石。这是一个记得自己遭遇过什么的地方。
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/zh_CN. -->

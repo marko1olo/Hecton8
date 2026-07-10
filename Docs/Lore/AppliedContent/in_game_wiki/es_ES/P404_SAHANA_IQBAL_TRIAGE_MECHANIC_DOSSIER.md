@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mecánica de triaje"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mecánica de triaje
 
-ES LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal reparaba máquinas en la sala donde trabajadores heridos esperaban a que sus nombres subieran por una guía. Su dossier une notas de par, etiquetas de camilla, cartuchos de depurador, hojas de reserva de oxígeno y cinta naranja de cuarentena. Los objetos hacen física la demora de Deep Reach: el mismo tablero que limitaba la tensión de pernos decidía qué cuerpo, válvula o filtro recibía atención antes de la siguiente caída de presión. El trabajo de Iqbal no es compasión escrita en grande. Es una mano eligiendo el orden menos mortal mientras el orden oficial cambia.
 
 ## Scanner
 
-ES LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Tablero de par, etiquetas de camilla y cinta de cuarentena comparten un mismo orden de espera.
 
 ## Terminal
 
-ES LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+BAHÍA DE TRIAJE C-2 / IQBAL, SAHANA: límites de par colocados junto a etiquetas de reserva de oxígeno. Herramientas, camillas y cartuchos de depurador en la misma guía. El lenguaje de cuarentena volvió a mover la línea de alcance.
 
 ## Audio
 
-ES LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal arreglaba lo que podía alcanzar. El tablero seguía decidiendo qué contaba como alcanzable.
 
 ## Field Note
 
-ES LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Usar a Iqbal en bucles de reparación de cuarentena, pasillos médicos, colas de oxígeno e interfaces donde una elección de máquina cueste tiempo humano visible.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/es_ES. -->

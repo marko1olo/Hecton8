@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Autoridad de retardo lumínico"
+title: "Autoridad de retraso-luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autoridad de retardo lumínico
+# Autoridad de retraso-luz
 
-Una llamada de socorro en HECTON-8 es un cargamento físico de significado. Sale de un mástil inundado, cruza el espacio de Aegir a velocidad de la luz, espera en búferes de relé y llega a Black Keel por una cola que ya sabe poner precio al riesgo. La primera demora es distancia honesta. Las demoras posteriores son humanas: clase de custodia, ventanas de tormenta, lenguaje de responsabilidad y la costumbre del portador de contestar al activo antes que a la persona. Por eso una respuesta puede estar técnicamente fresca y aun así no servir dentro de una sala de presión que se derrumba.
+La autoridad de retraso-luz define la comunicacion de HECTON-8 como fisica, demorada y contract-filtered: distance, weather, relay buffers y custody queues deciden cuando una signal se vuelve usable.
+
+## Scanner
+
+Cache de relay mast. La llamada salio limpia, luego espero tras light, queue law, storm scatter y Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active hasta que fresh signal window confirme override.
+
+## Audio
+
+La respuesta viene. Eso no la convierte en rescue.
+
+## Field Note
+
+Nadie censuro el primer scream. La physics lo movio lo bastante despacio para que la policy lo alcanzara.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/es_ES. -->

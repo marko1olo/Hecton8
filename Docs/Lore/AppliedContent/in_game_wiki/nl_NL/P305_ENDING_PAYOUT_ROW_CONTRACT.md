@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Datagrens van einduitbetaling"
+title: "Recordregel voor einduitbetaling"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datagrens van einduitbetaling
+# Recordregel voor einduitbetaling
 
-De grens houdt eindes als afwegingsrecords, niet als overwinningsscores. De uitbetaling telt, maar ook bewaring, publiek bewijs, quarantaine, schuld en het recht van de ontvanger om te handelen nadat de speler vertrekt.
+Einduitbetalingsregels bewaren de ruil die je echt maakte. Een materiële uitgang kan een deel van de retentie wissen terwijl coördinaten teruggaan naar Recovery Compliance. Vrijgave aan een openbaar ledger kan namen beschermen en controle over bewijs verliezen. Atlas-afsnijding of quarantaine verandert de ontvanger voordat het de waarde verandert.
 
 ## Scanner
 
-Eindrij bindt ontvanger, bewaring, bewijsstaat, uitbetaling en onopgelost gevolg.
+Uitkomstregel in behandeling: ontvanger, payloadroute, bewijsstatus, uitbetaling, quarantainevertraging en onopgelost gevolg zijn niet gesloten.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: rijen vereisen payloadroute, ontvanger, bewijsstaat, materiële uitbetaling, juridisch gevolg, quarantainevertraging en onopgeloste kost. Credits sluiten geen plaats delict.
+EINDUITBETALING SCHEMA / dossier-ontvangercontrole: sluit geen record voordat payloadroute, ontvanger, bewijsstatus, materiële uitbetaling, retentieaanpassing, quarantainevertraging, ecologisch gevolg en onopgeloste kost zijn geschreven. Credits komen vrij na bewaring, niet ervoor.
 
 ## Audio
 
-Credits sluiten geen plaats delict.
+Dossierrelais: ontvanger accepteerde bewaring. De quarantaineklok start voordat het krediet vrijkomt.
 
 ## Field Note
 
-Creditwaarde, quarantainevertraging en dossierflags worden pas geregistreerd nadat ontvanger en bewijsstaat helder zijn.
+Noem een einde niet betaald voordat de ontvanger is genoemd. Verkeerde ontvanger, verkeerde toekomst; dezelfde oceaan, andere rekening.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegirアンカー"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegirアンカー
+# Ran / Aegir Anchor
 
-Ran / AegirアンカーはHECTON-8の見え方を固定する。上は硬派SFの薄い日光、下は圧力と負債の敵地。
+Ran / Aegir AnchorはHECTON-8のvisual logicを接地する。上にはdimmer hard-sci-fi sunlight、下にはdepth、weather、turbidity、pressure、debt。
 
 ## Scanner
 
-K級星プレート。Ranは正常に燃える。AegirはSolより暗いが、ここの闇は深度、天候、負債から来る。
+K-class star plate。Ranは通常通り燃えている。このdeepはsupernaturalではなく、weather、water、debtの下に遠すぎるだけだ。
 
 ## Terminal
 
-RAN NAV ANCHOR // 橙色矮星の照明は表面作業を支える。嵐の散乱、食の幾何、海の濁りが降下視認性を安全余白の下へ押し込む。
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows。Storm scatter、eclipse geometry、mineral turbidity、industrial silt reduce descent visibility below contract safety margin。
 
 ## Audio
 
-星はある。ただ、あなたを追って下りては来られない。
+starはそこにある。ただdownへはついて来られない。
 
 ## Field Note
 
-本物の星で十分だ。残りは海が行う。
+real starで十分だ。残りはoceanがやる。
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ja_JP. -->

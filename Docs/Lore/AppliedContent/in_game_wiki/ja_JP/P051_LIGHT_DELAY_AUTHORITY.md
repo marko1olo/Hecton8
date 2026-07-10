@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "光遅延権限"
+title: "光遅延の権限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 光遅延権限
+# 光遅延の権限
 
-HECTON-8にはansibleも軌道からの生の指揮声もない。メッセージは光速で進み、その後さらにバッファ、嵐の窓、リレー幾何、キャリアの保管規則で時間を失う。すべての返答は命令ではなく、古い証拠として扱う。
+HECTON-8にはansibleも、軌道上から身を乗り出す友好的な声も、十光年を慈悲深くする方法もない。messagesは光速で進み、その後relay geometry、storm scatter、buffer law、Black Keelのcustody queuesでさらに時間を失う。transmissionは正直であっても、従うには古すぎることがある。表面は早い段階でその規則を教える。すべてのremote answerはまずevidence、次にinstructionであり、comfortではない。壁、水、pressureがmessageと矛盾するなら、local worldが勝つ。
 
 ## Scanner
 
-リレーマストのキャッシュ: 呼び出しはきれいに出たが、その後は光、待ち行列の規則、嵐の散乱、Aegirの視線条件の後ろで待った。
+relay mast cache。callはきれいに出たが、light、queue law、storm scatter、Aegir line-of-sightの後ろで待たされた。
 
 ## Terminal
 
-通信権限: 片道遅延を確認。嵐散乱高。リレー待ち行列は保管優先。現地生存権限は有効。
+COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。fresh signal windowがoverrideを確認するまでLocal survival authority remains active。
 
 ## Audio
 
-返答は来る。それは救助とは限らない。
+返信は来ている。それはrescueではない。
 
 ## Field Note
 
-最初の叫びを検閲した者はいない。物理がそれをゆっくり運び、方針が追いついた。
+最初のscreamは誰にも検閲されていない。physicsがpolicyに追いつくだけの遅さで運んだ。
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/ja_JP. -->

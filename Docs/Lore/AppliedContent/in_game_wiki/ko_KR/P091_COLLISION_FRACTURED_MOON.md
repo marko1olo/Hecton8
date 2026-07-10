@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 충돌로 갈라진 달
 
-HECTON-8은 Aegir계 안에서 형성되었고 이후 스치는 충돌로 갈라졌다. 상처는 달을 부수지 않았다. 지각 선반을 들어 올리고, 염수 단층을 열고, 열수 통로를 먹이고, 드문 압력 창을 통해 오래된 바닥에 닿을 수 있게 했다. 인양 지도는 그 손상을 따라간다. 가장 안전한 길은 물이 찬 오래된 부상이기 때문이다.
+HECTON-8은 mystery를 위해 Aegir에 떨어진 stolen world가 아니다. 여기서 formed했고, glancing collision이 opened it without killing it했다. wound는 shelves를 들어 올리고, brine basins를 cracked하고, fault ladders를 데우고, moon이 close around its own ocean하려던 곳에 pressure-glass seams를 남겼다. 그 old damage는 지금도 hull이 어디로 descend할 수 있는지, sound가 어디서 bends하는지, vents가 어디서 stay alive하는지, buried colony evidence가 어디서 surface하는지 결정한다. HECTON-8에서 salvage maps는 injuries를 따른다. safest route는 흔히 완전히 heal하지 않은 old break다.
 
 ## Scanner
 
-오래된 지각 표본. 이 달은 Aegir의 잔해대에서 만들어졌고, 바다가 기억할 만큼 큰 충돌로 열렸다.
+crust sample. HECTON-8은 Aegir's debris belt에서 formed했고, 뒤이어 ocean이 기억할 만큼 넓은 oblique impact를 받았다.
 
 ## Terminal
 
-기원 모델: Aegir 주변 강착, 이후 사선 충돌, 조석 고정 뒤 공명. 결과: 계단형 지각, 뜨거운 단층 사다리, 염수 분지, 압력유리 맥, 깊은 바닥으로 가는 불균등 접근.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-여기서 태어났다. 그리고 바다에 지도를 줄 만큼 세게 맞았다.
+It was born here. 그리고 무언가 sea에게 map을 줄 만큼 hard하게 때렸다.
 
 ## Field Note
 
-포획된 달이라는 신화는 너무 말끔하다. HECTON-8에는 현지의 상처가 있다. 들린 지각, 짙어진 염수, 아직 이자를 내는 분출구.
+captured-moon story는 너무 깨끗하다. 이곳은 born local, broken local, billed local이다.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ko_KR. -->

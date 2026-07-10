@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tunda Rute Tanpa FTL"
+title: "Penundaan rute tanpa FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tunda Rute Tanpa FTL
+# Penundaan rute tanpa FTL
 
-HECTON-8 tidak memiliki kanal penyelamatan instan. Sistem Aegir dicapai oleh precursor probes, beam infrastructure, pellet-fusion freight, dan sistem pengereman yang memperlakukan urgensi sebagai batas massa lain. Pesan dapat tiba sebelum perangkat yang membuat pesan itu berguna. Carrier bisa mengakui keberadaanmu, menilai payload, dan memegang valid claim, namun tetap tak bisa mengeluarkan descent mass pada weather, relay angle, atau custody window yang salah. Teks perjalanan publik harus menjaga batasan ini terlihat, karena isolasi di sini lahir dari rekayasa, hukum, dan logistik sekaligus. Black Keel bisa dekat secara hukum dan tak terjangkau secara fisik. Keterlambatan itu menjelaskan mengapa pemain tetap memperbaiki segel dengan tangan setelah relay menjawab.
+HECTON-8 tidak punya kanal penyelamatan instan. Lalu lintas manusia ke Aegir dibangun dari peta probe pendahulu, infrastruktur jalur berkas, kargo fusi pelet, sistem pengereman, jendela pembawa, dan serah-terima kustodi legal. Kedaruratan tidak membatalkan massa. Kapal bisa memberi harga muatan, menerima klaim, dan menyimpan catatanmu sambil tidak memiliki alokasi turun untuk memindahkan satu benda berguna ke air. Karena itu game memperlakukan komunikasi sebagai bukti, bukan penyelamatan. Jawaban membuktikan seseorang mendengar darurat. Ia tidak menambal segel, memindahkan bathydrop, atau memendekkan jendela orbit buruk.
 
 ## Scanner
 
-Catatan transit. Lalu lintas Aegir bergantung pada precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody, dan penundaan hukum.
+Catatan transit. Lalu lintas Aegir bergantung pada peta probe, jalur berkas, kargo fusi pelet, massa pengereman, usia paket, kustodi relai, dan jendela turun yang dipengaruhi cuaca.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // BATAS TRANSIT. FTL tidak ada. Ansible tidak ada. Penyelamatan hidup memerlukan transfer fisik, braking architecture, carrier position, descent mass, dan local window yang sah.
+NODE ARSIP PUBLIK // BATAS TRANSIT. FTL: tidak ada. Ansible: tidak ada. Penyelamatan hidup memerlukan posisi pembawa, alokasi pengereman, massa turun, cuaca lokal, dan jendela kustodi yang belum kedaluwarsa.
 
 ## Audio
 
-Bantuan bisa hadir secara hukum dan tetap berjarak fisik bertahun-tahun.
+Pembawa bisa mencatat keadaan daruratmu dan tetap berjarak tahun massa.
 
 ## Field Note
 
-Catatan Marauder: saat relay menjawab, tanyakan umur jawabannya dan massa apa yang bisa ia gerakkan.
+Catatan Marauder: setiap jawaban penyelamatan butuh empat angka: usia paket, massa pembawa, slot pengereman, jendela turun.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/id_ID. -->

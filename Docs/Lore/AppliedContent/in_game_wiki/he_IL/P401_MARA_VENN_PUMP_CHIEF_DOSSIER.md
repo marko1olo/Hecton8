@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Mara Venn/Pump Chief"
+title: "מארה ון, ראש צוות המשאבות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Mara Venn/Pump Chief
+# מארה ון, ראש צוות המשאבות
 
-HE LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+מארה ון הייתה ראש צוות המשאבות שהחזיקה את הנספח התחתון בחיים אחרי שמדי היניקה התחילו לשקר. התיק שלה בנוי מחפצי עבודה: תג שאוכל במלח, לוח קצב עם סימונים ידניים, יומן מים שתוקן בדיו לחץ וידית מעקף שהוחלקה משימוש חוזר. יחד הם מראים עובדת שהכריחה את המושבה להודות שאובדן מים לא היה רעש רקע. זו הייתה תקלה נספרת במכונה המחוברת לריאות אנושיות.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+תיק: מארה ון. שפת התג, לוח הקצב ויומן המים המתוקן מצביעים כולם על חדר המשאבות P-63.
 
 ## Terminal
 
-HE LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+חדר משאבות P-63 / VENN, MARA: ידית המעקף לוטשה דרך שכבות הכפפה; לוח קצב מוצמד ליד סימני אובדן ביניקה. תיקון היומן הופך מים חסרים מדליפה נופית לעומס מכונה.
 
 ## Audio
 
-HE LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+ון לא השאירה פרידה. היא השאירה קצב על לוח המשאבות כדי שאנשים מפוחדים יוכלו לספור את הנשימה הבאה.
 
 ## Field Note
 
-HE LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+מקמו את הראיות של ון ליד חידות קצב משאבות, יומני מים וידיות מעקף. החפצים שלה צריכים לגרום לשחקן לשמוע תשתית כנשימה.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/he_IL. -->

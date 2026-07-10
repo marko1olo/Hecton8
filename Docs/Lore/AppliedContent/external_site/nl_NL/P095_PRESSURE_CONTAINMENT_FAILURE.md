@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Drukcontainmentfalen"
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drukcontainmentfalen
+# Pressure Containment Failure
 
-Blue debt is geen vervloekte schat. Het is materiaalgeheugen onder druk. Xenon-Omega-residu blijft nuttig zolang zijn rooster gelooft dat het diep, koud en samengedrukt is. Haal het te snel weg, bewaar het slecht, of laat signaalschuif door de casket kruipen, en het monster faalt in leesbare fasen. Eerst komt drift: meters liegen, resonantie trilt, containmentalarmen spreken elkaar tegen. Dan breekt het rooster. Pekel komt binnen. Biologie volgt chemie. In fase 4 is het monster dood als waarde, maar levend als besmetting.
+Pressure Containment Failure definieert blue debt handling stages en koppelt resource value aan depth, pressure memory, bloom contamination, route planning en salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear en bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Een sample kan worth a fortune at one depth zijn en become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/nl_NL. -->

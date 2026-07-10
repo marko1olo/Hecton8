@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Lian Torres/Vent Forge"
+title: "Лиан Торрес, оператор вент-кузницы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Lian Torres/Vent Forge
+# Лиан Торрес, оператор вент-кузницы
 
-RU LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Лиан Торрес заземляет промышленность HECTON-8 в ремесле, а не в чудесном материале. Улики вент-кузницы показывают, что пресс-стекло, кольца уплотнений и керамические вкладыши не родились добычей. Их обрабатывали, браковали, перемаркировали и доводили до состояния, которому кто-то другой мог доверять под водой.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Досье: Лиан Торрес. Термоперчатка, таймер цикла и лоток брака относятся к одной партии пресс-стекла.
 
 ## Terminal
 
-RU LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+ВЕНТ-КУЗНИЦА V-9 / ТОРРЕС, ЛИАН: в лотке брака оставлены треснувшие кольца уплотнения, мутное пресс-стекло и три перегретых купона с метками. Примечание партии: отказ учит следующий герметик только если отказ остался подписан.
 
 ## Audio
 
-RU LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Торрес хранил плохие детали. В кузнице чистый пол означал, что кто-то выбросил урок.
 
 ## Field Note
 
-RU LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Использовать Торреса рядом с пропами вент-кузницы, рецептами пресс-стекла, отбракованными кольцами и верстаками апгрейдов, где нужна видимая история неудачных деталей.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ru_RU. -->

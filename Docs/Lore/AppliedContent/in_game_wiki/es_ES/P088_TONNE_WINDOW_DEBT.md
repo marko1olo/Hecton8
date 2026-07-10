@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deuda de ventana-tonelada
 
-La deuda de ventana-tonelada es el punto donde la física se vuelve finanzas. Black Keel no tiene margen de elevación infinito, combustible de tránsito infinito ni volumen limpio de cuarentena infinito. Cada kilogramo subido desde HECTON-8 compite con cada kilogramo necesario para mantener vivo al operador. El medidor de deuda hace cruel al carrier sin romper la ciencia dura: el rescate es posible, pero el presupuesto de ruta pregunta qué merece masa.
+La deuda de ventana-tonelada es donde HECTON-8 deja de ser solo una historia de horror y se vuelve orbital logistics. Black Keel tiene lift margin finito, clean volume finito, oxygen reserve finita y un route price unido a cada kilogramo. Spare tank, sealed sample, damaged suit, proof case, body y crate of salvage compiten dentro de la misma ventana. El sistema parece cruel porque es exacto. No necesita fingir que el rescue es imposible. Solo sigue preguntando que puede permitirse levantar la ruta.
 
 ## Scanner
 
-Medidor de ventana de masa. Cada kilogramo de ayuda tiene precio de ruta.
+Ledger de mass-window. La ayuda tiene peso antes de tener lenguaje.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: margen de recovery burn reducido. Masa de extracción del operador en conflicto con payload sellado, reserva de lastre, deuda de oxígeno y custodia de muestra de cuarentena. Anulación manual requiere prioridad pagada o prueba de peligro.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass en conflicto con sealed payload, ballast reserve, oxygen debt, quarantine sample volume y hull patch inventory. Manual priority requiere paid override, verified hazard proof o custody reclassification.
 
 ## Audio
 
-La nave puede llevarte a ti o lo que encontraste. Prefiere un número.
+La nave puede levantar una vida. La pregunta es que mas obliga a cargar el ledger.
 
 ## Field Note
 
-Oxígeno, lastre, prueba, payload, cuerpo: el carrier los pesa antes de pesar misericordia.
+Oxygen, ballast, proof, samples, hull patch, body: el carrier pone precio a la misericordia por kilogramo.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/es_ES. -->

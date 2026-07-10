@@ -19,24 +19,28 @@ localization_flags: 1
 
 # Rejestr Władzy Nazw Ran / Aegir
 
-HECTON-8 ma kilka nazw, bo kilka władz próbuje posiadać tę samą wodę. Ran to gwiazda, kotwica astronomiczna i nazwa dla fizyki tras. Aegir to gazowy olbrzym, jasny rodzic na niebie i skrót biur roszczeń. RAN-B:H8 to klucz katalogowy: zimny, ubezpieczalny i sortowalny. HECTON-8 to nazwa polowa, w której gracz krwawi.
+HECTON-8 ma za dużo nazw, bo za dużo biur chciało czystego sposobu posiadania brudnej wody. Ran to gwiazda, używana w dokumentach o świetle, trasach, opóźnieniu nośnika i nawigacji. Aegir to gazowy olbrzym, używany, gdy mówca chce ukryć księżyc w większym systemie roszczeń, niebie, ciele macierzystym albo grupie aktywów. RAN-B:H8 to ubezpieczony klucz księżyca, nazwa sortowalna bez pamięci. HECTON-8 to nazwa polowa, przyklejona do mokrych drabin, krawędzi włazów, tablic tras i starych drzwi ciśnieniowych.
 
-Różnica ma znaczenie. Płyta Ran mówi o świetle, dystansie i tranzycie. Memo Deep Reach mówiące Aegir często mówi o własności i ciągłości roszczeń. Potwierdzenie Black Keel z RAN-B:H8 wycenia konkretny rekord księżyca. Notatka Maraudera mówiąca HECTON-8 mówi o pokojach, ciałach, drzwiach ciśnieniowych i oceanie, którego nie obchodzą nazwy prawników.
+            Nazwy nie są zamienne. Są odciskami palców. Biuro trasy mówiące Ran prawdopodobnie nawiguję. Memo Deep Reach mówiące Aegir często chroni własność w skali systemu. Potwierdzenie Black Keel z RAN-B:H8 zmienia miejsce w obiekt rozliczeniowy. Notatka pracownika z HECTON-8 nie jest slangiem ani sentymentem. Jest świadectwem z poziomu, na którym ocean zabijał ludzi komora po komorze.
+
+            Dobry dowód zachowuje nazwę, którą znalazł. Zbyt wczesna normalizacja może zniszczyć motyw. Nakaz kwarantanny z aktywem Aegir może ukrywać lokalną awarię przez poszerzenie kadru. Wycena salvage z RAN-B:H8 może zdjąć pamięć, by księżyc przeszedł przez ubezpieczenie bez żałoby.
+
+            Dlatego PDA zachowuje konflikty nazw. Konflikt mówi graczowi, kto mówił, co chciał policzyć i co chciał pogrzebać.
 
 ## Scanner
 
-PŁYTA TRASY ROZWIĄZANA // Ran to gwiazda macierzysta. Aegir to olbrzym i skrót systemu roszczeń. RAN-B:H8 to klucz katalogowy HECTON-8.
+WŁADZA NAZW ROZWIĄZANA // Ran: gwiazda macierzysta i kotwica trasy. Aegir: gazowy olbrzym i parasol roszczeń. RAN-B:H8: ubezpieczony klucz księżyca. HECTON-8: nazwa polowa dla wody, kolonii i przeżytej szkody. Zachowaj etykietę źródła.
 
 ## Terminal
 
-POWIADOMIENIE NORMALIZACJI KATALOGU // Skrót AEGIR dopuszczony dla indeksu systemu roszczeń. Użyj RAN-B:H8 dla ubezpieczonego rekordu księżyca i HECTON-8 dla powierzchni operacyjnej w terenie.
+OSTRZEŻENIE NORMALIZACJI KATALOGU // Nie składać świadectwa pracownika pochodzenia HECTON-8 do języka aktywa AEGIR bez noty świadka. RAN-B:H8 tylko dla ubezpieczonego rekordu księżyca. Odniesienia Ran zostają kontekstem fizyki trasy.
 
 ## Audio
 
-Resolver katalogu Black Keel: Ran jest źródłem światła, Aegir niebem roszczeń, HECTON-8 miejscem, gdzie faktura moknie.
+Resolver katalogu Black Keel: gdy nazwa się zmienia, rachunek się przesunął. Zostaw starą nazwę, aż wiesz, kto zyskuje.
 
 ## Field Note
 
-Jeśli prawnik mówi Aegir, gdy płyta mówi RAN-B:H8, sprawdź, która kolumna potaniała.
+Jeśli woda kogoś zabiła, nazwij to HECTON-8, zanim prawnicy wypłuczą to w Aegir.
 
 <!-- In-Game Wiki; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/pl_PL. -->

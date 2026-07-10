@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Montagem da cadeia de escape"
+title: "Montagem da Cadeia de Escape"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Montagem da cadeia de escape
+# Montagem da Cadeia de Escape
 
-Escapar é uma cadeia de montagem, não um veículo reparado. O pacote de queda danificado pode manter o jogador vivo, mas não pode criar sozinho uma ascensão confiável. A rota para casa precisa de uma espinha de relé acústico para ser ouvida através da água e do ruído de tempestade, uma vedação de pressão que não transforme ascensão em ruptura, um núcleo de orientação capaz de sobreviver aos perigos locais de HECTON-8, uma carga de energia de ascensão, um aperto de mão de quarentena e lei e, se o jogador quiser poder sobre o registro de recuperação, uma carga de evidência que a Black Keel não consiga desvalorizar. Cada peça fica mais fundo que o conforto porque o sistema original foi construído para mover ativos, não para deixar trabalhadores abandonados saírem em seus próprios termos.
+Escape é uma cadeia de montagem, não um único veículo reparado. O drop package danificado pode manter um corpo vivo, mas não cria sozinho uma subida confiável. A rota para casa precisa de acoustic relay spine para ser ouvida por água e ruído de tempestade, pressure seal que não transforme a subida em ruptura, guidance core capaz de sobreviver aos perigos locais de HECTON-8, ascent-energy charge, quarantine/legal handshake e evidence payload forte o bastante para mudar a recovery authority da Black Keel. Cada componente é físico, legal e moral ao mesmo tempo.
 
 ## Scanner
 
-Partir exige seis provas duras: relé, vedação, orientação, carga de ascensão, aperto de mão legal e uma carga que o transportador não consiga ignorar.
+Partir exige seis provas duras: relé, vedação, orientação, carga de subida, handshake legal e payload que o carrier não possa ignorar.
 
 ## Terminal
 
-PACOTE DE ASCENSÃO: espinha de relé acústico ausente. Classificação do anel de fixação insuficiente. Núcleo de orientação ausente. Berço de carga vazio. Aperto de mão de quarentena não resolvido. Carga de evidência opcional, mas altera a autoridade de recuperação.
+ASCENT PACKAGE: acoustic relay spine ausente. Rating do clamp ring insuficiente. Guidance core ausente. Charge cradle vazio. Quarantine handshake não resolvido. Evidence payload altera recovery authority.
 
 ## Audio
 
-Você não conserta a cápsula. Você constrói a primeira saída honesta que a colônia nunca teve.
+Você não conserta a cápsula. Constrói a primeira saída honesta que a colônia nunca teve.
 
 ## Field Note
 
-A rota para cima é feita de peças que nunca foram pensadas para deixar trabalhadores irem embora sozinhos.
+A rota para cima é construída com peças que nunca deveriam deixar trabalhadores saírem sozinhos.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/pt_BR. -->

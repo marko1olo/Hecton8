@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Опіка salvage-інструмента"
+title: "Custody salvage-інструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опіка salvage-інструмента
+# Custody salvage-інструмента
 
-На HECTON-8 інструмент може бути спорядженням виживання і контрактним свідком одночасно. Журнали salvage-опіки зв’язують різи, ремонти й зразки з claim-токенами, роблячи корисну дію частиною майбутніх доказів, боргу або тиску виплати.
+Custody salvage-інструмента зв'язує minute-to-minute survival з claim economy: cuts, repairs, patches і samples можуть стати evidence, payout pressure або Keelmark debt.
 
 ## Scanner
 
-Док інструмента містить запечатаний журнал опіки. Останній різ, ремонт і мішок зразка прив’язані до claim-токена Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair і sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: використання різака прийнято під salvage claim. Ремонтну дію засвідчено. Права на зразок прив’язані до токена Keelmark Mutual. Експорт доказів конфліктує з маршрутом матеріальної виплати.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Кожен корисний різ залишає свідка.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Різак може врятувати повітря і продати твої руки одним рухом. Перевір, що він записує, перш ніж назвати його своїм.
+Cutter може save your air і sell your hands одним stroke. Перевір, що він records, перш ніж назвати його своїм.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/uk_UA. -->

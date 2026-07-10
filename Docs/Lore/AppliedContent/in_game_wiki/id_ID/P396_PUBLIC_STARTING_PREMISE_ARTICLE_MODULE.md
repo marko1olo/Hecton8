@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Klaim Awal Marauder"
+title: "Klaim awal Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Klaim Awal Marauder
+# Klaim awal Marauder
 
-Catatan pembuka menempatkan pemain sebagai operator terlatih di bawah tekanan utang. Ia bukan turis, pewaris terpilih, atau pembalas dendam keluarga; ia sudah memahami pompa, segel, formulir rute, dan singkatan Deep Reach sebelum bangkai mulai membantah formulir itu. Jam pertama tetap praktis: segel bathydrop, pulihkan tekanan, baca mesin yang rusak, ambil muatan, dan putuskan baris resmi mana yang sudah berbohong.
+Catatan HECTON-8 pertama tidak memperkenalkan turis atau penyintas terpilih. Ia menyebut operator terlatih di bawah tekanan utang: orang yang sudah membaca singkatan pompa, peringatan segel, tag evakuasi, dan frasa liabilitas Deep Reach sebelum palka pertama terbuka. Pekerjaan awalnya konkret. Tambal bathydrop. Pastikan tekanan. Pindai paparan P-63. Nyalakan ulang mesin hanya setelah jalur segel masuk akal. Ambil kargo jika membayar, dan bukti jika bisa bertahan dari jam kustodi.
 
 ## Scanner
 
-Catatan claim publik. Rute pembuka mengidentifikasi Marauder terlilit utang dengan riwayat Deep Reach field-systems, bathydrop rusak, dan jendela pemulihan Black Keel di atas P-63.
+Catatan klaim publik. File lien Black Keel menyebut mantan spesialis sistem lapangan Deep Reach, bathydrop rusak, rute P-63, dan jendela kustodi yang menutup.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // KLAIM AWAL. Catatan kontraktor: mantan spesialis Deep Reach field-systems. Status kini: Marauder di bawah lien. Rute: recovery claim Black Keel, turun ke shelf P-63, kembali membawa bukti dan muatan sebelum custody window tertutup.
+NODE ARSIP PUBLIK // BLACK KEEL CLAIM BK-P63-2190. Status: Marauder terikat lien. Izin lama: sistem lapangan Deep Reach / infrastruktur evakuasi. Serahan: massa kargo plus bukti sah sebelum kustodi lokal T+06:40.
 
 ## Audio
 
-Kau tidak sedang berwisata ke HECTON-8. Kau kembali ke berkas yang terlalu kau kenal.
+Kontrak tahu singkatan lamamu. Itu tidak sama dengan mengatakan kebenaran.
 
 ## Field Note
 
-Catatan Marauder: kontrak itu mengenal masa lalumu. Itu tidak membuatnya jujur.
+Catatan Marauder: jika file klaim tahu level izinmu, baca yang dihilangkan sebelum pembayaran.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/id_ID. -->

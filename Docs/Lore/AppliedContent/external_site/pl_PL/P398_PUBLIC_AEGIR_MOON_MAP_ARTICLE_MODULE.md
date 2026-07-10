@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Mapa tras księżyców Aegir
 
-Mapa księżyców Aegir jest najpierw operacyjna, dopiero potem piękna. HECTON-8 to ciało oceaniczne w drabinie księżyców, shepherd rocks, ice-scatter paths i dead relay marks. Ciała wewnętrzne zakłócają narrowband contact i osłonę radiacyjną. Lodowe księżyce rozbijają optical relay lines na złe fragmenty. Occultation bands tworzą okna ciszy, gdzie claim może być ważny i wciąż niesłyszany. Zewnętrzne beacons zachowują dawne prawa własności po zniknięciu załóg. Geometria pływów i storm stacking decydują, czy bathydrop chain wzniesie się czysto, czy trafi do loss ledger. Mapy publiczne mogą to pokazać bez obietnicy dodatkowych światów gry; ich zadaniem jest uczynić niebo czytelnym jako ciśnienie, opóźnienie i ryzyko trasy.
+Mapę księżyców Aegir należy czytać jak tablicę operacyjną. Każda etykieta może zmienić wiek sygnału, osłonę radiacyjną, ryzyko transferu, pogodę zejścia, geometrię odzysku albo prawny czas przechowania. HECTON-8 siedzi w tej ruchomej drabinie: ciała wewnętrzne zakłócają kontakt wąskopasmowy, księżyce lodowe łamią trasy optyczne na fragmenty, pasy zakrycia tworzą ciche okna, a stare boje utrzymują znaki własności po zniknięciu załóg. Materiał publiczny może pokazać system bez obiecywania grywalnych księżyców. Użyteczna obietnica jest węższa: gdy gracz spojrzy znad wody, niebo może wyjaśnić, czemu przekaźnik się zaciął, czemu nośnik odmówił masy zejścia albo czemu ważne roszczenie czekało w ciemności.
 
 ## Scanner
 
-Zapis mapy systemu. Księżyce Aegir określają relay timing, osłonę radiacyjną, ice scatter, ciśnienie pływowe, occultation bands, martwe beacons i recovery geometry.
+Zapis mapy systemu. Etykiety księżyców ustawiają wiek przekaźnika, obciążenie pływowe, osłonę radiacyjną, rozproszenie lodu, pasy zakrycia, martwe boje i geometrię odzysku.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // DRABINA KSIĘŻYCÓW AEGIR. Nazwy księżyców są etykietami trasy. Każde ciało zmienia signal age, transfer risk, storm exposure, custody timing lub claim reliability.
+PUBLICZNY WĘZEŁ ARCHIWUM // DRABINA KSIĘŻYCÓW AEGIR. Nazwa księżyca jest daną trasy. Pola wymagane: wiek sygnału, faza pływu, osłona burzy, okno roszczenia, stan boi, ryzyko wynurzenia.
 
 ## Audio
 
-Mapa wyjaśnia, dlaczego nikt nie przybywa w chwili prośby.
+Księżyc na mapie nie jest tłem. To powód, dla którego odpowiedź przyszła późno.
 
 ## Field Note
 
-Notatka Maraudera: zaznacz księżyc, potem zaznacz, co robi trasie.
+Notatka Maraudera: oznacz księżyc, potem zapisz, co robi z sygnałem, pływem, masą i przechowaniem.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8-Orbit / Gezeitengeometrie"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8-Orbit / Gezeitengeometrie
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8-Orbit / Gezeitengeometrie ist die harte SF-Katastrophenschicht: Gezeiten, Wärme und Druck brechen zuerst die Kolonie; Konzernpriorität macht Versagen zum Verbrechen.
+HECTON-8 Orbit / Tide Geometry ist die hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage und pressure brechen zuerst die colony; corporate priority turns failure into crime.
 
 ## Scanner
 
-GEZEITENMODELL // Resonanz, Eisstress, Sturmflut und Wärmeabgabe überschritten Evakuierungsprognose. Atlas-continuity-Flags überschrieben Rückzugspriorität.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge und heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT-TIDE-KETTE // Orbitale Erzwingung verstärkte Ozeanlast. Künstliche Wärmeabgabe und versiegelte Drainage verwandelten ein Gezeitenereignis in Kolonieversagen.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge und sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Die Physik öffnete die Tür. Deep Reach entschied, wer hindurch durfte.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Ein Mond kann eine Kolonie ertränken, ohne sie zu hassen.
+Ein moon kann drown a colony, ohne sie zu hassen.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/de_DE. -->

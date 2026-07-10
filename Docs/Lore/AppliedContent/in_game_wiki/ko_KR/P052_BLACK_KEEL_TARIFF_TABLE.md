@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Black Keel 요율표
 
-Black Keel 지원은 유용하지만 결코 중립적이지 않다. 조난, 샘플, 산소, 책임 봉인, 운영자 회수, 선체 손상은 서로 다른 대기열에 들어간다. 플레이어는 그 규칙을 이용할 수 있지만, 같은 규칙이 왜 도움이 늘 가격표를 달고 오는지도 보여 준다.
+Black Keel support는 유용하다. carrier가 실제로 gear를 옮기고, oxygen을 cache하고, warnings를 전달하며, route options를 열기 때문이다. 하지만 중립적이지 않다. 모든 support action은 help가 되기 전에 tariff table에 들어간다. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, body recovery는 서로 다른 priority speeds를 가진 별도 line items다. 그 표는 숨은 악이 아니다. 실제로는 더 나쁘다. 가격이 없어야 할 순간을 위한 읽을 수 있는 price list다.
 
 ## Scanner
 
-판은 조난, 샘플 보관, 산소 예비량, 압력 장비, 시신 회수를 서로 다른 항목으로 가격 매긴다.
+tariff plate. distress, oxygen, sample custody, pressure gear, hull damage, body recovery가 별도 줄에 놓여 있다.
 
 ## Terminal
 
-요율 등급: 인양 긴급. 복지 부록 보류. 검증된 샘플 보관은 출항 우선순위를 과금 등급 두 단계 올림.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. lien arbitration resolves까지 Breathing mass surcharge applies.
 
 ## Audio
 
-증거에는 할인이 있고, 호흡에는 추가 요금이 있다.
+evidence에는 discount가 있고 breathing에는 surcharge가 있다.
 
 ## Field Note
 
-가장 빠른 등급은 구조가 아니다. 위로 이동하는 검증된 재산이다.
+가장 빠른 class는 rescue가 아니다. verified property moving upward다.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/ko_KR. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Сонарний маршрут повернення"
+title: "Sonar return route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Сонарний маршрут повернення
+# Sonar return route
 
-Маяк повернення записує, як звучав маршрут, коли він востаннє був безпечним. Він не обіцяє, що маршрут лишився безпечним. Штормовий нагін, вільний кабель, рухомий мул, fauna і свіжі вирізи salvage можуть зігнути сонарне повернення, не стираючи коридор. Перед вантажем або глибшим зануренням пінгуй лінію. Якщо тон зсунувся, сховай вантаж або познач другий шлях назад.
+Return beacon записує, як route звучав, коли був last safe. Він не обіцяє, що route stayed safe. На HECTON-8 safety має звук: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass і door flexed under pressure можуть bend the return, не erased corridor. Return route - це work. Ping before loading і cache the load, якщо echo повертається іншої shape.
 
 ## Scanner
 
-Маяк повернення застарів. Старий безпечний ping більше не збігається з ехом коридору; маса вантажу сповільнить вікно відходу.
+Return beacon stale. Old safe ping більше не збігається з corridor echo; cargo mass сповільнить retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: останній чистий ехосигнал недійсний. Ping Black Keel отримано з низькою достовірністю. Зсув перешкод і щільність мулу вище допуску карти. Позначити другу лінію до вилучення вантажу.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density і cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Маршрут усе ще там. Ехо вже інше.
+The route is still there. Echo вже не те саме.
 
 ## Field Note
 
-Пінгуй до завантаження. Якщо дорога додому змінилася, поки руки були порожні, повний наплічник вона не пробачить.
+Ping before loading. Якщо way home changed, поки hands були empty, він не пробачить full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/uk_UA. -->

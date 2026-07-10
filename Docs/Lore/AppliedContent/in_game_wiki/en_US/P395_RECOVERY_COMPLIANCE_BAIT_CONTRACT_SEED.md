@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Recovery Compliance Bait Contract Seed
 
-Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Recovery Compliance bait contracts arrive as generous salvage recovery work, but the receiver chain is already bent toward Deep Reach. The payout is real. The cost is the hidden requirement to disclose where the wreck, corpse tag, sample crate or sealed machine was found.
 
 ## Scanner
 
-Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Contract seed: Recovery Compliance bait. High payout, contaminated receiver chain, concealed coordinate demand.
 
 ## Terminal
 
-SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+SEED BAIT: payout raised, Recovery Compliance receiver masked, coordinate disclosure clause hidden, withholding pressure active, Deep Reach routing likely.
 
 ## Audio
 
-Some contracts are not offers. They are envelopes with your name already on the return line.
+A rescue stamp can buy a dockhand's trust faster than a gun.
 
 ## Field Note
 
-Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Marauder note: if the job pays too clean, check who owns the towel.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/en_US. -->

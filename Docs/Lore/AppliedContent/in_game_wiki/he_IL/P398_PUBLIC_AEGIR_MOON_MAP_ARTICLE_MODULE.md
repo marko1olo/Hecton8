@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "מפת מסלולי הירחים של Aegir"
+title: "מפת נתיבי הירחים של Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מפת מסלולי הירחים של Aegir
+# מפת נתיבי הירחים של Aegir
 
-נתוני הירחים של Aegir הם נתוני מסלול. HECTON-8 הוא הירח האוקייני שניתן לשחק בו, אבל הוא נמצא בתוך סולם רחב יותר של מגבלות relay, קרינה, פיזור וגאות. השמים הנראים משתתפים בשאלה אם אות הצלה יישמע, יתעכב, יתומחר, יידחה או יהיה בלתי אפשרי פיזית.
+ירחי Aegir הם חלק ממערכת הנתיבים. HECTON-8 הוא הירח האוקייני תחת השחקן, אבל שאר הסולם משנה מה אפשר לשמוע, לתמחר, להסתיר או להזיז. גוף קטן יכול לחתוך קו ממסר. נתיב פיזור קרח יכול להשחית חבילה. שלב גאות יכול להפוך עליית bathydrop לזולה ואז קטלנית. מפות ציבוריות חשובות כי השמים אינם קישוט מעל המים; הם אחת המכונות שמחליטות אם תביעה יכולה לצאת.
 
 ## Scanner
 
-רשומת מפת מערכת. ירחי Aegir קובעים relay timing, כיסוי קרינה, ice scatter, לחץ גאות, occultation bands, beacons מתים ו-recovery geometry.
+רשומת מפת מערכת. תוויות ירחים קובעות גיל ממסר, עומס גאות, כיסוי קרינה, פיזור קרח, רצועות הסתרה, משואות מתות וגיאומטריית שחזור.
 
 ## Terminal
 
-צומת ארכיון ציבורי // סולם ירחי AEGIR. שמות ירחים הם תוויות מסלול. כל גוף משנה signal age, transfer risk, storm exposure, custody timing או claim reliability.
+צומת ארכיון ציבורי // סולם ירחי AEGIR. שם ירח הוא נתון נתיב. שדות חובה: גיל אות, שלב גאות, כיסוי סערה, חלון תביעה, מצב משואה, סיכון עלייה.
 
 ## Audio
 
-המפה מסבירה למה אף אחד לא מגיע ברגע שאתה מבקש.
+ירח על המפה אינו נוף. הוא סיבה לכך שהתשובה איחרה.
 
 ## Field Note
 
-הערת Marauder: סמן את הירח, ואז סמן מה הוא עושה למסלול.
+הערת Marauder: סמן את הירח, ואז כתוב מה הוא עושה לאות, לגאות, למסה ולמשמורת.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/he_IL. -->

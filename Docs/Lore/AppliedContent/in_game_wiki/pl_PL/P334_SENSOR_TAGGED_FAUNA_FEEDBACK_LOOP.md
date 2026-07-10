@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pętla sprzężenia zwrotnego fauny z sensorami"
+title: "Pętla sprzężenia fauny z tagiem czujnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pętla sprzężenia zwrotnego fauny z sensorami
+# Pętla sprzężenia fauny z tagiem czujnika
 
-Fauna z sensorami nosi starą kolonię w swoich bliznach. Deep Reach znakowało zwierzęta do badań migracji, ciśnienia i skażenia; Atlas później czytał te tagi jak tanią telemetrię środowiskową. Stworzenie nie jest marionetką. Jego ruch może jednak zmienić priorytet naprawy, obudzić trasę drona albo sprawić, że bezpieczne przejście wygląda na zajęte.
+Fauna z tagami czujników nosi stary sprzęt badawczy w wygojonej tkance. Deep Reach znakowało zwierzęta do badań ciśnienia, migracji i skażenia. Atlas słuchał dalej po śmierci kolonii i włączył te pakiety w stan konserwacji. Zwierzę wybiera własną ścieżkę; tag wciąż może zmieniać drzwi, alarmy i zaufanie mapy za nim.
 
 ## Scanner
 
-Stary znacznik Deep Reach pod narostem muszli. Ślad migracji pasuje do przeglądu konserwacyjnego.
+Stary tag Deep Reach pod narostem muszlowym na lewym boku. Pakiety ruchu wciąż pingują sieć konserwacji.
 
 ## Terminal
 
-PĘTLA FAUNY: osadzony znacznik zwraca słabe pakiety ciśnienia, ruchu i skażenia. Atlas czyta ruch jako stan środowiska, nie zamiar zwierzęcia.
+PĘTLA TAGU FAUNY / DR-2147-MIG: pakiety ciśnienia, ruchu i skażenia przyjęte jako telemetria środowiskowa. Intencja zwierzęcia nieparsowana. Alarmy trasy mogą iść za ścieżką migracji.
 
 ## Audio
 
-Ono na ciebie nie poluje. Nadal może cię zgłosić.
+To na ciebie nie poluje. Jego tag nadal może otworzyć złe drzwi.
 
 ## Field Note
 
-Dobre do spotkań, gdzie zwierzę jest niewinne, ale wciąż groźne dla trasy.
+Jeśli tagowana fauna przechodzi przez dziedziniec przekaźników, poczekaj, zanim zaufasz alarmom. Zwierzę może już zniknąć; stan trasy może jeszcze je doganiać.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pl_PL. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Moteur géothermique de forge hydrothermale"
+title: "Moteur géothermique vent forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Moteur géothermique de forge hydrothermale
+# Moteur géothermique vent forge
 
-Les forges hydrothermales relient géologie, fabrication, survie et horreur. Elles fournissent chaleur et cycles de pression pour céramiques, joints et verre de pression, mais les mêmes cycles créent poches d'ébullition, faux oxygène, nuages corrosifs et migrations de faune.
+Les vent forges relient géologie et travail. Leurs pulsations peuvent cuire les céramiques, réinitialiser des joints de pression, recuire le pressure glass et préchauffer des charges d'ascension, mais chaque cycle utile reste un rythme de danger. Le cisaillement bouillant attaque les coutures, le faux oxygène trompe les instruments, le bloom corrosif entre dans les boîtiers ouverts, et la vie proche bouge avant que l'opérateur comprenne pourquoi.
 
 ## Scanner
 
-Collecteur de forge hydrothermale. Chaleur, poison et énergie passent par le même tuyau.
+Collecteur de vent forge. Chaleur, poison, pression et puissance partagent le même tuyau.
 
 ## Terminal
 
-MOTEUR GÉOTHERMIQUE: impulsion d'évent adaptée à la cuisson céramique, au recuit du verre de pression et au préchauffage de charge d'ascension d'urgence. Risques: cisaillement bouillant, faux positif oxygène, floraison corrosive.
+MOTEUR GEOTHERMIQUE : pulsation d'évent utilisable pour cure céramique, recuit de pressure glass, réinitialisation de joint et préchauffe de charge d'ascension d'urgence. Risques : cisaillement bouillant, faux oxygène, bloom corrosif, migration de faune.
 
 ## Audio
 
-L'évent se moque que tu l'appelles énergie ou météo.
+L'évent ne se soucie pas que tu appelles cela puissance ou météo.
 
 ## Field Note
 

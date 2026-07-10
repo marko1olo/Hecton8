@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Estrella anfitriona de Aegir
 
-La estrella de Aegir fija HECTON-8 como hard sci-fi: hay luz en superficie, pero la presión viene de agua, distancia, órbita y abandono corporativo.
+La estrella anfitriona de Aegir mantiene HECTON-8 en ciencia ficción dura: hay iluminación, pero la presión de supervivencia viene de profundidad oceánica, tiempo orbital, demora de luz y abandono.
 
 ## Scanner
 
-Luz primaria tipo K confirmada. Hay luz en superficie; profundidad, tormentas y eclipses crean la oscuridad.
+Primaria tipo K confirmada. Hay luz en el sistema; profundidad, tormentas, eclipses y deuda hacen el trabajo oscuro.
 
 ## Terminal
 
-Efemérides Ran/Aegir: enana K, paquetes interestelares demorados, sin vector de rescate FTL. Toda ayuda es local.
+EFEMERIDES RAN/AEGIR: primaria enana K, salida fotosférica estable, paquetes interestelares con demora, sin vector de rescate FTL. Tratar la ayuda como local hasta que llegue masa.
 
 ## Audio
 
-La luz llega a la plataforma. No llega al problema.
+La luz estelar alcanza la plataforma. No alcanza el problema.
 
 ## Field Note
 
-El horror no es la estrella. Es el océano.
+El horror no es la estrella. Está donde el océano convierte la luz en rumor.
 
 <!-- External Site; generated from P016_AEGIR_HOST_STAR/es_ES. -->

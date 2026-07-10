@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Koude Claims van Buitenmanen"
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Koude Claims van Buitenmanen
+# Outer Moon Cold Claims
 
-Koude claims van buitenmanen verbreden Aegir voorbij HECTON-8: dode routes, koude caches en verlaten beacons voeden salvage-recht en verbergen herhaald verlies.
+Outer Moon Cold Claims breiden Aegir beyond HECTON-8 uit: dead routes, cold caches, abandoned beacons en billable loss voeden salvage law en corporate denial.
 
 ## Scanner
 
-Buitenste claimbeacon. Niet alles wat dood is in Aegir ligt op HECTON-8.
+Outer claim beacon. Niet elk dead thing in Aegir ligt op HECTON-8.
 
 ## Terminal
 
-BUITENLADDER ARCHIEF // Thorne pekelprospect faalde. Anvil exportroute ingemot. Mute-beacon herhaalt bewaringsping zonder actieve crewverklaring.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir leerde mensen verliezen voordat HECTON-8 de les afmaakte.
+Aegir leerde lose people voordat HECTON-8 de lesson afmaakte.
 
 ## Field Note
 
-Koude claims maken Marauders mogelijk. Ze leren bedrijven ook patronen te begraven.
+Cold claims maken marauders mogelijk. Ze leren companies ook bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/nl_NL. -->

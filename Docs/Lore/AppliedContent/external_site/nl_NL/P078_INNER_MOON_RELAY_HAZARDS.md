@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relaisgevaren van Binnenmanen"
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisgevaren van Binnenmanen
+# Inner Moon Relay Hazards
 
-Deze gevaren verklaren HECTON-8 contactverlies door straling, stof, occlusie en geërfde route law in plaats van magische storing.
+Inner Moon Relay Hazards verklaren HECTON-8 contact failure via radiation, dust, occlusion, eclipse geometry en inherited route law in plaats van impossible interference.
 
 ## Scanner
 
-BINNENLADDER // Skarn verzadigt antennes. Vela verstrooit optiek. Oude Claw- en Lumen-routes houden verlopen handshakes levend.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw en Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-RELAISGEVAAR NOTITIE // Contactverlies kan geometrie, deeltjesweer, stofshutter of geërfde buoy law zijn. Wantrouw schone UI tijdens surgevensters.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Het relais werd niet stil. Het herhaalde de verkeerde eeuw.
+De relay werd niet stil. Hij repeated the wrong century.
 
 ## Field Note
 
-Een schoon icoon kan nog steeds liegen door oude hemel.
+Een clean icon kan nog steeds lying through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/nl_NL. -->

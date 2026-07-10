@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Aegir Moon Ladder
 
-Aegir's moons are part of the route math, not scenery. Public catalog crosswalks vary by office, but the current PDA map uses the working ladder Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8 and Mute. HECTON-8 is Aegir-VIII: valuable because its ocean pressure, tide resonance and relay shadows make Black Keel recovery windows dirty.
+Aegir's moons are route machinery. Their names are not decoration on a skybox; they decide shadows, relay silence, tide phase, carrier waits, and the cost of moving mass. HECTON-8 is Aegir-VIII in the working ladder, valuable because its ocean pressure and relay geometry make both extraction and abandonment expensive.
 
 ## Scanner
 
-Moon ladder resolved: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel and Mute distort route timing.
+Moon ladder resolved: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel and Mute bend the windows.
 
 ## Terminal
 
-AEGIR ROUTE NOTE: HECTON-8 sits after Kestrel. Relay shadow, tide phase and carrier window must match before payload ascent.
+AEGIR ROUTE NOTE: HECTON-8 follows Kestrel in the working ladder. Relay shadow, tide phase, radiation band, and Black Keel transfer geometry must align before mass ascent.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Count Kestrel before you trust the window.
 
 ## Field Note
 
-The sky is a work schedule. Miss one moon shadow and the carrier is just a rumor.
+The sky is a work schedule. Miss one shadow and the carrier becomes a rumor.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/en_US. -->

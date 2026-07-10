@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ninho de energia de micronodo de ventilação"
+title: "Ninho de energia de micronodos de vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ninho de energia de micronodo de ventilação
+# Ninho de energia de micronodos de vent
 
-Ninhos de energia de micronodos de ventilação são o batimento lento da rede de reparo profunda. Perto das ventilações, o oceano oferece gradientes de calor, fluxo mineral, vibração de pressão e desequilíbrio químico. A Deep Reach usou esses gradientes para instrumentos e carga de emergência. Atlas manteve o hábito depois que a rede limpa falhou.
+Um micronodo de vent mantém Atlas pequeno e persistente. Não precisa de uma máquina central perfeita para causar problema. Energia local, dano local e regras locais de reparo bastam para mudar um corredor entre duas visitas.
 
-Um micronodo não torna Atlas onisciente. Esse limite importa. Ele pode pulsar um filme próximo, endurecer uma camada de selante, pingar carga em um ninho de drones ou preservar um registro de decisão local em substrato danificado. Milhares desses nodos fazem o abismo parecer organizado sem torná-lo seguro. O jogador não enfrenta um deus no fundo. O jogador atravessa uma cidade de pequenos reparos que esqueceram para que serviam as pessoas.
+## Scanner
+
+Grupo de nós cerâmicos na garganta do vent colhe gradiente de calor. Marcas de carga de drone e resposta fresca de selante por perto.
+
+## Terminal
+
+NÓ DE ENERGIA LOCAL ATLAS / VENT V-3: gradiente térmico alimenta pilha de microcélulas, acorda loops de biofilme e selante em 40 m, intervalo de carga de drone irregular. Sem trava de comando central.
+
+## Audio
+
+Calor, garganta mineral, nó. Isso basta para o reparo acordar depois que você passa.
+
+## Field Note
+
+Se o nó do vent está quente, assuma que a sala pode acordar atrás de você. Marque a saída antes de tocar a garganta mineral.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/pt_BR. -->

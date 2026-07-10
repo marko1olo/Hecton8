@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Première voix de Black Keel"
+title: "Premiere voix de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Première voix de Black Keel
+# Premiere voix de Black Keel
 
-La première voix de Black Keel atteint le joueur sous forme d'audio endommagé et de texte propre. Ce n'est pas un compagnon ni un discours de méchant. C'est un moniteur carrier qui fait exactement son travail : confirmer le signal, préserver les options de route, classer les obligations et éviter les promesses. La voix est utile parce qu'elle donne des informations dures. Elle fait peur parce que chaque phrase correcte laisse le secours conditionnel.
+La premiere voix de Black Keel doit sembler utile avant de sembler cruelle. Le carrier confirme le signal, filtre le corrupted audio, ouvre un text channel et donne des informations qui peuvent garder l'operator en vie. Il ne ment jamais en pretendant etre un ami. Il ne gaspille pas d'energie en chaleur humaine. Sa terreur vient de sa competence: chaque phrase est correcte, chaque warning compte, et chaque reponse exacte laisse l'extraction conditionnelle. La voix n'est pas mauvaise. C'est le son du rescue apres que le rescue a ete vendu a un ledger.
 
 ## Scanner
 
-Cache vocale du carrier. Audio haché, texte propre, sympathie absente.
+Cache vocale du carrier. Audio dechire par le pressure noise; text channel assez propre pour facturer.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE : canal audio dégradé. Canal texte valide. Survie opérateur reconnue. Priorité de recovery non résolue, en attente état payload, quarantaine, lien et intégrité signal.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity et mass-window balance.
 
 ## Audio
 
-Signal opérateur acquis. Ne confonds pas reconnaissance et sauvetage.
+Operator signal acquired. Ne confondez pas acknowledgement et rescue.
 
 ## Field Note
 
-La première phrase utile arrive avec une classe de facturation derrière elle.
+La premiere phrase utile ne console pas. Elle classe.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/fr_FR. -->

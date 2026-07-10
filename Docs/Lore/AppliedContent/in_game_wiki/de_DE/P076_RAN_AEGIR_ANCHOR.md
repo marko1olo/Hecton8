@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ran / Aegir-Anker"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegir-Anker
+# Ran / Aegir Anchor
 
-Ran verankert das Aegir-System als normalen Stern der K-Klasse, weder tote Lampe noch Quelle übernatürlicher Dunkelheit. HECTON-8 kann helle Untiefen haben, weil Licht existiert.
-
-Der Schrecken beginnt, wenn Atmosphäre, Sturm, Mineralwasser, Tiefe und Industrieschlick dieses Licht schneller löschen, als ein Rettungsvertrag reagieren kann. Über Wasser ist das System astronomisch. Unter Wasser wird jedes Lumen gemietete Zeit.
+Ran verankert Aegir als gewohnliche K-class star: alt, orange, stetig und gleichgultig. Das zahlt, weil HECTON-8 nicht durch magic dunkel ist. Die shallows konnen shine. Weather kann weiss uber der sea aufblitzen. Ein worker auf einem surface raft konnte immer noch hochsehen und wissen, dass es eine sun gibt. Horror beginnt, wenn atmosphere, storm shear, mineral water, depth und industrial silt dieses light schneller ausgeben, als ein carrier eine rescue window abrechnen kann. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-K-Klasse-Sternplatte. Ran brennt normal. Aegir ist dunkler als Sol, doch die Dunkelheit hier kommt von Tiefe, Wetter und Schuld.
+K-class star plate. Ran brennt normal; die deep hier ist nicht supernatural, nur zu weit unter weather, water und debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Orange-Zwerg-Licht stützt Oberflächenarbeit. Sturmstreuung, Finsternisgeometrie und Ozeantrübung drücken Abstiegslesbarkeit unter die Sicherheitsmarge.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity und industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Der Stern ist da. Er kann dir nur nicht nach unten folgen.
+Die star ist da. Sie kann nur nicht follow you down.
 
 ## Field Note
 
-Ein echter Stern genügt. Den Rest erledigt der Ozean.
+Eine real star reicht. Den Rest erledigt der ocean.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/de_DE. -->

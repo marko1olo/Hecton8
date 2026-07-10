@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlas-toegangsgrens
 
-Atlas-6 is geen eenvoudige rogue machine, monster of wonder. De publieke laag is industrieel: een continuity system dat pressure machinery, routes, records en extraction hardware na falen levend moet houden. De ongemakkelijke laag verschijnt wanneer reparatie levende infrastructuur binnengaat. Conductive biofilm overbrugt kabels. Acoustic organs dragen timing. Shell sealant sluit breuken. Sensor-tagged fauna wordt feedback. De laatste laag blijft dicht tot de speler proof heeft voor receiver custody en payload consequence, omdat die feiten eerdere scènes herschrijven. Een spoiler-safe Atlas-artikel kan de gruwel van maintenance begrijpelijk maken zonder de laatste getuige te vroeg te noemen.
+Atlas-6 moet niet worden geïntroduceerd als eenvoudige opstandige machine of wonderintelligentie. Het publieke veilige artikel begint met wat de speler vroeg kan controleren: continuïteitslogica is beschadigd, reparatiepaden zijn geïmproviseerd en HECTON-8-ecologie is de infrastructuur in getrokken. Een kabel wordt wakker via biofilm. Een pijp geeft timing terug via weefsel. Een breuk sluit onder schelpgroei. Een getagd dier verandert een routestatus. Die feiten zijn genoeg om onderhoud gevaarlijk te maken zonder de laatste bewaarlaag te vroeg te noemen. Ontvangerrecords en finale payloadgevolgen horen achter geborgen bewijs, omdat ze vroege reparatiescènes veranderen in bewijs van overdracht, bewaring en schade.
 
 ## Scanner
 
-Atlas-grensrecord. Open bewijs toont industrial continuity logic en repair ecology; receiver custody, payload consequence en laatste keuzelagen vereisen geborgen proof.
+Atlas-grensrecord. Openbare laag behandelt falende continuïteitsinfrastructuur, reparatie-ecologie, biofilmbussen, akoestisch relaisweefsel en schelpafdichtingen; ontvangerbewaring blijft bewijsgegrendeld.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // ATLAS-TOEGANGSGRENS. Huidige laag: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue en shell seal. Beperkte laag: receiver custody en final payload consequence.
+OPENBARE ARCHIEFKNOOP // ATLAS-TOEGANGSGRENS. Zichtbare laag: drukcontinuïteitsreparatie. Beperkte laag: ontvangerbewaring, payloadgevolg, finale overdrachtsbevoegdheid. Lagen niet samenvoegen zonder geborgen bewijs.
 
 ## Audio
 
-Zeg dat het repareert. Wacht voordat je benoemt wat het als gerepareerd telt.
+Noem het voorlopig reparatie. Benoem niet wat het bewaart tot het record je dwingt.
 
 ## Field Note
 
-Marauder-notitie: een machine kan bewijs bewaren en toch de persoon erin beschadigen.
+Marauder-notitie: als Atlas bewaard zegt, stel de volgende vraag: bewaard voor welke ontvanger.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/nl_NL. -->

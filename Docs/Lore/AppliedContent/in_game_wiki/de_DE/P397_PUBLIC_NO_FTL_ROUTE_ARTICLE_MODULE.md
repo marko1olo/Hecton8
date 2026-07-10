@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "No-FTL-Routenverzug"
+title: "Routenverzug ohne FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# No-FTL-Routenverzug
+# Routenverzug ohne FTL
 
-Entfernung ist eine Überlebensregel auf der Aegir-Route. Recht, Schuld und alte packets erreichen den Spieler lange vor carrier, tender, Ersatzteil oder menschlichem Retter. Eine relay-Antwort hebt die Druckarbeit vor dir nicht auf; sie beweist nur, dass jemand deinen claim in eine Warteschlange gelegt hat.
+Entfernung ist eine Betriebsgrenze auf der Aegir-Route. Ein Paket kann ein Schiff überholen. Eine rechtliche Antwort kann HECTON-8 vor dem Ersatzteil, Tenderteam, Druckbehälter oder menschlichen Retter erreichen, die sie nützlich machen würden. Relaiskontakt ändert daher Papier, bevor er den Raum um dich ändert. Wenn das Archiv sagt, Hilfe habe den Anspruch bestätigt, prüfe Paketalter, Trägermasse, Bremsslot und lokales Abstiegswetter, bevor du dem Satz traust.
 
 ## Scanner
 
-Transitdatensatz. Aegir-Verkehr hängt an precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody und juristischem Verzug.
+Transitdatensatz. Aegir-Verkehr hängt von Sondenkarten, Strahllinien, Pellet-Fusionsfracht, Bremsmasse, Paketalter, Relaisverwahrung und wetterabhängigen Abstiegsfenstern ab.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // TRANSITGRENZE. FTL fehlt. Ansible fehlt. Lebende Rettung braucht physischen Transfer, braking architecture, carrier position, descent mass und ein gültiges local window.
+ÖFFENTLICHER ARCHIVKNOTEN // TRANSITGRENZE. FTL: nicht vorhanden. Ansible: nicht vorhanden. Lebende Rettung benötigt Trägerposition, Bremszuteilung, Abstiegsmasse, lokales Wetter und ein nicht abgelaufenes Verwahrfenster.
 
 ## Audio
 
-Hilfe kann rechtlich anwesend und physisch Jahre entfernt sein.
+Ein Träger kann deinen Notfall eintragen und trotzdem Jahre an Masse entfernt sein.
 
 ## Field Note
 
-Marauder-Notiz: Wenn das relay antwortet, frag nach dem Alter der Antwort und welcher Masse sie bewegen kann.
+Marauder-Notiz: Jede Rettungsantwort braucht vier Zahlen: Paketalter, Trägermasse, Bremsslot, Abstiegsfenster.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/de_DE. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Barramento de reparo por biofilme condutor"
+title: "Barramento de reparo por biofilme condutivo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Barramento de reparo por biofilme condutor
+# Barramento de reparo por biofilme condutivo
 
-O barramento de reparo por biofilme condutor começa como um acidente prático. Capas antigas de cabos da Deep Reach se rompem sob pressão, sais de cobre sangram para a água e mantos microbianos locais, já adaptados ao calor mineral, se instalam na ferida. Atlas lê a corrente fraca como rota de serviço. Ele não precisa que o oceano fale; basta um filme molhado capaz de carregar um pulso.
+Um cabo envolto em biofilme condutivo é útil e inseguro ao mesmo tempo. O crescimento reduz corrosão, passa um ping fraco e dá a Atlas uma rota barata de reparo. Também esconde um condutor rompido de qualquer sistema que só verifica continuidade.
 
-Para um saqueador, isso é presente e armadilha. Uma ponte de biofilme pode acordar uma porta selada, carregar um handshake de scanner ou fazer uma bomba calada há anos responder por instantes. A mesma ponte também mente. A linha pode brilhar verde enquanto a capacidade de carga acabou, e um corte limpo pode transformar um corredor atravessável em tubo inundado. A pergunta não é se o crescimento é natural ou artificial. A pergunta é o que Atlas já contou como reparado.
+## Scanner
+
+Filme verde-escuro atravessa a capa rompida do cabo. Corrente baixa retorna pelo crescimento molhado; leitura de continuidade não é confiável.
+
+## Terminal
+
+RASTRO DE MANUTENÇÃO ATLAS / LINHA K-44: cobre exposto, crescimento salino, baixa fuga de calor. A ponte de biofilme reduz corrosão e devolve pulsos falsos de continuidade. Não rotear controle de bomba por esta linha.
+
+## Audio
+
+O pinger passa pelo limo. A energia também. Não chame isso de reparo.
+
+## Field Note
+
+Se um painel morto acorda pelo filme verde, marque a rota como temporária. Corte a energia antes de pôr ferramenta na capa.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pt_BR. -->

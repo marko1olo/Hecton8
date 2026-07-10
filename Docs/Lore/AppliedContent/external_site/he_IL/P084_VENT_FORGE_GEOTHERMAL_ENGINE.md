@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "מנוע גיאותרמי של כבשן פתח"
+title: "מנוע גיאותרמי Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מנוע גיאותרמי של כבשן פתח
+# מנוע גיאותרמי Vent Forge
 
-כבשני פתחים מחברים גאולוגיה לייצור, הישרדות ואימה. הם מספקים חום ומחזורי לחץ לקרמיקה, אטמים וזכוכית לחץ, אבל אותם מחזורים יוצרים כיסי רתיחה, חמצן שקרי, עננים מאכלים ונדידת fauna.
+Vent forges מחברים גאולוגיה לעבודה. הפעימות שלהם יכולות לרפא קרמיקה, לאפס אטמי לחץ, לחשל pressure glass ולחמם מטעני עלייה, אבל כל מחזור שימושי הוא גם קצב סכנה. גזירת רתיחה תוקפת תפרים, חמצן כוזב מרמה מכשירים, פריחת קורוזיה נכנסת למארזים פתוחים, והחיים הקרובים זזים לפני שהמפעיל מבין למה.
 
-המנוע הגיאותרמי של כבשן הפתח מראה למה HECTON-8 יקר וקטלני: הירח היה מנוע תעשייתי לפני שבני אדם בנו עליו אחד. כל פתח מועיל הוא גם מכונה שמענישה timing גרוע.
+המנוע הגיאותרמי vent forge מראה מדוע HECTON-8 יקר וקטלני: הירח היה תעשייתי לפני שהגיעו בני אדם. כל פתח שימושי הוא גם מכונה שמענישה תזמון רע.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/he_IL. -->

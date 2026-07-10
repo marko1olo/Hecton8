@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Zapis fizyki Wielkiego Przypływu"
+title: "Zapis fizyki Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zapis fizyki Wielkiego Przypływu
+# Zapis fizyki Great Tide
 
-Zapis fizyki Wielkiego Przypływu utrzymuje katastrofę uczciwą. HECTON-8 był podatny na rezonans pływów, pękanie lodu, wezbranie sztormowe i zrzut ciepła. Wina Deep Reach leży w marginesach, pojemności ewakuacji i priorytetach decyzji, nie w fałszywej magii.
+Zapis fizyki Great Tide zostawia katastrofę uczciwą. HECTON-8 już był groźny: wiosenna geometria Aegira ciągnęła morze, kriosfera obciążała szelfy, spiętrzone sztormy zjadały harmonogram, a ciepło kolonii wypychało zamknięty drenaż wstecz. Wina Deep Reach zaczyna się po fizyce. Firma zostawiła rezerwę wznoszenia jako przyszły koszt, chroniła ciągłość Atlas i traktowała ciała jako masę niższego priorytetu.
 
-Zapis fizyki Wielkiego Przypływu określa logikę katastrofy HECTON-8: ocean jest fizycznie groźny, a korporacyjna zbrodnia polegała na projektowaniu pod optymistyczne marginesy. Nie łagodź tego: ludzi zabiła prawdziwa fizyka, a Deep Reach dopilnował, żeby fizyka miała ofiary.
+Zapis fizyki Great Tide definiuje logikę katastrofy HECTON-8: ocean skali księżyca stał się śmiertelny, gdy mierzalna fizyka spotkała korporacyjny optymizm, odłożoną ewakuację i chroniony sprzęt ciągłości. Nie rób z tego mistyki. Ludzi zabiła fizyka. Deep Reach zadbało, by fizyka miała przed sobą tłum.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/pl_PL. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Custodia Keelmark Mutual"
+title: "Custodia de Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custodia Keelmark Mutual
+# Custodia de Keelmark Mutual
 
-Keelmark Mutual es la cáscara de seguro y custodia que permite a Black Keel operar en Aegir sin autoridad humana de rescate en sitio. En papel no es Deep Reach. En la práctica, una suscripción antigua puede ser dirigida por quien posea el gancho de prioridad correcto, porque cada cuerpo, herramienta, muestra y caja sellada entra en un calendario de riesgo antes de que el operador pida ayuda.
+Keelmark Mutual es la carcasa insurance-custody detras del comportamiento de Black Keel. No es Deep Reach con mascara, ni un servicio secreto de rescue. Keelmark existe para mantener claim tenders legales, financiados y asegurados cuando nadie en Aegir puede contestar una llamada viva. Eso lo hace mas frio que un villano. La policy no odia al operator; simplemente lo define como debt, vessel risk, payload interface, quarantine exposure y possible witness. Cuando esas categorias existen, cada suplica posterior tiene que cruzarlas.
 
 ## Scanner
 
-Cáscara de seguro intacta. Keelmark posee el gravamen antes de poseer el cuerpo.
+Etiqueta de underwriting intacta. Keelmark no necesita malicia cuando el lien ya tiene dientes.
 
 ## Terminal
 
-KEELMARK MUTUAL: gravamen claim-tender activo. Deuda del operador, riesgo de nave, custodia de payload y reserva de cuarentena agrupados bajo calendario de suscripción remota. El estado de auxilio no suspende el gravamen.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve y recovery proof agrupados bajo remote underwriting schedule. Distress status no suspende lien ni custody order.
 
 ## Audio
 
-La póliza es más vieja que tu llamada de auxilio.
+La policy es mas vieja que el distress call. Ha tenido mas tiempo para aprender la ruta.
 
 ## Field Note
 
-La aseguradora no es una mente oculta. Es peor: un calendario que nunca tuvo que preocuparse.
+No hay mastermind en una sala oscura. Solo un schedule bastante viejo para sobrevivir a la culpa.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/es_ES. -->

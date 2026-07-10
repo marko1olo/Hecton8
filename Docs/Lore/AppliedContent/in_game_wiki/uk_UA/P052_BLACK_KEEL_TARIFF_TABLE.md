@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Тарифна таблиця Black Keel
 
-Підтримка Black Keel корисна, але ніколи не нейтральна. Лихо, зразки, кисень, печатки відповідальності, повернення оператора і пошкодження корпусу входять у різні черги. Гравець може використати ці правила, але ті самі правила показують, чому допомога завжди приходить із цінником.
+Black Keel support корисний, бо carrier справді рухає gear, cache'ує oxygen, передає warnings і відкриває route options. Він ніколи не нейтральний, бо кожне support action потрапляє в tariff table раніше, ніж стає help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery і body recovery - різні line items з різними priority speeds. Таблиця не приховане зло. На практиці гірше: читабельний price list для митей, які не повинні мати ціни.
 
 ## Scanner
 
-Табличка рахує сигнал лиха, опіку над зразком, кисневий резерв, спорядження тиску і повернення тіла окремими рядками.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage і body recovery стоять окремими рядками.
 
 ## Terminal
 
-ТАРИФНИЙ КЛАС: аварійний salvage. Соціальний додаток очікує. Підтверджена опіка зразка піднімає вихідний пріоритет на два білінгові рівні.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies до lien arbitration resolves.
 
 ## Audio
 
-За докази є знижка. За дихання беруть надбавку.
+На evidence є discount, на breathing - surcharge.
 
 ## Field Note
 
-Найшвидший клас — не порятунок. Це підтверджена власність, що рухається вгору.
+Найшвидший class - не rescue. Це verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/uk_UA. -->

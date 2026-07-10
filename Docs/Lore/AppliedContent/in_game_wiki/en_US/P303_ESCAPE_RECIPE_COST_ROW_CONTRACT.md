@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escape Recipe Cost Boundary"
+title: "Ascent Recipe Cost Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Escape Recipe Cost Boundary
+# Ascent Recipe Cost Row
 
-Escape Recipe Cost Boundary keeps the exit chain mechanical instead of arbitrary. Every ascent part has pressure history, ownership, and proof requirements, so escape feels like repair under law rather than quest tokens in a menu.
+Each escape cost points to a damaged part or a blocked authority. The damaged bathydrop spent its ascent sleeve to keep you alive, so the return chain has to prove signal, seal, timing, energy, and receiver legality. Some parts repair the machine; other parts decide who is allowed to answer the recovery call.
 
 ## Scanner
 
-Escape recipe row binds component class, pressure tier, route proof, and authority state.
+Ascent row locked: relay proof, seal grade, guidance core, ascent charge, legal handshake, and payload authority are not all present.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: qualified costs must name relay, seal, guidance, ascent energy, legal handshake, payload authority, and receiver risk. The way up has parts; the parts have owners.
+ASCENT COST SCHEMA / Black Keel recovery interface: no ascent quote may post without acoustic relay, pressure seal, guidance timing core, ascent energy charge, quarantine/legal handshake, payload authority, receiver risk, and route window. The package cannot climb on parts alone.
 
 ## Audio
 
-The way up has parts. The parts have owners.
+Recovery interface: relay, seal, timing, charge, handshake. Missing one keeps the package wet.
 
 ## Field Note
 
-Pressure bands come from containment rules; exact costs belong to recipe tables.
+Do not spend the guidance core before the handshake clears. A working ascent charge with the wrong receiver is just a fast way into custody.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/en_US. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Buku Besar Respons Korporat"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Buku Besar Respons Korporat
+# Corporate Response Ledger
 
-Buku Besar Respons Korporat bukan pidato penjahat. Ia lebih dingin dari itu. Ia adalah janji yang bisa dibaca mesin bahwa Black Keel akan merespons, tetapi hanya dalam urutan yang diakui kontraknya. Kustodi aset dulu. Segel liabilitas kedua. Audit lambung, rute sampel, rute pembayaran, lalu pemulihan operator jika antrean masih mengizinkan. Pemain bisa memakai ledger ini sebagai petunjuk, kunci, dan tekanan karena sistemnya dapat diprediksi. Prediktabilitas itu dakwaannya: HECTON-8 ditinggalkan bukan oleh satu keputusan buruk, melainkan oleh tumpukan respons yang tetap bekerja saat manusia menjadi kargo prioritas rendah.
+Corporate Response Ledger mencatat batas keras bantuan Black Keel: response speed, rescue priority, evidence custody, asset preservation, dan debt settlement tetap menjadi systems terpisah.
+
+## Scanner
+
+Setiap reply tiba dalam contract language: asset custody, liability lock, sample route, hull risk, lalu operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, dan evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+Reply itu automatic. Rescue itu conditional.
+
+## Field Note
+
+Immediate response bukan immediate rescue.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/id_ID. -->

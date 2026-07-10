@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Biometall-Ressourcenstapel
 
-Der Ressourcenstapel verhindert, dass HECTON-8 auf ein magisches Material schrumpft. Xenon-Omega zählt, aber der Mond hat auch Metalle, Salze, Schlotchemie, Druckkeramik, Biofasern, Photoproteine, salvage und Atlas-verändertes Biometall.
+Der Ressourcenstapel verhindert, dass HECTON-8 auf ein magisches Material schrumpft. Blaue Schuld zählt, aber der Mond zahlt auch in Sulfidmetallen, Salzen, Edelgasen, Keramik, Katalysatoren, Biofasern, Photoproteinen, Bergungshardware und Atlas-verändertem Biometall. Gewalt ergibt Sinn, weil Wert verteilt ist: viele kleine Gründe zu schneiden, markieren, verstecken, zurückkehren und lügen.
 
-Der Biometall-Ressourcenstapel zeigt HECTON-8 als vollständige Druckökonomie, in der Erkundung viele Ressourcen belohnen kann, während blue debt strategischer Gipfel bleibt. Wenn jede Probe Xenon-Omega sagt, wird die Welt dumm. Zähle auch die anderen Gründe.
+Der Biometall-Ressourcenstapel rahmt HECTON-8 als volle Druckökonomie, mit Xenon-Omega als strategischer Spitze statt als einziger lesbarer Sache. Wenn jede Probe Xenon-Omega sagt, wird die Welt flach. Zähle auch die kleineren Gründe, aus denen Menschen starben.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/de_DE. -->

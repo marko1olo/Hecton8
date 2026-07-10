@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir Moon Route Map
 
-Aegir's moon map is operational before it is beautiful. HECTON-8 is one ocean body in a ladder of moons, shepherd rocks, ice-scatter paths and dead relay marks. Inner bodies disturb narrowband contact and radiation cover. Ice moons break optical relay lines into bad fragments. Occultation bands create silence windows where a claim can be valid and still unheard. Outer beacons preserve old ownership even after crews vanish. Tide geometry and storm stacking decide whether a bathydrop chain can rise cleanly or join the loss ledger. Public maps can show this without promising extra playable worlds. Their job is to make the sky legible as pressure, delay and route risk.
+The Aegir moon map should be read like an operations board. Each label can change signal age, radiation shelter, transfer risk, descent weather, recovery geometry, or legal custody timing. HECTON-8 sits inside that moving ladder: inner bodies disturb narrowband contact, ice moons break optical routes into fragments, occultation bands create silent windows, and old beacons keep ownership marks alive after crews disappear. Public material can show the system without promising playable moons. The useful promise is narrower and stronger: when a player looks up from the water, the sky can explain why the relay stuttered, why a carrier refused descent mass, or why a valid claim waited in the dark.
 
 ## Scanner
 
-System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure, occultation bands, dead beacons and recovery geometry.
+System map record. Moon labels set relay age, tide load, radiation cover, ice scatter, occultation bands, dead beacons, and recovery geometry.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure, custody timing or claim reliability.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon name is route data. Required fields: signal age, tide phase, storm cover, claim window, beacon state, ascent risk.
 
 ## Audio
 
-The map explains why no one arrives the moment you ask.
+A moon on the map is not scenery. It is a reason the answer came late.
 
 ## Field Note
 
-Marauder note: mark the moon, then mark what it does to the route.
+Marauder note: mark the moon, then write what it does to signal, tide, mass, and custody.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/en_US. -->

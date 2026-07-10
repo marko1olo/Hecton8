@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Geologi Tenggelam
 
-Geologi Tenggelam memberi replayability lewat medan, brine, panas, dan tekanan.
+Geologi tenggelam membuat jalur aman punya kedaluwarsa: badai, drift lumpur, pergeseran brine, dan kerusakan salvage dapat mengubah rute kemarin menjadi perangkap.
 
 ## Scanner
 
-Landas, ngarai, tangga brine, dan ventilasi. Bulan mengajar turun lewat medan, bukan gerbang.
+Paparan berlapis, corong ngarai, tangga brine, bekas vent, dan eksposur lumpur terdeteksi. Terrain adalah routing tekanan, bukan latar.
 
 ## Terminal
 
-Prakiraan: runtuh landas, corong ngarai, tirai densitas, plume panas, lumpur abyss.
+PRAKIRAAN KEDALAMAN: runtuh paparan, corong ngarai servis, tirai densitas brine, plume termal, eksposur lumpur abisal. Kepercayaan rute menurun setelah surge badai atau potongan salvage.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Baca batu sebelum meminta suit menang.
 
 ## Field Note
 
-Rute aman adalah pembacaan, bukan koridor.
+Rute teraman adalah pembacaan, bukan koridor.
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/id_ID. -->

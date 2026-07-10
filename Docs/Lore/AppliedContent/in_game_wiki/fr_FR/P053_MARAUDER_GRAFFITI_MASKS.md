@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Masques graffiti des maraudeurs"
+title: "Masques graffiti des marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Masques graffiti des maraudeurs
+# Masques graffiti des marauders
 
-Les marques maraudeuses sont navigation de terrain, avertissement social et langue anti-surveillance. Elles semblent grossières parce qu'elles devaient survivre à l'eau, à la peur, aux lampes faibles et aux caméras d'entreprise. Le joueur apprend quelles marques signalent bruit, pression, patrouilles, caches et routes hors des cartes officielles.
+Le marauder graffiti n'est pas une decoration. C'est field navigation, social warning et anti-surveillance language grave la ou les radios trahissent, les maps expirent, et l'official signage ment parce qu'il est trop vieux. Les marks sont rudes parce qu'ils devaient survivre a water, bad lamps, glove tremor et cameras capables de punir une readable intent. Un slash peut vouloir dire silence. Un black ring peut vouloir dire Black Keel ping. Une broken arrow peut dire pressure changed depuis le dernier route survey. La colony a laisse des labels; les marauders ont laisse weather.
 
 ## Scanner
 
-Code peinture : le nombre de barres marque la discipline sonore, les anneaux noirs le danger de ping du transporteur, les flèches brisées la dérive de pression.
+Paint code. Slash count marque noise discipline; black rings marquent carrier-ping danger; broken arrows marquent pressure drift.
 
 ## Terminal
 
-INDEX MASQUE ROUTE : trois barres, sûr pour gestes seulement. Anneau noir signifie balayage du transporteur. Flèche brisée signifie changement de pression depuis la dernière marque.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Si le mur a l'air furieux, lis-le comme la météo.
+Si le mur a l'air en colere, lis-le comme weather.
 
 ## Field Note
 
-Les maraudeurs écrivaient pour ceux qui ne pouvaient pas faire confiance aux radios ni payer des cartes.
+Les marauders ecrivaient pour des gens qui ne pouvaient pas faire confiance aux radios ni se payer des maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/fr_FR. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relais d'organe filtre acoustique"
+title: "Relais à organe filtre acoustique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relais d'organe filtre acoustique
+# Relais à organe filtre acoustique
 
-Un relais d'organe filtre acoustique est fait de pression, d'habitude et de mauvais usage. Deep Reach a posé des gorges de relais métalliques à travers la colonie parce que la radio meurt vite sous l'eau de HECTON-8. Les organismes filtres locaux y ont trouvé un abri utile : flux constant, grains minéraux, vibration des pompes et surfaces protégées. Avec les années, du tissu plissé a poussé là où le vieux matériel façonnait déjà le son.
+Certains tuyaux relais endommagés de HECTON-8 portent du tissu de chicane vivant. Le tissu fait un travail de signal parce que ses replis, son fluide et sa réponse à la pression correspondent au tuyau. Atlas peut lire le résultat comme du matériel relais même si la pièce intérieure n'est plus du métal.
 
-Atlas transforme cet accident en infrastructure. Un baffle vivant peut avaler le bruit d'une pompe tout en laissant passer un ton étroit de pinger. Il peut aussi déplacer le retour juste assez pour qu'une carte paraisse vraie du mauvais côté d'une cloison. Quand un couloir répond avec une voix formée par du tissu, le joueur a gagné de l'information, pas de la sécurité. Les impulsions de tempête, les mouvements d'animaux ou un pli mourant peuvent déplacer la route sans avertissement.
+## Scanner
+
+Tissu de chicane dans la gorge du relais : il passe un ton de pinger étroit et coupe le bruit de pompe. Carte de retour déphasée.
+
+## Terminal
+
+TUYAU RELAIS A-17 : replis vivants passant les impulsions pinger 8-12 kHz, rejetant le bruit large des pompes et ajoutant un délai de retour. Confiance cartographique aval réduite. Ne pas certifier la route de retour avec ce relais seul.
+
+## Audio
+
+Il a répondu au pinger. Le tuyau fuit un fluide clair. Marque-le animal, pas relais.
+
+## Field Note
+
+Si un relais répond trop proprement dans un tuyau noyé, lance un second pinger d'un autre angle. Un bon son peut encore faire une mauvaise carte.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/fr_FR. -->

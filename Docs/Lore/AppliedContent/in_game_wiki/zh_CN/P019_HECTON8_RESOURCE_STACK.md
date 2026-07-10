@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 资源栈
 
-HECTON-8不是单资源月球。早期材料让玩家活下去，salvage打开路线，盐水和热液化学教会压力，而blue debt只是顶端诱惑。
+HECTON-8不是单一资源月球。早期材料让呼吸和修理成为可能。打捞物打开封闭路线。盐水和喷口化学教会压力。蓝债和压力玻璃在claim链条中更高，但它们的价值之所以成立，是因为较小材料让操作者活得够久，能抵达那里。
 
 ## Scanner
 
-资源栈：reef fiber、brine salts、relay cores、pressure valves、blue debt、pressure glass、Atlas lattice。
+栈读取：礁纤维、盐水盐类、中继核心、压力阀、喷口催化剂、蓝债、压力玻璃、Atlas晶格。
 
 ## Terminal
 
-价值模型：生存生物资源、人类salvage、路线硬件、压力化学、blue debt、pressure glass、continuity substrate。
+价值模型：生存生物材料、人类打捞、路线硬件、压力化学、蓝债、压力玻璃、连续性基质。不要把资源栈压缩成单一奇迹材料。
 
 ## Audio
 
-如果carrier先问质量而不是姓名，你就知道合同归谁。
+如果carrier先要质量再问名字，你就知道合同归谁。
 
 ## Field Note
 
-这里没有单纯的战利品。
+这里没有东西只是战利品。每个样本都属于压力经济。
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/zh_CN. -->

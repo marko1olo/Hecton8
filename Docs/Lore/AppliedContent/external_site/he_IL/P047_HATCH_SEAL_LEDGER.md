@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "יומן איטום האץ'"
+title: "Ledger של אטם hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# יומן איטום האץ'
+# Ledger של אטם hatch
 
-האצ'ים הם מהתיעודים השקטים ביותר של HECTON-8. הם לא מסבירים מי נשאר מאחור; הם שומרים כיוון סגירה, מתח אטם וסמכות override. קריאת יומן איטום הופכת דלת נעולה להחלטת לחץ עם חותמת זמן.
+Hatches ב-HECTON-8 הם records שקטים: closure direction, gasket stress, override authority ו-wet-side witness traces הופכים locked door ל-pressure decision עם timestamp.
 
 ## Scanner
 
-זיכרון איטום שוחזר. האטם ספג שלושה חיתוכי לחץ ו-override פינוי אחד; גישת צד החזרה ננעלה מהצד הרטוב.
+Seal memory recovered. ה-gasket ספג three pressure cuts ו-one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: עיוות אטם מעל סבולת שירות. סגירה ידנית התקבלה תחת EVAC OVERRIDE. ספירת מפעילים בצד החזרה לא פתורה. לפתוח מחדש רק אחרי השוואת לחץ ובדיקת צירים.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection ו-wet-side witness check.
 
 ## Audio
 
-הוא נאטם. זה כל מה שההאץ' הבטיח.
+It sealed. זה כל מה שה-hatch הבטיח.
 
 ## Field Note
 
-האץ' אטום הוא קבלה. לפני פתיחה, שאל איזה צד שילם.
+Sealed hatch הוא receipt. לפני פתיחה, שאל איזה צד שילם.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/he_IL. -->

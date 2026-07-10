@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Drowned Geology
 
-Drowned geology makes routes change through terrain, brine, heat and pressure. A safe path is a reading that can expire after storms, silt drift or salvage cuts.
+Drowned geology makes safe paths expire: storms, silt drift, brine shift, and salvage damage can turn yesterday's route into a trap.
 
 ## Scanner
 
-Layered shelf, canyon funnel, brine stair and vent scar detected. Treat terrain as pressure routing, not background.
+Layered shelf, canyon funnel, brine stair, vent scar, and silt exposure detected. Terrain is pressure routing, not background.
 
 ## Terminal
 
-DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence falls after storm surge.
+DEPTH FORECAST: shelf collapse, service-canyon funneling, brine-density curtains, thermal plumes, abyssal silt exposure. Route confidence decays after storm surge or salvage cuts.
 
 ## Audio
 

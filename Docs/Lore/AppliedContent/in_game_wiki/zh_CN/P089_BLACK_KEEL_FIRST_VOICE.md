@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Black Keel第一声
 
-Black Keel的第一声以损坏音频和干净文本抵达玩家。它不是同伴,也不是反派演讲。它是carrier监控器,正在做自己被制造来做的事:确认信号、保留航线选项、排列义务、避免承诺。这个声音有用,因为它给出硬信息。它可怕,因为每个正确句子都让救援保持有条件。
+Black Keel的第一声应该先显得有用，然后才显得残酷。carrier确认信号，过滤corrupted audio，打开text channel，并给出可能让operator活下去的信息。它从不谎称自己是朋友。它不把能量浪费在温度上。它的恐怖来自能力：每一句话都正确，每一条warning都重要，而每一个正确答案都让extraction保持有条件。这个声音并不邪恶。它是rescue被卖给ledger之后的声音。
 
 ## Scanner
 
-carrier语音缓存。音频破碎,文本干净,没有同情。
+carrier voice cache。audio被pressure noise撕裂；text channel干净到足以计费。
 
 ## Terminal
 
-BLACK KEEL FAILSAFE:音频通道降级。文本通道有效。操作员生存已确认。recovery优先级未解决,等待payload、隔离、lien和信号完整性状态。
+BLACK KEEL FAILSAFE: operator signal acquired。Audio degraded。Text channel valid。Survival acknowledged。Recovery priority unresolved，等待payload custody、quarantine state、lien value、signal integrity与mass-window balance。
 
 ## Audio
 
-已获取操作员信号。不要把确认和救援混为一谈。
+Operator signal acquired。不要把acknowledgement误认为rescue。
 
 ## Field Note
 
-第一句有用的话背后带着计费等级。
+第一句有用的话不安慰。它分类。
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/zh_CN. -->

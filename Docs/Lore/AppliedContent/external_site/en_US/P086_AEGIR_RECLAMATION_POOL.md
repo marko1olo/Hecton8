@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Aegir Reclamation Pool
 
-The Aegir Reclamation Pool is how HECTON-8 keeps the player alone while still making the arrival believable. No small marauder owns Black Keel outright. The carrier tender belongs to a shared claim system built for dead infrastructure, disputed cargo, and worlds too expensive for ordinary crews to reach on their own. A pool stamp can buy access to a route, but it also hands the route to arbitration. Once the operator is below the waterline, every request competes with payload custody, quarantine reserves, evidence value, and fuel windows. The horror of the pool is procedural. It can send help and still refuse rescue, because help, under Aegir claim law, is only one billable service among many.
+Aegir Reclamation Pool frames Black Keel as a shared salvage instrument: rescue is real, but it is routed through contracts, lien priority, quarantine custody, and burn-window math.
+
+## Scanner
+
+Claim-pool stamp. Black Keel was dispatched by shared debt, not by rescue grace.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: autonomous claim tender BLACK KEEL assigned to derelict-pressure claim HECTON-8. Contractor welfare class limited. Payload custody class variable. Human extraction remains pending until lien, quarantine, and mass-window arbitration close.
+
+## Audio
+
+The pool did send a ship. That is the mercy. Everything after that is accounting.
+
+## Field Note
+
+The pool made a carrier possible in Aegir. It also made every promise conditional.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/en_US. -->

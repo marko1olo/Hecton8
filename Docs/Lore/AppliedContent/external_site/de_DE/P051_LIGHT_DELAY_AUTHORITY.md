@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Autorität der Lichtverzögerung"
+title: "Lichtverzogerungs-Autoritat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autorität der Lichtverzögerung
+# Lichtverzogerungs-Autoritat
 
-Ein Notruf auf HECTON-8 ist eine physische Fracht aus Bedeutung. Er verlässt einen gefluteten Mast, durchquert den Aegir-Raum mit Lichtgeschwindigkeit, wartet in Relaispuffern und erreicht Black Keel durch eine Warteschlange, die Gefahr bereits bepreisen kann. Die erste Verzögerung ist ehrliche Distanz. Die späteren Verzögerungen sind menschlich: Verwahrungsklasse, Sturmfenster, Haftungssprache und die Gewohnheit des Trägers, zuerst dem Asset zu antworten. Darum kann eine Antwort technisch frisch und in einem kollabierenden Druckraum trotzdem nutzlos sein. Der Text soll zuerst die Härte normaler Physik spürbar machen, bevor die Härte der Firma darüber liegt.
+Lichtverzogerungs-Autoritat definiert HECTON-8-Kommunikation als physisch, verzogert und contract-filtered: distance, weather, relay buffers und custody queues bestimmen, wann ein signal usable wird.
+
+## Scanner
+
+Relay mast cache. Der Ruf ging sauber hinaus, dann wartete er hinter light, queue law, storm scatter und Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active bis fresh signal window override bestatigt.
+
+## Audio
+
+Die Antwort kommt. Das macht sie nicht zu rescue.
+
+## Field Note
+
+Niemand zensierte den ersten scream. Physics trug ihn langsam genug, damit policy aufholen konnte.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/de_DE. -->

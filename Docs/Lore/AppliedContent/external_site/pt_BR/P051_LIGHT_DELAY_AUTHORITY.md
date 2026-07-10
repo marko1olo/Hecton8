@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Autoridade de atraso da luz"
+title: "Autoridade de Atraso-Luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autoridade de atraso da luz
+# Autoridade de Atraso-Luz
 
-Um pedido de socorro em HECTON-8 é uma carga física de sentido. Ele sai de um mastro alagado, cruza o espaço de Aegir à velocidade da luz, espera em buffers de relé e chega à Black Keel por uma fila que já sabe precificar risco. O primeiro atraso é distância honesta. Os atrasos seguintes são humanos: classe de custódia, janelas de tempestade, linguagem de responsabilidade e o hábito da transportadora de responder ao ativo antes da pessoa. Por isso uma resposta pode ser tecnicamente recente e ainda inútil dentro de uma sala de pressão ruindo.
+A Autoridade de Atraso-Luz define a comunicacao de HECTON-8 como fisica, atrasada e contract-filtered: distance, weather, relay buffers e custody queues decidem quando uma signal se torna usable.
+
+## Scanner
+
+Relay mast cache. O call saiu limpo, depois esperou atras de light, queue law, storm scatter e Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active ate fresh signal window confirmar override.
+
+## Audio
+
+A resposta esta vindo. Isso nao a torna rescue.
+
+## Field Note
+
+Ninguem censurou o primeiro scream. A physics o moveu devagar o bastante para a policy alcancar.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/pt_BR. -->

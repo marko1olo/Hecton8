@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder 시작 claim"
+title: "마라우더 시작 청구"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder 시작 claim
+# 마라우더 시작 청구
 
-HECTON-8에 대한 첫 Black Keel 파일은 문장 자체가 자신을 고발하기 전까지 salvage 작업처럼 보인다. 빚에 묶인 Marauder는 lien이 현실이고 회수 창이 좁기 때문에 이 루트를 받는다. Deep Reach field-systems 과거는 즉시 의미를 갖는다. 압력 절차, maintenance 약어, liability 문구, 대피 태그는 증거가 되기 전부터 익숙하다. Black Keel이 주는 것은 자비가 아니라 접근권이다. 강하는 P-63 주변의 구체적 작업으로 시작된다. bathydrop을 때우고, 실링을 확인하고, shelf를 스캔하고, 기계를 재시동하고, 화물이나 증거를 회수한 뒤 orbital timing과 legal custody가 claim을 닫기 전에 떠난다. 핵심은 직업적 인식이다. 플레이어는 매끈한 언어와 물리적 손상이 서로 다른 이야기를 하는 지점을 볼 수 있다.
+HECTON-8은 위험할 만큼 익숙한 계약으로 시작한다. Black Keel은 빚에 묶인 마라우더에게 P-63 위 회수 경로 접근권을 준다. 구조 약속은 아니다. 기록은 Deep Reach 어휘를 쓴다. 플레이어 캐릭터가 그 어휘 안에서 일했기 때문이다. 현장 시스템, 대피 기반시설, 압력 절차, 경로 양식, 인정 가능한 증거. 그 과거는 첫 시간을 바꾼다. 나쁜 패널은 배경이 아니다. 고쳐 쓴 태그는 장식 문구가 아니다. 매끈한 책임 문구는 찌그러짐, 시계, 문 상태, 실종자 표식과 대조할 수 있다. 하강은 유급 salvage로 시작해 전문적 인식으로 바뀐다. 서류는 방을 알고, 방은 서류가 정리되었음을 증명한다.
 
 ## Scanner
 
-공개 claim 기록. 시작 루트는 Deep Reach field-systems 이력을 가진 채무 Marauder, 손상된 bathydrop, P-63 위 Black Keel 회수 창을 식별한다.
+공개 청구 기록. Black Keel 유치권 파일은 전 Deep Reach 현장 시스템 전문가, 손상된 배시드롭, P-63 경로, 닫히는 보관 창구를 적는다.
 
 ## Terminal
 
-공개 아카이브 노드 // 시작 CLAIM. 계약자 기록: 전 Deep Reach field-systems 전문가. 현재 상태: lien에 묶인 Marauder. 루트: Black Keel recovery claim, P-63 shelf 강하, custody window 종료 전 증거와 화물 반환.
+공개 기록 노드 // BLACK KEEL CLAIM BK-P63-2190. 상태: 유치권에 묶인 마라우더. 이전 허가: Deep Reach 현장 시스템 / 대피 기반시설. 인도물: 현지 보관 T+06:40 전 화물 질량 및 인정 가능한 증거.
 
 ## Audio
 
-당신은 HECTON-8을 구경하러 온 것이 아니다. 너무 잘 아는 서류로 돌아온 것이다.
+계약서는 네 오래된 약어를 안다. 그것이 진실을 말한다는 뜻은 아니다.
 
 ## Field Note
 
-Marauder 메모: 계약은 네 과거를 안다. 그렇다고 정직해지지는 않는다.
+마라우더 메모: 청구 파일이 네 허가 등급을 안다면, 지급액보다 누락된 내용을 먼저 읽어라.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ko_KR. -->

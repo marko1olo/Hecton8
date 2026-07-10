@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Deep Reach Liability Evidence
 
-Deep Reach is culpable because the HECTON-8 disaster can be natural and managed badly at the same time. The ocean supplied real force: tide resonance, cryosphere shear, storm stacking and pressure failure. The company supplied thin margins, late authorization, quarantine delay, Atlas priority rules and paperwork clean enough to outlive the people it described. The strongest evidence is physical and procedural: a door held under executive authority, a sensor tolerance changed before the window closed, a queue delayed for legal clearance, a loss ledger converting workers into claim categories while water was still moving. The player learns to distrust official language by comparing it against dents, clocks and routes.
+The public case against Deep Reach is strongest when it keeps the ocean real. HECTON-8 was not destroyed by a cartoon plot or impossible science. It was hit by conditions the company modeled, priced, delayed, and then described in language that could survive court better than workers survived pressure. The useful evidence is physical and procedural: changed tolerance sheets, route holds, delayed evacuation windows, quarantine labels, Atlas priority tables, and loss ledgers that turned names into claim categories while water was still moving through the rooms. Deep Reach did not need to invent the disaster. It needed enough signatures to make the cheaper response look authorized.
 
 ## Scanner
 
-Liability record. Real tide physics, accepted margin risk, evacuation delay, quarantine holds, Atlas weighting and sanitized loss language converge in the same evidence chain.
+Liability record. Tide force is real; signed margin changes, quarantine holds, evacuation queues, Atlas weights, and loss language carry the preventable part.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // LIABILITY EVIDENCE. Great Tide accepted. Review remains open for sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification and loss conversion.
+PUBLIC ARCHIVE NODE // LIABILITY REVIEW DR-H8. Natural force accepted. Open fields: sensor margin, door authority, queue delay, quarantine hold, Atlas weighting, worker-to-claim conversion.
 
 ## Audio
 
-A disaster can be natural and still have signatures on it.
+The tide broke steel. The signatures decided which doors stayed closed.
 
 ## Field Note
 
-Marauder note: never argue with the tide. Argue with the signatures beside it.
+Marauder note: never argue that the tide was false. Put the signatures beside the tide clock.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/en_US. -->

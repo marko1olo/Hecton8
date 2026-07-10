@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Luna fracturada por colision
 
-HECTON-8 se formo dentro del sistema de Aegir y mas tarde lo rajo una colision rasante. La herida no partio la luna. Levanto plataformas de corteza, abrio fallas de salmuera, alimento corredores termales y dejo suelo antiguo al alcance de raras ventanas de presion. Los mapas de saqueo siguen ese dano, porque las rutas seguras son heridas viejas llenas de agua.
+HECTON-8 no es un stolen world arrojado a Aegir por mystery. Formed here, luego una glancing collision lo opened without killing it. La wound levanto shelves, cracked brine basins, calento fault ladders y dejo pressure-glass seams donde la moon intento close around its own ocean. Ese old damage aun decide donde un hull puede descend, donde sound bends, donde vents stay alive y donde buried colony evidence puede surface. Los salvage maps siguen injuries porque en HECTON-8 la safest route suele ser el old break that did not quite heal.
 
 ## Scanner
 
-Muestra de corteza antigua. La luna nacio en el cinturon de escombros de Aegir y luego un impacto la abrio lo bastante para que el oceano lo recordara.
+Crust sample. HECTON-8 formed in Aegir's debris belt, luego recibio un oblique impact lo bastante ancho para que el ocean lo recordara.
 
 ## Terminal
 
-MODELO DE ORIGEN: acrecion alrededor de Aegir, impacto oblicuo posterior, resonancia mareal tras el bloqueo. Resultado: corteza escalonada, fallas calientes, cuencas de salmuera, vetas de vidrio de presion, acceso desigual al fondo profundo.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Nacio aqui. Luego algo golpeo con fuerza suficiente para darle un mapa al mar.
+It was born here. Luego algo golpeo tan hard que give the sea a map.
 
 ## Field Note
 
-El mito de una luna capturada seria demasiado limpio. HECTON-8 lleva una herida local: corteza levantada, salmuera cargada y respiraderos cobrando intereses.
+La captured-moon story es demasiado limpia. Este lugar fue born local, broken local y billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/es_ES. -->

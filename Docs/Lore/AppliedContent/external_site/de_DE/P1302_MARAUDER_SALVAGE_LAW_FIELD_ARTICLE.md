@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Public Site Marauder Culture Article
 spoiler_tier: 1
-title: "Marauder-Feldartikel zum Bergungsrecht"
+title: "Marauder-Feldartikel zum Salvage-Recht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder-Feldartikel zum Bergungsrecht
+# Marauder-Feldartikel zum Salvage-Recht
 
-Das Wort Marauder soll unangenehm klingen. Es ist keine romantische Klasse und kein sauberer Beruf. In HECTON-8 entsteht ein Marauder dort, wo Recht schneller als Papier reist als als Hilfe. Das Claim-System braucht jemanden, der ein totes oder strittiges Asset betreten, Wert bergen, kontaminiertes Eigentum anfassen, persönliches Risiko tragen und genug Spuren lassen kann, damit Büros Kontrolle behaupten.
+Das Wort Marauder soll im Hals stecken bleiben. Es ist kein Machtfantasie-Label. Es ist ein Titel, den ein Grenzrecht erfindet, wenn es jemanden braucht, der ein zerstörtes Asset berührt, ohne zuzugeben, dass dieses Asset ein Arbeitsplatz voller Menschen war.
 
-Der Spieler ist damit von Anfang an moralisch offen. Du bist kein Ritter, der eine Kolonie rettet. Du bist ein professioneller Schrottjäger mit alter Deep-Reach-Prozedur in den Händen, einem Schuldfenster über dir und einem Ozean voller Menschen, die Bücher schon in Kategorien gedrückt haben. Das Grauen ist nicht, dass du plünderst. Das Grauen ist, dass Plündern die einzige Handlung sein kann, die das System noch anerkennt.
+            HECTON-8 nutzt Marauder, damit Handlungen moralisch geladen bleiben. Du plünderst, weil Sauerstoff, Schulden und Werkzeuge es nötig machen. Du dokumentierst auch, weil gestohlene Dinge vielleicht die einzigen Beweise sind, die Wasser, Druck und Firmenreinigung überleben. Ein guter Marauder ist nicht sauber. Er kennt den Unterschied zwischen Raum ausräumen und bewahren, was der Raum beweist.
 
-Marauder-Feldsprache wuchs aus diesem Druck. Ein schwarzer Ring ist kein Vandalismus, wenn er dem nächsten Taucher sagt, dass der offizielle Eigentümer lügt. Ein Schnitt durch eine gestempelte Todesursache ist kein Gefühl, wenn er auf ein fehlendes Pumpenzertifikat zeigt. Ein Arbeitername neben einer Routenmarke kann mehr Rechtskraft haben als ein poliertes Denkmal.
+            Daraus entsteht die Feldkultur. Wandmarken, durchgestrichene Labels, Arbeiternamen, Druckpfeile und hässliche Kurzschrift bilden ein zweites Recht unter dem offiziellen. Es ist grob, weil höfliche Sprache bereits versagt hat. Es ist schnell, weil niemand ein Claim-Handbuch liest, während ein Schott atmet.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/de_DE. -->

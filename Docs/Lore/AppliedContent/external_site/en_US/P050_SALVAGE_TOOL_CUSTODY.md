@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Salvage Tool Custody
 
-On HECTON-8, a tool can be survival gear and contract witness at once. Salvage custody logs tie cuts, repairs and samples to claim tokens, making a useful action part of later evidence, debt or payout pressure.
+Salvage tool custody ties minute-to-minute survival to the claim economy: cuts, repairs, patches, and samples can become evidence, payout pressure, or Keelmark debt.
 
 ## Scanner
 
-Tool dock holds a sealed custody log. Last cut, repair and sample pouch are tied to a Keelmark claim token.
+Tool dock holds a sealed custody log. Last cut, repair, and sample pouch are tied to a Keelmark claim token.
 
 ## Terminal
 

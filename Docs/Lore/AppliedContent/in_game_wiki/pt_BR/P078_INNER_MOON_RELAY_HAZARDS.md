@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Riscos de Relé das Luas Internas"
+title: "Riscos Relay das Luas Internas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Riscos de Relé das Luas Internas
+# Riscos Relay das Luas Internas
 
-Riscos de relé das luas internas tornam física a falha de contato. Surto alinhado a Skarn pode corromper antenas sem matá-las. Poeira e gelo de Vela fecham a óptica enquanto a rota ainda afirma existir.
-
-Claw e Lumen são piores porque carregam lógica de rota velha. Um handshake pode ser formalmente válido e inútil em operação. Black Keel pode registrar pacote, preservar custody e ainda deixar um corpo na água.
+Inner moon relay hazards tornam failed contact fisico em vez de conveniente. Skarn-aligned surges podem corrupt antennas sem killing them. Vela dust and ice pode shutter optics enquanto a route ainda reports itself as open. Claw e Lumen sao piores porque carry old buoy logic: um handshake pode ser formally valid e operationally useless. Por isso Black Keel pode log a packet, preserve custody e ainda deixar um human signal waiting in water. O system nao precisava go mute. So precisava answer from the wrong sky.
 
 ## Scanner
 
-ESCADA INTERNA // Skarn satura antenas. Vela espalha óptica. Rotas antigas de Claw e Lumen mantêm handshakes vencidos vivos.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw e Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTA DE RISCO DE RELÉ // Perda de contato pode ser geometria, clima de partículas, cortina de poeira ou buoy law herdada. Desconfie de UI limpo em janelas de surto.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-O relé não ficou mudo. Repetiu o século errado.
+O relay nao ficou mudo. Repeated the wrong century.
 
 ## Field Note
 
-Um ícone limpo ainda pode mentir através de céu antigo.
+Um clean icon ainda pode mentir through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/pt_BR. -->

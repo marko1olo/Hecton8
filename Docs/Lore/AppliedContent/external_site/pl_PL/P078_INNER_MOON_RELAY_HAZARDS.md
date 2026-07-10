@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Zagrożenia przekaźników księżyców wewnętrznych"
+title: "Zagrozenia relay wewnetrznych ksiezycow"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zagrożenia przekaźników księżyców wewnętrznych
+# Zagrozenia relay wewnetrznych ksiezycow
 
-Te zagrożenia tłumaczą utratę kontaktu przez promieniowanie, pył, przesłony i odziedziczone route law, bez magicznej ingerencji.
+Inner Moon Relay Hazards wyjasniaja contact failure HECTON-8 przez radiation, dust, occlusion, eclipse geometry i inherited route law zamiast impossible interference.
 
 ## Scanner
 
-DRABINA WEWNĘTRZNA // Skarn nasyca anteny. Vela rozprasza optykę. Stare trasy Claw i Lumen utrzymują przeterminowane handshakes.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw i Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTA ZAGROŻENIA PRZEKAŹNIKA // Utrata kontaktu to geometria, pogoda cząstek, migawka pyłu albo odziedziczone buoy law. Czysty UI podejrzany w oknach skoku.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Przekaźnik nie zamilkł. Powtarzał zły wiek.
+Relay nie zamilkl. Repeated the wrong century.
 
 ## Field Note
 
-Czysta ikona wciąż może kłamać przez stare niebo.
+Clean icon wciaz moze klamac through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/pl_PL. -->

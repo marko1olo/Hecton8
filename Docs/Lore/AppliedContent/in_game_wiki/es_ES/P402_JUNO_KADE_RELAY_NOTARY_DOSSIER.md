@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, notario de relevo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Juno Kade/Relay
+# Juno Kade, notario de relevo
 
-ES LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+Juno Kade trabajaba en la mesa de relevo donde la ley de HECTON-8 chocaba con la velocidad de la luz. Su sello, la escalera de paquetes, la cinta testigo y los arañazos de la bandeja muestran un oficio construido para la demora: hacer físico el hecho, marcar quién lo tocó y conservarlo intacto hasta que un portador o receptor aceptara custodia. La prueba no promete rescate. Explica por qué el testimonio importa en un sistema donde todo mensaje llega cuando el cuerpo ya está frío.
 
 ## Scanner
 
-ES LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Cara del sello, bandeja de paquetes y cinta testigo llevan la misma marca de custodia de ventana tardía.
 
 ## Terminal
 
-ES LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+PATIO DE RELEVO A-17 / KADE, JUNO: paquetes salientes sellados tras cada ventana de portador. Presión del sello, polvo de la bandeja y cinta testigo confirman custodia aunque el tiempo de respuesta supere al de rescate.
 
 ## Audio
 
-ES LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade certificaba hechos que llegarían demasiado tarde para salvar a nadie y aun así tenían que sobrevivir al viaje.
 
 ## Field Note
 
-ES LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Usar a Kade junto a relojes de ventana de comunicación, bandejas de paquetes, sellos notariales y revelaciones tardías de evidencia. Su dossier debe hacer que la distancia se sienta legal, no abstracta.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/es_ES. -->

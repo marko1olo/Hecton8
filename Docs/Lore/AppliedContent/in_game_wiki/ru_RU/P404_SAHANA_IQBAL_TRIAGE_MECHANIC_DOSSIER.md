@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Sahana Iqbal/Triage"
+title: "Сахана Икбал, механик триажа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Sahana Iqbal/Triage
+# Сахана Икбал, механик триажа
 
-RU LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Сахана Икбал ремонтировала машины в комнате, где раненые рабочие ждали, пока их имена поднимутся по рейке. Ее досье связывает заметки о моментах затяжки с бирками коек, картриджами скрубберов, листками кислородного резерва и оранжевой карантинной лентой. Предметы делают задержку Deep Reach физической: та же доска, что ограничивала натяжение болтов, решала, какое тело, клапан или фильтр получит внимание до следующего падения давления. Работа Икбал не большая надпись о милосердии. Это рука, выбирающая наименее смертельный порядок, пока официальный порядок меняется.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Досье: Сахана Икбал. Доска моментов, бирки коек и карантинная лента стоят в одной очереди ожидания.
 
 ## Terminal
 
-RU LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+ТРИАЖНЫЙ ОТСЕК C-2 / ИКБАЛ, САХАНА: пределы момента вывешены рядом с бирками кислородного резерва. Инструменты, койки и картриджи скрубберов стоят на одной рейке. Карантинный язык снова сдвинул границу досягаемого.
 
 ## Audio
 
-RU LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Икбал чинила то, до чего могла дотянуться. Доска все время решала, что считается досягаемым.
 
 ## Field Note
 
-RU LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Использовать Икбал в карантинных ремонтных циклах, коридорах медотсека, кислородных очередях и интерфейсах, где выбор машины явно стоит человеческого времени.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/ru_RU. -->

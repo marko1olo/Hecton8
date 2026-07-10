@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Pressure Containment Failure
 
-Pressure containment failure gives blue debt a material behavior players can read. It is valuable because deep pressure made it coherent, and dangerous because shallow handling lets that coherence fail. Stage 0 is sealed. Stage 1 drifts and can sometimes be recovered by vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom. Stage 4 leaves a dead sample that still contaminates gear, water, and routes.
+Pressure containment failure gives blue debt a behavior that can be read without myth. It is valuable because deep pressure made the lattice coherent. It is dangerous because shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts and may recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water, and route markings. The material is not cursed. It is homesick for pressure.
 
 ## Scanner
 

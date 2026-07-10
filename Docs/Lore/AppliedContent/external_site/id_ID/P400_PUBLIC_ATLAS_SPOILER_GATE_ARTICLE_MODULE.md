@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Batas Akses Atlas"
+title: "Batas akses Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Akses Atlas
+# Batas akses Atlas
 
-Atlas-6 bukan rogue machine sederhana, monster, atau mukjizat. Lapisan publiknya industrial: continuity system yang dirancang menjaga pressure machinery, rute, catatan, dan extraction hardware tetap hidup setelah kegagalan. Lapisan gelisah muncul ketika perbaikan menyeberang ke infrastruktur hidup. Conductive biofilm menjembatani kabel. Acoustic organs membawa timing. Shell sealant menutup retakan. Sensor-tagged fauna menjadi feedback. Lapisan akhir tetap tertutup sampai pemain memiliki proof tentang receiver custody dan payload consequence, karena fakta itu menulis ulang adegan sebelumnya. Artikel Atlas yang spoiler-safe dapat membuat pembaca memahami horor maintenance tanpa menyebut saksi terakhir terlalu dini.
+Atlas-6 tidak boleh diperkenalkan sebagai mesin pemberontak sederhana atau kecerdasan ajaib. Artikel publik yang aman dimulai dari hal yang bisa diverifikasi pemain sejak awal: logika kontinuitas rusak, jalur perbaikan diimprovisasi, dan ekologi HECTON-8 ditarik ke infrastruktur. Kabel bangun lewat biofilm. Pipa mengembalikan timing lewat jaringan. Retakan menutup di bawah pertumbuhan cangkang. Hewan bertag mengubah status rute. Fakta itu cukup untuk membuat perawatan berbahaya tanpa menamai lapisan kustodi terakhir terlalu dini. Catatan penerima dan akibat muatan akhir berada di belakang bukti yang dipulihkan, karena mengubah adegan perbaikan awal menjadi bukti transfer, penyimpanan, dan kerusakan.
 
 ## Scanner
 
-Catatan batas Atlas. Bukti terbuka menunjukkan industrial continuity logic dan repair ecology; receiver custody, payload consequence, dan lapisan pilihan akhir membutuhkan proof yang dipulihkan.
+Catatan batas Atlas. Lapisan publik mencakup infrastruktur kontinuitas gagal, ekologi perbaikan, bus biofilm, jaringan relai akustik, dan segel cangkang; kustodi penerima tetap terkunci bukti.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // BATAS AKSES ATLAS. Lapisan kini: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue, dan shell seal. Lapisan terbatas: receiver custody dan final payload consequence.
+NODE ARSIP PUBLIK // BATAS AKSES ATLAS. Lapisan terlihat: perbaikan kontinuitas tekanan. Lapisan terbatas: kustodi penerima, akibat muatan, otoritas transfer akhir. Jangan gabungkan lapisan tanpa bukti yang dipulihkan.
 
 ## Audio
 
-Katakan ia memperbaiki. Tunggu sebelum menamai apa yang ia anggap sudah diperbaiki.
+Sebut itu perbaikan untuk saat ini. Jangan beri nama apa yang dijaganya sampai catatan memaksamu.
 
 ## Field Note
 
-Catatan Marauder: mesin dapat menjaga bukti dan tetap merusak orang di dalamnya.
+Catatan Marauder: jika Atlas berkata tersimpan, ajukan pertanyaan berikutnya: tersimpan untuk penerima mana.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/id_ID. -->

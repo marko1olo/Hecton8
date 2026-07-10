@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Frontière de données de limite de pile"
+title: "Ligne de limite d'empilement pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontière de données de limite de pile
+# Ligne de limite d'empilement pression
 
-La pression d'inventaire dans HECTON-8 vient du confinement, de la certification et de la masse contaminée. Le jeu peut afficher des piles simples, mais le lore dit pourquoi une pile est sûre, pourquoi elle casse, et pourquoi l'océan se moque des icônes.
+Sur HECTON-8, la pression d'inventaire commence par les conteneurs. Les équipes de récupération peuvent serrer la ferraille, mais échantillons sous pression, pièces contaminées et matériel de route scellé ne s'empilent que si cote du récipient, masse, identité et marques de contamination correspondent. Un petit éclat peut bloquer plus de cargaison qu'une grande plaque.
 
 ## Scanner
 
-La ligne de pile rejette les tas d'icônes : classe de contenant, pression, contamination et masse décident du compte.
+Demande d'empilement refusée : classe de récipient, cote de pression, contamination, charge de fenêtre-masse et identité de manifeste divergent.
 
 ## Terminal
 
-STACK CONTRACT : le compte de pile exige type de contenant, pression certifiée, stade de contamination, classe de masse, tier d'alerte et identité stable en sauvegarde. Une caisse n'est pas un récipient sous pression.
+SCHÉMA D'ADMISSION D'EMPILEMENT / bureau cargo Black Keel : le compte d'empilement exige type de récipient, pression nominale, certificat de joint, stade de contamination, classe de masse, niveau d'alerte, fenêtre de masse sous privilège et identité stable de manifeste. L'étiquette d'une caisse ne certifie pas le confinement.
 
 ## Audio
 
-Une caisse n'est pas un récipient sous pression.
+Bureau cargo : empilement refusé. La caisse est cotée pour le levage, pas pour la garde sous pression.
 
 ## Field Note
 
-Les limites de pile restent table-owned et stables pour l'identité de sauvegarde.
+N'empile jamais des échantillons inconnus pour gagner de la place. Un mauvais joint transforme toute la pile en cargaison de quarantaine, et le transporteur facture quand même la masse.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/fr_FR. -->

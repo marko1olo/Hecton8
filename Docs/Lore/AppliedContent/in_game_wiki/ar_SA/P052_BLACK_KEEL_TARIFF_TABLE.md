@@ -19,22 +19,22 @@ localization_flags: 1
 
 # جدول تعرفة Black Keel
 
-دعم Black Keel مفيد، لكنه ليس محايدا أبدا. الاستغاثة والعينات والأكسجين وأختام المسؤولية واسترداد المشغل وضرر البدن تدخل طوابير مختلفة. يستطيع اللاعب استغلال القواعد نفسها، لكنها تفسر أيضا لماذا تأتي المساعدة دائما ومعها ثمن.
+إن support من Black Keel مفيد لأن carrier ينقل gear فعلا، ويخزن oxygen، ويمرر warnings، ويفتح route options. لكنه ليس محايدا أبدا، لأن كل support action يدخل tariff table قبل أن يصبح help. Distress وsealed samples وoxygen reserve وpressure gear وhull damage وoperator recovery وbody recovery هي line items مختلفة بسرعات priority مختلفة. الجدول ليس شرا مخفيا. عمليا هو أسوأ: price list مقروء للحظات لا ينبغي أن يكون لها سعر.
 
 ## Scanner
 
-اللوحة تسعر الاستغاثة وحيازة العينات واحتياطي الأكسجين ومعدات الضغط واسترداد الجثة كبنود منفصلة.
+Tariff plate. توضع distress وoxygen وsample custody وpressure gear وhull damage وbody recovery في أسطر منفصلة.
 
 ## Terminal
 
-فئة التعرفة: طوارئ انتشال. ملحق الرعاية معلق. حيازة العينة الموثقة ترفع أولوية الخروج درجتين.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies حتى lien arbitration resolves.
 
 ## Audio
 
-هناك خصم للدليل ورسم إضافي للتنفس.
+هناك discount على evidence وsurcharge على breathing.
 
 ## Field Note
 
-أسرع فئة ليست الإنقاذ. إنها الملكية الموثقة وهي تتحرك إلى الأعلى.
+أسرع class ليست rescue. إنها verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/ar_SA. -->

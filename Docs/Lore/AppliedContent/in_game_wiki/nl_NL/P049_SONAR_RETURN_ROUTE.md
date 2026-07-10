@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Sonar-terugkeerroute"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sonar-terugkeerroute
+# Sonar Return Route
 
-Een terugkeerbaken registreert hoe een route klonk toen die voor het laatst veilig was. Het belooft niet dat de route veilig bleef. Stormvloed, losse kabel, bewegend slib, fauna en verse salvage-sneden kunnen een sonarretour buigen zonder de gang te wissen. Ping de lijn voordat je vracht draagt of dieper gaat. Als de toon verschuift, cache de last of markeer een tweede weg terug.
+Een return beacon registreert hoe een route klonk toen hij last safe was. Hij belooft niet dat de route stayed safe. Op HECTON-8 heeft safety een geluid: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass en een door flexed under pressure kunnen de return buigen zonder de corridor te erased. De return route is work. Ping before loading en cache the load als de echo met een andere shape terugkomt.
 
 ## Scanner
 
-Terugkeerbaken verouderd. Oude veilige ping komt niet meer overeen met de gangecho; vrachtmassa vertraagt het terugtrekvenster.
+Return beacon stale. Old safe ping past niet meer bij corridor echo; cargo mass vertraagt de retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: laatste schone echo ongeldig. Black Keel-ping ontvangen met lage betrouwbaarheid. Obstakeldrift en slibdichtheid boven kaarttolerantie. Markeer secundaire lijn vóór vrachtextractie.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density en cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-De route is er nog. De echo is niet hetzelfde.
+The route is still there. De echo is niet hetzelfde.
 
 ## Field Note
 
-Ping voordat je laadt. Als de weg naar huis veranderde terwijl je handen leeg waren, vergeeft hij geen volle rugzak.
+Ping before loading. Als way home changed terwijl hands empty waren, vergeeft hij geen full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/nl_NL. -->

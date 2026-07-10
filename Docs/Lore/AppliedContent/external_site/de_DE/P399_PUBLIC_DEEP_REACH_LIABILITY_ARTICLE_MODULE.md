@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep-Reach-Haftungsbeweise"
+title: "Deep-Reach-Haftungsbelege"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep-Reach-Haftungsbeweise
+# Deep-Reach-Haftungsbelege
 
-Deep Reach ist schuldig, weil die HECTON-8-Katastrophe natürlich und zugleich schlecht verwaltet sein kann. Der Ozean lieferte echte Kraft: tide resonance, cryosphere shear, storm stacking und pressure failure. Die Firma lieferte dünne margins, späte authorization, quarantine delay, Atlas priority rules und Papierarbeit, sauber genug, um die beschriebenen Menschen zu überleben. Die stärksten Beweise sind physisch und prozedural: eine Tür unter executive authority gehalten, eine sensor tolerance vor Fensterschluss geändert, eine Schlange wegen legal clearance verzögert, ein loss ledger, das Arbeiter in claim categories verwandelte, während das Wasser noch in Bewegung war. Der Spieler lernt, offizieller Sprache zu misstrauen, indem er sie mit Dellen, Uhren und Routen vergleicht.
+Der öffentliche Fall gegen Deep Reach ist am stärksten, wenn er den Ozean real lässt. HECTON-8 wurde nicht durch Comic-Verschwörung oder unmögliche Wissenschaft zerstört. Es wurde von Bedingungen getroffen, die das Unternehmen modellierte, bepreiste, verzögerte und danach in Sprache beschrieb, die Gerichte besser überstand als Arbeiter den Druck. Nützliche Belege sind physisch und prozedural: geänderte Toleranzblätter, Routenhalte, verspätete Evakuierungsfenster, Quarantänelabels, Atlas-Prioritätstabellen und Verlustbücher, die Namen in Anspruchskategorien verwandelten, während Wasser noch durch die Räume lief. Deep Reach musste die Katastrophe nicht erfinden. Es brauchte genug Unterschriften, damit die billigere Antwort autorisiert wirkte.
 
 ## Scanner
 
-Liability-Datensatz. Reale Gezeitenphysik, akzeptiertes margin risk, Evakuierungsverzug, quarantine holds, Atlas weighting und bereinigte Verlustsprache laufen in derselben Beweiskette zusammen.
+Haftungsdatensatz. Gezeitenkraft ist real; signierte Margenänderungen, Quarantänehalte, Evakuierungswarteschlangen, Atlas-Gewichte und Verlustsprache tragen den vermeidbaren Teil.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // LIABILITY-BEWEISE. Great Tide anerkannt. Prüfung offen zu sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification und loss conversion.
+ÖFFENTLICHER ARCHIVKNOTEN // HAFTUNGSPRÜFUNG DR-H8. Naturkraft akzeptiert. Offene Felder: Sensormarge, Türbefugnis, Warteschlangenverzug, Quarantänehalt, Atlas-Gewichtung, Arbeiter-zu-Anspruch-Konvertierung.
 
 ## Audio
 
-Eine Katastrophe kann natürlich sein und trotzdem Unterschriften tragen.
+Die Flut brach Stahl. Die Unterschriften entschieden, welche Türen geschlossen blieben.
 
 ## Field Note
 
-Marauder-Notiz: Streite nicht mit der Flut. Streite mit den Unterschriften daneben.
+Marauder-Notiz: Streite nie ab, dass die Flut echt war. Lege die Unterschriften neben die Gezeitenuhr.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/de_DE. -->

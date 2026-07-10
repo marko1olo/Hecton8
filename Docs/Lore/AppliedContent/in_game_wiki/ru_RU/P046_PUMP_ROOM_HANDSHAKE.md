@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Рукопожатие клапана насосной
 
-Рукопожатие насоса начинается, когда затопленная комната принимает локальное управление. Оно открывает доступ, но переносит воду, шум и давление в другую часть маршрута. Смотри на впускную корзину, импульс выхода и стук обратного коридора, прежде чем считать сухой пол безопасным. Ранние насосные P-63 учат главной привычке ремонта: машина может улучшить один отсек и испортить дорогу домой.
+Pump handshake - момент, когда утопленная машина снова принимает local hand. Это ощущается как control: floor очищается, lamp перестает плавать, route будто открывается. Опасность в том, что water на HECTON-8 не исчезает; его переносят в другой компромисс. Intake baskets ловят capsule foam, старые gloves, shell grit и torn labels. Outlets будят corridors, которые молчали не случайно. Правильная привычка - читать pump как trade: одна room начинает дышать, другая начинает knock.
 
 ## Scanner
 
-Локальный трюмный насос принял ввод с маховика. Впускная корзина забита пеной капсулы; выходной импульс нагружает обратный коридор B.
+Local sump принял handwheel input. Capsule foam забивает intake basket; outlet pulse поднимается в Return Corridor B.
 
 ## Terminal
 
-P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНОЕ СОГЛАСОВАНИЕ: маховик принят. Дистанционная команда отклонена. Впуск восстановлен на низком расходе. Давление выхода растет в RETURN CORRIDOR B; перезапуск только после проверки нижнего люка.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Клапан взял. Выход стучит. Не называй это безопасным.
+Valve took. Outlet стучит. Safe это еще не стало.
 
 ## Field Note
 
-Сухая насосная может утопить дорогу назад. Послушай удар в выходной линии, прежде чем снимать клапан.
+Сухой floor - еще не solved room. Слушай corridor, который за него заплатил.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/ru_RU. -->

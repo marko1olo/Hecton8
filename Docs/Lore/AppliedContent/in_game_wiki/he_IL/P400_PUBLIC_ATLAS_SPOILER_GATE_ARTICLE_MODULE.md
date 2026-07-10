@@ -19,22 +19,22 @@ localization_flags: 1
 
 # גבול גישה Atlas
 
-אפשר לתאר את Atlas מוקדם כ-industrial continuity פגועה שלמדה דרך repair ecology. receiver records סופיים נשארים מאחורי evidence gate מפני שהם משנים את משמעות התיקונים הקודמים: seal, preserve, sever, quarantine ו-release אינם פעלים ניטרליים שם למטה.
+אפשר לדבר על Atlas מוקדם כרציפות תעשייתית פגועה. הוא מנסה להחזיק נתיבי לחץ, רשומות, מכונות וציוד הפקה בתוך השרשרת. החלק המטריד מתחיל כשנתיב התיקון עובר דרך חומר חי או חצי חי: biofilm מוליך על קרעי כבל, רקמה אקוסטית בצינורות ממסר, אטם קליפה על סדקים, וחי מתויג שמחזיר מצב נתיב לחיישנים. שכבת המקבל הסופית נשארת נעולה כי היא משנה את הפעלים. לאטום, לשמר, לנתק, להסגיר ולשחרר מפסיקים להיות ניטרליים אחרי שחזור ראיית המשמורת.
 
 ## Scanner
 
-רשומת גבול Atlas. ראיות פתוחות מראות industrial continuity logic ו-repair ecology; receiver custody, payload consequence ושכבות הבחירה הסופיות דורשות proof שהושב.
+רשומת גבול Atlas. השכבה הציבורית מכסה תשתית רציפות שכשלת, אקולוגיית תיקון, אפיקי biofilm, רקמת ממסר אקוסטית ואטמי קליפה; משמורת מקבל נשארת מאחורי ראיה.
 
 ## Terminal
 
-צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נוכחית: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue ו-shell seal. שכבה מוגבלת: receiver custody ו-final payload consequence.
+צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נראית: תיקון רציפות לחץ. שכבה מוגבלת: משמורת מקבל, תוצאת מטען, סמכות העברה סופית. אין למזג שכבות בלי ראיה משוחזרת.
 
 ## Audio
 
-אמור שהוא מתקן. חכה לפני שתקרא בשם למה שהוא מחשיב כמתוקן.
+קרא לזה תיקון בינתיים. אל תיתן שם למה שזה משמר עד שהרשומה תכריח אותך.
 
 ## Field Note
 
-הערת Marauder: מכונה יכולה לשמר ראיה ועדיין לפגוע באדם שבתוכה.
+הערת Marauder: אם Atlas אומר נשמר, שאל את השאלה הבאה: נשמר עבור איזה מקבל.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/he_IL. -->

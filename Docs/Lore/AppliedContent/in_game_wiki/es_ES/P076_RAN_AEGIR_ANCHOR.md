@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Ancla Ran / Aegir
 
-Ran ancla el sistema Aegir como una estrella normal de clase K, no como lámpara muerta ni fuente de oscuridad sobrenatural. HECTON-8 puede tener aguas someras brillantes porque la luz existe.
-
-El horror empieza cuando atmósfera, tormenta, agua mineral, profundidad y limo industrial borran esa luz más rápido que un contrato de rescate puede reaccionar. Sobre el agua, el sistema es astronómico. Bajo el agua, cada lumen es tiempo alquilado.
+Ran ancla Aegir como una K-class star ordinaria: vieja, naranja, estable e indiferente. Importa porque HECTON-8 no es oscuro por magic. Los shallows pueden shine. Weather puede destellar blanco sobre la sea. Un worker en una surface raft aun podia mirar arriba y saber que habia sun. El horror empieza cuando atmosphere, storm shear, mineral water, depth e industrial silt gastan esa light mas rapido de lo que un carrier puede facturar una rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-Placa estelar clase K. Ran arde con normalidad. Aegir es más tenue que Sol, pero la oscuridad aquí viene de profundidad, clima y deuda.
+K-class star plate. Ran arde con normalidad; el deep aqui no es supernatural, solo demasiado abajo bajo weather, water y debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // La luz de una enana naranja sirve para trabajo de superficie. Dispersión de tormenta, eclipses y turbidez oceánica bajan la lectura de descenso bajo el margen seguro.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity e industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-La estrella está presente. Simplemente no puede seguirte abajo.
+La star esta presente. Simplemente no puede follow you down.
 
 ## Field Note
 
-Una estrella real basta. El océano hace el resto.
+Una real star basta. El ocean hace el resto.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/es_ES. -->

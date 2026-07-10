@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Sahana Iqbal/Triage"
+title: "萨哈娜·伊克巴尔，分诊机械师"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Sahana Iqbal/Triage
+# 萨哈娜·伊克巴尔，分诊机械师
 
-ZH LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+萨哈娜·伊克巴尔显示HECTON-8如何把维护变成分诊。殖民地没有把坏设备和处于危险中的人清楚分开；两者都在同一套限制系统下等待，证据让玩家无需过场就能读出这种压力。
 
 ## Scanner
 
-ZH LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+档案：萨哈娜·伊克巴尔。扭矩板、床位牌和隔离带共享同一条等待顺序。
 
 ## Terminal
 
-ZH LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+C-2分诊舱 / IQBAL, SAHANA：扭矩限制贴在氧气储备牌旁。工具、床位和洗涤器滤芯排在同一根轨上。隔离措辞又一次移动了可触达边界。
 
 ## Audio
 
-ZH LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+伊克巴尔修她够得到的东西。那块板不断决定什么算够得到。
 
 ## Field Note
 
-ZH LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+在隔离维修循环、医护走廊、氧气队列，以及任何机器选择会明确消耗人类时间的界面中使用伊克巴尔。
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/zh_CN. -->

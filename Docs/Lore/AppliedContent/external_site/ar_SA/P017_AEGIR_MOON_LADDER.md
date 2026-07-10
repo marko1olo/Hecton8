@@ -19,22 +19,22 @@ localization_flags: 1
 
 # سلم أقمار Aegir
 
-سلم أقمار Aegir يجعل القمر القابل للعب جزءاً من نظام متحرك. الأقمار الأخرى تشكل المد وانتظار carrier وظلال relay وكلفة المغادرة.
+يحول سلم أقمار Aegir السماء إلى خريطة تشغيلية: الأقمار الأخرى تشكل المد، والإشارة، وحيازة carrier، والفرص الضيقة للمغادرة.
 
 ## Scanner
 
-تسلسل الأقمار: Cinder، Hook، Glass، Switch، Drywell، Brinehook، Rake، HECTON-8، Pale، Longmark، Grave، Farline.
+تم حل سلم الأقمار: Skarn وVela وClaw وLumen وThorne وAnvil وKestrel وHECTON-8 وMute. Kestrel وMute يثنيان النوافذ.
 
 ## Terminal
 
-HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Rake وظل Pale يغيران المد وجودة الحزم.
+ملاحظة مسار AEGIR: يأتي HECTON-8 بعد Kestrel في السلم العملي. يجب أن تتطابق ظل المرحل، ومرحلة المد، وحزام الإشعاع، وهندسة نقل Black Keel قبل صعود الكتلة.
 
 ## Audio
 
-عد الأقمار قبل أن تثق بنافذة.
+عد Kestrel قبل أن تثق بالنافذة.
 
 ## Field Note
 
-السماء آلية وليست خلفية.
+السماء جدول عمل. أخطئ ظلا واحدا فيصبح carrier مجرد شائعة.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/ar_SA. -->

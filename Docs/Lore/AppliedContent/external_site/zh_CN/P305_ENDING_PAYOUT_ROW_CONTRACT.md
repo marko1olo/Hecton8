@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "结局支付数据边界"
+title: "结局支付记录行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 结局支付数据边界
+# 结局支付记录行
 
-HECTON-8 的结局记录谁收到了证据、获得了什么监管、支付了什么、还有什么成本未解决。一个数字可以结束合同行。它不能结束海洋。
+HECTON-8的结局按接收方和保管记录。记录说明什么离开了海洋、谁接收了它、哪些证据幸存、支付了什么、还有什么被限制。支付可以关闭一条账目，而索赔、检疫或生态仍保持开放。
 
 ## Scanner
 
-结局行绑定接收器、监管、证据状态、支付和未解决后果。
+结果行待定：接收方、载荷路线、证据状态、支付、检疫延迟和未解决后果尚未关闭。
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT：行需要 payload 路线、接收器、证据状态、物资支付、法律后果、隔离延迟和未解决成本。信用点不能关闭犯罪现场。
+结局支付模式 / 档案接收方检查：载荷路线、接收方、证据状态、实物支付、留置调整、检疫延迟、生态后果和未解决成本未写入前，不得关闭记录。信用在保管之后释放，不在之前。
 
 ## Audio
 
-信用点不能关闭犯罪现场。
+档案中继：接收方已接受保管。信用结清前，检疫时钟先启动。
 
 ## Field Note
 
-只有 receiver 和 evidence state 清楚后，才记录 credit value、quarantine delay 和 dossier flags。
+接收方未命名前，不要说结局已付款。错误接收方，错误未来；同一片海，不同账单。
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/zh_CN. -->

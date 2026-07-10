@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8軌道 / 潮汐幾何"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8軌道 / 潮汐幾何
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8の軌道は、Great Tideを政治になる前に信じられるものにする。共鳴が海を引き、氷応力と高潮が棚を載荷し、産業熱と塞がれた排水が植民地の仕組みを悪い時刻に押し返させた。
-
-罪はDeep Reachが物理を発明したことではない。Atlas continuity、保険貨物、労働階級を中心に避難計算を組み、死者を許容予測誤差と呼んだことだ。
+HECTON-8のorbitは、Great Tideがpoliticalになる前にbelievableにする。Aegir pulled。ocean answered。ice shelves flexedし、storm surgeはcolony mathがmarginsを求めた場所にwaterを積み、industrial heatはsealed drainageをwrong hourにseaと戦わせた。crimeはDeep Reachがphysicsをinventedしたことではない。evacuation mathがAtlas continuity、insured payloads、labor classes、claim lossを中心にbuiltされ、その後deadがforecast errorとしてfiledされたことだ。
 
 ## Scanner
 
-潮汐幾何モデル // 共鳴、氷応力、高潮、熱排出が避難予測を超過。Atlas continuityフラグが退避優先を上書き。
+TIDE GEOMETRY MODEL: resonance、ice stress、storm surge、heat dischargeがevacuation forecastを超過。Atlas continuity flagsがretreat priorityをoverrode。
 
 ## Terminal
 
-GREAT TIDE連鎖 // 軌道強制が海洋荷重を増幅。人工熱排出と封鎖排水が潮汐事象を植民地失敗へ変えた。
+GREAT TIDE CHAIN: orbital forcing amplified ocean load。Ice flexure、storm surge、artificial heat discharge、sealed drainage converted a tide event into colony failure。Evacuation priority reweighted by continuity and payload custody。
 
 ## Audio
 
-物理が扉を開けた。Deep Reachが誰を通すかを決めた。
+physicsがdoorを開いた。Deep Reachが誰がそこをleaveできるか決めた。
 
 ## Field Note
 
-月は憎まずに植民地を溺れさせる。
+moonは憎まずにcolonyをdrownできる。
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ja_JP. -->

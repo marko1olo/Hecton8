@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "略奪者のグラフィティ・マスク"
+title: "Marauderグラフィティ・マスク"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 略奪者のグラフィティ・マスク
+# Marauderグラフィティ・マスク
 
-略奪者の印は現地ナビ、社会的警告、監視への対抗言語だ。粗いのは、水、恐怖、悪い照明、企業カメラを生き残る必要があったからだ。プレイヤーは騒音、圧力、巡回リスク、隠し物資、公的地図から外れたルートを示す印を学ぶ。
+Marauder graffitiは装飾ではない。radiosが裏切り、mapsが期限切れになり、official signageが古すぎるせいで嘘になる場所に刻まれたfield navigation、social warning、anti-surveillance languageである。marksが粗いのは、water、bad lamps、glove tremor、そしてreadable intentを罰しうるcamerasに耐える必要があったからだ。slashはsilenceを意味することがある。black ringはBlack Keel ping。broken arrowは最後のroute survey後にpressure changedした印。colonyはlabelsを残し、maraudersはweatherを残した。
 
 ## Scanner
 
-塗料コード: 斜線の数は騒音規律、黒い輪はキャリアのピン危険、折れた矢印は圧力のずれを示す。
+paint code。slash countはnoise discipline、black ringsはcarrier-ping danger、broken arrowsはpressure driftを示す。
 
 ## Terminal
 
-ルートマスク索引: 三本斜線は手信号のみ安全。黒い輪はキャリア走査。折れた矢印は最後の印から圧力が変わったことを示す。
+ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。
 
 ## Audio
 
-壁が怒って見えるなら、天気として読め。
+壁が怒って見えるなら、それをweatherとして読め。
 
 ## Field Note
 
-略奪者は無線を信用できず、地図を買えない人間のために書いた。
+maraudersはradiosを信用できずmapsを買えない者たちのために書いた。
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/ja_JP. -->

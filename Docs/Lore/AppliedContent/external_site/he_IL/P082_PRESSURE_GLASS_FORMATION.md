@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "היווצרות זכוכית לחץ"
+title: "היווצרות Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# היווצרות זכוכית לחץ
+# היווצרות Pressure Glass
 
-זכוכית לחץ היא השם הטכני מאחורי blue debt של ה-Marauders ושפת Xenon-Omega של Deep Reach. היא נוצרת במקום שבו לחץ, כיסי גז אציל, תמלחת, מינרלים, חום וביולוגיה משתנה נפגשים.
+Pressure glass הוא שם השטח מאחורי החוב הכחול של המראודרים ושפת Xenon-Omega של Deep Reach. הוא נוצר רק במקום שבו כיסי גז אציל, פגמי מינרלים, תמלחת חמה, ביולוגיה שהשתנתה והיסטוריית לחץ אלימה נשארים יחד מספיק זמן כדי לנעול סריג בזיכרון.
 
-היווצרות זכוכית לחץ הופכת את Xenon-Omega לאקולוגיית חומר קשיחה, לא לעפרה קסומה. זה לא עפרה. זה תהליך שזוכר איפה נוצר.
+היווצרות Pressure Glass הופכת את Xenon-Omega לאקולוגיה חומרית: מצע שנעשה בלחץ וקשור לכליאה, חישוב, רציפות Atlas וסיכון salvage. זה לא עפרה. זה מקום שזוכר מה עשו לו.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/he_IL. -->

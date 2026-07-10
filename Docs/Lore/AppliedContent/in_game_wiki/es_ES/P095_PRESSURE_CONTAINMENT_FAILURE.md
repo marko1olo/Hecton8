@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fallo de contencion de presion"
+title: "Fallo de pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fallo de contencion de presion
+# Fallo de pressure containment
 
-El fallo de contencion da a blue debt una conducta material legible. Vale porque la presion profunda lo hizo coherente, y es peligroso porque el manejo somero rompe esa coherencia. La etapa 0 esta sellada. La etapa 1 deriva y a veces se recupera con re-presion de ventila. La etapa 2 fractura la red. La etapa 3 invita salmuera y biologia. La etapa 4 deja una muestra muerta que contamina equipo, agua y rutas.
+Pressure containment failure da a blue debt un behavior que puede leerse sin myth. Es valuable porque deep pressure made the lattice coherent. Es dangerous porque shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts y puede recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water y route markings. El material no esta cursed. Esta homesick for pressure.
 
 ## Scanner
 
-Carta de etapas del cofre. Blue debt falla por memoria de presion, cizalla de senal y bloom; la supersticion malgasta oxigeno.
+Casket stage chart. Blue debt fails through pressure memory, signal shear y bloom; superstition wastes oxygen.
 
 ## Terminal
 
-ETAPAS DE CONTENCION: 0 red sellada; 1 deriva de senal; 2 fractura de red; 3 bloom de salmuera/biologia; 4 muestra muerta con contaminacion viva. Re-presion de ventila solo puede recuperar etapa 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-La muestra no te odia. Intenta volver a donde se formo.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Una muestra puede valer una fortuna a una profundidad y volverse deuda diez metros despues.
+Un sample puede valer una fortuna a una depth y become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/es_ES. -->

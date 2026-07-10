@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Colonne de la première heure
 
-Colonne de la première heure définit le rythme d’ouverture de HECTON-8. Le joueur commence par des tâches d’ingénierie tangibles et une merveille visuelle, puis voit ces tâches se relier à un mensonge d’entreprise et à une écologie de maintenance entrée dans la biologie. Cela garde la première route jouable et atmosphérique tout en plantant l’enquête plus large : l’océan ne cache pas l’histoire, il conserve les preuves dans la pression, le sel et la procédure.
+Colonne de la première heure définit le rythme d'ouverture de HECTON-8. Les tâches d'ingénierie tangibles et l'émerveillement visuel arrivent d'abord, puis ces tâches se relient à un mensonge corporatif et à une écologie de maintenance entrée dans la biologie. L'océan ne cache pas l'histoire ; il conserve la preuve dans la pression, le sel et la procédure.
 
 ## Scanner
 
-Contrat, descente endommagée, air, hauts-fonds lumineux, abri de pompe, mensonge nettoyé, puis première cicatrice de réparation utilisant la vie comme joint.
+Contrat, largage endommagé, air, hauts-fonds lumineux, abri de pompe, mensonge aseptisé, puis première cicatrice de réparation qui utilise la vie comme joint.
 
 ## Terminal
 
-ANNEXE PEU PROFONDE : redémarrage manuel de pompe valide. Paquet d’incident Deep Reach en cache. Croissance de réparation Atlas détectée autour d’un câble, d’un fragment d’outil et d’un résidu biologique.
+SHALLOW ANNEX : redémarrage manuel de pompe valide. Paquet d'incident Deep Reach mis en cache. Croissance de réparation Atlas détectée autour de câble, fragment d'outil et résidu biologique.
 
 ## Audio
 
-La première pièce sûre n’est pas propre. Elle retient seulement son souffle mieux que toi.
+La première pièce sûre n'est pas propre. Elle retient seulement mieux son souffle que toi.
 
 ## Field Note
 
-L’ouverture doit être belle avant de devenir accusatrice.
+L'ouverture doit être belle avant de commencer à accuser.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/fr_FR. -->

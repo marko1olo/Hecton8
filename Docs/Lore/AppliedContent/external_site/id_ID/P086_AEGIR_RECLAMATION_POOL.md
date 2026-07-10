@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pool Reklamasi Aegir"
+title: "Aegir Reclamation Pool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pool Reklamasi Aegir
+# Aegir Reclamation Pool
 
-Pool Reklamasi Aegir membuat pemain tetap sendirian di HECTON-8 sambil tetap membuat kedatangan terasa masuk akal. Tidak ada marauder kecil yang memiliki Black Keel secara langsung. Tender carrier itu milik sistem klaim bersama untuk infrastruktur mati, kargo sengketa, dan dunia yang terlalu mahal bagi kru biasa. Stempel pool dapat membeli akses ke rute, tetapi juga menyerahkan rute itu kepada arbitrase. Begitu operator berada di bawah garis air, setiap permintaan bersaing dengan custody payload, cadangan karantina, nilai bukti, dan jendela bahan bakar. Ketakutan pool bersifat prosedural. Ia bisa mengirim bantuan dan tetap menolak penyelamatan, karena dalam hukum klaim Aegir bantuan hanya satu layanan yang dapat ditagih di antara banyak layanan lain.
+Aegir Reclamation Pool menempatkan Black Keel sebagai instrumen salvage bersama: penyelamatan nyata, tetapi dirutekan lewat contracts, lien priority, quarantine custody, dan matematika burn window.
+
+## Scanner
+
+Cap claim-pool. Black Keel dikirim oleh utang bersama, bukan oleh belas kasihan penyelamatan.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: claim tender otonom BLACK KEEL ditugaskan ke derelict-pressure claim HECTON-8. Contractor welfare class terbatas. Payload custody class berubah. Human extraction tetap pending sampai arbitrase lien, quarantine, dan mass-window ditutup.
+
+## Audio
+
+Pool memang mengirim kapal. Itulah belas kasihnya. Sesudah itu semuanya akuntansi.
+
+## Field Note
+
+Pool membuat carrier di Aegir mungkin. Ia juga membuat setiap janji bersyarat.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/id_ID. -->

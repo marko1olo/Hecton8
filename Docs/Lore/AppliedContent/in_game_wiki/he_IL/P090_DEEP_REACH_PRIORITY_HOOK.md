@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "וו עדיפות Deep Reach"
+title: "קרס עדיפות של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# וו עדיפות Deep Reach
+# קרס עדיפות של Deep Reach
 
-הלחץ הנוכחי של Deep Reach אינו דורש שליטה מרחוק בלתי אפשרית. תעודות המשכיות ישנות, סעיפי הסגר, אסימוני גישה Atlas ו-priority hooks של payload כבר יושבים במסלול המשפטי של Black Keel. החברה יכולה להשפיע על מה שה-carrier מעריך בלי להחזיק בו בגלוי. כך קשה יותר לחתוך את האנטגוניסט: זה לא אות לשיבוש, אלא סעיף שממשיך להתעורר.
+הכוח של Deep Reach על Black Keel אינו instant remote control ואינו FTL command chain מוסתר. החברה השאירה מאחור דברים ישנים יותר: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities ו-evidence suppression queues. ה-hooks האלה נכתבו כשה-colony עוד החזיקה meetings, budgets ו-signatures. שנים אחר כך הם עדיין יכולים להתעורר בתוך arbitration path של ה-carrier. לכן הלחץ אמין. Deep Reach לא תמיד מדברת. לפעמים ה-paperwork הישן מדבר בשבילה.
 
 ## Scanner
 
-וו תעודה ישנה. Deep Reach אינה מחזיקה בספינה; היא מחזיקה בסעיף.
+Certificate hook ישן. Deep Reach לא צריכה את ה-bridge כשה-clause עדיין שלה.
 
 ## Terminal
 
-ROUTE OVERRIDE: תעודת המשכיות legacy של Deep Reach עשויה לקדם recovery של payload, נעילת הסגר, אסימון גישה Atlas או תור דיכוי ראיות תחת חוק claim של Aegir. עדיפות חילוץ אדם ללא שינוי אלא אם הוכחת סכנה עולה על ערך custody.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate עשוי לקדם payload recovery, quarantine lock, Atlas access token, evidence suppression queue או sealed infrastructure proof תחת Aegir claim law. Human extraction priority unchanged אלא אם verified hazard proof עולה על custody value.
 
 ## Audio
 
-הם לא צריכים לעמוד על הגשר כדי לכוון את התשובה.
+הם לא צריכים לעמוד על ה-bridge כדי לכוון את התשובה.
 
 ## Field Note
 
-נקי יותר מקנוניה: הניירת עדיין חיה ועדיין רעבה.
+נקי יותר מ-conspiracy: ה-paperwork שרד את האנשים שחתמו עליו.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/he_IL. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Graffitimaskers van marauders"
+title: "Marauder Graffiti Masks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Graffitimaskers van marauders
+# Marauder Graffiti Masks
 
-De marauders van HECTON-8 zijn geen gezichtsloze plunderaars. Het zijn arbeiders, schuldlopers, achtergelaten aannemers en bergingsploegen die op muren leerden schrijven omdat elk schoon kanaal bekeken of gefactureerd kon worden. Hun graffiti is expres lelijk: snel genoeg onder stress, duidelijk door condens, dubbelzinnig genoeg om op paniek of vandalisme te lijken. Een zwarte ring is geen decoratie. Hij betekent dat de carrier je misschien hoort. Een gebroken pijl is geen slecht tekenwerk. Hij betekent dat de gang veranderde sinds de laatste veilige passage.
+Marauder Graffiti Masks maken scavenger writing tot leesbare ocean infrastructure: route hints, comm silence, pressure drift, cache risk en wantrouwen tegenover carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count markeert noise discipline; black rings markeren carrier-ping danger; broken arrows markeren pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Als de wall boos lijkt, lees hem als weather.
+
+## Field Note
+
+Marauders schreven voor mensen die radios niet konden vertrouwen en maps niet konden betalen.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/nl_NL. -->

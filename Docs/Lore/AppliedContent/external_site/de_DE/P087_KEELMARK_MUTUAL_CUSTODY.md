@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Keelmark Mutual Custody
 
-Keelmark Mutual ist beängstigend, weil es keinen Hass braucht. Es ist Versicherer, Custodian, Lien-Halter und Routenschreiber in einem Remote-Schedule. Wenn Black Keel den Operator hört, hat Keelmarks Policenpfad den Körper bereits gegen Schiffsschaden, Salvage-Masse, Quarantänerisiko und Beweiswert gereiht. Das Unternehmen muss niemanden ermorden, damit der Ozean feindlich wirkt. Es kann warten, abrechnen, klassifizieren und eine weitere Bestätigung verlangen, während der Druck den Raum frisst. So bleibt der Carrier geerdet: Der Gegner ist kein einzelnes böses Gesicht auf einem Bildschirm, sondern ein Vertrag, alt genug, um zu antworten, bevor der Notruf endet.
+Keelmark Mutual Custody erklart Black Keels rechtlichen Eigentumer als Netz aus insurance lien, route underwriting, quarantine reserve und claim-tender custody.
+
+## Scanner
+
+Underwriting-Tag intakt. Keelmark braucht keine Bosheit, wenn der lien schon Zahne hat.
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve und recovery proof unter remote underwriting schedule gebundelt. Distress status setzt lien oder custody order nicht aus.
+
+## Audio
+
+Die policy ist alter als der distress call. Sie hatte mehr Zeit, die Route zu lernen.
+
+## Field Note
+
+Kein mastermind in einem dunklen Raum. Nur ein schedule, alt genug, um Schuld zu uberleben.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/de_DE. -->

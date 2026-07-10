@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir-Mondroutenkarte
 
-Aegirs Mondkarte ist zuerst betrieblich und erst danach schön. HECTON-8 ist ein Ozeankörper in einer Leiter aus Monden, shepherd rocks, ice-scatter paths und dead relay marks. Innere Körper stören narrowband contact und Strahlenschutz. Eismonde zerbrechen optical relay lines in schlechte Fragmente. Occultation bands erzeugen Schweigefenster, in denen ein claim gültig und dennoch ungehört bleibt. Äußere beacons bewahren alte Eigentumsrechte, nachdem Besatzungen verschwunden sind. Gezeitengeometrie und storm stacking entscheiden, ob eine bathydrop chain sauber aufsteigt oder ins loss ledger eingeht. Öffentliche Karten können das zeigen, ohne zusätzliche spielbare Welten zu versprechen; ihre Aufgabe ist, den Himmel als Druck, Verzögerung und Routenrisiko lesbar zu machen.
+Die Aegir-Mondkarte ist wie eine Betriebstafel zu lesen. Jedes Label kann Signalalter, Strahlenschutz, Transferrisiko, Abstiegswetter, Bergungsgeometrie oder rechtlichen Verwahrzeitpunkt ändern. HECTON-8 sitzt in dieser bewegten Leiter: innere Körper stören Schmalbandkontakt, Eismonde zerbrechen optische Routen in Fragmente, Bedeckungsbänder schaffen stille Fenster, und alte Baken halten Eigentumsmarken nach dem Verschwinden von Crews aufrecht. Öffentliches Material kann das System zeigen, ohne spielbare Monde zu versprechen. Das nützliche Versprechen ist enger: Wenn der Spieler aus dem Wasser hochsieht, kann der Himmel erklären, warum das Relais stockte, warum ein Träger Abstiegsmasse verweigerte oder warum ein gültiger Anspruch im Dunkeln wartete.
 
 ## Scanner
 
-Systemkartendatensatz. Aegir-Monde bestimmen relay timing, Strahlenschutz, ice scatter, Gezeitendruck, occultation bands, tote beacons und recovery geometry.
+Systemkartendatensatz. Mondlabel setzen Relaisalter, Gezeitenlast, Strahlenschutz, Eisstreuung, Bedeckungsbänder, tote Baken und Bergungsgeometrie.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // AEGIR-MONDLEITER. Mondnamen sind Routenetiketten. Jeder Körper verändert signal age, transfer risk, storm exposure, custody timing oder claim reliability.
+ÖFFENTLICHER ARCHIVKNOTEN // AEGIR-MONDLEITER. Mondname ist Routendatum. Pflichtfelder: Signalalter, Gezeitenphase, Sturmschutz, Anspruchsfenster, Bakenstatus, Aufstiegsrisiko.
 
 ## Audio
 
-Die Karte erklärt, warum niemand in dem Moment ankommt, in dem du fragst.
+Ein Mond auf der Karte ist keine Kulisse. Er ist ein Grund, warum die Antwort spät kam.
 
 ## Field Note
 
-Marauder-Notiz: Markiere den Mond, dann markiere, was er mit der Route macht.
+Marauder-Notiz: Markiere den Mond, dann notiere, was er mit Signal, Gezeiten, Masse und Verwahrung macht.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/de_DE. -->

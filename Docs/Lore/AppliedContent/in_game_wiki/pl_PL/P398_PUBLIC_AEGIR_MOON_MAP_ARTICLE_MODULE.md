@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Mapa tras księżyców Aegir
 
-Dane księżycowe Aegir są danymi tras. HECTON-8 to grywalny księżyc oceaniczny, ale leży w większej drabinie ograniczeń relay, radiacji, rozproszenia i pływów. Widoczne niebo wpływa na to, czy sygnał ratunkowy zostanie usłyszany, opóźniony, wyceniony, odrzucony albo fizycznie uniemożliwiony.
+Księżyce Aegir są częścią systemu tras. HECTON-8 to oceaniczny księżyc pod graczem, ale reszta drabiny zmienia to, co można usłyszeć, wycenić, ukryć albo poruszyć. Małe ciało może przeciąć linię przekaźnika. Ścieżka rozproszenia lodu może uszkodzić pakiet. Faza pływu może uczynić wynurzenie bathydropu tanim, a potem śmiertelnym. Mapy publiczne mają znaczenie, bo niebo nie jest dekoracją nad wodą; jest jedną z maszyn decydujących, czy roszczenie może odejść.
 
 ## Scanner
 
-Zapis mapy systemu. Księżyce Aegir określają relay timing, osłonę radiacyjną, ice scatter, ciśnienie pływowe, occultation bands, martwe beacons i recovery geometry.
+Zapis mapy systemu. Etykiety księżyców ustawiają wiek przekaźnika, obciążenie pływowe, osłonę radiacyjną, rozproszenie lodu, pasy zakrycia, martwe boje i geometrię odzysku.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // DRABINA KSIĘŻYCÓW AEGIR. Nazwy księżyców są etykietami trasy. Każde ciało zmienia signal age, transfer risk, storm exposure, custody timing lub claim reliability.
+PUBLICZNY WĘZEŁ ARCHIWUM // DRABINA KSIĘŻYCÓW AEGIR. Nazwa księżyca jest daną trasy. Pola wymagane: wiek sygnału, faza pływu, osłona burzy, okno roszczenia, stan boi, ryzyko wynurzenia.
 
 ## Audio
 
-Mapa wyjaśnia, dlaczego nikt nie przybywa w chwili prośby.
+Księżyc na mapie nie jest tłem. To powód, dla którego odpowiedź przyszła późno.
 
 ## Field Note
 
-Notatka Maraudera: zaznacz księżyc, potem zaznacz, co robi trasie.
+Notatka Maraudera: oznacz księżyc, potem zapisz, co robi z sygnałem, pływem, masą i przechowaniem.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/pl_PL. -->

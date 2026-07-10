@@ -27,7 +27,8 @@ namespace Hecton8.Editor
         private static readonly string BeautyPath = Path.Combine(OutputDir, "Cave_Beauty.png");
         private static readonly string XRayPath = Path.Combine(OutputDir, "Cave_SDF_Slice_XRay.png");
         private static readonly string TelemetryPath = Path.Combine(OutputDir, "Cave_Voxel_Telemetry.txt");
-        private const long BatchFallbackVaultBytes = 64L * 1024L * 1024L;
+        private const int MarchingCubesEdgeTableLength = 256;
+        private const int MarchingCubesTriTableLength = 4096;
         private const int GridDimension = 64;
         private const float VoxelStep = 3f;
         private const float TerrainHeight = 0f;
@@ -43,7 +44,7 @@ namespace Hecton8.Editor
         public static void Execute()
         {
             int exitCode = 0;
-            GlobalDataVault createdVault = null;
+            GlobalDataVault proofVault = null;
             GameObject engineObject = null;
             GameObject meshObject = null;
             Camera camera = null;
@@ -55,7 +56,7 @@ namespace Hecton8.Editor
                 DeleteStaleArtifact(TelemetryPath);
                 DeleteStaleArtifact(Path.Combine(OutputDir, "Cave_Render_Analysis.txt"));
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-                createdVault = EnsureBatchVaultRegistered();
+                proofVault = GlobalDataVault.Create();
 
                 RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
                 RenderSettings.ambientLight = new Color(0.006f, 0.009f, 0.012f, 1f);
@@ -66,7 +67,7 @@ namespace Hecton8.Editor
                 CleanRoomVoxelBuffers buffers = default;
                 try
                 {
-                    BuildVoxelProof(ref buffers);
+                    BuildVoxelProof(ref buffers, proofVault);
                     meshObject = BuildMeshObject(buffers);
                     camera = BuildCamera(meshObject);
                     RenderBeauty(camera);
@@ -91,30 +92,14 @@ namespace Hecton8.Editor
                 DestroyMeshObject(meshObject);
                 if (engineObject != null)
                     Object.DestroyImmediate(engineObject);
-                if (createdVault != null)
+                if (proofVault != null)
                 {
-                    GlobalRegistry.UnregisterDataVault(createdVault);
-                    createdVault.Dispose();
+                    MCTables.Shutdown();
+                    proofVault.Dispose();
                 }
                 if (Application.isBatchMode)
                     EditorApplication.Exit(exitCode);
             }
-        }
-
-        private static GlobalDataVault EnsureBatchVaultRegistered()
-        {
-            if (GlobalRegistry.DataVault != null)
-                return null;
-
-            GlobalDataVault vault = GlobalDataVault.Create(128, BatchFallbackVaultBytes);
-            GlobalRegistry.RegisterDataVault(vault);
-            if (GlobalRegistry.DataVault == null)
-            {
-                vault.Dispose();
-                throw new InvalidOperationException("Global DataVault registration failed.");
-            }
-
-            return vault;
         }
 
         private static void DeleteStaleArtifact(string path)
@@ -123,7 +108,7 @@ namespace Hecton8.Editor
                 File.Delete(path);
         }
 
-        private static void BuildVoxelProof(ref CleanRoomVoxelBuffers buffers)
+        private static void BuildVoxelProof(ref CleanRoomVoxelBuffers buffers, IDataVault proofVault)
         {
             int pts = GridDimension + 1;
             int totalPts = pts * pts * pts;
@@ -142,7 +127,7 @@ namespace Hecton8.Editor
 
             float caveThreshold = 0.65f;
             float carveStrength = 28f;
-            for (int attempt = 0; attempt < 4; attempt++)
+            for (int attempt = 0; attempt < 8; attempt++)
             {
                 RunDensity(buffers, caveThreshold, carveStrength);
                 buffers.CaveVolumeRatio = ComputeOpenRatio(buffers.Density);
@@ -176,9 +161,12 @@ namespace Hecton8.Editor
                 densityFaultFlags = buffers.FaultFlags
             }.Schedule(totalPts, 64).Complete();
 
-            MCTables.Initialize(GlobalRegistry.DataVault);
-            if (!MCTables.TryAcquireJobTables(GlobalRegistry.DataVault, out MCTables.JobTableLease tables))
-                throw new InvalidOperationException("Marching-cubes tables unavailable.");
+            if (proofVault == null)
+                throw new InvalidOperationException("Clean-room DataVault unavailable.");
+
+            MCTables.Initialize(proofVault);
+            if (!MCTables.TryAcquireEditorReadOnlyJobTables(proofVault, out MCTables.JobTableLease tables, out string tableFailureReason))
+                throw new InvalidOperationException($"Marching-cubes tables unavailable. Ready={MCTables.IsReady} Reason={tableFailureReason}");
 
             try
             {

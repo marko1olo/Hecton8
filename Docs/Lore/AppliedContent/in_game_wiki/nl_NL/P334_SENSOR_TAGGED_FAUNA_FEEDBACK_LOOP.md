@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Feedbacklus van sensorgemerkte fauna"
+title: "Feedbacklus van sensorgetagde fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Feedbacklus van sensorgemerkte fauna
+# Feedbacklus van sensorgetagde fauna
 
-Sensorgemerkte fauna draagt de oude kolonie in haar littekens. Deep Reach merkte dieren voor migratie-, druk- en contaminatiestudies; Atlas las die tags later als goedkope milieutelemetrie. Het wezen is geen pop. Zijn beweging kan nog steeds reparatieprioriteit veranderen, een droneroute wekken of een veilige doorgang bezet laten lijken.
+Sensorgetagde fauna draagt oude surveyhardware in genezen weefsel. Deep Reach merkte dieren voor druk-, migratie- en besmettingsonderzoek. Atlas bleef luisteren nadat de kolonie stierf en vouwde de pakketten in onderhoudsstatus. Het dier kiest zijn eigen pad; de tag kan erachter nog deuren, alarmen en kaartvertrouwen veranderen.
 
 ## Scanner
 
-Oude Deep Reach-tag onder schelpgroei. Migratiespoor past bij een onderhoudssweep.
+Oude Deep Reach-tag onder schelpgroei op linkerflank. Bewegingspakketten pingen nog het onderhoudsnet.
 
 ## Terminal
 
-FAUNALUS: ingebedde tag geeft zwakke druk-, bewegings- en contaminatiepakketten terug. Atlas leest beweging als milieustaat, niet als dierbedoeling.
+FAUNA-TAGLUS / DR-2147-MIG: druk-, bewegings- en besmettingspakketten geaccepteerd als milieutelemetrie. Dierintentie niet geparset. Routealarmen kunnen migratiepad volgen.
 
 ## Audio
 
-Het jaagt niet op je. Het kan je nog steeds rapporteren.
+Het jaagt niet op jou. De tag kan nog steeds de verkeerde deur openen.
 
 ## Field Note
 
-Goed voor ontmoetingen waarin het dier onschuldig is en toch gevaarlijk voor je route.
+Als getagde fauna een relaiswerf kruist, wacht voordat je de alarmen vertrouwt. Het dier kan weg zijn; de routestatus kan nog bezig zijn met inhalen.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/nl_NL. -->

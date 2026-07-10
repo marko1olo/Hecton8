@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Sonar-Rückkehrroute"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sonar-Rückkehrroute
+# Sonar Return Route
 
-Eine Rückkehrbake zeichnet auf, wie eine Route klang, als sie zuletzt sicher war. Sie verspricht nicht, dass sie sicher blieb. Sturmstoß, loses Kabel, wandernder Schlick, fauna und frische Salvage-Schnitte können eine Sonarrückkehr beugen, ohne den Korridor zu löschen. Vor Fracht oder tieferem Tauchgang die Linie anpingen. Wenn der Ton wandert, Fracht zwischenlagern oder zweiten Rückweg markieren.
+Ein return beacon speichert, wie eine route klang, als sie last safe war. Er verspricht nicht, dass die route stayed safe. Auf HECTON-8 hat safety einen Klang: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass und eine door flexed under pressure konnen den return biegen, ohne den corridor zu erased. Die return route ist work. Ping before loading und cache the load, wenn das echo mit einer anderen shape zuruckkommt.
 
 ## Scanner
 
-Rückkehrbake veraltet. Alter sicherer Ping passt nicht mehr zum Korridorecho; Frachtmasse wird das Rückzugsfenster verlangsamen.
+Return beacon stale. Old safe ping passt nicht mehr zum corridor echo; cargo mass verlangsamt die retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: letztes klares Echo ungültig. Black-Keel-Ping mit geringer Sicherheit empfangen. Hindernisdrift und Schlammichte über Kartentoleranz. Zweitlinie vor Frachtextraktion markieren.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density und cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Die Route ist noch da. Das Echo ist nicht dasselbe.
+The route is still there. Das echo ist nicht dasselbe.
 
 ## Field Note
 
-Ping vor dem Laden. Wenn sich der Heimweg mit leeren Händen änderte, verzeiht er keinen vollen Pack.
+Ping before loading. Wenn der way home changed, solange hands empty waren, verzeiht er keinen full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/de_DE. -->

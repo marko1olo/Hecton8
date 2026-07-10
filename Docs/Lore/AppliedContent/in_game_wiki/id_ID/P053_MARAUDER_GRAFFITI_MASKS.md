@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Topeng Grafiti Marauder"
+title: "Masker Grafiti Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Topeng Grafiti Marauder
+# Masker Grafiti Marauder
 
-Tanda marauder adalah navigasi lapangan, peringatan sosial, dan bahasa anti-pengawasan. Bentuknya kasar karena harus bertahan dari air, rasa takut, lampu buruk, dan kamera korporat. Pemain belajar tanda mana yang berarti suara, tekanan, risiko patroli, cache tersembunyi, dan rute yang tidak lagi cocok dengan peta resmi.
+Marauder graffiti bukan dekorasi. Itu field navigation, social warning, dan anti-surveillance language yang digoreskan di tempat radios berkhianat, maps kedaluwarsa, dan official signage berbohong karena terlalu tua. Marks terlihat kasar karena harus bertahan dari water, bad lamps, glove tremor, dan cameras yang bisa menghukum readable intent. Slash bisa berarti silence. Black ring bisa berarti Black Keel ping. Broken arrow bisa berarti pressure changed sejak route survey terakhir. Colony meninggalkan labels; marauders meninggalkan weather.
 
 ## Scanner
 
-Kode cat: jumlah garis menandai disiplin suara, cincin hitam menandai bahaya ping kapal induk, panah patah menandai drift tekanan.
+Paint code. Slash count menandai noise discipline; black rings menandai carrier-ping danger; broken arrows menandai pressure drift.
 
 ## Terminal
 
-INDEKS TOPENG RUTE: tiga garis aman hanya untuk isyarat tangan. Cincin hitam berarti sapuan kapal induk. Panah patah berarti tekanan berubah sejak tanda terakhir.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Jika dinding terlihat marah, bacalah seperti cuaca.
+Jika wall terlihat marah, bacalah sebagai weather.
 
 ## Field Note
 
-Marauder menulis untuk orang yang tidak bisa percaya radio dan tidak mampu membeli peta.
+Marauders menulis untuk orang yang tidak bisa percaya radios dan tidak mampu membeli maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/id_ID. -->

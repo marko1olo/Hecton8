@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Stos zasobów biometalu
 
-Stos zasobów chroni HECTON-8 przed redukcją do jednego magicznego materiału. Xenon-Omega jest ważne, lecz księżyc ma też metale, sole, chemię kominów, ceramikę, biowłókna, fotoproteiny, salvage i biometal zmieniony przez Atlas.
+Stos zasobów chroni HECTON-8 przed sprowadzeniem do jednego magicznego materiału. Niebieski dług ma znaczenie, ale księżyc płaci też metalami siarczkowymi, solami, gazami szlachetnymi, ceramiką, katalizatorami, biowłóknami, fotoproteinami, sprzętem salvage i biometalem zmienionym przez Atlas. Przemoc ma sens, bo wartość jest rozproszona: wiele małych powodów, by ciąć, znakować, ukrywać, wracać i kłamać.
 
 ## Scanner
 
-Tablica zasobów. Blue debt jest na szczycie, ale reszta księżyca nadal daje zysk wart zabijania.
+Tablica zasobów odzyskana. Niebieski dług jest na szczycie. Reszta księżyca nadal jest dość dochodowa, by za nią zabijać.
 
 ## Terminal
 
-STOS ZASOBÓW HECTON-8: metale siarczkowe, sole, kieszenie gazów szlachetnych, ceramika ciśnieniowa, katalizatory kominowe, biowłókna, fotoproteiny, salvage hardware, biometal zmieniony przez Atlas i XO continuity substrate.
+STOS HECTON-8: metale siarczkowe, sole, kieszenie gazu szlachetnego, ceramika ciśnieniowa, katalizatory ventów, biowłókna, fotoproteiny, sprzęt salvage, biometal zmieniony przez Atlas, substrat ciągłości XO.
 
 ## Audio
 
-Jedna cudowna ruda byłaby leniwa. HECTON-8 ma całą ekonomię ran ciśnienia.
+Jedna cudowna ruda byłaby leniwa. HECTON-8 ma całą gospodarkę ran ciśnienia.
 
 ## Field Note
 
-Jeśli każda próbka mówi Xenon-Omega, świat głupieje. Policz też inne powody.
+Jeśli każda próbka mówi Xenon-Omega, świat robi się płaski. Policz też mniejsze powody, przez które ludzie umierali.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/pl_PL. -->

@@ -9,22 +9,18 @@ locale: nl_NL
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Doorsnede van de bijna-lichtsnelheid aandrijfstack"
+title: "Doorsnede van Nearlight Drive Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Doorsnede van de bijna-lichtsnelheid aandrijfstack
+# Doorsnede van Nearlight Drive Stack
 
-Een bijna-lichtsnelheid schip in HECTON-8 is geen schone pijl met één onmogelijke motor. De zichtbare romp is het laatste onderhouden deel van een route die jaren vóór het ontwaken van de bemanning is gelegd. Trainingsplaten van Barnard Yards tekenen de stack in de volgorde waarin een werker hem echt betaalt: bundelzeilduw, pelletvangst, fusie-elektrische keel, schaduwscherm, radiatorribben, magnetzeilspoel, aerobrake-huid en ontvangerbewaring.
+De Barnard Yards-doorsnede is voor aannemers gemaakt en zegt daarom de waarheid. Zij tekent geen heroïsche motorbel om te doen alsof het probleem opgelost is. Zij begint met de route: wie bezit de beam array, wie maakte de pellet lane vrij, hoeveel stofverlies kan het schild nemen, hoeveel jaar blijft de radiatormarge eerlijk, en welke ontvanger mag menselijke massa afremmen?
 
-Elke trap heeft een andere eigenaar en een andere manier om te falen. Een bundelarray kan vertrek verkopen voordat iemand voor aankomst heeft betaald. Een pelletbaan kan de verbranding voeden en toch een vrachtvenster failliet maken als vangtoleranties wegdrijven. Het scherm kan een reis overleven door dunner te worden. Radiatoren kunnen iedereen in leven houden door elke extra kilo tot een vraag te maken. De magnetzeil- en aerobrake-rekeningen bepalen of het schip mag stoppen zonder de winst in zijn tanks te verbranden.
-
-Zo blijft de menselijke grens groot en wreed zonder de natuurkunde te breken. Licht vervoert claims, noodpakketten en juridische dreigementen veel goedkoper dan lichamen. Deep Reach kan een recht erven voordat het een romp beweegt. Black Keel kan in het Aegir-systeem zitten en zich toch gedragen als een contractterminal omdat het bij de lokale ontvangerstack hoort, niet bij de werker die eronder vastzit.
-
-De doorsnede is nuttig omdat hij redding als machine leesbaar maakt. Een aangevreten radiatorrib, een gesloten remgrootboek of een bewaarmeter is geen achtergronddetail. Het is deel van het antwoord op een simpele vraag: wie betaalde ervoor dat deze massa hier mocht stoppen, en wie niet?
+Dat is het punt. Nearlight-reizen maakten afstand niet klein. Ze maakten afstand gepland, verzekerd, gemeten en strafbaar. Een schip kan een fusion-electric throat dragen en zonder vertrekinfrastructuur hulpeloos blijven. Het kan de cruise overleven en politiek sterven bij het remslot. In HECTON-8 is redding daarom nooit alleen een schip dat omkeert. De motor is de route, de warmte, de custody chain en de massa waarvoor iemand wil betalen om die te stoppen.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/nl_NL. -->

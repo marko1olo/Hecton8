@@ -19,8 +19,10 @@ localization_flags: 1
 
 # Buku Otoritas Nama Ran / Aegir
 
-Sistem nama HECTON-8 bukan trivia. Ia menunjukkan kekuasaan mana yang sedang berbicara. Astronomi berkata Ran karena bintang menetapkan rute dan jeda cahaya. Kantor klaim berkata Aegir karena raksasa gas memungkinkan bulan, infrastruktur dan liabilitas dibundel. Tabel asuransi berkata RAN-B:H8 karena buku yang rapi tidak punya ingatan. Orang di bawah air berkata HECTON-8 karena di sanalah palka gagal.
+Sistem nama HECTON-8 adalah worldbuilding yang diam tetapi tajam. Bulan itu tidak punya empat nama untuk hiasan. Setiap nama milik otoritas berbeda dan jarak moral berbeda dari tempat tenggelam yang sama.
 
-Saat dokumen mengganti nama, sering kali ia mengganti yurisdiksi. Bahasa Ran milik waktu dan fisika. Bahasa Aegir milik kepemilikan. RAN-B:H8 milik katalog, asuransi dan kustodi. HECTON-8 milik penggunaan lapangan, memori dan koloni sebagai tempat.
+            Ran adalah bahasa astronomi: bintang, jangkar rute, jeda cahaya, timing carrier. Aegir adalah bahasa klaim: raksasa sebagai badan induk, singkatan publik, dan payung korporat. RAN-B:H8 adalah bahasa asuransi: catatan bulan yang bisa disortir, dipindah, dan diperdebatkan tanpa membawa suara koloni. HECTON-8 adalah bahasa yang dijalani: pintu, ruangan, kubur, dan alarm tekanan.
+
+            Saat pemain mempelajari tata bahasa ini, dokumen berubah bentuk. Pemberitahuan perusahaan memakai Aegir bisa menjauhkan kamera sampai kegagalan bulan terlihat seperti pemeliharaan sistem. Tanda terima RAN-B:H8 menyiapkan harga custody. Catatan lapangan HECTON-8 menyimpan kesaksian sebelum katalog mencucinya.
 
 <!-- External Site; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/id_ID. -->

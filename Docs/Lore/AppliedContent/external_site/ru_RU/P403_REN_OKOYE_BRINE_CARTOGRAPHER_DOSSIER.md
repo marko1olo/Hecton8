@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Ren Okoye/Brine Map"
+title: "Рен Окойе, картограф рассола"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Ren Okoye/Brine Map
+# Рен Окойе, картограф рассола
 
-RU LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Рен Окойе дает перемещению человеческий источник. Рассольные каньоны HECTON-8 становятся не просто угрозой, когда игрок находит ручную систему чтения: бусины, штыри, стертые линии и маршрутные метки человека, знавшего, что законный путь убьет, если вода сместилась.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Досье: Рен Окойе. Бусины плотности, порезы на сланце и шрамы от нитей описывают маршрут, который сместился за ночь.
 
 ## Terminal
 
-RU LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+СТОЛ КАРТ РАССОЛА / ОКОЙЕ, РЕН: безопасное течение ушло на 3,2 м к востоку после инверсии плотности. Доска разрешений все еще показывает вчерашний коридор. Рабочие метки маршрута имеют приоритет над управленческим маршрутом до следующего промера.
 
 ## Audio
 
-RU LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Окойе чертил дороги в воде, которая не хотела держать чертеж.
 
 ## Field Note
 
-RU LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Использовать Окойе для раскрытия рассольных маршрутов, навигации по слоям плотности и конфликтов с доской разрешений. Его улики должны давать игрокам конкретные причины не доверять старым картам.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ru_RU. -->

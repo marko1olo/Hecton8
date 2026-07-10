@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir卫星阶梯
 
-Aegir卫星阶梯让可游玩的月球成为运动系统的一部分。其他卫星塑造潮汐、carrier等待、relay阴影和离开的代价。
+Aegir卫星阶梯把天空变成作业地图：其他卫星塑造潮汐、信号、carrier custody，以及离开的狭窄机会。
 
 ## Scanner
 
-卫星序列：Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
+卫星阶梯解析：Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。Kestrel和Mute会弯折窗口。
 
 ## Terminal
 
-HECTON-8是Aegir-VIII：既非内侧，也非最远。Rake共振和Pale阴影会改变潮汐和数据包质量。
+AEGIR路线记录：在工作阶梯中，HECTON-8位于Kestrel之后。中继阴影、潮汐相位、辐射带和Black Keel转移几何必须在质量上升前对齐。
 
 ## Audio
 
-相信窗口前，先数清卫星。
+信任窗口前，先数清Kestrel。
 
 ## Field Note
 
-天空是机械，不是背景。
+天空是一张工作排程。错过一道影子，carrier就会变成传闻。
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/zh_CN. -->

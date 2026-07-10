@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "نطاقات عمق المحيط العالمي"
+title: "أحزمة عمق المحيط العالمية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# نطاقات عمق المحيط العالمي
+# أحزمة عمق المحيط العالمية
 
-يُقرأ محيط HECTON-8 كنطاقات، لا كرقم قاع واحد. الرف الضوئي يسمح بالضوء والحطام والطحالب والطيارين المهملين. الرف الصناعي يحمل شعاب الكابلات وأقفاص الأنابيب ومنصات التحميل القديمة. تحته تثني السلالم الملحية الصوت والموازنة. حقول الآلات السحيقة تعاقب الإصلاح. حوض Atlas يجعل الضغط يبدو كسلطة لا كطقس.
+ليس ocean في HECTON-8 مجرد one long fall to a bottom. إنه stack of laws. ما زال photic shelf يسمح بlight وalgae وbroken habitat skin وbad decisions يمكن تصحيحها. Industrial shelf هو pipe cages وcable reef وloading decks وmachines that answer late. تجعل brine stairs كل sound and ballast ينحنيان حتى تصبح route near and unreachable في الوقت نفسه. Abyssal machine fields تعاقب repairs بcold patience. Atlas basin أعمق من danger؛ هناك pressure becomes jurisdiction.
 
 ## Scanner
 
-مخطط عمق. الرف الأول يغفر سوء الموازنة؛ الماء الأعمق يرسل فاتورة كل خطأ بالضغط والحرارة والصمت.
+Depth chart. يسامح first shelf poor ballast؛ أما lower water فيحاسب every mistake عبر pressure وheat وnoise وsilence.
 
 ## Terminal
 
-النطاقات: 0-250 م رف ضوئي للنهب؛ 250-1200 م رف صناعي وشعاب كابلات؛ 1200-2800 م درج/وادي ملحي؛ 2800-4300 م حقل آلات سحيق؛ 4300-5600 م حوض Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-كل مئة متر تنتزع منك عادة.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-العمق على HECTON-8 قانون وطقس وحد وجوع يحمل الرقم نفسه.
+Depth على HECTON-8 هو law وweather وborder وhunger ترتدي الرقم نفسه.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ar_SA. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Peta Rute Bulan Aegir"
+title: "Peta rute bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Peta Rute Bulan Aegir
+# Peta rute bulan Aegir
 
-Peta bulan Aegir bersifat operasional sebelum indah. HECTON-8 adalah satu tubuh samudra di dalam tangga bulan, shepherd rocks, ice-scatter paths, dan dead relay marks. Benda bagian dalam mengganggu narrowband contact dan perlindungan radiasi. Bulan es memecah optical relay lines menjadi fragmen buruk. Occultation bands menciptakan jendela sunyi tempat claim tetap sah namun tak terdengar. Beacons luar menyimpan kepemilikan lama setelah kru hilang. Geometri pasang dan storm stacking menentukan apakah bathydrop chain naik bersih atau masuk loss ledger. Peta publik dapat menunjukkan ini tanpa menjanjikan dunia main tambahan; tugasnya membuat langit terbaca sebagai tekanan, tunda, dan risiko rute.
+Peta bulan Aegir harus dibaca seperti papan operasi. Setiap label bisa mengubah usia sinyal, perlindungan radiasi, risiko transfer, cuaca turun, geometri pemulihan, atau waktu kustodi legal. HECTON-8 berada di dalam tangga bergerak itu: benda dalam mengganggu kontak narrowband, bulan es memecah rute optik menjadi serpihan, pita okupasi membuat jendela senyap, dan suar lama mempertahankan tanda kepemilikan setelah kru hilang. Materi publik bisa menunjukkan sistem tanpa menjanjikan bulan yang bisa dimainkan. Janji bergunanya lebih sempit: saat pemain melihat ke atas dari air, langit bisa menjelaskan mengapa relai tersendat, mengapa pembawa menolak massa turun, atau mengapa klaim sah menunggu dalam gelap.
 
 ## Scanner
 
-Catatan peta sistem. Bulan-bulan Aegir menentukan relay timing, perlindungan radiasi, ice scatter, tekanan pasang, occultation bands, beacons mati, dan recovery geometry.
+Catatan peta sistem. Label bulan menentukan usia relai, beban pasang, pelindung radiasi, hamburan es, pita okupasi, suar mati, dan geometri pemulihan.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah label rute. Tiap benda mengubah signal age, transfer risk, storm exposure, custody timing, atau claim reliability.
+NODE ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah data rute. Kolom wajib: usia sinyal, fase pasang, perlindungan badai, jendela klaim, status suar, risiko naik.
 
 ## Audio
 
-Peta menjelaskan mengapa tak ada yang datang tepat saat kau meminta.
+Bulan di peta bukan pemandangan. Itu alasan jawaban datang terlambat.
 
 ## Field Note
 
-Catatan Marauder: tandai bulannya, lalu tandai apa yang ia lakukan pada rute.
+Catatan Marauder: tandai bulan, lalu tulis apa dampaknya pada sinyal, pasang, massa, dan kustodi.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/id_ID. -->

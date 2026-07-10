@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, triagemechanicus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, triagemechanicus
 
-NL LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal repareerde machines in de kamer waar gewonde werkers wachtten tot hun namen op een rail opschoven. Haar dossier verbindt momentnotities met brancardlabels, scrubberpatronen, zuurstofreservebriefjes en oranje quarantainetape. De objecten maken Deep Reach-vertraging fysiek: hetzelfde bord dat boutspanning beperkte, besliste welk lichaam, welke klep of welk filter aandacht kreeg voor de volgende drukval. Iqbals werk is geen groot geschreven barmhartigheid. Het is een hand die de minst dodelijke volgorde kiest terwijl de officiële volgorde blijft veranderen.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Momentbord, brancardlabels en quarantainetape delen één wachtrij.
 
 ## Terminal
 
-NL LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TRIAGEBAAI C-2 / IQBAL, SAHANA: momentlimieten naast zuurstofreservelabels. Gereedschap, brancards en scrubberpatronen op dezelfde rail. Quarantainetaal verplaatste de reiklijn opnieuw.
 
 ## Audio
 
-NL LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal repareerde wat ze kon bereiken. Het bord bleef beslissen wat bereikbaar telde.
 
 ## Field Note
 
-NL LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Gebruik Iqbal in quarantainereparatielussen, med-bay-gangen, zuurstofrijen en interfaces waar een machinekeuze zichtbaar menselijke tijd kost.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/nl_NL. -->

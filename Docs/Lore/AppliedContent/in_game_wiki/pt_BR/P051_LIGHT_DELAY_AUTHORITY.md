@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Autoridade de atraso da luz"
+title: "Autoridade de Atraso-Luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autoridade de atraso da luz
+# Autoridade de Atraso-Luz
 
-HECTON-8 não tem ansible nem voz de comando ao vivo da órbita. Mensagens seguem à velocidade da luz e depois perdem mais tempo em filas de buffer, janelas de tempestade, geometria de relé e regras de custódia da transportadora. Cada resposta é prova velha, não ordem.
+HECTON-8 nao tem ansible, nenhuma voz amiga inclinada da orbita, e nenhum modo de fazer dez anos-luz parecerem misericordiosos. Messages se movem a velocidade da luz, depois perdem mais tempo em relay geometry, storm scatter, buffer law e custody queues da Black Keel. Uma transmission pode ser honesta e ainda assim velha demais para obedecer. A superficie ensina cedo essa regra: todo remote answer e evidence primeiro, instruction depois, e nunca comfort. Se a parede, a agua e a pressure discordam do message, o local world vence.
 
 ## Scanner
 
-Cache do mastro de relé: a chamada saiu limpa e depois esperou atrás da luz, da lei de fila, da dispersão de tempestade e da linha de visão de Aegir.
+Relay mast cache. O call saiu limpo, depois esperou atras de light, queue law, storm scatter e Aegir line-of-sight.
 
 ## Terminal
 
-AUTORIDADE COM: atraso de mão única verificado. Dispersão de tempestade alta. Fila de relé sob prioridade de custódia. Autoridade local de sobrevivência ativa.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active ate fresh signal window confirmar override.
 
 ## Audio
 
-A resposta está vindo. Isso não faz dela resgate.
+A resposta esta vindo. Isso nao a torna rescue.
 
 ## Field Note
 
-Ninguém censurou o primeiro grito. A física o levou devagar o bastante para a política alcançar.
+Ninguem censurou o primeiro scream. A physics o moveu devagar o bastante para a policy alcancar.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/pt_BR. -->

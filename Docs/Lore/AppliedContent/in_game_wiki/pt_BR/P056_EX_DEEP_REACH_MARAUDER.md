@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ex-Deep Reach, agora marauder"
+title: "Ex-Deep Reach, agora Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ex-Deep Reach, agora marauder
+# Ex-Deep Reach, agora Marauder
 
-O protagonista não nasceu em HECTON-8 e não está perseguindo um fantasma de família. A velha colônia reconhece algo mais frio: cadência de reparo de sistemas de campo, hábitos de roteamento de emergência e pequenos atalhos ensinados pelo trabalho na Deep Reach. Esse passado torna pessoais as primeiras portas trancadas sem transformar a história em drama de linhagem barato de linhagem. Um marauder pode abrir um cache de reivindicação por dinheiro; um ex-especialista da Deep Reach também sabe qual registro de vedação não deveria existir, qual instrução de evacuação foi escrita para cobrir um atraso e qual sequência de reparo continuou viva depois que os trabalhadores foram descartados.
+O Marauder não nasceu em HECTON-8 e não está perseguindo um fantasma de família. A velha colônia reconhece algo mais frio: cadência de reparo de sistemas de campo, hábitos de roteamento de emergência e pequenos atalhos ensinados pelo trabalho de evacuação da Deep Reach. Esse passado torna pessoais as primeiras portas trancadas sem transformar a história em melodrama de linhagem. Um cache de reivindicação pode ser aberto por dinheiro; um ex-especialista da Deep Reach também sabe qual registro de vedação não deveria existir, qual instrução de evacuação foi escrita para cobrir um atraso e qual sequência de reparo continuou viva depois que os trabalhadores foram descartados.
 
 ## Scanner
 
-A velha trava da Deep Reach não confere seu nome. Ela reconhece o ritmo da sua sequência de reparo.
+A velha trava da Deep Reach não confere um nome. Ela reconhece o ritmo de um reparo de campo.
 
 ## Terminal
 
-RASTRO DE CREDENCIAL: antigo contrato de sistemas de campo. Acesso à infraestrutura de evacuação revogado. Status de recuperação aceito sob custódia de dívida do pool de reivindicações.
+RASTRO DE CREDENCIAL: antigo contrato de sistemas de campo. Acesso à infraestrutura de evacuação revogado. Status de salvage aceito sob custódia de dívida do pool de reivindicações.
 
 ## Audio
 
-Você não voltou para casa. Você voltou para um procedimento que nunca parou de rodar.
+Você não voltou para casa. Voltou para um procedimento que nunca parou de rodar.
 
 ## Field Note
 

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, vent-smederijoperator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, vent-smederijoperator
 
-NL LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres bediende een vent-smederij waar HECTON-8-hitte veranderde in onderdelen klein genoeg om te dragen en gevaarlijk genoeg om een naam te eisen. Zijn dossier bestaat uit een geschroeide handschoen, cyclustimer, afkeurtray, drukglascoupons en afdichtringen met ingekraste batchmerken. De tray telt het meest: hij bewijst dat kapotte onderdelen geen afval waren voordat ze de volgende drukgrens hadden geleerd hoe die moest houden. Torres maakt resource-lore tot arbeidslore. Salvage-categorieën beginnen hier als brandwonden, vertragingen, gelabeld falen en de beslissing bewijs te bewaren van wat barstte.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Hittehandschoen, cyclustimer en afkeurtrays passen bij dezelfde drukglasbatch.
 
 ## Terminal
 
-NL LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+VENT-SMEDERIJ V-9 / TORRES, LIAN: afkeurtray bewaarde gebarsten afdichtringen, troebel drukglas en drie gemarkeerde oververhittingscoupons. Batchnotitie: falen leert de volgende afdichting alleen als het falen gelabeld blijft.
 
 ## Audio
 
-NL LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres bewaarde de slechte stukken. In de smederij betekende een schone vloer dat iemand de les had weggegooid.
 
 ## Field Note
 
-NL LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Gebruik Torres bij vent-smederijprops, drukglasrecepten, afgekeurde afdichtringen en upgradebanken die een zichtbare geschiedenis van mislukte onderdelen nodig hebben.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/nl_NL. -->

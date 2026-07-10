@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Jangkar Ran / Aegir"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Jangkar Ran / Aegir
+# Ran / Aegir Anchor
 
-Ran menjangkar sistem Aegir sebagai bintang kelas K normal, bukan lampu mati atau sumber gelap supranatural. HECTON-8 dapat memiliki perairan dangkal terang karena cahaya memang ada.
-
-Horor dimulai ketika atmosfer, badai, air mineral, kedalaman, dan lumpur industri menghapus cahaya itu lebih cepat daripada kontrak penyelamatan dapat bereaksi. Di atas air sistem ini astronomi. Di bawah air setiap lumen menjadi waktu sewaan.
+Ran menambatkan Aegir sebagai K-class star biasa: tua, oranye, stabil, dan acuh tak acuh. Itu penting karena HECTON-8 tidak gelap karena magic. Shallows bisa shine. Weather bisa menyala putih di atas sea. Worker di surface raft masih bisa melihat ke atas dan tahu ada sun. Horror dimulai ketika atmosphere, storm shear, mineral water, depth, dan industrial silt menghabiskan light lebih cepat daripada carrier bisa menagih rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-Pelat bintang kelas K. Ran menyala normal. Aegir lebih redup dari Sol, tetapi gelap di sini datang dari kedalaman, cuaca, dan utang.
+K-class star plate. Ran terbakar normal; deep di sini bukan supernatural, hanya terlalu jauh di bawah weather, water, dan debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Cahaya katai oranye mendukung kerja permukaan. Sebaran badai, geometri gerhana, dan kekeruhan laut menurunkan keterbacaan turun di bawah margin aman.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity, dan industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Bintangnya ada. Ia hanya tidak bisa mengikutimu ke bawah.
+Star hadir. Ia hanya tidak bisa follow you down.
 
 ## Field Note
 
-Satu bintang nyata sudah cukup. Laut melakukan sisanya.
+Real star sudah cukup. Ocean melakukan sisanya.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/id_ID. -->

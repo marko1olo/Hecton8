@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Órbita de HECTON-8 / Geometria de Maré"
+title: "Orbita / Geometria de Mare de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Órbita de HECTON-8 / Geometria de Maré
+# Orbita / Geometria de Mare de HECTON-8
 
-A órbita de HECTON-8 torna o Great Tide crível antes de virar política. Ressonância puxou o oceano. Estresse de gelo e ressaca carregaram as plataformas. Calor industrial e drenagem bloqueada fizeram os sistemas da colônia empurrar na hora errada.
-
-O crime não é a Deep Reach inventar física. O crime é construir a matemática de evacuação em torno de Atlas continuity, cargas seguradas e classes de trabalho, depois chamar os mortos de erro aceitável de previsão.
+A orbit de HECTON-8 torna a Great Tide believable antes de virar political. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water onde colony math queria margins, e industrial heat fez sealed drainage fight the sea at the wrong hour. O crime nao e a Deep Reach invented physics. O crime e que evacuation math foi built around Atlas continuity, insured payloads, labor classes e claim loss, entao os dead foram filed as forecast error.
 
 ## Scanner
 
-MODELO DE MARÉ // Ressonância, estresse de gelo, ressaca e descarga térmica excederam a previsão de evacuação. Flags Atlas continuity anularam prioridade de recuo.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge e heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-CADEIA GREAT TIDE // Forçamento orbital amplificou carga oceânica. Descarga térmica artificial e drenagem selada converteram uma maré em falha colonial.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge e sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-A física abriu a porta. Deep Reach decidiu quem sairia por ela.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Uma lua pode afogar uma colônia sem odiá-la.
+Uma moon pode drown a colony sem odia-la.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/pt_BR. -->

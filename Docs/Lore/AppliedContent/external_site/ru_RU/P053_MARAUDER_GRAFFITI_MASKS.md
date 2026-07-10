@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Маскирующие граффити мародеров"
+title: "Граффити-маски мародеров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Маскирующие граффити мародеров
+# Граффити-маски мародеров
 
-Мародеры HECTON-8 — не безликая фракция налетчиков. Это рабочие, долговые бегуны, брошенные подрядчики и salvage-команды, которые научились писать на стенах, потому что любой чистый канал могли слушать или выставить в счет. Их граффити нарочно уродливы: их можно быстро нанести под стрессом, прочитать через конденсат и принять за панику или вандализм. Черное кольцо — не украшение. Оно значит, что носитель может слышать. Сломанная стрелка — не плохой рисунок. Она значит, что коридор изменился после последнего безопасного прохода. Лучшие метки ощущаются так, будто живой человек пытался удержать другого незнакомца в живых, не оставляя признания.
+Граффити-маски мародеров превращают scavenger writing в readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk и недоверие к carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count отмечает noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Если wall выглядит злой, читай ее как weather.
+
+## Field Note
+
+Marauders писали для тех, кто не мог доверять radios и не мог позволить себе maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/ru_RU. -->

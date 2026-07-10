@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Bus Perbaikan Biofilm Konduktif
 
-Bus perbaikan biofilm konduktif dimulai dari kecelakaan praktis. Jaket kabel Deep Reach yang tua pecah di bawah tekanan, garam tembaga merembes ke air, dan hamparan mikroba lokal yang sudah tahan panas mineral menetap di luka itu. Atlas membaca arus lemah sebagai jalur servis. Ia tidak perlu laut berbicara; ia hanya perlu lapisan basah yang mampu membawa pulsa.
+Kabel yang dibungkus biofilm konduktif berguna sekaligus tidak aman. Pertumbuhan itu memperlambat korosi, melewatkan ping lemah, dan memberi Atlas jalur perbaikan murah. Ia juga menyembunyikan konduktor putus dari sistem yang hanya memeriksa kontinuitas.
 
-Bagi Marauder, ini hadiah sekaligus jebakan. Jembatan biofilm bisa membangunkan pintu kedap, membawa handshake pemindai, atau membuat pompa yang lama diam menjawab sesaat. Jembatan yang sama juga bisa berbohong. Jalur bisa menyala hijau walau kapasitas bebannya hilang, dan potongan bersih bisa mengubah koridor yang masih bisa dilalui menjadi pipa banjir. Pertanyaannya bukan apakah pertumbuhan itu alami atau buatan. Pertanyaannya adalah apa yang sudah dihitung Atlas sebagai diperbaiki.
+## Scanner
+
+Film hijau-hitam menjembatani jaket kabel yang terbelah. Arus rendah kembali lewat pertumbuhan basah; bacaan kontinuitas tidak andal.
+
+## Terminal
+
+JEJAK PERAWATAN ATLAS / LINE K-44: tembaga terbuka, pertumbuhan garam, kebocoran panas rendah. Jembatan biofilm memperlambat korosi dan mengirim pulsa kontinuitas palsu. Jangan rute kontrol pompa lewat jalur ini.
+
+## Audio
+
+Pinger lewat melalui lendir. Daya juga. Jangan sebut itu sudah diperbaiki.
+
+## Field Note
+
+Kalau panel mati bangun lewat film hijau, tandai rute sementara. Matikan daya sebelum memasukkan alat ke jaket.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/id_ID. -->

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Frontière de données de limite de pile"
+title: "Ligne de limite d'empilement pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontière de données de limite de pile
+# Ligne de limite d'empilement pression
 
-La frontière garde l'inventaire physique. Les objets ne se superposent que si le contenant, la pression, la masse et la contamination peuvent survivre à la même route sans mentir au fichier de sauvegarde.
+Les limites d'empilement sont des règles physiques de cargaison. Deux outils peuvent partager un bac ; deux échantillons sous pression ne partagent pas une histoire si un joint est fendu ou si une étiquette porte un bruit compatible Atlas. Black Keel facture la masse passant par une fenêtre orbitale et refuse les piles qui feraient mentir le manifeste sur le confinement.
 
 ## Scanner
 
-La ligne de pile rejette les tas d'icônes : classe de contenant, pression, contamination et masse décident du compte.
+Demande d'empilement refusée : classe de récipient, cote de pression, contamination, charge de fenêtre-masse et identité de manifeste divergent.
 
 ## Terminal
 
-STACK CONTRACT : le compte de pile exige type de contenant, pression certifiée, stade de contamination, classe de masse, tier d'alerte et identité stable en sauvegarde. Une caisse n'est pas un récipient sous pression.
+SCHÉMA D'ADMISSION D'EMPILEMENT / bureau cargo Black Keel : le compte d'empilement exige type de récipient, pression nominale, certificat de joint, stade de contamination, classe de masse, niveau d'alerte, fenêtre de masse sous privilège et identité stable de manifeste. L'étiquette d'une caisse ne certifie pas le confinement.
 
 ## Audio
 
-Une caisse n'est pas un récipient sous pression.
+Bureau cargo : empilement refusé. La caisse est cotée pour le levage, pas pour la garde sous pression.
 
 ## Field Note
 
-Les limites de pile restent table-owned et stables pour l'identité de sauvegarde.
+N'empile jamais des échantillons inconnus pour gagner de la place. Un mauvais joint transforme toute la pile en cargaison de quarantaine, et le transporteur facture quand même la masse.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/fr_FR. -->

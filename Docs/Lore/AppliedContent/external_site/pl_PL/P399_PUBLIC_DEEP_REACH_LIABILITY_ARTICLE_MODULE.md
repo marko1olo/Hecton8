@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Dowody odpowiedzialności Deep Reach
 
-Deep Reach jest winne, bo katastrofa HECTON-8 mogła być naturalna i jednocześnie źle zarządzana. Ocean dostarczył prawdziwej siły: tide resonance, cryosphere shear, storm stacking i pressure failure. Firma dostarczyła cienkie margins, późną authorization, quarantine delay, Atlas priority rules i papierologię tak czystą, że przetrwała ludzi, których opisywała. Najmocniejsze dowody są fizyczne i proceduralne: drzwi trzymane przez executive authority, sensor tolerance zmienione przed zamknięciem okna, kolejka opóźniona przez legal clearance, loss ledger zmieniający pracowników w claim categories, gdy woda wciąż się poruszała. Gracz uczy się nie ufać oficjalnemu językowi, porównując go z wgnieceniami, zegarami i trasami.
+Publiczna sprawa przeciw Deep Reach jest najmocniejsza, gdy zostawia ocean realnym. HECTON-8 nie zniszczył kreskówkowy spisek ani niemożliwa nauka. Uderzyły warunki, które firma modelowała, wyceniała, opóźniała, a potem opisywała językiem zdolnym przeżyć sąd lepiej niż pracownicy ciśnienie. Użyteczne dowody są fizyczne i proceduralne: zmienione arkusze tolerancji, zatrzymania tras, opóźnione okna ewakuacji, etykiety kwarantanny, tabele priorytetów Atlas i rejestry strat zamieniające nazwiska w kategorie roszczeń, gdy woda nadal płynęła przez pomieszczenia. Deep Reach nie musiało wymyślać katastrofy. Potrzebowało podpisów, by tańsza odpowiedź wyglądała na autoryzowaną.
 
 ## Scanner
 
-Zapis liability. Realna fizyka pływów, zaakceptowane margin risk, opóźnienie ewakuacji, quarantine holds, Atlas weighting i oczyszczony język strat schodzą się w jednym łańcuchu dowodów.
+Zapis odpowiedzialności. Siła pływu jest realna; podpisane zmiany marginesów, zatrzymania kwarantanny, kolejki ewakuacji, wagi Atlas i język strat niosą część możliwą do uniknięcia.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // DOWODY LIABILITY. Great Tide przyjęty. Przegląd otwarty dla sensor margins, opóźnienia evacuation queue, quarantine holds, Atlas weighting, worker classification i loss conversion.
+PUBLICZNY WĘZEŁ ARCHIWUM // PRZEGLĄD ODPOWIEDZIALNOŚCI DR-H8. Siła naturalna przyjęta. Pola otwarte: margines czujnika, uprawnienie drzwi, opóźnienie kolejki, zatrzymanie kwarantanny, ważenie Atlas, konwersja pracownika na kategorię roszczenia.
 
 ## Audio
 
-Katastrofa może być naturalna i nadal nieść podpisy.
+Pływ złamał stal. Podpisy zdecydowały, które drzwi zostały zamknięte.
 
 ## Field Note
 
-Notatka Maraudera: nie kłóć się z pływem. Kłóć się z podpisami obok.
+Notatka Maraudera: nie twierdź, że pływ był fałszywy. Połóż podpisy obok zegara pływu.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pl_PL. -->

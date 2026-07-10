@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 无FTL路线延迟
 
-HECTON-8没有即时救援频道。Aegir系统由precursor probes、beam infrastructure、pellet-fusion freight和制动系统抵达，而这些系统把紧急性也当作质量约束。消息可能先于能让消息有用的硬件到达。carrier可以承认你的存在，给payload估价并持有valid claim，却仍可能在错误weather、relay angle或custody window下无法花费descent mass。公开航行文本必须让这点保持可见，因为这里的孤立是工程、法律和物流共同造成的。Black Keel在法律上可以很近，在物理上仍不可达。这种延迟解释了为什么relay回应之后，玩家仍要亲手修密封。
+HECTON-8没有即时救援频道。人类到Aegir的交通由先驱探测器图、束道基础设施、pellet-fusion货运、制动系统、载体窗口和法律保管移交组成。紧急不会取消质量。飞船可以给载荷定价、接受索赔并持有你的记录，同时仍没有下降分配把一个有用物件送进水里。这就是游戏把通信当成证据而非救援的原因。回复能证明有人听见了紧急情况。它不能补密封、移动浴滴舱，也不能缩短糟糕的轨道窗口。
 
 ## Scanner
 
-航运记录。Aegir交通依赖precursor probes、beam lanes、pellet-fusion freight、braking mass、packet age、relay custody和法律延迟。
+运输记录。Aegir交通依赖探测器图、束道、pellet-fusion货运、制动质量、包裹年龄、中继保管和受天气影响的下降窗口。
 
 ## Terminal
 
-公共档案节点 // 航运限制。无FTL。无Ansible。真实救援需要物理转运、braking architecture、carrier position、descent mass和有效local window。
+公共档案节点 // 运输限制。FTL：无。Ansible：无。实时救援需要载体位置、制动分配、下降质量、本地天气，以及未过期的保管窗口。
 
 ## Audio
 
-帮助可以在法律上已经到场，在物理上仍远隔数年。
+载体可以记录你的紧急情况，却仍隔着数年的质量距离。
 
 ## Field Note
 
-Marauder笔记：relay回答时，先问答案有多旧，再问它实际能移动多少质量。
+掠夺者笔记：每条救援回复都要四个数字：包裹年龄、载体质量、制动槽、下降窗口。
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/zh_CN. -->

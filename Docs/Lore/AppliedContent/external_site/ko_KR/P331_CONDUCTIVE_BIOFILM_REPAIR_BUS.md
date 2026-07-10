@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "전도성 바이오필름 수리 버스"
+title: "전도성 생물막 수리 버스"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 전도성 바이오필름 수리 버스
+# 전도성 생물막 수리 버스
 
-전도성 바이오필름 수리 버스는 실용적인 사고에서 시작된다. 낡은 Deep Reach 케이블 피복이 압력 아래 갈라지고, 구리염이 물로 새며, 광물 열에 적응한 현지 미생물 매트가 그 상처에 자리 잡는다. Atlas는 약한 전류를 서비스 경로로 읽는다. 바다가 말할 필요는 없다. 펄스를 운반할 만큼 젖은 막이면 충분하다.
+전도성 생물막에 싸인 케이블은 유용하면서도 안전하지 않다. 성장부는 부식을 늦추고 약한 ping을 통과시키며 Atlas에 값싼 수리 경로를 준다. 동시에 연속성만 검사하는 시스템에서 끊어진 도체를 숨긴다.
 
-Marauder에게 이것은 선물이자 함정이다. 바이오필름 다리는 밀폐문을 깨우고, 스캐너 핸드셰이크를 전달하고, 몇 년 동안 침묵한 펌프가 잠시 응답하게 할 수 있다. 같은 다리는 거짓말도 한다. 선로는 녹색으로 빛나지만 부하 용량은 사라졌을 수 있고, 깔끔한 절단이 통과 가능한 복도를 침수관으로 바꿀 수 있다. 질문은 자연적인 성장인지 인공적인 성장인지가 아니다. Atlas가 이미 무엇을 수리로 계산했는가다.
+## Scanner
+
+녹흑색 막이 갈라진 케이블 재킷을 잇고 있다. 낮은 전류가 젖은 성장부로 돌아온다. 연속성 판독은 믿을 수 없다.
+
+## Terminal
+
+ATLAS 정비 흔적 / LINE K-44: 노출된 구리, 염성 성장, 낮은 열 누출. 생물막 다리가 부식을 늦추고 거짓 연속성 펄스를 돌려준다. 이 선으로 펌프 제어를 라우팅하지 마라.
+
+## Audio
+
+핑거 신호가 점액을 통과한다. 전력도 통과한다. 그걸 수리라고 부르지 마라.
+
+## Field Note
+
+죽은 패널이 녹색 막으로 깨어나면 그 경로를 임시로 표시해라. 재킷에 도구를 넣기 전에 전원을 끊어라.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ko_KR. -->

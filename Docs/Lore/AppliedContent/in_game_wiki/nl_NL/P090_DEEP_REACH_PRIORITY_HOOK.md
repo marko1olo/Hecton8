@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach Priority Hook
 
-Deep Reachs huidige druk vraagt geen onmogelijke afstandsbesturing. Oude continuity certificates, quarantaineclausules, Atlas access tokens en payload priority hooks zitten al in Black Keels juridische pad. Het bedrijf kan beïnvloeden wat de carrier waardeert zonder zichtbaar eigenaar te zijn. Dat maakt de antagonist moeilijker weg te snijden: geen signaal om te jammen, maar een clausule die blijft ontwaken.
+Deep Reachs macht over Black Keel is geen instant remote control en geen verborgen FTL command chain. Het bedrijf liet oudere dingen achter: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities en evidence suppression queues. Die hooks werden geschreven toen de colony nog meetings, budgets en signatures had. Jaren later kunnen ze nog steeds ontwaken in het arbitration path van de carrier. Dat maakt de druk geloofwaardig. Deep Reach spreekt niet altijd zelf. Soms spreekt oud paperwork namens Deep Reach.
 
 ## Scanner
 
-Oude certificaathaak. Deep Reach bezit het schip niet; het bezit de clausule.
+Oude certificate hook. Deep Reach heeft de bridge niet nodig zolang het de clause nog bezit.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy Deep Reach continuity certificate kan payload recovery, quarantaineslot, Atlas access token of evidence suppression queue versnellen onder Aegir-claimrecht. Human extraction priority ongewijzigd tenzij hazard proof custody value overstijgt.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate kan payload recovery, quarantine lock, Atlas access token, evidence suppression queue of sealed infrastructure proof onder Aegir claim law vooruitzetten. Human extraction priority unchanged tenzij verified hazard proof custody value overstijgt.
 
 ## Audio
 
-Ze hoeven niet op de brug te staan om het antwoord te sturen.
+Ze hoeven niet op de bridge te staan om het antwoord te sturen.
 
 ## Field Note
 
-Schoner dan samenzwering: het papierwerk leeft nog en heeft nog honger.
+Schoner dan conspiracy: het paperwork overleefde de mensen die het tekenden.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/nl_NL. -->

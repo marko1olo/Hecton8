@@ -19,17 +19,15 @@ localization_flags: 0
 
 # HECTON-8 Orbit / Tide Geometry
 
-HECTON-8's orbit makes the Great Tide believable before it becomes political. Resonance pulled on the ocean. Ice stress and storm surge loaded the shelves. Industrial heat and blocked drainage made the colony's own systems push back at the wrong hour.
-
-The crime is not that Deep Reach invented physics. The crime is that it built evacuation math around Atlas continuity, insured payloads and labor classes, then called the dead an acceptable forecast error.
+HECTON-8's orbit makes the Great Tide believable before it becomes political. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water where colony math wanted margins, and industrial heat made sealed drainage fight the sea at the wrong hour. The crime is not that Deep Reach invented physics. The crime is that evacuation math was built around Atlas continuity, insured payloads, labor classes, and claim loss, then the dead were filed as forecast error.
 
 ## Scanner
 
-TIDE GEOMETRY MODEL // Resonance, ice stress, storm surge and heat discharge exceeded evacuation forecast. Atlas continuity flags overrode retreat priority.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, and heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT TIDE CHAIN // Orbital forcing amplified ocean load. Artificial heat discharge and sealed drainage converted a tide event into colony failure.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, and sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 

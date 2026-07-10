@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Władza opóźnienia świetlnego"
+title: "Autorytet opoznienia swiatla"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Władza opóźnienia świetlnego
+# Autorytet opoznienia swiatla
 
-Sygnał alarmowy na HECTON-8 jest fizycznym ładunkiem znaczenia. Opuszcza zalany maszt, przecina przestrzeń Aegir z prędkością światła, czeka w buforach przekaźnika i dociera do Black Keel przez kolejkę, która już umie wycenić ryzyko. Pierwsze opóźnienie to uczciwy dystans. Późniejsze opóźnienia są ludzkie: klasa pieczy, okna burzy, język odpowiedzialności i nawyk przewoźnika, by odpowiadać najpierw zasobowi. Dlatego odpowiedź może być technicznie świeża i nadal bezużyteczna w zapadającej się komorze ciśnienia.
+Autorytet opoznienia swiatla definiuje komunikacje HECTON-8 jako fizyczna, spozniona i contract-filtered: distance, weather, relay buffers i custody queues decyduja, kiedy signal staje sie usable.
+
+## Scanner
+
+Relay mast cache. Call wyszedl czysto, potem czekal za light, queue law, storm scatter i Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active do czasu gdy fresh signal window potwierdzi override.
+
+## Audio
+
+Odpowiedz nadchodzi. To nie czyni jej rescue.
+
+## Field Note
+
+Nikt nie ocenzurowal pierwszego scream. Physics niosla go dosc wolno, by policy zdazyla dogonic.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/pl_PL. -->

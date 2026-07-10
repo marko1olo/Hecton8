@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ran / Aegir 앵커"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran / Aegir 앵커
+# Ran / Aegir Anchor
 
-Ran / Aegir 앵커는 HECTON-8의 시각적 맛을 고정한다. 위에는 하드 SF의 흐린 햇빛, 아래에는 적대적 압력과 부채가 있다.
+Ran / Aegir Anchor는 HECTON-8의 visual logic을 고정한다. 위에는 dimmer hard-sci-fi sunlight, 아래에는 depth, weather, turbidity, pressure, debt.
 
 ## Scanner
 
-K급 항성 판. Ran은 정상적으로 탄다. Aegir는 Sol보다 어둡지만, 이곳의 어둠은 깊이, 날씨, 부채에서 온다.
+K-class star plate. Ran은 정상적으로 타오른다. 이 deep은 supernatural이 아니라 weather, water, debt 아래로 너무 멀 뿐이다.
 
 ## Terminal
 
-RAN NAV ANCHOR // 주황 왜성 조명은 표면 작업을 지원한다. 폭풍 산란, 식의 기하, 해수 탁도가 하강 가독성을 안전 여백 아래로 밀어낸다.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity, industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-별은 있다. 다만 너를 따라 내려올 수 없다.
+star는 존재한다. 그저 follow you down할 수 없을 뿐이다.
 
 ## Field Note
 
-진짜 별 하나면 충분하다. 나머지는 바다가 한다.
+real star 하나면 충분하다. 나머지는 ocean이 한다.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ko_KR. -->

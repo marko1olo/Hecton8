@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "公司响应账本"
+title: "企业响应账本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 公司响应账本
+# 企业响应账本
 
-账本是Black Keel在无人即兴处理时的语言。它能承认危险、打开队列、保留索赔，同时仍把操作员留在资产规则之后。玩家应该把响应账本当作有用信号，也当作已变成可执行代码的敌意文书。
+corporate response ledger是无人improvising时Black Keel说话的方式。它可以立刻acknowledge distress，打开route queue，preserve a claim，demand sample custody，log hull risk，同时仍让living operator在asset rules后面等待。ledger有价值，因为它暴露system知道什么。它带有敌意，因为knowing并不等于acting。在HECTON-8，第一条reply常常证明machine听见了一切，却几乎什么都没有承诺。
 
 ## Scanner
 
-每个回复都以合同语言到达：资产托管、责任锁、样本路线、船体风险，然后才是操作员回收。
+每个reply都以contract language抵达：asset custody、liability lock、sample route、hull risk，然后才是operator recovery。
 
 ## Terminal
 
-响应等级：资产保存。操作员回收附加在样本托管、责任封印、船体审计和付款路线之后。
+RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route和evidence retention。Automated acknowledgement valid。Rescue priority unresolved。
 
 ## Audio
 
-回复是自动的。救援是有条件的。
+reply是automatic。rescue是conditional。
 
 ## Field Note
 
-立即响应不是立即救援。
+Immediate response不是immediate rescue。
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/zh_CN. -->

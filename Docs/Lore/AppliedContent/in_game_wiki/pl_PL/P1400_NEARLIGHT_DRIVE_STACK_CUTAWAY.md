@@ -9,27 +9,25 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Propulsion Syllabus
 spoiler_tier: 1
-title: "Przekrój stosu napędu bliskiego światłu"
+title: "Przekrój stosu napędu near-light"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Przekrój stosu napędu bliskiego światłu
+# Przekrój stosu napędu near-light
 
-Przekrój Barnard Yards jest szorstki, bo zrobiono go dla kontraktorów, nie dla pasażerów. Kadłub klasy Atlas nie zaczyna podróży w chwili zapłonu silników pokładowych. Zaczyna ją wtedy, gdy macierz wiązek wydaje moc na żagiel, gdy tor peletów zostaje zwolniony, gdy schwytana masa dociera do gardzieli fuzyjno-elektrycznej i gdy księga osłony przyjmuje, że pył przez lata będzie ścierał kosztowną ochronę.
-
-Środek rejsu to problem cieplny z uśpionymi ludźmi w środku. Żebra radiatorów, zatoki krio, warsztaty, kołyski wiertnicze i ładunek klasy ciśnieniowej walczą o te same marginesy. Przybycie nie jest zwycięskim spaleniem; to kolejna maszyna kontraktowa. Szpule żagli magnetycznych, powłoki aerohamowania, okna odbiorcy i oprogramowanie depozytowe decydują, kto może wydać lokalny slot hamowania. Dlatego Black Keel może wycenić przejście złomiarza nad Aegir, ale nie staje się ratunkiem. Transportowiec bliski światłu rusza, gdy infrastruktura trasy, budżet cieplny, prawa hamowania i własność ustawiają się razem. Uwięziony Marauder jest tylko jedną pozycją, dopóki trasa nie zostanie zmuszona, by go policzyć.
+Statek near-light nie jest magiczną pochodnią przykręconą do kadłuba. Drive stack to cała trasa zamieniona w sprzęt: beam arrays wydają moc przed odlotem, pellet lanes układają masę do przechwycenia, fusion-electric throats zmieniają paliwo w prąd i ciepło, osłony przyjmują pył, radiatory latami wyrzucają ciepło, a hamowanie jest tak ważne jak przyspieszanie.
 
 ## Scanner
 
-PRZEKRÓJ STOSU NAPĘDU // Płyta serwisowa Barnard Yards. Jarzmo żagla wiązkowego, chwytacz peletów, gardziel fuzyjno-elektryczna, osłona cienia, żebra radiatorów, szpula żagla magnetycznego, powłoka aerohamowania i licznik depozytu mają ten sam wybity numer trasy.
+PRZEKRÓJ DRIVE STACK // płyta serwisowa Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, żebra radiatorów, magsail spool, aerobrake skin i custody meter dzielą numer trasy.
 
 ## Terminal
 
-STOS TRANZYTOWY ATLAS // Zewnętrzne macierze wiązek dają pchnięcie startowe. Tory peletów karmią schwytaną masę do gardzieli fuzyjno-elektrycznej. Lód osłonowy i węgiel przyjmują straty od pyłu. Żebra radiatorów spłacają ciepło przez lata. Żagle magnetyczne, powłoki aerohamowania i prawa odbiorcy decydują, czy ładunkowi wolno się zatrzymać.
+ATLAS TRANSIT STACK // Pchnięcie startowe: zewnętrzne beam array. Zasilanie rejsu: przechwycenie pellet lane. Konwersja: fusion-electric throat. Kontrola strat: lód osłony, węgiel, żebra radiatorów. Prawo przybycia: magsail spool, aerobrake skin, slot odbiorczy, ledger custody.
 
 ## Audio
 
@@ -37,6 +35,6 @@ Przestań nazywać stożek silnikiem. Silnik to trasa, ciepło odpadowe i ten, k
 
 ## Field Note
 
-Płyta stawia ciepło przed ciągiem. Dobra płyta. Tanie załogi umierają na marginesie radiatora, zanim zdążą chwalić się prędkością.
+Płyta stawia ciepło przed ciągiem. Dobra płyta. Tanie załogi giną na marginesie radiatora, zanim ktokolwiek chwali się prędkością.
 
 <!-- In-Game Wiki; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/pl_PL. -->

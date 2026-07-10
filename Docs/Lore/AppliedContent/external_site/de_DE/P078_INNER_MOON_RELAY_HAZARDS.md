@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Relaisgefahren der inneren Monde"
+title: "Innere-Mond-Relay-Gefahren"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisgefahren der inneren Monde
+# Innere-Mond-Relay-Gefahren
 
-Diese Gefahren erklären HECTON-8s Kontaktverlust durch Strahlung, Staub, Verdeckung und geerbtes route law statt magischer Störung.
+Inner Moon Relay Hazards erklaren HECTON-8 contact failure durch radiation, dust, occlusion, eclipse geometry und inherited route law statt impossible interference.
 
 ## Scanner
 
-INNERE LEITER // Skarn sättigt Antennen. Vela streut Optik. Alte Claw- und Lumen-Routen halten veraltete Handshakes lebendig.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw und Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-RELAISGEFAHR-NOTIZ // Kontaktverlust kann Geometrie, Teilchenwetter, Staub-Shutter oder geerbtes buoy law sein. Saubere UI in Surge-Fenstern verdächtigen.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Das Relais schwieg nicht. Es wiederholte das falsche Jahrhundert.
+Das relay wurde nicht still. Es repeated the wrong century.
 
 ## Field Note
 
-Ein sauberes Icon kann durch alten Himmel lügen.
+Ein clean icon kann noch durch old sky lugen.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/de_DE. -->

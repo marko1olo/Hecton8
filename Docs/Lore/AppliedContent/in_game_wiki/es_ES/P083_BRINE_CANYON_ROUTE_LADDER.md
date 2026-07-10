@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Escalera de ruta del cañón de salmuera
 
-Los cañones de salmuera vuelven física la progresión de profundidad. Capas densas, paredes minerales, fugas térmicas y distorsión acústica enseñan por qué viajar más hondo exige mejores instrumentos y disciplina de presión.
+Los cañones de salmuera convierten la profundidad en sustancia. Ríos salinos densos reposan dentro del océano como suelos, espejos y trampas. Una ruta limpia se construye con marcadores de densidad, ventanas de lastre, comprobaciones de relé y ángulos disciplinados, no con valentía. Las capas profundas enseñan por qué importan los instrumentos: el sonar puede reflejar la sala superior, la flotabilidad puede mentir y el traje puede tener razón mientras el mar discrepa.
 
 ## Scanner
 
-Marcador de densidad de salmuera. La ruta de descenso es química con paredes.
+Marcador de densidad confirmado. La ruta no es un pasillo; es química con paredes.
 
 ## Terminal
 
-CONTROL CAÑÓN DE SALMUERA: interfaz de densidad estable para descenso por etapas. Advertencia: distorsión de relé acústico, error de flotabilidad del vehículo y falsos suelos bajo 1800 m.
+CONTROL CAÑON SALMUERA: interfaz de densidad estable para descenso por etapas. Riesgos esperados bajo 1800 m: distorsión de relé acústico, error de flotabilidad del vehículo, eventos de falso suelo en sensores.
 
 ## Audio
 
@@ -35,6 +35,6 @@ El cañón es una escalera hecha de agua equivocada.
 
 ## Field Note
 
-No nadas por el cañón. Negocias con capas más pesadas que tu traje.
+No nadas por el cañón. Negocias con capas más pesadas que el traje.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/es_ES. -->

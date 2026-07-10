@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "噴出口マイクロノード電力巣"
+title: "ベント・マイクロノード電力巣"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 噴出口マイクロノード電力巣
+# ベント・マイクロノード電力巣
 
-噴出口マイクロノード電力巣は、深層修理網の遅い心拍だ。噴出口近くでは、海が熱勾配、鉱物流、圧力振動、化学的不均衡を提供する。Deep Reachはそれらを計器と非常充電に使った。清潔な送電網が死んだ後も、Atlasはその習慣を続けた。
+ベント・マイクロノードはAtlasを小さく、しつこく保つ。問題を起こすのに完全な中央機械は要らない。局所電力、局所損傷、局所修理規則だけで、二度の訪問の間に通路を変えられる。
 
-マイクロノードはAtlasを全知にはしない。その限界が重要だ。近くの膜へパルスを送り、シーラント層を硬化させ、ドローン巣に微弱充電を流し、損傷基質に局所判断記録を残すことはできる。そうしたノードが数千集まると、深淵は組織化されて感じられるが安全にはならない。底でプレイヤーが相手にするのは神ではない。人間の用途を忘れた小さな修理の都市だ。
+## Scanner
+
+ベント喉部のセラミックノード群が熱勾配を収穫。周囲にドローン充電痕と新しいシーラント反応。
+
+## Terminal
+
+ATLAS局所電力ノード / VENT V-3：熱勾配がマイクロセルスタックへ給電し、40 m内のバイオフィルムとシーラントループを起こす。ドローン充電間隔不規則。中央コマンドロックなし。
+
+## Audio
+
+熱、鉱物の喉、ノード。それだけで通過後に修理が起きる。
+
+## Field Note
+
+ベントノードが暖かいなら、背後で部屋が起きると考えろ。鉱物の喉に触れる前に出口をマークしろ。
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/ja_JP. -->

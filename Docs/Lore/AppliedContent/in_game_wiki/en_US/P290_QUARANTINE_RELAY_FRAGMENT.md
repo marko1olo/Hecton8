@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Quarantine Relay Fragment"
+title: "Quarantine Relay Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,33 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Relay Fragment
+# Quarantine Relay Hold
 
-Quarantine Relay Fragment is a small ending with teeth. It proves that HECTON-8 can rescue someone from pressure and still refuse to return them to personhood. The packet carries two truths in the same administrative breath: extraction accepted, release denied. The body is recovered. The person is retained. The air review line is older than the rescue receipt, which means the quarantine verdict was waiting before anyone opened the hatch. For gameplay and lore this fragment matters because it makes rescue morally incomplete. A dry floor is not freedom. A med seal is not release. The colony can save what it needs as evidence, sample, claimant property or witness inventory, then keep the human being inside the system that harmed them.
+A quarantine relay hold is a rescue document that stops short of release. QRF-17 accepts extraction from the water, then keeps the recovered operator inside quarantine because sample custody, air review and claimant status remain unresolved. The air review date predates the rescue receipt. The hold was already waiting when the hatch opened.
+
+The fields carry the threat: extraction accepted, release denied, witness provisional, wrist seal stays on. A living operator can be held inside the same custody chain as a contaminated sample until the claim desk decides which one matters more.
 
 ## Scanner
 
-The same relay packet approves extraction and denies release. The ocean lets the body go before the colony lets the person leave.
+Relay packet QRF-17 carries both stamps: EXTRACTION ACCEPTED and RELEASE DENIED. Air review date is older than the rescue receipt.
 
 ## Terminal
 
-RELAY HOLD QRF-17 / EXTRACTION: ACCEPTED / RELEASE: DENIED / REASONS: sample custody unresolved, air review stale, claimant dispute active, witness status provisional.
+RELAY HOLD QRF-17
+Extraction: accepted
+Release: denied
+Air review: stale before rescue receipt
+Custody: sample chain unresolved
+Claimant dispute: active
+Witness status: provisional
+Instruction: keep recovered operator inside quarantine line.
 
 ## Audio
 
-Relay hold. Extraction accepted. Release denied. You are out of the water, not out of custody.
+Extraction accepted. Release denied. Do not remove the wrist seal.
 
 ## Field Note
 
-Stamped twice: BODY RECOVERED, PERSON RETAINED. Air review predates the rescue receipt; claimant dispute remains open.
+Two stamps on one card: BODY RECOVERED, PERSON HELD. Check sample custody before you celebrate the dry floor.
 
 <!-- In-Game Wiki; generated from P290_QUARANTINE_RELAY_FRAGMENT/en_US. -->

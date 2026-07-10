@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "صوت Black Keel الأول"
+title: "الصوت الأول لBlack Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# صوت Black Keel الأول
+# الصوت الأول لBlack Keel
 
-يصل صوت Black Keel الأول إلى اللاعب كصوت متضرر ونص نظيف. ليس رفيقا وليس خطاب شرير. إنه مراقب carrier يفعل ما بني لأجله: يؤكد الإشارة، يحفظ خيارات الطريق، يرتب الالتزامات، ويتجنب الوعود. الصوت مفيد لأنه يعطي معلومات صلبة. ومخيف لأن كل جملة صحيحة تترك الإنقاذ مشروطا.
+يجب أن يبدو الصوت الأول لBlack Keel مفيدا قبل أن يبدو قاسيا. يؤكد carrier الإشارة، ويرشح corrupted audio، ويفتح text channel، ويقدم معلومات قد تبقي المشغل حيا. لا يكذب أبدا بأنه صديق. لا يهدر الطاقة على الدفء. رعبه يأتي من الكفاءة: كل جملة صحيحة، وكل warning مهم، وكل إجابة صحيحة تترك extraction مشروطا. الصوت ليس شريرا. هذا هو صوت rescue بعدما بيع rescue إلى ledger.
 
 ## Scanner
 
-مخبأ صوت carrier. الصوت مقطوع، النص نظيف، التعاطف غائب.
+Carrier voice cache. مزق pressure noise الصوت؛ text channel نظيف بما يكفي للفوترة.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: قناة الصوت متدهورة. قناة النص صالحة. نجاة المشغل معترف بها. أولوية الاسترداد غير محسومة بانتظار حالة payload والحجر وlien وسلامة الإشارة.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody وquarantine state وlien value وsignal integrity وmass-window balance.
 
 ## Audio
 
-تم التقاط إشارة المشغل. لا تخلط بين الاعتراف والإنقاذ.
+Operator signal acquired. لا تخلط acknowledgement مع rescue.
 
 ## Field Note
 
-أول جملة مفيدة تصل ومعها فئة فوترة خلفها.
+الجملة المفيدة الأولى لا تواسي. إنها تصنف.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ar_SA. -->

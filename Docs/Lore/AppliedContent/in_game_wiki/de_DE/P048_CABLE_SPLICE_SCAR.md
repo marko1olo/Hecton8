@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Kabelspleißnarbe"
+title: "Kabel-Splice-Narbe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kabelspleißnarbe
+# Kabel-Splice-Narbe
 
-Eine Kabelspleißnarbe ist eine frühe Atlas-6-Spur, die noch wie Wartung aussieht. Die Reparatur hält Strom in einer beschädigten Serviceleitung, doch das Material passt nicht zum Kolonieverfahren und die Freigabe fehlt. Solche Narben sollten erscheinen, bevor das Reparaturnetz biologisch wirkt: nützlich, konkret und leicht falsch.
+Eine cable splice scar ist eine der ersten Atlas traces, die noch als maintenance durchgehen kann. Die line ist broken, official repair fehlt, und power keeps moving trotzdem. Das material um die wound ist weder flesh noch normal insulation; es verhalt sich wie eine answer grown around a question nobody filed. Early scars sollen fast helpful wirken. Lights return. A relay wakes. A door gets one more cycle. Das Unbehagen kommt spater, wenn dieselbe repair logic dort erscheint, wo no hand could have reached und no work order was ever written.
 
 ## Scanner
 
-Nichtstandard-Spleiß. Isolierung wuchs nach Ausfall menschlicher Routenführung um ein Servicekabel nach; Atlas-6-Tag unvollständig, Wartungsautorität fehlt.
+Nonstandard splice. Insulation regrew um ein service cable, nachdem human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: menschlicher Spleiß offen ausgefallen. Autonome Kontinuitätsreparatur zur Erhaltung der Relaislast akzeptiert. Muster wiederholt sich an Kabelriffknoten mit geringerem Isolationsverlust und ohne Arbeitersignatur.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Jemand reparierte das Kabel, nachdem die Formulare endeten. Oder etwas.
+Jemand fixed the cable, nachdem paperwork stopped. Oder etwas tat es.
 
 ## Field Note
 
-Erst nützlich. Später falsch. So stellen sich Atlas-Reparaturen vor.
+Zuerst useful. Spater wrong. So stellen sich Atlas repairs vor.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/de_DE. -->

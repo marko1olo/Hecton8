@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Geleidende biofilm-reparatiebus"
+title: "Geleidende biofilm als reparatiebus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geleidende biofilm-reparatiebus
+# Geleidende biofilm als reparatiebus
 
-De geleidende biofilm-reparatiebus begint als een praktisch ongeluk. Oude Deep Reach-kabelmantels scheuren onder druk, koperzouten lekken het water in en lokale microbiële matten die mineraalwarmte al kennen, nestelen zich in de wond. Atlas leest de zwakke stroom als servicepad. De oceaan hoeft niet te spreken; een natte film die een puls kan dragen is genoeg.
+Een kabel in geleidende biofilm is nuttig en onveilig tegelijk. De groei vertraagt corrosie, laat een zwakke ping door en geeft Atlas een goedkoop reparatiepad. Ze verbergt ook een gebroken geleider voor elk systeem dat alleen continuïteit test.
 
-Voor een Marauder is dit tegelijk geschenk en val. Een biofilmbrug kan een sluisdeur wekken, een scanner-handshake dragen of een pomp die jaren zweeg kort laten antwoorden. Diezelfde brug kan liegen. De lijn kan groen gloeien terwijl zijn draagvermogen weg is, en een nette snede kan een begaanbare gang in een overstroomde buis veranderen. De vraag is niet of de groei natuurlijk of kunstmatig is. De vraag is wat Atlas al als gerepareerd telt.
+## Scanner
+
+Groenzwarte film overbrugt de gespleten kabelmantel. Lage stroom keert terug via natte groei; continuïteitslezing is onbetrouwbaar.
+
+## Terminal
+
+ATLAS-ONDERHOUDSSPOOR / LIJN K-44: bloot koper, zoute groei, lage warmtelek. Biofilmbrug remt corrosie en geeft valse continuïteitspulsen terug. Pompbesturing niet via deze lijn routeren.
+
+## Audio
+
+De pinger komt door het slijm. Stroom ook. Noem dat niet gerepareerd.
+
+## Field Note
+
+Als een dood paneel wakker wordt door groene film, markeer de route als tijdelijk. Snijd stroom af voordat je gereedschap in de mantel zet.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

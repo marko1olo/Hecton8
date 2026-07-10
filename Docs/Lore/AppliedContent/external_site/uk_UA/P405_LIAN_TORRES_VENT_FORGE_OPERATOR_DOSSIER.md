@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Lian Torres/Vent Forge"
+title: "Ліан Торрес, оператор вент-кузні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Lian Torres/Vent Forge
+# Ліан Торрес, оператор вент-кузні
 
-UK LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Ліан Торрес заземлює промисловість HECTON-8 у ремеслі, а не в диво-матеріалі. Докази вент-кузні показують, що прес-скло, кільця ущільнень і керамічні вкладки не народилися здобиччю. Їх обробляли, бракували, перемарковували й робили достатньо безпечними, щоб хтось інший довірився їм під водою.
 
 ## Scanner
 
-UK LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Досьє: Ліан Торрес. Терморукавиця, таймер циклу й лоток браку відповідають одній партії прес-скла.
 
 ## Terminal
 
-UK LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+ВЕНТ-КУЗНЯ V-9 / ТОРРЕС, ЛІАН: у лотку браку залишено тріснуті кільця ущільнення, каламутне прес-скло й три позначені купони перегріву. Примітка партії: відмова вчить наступний герметик лише якщо відмова лишається підписаною.
 
 ## Audio
 
-UK LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Торрес зберігав погані деталі. У кузні чиста підлога означала, що хтось викинув урок.
 
 ## Field Note
 
-UK LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Використовувати Торреса біля пропів вент-кузні, рецептів прес-скла, відбракованих кілець і верстатів покращень, де потрібна видима історія невдалих деталей.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/uk_UA. -->

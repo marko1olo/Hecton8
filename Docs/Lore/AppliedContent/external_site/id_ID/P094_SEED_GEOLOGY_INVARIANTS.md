@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Invarian Geologi Seed"
+title: "Invarian Geologi Survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Invarian Geologi Seed
+# Invarian Geologi Survey
 
-Setiap run salvage di HECTON-8 bisa membuka rute berbeda melalui luka. Ngarai bisa terbuka lebih awal, karang kabel bisa menyembunyikan kantong aman, bloom bisa mendorong fauna ke jalur yang dulu kosong, dan rantai bukti bisa muncul dalam urutan baru. Fisika bulan tidak diatur ulang untuk hiburan. Aegir tetap bintang utama. HECTON-8 tetap pada tangga orbitnya. Great Tide menjaga intervalnya. Pita kedalaman tetap tersusun dalam urutan brutal yang sama. Blue debt menjaga perilaku tekanannya. Atlas tetap terikat pada basin terdalam.
+Survey Geology Invariants memungkinkan HECTON-8 punya changing charts dan route uncertainty sambil mempertahankan fixed astronomy, depth order, Great Tide logic, blue-debt behavior, dan Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. Salvage chart bisa disagree with itself; moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+Later chart bisa bury evidence differently. Ia tidak bisa rewrite gravity, tide, atau guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/id_ID. -->

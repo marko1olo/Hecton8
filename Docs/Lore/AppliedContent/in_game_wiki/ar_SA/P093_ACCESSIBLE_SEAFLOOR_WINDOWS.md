@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "نوافذ القاع القابلة للوصول"
+title: "نوافذ seafloor قابلة للوصول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# نوافذ القاع القابلة للوصول
+# نوافذ seafloor قابلة للوصول
 
-نوافذ القاع القابلة للوصول هي مواضع تخفض فيها قشرة HECTON-8 المكسورة ثمن الهبوط مؤقتا. تظهر عند رفوف منهارة، حواف مكشوفة، ندوب فوهية مسخنة، وأعمدة ملحية تحمل الضغط بطريقة مختلفة. النافذة قاتلة إذا استعجلتها. لكنها تمنح تماسا مع قاع قديم، عروق معدن نادرة، عتاد مستعمرة مدفون، ودليلا لا يتركه المحيط العادي في المتناول.
+Accessible seafloor windows ليست safe places. إنها rare permissions كتبتها broken geology. يقلل collapsed shelf زاوية descent. وتحمل reheated brine column الpressure بطريقة مختلفة لبضع مئات الأمتار. ويجعل exposed ridge الsonar hold shape حيث كان open water swallow it. عبر تلك windows يصبح old floor reachable: mineral seams وcrushed habitat anchors وpressure-glass وdead machines وevidence كان main ocean سيبقيها out of human range. Rush a window، فتغلق with the same pressure that made it valuable.
 
 ## Scanner
 
-علامة حافة مكشوفة. هنا تمزقت القشرة بما يكفي كي تلمس الزاحفة القاع القديم من غير أن تصير معجونا.
+Exposed ridge marker. هنا تمزقت shell رقيقة بما يكفي كي يلمس crawler old floor without becoming paste.
 
 ## Terminal
 
-شروط النافذة: شفة قشرة مكسورة، عمود ملحي أعادت الفوهة تسخينه، منحدر رف منهار، عودة سونار ثابتة، جيب ضغط دون خط بدلة أحمر. يوسم للنهب البطيء فقط.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-البحر يسمح لك بلمس القاع عبر نوافذ، لا حيثما تشعر بالشجاعة.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-معظم القمر يحتفظ بقاعه كسرا ضغطيا. النوافذ استثناءات لها أسنان.
+تحفظ معظم moon أرضيتها كpressure secret. الwindows استثناءات with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ar_SA. -->

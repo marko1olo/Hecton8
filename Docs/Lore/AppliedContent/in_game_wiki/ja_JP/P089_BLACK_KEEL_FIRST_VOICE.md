@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Black Keelの最初の声
 
-Black Keelの最初の声は、壊れた音声と清潔なテキストとしてプレイヤーに届く。仲間ではなく、悪役の演説でもない。carrier監視装置が作られた通りに働いているだけだ。信号を確認し、経路選択肢を残し、義務を並べ、約束を避ける。声が有用なのは硬い情報を与えるからだ。怖いのは、正しい文のすべてが救助を条件付きにしたまま残すからだ。
+Black Keelの最初の声は、残酷に感じる前にまず有用であるべきだ。carrierは信号を確認し、corrupted audioを濾過し、text channelを開き、operatorを生かし続けるかもしれない情報を渡す。友人だとは決して嘘をつかない。暖かさに電力を使わない。その恐ろしさは有能さにある。すべての文が正しく、すべてのwarningが重要で、すべての正しい答えがextractionを条件付きのままにする。声は邪悪ではない。rescueがledgerに売られた後、rescueはこう聞こえる。
 
 ## Scanner
 
-carrier音声キャッシュ。音声は途切れ、文字は清潔、同情はない。
+carrier voice cache。audioはpressure noiseで裂けているが、text channelは請求できる程度に清浄。
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: 音声チャネル劣化。文字チャネル有効。操作者生存を承認。回収優先度はpayload、隔離、lien、信号完全性状態待ちで未解決。
+BLACK KEEL FAILSAFE: operator signal acquired。Audio degraded。Text channel valid。Survival acknowledged。Recovery priorityはpayload custody、quarantine state、lien value、signal integrity、mass-window balanceがpendingのため未解決。
 
 ## Audio
 
-操作者信号を取得。承認を救助と混同するな。
+Operator signal acquired。acknowledgementをrescueと混同しないこと。
 
 ## Field Note
 
-最初の有用な一文は、その背後に請求区分を連れて来る。
+最初の有用な文は慰めない。分類する。
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ja_JP. -->

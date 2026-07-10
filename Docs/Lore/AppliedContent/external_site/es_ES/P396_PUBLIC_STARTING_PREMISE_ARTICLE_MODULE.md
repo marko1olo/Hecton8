@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Reclamación inicial del Marauder"
+title: "Reclamación inicial del Merodeador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Reclamación inicial del Marauder
+# Reclamación inicial del Merodeador
 
-El primer archivo Black Keel sobre HECTON-8 parece un trabajo de salvage hasta que su propia redacción empieza a incriminarse. Un Marauder endeudado acepta la ruta porque el lien es real y la ventana de recuperación estrecha. Su pasado Deep Reach field-systems importa de inmediato: procedimientos de presión, abreviaturas de mantenimiento, frases de liability y marcas de evacuación resultan familiares antes de convertirse en pruebas. Black Keel ofrece acceso, no piedad. El descenso empieza con trabajo concreto alrededor de P-63: remendar el bathydrop, comprobar sellos, escanear el shelf, reiniciar máquinas, recuperar carga o prueba y salir antes de que el orbital timing y la legal custody cierren el claim. El gancho es reconocimiento profesional: el jugador ve dónde el lenguaje pulido y el daño físico cuentan historias distintas.
+HECTON-8 empieza con un contrato lo bastante familiar para ser peligroso. Black Keel da a un Merodeador atado por deuda acceso a una ruta de recuperación sobre P-63, no una promesa de rescate. El registro usa vocabulario de Deep Reach porque el personaje del jugador trabajó dentro de él: sistemas de campo, infraestructura de evacuación, procedimiento de presión, formularios de ruta, prueba admisible. Ese pasado cambia la primera hora. Un panel malo no es decorado. Una etiqueta corregida no es color local. Una frase de responsabilidad pulida puede compararse con una abolladura, un reloj, el estado de una puerta o una marca de desaparecido. El descenso empieza como salvage pagado y se convierte en reconocimiento profesional: el papel conoce la sala, y la sala demuestra que el papel fue limpiado.
 
 ## Scanner
 
-Registro público de claim. La ruta inicial identifica a un Marauder endeudado con pasado Deep Reach field-systems, un bathydrop dañado y una ventana de recuperación Black Keel sobre P-63.
+Registro público de reclamación. El archivo de gravamen Black Keel nombra a un antiguo especialista de sistemas de campo de Deep Reach, un batisalto dañado, la ruta P-63 y una ventana de custodia en cierre.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // RECLAMACIÓN INICIAL. Registro del contratista: antiguo especialista Deep Reach field-systems. Estado actual: Marauder bajo lien. Ruta: recovery claim Black Keel, descenso al shelf P-63, retorno de prueba y carga antes del cierre de custody window.
+NODO DE ARCHIVO PÚBLICO // BLACK KEEL CLAIM BK-P63-2190. Estado: Merodeador sujeto a gravamen. Autorización previa: sistemas de campo Deep Reach / infraestructura de evacuación. Entrega: masa de carga y prueba admisible antes de custodia local T+06:40.
 
 ## Audio
 
-No visitas HECTON-8. Vuelves a una burocracia que conoces demasiado bien.
+El contrato conoce tus viejas abreviaturas. Eso no equivale a decir la verdad.
 
 ## Field Note
 
-Nota de Marauder: el contrato conoce tu pasado. Eso no lo vuelve honesto.
+Nota de Merodeador: si un archivo de reclamación conoce tu nivel de autorización, lee las omisiones antes del pago.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/es_ES. -->

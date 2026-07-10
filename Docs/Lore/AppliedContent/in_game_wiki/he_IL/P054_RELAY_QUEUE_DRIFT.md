@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "סחיפת תור ממסר"
+title: "סטיית relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סחיפת תור ממסר
+# סטיית relay queue
 
-תקשורת מאוחרת מסוכנת כי היא יכולה להישאר מדויקת בזמן הלא נכון. אזהרת נושא עשויה לתאר שסתום אמיתי, דליפה אמיתית ונתיב אמיתי שכבר השתנו תחת לחץ. השחקן חייב להשוות את גיל החבילה לראיות מקומיות לפני אמון בסמכות רחוקה.
+Relay queue drift הוא סוג הכנות הקטלני ביותר ב-HECTON-8. Delayed carrier packet יכול לתאר real valve, real safe door, real low-current corridor ו-real leak שכבר זז. ה-order אינו מזויף; הוא שייך לחדר ששונה בידי pressure, flooding, silt, heat או collapse. Field practice טובה אינה אי-ציות לשם אי-ציות. היא השוואת packet age אל wet paint, fresh salt, door strain, pump sound והכיוון שבו loose debris רוצה לנוע.
 
 ## Scanner
 
-חותמת הממסר ישנה יותר מהדליפה שהיא מציינת; ההוראה הייתה נכונה לחדר שכבר אינו קיים.
+Relay stamp ישן יותר מה-leak שהוא מציין. ה-instruction היה נכון עבור room שכבר אינו קיים.
 
 ## Terminal
 
-סחיפת תור: גיל החבילה חורג מתוקף הנתיב. ראיה מקומית גוברת על הוראת הנושא עד חלון ממסר טרי.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction עד ש-fresh relay window נפתח. Treat delayed route orders as archival אלא אם pressure, door state ו-waterline תואמים.
 
 ## Audio
 
-ההודעה נכונה. זו הבעיה.
+ה-message נכון. זו הבעיה.
 
 ## Field Note
 
-אמת מאוחרת עדיין יכולה להרוג.
+Truth מאוחרת עדיין יכולה להרוג.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/he_IL. -->

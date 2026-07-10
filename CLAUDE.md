@@ -19,6 +19,27 @@ Do not load the full HECTON-8 authority stack on every message. Use staged intak
 
 If staged intake leaves authority unread, final chat must say the task was handled with scoped/static intake and name any unverified authority/proof area. This is context-budget discipline, not permission to lower standards.
 
+## Claude-only external work memory
+
+For non-trivial HECTON-8 or `C:\hades` work, Claude should use external dialog/direction memory to survive context overflow, package-size failures, crashes, or summarization.
+
+Memory location: `C:\Users\Admin\.claude\projects\c--hades\work-memory\`.
+
+Rules:
+
+1. For quick chat, tiny typo fixes, and narrow read-only answers, do not create dialog memory unless the user asks or the answer starts a continuing direction.
+2. For each substantial dialog, create or update one folder: `work-memory\dialogs\YYYYMMDD_short-dialog-slug\`.
+3. Inside that folder, maintain `INDEX.md` for the dialog summary, active direction map, cross-direction decisions, changed files, and resume entry point.
+4. For each independent direction/front in the dialog, maintain a separate `direction-<short-direction-slug>.md` file. Do not mix unrelated fronts in one file.
+5. Update the relevant direction file after each meaningful discovery, decision, source edit, failed attempt, proof result, blocker, or scope change.
+6. Update `INDEX.md` when directions are added, completed, blocked, or when the resume entry point changes.
+7. Update memory before heavy/long-running commands, before launching any subagent, before final response on non-trivial work, and whenever chat context is becoming large.
+8. Store concise but detailed recoverable facts: current request, status, next step, files actually read, findings, edits, commands/proof outcomes, blockers, and resume instructions.
+9. Do not store secrets, raw tokens, cookies, CSRF tokens, API keys, or huge raw logs. Summarize relevant error excerpts instead.
+10. This work-memory is not authority. On resume, verify live source/docs/proof before relying on it.
+
+Use `DIALOG_INDEX_TEMPLATE.md` and `DIRECTION_TEMPLATE.md` in the work-memory folder as the structure.
+
 ## Authority spine
 
 For all HECTON-8 work, read and obey the nearest live authority in this order:

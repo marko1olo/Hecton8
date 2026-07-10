@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ex-Deep-Reach Marauder
 
-Ex-Deep-Reach Marauder defines the player canon. The player is a former corporate field-systems and evacuation-infrastructure specialist, blacklisted or debt-bound into independent salvage, returning to HECTON-8 under Black Keel custody. The drama comes from professional recognition: the moon answers with procedures the player once understood, and every familiar lock makes the corporate lie harder to treat as someone else’s wreck.
+Ex-Deep-Reach Marauder fixes the biographical pressure without turning HECTON-8 into destiny. The central salvage operator is a former corporate field-systems and evacuation-infrastructure specialist, blacklisted or debt-bound into independent salvage and returned under Black Keel custody. The drama comes from professional recognition: the moon answers with procedures once understood by hand, and every familiar lock makes the corporate lie harder to treat as someone else's wreck.
 
 ## Scanner
 
-The old Deep Reach lock does not check your name. It recognizes the rhythm of your repair sequence.
+The old Deep Reach lock does not check a name. It recognizes the rhythm of a field repair.
 
 ## Terminal
 
-CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+CREDENTIAL TRACE: former field-systems contract. Evacuation-infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
 
 ## Audio
 

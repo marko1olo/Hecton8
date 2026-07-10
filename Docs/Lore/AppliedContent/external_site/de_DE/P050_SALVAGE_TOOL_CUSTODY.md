@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Verwahrung des Bergungswerkzeugs"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Verwahrung des Bergungswerkzeugs
+# Salvage Tool Custody
 
-Auf HECTON-8 kann ein Werkzeug zugleich Überlebensgerät und Vertragszeuge sein. Salvage-Verwahrungslogs binden Schnitte, Reparaturen und Proben an Claim-Token und machen eine nützliche Handlung zu späterem Beweis, Schulddruck oder Auszahlungslast.
+Salvage tool custody verbindet minute-to-minute survival mit der claim economy: cuts, repairs, patches und samples konnen evidence, payout pressure oder Keelmark debt werden.
 
 ## Scanner
 
-Werkzeugdock enthält ein versiegeltes Verwahrungslog. Letzter Schnitt, Reparatur und Probenbeutel sind an einen Keelmark-Claim-Token gebunden.
+Tool dock holds a sealed custody log. Last cut, repair und sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: Schneidereinsatz unter Salvage-Claim akzeptiert. Reparaturhandlung bezeugt. Probenrechte an Keelmark-Mutual-Token gebunden. Beweisexport kollidiert mit materieller Auszahlungsroute.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Jeder nützliche Schnitt hinterlässt einen Zeugen.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Ein Schneider kann deine Luft retten und deine Hände im selben Hub verkaufen. Prüfe, was er aufzeichnet, bevor du ihn deinen nennst.
+Ein cutter kann save your air und sell your hands im selben stroke. Prufe, was er records, bevor du ihn dein nennst.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/de_DE. -->

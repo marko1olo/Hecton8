@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Accessible Seafloor Windows
 
-Most of HECTON-8's seafloor is unreachable by ordinary courage. Pressure makes a wall before the bottom appears. Accessible seafloor windows are the exceptions: torn places where a collapsed shelf, exposed ridge, reheated vent scar, or dense brine column changes the descent curve. These windows are not safe caves. They are narrow bargains with geology. A crew can touch old crust, recover pressure-grown minerals, find sealed colony hardware, or read a buried event before the ocean closes the route again. Good pilots enter slowly, leave markers, and treat stable sonar as a temporary mercy.
+Accessible Seafloor Windows are rare pressure breaks where HECTON-8 exposes ancient floor, high-risk salvage, mineral seams, and evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Here the shell tore thin enough for a crawler to touch old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Most of the moon keeps its floor as a pressure secret. The windows are exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/en_US. -->

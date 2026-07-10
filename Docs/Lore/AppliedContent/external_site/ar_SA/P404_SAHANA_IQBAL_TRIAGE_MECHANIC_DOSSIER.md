@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Sahana Iqbal/Triage"
+title: "سهانا إقبال، ميكانيكية الفرز"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Sahana Iqbal/Triage
+# سهانا إقبال، ميكانيكية الفرز
 
-AR LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+تظهر سهانا إقبال كيف حوّلت HECTON-8 الصيانة إلى فرز. لم تفصل المستعمرة المعدات المكسورة عن البشر المعرضين للخطر بوضوح؛ كلاهما انتظر تحت نظام القيود نفسه، وتسمح الأدلة للاعب بقراءة هذا الضغط دون مشهد سينمائي.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+ملف: سهانا إقبال. لوحة العزم، وبطاقات الأسرّة، وشريط الحجر تشترك في ترتيب انتظار واحد.
 
 ## Terminal
 
-AR LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+خليج الفرز C-2 / IQBAL, SAHANA: حدود العزم معلقة قرب بطاقات احتياطي الأكسجين. الأدوات، والأسرّة، وخراطيش المنقّي مصطفة على السكة نفسها. لغة الحجر حرّكت خط الوصول مرة أخرى.
 
 ## Audio
 
-AR LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+كانت إقبال تصلح ما تستطيع الوصول إليه. اللوحة ظلت تقرر ما يعد قابلا للوصول.
 
 ## Field Note
 
-AR LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+استخدم إقبال في حلقات إصلاح الحجر وممرات الطب وطوابير الأكسجين وأي واجهة تجعل اختيار آلة يكلف وقتا بشريا بوضوح.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/ar_SA. -->

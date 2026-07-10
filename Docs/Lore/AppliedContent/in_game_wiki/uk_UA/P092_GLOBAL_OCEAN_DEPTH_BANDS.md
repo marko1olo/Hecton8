@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Глобальні пояси глибини океану"
+title: "Глобальні глибинні пояси океану"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Глобальні пояси глибини океану
+# Глобальні глибинні пояси океану
 
-Океан HECTON-8 читається поясами, а не однією лінією дна. Фотичний шельф ще допускає світло, уламки, водорості й необережних пілотів. Промисловий шельф тримає кабельний риф, клітки труб і старі вантажні палуби. Нижче ропні сходи гнуть сонар і баласт. Абісальні машинні поля карають ремонт. У басейні Atlas тиск поводиться як юрисдикція.
+Океан HECTON-8 - не one long fall to a bottom. Це stack of laws. Photic shelf ще дозволяє light, algae, broken habitat skin і bad decisions, які можна виправити. Industrial shelf - це pipe cages, cable reef, loading decks і machines that answer late. Brine stairs bend sound and ballast, доки route може бути near and unreachable водночас. Abyssal machine fields punish repairs with cold patience. Atlas basin deeper than danger; там pressure becomes jurisdiction.
 
 ## Scanner
 
-Мапа глибин. Перший шельф пробачає поганий баласт; нижча вода виставляє рахунок за кожну помилку тиском, жаром і тишею.
+Depth chart. The first shelf forgives poor ballast; lower water invoices every mistake in pressure, heat, noise і silence.
 
 ## Terminal
 
-ПОЯСИ: 0-250 м фотичний шельф здобичі; 250-1200 м промисловий шельф і кабельний риф; 1200-2800 м ропні сходи/каньйон; 2800-4300 м абісальне машинне поле; 4300-5600 м басейн Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Кожні сто метрів забирають у тебе одну звичку.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Глибина на HECTON-8 - закон, погода, кордон і голод під одним числом.
+Depth на HECTON-8 - law, weather, border і hunger під одним number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/uk_UA. -->

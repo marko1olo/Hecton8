@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder-startclaim"
+title: "Startclaim van de Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder-startclaim
+# Startclaim van de Marauder
 
-Het eerste Black Keel-bestand over HECTON-8 leest als salvage-werk totdat de eigen formulering zichzelf begint te beschuldigen. Een Marauder met schuld neemt de route aan omdat het lien echt is en het herstelvenster smal. Het Deep Reach field-systems-verleden telt meteen: drukprocedures, maintenance-afkortingen, liability-zinnen en evacuatielabels zijn vertrouwd voordat ze bewijs worden. Black Keel geeft toegang, geen genade. De afdaling begint met concreet werk rond P-63: bathydrop lappen, afdichtingen controleren, shelf scannen, machines herstarten, vracht of bewijs bergen en vertrekken voordat orbital timing en legal custody de claim sluiten. De haak zit in professionele herkenning: de speler ziet waar gepolijste taal en fysieke schade verschillende verhalen vertellen.
+HECTON-8 begint met een contract dat vertrouwd genoeg is om gevaarlijk te zijn. Black Keel geeft een door schuld gebonden Marauder toegang tot een bergingsroute boven P-63, geen reddingsbelofte. Het record gebruikt Deep Reach-taal omdat het spelerspersonage daarin werkte: veldsystemen, evacuatie-infrastructuur, drukprocedure, routeformulieren, toelaatbaar bewijs. Dat verleden verandert het eerste uur. Een slecht paneel is geen decor. Een gecorrigeerd label is geen smaaktekst. Een gladde aansprakelijkheidszin kan worden vergeleken met een deuk, klok, deurstatus of vermistenmarkering. De afdaling begint als betaalde salvage en wordt professionele herkenning: het papier kent de kamer, en de kamer bewijst dat het papier is opgeschoond.
 
 ## Scanner
 
-Publiek claimrecord. De openingsroute identificeert een Marauder met schulddruk, Deep Reach field-systems-verleden, beschadigde bathydrop en Black Keel-herstelvenster boven P-63.
+Openbaar claimrecord. Het Black Keel-panddossier noemt een voormalige Deep Reach-veldsystemenspecialist, een beschadigde bathydrop, route P-63 en een sluitend bewaarnster.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // STARTCLAIM. Contractantdossier: voormalig Deep Reach field-systems-specialist. Huidige status: Marauder onder lien. Route: Black Keel recovery claim, afdaling naar P-63 shelf, terugkeer met bewijs en vracht voor sluiting van custody window.
+OPENBARE ARCHIEFKNOOP // BLACK KEEL CLAIM BK-P63-2190. Status: pandgebonden Marauder. Eerdere vrijgave: Deep Reach-veldsystemen / evacuatie-infrastructuur. Levering: vrachtmassa plus toelaatbaar bewijs vóór lokale bewaring T+06:40.
 
 ## Audio
 
-Je bezoekt HECTON-8 niet. Je keert terug naar papierwerk dat je te goed kent.
+Het contract kent je oude afkortingen. Dat is niet hetzelfde als de waarheid vertellen.
 
 ## Field Note
 
-Marauder-notitie: het contract kent je verleden. Daar wordt het niet eerlijk van.
+Marauder-notitie: als een claimdossier je vrijgaveniveau kent, lees dan de weglatingen vóór de uitbetaling.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/nl_NL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Lian Torres/Vent Forge"
+title: "ليان توريس، مشغل مسبك الفوهة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Lian Torres/Vent Forge
+# ليان توريس، مشغل مسبك الفوهة
 
-AR LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+شغّل ليان توريس مسبكا عند الفوهة حيث تحولت حرارة HECTON-8 إلى قطع صغيرة بما يكفي للحمل وخطرة بما يكفي لتحمل اسما. يتكون ملفه من قفاز محروق، ومؤقت دورة، وصينية رفض، وعينات زجاج ضغط، وحلقات ختم مخدوشة بعلامات الدفعة. الصينية هي الأهم: تثبت أن القطع المكسورة لم تكن نفاية قبل أن تعلّم حد الضغط التالي كيف يصمد. يحوّل توريس Lore الموارد إلى Lore العمل. تبدأ فئات salvage هنا كحروق، وتأخيرات، وإخفاقات موسومة، وقرار بحفظ دليل ما تصدع.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+ملف: ليان توريس. قفاز الحرارة، ومؤقت الدورة، وصينية الرفض تطابق دفعة زجاج ضغط واحدة.
 
 ## Terminal
 
-AR LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+مسبك الفوهة V-9 / TORRES, LIAN: احتفظت صينية الرفض بحلقات ختم مشقوقة، وزجاج ضغط معتم، وثلاث عينات فرط حرارة موسومة. ملاحظة الدفعة: لا يعلّم الفشل الختم التالي إلا إذا بقي الفشل موسوما.
 
 ## Audio
 
-AR LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+كان توريس يحتفظ بالقطع السيئة. في المسبك، أرضية نظيفة تعني أن أحدهم رمى الدرس.
 
 ## Field Note
 
-AR LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+استخدم توريس قرب أدوات مسبك الفوهة ووصفات زجاج الضغط وحلقات الختم المرفوضة ومقاعد الترقية التي تحتاج تاريخا مرئيا للقطع الفاشلة.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ar_SA. -->

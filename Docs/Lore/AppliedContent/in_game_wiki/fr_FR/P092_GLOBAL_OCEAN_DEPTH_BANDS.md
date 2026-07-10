@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bandes mondiales de profondeur oceanique"
+title: "Bandes globales de profondeur oceanique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bandes mondiales de profondeur oceanique
+# Bandes globales de profondeur oceanique
 
-L'ocean de HECTON-8 se lit par bandes, pas par une simple ligne de fond. Le plateau photique garde lumiere, epaves, algues et pilotes imprudents. Le plateau industriel porte recifs de cables, cages de tuyaux et vieux ponts de chargement. Plus bas, les escaliers de saumure plient sonar et ballast. Les champs de machines abyssaux punissent les reparations. Le bassin Atlas donne a la pression un air de juridiction.
+L'ocean de HECTON-8 n'est pas one long fall to a bottom. C'est un stack of laws. Le photic shelf permet encore light, algae, broken habitat skin et bad decisions corrigibles. L'industrial shelf est fait de pipe cages, cable reef, loading decks et machines that answer late. Les brine stairs bend sound and ballast jusqu'a ce qu'une route soit near and unreachable en meme temps. Les abyssal machine fields punissent repairs avec cold patience. L'Atlas basin est plus profond que danger; c'est la que pressure becomes jurisdiction.
 
 ## Scanner
 
-Carte des profondeurs. Le premier plateau pardonne un mauvais ballast; l'eau plus basse facture chaque erreur en pression, chaleur et silence.
+Depth chart. The first shelf pardonne poor ballast; lower water facture every mistake en pressure, heat, noise et silence.
 
 ## Terminal
 
-BANDES: 0-250 m plateau photique de recuperation; 250-1200 m plateau industriel et recif de cables; 1200-2800 m escalier/canyon de saumure; 2800-4300 m champ abyssal de machines; 4300-5600 m bassin Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Tous les cent metres t'enlevent une habitude.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-La profondeur sur HECTON-8 est loi, meteo, frontiere et faim sous le meme nombre.
+Depth sur HECTON-8 est law, weather, border et hunger portant le meme number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/fr_FR. -->

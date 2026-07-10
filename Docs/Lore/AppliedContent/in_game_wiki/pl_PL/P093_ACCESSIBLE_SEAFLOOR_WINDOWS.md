@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Dostepne okna dna morskiego
 
-Dostepne okna dna to miejsca, gdzie peknieta skorupa HECTON-8 na chwile obniza koszt zejscia. Powstaja przy zapadnietych polkach, odslonietych grzbietach, podgrzanych bliznach kominow i kolumnach solanki niosacych cisnienie inaczej niz otwarta woda. Okno wciaz zabija, gdy sie je pogania. Daje kontakt ze starym dnem, rzadkimi zylami mineralow, pogrzebanym sprzetem kolonii i dowodami, ktore glowny ocean zmiazdzylby poza zasiegiem.
+Accessible seafloor windows nie sa safe places. To rare permissions zapisane przez broken geology. Collapsed shelf lowers the descent angle. Reheated brine column carries pressure differently przez kilkaset metrow. Exposed ridge pozwala sonar hold shape tam, gdzie open water swallow it. Przez te windows old floor staje sie reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines i evidence, ktore main ocean trzymalby out of human range. Rush a window, a zamknie sie with the same pressure that made it valuable.
 
 ## Scanner
 
-Znacznik odslonietego grzbietu. Tu powloka pekla tak cienko, ze crawler moze dotknac starego dna bez zmiany w paste.
+Exposed ridge marker. Tu shell rozerwala sie thin enough, by crawler dotknal old floor without becoming paste.
 
 ## Terminal
 
-KRYTERIA OKNA: warga peknietej skorupy, kolumna solanki podgrzana kominem, rampa zapadnietej polki, stabilny powrot sonaru, kieszen cisnienia pod czerwona linia skafandra. Oznaczac tylko do powolnego zlomiarstwa.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-Morze pozwala dotknac dna przez okna, a nie tam, gdzie czujesz odwage.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Wiekszosc ksiezyca trzyma dno jako sekret cisnienia. Okna sa wyjatkami z zebami.
+Wiekszosc moon trzyma floor jako pressure secret. Windows to exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/pl_PL. -->

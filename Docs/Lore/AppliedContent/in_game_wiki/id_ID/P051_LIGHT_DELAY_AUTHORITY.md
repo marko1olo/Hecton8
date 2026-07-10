@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Otoritas Tunda-Cahaya
 
-HECTON-8 tidak punya ansible dan tidak punya suara komando langsung dari orbit. Pesan bergerak secepat cahaya, lalu kehilangan waktu lagi di antrean buffer, jendela badai, geometri relai, dan aturan kustodi kapal induk. Setiap jawaban adalah bukti lama, bukan perintah.
+HECTON-8 tidak punya ansible, tidak ada suara ramah yang menunduk dari orbit, dan tidak ada cara membuat sepuluh tahun cahaya terasa penuh belas kasih. Messages bergerak dengan kecepatan cahaya, lalu kehilangan lebih banyak waktu pada relay geometry, storm scatter, buffer law, dan custody queues Black Keel. Transmission bisa jujur dan tetap terlalu tua untuk dipatuhi. Permukaan mengajarkan aturan itu sejak awal: setiap remote answer adalah evidence dulu, instruction kemudian, dan tidak pernah comfort. Jika dinding, air, dan pressure tidak setuju dengan message, local world menang.
 
 ## Scanner
 
-Cache tiang relai: panggilan keluar bersih, lalu menunggu di belakang cahaya, hukum antrean, sebaran badai, dan garis pandang Aegir.
+Relay mast cache. Call keluar bersih, lalu menunggu di balik light, queue law, storm scatter, dan Aegir line-of-sight.
 
 ## Terminal
 
-OTORITAS KOM: jeda satu arah terverifikasi. Sebaran badai tinggi. Antrean relai di bawah prioritas kustodi. Otoritas survival lokal tetap aktif.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active sampai fresh signal window mengonfirmasi override.
 
 ## Audio
 
-Balasan sedang datang. Itu belum berarti penyelamatan.
+Balasannya sedang datang. Itu tidak menjadikannya rescue.
 
 ## Field Note
 
-Tidak ada yang menyensor jeritan pertama. Fisika membawanya cukup lambat sampai kebijakan sempat menyusul.
+Tidak ada yang menyensor scream pertama. Physics membawanya cukup lambat sampai policy sempat mengejar.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/id_ID. -->

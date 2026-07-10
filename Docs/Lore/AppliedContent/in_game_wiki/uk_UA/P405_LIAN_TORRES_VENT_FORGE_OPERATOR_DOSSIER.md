@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "UK LOC HOLD: Lian Torres/Vent Forge"
+title: "Ліан Торрес, оператор вент-кузні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Lian Torres/Vent Forge
+# Ліан Торрес, оператор вент-кузні
 
-UK LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Ліан Торрес працював у вент-кузні, де тепло HECTON-8 ставало деталями, досить малими, щоб їх нести, і досить небезпечними, щоб за ними стояло ім'я. Його досьє складене з обпаленої рукавиці, таймера циклу, лотка браку, купонів прес-скла й кілець ущільнення з подряпаними мітками партії. Лоток найважливіший: він доводить, що зламані деталі не були відходами, доки не навчили наступну межу тиску триматися. Торрес перетворює лор ресурсів на лор праці. Категорії salvage починаються тут як опіки, затримки, підписані відмови й рішення зберегти доказ того, що тріснуло.
 
 ## Scanner
 
-UK LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Досьє: Ліан Торрес. Терморукавиця, таймер циклу й лоток браку відповідають одній партії прес-скла.
 
 ## Terminal
 
-UK LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+ВЕНТ-КУЗНЯ V-9 / ТОРРЕС, ЛІАН: у лотку браку залишено тріснуті кільця ущільнення, каламутне прес-скло й три позначені купони перегріву. Примітка партії: відмова вчить наступний герметик лише якщо відмова лишається підписаною.
 
 ## Audio
 
-UK LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Торрес зберігав погані деталі. У кузні чиста підлога означала, що хтось викинув урок.
 
 ## Field Note
 
-UK LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Використовувати Торреса біля пропів вент-кузні, рецептів прес-скла, відбракованих кілець і верстатів покращень, де потрібна видима історія невдалих деталей.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/uk_UA. -->

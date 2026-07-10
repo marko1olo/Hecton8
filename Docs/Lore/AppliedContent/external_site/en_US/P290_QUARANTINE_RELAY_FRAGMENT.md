@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Quarantine Relay Fragment"
+title: "Quarantine Relay Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Relay Fragment
+# Quarantine Relay Hold
 
-Quarantine Relay Fragment defines the bitter edge of HECTON-8 survival. The setting is not only about escaping water pressure; it is about escaping records, custody chains and ownership claims that survive the flood. The fragment gives endings a harder shape: someone can be recovered from the ocean and still not be free.
+QRF-17 separates extraction from release. A person can reach dry floor and still remain inside quarantine custody while sample chain, air review and claimant dispute stay open.
 
 ## Scanner
 
-The same relay packet approves extraction and denies release. The ocean lets the body go before the colony lets the person leave.
+Relay packet QRF-17 carries both stamps: EXTRACTION ACCEPTED and RELEASE DENIED. Air review date is older than the rescue receipt.
 
 ## Terminal
 
-RELAY HOLD QRF-17 / EXTRACTION: ACCEPTED / RELEASE: DENIED / REASONS: sample custody unresolved, air review stale, claimant dispute active, witness status provisional.
+RELAY HOLD QRF-17
+Extraction: accepted
+Release: denied
+Air review: stale before rescue receipt
+Custody: sample chain unresolved
+Claimant dispute: active
+Witness status: provisional
+Instruction: keep recovered operator inside quarantine line.
 
 ## Audio
 
-Relay hold. Extraction accepted. Release denied. You are out of the water, not out of custody.
+Extraction accepted. Release denied. Do not remove the wrist seal.
 
 ## Field Note
 
-Stamped twice: BODY RECOVERED, PERSON RETAINED. Air review predates the rescue receipt; claimant dispute remains open.
+Two stamps on one card: BODY RECOVERED, PERSON HELD. Check sample custody before you celebrate the dry floor.
 
 <!-- External Site; generated from P290_QUARANTINE_RELAY_FRAGMENT/en_US. -->

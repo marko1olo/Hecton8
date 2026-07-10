@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Public Site Marauder Culture Article
 spoiler_tier: 1
-title: "Marauder 인양법 현장 기사"
+title: "Marauder Salvage 법 현장 문서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder 인양법 현장 기사
+# Marauder Salvage 법 현장 문서
 
-Marauder라는 말은 불편해야 한다. 낭만적인 직업명도 깨끗한 직함도 아니다. HECTON-8에서 Marauder는 법이 도움보다 서류로 더 빨리 이동할 때 생긴다. 청구 시스템은 죽었거나 분쟁 중인 자산에 들어가 가치를 회수하고, 오염된 재산을 만지고, 개인 위험을 받아들이며, 다른 사무실이 절차가 통제되었다고 가장할 기록을 남길 사람을 필요로 한다.
+Marauder라는 단어는 목에 걸려야 한다. 힘 판타지 라벨이 아니다. 변경 법이 망가진 자산을 누군가 만지게 해야 하지만 그 자산이 사람들로 찬 작업장이었다고 인정하고 싶지 않을 때 만들어내는 직함이다.
 
-그래서 플레이어는 첫 순간부터 도덕적으로 노출된다. 당신은 식민지를 구하러 온 기사도 아니다. 낡은 Deep Reach 절차를 손에 쥔 전문 scavenger이고, 머리 위에는 부채 창이 있으며, 아래에는 장부가 이미 범주로 눌러 버리려 한 사람들의 바다가 있다. 공포는 약탈이 아니다. 약탈이 시스템이 아직 인정하는 유일한 행동일 수 있다는 점이다.
+            HECTON-8은 Marauder를 통해 플레이어 행동을 도덕적으로 무겁게 만든다. 산소, 빚, 도구 때문에 약탈은 필요하다. 동시에 기록도 한다. 네가 훔치는 물건이 물, 압력, 기업 청소를 살아남는 유일한 증거일 수 있기 때문이다. 좋은 Marauder는 깨끗하지 않다. 방을 벗겨내는 것과 방이 증명하는 것을 보존하는 것의 차이를 안다.
 
-Marauder 현장 언어는 그 압력에서 자랐다. 검은 고리는 다음 잠수부에게 공식 소유자가 거짓말한다고 알려주면 낙서가 아니다. 날인된 사망 원인을 가로지르는 선은 누락된 펌프 증명서를 가리키면 감상이 아니다. 항로 표식 옆 작업자 이름은 반짝이는 추모비보다 법적 힘이 클 수 있다.
+            현장 문화는 그 모순에서 나온다. 벽 표식, 지워진 라벨, 노동자 이름, 압력 화살표, 못생긴 속기는 공식 법 아래의 두 번째 법을 이룬다. 공손한 언어는 이미 실패했기 때문에 거칠고, 격벽이 숨 쉬는 동안 청구 매뉴얼을 읽을 시간은 없기 때문에 빠르다.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/ko_KR. -->

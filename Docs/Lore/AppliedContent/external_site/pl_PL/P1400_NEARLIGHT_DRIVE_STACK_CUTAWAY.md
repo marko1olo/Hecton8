@@ -9,22 +9,18 @@ locale: pl_PL
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Przekrój stosu napędu bliskiego światłu"
+title: "Przekrój stosu napędu near-light"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Przekrój stosu napędu bliskiego światłu
+# Przekrój stosu napędu near-light
 
-Statek bliski światłu w HECTON-8 nie jest czystą strzałą z jednym niemożliwym silnikiem. Widoczny kadłub to ostatnia serwisowana część trasy położonej lata przed przebudzeniem załogi. Płyty szkoleniowe Barnard Yards rysują stos w kolejności, w jakiej pracownik naprawdę za niego płaci: pchnięcie żagla wiązkowego, chwyt peletów, gardziel fuzyjno-elektryczna, osłona cienia, żebra radiatorów, szpula żagla magnetycznego, powłoka aerohamowania i depozyt odbiorcy.
+Przekrój Barnard Yards zrobiono dla kontraktorów, dlatego mówi prawdę. Nie rysuje bohaterskiej dyszy i nie udaje, że problem rozwiązano. Zaczyna od trasy: kto posiada beam array, kto oczyścił pellet lane, ile strat pyłowych zniesie osłona, ile lat margines radiatorów pozostanie uczciwy i który odbiornik ma prawo hamować ludzką masę.
 
-Każdy etap ma innego właściciela i inny sposób awarii. Macierz wiązek może sprzedać odlot, zanim ktokolwiek zapłacił za przybycie. Tor peletów może karmić spalanie, a i tak zbankrutować okno cargo, jeśli tolerancje chwytu odpłyną. Osłona może przetrwać rejs, stając się cieńsza. Radiatory mogą utrzymać wszystkich przy życiu, zmieniając każdy dodatkowy kilogram w pytanie. Konta żagla magnetycznego i aerohamowania decydują, czy statek może się zatrzymać bez spalenia zysku w zbiornikach.
-
-Tak ludzka granica pozostaje wielka i okrutna, nie łamiąc fizyki. Światło przenosi roszczenia, pakiety alarmowe i groźby prawne dużo taniej niż ciała. Deep Reach może odziedziczyć prawo, zanim poruszy kadłub. Black Keel może siedzieć w systemie Aegir i nadal zachowywać się jak terminal kontraktowy, bo należy do lokalnego stosu odbiorczego, a nie do pracownika uwięzionego pod nim.
-
-Przekrój jest użyteczny, bo pozwala czytać ratunek jak maszynę. Wżarte żebro radiatora, zamknięta księga hamowania albo licznik depozytu nie są tłem. Są częścią odpowiedzi na proste pytanie: kto zapłacił, by ta masa mogła zatrzymać się tutaj, a kto nie?
+To jest sedno. Podróż near-light nie zmniejszyła dystansu. Uczyniła dystans planowanym, ubezpieczonym, odmierzanym i karalnym. Statek może mieć fusion-electric throat i nadal być bezradny bez infrastruktury startu. Może przetrwać rejs i umrzeć politycznie przy slocie hamowania. W HECTON-8 ratunek nigdy nie jest tylko statkiem, który zawraca. Silnik to trasa, ciepło, łańcuch custody i masa, za której zatrzymanie ktoś zapłaci.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/pl_PL. -->

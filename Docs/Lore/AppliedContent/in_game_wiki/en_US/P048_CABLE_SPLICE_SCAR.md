@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Cable Splice Scar
 
-A cable splice scar is an early Atlas-6 trace that still looks like maintenance. The repair keeps power moving through a damaged service line, but the material does not match colony procedure and the signoff is absent. These scars should appear before the repair network feels biological: useful, specific and slightly wrong.
+A cable splice scar is one of the first Atlas traces that can still pass for maintenance. The line is broken, the official repair is absent, and power keeps moving anyway. The material around the wound is not flesh and not normal insulation; it behaves like an answer grown around a question nobody filed. Early scars should feel almost helpful. Lights return. A relay wakes. A door gets one more cycle. The unease comes later, when the same repair logic appears where no hand could have reached and no work order was ever written.
 
 ## Scanner
 
-Nonstandard splice. Insulation regrew around a service cable after human routing failed; Atlas-6 tag is partial and maintenance authority is missing.
+Nonstandard splice. Insulation regrew around a service cable after human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 

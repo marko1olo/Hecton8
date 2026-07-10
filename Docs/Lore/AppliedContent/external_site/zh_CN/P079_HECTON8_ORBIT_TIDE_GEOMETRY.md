@@ -19,22 +19,22 @@ localization_flags: 1
 
 # HECTON-8轨道 / 潮汐几何
 
-HECTON-8轨道 / 潮汐几何是硬科幻灾难层：潮汐、热和压力先摧毁殖民地；公司优先级把失败变成罪行。
+HECTON-8 Orbit / Tide Geometry是hard-sci-fi disaster layer：orbital forcing、ice stress、heat、drainage和pressure先破坏colony；corporate priority把failure变成crime。
 
 ## Scanner
 
-潮汐几何模型 // 共振、冰应力、风暴增水和热排放超过撤离预测。Atlas continuity标志覆盖撤退优先级。
+TIDE GEOMETRY MODEL: resonance、ice stress、storm surge和heat discharge exceeded evacuation forecast；Atlas continuity flags overrode retreat priority。
 
 ## Terminal
 
-GREAT TIDE链 // 轨道强迫放大海洋载荷。人工热排放和封闭排水把潮汐事件转成殖民地失效。
+GREAT TIDE CHAIN: orbital forcing amplified ocean load。Ice flexure、storm surge、artificial heat discharge和sealed drainage converted a tide event into colony failure。Evacuation priority reweighted by continuity and payload custody。
 
 ## Audio
 
-物理打开了门。Deep Reach决定谁能离开。
+physics opened the door。Deep Reach决定谁能leave through it。
 
 ## Field Note
 
-一颗月亮可以不带仇恨地淹死殖民地。
+moon可以不带恨意地drown a colony。
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/zh_CN. -->

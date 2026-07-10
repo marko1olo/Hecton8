@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Опіка salvage-інструмента"
+title: "Custody salvage-інструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опіка salvage-інструмента
+# Custody salvage-інструмента
 
-Salvage-інструменти не є нейтральним спорядженням. Різаки, патчери й доки фабрикаторів можуть записувати, хто відкрив панель, полагодив лінію чи переніс зразок. Цей журнал може захистити доказ, прикріпити права виплати або посилити claim проти гравця. Опіка інструмента це місце, де поминутне виживання торкається ширшої економіки salvage.
+Salvage tools на HECTON-8 - survival gear, але не innocent. Cutter відкриває panel. Patcher seals a line. Fabricator dock prints a clamp, що keeps air moving. Та сама action може також write custody: хто used the tool, що було opened, чи був attached sample pouch, і який claim token owns the next argument. Такий record може protect evidence або tighten debt. Жорстокість у тому, що refusing the tool може kill faster, ніж accepting its witness.
 
 ## Scanner
 
-Док інструмента містить запечатаний журнал опіки. Останній різ, ремонт і мішок зразка прив’язані до claim-токена Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair і sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: використання різака прийнято під salvage claim. Ремонтну дію засвідчено. Права на зразок прив’язані до токена Keelmark Mutual. Експорт доказів конфліктує з маршрутом матеріальної виплати.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Кожен корисний різ залишає свідка.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Різак може врятувати повітря і продати твої руки одним рухом. Перевір, що він записує, перш ніж назвати його своїм.
+Cutter може save your air і sell your hands одним stroke. Перевір, що він records, перш ніж назвати його своїм.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/uk_UA. -->

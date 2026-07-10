@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limite de Risco e Recompensa do Contrato"
+title: "Linha de risco/recompensa de contrato"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Limite de Risco e Recompensa do Contrato
+# Linha de risco/recompensa de contrato
 
-Replayability em HECTON-8 não é poder herdado. É um contrato pior, uma janela mais apertada, uma cobrança de prova mais cedo e um carrier que lembra quais partes de você ainda são garantia.
+Contratos Marauder ao redor de Aegir precificam o perigo antes de alguém abrir uma escotilha. Severidade do penhor, janela de recuperação, demanda de custódia, ordem de evidência, exposição de quarentena e peso de cláusula decidem por que duas passagens pelo mesmo destroço podem parecer diferentes. A oferta passa responsabilidade ao mergulhador antes da escotilha abrir.
 
 ## Scanner
 
-A linha de contrato liga gravame, janela de tempestade, ordem de custódia, teto de pagamento e peso de cláusula.
+Linha de oferta hostil: severidade do penhor, janela de tempestade, ordem de custódia, profundidade de evidência, teto de pagamento e peso de cláusula Deep Reach estão ligados.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: linhas exigem severidade de gravame, teto de pagamento, janela de tempestade, custódia de amostra, ordem de provas e peso de cláusula Deep Reach. O contrato é o primeiro predador.
+ESQUEMA DE RISCO DE CONTRATO / Aegir Reclamation Pool: publicar recompensa só depois de registrar severidade do penhor, teto de pagamento, janela de tempestade ou órbita, demanda de custódia da amostra, profundidade da ordem de evidência, exposição de quarentena e peso de cláusula Deep Reach. A concessão de rota é condicional até a transportadora aceitar a divisão de responsabilidade.
 
 ## Audio
 
-O contrato é o primeiro predador.
+Black Keel: nova oferta publicada. Pagamento maior, janela de tempestade menor, custódia da amostra primeiro. Leia a cláusula antes de mergulhar.
 
 ## Field Note
 
-Mudanças de recompensa pertencem à linha de contrato, não a texto de lore improvisado.
+Se a recompensa salta, procure a cláusula que se moveu. Geralmente é custódia, clima, quarentena ou problema de evidência de outra pessoa.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pt_BR. -->

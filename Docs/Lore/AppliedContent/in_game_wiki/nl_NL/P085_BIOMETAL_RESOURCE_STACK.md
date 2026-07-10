@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Biometaal-grondstoffenstapel"
+title: "Biometalen grondstoffenstapel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Biometaal-grondstoffenstapel
+# Biometalen grondstoffenstapel
 
-De grondstoffenstapel voorkomt dat HECTON-8 tot één magisch materiaal krimpt. Xenon-Omega telt, maar de maan heeft ook metalen, zouten, ventchemie, drukkeramiek, biovezels, fotoproteïnen, salvage en door Atlas veranderd biometaal.
+De grondstoffenstapel voorkomt dat HECTON-8 instort tot één magisch materiaal. Blauwe schuld telt, maar de maan betaalt ook in sulfidemetalen, zouten, edelgassen, keramiek, katalysatoren, biofibers, fotoproteïnen, salvage-hardware en door Atlas veranderd biometal. Het geweld klopt omdat waarde verspreid is: veel kleine redenen om te snijden, markeren, verbergen, terugkeren en liegen.
 
 ## Scanner
 
-Grondstoffenbord. Blue debt staat bovenaan, maar de rest van de maan is nog winstgevend genoeg om voor te doden.
+Grondstoffenbord geborgen. Blauwe schuld staat bovenaan. De rest van de maan is nog winstgevend genoeg om voor te doden.
 
 ## Terminal
 
-HECTON-8 GRONDSTOFFENSTAPEL: sulfidemetalen, zouten, edelgaszakken, drukkeramiek, ventkatalysatoren, biovezels, fotoproteïnen, salvage hardware, door Atlas veranderd biometaal en XO continuity substrate.
+HECTON-8-STAPEL: sulfidemetalen, zouten, edelgaszakken, drukkeramiek, ventkatalysatoren, biofibers, fotoproteïnen, salvage-hardware, door Atlas veranderd biometal, XO-continuïteitssubstraat.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Eén wondererts zou lui zijn. HECTON-8 heeft een hele economie van drukwonden.
 
 ## Field Note
 
-Als elk monster Xenon-Omega zegt, wordt de wereld dom. Tel de andere redenen ook.
+Als elke sample Xenon-Omega zegt, wordt de wereld plat. Tel ook de kleinere redenen waarvoor mensen stierven.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bulan Retak Tabrakan
 
-HECTON-8 terbentuk di sistem Aegir lalu retak oleh tumbukan menyamping. Lukanya tidak memecah bulan. Luka itu mengangkat rak kerak, membuka sesar brine, memberi makan koridor panas, dan meninggalkan dasar tua yang bisa disentuh lewat jendela tekanan langka. Peta salvage mengikuti kerusakan itu, karena rute paling aman adalah luka lama berisi air.
+HECTON-8 bukan stolen world yang dijatuhkan ke Aegir demi mystery. Ia formed here, lalu glancing collision opened it without killing it. Wound mengangkat shelves, cracked brine basins, memanaskan fault ladders, dan meninggalkan pressure-glass seams di tempat moon mencoba close around its own ocean. Old damage itu masih menentukan di mana hull bisa descend, di mana sound bends, di mana vents stay alive, dan di mana buried colony evidence bisa surface. Salvage maps mengikuti injuries karena di HECTON-8 safest route sering kali old break that did not quite heal.
 
 ## Scanner
 
-Sampel kerak tua. Bulan ini lahir di sabuk puing Aegir, lalu dihantam cukup lebar sampai samudra menyimpan bekasnya.
+Crust sample. HECTON-8 formed in Aegir's debris belt, lalu menerima oblique impact cukup lebar untuk diingat ocean.
 
 ## Terminal
 
-MODEL ASAL: akresi sekitar Aegir, tumbukan miring kemudian, resonansi pasang setelah terkunci. Hasil: kerak bertingkat, tangga sesar panas, cekungan brine, urat kaca-tekanan, akses tak merata ke dasar dalam.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Ia lahir di sini. Lalu sesuatu menghantam cukup keras untuk memberi peta pada laut.
+It was born here. Lalu sesuatu menghantam cukup hard untuk give the sea a map.
 
 ## Field Note
 
-Mitos bulan tangkapan terlalu rapi. HECTON-8 membawa luka lokal: kerak terangkat, air asin makin berat, ventilasi masih menagih bunga.
+Captured-moon story terlalu bersih. Tempat ini born local, broken local, dan billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/id_ID. -->

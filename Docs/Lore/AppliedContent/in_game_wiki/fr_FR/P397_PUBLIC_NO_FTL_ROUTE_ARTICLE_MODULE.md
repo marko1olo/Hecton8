@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Délai de route sans FTL
 
-La distance est une règle de survie sur la route Aegir. Loi, dette et anciens packets peuvent atteindre le joueur bien avant un carrier, un tender, une pièce de rechange ou un sauveteur. La réponse du relay n'annule jamais le travail de pression devant toi ; elle prouve seulement que quelqu'un a placé ton claim dans une file.
+La distance est une limite d'exploitation sur la route d'Aegir. Un paquet peut dépasser un vaisseau. Une réponse légale peut atteindre HECTON-8 avant la pièce, l'équipage de tender, la bouteille de pression ou le secouriste qui la rendrait utile. Le contact relais modifie donc les papiers avant de modifier la pièce autour de toi. Quand l'archive dit qu'une aide a reconnu la réclamation, vérifie âge du paquet, masse du transporteur, créneau de freinage et météo de descente avant de croire la phrase.
 
 ## Scanner
 
-Archive de transit. Le trafic Aegir dépend des precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody et délais juridiques.
+Enregistrement de transit. Le trafic Aegir dépend des cartes de sondes, voies de faisceau, fret à fusion-pellets, masse de freinage, âge des paquets, garde relais et fenêtres de descente météo.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // LIMITE DE TRANSIT. FTL absent. Ansible absent. Un secours vivant exige transfert physique, braking architecture, carrier position, descent mass et local window valide.
+NOEUD D'ARCHIVE PUBLIC // LIMITE DE TRANSIT. FTL : absent. Ansible : absent. Un secours vivant exige position de transporteur, allocation de freinage, masse de descente, météo locale et fenêtre de garde non expirée.
 
 ## Audio
 
-L'aide peut être juridiquement présente et physiquement éloignée de plusieurs années.
+Un transporteur peut enregistrer ton urgence et rester à des années de masse.
 
 ## Field Note
 
-Note de Maraudeur : quand le relay répond, demande l'âge de la réponse et quelle masse elle peut déplacer.
+Note de Maraudeur : chaque réponse de secours exige quatre nombres : âge du paquet, masse du transporteur, créneau de freinage, fenêtre de descente.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/fr_FR. -->

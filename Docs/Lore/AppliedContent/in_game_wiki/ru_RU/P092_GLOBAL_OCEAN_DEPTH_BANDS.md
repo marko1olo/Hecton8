@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Глобальные глубинные пояса океана
 
-Океан HECTON-8 читается поясами, а не одной линией дна. Фотический шельф еще допускает свет, обломки, водорослевые вспышки и небрежных пилотов. Промышленный шельф держит кабельные рифы, клети труб и старые погрузочные палубы. Ниже рапные лестницы гнут сонар и балласт. Абиссальные машинные поля наказывают ремонт. В бассейне Atlas давление ведет себя как юрисдикция.
+Океан HECTON-8 - не one long fall to a bottom. Это stack of laws. Photic shelf еще допускает light, algae, broken habitat skin и bad decisions, которые можно исправить. Industrial shelf - это pipe cages, cable reef, loading decks и machines that answer late. Brine stairs bend sound and ballast, пока route может быть near and unreachable одновременно. Abyssal machine fields punish repairs with cold patience. Atlas basin deeper than danger; там pressure becomes jurisdiction.
 
 ## Scanner
 
-Карта глубин. Первый шельф прощает плохой балласт; нижняя вода выставляет счет за каждую ошибку давлением, жаром и тишиной.
+Depth chart. First shelf forgives poor ballast; lower water invoices every mistake in pressure, heat, noise и silence.
 
 ## Terminal
 
-ПОЯСА: 0-250 м фотический шельф добычи; 250-1200 м промышленный шельф и кабельный риф; 1200-2800 м рапная лестница/каньон; 2800-4300 м абиссальное машинное поле; 4300-5600 м бассейн Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Каждые сто метров отнимают у тебя одну привычку.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Глубина на HECTON-8 - закон, погода, граница и голод под одним числом.
+Depth на HECTON-8 - law, weather, border и hunger под одним number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ru_RU. -->

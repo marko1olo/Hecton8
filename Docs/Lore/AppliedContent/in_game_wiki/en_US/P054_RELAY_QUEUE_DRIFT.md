@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Relay Queue Drift
 
-Delayed communication is dangerous because it can remain accurate in the wrong time. A carrier warning may describe a real valve, a real leak, and a real route that has already changed under pressure. The player must compare packet age against local evidence before trusting remote authority.
+Relay queue drift is the deadliest kind of honesty on HECTON-8. A delayed carrier packet can describe a real valve, a real safe door, a real low-current corridor, and a real leak that has already moved. The order is not fake; it belongs to a room changed by pressure, flooding, silt, heat, or collapse. Good field practice is not disobedience for its own sake. It is comparing packet age against wet paint, fresh salt, door strain, pump sound, and the direction loose debris wants to travel.
 
 ## Scanner
 
-The relay stamp is older than the leak it names; the instruction was true for a room that no longer exists.
+Relay stamp older than the leak it names. The instruction was true for a room that no longer exists.
 
 ## Terminal
 
-QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until a fresh relay window opens.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until fresh relay window opens. Treat delayed route orders as archival unless pressure, door state, and waterline match.
 
 ## Audio
 

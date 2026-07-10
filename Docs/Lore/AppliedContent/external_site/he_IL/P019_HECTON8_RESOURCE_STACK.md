@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ערימת משאבים"
+title: "מערום משאבים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ערימת משאבים
+# מערום משאבים
 
-ערימת המשאבים מציגה את HECTON-8 ככלכלת לחץ. Xenon-Omega הוא הפסגה האסטרטגית, לא כל העולם.
+מערום המשאבים מציג את HECTON-8 ככלכלת לחץ: Xenon-Omega היא הפסגה האסטרטגית, לא כל העולם.
 
 ## Scanner
 
-ערימה: סיבי שונית, מלחי תמלחת, ליבות relay, שסתומי לחץ, blue debt, pressure glass, סריג Atlas.
+המערום נקרא: סיב שונית, מלחי תמלחת, ליבות ממסר, שסתומי לחץ, זרזי פתחים, חוב כחול, pressure glass, סריג Atlas.
 
 ## Terminal
 
-ערך: ביוטת הישרדות, salvage אנושי, חומרת נתיב, כימיית לחץ, blue debt, pressure glass, continuity substrate.
+מודל ערך: ביוטת הישרדות, salvage אנושי, חומרת נתיב, כימיית לחץ, חוב כחול, pressure glass, מצע רציפות. לא לצמצם את המערום לחומר פלא אחד.
 
 ## Audio
 
-אם carrier מבקש מסה לפני שמות, אתה יודע מי מחזיק בחוזה.
+אם ה-carrier מבקש מסה לפני שמות, אתה יודע מי מחזיק בחוזה.
 
 ## Field Note
 
-שום דבר כאן אינו שלל בלבד.
+שום דבר כאן אינו רק שלל. כל דגימה שייכת לכלכלת לחץ.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/he_IL. -->

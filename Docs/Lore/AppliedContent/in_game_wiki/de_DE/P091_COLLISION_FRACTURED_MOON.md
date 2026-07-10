@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kollisionsgebrochener Mond
 
-HECTON-8 entstand im Aegir-System und wurde spaeter von einer streifenden Kollision aufgebrochen. Die Wunde zerriss den Mond nicht. Sie hob Krustenregale, oeffnete Salzlaugenstoerungen, speiste Schlottunnel und liess alten Boden durch seltene Druckfenster erreichbar werden. Bergungskarten folgen diesem Schaden, weil sichere Routen alte Verletzungen mit Wasser darin sind.
+HECTON-8 ist kein stolen world, das fur mystery in Aegir fiel. Es formed here, dann opened eine glancing collision es without killing it. Die wound hob shelves, cracked brine basins, heizte fault ladders und liess pressure-glass seams dort, wo die moon versuchte, close around its own ocean. Dieses old damage entscheidet noch, wo ein hull descend kann, wo sound bends, wo vents stay alive und wo buried colony evidence surface kann. Salvage maps folgen injuries, weil auf HECTON-8 die safest route oft der old break that did not quite heal ist.
 
 ## Scanner
 
-Alte Krustenprobe. Der Mond entstand im Truemmerguertel von Aegir, dann riss ihn ein Einschlag weit genug auf, dass der Ozean es behielt.
+Crust sample. HECTON-8 formed in Aegir's debris belt, dann traf ihn ein oblique impact breit genug, damit der ocean ihn erinnert.
 
 ## Terminal
 
-URSPRUNGSMODELL: Akkretion um Aegir, spaeter schraeger Einschlag, Gezeitenresonanz nach der Bindung. Ergebnis: Stufenkruste, heisse Stoerungsleitern, Salzlaugenbecken, Druckglasadern, ungleichmaessiger Zugang zum Tiefboden.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Er wurde hier geboren. Dann traf ihn etwas hart genug, um dem Meer eine Karte zu geben.
+It was born here. Dann traf etwas hard genug, um give the sea a map.
 
 ## Field Note
 
-Die Legende vom eingefangenen Mond waere zu sauber. HECTON-8 traegt eine lokale Wunde: gehobene Kruste, versalzene Lauge, Schlote mit offenen Zinsen.
+Die captured-moon story ist zu sauber. Dieser Ort war born local, broken local und billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/de_DE. -->

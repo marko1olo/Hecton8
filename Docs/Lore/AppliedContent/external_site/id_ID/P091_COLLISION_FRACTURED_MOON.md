@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Bulan Retak Tabrakan
 
-HECTON-8 bukan benda pengembara yang ditangkap demi tontonan. Ia berkumpul di sabuk puing Aegir, mendingin menjadi bulan samudra berlapis, lalu menerima tumbukan miring yang membengkokkan kerak tanpa menghapus dunia. Tumbukan itu mengangkat paparan, menenggelamkan cekungan, dan membuka tangga sesar panjang tempat kimia panas masih bergerak melalui air asin. Resonansi pasang menjaga luka itu hidup setelah kuncian orbit. Karena itu samudranya punya parut yang bisa dibaca: ngarai brine, bengkel ventilasi, urat kaca-tekanan, punggung terbuka, dan jendela langka ke dasar tua.
+Collision-Fractured Moon mendefinisikan HECTON-8 sebagai local Aegir body dengan ocean routes, vents, brine basins, dan salvage windows dari impact scars serta tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, lalu menerima oblique impact cukup lebar untuk diingat ocean.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Lalu sesuatu menghantam cukup hard untuk give the sea a map.
+
+## Field Note
+
+Captured-moon story terlalu bersih. Tempat ini born local, broken local, dan billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/id_ID. -->

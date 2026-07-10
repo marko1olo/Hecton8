@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Журнал уплотнения люка"
+title: "Ledger люкового уплотнения"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Журнал уплотнения люка
+# Ledger люкового уплотнения
 
-Рамы люков хранят полезную ложь. Зеленый индикатор уплотнения значит, что прокладка выдержала, а не что закрытие было честным, безопасным или обратимым. Журналы уплотнений сохраняют скачки давления, штампы override и направление последнего ручного закрытия. В заброшенной колонии люк может быть преградой маршрута, инструментом выживания и доказательством о рабочих одновременно.
+Hatch frames хранят полезную ложь. Green seal light значит, что gasket выдержал, а не что closure был fair, safe или reversible. Seal ledgers сохраняют pressure cuts, override stamps, hinge strain и direction последнего manual closure. В abandoned colony spaces hatch может быть route blocker, survival tool, worker evidence и accusation в одном объекте. Вопрос редко в том, откроется ли он. Вопрос в том, какие pressure, water и human decision он держал порознь.
 
 ## Scanner
 
-Память уплотнения восстановлена. Прокладка приняла три скачка давления и один эвакуационный override; доступ со стороны возврата был заперт с мокрой стороны.
+Seal memory recovered. Gasket пережил three pressure cuts и one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / РАМА H-17: деформация прокладки выше допуска обслуживания. Ручное закрытие принято по EVAC OVERRIDE. Число операторов на стороне возврата не подтверждено. Открывать только после выравнивания давления и проверки петель.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection и wet-side witness check.
 
 ## Audio
 
-Он заперся. Больше люк ничего не обещал.
+It sealed. Больше hatch ничего не обещал.
 
 ## Field Note
 
-Запертый люк это квитанция. Прежде чем открыть, спроси, какая сторона заплатила.
+Sealed hatch - это receipt. Перед открытием спроси, какая сторона заплатила.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/ru_RU. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Survey Geology Invariants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Seed Geology Invariants
+# Survey Geology Invariants
 
-Seed geology invariants keep HECTON-8 coherent across long replays. Canyons can open in different order, evidence can move, safe pockets can shift, and species pressure can change. The star remains Aegir, the moon remains HECTON-8, the depth bands keep their order, the Great Tide keeps its timing, and the Atlas basin keeps its relation to the deepest truth.
+Survey geology invariants keep HECTON-8 coherent across contradictory charts, damaged Atlas maps, and incomplete Black Keel route packets. A canyon approach may shift between surveys. A safe pocket may collapse. A cache may emerge under new silt. Bloom density and salvage exposure can change with weather, pressure, and what the last expedition disturbed. The deeper truths do not move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, the Great Tide keeps its interval, blue debt keeps its pressure behavior, and the Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Route-generation note. The salvage map changes, but the moon keeps the same bones.
+Atlas survey note. The salvage chart can disagree with itself; the moon keeps the same bones.
 
 ## Terminal
 
-INVARIANTS: Aegir primary, HECTON-8 orbital ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI order, safe pockets, bloom density, salvage exposure.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Different wound pattern. Same moon under it.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-A new run may bury evidence differently; it may not rewrite gravity, tide, or guilt.
+A later chart may bury evidence differently. It may not rewrite gravity, tide, or guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/en_US. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Kegagalan Kontainmen Tekanan"
+title: "Kegagalan Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kegagalan Kontainmen Tekanan
+# Kegagalan Pressure Containment
 
-Kegagalan kontainmen tekanan memberi blue debt perilaku material yang bisa dibaca. Ia bernilai karena tekanan dalam membuatnya koheren, dan berbahaya karena penanganan dangkal merusak koherensi itu. Tahap 0 tersegel. Tahap 1 drift dan kadang bisa dipulihkan dengan repressure ventilasi. Tahap 2 mematahkan kisi. Tahap 3 mengundang brine dan biologi. Tahap 4 meninggalkan sampel mati yang masih mencemari gear, air, dan rute.
+Pressure containment failure memberi blue debt behavior yang bisa dibaca tanpa myth. Ia valuable karena deep pressure made the lattice coherent. Ia dangerous karena shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts dan bisa recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water, dan route markings. Material itu tidak cursed. Ia homesick for pressure.
 
 ## Scanner
 
-Bagan tahap casket. Blue debt gagal lewat memori tekanan, geser sinyal, dan bloom; takhayul membuang oksigen.
+Casket stage chart. Blue debt fails through pressure memory, signal shear, dan bloom; superstition wastes oxygen.
 
 ## Terminal
 
-TAHAP KONTAINMEN: 0 kisi tersegel; 1 drift sinyal; 2 patah kisi; 3 bloom brine/biologi; 4 sampel mati dengan kontaminasi hidup. Repressure ventilasi hanya bisa memulihkan tahap 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Sampel itu tidak membencimu. Ia mencoba kembali ke tempat ia terbentuk.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Satu sampel bisa bernilai mahal di satu kedalaman dan menjadi beban sepuluh meter kemudian.
+Sample bisa worth a fortune at one depth dan become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/id_ID. -->

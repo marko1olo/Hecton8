@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "분출구 단조 지열 엔진"
+title: "Vent Forge 지열 기관"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 분출구 단조 지열 엔진
+# Vent Forge 지열 기관
 
-분출구 단조는 지질을 제작, 생존, 공포와 연결한다. 세라믹, seal, 압력 유리에 열과 압력 사이클을 제공하지만 같은 사이클이 끓는 pocket, 거짓 산소 판독, 부식 구름, fauna migration을 만든다.
+Vent forge는 지질과 작업을 잇는다. 그 펄스는 세라믹을 경화하고, 압력 실을 재설정하고, pressure glass를 어닐하고, 상승 장약을 예열할 수 있다. 그러나 모든 유용한 주기는 위험의 리듬이기도 하다. 끓는 전단은 이음부를 공격하고, 거짓 산소는 계기를 속이며, 부식 블룸은 열린 하우징으로 들어가고, 근처 생명은 작업자가 이유를 이해하기 전에 움직인다.
 
-분출구 단조 지열 엔진은 HECTON-8이 왜 가치 있고 치명적인지 보여 준다. 이 달은 인간이 기계를 짓기 전부터 산업 엔진이었다. 유용한 vent는 모두 나쁜 timing을 벌하는 기계이기도 하다.
+Vent Forge 지열 기관은 HECTON-8이 왜 귀중하고 치명적인지 보여준다. 그 달은 인간이 오기 전부터 산업적이었다. 쓸모 있는 모든 분출구는 나쁜 타이밍을 벌하는 기계이기도 하다.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ko_KR. -->

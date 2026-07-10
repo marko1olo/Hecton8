@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Kotwica Ran / Aegir
 
-Ran kotwiczy system Aegir jako normalną gwiazdę klasy K, nie martwą lampę ani źródło nadnaturalnej ciemności. HECTON-8 może mieć jasne płycizny, ponieważ światło istnieje.
-
-Groza zaczyna się tam, gdzie atmosfera, burza, woda mineralna, głębokość i przemysłowy muł gaszą to światło szybciej, niż reaguje kontrakt ratunkowy. Nad wodą system jest astronomią. Pod wodą każdy lumen staje się wynajętym czasem.
+Ran kotwiczy Aegir jako zwykla K-class star: stara, pomaranczowa, stabilna i obojetna. To wazne, bo HECTON-8 nie jest ciemny przez magic. Shallows moga shine. Weather moze blysnac biela nad sea. Worker na surface raft mogl wciaz spojrzec w gore i wiedziec, ze istnieje sun. Horror zaczyna sie, gdy atmosphere, storm shear, mineral water, depth i industrial silt wydaja to light szybciej, niz carrier moze rozliczyc rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-Tablica gwiazdy klasy K. Ran pali się normalnie. Aegir jest ciemniejszy niż Sol, ale mrok tutaj pochodzi z głębokości, pogody i długu.
+K-class star plate. Ran pali sie normalnie; deep tutaj nie jest supernatural, tylko zbyt daleko pod weather, water i debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Światło pomarańczowego karła wspiera prace powierzchniowe. Rozpraszanie burzy, geometria zaćmień i mętność oceanu spychają czytelność zejścia poniżej marginesu bezpieczeństwa.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity i industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Gwiazda jest obecna. Po prostu nie może zejść za tobą.
+Star jest obecna. Po prostu nie moze follow you down.
 
 ## Field Note
 
-Prawdziwa gwiazda wystarczy. Resztę robi ocean.
+Real star wystarczy. Reszte robi ocean.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/pl_PL. -->

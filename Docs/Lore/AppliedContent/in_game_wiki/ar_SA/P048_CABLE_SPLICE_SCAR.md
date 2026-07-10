@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "ندبة وصلة كابل"
+title: "ندبة cable splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ندبة وصلة كابل
+# ندبة cable splice
 
-ندبة وصلة الكابل أثر مبكر من Atlas-6 ما زال يبدو كصيانة. الإصلاح يحافظ على الطاقة في خط خدمة متضرر، لكن المادة لا تطابق إجراء المستعمرة والتوقيع غائب. يجب أن تظهر هذه الندبات قبل أن تبدو شبكة الإصلاح حيوية: نافعة ومحددة وخاطئة قليلا.
+Cable splice scar هو أحد أوائل Atlas traces التي ما زال يمكن أن تبدو كmaintenance. الline broken، والofficial repair absent، ومع ذلك power keeps moving. الmaterial حول wound ليس flesh وليس normal insulation؛ يتصرف كanswer grown around a question nobody filed. يجب أن تبدو early scars شبه helpful. Lights return. A relay wakes. A door gets one more cycle. يأتي القلق لاحقا، حين تظهر repair logic نفسها في مكان no hand could have reached وno work order was ever written.
 
 ## Scanner
 
-وصلة غير قياسية. نما العازل من جديد حول كابل خدمة بعد فشل توجيه البشر؛ وسم Atlas-6 جزئي وسلطة الصيانة مفقودة.
+Nonstandard splice. عاد insulation للنمو حول service cable بعد human routing failed؛ Atlas-6 tag partial وmaintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: وصلة بشرية فشلت مفتوحة. تم قبول إصلاح استمرارية ذاتي للحفاظ على حمل المرحل. يتكرر النمط في عقد شعاب الكابلات مع فقد عازل أقل ودون توقيع عامل.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-أصلح أحدهم الكابل بعدما توقفت الأوراق. أو أصلحه شيء ما.
+شخص ما fixed the cable بعد أن توقف paperwork. أو شيء ما فعل.
 
 ## Field Note
 
-مفيد أولا. خطأ لاحقا. هكذا تقدم إصلاحات Atlas نفسها.
+Useful أولا. Wrong لاحقا. هكذا تقدم Atlas repairs نفسها.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/ar_SA. -->

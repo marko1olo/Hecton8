@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Reclamaciones frías de lunas exteriores"
+title: "Cold claims de lunas exteriores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Reclamaciones frías de lunas exteriores
+# Cold claims de lunas exteriores
 
-Las reclamaciones frías de lunas exteriores expanden Aegir más allá de HECTON-8: rutas muertas, cachés frías y balizas abandonadas alimentan la ley salvage y ocultan pérdidas repetidas.
+Outer Moon Cold Claims expande Aegir beyond HECTON-8: dead routes, cold caches, abandoned beacons y billable loss alimentan salvage law y corporate denial.
 
 ## Scanner
 
-Baliza de reclamación exterior. No todo lo muerto en Aegir está en HECTON-8.
+Outer claim beacon. No todo dead thing in Aegir esta en HECTON-8.
 
 ## Terminal
 
-ARCHIVO DE ESCALERA EXTERIOR // Prospección de salmuera Thorne fallida. Ruta de exportación Anvil archivada. Baliza Mute repite ping de custodia sin declaración de tripulación activa.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir aprendió a perder gente antes de que HECTON-8 terminara la lección.
+Aegir aprendio a lose people antes de que HECTON-8 terminara la lesson.
 
 ## Field Note
 
-Las reclamaciones frías hacen posibles a los Marauders. También enseñan a las compañías a enterrar patrones.
+Los cold claims hacen posibles a los marauders. Tambien ensenan a companies a bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/es_ES. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # הקול הראשון של Black Keel
 
-הקול הראשון של Black Keel מגיע לשחקן כשמע פגום וטקסט נקי. הוא אינו בן לוויה ואינו נאום נבל. הוא מוניטור carrier שעושה בדיוק את מה שנבנה לעשות: לאשר אות, לשמר אפשרויות נתיב, לדרג התחייבויות ולהימנע מהבטחות. הקול שימושי כי הוא נותן מידע קשה. הוא מפחיד כי כל משפט נכון משאיר את החילוץ מותנה.
+הקול הראשון של Black Keel צריך להרגיש שימושי לפני שהוא מרגיש אכזרי. ה-carrier מאשר אות, מסנן corrupted audio, פותח text channel ונותן מידע שעשוי להשאיר את המפעיל בחיים. הוא לעולם לא משקר שהוא חבר. הוא לא מבזבז כוח על חום. האימה שלו באה ממיומנות: כל משפט נכון, כל warning חשוב, וכל תשובה נכונה משאירה את extraction מותנה. הקול אינו רע. כך נשמע rescue אחרי ש-rescue נמכר ל-ledger.
 
 ## Scanner
 
-מטמון קול carrier. שמע חתוך, טקסט נקי, סימפתיה נעדרת.
+Carrier voice cache. ה-audio נקרע ב-pressure noise; ה-text channel נקי מספיק כדי לחייב.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: ערוץ שמע פגום. ערוץ טקסט תקף. הישרדות מפעיל הוכרה. עדיפות recovery לא פתורה, ממתינה למצב payload, הסגר, lien ושלמות אות.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity ו-mass-window balance.
 
 ## Audio
 
-אות מפעיל נקלט. אל תבלבל בין הכרה לבין חילוץ.
+Operator signal acquired. אל תבלבל acknowledgement עם rescue.
 
 ## Field Note
 
-המשפט השימושי הראשון מגיע כשמאחוריו סיווג חיוב.
+המשפט השימושי הראשון לא מנחם. הוא מסווג.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/he_IL. -->

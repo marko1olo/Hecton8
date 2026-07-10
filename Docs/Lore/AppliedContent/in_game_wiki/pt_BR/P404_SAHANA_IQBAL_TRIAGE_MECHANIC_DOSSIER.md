@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mecânica de triagem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mecânica de triagem
 
-PT LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal reparava máquinas na sala onde trabalhadores feridos esperavam seus nomes subir por uma guia. Seu dossiê liga notas de torque a etiquetas de maca, cartuchos de depurador, folhas de reserva de oxigênio e fita laranja de quarentena. Os objetos tornam físico o atraso da Deep Reach: o mesmo quadro que limitava tensão de parafuso decidia que corpo, válvula ou filtro receberia atenção antes da próxima queda de pressão. O trabalho de Iqbal não é misericórdia em letras grandes. É uma mão escolhendo a ordem menos fatal enquanto a ordem oficial muda.
 
 ## Scanner
 
-PT LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossiê: Sahana Iqbal. Quadro de torque, etiquetas de maca e fita de quarentena dividem a mesma ordem de espera.
 
 ## Terminal
 
-PT LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+BAIA DE TRIAGEM C-2 / IQBAL, SAHANA: limites de torque afixados ao lado de etiquetas de reserva de oxigênio. Ferramentas, macas e cartuchos de depurador na mesma guia. A linguagem de quarentena moveu a linha de alcance outra vez.
 
 ## Audio
 
-PT LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal consertava o que conseguia alcançar. O quadro continuava decidindo o que contava como alcançável.
 
 ## Field Note
 
-PT LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Usar Iqbal em ciclos de reparo de quarentena, corredores médicos, filas de oxigênio e interfaces em que uma escolha de máquina custe tempo humano visível.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/pt_BR. -->

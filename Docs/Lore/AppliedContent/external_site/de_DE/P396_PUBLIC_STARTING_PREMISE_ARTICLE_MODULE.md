@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder-Startanspruch"
+title: "Startanspruch des Marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder-Startanspruch
+# Startanspruch des Marauders
 
-Die erste Black-Keel-Akte zu HECTON-8 liest sich wie salvage-Arbeit, bis ihre eigene Sprache anfängt, sich zu belasten. Ein verschuldeter Marauder nimmt die Route an, weil das lien real und das Bergungsfenster eng ist. Seine Deep-Reach-field-systems-Vergangenheit zählt sofort: Druckprozeduren, maintenance-Kürzel, liability-Sätze und Evakuierungsmarken sind vertraut, bevor sie Beweise werden. Black Keel gibt Zugang, keine Gnade. Der Abstieg beginnt mit konkreter Arbeit um P-63: bathydrop flicken, Dichtungen prüfen, shelf scannen, Maschinen neu starten, Fracht oder Beweis bergen und verschwinden, bevor orbital timing und legal custody den claim schließen. Der Reiz liegt in professioneller Wiedererkennung: Der Spieler sieht, wo polierte Sprache und physischer Schaden verschiedene Geschichten erzählen.
+HECTON-8 beginnt mit einem Vertrag, der vertraut genug ist, um gefährlich zu sein. Black Keel gibt einem schuldbelasteten Marauder Zugang zu einer Bergungsroute über P-63, kein Rettungsversprechen. Die Akte nutzt Deep-Reach-Vokabular, weil die Spielfigur früher darin arbeitete: Feldsysteme, Evakuierungsinfrastruktur, Druckverfahren, Routenformulare, zulässige Belege. Diese Vergangenheit verändert die erste Stunde. Ein schlechtes Panel ist keine Kulisse. Eine korrigierte Marke ist kein Flair. Eine polierte Haftungsformel lässt sich mit einer Delle, einer Uhr, einem Türzustand oder einer Vermisstenmarke vergleichen. Der Abstieg beginnt als bezahltes Salvage und wird zu fachlicher Wiedererkennung: Das Papier kennt den Raum, und der Raum beweist, dass das Papier bereinigt wurde.
 
 ## Scanner
 
-Öffentlicher claim-Datensatz. Die Anfangsroute zeigt einen verschuldeten Marauder mit Deep-Reach-field-systems-Vergangenheit, beschädigtem bathydrop und Black-Keel-Bergungsfenster über P-63.
+Öffentlicher Anspruchsdatensatz. Die Black-Keel-Pfandakte nennt einen ehemaligen Deep-Reach-Feldsystem-Spezialisten, einen beschädigten Bathydrop, Route P-63 und ein schließendes Verwahrfenster.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // STARTANSPRUCH. Auftragnehmerakte: ehemaliger Deep-Reach-field-systems-Spezialist. Aktueller Status: Marauder unter lien. Route: Black-Keel-recovery claim, Abstieg zum P-63 shelf, Rückgabe von Beweis und Fracht vor Schließung des custody window.
+ÖFFENTLICHER ARCHIVKNOTEN // BLACK KEEL CLAIM BK-P63-2190. Status: pfandgebundener Marauder. Frühere Freigabe: Deep-Reach-Feldsysteme / Evakuierungsinfrastruktur. Lieferumfang: Frachtmasse plus zulässiger Beleg vor lokaler Verwahrung T+06:40.
 
 ## Audio
 
-Du besuchst HECTON-8 nicht. Du kehrst zu Papierarbeit zurück, die du zu gut kennst.
+Der Vertrag kennt deine alten Abkürzungen. Das heißt nicht, dass er die Wahrheit sagt.
 
 ## Field Note
 
-Marauder-Notiz: Der Vertrag kennt deine Vergangenheit. Ehrlich wird er dadurch nicht.
+Marauder-Notiz: Wenn eine Anspruchsakte deine Freigabestufe kennt, lies zuerst die Auslassungen und dann die Auszahlung.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/de_DE. -->

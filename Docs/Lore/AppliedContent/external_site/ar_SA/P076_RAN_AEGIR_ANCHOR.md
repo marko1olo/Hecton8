@@ -19,22 +19,22 @@ localization_flags: 1
 
 # مرساة Ran / Aegir
 
-مرساة Ran / Aegir تثبت الطعم البصري لـ HECTON-8: ضوء خافت واقعي في الأعلى، وضغط ودين معاديان في الأسفل.
+تثبت Ran / Aegir Anchor منطق visual logic في HECTON-8: dimmer hard-sci-fi sunlight above، ثم depth وweather وturbidity وpressure وdebt below.
 
 ## Scanner
 
-لوحة نجم من الفئة K. Ran يحترق بشكل طبيعي. Aegir أخفت من Sol، لكن الظلمة هنا تأتي من العمق والطقس والدين.
+K-class star plate. يحترق Ran طبيعيا؛ الdeep هنا ليس supernatural، بل بعيد جدا تحت weather وwater وdebt.
 
 ## Terminal
 
-RAN NAV ANCHOR // ضوء قزم برتقالي يدعم عمل السطح. تشتت العواصف وهندسة الكسوف وعكارة المحيط تخفض قراءة الهبوط دون هامش الأمان.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter وeclipse geometry وmineral turbidity وindustrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-النجم موجود. لكنه لا يستطيع أن يتبعك إلى الأسفل.
+الstar موجودة. لكنها لا تستطيع follow you down.
 
 ## Field Note
 
-نجم حقيقي يكفي. المحيط يتولى الباقي.
+تكفي real star. يفعل ocean الباقي.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ar_SA. -->

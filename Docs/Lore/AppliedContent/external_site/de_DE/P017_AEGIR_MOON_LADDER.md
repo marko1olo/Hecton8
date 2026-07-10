@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegirs Mondleiter
 
-Aegirs Mondleiter macht den spielbaren Mond Teil eines bewegten Systems. Andere Monde formen Gezeiten, Carrier-Wartezeiten, Relaisschatten und Abflugkosten.
+Aegirs Mondleiter macht den Himmel zur Operationskarte: Andere Monde formen Tide, Signal, Carrier-Gewahrsam und die engen Chancen zu gehen.
 
 ## Scanner
 
-Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Mondleiter aufgelöst: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel und Mute biegen die Fenster.
 
 ## Terminal
 
-HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.
+AEGIR-ROUTENNOTIZ: HECTON-8 folgt Kestrel in der Arbeitsleiter. Relaisschatten, Tidephase, Strahlungsband und Black-Keel-Transfergeometrie müssen vor Massenaufstieg zusammenpassen.
 
 ## Audio
 
-Zähle die Monde, bevor du einem Fenster traust.
+Zähle Kestrel, bevor du dem Fenster glaubst.
 
 ## Field Note
 
-Der Himmel ist Mechanik, keine Kulisse.
+Der Himmel ist ein Arbeitsplan. Verpasst du einen Schatten, wird der Carrier zum Gerücht.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/de_DE. -->

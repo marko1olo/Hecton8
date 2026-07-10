@@ -19,22 +19,22 @@ localization_flags: 1
 
 # مجمع استرداد Aegir
 
-مجمع استرداد Aegir هو الغلاف العام للإنقاذ خلف Black Keel. يسمح لرخص marauder الصغيرة بالوصول إلى مطالبات Aegir المهجورة من دون امتلاك carrier بين الكواكب. هذه الصفقة نافعة وسامة معا: المجمع الذي يرسل العطاء هو نفسه من يقرر هل المشغل الحي أو الحمولة المختومة أو قفل الحجر أو حزمة الدليل تستحق الحرق التالي.
+مجمع استرداد Aegir هو غلاف salvage الذي يجعل Black Keel في متناول licensed marauders الصغار. لا يستطيع أي independent operator شراء interplanetary claim carrier وتمويلها وإبقاؤها قانونية من أجل قمر مهجور واحد. يحل المجمع ذلك بجمع المخاطر بين claims قديمة، ومسارات ميتة، وinsurer liens، وrecovery contracts مصطفة. هو مفيد لأنه موجود أصلا. وهو سام لأن ledger نفسه الذي يطلق carrier يقرر أيضا ما يسمح للcarrier بتقديره: sealed sample، أو proof bundle، أو quarantine lock، أو جسد ما زال يتنفس، أو burn window التالية للخروج من HECTON-8.
 
 ## Scanner
 
-ختم مجمع مطالبات. تم تعيين Black Keel بدين مسار، لا كهدية للمشغل.
+ختم مجمع claim. أُرسل Black Keel بدين مشترك، لا بكرم إنقاذ.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: تم تعيين العطاء الذاتي Black Keel لمطالبة HECTON-8 المهجورة تحت الضغط. فئة رعاية الطاقم: متعاقد. فئة حيازة الحمولة: أولوية متغيرة. استخراج الإنسان مشروط حتى يغلق تحكيم المجمع.
+AEGIR RECLAMATION POOL: تم تعيين claim tender ذاتي BLACK KEEL على derelict-pressure claim HECTON-8. Contractor welfare class محدود. Payload custody class متغير. Human extraction يبقى pending حتى إغلاق تحكيم lien وquarantine وmass-window.
 
 ## Audio
 
-المجمع يملك الطريق. أنت تستأجر الجواب إذا بقيت حيا بما يكفي لتسأل.
+المجمع أرسل سفينة فعلا. تلك هي الرحمة. كل ما بعدها محاسبة.
 
 ## Field Note
 
-المجمع المشترك يجعل الإنقاذ أرخص وأبطأ وأسهل لكل موقع أن ينكره.
+المجمع جعل وجود carrier في Aegir ممكنا. وجعل كل وعد مشروطا.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ar_SA. -->

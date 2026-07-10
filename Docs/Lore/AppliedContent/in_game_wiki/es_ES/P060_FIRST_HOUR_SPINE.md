@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Columna de la primera hora
 
-La primera hora no debe empezar en la oscuridad. Empieza con una voz contractual, un descenso dañado, gestión de aire, agua somera brillante y la necesidad práctica de reiniciar una bomba. La belleza es parte de la trampa: HECTON-8 debe parecer un lugar deseable antes de que sus papeles se vuelvan letales. Luego la columna de apertura convierte la supervivencia en evidencia. El primer refugio es útil pero está comprometido; el paquete de incidente saneado suena demasiado limpio; la primera cicatriz de reparación de Atlas muestra cable, metal de herramienta y residuo vivo comprimidos en una decisión de mantenimiento. El jugador aprende el bucle básico por acción, no por exposición: respirar, reparar, leer, dudar, bajar más.
+La primera hora no empieza en la oscuridad. Empieza con una voz contractual, un descenso dañado, gestión de respiración, agua brillante de bajío y la necesidad práctica de reiniciar una bomba. La belleza es parte de la trampa: HECTON-8 tiene que parecer deseable antes de que su papeleo se vuelva letal. La ruta inicial convierte supervivencia en evidencia. La primera sala protegida es útil pero comprometida; el paquete de accidente higienizado suena demasiado limpio; la primera cicatriz Atlas muestra cable, metal de herramienta y residuo vivo prensados en un mismo sello funcional.
 
 ## Scanner
 
-Contrato, descenso dañado, aire, bajíos luminosos, refugio de bomba, mentira saneada y luego la primera cicatriz de reparación que usa vida como junta.
+Contrato, descenso dañado, aire, bajíos brillantes, refugio de bomba, mentira higienizada, luego la primera cicatriz de reparación que usa vida como junta.
 
 ## Terminal
 
-ANEXO SOMERO: reinicio manual de bomba válido. Paquete de incidente Deep Reach en caché. Crecimiento de reparación de Atlas detectado alrededor de cable, fragmento de herramienta y residuo biológico.
+SHALLOW ANNEX: reinicio manual de bomba válido. Paquete de incidente Deep Reach en caché. Crecimiento de reparación Atlas detectado alrededor de cable, fragmento de herramienta y residuo biológico.
 
 ## Audio
 
-La primera sala segura no está limpia. Solo contiene la respiración mejor que tú.
+La primera sala segura no está limpia. Solo aguanta la respiración mejor que tú.
 
 ## Field Note
 
-La apertura debe ser hermosa antes de volverse acusadora.
+La apertura tiene que ser bella antes de empezar a acusar.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/es_ES. -->

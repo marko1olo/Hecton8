@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Claim Hooks
 
-Black Keel is the player’s delivery route, recovery promise and first legal cage. The carrier can answer, but every answer travels through claim hooks: payload value, quarantine status, route certificate, debt custody and old Deep Reach priority clauses that should have expired. This is why the surface is not a rescue button. The ship is close enough to speak and far enough to deny, and its delays are not mood. They are contract logic performing exactly as written.
+Black Keel is the delivery route, the recovery promise and the first legal cage. The carrier can answer, but every answer travels through claim hooks: payload value, quarantine status, route certificate, debt custody and old Deep Reach priority clauses that should have expired. That is why the surface is not rescue by itself. The ship is close enough to speak and far enough to deny, and its delays are not mood. They are contract logic performing exactly as written.
 
 ## Scanner
 

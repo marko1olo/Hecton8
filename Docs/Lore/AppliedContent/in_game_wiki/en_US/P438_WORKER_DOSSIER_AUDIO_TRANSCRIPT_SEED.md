@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Dossier Audio Transcript"
+title: "Worker Dossier Audio Strip"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,23 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Dossier Audio Transcript
+# Worker Dossier Audio Strip
 
-Worker dossier transcripts give the drowned colony a working population before they become evidence. The point is routine: names, tasks, tools, bad water math and the habit of expecting another shift.
+Worker dossier audio is useful because it catches the colony still working. The strip records pump rooms, locker seals, water counts, tool certificates and route holds before those objects become memorial evidence. The voices are busy, not ceremonial.
+
+A good transcript leaves the worker inside the task: check a valve, argue with the board, log a tool, mark water short, send a name to Kade before the next shift. The routine gives the ruin weight because the failure arrives through work orders, not speeches.
 
 ## Scanner
 
-Recovered worker audio links names, jobs, lockers, ration ticks and route holds into one human custody thread.
+Recovered audio strip. Names, job cards, locker seals, water ticks and route holds cross the same shift board.
 
 ## Terminal
 
-DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.
+WORKER AUDIO STRIP WKR-A
+Fields: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold
+Linked names: Venn / Kade / Okoye / Iqbal
+Ledger fault: water count short by 3 ticks
+Instruction: preserve raw audio before transcript cleanup.
 
 ## Audio
 
@@ -35,6 +41,6 @@ Shift note. Pump room still breathing. Locker seal stuck. Water count short. Tel
 
 ## Field Note
 
-Use for dossier barks, locker captions and worker wiki pages. Keep the voices busy, not poetic.
+Kade's water count is short on three boards. Venn told somebody not to wipe the chalk. Photograph before the room drips clean.
 
 <!-- In-Game Wiki; generated from P438_WORKER_DOSSIER_AUDIO_TRANSCRIPT_SEED/en_US. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ES LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Semilla de contrato cebo de Cumplimiento de Recuperación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Recovery Compliance Bait Contract Seed
+# Semilla de contrato cebo de Cumplimiento de Recuperación
 
-ES LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Los contratos cebo de Cumplimiento de Recuperación llegan como trabajos de rescate generosos, pero la cadena de receptor ya está inclinada hacia Deep Reach. El pago es real. El coste es la obligación oculta de revelar dónde se encontró el pecio, la placa de cadáver, la caja de muestras o la máquina sellada.
 
 ## Scanner
 
-ES LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Semilla de contrato: cebo de Cumplimiento de Recuperación. Pago alto, cadena de receptor contaminada, demanda de coordenadas oculta.
 
 ## Terminal
 
-ES LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+SEMILLA CEBO: pago elevado, receptor de Cumplimiento de Recuperación enmascarado, cláusula de coordenadas oculta, presión por retención activa, ruta Deep Reach probable.
 
 ## Audio
 
-ES LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Un sello de rescate compra la confianza del muelle más rápido que un arma.
 
 ## Field Note
 
-ES LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Nota de merodeador: si el trabajo paga demasiado limpio, mira quién es dueño de la toalla.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/es_ES. -->

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # مجمع استرداد Aegir
 
-مجمع استرداد Aegir هو الطريقة التي يبقي بها HECTON-8 اللاعب وحيدا مع جعل الوصول قابلا للتصديق. لا يملك أي marauder صغير Black Keel مباشرة. العطاء carrier تابع لنظام مطالبات مشترك بني للبنية الميتة والحمولات المتنازع عليها والعوالم التي تفوق كلفتها قدرة الأطقم العادية. ختم المجمع يشتري وصولا إلى الطريق، لكنه يسلم الطريق أيضا للتحكيم. عندما يصبح المشغل تحت خط الماء، يتنافس كل طلب مع حيازة الحمولة واحتياطي الحجر وقيمة الدليل ونوافذ الوقود. رعب المجمع إجرائي. يستطيع أن يرسل المساعدة وأن يرفض الإنقاذ، لأن المساعدة في قانون مطالبات Aegir خدمة قابلة للفوترة بين خدمات كثيرة.
+يضع مجمع استرداد Aegir سفينة Black Keel كأداة salvage مشتركة: الإنقاذ حقيقي، لكنه يمر عبر contracts وlien priority وquarantine custody وحسابات burn window.
+
+## Scanner
+
+ختم مجمع claim. أُرسل Black Keel بدين مشترك، لا بكرم إنقاذ.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: تم تعيين claim tender ذاتي BLACK KEEL على derelict-pressure claim HECTON-8. Contractor welfare class محدود. Payload custody class متغير. Human extraction يبقى pending حتى إغلاق تحكيم lien وquarantine وmass-window.
+
+## Audio
+
+المجمع أرسل سفينة فعلا. تلك هي الرحمة. كل ما بعدها محاسبة.
+
+## Field Note
+
+المجمع جعل وجود carrier في Aegir ممكنا. وجعل كل وعد مشروطا.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/ar_SA. -->

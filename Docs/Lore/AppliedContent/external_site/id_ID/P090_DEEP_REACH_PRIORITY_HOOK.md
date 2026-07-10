@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Priority Hook Deep Reach"
+title: "Deep Reach Priority Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Priority Hook Deep Reach
+# Deep Reach Priority Hook
 
-Priority hook adalah cara paling bersih agar Deep Reach tetap berbahaya setelah koloni diam. Perusahaan tidak perlu mengemudikan Black Keel dengan keajaiban jarak jauh. Ia hanya perlu sertifikat lama yang masih dikenali carrier, aturan kontinuitas yang terkait akses Atlas, dan kelas payload yang mengalahkan tubuh kontraktor dalam kondisi bahaya tertentu. Itu cukup. Rute bisa digeser. Kotak tersegel bisa naik dalam antrean. Kunci karantina bisa tetap tertutup sementara hitungan oksigen operator menjadi entri utang lain. Hasilnya lebih dingin daripada sabotase: sistem bekerja seperti tertulis, dan Deep Reach belajar menulis dirinya ke bagian yang bertahan dari bencana.
+Deep Reach Priority Hook menambatkan corporate pressure pada legacy certificates, quarantine clauses, Atlas tokens, payload priority, dan evidence custody, bukan instant command yang mustahil.
+
+## Scanner
+
+Certificate hook lama. Deep Reach tidak membutuhkan bridge selama clause masih miliknya.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate dapat memajukan payload recovery, quarantine lock, Atlas access token, evidence suppression queue, atau sealed infrastructure proof di bawah Aegir claim law. Human extraction priority unchanged kecuali verified hazard proof melebihi custody value.
+
+## Audio
+
+Mereka tidak perlu berdiri di bridge untuk mengarahkan jawaban.
+
+## Field Note
+
+Lebih bersih dari conspiracy: paperwork bertahan lebih lama daripada orang yang menandatanganinya.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/id_ID. -->

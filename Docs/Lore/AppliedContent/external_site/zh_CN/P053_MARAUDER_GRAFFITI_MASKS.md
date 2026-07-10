@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "掠夺者涂鸦伪装"
+title: "Marauder涂鸦掩码"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 掠夺者涂鸦伪装
+# Marauder涂鸦掩码
 
-HECTON-8的掠夺者不是没有面孔的袭击派系。他们是工人、债务跑腿、被遗弃的承包商和打捞队，学会在墙上写字，因为每个干净频道都可能被监看或计费。他们的涂鸦故意难看：足够快，可以在压力下画完；足够清楚，可以透过冷凝水读出；也足够含糊，可以被看成恐慌或破坏。黑环不是装饰，它表示载体可能听见你。断箭不是画得差，它表示自上次安全通过后，走廊已经变了。
+Marauder涂鸦掩码把scavenger writing变成可读的ocean infrastructure：route hints、comm silence、pressure drift、cache risk以及对carrier surveillance的不信任。
+
+## Scanner
+
+paint code。slash count标记noise discipline；black rings标记carrier-ping danger；broken arrows标记pressure drift。
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only。Black ring: carrier sweep。Broken arrow: pressure changed since last mark。Salt bloom: cache compromised。Double hook: official route no longer honest。
+
+## Audio
+
+如果wall看起来愤怒，就把它当weather读。
+
+## Field Note
+
+marauders写给那些不能信任radios、也买不起maps的人。
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/zh_CN. -->

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # מאגר ההשבה של Aegir
 
-מאגר ההשבה של Aegir הוא הדרך שבה HECTON-8 משאיר את השחקן לבד ועדיין הופך את ההגעה לאמינה. אף marauder קטן אינו מחזיק ב-Black Keel ישירות. טנדר ה-carrier שייך למערכת claims משותפת שנבנתה לתשתית מתה, מטענים במחלוקת ועולמות יקרים מדי לצוותים רגילים. חותמת מאגר יכולה לקנות גישה לנתיב, אבל היא גם מוסרת את הנתיב לבוררות. ברגע שהמפעיל מתחת לקו המים, כל בקשה מתחרה ב-custody של payload, עתודות הסגר, ערך ראייתי וחלונות דלק. הפחד של המאגר הוא פרוצדורלי. הוא יכול לשלוח עזרה ועדיין לסרב לחילוץ, כי תחת חוק claim של Aegir עזרה היא רק שירות מחויב אחד בין רבים.
+מאגר ההשבה של Aegir ממקם את Black Keel ככלי salvage משותף: חילוץ קיים, אבל הוא עובר דרך contracts, lien priority, quarantine custody ומתמטיקת burn window.
+
+## Scanner
+
+חותמת מאגר claim. Black Keel נשלחה בגלל חוב משותף, לא בגלל חסד של חילוץ.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: claim tender אוטונומי BLACK KEEL הוקצה ל-derelict-pressure claim HECTON-8. Contractor welfare class מוגבל. Payload custody class משתנה. Human extraction נשאר pending עד סגירת בוררות lien, quarantine ו-mass-window.
+
+## Audio
+
+המאגר באמת שלח ספינה. זו הרחמים. כל מה שאחרי זה הוא חשבונאות.
+
+## Field Note
+
+המאגר איפשר carrier ב-Aegir. הוא גם הפך כל הבטחה למותנית.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/he_IL. -->

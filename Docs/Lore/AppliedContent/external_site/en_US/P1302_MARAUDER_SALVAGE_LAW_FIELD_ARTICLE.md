@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Marauder Salvage Law Field Article
 
-The word Marauder should sound uncomfortable. It is not a romantic class name and not a clean job title. In HECTON-8, a Marauder is what the frontier produces when law travels faster as paperwork than as help. The claim system needs someone who can enter a dead or disputed asset, recover value, touch contaminated property, accept personal risk and leave enough records for other offices to pretend the process was controlled.
+The word Marauder is supposed to catch in the throat. It is not a power fantasy label. It is the kind of title a frontier legal system invents when it needs someone to touch a ruined asset without admitting that the asset used to be a workplace full of people.
 
-That makes the player morally exposed from the opening minute. You are not a knight arriving to save a colony. You are a professional scavenger with old Deep Reach procedure in your hands, a debt window above your head and an ocean full of people the ledgers already tried to flatten into categories. The horror is not that you loot. The horror is that looting may be the only action the system still recognizes.
+            HECTON-8 uses Marauders to keep the player's actions morally loaded. You loot because oxygen, debt and tools make looting necessary. You also document because the objects you steal may be the only evidence that survives water, pressure and corporate cleanup. A good Marauder is not clean. A good Marauder knows the difference between stripping a room and preserving what the room proves.
 
-Marauder field language grew from that pressure. A black ring is not vandalism if it tells the next diver the official owner is lying. A slash through a stamped cause of death is not sentiment if it points toward a missing pump certificate. A worker name scratched beside a route mark can carry more legal force than a polished memorial because it attaches personhood to place, time and custody. The marks are rude because polite language already failed.
+            The field culture follows from that contradiction. Marks on walls, crossed labels, worker names, pressure arrows and ugly shorthand all form a second law written under the official one. It is rude because official language already had its chance. It is fast because no one has time to read a claims manual while a bulkhead breathes.
 
-This is the cultural spine of HECTON-8's lore. The player learns the world by stealing from it, but the best theft is disciplined: take the object, keep the context, preserve the witness path, decide what must leave and what should remain as proof. Marauder work is not clean redemption. It is a pressure trade where survival, debt, evidence and shame all ride the same hook.
+            This lets the game make salvage more than inventory collection. Every recovered object asks what else came with it: context, custody, debt, shame, proof. The player is not rewarded for pretending to be innocent. The player is pressured to decide what kind of guilty work might still save the truth.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/en_US. -->

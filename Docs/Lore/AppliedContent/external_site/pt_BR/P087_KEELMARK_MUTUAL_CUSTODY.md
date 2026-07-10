@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Custody Keelmark Mutual"
+title: "Custodia da Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custody Keelmark Mutual
+# Custodia da Keelmark Mutual
 
-Keelmark Mutual assusta porque não precisa de ódio. É seguradora, custodian, detentora de lien e escrivã de rota dobradas numa só agenda remota. Quando Black Keel ouve o operador, o caminho da apólice de Keelmark já comparou o corpo a dano de nave, massa salvage, risco de quarentena e valor de prova. A empresa não precisa assassinar ninguém para fazer o oceano parecer hostil. Ela pode esperar, cobrar, classificar e pedir mais uma confirmação enquanto a pressão devora a sala. Assim o carrier permanece crível: o inimigo não é um rosto maligno na tela, mas um contrato velho o bastante para responder antes do fim do pedido de socorro.
+A Custodia da Keelmark Mutual explica a proprietaria legal da Black Keel como uma malha de insurance lien, route underwriting, quarantine reserve e claim-tender custody.
+
+## Scanner
+
+Etiqueta de underwriting intacta. Keelmark nao precisa de malicia quando o lien ja tem dentes.
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve e recovery proof agrupados sob remote underwriting schedule. Distress status nao suspende lien nem custody order.
+
+## Audio
+
+A policy e mais velha que o distress call. Teve mais tempo para aprender a rota.
+
+## Field Note
+
+Nao ha mastermind numa sala escura. So um schedule velho o bastante para sobreviver a culpa.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/pt_BR. -->

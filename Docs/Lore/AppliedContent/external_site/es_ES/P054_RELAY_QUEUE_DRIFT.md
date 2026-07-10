@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deriva de cola de relé"
+title: "Deriva de relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deriva de cola de relé
+# Deriva de relay queue
 
-La deriva de cola de relé es la diferencia entre verdad y utilidad. HECTON-8 no necesita estática falsa ni interferencia mágica para hacer temible la comunicación. Un mensaje puede llegar intacto, autenticado y correcto para la sala de hace treinta minutos. Luego el agua mueve una escotilla, la presión dobla un marco, el crecimiento Atlas sella la grieta equivocada y la misma instrucción se convierte en trampa. El jugador no resuelve si el sistema miente, sino si ya es demasiado viejo para confiar.
+Relay Queue Drift convierte message age en variable de supervivencia: remote orders pueden ser true, stale y lethal al mismo tiempo.
+
+## Scanner
+
+Relay stamp mas viejo que la leak que nombra. La instruction era cierta para una room que ya no existe.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction hasta que se abra fresh relay window. Treat delayed route orders as archival salvo que pressure, door state y waterline coincidan.
+
+## Audio
+
+El message es correcto. Ese es el problema.
+
+## Field Note
+
+Una truth tardia todavia puede matar.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/es_ES. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "فشل احتواء الضغط"
+title: "فشل pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# فشل احتواء الضغط
+# فشل pressure containment
 
-فشل احتواء الضغط يعطي blue debt سلوكا ماديا يمكن قراءته. قيمته تأتي من الضغط العميق الذي جعله متماسكا، وخطره يأتي من المعالجة الضحلة التي تفك ذلك التماسك. المرحلة 0 مختومة. المرحلة 1 تنحرف وقد تستعاد أحيانا بإعادة ضغط الفوهة. المرحلة 2 تكسر الشبكة. المرحلة 3 تدعو الملح والكائنات. المرحلة 4 تترك عينة ميتة تلوث العتاد والماء والطرق.
+يعطي pressure containment failure مادة blue debt behavior يمكن قراءته دون myth. إنها valuable لأن deep pressure made the lattice coherent. وهي dangerous لأن shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts وقد recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear وwater وroute markings. المادة ليست cursed. إنها homesick for pressure.
 
 ## Scanner
 
-مخطط مراحل الصندوق. يفشل blue debt بذاكرة الضغط وقص الإشارة والتفتح؛ الخرافة تهدر الأكسجين.
+Casket stage chart. يفشل Blue debt عبر pressure memory وsignal shear وbloom؛ superstition wastes oxygen.
 
 ## Terminal
 
-مراحل الاحتواء: 0 شبكة مختومة؛ 1 انحراف إشارة؛ 2 كسر شبكة؛ 3 تفتح ملحي/بيولوجي؛ 4 عينة ميتة مع تلوث حي. إعادة ضغط الفوهة قد تستعيد المرحلة 1 فقط.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-العينة لا تكرهك. إنها تحاول العودة إلى حيث تشكلت.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-عينة واحدة قد تساوي ثروة في عمق، وتصبح عبئا بعد عشرة أمتار.
+يمكن لsample أن يكون worth a fortune at one depth ثم become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ar_SA. -->

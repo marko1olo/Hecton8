@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Mapa de ruta de las lunas de Aegir"
+title: "Mapa de ruta de lunas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mapa de ruta de las lunas de Aegir
+# Mapa de ruta de lunas de Aegir
 
-El mapa de lunas de Aegir es operativo antes que hermoso. HECTON-8 es un cuerpo oceánico dentro de una escalera de lunas, shepherd rocks, ice-scatter paths y dead relay marks. Los cuerpos interiores perturban el narrowband contact y la cobertura de radiación. Las lunas de hielo rompen las optical relay lines en fragmentos malos. Las occultation bands crean ventanas de silencio donde un claim puede ser válido y seguir sin ser oído. Los beacons exteriores conservan propiedad antigua incluso tras la desaparición de tripulaciones. La geometría de mareas y el storm stacking deciden si una bathydrop chain sube limpia o entra en el loss ledger. Los mapas públicos pueden mostrar esto sin prometer mundos jugables extra; su función es hacer que el cielo se lea como presión, retraso y riesgo de ruta.
+El mapa de lunas de Aegir debe leerse como un tablero operativo. Cada etiqueta puede cambiar edad de señal, refugio de radiación, riesgo de transferencia, clima de descenso, geometría de recuperación o tiempos legales de custodia. HECTON-8 se encuentra dentro de esa escalera móvil: los cuerpos interiores alteran el contacto de banda estrecha, las lunas de hielo rompen rutas ópticas en fragmentos, las bandas de ocultación crean ventanas mudas y las balizas viejas conservan marcas de propiedad tras la desaparición de tripulaciones. El material público puede mostrar el sistema sin prometer lunas jugables. La promesa útil es más estrecha: cuando el jugador mira desde el agua, el cielo puede explicar por qué el relevo tropezó, por qué un portador negó masa de descenso o por qué una reclamación válida esperó en la oscuridad.
 
 ## Scanner
 
-Registro de mapa del sistema. Las lunas de Aegir definen relay timing, cobertura de radiación, ice scatter, presión de marea, occultation bands, beacons muertos y recovery geometry.
+Registro de mapa de sistema. Las etiquetas lunares fijan edad de relevo, carga de marea, cobertura de radiación, dispersión de hielo, bandas de ocultación, balizas muertas y geometría de recuperación.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // ESCALERA LUNAR AEGIR. Los nombres de lunas son etiquetas de ruta. Cada cuerpo cambia signal age, transfer risk, storm exposure, custody timing o fiabilidad del claim.
+NODO DE ARCHIVO PÚBLICO // ESCALERA LUNAR AEGIR. El nombre de luna es dato de ruta. Campos requeridos: edad de señal, fase de marea, cobertura de tormenta, ventana de reclamación, estado de baliza, riesgo de ascenso.
 
 ## Audio
 
-El mapa explica por qué nadie llega en el momento en que lo pides.
+Una luna en el mapa no es paisaje. Es una razón por la que la respuesta llegó tarde.
 
 ## Field Note
 
-Nota de Marauder: marca la luna, luego marca qué le hace a la ruta.
+Nota de Merodeador: marca la luna y luego escribe qué le hace a señal, marea, masa y custodia.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/es_ES. -->

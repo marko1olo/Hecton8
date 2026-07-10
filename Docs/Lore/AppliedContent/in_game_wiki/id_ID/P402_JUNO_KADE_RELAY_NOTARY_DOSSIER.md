@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, notaris relai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Juno Kade/Relay
+# Juno Kade, notaris relai
 
-ID LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+Juno Kade bekerja di meja relai tempat hukum HECTON-8 bertemu kecepatan cahaya. Segelnya, tangga paket, pita saksi, dan goresan baki menunjukkan pekerjaan yang dibangun untuk keterlambatan: jadikan fakta sebagai benda, cap siapa yang menyentuhnya, dan jaga tetap utuh sampai pembawa atau penerima mengambil kustodi. Bukti itu tidak menjanjikan penyelamatan. Ia menjelaskan mengapa kesaksian masih berarti dalam sistem tempat setiap pesan tiba setelah tubuh sudah dingin.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dosier: Juno Kade. Wajah segel, baki paket, dan pita saksi membawa tanda kustodi jendela terlambat yang sama.
 
 ## Terminal
 
-ID LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+HALAMAN RELAI A-17 / KADE, JUNO: paket keluar dicap setelah tiap jendela pembawa. Tekanan segel, debu baki, dan pita saksi memastikan kustodi walau waktu balasan melebihi waktu penyelamatan.
 
 ## Audio
 
-ID LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade mengesahkan fakta yang akan tiba terlalu terlambat untuk menyelamatkan siapa pun, tetapi tetap harus selamat sepanjang perjalanan.
 
 ## Field Note
 
-ID LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Gunakan Kade di dekat jam jendela komunikasi, baki paket, segel notaris, dan pengungkapan bukti terlambat. Dosiernya harus membuat jarak terasa legal, bukan abstrak.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/id_ID. -->

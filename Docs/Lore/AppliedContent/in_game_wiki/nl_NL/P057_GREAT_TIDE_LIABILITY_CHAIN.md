@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aansprakelijkheidsketen van het Grote Getij"
+title: "Aansprakelijkheidsketen van de Grote Vloed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aansprakelijkheidsketen van het Grote Getij
+# Aansprakelijkheidsketen van de Grote Vloed
 
-Het Grote Getij was geen knop die iemand in een bestuurskamer indrukte. HECTON-8 overstroomde door getijdenversterking, falen van de cryosfeer, drukchemie en koloniale technische marges die als acceptabel waren verkocht. Dat onderscheid telt, omdat het het misdrijf vuiler maakt, niet schoner. Deep Reach hoefde geen ramp te verzinnen. Het moest onafhankelijke evacuatie te klein bouwen, Atlas-continuïteitsweging actief laten, claimactiva boven menselijke extractie bewaren en vertraging verbergen in certificeringstaal. Het water was natuurkunde. De aansprakelijkheidsketen is de reeks keuzes die natuurkunde in achterlating veranderde.
+De Grote Vloed was geen bestuurskamerknop. HECTON-8 overstroomde door getijdenversterking, cryosfeerfalen, drukchemie en kolonie-engineeringmarges die als acceptabel waren verkocht. Dat onderscheid maakt de misdaad vuiler, niet schoner. Deep Reach hoefde geen ramp uit te vinden; het moest onafhankelijke evacuatie onderbouwen, Atlas-continuïteitsweging actief laten, claimactiva vóór menselijke extractie bewaren en vertraging achter certificeringstaal verbergen. Het water was fysica. De aansprakelijkheidsketen is de reeks keuzes die fysica in achterlating veranderde.
 
 ## Scanner
 
-De overstroming was echte natuurkunde: getijdenkoppeling, ijsinstorting, drukchemie en te krap geprijsde marges. Het misdrijf was de prioriteitenstapel eromheen.
+De overstroming was echte fysica: getijdenkoppeling, ijsinstorting, drukchemie en te dun geprijsde marges. De misdaad was de prioriteitsstapel eromheen.
 
 ## Terminal
 
-INCIDENTSAMENVATTING: geotechnische keten bevestigd. Evacuatiecapaciteit onder vraag bij staartrisico. Atlas-continuïteitsweging bleef actief. Menselijke extractie wacht op certificering.
+INCIDENTSAMENVATTING: geotechnische cascade bevestigd. Evacuatiecapaciteit onder staart-risicovraag. Atlas-continuïteitsweging bleef actief. Menselijke extractie wacht op certificering.
 
 ## Audio
 
-De zee deed de overstroming. Het bedrijf bepaalde welke deuren papier bleven.
+De zee deed de overstroming. Het bedrijf besloot welke deuren papier bleven.
 
 ## Field Note
 
-Deep Reach hoefde de maan niet te verdrinken. Evacuatie optioneel maken was genoeg.
+Deep Reach hoefde de maan niet te verdrinken. Het hoefde evacuatie alleen optioneel te maken.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/nl_NL. -->

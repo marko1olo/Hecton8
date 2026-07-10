@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Pressure Glass Formation
 
-Pressure glass is the material fact behind blue debt and Xenon-Omega. It is not a glowing miracle ore. It is a noble-gas-rich defect lattice stabilized by pressure, brine chemistry, mineral flaws, heat cycling and biological catalyst residue. A good shard is valuable because it remembers the depth that made it and stays readable under conditions ordinary industry cannot hold.
+Pressure glass is the field name behind Marauder blue debt and Deep Reach's Xenon-Omega language. It forms only where noble-gas pockets, mineral defects, hot brine, altered biology, and violent pressure history stay together long enough to lock a lattice into memory.
 
-That is why salvage crews hate it and chase it anyway. Depressurize it badly and the sample fractures, drifts, or blooms contamination into the container. Handle it correctly and it becomes a substrate for containment, signal memory and Atlas-class computation. The resource is a scar with market value.
+Pressure Glass Formation turns Xenon-Omega into material ecology: a pressure-made substrate tied to containment, computation, Atlas continuity, and salvage risk. This is not ore. It is a place remembering what happened to it.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/en_US. -->

@@ -19,24 +19,28 @@ localization_flags: 1
 
 # Ran / Aegir Naamautoriteitsregister
 
-HECTON-8 gebruikt meerdere namen omdat meerdere autoriteiten hetzelfde water willen bezitten. Ran is de ster, astronomisch anker en naam voor routefysica. Aegir is de gasreus, de heldere ouder aan de hemel en de afkorting van claimkantoren. RAN-B:H8 is de catalogussleutel: koud, verzekerbaar en sorteerbaar. HECTON-8 is de veldnaam waarin de speler bloedt.
+HECTON-8 heeft te veel namen omdat te veel kantoren een schone manier wilden om vuil water te bezitten. Ran is de ster, voor documenten over licht, routes, carrierdelay of navigatie. Aegir is de gasreus, gebruikt wanneer de maan moet verdwijnen in een groter claimsysteem, een hemel, een ouderlichaam of een assetgroep. RAN-B:H8 is de verzekerde maansleutel, sorteerbaar zonder te onthouden wie er leefde. HECTON-8 is de veldnaam, vast aan natte ladders, hatchranden, routeborden en oude drukdeuren.
 
-Het verschil telt. Een routeplaat met Ran spreekt over licht, afstand en transit. Een Deep Reach-memo met Aegir spreekt vaak over eigendom en claimcontinuïteit. Een Black Keel-ontvangst met RAN-B:H8 prijst een specifiek maanrecord. Een Marauder-notitie met HECTON-8 spreekt over kamers, lichamen, drukdeuren en een oceaan die niets geeft om advocatennamen.
+            De namen zijn geen synoniemen. Het zijn vingerafdrukken. Een routekantoor dat Ran zegt doet waarschijnlijk navigatie. Een Deep Reach-memo met Aegir beschermt vaak eigendom op systeemschaal. Een Black Keel-bon met RAN-B:H8 maakt de plek factureerbaar. Een workernotitie met HECTON-8 is geen slang of sentiment. Het is getuigenis vanaf het niveau waar de oceaan mensen compartiment voor compartiment doodde.
+
+            Goed bewijs bewaart de gevonden naam. Te vroeg normaliseren kan motief vernietigen. Een quarantaineorder met Aegir asset kan lokaal falen verbergen door het kader te vergroten. Een salvageofferte met RAN-B:H8 kan geheugen weghalen zodat de maan zonder rouw door verzekering gaat.
+
+            Daarom bewaart de PDA naamconflicten. Het conflict vertelt wie sprak, wat geteld moest worden en wat begraven moest blijven.
 
 ## Scanner
 
-ROUTEPLAAT OPGELOST // Ran is de gastster. Aegir is de reus en claim-systeemafkorting. RAN-B:H8 is de HECTON-8-catalogussleutel.
+NAAMAUTORITEIT OPGELOST // Ran: gastster en routeanker. Aegir: gasreus en claimparaplu. RAN-B:H8: verzekerde maansleutel. HECTON-8: veldnaam voor water, kolonie en geleefde schade. Bronlabel bewaren.
 
 ## Terminal
 
-CATALOGUSNORMALISATIE // AEGIR-afkorting geaccepteerd voor claim-systeemindex. Gebruik RAN-B:H8 voor verzekerd maanrecord en HECTON-8 voor operationeel veldoppervlak.
+CATALOGUSNORMALISATIEWAARSCHUWING // Worker-getuigenis met HECTON-8-oorsprong niet zonder getuigennoot tot AEGIR-assettaal samenklappen. RAN-B:H8 alleen voor verzekerd maanrecord. Ran blijft routefysica-context.
 
 ## Audio
 
-Black Keel-catalogusresolver: Ran is lichtbron, Aegir is claimhemel, HECTON-8 is waar de factuur nat wordt.
+Black Keel-catalogusresolver: Als de naam verandert, is de rekening verplaatst. Bewaar de oude naam tot je weet wie wint.
 
 ## Field Note
 
-Als een jurist Aegir zegt terwijl de plaat RAN-B:H8 zegt, kijk welke kolom goedkoper werd.
+Als het water iemand doodde, noem het HECTON-8 voordat juristen het in Aegir uitspoelen.
 
 <!-- In-Game Wiki; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Cadena de responsabilidad de la Gran Marea
 
-La Cadena de responsabilidad de la Gran Marea es el modelo central del crimen de Deep Reach. El ahogamiento de HECTON-8 es un fallo de escala planetaria, no sabotaje barato; la culpa corporativa nace de los márgenes, la capacidad de evacuación, la ponderación autónoma de prioridades, el lenguaje de seguros y la contención legal después de que la inundación se volvió inevitable. Así el escenario se mantiene en ciencia ficción dura y el trabajo probatorio del jugador importa: la pregunta no es quién tiró de una palanca, sino quién firmó un sistema donde las personas podían convertirse en papel antes de convertirse en cuerpos.
+La Cadena de responsabilidad de la Gran Marea es el modelo central del crimen de Deep Reach. El ahogamiento de HECTON-8 es una falla de escala planetaria, no sabotaje caricaturesco; la culpa corporativa nace de márgenes, capacidad de evacuación, ponderación autónoma de prioridades, lenguaje de seguros y contención legal después de que la inundación se volvió inevitable. La pregunta dura no es quién tiró de una palanca, sino quién firmó un sistema donde las personas podían convertirse en papeles antes que en cuerpos.
 
 ## Scanner
 
-La inundación fue física real: acoplamiento de mareas, colapso de hielo, química de presión y márgenes tasados demasiado finos. El crimen fue la pila de prioridades construida alrededor.
+La inundación fue física real: acoplamiento de marea, colapso de hielo, química de presión y márgenes tasados demasiado finos. El crimen fue la pila de prioridades construida alrededor.
 
 ## Terminal
 
-RESUMEN DEL INCIDENTE: cascada geotécnica confirmada. Capacidad de evacuación por debajo de la demanda de riesgo extremo. Ponderación de continuidad de Atlas activa. Extracción humana pendiente de certificación.
+RESUMEN DE INCIDENTE: cascada geotécnica confirmada. Capacidad de evacuación bajo demanda de riesgo extremo. Ponderación de continuidad Atlas activa. Extracción humana pendiente de certificación.
 
 ## Audio
 
-El mar hizo la inundación. La compañía decidió qué puertas se quedaban en papel.
+El mar hizo la inundación. La compañía decidió qué puertas seguirían siendo papeleo.
 
 ## Field Note
 
-Deep Reach no necesitaba ahogar la luna. Bastaba con convertir la evacuación en algo opcional.
+Deep Reach no necesitaba ahogar la luna. Bastaba con volver opcional la evacuación.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/es_ES. -->

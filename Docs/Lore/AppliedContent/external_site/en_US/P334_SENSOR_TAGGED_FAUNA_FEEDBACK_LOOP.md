@@ -19,8 +19,22 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Feedback Loop
 
-Sensor-tagged fauna are not controlled soldiers. That distinction matters. Deep Reach tagging programs began as ordinary field science and logistics: track migration, pressure tolerance, contamination exposure, and route density. Years later, the tags are no longer clean equipment. Shell grows around them. Scar tissue drags them out of alignment. Mineral caps change their signal.
+A sensor-tagged animal is not a puppet. It is wildlife with a corporate instrument still answering under shell and scar tissue. That is enough for Atlas to mistake movement for an environmental update and enough for a diver's route to change without the animal ever noticing.
 
-Atlas still reads the return. A wounded grazer crossing a flooded gantry can look like a pressure survey. A predator carrying an old tag can make a corridor appear occupied by infrastructure risk. The animal remains itself, but the system around it treats movement as data. This gives wildlife encounters a second edge: survival behavior may also be maintenance feedback.
+## Scanner
+
+Old Deep Reach tag under shell growth on the left flank. Motion packets still ping the maintenance net.
+
+## Terminal
+
+FAUNA TAG LOOP / DR-2147-MIG: pressure, motion, and contamination packets accepted as environmental telemetry. Animal intent not parsed. Route alarms may follow migration path.
+
+## Audio
+
+It is not hunting you. Its tag may still open the wrong door.
+
+## Field Note
+
+If tagged fauna crosses a relay yard, wait before you trust the alarms. The animal may be gone; the route state may still be catching up.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

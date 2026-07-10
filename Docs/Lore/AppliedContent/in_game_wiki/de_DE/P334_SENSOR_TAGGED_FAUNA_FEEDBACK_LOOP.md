@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Rückkopplungsschleife sensorgetaggter Fauna
 
-Sensorgetaggte Fauna trägt die alte Kolonie in ihren Narben. Deep Reach markierte Tiere für Migrations-, Druck- und Kontaminationsstudien; Atlas las diese Tags später als billige Umwelttelemetrie. Das Wesen ist keine Puppe. Seine Bewegung kann dennoch Reparaturpriorität ändern, eine Drohnenroute wecken oder einen sicheren Durchgang besetzt aussehen lassen.
+Sensorgetaggte Fauna trägt altes Vermessungsgerät in verheilter Gewebe. Deep Reach markierte Tiere für Druck-, Migrations- und Kontaminationsstudien. Atlas hörte nach dem Tod der Kolonie weiter zu und faltete die Pakete in Wartungsstatus ein. Das Tier wählt seinen eigenen Weg; das Tag kann dahinter noch Türen, Alarme und Kartenvertrauen ändern.
 
 ## Scanner
 
-Alter Deep-Reach-Tag unter Schalenwuchs. Migrationsspur entspricht einem Wartungssurvey.
+Altes Deep-Reach-Tag unter Schalenwachstum an linker Flanke. Bewegungspakete pingen noch das Wartungsnetz.
 
 ## Terminal
 
-FAUNASCHLEIFE: eingebetteter Tag sendet schwache Druck-, Bewegungs- und Kontaminationspakete. Atlas liest Bewegung als Umweltzustand, nicht als Tierabsicht.
+FAUNA-TAG-SCHLEIFE / DR-2147-MIG: Druck-, Bewegungs- und Kontaminationspakete als Umwelttelemetrie akzeptiert. Tierabsicht nicht geparst. Routenalarme können Migrationspfad folgen.
 
 ## Audio
 
-Es jagt dich nicht. Es kann dich trotzdem melden.
+Es jagt dich nicht. Sein Tag kann trotzdem die falsche Tür öffnen.
 
 ## Field Note
 
-Gut für Begegnungen, bei denen das Tier unschuldig und trotzdem gefährlich für die Route ist.
+Wenn getaggte Fauna einen Relaishof kreuzt, warte, bevor du den Alarmen traust. Das Tier kann weg sein; der Routenstatus holt vielleicht noch auf.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/de_DE. -->

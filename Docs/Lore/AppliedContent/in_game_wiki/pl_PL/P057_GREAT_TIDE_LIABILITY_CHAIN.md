@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Łańcuch odpowiedzialności Wielkiego Przypływu"
+title: "Łańcuch odpowiedzialności Wielkiej Fali"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Łańcuch odpowiedzialności Wielkiego Przypływu
+# Łańcuch odpowiedzialności Wielkiej Fali
 
-Wielki Przypływ nie był guzikiem naciśniętym w sali zarządu. HECTON-8 zatonął przez wzmocnienie pływów, awarię kriosfery, chemię ciśnienia i marginesy inżynierii kolonialnej sprzedane jako akceptowalne. To rozróżnienie ma znaczenie, bo czyni zbrodnię brudniejszą, nie czystszą. Deep Reach nie musiało wymyślać katastrofy. Wystarczyło zbyt słabo zbudować niezależną ewakuację, zostawić ważenie ciągłości Atlas przy sterze, chronić aktywa roszczeniowe przed wydobyciem ludzi i ukryć opóźnienie w języku certyfikacji. Woda była fizyką. Łańcuch odpowiedzialności to zestaw decyzji, które zmieniły fizykę w porzucenie.
+Wielka Fala nie była przyciskiem w sali zarządu. HECTON-8 zalały amplifikacja pływów, awaria kriosfery, chemia ciśnienia i marginesy inżynierii kolonii sprzedane jako akceptowalne. To rozróżnienie czyni zbrodnię brudniejszą, nie czystszą. Deep Reach nie musiało wymyślać katastrofy; wystarczyło nie dobudować niezależnej ewakuacji, zostawić aktywną wagę ciągłości Atlas, chronić aktywa roszczeń przed ekstrakcją ludzi i ukryć zwłokę w języku certyfikacji. Woda była fizyką. Łańcuch odpowiedzialności to zestaw decyzji, które zmieniły fizykę w porzucenie.
 
 ## Scanner
 
-Powódź była prawdziwą fizyką: sprzężeniem pływowym, zawaleniem lodu, chemią ciśnienia i zbyt cienko wycenionymi marginesami. Zbrodnią był zbudowany wokół tego stos priorytetów.
+Powódź była prawdziwą fizyką: sprzężeniem pływów, zawaleniem lodu, chemią ciśnienia i zbyt cienko wycenionymi marginesami. Zbrodnią był stos priorytetów wokół niej.
 
 ## Terminal
 
-PODSUMOWANIE INCYDENTU: kaskada geotechniczna potwierdzona. Pojemność ewakuacji poniżej potrzeb ryzyka skrajnego. Ważenie ciągłości Atlas pozostało aktywne. Wydobycie ludzi oczekuje na certyfikację.
+PODSUMOWANIE INCYDENTU: kaskada geotechniczna potwierdzona. Pojemność ewakuacji poniżej popytu ryzyka ogonowego. Waga ciągłości Atlas pozostała aktywna. Ekstrakcja ludzi oczekuje certyfikacji.
 
 ## Audio
 

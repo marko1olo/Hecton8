@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Klaim Dingin Bulan Luar"
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Klaim Dingin Bulan Luar
+# Outer Moon Cold Claims
 
-Klaim dingin bulan luar membuktikan Aegir adalah sistem, bukan satu bulan berhantu. Prospek air garam yang gagal, rute logam yang dimothball, dan beacon mati menciptakan ekonomi salvage yang membawa Marauder ke jaringan lalu lintas.
-
-Yang penting bukan jarak, tetapi pola. Rute bisa mati dan tetap dapat ditagih. Beacon bisa mengulang kustodi tanpa kru hidup. HECTON-8 adalah kasus terlihat paling buruk, tetapi bukan tempat pertama Aegir belajar mengarsipkan kehilangan sebagai infrastruktur.
+Outer moon cold claims membuktikan Aegir adalah system, bukan one haunted ocean. Failed brine prospects, mothballed metal routes, cold caches, dan beacons with no living crew menciptakan salvage economy sebelum HECTON-8 menjadi nama yang semua orang whisper. Yang penting adalah pattern. Route bisa dead dan still billable. Beacon bisa repeat custody into empty space. Company bisa learn bahwa loss becomes cheaper setelah filed as infrastructure. HECTON-8 adalah worst visible case, bukan first lesson.
 
 ## Scanner
 
-Beacon klaim luar. Tidak semua yang mati di Aegir berada di HECTON-8.
+Outer claim beacon. Tidak semua dead thing in Aegir berada di HECTON-8.
 
 ## Terminal
 
-ARSIP TANGGA LUAR // Prospek air garam Thorne gagal. Rute ekspor Anvil dimothball. Beacon Mute mengulang ping kustodi tanpa deklarasi kru aktif.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir belajar kehilangan orang sebelum HECTON-8 menyelesaikan pelajarannya.
+Aegir belajar lose people sebelum HECTON-8 menyelesaikan lesson.
 
 ## Field Note
 
-Klaim dingin membuat Marauder mungkin. Mereka juga mengajari perusahaan cara mengubur pola.
+Cold claims membuat marauders mungkin. Mereka juga mengajari companies cara bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/id_ID. -->

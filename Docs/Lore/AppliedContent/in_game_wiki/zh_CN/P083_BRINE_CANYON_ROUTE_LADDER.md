@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "卤水峡谷路线梯"
+title: "盐水峡谷路线阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 卤水峡谷路线梯
+# 盐水峡谷路线阶梯
 
-卤水峡谷让深度推进变成物理问题。高密度层、矿物墙、热泄漏和声学畸变会教玩家，越深的旅行越需要更好的仪器和压力纪律。
+盐水峡谷把深度变成物质。浓盐水河像地板、镜子和陷阱一样躺在海中。可靠路线来自密度标记、压载窗口、中继检查和角度纪律，而不是勇敢。更深的层会说明仪器为何重要：声呐可能反射上方空间，浮力可能撒谎，潜服可能正确，而海不认同。
 
 ## Scanner
 
-卤水密度标记。下行路线是有墙的化学。
+密度标记确认。路线不是走廊，而是有墙的化学。
 
 ## Terminal
 
-卤水峡谷控制：密度界面稳定到足以分段下潜。警告：1800米以下预计出现声学中继畸变、载具浮力误差和假地板事件。
+盐水峡谷控制：密度界面足以支持分段下降。1800米以下预计危险：声学中继失真、载具浮力误差、传感器假底事件。
 
 ## Audio
 
-峡谷是一道由错误水体组成的楼梯。
+峡谷是一架由错误的水做成的楼梯。
 
 ## Field Note
 

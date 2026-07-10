@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Pile de ressources
 
-HECTON-8 n’est pas une lune à ressource unique. Les matériaux précoces gardent le joueur en vie, le salvage ouvre les routes, la saumure enseigne la pression, et blue debt n’est que la tentation apex.
+HECTON-8 n'est pas une lune à ressource unique. Les premiers matériaux gardent respiration et réparation possibles. La récupération ouvre des routes scellées. La saumure et la chimie des évents enseignent la pression. Dette bleue et pressure glass sont plus hauts dans la chaîne de claim, mais leur valeur n'a de sens que parce que les matériaux mineurs gardent l'opérateur vivant assez longtemps pour les atteindre.
 
 ## Scanner
 
-Pile: fibre récifale, sels de saumure, cœurs relais, vannes, blue debt, pressure glass, treillis Atlas.
+Pile lue : fibre récifale, sels de saumure, coeurs relais, vannes de pression, catalyseurs d'évent, dette bleue, pressure glass, treillis Atlas.
 
 ## Terminal
 
-Valeur: biote de survie, salvage humain, matériel de route, chimie de pression, blue debt, pressure glass, continuity substrate.
+MODELE DE VALEUR : biote de survie, récupération humaine, matériel de route, chimie de pression, dette bleue, pressure glass, substrat de continuité. Ne pas réduire la pile à un matériau miracle.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Si le carrier demande la masse avant les noms, tu sais qui possède le contrat.
 
 ## Field Note
 
-Rien ici n’est seulement du butin.
+Rien ici n'est juste du butin. Chaque échantillon appartient à une économie de pression.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/fr_FR. -->

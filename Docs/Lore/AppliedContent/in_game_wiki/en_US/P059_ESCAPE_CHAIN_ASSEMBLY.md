@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Escape Chain Assembly
 
-Escape is an assembly chain, not a single repaired vehicle. The damaged drop package can keep the player alive, but it cannot create a trusted ascent by itself. The route home needs an acoustic relay spine to be heard through water and storm noise, a pressure seal that will not turn ascent into rupture, a guidance core that can survive HECTON-8’s local hazards, an ascent-energy charge, a quarantine/legal handshake and, if the player wants power over the recovery record, an evidence payload Black Keel cannot price away. Every part lives deeper than comfort because the original system was built to move assets, not to let abandoned workers leave on their own terms.
+Escape is an assembly chain, not a single repaired vehicle. The damaged drop package can keep a body alive, but it cannot create a trusted ascent by itself. The route home needs an acoustic relay spine to be heard through water and storm noise, a pressure seal that will not turn ascent into rupture, a guidance core that can survive HECTON-8's local hazards, an ascent-energy charge, a quarantine/legal handshake and an evidence payload strong enough to change Black Keel's recovery authority. Each component is physical, legal and moral at once.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal han
 
 ## Terminal
 
-ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload alters recovery authority.
 
 ## Audio
 

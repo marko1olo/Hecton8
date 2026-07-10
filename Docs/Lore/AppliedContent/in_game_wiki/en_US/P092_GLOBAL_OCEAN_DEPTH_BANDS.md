@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Global Ocean Depth Bands
 
-HECTON-8's ocean is read by bands, not by a single bottom line. The photic shelf still permits light, wreckage, algae bloom, and careless pilots. The industrial shelf carries cable reef, pipe cages, and old loading decks. Below it, brine stairs bend sound and ballast. Abyssal machine fields punish repairs. The Atlas basin is where pressure stops acting like weather and starts acting like jurisdiction.
+HECTON-8's ocean is not one long fall to a bottom. It is a stack of laws. The photic shelf still allows light, algae, broken habitat skin, and bad decisions that can be corrected. The industrial shelf is pipe cages, cable reef, loading decks, and machines that answer late. Brine stairs bend sound and ballast until a route can be near and unreachable at the same time. Abyssal machine fields punish repairs with cold patience. The Atlas basin is deeper than danger; it is where pressure becomes jurisdiction.
 
 ## Scanner
 
-Depth chart. The first shelf forgives bad ballast; lower water invoices every mistake in pressure, heat, and silence.
+Depth chart. The first shelf forgives poor ballast; lower water invoices every mistake in pressure, heat, noise, and silence.
 
 ## Terminal
 
@@ -31,7 +31,7 @@ BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef;
 
 ## Audio
 
-Every hundred meters takes one habit away from you.
+Every hundred meters takes one habit away.
 
 ## Field Note
 

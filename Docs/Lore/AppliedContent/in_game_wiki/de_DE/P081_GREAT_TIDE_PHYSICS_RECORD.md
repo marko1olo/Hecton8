@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Physikprotokoll der Großen Flut"
+title: "Physikaufzeichnung der Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Physikprotokoll der Großen Flut
+# Physikaufzeichnung der Great Tide
 
-Das Physikprotokoll der Großen Flut hält die Katastrophe ehrlich. HECTON-8 war anfällig für Gezeitenresonanz, Eisbruch, Sturmflut und industrielle Wärmeabgabe. Deep Reachs Schuld liegt in Margen, Evakuierungskapazität und Entscheidungsprioritäten, nicht in einer erfundenen magischen Ursache.
+Die Physikaufzeichnung der Great Tide hält die Katastrophe ehrlich. HECTON-8 war bereits gefährlich: Aegirs Frühlingsgeometrie zog am Meer, die Kryosphäre belastete die Schelfe, Sturmstapelung fraß Zeitreserven, und Koloniewärme drückte versiegelte Drainagen rückwärts. Deep Reachs Schuld beginnt danach. Die Firma schob Aufstiegsreserve in die Zukunft, schützte Atlas-Kontinuität und behandelte Körper als Masse niedriger Priorität.
 
 ## Scanner
 
-Das Flutmodell ist intakt. Das Meer brauchte keinen Bösewicht, nur schlechte Sicherheitsmargen.
+Das Flutmodell ist intakt. Der Ozean brauchte keine Bosheit. Schlechte Reserven, versiegelte Abläufe und Vorgesetzte, die die Schicht laufen ließen, reichten.
 
 ## Terminal
 
-GREAT-TIDE-MODELL: Kryosphären-Scherung, resonanter Ozeanhub, künstliche Wärmeabgabe und Sturmstapelung überschreiten die sichere Evakuierungshülle um Faktor 3,7. Unabhängige Aufstiegsreserve: nicht finanziert.
+GREAT-TIDE-MODELL: Kryosphärenscherung, resonanter Ozeanhub, industrielle Wärmeabgabe und Sturmstapelung überschritten die sichere Evakuierungshülle um Faktor 3.7. Unabhängige Aufstiegsreserve: nicht finanziert. Atlas-Kontinuitätsreserve: geschützt.
 
 ## Audio
 
-Der Bericht hatte recht. Darum haben sie ihn begraben.
+Der Bericht hatte recht. Deshalb verschwand er.
 
 ## Field Note
 
-Beschönige es nicht: echte Physik tötete Menschen, und Deep Reach sorgte dafür, dass diese Physik Opfer hatte.
+Mach daraus keine Mystik. Physik tötete Menschen. Deep Reach sorgte dafür, dass Physik eine Menge vor sich hatte.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/de_DE. -->

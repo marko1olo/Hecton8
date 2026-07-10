@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Dostepne okna dna morskiego
 
-Wiekszosc dna HECTON-8 jest nieosiagalna zwykla odwaga. Cisnienie stawia sciane, zanim pojawi sie grunt. Dostepne okna sa wyjatkami: rozerwanymi miejscami, gdzie zapadnieta polka, odsloniety grzbiet, podgrzana blizna komina lub gesta kolumna solanki zmienia krzywa zejscia. To nie sa bezpieczne jaskinie. To waskie umowy z geologia. Zaloga moze dotknac starej skorupy, wydobyc mineraly wyrosle w cisnieniu, znalezc zapieczetowany sprzet kolonii albo odczytac pogrzebane zdarzenie, zanim ocean zamknie trase.
+Accessible Seafloor Windows to rare pressure breaks, gdzie HECTON-8 exposing ancient floor, high-risk salvage, mineral seams i evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Tu shell rozerwala sie thin enough, by crawler dotknal old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Wiekszosc moon trzyma floor jako pressure secret. Windows to exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/pl_PL. -->

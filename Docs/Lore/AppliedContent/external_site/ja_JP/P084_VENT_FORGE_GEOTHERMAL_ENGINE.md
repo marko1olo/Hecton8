@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "噴出口鍛造地熱エンジン"
+title: "Vent Forge地熱機関"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 噴出口鍛造地熱エンジン
+# Vent Forge地熱機関
 
-噴出口鍛造は地質をクラフト、生存、恐怖につなぐ。セラミック、シール、圧力ガラスの熱と圧力サイクルを与えるが、同じサイクルが沸騰ポケット、偽酸素、腐食雲、動物移動を作る。
+Vent forgeは地質と作業を結びつける。パルスはセラミックを硬化させ、圧力シールを戻し、pressure glassを焼鈍し、上昇チャージを予熱できる。しかし有用な周期はすべて危険のリズムでもある。沸騰せん断は継ぎ目を攻撃し、偽酸素は計器を欺き、腐食ブルームは開いた筐体へ入り、周囲の生命は作業者が理由を理解する前に動く。
 
-噴出口鍛造地熱エンジンはHECTON-8が価値と致死性を同時に持つ理由を示す。月は人間の工場より先に工業エンジンだった。 有用な噴出口はすべて、悪いタイミングを罰する機械でもある。
+Vent Forge地熱機関は、HECTON-8が価値を持ち同時に致命的である理由を示す。この月は人類到着前から産業的だった。 役に立つ噴出口はすべて、悪いタイミングを罰する機械でもある。
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/ja_JP. -->

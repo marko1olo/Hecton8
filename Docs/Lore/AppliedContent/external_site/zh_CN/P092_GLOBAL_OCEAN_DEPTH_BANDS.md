@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 全球海洋深度带
 
-HECTON-8不是一个只有数字变深的平面海洋。它是一座垂直国家，边界由压力写成。0到250米，透光打捞陆架仍有光、藻类、软残骸，也给新手错误留出余地。250到1200米，工业陆架和电缆礁开始出现：断裂锚缆、管架、中继器残骨和旧公司航道。1200到2800米，盐卤阶梯弯折声呐，隐藏热量，让压载成为昂贵选择。2800到4300米，维修变成与机器场谈判。4300到5600米，Atlas把压力变成权力。
+Global Ocean Depth Bands从bright shelf到Atlas basin组织HECTON-8的exploration、salvage、biology、sound、pressure和route risk。
+
+## Scanner
+
+depth chart。first shelf原谅poor ballast；lower water用pressure、heat、noise和silence给every mistake开账单。
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+每一百米都会拿走一个habit。
+
+## Field Note
+
+HECTON-8上的depth是穿同一个number的law、weather、border和hunger。
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/zh_CN. -->

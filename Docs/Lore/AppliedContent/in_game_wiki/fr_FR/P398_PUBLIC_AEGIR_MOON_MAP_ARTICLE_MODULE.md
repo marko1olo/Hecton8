@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Carte de route des lunes d'Aegir
 
-Les données lunaires d'Aegir sont des données de route. HECTON-8 est la lune océanique jouable, mais elle se trouve dans une échelle plus vaste de contraintes relay, radiation, scatter et marée. Le ciel visible participe à la possibilité qu'un signal de secours soit entendu, retardé, tarifé, refusé ou physiquement impossible.
+Les lunes d'Aegir font partie du système de route. HECTON-8 est la lune océan sous le joueur, mais le reste de l'échelle change ce qui peut être entendu, tarifé, caché ou déplacé. Un petit corps peut couper une ligne relais. Un chemin de diffusion glacée peut corrompre un paquet. Une phase de marée peut rendre la remontée d'un bathydrop bon marché, puis mortelle. Les cartes publiques comptent parce que le ciel n'est pas un décor au-dessus de l'eau ; c'est une des machines qui décident si une réclamation peut sortir.
 
 ## Scanner
 
-Archive cartographique. Les lunes d'Aegir définissent relay timing, couverture radiation, ice scatter, pression de marée, occultation bands, beacons morts et recovery geometry.
+Enregistrement de carte système. Les labels lunaires fixent âge relais, charge de marée, abri radiatif, diffusion de glace, bandes d'occultation, balises mortes et géométrie de récupération.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // ÉCHELLE LUNAIRE AEGIR. Les noms de lunes sont des étiquettes de route. Chaque corps modifie signal age, transfer risk, storm exposure, custody timing ou fiabilité du claim.
+NOEUD D'ARCHIVE PUBLIC // ECHELLE LUNAIRE AEGIR. Le nom d'une lune est une donnée de route. Champs requis : âge du signal, phase de marée, abri de tempête, fenêtre de réclamation, état balise, risque de remontée.
 
 ## Audio
 
-La carte explique pourquoi personne n'arrive au moment où tu demandes.
+Une lune sur la carte n'est pas un décor. C'est une raison du retard.
 
 ## Field Note
 
-Note de Maraudeur : marque la lune, puis marque ce qu'elle fait à la route.
+Note de Maraudeur : marque la lune, puis note ce qu'elle fait au signal, à la marée, à la masse et à la garde.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/fr_FR. -->

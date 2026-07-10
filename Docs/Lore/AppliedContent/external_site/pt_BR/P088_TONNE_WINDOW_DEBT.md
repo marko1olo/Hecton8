@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dívida de janela-tonelada"
+title: "Divida de Janela-Tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dívida de janela-tonelada
+# Divida de Janela-Tonelada
 
-Uma janela-tonelada é uma fatia da capacidade do carrier medida em massa, timing de burn, volume de quarentena e prioridade legal. Para o operador, parece dívida porque todo objeto útil de HECTON-8 entra no mesmo ledger que o corpo que o encontrou. Uma caixa selada pode ser leve e legalmente pesada. Um rack de amostras pode custar pouca massa e exigir volume limpo. Extração humana parece óbvia até lastro, reserva de oxigênio e payload custody já terem gasto a janela disponível. A economia de HECTON-8 fica física, não abstrata. O jogador não é punido por um medidor moral falso. O jogador está preso numa máquina que precifica sobrevivência por combustível, massa, contaminação e papelada.
+A Divida de Janela-Tonelada transforma sobrevivencia em logistics dura: extraction, oxygen, samples, salvage, quarantine volume e burn margin ocupam a mesma priced mass window.
+
+## Scanner
+
+Mass-window ledger. A ajuda tem peso antes de ter linguagem.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass conflita com sealed payload, ballast reserve, oxygen debt, quarantine sample volume e hull patch inventory. Manual priority exige paid override, verified hazard proof ou custody reclassification.
+
+## Audio
+
+A nave pode erguer uma vida. A pergunta e o que mais o ledger a obriga a carregar.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: o carrier precifica misericordia por quilo.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/pt_BR. -->

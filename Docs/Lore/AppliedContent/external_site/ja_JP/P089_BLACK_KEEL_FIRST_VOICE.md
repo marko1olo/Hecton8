@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Black Keelの最初の声
 
-Black Keelの最初の声は、半分だけ開く扉のように感じられるべきだ。音声は破損し、テキストチャネルは清潔で、carrierは慰めに一語も使わない。その不在が重要だ。友好的なAIなら海を柔らかくしてしまう。劇的な悪役なら危険を人間的にしすぎる。Black Keelはそのどちらより有用だ。安全を拒む形式で真実を告げるからだ。信号取得。生存承認。回収未解決。聞かれたことは救われたことではないとプレイヤーは学ぶ。水面の上にある唯一の声は、まだ見ていないledgerに縛られている。
+Black Keelの最初の声はcarrierの調子を定義する。精密で、損傷し、有用で、財務条件付きで、感情的には決してそこにいない。
+
+## Scanner
+
+carrier voice cache。audioはpressure noiseで裂けているが、text channelは請求できる程度に清浄。
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired。Audio degraded。Text channel valid。Survival acknowledged。Recovery priorityはpayload custody、quarantine state、lien value、signal integrity、mass-window balanceがpendingのため未解決。
+
+## Audio
+
+Operator signal acquired。acknowledgementをrescueと混同しないこと。
+
+## Field Note
+
+最初の有用な文は慰めない。分類する。
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ja_JP. -->

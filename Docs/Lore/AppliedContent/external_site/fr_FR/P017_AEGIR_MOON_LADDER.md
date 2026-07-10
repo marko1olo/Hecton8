@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Échelle lunaire d’Aegir"
+title: "Echelle lunaire d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Échelle lunaire d’Aegir
+# Echelle lunaire d'Aegir
 
-L’échelle lunaire d’Aegir inscrit la lune jouable dans un système en mouvement. Les autres lunes façonnent marées, attentes du carrier, ombres relais et coût du départ.
+L'échelle lunaire d'Aegir transforme le ciel en carte opérationnelle : les autres lunes façonnent marée, signal, custody carrier et minces chances de partir.
 
 ## Scanner
 
-Séquence lunaire: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Echelle lunaire résolue : Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel et Mute courbent les fenêtres.
 
 ## Terminal
 
-HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Rake et l’ombre de Pale modifient marée et paquets.
+NOTE DE ROUTE AEGIR : HECTON-8 suit Kestrel dans l'échelle de travail. Ombre relais, phase de marée, bande de radiation et géométrie de transfert Black Keel doivent s'aligner avant ascension de masse.
 
 ## Audio
 
-Compte les lunes avant de croire à une fenêtre.
+Compte Kestrel avant de croire à la fenêtre.
 
 ## Field Note
 
-Le ciel est un mécanisme, pas un décor.
+Le ciel est un planning de travail. Rate une ombre et le carrier devient une rumeur.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/fr_FR. -->

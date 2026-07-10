@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Bewaring van salvage-gereedschap"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bewaring van salvage-gereedschap
+# Salvage Tool Custody
 
-Salvage-gereedschappen zijn geen neutrale uitrusting. Cutters, patchers en fabricatordocks kunnen registreren wie een paneel opende, een lijn repareerde of een monster verplaatste. Dat log kan bewijs beschermen, uitbetalingsrechten koppelen of de claim tegen de speler versterken. Gereedschapsbewaring is waar overleven per minuut de bredere salvage-economie raakt.
+Salvage tools op HECTON-8 zijn survival gear, maar ze zijn niet innocent. Een cutter opent een panel. Een patcher seals a line. Een fabricator dock prints a clamp die keeps air moving. Dezelfde action kan ook custody schrijven: wie used the tool, wat opened werd, of een sample pouch attached was en welke claim token owns the next argument. Dat record kan protect evidence of tighten debt. Het wrede is dat refusing the tool sneller kan killen dan accepting its witness.
 
 ## Scanner
 
-Gereedschapsdock bevat een verzegeld bewaringslog. Laatste snede, reparatie en monsterzak zijn gekoppeld aan een Keelmark-claimtoken.
+Tool dock holds a sealed custody log. Last cut, repair en sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: cuttergebruik geaccepteerd onder salvage-claim. Reparatiehandeling getuigd. Monsterrechten gekoppeld aan Keelmark Mutual-token. Bewijsexport botst met materiaaluitbetalingsroute.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Elke nuttige snede laat een getuige achter.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Een cutter kan je lucht redden en je handen in dezelfde slag verkopen. Controleer wat hij registreert voordat je hem de jouwe noemt.
+Een cutter kan save your air en sell your hands in dezelfde stroke. Controleer wat hij records voordat je hem van jou noemt.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tangga Bulan Aegir
 
-Tangga bulan Aegir membuat bulan permainan menjadi bagian sistem bergerak. Bulan lain membentuk pasang, tunggu carrier, bayangan relay, dan harga pergi.
+Tangga Bulan Aegir mengubah langit menjadi peta operasional: bulan lain membentuk pasang, sinyal, custody carrier, dan peluang sempit untuk pergi.
 
 ## Scanner
 
-Urutan bulan: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Tangga bulan terurai: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel dan Mute membengkokkan jendela.
 
 ## Terminal
 
-HECTON-8 adalah Aegir-VIII: bukan dalam, bukan paling jauh. Resonansi Rake dan bayangan Pale mengubah pasang dan paket.
+CATATAN RUTE AEGIR: HECTON-8 mengikuti Kestrel dalam tangga kerja. Bayangan relai, fase pasang, pita radiasi, dan geometri transfer Black Keel harus sejajar sebelum massa naik.
 
 ## Audio
 
-Hitung bulan sebelum percaya pada jendela.
+Hitung Kestrel sebelum percaya pada jendela.
 
 ## Field Note
 
-Langit adalah mekanisme, bukan latar.
+Langit adalah jadwal kerja. Lewat satu bayangan dan carrier menjadi rumor.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/id_ID. -->

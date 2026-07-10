@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bintang Induk Aegir
 
-Bintang induk Aegir menjaga HECTON-8 sebagai hard sci-fi: cahaya ada, tekanan bertahan hidup datang dari air, jarak, jendela orbit, dan penelantaran korporat.
+Bintang induk Aegir menjaga HECTON-8 tetap hard sci-fi: cahaya ada, tetapi tekanan bertahan hidup datang dari kedalaman laut, waktu orbit, jeda cahaya, dan pengabaian.
 
 ## Scanner
 
-Cahaya primer tipe K terkonfirmasi. Permukaan punya cahaya; kedalaman, badai, dan gerhana membuat gelap.
+Primer tipe K terkonfirmasi. Ada cahaya di sistem; kedalaman, badai, gerhana, dan utang yang membuat gelap.
 
 ## Terminal
 
-Efemeris Ran/Aegir: katai K, paket antarbintang tertunda, tanpa vektor penyelamatan FTL. Semua bantuan lokal.
+EPHEMERIS RAN/AEGIR: primer katai K, keluaran fotosfer stabil, kelas paket antarbintang tertunda, tidak ada vektor penyelamatan FTL. Perlakukan bantuan sebagai lokal sampai massa tiba.
 
 ## Audio
 
-Cahaya bintang mencapai landas. Tidak mencapai masalah.
+Cahaya bintang mencapai paparan. Ia tidak mencapai masalah.
 
 ## Field Note
 
-Horornya bukan bintang. Horornya lautan.
+Horornya bukan bintang. Horornya ada di tempat laut mengubah cahaya menjadi rumor.
 
 <!-- External Site; generated from P016_AEGIR_HOST_STAR/id_ID. -->

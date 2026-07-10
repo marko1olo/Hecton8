@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Geotermiczny silnik kuźni kominowej"
+title: "Geotermiczna maszyna vent forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geotermiczny silnik kuźni kominowej
+# Geotermiczna maszyna vent forge
 
-Kuźnie kominowe łączą geologię z craftingiem, przetrwaniem i grozą. Dają ciepło i cykle ciśnienia dla ceramiki, uszczelnień i szkła, ale te same cykle tworzą wrzące kieszenie, fałszywy tlen, chmury korozyjne i migracje fauny.
+Vent forge łączy geologię z pracą. Puls może utwardzać ceramikę, resetować uszczelnienia ciśnieniowe, wyżarzać pressure glass i podgrzewać ładunki wznoszenia, ale każdy użyteczny cykl jest też rytmem zagrożenia. Wrzące ścinanie atakuje szwy, fałszywy tlen oszukuje instrumenty, rozkwit korozji wchodzi w otwarte obudowy, a pobliskie życie rusza się, zanim operator zrozumie dlaczego.
 
-Geotermiczny silnik kuźni kominowej pokazuje, czemu HECTON-8 jest cenny i śmiertelny: księżyc jest silnikiem przemysłowym zanim ludzie zbudują własny. Każdy użyteczny komin karze też zły timing.
+Geotermiczna maszyna vent forge pokazuje, czemu HECTON-8 jest cenny i śmiertelny: księżyc był przemysłowy przed ludźmi. Każdy użyteczny otwór jest też maszyną karzącą zły moment.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/pl_PL. -->

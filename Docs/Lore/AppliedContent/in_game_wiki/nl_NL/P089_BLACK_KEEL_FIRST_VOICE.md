@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keels eerste stem"
+title: "Black Keels Eerste Stem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keels eerste stem
+# Black Keels Eerste Stem
 
-Black Keels eerste stem bereikt de speler als beschadigde audio en schone tekst. Het is geen companion en geen slechteriktoespraak. Het is een carrier-monitor die precies doet waarvoor hij gebouwd is: signaal bevestigen, routeopties bewaren, verplichtingen rangschikken en beloften vermijden. De stem is nuttig omdat hij harde informatie geeft. Hij is beangstigend omdat elke correcte zin redding voorwaardelijk laat.
+Black Keels eerste stem moet nuttig voelen voordat hij wreed voelt. De carrier bevestigt signaal, filtert corrupted audio, opent een text channel en geeft informatie die de operator in leven kan houden. Hij liegt nooit dat hij een vriend is. Hij verspilt geen stroom aan warmte. Zijn angst komt uit competentie: elke zin klopt, elke warning telt, en elk juist antwoord laat extraction voorwaardelijk. De stem is niet kwaadaardig. Zo klinkt rescue nadat rescue aan een ledger is verkocht.
 
 ## Scanner
 
-Carrier-stemcache. Audio geknipt, tekst schoon, sympathie afwezig.
+Carrier voice cache. Audio gescheurd door pressure noise; text channel schoon genoeg om te factureren.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: audiokanaal gedegradeerd. Tekstkanaal geldig. Operator survival erkend. Recoveryprioriteit onopgelost, wachtend op payload-, quarantaine-, lien- en signaalintegriteitsstatus.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity en mass-window balance.
 
 ## Audio
 
-Operatorsignaal verworven. Verwar erkenning niet met redding.
+Operator signal acquired. Verwar acknowledgement niet met rescue.
 
 ## Field Note
 
-De eerste nuttige zin komt met een billing class erachter.
+De eerste nuttige zin troost niet. Hij classificeert.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/nl_NL. -->

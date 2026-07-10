@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "סמכות השהיית האור"
+title: "סמכות עיכוב-אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סמכות השהיית האור
+# סמכות עיכוב-אור
 
-קריאת מצוקה ב-HECTON-8 היא מטען פיזי של משמעות. היא עוזבת תורן מוצף, חוצה את מרחב Aegir במהירות האור, ממתינה במאגרי ממסר ומגיעה אל Black Keel דרך תור שכבר יודע לתמחר סיכון. העיכוב הראשון הוא מרחק נקי. העיכובים הבאים אנושיים: דרגת משמורת, חלונות סערה, שפת אחריות וההרגל של הנושא לענות לנכס לפני האדם. לכן תשובה יכולה להיות טרייה מבחינה טכנית ועדיין חסרת תועלת בחדר לחץ שקורס.
+סמכות עיכוב-אור מגדירה את תקשורת HECTON-8 כפיזית, מאוחרת ו-contract-filtered: distance, weather, relay buffers ו-custody queues קובעים מתי signal נעשה usable.
+
+## Scanner
+
+Relay mast cache. ה-call יצא נקי, ואז המתין מאחורי light, queue law, storm scatter ו-Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active עד ש-fresh signal window מאשר override.
+
+## Audio
+
+התשובה בדרך. זה לא הופך אותה ל-rescue.
+
+## Field Note
+
+אף אחד לא צינזר את ה-scream הראשון. ה-physics נשאה אותו לאט מספיק כדי ש-policy תדביק אותו.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/he_IL. -->

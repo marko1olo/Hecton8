@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Vent Forge Geothermal Engine
 
-Vent forges connect geology to crafting, survival and horror. They provide heat and pressure cycles for ceramics, seals and pressure glass, but the same cycles create boil pockets, false oxygen readings, corrosive bloom and fauna migration.
+Vent forges connect geology to work. Their pulses can cure ceramics, reset pressure seals, anneal pressure glass, and preheat ascent charges, but every useful cycle is also a hazard rhythm. Boiling shear attacks seams, false oxygen fools instruments, corrosive bloom enters open housings, and nearby life moves before the operator understands why.
 
 ## Scanner
 
-Vent forge manifold. Heat, poison and power using the same pipe.
+Vent forge manifold. Heat, poison, pressure, and power share the same pipe.
 
 ## Terminal
 
-GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal and emergency ascent charge preheat. Exposure risk: boiling shear, sensor oxygen false-positive and corrosive bloom.
+GEOTHERMAL ENGINE: vent pulse suitable for ceramic cure, pressure-glass anneal, seal reset, and emergency ascent charge preheat. Exposure risk: boiling shear, false oxygen, corrosive bloom, fauna migration.
 
 ## Audio
 

@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pool de récupération Aegir"
+title: "Pool de reclamation d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pool de récupération Aegir
+# Pool de reclamation d'Aegir
 
-Le pool de récupération Aegir garde le joueur seul tout en rendant son arrivée crédible. Aucun petit marauder ne possède Black Keel directement. Le tender carrier appartient à un système de revendications partagé, bâti pour l'infrastructure morte, les cargaisons disputées et les mondes trop coûteux pour des équipages ordinaires. Un tampon de pool peut acheter l'accès à une route, mais il remet aussi cette route à l'arbitrage. Une fois l'opérateur sous la ligne d'eau, chaque demande rivalise avec la custody du payload, les réserves de quarantaine, la valeur probante et les fenêtres de carburant. La peur du pool est procédurale. Il peut envoyer de l'aide et refuser le sauvetage, car sous la loi de revendication Aegir l'aide n'est qu'un service facturable parmi d'autres.
+Le Pool de reclamation d'Aegir place Black Keel comme instrument de salvage partage: le secours existe, mais il passe par contracts, lien priority, quarantine custody et calcul de burn window.
+
+## Scanner
+
+Tampon du pool de claim. Black Keel a ete envoye par dette mutualisee, pas par grace de secours.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: claim tender autonome BLACK KEEL assigne au derelict-pressure claim HECTON-8. Classe de welfare contractor limitee. Classe de custody payload variable. Human extraction en attente jusqu'a cloture de l'arbitrage lien, quarantine et mass-window.
+
+## Audio
+
+Le pool a bien envoye un vaisseau. C'est la pitie. Tout le reste, c'est de la comptabilite.
+
+## Field Note
+
+Le pool a rendu un carrier possible dans Aegir. Il a aussi rendu chaque promesse conditionnelle.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/fr_FR. -->

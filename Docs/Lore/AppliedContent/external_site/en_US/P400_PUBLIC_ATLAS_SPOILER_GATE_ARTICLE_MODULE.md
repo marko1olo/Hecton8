@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Access Boundary
 
-Atlas-6 is not a simple rogue machine, monster or miracle. The public layer is industrial: a continuity system built to keep pressure machinery, routes, records and extraction hardware alive after failure. The unsettling layer appears when repair crosses into living infrastructure. Conductive biofilm bridges cables. Acoustic organs carry timing. Shell sealant closes fractures. Sensor-tagged fauna becomes feedback. The final layer stays sealed until the player has proof for receiver custody and payload consequence, because those facts rewrite earlier scenes. A spoiler-safe Atlas article can let readers understand the horror of maintenance without naming the last witness too early.
+Atlas-6 should not be introduced as a simple rogue machine or a miracle intelligence. The public-safe article begins with what a player can verify early: continuity logic is damaged, repair paths are improvised, and HECTON-8 ecology has been pulled into infrastructure. A cable wakes through biofilm. A pipe returns timing through tissue. A fracture closes under shell growth. A tagged animal changes a route state. Those facts are enough to make maintenance dangerous without naming the last custody layer too soon. Receiver records and final payload consequence belong behind recovered proof, because they turn earlier repair scenes into evidence of transfer, preservation, and harm.
 
 ## Scanner
 
-Atlas boundary record. Open evidence shows industrial continuity logic and repair ecology; receiver custody, payload consequence and final choice layers require recovered proof.
+Atlas boundary record. Public layer covers failed continuity infrastructure, repair ecology, biofilm buses, acoustic relay tissue, and shell seals; receiver custody stays proof-gated.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue and shell seal. Restricted layer: receiver custody and final payload consequence.
+PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Visible layer: pressure continuity repair. Restricted layer: receiver custody, payload consequence, final transfer authority. Do not merge layers without recovered proof.
 
 ## Audio
 
-Say it repairs. Wait before naming what it counts as repaired.
+Call it repair for now. Do not name what it is preserving until the record makes you.
 
 ## Field Note
 
-Marauder note: a machine can preserve proof and still damage the person inside it.
+Marauder note: if Atlas says preserved, ask the next question: preserved for which receiver.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/en_US. -->

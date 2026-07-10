@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black-Keel-Tariftabelle"
+title: "Black Keel Tariftabelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black-Keel-Tariftabelle
+# Black Keel Tariftabelle
 
-Black-Keel-Unterstützung ist nützlich, aber nie neutral. Notruf, Proben, Sauerstoff, Haftungssiegel, Operatorbergung und Rumpfschaden landen in verschiedenen Warteschlangen. Der Spieler kann diese Regeln ausnutzen, doch dieselben Regeln zeigen, warum Hilfe immer mit Preisschild kommt.
+Black Keel support ist nutzlich, weil der Carrier wirklich gear bewegt, oxygen cached, warnings weitergibt und route options offnet. Er ist nie neutral, weil jede support action in eine tariff table eintritt, bevor sie help wird. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery und body recovery sind verschiedene line items mit verschiedenen priority speeds. Die Tabelle ist kein verborgenes Bose. Praktisch ist sie schlimmer: eine lesbare price list fur Momente, die keinen Preis haben sollten.
 
 ## Scanner
 
-Die Platte bepreist Notruf, Probenverwahrung, Sauerstoffreserve, Druckausrüstung und Leichenbergung als getrennte Posten.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage und body recovery stehen auf getrennten Zeilen.
 
 ## Terminal
 
-TARIFKLASSE: Bergungsnotfall. Wohlfahrtszusatz ausstehend. Verifizierte Probenverwahrung erhöht Auswärtspriorität um zwei Abrechnungsstufen.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies bis lien arbitration resolves.
 
 ## Audio
 
-Es gibt Rabatt für Beweise und Aufpreis fürs Atmen.
+Es gibt discount fur evidence und surcharge fur breathing.
 
 ## Field Note
 
-Die schnellste Klasse ist keine Rettung. Es ist verifiziertes Eigentum auf dem Weg nach oben.
+Die schnellste class ist nicht rescue. Sie ist verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/de_DE. -->

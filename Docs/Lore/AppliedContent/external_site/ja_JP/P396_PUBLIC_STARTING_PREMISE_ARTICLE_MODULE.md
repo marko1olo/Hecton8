@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder開始請求"
+title: "マローダー開始請求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder開始請求
+# マローダー開始請求
 
-HECTON-8に関する最初のBlack Keelファイルは、文面そのものが告発を始めるまでsalvage業務に見える。債務下のMarauderは、lienが現実で回収窓が短いからこのルートを受ける。Deep Reach field-systemsの過去はすぐ効いてくる。圧力手順、保守略語、liability文、避難タグは、証拠になる前から見慣れている。Black Keelが与えるのは慈悲ではなくアクセスだ。降下はP-63周辺の具体作業から始まる。bathydropを継ぎ、シールを点検し、棚を走査し、機械を再起動し、貨物か証拠を回収し、orbital timingとlegal custodyがclaimを閉じる前に離脱する。核になるのは職能上の認識だ。磨かれた文書と物理的損傷が別の話をしている場所を、プレイヤーは見抜ける。
+HECTON-8は、危険なほど見慣れた契約から始まる。Black Keelはリーエンに縛られたマローダーへP-63上の回収経路を与えるが、救助は約束しない。記録がDeep Reach語彙を使うのは、プレイヤーキャラクターがかつてその語彙の内側で働いていたからだ。フィールドシステム、避難インフラ、圧力手順、経路フォーム、採用可能な証拠。その過去が最初の一時間を変える。悪いパネルは背景ではない。修正タグは味付けではない。磨かれた責任文句は、へこみ、時計、扉状態、行方不明者印と照合できる。降下は有償サルベージとして始まり、専門職の認識へ変わる。書類は部屋を知っており、部屋は書類が清掃済みだと証明する。
 
 ## Scanner
 
-公開claim記録。開始ルートは、Deep Reachのfield-systems経験を持つ債務下のMarauder、損傷したbathydrop、P-63上空のBlack Keel回収窓を示す。
+公開請求記録。Black Keelのリーエンファイルは、元Deep Reachフィールドシステム専門員、損傷したバシドロップ、経路P-63、閉じる保管窓を記載している。
 
 ## Terminal
 
-公開アーカイブノード // 開始請求。契約者記録: 元Deep Reach field-systems専門員。現状: lien下のMarauder。ルート: Black Keel recovery claim、P-63棚への降下、custody window閉鎖前の証拠と貨物の返送。
+公開アーカイブノード // BLACK KEEL CLAIM BK-P63-2190。状態: リーエン拘束マローダー。旧許可: Deep Reachフィールドシステム / 避難インフラ。成果物: 現地保管T+06:40前の貨物質量および採用可能な証拠。
 
 ## Audio
 
-HECTON-8を見物に来たのではない。よく知っている書類へ戻ってきたのだ。
+契約書は昔の略語を知っている。それは真実を話すこととは別だ。
 
 ## Field Note
 
-Marauderメモ: 契約はお前の過去を知っている。それで正直になるわけではない。
+マローダー記録: 請求ファイルが自分の許可レベルを知っているなら、支払いより先に省略を読め。
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ja_JP. -->

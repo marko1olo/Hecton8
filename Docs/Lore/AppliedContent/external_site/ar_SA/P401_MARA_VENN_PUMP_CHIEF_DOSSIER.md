@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Mara Venn/Pump Chief"
+title: "مارا فين، رئيسة المضخات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Mara Venn/Pump Chief
+# مارا فين، رئيسة المضخات
 
-AR LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+تثبت مارا فين HECTON-8 بالإجراء لا بالخطاب. أدلة غرفة المضخات لا تحولها إلى تمثال؛ بل تظهر كيف حسب الناس النجاة وجادلوها وأبقوها مفتوحة عبر شخص استمر عمله بينما كانت Deep Reach تسمي الملحق التزاما.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+ملف: مارا فين. حافة الشارة، ولوح الإيقاع، وسجل الماء المصحح كلها تشير إلى غرفة المضخات P-63.
 
 ## Terminal
 
-AR LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+غرفة المضخات P-63 / VENN, MARA: مقبض التجاوز مصقول عبر طبقات القفاز؛ لوح الإيقاع مثبت قرب علامات فقد السحب. تصحيح السجل يحول الماء المفقود من تسرب خلفي إلى حمل آلة.
 
 ## Audio
 
-AR LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+لم تترك فين وداعا. تركت إيقاعا على لوحة المضخات كي يعد الناس الخائفون النفس التالي.
 
 ## Field Note
 
-AR LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+توضع أدلة فين قرب ألغاز إيقاع المضخات وسجلات الماء ومقابض التجاوز. يجب أن تجعل أدواتها اللاعب يسمع البنية التحتية كأنها تنفس.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ar_SA. -->

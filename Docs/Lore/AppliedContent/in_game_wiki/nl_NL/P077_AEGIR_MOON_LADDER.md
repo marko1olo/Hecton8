@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir Maanladder"
+title: "Aegir Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir Maanladder
+# Aegir Moon Ladder
 
-De Aegir-maanladder houdt HECTON-8 in een fysiek systeem. Binnenmanen maken stralings- en relaisgevaren; middenmanen houden metaal, ijs, routeboeien en oude depots; buitenmanen dragen koude claims en dode bakens.
-
-HECTON-8 is niet de binnenste maan en niet de verste. Het is de maan die nog betaalt. Daarom blijft de rest van de ladder zijn reddingsvensters, salvage law en signaalroutes raken.
+De Aegir moon ladder houdt HECTON-8 in een working sky. Skarn werpt charged weather over antennas. Vela sheds ice and dust in optical routes. Claw en Lumen houden old buoy logic alive. Thorne failed quietly. Anvil fed metal tot de route stopped paying. Kestrel cuts relay lines onder de slechtste angles. Mute repeats ownership into nobody's hands. HECTON-8 is niet de eerste moon in de chain en niet de laatste. Het is de moon waarvan drowned infrastructure nog genoeg value heeft om ships, insurers en marauders over windows te laten ruziën.
 
 ## Scanner
 
-Maanladderkaart. HECTON-8 is een werkend gevaar in een bewegend systeem, geen geïsoleerd level.
+Moon ladder chart. HECTON-8 is one working hazard in a moving system, geen isolated ocean level.
 
 ## Terminal
 
-BELANGRIJKE AEGIR-MANEN // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer- en eclipsmodel bijgevoegd.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay en custody windows attached.
 
 ## Audio
 
-De kaart heeft meer manen dan genade.
+De map heeft meer moons dan mercy.
 
 ## Field Note
 
-Skarn brandt. Vela werpt ijs af. Anvil voedt metaal. Kestrel snijdt relais. HECTON verdrinkt.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/nl_NL. -->

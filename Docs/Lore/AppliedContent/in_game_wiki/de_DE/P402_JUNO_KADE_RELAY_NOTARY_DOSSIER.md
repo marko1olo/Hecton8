@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, Relaisnotar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Juno Kade/Relay
+# Juno Kade, Relaisnotar
 
-DE LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+Juno Kade arbeitete am Relaistisch, wo HECTON-8-Recht auf Lichtgeschwindigkeit traf. Sein Siegel, die Paketleiter, das Zeugenband und Kratzer in der Ablage zeigen eine Arbeit für Verzögerung: den Fakt physisch machen, berührende Personen stempeln und ihn intakt halten, bis Träger oder Empfänger die Verwahrung übernehmen. Der Beleg verspricht keine Rettung. Er erklärt, warum Aussage in einem System zählt, in dem jede Nachricht nach dem Erkalten des Körpers eintrifft.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Siegelfläche, Paketablage und Zeugenband tragen dieselbe Verwahrmarke eines späten Fensters.
 
 ## Terminal
 
-DE LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+RELAISHOF A-17 / KADE, JUNO: ausgehende Pakete nach jedem Trägerfenster gestempelt. Siegeldruck, Ablagestaub und Zeugenband bestätigen Verwahrung, selbst wenn Antwortzeit Rettungszeit übersteigt.
 
 ## Audio
 
-DE LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade beglaubigte Fakten, die zu spät ankommen würden, um jemanden zu retten, und die Reise trotzdem überstehen mussten.
 
 ## Field Note
 
-DE LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Kade bei Kommunikationsfenster-Uhren, Paketablagen, Notarsiegeln und verspäteten Belegenthüllungen einsetzen. Sein Dossier soll Entfernung rechtlich statt abstrakt wirken lassen.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/de_DE. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tonnenfenster-Schuld
 
-Tonnenfenster-Schuld ist der Punkt, an dem Physik zu Finanzen wird. Black Keel besitzt keinen unendlichen Hubspielraum, kein unbegrenztes Transitfuel und kein endlos sauberes Quarantänevolumen. Jedes Kilogramm von HECTON-8 konkurriert mit jedem Kilogramm, das den Operator am Leben hält. Der Schuldenzähler macht den Carrier grausam, ohne Hard Science zu brechen: Rettung ist möglich, aber das Routenbudget fragt immer, was Masse verdient.
+Tonnenfenster-Schuld ist der Punkt, an dem HECTON-8 nicht nur Horrorgeschichte bleibt, sondern orbital logistics wird. Black Keel hat endlichen lift margin, endliches clean volume, endliche oxygen reserve und einen route price fur jedes Kilogramm. Spare tank, sealed sample, damaged suit, proof case, body und crate of salvage konkurrieren im selben Fenster. Das System wirkt grausam, weil es exakt ist. Es muss nicht behaupten, dass rescue unmoglich ist. Es fragt nur weiter, was die Route sich zu heben leisten kann.
 
 ## Scanner
 
-Massenfensterzähler. Jedes Kilogramm Hilfe hat einen Routenpreis.
+Mass-window ledger. Hilfe hat Gewicht, bevor sie Sprache hat.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: Recovery-Burn-Marge verengt. Operator-Extraktionsmasse kollidiert mit versiegelter Payload, Ballastreserve, Sauerstoffschuld und Quarantäneproben-Custody. Manueller Override verlangt bezahlte Priorität oder Gefahrenbeweis.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass kollidiert mit sealed payload, ballast reserve, oxygen debt, quarantine sample volume und hull patch inventory. Manual priority erfordert paid override, verified hazard proof oder custody reclassification.
 
 ## Audio
 
-Das Schiff kann dich tragen oder das, was du gefunden hast. Es bevorzugt eine Zahl.
+Das Schiff kann ein Leben heben. Die Frage ist, was das ledger es noch tragen lasst.
 
 ## Field Note
 
-Sauerstoff, Ballast, Beweis, Payload, Körper: Der Carrier wiegt sie, bevor er Gnade wiegt.
+Oxygen, ballast, proof, samples, hull patch, body: Der Carrier bepreist Gnade pro Kilogramm.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/de_DE. -->

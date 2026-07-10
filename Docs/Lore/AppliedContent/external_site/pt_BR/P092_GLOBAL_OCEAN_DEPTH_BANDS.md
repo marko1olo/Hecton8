@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Faixas globais de profundidade oceanica"
+title: "Bandas Globais de Profundidade Oceanica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Faixas globais de profundidade oceanica
+# Bandas Globais de Profundidade Oceanica
 
-HECTON-8 nao e um oceano plano com numeros mais fundos. E um pais vertical com fronteiras escritas em pressao. De 0 a 250 metros, a plataforma fotica ainda tem luz, algas, destrocos macios e perdao para erros novos. De 250 a 1200 metros, comecam a plataforma industrial e o recife de cabos: amarras partidas, molduras de tubos, ossos de reles e rotas corporativas antigas. De 1200 a 2800 metros, escadas de salmoura dobram sonar e escondem calor. De 2800 a 4300 metros, reparar vira negociacao com campos de maquinas. De 4300 a 5600 metros, Atlas transforma pressao em autoridade.
+Global Ocean Depth Bands estrutura exploration, salvage, biology, sound, pressure e route risk de HECTON-8 desde bright shelf ate Atlas basin.
+
+## Scanner
+
+Depth chart. The first shelf perdoa poor ballast; lower water cobra every mistake em pressure, heat, noise e silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth em HECTON-8 e law, weather, border e hunger usando o mesmo number.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/pt_BR. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Máscaras de grafiti merodeador"
+title: "Mascaras de grafiti marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Máscaras de grafiti merodeador
+# Mascaras de grafiti marauder
 
-Los merodeadores de HECTON-8 no son una facción anónima de asalto. Son trabajadores, corredores de deuda, contratistas abandonados y tripulaciones de salvamento que aprendieron a escribir en paredes porque todo canal limpio podía ser vigilado o cobrado. Su grafiti es feo a propósito: rápido para pintar bajo estrés, claro a través de condensación y lo bastante ambiguo para pasar por pánico o vandalismo. Un anillo negro no es decoración; significa que el portador puede oírte. Una flecha rota no es mal dibujo; significa que el corredor cambió desde el último paso seguro.
+Las mascaras de grafiti marauder convierten scavenger writing en ocean infrastructure legible: route hints, comm silence, pressure drift, cache risk y desconfianza hacia carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count marca noise discipline; black rings marcan carrier-ping danger; broken arrows marcan pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Si la pared parece enfadada, leela como weather.
+
+## Field Note
+
+Los marauders escribian para gente que no podia confiar en radios ni pagar maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/es_ES. -->

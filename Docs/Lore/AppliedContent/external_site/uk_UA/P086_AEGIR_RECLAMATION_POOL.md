@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Реквізиційний пул Aegir"
+title: "Рекультиваційний пул Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Реквізиційний пул Aegir
+# Рекультиваційний пул Aegir
 
-Реквізиційний пул Aegir — спосіб залишити гравця самого на HECTON-8 і водночас зробити прибуття правдоподібним. Жоден малий marauder не володіє Black Keel напряму. Carrier-тендер належить спільній системі claims, створеній для мертвої інфраструктури, спірних вантажів і світів, надто дорогих для звичайних екіпажів. Штамп пулу купує доступ до маршруту, але разом із цим передає маршрут арбітражу. Коли оператор опиняється нижче ватерлінії, кожен запит конкурує з payload custody, карантинними резервами, цінністю доказів і паливними вікнами. Страх пулу процедурний. Він може надіслати допомогу й усе одно відмовити в порятунку, бо допомога за claim-правом Aegir — лише одна оплачувана послуга серед багатьох.
+Рекультиваційний пул Aegir показує Black Keel як спільний salvage-інструмент: порятунок реальний, але проходить через contracts, lien priority, quarantine custody і математику burn window.
+
+## Scanner
+
+Штамп спільного claim-пулу. Black Keel відправили через спільний борг, а не з рятувальної милості.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: автономний claim tender BLACK KEEL призначено на derelict-pressure claim HECTON-8. Contractor welfare class обмежений. Payload custody class змінний. Human extraction лишається pending до закриття lien, quarantine і mass-window arbitration.
+
+## Audio
+
+Пул справді надіслав корабель. Оце й є милість. Далі все - бухгалтерія.
+
+## Field Note
+
+Пул зробив carrier в Aegir можливим. Він же зробив кожну обіцянку умовною.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/uk_UA. -->

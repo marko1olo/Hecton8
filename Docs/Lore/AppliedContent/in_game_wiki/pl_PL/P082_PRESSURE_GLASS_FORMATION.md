@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Powstawanie szkła ciśnieniowego"
+title: "Powstawanie pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Powstawanie szkła ciśnieniowego
+# Powstawanie pressure glass
 
-Szkło ciśnieniowe to techniczna nazwa tego, co Marauderzy nazywają blue debt, a Deep Reach ukrywa jako Xenon-Omega. Powstaje tam, gdzie spotykają się ciśnienie, kieszenie gazów szlachetnych, solanka, minerały, ciepło i zmieniona biologia.
+Pressure glass to nazwa terenowa za niebieskim długiem marauderów i językiem Xenon-Omega Deep Reach. Powstaje tylko tam, gdzie kieszenie gazu szlachetnego, defekty minerałów, gorąca solanka, zmieniona biologia i gwałtowna historia ciśnienia pozostają razem dość długo, by zablokować siatkę w pamięci.
 
 ## Scanner
 
-Niebieska krata długu. Gaz szlachetny, solanka, defekty mineralne i historia ciśnienia zamknięte w kosztownym błędzie.
+Siatka niebieskiego długu. Gaz szlachetny, solanka, defekty minerałów, cykle cieplne i historia ciśnienia stopione w jedną drogą bliznę.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: bogata w ksenon krata klatratów i defektów stabilizowana chemią solanki, cyklami termicznymi i resztkami katalizatora biologicznego. Ryzyko dekompresji: dryf sygnału, pękanie, wykwit skażenia.
+SUBSTRAT CIĄGŁOŚCI XO: bogata w ksenon siatka klatratowa/defektowa stabilizowana chemią solanki, cyklami cieplnymi i pozostałością katalizy biologicznej. Ryzyka dekompresji: dryf sygnału, pęknięcie, rozkwit skażenia.
 
 ## Audio
 
-Po to wrócili. Nie po złoto. Po bliznę czytelną dla maszyny.
+Po to wrócili. Nie po złoto. Po czytelną ranę.
 
 ## Field Note
 
-To nie ruda. To proces, który pamięta miejsce powstania.
+To nie ruda. To miejsce, które pamięta, co mu zrobiono.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/pl_PL. -->

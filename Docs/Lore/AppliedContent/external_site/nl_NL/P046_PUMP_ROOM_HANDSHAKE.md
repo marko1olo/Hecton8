@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Pompkamerklep-handshake"
+title: "Pump Room Valve Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pompkamerklep-handshake
+# Pump Room Valve Handshake
 
-Pompkamers op HECTON-8 zijn geen simpele afvoeren. Lokale kleppen, handwielen en vermoeide terugslagkleppen laten de speler vragen waar het water heen gaat nadat de vloer droog is. Een werkende pomp kan een deur openen, een gang wekken, ruis in sonar voeden en de terugweg in het volgende probleem veranderen.
+Pump rooms op HECTON-8 veranderen drainage in consequence. Working handwheel kan clear a floor, feed noise into sonar, een downstream hatch belasten en de return path erger maken.
 
 ## Scanner
 
-Lokale sumppomp accepteerde handwielinvoer. De inlaatmand is vervuild met capsulefoam; de uitlaatpuls belast Terugkeergang B.
+Local sump accepteerde handwheel input. Capsule foam verstopt de intake basket; outlet pulse klimt naar Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROLE / LOKALE HANDSHAKE: handwielautoriteit geaccepteerd. Externe override geweigerd. Inlaatstroom hersteld op laag debiet. Uitlaatdruk stijgt in RETURN CORRIDOR B; herstart alleen na controle van de stroomafwaartse hatch.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-De klep pakte. De uitlaat klopt. Noem dit nog niet veilig.
+Valve took. De outlet klopt. Noem dit nog niet safe.
 
 ## Field Note
 
-Een droge pompkamer kan de weg terug verdrinken. Luister naar waterslag in de uitlaat voordat je de klep stript.
+Een droge floor is geen solved room. Luister naar de corridor die ervoor betaalde.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/nl_NL. -->

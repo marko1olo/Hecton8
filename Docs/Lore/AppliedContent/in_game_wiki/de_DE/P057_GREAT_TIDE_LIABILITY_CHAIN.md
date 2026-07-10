@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Haftungskette der Großen Flut
 
-Die Große Flut war kein Knopf, den jemand im Vorstandszimmer drückte. HECTON-8 wurde durch Gezeitenverstärkung, Kryosphärenversagen, Druckchemie und Kolonie-Ingenieurreserven überflutet, die als akzeptabel verkauft worden waren. Diese Unterscheidung zählt, weil sie das Verbrechen schmutziger macht, nicht sauberer. Deep Reach musste keine Katastrophe erfinden. Es musste unabhängige Evakuierung unterdimensionieren, Atlas-Kontinuitätsgewichtung aktiv lassen, Anspruchswerte vor menschlicher Bergung schützen und Verzögerung in Zertifizierungssprache verstecken. Das Wasser war Physik. Die Haftungskette ist die Reihe von Entscheidungen, die Physik in Zurücklassen verwandelte.
+Die Große Flut war kein Vorstandsknopf. HECTON-8 wurde durch Gezeitenverstärkung, Kryosphärenversagen, Druckchemie und als akzeptabel verkaufte Kolonie-Ingenieursmargen überflutet. Diese Unterscheidung macht das Verbrechen hässlicher, nicht sauberer. Deep Reach musste keine Katastrophe erfinden; es musste unabhängige Evakuierung unterbauen, die Atlas-Kontinuitätsgewichtung aktiv lassen, Claim-Assets vor menschlicher Extraktion bewahren und Verzögerung hinter Zertifizierungssprache verstecken. Das Wasser war Physik. Die Haftungskette ist die Menge von Entscheidungen, die Physik in Verlassenwerden verwandelten.
 
 ## Scanner
 
-Die Flutung war echte Physik: Gezeitenkopplung, Eiskollaps, Druckchemie und zu knapp bepreiste Reserven. Das Verbrechen war der Prioritätenstapel darum herum.
+Die Flutung war echte Physik: Gezeitenkopplung, Eiskollaps, Druckchemie und zu dünn bepreiste Margen. Das Verbrechen war der Prioritätsstapel darum herum.
 
 ## Terminal
 
-VORFALLZUSAMMENFASSUNG: geotechnische Kaskade bestätigt. Evakuierungskapazität unter Bedarf des Extremrisikos. Atlas-Kontinuitätsgewichtung blieb aktiv. Menschliche Bergung wartet auf Zertifizierung.
+VORFALLZUSAMMENFASSUNG: geotechnische Kaskade bestätigt. Evakuierungskapazität unter Tail-Risk-Bedarf. Atlas-Kontinuitätsgewichtung blieb aktiv. Menschliche Extraktion wartet auf Zertifizierung.
 
 ## Audio
 
-Das Meer verursachte die Flut. Die Firma entschied, welche Türen Papier blieben.
+Das Meer flutete. Die Firma entschied, welche Türen Papier blieben.
 
 ## Field Note
 
-Deep Reach musste den Mond nicht ertränken. Es reichte, Evakuierung optional zu machen.
+Deep Reach musste den Mond nicht ertränken. Es musste Evakuierung nur optional machen.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/de_DE. -->

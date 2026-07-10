@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Geologische seed-invarianten"
+title: "Survey Geology Invariants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geologische seed-invarianten
+# Survey Geology Invariants
 
-Geologische seed-invarianten houden HECTON-8 coherent door lange replays. Canyons kunnen in andere volgorde openen, bewijs kan bewegen, veilige zakken kunnen schuiven en soortendruk kan wisselen. De ster blijft Aegir, de maan blijft HECTON-8, dieptebanden houden hun volgorde, Great Tide houdt zijn timing en het Atlas-bekken houdt zijn relatie met de diepste waarheid.
+Survey geology invariants houden HECTON-8 coherent door contradictory charts, damaged Atlas maps en incomplete Black Keel route packets heen. Een canyon approach kan shift between surveys. Een safe pocket kan collapse. Een cache kan emerge under new silt. Bloom density en salvage exposure veranderen met weather, pressure en wat de last expedition disturbed. Deeper truths move niet: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior en Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Routegeneratienotitie. De bergingskaart verandert, maar de maan houdt dezelfde botten.
+Atlas survey note. De salvage chart kan disagree with itself; de moon keeps the same bones.
 
 ## Terminal
 
-INVARIANTEN: Aegir als primaire ster, orbitale ladder van HECTON-8, interval van Great Tide, volgorde dieptebanden, relatie Atlas-bekken, drukgedrag blue debt. VARIABEL: canyonbenadering, POI-volgorde, veilige zakken, bloomdichtheid, bergingsexpositie.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Ander wondpatroon. Dezelfde maan eronder.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-Een nieuwe run mag bewijs anders begraven; hij mag zwaartekracht, getij of schuld niet herschrijven.
+Een later chart kan bury evidence differently. Hij kan gravity, tide of guilt niet rewrite.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/nl_NL. -->

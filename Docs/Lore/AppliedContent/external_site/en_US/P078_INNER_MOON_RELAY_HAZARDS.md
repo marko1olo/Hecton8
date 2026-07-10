@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Inner Moon Relay Hazards
 
-Inner Moon Relay Hazards explain why HECTON-8 loses contact through radiation, dust, occlusion and inherited route law instead of magic interference.
+Inner Moon Relay Hazards explain HECTON-8 contact failure through radiation, dust, occlusion, eclipse geometry, and inherited route law instead of impossible interference.
 
 ## Scanner
 
-INNER LADDER // Skarn saturates antennas. Vela scatters optics. Old Claw and Lumen routes can keep stale handshakes alive.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw and Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-RELAY HAZARD NOTE // Contact loss can be geometry, charged-particle weather, dust shutter or inherited buoy law. Treat clean UI as suspect during surge windows.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 

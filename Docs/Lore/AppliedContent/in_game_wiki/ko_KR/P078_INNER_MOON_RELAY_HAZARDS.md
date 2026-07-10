@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "내부 달 중계 위험"
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 내부 달 중계 위험
+# Inner Moon Relay Hazards
 
-내부 달 중계 위험은 접촉 실패를 물리적으로 만든다. Skarn 정렬 서지는 안테나를 죽이지 않고 망가뜨릴 수 있다. Vela의 먼지와 얼음은 항로가 존재한다고 주장하는 동안 광학을 닫는다.
-
-Claw와 Lumen은 오래된 항로 논리를 나르기 때문에 더 나쁘다. handshake는 형식상 유효하고 작업상 쓸모없을 수 있다. 그래서 Black Keel은 패킷을 기록하고 custody를 보존하면서도 몸을 물에 남길 수 있다.
+inner moon relay hazards는 failed contact를 편의가 아니라 물리로 만든다. Skarn-aligned surges는 antennas를 killing them 없이 corrupt할 수 있다. Vela dust and ice는 route가 여전히 open이라고 reports itself as open하는 동안 optics를 shutter할 수 있다. Claw와 Lumen은 더 나쁘다. old buoy logic을 carry하기 때문이다. handshake는 formally valid이면서 operationally useless할 수 있다. 그래서 Black Keel은 log a packet하고 preserve custody하면서도 human signal waiting in water를 남길 수 있다. system은 go mute할 필요가 없었다. wrong sky에서 answer하면 충분했다.
 
 ## Scanner
 
-내부 사다리 // Skarn은 안테나를 포화시킨다. Vela는 광학을 흩뜨린다. 오래된 Claw와 Lumen 항로는 낡은 handshakes를 살려 둔다.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw와 Lumen은 stale handshakes를 legally alive하게 둔다.
 
 ## Terminal
 
-중계 위험 메모 // 접촉 상실은 기하, 대전 입자 날씨, 먼지 셔터, 상속된 buoy law일 수 있다. 서지 창에서는 깨끗한 UI를 의심하라.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. surge windows 동안 clean interface state는 suspect로 취급.
 
 ## Audio
 
-중계기는 침묵하지 않았다. 잘못된 세기를 반복했다.
+relay는 침묵하지 않았다. wrong century를 반복했다.
 
 ## Field Note
 
-깨끗한 아이콘도 오래된 하늘을 통해 거짓말할 수 있다.
+clean icon도 old sky를 통해 거짓말할 수 있다.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/ko_KR. -->

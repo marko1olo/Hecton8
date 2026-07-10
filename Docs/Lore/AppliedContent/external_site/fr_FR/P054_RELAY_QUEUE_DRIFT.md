@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dérive de file relais"
+title: "Derive de relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dérive de file relais
+# Derive de relay queue
 
-La dérive de file relais est l'écart entre vérité et utilité. HECTON-8 n'a pas besoin de faux parasites ni d'interférence magique pour rendre la communication inquiétante. Un message peut arriver intact, authentifié et parfaitement correct pour la pièce d'il y a trente minutes. Puis l'eau bouge une écoutille, la pression plie un cadre, la croissance Atlas scelle la mauvaise fissure et la même instruction devient piège. Le joueur ne cherche pas si le système ment, mais s'il est trop vieux pour être fiable.
+Relay Queue Drift fait de message age une variable de survie: remote orders peuvent etre true, stale et lethal en meme temps.
+
+## Scanner
+
+Relay stamp plus ancien que la leak qu'il nomme. L'instruction etait vraie pour une room qui n'existe plus.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction jusqu'a ouverture d'une fresh relay window. Treat delayed route orders as archival sauf si pressure, door state et waterline correspondent.
+
+## Audio
+
+Le message est correct. C'est le probleme.
+
+## Field Note
+
+Une truth tardive peut encore tuer.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/fr_FR. -->

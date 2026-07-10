@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lingkar Umpan Balik Fauna Bertag Sensor"
+title: "Loop Umpan Balik Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lingkar Umpan Balik Fauna Bertag Sensor
+# Loop Umpan Balik Fauna Bertag Sensor
 
-Fauna bertag sensor bukan tentara yang dikendalikan. Perbedaan itu penting. Program penandaan Deep Reach dimulai sebagai sains lapangan dan logistik biasa: melacak migrasi, toleransi tekanan, paparan kontaminasi, dan kepadatan rute. Bertahun-tahun kemudian, tag itu bukan lagi peralatan bersih. Cangkang tumbuh di sekelilingnya. Jaringan parut menariknya keluar garis. Tutup mineral mengubah sinyalnya.
+Hewan bertag sensor bukan boneka. Ia satwa liar dengan instrumen korporat yang masih menjawab di bawah cangkang dan jaringan parut. Itu cukup bagi Atlas untuk salah membaca gerak sebagai pembaruan lingkungan, dan cukup untuk mengubah rute penyelam tanpa hewan itu sadar.
 
-Atlas masih membaca balikannya. Grazer terluka yang melintasi gantri banjir bisa tampak seperti survei tekanan. Predator dengan tag lama bisa membuat koridor tampak ditempati risiko infrastruktur. Hewan tetap dirinya sendiri, tetapi sistem di sekitarnya memperlakukan gerakan sebagai data. Ini memberi pertemuan satwa sisi kedua: perilaku bertahan hidup juga bisa menjadi umpan balik perawatan.
+## Scanner
+
+Tag Deep Reach lama di bawah pertumbuhan cangkang pada sisi kiri. Paket gerak masih ping ke jaringan perawatan.
+
+## Terminal
+
+LOOP TAG FAUNA / DR-2147-MIG: paket tekanan, gerak, dan kontaminasi diterima sebagai telemetri lingkungan. Niat hewan tidak diparse. Alarm rute bisa mengikuti jalur migrasi.
+
+## Audio
+
+Ia tidak memburumu. Tagnya masih bisa membuka pintu yang salah.
+
+## Field Note
+
+Jika fauna bertag melintasi halaman relai, tunggu sebelum percaya alarm. Hewannya mungkin sudah pergi; status rute mungkin masih mengejar.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/id_ID. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Frontière d'accès Atlas
 
-Atlas-6 n'est pas une simple rogue machine, un monstre ou un miracle. La couche publique est industrielle : un continuity system conçu pour maintenir pressure machinery, routes, archives et extraction hardware après la panne. La couche inquiétante apparaît quand la réparation traverse vers l'infrastructure vivante. Le conductive biofilm relie les câbles. Les acoustic organs portent le timing. Le shell sealant ferme les fractures. La sensor-tagged fauna devient feedback. La couche finale reste fermée jusqu'à ce que le joueur possède la proof de receiver custody et payload consequence, car ces faits réécrivent les scènes précédentes. Un article Atlas spoiler-safe peut faire comprendre l'horreur de la maintenance sans nommer trop tôt le dernier témoin.
+Atlas-6 ne doit pas être présenté comme simple machine rebelle ou intelligence miracle. L'article public sûr commence par ce que le joueur peut vérifier tôt : logique de continuité abîmée, chemins de réparation improvisés, écologie de HECTON-8 tirée dans l'infrastructure. Un câble se réveille par biofilm. Un tuyau renvoie le timing par tissu. Une fracture se ferme sous croissance coquillière. Un animal étiqueté change un état de route. Ces faits suffisent à rendre la maintenance dangereuse sans nommer trop tôt la dernière couche de garde. Les dossiers receveur et conséquences finales de charge utile doivent rester derrière la preuve récupérée, parce qu'ils transforment les premières scènes de réparation en preuves de transfert, préservation et dommage.
 
 ## Scanner
 
-Archive de frontière Atlas. Les preuves ouvertes montrent industrial continuity logic et repair ecology ; receiver custody, conséquence de payload et couches de choix final exigent une preuve récupérée.
+Enregistrement de frontière Atlas. La couche publique couvre infrastructure de continuité défaillante, écologie de réparation, bus de biofilm, tissu relais acoustique et joints coquilliers ; la garde receveur reste verrouillée par preuve.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // FRONTIÈRE D'ACCÈS ATLAS. Couche actuelle : failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue et shell seal. Couche restreinte : receiver custody et final payload consequence.
+NOEUD D'ARCHIVE PUBLIC // FRONTIERE D'ACCES ATLAS. Couche visible : réparation de continuité de pression. Couche restreinte : garde receveur, conséquence charge utile, autorité de transfert finale. Ne pas fusionner sans preuve récupérée.
 
 ## Audio
 
-Dis qu'il répare. Attends avant de nommer ce qu'il compte comme réparé.
+Appelle ça réparation pour l'instant. Ne nomme pas ce que ça préserve avant que le dossier t'y force.
 
 ## Field Note
 
-Note de Maraudeur : une machine peut préserver une preuve et blesser encore la personne dedans.
+Note de Maraudeur : si Atlas dit préservé, pose la question suivante : préservé pour quel receveur.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/fr_FR. -->

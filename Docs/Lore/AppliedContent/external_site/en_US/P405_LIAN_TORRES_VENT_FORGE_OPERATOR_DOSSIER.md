@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Lian Torres/Vent Forge"
+title: "Lian Torres, Vent Forge Operator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Lian Torres/Vent Forge
+# Lian Torres, Vent Forge Operator
 
-Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres grounds HECTON-8 industry in craft instead of miracle material. The vent forge evidence shows that pressure glass, seal rings, and ceramic liners were not born as loot. They were worked, rejected, relabeled, and made safe enough for someone else to trust underwater.
 
 ## Scanner
 
-Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Heat glove, cycle timer, and reject tray match the same pressure-glass batch.
 
 ## Terminal
 
-LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+VENT FORGE V-9 / TORRES, LIAN: reject tray retained cracked seal rings, cloudy pressure glass, and three marked overheat coupons. Batch note: failure teaches the next seal only if the failure stays labeled.
 
 ## Audio
 
-Torres knew which failures could still teach the next seal to hold.
+Torres kept the bad pieces. In the forge, a clean floor meant someone had thrown away the lesson.
 
 ## Field Note
 
-Place in vent forge or pressure-glass salvage chains.
+Use Torres near vent forge props, pressure-glass recipes, rejected seal rings, and upgrade benches that need a visible history of failed parts.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/en_US. -->

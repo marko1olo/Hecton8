@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "压力贝壳密封生长"
+title: "壳质压力密封生长"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 压力贝壳密封生长
+# 壳质压力密封生长
 
-压力贝壳密封生长是Atlas最干净的错误：维修确实有效。钙硅层和生物聚合物树脂闭合裂缝，承受静压，救下本该被淹没的房间。同一片生长也会埋掉标签、把手、粉笔箭头、刮痕，以及穿过站点的最后一条人类路线。
+壳质密封生长能在同一小时内救下一间房，也能把人锁在里面。钙硅层和树脂封住裂缝，降低漏率，给Atlas一个可测量的维修结果。生长物不会检查自己是否盖住路线箭头、压力标签或唯一的手轮。
 
 ## Scanner
 
-层状密封物闭合裂缝，并把工人路线标记埋在白色壳层下。
+白色钙质壳层封住裂缝，也埋住了舱口边缘的路线箭头。切开可能重新漏水。
 
 ## Terminal
 
-维修冲突：漏率降低，压力边界改善，出口标记被遮蔽。切开壳层可能重新打开进水路径。
+维修冲突 / DOOR S-9：漏率下降，压力边界改善，出口标记被遮蔽，手轮埋没62%。授权切割前必须布置分阶段进水路径。
 
 ## Audio
 
-房间活下来了。出口没有。
+墙还撑着。舱口手轮在十厘米壳层下面。
 
 ## Field Note
 
-适合门、爬行通道和压力选择：修复与伤害是同一个物体。
+切掉舱口白壳前，先找上次水流去了哪里。标签被埋住可能有原因。
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/zh_CN. -->

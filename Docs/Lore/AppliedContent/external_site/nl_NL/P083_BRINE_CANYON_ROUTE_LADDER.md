@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Route-ladder van de Pekelkloof"
+title: "Routeladder van de pekelkloof"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Route-ladder van de Pekelkloof
+# Routeladder van de pekelkloof
 
-Pekelkloven maken diepteprogressie fysiek. Dichte lagen, mineraalmuren, warmtelekken en akoestische vervorming leren waarom diepere reizen betere instrumenten en drukdiscipline vragen.
+Pekelkloven maken diepte tot substantie. Dichte zoutrivieren liggen in de oceaan als vloeren, spiegels en vallen. Een schone route wordt gebouwd met dichtheidsmarkers, ballastvensters, relaiscontroles en hoekdiscipline, niet met moed. De diepere lagen leren waarom instrumenten tellen: sonar kan de ruimte erboven spiegelen, drijfvermogen kan liegen, en het pak kan gelijk hebben terwijl de zee weigert.
 
-De Route-ladder van de Pekelkloof is een kernstructuur van HECTON-8-verkenning: geen gang, maar chemische geografie waarin dichtheid, stroming en geluid vooruitgang vormen. Je zwemt niet door de kloof. Je onderhandelt met lagen zwaarder dan je pak.
+De routeladder van de pekelkloof toont HECTON-8s afdaling als chemische geografie: dichtheid, stroming, mineraalmuren en geluid bepalen welke routes overleven. Je zwemt niet door de kloof. Je onderhandelt met lagen zwaarder dan je pak.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/nl_NL. -->

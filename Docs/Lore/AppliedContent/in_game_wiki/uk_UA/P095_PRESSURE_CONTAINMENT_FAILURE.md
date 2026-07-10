@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Відмова утримання тиску"
+title: "Відмова pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Відмова утримання тиску
+# Відмова pressure containment
 
-Відмова утримання тиску дає blue debt читану матеріальну поведінку. Він цінний, бо глибинний тиск зробив його зв'язним, і небезпечний, бо мілководне поводження цю зв'язність ламає. Стадія 0 запечатана. Стадія 1 дрейфує й іноді повертається повторним тиском біля жерла. Стадія 2 ламає ґратку. Стадія 3 впускає ропу й біологію. Стадія 4 залишає мертвий зразок, який досі заражає спорядження, воду й маршрути.
+Pressure containment failure дає blue debt behavior, який можна read without myth. Він valuable, бо deep pressure made the lattice coherent. Він dangerous, бо shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts і може recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water і route markings. Material не cursed. Він homesick for pressure.
 
 ## Scanner
 
-Схема стадій капсули. Blue debt руйнується через пам'ять тиску, зсув сигналу й bloom; забобони лише палять кисень.
+Casket stage chart. Blue debt fails through pressure memory, signal shear і bloom; superstition wastes oxygen.
 
 ## Terminal
 
-СТАДІЇ УТРИМАННЯ: 0 запечатана ґратка; 1 дрейф сигналу; 2 перелом ґратки; 3 ропно-біологічний bloom; 4 мертвий зразок із живим зараженням. Повторний тиск біля жерла може повернути лише стадію 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Зразок тебе не ненавидить. Він намагається повернутися туди, де сформувався.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Зразок може коштувати статок на одній глибині й стати зобов'язанням десять метрів потому.
+Sample може бути worth a fortune at one depth і become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/uk_UA. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir 위성 루트 지도"
+title: "Aegir 위성 경로 지도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir 위성 루트 지도
+# Aegir 위성 경로 지도
 
-Aegir의 위성 지도는 아름답기 전에 운용 도면이다. HECTON-8은 위성, shepherd rocks, ice-scatter paths, dead relay marks로 된 사다리 속 하나의 해양 천체다. 안쪽 천체들은 narrowband contact와 방사선 엄폐를 흐트러뜨린다. 얼음 위성은 optical relay lines를 나쁜 조각으로 부순다. Occultation bands는 claim이 유효해도 들리지 않는 침묵 창을 만든다. 바깥 beacons는 승무원이 사라진 뒤에도 오래된 소유권을 보존한다. 조석 기하와 storm stacking은 bathydrop chain이 깨끗하게 상승할지 loss ledger에 들어갈지 결정한다. 공개 지도는 추가 플레이 세계를 약속하지 않고도 이를 보여줄 수 있다. 그 목적은 하늘을 압력, 지연, 루트 위험으로 읽게 하는 것이다.
+Aegir 위성 지도는 운용판처럼 읽어야 한다. 각 라벨은 신호 나이, 방사선 대피, 전송 위험, 하강 날씨, 회수 기하, 법적 보관 시점을 바꿀 수 있다. HECTON-8은 그 움직이는 사다리 안에 있다. 안쪽 천체는 협대역 접촉을 방해하고, 얼음 위성은 광학 경로를 조각내며, 엄폐대는 침묵 창구를 만들고, 오래된 비컨은 승무원이 사라진 뒤에도 소유권 표식을 유지한다. 공개 자료는 플레이 가능한 위성을 약속하지 않고도 시스템을 보여 줄 수 있다. 유용한 약속은 더 좁고 강하다. 플레이어가 물에서 올려다보면, 하늘은 왜 중계가 끊겼는지, 왜 운반자가 하강 질량을 거부했는지, 왜 유효한 청구가 어둠 속에서 기다렸는지 설명할 수 있다.
 
 ## Scanner
 
-시스템 지도 기록. Aegir 위성들은 relay timing, 방사선 엄폐, ice scatter, 조석 압력, occultation bands, 죽은 beacons, recovery geometry를 정한다.
+시스템 지도 기록. 위성 라벨은 중계 나이, 조석 부하, 방사선 엄폐, 얼음 산란, 엄폐대, 죽은 비컨, 회수 기하를 정한다.
 
 ## Terminal
 
-공개 아카이브 노드 // AEGIR 위성 사다리. 위성 이름은 루트 표지다. 각 천체는 signal age, transfer risk, storm exposure, custody timing, claim reliability를 바꾼다.
+공개 기록 노드 // AEGIR 위성 사다리. 위성 이름은 경로 데이터다. 필수 필드: 신호 나이, 조석 위상, 폭풍 엄폐, 청구 창구, 비컨 상태, 상승 위험.
 
 ## Audio
 
-지도는 왜 요청한 순간 아무도 오지 않는지 설명한다.
+지도 위 위성은 풍경이 아니다. 답변이 늦은 이유다.
 
 ## Field Note
 
-Marauder 메모: 위성을 표시한 다음, 그 위성이 루트에 무엇을 하는지 표시해라.
+마라우더 메모: 위성을 표시하고, 그것이 신호, 조석, 질량, 보관에 무엇을 하는지 적어라.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ko_KR. -->

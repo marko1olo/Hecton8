@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Sonar Return Route
 
-A return beacon records how a route sounded when it was last safe. It does not promise the route stayed safe. Storm surge, loose cable, moving silt, fauna and fresh salvage cuts can bend a sonar return without erasing the corridor. Before carrying cargo or pushing deeper, ping the line. If the tone shifts, cache the load or mark a second way back.
+A return beacon records how a route sounded when it was last safe. It does not promise the route stayed safe. On HECTON-8, safety has a sound: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass, and a door that flexed under pressure can all bend the return without erasing the corridor. The return route is work. Ping it before loading, and cache the load if the echo comes back with a different shape.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Return beacon stale. Old safe ping no longer matches the corridor echo; cargo ma
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift and silt density exceed map tolerance. Mark secondary line before cargo extraction.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, and cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The route is still there. The echo is not the same.
 
 ## Field Note
 
-Ping before you load. If the way home changed while your hands were empty, it will not forgive a full pack.
+Ping before loading. If the way home changed while your hands were empty, it will not forgive a full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/en_US. -->

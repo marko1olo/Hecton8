@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, cheffe des pompes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, cheffe des pompes
 
-FR LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+Mara Venn était la cheffe des pompes qui maintint l'annexe basse en vie quand les compteurs d'admission commencèrent à mentir. Son dossier tient dans des objets de travail : badge piqué par le sel, tableau de cadence coché à la main, registre d'eau corrigé à l'encre de pression et poignée de dérivation lissée par l'usage. Ensemble, ils montrent une ouvrière obligeant la colonie à reconnaître que la perte d'eau n'était pas un bruit de décor. C'était une panne chiffrable reliée à des poumons humains.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier : Mara Venn. Bord de badge, tableau de cadence et registre d'eau corrigé mènent tous à la salle des pompes P-63.
 
 ## Terminal
 
-FR LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+SALLE DES POMPES P-63 / VENN, MARA : poignée de dérivation polie à travers les gants ; tableau de cadence fixé près des pertes d'admission. La correction du registre transforme l'eau manquante, de fuite décorative, en charge machine.
 
 ## Audio
 
-FR LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn n'a pas laissé d'adieu. Elle a laissé un rythme sur le tableau des pompes pour que les gens terrifiés comptent le prochain souffle.
 
 ## Field Note
 
-FR LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Placer les preuves de Venn près des énigmes de rythme de pompe, registres d'eau et poignées de dérivation. Ses objets doivent faire entendre l'infrastructure comme une respiration.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/fr_FR. -->

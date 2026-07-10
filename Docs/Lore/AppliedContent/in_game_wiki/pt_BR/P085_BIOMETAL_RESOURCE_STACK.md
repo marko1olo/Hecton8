@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Pilha de Recursos Biometálicos"
+title: "Pilha de recursos de biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pilha de Recursos Biometálicos
+# Pilha de recursos de biometal
 
-A pilha de recursos impede HECTON-8 de virar um único material mágico. Xenon-Omega importa, mas a lua também tem metais, sais, química de vent, cerâmicas de pressão, biofibras, fotoproteínas, salvage e biometal alterado por Atlas.
+A pilha de recursos impede HECTON-8 de virar um material mágico só. A dívida azul importa, mas a lua também paga em metais sulfetados, sais, gases nobres, cerâmicas, catalisadores, biofibras, fotoproteínas, hardware de salvage e biometal alterado por Atlas. A violência faz sentido porque o valor é distribuído: muitos motivos pequenos para cortar, marcar, esconder, voltar e mentir.
 
 ## Scanner
 
-Quadro de recursos. Blue debt fica no topo, mas o resto da lua ainda dá lucro suficiente para matar.
+Quadro de recursos recuperado. A dívida azul fica no topo. O resto da lua ainda é lucrativo o bastante para matar.
 
 ## Terminal
 
-PILHA DE RECURSOS HECTON-8: metais sulfetados, sais, bolsões de gás nobre, cerâmicas de pressão, catalisadores de vent, biofibras, fotoproteínas, salvage hardware, biometal alterado por Atlas e XO continuity substrate.
+PILHA HECTON-8: metais sulfetados, sais, bolsões de gás nobre, cerâmicas de pressão, catalisadores de vent, biofibras, fotoproteínas, hardware de salvage, biometal alterado por Atlas, substrato de continuidade XO.
 
 ## Audio
 
-Um único minério milagroso seria preguiçoso. HECTON-8 tem uma economia inteira de feridas de pressão.
+Um minério milagroso seria preguiça. HECTON-8 tem uma economia inteira de feridas de pressão.
 
 ## Field Note
 
-Se toda amostra diz Xenon-Omega, o mundo fica burro. Conte também os outros motivos.
+Se toda amostra diz Xenon-Omega, o mundo fica plano. Conte também os motivos menores pelos quais pessoas morreram.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/pt_BR. -->

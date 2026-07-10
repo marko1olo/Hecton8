@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Claim Hooks
 
-Black Keel Claim Hooks defines the opening pressure. Black Keel is not a moustache-twirling villain ship; it is a carrier bound to claim-pool economics, quarantine law and dormant Deep Reach leverage. The player’s problem is practical and moral at once: a voice above the ocean can hear the distress call, but the route home must be made valuable, certifiable and legally inconvenient to ignore.
+Black Keel Claim Hooks defines the opening pressure above HECTON-8. Black Keel is not a villain ship; it is a carrier bound to claim-pool economics, quarantine law and dormant Deep Reach leverage. The problem is practical and moral at once: a voice above the ocean can hear distress, but the route home must become valuable, certifiable and legally inconvenient to ignore.
 
 ## Scanner
 

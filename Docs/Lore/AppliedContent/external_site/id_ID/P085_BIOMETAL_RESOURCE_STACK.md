@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Tumpukan Sumber Daya Biometal
 
-Tumpukan sumber daya mencegah HECTON-8 menyusut menjadi satu bahan ajaib. Xenon-Omega penting, tetapi bulan juga punya logam, garam, kimia vent, keramik tekanan, biofiber, fotoprotein, salvage dan biometal yang diubah Atlas.
+Tumpukan sumber daya mencegah HECTON-8 runtuh menjadi satu bahan ajaib. Utang biru penting, tetapi bulan juga membayar dengan logam sulfida, garam, gas mulia, keramik, katalis, biofiber, fotoprotein, hardware salvage, dan biometal yang diubah Atlas. Kekerasan masuk akal karena nilai tersebar: banyak alasan kecil untuk memotong, menandai, menyembunyikan, kembali, dan berbohong.
 
-Tumpukan Sumber Daya Biometal membingkai HECTON-8 sebagai ekonomi tekanan penuh, memberi banyak alasan eksplorasi sambil menjaga blue debt sebagai puncak strategis. Jika setiap sampel berkata Xenon-Omega, dunia menjadi bodoh. Hitung alasan lain juga.
+Tumpukan Sumber Daya Biometal membingkai HECTON-8 sebagai ekonomi tekanan penuh, dengan Xenon-Omega sebagai puncak strategis, bukan satu-satunya hal yang layak dibaca. Jika setiap sampel berkata Xenon-Omega, dunia menjadi datar. Hitung juga alasan kecil yang membuat orang mati.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/id_ID. -->

@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
-using Hecton8.EditorValidation;
+using Hecton8.Editor.Validation;
 
 namespace Hecton8.Tools.DataMonolithBakeCli
 {

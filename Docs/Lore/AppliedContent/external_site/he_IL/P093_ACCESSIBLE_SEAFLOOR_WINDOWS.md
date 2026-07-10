@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "חלונות קרקעית נגישים"
+title: "חלונות seafloor נגישים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# חלונות קרקעית נגישים
+# חלונות seafloor נגישים
 
-רוב קרקעית הים של HECTON-8 אינה נגישה באומץ רגיל. הלחץ בונה קיר לפני שהקרקעית מופיעה. החלונות הנגישים הם החריגים: מקומות קרועים שבהם מדף שקרס, רכס חשוף, צלקת נביעה חמה או עמוד מלח צפוף משנים את עקומת הירידה. אלה לא מערות בטוחות. אלה עסקאות צרות עם גאולוגיה. צוות יכול לגעת בקרום עתיק, להוציא מינרלים שגדלו בלחץ, למצוא ציוד מושבה אטום או לקרוא אירוע קבור לפני שהים סוגר שוב את הנתיב.
+Accessible Seafloor Windows הם rare pressure breaks שבהם HECTON-8 חושף ancient floor, high-risk salvage, mineral seams ו-evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. כאן ה-shell נקרע thin enough כדי ש-crawler ייגע ב-old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+רוב ה-moon שומר את ה-floor שלו כ-pressure secret. ה-windows הם exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/he_IL. -->

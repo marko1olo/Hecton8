@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Provas de Responsabilidade Deep Reach"
+title: "Provas de responsabilidade da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Provas de Responsabilidade Deep Reach
+# Provas de responsabilidade da Deep Reach
 
-A liability da Deep Reach funciona porque a inundação não precisa de física falsa. O Great Tide foi real. O dano evitável aparece em margins, relógios, access holds e registros que limpavam trabalhadores em categorias antes que alguém pudesse ser recuperado.
+A responsabilidade da Deep Reach não precisa de física falsa. A Grande Maré atingiu HECTON-8 com força oceânica real: ressonância, cisalhamento da criosfera, empilhamento de tempestades e falha de pressão. O dano evitável fica ao lado dessa força em documentos e salas. Uma margem foi aceita após alerta de sensor. Uma porta ficou sob autoridade executiva. Uma fila esperou liberação legal. A ponderação Atlas manteve máquinas acima de pessoas na janela errada. A cadeia de provas funciona porque a água é honesta e a papelada não.
 
 ## Scanner
 
-Registro de liability. Física real de marés, margin risk aceito, atraso de evacuação, quarantine holds, Atlas weighting e linguagem de perda sanitizada convergem na mesma cadeia de provas.
+Registro de responsabilidade. A força de maré é real; mudanças de margem assinadas, retenções de quarentena, filas de evacuação, pesos Atlas e linguagem de perda carregam a parte evitável.
 
 ## Terminal
 
-NÓ DE ARQUIVO PÚBLICO // PROVAS DE LIABILITY. Great Tide aceito. Revisão aberta para sensor margins, atraso de evacuation queue, quarantine holds, Atlas weighting, worker classification e loss conversion.
+NÓ DE ARQUIVO PÚBLICO // REVISÃO DE RESPONSABILIDADE DR-H8. Força natural aceita. Campos abertos: margem de sensor, autoridade de porta, atraso de fila, retenção de quarentena, ponderação Atlas, conversão de trabalhador em categoria de reivindicação.
 
 ## Audio
 
-Um desastre pode ser natural e ainda carregar assinaturas.
+A maré quebrou aço. As assinaturas decidiram quais portas ficavam fechadas.
 
 ## Field Note
 
-Nota de Marauder: não discuta com a maré. Discuta com as assinaturas ao lado dela.
+Nota de Marauder: nunca discuta que a maré foi falsa. Coloque as assinaturas ao lado do relógio de maré.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/pt_BR. -->

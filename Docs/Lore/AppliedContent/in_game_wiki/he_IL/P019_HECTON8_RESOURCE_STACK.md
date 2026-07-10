@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ערימת משאבים"
+title: "מערום משאבים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ערימת משאבים
+# מערום משאבים
 
-HECTON-8 אינו ירח של משאב אחד. חומרים מוקדמים משאירים בחיים, salvage פותח נתיבים, תמלחת מלמדת לחץ, ו-blue debt הוא רק הפיתוי העליון.
+HECTON-8 אינו ירח של משאב אחד. חומרים מוקדמים מאפשרים נשימה ותיקון. Salvage פותח נתיבים אטומים. תמלחת וכימיית פתחים מלמדות לחץ. חוב כחול ו-pressure glass יושבים גבוה יותר בשרשרת claim, אבל ערכם מובן רק כי חומרים קטנים יותר משאירים את המפעיל חי מספיק זמן להגיע אליהם.
 
 ## Scanner
 
-ערימה: סיבי שונית, מלחי תמלחת, ליבות relay, שסתומי לחץ, blue debt, pressure glass, סריג Atlas.
+המערום נקרא: סיב שונית, מלחי תמלחת, ליבות ממסר, שסתומי לחץ, זרזי פתחים, חוב כחול, pressure glass, סריג Atlas.
 
 ## Terminal
 
-ערך: ביוטת הישרדות, salvage אנושי, חומרת נתיב, כימיית לחץ, blue debt, pressure glass, continuity substrate.
+מודל ערך: ביוטת הישרדות, salvage אנושי, חומרת נתיב, כימיית לחץ, חוב כחול, pressure glass, מצע רציפות. לא לצמצם את המערום לחומר פלא אחד.
 
 ## Audio
 
-אם carrier מבקש מסה לפני שמות, אתה יודע מי מחזיק בחוזה.
+אם ה-carrier מבקש מסה לפני שמות, אתה יודע מי מחזיק בחוזה.
 
 ## Field Note
 
-שום דבר כאן אינו שלל בלבד.
+שום דבר כאן אינו רק שלל. כל דגימה שייכת לכלכלת לחץ.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/he_IL. -->

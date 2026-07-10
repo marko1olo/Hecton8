@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lichtvertragingsgezag"
+title: "Lichtvertragingsautoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lichtvertragingsgezag
+# Lichtvertragingsautoriteit
 
-HECTON-8 heeft geen ansible en geen live commandostem uit de baan. Berichten bewegen met lichtsnelheid en verliezen daarna meer tijd in buffers, stormvensters, relaisgeometrie en bewaarregels van de drager. Elk antwoord is oud bewijs, geen bevel.
+HECTON-8 heeft geen ansible, geen vriendelijke stem die uit de baan neerbuigt, en geen manier om tien lichtjaar barmhartig te maken. Messages reizen met lichtsnelheid en verliezen daarna meer tijd aan relay geometry, storm scatter, buffer law en Black Keels custody queues. Een transmission kan eerlijk zijn en toch te oud om op te volgen. Het oppervlak leert die regel vroeg: elk remote answer is eerst evidence, daarna instruction, en nooit comfort. Als de muur, het water en de pressure de message tegenspreken, wint de local world.
 
 ## Scanner
 
-Relaismastcache: de oproep ging zuiver weg en wachtte daarna achter licht, wachtrijwet, stormverstrooiing en Aegirs zichtlijn.
+Relay mast cache. De call vertrok schoon, wachtte daarna achter light, queue law, storm scatter en Aegir line-of-sight.
 
 ## Terminal
 
-COMM-GEZAG: eenrichtingsvertraging bevestigd. Stormverstrooiing hoog. Relaiswachtrij onder bewaarsprioriteit. Lokale overlevingsautoriteit actief.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active tot fresh signal window override bevestigt.
 
 ## Audio
 
-Het antwoord komt eraan. Dat maakt het nog geen redding.
+Het antwoord komt eraan. Dat maakt het geen rescue.
 
 ## Field Note
 
-Niemand censureerde de eerste schreeuw. De fysica droeg hem langzaam genoeg voor beleid om in te halen.
+Niemand censureerde de eerste scream. Physics droeg hem traag genoeg zodat policy kon inhalen.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/nl_NL. -->

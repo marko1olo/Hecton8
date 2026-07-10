@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-Acoustic filter organs grow in old relay throats where water, pressure, and sound do the work radio cannot. The tissue is not speaking. It changes impedance, dampens pump roar, and lets narrow pinger tones travel farther than they should. Atlas can use that repeated echo as a cheap relay, and a careful player can use it as a route clue.
+Acoustic filter organs form inside old relay pipes where pressure, moving water, and sound keep feeding tissue. They can make a pinger travel farther by cutting pump roar and passing a narrow tone. The same fold can delay the return and move a mapped wall by enough meters to put a diver into a dead end.
 
 ## Scanner
 
-Soft baffle tissue inside the relay pipe passes pinger tones and kills pump noise.
+Baffle tissue in the relay throat passes a narrow pinger tone and cuts pump noise. Return map is phase-shifted.
 
 ## Terminal
 
-RELAY NOTE: living folds reject broad machinery noise, pass narrow pinger pulses, and phase-shift return echoes. Downstream map confidence reduced.
+RELAY PIPE A-17: living folds pass 8-12 kHz pinger pulses, reject broad pump noise, and add return delay. Downstream map confidence reduced. Do not certify return route from this relay alone.
 
 ## Audio
 
-If it answers like equipment, remember equipment does not bleed.
+It answered the pinger. The pipe is leaking clear fluid. Mark it animal, not relay.
 
 ## Field Note
 
-Use where sonar feels helpful before it becomes suspect.
+If a relay answers too cleanly in a flooded pipe, run a second pinger from another angle. Good sound can still be a bad map.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/en_US. -->

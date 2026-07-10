@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Geothermischer Motor der Schlotschmiede"
+title: "Geothermische Vent-Forge-Maschine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geothermischer Motor der Schlotschmiede
+# Geothermische Vent-Forge-Maschine
 
-Schlotschmieden verbinden Geologie mit Fertigung, Überleben und Horror. Sie liefern Wärme- und Druckzyklen für Keramik, Dichtungen und Druckglas, erzeugen aber auch Kochblasen, falsche Sauerstoffwerte, Korrosionswolken und Tierwanderungen.
+Vent Forges verbinden Geologie mit Arbeit. Ihre Pulse können Keramik härten, Druckdichtungen zurücksetzen, Pressure Glass glühen und Aufstiegsladungen vorwärmen, aber jeder nützliche Zyklus ist auch ein Gefahrenrhythmus. Kochende Scherung greift Nähte an, falscher Sauerstoff täuscht Instrumente, Korrosionsblüte dringt in offene Gehäuse, und nahes Leben bewegt sich, bevor der Bediener versteht warum.
 
-Der geothermische Motor der Schlotschmiede zeigt, warum HECTON-8 wertvoll und tödlich ist: Der Mond ist schon vor menschlicher Technik ein Industriemotor. Jeder nützliche Schlot bestraft auch schlechtes Timing.
+Die geothermische Vent-Forge-Maschine zeigt, warum HECTON-8 wertvoll und tödlich ist: Der Mond war industriell, bevor Menschen ankamen. Jede nützliche Ventöffnung ist auch eine Maschine, die schlechtes Timing bestraft.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/de_DE. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Granica ryzyka i nagrody kontraktu"
+title: "Wiersz ryzyka/nagrody kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica ryzyka i nagrody kontraktu
+# Wiersz ryzyka/nagrody kontraktu
 
-Granica zmienia presję replay w kontraktowe rekordy tabel. Trasa zmienia się, bo zmieniły się dług, czas burzy, dozór i klauzule odpowiedzialności, nie dlatego, że świat zapomniał.
+Wiersze kontraktu zmieniają trasę przed zanurzeniem. Cichy salvage może płacić mniej i zostawić luźniejszy nadzór; bieg w oknie burzy może płacić dobrze i wymuszać zły czas; przynęta Recovery Compliance może żądać dowodu przed kredytem tlenu. Stary wrak, nowy papier, inna trasa.
 
 ## Scanner
 
-Wiersz kontraktu wiąże zastaw, okno burzy, porządek dozoru, pułap wypłaty i wagę klauzuli.
+Wiersz oferty wrogi: ciężar zastawu, okno burzy, nakaz nadzoru, głębokość dowodów, sufit wypłaty i waga klauzuli Deep Reach są powiązane.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: wiersze wymagają ciężaru zastawu, pułapu wypłaty, okna burzy, dozoru próbki, porządku dowodów i wagi klauzuli Deep Reach. Kontrakt jest pierwszym drapieżnikiem.
+SCHEMAT RYZYKA KONTRAKTU / Aegir Reclamation Pool: publikować nagrodę dopiero po zapisaniu ciężaru zastawu, sufitu wypłaty, okna burzy lub orbity, żądania nadzoru próbki, głębokości kolejności dowodów, ekspozycji kwarantanny i wagi klauzuli Deep Reach. Przyznanie trasy jest warunkowe, dopóki przewoźnik nie przyjmie podziału odpowiedzialności.
 
 ## Audio
 
-Kontrakt jest pierwszym drapieżnikiem.
+Black Keel: nowa oferta opublikowana. Wyższa wypłata, krótsze okno burzy, nadzór próbki najpierw. Przeczytaj klauzulę przed zanurzeniem.
 
 ## Field Note
 
-Zmiany nagrody należą do wiersza kontraktu, nie improwizowanego tekstu lore.
+Jeśli nagroda skacze, znajdź klauzulę, która się przesunęła. Zwykle chodzi o nadzór, pogodę, kwarantannę albo cudzy problem z dowodem.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/pl_PL. -->

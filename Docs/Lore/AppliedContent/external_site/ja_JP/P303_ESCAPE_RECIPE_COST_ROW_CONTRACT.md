@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "脱出レシピコスト境界"
+title: "上昇レシピ費用行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 脱出レシピコスト境界
+# 上昇レシピ費用行
 
-HECTON-8 を離れることは、まず修理問題だ。信号、シール、誘導、上昇エネルギー、法的ハンドシェイク、payload 保管。正確な費用はレシピ表が持ち、lore は各費用に牙がある理由を持つ。
+HECTON-8を出る作業は修理で始まり、質量付きの書類で終わる。乗員は中継、シール、誘導、上昇エネルギー、検疫ハンドシェイクを再建しなければ、運搬船は回収ウィンドウを開かない。証拠、blue debt、Atlasアクセスは向こう側の受信者を変え得るため、ペイロード権限が重要になる。
 
 ## Scanner
 
-脱出レシピ行は、部品分類、圧力 tier、ルート証明、権限状態を結びつける。
+上昇行ロック：中継証明、シール等級、誘導コア、上昇チャージ、法的ハンドシェイク、ペイロード権限がそろっていない。
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: 適格コストはリレー、シール、誘導、上昇エネルギー、法的ハンドシェイク、payload 権限、受信者リスクを名指しする必要がある。上への道には部品がある。部品には所有者がいる。
+上昇費用スキーマ / Black Keel回収インターフェース：音響中継、圧力シール、誘導タイミングコア、上昇エネルギーチャージ、検疫/法的ハンドシェイク、ペイロード権限、受信者リスク、ルートウィンドウなしに上昇見積もりを掲示しない。パッケージは部品だけでは登れない。
 
 ## Audio
 
-上への道には部品がある。部品には所有者がいる。
+回収インターフェース：中継、シール、タイミング、チャージ、ハンドシェイク。一つ欠ければパッケージは濡れたまま。
 
 ## Field Note
 
-圧力帯は封じ込めルールから来る。正確なコストは recipe table が所有する。
+ハンドシェイクが通る前に誘導コアを使うな。相手を間違えた上昇チャージは、ただ速く拘束される道だ。
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ja_JP. -->

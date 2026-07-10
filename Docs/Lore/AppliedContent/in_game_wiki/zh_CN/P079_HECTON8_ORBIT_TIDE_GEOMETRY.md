@@ -19,24 +19,22 @@ localization_flags: 1
 
 # HECTON-8轨道 / 潮汐几何
 
-HECTON-8的轨道让Great Tide在成为政治事件前就可信。共振拉动海洋。冰应力和风暴增水压住陆架。工业热与堵塞排水让殖民地系统在错误时刻反推。
-
-罪行不是Deep Reach发明了物理。罪行是它把撤离数学围绕Atlas continuity、承保载荷和劳动等级建立，然后把死者称作可接受预测误差。
+HECTON-8的orbit让Great Tide在变成political之前先变得believable。Aegir pulled。ocean answered。ice shelves flexed，storm surge把water堆到colony math需要margins的位置，industrial heat让sealed drainage在wrong hour与sea对抗。crime不在于Deep Reach invented physics。crime在于evacuation math围绕Atlas continuity、insured payloads、labor classes和claim loss建造，然后dead被filed as forecast error。
 
 ## Scanner
 
-潮汐几何模型 // 共振、冰应力、风暴增水和热排放超过撤离预测。Atlas continuity标志覆盖撤退优先级。
+TIDE GEOMETRY MODEL: resonance、ice stress、storm surge和heat discharge exceeded evacuation forecast；Atlas continuity flags overrode retreat priority。
 
 ## Terminal
 
-GREAT TIDE链 // 轨道强迫放大海洋载荷。人工热排放和封闭排水把潮汐事件转成殖民地失效。
+GREAT TIDE CHAIN: orbital forcing amplified ocean load。Ice flexure、storm surge、artificial heat discharge和sealed drainage converted a tide event into colony failure。Evacuation priority reweighted by continuity and payload custody。
 
 ## Audio
 
-物理打开了门。Deep Reach决定谁能离开。
+physics opened the door。Deep Reach决定谁能leave through it。
 
 ## Field Note
 
-一颗月亮可以不带仇恨地淹死殖民地。
+moon可以不带恨意地drown a colony。
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/zh_CN. -->

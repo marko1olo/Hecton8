@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Marauder Graffiti Masks
 
-Marauder marks are field navigation, social warning, and anti-surveillance language. They look rough because they had to survive water, fear, bad lamps, and corporate cameras. The player learns which marks indicate noise, pressure, patrol risk, hidden caches, and routes that no longer match official maps.
+Marauder graffiti is not decoration. It is field navigation, social warning, and anti-surveillance language scratched into places where radios betray, maps expire, and official signage lies by being too old. The marks look rough because they had to survive water, bad lamps, glove tremor, and cameras that could punish readable intent. A slash can mean silence. A black ring can mean Black Keel ping. A broken arrow can mean the pressure changed after the last route survey. The colony left labels; the marauders left weather.
 
 ## Scanner
 
-Paint code: slash count marks noise discipline, black rings mark carrier-ping danger, broken arrows mark pressure drift.
+Paint code. Slash count marks noise discipline; black rings mark carrier-ping danger; broken arrows mark pressure drift.
 
 ## Terminal
 
-ROUTE MASK INDEX: three slashes safe for hand signals only. Black ring means carrier sweep. Broken arrow means pressure change since last mark.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deep-Reach-Priority-Hook"
+title: "Deep Reach Priority Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep-Reach-Priority-Hook
+# Deep Reach Priority Hook
 
-Der Priority Hook ist der sauberste Weg, Deep Reach nach dem Verstummen der Kolonie gefährlich zu halten. Das Unternehmen muss Black Keel nicht per Fernwunder fliegen. Es braucht nur ein altes Zertifikat, das der Carrier noch anerkennt, eine Continuity-Regel mit Atlas-Zugang und eine Payload-Klasse, die unter bestimmten Gefahrenbedingungen einen Contractor-Körper überrangt. Das reicht. Eine Route kann verschoben werden. Eine versiegelte Kiste kann in der Queue steigen. Eine Quarantänesperre kann geschlossen bleiben, während der Sauerstoffzähler des Operators ein weiterer Schuldeneintrag wird. Das Ergebnis ist kälter als Sabotage: Das System arbeitet wie geschrieben, und Deep Reach lernte, sich in die Teile zu schreiben, die Katastrophen überleben.
+Deep Reach Priority Hook verankert corporate pressure in legacy certificates, quarantine clauses, Atlas tokens, payload priority und evidence custody statt in unmoglichem instant command.
+
+## Scanner
+
+Alter certificate hook. Deep Reach braucht die bridge nicht, solange ihm die clause noch gehort.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate kann payload recovery, quarantine lock, Atlas access token, evidence suppression queue oder sealed infrastructure proof unter Aegir claim law vorziehen. Human extraction priority unchanged, sofern verified hazard proof custody value nicht ubersteigt.
+
+## Audio
+
+Sie mussen nicht auf der bridge stehen, um die Antwort zu lenken.
+
+## Field Note
+
+Sauberer als conspiracy: Das paperwork uberlebte die Menschen, die es unterschrieben.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/de_DE. -->

@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Article de Terrain sur le Droit de Salvage Marauder
 
-Le mot Marauder doit déranger. Ce n'est pas une classe romantique ni un métier propre. Dans HECTON-8, un Marauder apparaît quand la loi voyage plus vite en papier qu'en aide. Le système de claims a besoin de quelqu'un capable d'entrer dans un actif mort ou disputé, de récupérer de la valeur, de toucher une propriété contaminée, d'accepter le risque et de laisser assez de traces pour que les bureaux prétendent au contrôle.
+Le mot Marauder doit accrocher dans la gorge. Ce n'est pas une étiquette de fantasme de puissance. C'est le titre qu'un droit de frontière invente quand il lui faut quelqu'un pour toucher un actif ruiné sans admettre que cet actif était un lieu de travail plein de gens.
 
-Cela expose le joueur moralement dès la première minute. Vous n'êtes pas un chevalier venu sauver une colonie. Vous êtes un chiffonnier professionnel avec une vieille procédure Deep Reach dans les mains, une fenêtre de dette au-dessus de vous et un océan plein de gens que les registres ont déjà tenté d'écraser en catégories. L'horreur n'est pas que vous pillez. L'horreur est que piller soit peut-être la seule action que le système reconnaît encore.
+            HECTON-8 utilise les Marauders pour garder les actions du joueur moralement chargées. Vous pillez parce que l'oxygène, la dette et les outils le rendent nécessaire. Vous documentez aussi, parce que les objets volés peuvent être les seules preuves qui survivent à l'eau, à la pression et au nettoyage corporatif. Un bon Marauder n'est pas propre. Il sait la différence entre vider une pièce et préserver ce qu'elle prouve.
 
-La langue de terrain Marauder vient de cette pression. Un anneau noir n'est pas du vandalisme s'il dit au prochain plongeur que le propriétaire officiel ment. Une barre sur une cause de mort tamponnée n'est pas sentimentale si elle pointe vers un certificat de pompe manquant. Un nom d'ouvrier près d'une marque de route peut avoir plus de force légale qu'un mémorial poli.
+            La culture de terrain suit cette contradiction. Marques murales, étiquettes barrées, noms ouvriers, flèches de pression et sténographie laide forment une seconde loi sous la loi officielle. Elle est grossière parce que le langage poli a déjà échoué. Elle est rapide parce que personne ne lit un manuel de réclamation quand une cloison respire.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/fr_FR. -->

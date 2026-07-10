@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Drift der Relaiswarteschlange"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drift der Relaiswarteschlange
+# Relay Queue Drift
 
-Verzögerte Kommunikation ist gefährlich, weil sie zur falschen Zeit genau bleiben kann. Eine Trägerwarnung kann ein echtes Ventil, ein echtes Leck und eine echte Route beschreiben, die unter Druck schon anders geworden ist. Der Spieler muss Paketalter mit lokalen Beweisen vergleichen.
+Relay queue drift ist die todlichste Art von Ehrlichkeit auf HECTON-8. Ein delayed carrier packet kann eine real valve, eine real safe door, einen real low-current corridor und ein real leak beschreiben, das sich bereits bewegt hat. Die order ist nicht falsch; sie gehort zu einem Raum, den pressure, flooding, silt, heat oder collapse verandert haben. Gute field practice ist nicht Ungehorsam um seiner selbst willen. Sie vergleicht packet age mit wet paint, fresh salt, door strain, pump sound und der Richtung, in die loose debris reisen will.
 
 ## Scanner
 
-Der Relaisstempel ist älter als das Leck, das er benennt; die Anweisung war für einen Raum wahr, den es so nicht mehr gibt.
+Relay stamp alter als das leak, das er nennt. Die instruction war wahr fur einen room, den es nicht mehr gibt.
 
 ## Terminal
 
-WARTESCHLANGENDRIFT: Paketalter überschreitet Routengültigkeit. Lokaler Beweis steht über Trägeranweisung bis zum nächsten frischen Relaisfenster.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction bis fresh relay window opens. Treat delayed route orders as archival, sofern pressure, door state und waterline nicht passen.
 
 ## Audio
 
-Die Nachricht ist korrekt. Genau das ist das Problem.
+Die message ist korrekt. Das ist das Problem.
 
 ## Field Note
 
-Eine verspätete Wahrheit kann trotzdem töten.
+Eine spate truth kann immer noch toten.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/de_DE. -->

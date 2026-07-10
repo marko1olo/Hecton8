@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Борг тонна-вікна"
+title: "Борг тоннажного вікна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Борг тонна-вікна
+# Борг тоннажного вікна
 
-Тонна-вікно — частка місткості carrier, виміряна масою, часом burn, карантинним об'ємом і юридичним пріоритетом. Для оператора це схоже на борг, бо кожен корисний предмет із HECTON-8 потрапляє в той самий ledger, що й тіло, яке його знайшло. Запечатаний кейс може бути легким і юридично важким. Стійка зразків може коштувати мало маси й вимагати чистого об'єму. Вилучення людини здається очевидним, доки баласт, кисневий резерв і payload custody вже не витратили доступне вікно. Економіка HECTON-8 стає фізичною, а не абстрактною. Гравця не карає фальшивий моральний лічильник. Гравець замкнений у машині, що оцінює виживання через паливо, масу, зараження й папери.
+Борг тоннажного вікна перетворює виживання на жорстку logistics: extraction, oxygen, samples, salvage, quarantine volume і burn margin займають те саме priced mass window.
+
+## Scanner
+
+Mass-window ledger. Допомога має вагу ще до того, як має мову.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass конфліктує з sealed payload, ballast reserve, oxygen debt, quarantine sample volume і hull patch inventory. Manual priority потребує paid override, verified hazard proof або custody reclassification.
+
+## Audio
+
+Корабель може підняти життя. Питання в тому, що ще ledger змусить його нести.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: carrier рахує милість кілограмами.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/uk_UA. -->

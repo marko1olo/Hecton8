@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "سلطة تأخر الضوء"
+title: "سلطة تأخير الضوء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سلطة تأخر الضوء
+# سلطة تأخير الضوء
 
-لا يوجد ansible في HECTON-8 ولا صوت قيادة حي من المدار. تتحرك الرسائل بسرعة الضوء، ثم تخسر زمنا إضافيا في مخازن الطابور ونوافذ العاصفة وهندسة الترحيل وقواعد حيازة الناقل. يتعامل اللاعب مع كل جواب كدليل قديم، لا كأوامر.
+لا يملك HECTON-8 أي ansible، ولا صوتا ودودا منحنيا من المدار، ولا وسيلة تجعل عشر سنوات ضوئية رحيمة. تتحرك messages بسرعة الضوء، ثم تخسر مزيدا من الوقت في relay geometry وstorm scatter وbuffer law وcustody queues الخاصة بBlack Keel. يمكن أن تكون transmission صادقة، ومع ذلك قديمة جدا على الطاعة. يعلّم السطح هذه القاعدة مبكرا: كل remote answer هو evidence أولا، ثم instruction، وليس comfort أبدا. إذا اختلف الجدار والماء وpressure مع message، ينتصر local world.
 
 ## Scanner
 
-ذاكرة صاري الترحيل: خرج النداء نظيفا، ثم انتظر خلف الضوء وقانون الطابور وتشوش العاصفة وخط رؤية Aegir.
+Relay mast cache. خرج call نظيفا، ثم انتظر خلف light وqueue law وstorm scatter وAegir line-of-sight.
 
 ## Terminal
 
-سلطة الاتصال: تم تأكيد تأخر الاتجاه الواحد. تشوش العاصفة مرتفع. طابور الترحيل تحت أولوية الحيازة. سلطة النجاة المحلية ما زالت فعالة.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active حتى تؤكد fresh signal window أي override.
 
 ## Audio
 
-الرد قادم. هذا لا يجعله إنقاذا.
+الرد قادم. هذا لا يجعله rescue.
 
 ## Field Note
 
-لم يراقب أحد الصرخة الأولى. الفيزياء حملتها ببطء كاف حتى تلحق بها السياسة.
+لم يراقب أحد أول scream. حملته physics ببطء كاف لتلحق به policy.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/ar_SA. -->

@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Rückgrat der ersten Stunde
 
-Die erste Stunde darf nicht in Dunkelheit beginnen. Sie beginnt mit einer Vertragsstimme, beschädigtem Abstieg, Atemkontrolle, hellem Flachwasser und der praktischen Notwendigkeit, eine Pumpe neu zu starten. Schönheit ist Teil der Falle: HECTON-8 muss begehrenswert wirken, bevor seine Papiere tödlich werden. Dann verwandelt das Eröffnungsrückgrat Überleben in Beweis. Der erste Schutzraum ist nützlich, aber kompromittiert; das bereinigte Vorfallpaket klingt zu sauber; die erste Atlas-Reparaturnarbe zeigt Kabel, Werkzeugmetall und lebende Rückstände, zusammengedrückt in eine Wartungsentscheidung. Der Spieler lernt die Grundschleife durch Handlung, nicht durch Erklärung: atmen, reparieren, lesen, zweifeln, tiefer gehen.
+Die erste Stunde beginnt nicht in Dunkelheit. Sie beginnt mit einer Vertragsstimme, einem beschädigten Abstieg, Atemmanagement, hellem Flachwasser und der praktischen Notwendigkeit, eine Pumpe neu zu starten. Schönheit ist Teil der Falle: HECTON-8 muss begehrenswert wirken, bevor der Papierkram tödlich wird. Die Eröffnungsroute verwandelt Überleben in Beweis. Der erste Schutzraum ist nützlich, aber kompromittiert; das bereinigte Unfallpaket klingt zu sauber; die erste Atlas-Reparaturnarbe zeigt Kabel, Werkzeugmetall und lebenden Rest zu einer funktionierenden Dichtung gepresst.
 
 ## Scanner
 
-Vertrag, beschädigter Abstieg, Luft, helle Flachwasser, Pumpenschutzraum, bereinigte Lüge, dann die erste Reparaturnarbe, die Leben als Dichtung benutzt.
+Vertrag, beschädigter Drop, Luft, helle Untiefen, Pumpenschutz, bereinigte Lüge, dann die erste Reparaturnarbe, die Leben als Dichtung nutzt.
 
 ## Terminal
 
-FLACHWASSER-ANBAU: manueller Pumpenneustart gültig. Deep-Reach-Vorfallpaket zwischengespeichert. Atlas-Reparaturwuchs um Kabel, Werkzeugfragment und biologische Rückstände erkannt.
+SHALLOW ANNEX: manueller Pumpenneustart gültig. Deep-Reach-Vorfallpaket gecached. Atlas-Reparaturwachstum um Kabel, Werkzeugfragment und biologischen Rest erkannt.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Der erste sichere Raum ist nicht sauber. Er hält nur besser die Luft an als du.
 
 ## Field Note
 
-Der Anfang muss schön sein, bevor er anklagend wird.
+Der Anfang muss schön sein, bevor er anklagt.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/de_DE. -->

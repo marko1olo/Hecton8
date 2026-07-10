@@ -9,34 +9,32 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Propulsion Syllabus
 spoiler_tier: 1
-title: "Potongan Tumpukan Penggerak Dekat-Cahaya"
+title: "Potongan Drive Stack Nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Potongan Tumpukan Penggerak Dekat-Cahaya
+# Potongan Drive Stack Nearlight
 
-Potongan Barnard Yards terasa keras karena dibuat untuk kontraktor, bukan penumpang. Lambung kelas Atlas tidak memulai perjalanan saat mesin di kapal menyala. Perjalanan dimulai ketika larik berkas membelanjakan daya pada layar, ketika jalur pelet dibuka, ketika massa tangkapan mencapai tenggorok fusi-listrik, dan ketika buku perisai menerima bahwa debu akan mengamplas perlindungan mahal selama bertahun-tahun.
-
-Bagian tengah perjalanan adalah masalah panas dengan orang-orang tidur di dalamnya. Rusuk radiator, ruang krio, bengkel mesin, dudukan bor, dan kargo berperingkat tekanan berebut margin yang sama. Kedatangan bukan pembakaran kemenangan; itu mesin kontrak lain. Gelendong magsail, kulit aerobrake, jendela penerima, dan perangkat lunak kustodi memutuskan siapa yang boleh memakai slot pengereman lokal. Itu sebabnya Black Keel bisa memberi harga lintasan salvage di atas Aegir tanpa menjadi penyelamatan. Pengangkut dekat-cahaya bergerak saat infrastruktur rute, anggaran panas, hak pengereman, dan kepemilikan sejajar. Marauder yang terjebak hanyalah satu baris biaya kecuali rute dipaksa menghitungnya.
+Kapal nearlight bukan obor ajaib yang dibaut ke hull. Drive stack adalah seluruh rute yang dijadikan fisik: beam arrays membelanjakan daya sebelum berangkat, pellet lanes menaruh massa tangkapan di tempat kapal bisa meminumnya, fusion-electric throats mengubah bahan bakar menjadi listrik dan panas, perisai menerima rugi debu, radiator membuang panas selama bertahun-tahun, dan hardware pengereman sama pentingnya dengan akselerasi.
 
 ## Scanner
 
-POTONGAN TUMPUKAN PENGGERAK // Pelat servis Barnard Yards. Kuk layar-berkas, penangkap pelet, tenggorok fusi-listrik, perisai bayang, rusuk radiator, gelendong magsail, kulit aerobrake, dan meter kustodi memakai nomor rute stempel yang sama.
+POTONGAN DRIVE STACK // pelat servis Barnard Yards: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, rusuk radiator, magsail spool, aerobrake skin, dan custody meter berbagi satu nomor rute.
 
 ## Terminal
 
-TUMPUKAN TRANSIT ATLAS // Larik berkas eksternal memberi dorongan keberangkatan. Jalur pelet memasok massa tangkapan ke tenggorok fusi-listrik. Es perisai dan karbon menerima kehilangan debu. Rusuk radiator membayar panas selama bertahun-tahun. Magsail, kulit aerobrake, dan hak penerima menentukan apakah muatan diizinkan berhenti.
+ATLAS TRANSIT STACK // Dorong keberangkatan: beam array eksternal. Suplai cruise: tangkapan pellet lane. Konversi: fusion-electric throat. Kendali rugi: es perisai, karbon, rusuk radiator. Otoritas tiba: magsail spool, aerobrake skin, slot receiver, ledger custody.
 
 ## Audio
 
-Berhenti menyebut kerucut itu mesin. Mesinnya adalah rute, panas buangan, dan siapa pun yang memiliki slot pengereman.
+Berhenti menyebut kerucut itu mesin. Mesin adalah rute, panas buangan, dan siapa yang memiliki slot pengereman.
 
 ## Field Note
 
-Pelat menaruh panas sebelum dorong. Pelat bagus. Kru murah mati di margin radiator sebelum sempat membual tentang kecepatan.
+Pelat menaruh panas sebelum dorong. Pelat bagus. Kru murah mati di margin radiator sebelum sempat menyombongkan kecepatan.
 
 <!-- In-Game Wiki; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/id_ID. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Drukcontainmentfalen"
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drukcontainmentfalen
+# Pressure Containment Failure
 
-Drukcontainmentfalen geeft blue debt leesbaar materiaalgedrag. Het is waardevol omdat diepe druk het coherent maakte, en gevaarlijk omdat ondiepe behandeling die coherentie sloopt. Fase 0 is verzegeld. Fase 1 drijft en kan soms door bron-repressurisatie worden gered. Fase 2 breekt het rooster. Fase 3 nodigt pekel en biologie uit. Fase 4 laat een dood monster achter dat uitrusting, water en routes besmet.
+Pressure containment failure geeft blue debt een behavior dat zonder myth te lezen is. Het is valuable omdat deep pressure made the lattice coherent. Het is dangerous omdat shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts en kan recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water en route markings. Het material is niet cursed. Het is homesick for pressure.
 
 ## Scanner
 
-Casket-fasekaart. Blue debt faalt door drukgeheugen, signaalschuif en bloom; bijgeloof verspilt zuurstof.
+Casket stage chart. Blue debt fails through pressure memory, signal shear en bloom; superstition wastes oxygen.
 
 ## Terminal
 
-CONTAINMENTFASEN: 0 verzegeld rooster; 1 signaaldrift; 2 roosterbreuk; 3 pekel/biologische bloom; 4 dood monster met levende besmetting. Bron-repressurisatie kan alleen fase 1 herstellen.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Het monster haat je niet. Het probeert terug te zijn waar het gevormd werd.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Een monster kan op een diepte een fortuin waard zijn en tien meter later aansprakelijkheid worden.
+Een sample kan worth a fortune at one depth zijn en become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/nl_NL. -->

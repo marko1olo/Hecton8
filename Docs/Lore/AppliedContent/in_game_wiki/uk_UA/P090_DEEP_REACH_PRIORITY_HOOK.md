@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Пріоритетний гачок Deep Reach"
+title: "Priority hook Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Пріоритетний гачок Deep Reach
+# Priority hook Deep Reach
 
-Нинішній тиск Deep Reach не потребує неможливого віддаленого керування. Старі continuity certificates, карантинні clauses, токени доступу Atlas і priority hooks для payload уже сидять у юридичному шляху Black Keel. Компанія може впливати на те, що carrier вважає цінним, не володіючи carrier явно. Тому антагоніста важче відрізати: це не сигнал, який можна заглушити, а clause, що знову прокидається.
+Влада Deep Reach над Black Keel - це не instant remote control і не прихований FTL command chain. Компанія лишила старіші речі: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities і evidence suppression queues. Ці hooks написали тоді, коли colony ще мала meetings, budgets і signatures. Через роки вони все ще можуть прокинутися в arbitration path carrier. Саме це робить тиск правдоподібним. Deep Reach не завжди говорить сам. Іноді за нього говорить старий paperwork.
 
 ## Scanner
 
-Старий certificate hook. Deep Reach не володіє кораблем; вона володіє clause.
+Старий certificate hook. Deep Reach не потрібен bridge, доки clause все ще належить їм.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy continuity certificate Deep Reach може просунути payload recovery, карантинний замок, токен доступу Atlas або чергу придушення доказів за claim-правом Aegir. Пріоритет вилучення людини не змінюється, якщо доказ небезпеки не перевищує custody value.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate може просувати payload recovery, quarantine lock, Atlas access token, evidence suppression queue або sealed infrastructure proof за Aegir claim law. Human extraction priority unchanged, якщо verified hazard proof не перевищує custody value.
 
 ## Audio
 
-Їм не треба стояти на містку, щоб керувати відповіддю.
+Їм не треба стояти на bridge, щоб скеровувати відповідь.
 
 ## Field Note
 
-Чистіше за змову: папери досі живі й досі голодні.
+Чистіше за conspiracy: paperwork пережив людей, які його підписали.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/uk_UA. -->

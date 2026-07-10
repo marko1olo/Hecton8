@@ -19,22 +19,27 @@ localization_flags: 0
 
 # Luyten Packet Custody Relay
 
-No-FTL civilization can authenticate a fact years before anyone can physically answer it. Luyten Junction is not mercy; it is a hardened notary lane. A packet that reaches it with custody intact becomes harder for claimants to erase, even while the person who sent it remains under Aegir pressure.
+Luyten Junction is a notary lane for facts that travel slower than need and faster than ships. A packet reaching it with route mark, tariff seal, witness hash and spool segment intact becomes harder to erase. That protection belongs to the record, not the sender's body.
+
+The relay can authenticate a claim after delay while the operator remains under Aegir pressure. It can make a sample, route photo or witness hash survive claimant denial. It does not assign carrier mass, oxygen, berth space or rescue priority. The useful rule is to keep the custody route attached until the record reaches a receiver that cannot cheaply pretend it never arrived.
 
 ## Scanner
 
-LUYTEN CUSTODY MARK // Notary spool route intact. Packet can be authenticated after relay delay. No recovery allocation present.
+LUYTEN CUSTODY MARK // Notary spool route intact. Packet authentication can survive relay delay. Recovery allocation absent.
 
 ## Terminal
 
-LUYTEN NOTARY SPOOL // Preserve route mark, tariff seal, witness hash, spool segment, and receiver queue. Authentication may survive delay. This relay does not allocate extraction, carrier mass, oxygen, or rescue priority.
+LUYTEN NOTARY SPOOL LNS-4
+Preserve: route mark; tariff seal; witness hash; spool segment; receiver queue
+Authentication: valid after delay if custody sequence holds
+No allocation: extraction; carrier mass; oxygen; rescue priority
 
 ## Audio
 
-The packet can outlive the operator. That is the whole bargain.
+The file has a lane. The body does not.
 
 ## Field Note
 
-Keep the notary route attached. A loose file is rumor; a routed packet is a future witness.
+Keep the notary route attached. Loose file: rumor. Routed packet: future witness.
 
 <!-- In-Game Wiki; generated from P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE/en_US. -->

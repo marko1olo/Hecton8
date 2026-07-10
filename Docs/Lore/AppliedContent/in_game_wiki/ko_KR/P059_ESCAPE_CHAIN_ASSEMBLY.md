@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 탈출 사슬 조립
 
-탈출은 조립 사슬이지, 한 대의 수리된 탈것이 아니다. 손상된 강하 패키지는 플레이어를 살려둘 수 있지만, 혼자서 신뢰받는 상승 경로를 만들 수는 없다. 귀환 경로에는 물과 폭풍 소음을 뚫고 들리는 음향 중계 척추, 상승을 파열로 바꾸지 않을 압력 봉인, HECTON-8의 지역 위험을 견디는 유도 코어, 상승 에너지 충전, 격리와 법적 악수, 그리고 플레이어가 회수 기록에 힘을 갖고 싶다면 Black Keel이 가격으로 지워버릴 수 없는 증거 적재물이 필요하다. 모든 부품은 안락한 깊이보다 아래에 있다. 원래 시스템은 자산을 이동시키기 위해 만들어졌지, 버려진 노동자가 자기 조건으로 떠나도록 만든 것이 아니었기 때문이다.
+탈출은 조립 사슬이지 하나의 수리된 차량이 아니다. 손상된 drop package는 몸을 살려 둘 수 있지만, 신뢰받는 상승을 혼자 만들 수는 없다. 집으로 가는 길에는 물과 폭풍 소음을 뚫고 들릴 acoustic relay spine, 상승을 파열로 바꾸지 않을 pressure seal, HECTON-8의 지역 위험을 견딜 guidance core, ascent-energy charge, quarantine/legal handshake, Black Keel의 recovery authority를 바꿀 만큼 강한 evidence payload가 필요하다. 각 부품은 동시에 물리적이고 법적이며 도덕적이다.
 
 ## Scanner
 
-출발에는 여섯 가지 확실한 증거가 필요하다. 중계, 봉인, 유도, 상승 충전, 법적 악수, 그리고 운송자가 무시할 수 없는 적재물.
+출발에는 여섯 가지 단단한 증명이 필요하다. 중계, 봉인, 유도, 상승 충전, 법적 handshake, carrier가 무시할 수 없는 payload.
 
 ## Terminal
 
-상승 패키지: 음향 중계 척추 없음. 클램프 링 등급 부족. 유도 코어 없음. 충전 크래들 비어 있음. 격리 악수 미해결. 증거 적재물은 선택 사항이나 회수 권한을 바꾼다.
+ASCENT PACKAGE: acoustic relay spine 누락. clamp ring 등급 부족. guidance core 없음. charge cradle 비어 있음. quarantine handshake 미해결. evidence payload는 recovery authority를 바꿈.
 
 ## Audio
 
-너는 캡슐을 수리하는 것이 아니다. 식민지가 한 번도 갖지 못한 첫 번째 정직한 출구를 만드는 것이다.
+캡슐을 수리하는 것이 아니다. 식민지가 가져 본 적 없는 첫 정직한 출구를 짓는 것이다.
 
 ## Field Note
 
-위로 가는 길은 노동자들이 스스로 떠나도록 만들어진 적 없는 부품들로 조립된다.
+위로 가는 길은 노동자들이 스스로 떠나게 하려고 만든 적 없는 부품들로 조립된다.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/ko_KR. -->

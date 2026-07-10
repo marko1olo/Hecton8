@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Échelle lunaire d’Aegir"
+title: "Echelle lunaire d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Échelle lunaire d’Aegir
+# Echelle lunaire d'Aegir
 
-L’échelle lunaire d’Aegir comprend marqueurs irradiés, relais, claims épuisés, dangers résonants, HECTON-8, lunes de stockage froid et irréguliers externes. HECTON-8 vaut parce qu’elle se tient entre océan vivant et pression orbitale.
+Les lunes d'Aegir sont une machinerie de route. Leurs noms ne décorent pas le ciel ; ils décident des ombres, silences relais, phases de marée, attentes du carrier et coûts de masse. HECTON-8 est Aegir-VIII dans l'échelle de travail, précieuse parce que sa pression océanique et sa géométrie relais rendent extraction et abandon coûteux.
 
 ## Scanner
 
-Séquence lunaire: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Echelle lunaire résolue : Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel et Mute courbent les fenêtres.
 
 ## Terminal
 
-HECTON-8 est Aegir-VIII: ni interne, ni la plus lointaine. La résonance de Rake et l’ombre de Pale modifient marée et paquets.
+NOTE DE ROUTE AEGIR : HECTON-8 suit Kestrel dans l'échelle de travail. Ombre relais, phase de marée, bande de radiation et géométrie de transfert Black Keel doivent s'aligner avant ascension de masse.
 
 ## Audio
 
-Compte les lunes avant de croire à une fenêtre.
+Compte Kestrel avant de croire à la fenêtre.
 
 ## Field Note
 
-Le ciel est un mécanisme, pas un décor.
+Le ciel est un planning de travail. Rate une ombre et le carrier devient une rumeur.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/fr_FR. -->

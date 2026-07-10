@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Poignée de vanne de salle des pompes"
+title: "Handshake de vanne de pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Poignée de vanne de salle des pompes
+# Handshake de vanne de pump room
 
-L’accord d’une pompe est le moment où une pièce noyée accepte le contrôle local. Il donne accès, mais déplace aussi eau, bruit et pression vers une autre partie du trajet. Lis le panier d’admission, la pulsation de sortie et les coups du couloir de retour avant de traiter un sol sec comme une sécurité. Les premières pompes P-63 enseignent l’habitude de réparation centrale : une machine peut améliorer un compartiment et empirer le chemin du retour.
+Un pump handshake est le moment ou une machine noyee accepte de nouveau une local hand. Cela ressemble au control parce que le floor se vide, la lamp cesse de flotter et la route semble s'ouvrir. Le danger, c'est que water ne disparait jamais sur HECTON-8; elle est deplacee vers un autre compromise. Les intake baskets capturent capsule foam, vieux gloves, shell grit et torn labels. Les outlets reveillent des corridors qui etaient silencieux pour une raison. La bonne habitude est de lire la pump comme un trade: une room respire, une autre commence a knock.
 
 ## Scanner
 
-La pompe de puisard locale accepte l’entrée au volant. Le panier d’admission est encrassé par la mousse de capsule; la pulsation de sortie charge le couloir de retour B.
+Local sump a accepte handwheel input. Capsule foam bouche l'intake basket; outlet pulse monte dans Return Corridor B.
 
 ## Terminal
 
-P-63 CONTRÔLE DE PUISARD / ACCORD LOCAL : autorité du volant acceptée. Commande distante refusée. Débit d’admission rétabli à bas régime. Pression de sortie en hausse dans RETURN CORRIDOR B; redémarrage seulement après contrôle de l’écoutille aval.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-La vanne a pris. La sortie cogne. N’appelle pas encore ça sûr.
+Valve took. L'outlet cogne. N'appelle pas ca safe.
 
 ## Field Note
 
-Une salle des pompes sèche peut noyer le chemin du retour. Écoute le coup de bélier en sortie avant de déposer la vanne.
+Un floor sec n'est pas une solved room. Ecoute le corridor qui l'a paye.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/fr_FR. -->

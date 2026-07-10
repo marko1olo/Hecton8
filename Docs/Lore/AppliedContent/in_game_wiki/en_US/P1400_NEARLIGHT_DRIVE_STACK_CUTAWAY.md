@@ -19,17 +19,15 @@ localization_flags: 0
 
 # Nearlight Drive Stack Cutaway
 
-The Barnard Yards cutaway is blunt because it was made for contractors, not passengers. An Atlas-class hull does not begin its voyage when its onboard engines ignite. It begins when a beam array spends power on a sail, when a pellet lane is cleared, when caught mass reaches the fusion-electric throat, and when the shield ledger accepts that dust will sand away expensive protection for years.
-
-The middle of the trip is a heat problem with people asleep inside it. Radiator ribs, cryo bays, machine shops, drill cradles and pressure-rated cargo all compete for the same margins. Arrival is not a victory burn; it is another contract machine. Magsail spools, aerobrake skins, receiver windows and custody software decide who may spend the local braking slot. That is why Black Keel can price a salvage pass over Aegir without becoming rescue. A near-light carrier moves when route infrastructure, thermal budget, braking rights and ownership line up. A trapped Marauder is only one line item unless the route is forced to count them.
+A near-light ship is not a magic torch bolted to a hull. The drive stack is a whole route made physical: beam arrays spend power before departure, pellet lanes put caught mass where the ship can drink it, fusion-electric throats turn fuel into electricity and heat, shields accept dust loss, radiators spend years throwing away waste, and braking hardware matters as much as acceleration.
 
 ## Scanner
 
-DRIVE STACK CUTAWAY // Barnard Yards service plate. Beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin and custody meter share one stamped route number.
+DRIVE STACK CUTAWAY // Barnard Yards service plate: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiator ribs, magsail spool, aerobrake skin, and custody meter share one route number.
 
 ## Terminal
 
-ATLAS TRANSIT STACK // External beam arrays supply departure push. Pellet lanes feed caught mass into the fusion-electric throat. Shield ice and carbon take dust loss. Radiator ribs spend heat for years. Magsails, aerobrake skins and receiver rights decide whether the payload is allowed to stop.
+ATLAS TRANSIT STACK // Departure push: external beam array. Cruise feed: pellet lane capture. Conversion: fusion-electric throat. Loss control: shield ice, carbon, radiator ribs. Arrival authority: magsail spool, aerobrake skin, receiver slot, custody ledger.
 
 ## Audio
 
@@ -37,6 +35,6 @@ Stop calling the cone the engine. The engine is the route, the waste heat, and w
 
 ## Field Note
 
-Plate puts heat before thrust. Good plate. Cheap crews die at the radiator margin before they ever get to brag about speed.
+The plate puts heat before thrust. Good plate. Cheap crews die at the radiator margin before anyone gets to brag about speed.
 
 <!-- In-Game Wiki; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/en_US. -->

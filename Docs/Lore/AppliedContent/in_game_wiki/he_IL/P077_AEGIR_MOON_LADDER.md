@@ -19,24 +19,22 @@ localization_flags: 1
 
 # סולם הירחים של Aegir
 
-סולם הירחים של Aegir מחזיק את HECTON-8 בתוך מערכת פיזית. ירחים פנימיים יוצרים סכנות קרינה וממסרים; ירחים אמצעיים מחזיקים מתכת, קרח, מצופי דרך ומחסנים ישנים; ירחים חיצוניים נושאים claims קרים ומשואות מתות.
-
-HECTON-8 אינו הירח הפנימי ביותר ואינו הרחוק ביותר. זה הירח שעדיין משלם. לכן שאר הסולם ממשיך לגעת בחלונות החילוץ, salvage law ונתיבי האות שלו.
+Aegir moon ladder משאיר את HECTON-8 בתוך working sky. Skarn זורק charged weather דרך antennas. Vela sheds ice and dust אל optical routes. Claw ו-Lumen מחזיקים old buoy logic alive. Thorne failed quietly. Anvil fed metal עד שה-route stopped paying. Kestrel cuts relay lines בזוויות הגרועות ביותר. Mute repeats ownership into nobody's hands. HECTON-8 אינו ה-moon הראשון ב-chain ואינו האחרון. זה ה-moon שה-drowned infrastructure שלו עדיין מחזיקה מספיק value כדי ש-ships, insurers ו-marauders יריבו על windows.
 
 ## Scanner
 
-מפת סולם ירחים. HECTON-8 הוא סכנת עבודה במערכת נעה, לא שלב מבודד.
+Moon ladder chart. HECTON-8 הוא one working hazard in a moving system, לא isolated ocean level.
 
 ## Terminal
 
-ירחי AEGIR הראשיים // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. מודל transfer ו-eclipse מצורף.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay ו-custody windows attached.
 
 ## Audio
 
-במפה יש יותר ירחים מרחמים.
+ל-map יש יותר moons מאשר mercy.
 
 ## Field Note
 
-Skarn שורף. Vela משילה קרח. Anvil מזינה מתכת. Kestrel חותך ממסרים. HECTON טובע.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/he_IL. -->

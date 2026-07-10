@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Опека Keelmark Mutual"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опека Keelmark Mutual
+# Custody Keelmark Mutual
 
-Keelmark Mutual — страховая custody-оболочка, позволяющая Black Keel работать в Aegir без живой спасательной власти на месте. На бумаге это не Deep Reach. На практике старым underwriting может управлять тот, у кого есть правильный priority hook, потому что каждое тело, инструмент, образец и запечатанный ящик попадают в расписание риска до того, как оператор просит помощи.
+Keelmark Mutual - страховая custody-оболочка за поведением Black Keel. Это не Deep Reach в маске и не тайная rescue service. Keelmark существует, чтобы claim tenders оставались законными, профинансированными и застрахованными там, где в Aegir никто не может ответить на живой вызов. Поэтому он холоднее злодея. Policy не ненавидит operator; он просто описывает operator как debt, vessel risk, payload interface, quarantine exposure и possible witness. Когда эти категории уже существуют, каждая следующая просьба должна пройти через них.
 
 ## Scanner
 
-Страховая оболочка цела. Keelmark владеет lien раньше, чем телом.
+Underwriting tag цел. Keelmark не нужна злоба, когда у lien уже есть зубы.
 
 ## Terminal
 
-KEELMARK MUTUAL: claim-tender lien активен. Долг оператора, риск судна, payload custody и карантинный резерв сведены под удаленное underwriting schedule. Статус distress не приостанавливает lien.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve и recovery proof объединены remote underwriting schedule. Distress status не приостанавливает lien или custody order.
 
 ## Audio
 
-Полис старше твоего сигнала бедствия.
+Policy старше distress call. У него было больше времени выучить маршрут.
 
 ## Field Note
 
-Страховщик не скрытый гений. Хуже: расписание, которому никогда не требовалось сочувствовать.
+Никакого masterminda в темной комнате. Просто schedule, который пережил вину.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/ru_RU. -->

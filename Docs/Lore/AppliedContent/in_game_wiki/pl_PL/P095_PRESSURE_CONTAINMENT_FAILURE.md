@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Awaria zamkniecia cisnieniowego"
+title: "Awaria pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Awaria zamkniecia cisnieniowego
+# Awaria pressure containment
 
-Awaria zamkniecia cisnieniowego daje blue debt czytelne zachowanie materialu. Ma wartosc, bo glebokie cisnienie nadalo mu spojnosci, i jest grozna, bo plytkie obchodzenie rozbija te spojnosci. Etap 0 jest zapieczetowany. Etap 1 dryfuje i czasem da sie odzyskac przez repressurizacje komina. Etap 2 lamie siatke. Etap 3 wpuszcza solanke i biologie. Etap 4 zostawia martwa probke, ktora nadal skaza sprzet, wode i trasy.
+Pressure containment failure daje blue debt behavior czytelny bez myth. Jest valuable, bo deep pressure made the lattice coherent. Jest dangerous, bo shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts i moze recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water i route markings. Material nie jest cursed. Jest homesick for pressure.
 
 ## Scanner
 
-Wykres etapow kasety. Blue debt pada przez pamiec cisnienia, scinanie sygnalu i bloom; przesad marnuje tlen.
+Casket stage chart. Blue debt fails through pressure memory, signal shear i bloom; superstition wastes oxygen.
 
 ## Terminal
 
-ETAPY ZAMKNIECIA: 0 uszczelniona siatka; 1 dryf sygnalu; 2 pekniecie siatki; 3 bloom solankowo-biologiczny; 4 martwa probka z zywa kontaminacja. Repressurizacja komina moze odzyskac tylko etap 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Probka cie nie nienawidzi. Probuje wrocic tam, gdzie powstala.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Probka moze byc warta fortune na jednej glebokosci i stac sie obciazeniem dziesiec metrow pozniej.
+Sample moze byc worth a fortune at one depth i become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pl_PL. -->

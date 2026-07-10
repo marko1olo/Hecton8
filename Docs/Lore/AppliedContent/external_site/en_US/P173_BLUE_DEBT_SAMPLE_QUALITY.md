@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Blue Debt Sample Quality"
+title: "Blue Debt Sample Classes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,29 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Blue Debt Sample Quality
+# Blue Debt Sample Classes
 
-Blue Debt Sample Quality defines HECTON-8's resource morality. The best samples are not simply worth more currency. They carry custody chains, pressure history and evidence value. That lets salvage, crafting, trading and endings speak the same language: what you bring up from the ocean can pay you, accuse someone, or make you harder to release.
+Blue Debt samples are valued by seal state, pressure history and custody tag. The best container can pay, poison a shelter, or prove where Deep Reach worked under pressure.
 
 ## Scanner
 
-Blue Debt quality is value, risk and evidence in one number. The richer the sample, the less it behaves like loot.
+Blue Debt sample: sealed casket. Pressure tag intact. Acoustic return low and regular. Do not open in shelter air.
 
 ## Terminal
 
-QUALITY CLASSES / shard: low custody, safe trade / casketed bloom: pressure-rated value / harmonic glass: acoustic proof and high Deep Reach interest / live-contaminated sample: evidence priority, unstable handling / dead contaminated glass: low payout, high legal odor.
+SAMPLE INTAKE BD-Q
+Class A: loose shard / payable / low custody
+Class B: casketed bloom / keep pressure tag / quarantine value
+Class C: harmonic glass / acoustic return active / route evidence
+Class D: live-contaminated / do not vent / witness hold possible
+Reject: dead glass in open air; low value, high cleanup.
 
 ## Audio
 
-The more it is worth, the less it is only loot.
+Leave the pretty shard. Take the sealed ugly one. The tag is worth more than the shine.
 
 ## Field Note
 
-Quality changes payout, containment cost, route pressure and ending leverage. A clean shard pays; a live-contaminated sample makes someone answer.
+A loose shard buys a meal. A tagged casket buys trouble and leverage. If the seal strip survived, Black Keel will ask for the container before it asks for you.
 
 <!-- External Site; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/en_US. -->

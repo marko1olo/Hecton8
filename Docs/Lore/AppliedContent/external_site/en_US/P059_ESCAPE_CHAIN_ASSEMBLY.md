@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Escape Chain Assembly
 
-Escape Chain Assembly is the campaign’s engineering spine. HECTON-8 does not offer a clean surface extraction after the first repair; departure becomes a set of physical, legal and evidentiary components distributed across drowned infrastructure. This gives the long descent a practical reason and a moral one: the player is not only leaving the ocean, but assembling a route that proves why the colony never had a fair exit.
+Escape Chain Assembly is the campaign's engineering spine. HECTON-8 does not offer clean surface extraction after the first repair; departure becomes a set of physical, legal and evidentiary components distributed across drowned infrastructure. This gives the long descent a practical reason and a moral one: the way out must be built from parts of the same colony that was denied a fair exit.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Departure needs six hard proofs: relay, seal, guidance, ascent charge, legal han
 
 ## Terminal
 
-ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload optional but alters recovery authority.
+ASCENT PACKAGE: acoustic relay spine missing. Clamp ring rating insufficient. Guidance core absent. Charge cradle empty. Quarantine handshake unresolved. Evidence payload alters recovery authority.
 
 ## Audio
 

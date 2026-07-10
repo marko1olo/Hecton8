@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Gancho de prioridade Deep Reach"
+title: "Priority Hook da Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Gancho de prioridade Deep Reach
+# Priority Hook da Deep Reach
 
-O gancho de prioridade é a forma mais limpa de manter a Deep Reach perigosa depois que a colônia fica em silêncio. A empresa não precisa pilotar Black Keel por milagre remoto. Só precisa de um certificado antigo que o carrier ainda reconhece, uma regra de continuidade ligada ao acesso Atlas e uma classe de payload que supera o corpo de um contratado sob condições específicas de perigo. Isso basta. Uma rota pode ser deslocada. Uma caixa selada pode subir na fila. Uma trava de quarentena pode permanecer fechada enquanto a contagem de oxigênio do operador vira outra entrada de dívida. O resultado é mais frio que sabotagem: o sistema funciona como foi escrito, e a Deep Reach aprendeu a se escrever nas partes que sobrevivem a desastres.
+O Priority Hook da Deep Reach ancora corporate pressure em legacy certificates, quarantine clauses, Atlas tokens, payload priority e evidence custody em vez de instant command impossivel.
+
+## Scanner
+
+Certificate hook antigo. A Deep Reach nao precisa da bridge enquanto ainda possuir a clause.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate pode adiantar payload recovery, quarantine lock, Atlas access token, evidence suppression queue ou sealed infrastructure proof sob Aegir claim law. Human extraction priority unchanged a menos que verified hazard proof exceda custody value.
+
+## Audio
+
+Eles nao precisam estar na bridge para direcionar a resposta.
+
+## Field Note
+
+Mais limpo que uma conspiracy: o paperwork sobreviveu a quem o assinou.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/pt_BR. -->

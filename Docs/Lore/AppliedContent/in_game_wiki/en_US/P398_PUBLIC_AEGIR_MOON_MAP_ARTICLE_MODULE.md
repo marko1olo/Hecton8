@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir Moon Route Map
 
-Aegir moon data is route data. HECTON-8 is the playable ocean moon, but it sits inside a larger ladder of relay, radiation, scatter and tide constraints. The visible sky is part of why a rescue signal can be heard, delayed, priced, denied or physically impossible.
+Aegir's moons are part of the route system. HECTON-8 is the ocean moon under the player, but the rest of the ladder changes what can be heard, priced, hidden, or moved. A small body can cut a relay line. An ice scatter path can corrupt a packet. A tide phase can make a bathydrop ascent cheap, then lethal. Public maps matter because the sky is not decoration over the water; it is one of the machines deciding whether a claim can leave.
 
 ## Scanner
 
-System map record. Aegir moons define relay timing, radiation cover, ice scatter, tide pressure, occultation bands, dead beacons and recovery geometry.
+System map record. Moon labels set relay age, tide load, radiation cover, ice scatter, occultation bands, dead beacons, and recovery geometry.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon names are route labels. Each body changes signal age, transfer risk, storm exposure, custody timing or claim reliability.
+PUBLIC ARCHIVE NODE // AEGIR MOON LADDER. Moon name is route data. Required fields: signal age, tide phase, storm cover, claim window, beacon state, ascent risk.
 
 ## Audio
 
-The map explains why no one arrives the moment you ask.
+A moon on the map is not scenery. It is a reason the answer came late.
 
 ## Field Note
 
-Marauder note: mark the moon, then mark what it does to the route.
+Marauder note: mark the moon, then write what it does to signal, tide, mass, and custody.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/en_US. -->

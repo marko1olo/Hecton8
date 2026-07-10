@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 中继队列漂移
 
-延迟通信危险，是因为它可能在错误时间保持准确。载体警告可能描述真实阀门、真实泄漏和真实路线，而那条路线已经在压力下改变。玩家必须把数据包年龄和本地证据比较，再决定是否相信远程权限。
+Relay queue drift是HECTON-8上最致命的诚实。delayed carrier packet可以描述一个real valve、real safe door、real low-current corridor，以及一个已经移动的real leak。order不是假的；它属于一个被pressure、flooding、silt、heat或collapse改变的房间。好的field practice不是为了违抗而违抗，而是把packet age与wet paint、fresh salt、door strain、pump sound，以及loose debris想要滚动的方向进行比较。
 
 ## Scanner
 
-中继戳比它所命名的泄漏还旧；那条指令曾经适用于一个已经不存在的房间。
+relay stamp比它命名的leak还老。instruction对一个已经不存在的room曾经正确。
 
 ## Terminal
 
-队列漂移：数据包年龄超过路线有效期。在新的中继窗口打开前，本地证据高于载体指令。
+QUEUE DRIFT: packet age exceeds route validity。fresh relay window opens之前，Local evidence outranks carrier instruction。除非pressure、door state和waterline一致，否则将delayed route orders视作archival。
 
 ## Audio
 
-消息是正确的。问题就在这里。
+message是正确的。这正是问题。
 
 ## Field Note
 
-迟到的真相仍然能杀人。
+迟到的truth仍然能杀人。
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/zh_CN. -->

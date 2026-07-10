@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Maski graffiti maruderów"
+title: "Maski graffiti marauderow"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Maski graffiti maruderów
+# Maski graffiti marauderow
 
-Znaki maruderów to nawigacja terenowa, ostrzeżenie społeczne i język przeciw nadzorowi. Są surowe, bo musiały przetrwać wodę, strach, złe lampy i kamery korporacji. Gracz uczy się, które znaki wskazują hałas, ciśnienie, patrole, skrytki i trasy poza oficjalnymi mapami.
+Marauder graffiti nie jest dekoracja. To field navigation, social warning i anti-surveillance language wydrapany tam, gdzie radios zdradzaja, maps wygasaja, a official signage klamie przez starosc. Marks sa surowe, bo musialy przetrwac water, bad lamps, glove tremor i cameras, ktore mogly karac readable intent. Slash moze znaczyc silence. Black ring moze znaczyc Black Keel ping. Broken arrow moze znaczyc pressure changed po ostatnim route survey. Colony zostawila labels; marauders zostawili weather.
 
 ## Scanner
 
-Kod farby: liczba kresek oznacza dyscyplinę hałasu, czarne pierścienie ryzyko pingu przewoźnika, złamane strzałki dryf ciśnienia.
+Paint code. Slash count oznacza noise discipline; black rings oznaczaja carrier-ping danger; broken arrows oznaczaja pressure drift.
 
 ## Terminal
 
-INDEKS MASKI TRASY: trzy kreski bezpieczne tylko dla znaków ręcznych. Czarny pierścień znaczy skan przewoźnika. Złamana strzałka znaczy zmianę ciśnienia od ostatniego znaku.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Jeśli ściana wygląda na wściekłą, czytaj ją jak pogodę.
+Jesli sciana wyglada na zla, czytaj ja jak weather.
 
 ## Field Note
 
-Maruderzy pisali dla ludzi, którzy nie mogli ufać radiu i nie mogli zapłacić za mapy.
+Marauders pisali dla ludzi, ktorzy nie mogli ufac radios i nie mogli pozwolic sobie na maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/pl_PL. -->

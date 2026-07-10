@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "약탈자 그래피티 마스크"
+title: "Marauder 그래피티 마스크"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 약탈자 그래피티 마스크
+# Marauder 그래피티 마스크
 
-약탈자 표식은 현장 항법, 사회적 경고, 감시 회피 언어다. 거친 이유는 물, 공포, 나쁜 조명, 기업 카메라를 견뎌야 했기 때문이다. 플레이어는 소음, 압력, 순찰 위험, 숨겨진 저장고, 공식 지도와 어긋난 경로를 뜻하는 표식을 배운다.
+Marauder graffiti는 장식이 아니다. radios가 배신하고, maps가 만료되고, official signage가 너무 오래되어 거짓말이 되는 곳에 긁힌 field navigation, social warning, anti-surveillance language다. marks가 거친 이유는 water, bad lamps, glove tremor, 그리고 readable intent를 처벌할 수 있는 cameras를 견뎌야 했기 때문이다. slash는 silence를 뜻할 수 있다. black ring은 Black Keel ping일 수 있다. broken arrow는 마지막 route survey 뒤 pressure changed를 뜻할 수 있다. colony는 labels를 남겼고 marauders는 weather를 남겼다.
 
 ## Scanner
 
-페인트 코드: 사선 수는 소음 규율, 검은 고리는 운반선 핑 위험, 부러진 화살표는 압력 표류를 뜻한다.
+paint code. slash count는 noise discipline, black rings는 carrier-ping danger, broken arrows는 pressure drift를 표시한다.
 
 ## Terminal
 
-경로 마스크 색인: 세 사선은 손신호만 안전. 검은 고리는 운반선 스윕. 부러진 화살표는 마지막 표식 뒤 압력 변화.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-벽이 화난 것처럼 보이면 날씨처럼 읽어라.
+벽이 화나 보이면 weather로 읽어라.
 
 ## Field Note
 
-약탈자들은 무전을 믿을 수 없고 지도를 살 수도 없는 사람들을 위해 벽에 썼다.
+marauders는 radios를 믿을 수 없고 maps를 살 수 없는 사람들을 위해 썼다.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/ko_KR. -->

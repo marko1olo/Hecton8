@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mekanik triase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mekanik triase
 
-ID LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Sahana Iqbal menunjukkan bagaimana HECTON-8 mengubah perawatan menjadi triase. Koloni tidak memisahkan peralatan rusak dan orang terancam secara bersih; keduanya menunggu dalam sistem batasan yang sama, dan bukti membuat pemain membaca tekanan itu tanpa cutscene.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dosier: Sahana Iqbal. Papan torsi, tag ranjang, dan pita karantina berbagi satu urutan tunggu.
 
 ## Terminal
 
-ID LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TELUK TRIASE C-2 / IQBAL, SAHANA: batas torsi ditempel di samping tag cadangan oksigen. Alat, ranjang, dan kartrid scrubber antre di rel yang sama. Bahasa karantina memindahkan garis jangkau lagi.
 
 ## Audio
 
-ID LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal memperbaiki apa yang bisa ia jangkau. Papan terus memutuskan apa yang dianggap terjangkau.
 
 ## Field Note
 
-ID LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Gunakan Iqbal dalam loop perbaikan karantina, koridor medis, antrean oksigen, dan antarmuka tempat pilihan mesin terlihat menghabiskan waktu manusia.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/id_ID. -->

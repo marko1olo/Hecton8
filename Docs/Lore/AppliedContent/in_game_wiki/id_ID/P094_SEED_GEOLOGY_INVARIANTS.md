@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Invarian Geologi Seed"
+title: "Invarian Geologi Survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Invarian Geologi Seed
+# Invarian Geologi Survey
 
-Invarian geologi seed menjaga HECTON-8 tetap koheren sepanjang replay panjang. Ngarai bisa terbuka dalam urutan lain, bukti bisa berpindah, kantong aman bisa bergeser, dan tekanan spesies bisa berubah. Bintang tetap Aegir, bulan tetap HECTON-8, pita kedalaman menjaga urutannya, Great Tide menjaga waktunya, dan basin Atlas tetap terhubung ke kebenaran terdalam.
+Survey geology invariants menjaga HECTON-8 coherent di antara contradictory charts, damaged Atlas maps, dan incomplete Black Keel route packets. Canyon approach bisa shift between surveys. Safe pocket bisa collapse. Cache bisa emerge under new silt. Bloom density dan salvage exposure berubah bersama weather, pressure, dan apa yang last expedition disturbed. Deeper truths tidak move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior, dan Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Catatan generasi rute. Peta salvage berubah, tapi bulan menyimpan tulang yang sama.
+Atlas survey note. Salvage chart bisa disagree with itself; moon keeps the same bones.
 
 ## Terminal
 
-INVARIAN: primer Aegir, tangga orbit HECTON-8, interval Great Tide, urutan pita kedalaman, relasi basin Atlas, perilaku tekanan blue debt. VARIABEL: pendekatan ngarai, urutan POI, kantong aman, kepadatan bloom, paparan salvage.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Pola luka berbeda. Bulan yang sama di bawahnya.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-Run baru boleh mengubur bukti secara berbeda; ia tidak boleh menulis ulang gravitasi, pasang, atau rasa bersalah.
+Later chart bisa bury evidence differently. Ia tidak bisa rewrite gravity, tide, atau guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/id_ID. -->

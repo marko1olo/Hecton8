@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Сонарний маршрут повернення"
+title: "Sonar return route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Сонарний маршрут повернення
+# Sonar return route
 
-Навігація HECTON-8 вважає зворотний шлях роботою, а не розрадою. Старий маяк може вказувати на правильний коридор і водночас приховувати нову перешкоду, зсунуте мулове ложе або двері тиску, що змінили ехо.
+Sonar return routes роблять navigation постійною роботою: stale beacons можуть вказувати right corridor, ховаючи new silt, obstruction drift, fauna movement або pressure-door changes.
 
 ## Scanner
 
-Маяк повернення застарів. Старий безпечний ping більше не збігається з ехом коридору; маса вантажу сповільнить вікно відходу.
+Return beacon stale. Old safe ping більше не збігається з corridor echo; cargo mass сповільнить retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: останній чистий ехосигнал недійсний. Ping Black Keel отримано з низькою достовірністю. Зсув перешкод і щільність мулу вище допуску карти. Позначити другу лінію до вилучення вантажу.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density і cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Маршрут усе ще там. Ехо вже інше.
+The route is still there. Echo вже не те саме.
 
 ## Field Note
 
-Пінгуй до завантаження. Якщо дорога додому змінилася, поки руки були порожні, повний наплічник вона не пробачить.
+Ping before loading. Якщо way home changed, поки hands були empty, він не пробачить full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/uk_UA. -->

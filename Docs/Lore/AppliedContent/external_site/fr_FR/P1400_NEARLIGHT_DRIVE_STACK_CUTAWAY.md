@@ -9,22 +9,18 @@ locale: fr_FR
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Coupe du train de propulsion proche-lumière"
+title: "Coupe du drive stack quasi-luminique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Coupe du train de propulsion proche-lumière
+# Coupe du drive stack quasi-luminique
 
-Un vaisseau proche-lumière dans HECTON-8 n'est pas une flèche nette dotée d'un moteur impossible. La coque visible est la dernière pièce entretenue d'une route posée des années avant le réveil de l'équipage. Les plaques de formation de Barnard Yards dessinent le train dans l'ordre où un ouvrier le paie réellement : poussée de voile à faisceau, capture de pellets, gorge fusion-électrique, blindage d'ombre, ailettes radiatrices, tambour de voile magnétique, peau d'aérofreinage et garde du récepteur.
+La coupe Barnard Yards fut faite pour des contractants, donc elle dit la vérité. Elle ne dessine pas une cloche héroïque pour prétendre que le problème est réglé. Elle commence par la route : qui possède le beam array, qui a nettoyé la pellet lane, combien de perte de poussière le bouclier supporte, combien d'années la marge radiateur reste honnête, et quel récepteur a le droit de freiner une masse humaine.
 
-Chaque étage a un propriétaire différent et une manière différente de céder. Un réseau de faisceaux peut vendre le départ avant que quelqu'un ait payé l'arrivée. Une ligne de pellets peut nourrir la poussée et ruiner quand même une fenêtre de fret si les tolérances de capture dérivent. Le bouclier peut survivre au voyage en devenant plus mince. Les radiateurs peuvent garder tout le monde en vie en transformant chaque kilogramme supplémentaire en question. Les comptes de voile magnétique et d'aérofreinage décident si le vaisseau a le droit de s'arrêter sans brûler le bénéfice dans ses réservoirs.
-
-C'est ainsi que la frontière humaine reste vaste et cruelle sans casser la physique. La lumière transporte les revendications, les paquets de détresse et les menaces juridiques bien moins cher que les corps. Deep Reach peut hériter d'un droit avant de déplacer une coque. Black Keel peut rester dans le système Aegir et se comporter encore comme un terminal de contrat parce qu'il appartient au train de réception local, pas au travailleur piégé au-dessous.
-
-La coupe est utile parce qu'elle fait lire le secours comme une machine. Une ailette radiatrice piquée, un registre de freinage fermé ou un compteur de garde ne sont pas du décor. Ils répondent à une question simple : qui a payé pour que cette masse s'arrête ici, et qui ne l'a pas fait ?
+C'est l'essentiel. Le quasi-luminique n'a pas rendu la distance petite. Il l'a rendue planifiée, assurée, mesurée et punissable. Un vaisseau peut porter un fusion-electric throat et rester impuissant sans infrastructure de départ. Il peut survivre à la croisière et mourir politiquement au slot de freinage. Dans HECTON-8, le secours n'est donc jamais seulement un vaisseau qui fait demi-tour. Le moteur, c'est la route, la chaleur, la chaîne custody et la masse que quelqu'un accepte de payer pour arrêter.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/fr_FR. -->

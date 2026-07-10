@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Władza opóźnienia świetlnego"
+title: "Autorytet opoznienia swiatla"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Władza opóźnienia świetlnego
+# Autorytet opoznienia swiatla
 
-HECTON-8 nie ma ansibla ani żywego głosu dowodzenia z orbity. Wiadomości idą z prędkością światła, a potem tracą czas w buforach, oknach burzy, geometrii przekaźników i regułach pieczy przewoźnika. Każda odpowiedź jest starym dowodem, nie rozkazem.
+HECTON-8 nie ma ansible, przyjaznego glosu pochylonego z orbity ani sposobu, by dziesiec lat swietlnych stalo sie milosierne. Messages ida z predkoscia swiatla, potem traca czas przez relay geometry, storm scatter, buffer law i custody queues Black Keel. Transmission moze byc szczera i wciaz za stara, by jej sluchac. Powierzchnia uczy tego szybko: kazda remote answer jest najpierw evidence, potem instruction, nigdy comfort. Jesli sciana, woda i pressure zaprzeczaja message, wygrywa local world.
 
 ## Scanner
 
-Pamięć masztu przekaźnika: wezwanie wyszło czysto, a potem czekało za światłem, prawem kolejki, rozproszeniem burzy i linią widzenia Aegir.
+Relay mast cache. Call wyszedl czysto, potem czekal za light, queue law, storm scatter i Aegir line-of-sight.
 
 ## Terminal
 
-WŁADZA ŁĄCZNOŚCI: opóźnienie jednokierunkowe potwierdzone. Rozproszenie burzy wysokie. Kolejka przekaźnika pod priorytetem pieczy. Lokalna władza przetrwania aktywna.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active do czasu gdy fresh signal window potwierdzi override.
 
 ## Audio
 
-Odpowiedź nadchodzi. To jeszcze nie jest ratunek.
+Odpowiedz nadchodzi. To nie czyni jej rescue.
 
 ## Field Note
 
-Nikt nie ocenzurował pierwszego krzyku. Fizyka niosła go dość wolno, by polityka zdążyła dogonić.
+Nikt nie ocenzurowal pierwszego scream. Physics niosla go dosc wolno, by policy zdazyla dogonic.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/pl_PL. -->

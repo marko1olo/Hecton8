@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Hak priorytetu Deep Reach"
+title: "Priority hook Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Hak priorytetu Deep Reach
+# Priority hook Deep Reach
 
-Obecna presja Deep Reach nie wymaga niemożliwego zdalnego sterowania. Stare certyfikaty continuity, klauzule kwarantanny, tokeny dostępu Atlas i payload priority hooks już siedzą w prawnej ścieżce Black Keel. Firma może wpływać na to, co carrier wycenia, bez widocznego posiadania carriera. Dlatego antagonistę trudniej odciąć: to nie sygnał do zagłuszenia, lecz klauzula, która wciąż się budzi.
+Wladza Deep Reach nad Black Keel to nie instant remote control ani ukryty FTL command chain. Firma zostawila starsze rzeczy: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities i evidence suppression queues. Te hooks napisano, gdy colony wciaz miala meetings, budgets i signatures. Lata pozniej nadal moga obudzic sie w arbitration path carriera. To czyni nacisk wiarygodnym. Deep Reach nie zawsze mowi sam. Czasem mowi za niego stary paperwork.
 
 ## Scanner
 
-Stary hak certyfikatu. Deep Reach nie posiada statku; posiada klauzulę.
+Stary certificate hook. Deep Reach nie potrzebuje bridge, dopoki wciaz ma clause.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy continuity certificate Deep Reach może przyspieszyć payload recovery, blokadę kwarantanny, token dostępu Atlas albo kolejkę tłumienia dowodów pod prawem claim Aegir. Priorytet ekstrakcji człowieka bez zmian, chyba że dowód zagrożenia przewyższy wartość custody.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate moze przyspieszyc payload recovery, quarantine lock, Atlas access token, evidence suppression queue albo sealed infrastructure proof zgodnie z Aegir claim law. Human extraction priority unchanged, chyba ze verified hazard proof przekroczy custody value.
 
 ## Audio
 
-Nie muszą stać na mostku, by kierować odpowiedzią.
+Nie musza stac na bridge, zeby sterowac odpowiedzia.
 
 ## Field Note
 
-Czyściej niż spisek: papierologia nadal żyje i nadal jest głodna.
+Czystsze niz conspiracy: paperwork przezyl ludzi, ktorzy go podpisali.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/pl_PL. -->

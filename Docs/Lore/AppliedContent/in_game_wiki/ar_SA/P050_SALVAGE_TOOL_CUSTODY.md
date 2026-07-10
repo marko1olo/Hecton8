@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "وصاية أداة salvage"
+title: "حضانة أداة salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# وصاية أداة salvage
+# حضانة أداة salvage
 
-أدوات salvage ليست معدات محايدة. القواطع والباتشرات وأرصفة المصنع يمكن أن تسجل من فتح لوحة، أصلح خطا أو نقل عينة. ذلك السجل قد يحمي دليلا، يربط حقوق دفع، أو يقوي claim ضد اللاعب. وصاية الأداة هي المكان الذي تلمس فيه نجاة كل دقيقة اقتصاد salvage الأوسع.
+Salvage tools على HECTON-8 هي survival gear، لكنها ليست innocent. يفتح cutter لوحة. Patcher seals a line. Fabricator dock prints a clamp يبقي air moving. يمكن للaction نفسها أن write custody أيضا: من used the tool، وما الذي opened، وهل كان sample pouch attached، وأي claim token owns the next argument. يمكن لذلك record أن protect evidence أو tighten debt. القسوة أن refusing the tool قد kill faster من accepting its witness.
 
 ## Scanner
 
-رصيف الأداة يحتوي سجل وصاية مختوما. آخر قطع وإصلاح وكيس عينة مرتبطة برمز claim من Keelmark.
+Tool dock holds a sealed custody log. آخر cut وrepair وsample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: استخدام القاطع مقبول تحت salvage claim. فعل الإصلاح مشهود. حقوق العينة ملحقة برمز Keelmark Mutual. تصدير الدليل يتعارض مع طريق الدفع المادي.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-كل قطع مفيد يترك شاهدا.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-القاطع قد ينقذ هواءك ويبيع يديك في الضربة نفسها. افحص ما يسجله قبل أن تسميه ملكك.
+يمكن لcutter أن save your air وsell your hands في stroke نفسه. افحص ما records قبل أن تسميه لك.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/ar_SA. -->

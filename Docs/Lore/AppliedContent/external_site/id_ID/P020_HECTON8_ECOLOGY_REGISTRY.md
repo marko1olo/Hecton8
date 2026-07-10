@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Registri Ekologi
 
-Registri Ekologi menjaga nada: indah, tekanan, lalu runtuh kategori.
+Registri ekologi menjaga HECTON-8 terbaca: keindahan asli, adaptasi industri, dan biologi perbaikan Atlas harus terbaca sebagai lapisan hidup berbeda.
 
 ## Scanner
 
-Ekologi dangkal terang terkonfirmasi. Lebih dalam ada flora kabel, tubuh filter, dan intrusi Atlas.
+Pemecahan registri terkonfirmasi: kehidupan paparan asli, biota adaptasi kabel, organisme perbaikan yang dirutekan Atlas. Identifikasi sebelum memotong.
 
 ## Terminal
 
-Terbagi: ekologi tekanan asli, biota adaptasi koloni, organisme diubah Atlas. Jangan gabung.
+PEMECAHAN REGISTRI: ekologi tekanan asli; biota kabel adaptasi koloni; organisme perbaikan yang diubah Atlas. Salah label dapat menghancurkan seal aktif atau menghapus bukti rute.
 
 ## Audio
 
-Jika semua monster, tidak ada pelanggaran.
+Jika semuanya monster, kamu akan memotong hal yang menahan tekanan.
 
 ## Field Note
 
-Dunia ini hidup sebelum terluka.
+Dunia sudah hidup sebelum terluka.
 
 <!-- External Site; generated from P020_HECTON8_ECOLOGY_REGISTRY/id_ID. -->

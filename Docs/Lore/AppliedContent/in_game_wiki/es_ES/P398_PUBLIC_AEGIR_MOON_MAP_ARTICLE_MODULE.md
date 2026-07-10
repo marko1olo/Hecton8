@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Mapa de ruta de las lunas de Aegir"
+title: "Mapa de ruta de lunas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mapa de ruta de las lunas de Aegir
+# Mapa de ruta de lunas de Aegir
 
-Los datos lunares de Aegir son datos de ruta. HECTON-8 es la luna oceánica jugable, pero está dentro de una escalera mayor de restricciones de relay, radiación, dispersión y marea. El cielo visible influye en que una señal de rescate sea oída, retrasada, tasada, negada o físicamente imposible.
+Las lunas de Aegir forman parte del sistema de rutas. HECTON-8 es la luna oceánica bajo el jugador, pero el resto de la escalera cambia qué puede oírse, tasarse, ocultarse o moverse. Un cuerpo pequeño puede cortar una línea de relevo. Un camino de dispersión de hielo puede corromper un paquete. Una fase de marea puede abaratar el ascenso de un batisalto y luego volverlo mortal. Los mapas públicos importan porque el cielo no es decoración sobre el agua; es una de las máquinas que decide si una reclamación puede salir.
 
 ## Scanner
 
-Registro de mapa del sistema. Las lunas de Aegir definen relay timing, cobertura de radiación, ice scatter, presión de marea, occultation bands, beacons muertos y recovery geometry.
+Registro de mapa de sistema. Las etiquetas lunares fijan edad de relevo, carga de marea, cobertura de radiación, dispersión de hielo, bandas de ocultación, balizas muertas y geometría de recuperación.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // ESCALERA LUNAR AEGIR. Los nombres de lunas son etiquetas de ruta. Cada cuerpo cambia signal age, transfer risk, storm exposure, custody timing o fiabilidad del claim.
+NODO DE ARCHIVO PÚBLICO // ESCALERA LUNAR AEGIR. El nombre de luna es dato de ruta. Campos requeridos: edad de señal, fase de marea, cobertura de tormenta, ventana de reclamación, estado de baliza, riesgo de ascenso.
 
 ## Audio
 
-El mapa explica por qué nadie llega en el momento en que lo pides.
+Una luna en el mapa no es paisaje. Es una razón por la que la respuesta llegó tarde.
 
 ## Field Note
 
-Nota de Marauder: marca la luna, luego marca qué le hace a la ruta.
+Nota de Merodeador: marca la luna y luego escribe qué le hace a señal, marea, masa y custodia.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/es_ES. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Marauder Starting Claim
 
-The opening record frames the player as a trained operator under debt pressure. The character is no tourist, chosen heir or family avenger; they already understand pumps, seals, route forms and Deep Reach abbreviations before the wreckage starts contradicting those forms. This keeps the first hour practical: seal the bathydrop, restore pressure, read damaged machinery, recover cargo and decide which official lines are already lying.
+The first HECTON-8 record does not introduce a tourist or chosen survivor. It names a trained operator under lien pressure: someone who already reads pump shorthand, seal warnings, evacuation tags, and Deep Reach liability phrases before the first hatch opens. The starting work is concrete. Patch the bathydrop. Confirm pressure. Scan the P-63 shelf. Restart machinery only after the seal path makes sense. Recover cargo if it pays, and proof if it survives the custody clock.
 
 ## Scanner
 
-Public claim record. The opening route identifies a debt-bound Marauder with Deep Reach field-systems history, a damaged bathydrop and a Black Keel recovery window over P-63.
+Public claim record. Black Keel lien file names a former Deep Reach field-systems specialist, a damaged bathydrop, route P-63, and a closing custody window.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // STARTING CLAIM. Contractor record: former Deep Reach field-systems specialist. Current status: lien-bound Marauder. Route: Black Keel recovery claim, P-63 shelf descent, evidence and cargo return before custody window close.
+PUBLIC ARCHIVE NODE // BLACK KEEL CLAIM BK-P63-2190. Status: lien-bound Marauder. Prior clearance: Deep Reach field systems / evacuation infrastructure. Deliverable: cargo mass plus admissible proof before local custody T+06:40.
 
 ## Audio
 
-You are not sightseeing on HECTON-8. You are returning to paperwork you know too well.
+The contract knows your old abbreviations. That is not the same as telling the truth.
 
 ## Field Note
 
-Marauder note: the contract knows your past. That does not make it honest.
+Marauder note: if a claim file knows your clearance level, read the omissions before you read the payout.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/en_US. -->

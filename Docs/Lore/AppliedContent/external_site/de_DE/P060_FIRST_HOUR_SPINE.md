@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Rückgrat der ersten Stunde
 
-Rückgrat der ersten Stunde definiert den Eröffnungsrhythmus von HECTON-8. Der Spieler beginnt mit greifbaren Ingenieuraufgaben und visueller Verwunderung und sieht dann, wie diese Aufgaben mit einer Konzernlüge und einer in Biologie eingedrungenen Wartungsökologie verbunden sind. So bleibt die erste Route spielbar und atmosphärisch, während sie die größere Untersuchung pflanzt: Der Ozean versteckt die Geschichte nicht, er bewahrt die Beweise in Druck, Salz und Prozedur.
+Rückgrat der ersten Stunde definiert HECTON-8s Anfangsrhythmus. Greifbare Ingenieursaufgaben und visuelles Staunen kommen zuerst, dann verbinden sich diese Aufgaben mit einer Konzernlüge und einer Wartungsökologie, die in Biologie eingedrungen ist. Der Ozean versteckt die Geschichte nicht; er bewahrt Beweise in Druck, Salz und Prozedur.
 
 ## Scanner
 
-Vertrag, beschädigter Abstieg, Luft, helle Flachwasser, Pumpenschutzraum, bereinigte Lüge, dann die erste Reparaturnarbe, die Leben als Dichtung benutzt.
+Vertrag, beschädigter Drop, Luft, helle Untiefen, Pumpenschutz, bereinigte Lüge, dann die erste Reparaturnarbe, die Leben als Dichtung nutzt.
 
 ## Terminal
 
-FLACHWASSER-ANBAU: manueller Pumpenneustart gültig. Deep-Reach-Vorfallpaket zwischengespeichert. Atlas-Reparaturwuchs um Kabel, Werkzeugfragment und biologische Rückstände erkannt.
+SHALLOW ANNEX: manueller Pumpenneustart gültig. Deep-Reach-Vorfallpaket gecached. Atlas-Reparaturwachstum um Kabel, Werkzeugfragment und biologischen Rest erkannt.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Der erste sichere Raum ist nicht sauber. Er hält nur besser die Luft an als du.
 
 ## Field Note
 
-Der Anfang muss schön sein, bevor er anklagend wird.
+Der Anfang muss schön sein, bevor er anklagt.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/de_DE. -->

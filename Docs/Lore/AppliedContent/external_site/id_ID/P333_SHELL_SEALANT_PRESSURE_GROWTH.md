@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Pertumbuhan Sealant Cangkang Tekanan
 
-Pertumbuhan sealant cangkang tekanan menunjukkan mengapa Atlas tidak bisa disederhanakan menjadi mesin rusak atau niat jahat. Tambalan itu bisa indah: cangkang putih di atas karat, tulang rusuk mineral melintasi retakan, resin basah mengeras di bawah tekanan. Ia juga dokumen prioritas yang hilang. Integritas batas tetap terbaca oleh Atlas setelah jalur keluar pekerja, cat peringatan, dan ingatan rute manusia menjadi derau.
+Sealant cangkang adalah salah satu kontradiksi lapangan paling jelas dari perbaikan Atlas. Batas tekanan membaik, ruangan bertahan lebih lama, dan rute bisa tidak terbaca di bawah lapisan putih yang sama. Pemain yang memotongnya bukan melepas dekorasi; ia mungkin membuka kembali hal yang membuat kompartemen tetap kering.
 
-Dalam permainan, tambalan sealant harus menciptakan ragu. Mungkin itu satu-satunya alasan sebuah ruang masih punya udara. Mungkin itu juga alasan seorang pekerja mati dua meter dari roda tangan tersembunyi. Kebenaran pemindai hanya sebagian: tekanan stabil, rute tertutup, tanda manusia hancur. Memotongnya bukan sekadar memanen bahan. Itu perdebatan dengan perbaikan yang sudah menyelamatkan sesuatu.
+## Scanner
+
+Cangkang kalsium putih menutup retakan dan mengubur panah rute di tepi palka. Memotongnya bisa membuka bocor lagi.
+
+## Terminal
+
+KONFLIK PERBAIKAN / DOOR S-9: laju bocor turun, batas tekanan membaik, tanda keluar tertutup, roda manual terkubur 62 persen. Izin cutter memerlukan jalur banjir bertahap.
+
+## Audio
+
+Dinding bertahan. Roda palka ada di bawah sepuluh sentimeter cangkang.
+
+## Field Note
+
+Sebelum memotong cangkang putih dari palka, cari ke mana air pergi terakhir kali. Label itu mungkin terkubur karena alasan.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/id_ID. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Якорь Ran / Aegir"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Якорь Ran / Aegir
+# Ran / Aegir Anchor
 
-Якорь Ran / Aegir фиксирует визуальный вкус HECTON-8: жесткий научно-фантастический тусклый свет сверху, давление и долг снизу.
+Ran / Aegir Anchor заземляет visual logic HECTON-8: dimmer hard-sci-fi sunlight above, затем depth, weather, turbidity, pressure и debt below.
 
 ## Scanner
 
-Звездная таблица K-класса. Ran горит нормально. Aegir тусклее Sol, но темнота здесь приходит от глубины, погоды и долга.
+K-class star plate. Ran горит нормально; deep здесь не supernatural, а просто слишком далеко под weather, water и debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Свет оранжевого карлика годится для поверхностных работ. Штормовое рассеяние, затмения и мутность океана опускают видимость спуска ниже безопасного края.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity и industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Звезда на месте. Она просто не может спуститься за тобой.
+Star present. Она просто не может follow you down.
 
 ## Field Note
 
-Настоящей звезды достаточно. Остальное делает океан.
+Реальной star достаточно. Остальное делает ocean.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/ru_RU. -->

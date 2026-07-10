@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Kalte Claims der Außenmonde"
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kalte Claims der Außenmonde
+# Outer Moon Cold Claims
 
-Kalte Claims der Außenmonde beweisen, dass Aegir ein System ist, nicht ein einzelner Spukmond. Gescheiterte Soleprospekte, eingemottete Metallrouten und tote Beacons schaffen die salvage-Ökonomie, die Marauders ins Verkehrsnetz zieht.
-
-Wichtig ist nicht Entfernung, sondern Muster. Eine Route kann tot und trotzdem abrechenbar sein. Ein Beacon kann Verwahrung ohne lebende Crew wiederholen. HECTON-8 ist der schlimmste sichtbare Fall, aber nicht der erste Ort, an dem Aegir lernte, Verlust als Infrastruktur abzulegen.
+Outer moon cold claims beweisen, dass Aegir ein system ist, nicht one haunted ocean. Failed brine prospects, mothballed metal routes, cold caches und beacons with no living crew schufen die salvage economy, bevor HECTON-8 der Name wurde, den alle whisper. Wichtig ist das pattern. Eine route kann dead und still billable sein. Ein beacon kann repeat custody into empty space. Eine company kann learn, dass loss becomes cheaper, sobald er filed as infrastructure ist. HECTON-8 ist der worst visible case, nicht die first lesson.
 
 ## Scanner
 
-Äußerer Claim-Beacon. Nicht alles Tote in Aegir liegt auf HECTON-8.
+Outer claim beacon. Nicht jedes dead thing in Aegir liegt auf HECTON-8.
 
 ## Terminal
 
-ARCHIV DER ÄUSSEREN LEITER // Thorne-Soleprospekt gescheitert. Anvil-Exportroute eingemottet. Mute-Beacon wiederholt Verwahrungsping ohne aktive Crew-Erklärung.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir lernte Menschen zu verlieren, bevor HECTON-8 die Lektion beendete.
+Aegir lernte lose people, bevor HECTON-8 die lesson beendete.
 
 ## Field Note
 
-Kalte Claims machen Marauders möglich. Sie lehren Firmen auch, Muster zu begraben.
+Cold claims machen marauders moglich. Sie lehren companies auch, bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/de_DE. -->

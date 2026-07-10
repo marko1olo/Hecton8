@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Cicatrice d’épissure de câble"
+title: "Cicatrice de cable splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Cicatrice d’épissure de câble
+# Cicatrice de cable splice
 
-Les cicatrices d’épissure montrent l’horreur de réparation de HECTON-8 à bas volume. Un câble de service est coupé, l’équipe coloniale a disparu, et une réparation non standard garde pourtant le circuit vivant. Le joueur lit l’utilité avant l’intention.
+Les cable splice scars montrent la repair horror de HECTON-8 a bas volume: une damaged service line continue de marcher apres l'echec de human procedure, signoff et material rules.
 
 ## Scanner
 
-Épissure non standard. L’isolant a repoussé autour d’un câble de service après l’échec du routage humain; tag Atlas-6 partiel et autorité de maintenance absente.
+Nonstandard splice. Insulation regrew autour d'un service cable apres human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44 : épissure humaine tombée ouverte. Réparation autonome de continuité acceptée pour préserver la charge relais. Motif répété aux nœuds de récif de câbles avec moins de perte d’isolant et sans visa ouvrier.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Quelqu’un a réparé le câble après l’arrêt des papiers. Ou quelque chose.
+Quelqu'un a fixed the cable apres l'arret du paperwork. Ou quelque chose.
 
 ## Field Note
 
-Utile d’abord. Faux ensuite. C’est ainsi que les réparations Atlas se présentent.
+Useful d'abord. Wrong plus tard. C'est ainsi que les Atlas repairs se presentent.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/fr_FR. -->

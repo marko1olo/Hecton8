@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black-Keel-Tariftabelle"
+title: "Black Keel Tariftabelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black-Keel-Tariftabelle
+# Black Keel Tariftabelle
 
-Die Tariftabelle ist der klarste Moment, in dem HECTON-8 das Leise laut macht. Black Keel kann den Spieler hören, die Gefahr klassifizieren und Pakete durch das System bewegen, aber jede Handlung wird zuerst Abrechnungskategorie. Eine konservierte Probe kann schneller reisen als ein atmender Operator. Eine versiegelte Kassette kann die Route hochstufen, bevor ein verwundeter Körper es tut. Das ist kein Theaterbösewicht, sondern ein Ledger bei seiner vorgesehenen Arbeit. Der Schrecken ist praktisch: Der Spieler überlebt, indem er dieselbe ökonomische Grammatik missbraucht, die die Kolonie entbehrlich machte.
+Black Keel Tariftabelle zeigt die carrier economy um HECTON-8, wo distress traffic mit sample custody, oxygen, debt, proof und asset protection konkurriert.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage und body recovery stehen auf getrennten Zeilen.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies bis lien arbitration resolves.
+
+## Audio
+
+Es gibt discount fur evidence und surcharge fur breathing.
+
+## Field Note
+
+Die schnellste class ist nicht rescue. Sie ist verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/de_DE. -->

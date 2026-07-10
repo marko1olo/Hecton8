@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Registri Ekologi
 
-HECTON-8 perlu kontras: dangkal indah dan berguna, adaptasi tengah pada struktur manusia, lalu intrusi Atlas. Horor bekerja karena kehidupan asli ada sebelum kerusakan.
+Registri ekologi memisahkan kehidupan dari kerusakan. Mat paparan terang dan grazer menunjukkan dasar. Flora kabel dan tubuh filter menunjukkan kehidupan yang beradaptasi pada hardware manusia. Fauna bertag sensor, film konduktif, dan pertumbuhan shell-seal menunjuk ke routing perbaikan Atlas. Pertanyaan yang benar bukan apakah sesuatu hidup, tetapi pekerjaan apa yang ia lakukan dalam sistem tekanan.
 
 ## Scanner
 
-Ekologi dangkal terang terkonfirmasi. Lebih dalam ada flora kabel, tubuh filter, dan intrusi Atlas.
+Pemecahan registri terkonfirmasi: kehidupan paparan asli, biota adaptasi kabel, organisme perbaikan yang dirutekan Atlas. Identifikasi sebelum memotong.
 
 ## Terminal
 
-Terbagi: ekologi tekanan asli, biota adaptasi koloni, organisme diubah Atlas. Jangan gabung.
+PEMECAHAN REGISTRI: ekologi tekanan asli; biota kabel adaptasi koloni; organisme perbaikan yang diubah Atlas. Salah label dapat menghancurkan seal aktif atau menghapus bukti rute.
 
 ## Audio
 
-Jika semua monster, tidak ada pelanggaran.
+Jika semuanya monster, kamu akan memotong hal yang menahan tekanan.
 
 ## Field Note
 
-Dunia ini hidup sebelum terluka.
+Dunia sudah hidup sebelum terluka.
 
 <!-- In-Game Wiki; generated from P020_HECTON8_ECOLOGY_REGISTRY/id_ID. -->

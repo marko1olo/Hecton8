@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "전도성 바이오필름 수리 버스"
+title: "전도성 생물막 수리 버스"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 전도성 바이오필름 수리 버스
+# 전도성 생물막 수리 버스
 
-전도성 바이오필름은 갈라진 케이블 피복이 HECTON-8 물속으로 구리염, 열, 약한 전류를 흘리는 곳에서 생긴다. 정신이 아니다. Atlas가 수리 버스로 취급할 만큼 유용한 살아 있는 도체다. 손상된 선로는 정상처럼 보일 수 있지만, 막은 상처 위로 가느다란 진단 펄스만 옮긴다.
+전도성 생물막은 갈라진 케이블 재킷이 구리염, 온기, 약한 전류를 HECTON-8 물속으로 흘리는 곳에서 자란다. 그 막은 Atlas가 죽은 선을 사용 가능으로 표시할 만큼의 신호를 실어 나를 수 있다. 패널이 몇 초 깨어나고 잠금장치가 녹색으로 깜박여도, 실제 케이블은 부하에서 실패할 수 있다.
 
 ## Scanner
 
-녹흑색 막이 케이블의 상처를 가로지른다. 누설 전류는 약하지만 패턴이 있고 아직 흐르고 있다.
+녹흑색 막이 갈라진 케이블 재킷을 잇고 있다. 낮은 전류가 젖은 성장부로 돌아온다. 연속성 판독은 믿을 수 없다.
 
 ## Terminal
 
-ATLAS 흔적: 미생물 막이 노출 접점을 잇고 구리 손실을 늦추며 거짓 연속성 펄스를 반환한다. 인증된 선로 수리는 없음.
+ATLAS 정비 흔적 / LINE K-44: 노출된 구리, 염성 성장, 낮은 열 누출. 생물막 다리가 부식을 늦추고 거짓 연속성 펄스를 돌려준다. 이 선으로 펌프 제어를 라우팅하지 마라.
 
 ## Audio
 
-초록불을 믿지 마라. 저 케이블은 거짓말할 만큼은 살아 있다.
+핑거 신호가 점액을 통과한다. 전력도 통과한다. 그걸 수리라고 부르지 마라.
 
 ## Field Note
 
-초기 Atlas 흉터: 유용하고 조용하며, 스캐너 불신을 가르치기에 충분히 틀렸다.
+죽은 패널이 녹색 막으로 깨어나면 그 경로를 임시로 표시해라. 재킷에 도구를 넣기 전에 전원을 끊어라.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/ko_KR. -->

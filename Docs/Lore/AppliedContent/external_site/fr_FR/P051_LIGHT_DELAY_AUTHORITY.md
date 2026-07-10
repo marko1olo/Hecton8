@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Autorité du délai lumineux"
+title: "Autorite du delai-lumiere"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autorité du délai lumineux
+# Autorite du delai-lumiere
 
-Un appel de détresse sur HECTON-8 est une cargaison physique de sens. Il quitte un mât noyé, traverse l'espace d'Aegir à la vitesse de la lumière, attend dans des tampons relais et atteint Black Keel par une file qui sait déjà tarifer le risque. Le premier délai est une distance honnête. Les retards suivants sont humains : classe de garde, fenêtres de tempête, langue de responsabilité et habitude du transporteur à répondre à l'actif avant la personne. Une réponse peut donc être techniquement récente et inutile dans une salle de pression en train de céder.
+L'autorite du delai-lumiere definit la communication de HECTON-8 comme physique, retardee et contract-filtered: distance, weather, relay buffers et custody queues decident quand un signal devient usable.
+
+## Scanner
+
+Cache de relay mast. L'appel est parti propre, puis a attendu derriere light, queue law, storm scatter et Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active jusqu'a confirmation d'override par fresh signal window.
+
+## Audio
+
+La reponse arrive. Cela n'en fait pas un rescue.
+
+## Field Note
+
+Personne n'a censure le premier scream. La physics l'a porte assez lentement pour que la policy le rattrape.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/fr_FR. -->

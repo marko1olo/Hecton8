@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir衛星ラダー"
+title: "Aegir月梯子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir衛星ラダー
+# Aegir月梯子
 
-Aegirの衛星ラダーは、放射線標識、リレー天体、枯れた請求地、共鳴危険、HECTON-8、低温保管衛星、外側の不規則天体でできている。HECTON-8は生きた海と軌道圧の間にあるから価値を持つ。
+Aegirの月は経路機械だ。名前は空の飾りではない。影、中継沈黙、潮汐位相、carrier待機、質量移動の費用を決める。HECTON-8は作業梯子上のAegir-VIIIであり、海洋圧力と中継配置が採取も放棄も高価にするため価値を持つ。
 
 ## Scanner
 
-衛星列: Cinder、Hook、Glass、Switch、Drywell、Brinehook、Rake、HECTON-8、Pale、Longmark、Grave、Farline。
+月梯子解決: Skarn、Vela、Claw、Lumen、Thorne、Anvil、Kestrel、HECTON-8、Mute。KestrelとMuteが窓を曲げる。
 
 ## Terminal
 
-HECTON-8はAegir-VIII。内側でも最遠でもない。Rake共鳴とPaleの影が潮汐と通信品質を変える。
+AEGIR経路注記: 作業梯子でHECTON-8はKestrelの後にある。質量上昇前に中継影、潮汐位相、放射帯、Black Keel転送配置が一致しなければならない。
 
 ## Audio
 
-窓を信じる前に衛星を数えろ。
+窓を信じる前にKestrelを数えろ。
 
 ## Field Note
 
-空は背景ではなく機構だ。
+空は作業予定表だ。一つの影を逃せば、carrierは噂になる。
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/ja_JP. -->

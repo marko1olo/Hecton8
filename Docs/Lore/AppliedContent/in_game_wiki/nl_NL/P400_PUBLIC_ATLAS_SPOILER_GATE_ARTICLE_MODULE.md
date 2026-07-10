@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlas-toegangsgrens
 
-Atlas kan vroeg worden beschreven als beschadigde industrial continuity die via repair ecology leerde. Laatste receiver records blijven achter de evidence gate, omdat ze de betekenis van eerdere reparaties veranderen: seal, preserve, sever, quarantine en release zijn daar beneden geen neutrale werkwoorden.
+Atlas kan vroeg worden besproken als beschadigde industriële continuïteit. Het probeert drukroutes, records, machines en extractiehardware in de keten te houden. Het ongemakkelijke deel begint wanneer het reparatiepad door levend of halflevend materiaal loopt: geleidende biofilm over kabelbreuken, akoestisch weefsel in relaisbuizen, schelpafdichting over scheuren, getagde fauna die routestatus teruggeeft aan sensoren. De finale ontvangerlaag blijft gegrendeld omdat die de werkwoorden verandert. Afdichten, bewaren, scheiden, quarantainen en vrijgeven zijn niet meer neutraal zodra bewaarbewijs is teruggevonden.
 
 ## Scanner
 
-Atlas-grensrecord. Open bewijs toont industrial continuity logic en repair ecology; receiver custody, payload consequence en laatste keuzelagen vereisen geborgen proof.
+Atlas-grensrecord. Openbare laag behandelt falende continuïteitsinfrastructuur, reparatie-ecologie, biofilmbussen, akoestisch relaisweefsel en schelpafdichtingen; ontvangerbewaring blijft bewijsgegrendeld.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // ATLAS-TOEGANGSGRENS. Huidige laag: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue en shell seal. Beperkte laag: receiver custody en final payload consequence.
+OPENBARE ARCHIEFKNOOP // ATLAS-TOEGANGSGRENS. Zichtbare laag: drukcontinuïteitsreparatie. Beperkte laag: ontvangerbewaring, payloadgevolg, finale overdrachtsbevoegdheid. Lagen niet samenvoegen zonder geborgen bewijs.
 
 ## Audio
 
-Zeg dat het repareert. Wacht voordat je benoemt wat het als gerepareerd telt.
+Noem het voorlopig reparatie. Benoem niet wat het bewaart tot het record je dwingt.
 
 ## Field Note
 
-Marauder-notitie: een machine kan bewijs bewaren en toch de persoon erin beschadigen.
+Marauder-notitie: als Atlas bewaard zegt, stel de volgende vraag: bewaard voor welke ontvanger.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Луна, расколотая столкновением
 
-HECTON-8 сформировалась внутри системы Эгира, а позже была рассечена касательным столкновением. Рана не разорвала луну. Она подняла полки коры, открыла рапные разломы, накормила термальные коридоры и оставила старое дно доступным через редкие окна давления. Карты мародеров идут по этому повреждению, потому что самые безопасные маршруты здесь - старые травмы, заполненные водой.
+HECTON-8 - не stolen world, брошенный в Aegir ради mystery. Он formed here, потом glancing collision opened it without killing it. Wound поднял shelves, cracked brine basins, heated fault ladders и оставил pressure-glass seams там, где moon пыталась close around its own ocean. Этот old damage до сих пор решает, где hull может descend, где sound bends, где vents stay alive и где buried colony evidence может surface. Salvage maps follow injuries, потому что на HECTON-8 safest route often the old break that did not quite heal.
 
 ## Scanner
 
-Образец старой коры. Луна собралась в поясе обломков Эгира, а потом удар раскрыл ее так широко, что океан это запомнил.
+Crust sample. HECTON-8 formed in Aegir's debris belt, затем took an oblique impact wide enough for the ocean to remember.
 
 ## Terminal
 
-МОДЕЛЬ ПРОИСХОЖДЕНИЯ: аккреция вокруг Эгира, поздний косой удар, приливный резонанс после захвата. Итог: ступенчатая кора, горячие лестницы разломов, рапные бассейны, жилы пресс-стекла, неровный доступ к глубокому дну.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams и uneven deep-floor access.
 
 ## Audio
 
-Она родилась здесь. Потом что-то ударило так сильно, что у моря появилась карта.
+It was born here. Потом что-то ударило достаточно hard, чтобы give the sea a map.
 
 ## Field Note
 
-Миф о захваченной луне слишком чистый. HECTON-8 несет местную рану: поднятая кора, пересоленная рапа, жерла, которые до сих пор берут проценты.
+Captured-moon story слишком чистая. Это место born local, broken local и billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ru_RU. -->

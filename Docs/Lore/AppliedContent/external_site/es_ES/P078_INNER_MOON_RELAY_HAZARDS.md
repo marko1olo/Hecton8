@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Peligros de relé de lunas internas"
+title: "Riesgos relay de lunas internas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Peligros de relé de lunas internas
+# Riesgos relay de lunas internas
 
-Estos peligros explican cómo HECTON-8 pierde contacto por radiación, polvo, oclusión y route law heredada, no por interferencia mágica.
+Inner Moon Relay Hazards explica contact failure de HECTON-8 mediante radiation, dust, occlusion, eclipse geometry e inherited route law, no impossible interference.
 
 ## Scanner
 
-ESCALERA INTERNA // Skarn satura antenas. Vela dispersa óptica. Rutas viejas de Claw y Lumen mantienen handshakes caducados vivos.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw y Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTA DE PELIGRO DE RELÉ // La pérdida de contacto puede ser geometría, clima de partículas, persiana de polvo o buoy law heredada. Sospecha de UI limpia en ventanas de oleada.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-El relé no calló. Repitió el siglo equivocado.
+El relay no se silencio. Repeated the wrong century.
 
 ## Field Note
 
-Un icono limpio aún puede mentir a través de cielo viejo.
+Un clean icon aun puede mentir through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/es_ES. -->

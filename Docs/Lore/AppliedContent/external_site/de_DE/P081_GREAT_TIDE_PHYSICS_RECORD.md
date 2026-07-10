@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Physikprotokoll der Großen Flut"
+title: "Physikaufzeichnung der Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Physikprotokoll der Großen Flut
+# Physikaufzeichnung der Great Tide
 
-Das Physikprotokoll der Großen Flut hält die Katastrophe ehrlich. HECTON-8 war anfällig für Gezeitenresonanz, Eisbruch, Sturmflut und industrielle Wärmeabgabe. Deep Reachs Schuld liegt in Margen, Evakuierungskapazität und Entscheidungsprioritäten, nicht in einer erfundenen magischen Ursache.
+Die Physikaufzeichnung der Great Tide hält die Katastrophe ehrlich. HECTON-8 war bereits gefährlich: Aegirs Frühlingsgeometrie zog am Meer, die Kryosphäre belastete die Schelfe, Sturmstapelung fraß Zeitreserven, und Koloniewärme drückte versiegelte Drainagen rückwärts. Deep Reachs Schuld beginnt danach. Die Firma schob Aufstiegsreserve in die Zukunft, schützte Atlas-Kontinuität und behandelte Körper als Masse niedriger Priorität.
 
-Das Physikprotokoll der Großen Flut definiert die Katastrophenlogik von HECTON-8: Der Ozean ist physisch gefährlich, und das Unternehmensverbrechen bestand darin, mit optimistischen Margen zu planen. Beschönige es nicht: echte Physik tötete Menschen, und Deep Reach sorgte dafür, dass diese Physik Opfer hatte.
+Die Physikaufzeichnung der Great Tide definiert HECTON-8s Katastrophenlogik: Ein mondweiter Ozean wurde tödlich, weil messbare Physik auf Konzernoptimismus, verschobene Evakuierungskapazität und geschützte Kontinuitätshardware traf. Mach daraus keine Mystik. Physik tötete Menschen. Deep Reach sorgte dafür, dass Physik eine Menge vor sich hatte.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/de_DE. -->

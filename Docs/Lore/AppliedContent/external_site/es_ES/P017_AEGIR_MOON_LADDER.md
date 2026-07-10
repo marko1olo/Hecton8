@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Escalera lunar de Aegir
 
-La escalera lunar de Aegir convierte la luna jugable en parte de un sistema móvil. Otras lunas moldean mareas, esperas del carrier, sombras relé y coste de salida.
+La escalera lunar de Aegir convierte el cielo en mapa operativo: otras lunas forman mareas, señal, custodia carrier y las oportunidades estrechas para salir.
 
 ## Scanner
 
-Secuencia de lunas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Escalera lunar resuelta: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel y Mute doblan las ventanas.
 
 ## Terminal
 
-HECTON-8 es Aegir-VIII: ni interior ni la más lejana. La resonancia de Rake y la sombra de Pale alteran marea y paquetes.
+NOTA DE RUTA AEGIR: HECTON-8 sigue a Kestrel en la escalera operativa. Sombra de relé, fase de marea, banda de radiación y geometría de transferencia Black Keel deben alinearse antes del ascenso de masa.
 
 ## Audio
 
-Cuenta las lunas antes de confiar en una ventana.
+Cuenta Kestrel antes de confiar en la ventana.
 
 ## Field Note
 
-El cielo es un mecanismo, no decorado.
+El cielo es un horario de trabajo. Falla una sombra y el carrier será solo un rumor.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/es_ES. -->

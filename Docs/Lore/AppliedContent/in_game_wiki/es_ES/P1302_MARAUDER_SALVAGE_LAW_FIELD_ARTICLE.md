@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Salvage Law And Field Culture Primer
 spoiler_tier: 1
-title: "Artículo de Campo sobre Ley de Salvamento Marauder"
+title: "Artículo de Campo sobre Ley de Salvage Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Artículo de Campo sobre Ley de Salvamento Marauder
+# Artículo de Campo sobre Ley de Salvage Marauder
 
-Marauder es la palabra fea para una persona que el sistema de reclamaciones puede usar sin admitir deber de rescate. Un pirata roba fuera del libro. Un rescatista llega con deber, tripulación y autoridad pública. Un Marauder entra entre esas categorías: con licencia suficiente para tocar propiedad abandonada, prescindible suficiente para morir allí, útil suficiente para mover una reclamación disputada.
+Marauder es una palabra legal sucia antes de ser un trabajo. Un pirata roba fuera del libro. Un rescatista llega con deber, tripulación, autoridad pública y combustible suficiente para admitir que una persona importa. Un Marauder entra en la grieta entre ambos. La licencia dice que puedes tocar propiedad abandonada o disputada, marcar masa recuperable, preservar material testigo y presentar gravamen. También dice, en voz baja, que si mueres dentro de la reclamación el sistema puede llamarlo pérdida de contratista, no rescate fallido.
 
-Por eso las marcas Marauder no son lemas cuando aprendes la gramática. Arañazos, anillos negros, flechas de presión y etiquetas corporativas tachadas son ley de campo rápida: dueño hostil, cuenta de aire sospechosa, reloj de puerta falso, nombre de trabajador sin resolver, muestra más valiosa que cuerpo, paquete necesita testigo. Las dejaron equipos que no tenían tiempo de abrir un manual legal mientras el océano empujaba la pared.
+            Por eso el trabajo Marauder se siente mal incluso cuando sirve. Cortas paneles de una puerta de presión muerta porque el metal vale. También guardas el borde cortado porque prueba que la puerta fue soldada después de que la gente desapareció. Guardas una placa de nombre porque vende como aleación. También guardas el hash mojado porque la placa convierte una categoría de cuerpo otra vez en persona.
 
-La licencia es sucia porque permite a las corporaciones evitar verbos limpios. Deep Reach no tiene que decir abandonamos trabajadores si una zona puede llamarse campo de activos contaminados. Keelmark no tiene que decir vendimos riesgo si un cuerpo se vuelve masa recuperable. Un Marauder sobrevive leyendo esas traducciones más rápido que las oficinas.
+            Las marcas de campo nacieron porque la ley formal es demasiado lenta para salas inundadas. Un anillo negro significa dueño hostil o mentiroso. Una flecha partida significa ruta de presión falsa. Un sello corporativo tachado significa no confiar en la causa impresa. Un nombre obrero junto a una marca de ruta significa preservar persona con lugar. No son lemas; son ley de supervivencia comprimida.
+
+            En HECTON-8, el jugador no se vuelve puro por rechazar el salvage. Rechazarlo deja en pie las etiquetas limpias. La disciplina difícil es tomar con contexto: objeto, lugar, hash, marca, nombre, ruta del daño. Salvage sin memoria es saqueo. Salvage con testigo sigue siendo feo, pero puede obligar a una sala muerta a hablar en un libro que preferiría contar solo masa.
 
 ## Scanner
 
-MARCA MARAUDER // No es pintura pirata. Taquigrafía contractual: reclamación disputada, masa recuperable, dueño hostil, riesgo de testigo. Quien la dejó esperaba que otro profesional leyera rápido la pared.
+MARCA MARAUDER // Taquigrafía contractual, no pintura pirata. Campos implícitos: dueño disputado, masa recuperable, peligro de testigo, acceso de presión, riesgo de gravamen, conflicto de nombre obrero. Leer antes de cortar.
 
 ## Terminal
 
-AVISO DE CAMPO KEELMARK // La licencia Marauder no concede autoridad de rescate. Concede entrada limitada de salvamento, reconocimiento de gravamen, opciones de custodia de prueba y contabilidad de masa recuperable bajo reclamación disputada.
+AVISO DE CAMPO KEELMARK // La licencia Marauder concede entrada limitada a reclamación disputada, aviso de gravamen salvage, custodia de prueba de emergencia y contabilidad de masa recuperable. No concede autoridad de rescate, mando médico ni título limpio.
 
 ## Audio
 
-Línea de contrato Black Keel: No estás aquí porque la ley haya fallado. Estás aquí porque la ley encontró a alguien más barato que el rescate.
+Línea de contrato Black Keel: La ley no falló. Contrató a alguien lo bastante barato para entrar en la sala que abandonó.
 
 ## Field Note
 
-No confíes en una etiqueta limpia dentro de una sala mojada. Si importaba, alguien arañó cerca la versión fea.
+Si lo tomas, conserva de dónde vino. Un botín limpio compra combustible. Un botín sucio con testigo puede comprar de vuelta un nombre.
 
 <!-- In-Game Wiki; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/es_ES. -->

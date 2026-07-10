@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ecology Registry
 
-Use the ecology registry to separate native life from damage. Bright shelf mats and grazers show the baseline. Cable flora and filter bodies show life adapting to human hardware. Sensor-tagged fauna, conductive film and shell-seal growth point to Atlas repair routing. Do not cut every living thing off a cable; some of it may be keeping the line sealed.
+The ecology registry separates life from damage. Bright shelf mats and grazers show the baseline. Cable flora and filter bodies show life adapting to human hardware. Sensor-tagged fauna, conductive film, and shell-seal growth point to Atlas repair routing. The correct question is not whether something is alive, but what job it is doing in the pressure system.
 
 ## Scanner
 
-Ecology split confirmed: native shelf life, cable-adapted biota and Atlas-routed repair organisms. Identify category before harvesting.
+Registry split confirmed: native shelf life, cable-adapted biota, Atlas-routed repair organisms. Identify before cutting.
 
 ## Terminal
 
-REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals.
+REGISTRY SPLIT: native pressure ecology; colony-adapted cable biota; Atlas-altered repair organisms. Mislabeling can destroy working seals or erase route evidence.
 
 ## Audio
 

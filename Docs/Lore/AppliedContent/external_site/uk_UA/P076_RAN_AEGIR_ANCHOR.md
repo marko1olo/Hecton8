@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Якір Ran / Aegir
 
-Якір Ran / Aegir фіксує візуальний смак HECTON-8: жорстке науково-фантастичне тьмяне світло згори, тиск і борг знизу.
+Ran / Aegir Anchor заземлює visual logic HECTON-8: dimmer hard-sci-fi sunlight above, далі depth, weather, turbidity, pressure і debt below.
 
 ## Scanner
 
-Зоряна таблиця K-класу. Ran горить нормально. Aegir тьмяніший за Sol, але темрява тут приходить від глибини, погоди і боргу.
+K-class star plate. Ran горить нормально; deep тут не supernatural, а просто надто далеко під weather, water і debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Світло помаранчевого карлика підтримує поверхневі роботи. Штормове розсіювання, геометрія затемнень і каламутність океану опускають видимість спуску нижче безпечної межі.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity і industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Зоря на місці. Вона просто не може спуститися за тобою.
+Star present. Вона просто не може follow you down.
 
 ## Field Note
 
-Справжньої зорі достатньо. Решту робить океан.
+Real star достатньо. Решту робить ocean.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/uk_UA. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Frontera de acceso Atlas"
+title: "Límite de acceso Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontera de acceso Atlas
+# Límite de acceso Atlas
 
-Atlas-6 no es una simple rogue machine, monstruo ni milagro. La capa pública es industrial: un continuity system diseñado para mantener pressure machinery, rutas, registros y extraction hardware con vida después del fallo. La capa inquietante aparece cuando la reparación cruza hacia infraestructura viva. El conductive biofilm puentea cables. Los acoustic organs llevan timing. El shell sealant cierra fracturas. La sensor-tagged fauna se vuelve feedback. La capa final permanece cerrada hasta que el jugador tenga proof de receiver custody y payload consequence, porque esos hechos reescriben escenas anteriores. Un artículo Atlas spoiler-safe puede hacer comprensible el horror del mantenimiento sin nombrar demasiado pronto al último testigo.
+Atlas-6 no debe presentarse como simple máquina rebelde ni inteligencia milagrosa. El artículo público seguro empieza con lo que el jugador puede verificar pronto: la lógica de continuidad está dañada, las rutas de reparación son improvisadas y la ecología de HECTON-8 ha sido arrastrada a la infraestructura. Un cable despierta por biofilm. Una tubería devuelve ritmo por tejido. Una fractura se cierra bajo crecimiento de concha. Un animal etiquetado cambia un estado de ruta. Esos hechos bastan para hacer peligrosa la manutención sin nombrar demasiado pronto la última capa de custodia. Los registros de receptor y la consecuencia final de carga útil pertenecen detrás de prueba recuperada, porque convierten escenas tempranas de reparación en prueba de transferencia, preservación y daño.
 
 ## Scanner
 
-Registro de frontera Atlas. La evidencia abierta muestra industrial continuity logic y repair ecology; receiver custody, consecuencia del payload y capas de elección final requieren prueba recuperada.
+Registro de límite Atlas. La capa pública cubre infraestructura de continuidad fallida, ecología de reparación, buses de biofilm, tejido de relevo acústico y sellos de concha; la custodia de receptor queda cerrada por prueba.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // FRONTERA DE ACCESO ATLAS. Capa actual: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue y shell seal. Capa restringida: receiver custody y final payload consequence.
+NODO DE ARCHIVO PÚBLICO // LÍMITE DE ACCESO ATLAS. Capa visible: reparación de continuidad de presión. Capa restringida: custodia de receptor, consecuencia de carga útil, autoridad de transferencia final. No mezclar capas sin prueba recuperada.
 
 ## Audio
 
-Di que repara. Espera antes de nombrar qué cuenta como reparado.
+Llámalo reparación por ahora. No nombres lo que preserva hasta que el registro te obligue.
 
 ## Field Note
 
-Nota de Marauder: una máquina puede preservar una prueba y aun así dañar a la persona dentro.
+Nota de Merodeador: si Atlas dice preservado, pregunta lo siguiente: preservado para qué receptor.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/es_ES. -->

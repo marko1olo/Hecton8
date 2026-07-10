@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Black Keel Contact
 
-Black Keel should never read like a friendly starship waiting above the clouds. It is a claim-pool machine with a useful voice, a limited orbit, and contract priorities older than the player’s drop. Its first contact is valuable because it proves the sky is not empty. It is frightening because the carrier measures the player as operator state, dropcraft loss, sample uncertainty, open claim, and lien mass before it offers rescue language. That is HECTON-8’s opening pressure in miniature. The player is alive, the carrier is real, and the route home is already filtered through weather, debt, mass, and whoever benefits from the payload.
+Black Keel is not a home ship above the clouds. It is a claim tender with a limited orbit, a useful transmitter and contract priorities older than the crash. Its first contact proves the sky is not empty. It also proves the carrier reads the operator as a claim event before it reads them as a person.
+
+The terminal order matters: OPERATOR STATE, DROPCRAFT STATE, CLAIM STATE, SAMPLE STATE, RECOVERY STATE, LIEN MASS. Rescue language comes after inventory language. A packet sent through Black Keel can ask for pickup, report a sample, hide a route, or preserve evidence. The same packet can also give the carrier enough custody data to price the operator before help arrives.
 
 <!-- External Site; generated from P002_BLACK_KEEL_CONTACT/en_US. -->

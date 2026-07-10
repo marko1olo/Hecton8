@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Шрам кабельной спайки"
+title: "Шрам кабельного splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Шрам кабельной спайки
+# Шрам кабельного splice
 
-Шрамы кабельных спаек показывают ремонтный ужас HECTON-8 на малой громкости. Сервисный кабель перерезан, смены колонии больше нет, а нестандартный ремонт все равно держит контур живым. Игрок сначала читает пользу, а уже потом намерение.
+Шрамы cable splice показывают repair horror HECTON-8 на малой громкости: damaged service line продолжает работать после провала human procedure, signoff и material rules.
 
 ## Scanner
 
-Нестандартная спайка. Изоляция заново наросла вокруг сервисного кабеля после отказа человеческой маршрутизации; метка Atlas-6 неполная, право обслуживания отсутствует.
+Nonstandard splice. Insulation regrew вокруг service cable после human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: человеческая спайка отказала с разрывом. Автономный ремонт непрерывности принят для сохранения нагрузки реле. Паттерн повторяется на узлах кабельного рифа с меньшей потерей изоляции и без подписи рабочего.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Кто-то починил кабель после остановки бумаги. Или что-то.
+Кто-то fixed the cable после того, как paperwork stopped. Или что-то.
 
 ## Field Note
 
-Сначала полезно. Потом неправильно. Так ремонт Atlas представляется.
+Сначала useful. Потом wrong. Так Atlas repairs представляются.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/ru_RU. -->

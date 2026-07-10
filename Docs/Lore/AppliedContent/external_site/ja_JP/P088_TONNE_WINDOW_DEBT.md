@@ -19,6 +19,22 @@ localization_flags: 1
 
 # トン窓債務
 
-トン窓とは、質量、burnタイミング、隔離容積、法的優先度で測られるcarrier容量の一片だ。操作者には債務のように感じられる。HECTON-8で見つけた有用な物体すべてが、それを見つけた身体と同じledgerに入るからだ。封印ケースは軽くても法的に重い。サンプルラックは質量が小さくても清浄容積を要求する。人間の抽出は当然に見えるが、バラスト、酸素予備、payload custodyがすでに窓を使っていれば当然ではなくなる。HECTON-8の経済は抽象ではなく物理になる。プレイヤーは偽の道徳メーターで罰せられない。燃料、質量、汚染、書類で生存を値付けする機械の中に閉じ込められる。
+トン窓債務は生存を硬いlogisticsへ変える。extraction、oxygen、samples、salvage、quarantine volume、burn marginが同じpriced mass windowを占める。
+
+## Scanner
+
+mass-window ledger。助けは言葉を持つ前に重さを持つ。
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed。Extraction massはsealed payload、ballast reserve、oxygen debt、quarantine sample volume、hull patch inventoryと競合。Manual priorityにはpaid override、verified hazard proof、またはcustody reclassificationが必要。
+
+## Audio
+
+船は命を持ち上げられる。問題はledgerがほかに何を積ませるかだ。
+
+## Field Note
+
+oxygen、ballast、proof、samples、hull patch、body。carrierは慈悲をキログラムで値付けする。
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ja_JP. -->

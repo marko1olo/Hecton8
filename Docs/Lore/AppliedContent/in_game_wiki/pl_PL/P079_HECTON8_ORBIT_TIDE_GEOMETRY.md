@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Orbita HECTON-8 / geometria pływów"
+title: "Orbita / geometria plywow HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Orbita HECTON-8 / geometria pływów
+# Orbita / geometria plywow HECTON-8
 
-Orbita HECTON-8 czyni Great Tide wiarygodnym, zanim stanie się polityczny. Rezonans ciągnął ocean. Stres lodu i sztormowy napór obciążały szelfy. Ciepło przemysłowe i zamknięty drenaż sprawiły, że systemy kolonii odepchnęły wodę w złej godzinie.
-
-Zbrodnią nie jest to, że Deep Reach wymyśliło fizykę. Zbrodnią jest ewakuacyjna matematyka zbudowana wokół Atlas continuity, ubezpieczonych ładunków i klas pracy, a potem nazwanie martwych dopuszczalnym błędem prognozy.
+Orbit HECTON-8 czyni Great Tide believable, zanim stanie sie political. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water tam, gdzie colony math chciala margins, a industrial heat kazal sealed drainage fight the sea at the wrong hour. Crime nie polega na tym, ze Deep Reach invented physics. Crime polega na tym, ze evacuation math byla built around Atlas continuity, insured payloads, labor classes i claim loss, a dead zostali filed as forecast error.
 
 ## Scanner
 
-MODEL PŁYWÓW // Rezonans, stres lodu, sztormowy napór i zrzut ciepła przekroczyły prognozę ewakuacji. Flagi Atlas continuity nadpisały odwrót.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge i heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-ŁAŃCUCH GREAT TIDE // Wymuszenie orbitalne wzmocniło obciążenie oceanu. Sztuczny zrzut ciepła i zamknięty drenaż zmieniły pływ w awarię kolonii.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge i sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Fizyka otworzyła drzwi. Deep Reach zdecydowało, kto przez nie wyjdzie.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Księżyc może utopić kolonię bez nienawiści.
+Moon moze drown a colony bez nienawisci.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/pl_PL. -->

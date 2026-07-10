@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "تأخر مسار بلا FTL"
+title: "تأخير المسار بلا FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تأخر مسار بلا FTL
+# تأخير المسار بلا FTL
 
-لا يملك HECTON-8 قناة إنقاذ فورية. تم الوصول إلى نظام Aegir عبر precursor probes وbeam infrastructure وpellet-fusion freight وأنظمة كبح تتعامل مع العجلة كقيد كتلة آخر. قد تصل الرسالة قبل العتاد الذي يجعلها مفيدة. يستطيع carrier الاعتراف بوجودك، وتسعير payload، وحمل valid claim، ومع ذلك يعجز عن إنفاق descent mass تحت weather أو relay angle أو custody window خاطئة. يجب أن يبقي نص السفر العام هذا القيد ظاهرا، لأن العزلة هنا نتيجة هندسة وقانون ولوجستيات معا. قد يكون Black Keel قريبا قانونيا وغير قابل للوصول ماديا. هذا التأخير هو سبب استمرار اللاعب في إصلاح الأختام يدويا بعد رد relay.
+لا تملك HECTON-8 قناة إنقاذ فورية. حركة البشر إلى Aegir مبنية من خرائط مسابير سابقة، وبنية ممرات الحزم، وشحن pellet-fusion، وأنظمة الكبح، ونوافذ الناقل، وتسليمات الحفظ القانونية. لا تلغي العجلة الكتلة. يمكن لسفينة أن تسعر حمولة، وتقبل مطالبة، وتحفظ سجلك، وهي لا تملك تخصيص هبوط لنقل غرض مفيد واحد إلى الماء. لذلك تعامل اللعبة الاتصال كدليل لا كإنقاذ. تثبت الإجابة أن أحدا سمع الطارئ. لا ترقع ختما، ولا تحرك bathydrop، ولا تقصر نافذة مدارية سيئة.
 
 ## Scanner
 
-سجل عبور. حركة Aegir تعتمد على precursor probes وbeam lanes وpellet-fusion freight وbraking mass وpacket age وrelay custody والتأخير القانوني.
+سجل عبور. تعتمد حركة Aegir على خرائط المسابير، وممرات الحزم، وشحن pellet-fusion، وكتلة الكبح، وعمر الحزمة، وحفظ المرحل، ونوافذ الهبوط المتأثرة بالطقس.
 
 ## Terminal
 
-عقدة الأرشيف العام // حد العبور. لا يوجد FTL. لا يوجد Ansible. الإنقاذ الحي يحتاج نقلا ماديا وbraking architecture وcarrier position وdescent mass وlocal window صالحة.
+عقدة أرشيف عامة // حد العبور. FTL: غير موجود. Ansible: غير موجود. الإنقاذ الحي يتطلب موقع الناقل، وتخصيص الكبح، وكتلة الهبوط، والطقس المحلي، ونافذة حفظ لم تنته.
 
 ## Audio
 
-قد تكون المساعدة حاضرة قانونيا وبعيدة ماديا لسنوات.
+يمكن للناقل تسجيل طارئك ويبقى على مسافة سنوات من الكتلة.
 
 ## Field Note
 
-ملاحظة Marauder: عندما يجيب relay، اسأل عن عمر الجواب وعن الكتلة التي يستطيع تحريكها.
+ملاحظة Marauder: كل إجابة إنقاذ تحتاج أربعة أرقام: عمر الحزمة، كتلة الناقل، فتحة الكبح، نافذة الهبوط.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ar_SA. -->

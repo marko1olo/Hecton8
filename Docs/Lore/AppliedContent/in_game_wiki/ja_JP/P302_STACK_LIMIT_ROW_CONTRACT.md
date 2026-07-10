@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "スタック上限データ境界"
+title: "圧力スタック制限行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# スタック上限データ境界
+# 圧力スタック制限行
 
-スタック上限データ境界はインベントリを物理的に保つ。アイテムが重なるのは、容器、圧力等級、質量、汚染状態が同じルートを生き延び、セーブファイルに嘘をつかない場合だけだ。
+スタック制限は物理的な貨物規則だ。工具二つは同じ箱に入る。圧力サンプル二つは、片方のシールが割れたり片方のタグがAtlas互換ノイズを持つなら、同じ記録を共有できない。Black Keelは軌道ウィンドウを通る質量に課金し、封じ込めについてマニフェストを嘘にするスタックを拒否する。
 
 ## Scanner
 
-スタック行はアイコンの山を拒否する: 容器分類、圧力等級、汚染、質量が数を決める。
+スタック要求拒否：容器クラス、圧力等級、汚染段階、質量ウィンドウ料金、マニフェストIDが一致しない。
 
 ## Terminal
 
-STACK CONTRACT: スタック数には容器タイプ、圧力等級、汚染段階、質量分類、警告 tier、save-stable identity が必要。木箱は圧力容器ではない。
+スタック受入スキーマ / Black Keel貨物デスク：スタック数には容器種別、定格圧力、シール証明、汚染段階、質量クラス、警告階層、抵当質量ウィンドウ、安定したマニフェストIDが必要。箱ラベルは封じ込め認証ではない。
 
 ## Audio
 
-木箱は圧力容器ではない。
+貨物デスク：スタック拒否。その箱は吊り上げ用で、圧力保管用ではない。
 
 ## Field Note
 
-スタック上限は table-owned のまま、セーブ identity に対して安定させる。
+場所を空けるために未知のサンプルを重ねるな。悪いシール一つで山全体が検疫貨物になり、運搬船は質量分を請求する。
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/ja_JP. -->

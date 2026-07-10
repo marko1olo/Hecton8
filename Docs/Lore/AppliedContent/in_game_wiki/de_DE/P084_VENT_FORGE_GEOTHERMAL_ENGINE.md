@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Geothermischer Motor der Schlotschmiede"
+title: "Geothermische Vent-Forge-Maschine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geothermischer Motor der Schlotschmiede
+# Geothermische Vent-Forge-Maschine
 
-Schlotschmieden verbinden Geologie mit Fertigung, Überleben und Horror. Sie liefern Wärme- und Druckzyklen für Keramik, Dichtungen und Druckglas, erzeugen aber auch Kochblasen, falsche Sauerstoffwerte, Korrosionswolken und Tierwanderungen.
+Vent Forges verbinden Geologie mit Arbeit. Ihre Pulse können Keramik härten, Druckdichtungen zurücksetzen, Pressure Glass glühen und Aufstiegsladungen vorwärmen, aber jeder nützliche Zyklus ist auch ein Gefahrenrhythmus. Kochende Scherung greift Nähte an, falscher Sauerstoff täuscht Instrumente, Korrosionsblüte dringt in offene Gehäuse, und nahes Leben bewegt sich, bevor der Bediener versteht warum.
 
 ## Scanner
 
-Verteiler der Schlotschmiede. Hitze, Gift und Energie nutzen dasselbe Rohr.
+Vent-Forge-Verteiler. Wärme, Gift, Druck und Leistung teilen dieselbe Leitung.
 
 ## Terminal
 
-GEOTHERMISCHER MOTOR: Schlotpuls geeignet für Keramikhärtung, Druckglas-Temperung und Vorwärmung von Notaufstiegsladungen. Risiken: kochende Scherung, Sauerstoff-Falschpositiv und korrosive Blüte.
+GEOTHERMISCHE MASCHINE: Ventpuls geeignet für Keramikhärtung, Pressure-Glass-Glühen, Dichtungsreset und Vorwärmung von Notaufstiegsladung. Expositionsrisiken: kochende Scherung, falscher Sauerstoff, Korrosionsblüte, Faunamigration.
 
 ## Audio
 
-Dem Schlot ist egal, ob du ihn Energie oder Wetter nennst.
+Dem Vent ist egal, ob du es Leistung oder Wetter nennst.
 
 ## Field Note
 
-Jeder nützliche Schlot bestraft auch schlechtes Timing.
+Jede nützliche Ventöffnung ist auch eine Maschine, die schlechtes Timing bestraft.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/de_DE. -->

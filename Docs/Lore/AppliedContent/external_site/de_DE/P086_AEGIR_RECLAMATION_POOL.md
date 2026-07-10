@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Aegir-Rückgewinnungspool"
+title: "Aegir-Reklamationspool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir-Rückgewinnungspool
+# Aegir-Reklamationspool
 
-Der Aegir-Rückgewinnungspool hält den Spieler allein und macht die Ankunft dennoch glaubwürdig. Kein kleiner Marauder besitzt Black Keel direkt. Der Carrier-Tender gehört zu einem gemeinsamen Claim-System für tote Infrastruktur, umstrittene Fracht und Welten, die für normale Crews allein zu teuer sind. Ein Pool-Stempel kann Zugang zu einer Route kaufen, übergibt diese Route aber auch der Schlichtung. Sobald der Operator unter der Wasserlinie ist, konkurriert jede Anfrage mit Payload-Custody, Quarantänereserven, Beweiswert und Treibstofffenstern. Das Grauen des Pools ist prozedural. Er kann Hilfe schicken und Rettung verweigern, weil Hilfe unter Aegir-Claim-Recht nur eine abrechenbare Dienstleistung unter vielen ist.
+Der Aegir-Reklamationspool rahmt Black Keel als geteiltes Salvage-Instrument: Rettung ist real, lauft aber durch contracts, lien priority, quarantine custody und burn-window-Mathematik.
+
+## Scanner
+
+Claim-Pool-Stempel. Black Keel wurde durch gemeinsame Schuld entsandt, nicht durch Rettungsgnade.
+
+## Terminal
+
+AEGIR RECLAMATION POOL: autonomer claim tender BLACK KEEL dem derelict-pressure claim HECTON-8 zugewiesen. Contractor welfare class begrenzt. Payload custody class variabel. Human extraction bleibt pending, bis lien-, quarantine- und mass-window-arbitration geschlossen sind.
+
+## Audio
+
+Der Pool hat wirklich ein Schiff geschickt. Das ist die Gnade. Alles danach ist Buchhaltung.
+
+## Field Note
+
+Der Pool machte einen Carrier in Aegir moglich. Er machte auch jedes Versprechen bedingt.
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/de_DE. -->

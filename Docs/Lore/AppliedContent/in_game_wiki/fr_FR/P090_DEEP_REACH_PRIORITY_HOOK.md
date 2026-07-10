@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Crochet de priorité Deep Reach"
+title: "Priority hook de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Crochet de priorité Deep Reach
+# Priority hook de Deep Reach
 
-La pression actuelle de Deep Reach n'exige pas un contrôle à distance impossible. Vieux certificats de continuité, clauses de quarantaine, tokens d'accès Atlas et crochets de priorité payload se trouvent déjà dans le chemin légal de Black Keel. La compagnie peut influencer ce que le carrier valorise sans le posséder visiblement. L'antagoniste devient plus difficile à couper : ce n'est pas un signal à brouiller, mais une clause qui se réveille encore.
+Le pouvoir de Deep Reach sur Black Keel n'est pas un instant remote control ni une chaine FTL cachee. La compagnie a laisse des choses plus anciennes: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities et evidence suppression queues. Ces hooks ont ete ecrits quand la colony avait encore des meetings, budgets et signatures. Des annees plus tard, ils peuvent encore se reveiller dans l'arbitration path du carrier. C'est ce qui rend la pression credible. Deep Reach ne parle pas toujours. Parfois, l'ancien paperwork parle pour elle.
 
 ## Scanner
 
-Vieux crochet de certificat. Deep Reach ne possède pas le vaisseau ; elle possède la clause.
+Ancien certificate hook. Deep Reach n'a pas besoin du bridge tant que la clause lui appartient encore.
 
 ## Terminal
 
-ROUTE OVERRIDE : certificat legacy de continuité Deep Reach peut avancer recovery payload, verrou quarantaine, token accès Atlas ou file suppression preuve sous loi claim Aegir. Priorité extraction humaine inchangée sauf si preuve danger dépasse valeur custody.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate peut avancer payload recovery, quarantine lock, Atlas access token, evidence suppression queue ou sealed infrastructure proof sous Aegir claim law. Human extraction priority unchanged sauf si verified hazard proof depasse custody value.
 
 ## Audio
 
-Ils n'ont pas besoin d'être sur le pont pour orienter la réponse.
+Ils n'ont pas besoin d'etre sur le bridge pour orienter la reponse.
 
 ## Field Note
 
-Plus propre qu'un complot : les papiers vivent encore et ont encore faim.
+Plus propre qu'une conspiracy: le paperwork a survecu aux gens qui l'ont signe.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/fr_FR. -->

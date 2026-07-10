@@ -19,22 +19,31 @@ localization_flags: 0
 
 # P-63 Pump Room Work Order
 
-The P-63 Pump Room Work Order makes the first repair feel like inherited colony procedure instead of tutorial text. It is soaked, practical, and frightened in small ways. The order tells workers to clear the sump, patch the cold seam, wait for the return pinger, and cut a fused latch only after pressure holds. That sequence teaches the player how HECTON-8 workers thought: water first, seal second, sound before force, route trust last. The missing supervisor initials and doubled circle around the cut line make the paper feel used, not authored for the player. It is a small artifact, but it carries the whole game loop in miniature: read the room, restore a system, distrust the easy cut.
+The P-63 pump room order is a wet repair card, not a lesson sheet. It gives the repair sequence in the order a worker needed it: water out, seam sealed, return pinger checked, latch cut only after pressure holds. The doubled circle around the cut line is the warning. Somebody saw a fast cut go wrong before this copy was soaked.
+
+The artifact carries colony habit in procedure. Workers trusted water level first, seal second, sound before force, and route clearance last. The missing supervisor initials and stained lower half matter because the order was used in a room that was failing while the paper was still on the clipboard.
 
 ## Scanner
 
-The first repair reads like a colony habit: pump, seal, listen, cut only if the room stops lying.
+Waterlogged P-63 work order. Sequence still readable: clear sump, patch cold seam, wait for return pinger, cut only after pressure holds.
 
 ## Terminal
 
-WORK ORDER P-63: clear sump; patch cold seam; verify return pinger; cut fused latch only after pressure holds; print gasket from local stock; mark route safe after acoustic return repeats three times. Supervisor initials missing under water stain.
+WORK ORDER P-63
+Clear sump.
+Patch cold seam.
+Verify return pinger.
+Cut fused latch only after pressure holds.
+Print gasket from local stock.
+Mark route safe after three acoustic-return repeats.
+Supervisor initials lost under water stain.
 
 ## Audio
 
-Pump first. Seal second. If it sings, stop cutting.
+Pump first. Seal second. Three returns before the cut.
 
 ## Field Note
 
-Clipboard soaked through the lower half. The cut line is still readable because somebody circled it twice and wrote if it sings, stop.
+Lower clipboard soaked through. Cut line circled twice: IF IT SINGS, STOP.
 
 <!-- In-Game Wiki; generated from P287_P63_PUMP_ROOM_WORK_ORDER/en_US. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Leitfähiger Biofilm-Reparaturbus
 
-Leitfähiger Biofilm entsteht dort, wo gerissene Kabelmäntel Kupfersalze, Wärme und schwachen Strom ins Wasser von HECTON-8 abgeben. Das ist kein Bewusstsein. Es ist ein lebender Leiter, nützlich genug, damit Atlas ihn als Reparaturbus behandelt. Eine beschädigte Leitung kann gesund wirken, während der Film nur einen dünnen Diagnoseimpuls über die Wunde trägt.
+Leitfähiger Biofilm wächst dort, wo gerissene Kabelmäntel Kupfersalze, Wärme und schwachen Strom ins Wasser von HECTON-8 lecken. Der Film kann genug Signal tragen, damit Atlas eine tote Leitung als nutzbar markiert. Ein Panel wacht für Sekunden auf, ein Schloss blinkt grün, und das echte Kabel kann unter Last trotzdem versagen.
 
 ## Scanner
 
-Grünschwarzer Film überbrückt die Kabelwunde. Die Leckspannung ist schwach, gemustert und noch in Bewegung.
+Grünschwarzer Film überbrückt den gespaltenen Kabelmantel. Schwacher Strom läuft durch nasses Wachstum zurück; Durchgangsanzeige unzuverlässig.
 
 ## Terminal
 
-ATLAS-SPUR: mikrobieller Film überbrückt offene Kontakte, bremst Kupferverlust und liefert falsche Kontinuitätsimpulse. Keine zertifizierte Leitungsreparatur vorhanden.
+ATLAS-WARTUNGSSPUR / LEITUNG K-44: freiliegendes Kupfer, salines Wachstum, geringe Wärmeleckage. Biofilmbrücke bremst Korrosion und liefert falsche Durchgangsimpulse. Pumpensteuerung nicht über diese Leitung routen.
 
 ## Audio
 
-Trau dem grünen Licht nicht. Das Kabel lebt genug, um zu lügen.
+Der Pinger kommt durch den Schleim. Strom auch. Nenn das nicht repariert.
 
 ## Field Note
 
-Frühe Atlas-Narbe: nützlich, leise und falsch genug, um Misstrauen gegen Scanner zu lehren.
+Wenn ein totes Panel durch grünen Film aufwacht, markier die Route als vorläufig. Schalte Strom ab, bevor du Werkzeug in den Mantel setzt.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/de_DE. -->

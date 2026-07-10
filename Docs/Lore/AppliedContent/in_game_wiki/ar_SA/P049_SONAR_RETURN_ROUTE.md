@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "طريق عودة بالسونار"
+title: "مسار عودة sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# طريق عودة بالسونار
+# مسار عودة sonar
 
-منارة العودة تسجل صوت الطريق عندما كان آمنا آخر مرة. لا تعد بأن الطريق بقي آمنا. موج العاصفة، كابل مرتخ، طمي متحرك، fauna وقطع salvage جديدة يمكن أن تثني عودة السونار دون أن تمحو الممر. قبل حمل حمولة أو النزول أعمق، أرسل ping على الخط. إذا تغيرت النغمة، خزّن الحمولة أو ضع طريقا ثانيا.
+يسجل return beacon كيف بدا صوت route عندما كان last safe. لا يعد بأن route stayed safe. على HECTON-8، للsafety صوت: clear edges وclean delay وno loose metal singing in the low band وno silt swallowing the tail. يمكن لstorm surge وcut cable وmoving fauna وfresh salvage mass وdoor flexed under pressure أن bend the return دون erased corridor. Return route هو work. Ping before loading، وcache the load إذا عاد echo بshape مختلف.
 
 ## Scanner
 
-منارة العودة قديمة. ping الآمن القديم لم يعد يطابق صدى الممر؛ كتلة الحمولة ستبطئ نافذة الانسحاب.
+Return beacon stale. لم يعد old safe ping يطابق corridor echo؛ سوف يبطئ cargo mass نافذة retreat.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: آخر صدى نظيف غير صالح. تم استقبال ping من Black Keel بثقة منخفضة. انجراف العوائق وكثافة الطمي يتجاوزان سماحية الخريطة. ضع علامة خط ثان قبل استخراج الحمولة.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, and cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-الطريق ما زال هناك. الصدى ليس نفسه.
+The route is still there. الecho ليس نفسه.
 
 ## Field Note
 
-أرسل ping قبل التحميل. إذا تغير طريق البيت ويداك فارغتان، فلن يسامح حقيبة كاملة.
+Ping before loading. إذا كان way home changed حين كانت hands empty، فلن يغفر full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/ar_SA. -->

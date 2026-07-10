@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Keelmark Mutual监管
 
-Keelmark Mutual是保险监管外壳,让Black Keel能在Aegir运行,而现场不需要真人救援权力。纸面上它不是Deep Reach。实际中,旧underwriting可以被拥有正确priority hook的人推动,因为每具身体、每件工具、每个样本和每只封存箱,在操作员求助之前就已经位于风险日程里。
+Keelmark Mutual是Black Keel行为背后的insurance-custody外壳。它不是戴着面具的Deep Reach，也不是秘密rescue service。Keelmark存在的目的，是在Aegir没有活人能接电话时，让claim tenders保持合法、受资助、受保险保护。这让它比反派更冷。policy并不憎恨operator；它只是把operator定义为debt、vessel risk、payload interface、quarantine exposure和possible witness。一旦这些类别存在，后来的每一次求助都必须穿过它们。
 
 ## Scanner
 
-保险外壳完好。Keelmark在拥有身体之前先拥有留置权。
+underwriting标签完好。既然lien已经有牙齿，Keelmark不需要恶意。
 
 ## Terminal
 
-KEELMARK MUTUAL:claim-tender留置权激活。操作员债务、船体风险、payload custody和隔离储备打包进远程underwriting schedule。distress状态不暂停留置权。
+KEELMARK MUTUAL: claim-tender lien active。Operator debt、vessel risk、payload custody、quarantine reserve与recovery proof已绑定在remote underwriting schedule下。Distress status不会暂停lien或custody order。
 
 ## Audio
 
-这份保单比你的求救呼叫更老。
+那份policy比distress call更老。它有更长时间学习这条路线。
 
 ## Field Note
 
-保险方不是隐藏主谋。它更糟:一个从不需要在乎的日程。
+没有黑屋里的mastermind。只有一套比罪责活得更久的schedule。
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/zh_CN. -->

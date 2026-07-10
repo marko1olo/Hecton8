@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Cable Splice Scar
 
-Cable splice scars show HECTON-8's repair horror at low volume. A service cable is cut, the colony crew is gone, and a nonstandard repair keeps the circuit alive anyway. The player reads utility before intent.
+Cable splice scars show HECTON-8's repair horror at low volume: a damaged service line keeps working after human procedure, signoff, and material rules have already failed.
 
 ## Scanner
 
-Nonstandard splice. Insulation regrew around a service cable after human routing failed; Atlas-6 tag is partial and maintenance authority is missing.
+Nonstandard splice. Insulation regrew around a service cable after human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 

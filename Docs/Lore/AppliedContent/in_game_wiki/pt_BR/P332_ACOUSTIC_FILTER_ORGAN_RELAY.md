@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Relé de órgão filtrante acústico
 
-Órgãos filtrantes acústicos crescem em antigas gargantas de relé, onde água, pressão e som fazem o trabalho que rádio não consegue. O tecido não fala. Ele muda impedância, abafa o rugido das bombas e deixa tons estreitos do pinger viajarem mais longe do que deveriam. Atlas pode usar esse eco repetido como relé barato, e um jogador atento como pista de rota.
+Órgãos filtrantes acústicos se formam dentro de tubos de relé antigos onde pressão, água em movimento e som continuam alimentando tecido. Eles podem levar um pinger mais longe ao cortar o rugido da bomba e passar um tom estreito. A mesma dobra pode atrasar o retorno e mover uma parede mapeada por metros, o bastante para pôr um mergulhador num beco sem saída.
 
 ## Scanner
 
-Tecido macio de anteparo no tubo de relé deixa tons do pinger passar e mata o ruído das bombas.
+Tecido de anteparo na garganta do relé passa tom estreito de pinger e corta ruído de bomba. Mapa de retorno está defasado.
 
 ## Terminal
 
-NOTA DE RELÉ: dobras vivas rejeitam ruído amplo de máquinas, deixam pulsos estreitos do pinger passar e deslocam a fase dos ecos de retorno. Confiança do mapa adiante reduzida.
+TUBO DE RELÉ A-17: dobras vivas passam pulsos de pinger 8-12 kHz, rejeitam ruído amplo de bomba e adicionam atraso de retorno. Confiança do mapa a jusante reduzida. Não certificar rota de volta só por este relé.
 
 ## Audio
 
-Se responder como equipamento, lembre que equipamento não sangra.
+Respondeu ao pinger. O tubo vaza fluido claro. Marque como animal, não relé.
 
 ## Field Note
 
-Use onde o sonar parece útil antes de ficar suspeito.
+Se um relé responde limpo demais num tubo inundado, rode um segundo pinger de outro ângulo. Som bom ainda pode ser mapa ruim.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/pt_BR. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "نوافذ القاع القابلة للوصول"
+title: "نوافذ seafloor قابلة للوصول"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# نوافذ القاع القابلة للوصول
+# نوافذ seafloor قابلة للوصول
 
-معظم قاع HECTON-8 لا تصل إليه الشجاعة العادية. الضغط يبني جدارا قبل أن يظهر القاع. النوافذ القابلة للوصول هي الاستثناء: أماكن ممزقة حيث يغير رف منهار أو حافة مكشوفة أو ندبة فوهية حارة أو عمود ملحي كثيف منحنى الهبوط. ليست كهوفا آمنة. إنها صفقات ضيقة مع الجيولوجيا. يمكن للطاقم لمس قشرة قديمة، واسترجاع معادن نمت تحت الضغط، والعثور على عتاد مستعمرة مختوم، وقراءة حدث مدفون قبل أن يغلق البحر الطريق.
+Accessible Seafloor Windows هي rare pressure breaks حيث يكشف HECTON-8 عن ancient floor وhigh-risk salvage وmineral seams وevidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. هنا تمزقت shell رقيقة بما يكفي كي يلمس crawler old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+تحفظ معظم moon أرضيتها كpressure secret. الwindows استثناءات with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ar_SA. -->

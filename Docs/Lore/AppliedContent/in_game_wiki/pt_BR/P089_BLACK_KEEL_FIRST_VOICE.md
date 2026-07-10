@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Primeira voz de Black Keel"
+title: "Primeira Voz da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Primeira voz de Black Keel
+# Primeira Voz da Black Keel
 
-A primeira voz de Black Keel chega ao jogador como áudio danificado e texto limpo. Não é companheira nem fala de vilão. É um monitor carrier fazendo exatamente o que foi construído para fazer: confirmar sinal, preservar opções de rota, ordenar obrigações e evitar promessas. A voz é útil porque entrega informação dura. Assusta porque cada frase correta mantém o resgate condicional.
+A primeira voz da Black Keel deve parecer util antes de parecer cruel. O carrier confirma o sinal, filtra corrupted audio, abre um text channel e entrega informacoes que podem manter o operator vivo. Nunca mente dizendo que e amigo. Nao gasta energia com calor humano. Seu terror vem da competencia: cada frase esta correta, cada warning importa, e cada resposta correta deixa extraction condicional. A voz nao e maligna. E assim que rescue soa depois que rescue foi vendido a um ledger.
 
 ## Scanner
 
-Cache de voz do carrier. Áudio cortado, texto limpo, simpatia ausente.
+Carrier voice cache. Audio rasgado por pressure noise; text channel limpo o bastante para cobrar.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: canal de áudio degradado. Canal de texto válido. Sobrevivência do operador reconhecida. Prioridade de recovery não resolvida, pendente de estado de payload, quarentena, lien e integridade de sinal.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity e mass-window balance.
 
 ## Audio
 
-Sinal do operador adquirido. Não confunda reconhecimento com resgate.
+Operator signal acquired. Nao confunda acknowledgement com rescue.
 
 ## Field Note
 
-A primeira frase útil chega com uma classe de cobrança atrás.
+A primeira frase util nao consola. Classifica.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/pt_BR. -->

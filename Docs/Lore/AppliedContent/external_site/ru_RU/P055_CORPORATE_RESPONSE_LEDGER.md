@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Реестр корпоративного ответа"
+title: "Corporate response ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Реестр корпоративного ответа
+# Corporate response ledger
 
-Реестр корпоративного ответа — не речь злодея. Он холоднее. Это машиночитаемое обещание, что Black Keel ответит, но только в порядке, который признают его контракты. Сначала опека актива. Затем печать ответственности. Аудит корпуса, маршрут образца, маршрут оплаты, потом возврат оператора, если очередь еще позволит. Игрок может использовать эти реестры как подсказки, ключи и рычаги, потому что система предсказуема. Эта предсказуемость и есть обвинение. HECTON-8 бросили не одним плохим решением; его бросил стек ответа, который продолжал работать, пока люди становились грузом низшего приоритета.
+Corporate response ledger фиксирует жесткий предел помощи Black Keel: response speed, rescue priority, evidence custody, asset preservation и debt settlement остаются отдельными systems.
+
+## Scanner
+
+Каждый reply приходит contract language: asset custody, liability lock, sample route, hull risk, потом operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route и evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+Reply был automatic. Rescue был conditional.
+
+## Field Note
+
+Immediate response - не immediate rescue.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/ru_RU. -->

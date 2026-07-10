@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Black Keel Tariff Table
 
-Black Keel support is useful, but it is never neutral. Distress, samples, oxygen, liability seals, operator recovery, and hull damage enter different queues. The player can exploit those rules, but the same rules explain why help keeps arriving with a price tag.
+Black Keel support is useful because the carrier really does move gear, cache oxygen, pass warnings, and open route options. It is never neutral because every support action enters a tariff table before it becomes help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, and body recovery are different line items with different priority speeds. The table is not hidden evil. It is worse in practice: a readable price list for moments that should not have prices.
 
 ## Scanner
 
-The plate prices distress, sample custody, oxygen reserve, pressure gear, and body recovery as separate line items.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, and body recovery sit on separate lines.
 
 ## Terminal
 
-TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies until lien arbitration resolves.
 
 ## Audio
 

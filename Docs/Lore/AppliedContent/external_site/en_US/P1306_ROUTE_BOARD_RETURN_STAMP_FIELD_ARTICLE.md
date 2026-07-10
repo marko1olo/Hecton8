@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Public Site Colony Evidence Article
 spoiler_tier: 1
-title: "Route Board and Return Stamp Field Article"
+title: "Route Board Return Stamp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Route Board and Return Stamp Field Article
+# Route Board Return Stamp
 
-Route boards are one of HECTON-8's strongest bridges between lore and play because they make ordinary work readable. The player does not need a lecture about colony staffing if a hatch board shows four names, two tool tags, one bad tide window and a return stamp that never landed. The object tells time, work, danger and blame at once.
+## Route Board RB-17
 
-The best board evidence should feel handled. Grease pencil should cross older salt. A stamp should sit a few millimeters wrong because the person using it was tired, wet or afraid. A name should be moved rather than erased. Those details keep the colony human without inventing a family subplot for every corpse. The workers were professionals under pressure, not decorative victims.
+The board hangs beside a hatch because the hatch is where promises fail. RB-17 records name, destination, work window, tool seal, air tally, pinger channel and return stamp. One empty stamp box is salt-crusted. A tool tag came back without its worker line closing.
 
-For design, route boards also support repeatable content. The same board language can point to a cache, a hazard, a locked hatch, a missing tool, an audio fragment or a procedural room variant. For story, it exposes Deep Reach's habit of converting a human absence into a managed status. HECTON-8 becomes more frightening when the player realizes the colony did not stop working before it died. It kept filing the death as work.
+The surface is strongest when it stays ordinary. Fresh tape over old salt, a stamp a few millimeters off, a name moved instead of erased, a pinger note squeezed into the margin. Those marks make the board a used instrument rather than a memorial plaque.
+
+Deep Reach damage appears in the status words. Dead can become delayed. Delayed can become held. Held can become pending. The board catches the edit when the physical marks disagree: a returned cutter, an open hatch log, a pinger receipt with no return stamp. Read the board as a route first and an accusation second.
 
 <!-- External Site; generated from P1306_ROUTE_BOARD_RETURN_STAMP_FIELD_ARTICLE/en_US. -->

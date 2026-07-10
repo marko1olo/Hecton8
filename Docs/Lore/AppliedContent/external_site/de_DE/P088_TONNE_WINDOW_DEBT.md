@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Tonnenfenster-Schuld
 
-Ein Tonnenfenster ist ein Stück Carrier-Kapazität, gemessen in Masse, Burn-Zeit, Quarantänevolumen und rechtlicher Priorität. Für den Operator fühlt es sich wie Schuld an, weil jedes nützliche Objekt von HECTON-8 im selben Ledger landet wie der Körper, der es fand. Eine versiegelte Kiste kann leicht und rechtlich schwer sein. Ein Probenrack kann wenig Masse kosten und dennoch sauberes Volumen verlangen. Eine menschliche Extraktion wirkt selbstverständlich, bis Ballast, Sauerstoffreserve und Payload-Custody das verfügbare Fenster verbraucht haben. So wird HECTON-8s Ökonomie physisch statt abstrakt. Der Spieler wird nicht von einer falschen Moralzahl bestraft. Der Spieler steckt in einer Maschine, die Überleben über Fuel, Masse, Kontamination und Papier bewertet.
+Tonnenfenster-Schuld macht Uberleben zu harter logistics: extraction, oxygen, samples, salvage, quarantine volume und burn margin belegen dasselbe priced mass window.
+
+## Scanner
+
+Mass-window ledger. Hilfe hat Gewicht, bevor sie Sprache hat.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass kollidiert mit sealed payload, ballast reserve, oxygen debt, quarantine sample volume und hull patch inventory. Manual priority erfordert paid override, verified hazard proof oder custody reclassification.
+
+## Audio
+
+Das Schiff kann ein Leben heben. Die Frage ist, was das ledger es noch tragen lasst.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: Der Carrier bepreist Gnade pro Kilogramm.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/de_DE. -->

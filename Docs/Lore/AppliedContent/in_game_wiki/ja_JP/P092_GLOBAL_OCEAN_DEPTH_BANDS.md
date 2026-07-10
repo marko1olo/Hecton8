@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 全球海洋深度帯
 
-HECTON-8の海は単一の底線ではなく帯域で読む。光性棚にはまだ光、残骸、藻類、雑な操縦士がいる。工業棚にはケーブル礁、配管檻、古い積載甲板が残る。その下では塩水階段がソナーとバラストを曲げる。深淵機械野は修理を罰する。Atlas盆地では圧力が天候ではなく管轄のように振る舞う。
+HECTON-8のoceanはbottomへのone long fallではない。lawsのstackである。photic shelfはまだlight、algae、broken habitat skin、修正できるbad decisionsを許す。industrial shelfはpipe cages、cable reef、loading decks、machines that answer lateだ。brine stairsはsound and ballastを曲げ、routeをnear and unreachableに同時にする。abyssal machine fieldsはrepairsをcold patienceで罰する。Atlas basinはdangerより深い。そこではpressure becomes jurisdiction。
 
 ## Scanner
 
-深度図。最初の棚は悪いバラストを許すが、下の水は圧力、熱、沈黙で全ミスを請求する。
+depth chart。first shelfはpoor ballastを許す。lower waterはpressure、heat、noise、silenceでevery mistakeを請求する。
 
 ## Terminal
 
-帯域: 0-250m 光性サルベージ棚; 250-1200m 工業棚とケーブル礁; 1200-2800m 塩水階段/峡谷; 2800-4300m 深淵機械野; 4300-5600m Atlas盆地。
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-百メートルごとに習慣を一つ奪われる。
+百メートルごとに、一つのhabitが奪われる。
 
 ## Field Note
 
-HECTON-8の深度は同じ数字を着た法律、天候、国境、飢えだ。
+HECTON-8のdepthは、同じnumberを着たlaw、weather、border、hungerだ。
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ja_JP. -->

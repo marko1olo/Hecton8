@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "衝突で裂けた月"
+title: "衝突で割れた月"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 衝突で裂けた月
+# 衝突で割れた月
 
-HECTON-8は見世物のために捕獲された漂流天体ではなかった。Aegir自身の残骸帯で集積し、層状の海洋月として冷え、その後、世界を消さずに地殻を歪める斜め衝突を受けた。衝突は棚を持ち上げ、盆地を沈め、熱い化学が塩水の中をまだ流れる長い断層梯子を開いた。潮汐共鳴は軌道ロック後も傷を生かした。だから海には読める傷跡がある。塩水峡谷、噴出口の鍛冶場、圧力ガラス脈、露出した尾根、古い底へ届くまれな窓だ。
+Collision-Fractured MoonはHECTON-8をlocal Aegir bodyとして定義する。ocean routes、vents、brine basins、salvage windowsはimpact scarsとtidal heatから生まれる。
+
+## Scanner
+
+crust sample。HECTON-8はAegir's debris beltでformedし、その後oceanが記憶するほど広いoblique impactを受けた。
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock。Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, uneven deep-floor access。
+
+## Audio
+
+ここで生まれた。その後、海にmapを与えるほど強く何かが当たった。
+
+## Field Note
+
+captured-moon storyは清潔すぎる。この場所はborn local、broken local、billed localだ。
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/ja_JP. -->

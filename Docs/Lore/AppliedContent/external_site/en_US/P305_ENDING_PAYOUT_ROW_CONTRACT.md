@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ending Payout Data Boundary"
+title: "Ending Payout Record Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ending Payout Data Boundary
+# Ending Payout Record Row
 
-HECTON-8 endings record who received the proof, what custody they gained, what they paid, and what cost remains unresolved. A number can end a contract line. It cannot end the ocean.
+HECTON-8 endings are recorded by receiver and custody. The record names what left the ocean, who received it, what evidence survived, what was paid, and what remains restricted. A payout can close a line item while the claim, quarantine, or ecology stays open.
 
 ## Scanner
 
-Ending row binds receiver, custody, evidence state, payout, and unresolved consequence.
+Outcome row pending: receiver, payload route, evidence state, payout, quarantine delay, and unresolved consequence are not closed.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, quarantine delay, and unresolved cost. Credits do not close a crime scene.
+ENDING PAYOUT SCHEMA / dossier receiver check: close no record until payload route, receiver, evidence state, material payout, lien adjustment, quarantine delay, ecological consequence, and unresolved cost are written. Credits release after custody, not before it.
 
 ## Audio
 
-Credits do not close a crime scene.
+Dossier relay: receiver accepted custody. Quarantine clock starts before the credit clears.
 
 ## Field Note
 
-Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Do not call an ending paid until the receiver is named. Wrong receiver, wrong future; same ocean, different bill.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/en_US. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Geleidende biofilm-reparatiebus"
+title: "Geleidende biofilm als reparatiebus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geleidende biofilm-reparatiebus
+# Geleidende biofilm als reparatiebus
 
-Geleidende biofilm ontstaat waar gescheurde kabelmantels koperzouten, warmte en zwakke stroom in het water van HECTON-8 lekken. Het is geen geest. Het is een levende geleider die nuttig genoeg is voor Atlas om hem als reparatiebus te behandelen. Een beschadigde lijn kan gezond lijken terwijl de film alleen een dunne diagnostische puls over de wond draagt.
+Geleidende biofilm groeit waar gebarsten kabelmantels koperzouten, warmte en zwakke stroom in HECTON-8-water lekken. De film kan genoeg signaal dragen voor Atlas om een dode lijn bruikbaar te noemen. Een paneel kan enkele seconden wakker worden, een slot kan groen knipperen, en de echte kabel kan nog steeds onder belasting falen.
 
 ## Scanner
 
-Groen-zwarte film kruist de kabelwond. De lekstroom is zwak, patroonmatig en nog in beweging.
+Groenzwarte film overbrugt de gespleten kabelmantel. Lage stroom keert terug via natte groei; continuïteitslezing is onbetrouwbaar.
 
 ## Terminal
 
-ATLAS-SPOOR: microbiële film overbrugt blootliggende contacten, remt koperverlies en geeft valse continuïteitspulsen terug. Geen gecertificeerde lijnreparatie aanwezig.
+ATLAS-ONDERHOUDSSPOOR / LIJN K-44: bloot koper, zoute groei, lage warmtelek. Biofilmbrug remt corrosie en geeft valse continuïteitspulsen terug. Pompbesturing niet via deze lijn routeren.
 
 ## Audio
 
-Vertrouw het groene licht niet. Die kabel leeft genoeg om te liegen.
+De pinger komt door het slijm. Stroom ook. Noem dat niet gerepareerd.
 
 ## Field Note
 
-Vroege Atlas-littekens: nuttig, stil en fout genoeg om scannerwantrouwen te leren.
+Als een dood paneel wakker wordt door groene film, markeer de route als tijdelijk. Snijd stroom af voordat je gereedschap in de mantel zet.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/nl_NL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bukti Tanggung Jawab Deep Reach"
+title: "Bukti liabilitas Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bukti Tanggung Jawab Deep Reach
+# Bukti liabilitas Deep Reach
 
-Liability Deep Reach berjalan karena banjir itu tidak memerlukan fisika palsu. Great Tide nyata. Kerusakan yang dapat dicegah muncul dalam margins, jam, access holds, dan catatan yang membersihkan pekerja menjadi kategori sebelum siapa pun bisa diangkat.
+Liabilitas Deep Reach tidak memerlukan fisika palsu. Pasang Besar menghantam HECTON-8 dengan gaya samudra nyata: resonansi, geser kriosfer, tumpukan badai, dan kegagalan tekanan. Kerusakan yang bisa dicegah berada di samping gaya itu dalam dokumen dan ruangan. Margin diterima setelah peringatan sensor. Pintu tetap di bawah otoritas eksekutif. Antrean menunggu izin legal. Pembobotan Atlas menempatkan mesin di atas manusia pada jendela yang salah. Rantai bukti bekerja karena air jujur dan dokumen tidak.
 
 ## Scanner
 
-Catatan liability. Fisika pasang nyata, margin risk yang diterima, tunda evakuasi, quarantine holds, Atlas weighting, dan bahasa kerugian yang dirapikan bertemu dalam rantai bukti yang sama.
+Catatan liabilitas. Gaya pasang nyata; perubahan margin bertanda tangan, tahanan karantina, antrean evakuasi, bobot Atlas, dan bahasa kehilangan membawa bagian yang bisa dicegah.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // BUKTI LIABILITY. Great Tide diterima. Tinjauan tetap terbuka untuk sensor margins, tunda evacuation queue, quarantine holds, Atlas weighting, worker classification, dan loss conversion.
+NODE ARSIP PUBLIK // TINJAUAN LIABILITAS DR-H8. Gaya alam diterima. Kolom terbuka: margin sensor, otoritas pintu, penundaan antrean, tahanan karantina, pembobotan Atlas, konversi pekerja ke kategori klaim.
 
 ## Audio
 
-Bencana bisa alami dan tetap memiliki tanda tangan.
+Pasang mematahkan baja. Tanda tangan menentukan pintu mana yang tetap tertutup.
 
 ## Field Note
 
-Catatan Marauder: jangan berdebat dengan pasang. Berdebatlah dengan tanda tangan di sampingnya.
+Catatan Marauder: jangan perdebatkan bahwa pasang itu palsu. Letakkan tanda tangan di samping jam pasang.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/id_ID. -->

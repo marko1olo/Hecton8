@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 到達可能な海底窓
 
-到達可能な海底窓は、HECTON-8の壊れた地殻が下降コストを短時間だけ下げる場所だ。崩れた棚、露出尾根、再加熱された噴出口傷、圧力を別に運ぶ塩水柱に生じる。急げば窓も死を招く。それでも古い床、希少鉱脈、埋もれた植民地機材、通常の海が届かせない証拠に触れられる。
+accessible seafloor windowsはsafe placesではない。broken geologyが書いたrare permissionsである。collapsed shelfはdescent angleを下げる。reheated brine columnは数百メートルだけpressureを違う形で運ぶ。exposed ridgeはopen waterならswallowするsonar shapeを保つ。そうしたwindowsを通じてold floorがreachableになる。mineral seams、crushed habitat anchors、pressure-glass、dead machines、main oceanがhuman rangeの外に保つはずのevidence。windowをrushすれば、それをvaluableにした同じpressureで閉じる。
 
 ## Scanner
 
-露出尾根マーカー。ここでは殻が薄く裂け、クローラーがペーストにならず古い床に触れられる。
+exposed ridge marker。ここではshellが薄く裂け、crawlerがpasteにならずにold floorへ触れられる。
 
 ## Terminal
 
-窓条件: 破砕地殻リップ、噴出口で再加熱された塩水柱、崩落棚ランプ、安定ソナー反射、スーツ赤線以下の圧力ポケット。低速サルベージのみ標識。
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline。Slow salvage only。
 
 ## Audio
 
-海は窓で底に触らせる。勇気を出した場所ならどこでも、ではない。
+seaはwindowsでbottomに触れさせる。勇気のある場所ならどこでも、ではない。
 
 ## Field Note
 
-月の大半は床を圧力の秘密として隠している。窓は牙のある例外だ。
+moonの大半はfloorをpressure secretとして保つ。windowsはexceptions with teethだ。
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ja_JP. -->

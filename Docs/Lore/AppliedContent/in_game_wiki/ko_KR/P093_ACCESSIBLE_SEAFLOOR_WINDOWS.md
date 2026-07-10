@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 접근 가능한 해저 창
 
-접근 가능한 해저 창은 HECTON-8의 부서진 지각이 잠시 하강 비용을 낮추는 곳이다. 붕괴 선반, 드러난 능선, 다시 가열된 분출구 흉터, 압력을 다르게 운반하는 염수 기둥에서 생긴다. 서두르면 창도 치명적이다. 그래도 오래된 바닥, 희귀 광맥, 묻힌 식민지 장비, 일반 바다가 손닿지 않게 부술 증거에 닿을 수 있다.
+accessible seafloor windows는 safe places가 아니다. broken geology가 쓴 rare permissions다. collapsed shelf는 descent angle을 낮춘다. reheated brine column은 몇백 미터 동안 pressure를 differently carries한다. exposed ridge는 open water라면 swallow it할 sonar가 hold shape하게 한다. 이 windows를 통해 old floor가 reachable해진다. mineral seams, crushed habitat anchors, pressure-glass, dead machines, main ocean이 human range 밖에 두었을 evidence. rush a window하면 valuable하게 만든 바로 그 pressure로 닫힌다.
 
 ## Scanner
 
-드러난 능선 표식. 여기서는 껍질이 충분히 얇게 찢겨 크롤러가 반죽이 되지 않고 오래된 바닥을 만질 수 있다.
+exposed ridge marker. 여기서 shell은 crawler가 paste가 되지 않고 old floor를 touch할 만큼 얇게 찢어졌다.
 
 ## Terminal
 
-창 조건: 갈라진 지각 가장자리, 분출구로 재가열된 염수 기둥, 붕괴 선반 램프, 안정 소나 반사, 슈트 적색선 아래 압력 주머니. 느린 인양 전용으로 표시.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-바다는 창에서만 바닥을 만지게 한다. 네가 용감하다고 느끼는 곳마다가 아니다.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-달의 대부분은 바닥을 압력의 비밀로 감춘다. 창은 이빨 달린 예외다.
+moon의 대부분은 floor를 pressure secret으로 보관한다. windows는 exceptions with teeth다.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ko_KR. -->

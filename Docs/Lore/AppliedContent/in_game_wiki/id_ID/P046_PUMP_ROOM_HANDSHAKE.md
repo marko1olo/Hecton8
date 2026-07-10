@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Handshake Katup Ruang Pompa"
+title: "Handshake Katup Pump Room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Handshake Katup Ruang Pompa
+# Handshake Katup Pump Room
 
-Handshake pompa terjadi saat ruangan yang tenggelam menerima kendali lokal. Ia memberi akses, tetapi juga memindahkan air, bunyi, dan tekanan ke bagian lain dari rute. Baca keranjang masuk, pulsa keluar, dan hentakan koridor pulang sebelum menganggap lantai kering sebagai aman. Ruang pompa P-63 awal mengajarkan kebiasaan repair inti: mesin bisa memperbaiki satu kompartemen sambil memperburuk jalan pulang.
+Pump handshake adalah saat mesin yang tenggelam menerima local hand lagi. Rasanya seperti control karena floor mengering, lamp berhenti berenang, dan route seperti terbuka. Bahayanya: water tidak pernah hilang di HECTON-8; ia dipindahkan ke compromise lain. Intake baskets menangkap capsule foam, gloves lama, shell grit, dan torn labels. Outlets membangunkan corridors yang diam karena alasan. Kebiasaan benar adalah membaca pump sebagai trade: satu room bernapas, room lain mulai knock.
 
 ## Scanner
 
-Pompa sump lokal menerima input roda tangan. Keranjang masuk kotor oleh busa kapsul; pulsa keluar membebani Koridor Pulang B.
+Local sump menerima handwheel input. Capsule foam menyumbat intake basket; outlet pulse naik ke Return Corridor B.
 
 ## Terminal
 
-P-63 KONTROL SUMP / HANDSHAKE LOKAL: otoritas roda tangan diterima. Override jarak jauh ditolak. Aliran masuk pulih pada laju rendah. Tekanan keluar naik di RETURN CORRIDOR B; restart hanya setelah hatch hilir diperiksa.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Katup masuk. Jalur keluar mengetuk. Jangan sebut ini aman dulu.
+Valve took. Outlet mengetuk. Jangan sebut ini safe dulu.
 
 ## Field Note
 
-Ruang pompa yang kering bisa menenggelamkan jalan pulang. Dengarkan hantaman di jalur keluar sebelum melepas katup.
+Floor yang kering bukan solved room. Dengarkan corridor yang membayarnya.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/id_ID. -->

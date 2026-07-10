@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Light-Delay Authority
 
-HECTON-8 has no ansible and no live command voice from orbit. Messages move at light speed, then lose more time to buffer queues, storm windows, relay geometry, and carrier custody rules. The player treats every answer as old evidence, not orders.
+HECTON-8 has no ansible, no friendly voice leaning over orbit, and no way to make ten light-years feel merciful. Messages move at light speed, then lose more time to relay geometry, storm scatter, buffer law, and Black Keel custody queues. A transmission can be honest and still be too old to obey. That is the rule the surface teaches early: every remote answer is evidence first, instruction second, and comfort never. If the wall, the water, and the pressure disagree with the message, the local world wins.
 
 ## Scanner
 
-Relay mast cache: the call left clean, then waited behind light, queue law, storm scatter, and Aegir line-of-sight.
+Relay mast cache. The call left clean, then waited behind light, queue law, storm scatter, and Aegir line-of-sight.
 
 ## Terminal
 
-COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active until fresh signal window confirms override.
 
 ## Audio
 
@@ -35,6 +35,6 @@ The reply is coming. That does not make it rescue.
 
 ## Field Note
 
-Nobody censored the first scream. Physics carried it slowly enough for policy to catch up.
+Nobody censored the first scream. Physics moved slowly enough for policy to catch up.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/en_US. -->

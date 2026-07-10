@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Приоритетный крюк Deep Reach"
+title: "Priority hook Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Приоритетный крюк Deep Reach
+# Priority hook Deep Reach
 
-Нынешнее давление Deep Reach не требует невозможного удаленного управления. Старые continuity certificates, карантинные clauses, токены доступа Atlas и priority hooks для payload уже сидят в юридическом пути Black Keel. Компания может влиять на то, что carrier считает ценным, не владея carrier явно. Поэтому антагониста труднее отрезать: это не сигнал, который можно заглушить, а clause, которая снова просыпается.
+Власть Deep Reach над Black Keel - не instant remote control и не скрытая FTL command chain. Компания оставила после себя вещи старше: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities и evidence suppression queues. Эти hooks были написаны, когда у colony еще были meetings, budgets и signatures. Спустя годы они все еще могут проснуться внутри arbitration path carrier. Поэтому давление достоверно. Deep Reach не всегда говорит сам. Иногда за него говорит старый paperwork.
 
 ## Scanner
 
-Старый certificate hook. Deep Reach не владеет кораблем; она владеет clause.
+Старый certificate hook. Deep Reach не нужен bridge, пока clause все еще принадлежит им.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy continuity certificate Deep Reach может продвинуть payload recovery, карантинный замок, токен доступа Atlas или очередь подавления доказательств по claim-праву Aegir. Приоритет извлечения человека не меняется, если доказательство опасности не превышает custody value.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate может продвигать payload recovery, quarantine lock, Atlas access token, evidence suppression queue или sealed infrastructure proof по Aegir claim law. Human extraction priority unchanged, если verified hazard proof не превышает custody value.
 
 ## Audio
 
-Им не нужно стоять на мостике, чтобы рулить ответом.
+Им не нужно стоять на bridge, чтобы направлять ответ.
 
 ## Field Note
 
-Чище заговора: бумаги все еще живы и все еще голодны.
+Чище, чем conspiracy: paperwork пережил людей, которые его подписали.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ru_RU. -->

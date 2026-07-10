@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Rute Pulang Sonar"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rute Pulang Sonar
+# Sonar Return Route
 
-Beacon pulang merekam bagaimana rute terdengar saat terakhir aman. Ia tidak berjanji rute tetap aman. Gelombang badai, kabel longgar, lumpur bergerak, fauna, dan potongan salvage baru bisa membengkokkan balik sonar tanpa menghapus koridor. Sebelum membawa kargo atau turun lebih dalam, ping jalur itu. Jika nada bergeser, simpan muatan atau tandai jalan kedua.
+Return beacon merekam bagaimana route terdengar saat last safe. Ia tidak berjanji route stayed safe. Di HECTON-8, safety punya bunyi: clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. Storm surge, cut cable, moving fauna, fresh salvage mass, dan door flexed under pressure bisa bend the return tanpa erased corridor. Return route adalah work. Ping before loading, dan cache the load jika echo kembali dengan shape berbeda.
 
 ## Scanner
 
-Beacon pulang sudah basi. Ping aman lama tidak lagi cocok dengan gema koridor; massa kargo akan memperlambat jendela mundur.
+Return beacon stale. Old safe ping tidak lagi cocok dengan corridor echo; cargo mass akan memperlambat retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: gema bersih terakhir tidak valid. Ping Black Keel diterima dengan kepercayaan rendah. Pergeseran rintangan dan kepadatan lumpur melebihi toleransi peta. Tandai garis kedua sebelum ekstraksi kargo.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, dan cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Rutenya masih ada. Gemanya tidak sama.
+The route is still there. Echo-nya tidak sama.
 
 ## Field Note
 
-Ping sebelum memuat. Jika jalan pulang berubah saat tanganmu kosong, ia tidak akan memaafkan tas penuh.
+Ping before loading. Jika way home changed saat hands masih empty, ia tidak akan memaafkan full pack.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/id_ID. -->

@@ -19,8 +19,22 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-An acoustic filter organ relay is built from pressure, habit, and misuse. Deep Reach put metal relay throats through the colony because radio dies quickly under HECTON-8 water. Native filter organisms found those throats useful: constant flow, mineral grit, pump vibration, and protected surfaces. Over years, folded tissue grew where old hardware already shaped sound.
+Damaged HECTON-8 relay pipes sometimes carry living baffle tissue. The tissue does signal work because its folds, fluid and pressure response fit the pipe. Atlas can read the result as relay hardware even when the part inside is no longer metal.
 
-Atlas uses that accident as infrastructure. A living baffle can swallow pump noise while letting a narrow pinger tone pass. It can also shift the return just enough to make a map look true from the wrong side of a bulkhead. When a corridor answers in a voice shaped by tissue, the player has gained information, not safety. Storm pulses, animal movement, or a dying fold can move the route without warning.
+## Scanner
+
+Baffle tissue in the relay throat passes a narrow pinger tone and cuts pump noise. Return map is phase-shifted.
+
+## Terminal
+
+RELAY PIPE A-17: living folds pass 8-12 kHz pinger pulses, reject broad pump noise, and add return delay. Downstream map confidence reduced. Do not certify return route from this relay alone.
+
+## Audio
+
+It answered the pinger. The pipe is leaking clear fluid. Mark it animal, not relay.
+
+## Field Note
+
+If a relay answers too cleanly in a flooded pipe, run a second pinger from another angle. Good sound can still be a bad map.
 
 <!-- External Site; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/en_US. -->

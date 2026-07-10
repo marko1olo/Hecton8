@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Klaim Dingin Bulan Luar"
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Klaim Dingin Bulan Luar
+# Outer Moon Cold Claims
 
-Klaim dingin bulan luar memperluas Aegir melampaui HECTON-8: rute mati, cache dingin, dan beacon terlantar memberi makan hukum salvage serta menyembunyikan kehilangan berulang.
+Outer Moon Cold Claims memperluas Aegir beyond HECTON-8: dead routes, cold caches, abandoned beacons, dan billable loss memberi makan salvage law serta corporate denial.
 
 ## Scanner
 
-Beacon klaim luar. Tidak semua yang mati di Aegir berada di HECTON-8.
+Outer claim beacon. Tidak semua dead thing in Aegir berada di HECTON-8.
 
 ## Terminal
 
-ARSIP TANGGA LUAR // Prospek air garam Thorne gagal. Rute ekspor Anvil dimothball. Beacon Mute mengulang ping kustodi tanpa deklarasi kru aktif.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir belajar kehilangan orang sebelum HECTON-8 menyelesaikan pelajarannya.
+Aegir belajar lose people sebelum HECTON-8 menyelesaikan lesson.
 
 ## Field Note
 
-Klaim dingin membuat Marauder mungkin. Mereka juga mengajari perusahaan cara mengubur pola.
+Cold claims membuat marauders mungkin. Mereka juga mengajari companies cara bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/id_ID. -->

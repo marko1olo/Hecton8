@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Espinha da primeira hora"
+title: "Espinha da Primeira Hora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Espinha da primeira hora
+# Espinha da Primeira Hora
 
-Espinha da primeira hora define o ritmo de abertura de HECTON-8. O jogador começa com tarefas de engenharia tangíveis e maravilha visual, depois vê essas tarefas se conectarem a uma mentira corporativa e a uma ecologia de manutenção que entrou na biologia. Isso mantém a primeira rota jogável e atmosférica enquanto planta a investigação maior: o oceano não está escondendo a história; ele preserva as evidências na pressão, no sal e no procedimento.
+Espinha da Primeira Hora define o ritmo de abertura de HECTON-8. Tarefas tangíveis de engenharia e maravilha visual chegam primeiro, então essas tarefas se conectam a uma mentira corporativa e a uma ecologia de manutenção que entrou na biologia. O oceano não esconde a história; preserva evidências em pressão, sal e procedimento.
 
 ## Scanner
 
-Contrato, queda danificada, ar, rasos luminosos, abrigo da bomba, mentira saneada, então a primeira cicatriz de reparo que usa vida como junta.
+Contrato, queda danificada, ar, rasos claros, abrigo de bomba, mentira sanitizada, depois a primeira cicatriz de reparo que usa vida como junta.
 
 ## Terminal
 
-ANEXO RASO: reinício manual da bomba válido. Pacote de incidente Deep Reach em cache. Crescimento de reparo da Atlas detectado ao redor de cabo, fragmento de ferramenta e resíduo biológico.
+SHALLOW ANNEX: reinício manual da bomba válido. Pacote de incidente Deep Reach em cache. Crescimento de reparo Atlas detectado ao redor de cabo, fragmento de ferramenta e resíduo biológico.
 
 ## Audio
 
-A primeira sala segura não está limpa. Ela só prende a respiração melhor que você.
+A primeira sala segura não está limpa. Só prende a respiração melhor que você.
 
 ## Field Note
 
-A abertura precisa ser bonita antes de se tornar acusação.
+A abertura precisa ser bonita antes de começar a acusar.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/pt_BR. -->

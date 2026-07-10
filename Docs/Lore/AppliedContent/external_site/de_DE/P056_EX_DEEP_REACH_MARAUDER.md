@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Ehemaliger Deep-Reach-Marauder
 
-Ehemaliger Deep-Reach-Marauder legt den Spielerkanon fest. Der Spieler ist ein früherer Konzernspezialist für Feldsysteme und Evakuierungsinfrastruktur, durch Schwarze Liste oder Schulden in unabhängige Bergung gedrückt und unter Black-Keel-Verwahrung nach HECTON-8 zurückgebracht. Das Drama entsteht aus professionellem Wiedererkennen: Der Mond antwortet mit Prozeduren, die der Spieler einst verstand, und jedes vertraute Schloss macht es schwerer, die Konzernlüge als fremden Unfall abzutun.
+Ehemaliger Deep-Reach-Marauder fixiert biografischen Druck, ohne HECTON-8 zum Schicksal zu machen. Die zentrale Salvage-Arbeitskraft ist ehemaliger Konzernspezialist für Feldsysteme und Evakuierungsinfrastruktur, durch Blacklist oder Schuld in unabhängiges Salvage gedrückt und unter Black-Keel-Verwahrung zurückgebracht. Das Drama entsteht aus beruflicher Wiedererkennung: Der Mond antwortet mit Prozeduren, die einst von Hand verstanden wurden, und jedes vertraute Schloss macht die Konzernlüge schwerer als fremdes Wrack abzutun.
 
 ## Scanner
 
-Das alte Deep-Reach-Schloss prüft nicht deinen Namen. Es erkennt den Rhythmus deiner Reparatursequenz.
+Das alte Deep-Reach-Schloss prüft keinen Namen. Es erkennt den Rhythmus einer Feldreparatur.
 
 ## Terminal
 
-BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Bergungsstatus unter Schuldenverwahrung des Anspruchspools akzeptiert.
+BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Salvage-Status unter Schuldenverwahrung des Claim-Pools akzeptiert.
 
 ## Audio
 

@@ -19,24 +19,22 @@ localization_flags: 1
 
 # سلم أقمار Aegir
 
-يبقي سلم أقمار Aegir قمر HECTON-8 داخل نظام فيزيائي. الأقمار الداخلية تصنع أخطار إشعاع ومرحلات؛ الأقمار الوسطى تحمل المعدن والجليد وعوامات المسار والمخازن القديمة؛ الأقمار الخارجية تحمل claims باردة ومنارات ميتة.
-
-HECTON-8 ليس الأقرب ولا الأبعد. إنه القمر الذي ما زال يدفع. لذلك يلمس بقية السلم نوافذ إنقاذه وsalvage law وطرق إشارته باستمرار.
+يبقي Aegir moon ladder قمر HECTON-8 داخل working sky. يقذف Skarn charged weather عبر antennas. وتلقي Vela ice and dust في optical routes. ويحافظ Claw وLumen على old buoy logic alive. Thorne failed quietly. Anvil fed metal حتى route stopped paying. Kestrel cuts relay lines عند أسوأ angles. Mute repeats ownership into nobody's hands. HECTON-8 ليس أول moon في chain ولا آخرها. إنه القمر الذي ما زالت drowned infrastructure فيه تملك value كافيا ليجادل ships وinsurers وmarauders على windows.
 
 ## Scanner
 
-خريطة سلم الأقمار. HECTON-8 خطر عامل في نظام متحرك، وليس مستوى معزولاً.
+Moon ladder chart. HECTON-8 هو one working hazard in a moving system، وليس isolated ocean level.
 
 ## Terminal
 
-أقمار AEGIR الكبرى // H1 Skarn، H2 Vela، H3 Claw، H4 Lumen، H5 Thorne، H6 Anvil، H7 Kestrel، H8 HECTON، H9 Mute. نموذج transfer وeclipse مرفق.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, and custody windows attached.
 
 ## Audio
 
-في الخريطة أقمار أكثر من الرحمة.
+في map أقمار أكثر من mercy.
 
 ## Field Note
 
-Skarn يحرق. Vela تسقط الجليد. Anvil يطعم المعدن. Kestrel يقطع المرحلات. HECTON يغرق.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ar_SA. -->

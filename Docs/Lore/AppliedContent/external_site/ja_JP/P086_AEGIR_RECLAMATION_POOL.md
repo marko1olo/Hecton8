@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Aegir回収プール
 
-Aegir回収プールは、プレイヤーを孤独に保ちながら到着を信じられるものにする仕組みだ。小さなmarauderがBlack Keelを直接所有しているわけではない。carrierテンダーは、死んだインフラ、争われる貨物、普通のクルーには高すぎる世界のために作られた共有クレーム制度に属する。プール印は経路へのアクセスを買えるが、その経路を仲裁にも渡す。操作者が水線の下に入った瞬間、すべての要求はpayload custody、隔離予備、証拠価値、燃料窓と競合する。プールの恐さは手続きにある。助けを送っても救助は拒める。Aegirクレーム法では、助けは数ある請求可能サービスの一つでしかない。
+Aegir回収プールはBlack Keelを共有salvage機構として位置付ける。救助は実在するが、contract、lien priority、quarantine custody、burn-window計算を通って届く。
+
+## Scanner
+
+共同claimプールの刻印。Black Keelは救助の慈悲ではなく、共有債務で派遣された。
+
+## Terminal
+
+AEGIR RECLAMATION POOL: 自律claim tender BLACK KEEL、derelict-pressure claim HECTON-8へ割当。contractor welfare classは限定。payload custody classは可変。Human extractionはlien、quarantine、mass-window arbitration完了までpending。
+
+## Audio
+
+プールは確かに船を送った。それが慈悲だ。その先はすべて会計になる。
+
+## Field Note
+
+このプールがAegirでcarrierを可能にした。同時に、すべての約束を条件付きにした。
 
 <!-- External Site; generated from P086_AEGIR_RECLAMATION_POOL/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "فشل احتواء الضغط"
+title: "فشل pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# فشل احتواء الضغط
+# فشل pressure containment
 
-Blue debt ليس كنزا ملعونا. إنه ذاكرة مادية تحت الضغط. تبقى بقايا Xenon-Omega نافعة ما دامت شبكتها تصدق أنها عميقة وباردة ومضغوطة. أخرجها بسرعة أو خزّنها بسوء أو اسمح لقص الإشارة بالدخول إلى الصندوق فتبدأ العينة بالفشل على مراحل مقروءة. أولا يأتي الانحراف: العدادات تكذب، الرنين يرتجف، إنذارات الاحتواء تتجادل. ثم تنكسر الشبكة. يدخل الملح. تتبع الأحياء الكيمياء. عند المرحلة 4 تموت القيمة وتبقى العدوى.
+يعرف Pressure Containment Failure مراحل handling stages للblue debt، رابطا resource value بdepth وpressure memory وbloom contamination وroute planning وsalvage liability.
+
+## Scanner
+
+Casket stage chart. يفشل Blue debt عبر pressure memory وsignal shear وbloom؛ superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+يمكن لsample أن يكون worth a fortune at one depth ثم become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ar_SA. -->

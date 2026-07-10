@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Влада світлової затримки
 
-Сигнал лиха на HECTON-8 — це фізичний вантаж сенсу. Він виходить із затопленої щогли, перетинає простір Aegir зі швидкістю світла, чекає в буферах ретранслятора і доходить до Black Keel через чергу, яка вже вміє оцінювати ризик. Перша затримка чесна: відстань. Пізніші затримки людські: клас опіки, штормові вікна, мова відповідальності і звичка носія відповідати активу раніше за людину. Тому відповідь може бути технічно свіжою і все одно марною в кімнаті тиску, що руйнується.
+Влада світлової затримки визначає зв'язок HECTON-8 як фізичний, запізнілий і contract-filtered: distance, weather, relay buffers і custody queues вирішують, коли signal стає usable.
+
+## Scanner
+
+Relay mast cache. Виклик вийшов чисто, а тоді чекав за light, queue law, storm scatter і Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.
+
+## Audio
+
+Відповідь іде. Це ще не rescue.
+
+## Field Note
+
+Перший scream ніхто не цензурував. Physics несла його досить повільно, щоб policy встигла наздогнати.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/uk_UA. -->

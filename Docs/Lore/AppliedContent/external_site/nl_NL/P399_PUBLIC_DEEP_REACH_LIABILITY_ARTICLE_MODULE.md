@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach-aansprakelijkheidsbewijs
 
-Deep Reach is schuldig omdat de HECTON-8-ramp natuurlijk en tegelijk slecht beheerd kan zijn. De oceaan leverde echte kracht: tide resonance, cryosphere shear, storm stacking en pressure failure. Het bedrijf leverde dunne margins, late authorization, quarantine delay, Atlas priority rules en papierwerk schoon genoeg om de mensen die het beschreef te overleven. Het sterkste bewijs is fysiek en procedureel: een deur vastgehouden onder executive authority, een sensor tolerance veranderd voor het venster sloot, een wachtrij vertraagd voor legal clearance, een loss ledger die arbeiders omzet in claim categories terwijl het water nog bewoog. De speler leert officiële taal te wantrouwen door haar naast deuken, klokken en routes te leggen.
+De publieke zaak tegen Deep Reach is het sterkst wanneer de oceaan echt blijft. HECTON-8 werd niet vernietigd door een cartooncomplot of onmogelijke wetenschap. Het werd geraakt door omstandigheden die het bedrijf modelleerde, prijsde, vertraagde en daarna beschreef in taal die de rechtbank beter kon overleven dan werkers de druk. Bruikbaar bewijs is fysiek en procedureel: gewijzigde tolerantiebladen, routeholds, vertraagde evacuatievensters, quarantainelabels, Atlas-prioriteitstabellen en verliesboeken die namen in claimcategorieën veranderden terwijl water nog door de kamers liep. Deep Reach hoefde de ramp niet uit te vinden. Het had genoeg handtekeningen nodig om de goedkopere reactie geautoriseerd te laten lijken.
 
 ## Scanner
 
-Liability-record. Echte getijdenfysica, geaccepteerd margin risk, evacuatievertraging, quarantine holds, Atlas weighting en opgeschoonde verliestaal komen samen in dezelfde bewijsketen.
+Aansprakelijkheidsrecord. Getijkracht is echt; ondertekende marge-aanpassingen, quarantaineholds, evacuatierijen, Atlas-gewichten en verlieswoorden dragen het vermijdbare deel.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // LIABILITY-BEWIJS. Great Tide geaccepteerd. Review open voor sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification en loss conversion.
+OPENBARE ARCHIEFKNOOP // AANSPRAKELIJKHEIDSONDERZOEK DR-H8. Natuurkracht geaccepteerd. Open velden: sensormarge, deurbevoegdheid, rijvertraging, quarantainehold, Atlas-weging, werker-naar-claimconversie.
 
 ## Audio
 
-Een ramp kan natuurlijk zijn en toch handtekeningen dragen.
+Het getij brak staal. De handtekeningen bepaalden welke deuren dicht bleven.
 
 ## Field Note
 
-Marauder-notitie: discussieer niet met het getij. Discussieer met de handtekeningen ernaast.
+Marauder-notitie: betwist nooit dat het getij echt was. Leg de handtekeningen naast de getijklok.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/nl_NL. -->

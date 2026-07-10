@@ -66,10 +66,12 @@ public static class MCTables
         {
             get
             {
-                return _vault != null &&
-                       _vault.TryReadOnlyHandle(in _edgeTableHandle, out NativeArray<int>.ReadOnly table) &&
-                       table.Length >= EdgeTableLength
-                    ? table
+                if (_vault == null)
+                    return default;
+                if (_vault.TryReadOnlyHandle(in _edgeTableHandle, out NativeArray<int>.ReadOnly table) && table.Length >= EdgeTableLength)
+                    return table;
+                return _vault.TryResolveHandle(in _edgeTableHandle, out NativeArray<int> mutableTable) && mutableTable.Length >= EdgeTableLength
+                    ? mutableTable.AsReadOnly()
                     : default;
             }
         }
@@ -78,10 +80,12 @@ public static class MCTables
         {
             get
             {
-                return _vault != null &&
-                       _vault.TryReadOnlyHandle(in _triTableHandle, out NativeArray<int>.ReadOnly table) &&
-                       table.Length >= TriTableLength
-                    ? table
+                if (_vault == null)
+                    return default;
+                if (_vault.TryReadOnlyHandle(in _triTableHandle, out NativeArray<int>.ReadOnly table) && table.Length >= TriTableLength)
+                    return table;
+                return _vault.TryResolveHandle(in _triTableHandle, out NativeArray<int> mutableTable) && mutableTable.Length >= TriTableLength
+                    ? mutableTable.AsReadOnly()
                     : default;
             }
         }
@@ -654,6 +658,92 @@ public static class MCTables
                 vault.ReleaseMutationGuard(JobTableMutationGuardMask);
         }
     }
+
+#if UNITY_EDITOR
+    public static bool TryAcquireEditorReadOnlyJobTables(IDataVault vault, out JobTableLease lease)
+    {
+        return TryAcquireEditorReadOnlyJobTables(vault, out lease, out _);
+    }
+
+    public static bool TryAcquireEditorReadOnlyJobTables(IDataVault vault, out JobTableLease lease, out string failureReason)
+    {
+        lease = default;
+        failureReason = string.Empty;
+        if (vault == null)
+        {
+            failureReason = "vault-null";
+            return false;
+        }
+
+        Initialize(vault);
+        if (!ReferenceEquals(_vault, vault))
+        {
+            failureReason = "vault-mismatch";
+            return false;
+        }
+
+        if (vault.IsCompactionFenceActive)
+        {
+            failureReason = "compaction-fence";
+            return false;
+        }
+
+        if (Volatile.Read(ref _ready) != 1)
+        {
+            failureReason = "not-ready";
+            return false;
+        }
+
+        if (!IsTableHandleCreated(in _edgeTableHandle, EdgeTableBufferId))
+        {
+            failureReason = "edge-handle";
+            return false;
+        }
+
+        if (!IsTableHandleCreated(in _triTableHandle, TriTableBufferId))
+        {
+            failureReason = "tri-handle";
+            return false;
+        }
+
+        NativeArray<int>.ReadOnly edgeTable;
+        if (!vault.TryReadOnlyHandle(in _edgeTableHandle, out edgeTable))
+        {
+            if (!vault.TryResolveHandle(in _edgeTableHandle, out NativeArray<int> mutableEdgeTable))
+            {
+                failureReason = "edge-readonly";
+                return false;
+            }
+            edgeTable = mutableEdgeTable.AsReadOnly();
+        }
+
+        if (edgeTable.Length < EdgeTableLength)
+        {
+            failureReason = $"edge-length-{edgeTable.Length}";
+            return false;
+        }
+
+        NativeArray<int>.ReadOnly triTable;
+        if (!vault.TryReadOnlyHandle(in _triTableHandle, out triTable))
+        {
+            if (!vault.TryResolveHandle(in _triTableHandle, out NativeArray<int> mutableTriTable))
+            {
+                failureReason = "tri-readonly";
+                return false;
+            }
+            triTable = mutableTriTable.AsReadOnly();
+        }
+
+        if (triTable.Length < TriTableLength)
+        {
+            failureReason = $"tri-length-{triTable.Length}";
+            return false;
+        }
+
+        lease = new JobTableLease(vault, in _edgeTableHandle, in _triTableHandle, 0UL);
+        return true;
+    }
+#endif
 
     static ulong TableMutationGuardBit(BufferID bufferId)
     {

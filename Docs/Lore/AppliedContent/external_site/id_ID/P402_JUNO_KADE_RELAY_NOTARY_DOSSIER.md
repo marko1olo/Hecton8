@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, notaris relai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Juno Kade/Relay
+# Juno Kade, notaris relai
 
-ID LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Juno Kade mengubah premis tanpa FTL menjadi pekerjaan manusia. Ia orang di antara panik dan catatan: notaris relai yang memastikan klaim evakuasi, penolakan rute, atau tanda kematian melintasi jarak antarbintang tanpa menjadi rumor.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dosier: Juno Kade. Wajah segel, baki paket, dan pita saksi membawa tanda kustodi jendela terlambat yang sama.
 
 ## Terminal
 
-ID LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+HALAMAN RELAI A-17 / KADE, JUNO: paket keluar dicap setelah tiap jendela pembawa. Tekanan segel, debu baki, dan pita saksi memastikan kustodi walau waktu balasan melebihi waktu penyelamatan.
 
 ## Audio
 
-ID LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade mengesahkan fakta yang akan tiba terlalu terlambat untuk menyelamatkan siapa pun, tetapi tetap harus selamat sepanjang perjalanan.
 
 ## Field Note
 
-ID LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Gunakan Kade di dekat jam jendela komunikasi, baki paket, segel notaris, dan pengungkapan bukti terlambat. Dosiernya harus membuat jarak terasa legal, bukan abstrak.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/id_ID. -->

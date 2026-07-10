@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Límite de datos de pago final"
+title: "Fila de registro de pago final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Límite de datos de pago final
+# Fila de registro de pago final
 
-El límite mantiene los finales como registros de intercambio, no puntuaciones de victoria. El pago importa, pero también custodia, prueba pública, cuarentena, deuda y el derecho del receptor a actuar tras la marcha del jugador.
+Las filas de pago final guardan el trato que realmente hiciste. Una salida material puede limpiar parte del gravamen y devolver coordenadas a Recovery Compliance. Publicar en un libro público puede proteger nombres y perder control de la prueba. Cortar Atlas o activar cuarentena cambia el receptor antes de cambiar el número.
 
 ## Scanner
 
-La fila de final ata receptor, custodia, estado de prueba, pago y consecuencia sin resolver.
+Fila de resultado pendiente: receptor, ruta de carga útil, estado de pruebas, pago, retraso de cuarentena y consecuencia sin resolver no están cerrados.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: las filas requieren ruta de payload, receptor, estado de prueba, pago material, consecuencia legal, demora de cuarentena y coste no resuelto. Los créditos no cierran una escena del crimen.
+ESQUEMA DE PAGO FINAL / comprobación de receptor de dossier: no cerrar registro hasta escribir ruta de carga útil, receptor, estado de pruebas, pago material, ajuste de gravamen, retraso de cuarentena, consecuencia ecológica y coste sin resolver. Los créditos se liberan después de la custodia, no antes.
 
 ## Audio
 
-Los créditos no cierran una escena del crimen.
+Relé de dossier: el receptor aceptó custodia. El reloj de cuarentena empieza antes de que despeje el crédito.
 
 ## Field Note
 
-Credit value, quarantine delay y dossier flags solo se registran después de aclarar receptor y estado de prueba.
+No llames pagado a un final hasta nombrar receptor. Receptor equivocado, futuro equivocado; mismo océano, otra factura.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/es_ES. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Журнал ущільнення люка"
+title: "Ledger люкового ущільнення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Журнал ущільнення люка
+# Ledger люкового ущільнення
 
-Люки є одними з найтихіших записів HECTON-8. Вони не пояснюють, кого залишили; вони зберігають напрям закриття, напруження прокладки й право override. Читання журналу ущільнення перетворює замкнені двері на рішення про тиск із часовою міткою.
+Hatches на HECTON-8 - тихі records: closure direction, gasket stress, override authority і wet-side witness traces перетворюють locked door на pressure decision з timestamp.
 
 ## Scanner
 
-Пам’ять ущільнення відновлено. Прокладка прийняла три зрізи тиску й один евакуаційний override; доступ зі сторони повернення був замкнений з мокрого боку.
+Seal memory recovered. Gasket витримав three pressure cuts і one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / РАМА H-17: деформація прокладки вище допуску обслуговування. Ручне закриття прийнято під EVAC OVERRIDE. Кількість операторів на стороні повернення не підтверджена. Відкривати лише після вирівнювання тиску й перевірки петель.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection і wet-side witness check.
 
 ## Audio
 
-Він запечатався. Більше люк не обіцяв.
+It sealed. Більше hatch нічого не обіцяв.
 
 ## Field Note
 
-Запечатаний люк це квитанція. Перед відкриттям спитай, який бік заплатив.
+Sealed hatch - це receipt. Перед відкриттям спитай, яка сторона заплатила.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/uk_UA. -->

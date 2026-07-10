@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ראיות אחריות Deep Reach"
+title: "ראיות אחריות של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ראיות אחריות Deep Reach
+# ראיות אחריות של Deep Reach
 
-ה-liability של Deep Reach עובדת כי המבול אינו צריך פיזיקה מזויפת. ה-Great Tide היה אמיתי. הנזק שניתן היה למנוע מופיע ב-margins, בשעונים, ב-access holds וברשומות שניקו עובדים לקטגוריות לפני שאפשר היה להשיב מישהו.
+האחריות של Deep Reach אינה דורשת פיזיקה מזויפת. הגאות הגדולה פגעה ב-HECTON-8 בכוח אוקייני אמיתי: תהודה, גזירת קריוספירה, ערימת סערות וכשל לחץ. הנזק שניתן היה למנוע נמצא לצד הכוח הזה במסמכים ובחדרים. מרווח התקבל אחרי אזהרת חיישן. דלת נשארה תחת סמכות ביצוע. תור חיכה לאישור משפטי. שקלול Atlas השאיר מכונות מעל אנשים בחלון הלא נכון. שרשרת הראיות עובדת כי המים כנים והניירת לא.
 
 ## Scanner
 
-רשומת liability. פיזיקת גאות אמיתית, margin risk שאושר, עיכוב פינוי, quarantine holds, Atlas weighting ושפת אובדן מנוקה מתכנסים באותה שרשרת ראיות.
+רשומת אחריות. כוח הגאות אמיתי; שינויי מרווח חתומים, החזקות הסגר, תורי פינוי, משקלי Atlas ושפת אובדן נושאים את החלק שניתן היה למנוע.
 
 ## Terminal
 
-צומת ארכיון ציבורי // ראיות LIABILITY. Great Tide התקבל. בדיקה פתוחה לגבי sensor margins, עיכוב evacuation queue, quarantine holds, Atlas weighting, worker classification ו-loss conversion.
+צומת ארכיון ציבורי // בדיקת אחריות DR-H8. כוח טבעי התקבל. שדות פתוחים: מרווח חיישן, סמכות דלת, עיכוב תור, החזקת הסגר, שקלול Atlas, המרת עובד לקטגוריית תביעה.
 
 ## Audio
 
-אסון יכול להיות טבעי ועדיין לשאת חתימות.
+הגאות שברה פלדה. החתימות החליטו אילו דלתות נשארו סגורות.
 
 ## Field Note
 
-הערת Marauder: אל תתווכח עם הגאות. תתווכח עם החתימות שלידה.
+הערת Marauder: אל תטען שהגאות הייתה שקרית. שים את החתימות ליד שעון הגאות.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/he_IL. -->

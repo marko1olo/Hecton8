@@ -19,7 +19,9 @@ localization_flags: 0
 
 # Blue Debt
 
-Blue debt is marauder slang for pressure-kept Xenon-Omega residue and the contaminated substrates grown around it. It is not one mineral. It is a family of cold lattices, clathrate cages, computation ash, failed containment gel, and deep-process scrap left by Deep Reach equipment. Under HECTON-8's water column it stays quiet enough to move. In cabin air it can shed reactive gas, glassy dust, and legal trouble. The material matters because it links three systems at once: high-energy containment, Atlas-compatible memory, and the salvage economy. A sealed sample can buy power cells, tool licenses, or a route out of debt. The same sample can mark the carrier, trigger a lien, poison a shelter, or prove Deep Reach came back for something it claimed to have abandoned.
+Blue Debt is Marauder slang for pressure-kept Xenon-Omega residue and contaminated substrate around it. It is not one mineral. It includes cold lattices, clathrate cages, computation ash, failed containment gel and sealed process scrap left by Deep Reach equipment. Under HECTON-8's water column it stays quiet enough to move. In cabin air it can shed reactive gas, glassy dust and claim trouble.
+
+A loose shard is payday. A sealed container is also custody history: pressure tag, route stain, acoustic return, claimant hook. The same sample can power a tool, poison a shelter, mark the carrier, or prove Deep Reach returned to a site it listed as abandoned. Handle it like evidence first and money second.
 
 ## Scanner
 
@@ -35,6 +37,6 @@ Container is singing on sonar. Low and regular. That is process residue, not lif
 
 ## Field Note
 
-They call it blue debt because every gram borrows from the future. It pays up front, then sends collectors.
+Keep the pressure tag on. Loose blue buys fuel. Sealed blue buys fuel, quarantine attention and a name on the claim desk.
 
 <!-- In-Game Wiki; generated from P004_BLUE_DEBT/en_US. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "センサー標識生物フィードバックループ"
+title: "センサータグ付き動物フィードバックループ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# センサー標識生物フィードバックループ
+# センサータグ付き動物フィードバックループ
 
-センサー標識生物は制御された兵士ではない。この区別は重要だ。Deep Reachのタグ付け計画は、移動、耐圧、汚染曝露、経路密度を追う普通の野外科学と物流として始まった。年月が経つと、タグは清潔な装置ではなくなる。殻が周囲に育ち、瘢痕組織が位置をずらし、鉱物キャップが信号を変える。
+センサータグ付き動物は操り人形ではない。殻と瘢痕組織の下で企業機器がまだ応答する野生動物だ。それだけでAtlasは移動を環境更新と誤認し、動物が気づかないままダイバーのルートを変えられる。
 
-Atlasはそれでも戻りを読む。負傷した草食生物が浸水した作業橋を横切れば、圧力調査のように見える。古いタグを持つ捕食者は、廊下をインフラリスクで占有されているように見せる。動物は動物のままだが、周囲のシステムは移動をデータとして扱う。野生生物との遭遇には二つ目の刃がある。生存行動が修理フィードバックにもなるのだ。
+## Scanner
+
+左脇の殻成長下に古いDeep Reachタグ。移動パケットはまだ保守網へピングを打つ。
+
+## Terminal
+
+FAUNA TAG LOOP / DR-2147-MIG：圧力、移動、汚染パケットを環境テレメトリとして受理。動物の意図は解析されない。ルート警報が移動経路を追う場合あり。
+
+## Audio
+
+そいつは狩っていない。タグが間違ったドアを開けることはある。
+
+## Field Note
+
+タグ付き動物がリレー yard を横切ったら、警報を信じる前に待て。動物はもう去っていても、ルート状態は追いついていないことがある。
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ja_JP. -->

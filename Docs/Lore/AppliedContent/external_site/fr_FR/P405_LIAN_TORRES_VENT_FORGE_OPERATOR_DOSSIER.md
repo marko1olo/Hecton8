@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, opérateur de forge hydrothermale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, opérateur de forge hydrothermale
 
-FR LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres ancre l'industrie de HECTON-8 dans l'artisanat plutôt que dans le matériau miracle. Les preuves de forge montrent que verre de pression, anneaux de joint et doublures céramiques ne naissaient pas comme butin. Ils étaient travaillés, rejetés, réétiquetés et rendus assez sûrs pour qu'un autre leur fasse confiance sous l'eau.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier : Lian Torres. Gant thermique, minuteur de cycle et bac de rejet correspondent au même lot de verre de pression.
 
 ## Terminal
 
-FR LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+FORGE HYDROTHERMALE V-9 / TORRES, LIAN : bac de rejet conservant anneaux de joint fendus, verre de pression trouble et trois coupons de surchauffe marqués. Note de lot : l'échec n'enseigne le prochain joint que si l'échec reste étiqueté.
 
 ## Audio
 
-FR LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres gardait les mauvaises pièces. Dans la forge, un sol propre voulait dire que quelqu'un avait jeté la leçon.
 
 ## Field Note
 
-FR LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Utiliser Torres près des accessoires de forge, recettes de verre de pression, anneaux rejetés et établis d'amélioration ayant besoin d'une histoire visible de pièces ratées.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/fr_FR. -->

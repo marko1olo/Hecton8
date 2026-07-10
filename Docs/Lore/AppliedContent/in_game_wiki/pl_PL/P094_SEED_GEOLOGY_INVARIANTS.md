@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Niezmienniki geologii seeda"
+title: "Inwarianty geologii survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Niezmienniki geologii seeda
+# Inwarianty geologii survey
 
-Niezmienniki geologii seeda utrzymuja spojnosci HECTON-8 przez dlugie powtorki. Kaniony moga otwierac sie w innej kolejnosci, dowody moga sie przesuwac, bezpieczne kieszenie zmieniac, a presja gatunkow wahac. Gwiazda pozostaje Aegirem, ksiezyc pozostaje HECTON-8, pasma glebokosci trzymaja porzadek, Great Tide trzyma rytm, a basen Atlas zostaje zwiazany z najglebsza prawda.
+Survey geology invariants utrzymuja HECTON-8 coherent wsrod contradictory charts, damaged Atlas maps i incomplete Black Keel route packets. Canyon approach moze shift between surveys. Safe pocket moze collapse. Cache moze emerge under new silt. Bloom density i salvage exposure zmieniaja sie z weather, pressure i tym, co last expedition disturbed. Deeper truths nie move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior, a Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Notatka generowania trasy. Mapa zlomiarzy sie zmienia, ale ksiezyc trzyma te same kosci.
+Atlas survey note. Salvage chart moze disagree with itself; moon keeps the same bones.
 
 ## Terminal
 
-NIEZMIENNIKI: Aegir jako gwiazda glowna, drabina orbitalna HECTON-8, interwal Great Tide, porzadek pasm glebokosci, relacja basenu Atlas, zachowanie cisnieniowe blue debt. ZMIENNE: podejscie do kanionu, kolejnosc POI, bezpieczne kieszenie, gestosc bloom, ekspozycja zlomu.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Inny wzor rany. Ten sam ksiezyc pod spodem.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-Nowy run moze inaczej zakopac dowody; nie moze przepisac grawitacji, plywu ani winy.
+Later chart moze bury evidence differently. Nie moze rewrite gravity, tide ani guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/pl_PL. -->

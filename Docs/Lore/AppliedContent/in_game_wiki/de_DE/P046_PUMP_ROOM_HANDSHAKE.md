@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Pumpenraum-Ventilhandshake"
+title: "Pumpenraum-Ventil-Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pumpenraum-Ventilhandshake
+# Pumpenraum-Ventil-Handshake
 
-Ein Pumpen-Handshake ist der Moment, in dem ein ertrunkener Raum lokale Kontrolle annimmt. Er schafft Zugang, verschiebt aber Wasser, Lärm und Druck in einen anderen Teil der Route. Lies Ansaugkorb, Auslasspuls und Wasserschlag im Rückkehrkorridor, bevor ein trockener Boden als Sicherheit gilt. Frühe P-63-Pumpenräume lehren die Grundregel der Reparatur: Eine Maschine kann ein Abteil verbessern und zugleich den Heimweg verschlechtern.
+Ein pump handshake ist der Moment, in dem eine ertrunkene Maschine wieder eine local hand akzeptiert. Es fuhlt sich wie control an, weil der floor frei wird, die lamp nicht mehr schwimmt und die route sich zu offnen scheint. Die Gefahr ist, dass water auf HECTON-8 nie verschwindet; es wird in einen anderen compromise bewegt. Intake baskets fangen capsule foam, alte gloves, shell grit und torn labels. Outlets wecken corridors, die aus gutem Grund still waren. Die richtige Gewohnheit ist, die pump als trade zu lesen: Eine room atmet, eine andere beginnt zu knock.
 
 ## Scanner
 
-Lokale Sumpfpumpe akzeptiert Handradeingabe. Ansaugkorb ist mit Kapselschaum verschmutzt; Auslasspuls belastet Rückkehrkorridor B.
+Local sump akzeptierte handwheel input. Capsule foam verstopft den intake basket; outlet pulse steigt in Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROL / LOKALER HANDSHAKE: Handradautorität akzeptiert. Fernübersteuerung verweigert. Ansaugfluss mit niedriger Rate wiederhergestellt. Auslassdruck steigt in RETURN CORRIDOR B; Neustart nur nach Prüfung der nachgeschalteten Luke.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Ventil hat gegriffen. Der Auslass klopft. Nenn es noch nicht sicher.
+Valve took. Der outlet klopft. Nenn das noch nicht safe.
 
 ## Field Note
 
-Ein trockener Pumpenraum kann den Rückweg fluten. Hör auf Wasserschlag am Auslass, bevor du das Ventil ausbaust.
+Ein trockener floor ist keine solved room. Hor auf den corridor, der dafur bezahlt hat.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/de_DE. -->

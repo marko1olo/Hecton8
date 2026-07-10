@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "逃离配方成本边界"
+title: "上升配方成本行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 逃离配方成本边界
+# 上升配方成本行
 
-逃离配方成本边界让出口链保持机械性，而不是任意门槛。每个上升部件都有压力历史、所有者和证明需求，所以逃离像法律下的维修，而不是菜单里的任务代币。
+每一项逃离成本都对应一处损坏部件或一项被封锁的权限。受损的bathydrop为了让你活下来耗掉了上升套筒，回程链必须证明信号、密封、计时、能量和接收方合法性。有些部件修机器；有些部件决定谁有权回应回收呼叫。
 
 ## Scanner
 
-逃离配方行绑定部件类别、压力层级、路线证明和权限状态。
+上升行锁定：中继证明、密封等级、制导核心、上升充能、法律握手和载荷权限并未齐备。
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT：合格成本必须标明中继、密封、导航、上升能量、法律握手、payload 权限和接收器风险。上去的路有部件；部件有主人。
+上升成本模式 / Black Keel回收接口：没有声学中继、压力密封、制导计时核心、上升能量充能、检疫/法律握手、载荷权限、接收方风险和路线窗口时，不得发布上升报价。舱包不能只靠零件爬上去。
 
 ## Audio
 
-上去的路有部件。部件有主人。
+回收接口：中继、密封、计时、充能、握手。缺一个，舱包就继续湿着。
 
 ## Field Note
 
-Pressure band 来自封存规则；精确成本属于 recipe table。
+握手清除前不要消耗制导核心。带着错误接收方的可用上升充能，只是通向拘押的快路。
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/zh_CN. -->

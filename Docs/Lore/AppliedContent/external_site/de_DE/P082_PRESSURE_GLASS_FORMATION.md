@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Bildung von Druckglas"
+title: "Bildung von Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bildung von Druckglas
+# Bildung von Pressure Glass
 
-Druckglas ist der technische Name hinter Marauder blue debt und Deep Reachs Xenon-Omega-Sprache. Es entsteht dort, wo Druck, Edelgastaschen, Sole, Mineralien, Hitze und veränderte Biologie zusammentreffen.
+Pressure Glass ist der Feldname hinter der blauen Schuld der Marauder und Deep Reachs Xenon-Omega-Sprache. Es entsteht nur dort, wo Edelgastaschen, Mineraldefekte, heiße Sole, veränderte Biologie und brutale Druckgeschichte lange genug zusammenbleiben, um ein Gitter in Erinnerung zu sperren.
 
-Die Bildung von Druckglas macht Xenon-Omega zu materieller Ökologie harter Science-Fiction, nicht zu magischem Erz. Das ist kein Erz. Es ist ein Prozess, der sich erinnert, wo er entstanden ist.
+Die Bildung von Pressure Glass macht Xenon-Omega zu Materialökologie: ein druckgemachtes Substrat, verbunden mit Einschluss, Berechnung, Atlas-Kontinuität und Bergungsrisiko. Das ist kein Erz. Das ist ein Ort, der sich erinnert, was ihm angetan wurde.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/de_DE. -->

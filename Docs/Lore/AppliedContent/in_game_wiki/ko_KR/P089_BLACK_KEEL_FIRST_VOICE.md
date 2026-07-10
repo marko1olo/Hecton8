@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel 첫 목소리"
+title: "Black Keel의 첫 목소리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel 첫 목소리
+# Black Keel의 첫 목소리
 
-Black Keel의 첫 목소리는 손상된 오디오와 깨끗한 텍스트로 플레이어에게 닿는다. 동료도 아니고 악당 연설도 아니다. 그것은 carrier 모니터가 설계된 그대로 행동하는 것이다. 신호를 확인하고, 경로 선택지를 보존하고, 의무를 정렬하고, 약속을 피한다. 그 목소리는 단단한 정보를 주기 때문에 유용하다. 모든 올바른 문장이 구조를 조건부로 남겨 두기 때문에 무섭다.
+Black Keel의 첫 목소리는 잔혹하게 느껴지기 전에 먼저 유용해야 한다. carrier는 신호를 확인하고 corrupted audio를 걸러내며 text channel을 열고 운용자를 살릴 수 있는 정보를 준다. 친구라고 거짓말하지 않는다. 따뜻함에 전력을 낭비하지 않는다. 공포는 유능함에서 온다. 모든 문장은 정확하고, 모든 warning은 중요하며, 모든 정확한 답은 extraction을 조건부로 남긴다. 그 목소리는 악하지 않다. rescue가 ledger에 팔린 뒤 rescue는 이렇게 들린다.
 
 ## Scanner
 
-carrier 음성 캐시. 오디오는 끊기고, 텍스트는 깨끗하며, 동정은 없다.
+Carrier voice cache. Audio는 pressure noise에 찢겼고 text channel은 청구할 만큼 깨끗하다.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: 오디오 채널 저하. 텍스트 채널 유효. 오퍼레이터 생존 인정. recovery 우선순위는 payload, 격리, lien, 신호 무결성 상태 대기 중 미해결.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity, mass-window balance.
 
 ## Audio
 
-오퍼레이터 신호 획득. 인정을 구조와 혼동하지 말 것.
+Operator signal acquired. acknowledgement를 rescue와 혼동하지 말 것.
 
 ## Field Note
 
-첫 유용한 문장 뒤에는 청구 등급이 따라온다.
+첫 유용한 문장은 위로하지 않는다. 분류한다.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/ko_KR. -->

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # טבלת התעריפים של Black Keel
 
-טבלת התעריפים היא המקום שבו HECTON-8 אומרת בקול את מה שנאמר בשקט. Black Keel יכולה לשמוע את השחקן, לסווג את הסכנה ולהעביר חבילות במערכת, אבל כל פעולה נכנסת קודם לקטגוריית חיוב. דגימה שמורה עשויה לנוע מהר יותר ממפעיל נושם. קופסה חתומה עשויה לשדרג את המסלול לפני גוף פצוע. זו לא רשעות תיאטרלית; זה ספר חשבונות שעושה בדיוק את עבודתו. האכזריות מעשית: השחקן לומד לשרוד דרך ניצול אותה שפה כלכלית שהפכה את המושבה לזניחה.
+טבלת התעריפים של Black Keel חושפת את ה-carrier economy סביב HECTON-8, שבה distress traffic מתחרה עם sample custody, oxygen, debt, proof ו-asset protection.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage ו-body recovery יושבים בשורות נפרדות.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies עד ש-lien arbitration resolves.
+
+## Audio
+
+יש discount עבור evidence ו-surcharge עבור breathing.
+
+## Field Note
+
+ה-class המהיר ביותר אינו rescue. הוא verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/he_IL. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "سجل الاستجابة المؤسسية"
+title: "سجل الاستجابة corporate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سجل الاستجابة المؤسسية
+# سجل الاستجابة corporate
 
-السجل هو طريقة كلام Black Keel عندما لا يرتجل أحد. يستطيع الاعتراف بالخطر وفتح طابور وحفظ مطالبة، ومع ذلك يترك المشغل ينتظر خلف قواعد الأصول. يجب قراءة سجلات الاستجابة كإشارات مفيدة وأوراق عدائية صارت قابلة للتنفيذ.
+Corporate response ledger هو الطريقة التي يتكلم بها Black Keel عندما لا يرتجل أحد. يمكنه acknowledge distress فورا، وفتح route queue، وpreserve a claim، وdemand sample custody، وlog hull risk، ومع ذلك يترك living operator ينتظر خلف asset rules. للledger قيمة لأنه يكشف ما يعرفه system. وهو عدائي لأن knowing ليس acting. على HECTON-8، تكون أول reply غالبا دليلا على أن machine سمعت كل شيء ووعدت تقريبا بلا شيء.
 
 ## Scanner
 
-كل رد يصل بلغة العقود: حيازة الأصول، أقفال المسؤولية، مسار العينات، خطر البدن، ثم استرداد المشغل.
+كل reply يصل بلغة contract language: asset custody وliability lock وsample route وhull risk، ثم operator recovery.
 
 ## Terminal
 
-فئة الاستجابة: حفظ الأصول. أضيف استرداد المشغل بعد حيازة العينة وختم المسؤولية وتدقيق البدن ومسار الدفع.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody وliability seal وhull audit وpayment route وevidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-كان الرد آليا. كان الإنقاذ مشروطا.
+كانت reply automatic. وكان rescue conditional.
 
 ## Field Note
 
-الاستجابة الفورية ليست إنقاذا فوريا.
+Immediate response ليست immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/ar_SA. -->

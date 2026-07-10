@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Ren Okoye/Brine Map"
+title: "רן אוקויה, קרטוגרף תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Ren Okoye/Brine Map
+# רן אוקויה, קרטוגרף תמלחת
 
-HE LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+רן אוקויה מיפה את שכבות התמלחת של HECTON-8 כדרכי עבודה, לא כתפאורה. הלוח ששרד, חרוזי הצפיפות המוכתמים, צלקות לוח הסיכות ופתקי הנתיב החתומים בלחץ מציגים קרטוגרף שתיקן מסדרונות רשמיים כשהמים עצמם משמשים עד. המפות שלו מסבירות למה הדרכים הבטוחות ביותר במושבה חיו לעיתים מחוץ ללוח ההיתרים: התמלחת זזה מהר יותר מאישור, ואנשים שנשאו כלים היו חייבים לסמוך על המדידה האחרונה יותר מעל החתימה האחרונה.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+תיק: רן אוקויה. חרוזי צפיפות, חתכי לוח וצלקות חוטים מתארים נתיב שזז בן לילה.
 
 ## Terminal
 
-HE LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+שולחן מפת תמלחת / OKOYE, REN: הזרם הבטוח זז 3.2 מ' מזרחה אחרי היפוך צפיפות. לוח ההיתרים עדיין מציג את המסדרון של אתמול. סימני נתיב של עובדים גוברים על נתיב ההנהלה עד למדידה הבאה.
 
 ## Audio
 
-HE LOC HOLD: Okoye drew roads that moved while management argued about permission.
+אוקויה צייר דרכים במים שלא רצו לשמור את הציור.
 
 ## Field Note
 
-HE LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+להשתמש באוקויה לחשיפת נתיבי תמלחת, ניווט שכבות צפיפות וסתירות בלוח ההיתרים. הראיות שלו צריכות לתת סיבות מוחשיות לא לסמוך על מפות ישנות.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/he_IL. -->

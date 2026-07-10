@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Otoritas Tunda-Cahaya
 
-Panggilan darurat di HECTON-8 adalah kiriman fisik berisi makna. Ia keluar dari tiang yang terendam, menyeberangi ruang Aegir dengan kecepatan cahaya, menunggu di buffer relai, lalu tiba di Black Keel lewat antrean yang sudah tahu cara memberi harga pada risiko. Jeda pertama adalah jarak yang jujur. Jeda berikutnya buatan manusia: kelas kustodi, jendela badai, bahasa tanggung jawab, dan kebiasaan kapal induk menjawab aset sebelum orang. Karena itu balasan bisa masih baru secara teknis dan tetap tidak berguna di ruang tekanan yang runtuh.
+Otoritas Tunda-Cahaya mendefinisikan komunikasi HECTON-8 sebagai fisik, tertunda, dan contract-filtered: distance, weather, relay buffers, dan custody queues menentukan kapan signal menjadi usable.
+
+## Scanner
+
+Relay mast cache. Call keluar bersih, lalu menunggu di balik light, queue law, storm scatter, dan Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active sampai fresh signal window mengonfirmasi override.
+
+## Audio
+
+Balasannya sedang datang. Itu tidak menjadikannya rescue.
+
+## Field Note
+
+Tidak ada yang menyensor scream pertama. Physics membawanya cukup lambat sampai policy sempat mengejar.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/id_ID. -->

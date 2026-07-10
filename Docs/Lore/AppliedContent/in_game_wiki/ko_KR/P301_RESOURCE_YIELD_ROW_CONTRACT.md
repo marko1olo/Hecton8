@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "자원 산출 데이터 경계"
+title: "자원 산출 접수 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 자원 산출 데이터 경계
+# 자원 산출 접수 행
 
-이 경계는 자원 가격이 느슨한 lore가 되는 것을 막는다. HECTON-8에서 광물은 모든 깊이에서 같은 가치가 아니다. 압력 이력, 경로 보관, 고갈 동작이 샘플을 화폐, 증거, 오염된 밸러스트 중 무엇으로 만들지 결정한다.
+산출 행은 자원이 흩어진 폐품이 아니라 지급 가능한 화물이 되는 시점을 정한다. HECTON-8 샘플의 가치는 깊이, 용기 등급, 오염 단계, 보관을 증명할 수 있는 주체에 따라 달라진다. 밀봉된 염수 경로의 조화성 blue debt 조각은 갈라진 주머니 속 세척된 선반 부스러기와 같은 행이 아니다.
 
 ## Scanner
 
-산출 행은 느슨한 가치를 거부한다. 등급, 압력대, 보관, 고갈, hash가 맞아야 한다.
+샘플 행 미완료: 압력 이력, 보관 등급, 고갈 상태, 오염 단계, 패킷 해시가 서로 맞지 않는다.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: packet hash, 자원 등급, 압력대, 보관 등급, 희귀도 곡선, 고갈 동작 없이는 어떤 숫자도 수락되지 않는다. 압력 이력이 없는 샘플은 가치가 아니라 증거다.
+산출 접수 스키마 / Aegir Reclamation Pool: 자원 분류, 압력대, 보관 등급, 희귀도 곡선, 고갈 거동, 오염 단계, 패킷 증인 해시가 없으면 가치 게시를 거부한다. 봉지에 든 돌은 압력 경로가 증명될 때까지 질량이다.
 
 ## Audio
 
-압력 이력 없는 샘플은 가치가 아니다.
+Black Keel: 압력 경로와 보관 해시 확인 후 샘플 보류 승인. 그 전까지는 밸러스트로 이동한다.
 
 ## Field Note
 
-압력대, 보관 등급, 고갈 동작, packet hash가 일치할 때까지 산출 숫자는 임시다.
+행에 압력대가 없으면 가격을 따지지 마라. 죽은 질량으로 넣고, 용기는 봉인한 채 두고, 보관이 통과된 뒤 브로커에게 청구해라.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/ko_KR. -->

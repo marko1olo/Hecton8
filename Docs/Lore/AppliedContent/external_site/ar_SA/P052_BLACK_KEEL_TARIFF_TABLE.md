@@ -19,6 +19,22 @@ localization_flags: 1
 
 # جدول تعرفة Black Keel
 
-جدول التعرفة هو أوضح مكان تقول فيه HECTON-8 الحقيقة الهادئة. تستطيع Black Keel سماع اللاعب، وتصنيف الخطر، وتحريك الحزم في النظام، لكن كل فعل يدخل فئة فوترة قبل أن يصبح مساعدة. قد تسافر عينة محفوظة أسرع من عامل يتنفس. قد يرفع صندوق مختوم أولوية الطريق قبل جسد مصاب. هذا ليس شرا مسرحيا؛ إنه دفتر يعمل كما صمم. القسوة عملية: يتعلم اللاعب النجاة عبر إساءة استخدام القواعد الاقتصادية نفسها التي جعلت المستعمرة قابلة للرمي.
+يكشف جدول تعرفة Black Keel عن carrier economy حول HECTON-8، حيث تنافس distress traffic كل sample custody وoxygen وdebt وproof وasset protection.
+
+## Scanner
+
+Tariff plate. توضع distress وoxygen وsample custody وpressure gear وhull damage وbody recovery في أسطر منفصلة.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies حتى lien arbitration resolves.
+
+## Audio
+
+هناك discount على evidence وsurcharge على breathing.
+
+## Field Note
+
+أسرع class ليست rescue. إنها verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/ar_SA. -->

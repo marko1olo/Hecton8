@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ökologieregister
 
-Das Ökologieregister schützt den Ton: Schönheit, Druck, Kategoriesturz.
+Das Ökologieregister hält HECTON-8 lesbar: native Schönheit, industrielle Anpassung und Atlas-Reparaturbiologie müssen als verschiedene lebende Schichten erscheinen.
 
 ## Scanner
 
-Helle Flachwasserökologie bestätigt. Tiefer: Kabelflora, Filterkörper und Atlas-Reparatureingriff.
+Registertrennung bestätigt: natives Schelfleben, kabelangepasste Biota, Atlas-geroutete Reparaturorganismen. Vor dem Schneiden identifizieren.
 
 ## Terminal
 
-Registertrennung: native Druckökologie, kolonienadaptierte Biota, Atlas-veränderte Reparaturorganismen. Nicht mischen.
+REGISTERTEILUNG: native Druckökologie; kolonial angepasste Kabelbiota; Atlas-veränderte Reparaturorganismen. Falsche Etikettierung kann arbeitende Dichtungen zerstören oder Routenbeweise löschen.
 
 ## Audio
 
-Wenn alles Monster ist, ist nichts Verletzung.
+Wenn alles ein Monster ist, schneidest du das durch, was Druck hält.
 
 ## Field Note
 
-Die Welt lebte, bevor sie verletzt wurde.
+Die Welt lebte, bevor sie verwundet wurde.
 
 <!-- External Site; generated from P020_HECTON8_ECOLOGY_REGISTRY/de_DE. -->

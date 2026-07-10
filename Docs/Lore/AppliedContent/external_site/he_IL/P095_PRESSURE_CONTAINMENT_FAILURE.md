@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "כשל כליאת לחץ"
+title: "כשל Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# כשל כליאת לחץ
+# כשל Pressure Containment
 
-blue debt אינו אוצר מקולל. הוא זיכרון חומרי תחת לחץ. שארית Xenon-Omega נשארת שימושית כל עוד הסריג שלה מאמין שהוא עדיין עמוק, קר ודחוס. הוצאה מהירה מדי, אחסון גרוע או גזירת אות בתוך הארון מתחילים כשל בשלבים קריאים. תחילה מגיעה סטייה: המדדים משקרים, התהודה רועדת, אזעקות הכליאה רבות זו עם זו. אחר כך הסריג נשבר. מלח נכנס. ביולוגיה הולכת אחרי הכימיה. בשלב 4 הערך מת, אבל הזיהום חי.
+Pressure Containment Failure מגדיר blue debt handling stages, וקושר resource value ל-depth, pressure memory, bloom contamination, route planning ו-salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear ו-bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Sample יכול להיות worth a fortune at one depth ו-become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/he_IL. -->

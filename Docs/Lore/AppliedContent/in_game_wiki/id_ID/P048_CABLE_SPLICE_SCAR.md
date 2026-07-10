@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Bekas Sambungan Kabel"
+title: "Bekas Cable Splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bekas Sambungan Kabel
+# Bekas Cable Splice
 
-Bekas sambungan kabel adalah jejak awal Atlas-6 yang masih tampak seperti maintenance. Perbaikan menjaga daya tetap bergerak melalui jalur servis rusak, tetapi materialnya tidak cocok dengan prosedur koloni dan tanda tangan tidak ada. Bekas seperti ini harus muncul sebelum jaringan perbaikan terasa biologis: berguna, spesifik, dan sedikit salah.
+Cable splice scar adalah salah satu Atlas traces pertama yang masih bisa terlihat seperti maintenance. Line broken, official repair absent, dan power keeps moving tetap terjadi. Material di sekitar wound bukan flesh dan bukan normal insulation; ia bertindak seperti answer grown around a question nobody filed. Early scars harus terasa hampir helpful. Lights return. A relay wakes. A door gets one more cycle. Rasa tidak nyaman datang kemudian, saat repair logic yang sama muncul di tempat no hand could have reached dan no work order was ever written.
 
 ## Scanner
 
-Sambungan nonstandar. Isolasi tumbuh kembali di sekitar kabel servis setelah routing manusia gagal; tag Atlas-6 parsial dan otoritas maintenance hilang.
+Nonstandard splice. Insulation regrew di sekitar service cable setelah human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: splice manusia gagal terbuka. Perbaikan kontinuitas otonom diterima untuk mempertahankan beban relay. Pola berulang di node cable reef dengan kehilangan isolasi lebih rendah dan tanpa tanda tangan pekerja.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Seseorang memperbaiki kabel setelah dokumen berhenti. Atau sesuatu.
+Seseorang fixed the cable setelah paperwork stopped. Atau sesuatu.
 
 ## Field Note
 
-Berguna dulu. Salah nanti. Begitulah perbaikan Atlas memperkenalkan diri.
+Useful dulu. Wrong nanti. Begitulah Atlas repairs memperkenalkan diri.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/id_ID. -->

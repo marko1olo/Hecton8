@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Grens van contractrisico en beloning"
+title: "Contractregel risico/beloning"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Grens van contractrisico en beloning
+# Contractregel risico/beloning
 
-Replayability in HECTON-8 is geen geërfde macht. Het is een slechter contract, een krapper venster, een vroegere bewijsvraag en een carrier die onthoudt welke delen van jou nog onderpand zijn.
+Marauder-contracten rond Aegir prijzen gevaar voordat iemand een luik opent. Retentiezwaarte, bergingsvenster, bewaarvraag, bewijsvolgorde, quarantaineblootstelling en clausulegewicht bepalen waarom twee runs door hetzelfde wrak anders voelen. Het aanbod schuift aansprakelijkheid naar de duiker voordat het luik open gaat.
 
 ## Scanner
 
-Contractrij bindt retentierecht, stormvenster, bewaringsvolgorde, uitbetalingsplafond en clausulegewicht.
+Aanbiedingsregel vijandig: retentiezwaarte, stormvenster, bewaarorder, bewijsdiepte, uitbetalingsplafond en Deep Reach-clausulegewicht zijn gekoppeld.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: rijen vereisen ernst van retentierecht, uitbetalingsplafond, stormvenster, monsterbewaring, bewijsvolgorde en Deep Reach-clausulegewicht. Het contract is het eerste roofdier.
+CONTRACTRISICO SCHEMA / Aegir Reclamation Pool: beloning pas plaatsen nadat retentiezwaarte, uitbetalingsplafond, storm- of orbitvenster, monsterbewaarvraag, bewijsvolgordediepte, quarantaineblootstelling en Deep Reach-clausulegewicht zijn vastgelegd. Routegrant blijft voorwaardelijk tot de carrier de aansprakelijkheidsdeling accepteert.
 
 ## Audio
 
-Het contract is het eerste roofdier.
+Black Keel: nieuw aanbod geplaatst. Hogere uitbetaling, korter stormvenster, monsterbewaring eerst. Lees de clausule voordat je duikt.
 
 ## Field Note
 
-Beloningswijzigingen horen bij de contractrij, niet bij geïmproviseerde loretekst.
+Springt de beloning omhoog, zoek dan de clausule die verschoof. Meestal is het bewaring, weer, quarantaine of iemand anders zijn bewijsprobleem.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/nl_NL. -->

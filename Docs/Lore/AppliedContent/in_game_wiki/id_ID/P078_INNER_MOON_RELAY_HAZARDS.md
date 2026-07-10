@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bahaya Relai Bulan Dalam"
+title: "Bahaya Relay Bulan Dalam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bahaya Relai Bulan Dalam
+# Bahaya Relay Bulan Dalam
 
-Bahaya relai bulan dalam membuat kegagalan kontak menjadi fisik. Lonjakan sejajar Skarn dapat merusak antena tanpa mematikannya. Debu dan es Vela menutup optik sementara rute masih mengaku ada.
-
-Claw dan Lumen lebih buruk karena membawa logika rute tua. Handshake dapat sah secara formal dan tidak berguna secara operasi. Black Keel dapat mencatat paket, menjaga custody, dan tetap meninggalkan tubuh di air.
+Inner moon relay hazards membuat failed contact fisik, bukan nyaman. Skarn-aligned surges bisa corrupt antennas tanpa killing them. Vela dust and ice bisa shutter optics sementara route masih reports itself as open. Claw dan Lumen lebih buruk karena carry old buoy logic: handshake bisa formally valid dan operationally useless. Karena itu Black Keel bisa log a packet, preserve custody, dan tetap meninggalkan human signal waiting in water. System tidak perlu go mute. Ia hanya perlu answer from the wrong sky.
 
 ## Scanner
 
-TANGGA DALAM // Skarn menjenuhkan antena. Vela menyebar optik. Rute tua Claw dan Lumen menjaga handshakes basi tetap hidup.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw dan Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-CATATAN BAHAYA RELAI // Hilang kontak bisa berupa geometri, cuaca partikel, tirai debu, atau buoy law warisan. Curigai UI bersih saat jendela lonjakan.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Relai tidak diam. Ia mengulang abad yang salah.
+Relay tidak diam. Ia repeated the wrong century.
 
 ## Field Note
 
-Ikon bersih masih bisa berbohong lewat langit lama.
+Clean icon masih bisa berbohong through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/id_ID. -->

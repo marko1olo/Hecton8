@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Rejestr odpowiedzi korporacyjnej"
+title: "Corporate response ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rejestr odpowiedzi korporacyjnej
+# Corporate response ledger
 
-Rejestr odpowiedzi korporacyjnej nie jest mową złoczyńcy. Jest chłodniejszy. To maszynowo czytelna obietnica, że Black Keel odpowie, ale tylko w kolejności uznawanej przez kontrakty. Najpierw piecza aktywów. Potem pieczęć odpowiedzialności. Audyt kadłuba, trasa próbki, trasa płatności, potem odzysk operatora, jeśli kolejka pozwoli. Gracz może używać rejestrów jako wskazówek, kluczy i nacisku, bo system jest przewidywalny. Ta przewidywalność jest oskarżeniem: HECTON-8 porzucono nie jedną złą decyzją, lecz stosem odpowiedzi, który działał dalej, gdy ludzie stawali się ładunkiem niższego priorytetu.
+Corporate Response Ledger zapisuje twardy limit pomocy Black Keel: response speed, rescue priority, evidence custody, asset preservation i debt settlement pozostaja osobnymi systems.
+
+## Scanner
+
+Kazda reply przychodzi w contract language: asset custody, liability lock, sample route, hull risk, potem operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route i evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+Reply byla automatic. Rescue byl conditional.
+
+## Field Note
+
+Immediate response to nie immediate rescue.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/pl_PL. -->

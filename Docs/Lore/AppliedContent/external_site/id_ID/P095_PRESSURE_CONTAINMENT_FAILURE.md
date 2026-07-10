@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Kegagalan Kontainmen Tekanan"
+title: "Kegagalan Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kegagalan Kontainmen Tekanan
+# Kegagalan Pressure Containment
 
-Blue debt bukan harta terkutuk. Ia memori material di bawah tekanan. Residu Xenon-Omega tetap berguna selama kisinya percaya ia masih dalam, dingin, dan terkompresi. Ambil terlalu cepat, simpan buruk, atau biarkan geser sinyal merayap ke casket, lalu sampel mulai gagal lewat tahap yang bisa dibaca. Pertama muncul drift: meter berbohong, resonansi gemetar, alarm kontainmen saling membantah. Lalu kisi retak. Brine masuk. Biologi mengikuti kimia. Pada tahap 4, nilai mati tetapi kontaminasi hidup.
+Pressure Containment Failure mendefinisikan blue debt handling stages, mengikat resource value ke depth, pressure memory, bloom contamination, route planning, dan salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear, dan bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+Sample bisa worth a fortune at one depth dan become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/id_ID. -->

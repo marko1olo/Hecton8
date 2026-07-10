@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Montage der Fluchtkette
 
-Montage der Fluchtkette ist das Ingenieurrückgrat der Kampagne. HECTON-8 bietet nach der ersten Reparatur keine saubere Oberflächenextraktion; Abflug wird zu einer Reihe physischer, rechtlicher und beweisführender Komponenten, verteilt in ertrunkener Infrastruktur. So bekommt der lange Abstieg einen praktischen und moralischen Grund: Der Spieler verlässt nicht nur den Ozean, sondern baut eine Route, die beweist, warum die Kolonie nie einen fairen Ausgang hatte.
+Montage der Fluchtkette ist das ingenieurische Rückgrat der Kampagne. HECTON-8 bietet nach der ersten Reparatur keine saubere Oberflächenextraktion; Abflug wird zu einem Satz physischer, legaler und beweisführender Komponenten, verteilt über ertrunkene Infrastruktur. So bekommt der lange Abstieg einen praktischen und moralischen Grund: Der Ausgang muss aus Teilen derselben Kolonie gebaut werden, der ein fairer Ausgang verweigert wurde.
 
 ## Scanner
 
-Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, rechtlichen Handschlag und eine Nutzlast, die der Träger nicht ignorieren kann.
+Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, legalen Handshake und Payload, den der Carrier nicht ignorieren kann.
 
 ## Terminal
 
-AUFSTIEGSPAKET: akustischer Relaisspinen fehlt. Klemmringwertung unzureichend. Führungskern fehlt. Ladewiege leer. Quarantäne-Handschlag ungelöst. Beweisnutzlast optional, verändert aber Bergungsautorität.
+ASCENT PACKAGE: acoustic relay spine fehlt. clamp ring rating unzureichend. guidance core fehlt. charge cradle leer. quarantine handshake ungelöst. evidence payload ändert recovery authority.
 
 ## Audio
 
-Du reparierst die Kapsel nicht. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
+Du reparierst nicht die Kapsel. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
 
 ## Field Note
 
-Der Weg nach oben wird aus Teilen gebaut, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
+Der Weg nach oben besteht aus Teilen, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/de_DE. -->

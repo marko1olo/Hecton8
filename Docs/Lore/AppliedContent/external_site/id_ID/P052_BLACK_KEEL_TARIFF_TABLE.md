@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Tabel Tarif Black Keel
 
-Tabel tarif adalah cara paling jelas HECTON-8 mengatakan hal yang biasanya disembunyikan. Black Keel bisa mendengar pemain, mengklasifikasikan bahaya, dan memindahkan paket melalui sistem, tetapi setiap tindakan masuk kategori tagihan sebelum menjadi bantuan. Sampel yang terawetkan bisa bergerak lebih cepat daripada operator yang masih bernapas. Kotak tersegel bisa menaikkan rute sebelum tubuh terluka. Ini bukan kejahatan teatrikal; ini buku besar yang bekerja sesuai rancangan. Kekejamannya praktis: pemain belajar bertahan dengan memakai tata bahasa ekonomi yang sama yang membuat koloni bisa dibuang.
+Tabel Tarif Black Keel membuka carrier economy di sekitar HECTON-8, tempat distress traffic bersaing dengan sample custody, oxygen, debt, proof, dan asset protection.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, dan body recovery berada pada baris terpisah.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies sampai lien arbitration resolves.
+
+## Audio
+
+Ada discount untuk evidence dan surcharge untuk breathing.
+
+## Field Note
+
+Class tercepat bukan rescue. Itu verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/id_ID. -->

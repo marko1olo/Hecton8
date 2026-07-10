@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "תביעות קרות של הירחים החיצוניים"
+title: "Outer Moon Cold Claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# תביעות קרות של הירחים החיצוניים
+# Outer Moon Cold Claims
 
-תביעות קרות של הירחים החיצוניים מרחיבות את Aegir מעבר ל-HECTON-8: נתיבים מתים, מטמונים קרים ומשואות נטושות מזינים חוק salvage ומסתירים אובדן חוזר.
+Outer Moon Cold Claims מרחיב את Aegir beyond HECTON-8: dead routes, cold caches, abandoned beacons ו-billable loss מזינים salvage law ו-corporate denial.
 
 ## Scanner
 
-משואת תביעה חיצונית. לא כל דבר מת ב-Aegir נמצא על HECTON-8.
+Outer claim beacon. לא כל dead thing in Aegir נמצא על HECTON-8.
 
 ## Terminal
 
-ארכיון הסולם החיצוני // סקר מי מלח Thorne נכשל. נתיב היצוא Anvil הוקפא. משואת Mute חוזרת על ping משמורת בלי הצהרת צוות פעיל.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir למד לאבד אנשים לפני ש-HECTON-8 סיים את השיעור.
+Aegir למד lose people לפני ש-HECTON-8 סיים את ה-lesson.
 
 ## Field Note
 
-תביעות קרות מאפשרות Marauders. הן גם מלמדות חברות איך לקבור דפוסים.
+Cold claims מאפשרים marauders. הם גם מלמדים companies איך bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/he_IL. -->

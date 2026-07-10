@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "أخطار مرحلات الأقمار الداخلية"
+title: "مخاطر relay للأقمار الداخلية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# أخطار مرحلات الأقمار الداخلية
+# مخاطر relay للأقمار الداخلية
 
-أخطار مرحلات الأقمار الداخلية تجعل فشل الاتصال مادياً. طفرة Skarn قد تفسد الهوائيات دون أن تقتلها. غبار Vela وجليدها يغلقان البصريات بينما يستمر المسار في ادعاء الوجود.
-
-Claw وLumen أسوأ لأنهما يحملان منطق مسارات قديم. يمكن أن يكون handshake صالحاً شكلياً وعديم الفائدة عملياً. لذلك يستطيع Black Keel تسجيل حزمة وحفظ custody وترك جسد في الماء.
+تجعل inner moon relay hazards فشل الاتصال ماديا لا مناسبا. يمكن لSkarn-aligned surges أن corrupt antennas دون killing them. ويمكن لVela dust and ice أن shutter optics بينما ما تزال route reports itself as open. Claw وLumen أسوأ لأنهما carry old buoy logic: يمكن لhandshake أن يكون formally valid وoperationally useless. لذلك يستطيع Black Keel أن log a packet وpreserve custody ويترك human signal waiting in water. لم يحتج system إلى go mute. احتاج فقط إلى answer from the wrong sky.
 
 ## Scanner
 
-السلم الداخلي // Skarn يشبع الهوائيات. Vela تبعثر البصريات. مسارات Claw وLumen القديمة تبقي handshakes منتهية حية.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw وLumen keep stale handshakes legally alive.
 
 ## Terminal
 
-ملاحظة خطر المرحل // فقدان الاتصال قد يكون هندسة أو طقس جسيمات مشحونة أو ستارة غبار أو buoy law موروثاً. اشكك في UI النظيف أثناء نوافذ الطفرة.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-المرحل لم يصمت. كرر القرن الخطأ.
+لم يصمت relay. بل repeated the wrong century.
 
 ## Field Note
 
-أيقونة نظيفة قد تكذب عبر سماء قديمة.
+يمكن لclean icon أن يكذب through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/ar_SA. -->

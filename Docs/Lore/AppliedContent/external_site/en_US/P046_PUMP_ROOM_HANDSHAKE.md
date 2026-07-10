@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Pump Room Valve Handshake
 
-Pump rooms on HECTON-8 are not simple drains. Their local valves, handwheels and tired check valves make the player ask where the water goes after the floor clears. A working pump can open a door, wake a corridor, feed noise into sonar and turn a return path into the next problem.
+Pump rooms on HECTON-8 turn drainage into consequence. A working handwheel can clear a floor, feed noise into sonar, load a downstream hatch, and make the return path worse.
 
 ## Scanner
 
-Local sump pump accepted handwheel input. Intake basket is fouled with capsule foam; outlet pulse is loading Return Corridor B.
+Local sump accepted handwheel input. Capsule foam clogs the intake basket; outlet pulse is climbing into Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B; restart only with downstream hatch checked.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Valve took. Outlet is knocking. Do not call this safe yet.
 
 ## Field Note
 
-A dry pump room can drown the way back. Listen for hammer in the outlet before you strip the valve.
+A dry floor is not a solved room. Listen for the corridor that paid for it.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/en_US. -->

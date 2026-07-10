@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Tonne-Window Debt
 
-A tonne-window is a slice of carrier capacity measured in mass, burn timing, quarantine volume, and legal priority. For the operator it feels like debt because every useful object from HECTON-8 enters the same ledger as the body that found it. A sealed case may be light but legally heavy. A sample rack may cost little mass but demand clean volume. A human extraction may look obvious until ballast, oxygen reserve, and payload custody already spent the available window. This makes HECTON-8's economy physical instead of abstract. The player is not punished by a fake morality meter. The player is trapped inside a machine that prices survival through fuel, mass, contamination, and paperwork.
+Tonne-Window Debt turns survival into hard logistics: extraction, oxygen, samples, salvage, quarantine volume, and burn margin all occupy the same priced mass window.
+
+## Scanner
+
+Mass-window ledger. Help has weight before it has language.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass conflicts with sealed payload, ballast reserve, oxygen debt, quarantine sample volume, and hull patch inventory. Manual priority requires paid override, verified hazard proof, or custody reclassification.
+
+## Audio
+
+The ship can lift a life. The question is what else the ledger makes it carry.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: the carrier prices mercy by the kilogram.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/en_US. -->

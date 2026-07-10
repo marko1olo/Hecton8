@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Pila de recursos
 
-La pila de recursos encuadra HECTON-8 como economía de presión. Xenon-Omega es la cima estratégica, no todo el mundo.
+La pila de recursos plantea HECTON-8 como economía de presión: Xenon-Omega es el ápice estratégico, no el mundo entero.
 
 ## Scanner
 
-Pila: fibra de arrecife, sales de salmuera, núcleos relé, válvulas, blue debt, pressure glass, red Atlas.
+Pila leída: fibra de arrecife, sales de salmuera, núcleos de relé, válvulas de presión, catalizadores de respiradero, deuda azul, pressure glass, red Atlas.
 
 ## Terminal
 
-Valor: biota de supervivencia, salvage humano, hardware de ruta, química de presión, blue debt, pressure glass, continuity substrate.
+MODELO DE VALOR: biota de supervivencia, salvamento humano, hardware de ruta, química de presión, deuda azul, pressure glass, sustrato de continuidad. No colapsar la pila en un material milagroso.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Si el carrier pide masa antes que nombres, ya sabes quién posee el contrato.
 
 ## Field Note
 
-Nada aquí es solo botín.
+Nada aquí es solo botín. Cada muestra pertenece a una economía de presión.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/es_ES. -->

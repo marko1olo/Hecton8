@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Дрейф очереди ретранслятора"
+title: "Дрейф relay-очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Дрейф очереди ретранслятора
+# Дрейф relay-очереди
 
-Задержанная связь опасна тем, что может оставаться точной в неправильное время. Предупреждение носителя может описывать настоящий клапан, настоящую течь и настоящий маршрут, который уже изменился под давлением. Игрок должен сравнить возраст пакета с местными свидетельствами, прежде чем доверять удаленной власти.
+Relay queue drift - самая смертельная форма честности на HECTON-8. Delayed carrier packet может описывать real valve, real safe door, real low-current corridor и real leak, который уже ушел дальше. Order не фальшивый; он принадлежит комнате, измененной pressure, flooding, silt, heat или collapse. Хорошая field practice - не неповиновение ради неповиновения. Это сравнение packet age с wet paint, fresh salt, door strain, pump sound и направлением, куда хочет катиться loose debris.
 
 ## Scanner
 
-Штамп ретранслятора старше течи, которую он называет; инструкция была правдой для комнаты, которой больше нет.
+Relay stamp старше leak, который он называет. Instruction была верна для room, которой больше нет.
 
 ## Terminal
 
-ДРЕЙФ ОЧЕРЕДИ: возраст пакета превышает срок годности маршрута. Локальные свидетельства выше инструкции носителя до свежего ретрансляционного окна.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, если pressure, door state и waterline не совпадают.
 
 ## Audio
 
-Сообщение верное. В этом и проблема.
+Message верное. В этом и проблема.
 
 ## Field Note
 
-Поздняя правда все еще может убить.
+Поздняя truth все еще может убить.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/ru_RU. -->

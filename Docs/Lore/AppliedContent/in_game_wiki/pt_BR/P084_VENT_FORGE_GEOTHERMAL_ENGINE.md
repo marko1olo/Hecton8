@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Motor Geotérmico da Forja de Vent"
+title: "Motor geotérmico vent forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Motor Geotérmico da Forja de Vent
+# Motor geotérmico vent forge
 
-Forjas de vent conectam geologia a crafting, sobrevivência e horror. Elas fornecem calor e ciclos de pressão para cerâmica, selos e vidro de pressão, mas os mesmos ciclos criam bolsões ferventes, leituras falsas de oxigênio, nuvens corrosivas e migração de fauna.
+Vent forges conectam geologia a trabalho. Seus pulsos podem curar cerâmicas, resetar vedações de pressão, recozer pressure glass e pré-aquecer cargas de ascensão, mas cada ciclo útil também é ritmo de perigo. Cisalhamento fervente ataca costuras, oxigênio falso engana instrumentos, bloom corrosivo entra em carcaças abertas, e a vida próxima se move antes de o operador entender por quê.
 
 ## Scanner
 
-Coletor da forja de vent. Calor, veneno e energia usam o mesmo tubo.
+Coletor vent forge. Calor, veneno, pressão e energia dividem o mesmo tubo.
 
 ## Terminal
 
-MOTOR GEOTÉRMICO: pulso de vent adequado para cura cerâmica, recozimento de vidro de pressão e pré-aquecimento de carga de ascensão emergencial. Riscos: cisalhamento fervente, falso positivo de oxigênio e bloom corrosivo.
+MOTOR GEOTÉRMICO: pulso de vent adequado para cura cerâmica, recozimento de pressure glass, reset de vedação e pré-aquecimento de carga de ascensão emergencial. Riscos: cisalhamento fervente, oxigênio falso, bloom corrosivo, migração de fauna.
 
 ## Audio
 
@@ -35,6 +35,6 @@ O vent não liga se você chama isso de energia ou clima.
 
 ## Field Note
 
-Todo vent útil também é uma máquina que pune timing ruim.
+Todo vent útil também é uma máquina para punir timing ruim.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/pt_BR. -->

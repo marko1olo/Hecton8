@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Montage van de ontsnappingsketen"
+title: "Assemblage van de ontsnappingsketen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Montage van de ontsnappingsketen
+# Assemblage van de ontsnappingsketen
 
-Ontsnappen is een montageketen, geen enkel gerepareerd voertuig. Het beschadigde droppakket kan de speler in leven houden, maar kan niet alleen een vertrouwde opstijging maken. De route naar huis heeft een akoestische relaisspine nodig die door water en stormruis hoorbaar is, een drukafdichting die opstijging niet in breuk verandert, een geleidingskern die HECTON-8s lokale gevaren overleeft, een opstijgenergielading, een quarantaine- en juridische handdruk en, als de speler macht over het herstelrecord wil, een bewijsvracht die Black Keel niet kan wegprijzen. Elk deel ligt dieper dan comfort, omdat het oorspronkelijke systeem gebouwd was om activa te verplaatsen, niet om achtergelaten arbeiders op eigen voorwaarden te laten vertrekken.
+Ontsnapping is een assemblageketen, geen enkel gerepareerd voertuig. Het beschadigde drop package kan een lichaam in leven houden, maar kan alleen geen vertrouwde opstijging maken. De route naar huis heeft een acoustic relay spine nodig om door water en stormruis gehoord te worden, een pressure seal die opstijgen niet in scheuren verandert, een guidance core die HECTON-8s lokale gevaren overleeft, een ascent-energy charge, een quarantine/legal handshake en een evidence payload sterk genoeg om Black Keels recovery authority te veranderen. Elk onderdeel is tegelijk fysiek, juridisch en moreel.
 
 ## Scanner
 
-Vertrek vraagt zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handdruk en een vracht die de drager niet kan negeren.
+Vertrek vereist zes harde bewijzen: relais, afdichting, geleiding, opstijglading, juridische handshake en een payload die de carrier niet kan negeren.
 
 ## Terminal
 
-OPSTIJGPAKKET: akoestische relaisspine ontbreekt. Klemmingsringclassificatie onvoldoende. Geleidingskern afwezig. Laadwieg leeg. Quarantainehanddruk onopgelost. Bewijsvracht optioneel, maar verandert herstelautoriteit.
+ASCENT PACKAGE: acoustic relay spine ontbreekt. clamp ring-rating onvoldoende. guidance core afwezig. charge cradle leeg. quarantine handshake onopgelost. evidence payload verandert recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Je repareert de capsule niet. Je bouwt de eerste eerlijke uitgang die de kolonie
 
 ## Field Note
 
-De weg omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
+De route omhoog wordt gebouwd uit delen die nooit bedoeld waren om arbeiders zelfstandig te laten vertrekken.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/nl_NL. -->

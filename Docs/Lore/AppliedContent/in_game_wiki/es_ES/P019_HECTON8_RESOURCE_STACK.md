@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Pila de recursos
 
-HECTON-8 no es una luna de un solo recurso. Materiales tempranos sostienen vida, salvage abre rutas, salmuera enseña presión y blue debt es solo la tentación máxima.
+HECTON-8 no es una luna de un solo recurso. Los primeros materiales mantienen posible respirar y reparar. El salvamento abre rutas selladas. La salmuera y la química de respiradero enseñan presión. La deuda azul y pressure glass están más arriba en la cadena de claim, pero su valor solo tiene sentido porque materiales menores mantienen vivo al operador el tiempo suficiente para llegar.
 
 ## Scanner
 
-Pila: fibra de arrecife, sales de salmuera, núcleos relé, válvulas, blue debt, pressure glass, red Atlas.
+Pila leída: fibra de arrecife, sales de salmuera, núcleos de relé, válvulas de presión, catalizadores de respiradero, deuda azul, pressure glass, red Atlas.
 
 ## Terminal
 
-Valor: biota de supervivencia, salvage humano, hardware de ruta, química de presión, blue debt, pressure glass, continuity substrate.
+MODELO DE VALOR: biota de supervivencia, salvamento humano, hardware de ruta, química de presión, deuda azul, pressure glass, sustrato de continuidad. No colapsar la pila en un material milagroso.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Si el carrier pide masa antes que nombres, ya sabes quién posee el contrato.
 
 ## Field Note
 
-Nada aquí es solo botín.
+Nada aquí es solo botín. Cada muestra pertenece a una economía de presión.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/es_ES. -->

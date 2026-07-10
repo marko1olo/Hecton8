@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bedrijfsrespons-grootboek"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bedrijfsrespons-grootboek
+# Corporate Response Ledger
 
-Het grootboek is hoe Black Keel spreekt wanneer niemand improviseert. Het kan gevaar erkennen, een wachtrij openen, een claim bewaren en de operator toch achter assetregels laten wachten. Lees responsgrootboeken als nuttige signalen en vijandig papierwerk dat uitvoerbaar werd.
+Het corporate response ledger is hoe Black Keel spreekt wanneer niemand improviseert. Het kan distress direct acknowledge, een route queue openen, preserve a claim, demand sample custody, log hull risk en toch een living operator achter asset rules laten wachten. Het ledger is waardevol omdat het toont wat het system weet. Het is vijandig omdat knowing niet hetzelfde is als acting. Op HECTON-8 bewijst de eerste reply vaak dat de machine alles hoorde en bijna niets beloofde.
 
 ## Scanner
 
-Elk antwoord komt in contracttaal: assetbewaring, aansprakelijkheidssloten, monsterroute, romprisico, dan operatorberging.
+Elke reply komt in contract language: asset custody, liability lock, sample route, hull risk, daarna operator recovery.
 
 ## Terminal
 
-RESPONS-KLASSE: assetbehoud. Operatorberging toegevoegd na monsterbewaring, aansprakelijkheidszegel, rompaudit en betaalroute.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route en evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 
-Het antwoord was automatisch. De redding was voorwaardelijk.
+De reply was automatic. De rescue was conditional.
 
 ## Field Note
 
-Directe respons is geen directe redding.
+Immediate response is geen immediate rescue.
 
 <!-- In-Game Wiki; generated from P055_CORPORATE_RESPONSE_LEDGER/nl_NL. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Reclamaciones frías de lunas exteriores"
+title: "Cold claims de lunas exteriores"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Reclamaciones frías de lunas exteriores
+# Cold claims de lunas exteriores
 
-Las reclamaciones frías de lunas exteriores prueban que Aegir es un sistema, no una sola luna embrujada. Prospecciones de salmuera fallidas, rutas metálicas archivadas y balizas muertas crean la economía salvage que trae Marauders a la red de tráfico.
-
-Lo importante no es la distancia. Es el patrón. Una ruta puede estar muerta y seguir siendo facturable. Una baliza puede repetir custodia sin tripulación viva. HECTON-8 es el peor caso visible, pero no el primer lugar donde Aegir aprendió a archivar pérdida como infraestructura.
+Los outer moon cold claims prueban que Aegir es un system, no one haunted ocean. Failed brine prospects, mothballed metal routes, cold caches y beacons with no living crew crearon la salvage economy antes de que HECTON-8 se volviera el nombre que todos whisper. Lo importante es el pattern. Una route puede estar dead y still billable. Un beacon puede repeat custody into empty space. Una company puede learn que loss becomes cheaper cuando esta filed as infrastructure. HECTON-8 es el worst visible case, no la first lesson.
 
 ## Scanner
 
-Baliza de reclamación exterior. No todo lo muerto en Aegir está en HECTON-8.
+Outer claim beacon. No todo dead thing in Aegir esta en HECTON-8.
 
 ## Terminal
 
-ARCHIVO DE ESCALERA EXTERIOR // Prospección de salmuera Thorne fallida. Ruta de exportación Anvil archivada. Baliza Mute repite ping de custodia sin declaración de tripulación activa.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir aprendió a perder gente antes de que HECTON-8 terminara la lección.
+Aegir aprendio a lose people antes de que HECTON-8 terminara la lesson.
 
 ## Field Note
 
-Las reclamaciones frías hacen posibles a los Marauders. También enseñan a las compañías a enterrar patrones.
+Los cold claims hacen posibles a los marauders. Tambien ensenan a companies a bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/es_ES. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "沈んだ地質"
+title: "水没地質"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 沈んだ地質
+# 水没地質
 
-HECTON-8の地質はゲームプレイの言語だ。棚の生存、沈んだ部屋、峡谷、塩水密度、熱経路、深淵。シードは道を動かすが物理的真実は変えない。
+水没地質はHECTON-8での移動を教える。尾根は避難場所になる。崩れた棚はサルベージ品と窒息するシルトを集める。峡谷は流れを増幅する。塩水カーテンはソナーと浮力を曲げる。噴出口の傷はシーラントを硬化させることも焼くこともある。経路とは、岩、水、熱、圧力への一時的な解釈だ。
 
 ## Scanner
 
-棚、峡谷、塩水階段、噴出口。月はレベルゲートではなく地形で降下を教える。
+層状棚、峡谷漏斗、塩水階段、噴出口痕、シルト露出を検出。地形は背景ではなく圧力経路だ。
 
 ## Terminal
 
-深度予測: 棚崩落、峡谷流路、塩水密度幕、熱プルーム、深淵シルト。
+深度予測: 棚崩落、サービス峡谷の集中流、塩水密度カーテン、熱プルーム、深海シルト露出。嵐の増水またはサルベージ切断後、経路信頼度は低下。
 
 ## Audio
 
@@ -35,6 +35,6 @@ HECTON-8の地質はゲームプレイの言語だ。棚の生存、沈んだ部
 
 ## Field Note
 
-最も安全な道は通路ではなく読解だ。
+最も安全な道は通路ではなく読み取りだ。
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/ja_JP. -->

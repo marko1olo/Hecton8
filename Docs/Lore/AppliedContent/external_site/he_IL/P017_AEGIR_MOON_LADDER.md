@@ -19,22 +19,22 @@ localization_flags: 1
 
 # סולם הירחים של Aegir
 
-סולם הירחים של Aegir הופך את הירח המשחקי לחלק ממערכת נעה. ירחים אחרים מעצבים גאות, המתנת carrier, צללי relay ועלות עזיבה.
+סולם הירחים של Aegir הופך את השמיים למפה תפעולית: ירחים אחרים מעצבים גאות, אות, custody של carrier והזדמנויות צרות לעזוב.
 
 ## Scanner
 
-רצף ירחים: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+סולם הירחים נפתר: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel ו-Mute מכופפים חלונות.
 
 ## Terminal
 
-HECTON-8 הוא Aegir-VIII: לא פנימי ולא הרחוק ביותר. תהודת Rake וצל Pale משנים גאות ואיכות חבילות.
+הערת נתיב AEGIR: HECTON-8 בא אחרי Kestrel בסולם העבודה. צל ממסר, שלב גאות, רצועת קרינה וגאומטריית העברה של Black Keel חייבים להתיישר לפני עליית מסה.
 
 ## Audio
 
-ספור את הירחים לפני שאתה סומך על חלון.
+ספר את Kestrel לפני שאתה מאמין לחלון.
 
 ## Field Note
 
-השמים הם מנגנון, לא תפאורה.
+השמיים הם לוח עבודה. פספסת צל אחד וה-carrier נהיה שמועה.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/he_IL. -->

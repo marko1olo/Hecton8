@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Ziarno kontraktu-przynęty zgodności odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Recovery Compliance Bait Contract Seed
+# Ziarno kontraktu-przynęty zgodności odzysku
 
-PL LOC HOLD: A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+Przynęta zgodności odzysku to jeden z najbrudniejszych czystych kontraktów na tablicy. Akta noszą twarz usługi publicznej: odzyskać zalane szafki medyczne, przynieść identyfikatory martwych skafandrów, usunąć niebezpieczne rdzenie maszyn, zwrócić zaplombowany ładunek, zanim rozkład lub uszkodzenia ciśnieniowe zniszczą zapis. Wypłata na liście jest dość wysoka, by w ciężkim tygodniu wyglądać jak miłosierdzie.
 
-## Scanner
+Pułapka siedzi w łańcuchu odbiorcy. Stempel zgodności odzysku może przejść przez neutralne biura salvage, kolonialnych ubezpieczycieli albo punkty sprzątania katastrof, lecz ostatni czytnik często należy do Deep Reach albo do pośrednika sprzedającego im priorytetowy dostęp. Operator otrzymuje zapłatę za odzysk materiału i po cichu zostaje związany dowodem współrzędnych, paskami stanu włazu oraz notami przechowania. Odmowa przekazania nie usuwa ryzyka. Oznacza trasę jako wrażliwą na wstrzymanie i sprawia, że późniejsi bezpieczni odbiorcy mają mniej cierpliwości.
 
-PL LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
-
-## Terminal
-
-PL LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
-
-## Audio
-
-PL LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
-
-## Field Note
-
-PL LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Te kontrakty działają, bo desperacja sprawia, że dobre formularze wyglądają jak schronienie. Załoga bez filtrów, płyt baterii albo taśmy ciśnieniowej widzi czystą wypłatę i przyjmuje akta przed przeczytaniem klauzuli współrzędnych. Gdy pierwsza zaplombowana skrzynia trafia na pokład, tablica już wie, dokąd załoga nadal sięga i czego opuszczona strefa nie zdążyła pogrzebać.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/pl_PL. -->

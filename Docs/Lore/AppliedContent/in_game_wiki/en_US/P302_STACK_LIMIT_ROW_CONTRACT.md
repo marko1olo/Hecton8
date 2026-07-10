@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Stack Limit Data Boundary"
+title: "Pressure Stack Limit Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Stack Limit Data Boundary
+# Pressure Stack Limit Row
 
-Stack Limit Data Boundary keeps inventory physical. Items stack only when the container, pressure rating, mass, and contamination state can survive the same route without lying to the save file.
+Stack limits are physical cargo rules. Two tools can share a bin; two pressure samples cannot share a story if one seal is cracked or one tag carries Atlas-compatible noise. Black Keel charges mass through an orbital window and refuses stacks that would make the manifest lie about containment.
 
 ## Scanner
 
-Stack row rejects icon piles: vessel class, pressure rating, contamination, and mass decide count.
+Stack request denied: vessel class, pressure rating, contamination stage, mass-window charge, and manifest identity mismatch.
 
 ## Terminal
 
-STACK CONTRACT: stack count requires vessel type, pressure rating, contamination stage, mass class, warning tier, and save-stable identity. A crate is not a pressure vessel.
+STACK INTAKE SCHEMA / Black Keel cargo desk: stack count requires vessel type, rated pressure, seal certificate, contamination stage, mass class, warning tier, lien mass window, and stable manifest identity. A crate label does not certify containment.
 
 ## Audio
 
-A crate is not a pressure vessel.
+Cargo desk: stack denied. The crate is rated for lifting, not for pressure custody.
 
 ## Field Note
 
-Stack limits stay table-owned and stable for save identity.
+Never stack unknown samples to save space. One bad seal makes the whole pile quarantine cargo, and the carrier bills the mass anyway.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/en_US. -->

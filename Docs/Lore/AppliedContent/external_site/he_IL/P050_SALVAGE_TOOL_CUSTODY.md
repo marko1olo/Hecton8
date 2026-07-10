@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "משמורת כלי salvage"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# משמורת כלי salvage
+# Salvage Tool Custody
 
-ב-HECTON-8 כלי יכול להיות ציוד הישרדות ועד חוזי באותו זמן. יומני משמורת salvage קושרים חיתוכים, תיקונים ודגימות לטוקני claim, והופכים פעולה מועילה לחלק מראיה, חוב או לחץ payout עתידי.
+Salvage tool custody קושרת minute-to-minute survival אל claim economy: cuts, repairs, patches ו-samples יכולים להפוך ל-evidence, payout pressure או Keelmark debt.
 
 ## Scanner
 
-מעגן הכלי מחזיק יומן משמורת חתום. החיתוך האחרון, התיקון ושקית הדגימה קשורים לטוקן claim של Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair ו-sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: שימוש בחותך התקבל תחת salvage claim. פעולת תיקון נצפתה. זכויות דגימה מחוברות לטוקן Keelmark Mutual. ייצוא ראיות מתנגש עם מסלול payout חומרי.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-כל חיתוך מועיל משאיר עד.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-חותך יכול להציל את האוויר שלך ולמכור את הידיים שלך באותה תנועה. בדוק מה הוא רושם לפני שתקרא לו שלך.
+Cutter יכול save your air ול-sell your hands באותו stroke. בדוק מה הוא records לפני שתכנה אותו שלך.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/he_IL. -->

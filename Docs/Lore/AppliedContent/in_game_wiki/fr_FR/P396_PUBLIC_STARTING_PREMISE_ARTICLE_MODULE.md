@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Réclamation initiale du Maraudeur
 
-Le premier dossier place le joueur comme opérateur formé sous pression de dette. Ce n'est ni un touriste, ni un héritier choisi, ni un vengeur familial ; il comprend déjà pompes, joints, formulaires de route et abréviations Deep Reach avant que les débris contredisent ces formulaires. La première heure reste concrète : sceller le bathydrop, rétablir la pression, lire les machines abîmées, récupérer cargaison et décider quelles lignes officielles mentent déjà.
+Le premier dossier HECTON-8 ne présente ni touriste ni survivant élu. Il nomme un opérateur formé sous pression de dette : quelqu'un qui lit déjà les abréviations de pompes, alertes de joints, étiquettes d'évacuation et formules de responsabilité Deep Reach avant l'ouverture du premier sas. Le travail de départ est concret. Colmater le bathydrop. Confirmer la pression. Scanner le plateau P-63. Redémarrer les machines seulement quand le chemin d'étanchéité tient. Récupérer la cargaison si elle paie, et la preuve si elle survit à l'horloge de garde.
 
 ## Scanner
 
-Archive publique de claim. La première route identifie un Maraudeur sous dette, ancien opérateur Deep Reach field-systems, avec un bathydrop endommagé et une fenêtre Black Keel au-dessus de P-63.
+Enregistrement public de réclamation. Le dossier de privilège Black Keel nomme un ancien spécialiste systèmes de terrain Deep Reach, un bathydrop endommagé, la route P-63 et une fenêtre de garde qui se ferme.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // RÉCLAMATION INITIALE. Dossier contractant : ancien spécialiste Deep Reach field-systems. Statut actuel : Maraudeur sous lien. Route : recovery claim Black Keel, descente shelf P-63, retour preuve et cargaison avant fermeture de custody window.
+NOEUD D'ARCHIVE PUBLIC // BLACK KEEL CLAIM BK-P63-2190. Statut : Maraudeur sous privilège. Habilitation antérieure : systèmes de terrain Deep Reach / infrastructure d'évacuation. Livrable : masse cargo plus preuve recevable avant garde locale T+06:40.
 
 ## Audio
 
-Tu ne visites pas HECTON-8. Tu retournes dans une paperasse que tu connais trop bien.
+Le contrat connaît tes anciennes abréviations. Ce n'est pas pareil que dire la vérité.
 
 ## Field Note
 
-Note de Maraudeur : le contrat connaît ton passé. Cela ne le rend pas honnête.
+Note de Maraudeur : si le dossier de réclamation connaît ton niveau d'habilitation, lis les omissions avant le paiement.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/fr_FR. -->

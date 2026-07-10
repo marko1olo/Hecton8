@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Маскирующие граффити мародеров"
+title: "Граффити-маски мародеров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Маскирующие граффити мародеров
+# Граффити-маски мародеров
 
-Метки мародеров — полевая навигация, социальное предупреждение и язык против наблюдения. Они грубые, потому что должны были пережить воду, страх, плохие лампы и корпоративные камеры. Игрок учится читать, какие знаки говорят о шуме, давлении, риске патруля, тайниках и маршрутах, которые больше не совпадают с официальными картами.
+Граффити marauders - не decoration. Это field navigation, social warning и anti-surveillance language, выцарапанный там, где radios предают, maps истекают, а official signage лжет уже потому, что слишком старый. Marks выглядят грубо, потому что должны были пережить water, bad lamps, glove tremor и cameras, которые могли наказать readable intent. Slash может значить silence. Black ring - Black Keel ping. Broken arrow - pressure changed после последнего route survey. Colony оставила labels; marauders оставили weather.
 
 ## Scanner
 
-Код краски: число засечек отмечает шумовую дисциплину, черные кольца — опасность carrier-ping, сломанные стрелки — дрейф давления.
+Paint code. Slash count отмечает noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.
 
 ## Terminal
 
-ИНДЕКС МАСКИ МАРШРУТА: три засечки — безопасны только ручные сигналы. Черное кольцо — скан носителя. Сломанная стрелка — давление изменилось после последней метки.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Если стена выглядит злой, читай ее как погоду.
+Если wall выглядит злой, читай ее как weather.
 
 ## Field Note
 
-Мародеры писали для тех, кто не мог доверять радио и не мог позволить себе карты.
+Marauders писали для тех, кто не мог доверять radios и не мог позволить себе maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/ru_RU. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Keelmark MutualのCustody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Keelmark MutualのCustody
 
-Keelmark Mutualが恐ろしいのは憎しみを必要としないからだ。それは保険者、custodian、lien保持者、経路係を一つの遠隔scheduleに折り畳んだものだ。Black Keelが操作者を聞いた時点で、Keelmarkの保険経路はすでに身体を船体損傷、salvage質量、隔離リスク、証拠価値と並べている。会社は誰かを殺さなくても海を敵にできる。待ち、請求し、分類し、圧力が部屋を食う間にもう一つ確認を求めればいい。carrierが地に足を持つのはそのためだ。敵は画面上の悪い顔ではなく、遭難信号が終わる前に答えられるほど古い契約なのだ。
+Keelmark MutualのCustodyは、Black Keelの法的所有者をinsurance lien、route underwriting、quarantine reserve、claim-tender custodyの網として説明する。
+
+## Scanner
+
+underwriting tagは無傷。lienに歯があるなら、Keelmarkに悪意は要らない。
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active。Operator debt、vessel risk、payload custody、quarantine reserve、recovery proofはremote underwriting scheduleに束ねられている。Distress statusはlienまたはcustody orderを停止しない。
+
+## Audio
+
+そのpolicyはdistress callより古い。航路を覚える時間も長かった。
+
+## Field Note
+
+暗い部屋のmastermindはいない。罪悪感より長く生きたscheduleがあるだけだ。
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/ja_JP. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Maanladder van Aegir"
+title: "Aegirs maanladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Maanladder van Aegir
+# Aegirs maanladder
 
-Aegirs maanladder bevat stralingsmarkeringen, relay-lichamen, uitgeputte claims, resonantiegevaren, HECTON-8, koude opslagmanen en buitenste objecten. HECTON-8 is waardevol omdat hij tussen levende oceaan en baandruk zit.
+Aegirs manen zijn routemachines. Hun namen zijn geen luchtdecor; ze bepalen schaduwen, relaisstilte, getijfase, carrier-wachten en de kosten van massa verplaatsen. HECTON-8 is Aegir-VIII in de werkladder, waardevol omdat oceaandruk en relaisgeometrie zowel extractie als verlatenheid duur maken.
 
 ## Scanner
 
-Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Maanladder opgelost: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel en Mute buigen de vensters.
 
 ## Terminal
 
-HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.
+AEGIR-ROUTENOTITIE: HECTON-8 volgt Kestrel in de werkende ladder. Relaisschaduw, getijfase, stralingsband en Black Keel-overdrachtsgeometrie moeten samenvallen voor massaopstijging.
 
 ## Audio
 
-Tel de manen voordat je een venster vertrouwt.
+Tel Kestrel voordat je het venster vertrouwt.
 
 ## Field Note
 
-De hemel is een mechanisme, geen decor.
+De hemel is een werkschema. Mis één schaduw en de carrier wordt een gerucht.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/nl_NL. -->

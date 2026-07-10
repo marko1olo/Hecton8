@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Vent Micronode Power Nest
 
-Vent micronode nests explain why Atlas becomes denser near the deep machine fields without becoming omnipotent. Each node harvests a local gradient: heat, mineral chemistry, vibration, and pressure. A single nest cannot command the colony, but it can wake a patch, feed a drone scar, preserve a memory fragment, or keep a bad repair alive.
+Vent micronode nests explain why Atlas repair stays active in dead rooms. Each node harvests a local gradient: heat through ceramic, brine chemistry across mineral veins, vibration through the vent wall. A single nest cannot command HECTON-8. It can wake one door patch, one drone cradle, or one strip of biofilm after the player has moved on.
 
 ## Scanner
 
-Thermal micronodes pulse in the vent wall. Drone charge scars surround the mineral throat.
+Ceramic node cluster in the vent throat harvests heat gradient. Drone charge scars and fresh sealant response nearby.
 
 ## Terminal
 
-ATLAS POWER TRACE: vent gradient feeds local node, node wakes biofilm and sealant response, drone charge interval irregular. Central command certainty low.
+ATLAS LOCAL POWER NODE / VENT V-3: thermal gradient feeds microcell stack, wakes biofilm and sealant loops within 40 m, drone charge interval irregular. No central command lock.
 
 ## Audio
 
-Down here, even heat has a work order.
+Heat, mineral throat, node. That is enough for repair to wake after you pass.
 
 ## Field Note
 
-Use near vent fields, factory-temple approach, and late-route repair persistence.
+If the vent node is warm, assume the room can wake behind you. Mark the exit before you touch the mineral throat.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/en_US. -->

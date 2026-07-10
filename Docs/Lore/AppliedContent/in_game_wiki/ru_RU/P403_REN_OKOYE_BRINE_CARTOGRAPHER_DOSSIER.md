@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Ren Okoye/Brine Map"
+title: "Рен Окойе, картограф рассола"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Ren Okoye/Brine Map
+# Рен Окойе, картограф рассола
 
-RU LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Рен Окойе картировал рассольные слои HECTON-8 как рабочие дороги, а не как декорацию. Сохранившийся сланец, окрашенные бусины плотности, шрамы на доске и маршрутные листки с пресс-штампами показывают картографа, который исправлял официальные коридоры самой водой как свидетелем. Его карты объясняют, почему самые безопасные пути колонии часто жили вне доски разрешений: рассол двигался быстрее согласования, а люди с инструментами должны были доверять свежему промеру больше свежей подписи.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Досье: Рен Окойе. Бусины плотности, порезы на сланце и шрамы от нитей описывают маршрут, который сместился за ночь.
 
 ## Terminal
 
-RU LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+СТОЛ КАРТ РАССОЛА / ОКОЙЕ, РЕН: безопасное течение ушло на 3,2 м к востоку после инверсии плотности. Доска разрешений все еще показывает вчерашний коридор. Рабочие метки маршрута имеют приоритет над управленческим маршрутом до следующего промера.
 
 ## Audio
 
-RU LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Окойе чертил дороги в воде, которая не хотела держать чертеж.
 
 ## Field Note
 
-RU LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Использовать Окойе для раскрытия рассольных маршрутов, навигации по слоям плотности и конфликтов с доской разрешений. Его улики должны давать игрокам конкретные причины не доверять старым картам.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ru_RU. -->

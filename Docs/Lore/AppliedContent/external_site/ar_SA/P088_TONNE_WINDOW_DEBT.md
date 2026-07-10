@@ -19,6 +19,22 @@ localization_flags: 1
 
 # دين نافذة الطن
 
-نافذة الطن شريحة من قدرة carrier تقاس بالكتلة وتوقيت burn وحجم الحجر والأولوية القانونية. بالنسبة إلى المشغل تبدو دينا لأن كل شيء مفيد من HECTON-8 يدخل السجل نفسه مع الجسد الذي وجده. صندوق مختوم قد يكون خفيفا لكنه ثقيل قانونيا. رف عينات قد يكلف كتلة قليلة لكنه يطلب حجما نظيفا. استخراج إنسان قد يبدو بديهيا حتى تكون الثقل واحتياطي الأكسجين وحيازة payload قد أنفقت النافذة المتاحة. هكذا يصبح اقتصاد HECTON-8 جسديا لا مجردا. اللاعب لا يعاقب بعداد أخلاق مزيف. اللاعب محاصر داخل آلة تسعر النجاة بالوقود والكتلة والتلوث والأوراق.
+يحول دين نافذة الطن النجاة إلى logistics صارمة: extraction وoxygen وsamples وsalvage وquarantine volume وburn margin تشغل كلها priced mass window نفسها.
+
+## Scanner
+
+Mass-window ledger. للمساعدة وزن قبل أن يكون لها كلام.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass يتعارض مع sealed payload وballast reserve وoxygen debt وquarantine sample volume وhull patch inventory. Manual priority يتطلب paid override أو verified hazard proof أو custody reclassification.
+
+## Audio
+
+تستطيع السفينة رفع حياة. السؤال هو ماذا يجبرها ledger على حمله أيضا.
+
+## Field Note
+
+Oxygen وballast وproof وsamples وhull patch وbody: يضع carrier سعرا للرحمة بالكيلوغرام.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ar_SA. -->

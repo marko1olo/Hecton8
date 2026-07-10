@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Defaillance de confinement par pression"
+title: "Echec de pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Defaillance de confinement par pression
+# Echec de pressure containment
 
-La defaillance de confinement donne au blue debt un comportement materiel lisible. Sa valeur vient de la pression profonde qui l'a rendu coherent, et son danger du maniement peu profond qui defait cette coherence. L'etape 0 est scellee. L'etape 1 derive et peut parfois etre sauvee par repression d'event. L'etape 2 fracture le reseau. L'etape 3 invite saumure et biologie. L'etape 4 laisse un echantillon mort qui contamine equipement, eau et routes.
+Pressure containment failure donne a blue debt un behavior lisible sans myth. Il est valuable parce que deep pressure made the lattice coherent. Il est dangerous parce que shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts et peut recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water et route markings. Le material n'est pas cursed. Il est homesick for pressure.
 
 ## Scanner
 
-Tableau d'etapes du caisson. Le blue debt cede par memoire de pression, cisaillement de signal et bloom; la superstition gaspille l'oxygene.
+Casket stage chart. Blue debt fails through pressure memory, signal shear et bloom; superstition wastes oxygen.
 
 ## Terminal
 
-ETAPES DE CONFINEMENT: 0 reseau scelle; 1 derive de signal; 2 fracture de reseau; 3 bloom saumure/biologie; 4 echantillon mort avec contamination vivante. Repression par event peut sauver l'etape 1 seulement.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-L'echantillon ne te hait pas. Il essaie de revenir la ou il s'est forme.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Un echantillon peut valoir une fortune a une profondeur et devenir une charge dix metres plus loin.
+Un sample peut valoir une fortune a une depth et become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/fr_FR. -->

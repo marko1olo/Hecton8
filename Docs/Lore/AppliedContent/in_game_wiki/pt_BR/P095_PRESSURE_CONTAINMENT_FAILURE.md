@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Falha de contencao de pressao"
+title: "Falha de Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Falha de contencao de pressao
+# Falha de Pressure Containment
 
-Falha de contencao de pressao da ao blue debt um comportamento material legivel. Ele vale porque a pressao profunda o tornou coerente, e e perigoso porque o manejo raso desfaz essa coerencia. Estagio 0 esta selado. Estagio 1 deriva e as vezes pode ser recuperado por repressao de respiradouro. Estagio 2 fratura a rede. Estagio 3 chama salmoura e biologia. Estagio 4 deixa uma amostra morta que contamina equipamento, agua e rotas.
+Pressure containment failure da ao blue debt um behavior que pode ser lido sem myth. E valuable porque deep pressure made the lattice coherent. E dangerous porque shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts e pode recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water e route markings. O material nao e cursed. Ele e homesick for pressure.
 
 ## Scanner
 
-Grafico de estagios do cofre. Blue debt falha por memoria de pressao, cisalhamento de sinal e bloom; supersticao desperdiça oxigenio.
+Casket stage chart. Blue debt fails through pressure memory, signal shear e bloom; superstition wastes oxygen.
 
 ## Terminal
 
-ESTAGIOS DE CONTENCAO: 0 rede selada; 1 deriva de sinal; 2 fratura de rede; 3 bloom de salmoura/biologia; 4 amostra morta com contaminacao viva. Repressao por respiradouro pode recuperar apenas estagio 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-A amostra nao odeia voce. Ela tenta voltar para onde se formou.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Uma amostra pode valer uma fortuna em uma profundidade e virar passivo dez metros depois.
+Um sample pode worth a fortune at one depth e become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/pt_BR. -->

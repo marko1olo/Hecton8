@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Montage der Fluchtkette
 
-Flucht ist eine Montagekette, kein einzelnes repariertes Fahrzeug. Das beschädigte Abwurfpaket kann den Spieler am Leben halten, aber allein keinen vertrauenswürdigen Aufstieg schaffen. Der Heimweg braucht einen akustischen Relaisspinen, der durch Wasser und Sturmrauschen gehört wird, eine Druckdichtung, die Aufstieg nicht in Bruch verwandelt, einen Führungskern, der HECTON-8s lokale Gefahren übersteht, eine Aufstiegsenergieladung, einen Quarantäne- und Rechts-Handschlag und, wenn der Spieler Macht über den Bergungsdatensatz will, eine Beweisnutzlast, die Black Keel nicht wegpreisen kann. Jedes Teil liegt tiefer als Komfort, weil das ursprüngliche System für bewegte Vermögenswerte gebaut wurde, nicht dafür, zurückgelassene Arbeiter zu eigenen Bedingungen gehen zu lassen.
+Flucht ist eine Montagekette, kein einzelnes repariertes Fahrzeug. Das beschädigte Drop-Paket kann einen Körper am Leben halten, aber keinen vertrauenswürdigen Aufstieg allein erzeugen. Der Heimweg braucht eine acoustic relay spine, um durch Wasser und Sturmrauschen gehört zu werden, eine pressure seal, die Aufstieg nicht in Bruch verwandelt, einen guidance core, der HECTON-8s lokale Gefahren übersteht, eine ascent-energy charge, einen quarantine/legal handshake und einen evidence payload, stark genug, um Black Keels recovery authority zu ändern. Jede Komponente ist physisch, legal und moralisch zugleich.
 
 ## Scanner
 
-Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, rechtlichen Handschlag und eine Nutzlast, die der Träger nicht ignorieren kann.
+Abflug braucht sechs harte Nachweise: Relais, Dichtung, Führung, Aufstiegsladung, legalen Handshake und Payload, den der Carrier nicht ignorieren kann.
 
 ## Terminal
 
-AUFSTIEGSPAKET: akustischer Relaisspinen fehlt. Klemmringwertung unzureichend. Führungskern fehlt. Ladewiege leer. Quarantäne-Handschlag ungelöst. Beweisnutzlast optional, verändert aber Bergungsautorität.
+ASCENT PACKAGE: acoustic relay spine fehlt. clamp ring rating unzureichend. guidance core fehlt. charge cradle leer. quarantine handshake ungelöst. evidence payload ändert recovery authority.
 
 ## Audio
 
-Du reparierst die Kapsel nicht. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
+Du reparierst nicht die Kapsel. Du baust den ersten ehrlichen Ausgang, den die Kolonie nie hatte.
 
 ## Field Note
 
-Der Weg nach oben wird aus Teilen gebaut, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
+Der Weg nach oben besteht aus Teilen, die nie dafür gedacht waren, Arbeiter allein gehen zu lassen.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/de_DE. -->

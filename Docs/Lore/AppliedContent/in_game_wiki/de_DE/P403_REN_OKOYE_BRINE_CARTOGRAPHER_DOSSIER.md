@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, Solekartograf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, Solekartograf
 
-DE LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Ren Okoye kartierte HECTON-8s Solelagen als Arbeitsstraßen, nicht als Kulisse. Erhaltener Schiefer, gefärbte Dichteperlen, Narben der Pinwand und druckgestempelte Routenzettel zeigen einen Kartografen, der offizielle Korridore mit dem Wasser selbst als Zeugen korrigierte. Seine Karten erklären, warum die sichersten Wege der Kolonie oft außerhalb der Genehmigungstafel lagen: Sole bewegte sich schneller als Freigabe, und Menschen mit Werkzeugen mussten der neuesten Lotung mehr trauen als der neuesten Unterschrift.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossier: Ren Okoye. Dichteperlen, Schieferschnitte und Fadennarben beschreiben eine Route, die sich über Nacht verschob.
 
 ## Terminal
 
-DE LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+SOHLENKARTENTISCH / OKOYE, REN: sichere Strömung nach Dichteinversion 3,2 m nach Osten verschoben. Genehmigungstafel führt noch den Korridor von gestern. Arbeiterroutenmarken überschreiben Verwaltungsroute bis zur nächsten Lotung.
 
 ## Audio
 
-DE LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye zeichnete Straßen in Wasser, das die Zeichnung nicht behalten wollte.
 
 ## Field Note
 
-DE LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Okoye für Sole-Routenenthüllungen, Dichteschicht-Navigation und Widersprüche der Genehmigungstafel verwenden. Seine Belege sollen konkrete Gründe geben, alten Karten zu misstrauen.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/de_DE. -->

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Місяць, розламаний зіткненням"
+title: "Місяць, розколотий зіткненням"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Місяць, розламаний зіткненням
+# Місяць, розколотий зіткненням
 
-HECTON-8 сформувався всередині системи Егіра, а пізніше його розсікло дотичне зіткнення. Рана не розірвала місяць. Вона підняла полиці кори, відкрила ропні розломи, підживила термальні коридори й лишила старе дно доступним крізь рідкісні вікна тиску. Мапи здобичників ідуть за цим ушкодженням, бо найбезпечніші маршрути тут - старі травми, заповнені водою.
+HECTON-8 - не stolen world, кинутий в Aegir заради mystery. Він formed here, а потім glancing collision opened it without killing it. Wound підняв shelves, cracked brine basins, heated fault ladders і лишив pressure-glass seams там, де moon намагався close around its own ocean. Цей old damage досі вирішує, де hull може descend, де sound bends, де vents stay alive і де buried colony evidence може surface. Salvage maps follow injuries, бо на HECTON-8 safest route часто old break that did not quite heal.
 
 ## Scanner
 
-Зразок старої кори. Місяць зібрався в поясі уламків Егіра, а потім удар розкрив його так широко, що океан це запам'ятав.
+Crust sample. HECTON-8 formed in Aegir's debris belt, потім took an oblique impact wide enough for the ocean to remember.
 
 ## Terminal
 
-МОДЕЛЬ ПОХОДЖЕННЯ: акреція навколо Егіра, пізній косий удар, припливний резонанс після замикання. Наслідок: східчаста кора, гарячі драбини розломів, ропні басейни, жили скла тиску, нерівний доступ до глибокого дна.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Він народився тут. Потім щось ударило так сильно, що море отримало мапу.
+It was born here. Потім щось hit hard enough to give the sea a map.
 
 ## Field Note
 
-Міф про захоплений місяць надто чистий. HECTON-8 несе місцеву рану: піднята кора, пересолена ропа, жерла, що досі беруть відсотки.
+Captured-moon story надто чиста. Це місце born local, broken local і billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/uk_UA. -->

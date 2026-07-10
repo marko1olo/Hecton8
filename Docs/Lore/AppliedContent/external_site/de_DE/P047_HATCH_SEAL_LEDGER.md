@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Lukendichtungsbuch"
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lukendichtungsbuch
+# Hatch Seal Ledger
 
-Luken gehören zu den leisesten Aufzeichnungen von HECTON-8. Sie erklären nicht, wer zurückblieb; sie speichern Schließrichtung, Dichtungsstress und Override-Autorität. Ein Dichtungsbuch verwandelt eine verschlossene Tür in eine Druckentscheidung mit Zeitstempel.
+Hatches sind leise records auf HECTON-8: closure direction, gasket stress, override authority und wet-side witness traces machen eine locked door zu einer pressure decision mit timestamp.
 
 ## Scanner
 
-Dichtungsspeicher wiederhergestellt. Die Dichtung nahm drei Druckschnitte und einen Evakuierungs-Override auf; Rückkehrseitenzugang wurde von der nassen Seite verriegelt.
+Seal memory recovered. Der gasket nahm three pressure cuts und one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / RAHMEN H-17: Dichtungsverformung über Servicetoleranz. Manuelle Schließung unter EVAC OVERRIDE akzeptiert. Operatorenzahl auf Rückkehrseite ungeklärt. Wiederöffnen nur nach Druckausgleich und Scharnierprüfung.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection und wet-side witness check.
 
 ## Audio
 
-Sie hat gedichtet. Mehr hat die Luke nie versprochen.
+It sealed. Mehr hat der hatch nicht versprochen.
 
 ## Field Note
 
-Eine versiegelte Luke ist eine Quittung. Frag vor dem Öffnen, welche Seite bezahlt hat.
+Ein sealed hatch ist ein receipt. Frag vor dem Offnen, welche Seite bezahlt hat.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/de_DE. -->

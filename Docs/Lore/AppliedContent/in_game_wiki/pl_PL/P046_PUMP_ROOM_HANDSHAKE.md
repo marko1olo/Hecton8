@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Uzgodnienie zaworu pompowni"
+title: "Handshake zaworu pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Uzgodnienie zaworu pompowni
+# Handshake zaworu pump room
 
-Uzgodnienie pompy to chwila, gdy zalane pomieszczenie przyjmuje kontrolę lokalną. Daje dostęp, ale przenosi wodę, hałas i ciśnienie do innej części trasy. Przed uznaniem suchej podłogi za bezpieczeństwo czytaj kosz wlotowy, impuls wylotu i stukanie korytarza powrotnego. Wczesne pompownie P-63 uczą podstawowego nawyku naprawy: maszyna może poprawić jeden przedział i pogorszyć drogę do domu.
+Pump handshake to chwila, gdy utopiona maszyna znow przyjmuje local hand. Daje poczucie control, bo floor sie oczyszcza, lamp przestaje plywac, a route wyglada na otwarta. Niebezpieczenstwo w tym, ze water na HECTON-8 nigdy nie znika; przesuwa sie do innego compromise. Intake baskets lapia capsule foam, stare gloves, shell grit i torn labels. Outlets budza corridors, ktore byly ciche z jakiegos powodu. Wlasciwy nawyk to czytac pump jak trade: jedna room oddycha, druga zaczyna knock.
 
 ## Scanner
 
-Lokalna pompa zęzowa przyjęła wejście z koła ręcznego. Kosz wlotowy zabrudzony pianą kapsuły; impuls wylotowy obciąża korytarz powrotny B.
+Local sump przyjal handwheel input. Capsule foam zapycha intake basket; outlet pulse wchodzi do Return Corridor B.
 
 ## Terminal
 
-P-63 KONTROLA STUDZIENKI / UZGODNIENIE LOKALNE: koło ręczne przyjęte. Zdalne nadpisanie odrzucone. Przepływ wlotowy przywrócony na niskim poziomie. Ciśnienie wylotu rośnie w RETURN CORRIDOR B; restart tylko po kontroli włazu za odpływem.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Zawór chwycił. Wylot stuka. Nie nazywaj tego jeszcze bezpiecznym.
+Valve took. Outlet puka. Nie nazywaj tego jeszcze safe.
 
 ## Field Note
 
-Sucha pompownia może utopić drogę powrotną. Posłuchaj uderzeń na wylocie, zanim zdejmiesz zawór.
+Suchy floor to nie solved room. Sluchaj corridor, ktory za niego zaplacil.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/pl_PL. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Druckschalen-Dichtwuchs"
+title: "Druckwachstum aus Schalen-Dichtstoff"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druckschalen-Dichtwuchs
+# Druckwachstum aus Schalen-Dichtstoff
 
-Druckschalen-Dichtwuchs verhindert, Atlas auf kaputte Maschine oder Bosheit zu reduzieren. Der Flicken kann schön sein: weiße Schale über Rost, mineralische Rippen über einem Riss, nasses Harz, das unter Druck härtet. Er ist auch ein Dokument verlorener Priorität. Grenzintegrität blieb für Atlas lesbar, nachdem Arbeiterausgänge, Warnfarbe und menschliche Routenerinnerung zu Rauschen wurden.
+Schalen-Dichtstoff ist einer der klarsten Feldwidersprüche der Atlas-Reparatur. Die Druckgrenze wird besser, der Raum hält länger, und die Route kann unter denselben weißen Schichten unlesbar werden. Wer ihn schneidet, entfernt keine Dekoration; er kann öffnen, was das Abteil trocken hielt.
 
-Im Spiel sollte ein Schalenflicken Zögern erzeugen. Vielleicht ist er der einzige Grund, warum eine Kammer noch Luft hat. Vielleicht ist er auch der Grund, warum ein Arbeiter zwei Meter neben einem versteckten Handrad starb. Die Wahrheit des Scanners ist teilweise: Druck stabil, Route verdeckt, menschliche Markierungen zerstört. Ihn zu schneiden ist nie nur Materialernte. Es ist ein Streit mit einer Reparatur, die bereits etwas gerettet hat.
+## Scanner
+
+Weiße Kalziumschale hat den Riss geschlossen und Routenpfeile am Lukenrand begraben. Schneiden kann das Leck wieder öffnen.
+
+## Terminal
+
+REPARATURKONFLIKT / TÜR S-9: Leckrate reduziert, Druckgrenze verbessert, Ausstiegsmarken verdeckt, Handrad zu 62 Prozent begraben. Cutterfreigabe erfordert gestaffelten Flutpfad.
+
+## Audio
+
+Die Wand hält. Das Lukenrad liegt unter zehn Zentimetern Schale.
+
+## Field Note
+
+Bevor du weiße Schale von einer Luke schneidest, such, wohin das Wasser beim letzten Mal lief. Das Schild kann aus gutem Grund begraben sein.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/de_DE. -->

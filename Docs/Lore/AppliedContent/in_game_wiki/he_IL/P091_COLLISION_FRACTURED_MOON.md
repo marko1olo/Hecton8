@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ירח שסוע מפגיעה"
+title: "ירח שנשבר בהתנגשות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ירח שסוע מפגיעה
+# ירח שנשבר בהתנגשות
 
-HECTON-8 נוצר בתוך מערכת Aegir ונבקע מאוחר יותר בפגיעה משיקה. הפצע לא פירק את הירח. הוא הרים מדפי קרום, פתח שברי תמיסת מלח, הזין מסדרונות חמים והשאיר קרקעית עתיקה נגישה דרך חלונות לחץ נדירים. מפות חילוץ עוקבות אחר הנזק הזה, כי הדרכים הבטוחות הן פציעות ישנות שמלאות מים.
+HECTON-8 אינו stolen world שהושלך ל-Aegir בשביל mystery. הוא formed here, ואז glancing collision opened it without killing it. ה-wound הרימה shelves, cracked brine basins, חיממה fault ladders והשאיר pressure-glass seams במקום שבו ה-moon ניסה close around its own ocean. ה-old damage הזה עדיין קובע היכן hull יכול descend, היכן sound bends, היכן vents stay alive והיכן buried colony evidence יכול surface. Salvage maps עוקבות אחרי injuries, כי ב-HECTON-8 ה-safest route הוא לעיתים קרובות old break that did not quite heal.
 
 ## Scanner
 
-דגימת קרום עתיק. הירח נוצר בחגורת הפסולת של Aegir, ואז פגיעה פתחה אותו מספיק כדי שהאוקיינוס יזכור.
+Crust sample. HECTON-8 formed in Aegir's debris belt, ואז ספג oblique impact רחב מספיק כדי שה-ocean יזכור.
 
 ## Terminal
 
-מודל מקור: הצטברות סביב Aegir, פגיעה אלכסונית מאוחרת, תהודת גאות לאחר נעילה. תוצאה: קרום מדורג, סולמות שבר חמים, אגני תמיסת מלח, עורקי זכוכית לחץ, וגישה לא אחידה לקרקעית עמוקה.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-הוא נולד כאן. אחר כך משהו הכה חזק מספיק כדי לתת לים מפה.
+It was born here. ואז משהו פגע hard מספיק כדי give the sea a map.
 
 ## Field Note
 
-מיתוס של ירח שנלכד נקי מדי. HECTON-8 נושא פצע מקומי: קרום מורם, תמיסת מלח כבדה, ונביעות שעדיין גובות ריבית.
+ה-captured-moon story נקייה מדי. המקום הזה born local, broken local ו-billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/he_IL. -->

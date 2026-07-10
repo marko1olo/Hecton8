@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Contractzaad: herstelcompliance-lokker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Recovery Compliance Bait Contract Seed
+# Contractzaad: herstelcompliance-lokker
 
-NL LOC HOLD: A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+Recovery Compliance-lokkers behoren tot de vuilste schone contracten op het bord. Het dossier draagt een publiek-dienstverlenend gezicht: overstroomde medische lockers bergen, identificaties van dode pakken ophalen, gevaarlijke machinekernen verwijderen, verzegelde vracht terugbrengen voordat verval of drukschade het dossier ruïneert. De genoemde uitbetaling is hoog genoeg om in een slechte week barmhartig te lijken.
 
-## Scanner
+De val zit in de ontvangersketen. Een Recovery Compliance-stempel kan via neutrale bergingskantoren, koloniale verzekeraars of rampenruimingsbalies lopen, maar de laatste lezer hoort vaak bij Deep Reach of bij een tussenpartij die prioriteitstoegang verkoopt. De operator wordt betaald voor materiaalherstel en stil vastgezet aan coördinatenbewijs, luikstatusstroken en bewaarnotities. Een overdracht weigeren haalt het risico niet weg. Het markeert de route als inhoudingsgevoelig en maakt latere veilige ontvangers minder geduldig.
 
-NL LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
-
-## Terminal
-
-NL LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
-
-## Audio
-
-NL LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
-
-## Field Note
-
-NL LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Deze contracten werken omdat wanhoop goed papierwerk op onderdak laat lijken. Een crew met te weinig filters, batterijplaten of druktape ziet een schone uitbetaling en accepteert het dossier voordat de coördinatenclausule is gelezen. Tegen de tijd dat de eerste verzegelde kist aan boord is, weet het bord waar de crew nog kan komen en wat de verlaten zone nog niet heeft kunnen begraven.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/nl_NL. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, operator kuźni kominowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, operator kuźni kominowej
 
-PL LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres obsługiwał kuźnię kominową, gdzie ciepło HECTON-8 stawało się częściami małymi do przenoszenia i dość niebezpiecznymi, by wymagać nazwiska. Jego akta tworzą przypalona rękawica, timer cyklu, taca odrzutów, kupony szkła ciśnieniowego i pierścienie uszczelnień z wydrapanymi znakami partii. Najważniejsza jest taca: dowodzi, że zepsute części nie były odpadem, dopóki nie nauczyły następnej granicy ciśnienia, jak trzymać. Torres zmienia lore zasobów w lore pracy. Kategorie salvage zaczynają się tu jako oparzenia, opóźnienia, opisane awarie i decyzja o zachowaniu dowodu tego, co pękło.
 
 ## Scanner
 
-PL LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Akta: Lian Torres. Rękawica cieplna, timer cyklu i taca odrzutów pasują do tej samej partii szkła ciśnieniowego.
 
 ## Terminal
 
-PL LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+KUŹNIA KOMINOWA V-9 / TORRES, LIAN: taca odrzutów zachowała pęknięte pierścienie uszczelnień, mętne szkło ciśnieniowe i trzy oznaczone kupony przegrzania. Notatka partii: awaria uczy następne uszczelnienie tylko wtedy, gdy pozostaje opisana.
 
 ## Audio
 
-PL LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres trzymał złe części. W kuźni czysta podłoga znaczyła, że ktoś wyrzucił lekcję.
 
 ## Field Note
 
-PL LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Używać Torresa przy rekwizytach kuźni, recepturach szkła ciśnieniowego, odrzuconych pierścieniach i stołach ulepszeń wymagających widocznej historii nieudanych części.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/pl_PL. -->

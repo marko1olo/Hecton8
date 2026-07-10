@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Отказ удержания давления"
+title: "Отказ pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Отказ удержания давления
+# Отказ pressure containment
 
-Blue debt - не проклятый клад. Это материальная память под давлением. Остаток Xenon-Omega полезен, пока его решетка верит, что она все еще глубоко, холодно и сжата. Вытащи слишком быстро, храни плохо или дай сдвигу сигнала проползти в капсулу, и образец начнет ломаться по читаемым стадиям. Сначала приходит дрейф: метры лгут, резонанс дрожит, тревоги удержания спорят друг с другом. Потом ломается решетка. Входит рапа. Биология идет за химией. На стадии 4 ценность мертва, но заражение живо.
+Pressure Containment Failure задает handling stages blue debt, связывая resource value с depth, pressure memory, bloom contamination, route planning и salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear и bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+Sample не ненавидит тебя. Он trying to be back where it formed.
+
+## Field Note
+
+Sample может быть worth a fortune at one depth и become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ru_RU. -->

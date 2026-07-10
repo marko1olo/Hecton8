@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Máscaras de grafite marauder"
+title: "Mascaras de Grafite Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Máscaras de grafite marauder
+# Mascaras de Grafite Marauder
 
-Marcas marauder são navegação de campo, aviso social e linguagem contra vigilância. Parecem brutas porque precisavam sobreviver a água, medo, lâmpadas ruins e câmeras corporativas. O jogador aprende quais marcas indicam ruído, pressão, risco de patrulha, caches ocultos e rotas fora dos mapas oficiais.
+Marauder graffiti nao e decoration. E field navigation, social warning e anti-surveillance language riscada em lugares onde radios traem, maps expiram e official signage mente por ser antigo demais. As marks parecem brutas porque precisavam sobreviver a water, bad lamps, glove tremor e cameras capazes de punir readable intent. Slash pode significar silence. Black ring pode significar Black Keel ping. Broken arrow pode significar pressure changed desde o ultimo route survey. A colony deixou labels; marauders deixaram weather.
 
 ## Scanner
 
-Código de tinta: número de cortes marca disciplina de ruído, anéis pretos marcam perigo de ping da transportadora, setas quebradas marcam deriva de pressão.
+Paint code. Slash count marca noise discipline; black rings marcam carrier-ping danger; broken arrows marcam pressure drift.
 
 ## Terminal
 
-ÍNDICE DE MÁSCARA DE ROTA: três cortes seguro só para sinais manuais. Anel preto significa varredura da transportadora. Seta quebrada significa mudança de pressão desde a última marca.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Se a parede parece furiosa, leia como clima.
+Se a wall parece irritada, leia como weather.
 
 ## Field Note
 
-Marauders escreviam para gente que não podia confiar em rádios nem pagar mapas.
+Marauders escreviam para gente que nao podia confiar em radios nem pagar maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/pt_BR. -->

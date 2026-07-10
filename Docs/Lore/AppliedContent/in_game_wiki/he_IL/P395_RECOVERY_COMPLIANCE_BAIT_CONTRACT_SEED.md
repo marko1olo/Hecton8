@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "זרע חוזה פיתיון תאימות שחזור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Recovery Compliance Bait Contract Seed
+# זרע חוזה פיתיון תאימות שחזור
 
-HE LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+חוזי פיתיון תאימות שחזור מגיעים כעבודות חילוץ נדיבות, אבל שרשרת המקבל כבר מוטה לעבר Deep Reach. התשלום אמיתי. המחיר הוא הדרישה המוסתרת לחשוף היכן נמצאו השבר, תג הגופה, תיבת הדגימות או המכונה האטומה.
 
 ## Scanner
 
-HE LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+זרע חוזה: פיתיון תאימות שחזור. תשלום גבוה, שרשרת מקבל מזוהמת, דרישת קואורדינטות מוסתרת.
 
 ## Terminal
 
-HE LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+זרע פיתיון: תשלום הוגדל, מקבל תאימות שחזור מוסווה, סעיף גילוי קואורדינטות מוסתר, לחץ אי-מסירה פעיל, ניתוב Deep Reach סביר.
 
 ## Audio
 
-HE LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+חותמת חילוץ קונה אמון ברציף מהר יותר מנשק.
 
 ## Field Note
 
-HE LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+הערת מארודר: אם העבודה משלמת נקי מדי, בדוק למי שייכת המגבת.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/he_IL. -->

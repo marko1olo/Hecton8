@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Globale Ozean-Tiefenbaender"
+title: "Globale Ozean-Tiefenbänder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Globale Ozean-Tiefenbaender
+# Globale Ozean-Tiefenbänder
 
-HECTON-8s Ozean wird in Baendern gelesen, nicht als einzelne Bodenzahl. Der photische Schelf erlaubt noch Licht, Wracks, Algen und schlechte Piloten. Der Industrieschelf traegt Kabelriff, Rohrkaefige und alte Ladedecks. Darunter biegen Salzlauge-Treppen Schall und Ballast. Abyssale Maschinenfelder bestrafen Reparaturen. Im Atlas-Becken wirkt Druck wie Zuständigkeit.
+HECTON-8s ocean ist kein one long fall to a bottom. Er ist ein stack of laws. Der photic shelf erlaubt noch light, algae, broken habitat skin und korrigierbare bad decisions. Der industrial shelf besteht aus pipe cages, cable reef, loading decks und machines that answer late. Brine stairs bend sound and ballast, bis eine route near and unreachable zugleich sein kann. Abyssal machine fields bestrafen repairs mit cold patience. Das Atlas basin ist tiefer als danger; dort wird pressure becomes jurisdiction.
 
 ## Scanner
 
-Tiefenkarte. Der erste Schelf verzeiht schlechten Ballast; tieferes Wasser stellt jeden Fehler in Druck, Hitze und Stille in Rechnung.
+Depth chart. The first shelf verzeiht poor ballast; lower water stellt every mistake in pressure, heat, noise und silence in Rechnung.
 
 ## Terminal
 
-BAENDER: 0-250 m photischer Bergungsschelf; 250-1200 m Industrieschelf und Kabelriff; 1200-2800 m Salzlauge-Treppe/Canyon; 2800-4300 m abyssales Maschinenfeld; 4300-5600 m Atlas-Becken.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Alle hundert Meter nimmt dir eine Gewohnheit weg.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Tiefe auf HECTON-8 ist Gesetz, Wetter, Grenze und Hunger mit derselben Zahl.
+Depth auf HECTON-8 ist law, weather, border und hunger mit derselben number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/de_DE. -->

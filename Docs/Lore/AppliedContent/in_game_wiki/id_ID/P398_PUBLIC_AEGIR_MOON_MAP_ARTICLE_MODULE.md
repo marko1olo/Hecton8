@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Peta Rute Bulan Aegir"
+title: "Peta rute bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Peta Rute Bulan Aegir
+# Peta rute bulan Aegir
 
-Data bulan Aegir adalah data rute. HECTON-8 adalah bulan samudra yang dimainkan, tetapi ia berada dalam tangga batasan relay, radiasi, sebaran, dan pasang yang lebih besar. Langit yang terlihat ikut menentukan apakah sinyal penyelamatan didengar, tertunda, diberi harga, ditolak, atau mustahil secara fisik.
+Bulan-bulan Aegir adalah bagian dari sistem rute. HECTON-8 adalah bulan samudra di bawah pemain, tetapi sisa tangga mengubah apa yang bisa didengar, dihargai, disembunyikan, atau dipindahkan. Benda kecil bisa memotong jalur relai. Jalur hamburan es bisa merusak paket. Fase pasang bisa membuat naiknya bathydrop murah lalu mematikan. Peta publik penting karena langit bukan hiasan di atas air; ia salah satu mesin yang memutuskan apakah klaim bisa pergi.
 
 ## Scanner
 
-Catatan peta sistem. Bulan-bulan Aegir menentukan relay timing, perlindungan radiasi, ice scatter, tekanan pasang, occultation bands, beacons mati, dan recovery geometry.
+Catatan peta sistem. Label bulan menentukan usia relai, beban pasang, pelindung radiasi, hamburan es, pita okupasi, suar mati, dan geometri pemulihan.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah label rute. Tiap benda mengubah signal age, transfer risk, storm exposure, custody timing, atau claim reliability.
+NODE ARSIP PUBLIK // TANGGA BULAN AEGIR. Nama bulan adalah data rute. Kolom wajib: usia sinyal, fase pasang, perlindungan badai, jendela klaim, status suar, risiko naik.
 
 ## Audio
 
-Peta menjelaskan mengapa tak ada yang datang tepat saat kau meminta.
+Bulan di peta bukan pemandangan. Itu alasan jawaban datang terlambat.
 
 ## Field Note
 
-Catatan Marauder: tandai bulannya, lalu tandai apa yang ia lakukan pada rute.
+Catatan Marauder: tandai bulan, lalu tulis apa dampaknya pada sinyal, pasang, massa, dan kustodi.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/id_ID. -->

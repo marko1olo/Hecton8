@@ -19,22 +19,12 @@ localization_flags: 0
 
 # Claim-Safe Summary Conflict
 
-## What the record proves
+## Claim-Safe Summary Conflict
 
-A claim-safe summary is not a shorter truth. It is an authorized redaction for a claim route. It can remove worker names, blur coordinates, replace injury detail with a payout category, change held to queued, or list only the office allowed to answer public mail. Some removals protect living crews, medical privacy, or an unfinished recovery route. Others protect Deep Reach from a custody problem. The conflict between summary and raw object is evidence because the cut itself has an owner, a timing mark, and a beneficiary.
+The public copy is clean because somebody paid or authorized it to be clean. It may remove a worker name, blur a coordinate, replace an injury with a payout category or change held into queued. Those edits can protect living crews. They can also protect a claimant desk.
 
-Read the summary beside the object that forced it: tag sleeve, audio cassette, sample bag, pressure-door log, suit ring, or tray photo. Keep the omission list visible. Ask what was removed, which legal risk marker it maps to, who requested the redaction, and whether the object can restore context without inventing names or coordinates. If the raw object proves more than the summary says, preserve the gap. Do not fill it with a clean sentence.
+The raw object decides which. A tag sleeve, cassette, sample bag, suit ring, pressure-door log or tray photo can still carry the field the summary removed. The omission is not empty space. It has a requester, timestamp, risk marker and custody route.
 
-## How to read it
-
-CLAIM-SAFE SUMMARY CONFLICT
-Summary is cleared for public handling. Raw object is not.
-Do not restore names, coordinates, or injury detail from guesswork.
-Required next proof: omission list, requester, legal risk marker, object route, custody timestamp.
-Action: keep summary and raw object linked until the omission has an owner.
-
-## Field note
-
-A summary can protect a worker or protect a desk. The object route tells which.
+Do not fill the missing field with a neat sentence. Keep the summary and raw object linked until the cut has an owner. The gap is the evidence.
 
 <!-- External Site; generated from P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE/en_US. -->

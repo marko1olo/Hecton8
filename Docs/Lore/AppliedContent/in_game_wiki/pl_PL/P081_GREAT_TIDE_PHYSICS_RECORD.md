@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Zapis fizyki Wielkiego Przypływu"
+title: "Zapis fizyki Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zapis fizyki Wielkiego Przypływu
+# Zapis fizyki Great Tide
 
-Zapis fizyki Wielkiego Przypływu utrzymuje katastrofę uczciwą. HECTON-8 był podatny na rezonans pływów, pękanie lodu, wezbranie sztormowe i zrzut ciepła. Wina Deep Reach leży w marginesach, pojemności ewakuacji i priorytetach decyzji, nie w fałszywej magii.
+Zapis fizyki Great Tide zostawia katastrofę uczciwą. HECTON-8 już był groźny: wiosenna geometria Aegira ciągnęła morze, kriosfera obciążała szelfy, spiętrzone sztormy zjadały harmonogram, a ciepło kolonii wypychało zamknięty drenaż wstecz. Wina Deep Reach zaczyna się po fizyce. Firma zostawiła rezerwę wznoszenia jako przyszły koszt, chroniła ciągłość Atlas i traktowała ciała jako masę niższego priorytetu.
 
 ## Scanner
 
-Model zalania jest cały. Morze nie potrzebowało złoczyńcy, tylko złych marginesów bezpieczeństwa.
+Model powodzi jest cały. Ocean nie potrzebował złej woli. Wystarczyły złe marginesy, zamknięte drenaże i kierownicy, którzy nie zatrzymali zmiany.
 
 ## Terminal
 
-MODEL WIELKIEGO PRZYPŁYWU: ścinanie kriosfery, rezonansowe podniesienie oceanu, sztuczny zrzut ciepła i spiętrzenie burz przekraczają bezpieczną kopertę ewakuacji 3,7 raza. Niezależna rezerwa wynurzenia: bez finansowania.
+MODEL GREAT TIDE: ścinanie kriosfery, rezonansowe podniesienie oceanu, przemysłowy zrzut ciepła i spiętrzenie sztormów przekroczyły bezpieczną obwiednię ewakuacji 3.7 raza. Niezależna rezerwa wznoszenia: bez finansowania. Rezerwa ciągłości Atlas: chroniona.
 
 ## Audio
 
-Raport miał rację. Dlatego go zakopano.
+Raport miał rację. Dlatego zniknął.
 
 ## Field Note
 
-Nie łagodź tego: ludzi zabiła prawdziwa fizyka, a Deep Reach dopilnował, żeby fizyka miała ofiary.
+Nie rób z tego mistyki. Ludzi zabiła fizyka. Deep Reach zadbało, by fizyka miała przed sobą tłum.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/pl_PL. -->

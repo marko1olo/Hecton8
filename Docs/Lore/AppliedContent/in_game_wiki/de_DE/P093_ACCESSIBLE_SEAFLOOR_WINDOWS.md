@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zugaengliche Meeresbodenfenster"
+title: "Zugängliche Meeresbodenfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zugaengliche Meeresbodenfenster
+# Zugängliche Meeresbodenfenster
 
-Zugaengliche Meeresbodenfenster sind Stellen, an denen HECTON-8s gebrochene Kruste die Kosten des Abstiegs kurz senkt. Sie entstehen an eingestuerzten Schelfen, freiliegenden Ruecken, wieder erhitzten Schlotnarben und Salzlaugesaeulen mit anderem Druckverhalten. Ein Fenster bleibt toedlich, wenn man es hetzt. Es erlaubt Kontakt mit altem Boden, seltenen Mineraladern, versiegelter Koloniehardware und Beweisen, die der offene Ozean unerreichbar zerquetschen wuerde.
+Accessible seafloor windows sind keine safe places. Sie sind rare permissions, geschrieben von broken geology. Ein collapsed shelf lowers the descent angle. Eine reheated brine column carries pressure differently fur einige hundert Meter. Ein exposed ridge lasst sonar hold shape, wo open water swallow it wurde. Durch diese windows wird old floor reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines und evidence, die der main ocean out of human range hielte. Rush a window, und es closes with the same pressure that made it valuable.
 
 ## Scanner
 
-Freiliegende Rueckenmarke. Hier riss die Schale duenn genug, damit ein Crawler alten Boden beruehren kann, ohne zu Paste zu werden.
+Exposed ridge marker. Hier riss die shell thin genug, damit ein crawler old floor beruhrt without becoming paste.
 
 ## Terminal
 
-FENSTERKRITERIEN: gebrochene Krustenlippe, durch Schlote erhitzte Salzlaugesaeule, eingestuerzte Schelframpe, stabile Sonarrueckgabe, Drucktasche unter Anzug-Rotlinie. Nur fuer langsame Bergung markieren.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-Das Meer laesst dich den Grund in Fenstern beruehren, nicht dort, wo du dich mutig fuehlst.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Der groesste Teil des Mondes haelt seinen Boden als Druckgeheimnis. Die Fenster sind Ausnahmen mit Zaehnen.
+Der meiste moon halt seinen floor als pressure secret. Die windows sind exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/de_DE. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Globalne pasma glebokosci oceanu
 
-Ocean HECTON-8 czyta sie pasmami, a nie pojedyncza linia dna. Polka fotyczna ma jeszcze swiatlo, wraki, glony i lekkomyslnych pilotow. Polka przemyslowa niesie rafe kabli, klatki rur i stare poklady zaladunkowe. Nizej schody solankowe wyginaja sonar i balast. Abisalne pola maszyn karza naprawy. W basenie Atlas cisnienie zachowuje sie jak jurysdykcja.
+Ocean HECTON-8 nie jest one long fall to a bottom. To stack of laws. Photic shelf wciaz dopuszcza light, algae, broken habitat skin i bad decisions, ktore da sie poprawic. Industrial shelf to pipe cages, cable reef, loading decks i machines that answer late. Brine stairs bend sound and ballast, az route moze byc near and unreachable jednoczesnie. Abyssal machine fields karza repairs z cold patience. Atlas basin jest glebszy niz danger; tam pressure becomes jurisdiction.
 
 ## Scanner
 
-Mapa glebokosci. Pierwsza polka wybacza zly balast; nizsza woda wystawia rachunek za kazdy blad cisnieniem, cieplem i cisza.
+Depth chart. The first shelf wybacza poor ballast; lower water wystawia rachunek za every mistake w pressure, heat, noise i silence.
 
 ## Terminal
 
-PASMA: 0-250 m fotyczna polka zlomiarzy; 250-1200 m polka przemyslowa i rafa kablowa; 1200-2800 m schody/kanion solankowy; 2800-4300 m abisalne pole maszyn; 4300-5600 m basen Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Kazde sto metrow zabiera ci jeden nawyk.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Glebokosc na HECTON-8 to prawo, pogoda, granica i glod pod tym samym numerem.
+Depth na HECTON-8 to law, weather, border i hunger pod tym samym number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/pl_PL. -->

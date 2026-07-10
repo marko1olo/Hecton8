@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Первый голос Black Keel
 
-Первый голос Black Keel должен ощущаться как дверь, открытая только наполовину. Аудио повреждено, текстовый канал чист, и carrier не тратит ни слова на утешение. Это отсутствие важно. Дружелюбный AI смягчил бы океан. Драматический злодей сделал бы угрозу слишком человеческой. Black Keel полезнее обоих, потому что говорит правду в формате, который все еще отказывает в безопасности. Сигнал получен. Выживание подтверждено. Recovery не решено. Игрок понимает, что быть услышанным не значит быть спасенным, а единственный голос над водой привязан к ledgers, которых игрок еще не видел.
+Первый голос Black Keel задает тон carrier: точный, поврежденный, полезный, финансово условный и никогда эмоционально присутствующий.
+
+## Scanner
+
+Carrier voice cache. Audio порвано pressure noise; text channel достаточно чист, чтобы выставить счет.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity и mass-window balance.
+
+## Audio
+
+Operator signal acquired. Не путайте acknowledgement со спасением.
+
+## Field Note
+
+Первое полезное предложение не успокаивает. Оно классифицирует.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ru_RU. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "염수 협곡 루트 사다리"
+title: "염수 협곡 경로 사다리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 염수 협곡 루트 사다리
+# 염수 협곡 경로 사다리
 
-염수 협곡은 깊이 진행을 물리적으로 만든다. 조밀한 층, 광물 벽, 열 누출, 음향 왜곡은 더 깊은 이동에 더 좋은 계기와 압력 규율이 필요함을 가르친다.
+염수 협곡은 깊이를 물질로 바꾼다. 짙은 소금 강이 바닥, 거울, 함정처럼 바다 안에 놓인다. 깨끗한 경로는 용기가 아니라 밀도 표식, 밸러스트 창, 중계 확인, 각도 규율로 만들어진다. 더 깊은 층은 장비가 왜 중요한지 가르친다. 소나는 위의 공간을 반사할 수 있고, 부력은 거짓말할 수 있으며, 슈트가 맞아도 바다가 동의하지 않을 수 있다.
 
-염수 협곡 루트 사다리는 HECTON-8의 핵심 탐사 구조다. 복도가 아니라 밀도, 흐름, 소리가 진행을 만드는 화학 지형이다. 협곡을 헤엄쳐 지나가는 것이 아니다. 슈트보다 무거운 층과 협상하는 것이다.
+염수 협곡 경로 사다리는 HECTON-8의 하강을 화학 지리로 구성한다. 밀도, 흐름, 광물 벽, 소리가 생존 가능한 길을 결정한다. 협곡을 헤엄쳐 통과하는 게 아니다. 슈트보다 무거운 층들과 협상한다.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/ko_KR. -->

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Власть световой задержки
 
-Сигнал бедствия на HECTON-8 — это физический груз смысла. Он уходит с затопленной мачты, пересекает пространство Aegir со скоростью света, ждет внутри ретрансляционных буферов и приходит на Black Keel через очередь, которая уже умеет назначать цену риску. Первая задержка честная: расстояние. Поздние задержки человеческие: класс опеки, штормовые окна, язык ответственности и привычка носителя отвечать активу раньше человека. Поэтому ответ может быть технически свежим и все равно бесполезным в схлопывающейся комнате давления. Читатель должен сначала почувствовать жестокость обычной физики, а потом увидеть корпоративную жестокость поверх нее.
+Власть световой задержки задает связь HECTON-8 как физическую, запоздалую и contract-filtered: distance, weather, relay buffers и custody queues решают, когда signal становится usable.
+
+## Scanner
+
+Relay mast cache. Вызов ушел чисто, потом застрял за light, queue law, storm scatter и Aegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active до fresh signal window confirms override.
+
+## Audio
+
+Ответ идет. Это еще не rescue.
+
+## Field Note
+
+Первый scream никто не цензурировал. Physics двигалась достаточно медленно, чтобы policy успела догнать.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ru_RU. -->

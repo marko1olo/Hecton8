@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Долг тонна-окна"
+title: "Долг тоннажного окна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Долг тонна-окна
+# Долг тоннажного окна
 
-Долг тонна-окна — точка, где физика становится финансами. У Black Keel нет бесконечного запаса подъема, транзитного топлива или чистого карантинного объема. Каждый килограмм, поднятый с HECTON-8, конкурирует с каждым килограммом, нужным, чтобы оператор остался жив. Счетчик долга делает carrier жестоким, не ломая hard science: спасение возможно, но бюджет маршрута снова спрашивает, что заслуживает массы.
+Долг тоннажного окна - точка, где HECTON-8 перестает быть только историей ужаса и становится orbital logistics. У Black Keel конечный lift margin, конечный clean volume, конечный oxygen reserve и route price на каждый килограмм. Spare tank, sealed sample, damaged suit, proof case, body и crate of salvage конкурируют внутри одного окна. Система кажется жестокой потому, что она точна. Ей не нужно делать вид, что rescue невозможен. Она просто снова и снова спрашивает, что маршрут может позволить себе поднять.
 
 ## Scanner
 
-Счетчик массового окна. У каждого килограмма помощи есть цена маршрута.
+Mass-window ledger. Помощь получает вес раньше, чем получает язык.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: запас recovery burn сужен. Масса извлечения оператора конфликтует с запечатанным payload, балластным резервом, кислородным долгом и custody карантинного образца. Ручной override требует оплаченного приоритета или доказательства опасности.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass конфликтует с sealed payload, ballast reserve, oxygen debt, quarantine sample volume и hull patch inventory. Manual priority требует paid override, verified hazard proof или custody reclassification.
 
 ## Audio
 
-Корабль может унести тебя или то, что ты нашел. Он предпочитает число.
+Корабль может поднять жизнь. Вопрос в том, что еще ledger заставит его нести.
 
 ## Field Note
 
-Кислород, балласт, доказательство, payload, тело: carrier взвешивает их раньше, чем милость.
+Кислород, ballast, proof, samples, hull patch, body: carrier оценивает милость килограммами.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ru_RU. -->

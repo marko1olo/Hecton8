@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Інваріанти геології сиду"
+title: "Геологічні інваріанти survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Інваріанти геології сиду
+# Геологічні інваріанти survey
 
-Інваріанти геології сиду тримають HECTON-8 цілісним у довгих повторах. Каньйони можуть відкриватися в іншому порядку, докази рухатися, безпечні кишені зміщуватися, тиск видів змінюватися. Зоря лишається Еґіром, місяць лишається HECTON-8, глибинні пояси тримають порядок, Great Tide тримає ритм, а басейн Atlas зберігає зв'язок із найглибшою правдою.
+Survey geology invariants тримають HECTON-8 coherent серед contradictory charts, damaged Atlas maps і incomplete Black Keel route packets. Canyon approach може shift between surveys. Safe pocket може collapse. Cache може emerge under new silt. Bloom density і salvage exposure змінюються з weather, pressure і тим, що last expedition disturbed. Deeper truths не move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior, а Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Нотатка генерації маршруту. Мапа здобичі змінюється, але місяць тримає ті самі кістки.
+Atlas survey note. Salvage chart може disagree with itself; moon keeps the same bones.
 
 ## Terminal
 
-ІНВАРІАНТИ: зоря Еґір, орбітальна драбина HECTON-8, інтервал Great Tide, порядок глибинних поясів, зв'язок басейну Atlas, поведінка blue debt під тиском. ЗМІННЕ: підхід до каньйону, порядок POI, безпечні кишені, щільність bloom, оголення здобичі.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Інший візерунок рани. Той самий місяць під ним.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-Новий захід може інакше поховати доказ; він не може переписати гравітацію, приплив чи провину.
+Later chart може bury evidence differently. Він не може rewrite gravity, tide або guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/uk_UA. -->

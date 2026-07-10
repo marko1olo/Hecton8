@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Globalne pasma glebokosci oceanu
 
-HECTON-8 nie jest plaskim oceanem z coraz wiekszymi liczbami. To pionowy kraj z granicami zapisanymi cisnieniem. Od 0 do 250 metrow fotyczna polka daje jeszcze swiatlo, glony, miekkie wraki i wybaczenie dla pierwszych bledow. Od 250 do 1200 metrow zaczynaja sie polka przemyslowa i rafa kablowa: zerwane cumy, ramy rur, kosci przekaznikow i stare trasy korporacji. Od 1200 do 2800 metrow schody solankowe wyginaja sonar i ukrywaja cieplo. Od 2800 do 4300 metrow naprawa staje sie negocjacja z polem maszyn. Od 4300 do 5600 metrow Atlas zmienia cisnienie we wladze.
+Global Ocean Depth Bands uklada exploration, salvage, biology, sound, pressure i route risk HECTON-8 od bright shelf do Atlas basin.
+
+## Scanner
+
+Depth chart. The first shelf wybacza poor ballast; lower water wystawia rachunek za every mistake w pressure, heat, noise i silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth na HECTON-8 to law, weather, border i hunger pod tym samym number.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/pl_PL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Rejestr ekologii
 
-HECTON-8 potrzebuje kontrastu: jasne użyteczne płycizny, adaptacja do struktur ludzi, a potem głęboka ingerencja Atlas. Groza działa, bo rodzime życie istniało przed raną.
+Rejestr ekologii oddziela życie od uszkodzenia. Jasne maty szelfowe i skubacze pokazują warstwę bazową. Flora kabli i ciała filtrujące pokazują życie dostosowane do ludzkiego sprzętu. Fauna z tagami, film przewodzący i wzrost shell-seal wskazują na naprawy Atlas. Właściwe pytanie nie brzmi, czy coś żyje, ale jaką pracę wykonuje w systemie ciśnienia.
 
 ## Scanner
 
-Potwierdzono jasną płytką ekologię. Głębiej widać florę kablową, ciała filtrujące i ingerencję Atlas.
+Podział rejestru potwierdzony: rodzime życie szelfu, biota dostosowana do kabli, organizmy naprawcze routowane przez Atlas. Rozpoznaj przed cięciem.
 
 ## Terminal
 
-Podział: natywna ekologia ciśnienia, biota adaptowana do kolonii, organizmy zmienione przez Atlas. Nie mieszać.
+PODZIAŁ REJESTRU: rodzima ekologia ciśnienia; kolonijna biota kablowa; organizmy naprawcze zmienione przez Atlas. Zła etykieta może zniszczyć działające uszczelnienie albo wymazać dowód trasy.
 
 ## Audio
 
-Jeśli wszystko jest potworem, nic nie jest naruszeniem.
+Jeśli wszystko jest potworem, przetniesz to, co trzyma ciśnienie.
 
 ## Field Note
 
-Świat żył, zanim został zraniony.
+Świat był żywy, zanim go zraniono.
 
 <!-- In-Game Wiki; generated from P020_HECTON8_ECOLOGY_REGISTRY/pl_PL. -->

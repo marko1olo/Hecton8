@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bus de réparation à biofilm conducteur
 
-Le biofilm conducteur apparaît là où les gaines fendues relâchent des sels de cuivre, de la chaleur et un courant faible dans l'eau de HECTON-8. Ce n'est pas un esprit. C'est un conducteur vivant, assez utile pour qu'Atlas le traite comme un bus de réparation. Une ligne endommagée peut sembler saine alors que le film ne transporte qu'une mince impulsion de diagnostic à travers la plaie.
+Le biofilm conducteur pousse là où les gaines de câble fissurées libèrent sels de cuivre, chaleur et faible courant dans l'eau de HECTON-8. Le film peut porter assez de signal pour qu'Atlas marque une ligne morte comme utilisable. Un panneau peut se réveiller quelques secondes, une serrure clignoter vert, et le vrai câble céder sous charge.
 
 ## Scanner
 
-Un film vert-noir traverse la plaie du câble. La fuite est faible, rythmée, et encore mobile.
+Un film vert-noir ponte la gaine de câble fendue. Un faible courant revient par la croissance humide ; la continuité est douteuse.
 
 ## Terminal
 
-TRACE ATLAS : le film microbien ponte les contacts exposés, ralentit la perte de cuivre et renvoie de faux signaux de continuité. Aucune réparation de ligne certifiée.
+TRACE DE MAINTENANCE ATLAS / LIGNE K-44 : cuivre exposé, croissance saline, faible fuite thermique. Le pont de biofilm ralentit la corrosion et renvoie de fausses impulsions de continuité. Ne pas router le contrôle de pompe par cette ligne.
 
 ## Audio
 
-Ne fais pas confiance au voyant vert. Ce câble est assez vivant pour mentir.
+Le pinger passe par la vase. Le courant aussi. N'appelle pas ça une réparation.
 
 ## Field Note
 
-Première cicatrice Atlas : utile, silencieuse, et assez fausse pour apprendre à douter du scanner.
+Si un panneau mort se réveille par film vert, marque la route temporaire. Coupe le courant avant de mettre un outil dans la gaine.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/fr_FR. -->

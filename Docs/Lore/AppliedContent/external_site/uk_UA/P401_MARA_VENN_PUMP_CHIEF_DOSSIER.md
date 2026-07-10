@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Mara Venn/Pump Chief"
+title: "Мара Венн, начальниця насосної"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Mara Venn/Pump Chief
+# Мара Венн, начальниця насосної
 
-UK LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Мара Венн тримає HECTON-8 процедурою, а не промовою. Докази з насосної не роблять із неї статую; вони показують, як виживання рахували, оскаржували й утримували відкритим людиною, чия робота тривала, коли Deep Reach уже називав анекс зобов'язанням.
 
 ## Scanner
 
-UK LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Досьє: Мара Венн. Край жетона, дошка ритму й виправлений водний журнал вказують на насосну P-63.
 
 ## Terminal
 
-UK LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+НАСОСНА P-63 / ВЕНН, МАРА: руків'я байпаса відполіроване крізь шар рукавиць; дошку ритму закріплено біля позначок втрат на впуску. Виправлення в журналі переводить зниклу воду з декоративного витоку в навантаження машини.
 
 ## Audio
 
-UK LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Венн не залишила прощання. Вона залишила ритм на дошці насосів, щоб налякані люди могли рахувати наступний вдих.
 
 ## Field Note
 
-UK LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Ставити докази Венн біля насосних ритмів, водних журналів і руків'їв байпаса. Її предмети мають змушувати гравця чути інфраструктуру як дихання.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/uk_UA. -->

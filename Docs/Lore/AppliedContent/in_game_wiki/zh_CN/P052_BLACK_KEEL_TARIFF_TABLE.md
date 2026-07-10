@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Black Keel费率表
 
-Black Keel的支持有用，但从不中立。求救、样本、氧气、责任封印、操作员回收和船体损伤进入不同队列。玩家可以利用这些规则，但同一套规则也说明为什么帮助总是带着价签。
+Black Keel的support有用，因为carrier确实会移动gear、cache oxygen、传递warnings并打开route options。它从不中立，因为每一个support action在成为help之前都会先进入tariff table。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery和body recovery都是不同line items，有不同priority speed。表格不是隐藏的邪恶。实际更糟：那是一张给不该有价格的时刻准备的可读price list。
 
 ## Scanner
 
-标牌把求救、样本托管、氧气储备、耐压设备和遗体回收列成分开的收费项目。
+tariff plate。distress、oxygen、sample custody、pressure gear、hull damage和body recovery被列成不同项目。
 
 ## Terminal
 
-费率等级：打捞紧急。福利附录待定。已验证样本托管将出站优先级提高两个计费层级。
+TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。Breathing mass surcharge applies，直到lien arbitration resolves。
 
 ## Audio
 
-证据有折扣，呼吸有附加费。
+evidence有discount，breathing有surcharge。
 
 ## Field Note
 
-最快的等级不是救援，而是向上移动的已验证财产。
+最快的class不是rescue，而是verified property moving upward。
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/zh_CN. -->

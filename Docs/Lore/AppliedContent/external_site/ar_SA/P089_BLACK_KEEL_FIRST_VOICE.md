@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "صوت Black Keel الأول"
+title: "الصوت الأول لBlack Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# صوت Black Keel الأول
+# الصوت الأول لBlack Keel
 
-يجب أن يبدو صوت Black Keel الأول كأن بابا يفتح نصف فتحة فقط. الصوت متضرر، قناة النص نظيفة، وcarrier لا يهدر كلمة على المواساة. هذا الغياب مهم. ذكاء اصطناعي ودود كان سيخفف المحيط. شرير خطابي كان سيجعل الخطر بشريا أكثر مما ينبغي. Black Keel أنفع من الاثنين لأنه يقول الحقيقة بصيغة لا تمنح الأمان. تم التقاط الإشارة. النجاة معترف بها. الاسترداد غير محسوم. يتعلم اللاعب أن سماعه لا يعني إنقاذه، وأن الصوت الوحيد فوق الماء مربوط بسجلات لم يرها بعد.
+يحدد الصوت الأول لBlack Keel نبرة carrier: دقيقة، متضررة، مفيدة، مشروطة ماليا، ولا تحضر عاطفيا أبدا.
+
+## Scanner
+
+Carrier voice cache. مزق pressure noise الصوت؛ text channel نظيف بما يكفي للفوترة.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody وquarantine state وlien value وsignal integrity وmass-window balance.
+
+## Audio
+
+Operator signal acquired. لا تخلط acknowledgement مع rescue.
+
+## Field Note
+
+الجملة المفيدة الأولى لا تواسي. إنها تصنف.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/ar_SA. -->

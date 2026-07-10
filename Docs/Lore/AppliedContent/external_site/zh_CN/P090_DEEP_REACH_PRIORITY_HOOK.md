@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Deep Reach优先钩
 
-优先钩是让Deep Reach在殖民地沉默后仍然危险的最干净办法。公司不需要用远程奇迹驾驶Black Keel。它只需要carrier仍然承认的一份旧证书、连接Atlas访问的continuity规则,以及在特定危险条件下高于承包人身体的payload等级。这就足够。航线可以被挪动。封存箱可以上升队列。隔离锁可以保持关闭,而操作员的氧气计数变成另一条债务记录。结果比破坏更冷:系统按写下的方式工作,而Deep Reach学会了把自己写进灾难后仍会存活的部分。
+Deep Reach优先钩把corporate pressure建立在legacy certificates、quarantine clauses、Atlas tokens、payload priority和evidence custody上，而不是不可能的instant command。
+
+## Scanner
+
+旧certificate hook。只要clause还属于Deep Reach，他们就不需要bridge。
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate可在Aegir claim law下推进payload recovery、quarantine lock、Atlas access token、evidence suppression queue或sealed infrastructure proof。除非verified hazard proof超过custody value，否则Human extraction priority unchanged。
+
+## Audio
+
+他们不需要站在bridge上，也能引导答案。
+
+## Field Note
+
+比conspiracy更干净：paperwork活过了签下它的人。
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/zh_CN. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "No-FTL-routevertraging"
+title: "Routevertraging zonder FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# No-FTL-routevertraging
+# Routevertraging zonder FTL
 
-Afstand is een overlevingsregel op de Aegir-route. Wet, schuld en oude packets kunnen de speler veel eerder bereiken dan een carrier, tender, reserveonderdeel of menselijke redder. Een relay-antwoord heft het drukwerk voor je niet op; het bewijst alleen dat iemand je claim in een wachtrij heeft gezet.
+Afstand is een operationele limiet op de Aegir-route. Een pakket kan een schip inhalen. Een juridisch antwoord kan HECTON-8 bereiken vóór het reserveonderdeel, tenderteam, drukfles of menselijke redder die dat antwoord nuttig zou maken. Relaiscontact verandert daarom papierwerk voordat het de kamer om je heen verandert. Wanneer het archief zegt dat hulp de claim heeft erkend, controleer pakketleeftijd, dragermassa, remslot en lokaal daalweer voordat je de zin vertrouwt.
 
 ## Scanner
 
-Transitrecord. Aegir-verkeer hangt af van precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody en juridische vertraging.
+Transitrecord. Aegir-verkeer hangt af van sondekaarten, straalbanen, pellet-fusievracht, remmassa, pakketleeftijd, relaisbewaring en verweerde daalvensters.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // TRANSITLIMIET. Geen FTL. Geen Ansible. Levende redding vereist fysieke transfer, braking architecture, carrier position, descent mass en een geldig local window.
+OPENBARE ARCHIEFKNOOP // TRANSITLIMIET. FTL: afwezig. Ansible: afwezig. Levende redding vereist dragerpositie, remtoewijzing, daalmassa, lokaal weer en een niet verlopen bewaarnster.
 
 ## Audio
 
-Hulp kan juridisch aanwezig zijn en fysiek jaren weg.
+Een drager kan je noodsituatie registreren en nog jaren massa weg zijn.
 
 ## Field Note
 
-Marauder-notitie: als het relay antwoordt, vraag hoe oud het antwoord is en welke massa het kan verplaatsen.
+Marauder-notitie: elk reddingsantwoord heeft vier cijfers nodig: pakketleeftijd, dragermassa, remslot, daalvenster.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/nl_NL. -->

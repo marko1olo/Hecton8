@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dangers de relais des lunes internes"
+title: "Dangers relais des lunes internes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dangers de relais des lunes internes
+# Dangers relais des lunes internes
 
-Les dangers de relais des lunes internes rendent l'échec de contact physique. Un sursaut aligné sur Skarn peut corrompre les antennes sans les tuer. Poussière et glace de Vela ferment l'optique tandis que la route prétend encore exister.
-
-Claw et Lumen sont pires car ils transportent une vieille logique de route. Un handshake peut être valide sur papier et inutile au travail. Black Keel peut donc journaliser un paquet, préserver la custody et laisser un corps dans l'eau.
+Les inner moon relay hazards rendent failed contact physique plutot que commode. Les Skarn-aligned surges peuvent corrupt antennas sans les killing. Vela dust and ice peuvent shutter optics tandis que la route se signale encore open. Claw et Lumen sont pires parce qu'ils carry old buoy logic: un handshake peut etre formally valid et operationally useless. C'est pourquoi Black Keel peut log a packet, preserve custody et laisser tout de meme un human signal waiting in water. Le system n'avait pas besoin de go mute. Il suffisait d'answer from the wrong sky.
 
 ## Scanner
 
-ÉCHELLE INTERNE // Skarn sature les antennes. Vela disperse l'optique. Les anciennes routes Claw et Lumen gardent des handshakes périmés vivants.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw et Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTE DE DANGER RELAIS // Perte de contact : géométrie, météo de particules, volet de poussière ou buoy law héritée. UI propre suspecte en fenêtre de sursaut.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Le relais ne s'est pas tu. Il a répété le mauvais siècle.
+Le relay n'est pas devenu silencieux. Il a repeated the wrong century.
 
 ## Field Note
 
-Une icône propre peut encore mentir à travers un vieux ciel.
+Un clean icon peut encore mentir through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/fr_FR. -->

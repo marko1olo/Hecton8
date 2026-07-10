@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Public Site Marauder Culture Article
 spoiler_tier: 1
-title: "Artículo de Campo sobre Ley de Salvamento Marauder"
+title: "Artículo de Campo sobre Ley de Salvage Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Artículo de Campo sobre Ley de Salvamento Marauder
+# Artículo de Campo sobre Ley de Salvage Marauder
 
-La palabra Marauder debe sonar incómoda. No es una clase romántica ni un empleo limpio. En HECTON-8, un Marauder aparece cuando la ley viaja más rápido como papeleo que como ayuda. El sistema de reclamaciones necesita a alguien que entre en un activo muerto o disputado, recupere valor, toque propiedad contaminada, acepte riesgo personal y deje suficientes registros para que otras oficinas finjan control.
+La palabra Marauder debe quedarse atravesada. No es una etiqueta de fantasía de poder. Es el título que inventa un sistema legal de frontera cuando necesita a alguien que toque un activo arruinado sin admitir que ese activo fue un lugar de trabajo lleno de personas.
 
-Eso expone moralmente al jugador desde el primer minuto. No eres un caballero que viene a salvar una colonia. Eres un carroñero profesional con viejo procedimiento de Deep Reach en las manos, una ventana de deuda sobre la cabeza y un océano lleno de gente que los libros ya intentaron aplastar en categorías. El horror no es saquear. El horror es que saquear quizá sea la única acción que el sistema todavía reconoce.
+            HECTON-8 usa Marauders para que las acciones del jugador sigan cargadas moralmente. Saqueas porque oxígeno, deuda y herramientas lo hacen necesario. También documentas porque los objetos robados quizá sean las únicas pruebas que sobrevivan al agua, la presión y la limpieza corporativa. Un buen Marauder no es limpio. Sabe distinguir entre vaciar una sala y preservar lo que la sala demuestra.
 
-El lenguaje de campo Marauder nació de esa presión. Un anillo negro no es vandalismo si avisa al siguiente buzo de que el dueño oficial miente. Un tajo sobre una causa de muerte sellada no es sentimental si apunta a un certificado de bomba perdido. Un nombre de trabajador junto a una marca de ruta puede tener más fuerza legal que un memorial pulido.
+            De ahí nace la cultura de campo. Marcas de pared, etiquetas tachadas, nombres obreros, flechas de presión y abreviaturas feas forman una segunda ley bajo la oficial. Es grosera porque el lenguaje educado ya falló. Es rápida porque nadie lee un manual de reclamaciones mientras un mamparo respira.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/es_ES. -->

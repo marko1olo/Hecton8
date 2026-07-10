@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ندبة وصلة كابل"
+title: "ندبة cable splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ندبة وصلة كابل
+# ندبة cable splice
 
-ندبات وصلات الكابلات تظهر رعب الإصلاح في HECTON-8 بصوت منخفض. كابل خدمة مقطوع، طاقم المستعمرة غائب، وإصلاح غير قياسي يبقي الدارة حية رغم ذلك. يقرأ اللاعب الفائدة قبل النية.
+تظهر cable splice scars رعب repair في HECTON-8 بصوت منخفض: damaged service line تستمر بالعمل بعد فشل human procedure وsignoff وmaterial rules.
 
 ## Scanner
 
-وصلة غير قياسية. نما العازل من جديد حول كابل خدمة بعد فشل توجيه البشر؛ وسم Atlas-6 جزئي وسلطة الصيانة مفقودة.
+Nonstandard splice. عاد insulation للنمو حول service cable بعد human routing failed؛ Atlas-6 tag partial وmaintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: وصلة بشرية فشلت مفتوحة. تم قبول إصلاح استمرارية ذاتي للحفاظ على حمل المرحل. يتكرر النمط في عقد شعاب الكابلات مع فقد عازل أقل ودون توقيع عامل.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-أصلح أحدهم الكابل بعدما توقفت الأوراق. أو أصلحه شيء ما.
+شخص ما fixed the cable بعد أن توقف paperwork. أو شيء ما فعل.
 
 ## Field Note
 
-مفيد أولا. خطأ لاحقا. هكذا تقدم إصلاحات Atlas نفسها.
+Useful أولا. Wrong لاحقا. هكذا تقدم Atlas repairs نفسها.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/ar_SA. -->

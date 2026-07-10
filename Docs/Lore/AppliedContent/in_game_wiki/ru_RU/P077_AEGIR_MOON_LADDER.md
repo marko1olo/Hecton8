@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Лунная лестница Aegir
 
-Лунная лестница Aegir удерживает HECTON-8 внутри физической системы. Внутренние луны создают радиационные и ретрансляционные опасности; средние держат металл, лед, маршрутные буи и старые склады; внешние несут холодные claims и мертвые маяки.
-
-HECTON-8 не самая внутренняя луна и не самая дальняя. Это луна, которая все еще платит. Поэтому остальная лестница постоянно цепляет ее окна спасения, salvage law и маршруты сигнала.
+Aegir moon ladder держит HECTON-8 внутри working sky. Skarn бросает charged weather через antennas. Vela sheds ice and dust в optical routes. Claw и Lumen keeping old buoy logic alive. Thorne failed quietly. Anvil fed metal, пока route stopped paying. Kestrel cuts relay lines под худшими angles. Mute repeats ownership into nobody's hands. HECTON-8 не первая moon в chain и не последняя. Это та, чья drowned infrastructure все еще достаточно valuable, чтобы ships, insurers и marauders спорили о windows.
 
 ## Scanner
 
-Карта лунной лестницы. HECTON-8 является рабочей опасностью в движущейся системе, а не изолированным уровнем.
+Moon ladder chart. HECTON-8 - one working hazard in a moving system, а не isolated ocean level.
 
 ## Terminal
 
-ОСНОВНЫЕ ЛУНЫ AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Модель transfer и eclipse приложена.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay и custody windows attached.
 
 ## Audio
 
-На карте больше лун, чем милости.
+У map больше moons, чем mercy.
 
 ## Field Note
 
-Skarn жжет. Vela сбрасывает лед. Anvil кормит металлом. Kestrel режет ретрансляторы. HECTON тонет.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ru_RU. -->

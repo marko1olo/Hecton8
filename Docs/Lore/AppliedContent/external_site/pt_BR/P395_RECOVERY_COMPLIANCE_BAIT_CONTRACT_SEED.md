@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Semente de contrato-isca de Conformidade de Recuperação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Recovery Compliance Bait Contract Seed
+# Semente de contrato-isca de Conformidade de Recuperação
 
-PT LOC HOLD: A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+A isca de Conformidade de Recuperação é um dos contratos limpos mais sujos do quadro. A ordem usa uma cara de serviço público: recuperar armários médicos inundados, trazer identificadores de trajes mortos, remover núcleos de máquinas perigosas, devolver carga lacrada antes que decomposição ou dano por pressão destruam o registro. O pagamento listado é alto o bastante para parecer misericórdia numa semana ruim.
 
-## Scanner
+A armadilha fica na cadeia de receptor. Um carimbo de Conformidade de Recuperação pode passar por escritórios neutros de salvage, seguradoras coloniais ou mesas de limpeza de desastre, mas o leitor final muitas vezes pertence à Deep Reach ou a um procurador que vende acesso prioritário para ela. O operador recebe pela recuperação material e fica discretamente preso a prova de coordenadas, tiras de estado de escotilha e notas de custódia. Recusar a entrega não remove o risco. Isso marca a rota como sensível a retenção e torna receptores seguros futuros menos pacientes.
 
-PT LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
-
-## Terminal
-
-PT LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
-
-## Audio
-
-PT LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
-
-## Field Note
-
-PT LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Esses contratos funcionam porque o desespero faz boa papelada parecer abrigo. Uma tripulação com poucos filtros, placas de bateria ou fita de pressão vê um pagamento limpo e aceita a ordem antes de ler a cláusula de coordenadas. Quando a primeira caixa lacrada está a bordo, o quadro já aprendeu até onde a tripulação ainda consegue chegar e o que a zona abandonada ainda não conseguiu enterrar.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/pt_BR. -->

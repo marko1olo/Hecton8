@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Datengrenze der Endauszahlung"
+title: "Endauszahlungs-Datensatzzeile"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datengrenze der Endauszahlung
+# Endauszahlungs-Datensatzzeile
 
-Die Grenze hält Enden als Abwägungsakten, nicht als Siegpunkte. Die Auszahlung zählt, aber auch Verwahrung, öffentlicher Beweis, Quarantäne, Schuld und das Handlungsrecht des Empfängers nach Abreise des Spielers.
+Endauszahlungszeilen speichern den Handel, den du wirklich gemacht hast. Ein materieller Ausstieg kann einen Teil des Pfands tilgen und Koordinaten an Recovery Compliance zurückgeben. Öffentliche Ledger-Freigabe kann Namen schützen und Kontrolle über Beweis verlieren. Atlas-Trennung oder Quarantäne ändern den Empfänger, bevor sie die Zahl ändern.
 
 ## Scanner
 
-Endzeile bindet Empfänger, Verwahrung, Beweisstatus, Auszahlung und ungelöste Folge.
+Ausgangszeile offen: Empfänger, Nutzlastroute, Beweisstatus, Auszahlung, Quarantäneverzug und ungelöste Folge sind nicht geschlossen.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: Zeilen erfordern Payloadroute, Empfänger, Beweisstatus, materielle Auszahlung, rechtliche Folge, Quarantäneverzug und ungelöste Kosten. Credits schließen keinen Tatort.
+ENDAUSZAHLUNGS-SCHEMA / Dossier-Empfängerprüfung: keinen Datensatz schließen, bis Nutzlastroute, Empfänger, Beweisstatus, Materialauszahlung, Pfandanpassung, Quarantäneverzug, ökologische Folge und ungelöste Kosten geschrieben sind. Credits werden nach Verwahrung freigegeben, nicht davor.
 
 ## Audio
 
-Credits schließen keinen Tatort.
+Dossier-Relais: Empfänger hat Verwahrung akzeptiert. Quarantäneuhr startet, bevor der Kredit frei ist.
 
 ## Field Note
 
-Credit-Wert, Quarantäneverzögerung und Dossierflags werden erst erfasst, wenn Empfänger und Beweisstatus klar sind.
+Nenn ein Ende nicht bezahlt, bevor der Empfänger genannt ist. Falscher Empfänger, falsche Zukunft; derselbe Ozean, andere Rechnung.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/de_DE. -->

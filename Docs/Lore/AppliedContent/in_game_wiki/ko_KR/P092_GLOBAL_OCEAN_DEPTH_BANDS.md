@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "전역 해양 심도대"
+title: "전 지구 해양 수심대"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 전역 해양 심도대
+# 전 지구 해양 수심대
 
-HECTON-8의 바다는 하나의 바닥선이 아니라 심도대로 읽는다. 유광 선반에는 아직 빛, 잔해, 조류, 부주의한 조종사가 있다. 산업 선반은 케이블 암초, 배관 우리, 오래된 적재 갑판을 품는다. 그 아래 염수 계단은 소나와 밸러스트를 굽힌다. 심연 기계장은 수리를 벌준다. Atlas 분지에서는 압력이 날씨가 아니라 관할처럼 행동한다.
+HECTON-8의 ocean은 bottom까지 이어지는 one long fall이 아니다. stack of laws다. photic shelf는 아직 light, algae, broken habitat skin, 고칠 수 있는 bad decisions를 허용한다. industrial shelf는 pipe cages, cable reef, loading decks, machines that answer late다. brine stairs는 sound and ballast를 굽혀 route가 near and unreachable 동시에 되게 한다. abyssal machine fields는 repairs를 cold patience로 벌한다. Atlas basin은 danger보다 깊다. 거기서는 pressure becomes jurisdiction.
 
 ## Scanner
 
-심도 도표. 첫 선반은 나쁜 밸러스트를 봐주지만, 아래 물은 압력과 열과 침묵으로 모든 실수를 청구한다.
+depth chart. first shelf는 poor ballast를 용서한다. lower water는 pressure, heat, noise, silence로 every mistake를 청구한다.
 
 ## Terminal
 
-심도대: 0-250m 유광 인양 선반; 250-1200m 산업 선반과 케이블 암초; 1200-2800m 염수 계단/협곡; 2800-4300m 심연 기계장; 4300-5600m Atlas 분지.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-백 미터마다 습관 하나를 빼앗긴다.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-HECTON-8에서 깊이는 같은 숫자를 입은 법, 날씨, 경계, 굶주림이다.
+HECTON-8의 depth는 같은 number를 입은 law, weather, border, hunger다.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ko_KR. -->

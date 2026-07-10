@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Cadena de responsabilidad de la Gran Marea
 
-La Gran Marea no fue un botón pulsado en una sala de juntas. HECTON-8 se inundó por amplificación de mareas, fallo de criosfera, química de presión y márgenes de ingeniería colonial vendidos como aceptables. La distinción importa porque vuelve el crimen más sucio, no más limpio. Deep Reach no necesitaba inventar un desastre. Le bastó con infradimensionar la evacuación independiente, dejar activa la ponderación de continuidad de Atlas, preservar activos de reclamación por encima de la extracción humana y esconder la demora en lenguaje de certificación. El agua fue física. La cadena de responsabilidad es el conjunto de decisiones que convirtió la física en abandono.
+La Gran Marea no fue un botón en una sala de juntas. HECTON-8 se inundó por amplificación de marea, fallo de criosfera, química de presión y márgenes de ingeniería colonial vendidos como aceptables. Esa distinción vuelve el crimen más sucio, no más limpio. Deep Reach no necesitaba inventar un desastre: necesitaba construir poca evacuación independiente, dejar activa la ponderación de continuidad Atlas, preservar activos de reclamación antes que extracción humana y esconder la demora detrás del lenguaje de certificación. El agua fue física. La cadena de responsabilidad es el conjunto de decisiones que convirtió la física en abandono.
 
 ## Scanner
 
-La inundación fue física real: acoplamiento de mareas, colapso de hielo, química de presión y márgenes tasados demasiado finos. El crimen fue la pila de prioridades construida alrededor.
+La inundación fue física real: acoplamiento de marea, colapso de hielo, química de presión y márgenes tasados demasiado finos. El crimen fue la pila de prioridades construida alrededor.
 
 ## Terminal
 
-RESUMEN DEL INCIDENTE: cascada geotécnica confirmada. Capacidad de evacuación por debajo de la demanda de riesgo extremo. Ponderación de continuidad de Atlas activa. Extracción humana pendiente de certificación.
+RESUMEN DE INCIDENTE: cascada geotécnica confirmada. Capacidad de evacuación bajo demanda de riesgo extremo. Ponderación de continuidad Atlas activa. Extracción humana pendiente de certificación.
 
 ## Audio
 
-El mar hizo la inundación. La compañía decidió qué puertas se quedaban en papel.
+El mar hizo la inundación. La compañía decidió qué puertas seguirían siendo papeleo.
 
 ## Field Note
 
-Deep Reach no necesitaba ahogar la luna. Bastaba con convertir la evacuación en algo opcional.
+Deep Reach no necesitaba ahogar la luna. Bastaba con volver opcional la evacuación.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/es_ES. -->

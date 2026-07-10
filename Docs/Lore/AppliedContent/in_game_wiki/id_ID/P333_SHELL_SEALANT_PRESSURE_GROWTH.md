@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Pertumbuhan Sealant Cangkang Tekanan
 
-Pertumbuhan sealant cangkang tekanan adalah kesalahan Atlas yang paling bersih: perbaikannya bekerja. Lapisan kalsium-silikat dan resin biopolimer menutup retakan, menahan tekanan statis, dan menyelamatkan ruangan yang seharusnya tenggelam. Pertumbuhan yang sama dapat mengubur label, pegangan, panah kapur, bekas goresan, dan rute manusia terakhir di stasiun.
+Pertumbuhan sealant cangkang bisa menyelamatkan ruangan dan mengurung orang dalam jam yang sama. Lapisan kalsium-silikat dan resin menutup retakan, menurunkan laju bocor, dan memberi Atlas perbaikan terukur. Pertumbuhan itu tidak memeriksa apakah ia menutup panah rute, label tekanan, atau satu-satunya roda manual.
 
 ## Scanner
 
-Sealant berlapis menutup retakan dan mengubur tanda rute pekerja di bawah cangkang putih.
+Cangkang kalsium putih menutup retakan dan mengubur panah rute di tepi palka. Memotongnya bisa membuka bocor lagi.
 
 ## Terminal
 
-KONFLIK PERBAIKAN: laju bocor turun, batas tekanan membaik, tanda keluar tertutup. Memotong cangkang dapat membuka ulang jalur banjir.
+KONFLIK PERBAIKAN / DOOR S-9: laju bocor turun, batas tekanan membaik, tanda keluar tertutup, roda manual terkubur 62 persen. Izin cutter memerlukan jalur banjir bertahap.
 
 ## Audio
 
-Ruangan itu selamat. Jalan keluarnya tidak.
+Dinding bertahan. Roda palka ada di bawah sepuluh sentimeter cangkang.
 
 ## Field Note
 
-Paling baik untuk pintu, rute merayap, dan pilihan tekanan saat perbaikan dan bahaya adalah objek yang sama.
+Sebelum memotong cangkang putih dari palka, cari ke mana air pergi terakhir kali. Label itu mungkin terkubur karena alasan.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/id_ID. -->

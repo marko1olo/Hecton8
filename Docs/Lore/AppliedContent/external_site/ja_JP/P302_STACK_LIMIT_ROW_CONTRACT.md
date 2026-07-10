@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "スタック上限データ境界"
+title: "圧力スタック制限行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# スタック上限データ境界
+# 圧力スタック制限行
 
-HECTON-8 のインベントリ圧は、封じ込め、認証、汚染質量から来る。ゲームは単純なスタックを見せられるが、lore はなぜそのスタックが安全で、なぜ壊れ、なぜ海がアイコンを気にしないかを語る。
+HECTON-8の在庫圧力は容器から始まる。スクラップは詰め込めるが、圧力サンプル、汚染部品、封印されたルート機材は、容器等級、質量、ID、汚染印が一致した時だけ積める。小さな破片が大きな板より多くの貨物を止めることがある。
 
 ## Scanner
 
-スタック行はアイコンの山を拒否する: 容器分類、圧力等級、汚染、質量が数を決める。
+スタック要求拒否：容器クラス、圧力等級、汚染段階、質量ウィンドウ料金、マニフェストIDが一致しない。
 
 ## Terminal
 
-STACK CONTRACT: スタック数には容器タイプ、圧力等級、汚染段階、質量分類、警告 tier、save-stable identity が必要。木箱は圧力容器ではない。
+スタック受入スキーマ / Black Keel貨物デスク：スタック数には容器種別、定格圧力、シール証明、汚染段階、質量クラス、警告階層、抵当質量ウィンドウ、安定したマニフェストIDが必要。箱ラベルは封じ込め認証ではない。
 
 ## Audio
 
-木箱は圧力容器ではない。
+貨物デスク：スタック拒否。その箱は吊り上げ用で、圧力保管用ではない。
 
 ## Field Note
 
-スタック上限は table-owned のまま、セーブ identity に対して安定させる。
+場所を空けるために未知のサンプルを重ねるな。悪いシール一つで山全体が検疫貨物になり、運搬船は質量分を請求する。
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/ja_JP. -->

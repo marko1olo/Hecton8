@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Great Tide Physics Record
 
-The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was vulnerable to tide resonance, ice collapse, storm surge and heat discharge. Deep Reach's guilt is visible in margins, evacuation capacity and decision priority, not in a fake magic cause.
+The Great Tide Physics Record keeps the catastrophe honest. HECTON-8 was already dangerous: Aegir's spring geometry pulled on the sea, the cryosphere loaded the shelves, storm stacking erased schedule margin, and colony heat pushed sealed drainage backward. Deep Reach's crime comes after the physics. It kept lift reserve as a future cost, guarded Atlas continuity, and treated bodies as lower priority mass.
 
 ## Scanner
 
-Flood model intact. The sea did not need a villain. It needed bad margins.
+Flood model intact. The ocean did not need malice. It needed bad margins, sealed drains, and managers who kept the shift clock running.
 
 ## Terminal
 
-GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, artificial heat discharge and storm stacking exceed safe evacuation envelope by factor 3.7. Independent ascent reserve: not funded.
+GREAT TIDE MODEL: cryosphere shear, resonant ocean lift, industrial heat discharge, and storm stacking exceeded the safe evacuation envelope by factor 3.7. Independent ascent reserve: unfunded. Atlas continuity reserve: protected.
 
 ## Audio
 
-The report was right. That is why they buried it.
+The report was right. That is why it went missing.
 
 ## Field Note
 
-Do not soften it: real physics killed people, and Deep Reach made sure physics had victims.
+Do not make this mystical. Physics killed people. Deep Reach made sure physics had a crowd.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/en_US. -->

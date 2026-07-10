@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "可进入海底窗口"
+title: "可接触海底窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 可进入海底窗口
+# 可接触海底窗口
 
-可进入海底窗口，是HECTON-8破碎地壳短暂降低下降代价的地方。它们出现在坍塌陆架、裸露脊线、被重新加热的喷口伤痕，以及以不同方式承压的盐卤柱处。窗口若被强闯仍会致命。它提供与古老海底、稀有矿脉、埋藏殖民硬件，以及主海洋会压碎到不可触及之处的证据接触的机会。
+accessible seafloor windows不是safe places。它们是broken geology写下的rare permissions。collapsed shelf降低descent angle。reheated brine column在几百米内以不同方式carries pressure。exposed ridge让sonar在open water会swallow it的地方hold shape。通过这些windows，old floor变得reachable：mineral seams、crushed habitat anchors、pressure-glass、dead machines，以及main ocean本会挡在human range之外的evidence。rush a window，它会用同一种让它valuable的pressure关闭。
 
 ## Scanner
 
-裸露脊线标记。这里的壳层撕得足够薄，履带机能触碰古老海底，而不会被压成糊。
+exposed ridge marker。这里的shell撕薄到crawler能touch old floor without becoming paste。
 
 ## Terminal
 
-窗口条件：破裂地壳唇缘、由喷口重新加热的盐卤柱、坍塌陆架坡道、稳定声呐回波、低于潜服红线的压力袋。仅标记为缓慢打捞。
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline。Slow salvage only。
 
 ## Audio
 
-海只允许你在窗口触底，不是在你觉得勇敢的任何地方。
+sea只在windows里允许你touch bottom，不是在任何feel brave的地方。
 
 ## Field Note
 
-月球大部分区域把海底当作压力秘密保存。窗口是带牙的例外。
+moon的大部分把floor作为pressure secret保存。windows是exceptions with teeth。
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/zh_CN. -->

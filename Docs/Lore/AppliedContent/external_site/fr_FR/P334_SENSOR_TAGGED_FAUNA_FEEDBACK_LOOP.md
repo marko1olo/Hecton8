@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Boucle de rétroaction de faune balisée"
+title: "Boucle de faune à balise capteur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Boucle de rétroaction de faune balisée
+# Boucle de faune à balise capteur
 
-La faune balisée n'est pas composée de soldats contrôlés. Cette distinction compte. Les programmes de balisage Deep Reach ont commencé comme science de terrain et logistique ordinaires : suivre migration, tolérance à la pression, contamination et densité de route. Des années plus tard, les balises ne sont plus du matériel propre. La coquille pousse autour d'elles. Le tissu cicatriciel les décale. Des coiffes minérales changent leur signal.
+Un animal balisé n'est pas une marionnette. C'est une faune sauvage avec un instrument d'entreprise qui répond encore sous coquille et tissu cicatriciel. Cela suffit pour qu'Atlas prenne le mouvement pour une mise à jour environnementale et pour que la route d'un plongeur change sans que l'animal le sache.
 
-Atlas lit encore le retour. Un brouteur blessé traversant une passerelle noyée peut ressembler à un relevé de pression. Un prédateur portant une vieille balise peut faire paraître un couloir occupé par un risque d'infrastructure. L'animal reste lui-même, mais le système autour de lui traite le mouvement comme de la donnée. Les rencontres sauvages gagnent ainsi un second tranchant : un comportement de survie peut aussi être une rétroaction de maintenance.
+## Scanner
+
+Ancienne balise Deep Reach sous croissance coquillière sur le flanc gauche. Les paquets de mouvement pingent encore le réseau de maintenance.
+
+## Terminal
+
+BOUCLE BALISE FAUNE / DR-2147-MIG : paquets de pression, mouvement et contamination acceptés comme télémétrie environnementale. Intention animale non analysée. Les alarmes de route peuvent suivre la migration.
+
+## Audio
+
+Il ne te chasse pas. Sa balise peut quand même ouvrir la mauvaise porte.
+
+## Field Note
+
+Si une faune balisée traverse une cour relais, attends avant de croire les alarmes. L'animal est peut-être parti ; l'état de route peut encore le rattraper.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/fr_FR. -->

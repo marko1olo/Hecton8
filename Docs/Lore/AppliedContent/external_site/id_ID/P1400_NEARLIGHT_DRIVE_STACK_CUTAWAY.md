@@ -9,22 +9,18 @@ locale: id_ID
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Potongan Tumpukan Penggerak Dekat-Cahaya"
+title: "Potongan Drive Stack Nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Potongan Tumpukan Penggerak Dekat-Cahaya
+# Potongan Drive Stack Nearlight
 
-Kapal dekat-cahaya di HECTON-8 bukan anak panah bersih dengan satu mesin mustahil. Lambung yang terlihat adalah bagian terakhir yang diservis dari rute yang dipasang bertahun-tahun sebelum awak bangun. Pelat latihan Barnard Yards menggambar tumpukan dalam urutan yang benar-benar dibayar pekerja: dorongan layar-berkas, tangkapan pelet, tenggorok fusi-listrik, perisai bayang, rusuk radiator, gelendong magsail, kulit aerobrake, dan kustodi penerima.
+Potongan Barnard Yards dibuat untuk kontraktor, jadi ia berkata jujur. Ia tidak menggambar corong mesin heroik lalu menyebut masalah selesai. Ia mulai dari rute: siapa pemilik beam array, siapa membersihkan pellet lane, berapa rugi debu yang bisa diterima perisai, berapa tahun margin radiator tetap jujur, dan receiver mana yang boleh mengerem massa manusia.
 
-Setiap tahap punya pemilik berbeda dan cara gagal berbeda. Larik berkas dapat menjual keberangkatan sebelum ada yang membayar kedatangan. Jalur pelet dapat memberi makan pembakaran dan tetap membuat jendela kargo bangkrut jika toleransi tangkapan melenceng. Perisai dapat selamat dari perjalanan dengan menjadi lebih tipis. Radiator dapat menjaga semua orang hidup dengan membuat tiap kilogram tambahan menjadi pertanyaan. Akun magsail dan aerobrake menentukan apakah kapal boleh berhenti tanpa membakar laba di tangkinya.
-
-Beginilah perbatasan manusia tetap luas dan kejam tanpa merusak fisika. Cahaya membawa klaim, paket darurat, dan ancaman hukum jauh lebih murah daripada tubuh. Deep Reach dapat mewarisi hak sebelum menggerakkan lambung. Black Keel dapat berada di sistem Aegir dan tetap bertindak seperti terminal kontrak karena ia milik tumpukan penerima lokal, bukan pekerja yang terperangkap di bawahnya.
-
-Potongan itu berguna karena memberi pemain cara membaca penyelamatan sebagai mesin. Rusuk radiator berlubang, buku pengereman tertutup, atau meter kustodi bukan detail latar. Itu bagian dari jawaban atas pertanyaan sederhana: siapa membayar agar massa ini berhenti di sini, dan siapa tidak?
+Itulah bagian penting. Perjalanan nearlight tidak membuat jarak kecil. Ia membuat jarak terjadwal, diasuransikan, diukur, dan dapat dihukum. Kapal bisa membawa fusion-electric throat dan tetap tak berdaya tanpa infrastruktur berangkat. Ia bisa selamat dari cruise dan mati secara politik di slot pengereman. Di HECTON-8, penyelamatan tidak pernah hanya kapal yang berbalik. Mesin adalah rute, panas, rantai custody, dan massa yang seseorang mau bayar untuk dihentikan.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/id_ID. -->

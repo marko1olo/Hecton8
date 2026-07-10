@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Grondstoffenstapel
 
-De grondstoffenstapel toont HECTON-8 als drukeconomie. Xenon-Omega is de strategische top, niet de hele wereld.
+De grondstoffenstapel toont HECTON-8 als drukeconomie: Xenon-Omega is de strategische top, niet de hele wereld.
 
 ## Scanner
 
-Stapel: rifvezel, pekelzouten, relay-kernen, drukventielen, blue debt, pressure glass, Atlas-rooster.
+Stapel gelezen: rifvezel, pekelzouten, relaiskernen, drukkleppen, ventkatalysatoren, blauwe schuld, pressure glass, Atlas-rooster.
 
 ## Terminal
 
-Waarde: overlevingsbiota, menselijke salvage, routehardware, drukchemie, blue debt, pressure glass, continuity substrate.
+WAARDEMODEL: overlevingsbiota, menselijke salvage, routehardware, drukchemie, blauwe schuld, pressure glass, continuïteitssubstraat. Stapel niet tot één wondermateriaal reduceren.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Als de carrier massa vóór namen vraagt, weet je wie het contract bezit.
 
 ## Field Note
 
-Niets hier is alleen buit.
+Niets hier is alleen buit. Elke sample hoort bij een drukeconomie.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/nl_NL. -->

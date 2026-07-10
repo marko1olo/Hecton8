@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deriva da fila de relé"
+title: "Deriva de Relay Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deriva da fila de relé
+# Deriva de Relay Queue
 
-Comunicação atrasada é perigosa porque pode continuar precisa na hora errada. Um aviso da transportadora pode descrever uma válvula real, um vazamento real e uma rota real que já mudou sob pressão. O jogador compara idade do pacote com evidência local antes de confiar.
+Relay queue drift e o tipo mais mortal de honestidade em HECTON-8. Um delayed carrier packet pode descrever uma real valve, uma real safe door, um real low-current corridor e uma real leak que ja se moveu. A order nao e falsa; pertence a uma sala mudada por pressure, flooding, silt, heat ou collapse. Boa field practice nao e desobediencia por si so. E comparar packet age com wet paint, fresh salt, door strain, pump sound e a direcao para onde loose debris quer viajar.
 
 ## Scanner
 
-O carimbo do relé é mais velho que o vazamento que nomeia; a instrução era verdadeira para uma sala que já não existe.
+Relay stamp mais velho que a leak que ele nomeia. A instruction era verdadeira para uma room que nao existe mais.
 
 ## Terminal
 
-DERIVA DE FILA: idade do pacote excede validade da rota. Evidência local supera instrução da transportadora até uma janela de relé nova.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction ate uma fresh relay window abrir. Treat delayed route orders as archival a menos que pressure, door state e waterline coincidam.
 
 ## Audio
 
-A mensagem está correta. Esse é o problema.
+O message esta correto. Esse e o problema.
 
 ## Field Note
 
-Uma verdade atrasada ainda pode matar.
+Uma truth atrasada ainda pode matar.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/pt_BR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Powstawanie szkła ciśnieniowego"
+title: "Powstawanie pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Powstawanie szkła ciśnieniowego
+# Powstawanie pressure glass
 
-Szkło ciśnieniowe to techniczna nazwa tego, co Marauderzy nazywają blue debt, a Deep Reach ukrywa jako Xenon-Omega. Powstaje tam, gdzie spotykają się ciśnienie, kieszenie gazów szlachetnych, solanka, minerały, ciepło i zmieniona biologia.
+Pressure glass to nazwa terenowa za niebieskim długiem marauderów i językiem Xenon-Omega Deep Reach. Powstaje tylko tam, gdzie kieszenie gazu szlachetnego, defekty minerałów, gorąca solanka, zmieniona biologia i gwałtowna historia ciśnienia pozostają razem dość długo, by zablokować siatkę w pamięci.
 
-Powstawanie szkła ciśnieniowego robi z Xenon-Omega materialną ekologię hard science fiction, nie magiczną rudę. To nie ruda. To proces, który pamięta miejsce powstania.
+Powstawanie pressure glass zmienia Xenon-Omega w ekologię materiałową: substrat zrobiony przez ciśnienie, związany z utrzymaniem, obliczaniem, ciągłością Atlas i ryzykiem salvage. To nie ruda. To miejsce, które pamięta, co mu zrobiono.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/pl_PL. -->

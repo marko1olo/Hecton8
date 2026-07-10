@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relé de órgano filtro acústico"
+title: "Relé de órgano filtrante acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relé de órgano filtro acústico
+# Relé de órgano filtrante acústico
 
-Los órganos filtro acústicos crecen en viejas gargantas de relé donde el agua, la presión y el sonido hacen el trabajo que la radio no puede hacer. El tejido no habla. Cambia la impedancia, amortigua el rugido de las bombas y deja que los tonos estrechos del pinger viajen más de lo debido. Atlas puede usar ese eco repetido como relé barato, y un jugador cuidadoso como pista de ruta.
+Los órganos filtrantes acústicos se forman dentro de viejos tubos de relé donde presión, agua en movimiento y sonido siguen alimentando tejido. Pueden llevar un pinger más lejos al cortar el rugido de bomba y dejar pasar un tono estrecho. El mismo pliegue puede retrasar el retorno y mover una pared mapeada varios metros, suficiente para meter a un buzo en un callejón sin salida.
 
 ## Scanner
 
-Tejido blando de bafle dentro del tubo de relé deja pasar tonos del pinger y mata el ruido de bomba.
+Tejido de bafle en la garganta del relé deja pasar un tono estrecho de pinger y corta ruido de bomba. Mapa de retorno desfasado.
 
 ## Terminal
 
-NOTA DE RELÉ: pliegues vivos rechazan ruido mecánico amplio, dejan pasar pulsos estrechos del pinger y desplazan la fase de los ecos de retorno. Confianza de mapa aguas abajo reducida.
+TUBO DE RELÉ A-17: pliegues vivos pasan pulsos pinger de 8-12 kHz, rechazan ruido ancho de bomba y añaden retardo de retorno. Confianza del mapa aguas abajo reducida. No certificar ruta de vuelta solo con este relé.
 
 ## Audio
 
-Si responde como equipo, recuerda que el equipo no sangra.
+Respondió al pinger. El tubo pierde fluido claro. Márcalo como animal, no como relé.
 
 ## Field Note
 
-Usar donde el sonar parezca útil antes de volverse sospechoso.
+Si un relé responde demasiado limpio en un tubo inundado, lanza un segundo pinger desde otro ángulo. Buen sonido aún puede ser mal mapa.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/es_ES. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "سلطة تأخر الضوء"
+title: "سلطة تأخير الضوء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# سلطة تأخر الضوء
+# سلطة تأخير الضوء
 
-نداء الاستغاثة في HECTON-8 هو شحنة مادية من المعنى. يخرج من صاري غارق، يعبر فضاء Aegir بسرعة الضوء، ينتظر داخل مخازن الترحيل، ثم يصل إلى Black Keel عبر طابور يعرف مسبقا كيف يسعر الخطر. أول تأخر هو المسافة الصادقة. التأخيرات اللاحقة بشرية: فئة الحيازة، نوافذ العاصفة، لغة المسؤولية، وعادة الناقل في الرد على الأصل قبل الإنسان. لذلك قد يكون الجواب جديدا تقنيا وعديم الفائدة داخل غرفة ضغط تنهار. يجب أن يشعر القارئ بقسوة الفيزياء العادية قبل أن يرى قسوة الشركة فوقها.
+تعرف سلطة تأخير الضوء اتصالات HECTON-8 كشيء مادي ومتأخر وcontract-filtered: distance وweather وrelay buffers وcustody queues تقرر متى تصبح signal usable.
+
+## Scanner
+
+Relay mast cache. خرج call نظيفا، ثم انتظر خلف light وqueue law وstorm scatter وAegir line-of-sight.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active حتى تؤكد fresh signal window أي override.
+
+## Audio
+
+الرد قادم. هذا لا يجعله rescue.
+
+## Field Note
+
+لم يراقب أحد أول scream. حملته physics ببطء كاف لتلحق به policy.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ar_SA. -->

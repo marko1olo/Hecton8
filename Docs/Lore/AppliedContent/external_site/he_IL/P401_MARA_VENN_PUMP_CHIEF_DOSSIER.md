@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Mara Venn/Pump Chief"
+title: "מארה ון, ראש צוות המשאבות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Mara Venn/Pump Chief
+# מארה ון, ראש צוות המשאבות
 
-HE LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+מארה ון מעגנת את HECTON-8 דרך נוהל, לא דרך נאום. הראיות מחדר המשאבות אינן הופכות אותה לפסל; הן מראות כיצד הישרדות נספרה, נידונה ונשמרה פתוחה בידי מי שתפקידה נמשך כש-Deep Reach כבר כינתה את הנספח התחייבות.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+תיק: מארה ון. שפת התג, לוח הקצב ויומן המים המתוקן מצביעים כולם על חדר המשאבות P-63.
 
 ## Terminal
 
-HE LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+חדר משאבות P-63 / VENN, MARA: ידית המעקף לוטשה דרך שכבות הכפפה; לוח קצב מוצמד ליד סימני אובדן ביניקה. תיקון היומן הופך מים חסרים מדליפה נופית לעומס מכונה.
 
 ## Audio
 
-HE LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+ון לא השאירה פרידה. היא השאירה קצב על לוח המשאבות כדי שאנשים מפוחדים יוכלו לספור את הנשימה הבאה.
 
 ## Field Note
 
-HE LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+מקמו את הראיות של ון ליד חידות קצב משאבות, יומני מים וידיות מעקף. החפצים שלה צריכים לגרום לשחקן לשמוע תשתית כנשימה.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/he_IL. -->

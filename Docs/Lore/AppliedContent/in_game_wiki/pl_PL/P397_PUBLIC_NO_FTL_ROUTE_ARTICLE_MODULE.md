@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Opóźnienie trasy bez FTL
 
-Odległość jest zasadą przetrwania na trasie Aegir. Prawo, dług i stare packets mogą dotrzeć do gracza długo przed carrierem, tenderem, częścią zamienną albo ratownikiem. Odpowiedź relay nie kasuje pracy z ciśnieniem przed tobą; dowodzi tylko, że ktoś wstawił twój claim do kolejki.
+Odległość jest limitem operacyjnym na trasie Aegir. Pakiet może wyprzedzić statek. Odpowiedź prawna może dotrzeć na HECTON-8 przed częścią, ekipą tendera, butlą ciśnieniową albo ratownikiem, którzy uczyniliby ją użyteczną. Kontakt przekaźnikowy zmienia więc dokumenty, zanim zmieni pomieszczenie wokół ciebie. Gdy archiwum mówi, że pomoc uznała roszczenie, sprawdź wiek pakietu, masę nośnika, slot hamowania i lokalną pogodę zejścia, zanim zaufasz zdaniu.
 
 ## Scanner
 
-Zapis tranzytowy. Ruch Aegir zależy od precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody i opóźnienia prawnego.
+Zapis tranzytu. Ruch Aegir zależy od map sond, pasów wiązki, frachtu fuzji pelletowej, masy hamowania, wieku pakietu, przechowania przekaźnikowego i okien zejścia przy pogodzie.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // GRANICA TRANZYTU. Brak FTL. Brak Ansible. Żywy ratunek wymaga fizycznego transferu, braking architecture, carrier position, descent mass i ważnego local window.
+PUBLICZNY WĘZEŁ ARCHIWUM // LIMIT TRANZYTU. FTL: brak. Ansible: brak. Żywy ratunek wymaga pozycji nośnika, przydziału hamowania, masy zejścia, lokalnej pogody i niewygasłego okna przechowania.
 
 ## Audio
 
-Pomoc może być obecna prawnie i fizycznie oddalona o lata.
+Nośnik może zapisać twój alarm i nadal być o lata masy dalej.
 
 ## Field Note
 
-Notatka Maraudera: gdy relay odpowie, zapytaj, ile lat ma odpowiedź i jaką masę może ruszyć.
+Notatka Maraudera: każda odpowiedź ratunkowa potrzebuje czterech liczb: wiek pakietu, masa nośnika, slot hamowania, okno zejścia.
 
 <!-- In-Game Wiki; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/pl_PL. -->

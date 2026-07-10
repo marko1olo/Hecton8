@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Granica danych limitu stosu"
+title: "Wiersz limitu stosu ciśnieniowego"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica danych limitu stosu
+# Wiersz limitu stosu ciśnieniowego
 
-Granica utrzymuje fizyczny charakter ekwipunku. Przedmioty układają się tylko wtedy, gdy pojemnik, ciśnienie, masa i skażenie mogą przeżyć tę samą trasę bez okłamywania pliku zapisu.
+Limity stosu są fizycznymi zasadami ładunku. Dwa narzędzia mogą dzielić pojemnik; dwie próbki ciśnieniowe nie mogą dzielić historii, jeśli jedno uszczelnienie pękło albo jeden tag niesie szum zgodny z Atlas. Black Keel nalicza masę przez okno orbitalne i odrzuca stosy, które zmusiłyby manifest do kłamstwa o zamknięciu.
 
 ## Scanner
 
-Wiersz stosu odrzuca kupy ikon: klasa naczynia, ciśnienie, skażenie i masa decydują o liczbie.
+Żądanie stosu odrzucone: klasa naczynia, rating ciśnienia, etap skażenia, opłata okna masy i tożsamość manifestu nie pasują.
 
 ## Terminal
 
-STACK CONTRACT: liczba w stosie wymaga typu naczynia, ratingu ciśnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia i stabilnej tożsamości zapisu. Skrzynia nie jest naczyniem ciśnieniowym.
+SCHEMAT PRZYJĘCIA STOSU / biurko ładunkowe Black Keel: liczba w stosie wymaga typu naczynia, ciśnienia znamionowego, certyfikatu uszczelnienia, etapu skażenia, klasy masy, poziomu ostrzeżenia, okna masy objętej zastawem i stabilnej tożsamości manifestu. Etykieta skrzyni nie certyfikuje zamknięcia.
 
 ## Audio
 
-Skrzynia nie jest naczyniem ciśnieniowym.
+Biurko ładunkowe: stos odrzucony. Skrzynia jest oceniona do podnoszenia, nie do nadzoru ciśnieniowego.
 
 ## Field Note
 
-Limity stosów pozostają table-owned i stabilne dla save identity.
+Nigdy nie układaj nieznanych próbek dla oszczędności miejsca. Jedno złe uszczelnienie robi z całej kupy ładunek kwarantanny, a przewoźnik i tak policzy masę.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/pl_PL. -->

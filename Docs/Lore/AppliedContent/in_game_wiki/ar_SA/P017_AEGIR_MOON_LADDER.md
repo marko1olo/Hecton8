@@ -19,22 +19,22 @@ localization_flags: 1
 
 # سلم أقمار Aegir
 
-سلم أقمار Aegir يضم علامات إشعاع وأجسام relay وclaims مستنزفة وأخطار رنين وHECTON-8 وأقمار تخزين بارد وأجساماً خارجية. قيمة HECTON-8 أنه بين محيط حي وضغط مداري.
+أقمار Aegir آلة مسارات. أسماؤها ليست زينة في السماء؛ إنها تقرر الظلال، وصمت المرحلات، ومرحلة المد، وانتظار carrier، وكلفة تحريك الكتلة. HECTON-8 هو Aegir-VIII في السلم العملي، ثمين لأن ضغط محيطه وهندسة المرحلات يجعلان الاستخراج والهجر مكلفين.
 
 ## Scanner
 
-تسلسل الأقمار: Cinder، Hook، Glass، Switch، Drywell، Brinehook، Rake، HECTON-8، Pale، Longmark، Grave، Farline.
+تم حل سلم الأقمار: Skarn وVela وClaw وLumen وThorne وAnvil وKestrel وHECTON-8 وMute. Kestrel وMute يثنيان النوافذ.
 
 ## Terminal
 
-HECTON-8 هو Aegir-VIII: ليس داخلياً ولا الأبعد. رنين Rake وظل Pale يغيران المد وجودة الحزم.
+ملاحظة مسار AEGIR: يأتي HECTON-8 بعد Kestrel في السلم العملي. يجب أن تتطابق ظل المرحل، ومرحلة المد، وحزام الإشعاع، وهندسة نقل Black Keel قبل صعود الكتلة.
 
 ## Audio
 
-عد الأقمار قبل أن تثق بنافذة.
+عد Kestrel قبل أن تثق بالنافذة.
 
 ## Field Note
 
-السماء آلية وليست خلفية.
+السماء جدول عمل. أخطئ ظلا واحدا فيصبح carrier مجرد شائعة.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/ar_SA. -->

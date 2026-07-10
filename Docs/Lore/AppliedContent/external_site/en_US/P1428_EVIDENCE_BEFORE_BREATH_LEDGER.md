@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Public Site Proof Before Rescue Article
 spoiler_tier: 1
-title: "Evidence Before Breath Ledger"
+title: "Distress Hash Notary Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Evidence Before Breath Ledger
+# Distress Hash Notary Ledger
 
-The strongest HECTON-8 isolation is not radio silence. It is an answered message that changes almost nothing. A distress hash, sample certificate or claim packet can move because it is compact, redundant and legally useful. It does not require cabin volume, quarantine, medical risk or receiver heat margin.
+## Distress Hash Notary Ledger
 
-That distinction keeps the setting hard. The player can be heard without being saved. Their data can become valuable before their body becomes recoverable. Black Keel and the wider route economy are not absent; they are present as systems with priorities that were built for cargo, liability and ownership before mercy.
+The cradle records what can travel first: identity hash, sample hash, time window, pressure telemetry, witness seal. Those fields are compact enough for a relay window and useful enough for claim desks, insurers and public mirrors. They do not reserve a seat.
 
-For wiki and site use, Evidence Before Breath is the clean rule: proof can outrun rescue. The drama comes from forcing a living person back into a route that was happy to carry their evidence alone.
+The missing fields sit below the accepted stamp: route owner, breathing-mass custody, quarantine berth, lift reservation, braking margin. Until those are assigned, the route has accepted evidence rather than the person who made it.
+
+The ledger is useful because it prevents a false comfort. An answered packet is not silence breaking into rescue. It is proof entering custody while the body remains under pressure. That proof can create leverage later. It cannot warm the suit, clear contamination or stop the air counter by itself.
 
 <!-- External Site; generated from P1428_EVIDENCE_BEFORE_BREATH_LEDGER/en_US. -->

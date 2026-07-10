@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Relay Queue Drift
 
-Relay Queue Drift is the difference between truth and usefulness. HECTON-8 does not need fake static or magic interference to make communication frightening. A message can arrive intact, authenticated, and perfectly correct for the room as it existed thirty minutes ago. Then water moves a hatch, pressure bends a frame, Atlas growth seals the wrong crack, and the same instruction becomes a trap. This gives the world a procedural kind of dread: the player is not solving whether the system lies, but whether the system is too old to trust.
+Relay Queue Drift makes message age a survival variable: remote orders may be true, stale, and lethal at the same time.
+
+## Scanner
+
+Relay stamp older than the leak it names. The instruction was true for a room that no longer exists.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction until fresh relay window opens. Treat delayed route orders as archival unless pressure, door state, and waterline match.
+
+## Audio
+
+The message is correct. That is the problem.
+
+## Field Note
+
+A late truth can still kill.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/en_US. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder Correction Note Sample"
+title: "Marauder Correction: Auth Delay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,27 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Marauder Correction Note Sample
+# Marauder Correction: Auth Delay
 
-The Marauder Correction Note Sample is not a confession and it is more useful because of that. It is a dirty annotation on top of an official accident form, written by someone who had learned to distrust clean causes. The note does not say who killed whom. It says what must be checked before the word accident is allowed to stand: pump certificate, shift count, body category, door-clock mismatch and the authorization queue that held rescue long enough for the room to become evidence. In HECTON-8 terms this makes the object a bridge between environmental proof and faction voice. The colony record tries to end the story with weather. The marauder hand forces the player back into the room.
+This Marauder correction is a dirty annotation on an official accident form. It does not solve the case. It blocks a clean cause from closing the room too early. The official line says weather. The correction points to pump certification, shift count, body category, door-clock mismatch and the rescue authorization queue.
+
+The six-minute clock offset is the useful cut. It turns suspicion into a checkable record: door log against claim stamp, queue hold against body count. The Marauder hand does not become an omniscient narrator. It leaves the next diver with a short list of records that can prove whether the room was allowed to drown.
 
 ## Scanner
 
-Grease-pencil correction on an accident form: not weather, not panic, an authorization delay with a body count attached.
+Grease-pencil correction over accident form. Official cause: WEATHER. Correction: AUTH DELAY. Door clock runs six minutes ahead of claim stamp.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch, rescue authorization queue.
+MARAUDER CORRECTION MC-12
+Official cause: weather / rejected
+Check before claim: pump certificate; shift count; body category; door-clock mismatch; rescue authorization queue
+Clock fault: door +00:06 before claim stamp
+Action: hold accident label until queue log is recovered.
 
 ## Audio
 
-Someone smelled the rot in the paperwork before the room dried.
+Weather did not hold the door. The queue did.
 
 ## Field Note
 

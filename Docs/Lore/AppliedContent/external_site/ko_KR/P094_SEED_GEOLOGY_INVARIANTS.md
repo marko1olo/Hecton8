@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "시드 지질 불변값"
+title: "측량 지질 불변항"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 시드 지질 불변값
+# 측량 지질 불변항
 
-HECTON-8의 모든 인양 실행은 상처를 통과하는 다른 루트를 드러낼 수 있다. 협곡이 더 일찍 열리고, 케이블 암초가 안전 주머니를 숨기고, bloom이 지난번 비어 있던 길로 생물을 밀어 넣고, 증거 사슬이 새 순서로 나타날 수 있다. 그러나 달의 물리는 재미를 위해 초기화되지 않는다. Aegir는 주성으로 남는다. HECTON-8은 궤도 사다리에 남는다. Great Tide는 간격을 지킨다. 심도대는 같은 잔혹한 순서로 쌓인다. blue debt는 압력 행동을 지킨다. Atlas는 가장 깊은 분지와 묶여 있다.
+Survey Geology Invariants는 changing charts와 route uncertainty를 허용하면서 fixed astronomy, depth order, Great Tide logic, blue-debt behavior, Atlas-basin canon을 보존한다.
+
+## Scanner
+
+Atlas survey note. salvage chart는 disagree with itself할 수 있지만 moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+later chart는 evidence를 differently bury할 수 있다. gravity, tide, guilt는 rewrite할 수 없다.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/ko_KR. -->

@@ -19,19 +19,19 @@ localization_flags: 1
 
 # Registro ecológico
 
-El registro ecológico protege el tono: belleza, presión y colapso de categorías.
+El registro ecológico mantiene legible HECTON-8: belleza nativa, adaptación industrial y biología de reparación Atlas deben leerse como capas vivas distintas.
 
 ## Scanner
 
-Ecología somera brillante confirmada. Más abajo hay flora de cable, cuerpos filtro e intrusión Atlas.
+División de registro confirmada: vida nativa de plataforma, biota adaptada a cables, organismos de reparación enrutados por Atlas. Identificar antes de cortar.
 
 ## Terminal
 
-Registro dividido: ecología nativa de presión, biota adaptada a colonia, organismos alterados por Atlas. No mezclar.
+DIVISION REGISTRO: ecología de presión nativa; biota de cables adaptada a colonia; organismos de reparación alterados por Atlas. Etiquetar mal puede destruir sellos activos o borrar evidencia de ruta.
 
 ## Audio
 
-Si todo es monstruo, nada es violación.
+Si todo es monstruo, cortarás lo que mantiene la presión.
 
 ## Field Note
 

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 中继队列漂移
 
-中继队列漂移是真相和可用性之间的差别。HECTON-8不需要假静电或魔法干扰来让通信可怕。一条消息可以完整、已认证，并且对三十分钟前的房间完全正确地抵达。然后水移动舱门，压力弯曲框架，Atlas生长封住错误裂缝，同一条指令就变成陷阱。玩家要判断的不是系统是否撒谎，而是系统是否已经太旧，不能信任。
+中继队列漂移让message age成为生存变量：remote orders可能同时true、stale和lethal。
+
+## Scanner
+
+relay stamp比它命名的leak还老。instruction对一个已经不存在的room曾经正确。
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity。fresh relay window opens之前，Local evidence outranks carrier instruction。除非pressure、door state和waterline一致，否则将delayed route orders视作archival。
+
+## Audio
+
+message是正确的。这正是问题。
+
+## Field Note
+
+迟到的truth仍然能杀人。
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/zh_CN. -->

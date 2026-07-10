@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "مطالبات الأقمار الخارجية الباردة"
+title: "Cold claims للأقمار الخارجية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# مطالبات الأقمار الخارجية الباردة
+# Cold claims للأقمار الخارجية
 
-مطالبات الأقمار الخارجية الباردة تثبت أن Aegir نظام كامل، لا قمر واحد مسكون. مشاريع المحلول الفاشلة، وطرق المعدن المجمدة، والمنارات الميتة تصنع اقتصاد salvage الذي يجلب Marauders إلى شبكة المرور.
-
-المهم ليس المسافة بل النمط. قد يكون الطريق ميتا ويبقى قابلا للفوترة. قد تكرر منارة الحيازة بلا طاقم حي. HECTON-8 أسوأ حالة مرئية، لكنها ليست أول مكان تعلم فيه Aegir تحويل الفقد إلى بنية تحتية.
+تثبت outer moon cold claims أن Aegir هو system، وليس one haunted ocean. لقد خلقت failed brine prospects وmothballed metal routes وcold caches وbeacons with no living crew اقتصاد salvage قبل أن يصبح HECTON-8 الاسم الذي يهمس به الجميع. المهم هو pattern. يمكن لroute أن يكون dead وstill billable. ويمكن لbeacon أن repeat custody into empty space. ويمكن لcompany أن learn أن loss becomes cheaper عندما يصبح filed as infrastructure. HECTON-8 هو worst visible case، وليس first lesson.
 
 ## Scanner
 
-منارة مطالبة خارجية. ليس كل شيء ميت في Aegir موجودا على HECTON-8.
+Outer claim beacon. ليس كل dead thing in Aegir على HECTON-8.
 
 ## Terminal
 
-أرشيف السلم الخارجي // فشل مشروع محلول Thorne. تم تجميد طريق تصدير Anvil. منارة Mute تكرر ping الحيازة بلا إعلان طاقم نشط.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-تعلم Aegir كيف يفقد الناس قبل أن تنهي HECTON-8 الدرس.
+تعلم Aegir أن lose people قبل أن تنهي HECTON-8 الlesson.
 
 ## Field Note
 
-المطالبات الباردة تجعل Marauders ممكنين. كما تعلم الشركات كيف تدفن الأنماط.
+تجعل cold claims وجود marauders ممكنا. وتعلم companies كيف bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/ar_SA. -->

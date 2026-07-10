@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Preuves de responsabilité Deep Reach
 
-La liability de Deep Reach fonctionne parce que l'inondation n'a pas besoin de fausse physique. Le Great Tide était réel. Les dégâts évitables apparaissent dans les margins, les horloges, les access holds et les dossiers qui nettoyaient les travailleurs en catégories avant toute récupération.
+La responsabilité Deep Reach n'exige pas de fausse physique. La Grande Marée a frappé HECTON-8 avec une force océanique réelle : résonance, cisaillement cryosphérique, empilement d'orages et rupture de pression. La part évitable se trouve à côté de cette force, dans les documents et les pièces. Une marge fut acceptée après une alerte capteur. Une porte resta sous autorité exécutive. Une file attendit une validation légale. Une pondération Atlas classa les machines au-dessus des personnes dans la mauvaise fenêtre. La chaîne de preuves tient parce que l'eau est honnête et les papiers non.
 
 ## Scanner
 
-Archive de liability. Physique réelle des marées, margin risk accepté, retard d'évacuation, quarantine holds, Atlas weighting et langage de perte assaini convergent dans la même chaîne de preuves.
+Dossier de responsabilité. La force de marée est réelle ; changements de marge signés, retenues de quarantaine, files d'évacuation, pondérations Atlas et langage de perte portent la part évitable.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // PREUVES DE LIABILITY. Great Tide accepté. Revue ouverte sur sensor margins, retard evacuation queue, quarantine holds, Atlas weighting, worker classification et loss conversion.
+NOEUD D'ARCHIVE PUBLIC // REVUE RESPONSABILITE DR-H8. Force naturelle acceptée. Champs ouverts : marge capteur, autorité porte, retard file, retenue quarantaine, pondération Atlas, conversion travailleur vers catégorie de réclamation.
 
 ## Audio
 
-Une catastrophe peut être naturelle et porter des signatures.
+La marée a brisé l'acier. Les signatures ont décidé quelles portes resteraient fermées.
 
 ## Field Note
 
-Note de Maraudeur : ne discute pas avec la marée. Discute avec les signatures à côté.
+Note de Maraudeur : ne conteste jamais la marée. Pose les signatures à côté de l'horloge de marée.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/fr_FR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Datengrenze der Endauszahlung"
+title: "Endauszahlungs-Datensatzzeile"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datengrenze der Endauszahlung
+# Endauszahlungs-Datensatzzeile
 
-HECTON-8-Enden erfassen, wer den Beweis erhielt, welche Verwahrung er gewann, was bezahlt wurde und welche Kosten offen bleiben. Eine Zahl kann eine Vertragszeile schließen. Sie kann den Ozean nicht schließen.
+HECTON-8-Enden werden nach Empfänger und Verwahrung erfasst. Der Datensatz nennt, was den Ozean verlassen hat, wer es empfing, welche Beweise überlebten, was bezahlt wurde und was beschränkt bleibt. Eine Auszahlung kann eine Buchungszeile schließen, während Anspruch, Quarantäne oder Ökologie offen bleiben.
 
 ## Scanner
 
-Endzeile bindet Empfänger, Verwahrung, Beweisstatus, Auszahlung und ungelöste Folge.
+Ausgangszeile offen: Empfänger, Nutzlastroute, Beweisstatus, Auszahlung, Quarantäneverzug und ungelöste Folge sind nicht geschlossen.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: Zeilen erfordern Payloadroute, Empfänger, Beweisstatus, materielle Auszahlung, rechtliche Folge, Quarantäneverzug und ungelöste Kosten. Credits schließen keinen Tatort.
+ENDAUSZAHLUNGS-SCHEMA / Dossier-Empfängerprüfung: keinen Datensatz schließen, bis Nutzlastroute, Empfänger, Beweisstatus, Materialauszahlung, Pfandanpassung, Quarantäneverzug, ökologische Folge und ungelöste Kosten geschrieben sind. Credits werden nach Verwahrung freigegeben, nicht davor.
 
 ## Audio
 
-Credits schließen keinen Tatort.
+Dossier-Relais: Empfänger hat Verwahrung akzeptiert. Quarantäneuhr startet, bevor der Kredit frei ist.
 
 ## Field Note
 
-Credit-Wert, Quarantäneverzögerung und Dossierflags werden erst erfasst, wenn Empfänger und Beweisstatus klar sind.
+Nenn ein Ende nicht bezahlt, bevor der Empfänger genannt ist. Falscher Empfänger, falsche Zukunft; derselbe Ozean, andere Rechnung.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/de_DE. -->

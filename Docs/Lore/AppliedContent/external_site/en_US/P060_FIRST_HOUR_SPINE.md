@@ -19,7 +19,7 @@ localization_flags: 0
 
 # First Hour Spine
 
-First Hour Spine defines the opening rhythm of HECTON-8. The player starts with tangible engineering tasks and visual wonder, then sees those tasks connect to a corporate lie and a maintenance ecology that has entered biology. This keeps the first route playable and atmospheric while planting the larger investigation: the ocean is not hiding the story; it is preserving the evidence in pressure, salt and procedure.
+First Hour Spine defines the opening rhythm of HECTON-8. Tangible engineering tasks and visual wonder arrive first, then those tasks connect to a corporate lie and to a maintenance ecology that has entered biology. The ocean is not hiding the story; it is preserving the evidence in pressure, salt and procedure.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ The first safe room is not clean. It is only holding its breath better than you 
 
 ## Field Note
 
-The opening must be beautiful before it becomes accusing.
+The opening has to be beautiful before it starts accusing.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/en_US. -->

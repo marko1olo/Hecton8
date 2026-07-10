@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ZH LOC HOLD: Juno Kade/Relay"
+title: "朱诺·凯德，中继公证员"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Juno Kade/Relay
+# 朱诺·凯德，中继公证员
 
-ZH LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+朱诺·凯德在中继台工作，那里是HECTON-8法律与光速相撞的地方。他的印章、包裹梯、见证带和托盘划痕显示了一种为延迟而生的工作：把事实变成实体，盖下触碰者，保持完整，直到载体或接收方接管保管。证据不承诺救援。它解释了为什么在每条消息都晚于尸体冷却的系统里，证词仍然重要。
 
 ## Scanner
 
-ZH LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+档案：朱诺·凯德。印面、包裹托盘和见证带带着同一枚迟窗保管标记。
 
 ## Terminal
 
-ZH LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+A-17中继场 / KADE, JUNO：每个载体窗口后为外发包裹盖章。印压、托盘尘痕和见证带确认了保管链，哪怕回复时间已经超过救援时间。
 
 ## Audio
 
-ZH LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+凯德认证那些来得太晚、救不了任何人的事实，并且仍要让它们撑过旅程。
 
 ## Field Note
 
-ZH LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+在通信窗口时钟、包裹托盘、公证印和延迟证据揭示处使用凯德。他的档案应让距离变成法律问题，而非抽象背景。
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/zh_CN. -->

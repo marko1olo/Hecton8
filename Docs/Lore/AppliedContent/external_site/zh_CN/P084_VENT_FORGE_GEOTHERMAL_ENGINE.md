@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "热泉锻炉地热引擎"
+title: "喷口熔炉地热机"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 热泉锻炉地热引擎
+# 喷口熔炉地热机
 
-热泉锻炉把地质和制造、生存、恐怖连在一起。它们提供陶瓷、密封件和压力玻璃需要的热压循环，但同样的循环也制造沸腾空穴、假氧读数、腐蚀云和动物迁移。
+喷口熔炉把地质和作业连接起来。它的脉冲可以固化陶瓷、复位压力密封、退火压力玻璃、预热上升药柱，但每个有用周期也都是危险节律。沸腾剪切会攻击接缝，假氧会骗过仪器，腐蚀暴发会进入打开的壳体，附近生命会在操作者明白原因前先移动。
 
-热泉锻炉地热引擎说明HECTON-8为何既有价值又致命：在人类造机器之前，这颗月亮本身就是工业引擎。 每个有用的热泉也是惩罚错误时机的机器。
+喷口熔炉地热机说明HECTON-8为何既有价值又致命：在人类抵达前，这颗月亮就已经具备工业性。 每个有用喷口，也都是惩罚错误时机的机器。
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/zh_CN. -->

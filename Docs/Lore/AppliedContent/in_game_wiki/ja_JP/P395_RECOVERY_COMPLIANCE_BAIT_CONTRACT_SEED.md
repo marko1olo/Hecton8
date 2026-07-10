@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "JA LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "回収コンプライアンス餌契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Recovery Compliance Bait Contract Seed
+# 回収コンプライアンス餌契約シード
 
-JA LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+回収コンプライアンス餌契約は、気前のよいサルベージ回収として届く。しかし受領者チェーンは最初から Deep Reach 側へ曲げられている。報酬は本物だ。代償は、残骸、遺体タグ、試料箱、密封機械をどこで見つけたか開示する隠し義務である。
 
 ## Scanner
 
-JA LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+契約シード: 回収コンプライアンス餌。高額報酬、汚染された受領者チェーン、隠された座標要求。
 
 ## Terminal
 
-JA LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+餌シード: 報酬引き上げ、回収コンプライアンス受領者を偽装、座標開示条項を秘匿、差し止め圧力有効、Deep Reach 経路の可能性大。
 
 ## Audio
 
-JA LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+救助の印章は、銃より早く桟橋の信用を買える。
 
 ## Field Note
 
-JA LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+マローダー記録: 支払いがきれいすぎる仕事なら、そのタオルの持ち主を調べろ。
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ja_JP. -->

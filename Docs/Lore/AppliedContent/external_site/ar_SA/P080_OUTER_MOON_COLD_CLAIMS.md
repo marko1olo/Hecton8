@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "مطالبات الأقمار الخارجية الباردة"
+title: "Cold claims للأقمار الخارجية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# مطالبات الأقمار الخارجية الباردة
+# Cold claims للأقمار الخارجية
 
-مطالبات الأقمار الخارجية الباردة توسع Aegir وراء HECTON-8: الطرق الميتة والمخابئ الباردة والمنارات المهجورة تغذي قانون salvage وتخفي الخسائر المتكررة.
+توسع Outer Moon Cold Claims نظام Aegir beyond HECTON-8: dead routes وcold caches وabandoned beacons وbillable loss تغذي salvage law وcorporate denial.
 
 ## Scanner
 
-منارة مطالبة خارجية. ليس كل شيء ميت في Aegir موجودا على HECTON-8.
+Outer claim beacon. ليس كل dead thing in Aegir على HECTON-8.
 
 ## Terminal
 
-أرشيف السلم الخارجي // فشل مشروع محلول Thorne. تم تجميد طريق تصدير Anvil. منارة Mute تكرر ping الحيازة بلا إعلان طاقم نشط.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-تعلم Aegir كيف يفقد الناس قبل أن تنهي HECTON-8 الدرس.
+تعلم Aegir أن lose people قبل أن تنهي HECTON-8 الlesson.
 
 ## Field Note
 
-المطالبات الباردة تجعل Marauders ممكنين. كما تعلم الشركات كيف تدفن الأنماط.
+تجعل cold claims وجود marauders ممكنا. وتعلم companies كيف bury patterns.
 
 <!-- External Site; generated from P080_OUTER_MOON_COLD_CLAIMS/ar_SA. -->

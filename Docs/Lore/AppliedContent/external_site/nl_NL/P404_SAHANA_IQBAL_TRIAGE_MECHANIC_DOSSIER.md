@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, triagemechanicus"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, triagemechanicus
 
-NL LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Sahana Iqbal laat zien hoe HECTON-8 onderhoud in triage veranderde. De kolonie scheidde kapotte apparatuur niet netjes van bedreigde mensen; beide wachtten onder hetzelfde beperkingssysteem, en het bewijs laat spelers die druk lezen zonder cutscene.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Momentbord, brancardlabels en quarantainetape delen één wachtrij.
 
 ## Terminal
 
-NL LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TRIAGEBAAI C-2 / IQBAL, SAHANA: momentlimieten naast zuurstofreservelabels. Gereedschap, brancards en scrubberpatronen op dezelfde rail. Quarantainetaal verplaatste de reiklijn opnieuw.
 
 ## Audio
 
-NL LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal repareerde wat ze kon bereiken. Het bord bleef beslissen wat bereikbaar telde.
 
 ## Field Note
 
-NL LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Gebruik Iqbal in quarantainereparatielussen, med-bay-gangen, zuurstofrijen en interfaces waar een machinekeuze zichtbaar menselijke tijd kost.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/nl_NL. -->

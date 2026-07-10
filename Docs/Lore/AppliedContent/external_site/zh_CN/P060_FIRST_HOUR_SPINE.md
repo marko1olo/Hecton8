@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "第一小时主脊"
+title: "第一小时脊柱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 第一小时主脊
+# 第一小时脊柱
 
-第一小时主脊定义 HECTON-8 的开局节奏。玩家从可触摸的工程任务和视觉奇观开始，然后看见这些任务连接到公司谎言，以及已经进入生物体的维护生态。这让第一条路线既可玩又有氛围，同时埋下更大的调查：海洋不是在隐藏故事，而是在压力、盐和程序中保存证据。
+第一小时脊柱定义了 HECTON-8 的开场节奏。可触摸的工程任务和视觉惊异先到，然后这些任务连接到公司谎言，以及已经进入生物学的维护生态。海洋没有藏起故事；它把证据保存在压力、盐和程序里。
 
 ## Scanner
 
-合同、受损投送、空气、明亮浅滩、泵房避难点、被清洗过的谎言，然后是第一道把生命当密封垫使用的修复伤痕。
+合同、受损投放、空气、明亮浅水、泵房庇护、消毒过的谎言，然后是第一道把生命当垫圈的维修疤。
 
 ## Terminal
 
-浅水附属区：手动泵重启有效。Deep Reach 事故包已缓存。Atlas 修复生长在电缆、工具碎片和生物残留周围检出。
+SHALLOW ANNEX：手动泵重启有效。Deep Reach 事故包已缓存。检测到 Atlas 修复生长围绕电缆、工具碎片和生物残留。
 
 ## Audio
 
@@ -35,6 +35,6 @@ localization_flags: 1
 
 ## Field Note
 
-开场必须先美丽，之后才开始控诉。
+开场必须先美丽，然后才开始指控。
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/zh_CN. -->

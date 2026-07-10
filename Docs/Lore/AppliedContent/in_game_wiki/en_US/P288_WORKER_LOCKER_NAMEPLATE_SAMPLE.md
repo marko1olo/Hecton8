@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Worker Locker Nameplate Sample"
+title: "Ren Okoye Locker Plate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,25 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Locker Nameplate Sample
+# Ren Okoye Locker Plate
 
-Worker Locker Nameplate Sample shows how HECTON-8 remembers people through objects that still had jobs. Ren Okoye is not introduced by biography. The locker plate gives route, tool certification, meal token, glove-size mark, and a payroll stripe sanded away by somebody who did not know which details mattered. That is why the artifact works. It proves that corporate erasure can be clumsy: the payline disappears, but the clamp route remains; the status is overwritten, but the glove-size mark still fits a real hand. The player should read the name through labor first, then feel the violence of the missing account line.
+Ren Okoye's locker plate preserves identity through work residue. The payroll stripe is sanded off, but the route access, cutter certificate, meal token and glove-size mark remain. Whoever erased the payline knew accounting fields, not the details that tied a person to a shift.
+
+The plate is useful because the erasure is incomplete. A payroll system can overwrite status. It cannot easily remove tape shadows, glove-size marks, route grime or a meal token clipped under a locker lip. Those leftovers can connect Ren Okoye to tools, rooms and later witness records.
 
 ## Scanner
 
-Ren Okoye's plate keeps the name because the payline was easier to erase than the work.
+Ren Okoye locker plate. Payroll stripe sanded off. Clamp Route B, cutter cert, meal token and glove-size mark remain readable.
 
 ## Terminal
 
-LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
+LOCKER CROSSCHECK
+Name: OKOYE, REN
+Route: Clamp Route B / valid
+Cutter cert: active
+Meal token: present
+Payroll status: overwritten by Loss Desk
+Erasure: incomplete; glove-size mark and route access remain.
 
 ## Audio
 
@@ -35,6 +43,6 @@ Name retained. Payline erased. Work still attached.
 
 ## Field Note
 
-REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Payroll stripe sanded off; glove-size mark still visible.
+REN OKOYE / Clamp Route B / cutter cert active / meal token under tape. Payroll stripe erased; glove-size mark still fits a hand.
 
 <!-- In-Game Wiki; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/en_US. -->

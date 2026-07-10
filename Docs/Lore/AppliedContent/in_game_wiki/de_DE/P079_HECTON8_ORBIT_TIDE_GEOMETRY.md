@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HECTON-8-Orbit / Gezeitengeometrie"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8-Orbit / Gezeitengeometrie
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8s Orbit macht den Great Tide glaubwürdig, bevor er politisch wird. Resonanz zog am Ozean. Eisstress und Sturmflut belasteten die Schelfe. Industriewärme und blockierte Drainage ließen die Koloniesysteme zur falschen Stunde zurückdrücken.
-
-Das Verbrechen ist nicht, dass Deep Reach Physik erfand. Es baute Evakuierungsrechnung um Atlas continuity, versicherte Nutzlasten und Arbeitsklassen und nannte die Toten dann akzeptablen Prognosefehler.
+HECTON-8s orbit macht die Great Tide believable, bevor sie political wird. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water dorthin, wo colony math margins wollte, und industrial heat liess sealed drainage fight the sea at the wrong hour. Das crime ist nicht, dass Deep Reach invented physics. Das crime ist, dass evacuation math built around Atlas continuity, insured payloads, labor classes und claim loss war, und die dead danach filed as forecast error wurden.
 
 ## Scanner
 
-GEZEITENMODELL // Resonanz, Eisstress, Sturmflut und Wärmeabgabe überschritten Evakuierungsprognose. Atlas-continuity-Flags überschrieben Rückzugspriorität.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge und heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-GREAT-TIDE-KETTE // Orbitale Erzwingung verstärkte Ozeanlast. Künstliche Wärmeabgabe und versiegelte Drainage verwandelten ein Gezeitenereignis in Kolonieversagen.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge und sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Die Physik öffnete die Tür. Deep Reach entschied, wer hindurch durfte.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Ein Mond kann eine Kolonie ertränken, ohne sie zu hassen.
+Ein moon kann drown a colony, ohne sie zu hassen.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/de_DE. -->

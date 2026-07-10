@@ -19,22 +19,22 @@ localization_flags: 1
 
 # دين نافذة الطن
 
-دين نافذة الطن هو الموضع الذي تصير فيه الفيزياء تمويلا. لا يملك Black Keel هامش رفع أو وقود عبور أو حجم حجر نظيف بلا حد. كل كيلوغرام يصعد من HECTON-8 ينافس كل كيلوغرام يلزم لإبقاء المشغل حيا. يجعل عداد الدين carrier قاسيا من دون كسر العلم الصلب: الإنقاذ ممكن، لكن ميزانية الطريق تسأل دائما ما الذي يستحق الكتلة.
+دين نافذة الطن هو الموضع الذي يتوقف فيه HECTON-8 عن كونه قصة رعب فقط، ويصبح orbital logistics. لدى Black Keel lift margin محدود، وclean volume محدود، وoxygen reserve محدود، وroute price ملصق بكل كيلوغرام. Spare tank وsealed sample وdamaged suit وproof case وbody وcrate of salvage تتنافس داخل النافذة نفسها. يبدو النظام قاسيا لأنه دقيق. لا يحتاج إلى ادعاء أن rescue مستحيل. إنه يواصل السؤال عما تستطيع route تحمل رفعه.
 
 ## Scanner
 
-عداد نافذة كتلة. كل كيلوغرام من المساعدة له سعر مسار.
+Mass-window ledger. للمساعدة وزن قبل أن يكون لها كلام.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: هامش recovery burn ضاق. كتلة استخراج المشغل تتعارض مع payload مختوم واحتياطي ثقل ودين أكسجين وحيازة عينات حجر. التجاوز اليدوي يتطلب أولوية مدفوعة أو دليل خطر.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass يتعارض مع sealed payload وballast reserve وoxygen debt وquarantine sample volume وhull patch inventory. Manual priority يتطلب paid override أو verified hazard proof أو custody reclassification.
 
 ## Audio
 
-يمكن للسفينة أن تحملك أو تحمل ما وجدته. إنها تفضل رقما.
+تستطيع السفينة رفع حياة. السؤال هو ماذا يجبرها ledger على حمله أيضا.
 
 ## Field Note
 
-الأكسجين، الثقل، الدليل، payload، الجسد: carrier يزنها قبل أن يزن الرحمة.
+Oxygen وballast وproof وsamples وhull patch وbody: يضع carrier سعرا للرحمة بالكيلوغرام.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ar_SA. -->

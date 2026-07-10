@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PT LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Semente de contrato-isca de Conformidade de Recuperação"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Recovery Compliance Bait Contract Seed
+# Semente de contrato-isca de Conformidade de Recuperação
 
-PT LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Contratos-isca de Conformidade de Recuperação chegam como trabalhos generosos de resgate, mas a cadeia de receptor já está inclinada para a Deep Reach. O pagamento é real. O custo é a exigência oculta de revelar onde o destroço, a etiqueta de cadáver, a caixa de amostras ou a máquina lacrada foram encontrados.
 
 ## Scanner
 
-PT LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Semente de contrato: isca de Conformidade de Recuperação. Pagamento alto, cadeia de receptor contaminada, exigência de coordenadas oculta.
 
 ## Terminal
 
-PT LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+SEMENTE-ISCA: pagamento elevado, receptor de Conformidade de Recuperação mascarado, cláusula de coordenadas escondida, pressão de retenção ativa, roteamento Deep Reach provável.
 
 ## Audio
 
-PT LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Um carimbo de resgate compra confiança no cais mais rápido que uma arma.
 
 ## Field Note
 
-PT LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Nota de saqueador: se o trabalho paga limpo demais, veja quem é dono da toalha.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/pt_BR. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Bewaring van salvage-gereedschap"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bewaring van salvage-gereedschap
+# Salvage Tool Custody
 
-Op HECTON-8 kan een gereedschap tegelijk overlevingsuitrusting en contractgetuige zijn. Salvage-bewaringslogs koppelen sneden, reparaties en monsters aan claimtokens, waardoor een nuttige handeling deel wordt van later bewijs, schuld of uitbetalingsdruk.
+Salvage tool custody verbindt minute-to-minute survival met de claim economy: cuts, repairs, patches en samples kunnen evidence, payout pressure of Keelmark debt worden.
 
 ## Scanner
 
-Gereedschapsdock bevat een verzegeld bewaringslog. Laatste snede, reparatie en monsterzak zijn gekoppeld aan een Keelmark-claimtoken.
+Tool dock holds a sealed custody log. Last cut, repair en sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: cuttergebruik geaccepteerd onder salvage-claim. Reparatiehandeling getuigd. Monsterrechten gekoppeld aan Keelmark Mutual-token. Bewijsexport botst met materiaaluitbetalingsroute.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Elke nuttige snede laat een getuige achter.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Een cutter kan je lucht redden en je handen in dezelfde slag verkopen. Controleer wat hij registreert voordat je hem de jouwe noemt.
+Een cutter kan save your air en sell your hands in dezelfde stroke. Controleer wat hij records voordat je hem van jou noemt.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/nl_NL. -->

@@ -16,11 +16,9 @@ namespace Hecton8.EditorTools
 
             FixCelestialAndLight();
 
-            // Inject the PlayMode Screenshotter
+            // Inject the PlayMode Screenshotter in the unsaved editor scene state only.
             var go = new GameObject("H8_PlayModeScreenshotter");
             go.AddComponent<H8_PlayModeScreenshotter>();
-            
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), scenePath);
 
             Debug.Log("[H8ScreenshotPlayMode] Entering Play Mode...");
             EditorApplication.isPlaying = true;
@@ -75,8 +73,6 @@ namespace Hecton8.EditorTools
             celSO.FindProperty("aegirFallbackMaterial").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Sky/Hecton_AegirSky_Mat.mat");
             celSO.ApplyModifiedProperties();
             
-            EditorUtility.SetDirty(celestial);
-            EditorUtility.SetDirty(orch);
         }
     }
 }

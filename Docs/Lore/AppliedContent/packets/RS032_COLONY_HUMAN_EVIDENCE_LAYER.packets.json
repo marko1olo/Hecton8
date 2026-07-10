@@ -647,13 +647,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Marauder Correction Layer",
-          "scanner": "CORRECTION LAYER // Corporate label: temporary atmospheric variance. Marauder note: CO2 eats judgment first.",
-          "terminal": "ANNOTATION RULE: translate Deep Reach language back into survival facts. Keep notes short, practical, angry, and useful under pressure.",
-          "audio": "A good note does not sound clever. It keeps someone alive.",
-          "in_game_wiki": "The Marauder correction layer is where old corporate language loses authority. Deep Reach writes variance, custody, hold, asset, exposure. Marauders write what a diver needs before the next breath: CO2 makes hands slow, brine hides the step, seal tape fails at the bend, don't trust the clean hatch. These notes should feel like a culture rebuilding itself from people who were trained by the system and then learned to hate its vocabulary.",
-          "external_site": "Marauder Correction Layer bridges Deep Reach procedure and player agency: short annotations turn official language into survival truth.",
-          "field_note": "The player should feel old Deep Reach language being translated into body count."
+          "title": "Marauder Correction Note",
+          "scanner": "Grease-pencil correction over Deep Reach label. Corp: TEMP ATM VARIANCE. Note: CO2 slows hands first. Check hatch timer.",
+          "terminal": "FIELD CORRECTION MC-04\nSource label: TEMPORARY ATMOSPHERIC VARIANCE\nRejected cause: weather\nCheck: CO2 alarm history; hatch clock; seal tape bend; body count before claim stamp\nAction: mark route unsafe until vent fan turns.",
+          "audio": "Read the label, then read the room. If they disagree, write on the label.",
+          "in_game_wiki": "Marauder correction notes are grease-pencil edits left on Deep Reach labels, warning boards and claim forms. They are not commentary. They turn clean corporate words into immediate survival checks. Variance becomes CO2 in the lock. Custody becomes do not open the sample bag. Hold becomes the hatch will not answer you in time.\n\nThe useful note names one hazard, one object and one action. It does not explain the politics. It keeps the next diver from trusting a clean form over a wet room.",
+          "external_site": "Marauder correction notes are field edits on official labels. They preserve the lie and write the survival check beside it: gas, timer, seal, route, body count.",
+          "field_note": "Do not translate the whole form. Circle the word that gets a diver killed. Write the fix beside it: vent before entry, count two breaths after the hiss, do not trust the clean hatch."
         },
         "ru_RU": {
           "title": "Слой правок Marauder",

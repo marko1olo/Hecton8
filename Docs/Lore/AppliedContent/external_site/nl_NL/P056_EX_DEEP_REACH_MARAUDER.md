@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Voormalige Deep-Reach-Marauder
 
-Voormalige Deep-Reach-Marauder legt de spelerscanon vast. De speler is een voormalige bedrijfsspecialist voor veldsystemen en evacuatie-infrastructuur, door zwarte lijst of schuld naar onafhankelijke berging geduwd en onder Black-Keel-bewaring teruggebracht naar HECTON-8. Het drama komt uit professionele herkenning: de maan antwoordt met procedures die de speler ooit begreep, en elk vertrouwd slot maakt de bedrijfsleugen moeilijker af te doen als het ongeluk van iemand anders.
+Voormalige Deep-Reach-Marauder legt biografische druk vast zonder HECTON-8 tot noodlot te maken. De centrale salvage-operator is een voormalige bedrijfsspecialist voor veldsystemen en evacuatie-infrastructuur, door zwarte lijst of schuld naar onafhankelijke salvage geduwd en onder Black-Keel-bewaring teruggebracht. Het drama komt uit professionele herkenning: de maan antwoordt met procedures die ooit met de hand werden begrepen, en elk vertrouwd slot maakt de bedrijfsleugen moeilijker af te doen als andermans wrak.
 
 ## Scanner
 
-Het oude Deep-Reach-slot controleert je naam niet. Het herkent het ritme van je reparatiereeks.
+Het oude Deep-Reach-slot controleert geen naam. Het herkent het ritme van een veldreparatie.
 
 ## Terminal
 
-BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Bergingsstatus geaccepteerd onder schuldbeheer van de claimpool.
+BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Salvage-status geaccepteerd onder schuldbeheer van de claimpool.
 
 ## Audio
 

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Batas Data Hasil Sumber Daya"
+title: "Baris Penerimaan Hasil Sumber Daya"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Data Hasil Sumber Daya
+# Baris Penerimaan Hasil Sumber Daya
 
-Batas data menjaga harga sumber daya agar tidak menjadi lore lepas. Di HECTON-8, mineral tidak bernilai sama di setiap kedalaman: riwayat tekanan, kustodi rute, dan deplesi menentukan apakah sampel menjadi mata uang, bukti, atau ballast terkontaminasi.
+Baris hasil menentukan kapan sumber daya menjadi kargo yang dibayar, bukan rongsokan lepas. Sampel HECTON-8 berubah nilai karena kedalaman, rating wadah, tahap kontaminasi, dan pihak yang bisa membuktikan kustodi. Serpih harmonik blue debt dari rute brine tersegel bukan baris yang sama dengan serpihan rak yang dicuci dalam kantong retak.
 
 ## Scanner
 
-Baris hasil menolak nilai lepas: kelas, pita tekanan, kustodi, deplesi, dan hash harus cocok.
+Baris sampel belum lengkap: riwayat tekanan, tingkat kustodi, status habis, tahap kontaminasi, dan hash paket tidak cocok.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: tidak ada angka diterima tanpa packet hash, kelas sumber daya, pita tekanan, grade kustodi, kurva kelangkaan, dan perilaku deplesi. Sampel tanpa riwayat tekanan adalah bukti, bukan nilai.
+SKEMA MASUK HASIL / Aegir Reclamation Pool: tolak pencatatan nilai sampai kelas sumber daya, pita tekanan, tingkat kustodi, kurva kelangkaan, perilaku habis, tahap kontaminasi, dan hash saksi paket tersedia. Batu dalam kantong tetap massa sampai rute tekanan terbukti.
 
 ## Audio
 
-Sampel tanpa riwayat tekanan bukan nilai.
+Black Keel: penahanan sampel diterima setelah rute tekanan dan hash kustodi. Sebelum itu ia ikut sebagai balas.
 
 ## Field Note
 
-Angka yield tetap sementara sampai pressure band, custody grade, depletion behavior, dan packet hash selaras.
+Kalau baris tidak punya pita tekanan, jangan tawar harga. Masukkan ke massa mati, biarkan wadah tersegel, dan paksa broker membayar setelah kustodi lolos.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/id_ID. -->

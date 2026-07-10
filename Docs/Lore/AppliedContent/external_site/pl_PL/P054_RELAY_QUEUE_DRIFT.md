@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dryf kolejki przekaźnika"
+title: "Dryf relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dryf kolejki przekaźnika
+# Dryf relay queue
 
-Dryf kolejki przekaźnika to różnica między prawdą a użytecznością. HECTON-8 nie potrzebuje fałszywych szumów ani magicznych zakłóceń, by komunikacja budziła strach. Wiadomość może dotrzeć cała, uwierzytelniona i doskonale poprawna dla pokoju sprzed trzydziestu minut. Potem woda przesuwa właz, ciśnienie wygina ramę, wzrost Atlas uszczelnia złą szczelinę i ta sama instrukcja staje się pułapką. Gracz nie sprawdza, czy system kłamie, tylko czy jest już zbyt stary, by mu ufać.
+Relay Queue Drift czyni message age zmienna przetrwania: remote orders moga byc true, stale i lethal jednoczesnie.
+
+## Scanner
+
+Relay stamp starszy niz leak, ktory nazywa. Instruction byla prawdziwa dla room, ktory juz nie istnieje.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction do otwarcia fresh relay window. Treat delayed route orders as archival, jesli pressure, door state i waterline nie pasuja.
+
+## Audio
+
+Message jest poprawne. To jest problem.
+
+## Field Note
+
+Spozniona truth wciaz moze zabic.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/pl_PL. -->

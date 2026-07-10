@@ -19,11 +19,11 @@ localization_flags: 0
 
 # Salvage Tool Custody
 
-Salvage tools are not neutral equipment. Cutters, patchers and fabricator docks can record who opened a panel, repaired a line or moved a sample. That log may protect evidence, attach payout rights or strengthen the claim against the player. Tool custody is where minute-to-minute survival touches the wider salvage economy.
+Salvage tools on HECTON-8 are survival gear, but they are not innocent. A cutter opens a panel. A patcher seals a line. A fabricator dock prints a clamp that keeps air moving. The same action can also write custody: who used the tool, what was opened, whether a sample pouch was attached, and which claim token owns the next argument. That record can protect evidence or tighten debt. The cruel part is that refusing the tool can kill faster than accepting its witness.
 
 ## Scanner
 
-Tool dock holds a sealed custody log. Last cut, repair and sample pouch are tied to a Keelmark claim token.
+Tool dock holds a sealed custody log. Last cut, repair, and sample pouch are tied to a Keelmark claim token.
 
 ## Terminal
 

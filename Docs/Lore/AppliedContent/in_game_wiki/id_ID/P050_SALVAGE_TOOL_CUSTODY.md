@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Kustodi Alat Salvage"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kustodi Alat Salvage
+# Salvage Tool Custody
 
-Alat salvage bukan perlengkapan netral. Cutter, patcher, dan dock fabricator bisa mencatat siapa membuka panel, memperbaiki jalur, atau memindahkan sampel. Log itu bisa melindungi bukti, menempelkan hak payout, atau memperkuat claim terhadap pemain. Kustodi alat adalah tempat bertahan hidup menit demi menit menyentuh ekonomi salvage yang lebih luas.
+Salvage tools di HECTON-8 adalah survival gear, tetapi tidak innocent. Cutter membuka panel. Patcher seals a line. Fabricator dock prints a clamp yang keeps air moving. Action yang sama juga bisa write custody: siapa used the tool, apa yang opened, apakah sample pouch attached, dan claim token mana yang owns the next argument. Record itu bisa protect evidence atau tighten debt. Bagian kejamnya adalah refusing the tool bisa kill faster daripada accepting its witness.
 
 ## Scanner
 
-Dock alat menyimpan log kustodi tersegel. Potongan terakhir, perbaikan, dan kantong sampel terikat ke token claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair, dan sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: penggunaan cutter diterima di bawah salvage claim. Aksi repair disaksikan. Hak sampel melekat pada token Keelmark Mutual. Ekspor bukti bertentangan dengan rute payout material.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Setiap potongan berguna meninggalkan saksi.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Cutter bisa menyelamatkan udaramu dan menjual tanganmu dalam satu gerakan. Periksa apa yang ia catat sebelum menyebutnya milikmu.
+Cutter bisa save your air dan sell your hands dalam stroke yang sama. Periksa apa yang ia records sebelum menyebutnya milikmu.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/id_ID. -->

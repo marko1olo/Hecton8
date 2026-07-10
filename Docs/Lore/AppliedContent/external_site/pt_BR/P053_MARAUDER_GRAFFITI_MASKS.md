@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Máscaras de grafite marauder"
+title: "Mascaras de Grafite Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Máscaras de grafite marauder
+# Mascaras de Grafite Marauder
 
-Os marauders de HECTON-8 não são uma facção sem rosto de saqueadores. São trabalhadores, corredores de dívida, contratados abandonados e equipes de salvage que aprenderam a escrever nas paredes porque todo canal limpo podia ser vigiado ou cobrado. O grafite deles é feio de propósito: rápido para pintar sob estresse, claro através da condensação e ambíguo o bastante para parecer pânico ou vandalismo. Um anel preto não é decoração. Significa que a transportadora pode ouvir você. Uma seta quebrada não é desenho ruim. Significa que o corredor mudou desde a última passagem segura.
+Mascaras de Grafite Marauder transformam scavenger writing em ocean infrastructure legivel: route hints, comm silence, pressure drift, cache risk e desconfiança de carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count marca noise discipline; black rings marcam carrier-ping danger; broken arrows marcam pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Se a wall parece irritada, leia como weather.
+
+## Field Note
+
+Marauders escreviam para gente que nao podia confiar em radios nem pagar maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/pt_BR. -->

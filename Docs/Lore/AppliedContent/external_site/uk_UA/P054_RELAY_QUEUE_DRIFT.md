@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Дрейф черги ретранслятора"
+title: "Дрейф relay-черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Дрейф черги ретранслятора
+# Дрейф relay-черги
 
-Дрейф черги ретранслятора — це різниця між правдою і придатністю. HECTON-8 не потребує фальшивих перешкод чи магічного втручання, щоб зв'язок лякав. Повідомлення може прийти цілим, підтвердженим і ідеально правильним для кімнати, якою вона була тридцять хвилин тому. Потім вода зсуває люк, тиск гне раму, ріст Atlas закриває не ту тріщину, і та сама інструкція стає пасткою. Гравець з'ясовує не те, чи система бреше, а чи не стала вона занадто старою для довіри.
+Дрейф relay-черги робить message age змінною виживання: remote orders можуть бути true, stale і lethal одночасно.
+
+## Scanner
+
+Relay stamp старіший за leak, який називає. Instruction була правдивою для room, якої вже немає.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, якщо pressure, door state і waterline не збігаються.
+
+## Audio
+
+Message правильне. У цьому й проблема.
+
+## Field Note
+
+Запізніла truth все ще може вбити.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/uk_UA. -->

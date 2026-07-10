@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir月梯"
+title: "Aegir卫星阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir月梯
+# Aegir卫星阶梯
 
-Aegir月梯把HECTON-8放回物理系统。内侧卫星制造辐射和relay危险；中层卫星保有金属、冰、航线浮标和旧仓；外侧卫星携带冷claims和死信标。
-
-HECTON-8既不是最内侧，也不是最远。它是仍然付钱的那颗月。因此月梯其他部分持续碰触它的救援窗口、salvage law和信号路线。
+Aegir moon ladder把HECTON-8放回working sky之中。Skarn把charged weather甩过antennas。Vela把ice and dust撒进optical routes。Claw和Lumen让old buoy logic继续alive。Thorne quietly failed。Anvil fed metal，直到route stopped paying。Kestrel在最糟angles上cuts relay lines。Mute把ownership重复到无人手中。HECTON-8不是chain里的第一颗moon，也不是最后一颗。它是那颗drowned infrastructure仍有足够value，让ships、insurers和marauders继续争夺windows的moon。
 
 ## Scanner
 
-月梯图。HECTON-8是运动系统中的工作危险，不是孤立关卡。
+moon ladder chart。HECTON-8是moving system里的one working hazard，不是isolated ocean level。
 
 ## Terminal
 
-AEGIR主要卫星 // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。附transfer和eclipse模型。
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。Transfer、eclipse、relay和custody windows attached。
 
 ## Audio
 
-地图上的月亮比怜悯更多。
+map里的moons比mercy更多。
 
 ## Field Note
 
-Skarn燃烧。Vela脱落冰。Anvil供应金属。Kestrel切断relay。HECTON下沉。
+Skarn burns。Vela sheds ice。Anvil feeds metal。Kestrel cuts relays。HECTON drowns。
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/zh_CN. -->

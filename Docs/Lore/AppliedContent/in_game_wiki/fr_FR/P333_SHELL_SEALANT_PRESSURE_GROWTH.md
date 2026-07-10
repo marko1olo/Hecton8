@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Croissance de scellement coquillier sous pression"
+title: "Croissance de scellant coquillier sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Croissance de scellement coquillier sous pression
+# Croissance de scellant coquillier sous pression
 
-La croissance de scellement coquillier est l'erreur la plus nette d'Atlas : la réparation fonctionne. Des couches de silicate de calcium et une résine biopolymère ferment une fracture, tiennent la pression statique et sauvent une pièce qui aurait dû se noyer. La même croissance peut enterrer étiquettes, poignées, flèches à la craie, griffures et dernière route humaine dans la station.
+La croissance de scellant coquillier peut sauver une pièce et enfermer quelqu'un dans la même heure. Des couches calcium-silicate et de la résine ferment une fracture, réduisent le débit de fuite et donnent à Atlas une réparation mesurable. La croissance ne vérifie pas si elle couvre une flèche de route, une étiquette de pression ou le seul volant manuel.
 
 ## Scanner
 
-Un scellement stratifié ferme la fracture et enterre les marques de route ouvrières sous une coquille blanche.
+Une coquille calcique blanche a fermé la fracture et enterré les flèches de route le long du bord d'écoutille. La coupe peut rouvrir la fuite.
 
 ## Terminal
 
-CONFLIT DE RÉPARATION : fuite réduite, frontière de pression améliorée, marquages de sortie occultés. Couper la coquille peut rouvrir un chemin d'inondation.
+CONFLIT DE RÉPARATION / PORTE S-9 : débit de fuite réduit, frontière de pression améliorée, marques d'évacuation masquées, volant manuel enterré à 62 pour cent. Autorisation de coupe exige un chemin d'inondation préparé.
 
 ## Audio
 
-La pièce a survécu. La sortie, non.
+Le mur tient. Le volant d'écoutille est sous dix centimètres de coquille.
 
 ## Field Note
 
-À utiliser sur portes, rampes étroites et choix de pression où réparation et dommage sont le même objet.
+Avant de couper la coquille blanche d'une écoutille, trouve où l'eau est partie la dernière fois. L'étiquette est peut-être enterrée pour une raison.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/fr_FR. -->

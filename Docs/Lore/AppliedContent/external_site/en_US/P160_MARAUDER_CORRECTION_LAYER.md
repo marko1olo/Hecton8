@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Layer"
+title: "Marauder Correction Note"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Marauder Correction Layer
+# Marauder Correction Note
 
-Marauder Correction Layer bridges Deep Reach procedure and player agency: short annotations turn official language into survival truth.
+Marauder correction notes are field edits on official labels. They preserve the lie and write the survival check beside it: gas, timer, seal, route, body count.
 
 ## Scanner
 
-CORRECTION LAYER // Corporate label: temporary atmospheric variance. Marauder note: CO2 eats judgment first.
+Grease-pencil correction over Deep Reach label. Corp: TEMP ATM VARIANCE. Note: CO2 slows hands first. Check hatch timer.
 
 ## Terminal
 
-ANNOTATION RULE: translate Deep Reach language back into survival facts. Keep notes short, practical, angry, and useful under pressure.
+FIELD CORRECTION MC-04
+Source label: TEMPORARY ATMOSPHERIC VARIANCE
+Rejected cause: weather
+Check: CO2 alarm history; hatch clock; seal tape bend; body count before claim stamp
+Action: mark route unsafe until vent fan turns.
 
 ## Audio
 
-A good note does not sound clever. It keeps someone alive.
+Read the label, then read the room. If they disagree, write on the label.
 
 ## Field Note
 
-The player should feel old Deep Reach language being translated into body count.
+Do not translate the whole form. Circle the word that gets a diver killed. Write the fix beside it: vent before entry, count two breaths after the hiss, do not trust the clean hatch.
 
 <!-- External Site; generated from P160_MARAUDER_CORRECTION_LAYER/en_US. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir 위성 루트 지도"
+title: "Aegir 위성 경로 지도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir 위성 루트 지도
+# Aegir 위성 경로 지도
 
-Aegir 위성 데이터는 루트 데이터다. HECTON-8은 플레이 가능한 해양 위성이지만, relay, 방사선, 산란, 조석 제약으로 된 더 큰 사다리 안에 있다. 보이는 하늘은 구조 신호가 들리는지, 지연되는지, 가격이 붙는지, 거절되는지, 물리적으로 불가능해지는지에 관여한다.
+Aegir의 위성은 경로 시스템의 일부다. HECTON-8은 플레이어 아래의 해양 위성이지만, 나머지 사다리는 무엇이 들리고, 가격 매겨지고, 숨겨지고, 이동될 수 있는지를 바꾼다. 작은 천체는 중계선을 끊을 수 있다. 얼음 산란 경로는 패킷을 손상시킬 수 있다. 조석 위상은 배시드롭 상승을 싸게 만들었다가 치명적으로 만들 수 있다. 공개 지도는 중요하다. 하늘은 물 위 장식이 아니라, 청구가 떠날 수 있는지 결정하는 기계 중 하나다.
 
 ## Scanner
 
-시스템 지도 기록. Aegir 위성들은 relay timing, 방사선 엄폐, ice scatter, 조석 압력, occultation bands, 죽은 beacons, recovery geometry를 정한다.
+시스템 지도 기록. 위성 라벨은 중계 나이, 조석 부하, 방사선 엄폐, 얼음 산란, 엄폐대, 죽은 비컨, 회수 기하를 정한다.
 
 ## Terminal
 
-공개 아카이브 노드 // AEGIR 위성 사다리. 위성 이름은 루트 표지다. 각 천체는 signal age, transfer risk, storm exposure, custody timing, claim reliability를 바꾼다.
+공개 기록 노드 // AEGIR 위성 사다리. 위성 이름은 경로 데이터다. 필수 필드: 신호 나이, 조석 위상, 폭풍 엄폐, 청구 창구, 비컨 상태, 상승 위험.
 
 ## Audio
 
-지도는 왜 요청한 순간 아무도 오지 않는지 설명한다.
+지도 위 위성은 풍경이 아니다. 답변이 늦은 이유다.
 
 ## Field Note
 
-Marauder 메모: 위성을 표시한 다음, 그 위성이 루트에 무엇을 하는지 표시해라.
+마라우더 메모: 위성을 표시하고, 그것이 신호, 조석, 질량, 보관에 무엇을 하는지 적어라.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ko_KR. -->

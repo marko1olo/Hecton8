@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "サルベージ工具管理"
+title: "Salvage Tool Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# サルベージ工具管理
+# Salvage Tool Custody
 
-HECTON-8では、工具は生存装備であり契約上の証人でもある。サルベージ管理ログは切断、修理、サンプルをclaimトークンへ結び、役に立つ行動を後の証拠、債務、支払い圧力の一部にする。
+Salvage tool custodyはminute-to-minute survivalをclaim economyに結びつける。cuts、repairs、patches、samplesはevidence、payout pressure、Keelmark debtになりうる。
 
 ## Scanner
 
-工具ドックに封印された管理ログ。最後の切断、修理、サンプルポーチはKeelmarkのclaimトークンに結び付いている。
+tool dockはsealed custody logを保持。last cut、repair、sample pouchはKeelmark claim tokenに紐付く。
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: カッター使用はsalvage claim下で受理。修理行動を証言。サンプル権はKeelmark Mutualトークンに付随。証拠エクスポートは物資支払い経路と衝突。
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim。Repair action witnessed。Sample rights attached to Keelmark Mutual token。Evidence export conflicts with material payout route。
 
 ## Audio
 
-役に立つ切断はすべて証人を残す。
+Every useful cut leaves a witness.
 
 ## Field Note
 
-カッターは同じ一振りで空気を救い、手を売る。自分の物と呼ぶ前に、何を記録するか確認しろ。
+cutterは同じstrokeでairを救い、handsを売ることがある。自分のものと呼ぶ前に何をrecordsするか確認せよ。
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/ja_JP. -->

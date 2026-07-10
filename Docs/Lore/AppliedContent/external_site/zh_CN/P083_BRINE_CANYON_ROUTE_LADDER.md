@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "卤水峡谷路线梯"
+title: "盐水峡谷路线阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 卤水峡谷路线梯
+# 盐水峡谷路线阶梯
 
-卤水峡谷让深度推进变成物理问题。高密度层、矿物墙、热泄漏和声学畸变会教玩家，越深的旅行越需要更好的仪器和压力纪律。
+盐水峡谷把深度变成物质。浓盐水河像地板、镜子和陷阱一样躺在海中。可靠路线来自密度标记、压载窗口、中继检查和角度纪律，而不是勇敢。更深的层会说明仪器为何重要：声呐可能反射上方空间，浮力可能撒谎，潜服可能正确，而海不认同。
 
-卤水峡谷路线梯是HECTON-8的核心探索结构之一：它不是走廊，而是由密度、水流和声音塑造进程的化学地理。 你不是游过峡谷。你是在和比潜服更重的层谈判。
+盐水峡谷路线阶梯把HECTON-8的下降写成化学地理：密度、洋流、矿物墙和声音决定哪些路线能活着通过。 你不是游过峡谷。你是在和比潜服更重的层谈判。
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/zh_CN. -->

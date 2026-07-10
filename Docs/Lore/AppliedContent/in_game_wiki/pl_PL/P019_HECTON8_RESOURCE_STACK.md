@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Stos zasobów
 
-HECTON-8 nie jest księżycem jednego zasobu. Wczesne materiały trzymają przy życiu, salvage otwiera trasy, solanka uczy ciśnienia, a blue debt jest tylko szczytem pokusy.
+HECTON-8 nie jest księżycem jednego zasobu. Wczesne materiały umożliwiają oddech i naprawę. Salvage otwiera zamknięte trasy. Solanka i chemia ventów uczą ciśnienia. Niebieski dług i pressure glass są wyżej w łańcuchu claim, ale ich wartość ma sens tylko dlatego, że mniejsze materiały utrzymują operatora przy życiu dość długo, by do nich dotrzeć.
 
 ## Scanner
 
-Stos: włókno rafowe, sole solanki, rdzenie przekaźników, zawory, blue debt, pressure glass, siatka Atlas.
+Stos odczytany: włókno rafowe, sole solanki, rdzenie przekaźników, zawory ciśnienia, katalizatory ventów, niebieski dług, pressure glass, siatka Atlas.
 
 ## Terminal
 
-Wartość: biota przetrwania, ludzki salvage, sprzęt tras, chemia ciśnienia, blue debt, pressure glass, continuity substrate.
+MODEL WARTOŚCI: biota przetrwania, ludzki salvage, sprzęt tras, chemia ciśnienia, niebieski dług, pressure glass, substrat ciągłości. Nie sprowadzać stosu do jednego cudownego materiału.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Jeśli carrier pyta o masę przed nazwiskami, wiesz, kto ma kontrakt.
 
 ## Field Note
 
-Nic tu nie jest tylko lootem.
+Nic tu nie jest tylko łupem. Każda próbka należy do gospodarki ciśnienia.
 
 <!-- In-Game Wiki; generated from P019_HECTON8_RESOURCE_STACK/pl_PL. -->

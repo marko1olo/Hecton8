@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, relaisnotaris"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Juno Kade/Relay
+# Juno Kade, relaisnotaris
 
-NL LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+Juno Kade werkte aan de relaistafel waar HECTON-8-recht de lichtsnelheid ontmoette. Zijn zegel, pakketladder, getuigenlint en krassen in de bak tonen werk gebouwd voor vertraging: maak het feit fysiek, stempel wie het aanraakte en houd het intact tot een drager of ontvanger de bewaring overneemt. Het bewijs belooft geen redding. Het verklaart waarom getuigenis nog telt in een systeem waar elk bericht aankomt nadat het lichaam is afgekoeld.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Zegelvlak, pakketbak en getuigenlint dragen dezelfde bewaarmarkering van een laat venster.
 
 ## Terminal
 
-NL LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+RELAISWERF A-17 / KADE, JUNO: uitgaande pakketten gestempeld na elk dragervenster. Zegeldruk, bakstof en getuigenlint bevestigen bewaring zelfs wanneer antwoordtijd reddingstijd overschrijdt.
 
 ## Audio
 
-NL LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade bekrachtigde feiten die te laat zouden aankomen om iemand te redden en toch de reis moesten overleven.
 
 ## Field Note
 
-NL LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Gebruik Kade bij communicatievensterklokken, pakketbakken, notariszegels en late bewijsopenbaringen. Zijn dossier moet afstand juridisch laten voelen, niet abstract.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/nl_NL. -->

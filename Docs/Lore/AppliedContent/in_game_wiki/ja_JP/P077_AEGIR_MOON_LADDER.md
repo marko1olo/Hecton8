@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir月梯子"
+title: "Aegir Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir月梯子
+# Aegir Moon Ladder
 
-Aegirの月梯子はHECTON-8を物理系の中に置く。内側の月は放射線とリレー危険を作り、中間の月は金属、氷、航路ブイ、古い倉庫を持ち、外側の月は冷たいclaimsと死んだビーコンを運ぶ。
-
-HECTON-8は最内月でも最遠月でもない。まだ支払いを生む月である。だから梯子の他の部分が、その救助窓、salvage law、信号経路に触れ続ける。
+Aegir moon ladderはHECTON-8をworking skyの中に置く。Skarnはcharged weatherをantennasへ投げる。Velaはice and dustをoptical routesへshedする。ClawとLumenはold buoy logicをaliveに保つ。Thorneはquietly failedした。Anvilはroute stopped payingまでmetalをfedした。Kestrelは最悪のanglesでrelay linesをcutsする。Muteはownershipを誰の手にも届かない場所へrepeatsする。HECTON-8はchainの最初のmoonでも最後でもない。drowned infrastructureがまだships、insurers、maraudersにwindowsを争わせるだけのvalueを持つmoonである。
 
 ## Scanner
 
-月梯子図。HECTON-8は動く系の中の作業危険であり、孤立した階層ではない。
+moon ladder chart。HECTON-8はisolated ocean levelではなく、moving system内のone working hazardだ。
 
 ## Terminal
 
-AEGIR主要月 // H1 Skarn、H2 Vela、H3 Claw、H4 Lumen、H5 Thorne、H6 Anvil、H7 Kestrel、H8 HECTON、H9 Mute。transferおよびeclipseモデル添付。
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute。Transfer、eclipse、relay、custody windows attached。
 
 ## Audio
 
-その地図には慈悲より多くの月がある。
+mapにはmercyより多くのmoonsがある。
 
 ## Field Note
 
-Skarnは焼く。Velaは氷を落とす。Anvilは金属を供給する。Kestrelはリレーを切る。HECTONは沈む。
+Skarn burns。Vela sheds ice。Anvil feeds metal。Kestrel cuts relays。HECTON drowns。
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ja_JP. -->

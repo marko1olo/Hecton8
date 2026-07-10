@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ren Okoye/Brine Map"
+title: "Ren Okoye, Brine Cartographer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ren Okoye/Brine Map
+# Ren Okoye, Brine Cartographer
 
-Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Ren Okoye gives traversal a human source. HECTON-8's brine canyons become more than hazards when a player finds the hand-built system that made them readable: beads, pins, erased lines, and route marks left by someone who knew a legal path could kill you if the water had shifted.
 
 ## Scanner
 
-Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossier: Ren Okoye. Density beads, slate cuts, and pin-string scars describe a route that moved overnight.
 
 ## Terminal
 
-REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+BRINE MAP DESK / OKOYE, REN: safe current shifted 3.2 m east after density inversion. Permit board still lists yesterday's corridor. Worker route marks override management route until next sounding.
 
 ## Audio
 
-Okoye drew roads that moved while management argued about permission.
+Okoye drew roads in water that did not want to keep the drawing.
 
 ## Field Note
 
-Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Use Okoye for brine route reveals, density-layer navigation, and permit-board contradictions. His evidence should let players distrust old maps for concrete reasons.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/en_US. -->

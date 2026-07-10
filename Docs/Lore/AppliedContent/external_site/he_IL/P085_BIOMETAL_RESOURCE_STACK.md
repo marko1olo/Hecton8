@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "מערך משאבי ביומטל"
+title: "מערום משאבי ביומטאל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מערך משאבי ביומטל
+# מערום משאבי ביומטאל
 
-מערך המשאבים מונע מ-HECTON-8 להצטמצם לחומר קסום אחד. Xenon-Omega חשוב, אבל לירח יש גם מתכות, מלחים, כימיית פתחים, ceramics לחץ, biofibers, photoproteins, salvage וביומטל ששונה בידי Atlas.
+מערום המשאבים מונע מ-HECTON-8 להתכווץ לחומר קסם אחד. החוב הכחול חשוב, אבל הירח משלם גם במתכות גופריתיות, מלחים, גזים אצילים, קרמיקה, זרזים, ביו-סיבים, פוטופרוטאינים, חומרת salvage וביומטאל ששונה בידי Atlas. האלימות מובנת כי הערך מפוזר: הרבה סיבות קטנות לחתוך, לסמן, להסתיר, לחזור ולשקר.
 
-מערך משאבי ביומטל מציג את HECTON-8 ככלכלת לחץ מלאה, שבה חקירה יכולה לתגמל במשאבים רבים ולהשאיר את blue debt בפסגה האסטרטגית. אם כל דגימה אומרת Xenon-Omega, העולם נעשה טיפש. ספור גם את הסיבות האחרות.
+מערום משאבי הביומטאל מציג את HECTON-8 ככלכלת לחץ מלאה, עם Xenon-Omega כפסגה אסטרטגית ולא כדבר היחיד ששווה לקרוא. אם כל דגימה אומרת Xenon-Omega, העולם נעשה שטוח. ספור גם את הסיבות הקטנות שבגללן אנשים מתו.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/he_IL. -->

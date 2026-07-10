@@ -19,16 +19,12 @@ localization_flags: 0
 
 # Luyten Packet Custody Relay
 
-## What The Record Proves
+## Luyten Notary Spool LNS-4
 
-Luyten Junction does not make HECTON-8 closer. It makes a packet harder to erase by giving route, tariff, witness hash, and notary spool a survivable path.
+The spool preserves route mark, tariff seal, witness hash, spool segment and receiver queue. If those marks stay in order, authentication can survive relay delay and claimant pressure.
 
-No-FTL civilization can authenticate a fact years before anyone can physically answer it. Luyten Junction is not mercy; it is a hardened notary lane. A packet that reaches it with custody intact becomes harder for claimants to erase, even while the person who sent it remains under Aegir pressure.
+Luyten does not shorten the ocean. It gives the record a lane. A sample certificate, route photo or distress hash can become difficult to erase while the operator who sent it still has no lift slot, berth or oxygen allocation. The packet has a future witness. The body remains a separate problem.
 
-LUYTEN NOTARY SPOOL // Preserve route mark, tariff seal, witness hash, spool segment, and receiver queue. Authentication may survive delay. This relay does not allocate extraction, carrier mass, oxygen, or rescue priority.
-
-## How The Player Reads It
-
-Keep the notary route attached. A loose file is rumor; a routed packet is a future witness. Use it as a rule for evidence handling, not as a promise that help is already moving.
+The field instruction is simple: keep the notary route attached. A loose file becomes rumor. A routed packet can later prove where it came from, which queue touched it and which office tried to answer or bury it.
 
 <!-- External Site; generated from P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE/en_US. -->

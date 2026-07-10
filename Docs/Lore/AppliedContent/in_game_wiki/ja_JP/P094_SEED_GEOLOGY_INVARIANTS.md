@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "シード地質不変項"
+title: "測量地質インバリアント"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# シード地質不変項
+# 測量地質インバリアント
 
-シード地質不変項は、長いリプレイでもHECTON-8を一貫させる。峡谷は違う順に開き、証拠は移動し、安定ポケットはずれ、種の圧力も変わる。星はAegirのまま、月はHECTON-8のまま、深度帯は順序を保ち、Great Tideは間隔を保ち、Atlas盆地は最深の真実との関係を保つ。
+survey geology invariantsは、contradictory charts、damaged Atlas maps、incomplete Black Keel route packetsの中でもHECTON-8をcoherentに保つ。canyon approachはsurveys間でshiftすることがある。safe pocketはcollapseすることがある。cacheはnew siltの下からemergeすることがある。bloom densityとsalvage exposureはweather、pressure、last expeditionがdisturbedしたものによって変わる。deeper truthsはmoveしない。Ran anchors the system、HECTON-8 stays on the Aegir ladder、depth bands keep their order、Great Tide keeps its interval、blue debt keeps its pressure behavior、Atlas basin remains tied to the lowest evidence。
 
 ## Scanner
 
-ルート生成メモ。サルベージ地図は変わるが、月は同じ骨を保つ。
+Atlas survey note。salvage chartは自分自身とdisagreeできる。moonはsame bonesを保つ。
 
 ## Terminal
 
-不変項: Aegir主星、HECTON-8軌道梯子、Great Tide間隔、深度帯順序、Atlas盆地関係、blue debt圧力挙動。可変: 峡谷接近、POI順、安定ポケット、bloom密度、サルベージ露出。
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-違う傷の模様。その下は同じ月。
+woundの読みは違う。下にあるmoonは同じだ。
 
 ## Field Note
 
-新しいランは証拠を別に埋めてよい。重力、潮汐、罪を書き換えてはならない。
+later chartはevidenceをdifferently buryできる。gravity、tide、guiltはrewriteできない。
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ja_JP. -->

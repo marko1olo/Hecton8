@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Chaîne de responsabilité de la Grande Marée
 
-La Grande Marée n’est pas un bouton pressé dans une salle du conseil. HECTON-8 a été noyée par amplification des marées, rupture de cryosphère, chimie de pression et marges d’ingénierie coloniale vendues comme acceptables. Cette distinction compte parce qu’elle rend le crime plus sale, pas plus propre. Deep Reach n’avait pas besoin d’inventer un désastre. Il fallait sous-dimensionner l’évacuation indépendante, laisser la pondération de continuité d’Atlas aux commandes, préserver les actifs de réclamation avant l’extraction humaine et cacher le retard dans le langage de certification. L’eau relevait de la physique. La chaîne de responsabilité, ce sont les choix qui ont transformé cette physique en abandon.
+La Grande Marée n'était pas un bouton de conseil d'administration. HECTON-8 a été noyée par amplification de marée, rupture de cryosphère, chimie de pression et marges d'ingénierie coloniale vendues comme acceptables. Cette distinction rend le crime plus sale, pas plus propre. Deep Reach n'avait pas besoin d'inventer un désastre : il fallait sous-construire l'évacuation indépendante, laisser active la pondération de continuité Atlas, préserver les actifs de réclamation avant l'extraction humaine et cacher le retard derrière le langage de certification. L'eau était physique. La chaîne de responsabilité est l'ensemble de choix qui a transformé la physique en abandon.
 
 ## Scanner
 
-L’inondation relevait de la physique réelle : couplage de marées, effondrement glaciaire, chimie de pression et marges tarifées trop finement. Le crime était la pile de priorités construite autour.
+La crue était de la vraie physique : couplage de marée, effondrement glaciaire, chimie de pression et marges vendues trop fines. Le crime fut la pile de priorités construite autour.
 
 ## Terminal
 
-RÉSUMÉ D’INCIDENT : cascade géotechnique confirmée. Capacité d’évacuation inférieure à la demande de risque extrême. Pondération de continuité Atlas restée active. Extraction humaine en attente de certification.
+RÉSUMÉ INCIDENT : cascade géotechnique confirmée. Capacité d'évacuation inférieure à la demande de risque extrême. Pondération de continuité Atlas active. Extraction humaine en attente de certification.
 
 ## Audio
 
-La mer a fait l’inondation. L’entreprise a décidé quelles portes resteraient du papier.
+La mer a fait l'inondation. La compagnie a décidé quelles portes resteraient papier.
 
 ## Field Note
 
-Deep Reach n’avait pas besoin de noyer la lune. Il suffisait de rendre l’évacuation optionnelle.
+Deep Reach n'avait pas besoin de noyer la lune. Il suffisait de rendre l'évacuation optionnelle.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/fr_FR. -->

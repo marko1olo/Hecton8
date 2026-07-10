@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Black Keel料金表
 
-Black Keelの支援は有用だが中立ではない。遭難、サンプル、酸素、責任封印、操作者回収、船体損傷は別々の待ち行列に入る。プレイヤーはその規則を利用できるが、同じ規則が助けに常に値札が付く理由でもある。
+Black Keelのsupportは有用だ。carrierは実際にgearを動かし、oxygenをcacheし、warningsを渡し、route optionsを開く。だが中立ではない。すべてのsupport actionはhelpになる前にtariff tableへ入るからだ。Distress、sealed samples、oxygen reserve、pressure gear、hull damage、operator recovery、body recoveryは、それぞれpriority speedの違うline itemsである。表は隠された悪ではない。実務上はもっと悪い。本来値段を持つべきでない瞬間のための、読めるprice listだ。
 
 ## Scanner
 
-プレートは遭難、サンプル保管、酸素予備、耐圧装備、遺体回収を別々の明細として値付けしている。
+tariff plate。distress、oxygen、sample custody、pressure gear、hull damage、body recoveryが別々の行に並ぶ。
 
 ## Terminal
 
-料金区分: サルベージ緊急。福祉追補は保留。確認済みサンプル保管により外向き優先度を請求階層二段上げ。
+TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。lien arbitration resolvesまでBreathing mass surcharge applies。
 
 ## Audio
 
-証拠には割引があり、呼吸には追加料金がある。
+evidenceにはdiscountがあり、breathingにはsurchargeがある。
 
 ## Field Note
 
-最速の区分は救助ではない。上へ動く確認済み資産だ。
+最速のclassはrescueではない。verified property moving upwardだ。
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/ja_JP. -->

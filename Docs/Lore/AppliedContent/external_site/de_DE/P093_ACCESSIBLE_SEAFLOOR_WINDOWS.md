@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Zugaengliche Meeresbodenfenster"
+title: "Zugängliche Meeresbodenfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zugaengliche Meeresbodenfenster
+# Zugängliche Meeresbodenfenster
 
-Der meiste Meeresboden von HECTON-8 ist mit gewoehnlichem Mut nicht erreichbar. Druck baut eine Wand, bevor der Boden sichtbar wird. Zugaengliche Fenster sind die Ausnahmen: Rissstellen, an denen ein eingestuerzter Schelf, ein freiliegender Ruecken, eine erhitzte Schlotnarbe oder eine dichte Salzlaugesaeule die Abstiegsbahn aendert. Sie sind keine sicheren Hoehlen. Sie sind knappe Abmachungen mit Geologie. Eine Crew kann alte Kruste beruehren, Druckminerale bergen, Koloniehardware finden oder ein begrabenes Ereignis lesen, bevor der Ozean die Route wieder schliesst.
+Accessible Seafloor Windows sind rare pressure breaks, wo HECTON-8 ancient floor, high-risk salvage, mineral seams und evidence normally sealed below lethal water freilegt.
+
+## Scanner
+
+Exposed ridge marker. Hier riss die shell thin genug, damit ein crawler old floor beruhrt without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+Der meiste moon halt seinen floor als pressure secret. Die windows sind exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/de_DE. -->

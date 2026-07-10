@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Keelmark Mutual Custody"
+title: "Keelmark MutualのCustody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Keelmark Mutual Custody
+# Keelmark MutualのCustody
 
-Keelmark Mutualは、現地に人間の救助権限がなくてもBlack KeelをAegirで運用させる保険custodyの殻だ。書類上はDeep Reachではない。実際には、正しいpriority hookを持つ者が古いunderwritingを動かせる。操作者が助けを求める前から、身体、工具、サンプル、封印ケースはすべてリスクschedule内に置かれている。
+Keelmark Mutualは、Black Keelの挙動の背後にあるinsurance-custody shellである。Deep Reachが仮面を被ったものではなく、秘密のrescue serviceでもない。Keelmarkは、Aegirで誰もlive phoneに出られない状況でもclaim tendersを合法、資金付き、保険付きに保つために存在する。だから悪役より冷たい。policyはoperatorを憎まない。ただoperatorをdebt、vessel risk、payload interface、quarantine exposure、possible witnessとして定義する。その分類が存在した瞬間から、後の訴えはすべてそこを通らなければならない。
 
 ## Scanner
 
-保険殻は無傷。Keelmarkは身体を所有する前にlienを所有する。
+underwriting tagは無傷。lienに歯があるなら、Keelmarkに悪意は要らない。
 
 ## Terminal
 
-KEELMARK MUTUAL: claim-tender lien有効。操作者債務、船体リスク、payload custody、隔離予備を遠隔underwriting scheduleに統合。遭難状態はlienを停止しない。
+KEELMARK MUTUAL: claim-tender lien active。Operator debt、vessel risk、payload custody、quarantine reserve、recovery proofはremote underwriting scheduleに束ねられている。Distress statusはlienまたはcustody orderを停止しない。
 
 ## Audio
 
-その保険証券は君の遭難信号より古い。
+そのpolicyはdistress callより古い。航路を覚える時間も長かった。
 
 ## Field Note
 
-保険者は隠れた黒幕ではない。もっと悪い。気にかける必要のなかったscheduleだ。
+暗い部屋のmastermindはいない。罪悪感より長く生きたscheduleがあるだけだ。
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/ja_JP. -->

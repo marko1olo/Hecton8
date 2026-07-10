@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Motor geotérmico de forja de chimenea"
+title: "Motor geotérmico vent forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Motor geotérmico de forja de chimenea
+# Motor geotérmico vent forge
 
-Las forjas de chimenea conectan geología con fabricación, supervivencia y horror. Dan calor y ciclos de presión para cerámica, sellos y vidrio de presión, pero esos ciclos crean bolsas de ebullición, falsos oxígenos, nubes corrosivas y migración de fauna.
+Los vent forges conectan geología y trabajo. Sus pulsos pueden curar cerámicas, reiniciar sellos de presión, recocer pressure glass y precalentar cargas de ascenso, pero cada ciclo útil es también ritmo de peligro. La cizalla hirviente ataca costuras, el oxígeno falso engaña instrumentos, el bloom corrosivo entra en carcasas abiertas y la vida cercana se mueve antes de que el operador entienda por qué.
 
 ## Scanner
 
-Colector de forja de chimenea. Calor, veneno y energía usan la misma tubería.
+Colector vent forge. Calor, veneno, presión y energía comparten la misma tubería.
 
 ## Terminal
 
-MOTOR GEOTÉRMICO: pulso de chimenea apto para curado cerámico, recocido de vidrio de presión y precalentamiento de carga de ascenso de emergencia. Riesgos: cizalla hirviente, falso positivo de oxígeno y floración corrosiva.
+MOTOR GEOTERMICO: pulso de respiradero apto para curado cerámico, recocido de pressure glass, reinicio de sellos y precalentamiento de carga de ascenso de emergencia. Riesgos: cizalla hirviente, oxígeno falso, bloom corrosivo, migración de fauna.
 
 ## Audio
 
-A la chimenea no le importa si la llamas energía o clima.
+Al respiradero le da igual si lo llamas energía o clima.
 
 ## Field Note
 
-Cada chimenea útil también castiga el mal momento.
+Cada respiradero útil es también una máquina para castigar el mal momento.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/es_ES. -->

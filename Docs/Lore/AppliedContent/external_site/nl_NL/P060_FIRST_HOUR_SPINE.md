@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Ruggengraat van het eerste uur
 
-Ruggengraat van het eerste uur bepaalt het openingsritme van HECTON-8. De speler begint met tastbare technische taken en visuele verwondering, en ziet daarna hoe die taken verbonden raken met een bedrijfsleugen en een onderhoudsecologie die de biologie is binnengedrongen. Zo blijft de eerste route speelbaar en atmosferisch, terwijl het grotere onderzoek wordt geplant: de oceaan verbergt het verhaal niet, hij bewaart het bewijs in druk, zout en procedure.
+Ruggengraat van het eerste uur definieert het openingsritme van HECTON-8. Tastbare technische taken en visuele verwondering komen eerst, daarna verbinden die taken zich met een bedrijfsleugen en een onderhoudsecologie die de biologie is binnengegaan. De oceaan verbergt het verhaal niet; hij bewaart bewijs in druk, zout en procedure.
 
 ## Scanner
 
-Contract, beschadigde drop, lucht, helder ondiep water, pompschuilplek, opgeschoonde leugen, daarna het eerste reparatielitteken dat leven als pakking gebruikt.
+Contract, beschadigde drop, lucht, heldere ondiepten, pompschuilplaats, gesaneerde leugen, daarna het eerste reparatielitteken dat leven als pakking gebruikt.
 
 ## Terminal
 
-ONDIEPE ANNEX: handmatige pompstart geldig. Deep-Reach-incidentpakket opgeslagen. Atlas-reparatiegroei gevonden rond kabel, gereedschapsfragment en biologisch residu.
+SHALLOW ANNEX: handmatige pompstart geldig. Deep Reach-incidentpakket gecached. Atlas-reparatiegroei gedetecteerd rond kabel, gereedschapfragment en biologisch residu.
 
 ## Audio
 
@@ -35,6 +35,6 @@ De eerste veilige kamer is niet schoon. Ze houdt alleen beter haar adem in dan j
 
 ## Field Note
 
-De opening moet mooi zijn voordat ze beschuldigend wordt.
+De opening moet mooi zijn voordat ze begint te beschuldigen.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/nl_NL. -->

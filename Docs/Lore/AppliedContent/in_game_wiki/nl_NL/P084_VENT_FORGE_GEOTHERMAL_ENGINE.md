@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Geothermische Motor van de Vent-smederij"
+title: "Geothermische Vent Forge-machine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Geothermische Motor van de Vent-smederij
+# Geothermische Vent Forge-machine
 
-Vent-smederijen verbinden geologie met crafting, overleven en horror. Ze leveren warmte- en drukcycli voor keramiek, afdichtingen en drukglas, maar dezelfde cycli maken kookzakken, valse zuurstofmetingen, corrosieve wolken en faunamigratie.
+Vent forges verbinden geologie met werk. Hun pulsen kunnen keramiek uitharden, drukafdichtingen resetten, pressure glass gloeien en stijgladingen voorverwarmen, maar elke nuttige cyclus is ook een gevarenritme. Kokende schuif valt naden aan, valse zuurstof misleidt instrumenten, corrosiebloei dringt open behuizingen binnen, en nabij leven beweegt voordat de operator begrijpt waarom.
 
 ## Scanner
 
-Vent-smederijverdeelstuk. Hitte, gif en vermogen gebruiken dezelfde buis.
+Vent forge-spruitstuk. Warmte, gif, druk en kracht delen dezelfde leiding.
 
 ## Terminal
 
-GEOTHERMISCHE MOTOR: ventpuls geschikt voor keramische uitharding, drukglas-gloeien en voorverwarming van noodstijglading. Risico's: kokende schuif, vals zuurstofpositief en corrosieve bloei.
+GEOTHERMISCHE MACHINE: ventpuls geschikt voor keramiekuitharding, pressure-glass-gloeien, afdichtingsreset en voorverwarming van noodstijglading. Blootstellingsrisico: kokende schuif, valse zuurstof, corrosiebloei, faunamigratie.
 
 ## Audio
 
-De vent geeft er niets om of je het vermogen of weer noemt.
+De vent maakt het niet uit of je het kracht of weer noemt.
 
 ## Field Note
 

@@ -6,10 +6,7 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Hecton8.Core",
-        "Hecton8.Core.Contracts",
-        "Hecton8.Inventory",
-        "Hecton8.Gameplay",
-        "Hecton8.UI"
+        "Hecton8.Core.Contracts"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

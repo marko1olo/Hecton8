@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Pool Reklamasi Aegir"
+title: "Aegir Reclamation Pool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pool Reklamasi Aegir
+# Aegir Reclamation Pool
 
-Pool Reklamasi Aegir adalah cangkang salvage publik di balik Black Keel. Sistem ini memungkinkan lisensi marauder kecil mencapai klaim Aegir yang ditinggalkan tanpa memiliki carrier antaraplanet pribadi. Kesepakatan itu berguna sekaligus beracun: pool yang bisa mengirim tender juga memutuskan apakah operator bernapas, payload tersegel, kunci karantina, atau bundel bukti layak mendapat burn berikutnya.
+Aegir Reclamation Pool adalah cangkang salvage yang membuat Black Keel terjangkau bagi licensed marauders kecil. Tidak ada independent operator yang mampu membeli, mengisi bahan bakar, dan memegang legalitas interplanetary claim carrier untuk satu bulan terbengkalai. Pool menyelesaikannya dengan menggabungkan risiko dari claims lama, rute mati, insurer liens, dan recovery contracts yang mengantre. Ia berguna karena benar-benar ada. Ia beracun karena ledger yang sama yang meluncurkan carrier juga memutuskan apa yang boleh dinilai carrier: sealed sample, proof bundle, quarantine lock, tubuh yang masih bernapas, atau burn window berikutnya keluar dari HECTON-8.
 
 ## Scanner
 
-Stempel claim-pool. Black Keel ditugaskan oleh utang rute, bukan diberikan kepada operator.
+Cap claim-pool. Black Keel dikirim oleh utang bersama, bukan oleh belas kasihan penyelamatan.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: tender otonom Black Keel ditugaskan ke klaim HECTON-8 yang terlantar di bawah tekanan. Kelas kesejahteraan kru: kontraktor. Kelas custody payload: prioritas variabel. Ekstraksi manusia tetap bersyarat sampai arbitrase pool ditutup.
+AEGIR RECLAMATION POOL: claim tender otonom BLACK KEEL ditugaskan ke derelict-pressure claim HECTON-8. Contractor welfare class terbatas. Payload custody class berubah. Human extraction tetap pending sampai arbitrase lien, quarantine, dan mass-window ditutup.
 
 ## Audio
 
-Pool memiliki rute. Kamu menyewa jawaban dengan bertahan cukup lama untuk bertanya.
+Pool memang mengirim kapal. Itulah belas kasihnya. Sesudah itu semuanya akuntansi.
 
 ## Field Note
 
-Pool bersama membuat penyelamatan lebih murah, lebih lambat, dan lebih mudah disangkal oleh setiap penanda tangan.
+Pool membuat carrier di Aegir mungkin. Ia juga membuat setiap janji bersyarat.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/id_ID. -->

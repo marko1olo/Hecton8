@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "光遅延権限"
+title: "光遅延の権限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 光遅延権限
+# 光遅延の権限
 
-HECTON-8の遭難信号は、意味を載せた物理的な貨物だ。浸水したマストを出て、Aegir空間を光速で渡り、リレーバッファで待ち、リスクの値段を先に知っている待ち行列を通ってBlack Keelへ届く。最初の遅れは正直な距離だ。その後の遅れは人間のものだ。保管等級、嵐の窓、責任文言、そして人より先に資産へ返答するキャリアの癖。だから返答は技術的には新しくても、崩れかけた加圧室では何の助けにもならない。
+光遅延の権限は、HECTON-8の通信を物理的で遅延しcontract-filteredなものとして定義する。distance、weather、relay buffers、custody queuesがsignalの有用性を決める。
+
+## Scanner
+
+relay mast cache。callはきれいに出たが、light、queue law、storm scatter、Aegir line-of-sightの後ろで待たされた。
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified。Storm scatter high。Relay queue under custody priority。fresh signal windowがoverrideを確認するまでLocal survival authority remains active。
+
+## Audio
+
+返信は来ている。それはrescueではない。
+
+## Field Note
+
+最初のscreamは誰にも検閲されていない。physicsがpolicyに追いつくだけの遅さで運んだ。
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ja_JP. -->

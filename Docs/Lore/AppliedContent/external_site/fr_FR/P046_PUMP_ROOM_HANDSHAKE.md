@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Poignée de vanne de salle des pompes"
+title: "Handshake de vanne de pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Poignée de vanne de salle des pompes
+# Handshake de vanne de pump room
 
-Les salles des pompes de HECTON-8 ne sont pas de simples drains. Leurs vannes locales, volants et clapets fatigués obligent à demander où va l’eau une fois le sol dégagé. Une pompe fonctionnelle peut ouvrir une porte, réveiller un couloir, nourrir le sonar en bruit et transformer le retour en problème suivant.
+Les pump rooms de HECTON-8 transforment drainage en consequence. Un working handwheel peut clear a floor, feed noise into sonar, charger un downstream hatch et empirer le return path.
 
 ## Scanner
 
-La pompe de puisard locale accepte l’entrée au volant. Le panier d’admission est encrassé par la mousse de capsule; la pulsation de sortie charge le couloir de retour B.
+Local sump a accepte handwheel input. Capsule foam bouche l'intake basket; outlet pulse monte dans Return Corridor B.
 
 ## Terminal
 
-P-63 CONTRÔLE DE PUISARD / ACCORD LOCAL : autorité du volant acceptée. Commande distante refusée. Débit d’admission rétabli à bas régime. Pression de sortie en hausse dans RETURN CORRIDOR B; redémarrage seulement après contrôle de l’écoutille aval.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-La vanne a pris. La sortie cogne. N’appelle pas encore ça sûr.
+Valve took. L'outlet cogne. N'appelle pas ca safe.
 
 ## Field Note
 
-Une salle des pompes sèche peut noyer le chemin du retour. Écoute le coup de bélier en sortie avant de déposer la vanne.
+Un floor sec n'est pas une solved room. Ecoute le corridor qui l'a paye.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/fr_FR. -->

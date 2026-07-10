@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "계약 위험 보상 경계"
+title: "계약 위험/보상 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 계약 위험 보상 경계
+# 계약 위험/보상 행
 
-HECTON-8의 리플레이성은 계승된 힘이 아니다. 더 나쁜 계약, 더 좁은 창, 더 이른 증거 요구, 그리고 네 어떤 부분이 아직 담보인지 기억하는 carrier다.
+Aegir 주변의 Marauder 계약은 해치를 열기 전에 위험에 가격을 붙인다. 유치권 강도, 회수 창, 보관 요구, 증거 순서, 검역 노출, 조항 가중치가 같은 잔해를 지나는 두 번의 run을 다르게 만든다. 제안은 해치가 열리기 전에 책임을 잠수자에게 옮긴다.
 
 ## Scanner
 
-계약 행은 유치권, 폭풍 창, 보관 순서, 지급 한도, 조항 가중치를 묶는다.
+제안 행 적대적: 유치권 강도, 폭풍 창, 보관 명령, 증거 깊이, 지급 상한, Deep Reach 조항 가중치가 연결되어 있다.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: 행은 유치권 심각도, 지급 한도, 폭풍 창, 샘플 보관, 증거 순서, Deep Reach 조항 가중치를 요구한다. 계약은 첫 번째 포식자다.
+계약 위험 스키마 / Aegir Reclamation Pool: 유치권 강도, 지급 상한, 폭풍 또는 궤도 창, 샘플 보관 요구, 증거 순서 깊이, 검역 노출, Deep Reach 조항 가중치가 기록된 뒤에만 보상을 게시한다. 운반선이 책임 분할을 수락할 때까지 경로 승인은 조건부다.
 
 ## Audio
 
-계약은 첫 번째 포식자다.
+Black Keel: 새 제안 게시. 더 높은 지급, 더 짧은 폭풍 창, 샘플 보관 우선. 잠수 전에 조항을 읽어라.
 
 ## Field Note
 
-보상 변경은 즉흥 lore 텍스트가 아니라 계약 행에 속한다.
+보상이 뛰면 움직인 조항을 찾아라. 대개 보관, 날씨, 검역, 또는 남의 증거 문제다.
 
 <!-- External Site; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/ko_KR. -->

@@ -19,6 +19,22 @@ localization_flags: 1
 
 # خطاف أولوية Deep Reach
 
-خطاف الأولوية هو أنظف طريقة تبقى بها Deep Reach خطرة بعد صمت المستعمرة. لا تحتاج الشركة إلى قيادة Black Keel بمعجزة بعيدة. تحتاج فقط إلى شهادة قديمة لا يزال carrier يتعرف عليها، وقاعدة استمرارية مرتبطة بوصول Atlas، وفئة payload تتفوق على جسد متعاقد في ظروف خطر محددة. هذا يكفي. يمكن إزاحة route. يمكن لصندوق مختوم أن يصعد في الطابور. يمكن لقفل الحجر أن يبقى مغلقا بينما يصبح عد أكسجين المشغل خانة دين أخرى. النتيجة أبرد من التخريب: النظام يعمل كما كتب، وDeep Reach تعلمت كيف تكتب نفسها في الأجزاء التي تنجو من الكوارث.
+يثبت خطاف أولوية Deep Reach الضغط corporate في legacy certificates وquarantine clauses وAtlas tokens وpayload priority وevidence custody بدلا من instant command مستحيل.
+
+## Scanner
+
+Certificate hook قديم. لا تحتاج Deep Reach إلى bridge ما دامت تملك clause.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate قد يرفع payload recovery أو quarantine lock أو Atlas access token أو evidence suppression queue أو sealed infrastructure proof تحت Aegir claim law. Human extraction priority unchanged ما لم يتجاوز verified hazard proof قيمة custody value.
+
+## Audio
+
+لا يحتاجون إلى الوقوف على bridge كي يوجهوا الإجابة.
+
+## Field Note
+
+أنظف من conspiracy: بقي paperwork بعد من وقعوه.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/ar_SA. -->

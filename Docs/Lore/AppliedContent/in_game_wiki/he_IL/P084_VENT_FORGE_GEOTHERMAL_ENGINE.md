@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "מנוע גיאותרמי של כבשן פתח"
+title: "מנוע גיאותרמי Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מנוע גיאותרמי של כבשן פתח
+# מנוע גיאותרמי Vent Forge
 
-כבשני פתחים מחברים גאולוגיה לייצור, הישרדות ואימה. הם מספקים חום ומחזורי לחץ לקרמיקה, אטמים וזכוכית לחץ, אבל אותם מחזורים יוצרים כיסי רתיחה, חמצן שקרי, עננים מאכלים ונדידת fauna.
+Vent forges מחברים גאולוגיה לעבודה. הפעימות שלהם יכולות לרפא קרמיקה, לאפס אטמי לחץ, לחשל pressure glass ולחמם מטעני עלייה, אבל כל מחזור שימושי הוא גם קצב סכנה. גזירת רתיחה תוקפת תפרים, חמצן כוזב מרמה מכשירים, פריחת קורוזיה נכנסת למארזים פתוחים, והחיים הקרובים זזים לפני שהמפעיל מבין למה.
 
 ## Scanner
 
-סעפת כבשן פתח. חום, רעל וכוח משתמשים באותו צינור.
+סעפת vent forge. חום, רעל, לחץ וכוח חולקים אותו צינור.
 
 ## Terminal
 
-GEOTHERMAL ENGINE: vent pulse מתאים ל-ceramic cure, pressure-glass anneal וחימום מקדים של emergency ascent charge. סיכונים: boiling shear, sensor oxygen false-positive ו-corrosive bloom.
+מנוע גיאותרמי: פעימת פתח מתאימה לריפוי קרמיקה, חישול pressure glass, איפוס אטם וחימום מוקדם של מטען עלייה חירום. סיכוני חשיפה: גזירת רתיחה, חמצן כוזב, פריחת קורוזיה, נדידת פאונה.
 
 ## Audio
 
-לפתח לא אכפת אם תקרא לו כוח או מזג אוויר.
+לפתח לא אכפת אם תקרא לזה כוח או מזג אוויר.
 
 ## Field Note
 
-כל פתח מועיל הוא גם מכונה שמענישה timing גרוע.
+כל פתח שימושי הוא גם מכונה שמענישה תזמון רע.
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/he_IL. -->

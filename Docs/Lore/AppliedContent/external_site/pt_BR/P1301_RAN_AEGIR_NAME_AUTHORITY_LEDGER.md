@@ -19,8 +19,10 @@ localization_flags: 1
 
 # Livro de Autoridade de Nomes Ran / Aegir
 
-O sistema de nomes de HECTON-8 não é curiosidade. Ele mostra qual poder está falando. A astronomia diz Ran porque uma estrela fixa rotas e atraso de luz. Escritórios de reivindicação dizem Aegir porque o gigante permite agrupar luas, infraestrutura e responsabilidade. Tabelas de seguro dizem RAN-B:H8 porque livros ordenados não têm memória. As pessoas sob a água dizem HECTON-8 porque é ali que a escotilha falha.
+O sistema de nomes de HECTON-8 é worldbuilding quieto com dentes. A lua não tem quatro nomes por decoração. Cada nome pertence a uma autoridade diferente e a uma distância moral diferente do mesmo lugar afogado.
 
-Quando um documento troca de nome, muitas vezes troca de jurisdição. Linguagem Ran pertence a tempo e física. Linguagem Aegir pertence a propriedade. RAN-B:H8 pertence a catálogo, seguro e custódia. HECTON-8 pertence a uso de campo, memória e colônia como lugar.
+            Ran é linguagem astronômica: estrela, âncora de rota, atraso de luz, tempo de carrier. Aegir é linguagem de reivindicação: gigante como corpo pai, abreviação pública e guarda-chuva corporativo. RAN-B:H8 é linguagem de seguro: registro lunar ordenável, transferível e litigável sem levar a voz da colônia junto. HECTON-8 é linguagem vivida: portas, salas, túmulos e alarmes de pressão.
+
+            Quando o jogador aprende essa gramática, documentos mudam de forma. Um aviso corporativo com Aegir pode afastar a câmera até uma falha lunar parecer manutenção de sistema. Um recibo RAN-B:H8 prepara preço de custódia. Uma nota de campo HECTON-8 preserva testemunho antes que o catálogo lave tudo.
 
 <!-- External Site; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/pt_BR. -->

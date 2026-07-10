@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir-maanroutekaart
 
-De maankaart van Aegir is operationeel voordat hij mooi is. HECTON-8 is een oceaanlichaam in een ladder van manen, shepherd rocks, ice-scatter paths en dead relay marks. Binnenste lichamen verstoren narrowband contact en stralingsdekking. IJsmanen breken optical relay lines in slechte fragmenten. Occultation bands maken stille vensters waar een claim geldig kan zijn en toch ongehoord blijft. Buitenste beacons bewaren oud eigendom nadat bemanningen verdwijnen. Getijdengeometrie en storm stacking beslissen of een bathydrop chain schoon opstijgt of in het loss ledger belandt. Publieke kaarten kunnen dit tonen zonder extra speelbare werelden te beloven; hun taak is de hemel leesbaar te maken als druk, vertraging en routerisico.
+De Aegir-maankaart moet als een operationeel bord worden gelezen. Elk label kan signaalleeftijd, stralingsschuiling, transferrisico, daalweer, bergingsgeometrie of juridische bewaartiming veranderen. HECTON-8 zit in die bewegende ladder: binnenste lichamen verstoren smalbandcontact, ijsmanen breken optische routes in fragmenten, occultatiebanden maken stille vensters en oude bakens houden eigendomsmarkeringen levend nadat crews verdwijnen. Publiek materiaal kan het systeem tonen zonder speelbare manen te beloven. De nuttige belofte is smaller: wanneer de speler uit het water omhoogkijkt, kan de hemel verklaren waarom het relais haperde, waarom een drager daalmassa weigerde of waarom een geldige claim in het donker wachtte.
 
 ## Scanner
 
-Systeemkaartrecord. Aegir-manen bepalen relay timing, stralingsdekking, ice scatter, getijdendruk, occultation bands, dode beacons en recovery geometry.
+Systeemkaartrecord. Maanlabels bepalen relaisleeftijd, getijbelasting, stralingsdekking, ijsverstrooiing, occultatiebanden, dode bakens en bergingsgeometrie.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // AEGIR-MAANLADDER. Maannamen zijn routelabels. Elk lichaam verandert signal age, transfer risk, storm exposure, custody timing of claim reliability.
+OPENBARE ARCHIEFKNOOP // AEGIR-MAANLADDER. Maan naam is routedata. Vereiste velden: signaalleeftijd, getijfase, stormdekking, claimvenster, bakenstatus, opstijgrisico.
 
 ## Audio
 
-De kaart verklaart waarom niemand aankomt op het moment dat je vraagt.
+Een maan op de kaart is geen decor. Het is een reden dat het antwoord laat kwam.
 
 ## Field Note
 
-Marauder-notitie: markeer de maan, markeer daarna wat die met de route doet.
+Marauder-notitie: markeer de maan, schrijf daarna wat hij doet met signaal, getij, massa en bewaring.
 
 <!-- External Site; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/nl_NL. -->

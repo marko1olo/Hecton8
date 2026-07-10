@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Échelle de route du canyon de saumure"
+title: "Echelle de route du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Échelle de route du canyon de saumure
+# Echelle de route du canyon de saumure
 
-Les canyons de saumure rendent la progression en profondeur physique. Couches denses, murs minéraux, fuites thermiques et distorsion acoustique apprennent au joueur pourquoi il faut de meilleurs instruments et une discipline de pression.
+Les canyons de saumure transforment la profondeur en substance. Des rivières de sel dense reposent dans l'océan comme sols, miroirs et pièges. Une route propre vient de marqueurs de densité, de fenêtres de ballast, de contrôles relais et d'angles disciplinés, pas de courage. Les couches profondes enseignent pourquoi les instruments comptent : le sonar peut refléter la salle du dessus, la flottabilité peut mentir, et la combinaison peut avoir raison quand la mer refuse.
 
-L'Échelle de route du canyon de saumure est une structure d'exploration centrale de HECTON-8: pas un couloir, mais une géographie chimique où densité, courant et son sculptent la progression. On ne nage pas dans le canyon. On négocie avec des couches plus lourdes que la combinaison.
+L'échelle de route du canyon de saumure présente la descente de HECTON-8 comme une géographie chimique où densité, courant, murs minéraux et son décident des voies survivables. On ne traverse pas le canyon à la nage. On négocie avec des couches plus lourdes que la combinaison.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/fr_FR. -->

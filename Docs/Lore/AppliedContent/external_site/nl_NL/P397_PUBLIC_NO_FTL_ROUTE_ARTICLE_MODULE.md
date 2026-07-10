@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "No-FTL-routevertraging"
+title: "Routevertraging zonder FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# No-FTL-routevertraging
+# Routevertraging zonder FTL
 
-HECTON-8 heeft geen direct reddingskanaal. Het Aegir-systeem werd bereikt door precursor probes, beam infrastructure, pellet-fusion freight en remsystemen die urgentie behandelen als nog een massabeperking. Een bericht kan aankomen voor de hardware die het nuttig zou maken. Een carrier kan je bestaan erkennen, je payload prijzen en een valid claim vasthouden, terwijl het bij verkeerde weather, relay angle of custody window geen descent mass mag uitgeven. Publieke reistekst moet die grens zichtbaar houden, want isolatie ontstaat hier uit techniek, recht en logistiek tegelijk. Black Keel kan juridisch dichtbij en fysiek onbereikbaar zijn. Die vertraging verklaart waarom de speler afdichtingen nog met de hand repareert nadat het relay antwoordt.
+HECTON-8 heeft geen direct reddingskanaal. Menselijk verkeer naar Aegir is opgebouwd uit voorlopersondekaarten, straalbaan-infrastructuur, pellet-fusievracht, remsystemen, dragervensters en juridische bewaaroverdrachten. Urgentie heft massa niet op. Een schip kan een lading prijzen, een claim accepteren en je record bewaren terwijl het geen daaltoewijzing heeft om één nuttig object het water in te brengen. Daarom behandelt de game communicatie als bewijs, niet als redding. Een antwoord bewijst dat iemand de noodsituatie hoorde. Het dicht geen afdichting, verplaatst geen bathydrop en verkort geen slecht baanvenster.
 
 ## Scanner
 
-Transitrecord. Aegir-verkeer hangt af van precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody en juridische vertraging.
+Transitrecord. Aegir-verkeer hangt af van sondekaarten, straalbanen, pellet-fusievracht, remmassa, pakketleeftijd, relaisbewaring en verweerde daalvensters.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // TRANSITLIMIET. Geen FTL. Geen Ansible. Levende redding vereist fysieke transfer, braking architecture, carrier position, descent mass en een geldig local window.
+OPENBARE ARCHIEFKNOOP // TRANSITLIMIET. FTL: afwezig. Ansible: afwezig. Levende redding vereist dragerpositie, remtoewijzing, daalmassa, lokaal weer en een niet verlopen bewaarnster.
 
 ## Audio
 
-Hulp kan juridisch aanwezig zijn en fysiek jaren weg.
+Een drager kan je noodsituatie registreren en nog jaren massa weg zijn.
 
 ## Field Note
 
-Marauder-notitie: als het relay antwoordt, vraag hoe oud het antwoord is en welke massa het kan verplaatsen.
+Marauder-notitie: elk reddingsantwoord heeft vier cijfers nodig: pakketleeftijd, dragermassa, remslot, daalvenster.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/nl_NL. -->

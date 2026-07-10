@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Crescimento de selante de concha sob pressão"
+title: "Crescimento de selante de concha pressurizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Crescimento de selante de concha sob pressão
+# Crescimento de selante de concha pressurizada
 
-O crescimento de selante de concha sob pressão é o erro mais limpo de Atlas: o reparo funciona. Camadas de silicato de cálcio e resina biopolimérica fecham uma fratura, seguram pressão estática e salvam uma sala que deveria ter afogado. O mesmo crescimento pode enterrar etiquetas, alças, setas de giz, arranhões e a última rota humana pela estação.
+Crescimento de selante de concha pode salvar uma sala e prender uma pessoa na mesma hora. Camadas de cálcio-silicato e resina fecham uma fratura, reduzem vazamento e dão a Atlas um reparo mensurável. O crescimento não verifica se cobriu uma seta de rota, uma etiqueta de pressão ou a única roda manual.
 
 ## Scanner
 
-Selante em camadas fecha a fratura e enterra marcas de rota dos trabalhadores sob concha branca.
+Concha branca de cálcio fechou a fratura e enterrou setas de rota na borda da escotilha. Cortar pode reabrir o vazamento.
 
 ## Terminal
 
-CONFLITO DE REPARO: vazamento reduzido, fronteira de pressão melhorada, marcações de saída ocultas. Cortar a concha pode reabrir caminho de inundação.
+CONFLITO DE REPARO / PORTA S-9: vazamento reduzido, limite de pressão melhorado, marcas de saída ocultas, roda manual 62 por cento enterrada. Autorização de corte requer caminho de inundação preparado.
 
 ## Audio
 
-A sala sobreviveu. A saída não.
+A parede segura. A roda da escotilha está sob dez centímetros de concha.
 
 ## Field Note
 
-Melhor em portas, rotas de rastejo e escolhas de pressão em que reparo e dano são o mesmo objeto.
+Antes de cortar concha branca de uma escotilha, descubra para onde a água foi da última vez. A etiqueta pode estar enterrada por um motivo.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/pt_BR. -->

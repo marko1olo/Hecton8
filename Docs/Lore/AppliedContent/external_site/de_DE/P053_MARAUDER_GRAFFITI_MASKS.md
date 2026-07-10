@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marodeur-Graffitimasken"
+title: "Marauder-Graffiti-Masken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marodeur-Graffitimasken
+# Marauder-Graffiti-Masken
 
-Die Marodeure von HECTON-8 sind keine gesichtslose Plündererfraktion. Es sind Arbeiter, Schuldläufer, zurückgelassene Auftragnehmer und Bergungscrews, die auf Wände schreiben lernten, weil jeder saubere Kanal beobachtet oder berechnet werden konnte. Ihr Graffiti ist absichtlich hässlich: schnell genug unter Stress, klar genug durch Kondenswasser, doppeldeutig genug, um wie Panik oder Vandalismus auszusehen. Ein schwarzer Ring ist kein Schmuck. Er bedeutet, der Träger könnte dich hören. Ein gebrochener Pfeil ist kein schlechter Entwurf. Er bedeutet, der Korridor hat sich seit dem letzten sicheren Durchgang verändert.
+Marauder-Graffiti-Masken machen scavenger writing zu lesbarer ocean infrastructure: route hints, comm silence, pressure drift, cache risk und Misstrauen gegen carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count markiert noise discipline; black rings markieren carrier-ping danger; broken arrows markieren pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+Wenn die Wand wutend aussieht, lies sie als weather.
+
+## Field Note
+
+Marauders schrieben fur Menschen, die radios nicht trauen und sich maps nicht leisten konnten.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/de_DE. -->

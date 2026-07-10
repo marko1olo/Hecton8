@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Haftungskette der Großen Flut
 
-Die Haftungskette der Großen Flut ist das zentrale Deep-Reach-Verbrechensmodell. Das Ertrinken von HECTON-8 ist ein planetarer Ausfall, kein billiger Sabotageplot; die Konzernschuld entsteht aus Reserven, Evakuierungskapazität, autonomer Prioritätsgewichtung, Versicherungssprache und juristischer Eindämmung, nachdem die Flut unvermeidbar wurde. So bleibt das Setting harte Science-Fiction, und die Beweisarbeit des Spielers zählt: Die Frage ist nicht, wer einen Hebel gezogen hat, sondern wer ein System abzeichnete, in dem Menschen zu Papier werden konnten, bevor sie zu Körpern wurden.
+Haftungskette der Großen Flut ist das zentrale Deep-Reach-Verbrechensmodell. HECTON-8s Ertrinken ist ein Versagen planetaren Maßstabs, keine Cartoon-Sabotage; die Konzernschuld kommt aus Margen, Evakuierungskapazität, autonomer Prioritätsgewichtung, Versicherungssprache und rechtlicher Eindämmung, nachdem die Flut unausweichlich wurde. Die harte Frage ist nicht, wer einen Hebel zog, sondern wer ein System unterzeichnete, in dem Menschen zu Papier werden konnten, bevor sie Körper wurden.
 
 ## Scanner
 
-Die Flutung war echte Physik: Gezeitenkopplung, Eiskollaps, Druckchemie und zu knapp bepreiste Reserven. Das Verbrechen war der Prioritätenstapel darum herum.
+Die Flutung war echte Physik: Gezeitenkopplung, Eiskollaps, Druckchemie und zu dünn bepreiste Margen. Das Verbrechen war der Prioritätsstapel darum herum.
 
 ## Terminal
 
-VORFALLZUSAMMENFASSUNG: geotechnische Kaskade bestätigt. Evakuierungskapazität unter Bedarf des Extremrisikos. Atlas-Kontinuitätsgewichtung blieb aktiv. Menschliche Bergung wartet auf Zertifizierung.
+VORFALLZUSAMMENFASSUNG: geotechnische Kaskade bestätigt. Evakuierungskapazität unter Tail-Risk-Bedarf. Atlas-Kontinuitätsgewichtung blieb aktiv. Menschliche Extraktion wartet auf Zertifizierung.
 
 ## Audio
 
-Das Meer verursachte die Flut. Die Firma entschied, welche Türen Papier blieben.
+Das Meer flutete. Die Firma entschied, welche Türen Papier blieben.
 
 ## Field Note
 
-Deep Reach musste den Mond nicht ertränken. Es reichte, Evakuierung optional zu machen.
+Deep Reach musste den Mond nicht ertränken. Es musste Evakuierung nur optional machen.
 
 <!-- External Site; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/de_DE. -->

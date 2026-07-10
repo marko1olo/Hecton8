@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Pila de recursos biometálicos"
+title: "Pila de recursos de biometal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pila de recursos biometálicos
+# Pila de recursos de biometal
 
-La pila de recursos evita que HECTON-8 colapse en un material mágico. Xenon-Omega importa, pero la luna también tiene metales, sales, química de chimenea, cerámicas, biofibras, fotoproteínas, salvage y biometal alterado por Atlas.
+La pila de recursos impide que HECTON-8 se colapse en un único material mágico. La deuda azul importa, pero la luna también paga en metales sulfurosos, sales, gases nobles, cerámicas, catalizadores, biofibras, fotoproteínas, hardware de salvamento y biometal alterado por Atlas. La violencia tiene sentido porque el valor está distribuido: muchas razones pequeñas para cortar, marcar, esconder, volver y mentir.
 
-La Pila de recursos biometálicos presenta HECTON-8 como una economía completa de presión, capaz de recompensar exploración con muchos recursos mientras blue debt sigue en la cima estratégica. Si cada muestra dice Xenon-Omega, el mundo se vuelve tonto. Cuenta también las otras razones.
+La pila de recursos de biometal plantea HECTON-8 como una economía completa de presión, con Xenon-Omega como ápice estratégico y no como lo único digno de leerse. Si cada muestra dice Xenon-Omega, el mundo se aplana. Cuenta también las razones menores por las que murió gente.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/es_ES. -->

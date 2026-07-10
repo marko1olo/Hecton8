@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Datengrenze des Ressourcenertrags"
+title: "Annahmezeile für Ressourcenertrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datengrenze des Ressourcenertrags
+# Annahmezeile für Ressourcenertrag
 
-Die Datengrenze verhindert, dass Ressourcenpreise lose Lore werden. Auf HECTON-8 ist ein Mineral nicht in jeder Tiefe gleich viel wert: Druckgeschichte, Routenverwahrung und Erschöpfung entscheiden, ob eine Probe Währung, Beweis oder kontaminierter Ballast ist.
+Ertragszeilen legen fest, wann eine Ressource bezahlbare Fracht statt loser Schrott ist. HECTON-8-Proben ändern ihren Wert mit Tiefe, Behälterrating, Kontaminationsstufe und nachweisbarer Verwahrung. Ein harmonischer blue-debt-Splitter aus einer versiegelten Soleroute ist nicht dieselbe Zeile wie ein gespülter Schelfkrümel in einem gerissenen Beutel.
 
 ## Scanner
 
-Ertragszeile weist losen Wert zurück: Klasse, Druckband, Verwahrung, Erschöpfung und Hash müssen stimmen.
+Probenzeile unvollständig: Druckhistorie, Verwahrungsstufe, Erschöpfungsstatus, Kontaminationsstufe und Pakethash stimmen nicht überein.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: Keine Zahl wird ohne packet hash, Ressourcenklasse, Druckband, Verwahrungsgrad, Seltenheitskurve und Erschöpfungsverhalten akzeptiert. Eine Probe ohne Druckgeschichte ist Beweis, kein Wert.
+ERTRAGSANNAHME-SCHEMA / Aegir Reclamation Pool: Wertbuchung ablehnen, bis Ressourcenklasse, Druckband, Verwahrungsstufe, Seltenheitskurve, Erschöpfungsverhalten, Kontaminationsstufe und Paketzeugenhash vorliegen. Ein Stein im Beutel ist Masse, bis die Druckroute bewiesen ist.
 
 ## Audio
 
-Eine Probe ohne Druckgeschichte ist kein Wert.
+Black Keel: Probenhaltung nach Druckroute und Verwahrungshash angenommen. Bis dahin fliegt sie als Ballast.
 
 ## Field Note
 
-Ertragszahlen bleiben vorläufig, bis Druckband, Verwahrungsgrad, Erschöpfungsverhalten und packet hash übereinstimmen.
+Hat die Zeile kein Druckband, feilsch nicht. Leg sie in tote Masse, lass den Behälter versiegelt und zwing den Broker nach geklärter Verwahrung zur Zahlung.
 
 <!-- In-Game Wiki; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/de_DE. -->

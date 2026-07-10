@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bintang Induk Aegir
 
-Aegir mengorbit bintang oranye-kuning tipe K. HECTON-8 gelap bukan karena kurang cahaya; kedalaman, badai, gerhana, lumpur, tekanan, dan industri rusak yang membuatnya gelap.
+Aegir mengorbit primer tipe K biasa. HECTON-8 gelap bukan karena bintangnya gagal; ia menjadi gelap melalui kedalaman kolom air, kekeruhan badai, waktu gerhana, lumpur, tekanan, dan industri rusak. Cahaya permukaan dapat menumbuhkan kehidupan paparan sementara jurang tetap menjadi titik buta hukum dan fisik.
 
 ## Scanner
 
-Cahaya primer tipe K terkonfirmasi. Permukaan punya cahaya; kedalaman, badai, dan gerhana membuat gelap.
+Primer tipe K terkonfirmasi. Ada cahaya di sistem; kedalaman, badai, gerhana, dan utang yang membuat gelap.
 
 ## Terminal
 
-Efemeris Ran/Aegir: katai K, paket antarbintang tertunda, tanpa vektor penyelamatan FTL. Semua bantuan lokal.
+EPHEMERIS RAN/AEGIR: primer katai K, keluaran fotosfer stabil, kelas paket antarbintang tertunda, tidak ada vektor penyelamatan FTL. Perlakukan bantuan sebagai lokal sampai massa tiba.
 
 ## Audio
 
-Cahaya bintang mencapai landas. Tidak mencapai masalah.
+Cahaya bintang mencapai paparan. Ia tidak mencapai masalah.
 
 ## Field Note
 
-Horornya bukan bintang. Horornya lautan.
+Horornya bukan bintang. Horornya ada di tempat laut mengubah cahaya menjadi rumor.
 
 <!-- In-Game Wiki; generated from P016_AEGIR_HOST_STAR/id_ID. -->

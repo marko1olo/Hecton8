@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Реквізиційний пул Aegir"
+title: "Рекультиваційний пул Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Реквізиційний пул Aegir
+# Рекультиваційний пул Aegir
 
-Реквізиційний пул Aegir — публічна salvage-оболонка за Black Keel. Він дозволяє малим ліцензіям marauder діставатися покинутих claims Aegir без власного міжпланетного carrier. Угода корисна й отруйна водночас: той самий пул, що може прислати тендер, вирішує, що варте наступного burn — оператор, який дихає, запечатаний payload, карантинний замок або пакет доказів.
+Рекультиваційний пул Aegir - salvage-оболонка, що робить Black Keel доступним для малих licensed marauders. Жоден independent operator не зміг би купити, заправити й законно тримати interplanetary claim carrier заради одного покинутого місяця. Пул вирішує це, об'єднуючи ризик старих claims, мертвих маршрутів, insurer liens і queued recovery contracts. Він корисний, бо взагалі існує. Він отруйний, бо той самий ledger, що запускає carrier, вирішує, що carrier має право цінувати: sealed sample, proof bundle, quarantine lock, тіло, яке ще дихає, або наступне burn window з HECTON-8.
 
 ## Scanner
 
-Штамп claim-пулу. Black Keel призначили через борг маршруту, а не подарували оператору.
+Штамп спільного claim-пулу. Black Keel відправили через спільний борг, а не з рятувальної милості.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: автономний тендер Black Keel призначено на покинуту pressure-claim HECTON-8. Клас добробуту екіпажу: contractor. Клас payload custody: змінний пріоритет. Вилучення людини лишається умовним до закриття арбітражу пулу.
+AEGIR RECLAMATION POOL: автономний claim tender BLACK KEEL призначено на derelict-pressure claim HECTON-8. Contractor welfare class обмежений. Payload custody class змінний. Human extraction лишається pending до закриття lien, quarantine і mass-window arbitration.
 
 ## Audio
 
-Пул володіє маршрутом. Ти орендуєш відповідь, якщо виживеш достатньо довго, щоб запитати.
+Пул справді надіслав корабель. Оце й є милість. Далі все - бухгалтерія.
 
 ## Field Note
 
-Спільний пул робить порятунок дешевшим, повільнішим і зручнішим для кожного підписанта, який захоче відмовитися.
+Пул зробив carrier в Aegir можливим. Він же зробив кожну обіцянку умовною.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/uk_UA. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Mara Venn/Pump Chief"
+title: "Мара Венн, начальница насосной"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Mara Venn/Pump Chief
+# Мара Венн, начальница насосной
 
-RU LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Мара Венн держит HECTON-8 через процедуру, а не через речь. Улики насосной не делают из нее памятник; они показывают, как выживание считали, оспаривали и удерживали открытым человеком, чья работа продолжалась уже после того, как язык Deep Reach начал называть аннекс обязательством.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Досье: Мара Венн. Край жетона, доска ритма и исправленный водный журнал указывают на насосную P-63.
 
 ## Terminal
 
-RU LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+НАСОСНАЯ P-63 / ВЕНН, МАРА: рукоять байпаса отполирована через слой перчаток; доска ритма закреплена рядом с отметками потерь на впуске. Исправление в журнале переводит исчезающую воду из декора протечки в нагрузку машины.
 
 ## Audio
 
-RU LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Венн не оставила прощания. Она оставила ритм на насосной доске, чтобы испуганные люди могли считать следующий вдох.
 
 ## Field Note
 
-RU LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Ставить улики Венн рядом с насосными ритмами, водными журналами и рукоятями байпаса. Ее предметы должны заставлять игрока слышать инфраструктуру как дыхание.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/ru_RU. -->

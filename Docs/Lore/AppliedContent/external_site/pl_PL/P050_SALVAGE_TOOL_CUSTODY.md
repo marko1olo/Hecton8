@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Nadzór narzędzia salvage"
+title: "Custody narzedzia salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Nadzór narzędzia salvage
+# Custody narzedzia salvage
 
-Na HECTON-8 narzędzie może być jednocześnie sprzętem przetrwania i świadkiem kontraktu. Logi nadzoru salvage wiążą cięcia, naprawy i próbki z tokenami claim, czyniąc użyteczne działanie częścią późniejszego dowodu, długu lub presji wypłaty.
+Custody narzedzia salvage laczy minute-to-minute survival z claim economy: cuts, repairs, patches i samples moga stac sie evidence, payout pressure albo Keelmark debt.
 
 ## Scanner
 
-Dok narzędzia zawiera zapieczętowany log nadzoru. Ostatnie cięcie, naprawa i worek próbki są powiązane z tokenem claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair i sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: użycie przecinaka przyjęte pod salvage claim. Działanie naprawcze poświadczone. Prawa do próbki przypięte do tokena Keelmark Mutual. Eksport dowodów koliduje z trasą wypłaty materiałowej.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Każde użyteczne cięcie zostawia świadka.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Przecinak może uratować ci powietrze i sprzedać twoje ręce jednym ruchem. Sprawdź, co zapisuje, zanim nazwiesz go swoim.
+Cutter moze save your air i sell your hands jednym stroke. Sprawdz, co records, zanim nazwiesz go swoim.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/pl_PL. -->

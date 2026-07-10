@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Pita Kedalaman Samudra Global
 
-HECTON-8 bukan samudra datar dengan angka lebih dalam. Ia negeri vertikal dengan batas yang ditulis oleh tekanan. Dari 0 sampai 250 meter, paparan fotik masih punya cahaya, alga, rongsokan lunak, dan cukup ampun untuk kesalahan awal. Dari 250 sampai 1200 meter, paparan industri dan karang kabel mulai muncul: tambatan putus, rangka pipa, tulang relai, dan jalur korporat lama. Dari 1200 sampai 2800 meter, tangga brine membelokkan sonar dan menyembunyikan panas. Dari 2800 sampai 4300 meter, perbaikan menjadi negosiasi dengan ladang mesin. Dari 4300 sampai 5600 meter, Atlas membuat tekanan menjadi kuasa.
+Global Ocean Depth Bands menyusun exploration, salvage, biology, sound, pressure, dan route risk HECTON-8 dari bright shelf sampai Atlas basin.
+
+## Scanner
+
+Depth chart. The first shelf memaafkan poor ballast; lower water menagih every mistake dalam pressure, heat, noise, dan silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth di HECTON-8 adalah law, weather, border, dan hunger memakai number yang sama.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/id_ID. -->

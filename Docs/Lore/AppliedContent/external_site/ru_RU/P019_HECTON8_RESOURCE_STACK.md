@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Стек ресурсов"
+title: "Ресурсный стек"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Стек ресурсов
+# Ресурсный стек
 
-Стек ресурсов показывает HECTON-8 как экономику давления. Xenon-Omega это стратегическая вершина, не весь мир.
+Ресурсный стек показывает HECTON-8 как экономику давления: Xenon-Omega - стратегическая вершина, а не весь мир.
 
 ## Scanner
 
-Стек: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.
+Стек прочитан: рифовое волокно, соли рассола, ядра ретрансляторов, pressure valves, жерловые катализаторы, синий долг, pressure glass, решетка Atlas.
 
 ## Terminal
 
-Модель ценности: биота выживания, человеческий salvage, route hardware, химия давления, blue debt, pressure glass, continuity substrate.
+МОДЕЛЬ ЦЕННОСТИ: биота выживания, человеческий salvage, маршрутное железо, химия давления, синий долг, pressure glass, субстрат непрерывности. Не сводить стек к одному чудо-материалу.
 
 ## Audio
 
@@ -35,6 +35,6 @@ localization_flags: 1
 
 ## Field Note
 
-Здесь нет просто лута.
+Здесь ничто не просто добыча. Каждый образец принадлежит экономике давления.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/ru_RU. -->

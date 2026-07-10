@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir-terugwinningspool"
+title: "Aegir Reclamation Pool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir-terugwinningspool
+# Aegir Reclamation Pool
 
-De Aegir-terugwinningspool is de publieke salvage-huls achter Black Keel. Kleine marauder-licenties kunnen zo verlaten Aegir-claims bereiken zonder een eigen interplanetaire carrier. Die afspraak helpt en vergiftigt tegelijk: dezelfde pool die een tender kan sturen, beslist of een ademende operator, verzegelde payload, quarantaineslot of bewijsbundel de volgende burn waard is.
+De Aegir Reclamation Pool is de salvage-schil die Black Keel bereikbaar maakt voor kleine licensed marauders. Geen independent operator kan voor een enkele verlaten maan een interplanetary claim carrier kopen, brandstof geven en legaal in stand houden. De pool lost dat op door risico te bundelen uit oude claims, dode routes, insurer liens en recovery contracts in wachtrij. Hij is nuttig omdat hij bestaat. Hij is giftig omdat hetzelfde ledger dat de carrier lanceert ook beslist wat de carrier mag waarderen: een sealed sample, een proof bundle, een quarantine lock, een lichaam dat nog ademt, of het volgende burn window uit HECTON-8.
 
 ## Scanner
 
-Claim-poolstempel. Black Keel werd toegewezen door routeschuld, niet geschonken aan de operator.
+Stempel van de claim-pool. Black Keel werd gestuurd door gedeelde schuld, niet door reddingsgenade.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: autonome tender Black Keel toegewezen aan derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: variabele prioriteit. Menselijke extractie blijft voorwaardelijk tot poolarbitrage sluit.
+AEGIR RECLAMATION POOL: autonome claim tender BLACK KEEL toegewezen aan derelict-pressure claim HECTON-8. Contractor welfare class beperkt. Payload custody class variabel. Human extraction blijft pending tot lien-, quarantine- en mass-window-arbitration sluiten.
 
 ## Audio
 
-De pool bezit de route. Jij huurt het antwoord door lang genoeg te overleven om te vragen.
+De pool stuurde echt een schip. Dat is de genade. Alles daarna is boekhouding.
 
 ## Field Note
 
-Een gedeelde pool maakt redding goedkoper, trager en voor elke ondertekenaar makkelijker te ontkennen.
+De pool maakte een carrier in Aegir mogelijk. Hij maakte ook elke belofte voorwaardelijk.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/nl_NL. -->

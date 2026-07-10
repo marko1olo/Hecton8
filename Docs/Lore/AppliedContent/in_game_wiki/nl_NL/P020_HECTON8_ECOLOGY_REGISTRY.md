@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ecologieregister
 
-HECTON-8 heeft contrast nodig: mooi nuttig ondiep water, aanpassing aan menselijke structuren, daarna diepe Atlas-intrusie. Horror werkt omdat inheems leven eerst bestond.
+Het ecologieregister scheidt leven van schade. Heldere plaatmatten en grazers tonen de basis. Kabelflora en filterlichamen tonen leven dat zich aan menselijke hardware aanpast. Sensor-gemarkeerde fauna, geleidende film en shell-seal-groei wijzen op Atlas-reparatierouting. De juiste vraag is niet of iets leeft, maar welk werk het in het druksysteem doet.
 
 ## Scanner
 
-Heldere ondiepe ecologie bevestigd. Dieper: kabelflora, filterlichamen en Atlas-intrusie.
+Registerscheiding bevestigd: inheems plaatleven, kabel-aangepaste biota, Atlas-geroute reparatieorganismen. Identificeer voor snijden.
 
 ## Terminal
 
-Scheiding: inheemse drukecologie, kolonie-aangepaste biota, door Atlas veranderde organismen. Niet samenvoegen.
+REGISTERSCHEIDING: inheemse drukecologie; kolonie-aangepaste kabelbiota; door Atlas veranderde reparatieorganismen. Verkeerd labelen kan werkende afdichtingen vernietigen of routebewijs wissen.
 
 ## Audio
 
-Als alles monster is, is niets schending.
+Als alles een monster is, snijd je door wat druk vasthoudt.
 
 ## Field Note
 
-De wereld leefde voordat hij gewond raakte.
+De wereld leefde voordat zij gewond werd.
 
 <!-- In-Game Wiki; generated from P020_HECTON8_ECOLOGY_REGISTRY/nl_NL. -->

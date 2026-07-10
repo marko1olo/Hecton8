@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ventanas accesibles del lecho marino"
+title: "Ventanas de seafloor accesibles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ventanas accesibles del lecho marino
+# Ventanas de seafloor accesibles
 
-Las ventanas accesibles del lecho son lugares donde la corteza rota de HECTON-8 reduce por poco tiempo el coste de descender. Nacen en plataformas colapsadas, crestas expuestas, cicatrices de ventila recalentadas y columnas de salmuera que llevan la presion de otro modo. Una ventana sigue siendo letal si se fuerza. Da contacto con suelo antiguo, vetas minerales raras, hardware colonial enterrado y pruebas que el oceano principal aplastaria fuera de alcance.
+Las accessible seafloor windows no son safe places. Son rare permissions escritas por broken geology. Un collapsed shelf lowers the descent angle. Una reheated brine column carries pressure differently durante unos cientos de metros. Un exposed ridge permite a sonar hold shape donde open water swallow it. Por esas windows, old floor se vuelve reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines y evidence que el main ocean mantendria out of human range. Rush a window y se cierra con the same pressure that made it valuable.
 
 ## Scanner
 
-Marcador de cresta expuesta. Aqui la corteza se desgarro lo bastante fina para que un crawler toque suelo antiguo sin volverse pasta.
+Exposed ridge marker. Aqui la shell se rasgo lo bastante thin para que un crawler toque old floor without becoming paste.
 
 ## Terminal
 
-CRITERIOS DE VENTANA: labio de corteza fracturada, columna de salmuera recalentada por ventilas, rampa de plataforma colapsada, retorno de sonar estable, bolsa de presion bajo linea roja del traje. Marcar solo para saqueo lento.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-El mar te deja tocar fondo por ventanas, no donde te sientas valiente.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-Casi toda la luna guarda su fondo como secreto de presion. Las ventanas son excepciones con dientes.
+La mayor parte de la moon guarda su floor como pressure secret. Las windows son exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/es_ES. -->

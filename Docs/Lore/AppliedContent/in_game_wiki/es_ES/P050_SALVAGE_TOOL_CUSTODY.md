@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Custodia de herramienta de salvamento"
+title: "Custodia de herramienta salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custodia de herramienta de salvamento
+# Custodia de herramienta salvage
 
-Las herramientas de salvamento no son equipo neutral. Cortadores, parcheadores y muelles de fabricador pueden registrar quién abrió un panel, reparó una línea o movió una muestra. Ese registro puede proteger pruebas, adjuntar derechos de pago o fortalecer el claim contra el jugador. La custodia de herramienta es donde la supervivencia minuto a minuto toca la economía de salvamento más amplia.
+Las salvage tools en HECTON-8 son survival gear, pero no son innocent. Un cutter abre un panel. Un patcher seals a line. Un fabricator dock prints a clamp que keeps air moving. La misma action tambien puede write custody: quien used the tool, que fue opened, si se attached un sample pouch y que claim token owns the next argument. Ese record puede protect evidence o tighten debt. La parte cruel es que refusing the tool puede kill faster que aceptar su witness.
 
 ## Scanner
 
-El muelle de herramienta contiene un registro de custodia sellado. Último corte, reparación y bolsa de muestra ligados a un token de claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair y sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: uso de cortador aceptado bajo salvage claim. Acción de reparación atestiguada. Derechos de muestra anexos a token Keelmark Mutual. Exportación de pruebas en conflicto con ruta de pago material.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Cada corte útil deja un testigo.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Un cortador puede salvar tu aire y vender tus manos en el mismo trazo. Revisa qué registra antes de llamarlo tuyo.
+Un cutter puede save your air y sell your hands en el mismo stroke. Revisa que records antes de llamarlo tuyo.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/es_ES. -->

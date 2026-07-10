@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Sonarowa trasa powrotna"
+title: "Sonar return route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Sonarowa trasa powrotna
+# Sonar return route
 
-Nawigacja HECTON-8 traktuje drogę powrotną jak pracę, nie pocieszenie. Stara latarnia może nadal wskazywać dobry korytarz, ukrywając nową przeszkodę, przesunięte dno mułu lub drzwi ciśnieniowe, które zmieniły echo.
+Sonar return routes czynia navigation praca ciagla: stale beacons moga wskazywac right corridor, ukrywajac new silt, obstruction drift, fauna movement albo pressure-door changes.
 
 ## Scanner
 
-Latarnia powrotna nieaktualna. Stary bezpieczny ping nie pasuje już do echa korytarza; masa ładunku spowolni okno odwrotu.
+Return beacon stale. Old safe ping nie pasuje juz do corridor echo; cargo mass spowolni retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: ostatnie czyste echo nieważne. Ping Black Keel odebrany z niską pewnością. Dryf przeszkód i gęstość mułu przekraczają tolerancję mapy. Oznaczyć drugą linię przed wydobyciem ładunku.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density i cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-Trasa nadal tam jest. Echo nie jest takie samo.
+The route is still there. Echo nie jest takie samo.
 
 ## Field Note
 
-Pinguj przed załadunkiem. Jeśli droga do domu zmieniła się przy pustych rękach, nie wybaczy pełnego plecaka.
+Ping before loading. Jesli way home changed, gdy hands byly empty, nie wybaczy full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/pl_PL. -->

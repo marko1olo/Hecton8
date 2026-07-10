@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ex-Deep-Reach Marauder
 
-The protagonist was not born to HECTON-8 and is not chasing a family ghost. The old colony recognizes something colder: a field-systems repair cadence, emergency routing habits, and the small shortcuts taught by Deep Reach work. That history makes the first locked doors personal without turning the story into bloodline melodrama. A Marauder can cut open a claim cache for money; an ex-Deep-Reach specialist also knows which seal log should not exist, which evacuation instruction was written by someone covering a delay, and which repair sequence was kept alive after the workers were written off.
+The Marauder was not born to HECTON-8 and is not chasing a family ghost. The old colony recognizes something colder: field-systems repair cadence, emergency routing habits, and small shortcuts taught by Deep Reach evacuation work. That history makes the first locked doors personal without turning the story into bloodline melodrama. A claim cache can be cut open for money; an ex-Deep-Reach specialist also knows which seal log should not exist, which evacuation instruction was written to cover a delay, and which repair sequence kept running after the workers were written off.
 
 ## Scanner
 
-The old Deep Reach lock does not check your name. It recognizes the rhythm of your repair sequence.
+The old Deep Reach lock does not check a name. It recognizes the rhythm of a field repair.
 
 ## Terminal
 
-CREDENTIAL TRACE: former field-systems contract. Evacuation infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
+CREDENTIAL TRACE: former field-systems contract. Evacuation-infrastructure access revoked. Salvage status accepted under claim-pool debt custody.
 
 ## Audio
 

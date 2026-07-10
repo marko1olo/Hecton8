@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Estrela hospedeira de Aegir
 
-Aegir orbita uma estrela laranja-amarela tipo K. HECTON-8 não é escura por falta de luz; profundidade, tempestades, eclipses, lodo, pressão e indústria quebrada fazem a escuridão.
+Aegir orbita uma primária normal tipo K. HECTON-8 não é escuro porque a estrela falha; fica escuro por coluna d'água, turbidez de tempestade, tempo de eclipse, silte, pressão e indústria quebrada. A luz de superfície pode nutrir a vida da plataforma enquanto o abismo segue como ponto cego legal e físico.
 
 ## Scanner
 
-Luz primária tipo K confirmada. A superfície tem luz; profundidade, tempestades e eclipses fazem o escuro.
+Primária tipo K confirmada. Há luz no sistema; profundidade, tempestades, eclipses e dívida fazem o escuro.
 
 ## Terminal
 
-Efeméride Ran/Aegir: anã K, pacotes interestelares atrasados, sem vetor de resgate FTL. Toda ajuda é local.
+EFEMERIDES RAN/AEGIR: primária anã K, saída fotosférica estável, classe de pacotes interestelares atrasados, sem vetor de resgate FTL. Tratar ajuda como local até massa chegar.
 
 ## Audio
 
-A luz da estrela chega à plataforma. Não chega ao problema.
+A luz da estrela alcança a plataforma. Não alcança o problema.
 
 ## Field Note
 
-O horror não é a estrela. É o oceano.
+O horror não é a estrela. É onde o oceano transforma luz em boato.
 
 <!-- In-Game Wiki; generated from P016_AEGIR_HOST_STAR/pt_BR. -->

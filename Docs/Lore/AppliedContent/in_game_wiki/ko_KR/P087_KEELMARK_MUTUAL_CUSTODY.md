@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Keelmark Mutual Custody
 
-Keelmark Mutual은 현장에 살아 있는 구조 권한 없이도 Black Keel이 Aegir에서 운용되게 하는 보험-custody 껍데기다. 서류상으로는 Deep Reach가 아니다. 실제로는 올바른 priority hook을 가진 자가 오래된 underwriting을 조종할 수 있다. 오퍼레이터가 도움을 요청하기 전에 모든 몸, 도구, 샘플, 봉인 상자는 이미 위험 schedule 안에 있다.
+Keelmark Mutual은 Black Keel의 행동 뒤에 있는 insurance-custody shell이다. Deep Reach가 가면을 쓴 것도 아니고, 비밀 rescue service도 아니다. Keelmark는 Aegir에서 아무도 실시간 전화를 받을 수 없을 때 claim tenders가 합법적이고 자금이 있고 보험 처리된 상태로 남도록 존재한다. 그래서 악당보다 차갑다. policy는 운용자를 미워하지 않는다. 그저 운용자를 debt, vessel risk, payload interface, quarantine exposure, possible witness로 정의한다. 그 범주가 생긴 순간 이후의 모든 호소는 그것들을 통과해야 한다.
 
 ## Scanner
 
-보험 껍데기 온전. Keelmark는 몸보다 먼저 lien을 소유한다.
+underwriting tag 온전. lien에 이미 이빨이 있다면 Keelmark에 악의는 필요 없다.
 
 ## Terminal
 
-KEELMARK MUTUAL: claim-tender lien 활성. 오퍼레이터 부채, 선박 위험, payload custody, 격리 예비가 원격 underwriting schedule 아래 묶임. distress 상태는 lien을 정지하지 않는다.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve, recovery proof가 remote underwriting schedule 아래 묶임. Distress status는 lien 또는 custody order를 중지하지 않음.
 
 ## Audio
 
-그 보험은 네 조난 호출보다 오래되었다.
+그 policy는 distress call보다 오래되었다. 항로를 배울 시간이 더 많았다.
 
 ## Field Note
 
-보험사는 숨은 지배자가 아니다. 더 나쁘다. 신경 쓸 필요가 없었던 schedule이다.
+어두운 방의 mastermind는 없다. 죄책감보다 오래 살아남은 schedule만 있다.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/ko_KR. -->

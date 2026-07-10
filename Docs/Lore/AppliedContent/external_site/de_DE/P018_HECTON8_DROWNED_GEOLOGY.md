@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ertrunkene Geologie
 
-Ertrunkene Geologie macht Wiederspielbarkeit aus Gelände, Sole, Hitze und Druck.
+Ertrunkene Geologie lässt sichere Wege verfallen: Stürme, Schlickdrift, Soleverschiebung und Bergungsschäden können den gestrigen Weg zur Falle machen.
 
 ## Scanner
 
-Geschichtete Schelfe, Canyons, Salztreppen und Schlote. Der Mond lehrt Abstieg durch Gelände, nicht Tore.
+Geschichteter Schelf, Canyontrichter, Soletreppe, Ventnarbe und Schlickfreilegung erkannt. Gelände ist Druckrouting, kein Hintergrund.
 
 ## Terminal
 
-Prognose: Schelfbruch, Canyon-Trichter, Dichteschleier, Thermalfahnen, Abyssalschlick.
+TIEFENPROGNOSE: Schelfkollaps, Service-Canyon-Trichter, Sole-Dichtevorhänge, thermische Fahnen, abyssale Schlickfreilegung. Routenvertrauen sinkt nach Sturmflut oder Bergungsschnitten.
 
 ## Audio
 
-Lies den Fels, bevor der Anzug gewinnen soll.
+Lies den Fels, bevor du den Anzug gewinnen lässt.
 
 ## Field Note
 
-Der sicherste Weg ist eine Lesart, kein Korridor.
+Der sicherste Weg ist eine Lesung, kein Korridor.
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/de_DE. -->

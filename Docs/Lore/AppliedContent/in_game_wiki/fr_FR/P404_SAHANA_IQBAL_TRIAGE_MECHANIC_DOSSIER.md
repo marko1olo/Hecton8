@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mécanicienne de triage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mécanicienne de triage
 
-FR LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal réparait des machines dans la pièce où des travailleurs blessés attendaient que leurs noms montent sur un rail. Son dossier lie notes de couple, étiquettes de lits, cartouches d'épurateur, billets de réserve d'oxygène et ruban orange de quarantaine. Les objets rendent physique le retard Deep Reach : le même tableau limitait la tension des boulons et décidait quel corps, quelle vanne ou quel filtre recevait de l'attention avant la prochaine chute de pression. Le travail d'Iqbal n'est pas une grande devise de compassion. C'est une main choisissant l'ordre le moins mortel pendant que l'ordre officiel change.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier : Sahana Iqbal. Tableau de couple, étiquettes de lits et ruban de quarantaine partagent le même ordre d'attente.
 
 ## Terminal
 
-FR LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+BAIE DE TRIAGE C-2 / IQBAL, SAHANA : limites de couple affichées près des étiquettes de réserve d'oxygène. Outils, lits et cartouches d'épurateur mis en file sur le même rail. Le langage de quarantaine a encore déplacé la ligne de portée.
 
 ## Audio
 
-FR LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal réparait ce qu'elle pouvait atteindre. Le tableau décidait sans cesse ce qui comptait comme atteignable.
 
 ## Field Note
 
-FR LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Utiliser Iqbal dans boucles de réparation de quarantaine, couloirs médicaux, files d'oxygène et interfaces où un choix de machine coûte visiblement du temps humain.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/fr_FR. -->

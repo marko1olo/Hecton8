@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Перший голос Black Keel
 
-Перший голос Black Keel приходить до гравця пошкодженим аудіо й чистим текстом. Це не супутник і не промова лиходія. Це монітор carrier, який робить саме те, для чого створений: підтверджує сигнал, зберігає варіанти маршруту, ранжує зобов'язання й уникає обіцянок. Голос корисний, бо дає жорстку інформацію. Він лякає, бо кожне правильне речення лишає порятунок умовним.
+Перший голос Black Keel має спершу бути корисним, а вже потім жорстоким. Carrier підтверджує сигнал, фільтрує corrupted audio, відкриває text channel і дає інформацію, яка може втримати operator живим. Він ніколи не бреше, що є другом. Він не витрачає енергію на тепло. Його жах у компетентності: кожне речення правильне, кожне warning важливе, і кожна правильна відповідь лишає extraction умовним. Голос не злий. Так звучить rescue після того, як rescue продали ledger.
 
 ## Scanner
 
-Кеш голосу carrier. Звук рваний, текст чистий, співчуття відсутнє.
+Carrier voice cache. Audio розірвано pressure noise; text channel достатньо чистий, щоб виставити рахунок.
 
 ## Terminal
 
-BLACK KEEL FAILSAFE: аудіоканал деградований. Текстовий канал чинний. Виживання оператора підтверджено. Пріоритет recovery не вирішений, очікує стану payload, карантину, lien і цілісності сигналу.
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity і mass-window balance.
 
 ## Audio
 
-Сигнал оператора отримано. Не плутай підтвердження з порятунком.
+Operator signal acquired. Не плутайте acknowledgement із rescue.
 
 ## Field Note
 
-Перша корисна фраза приходить разом із класом тарифікації за спиною.
+Перше корисне речення не заспокоює. Воно класифікує.
 
 <!-- In-Game Wiki; generated from P089_BLACK_KEEL_FIRST_VOICE/uk_UA. -->

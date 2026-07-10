@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Escada de Rota do Cânion de Salmoura"
+title: "Escada de rota do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escada de Rota do Cânion de Salmoura
+# Escada de rota do cânion de salmoura
 
-Cânions de salmoura tornam física a progressão de profundidade. Camadas densas, paredes minerais, vazamentos térmicos e distorção acústica ensinam por que viagens mais profundas exigem instrumentos melhores e disciplina de pressão.
+Cânions de salmoura transformam profundidade em substância. Rios densos de sal ficam dentro do oceano como pisos, espelhos e armadilhas. Uma rota limpa é feita de marcadores de densidade, janelas de lastro, checagens de relé e disciplina de ângulo, não de coragem. As camadas profundas ensinam por que instrumentos importam: sonar pode refletir a sala acima, flutuabilidade pode mentir e o traje pode estar certo enquanto o mar discorda.
 
-A Escada de Rota do Cânion de Salmoura é uma estrutura central de exploração de HECTON-8: não corredor, mas geografia química onde densidade, corrente e som moldam o progresso. Você não nada pelo cânion. Você negocia com camadas mais pesadas que o traje.
+A escada de rota do cânion de salmoura enquadra a descida de HECTON-8 como geografia química: densidade, corrente, paredes minerais e som decidem quais rotas sobrevivem. Você não nada pelo cânion. Você negocia com camadas mais pesadas que o traje.
 
 <!-- External Site; generated from P083_BRINE_CANYON_ROUTE_LADDER/pt_BR. -->

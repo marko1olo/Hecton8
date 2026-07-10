@@ -19,22 +19,22 @@ localization_flags: 1
 
 # משמורת Keelmark Mutual
 
-Keelmark Mutual היא מעטפת הביטוח וה-custody שמאפשרת ל-Black Keel לפעול ב-Aegir בלי רשות חילוץ חיה באתר. על הנייר היא לא Deep Reach. בפועל, underwriting ישן יכול להיות מנותב בידי מי שמחזיק ב-priority hook הנכון, כי כל גוף, כלי, דגימה ותיבה חתומה כבר נמצאים בלוח סיכון לפני שהמפעיל מבקש עזרה.
+Keelmark Mutual היא מעטפת ה-insurance-custody שמאחורי ההתנהגות של Black Keel. זו לא Deep Reach במסכה, ולא rescue service סודי. Keelmark קיימת כדי לשמור על claim tenders חוקיים, ממומנים ומבוטחים כשאף אחד ב-Aegir לא יכול לענות לטלפון חי. זה הופך אותה לקרה יותר מנבל. ה-policy לא שונאת את המפעיל; היא פשוט מגדירה אותו כ-debt, vessel risk, payload interface, quarantine exposure ו-possible witness. ברגע שהקטגוריות האלה קיימות, כל תחינה מאוחרת יותר חייבת לעבור דרכן.
 
 ## Scanner
 
-מעטפת הביטוח שלמה. Keelmark מחזיקה בשעבוד לפני שהיא מחזיקה בגוף.
+תג underwriting שלם. Keelmark לא צריכה זדון כאשר ל-lien כבר יש שיניים.
 
 ## Terminal
 
-KEELMARK MUTUAL: שעבוד claim-tender פעיל. חוב מפעיל, סיכון כלי, payload custody ועתודת הסגר מאוגדים תחת לוח underwriting מרוחק. מצב מצוקה אינו משעה את השעבוד.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve ו-recovery proof כרוכים תחת remote underwriting schedule. Distress status אינו משהה lien או custody order.
 
 ## Audio
 
-הפוליסה ישנה יותר מקריאת המצוקה שלך.
+ה-policy ישנה יותר מה-distress call. היה לה יותר זמן ללמוד את הנתיב.
 
 ## Field Note
 
-המבטחת אינה מוח נסתר. היא גרועה יותר: לוח זמנים שמעולם לא היה צריך לדאוג.
+אין mastermind בחדר חשוך. רק schedule ישן מספיק כדי לשרוד אשמה.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/he_IL. -->

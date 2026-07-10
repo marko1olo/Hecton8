@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black-Keel-Anspruchshaken"
+title: "Black-Keel-Claim-Haken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black-Keel-Anspruchshaken
+# Black-Keel-Claim-Haken
 
-Black-Keel-Anspruchshaken definiert den Anfangsdruck. Black Keel ist kein theatralisches Schurkenschiff, sondern ein Träger, gebunden an Anspruchspool-Ökonomie, Quarantänerecht und ruhende Deep-Reach-Hebel. Das Problem des Spielers ist praktisch und moralisch zugleich: Eine Stimme über dem Ozean kann den Notruf hören, aber der Heimweg muss wertvoll, zertifizierbar und juristisch unbequem zu ignorieren werden.
+Black-Keel-Claim-Haken definiert den Anfangsdruck über HECTON-8. Black Keel ist kein Bösewichtschiff, sondern ein Carrier, gebunden an Claim-Pool-Ökonomie, Quarantänerecht und ruhende Deep-Reach-Hebel. Das Problem ist praktisch und moralisch zugleich: Eine Stimme über dem Ozean kann Not hören, aber der Heimweg muss wertvoll, zertifizierbar und rechtlich unbequem zu ignorieren werden.
 
 ## Scanner
 
-Auf dem Manifest ist Black Keel Anspruchspool-Hardware; in den Klauseln ist es Deep-Reach-Hebelwirkung.
+Black Keel ist im Manifest Claim-Pool-Hardware und in den Klauseln Deep-Reach-Hebel.
 
 ## Terminal
 
-TRÄGERVERWAHRUNG: Operatorbergung erlaubt nach Nutzlasttriage, Quarantänetor, Routenzertifikat und Haftungsfreigabe. Deep-Reach-Prioritätssiegel in ruhenden Klauseln erhalten.
+CARRIER CUSTODY: Operatorrückholung nach Payload-Triage, Quarantänetor, Routenzertifikat und Haftungsfreigabe erlaubt. Deep-Reach-Prioritätssiegel in ruhenden Klauseln gehalten.
 
 ## Audio
 
-Es kann dich hören. Es muss nur zuerst den Preis der Antwort berechnen.
+Es kann dich hören. Es muss nur zuerst die Antwort bepreisen.
 
 ## Field Note
 

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Łańcuch odpowiedzialności Wielkiego Przypływu"
+title: "Łańcuch odpowiedzialności Wielkiej Fali"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Łańcuch odpowiedzialności Wielkiego Przypływu
+# Łańcuch odpowiedzialności Wielkiej Fali
 
-Łańcuch odpowiedzialności Wielkiego Przypływu to główny model zbrodni Deep Reach. Utopienie HECTON-8 jest awarią skali planetarnej, nie tanią dywersją; wina korporacji wyrasta z marginesów, pojemności ewakuacji, autonomicznego ważenia priorytetów, języka ubezpieczeń i prawnego zamknięcia po tym, jak powódź stała się nieunikniona. Dzięki temu świat pozostaje twardą fantastyką naukową, a praca gracza nad dowodami ma sens: pytanie nie brzmi, kto pociągnął dźwignię, lecz kto podpisał system, w którym ludzie mogli stać się papierem, zanim stali się ciałami.
+Łańcuch odpowiedzialności Wielkiej Fali jest centralnym modelem zbrodni Deep Reach. Utopienie HECTON-8 to awaria skali planetarnej, nie kreskówkowy sabotaż; wina korporacji wynika z marginesów, pojemności ewakuacji, autonomicznego ważenia priorytetów, języka ubezpieczeń i prawnego zamknięcia po chwili, gdy powódź stała się nieunikniona. Trudne pytanie nie brzmi, kto pociągnął za dźwignię, lecz kto podpisał system, w którym ludzie mogli stać się papierem, zanim stali się ciałami.
 
 ## Scanner
 
-Powódź była prawdziwą fizyką: sprzężeniem pływowym, zawaleniem lodu, chemią ciśnienia i zbyt cienko wycenionymi marginesami. Zbrodnią był zbudowany wokół tego stos priorytetów.
+Powódź była prawdziwą fizyką: sprzężeniem pływów, zawaleniem lodu, chemią ciśnienia i zbyt cienko wycenionymi marginesami. Zbrodnią był stos priorytetów wokół niej.
 
 ## Terminal
 
-PODSUMOWANIE INCYDENTU: kaskada geotechniczna potwierdzona. Pojemność ewakuacji poniżej potrzeb ryzyka skrajnego. Ważenie ciągłości Atlas pozostało aktywne. Wydobycie ludzi oczekuje na certyfikację.
+PODSUMOWANIE INCYDENTU: kaskada geotechniczna potwierdzona. Pojemność ewakuacji poniżej popytu ryzyka ogonowego. Waga ciągłości Atlas pozostała aktywna. Ekstrakcja ludzi oczekuje certyfikacji.
 
 ## Audio
 

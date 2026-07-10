@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Relai Organ Filter Akustik
 
-Organ filter akustik tumbuh di tenggorokan relai lama, tempat air, tekanan, dan suara melakukan pekerjaan yang tidak bisa dilakukan radio. Jaringan itu tidak berbicara. Ia mengubah impedansi, meredam deru pompa, dan membuat nada pinger sempit berjalan lebih jauh dari semestinya. Atlas dapat memakai gema berulang itu sebagai relai murah, dan pemain teliti dapat memakainya sebagai petunjuk rute.
+Organ filter akustik terbentuk di dalam pipa relai lama saat tekanan, air bergerak, dan suara terus memberi makan jaringan. Organ itu bisa membuat pinger berjalan lebih jauh dengan memotong deru pompa dan melewatkan nada sempit. Lipatan yang sama bisa menunda balik dan menggeser dinding di peta beberapa meter, cukup untuk memasukkan penyelam ke jalan buntu.
 
 ## Scanner
 
-Jaringan sekat lunak di pipa relai meloloskan nada pinger dan membunuh bising pompa.
+Jaringan sekat di leher relai melewatkan nada pinger sempit dan memotong suara pompa. Peta balik bergeser fase.
 
 ## Terminal
 
-CATATAN RELAI: lipatan hidup menolak bising mesin lebar, meloloskan pulsa pinger sempit, dan menggeser fase gema balik. Kepercayaan peta hilir dikurangi.
+PIPA RELAI A-17: lipatan hidup melewatkan pulsa pinger 8-12 kHz, menolak suara pompa lebar, dan menambah tunda balik. Kepercayaan peta hilir turun. Jangan sertifikasi rute pulang hanya dari relai ini.
 
 ## Audio
 
-Jika ia menjawab seperti peralatan, ingat bahwa peralatan tidak berdarah.
+Ia menjawab pinger. Pipa bocor cairan bening. Tandai sebagai hewan, bukan relai.
 
 ## Field Note
 
-Pakai saat sonar terasa membantu sebelum terasa mencurigakan.
+Jika relai menjawab terlalu bersih di pipa banjir, kirim pinger kedua dari sudut lain. Suara bagus tetap bisa menjadi peta buruk.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/id_ID. -->

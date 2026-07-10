@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ZH LOC HOLD: Lian Torres/Vent Forge"
+title: "连·托雷斯，热口锻炉操作员"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ZH LOC HOLD: Lian Torres/Vent Forge
+# 连·托雷斯，热口锻炉操作员
 
-ZH LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+连·托雷斯把HECTON-8工业落在工艺上，而不是奇迹材料上。热口锻炉证据显示，压力玻璃、密封环和陶瓷衬套并不是天生的战利品。它们被加工、退回、重标，并被做到足够安全，让另一个人在水下信任。
 
 ## Scanner
 
-ZH LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+档案：连·托雷斯。隔热手套、循环计时器和废品托盘对应同一批压力玻璃。
 
 ## Terminal
 
-ZH LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+V-9热口锻炉 / TORRES, LIAN：废品托盘保留了裂开的密封环、浑浊压力玻璃和三块标记过热试片。批次备注：失败只有在保留标签时，才能教会下一道密封。
 
 ## Audio
 
-ZH LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+托雷斯保留坏件。在锻炉里，干净地面意味着有人把教训扔掉了。
 
 ## Field Note
 
-ZH LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+在热口锻炉道具、压力玻璃配方、废弃密封环，以及需要可见失败历史的升级台附近使用托雷斯。
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/zh_CN. -->

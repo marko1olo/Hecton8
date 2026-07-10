@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Mesin Geotermal Tempa Vent"
+title: "Mesin Geotermal Vent Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Mesin Geotermal Tempa Vent
+# Mesin Geotermal Vent Forge
 
-Tempa vent menghubungkan geologi dengan crafting, bertahan hidup dan horor. Ia memberi panas dan siklus tekanan untuk keramik, seal dan kaca tekanan, tetapi siklus yang sama membuat kantong mendidih, pembacaan oksigen palsu, awan korosif dan migrasi fauna.
+Vent forge menghubungkan geologi dengan kerja. Pulsanya dapat mengeraskan keramik, mereset seal tekanan, meng-anneal pressure glass, dan memanaskan muatan naik, tetapi setiap siklus berguna juga ritme bahaya. Shear mendidih menyerang jahitan, oksigen palsu menipu instrumen, bloom korosif masuk ke housing terbuka, dan kehidupan sekitar bergerak sebelum operator tahu sebabnya.
 
-Mesin Geotermal Tempa Vent menunjukkan mengapa HECTON-8 berharga dan mematikan: bulan itu mesin industri sebelum manusia membangun mesin di atasnya. Setiap vent berguna juga mesin yang menghukum timing buruk.
+Mesin Geotermal Vent Forge menunjukkan mengapa HECTON-8 bernilai dan mematikan: bulan itu sudah industrial sebelum manusia datang. Setiap vent berguna juga mesin untuk menghukum timing buruk.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/id_ID. -->

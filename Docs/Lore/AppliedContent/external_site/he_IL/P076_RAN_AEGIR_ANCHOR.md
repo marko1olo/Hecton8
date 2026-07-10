@@ -19,22 +19,22 @@ localization_flags: 1
 
 # עוגן Ran / Aegir
 
-עוגן Ran / Aegir קובע את הטעם החזותי של HECTON-8: אור מדע בדיוני קשה ועמום למעלה, לחץ וחוב עוינים למטה.
+Ran / Aegir Anchor מעגן את visual logic של HECTON-8: dimmer hard-sci-fi sunlight above, ואז depth, weather, turbidity, pressure ו-debt below.
 
 ## Scanner
 
-לוח כוכב מסוג K. Ran בוער כרגיל. Aegir עמום מ-Sol, אבל החושך כאן מגיע מעומק, מזג אוויר וחוב.
+K-class star plate. Ran בוערת כרגיל; ה-deep כאן אינו supernatural, אלא פשוט רחוק מדי מתחת ל-weather, water ו-debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // תאורת ננס כתום תומכת בעבודת שטח. פיזור סערה, גאומטריית ליקוי ועכירות האוקיינוס מורידים קריאות ירידה מתחת לשולי הבטיחות.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity ו-industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-הכוכב קיים. הוא פשוט לא יכול לעקוב אחריך למטה.
+ה-star קיימת. היא פשוט לא יכולה follow you down.
 
 ## Field Note
 
-כוכב אמיתי אחד מספיק. האוקיינוס עושה את השאר.
+Real star מספיקה. ה-ocean עושה את השאר.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/he_IL. -->

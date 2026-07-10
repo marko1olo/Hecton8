@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "بذرة عقد طُعم امتثال الاسترداد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Recovery Compliance Bait Contract Seed
+# بذرة عقد طُعم امتثال الاسترداد
 
-AR LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+تصل عقود طُعم امتثال الاسترداد كأعمال انتشال سخية، لكن سلسلة المستلم تكون مائلة مسبقا نحو Deep Reach. الأجر حقيقي. الكلفة هي الشرط المخفي: كشف مكان العثور على الحطام أو بطاقة الجثة أو صندوق العينة أو الآلة المختومة.
 
 ## Scanner
 
-AR LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+بذرة عقد: طُعم امتثال الاسترداد. أجر مرتفع، سلسلة مستلم ملوثة، ومطلب إحداثيات مخفي.
 
 ## Terminal
 
-AR LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+بذرة طُعم: رفع الأجر، إخفاء مستلم امتثال الاسترداد، بند كشف الإحداثيات مستتر، ضغط حجب نشط، واحتمال توجيه عبر Deep Reach.
 
 ## Audio
 
-AR LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+ختم الإنقاذ قد يشتري ثقة عامل الرصيف أسرع من السلاح.
 
 ## Field Note
 
-AR LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+ملاحظة مارودر: إذا كان العمل يدفع بنظافة زائدة، فتفقد من يملك المنشفة.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ar_SA. -->

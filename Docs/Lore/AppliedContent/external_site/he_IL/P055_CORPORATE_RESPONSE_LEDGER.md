@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ספר תגובה תאגידית"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ספר תגובה תאגידית
+# Corporate Response Ledger
 
-ספר התגובה התאגידית אינו נאום נבל. הוא קר מזה. זו הבטחה קריאת מכונה ש-Black Keel תגיב, אך רק לפי הסדר שהחוזים שלה מכירים. משמורת נכס ראשונה. חותם אחריות שני. ביקורת גוף, נתיב דגימה, נתיב תשלום, ואז חילוץ מפעיל אם התור עדיין מאפשר. השחקן יכול להשתמש בספרים האלה כרמזים, מפתחות ומנוף כי המערכת צפויה. הצפיות הזו היא כתב האישום: HECTON-8 לא ננטשה בגלל החלטה גרועה אחת, אלא בגלל מחסנית תגובה שהמשיכה לעבוד בזמן שאנשים נעשו מטען בעדיפות נמוכה יותר.
+Corporate Response Ledger מתעד את הגבול הקשה של עזרת Black Keel: response speed, rescue priority, evidence custody, asset preservation ו-debt settlement נשארים systems נפרדים.
+
+## Scanner
+
+כל reply מגיעה ב-contract language: asset custody, liability lock, sample route, hull risk, ואז operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route ו-evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+ה-reply הייתה automatic. ה-rescue היה conditional.
+
+## Field Note
+
+Immediate response אינו immediate rescue.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/he_IL. -->

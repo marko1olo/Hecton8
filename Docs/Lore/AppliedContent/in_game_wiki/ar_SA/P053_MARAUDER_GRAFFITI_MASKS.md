@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "أقنعة غرافيتي المغيرين"
+title: "أقنعة غرافيتي marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# أقنعة غرافيتي المغيرين
+# أقنعة غرافيتي marauder
 
-علامات المغيرين ملاحة ميدانية وتحذير اجتماعي ولغة ضد المراقبة. تبدو خشنة لأنها كان عليها أن تنجو من الماء والخوف والمصابيح الرديئة وكاميرات الشركة. يتعلم اللاعب أي علامات تدل على الضوضاء والضغط وخطر الدوريات والمخابئ والطرق التي لم تعد توافق الخرائط الرسمية.
+Marauder graffiti ليس decoration. إنه field navigation وsocial warning وanti-surveillance language محفور في أماكن تخون فيها radios، وتنتهي maps، ويكذب official signage لأنه قديم جدا. تبدو marks خشنة لأنها كان عليها أن تنجو من water وbad lamps وglove tremor وcameras تستطيع معاقبة readable intent. قد يعني slash صمتا. وقد تعني black ring إشارة Black Keel ping. وقد تعني broken arrow أن pressure changed بعد آخر route survey. تركت colony labels؛ وترك marauders weather.
 
 ## Scanner
 
-كود الطلاء: عدد الشقوق يحدد انضباط الضوضاء، الحلقات السوداء تعني خطر نبضة الناقل، والسهام المكسورة تعني انجراف الضغط.
+Paint code. يشير slash count إلى noise discipline؛ وتشير black rings إلى carrier-ping danger؛ وتشير broken arrows إلى pressure drift.
 
 ## Terminal
 
-فهرس قناع الطريق: ثلاث شقوق آمنة للإشارات اليدوية فقط. الحلقة السوداء تعني مسح الناقل. السهم المكسور يعني تغير الضغط منذ آخر علامة.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-إذا بدا الجدار غاضبا، فاقرأه كطقس.
+إذا بدا wall غاضبا، فاقرأه كweather.
 
 ## Field Note
 
-كتب المغيرون لأناس لا يثقون بالراديو ولا يملكون ثمن الخرائط.
+كتب marauders لأناس لا يستطيعون الثقة بradios ولا دفع ثمن maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/ar_SA. -->

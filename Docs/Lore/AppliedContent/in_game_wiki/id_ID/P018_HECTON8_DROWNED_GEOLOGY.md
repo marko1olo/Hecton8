@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Geologi Tenggelam
 
-Geologi HECTON-8 adalah bahasa gameplay: landas, ruang tenggelam, ngarai, brine, panas, dan abyss. Seed memindah rute, bukan kebenaran fisik.
+Geologi tenggelam mengajarkan cara bergerak di HECTON-8. Punggung memberi lindung. Paparan runtuh mengumpulkan salvage dan lumpur mencekik. Ngarai memperkuat arus. Tirai brine membelokkan sonar dan apung. Bekas vent dapat mengeraskan sealant atau memasaknya. Rute adalah tafsir sementara atas batu, air, panas, dan tekanan.
 
 ## Scanner
 
-Landas, ngarai, tangga brine, dan ventilasi. Bulan mengajar turun lewat medan, bukan gerbang.
+Paparan berlapis, corong ngarai, tangga brine, bekas vent, dan eksposur lumpur terdeteksi. Terrain adalah routing tekanan, bukan latar.
 
 ## Terminal
 
-Prakiraan: runtuh landas, corong ngarai, tirai densitas, plume panas, lumpur abyss.
+PRAKIRAAN KEDALAMAN: runtuh paparan, corong ngarai servis, tirai densitas brine, plume termal, eksposur lumpur abisal. Kepercayaan rute menurun setelah surge badai atau potongan salvage.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Baca batu sebelum meminta suit menang.
 
 ## Field Note
 
-Rute aman adalah pembacaan, bukan koridor.
+Rute teraman adalah pembacaan, bukan koridor.
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/id_ID. -->

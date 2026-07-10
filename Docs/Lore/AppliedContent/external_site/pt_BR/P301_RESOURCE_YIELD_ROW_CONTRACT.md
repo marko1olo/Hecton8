@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limite de Dados de Rendimento de Recurso"
+title: "Linha de aceitação de rendimento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Limite de Dados de Rendimento de Recurso
+# Linha de aceitação de rendimento
 
-Valor de recurso em HECTON-8 é cadeia, não rótulo. A tabela possui o número, mas a ficção possui o motivo: quem pegou a amostra, sob qual pressão, com qual selo de custódia e quanto daquele veio a rota ainda pode retirar com segurança.
+Registros de salvamento em torno de HECTON-8 não precificam minerais só pelo nome. Um registro de rendimento precisa de classe da amostra, faixa de pressão, custódia de rota, estado de esgotamento, estágio de contaminação e hash do pacote antes que o valor lançado seja confiável. Amostra sem histórico de pressão é massa sem pagamento.
 
 ## Scanner
 
-A linha de rendimento rejeita valor solto: classe, faixa de pressão, custódia, depleção e hash precisam concordar.
+Linha de amostra incompleta: histórico de pressão, grau de custódia, estado de esgotamento, contaminação e hash do pacote não batem.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: nenhum número é aceito sem packet hash, classe de recurso, faixa de pressão, grau de custódia, curva de raridade e comportamento de depleção. Amostra sem histórico de pressão é prova, não valor.
+ESQUEMA DE ENTRADA DE RENDIMENTO / Aegir Reclamation Pool: recusar lançamento de valor até haver classe do recurso, faixa de pressão, grau de custódia, curva de raridade, comportamento de esgotamento, estágio de contaminação e hash testemunha do pacote. Pedra ensacada é massa até a rota de pressão ser provada.
 
 ## Audio
 
-Amostra sem histórico de pressão não é valor.
+Black Keel: retenção da amostra aceita após rota de pressão e hash de custódia. Até lá, viaja como lastro.
 
 ## Field Note
 
-Números de yield ficam provisórios até pressure band, custody grade, depletion behavior e packet hash concordarem.
+Se a linha não tem faixa de pressão, não discuta preço. Mande para massa morta, mantenha o contêiner selado e faça o corretor pagar depois que a custódia limpar.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/pt_BR. -->

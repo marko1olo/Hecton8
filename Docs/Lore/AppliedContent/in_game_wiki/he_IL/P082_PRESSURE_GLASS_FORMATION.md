@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "היווצרות זכוכית לחץ"
+title: "היווצרות Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# היווצרות זכוכית לחץ
+# היווצרות Pressure Glass
 
-זכוכית לחץ היא השם הטכני מאחורי blue debt של ה-Marauders ושפת Xenon-Omega של Deep Reach. היא נוצרת במקום שבו לחץ, כיסי גז אציל, תמלחת, מינרלים, חום וביולוגיה משתנה נפגשים.
+Pressure glass הוא שם השטח מאחורי החוב הכחול של המראודרים ושפת Xenon-Omega של Deep Reach. הוא נוצר רק במקום שבו כיסי גז אציל, פגמי מינרלים, תמלחת חמה, ביולוגיה שהשתנתה והיסטוריית לחץ אלימה נשארים יחד מספיק זמן כדי לנעול סריג בזיכרון.
 
 ## Scanner
 
-סריג חוב כחול. גז אציל, תמלחת, פגמי מינרלים והיסטוריית לחץ נעולים בטעות יקרה אחת.
+סריג חוב כחול. גז אציל, תמלחת, פגמי מינרלים, מחזורי חום והיסטוריית לחץ התמזגו לצלקת יקרה אחת.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: סריג clathrate/defect עשיר קסנון מיוצב בכימיית תמלחת, מחזורי חום ושארית זרז ביולוגי. סיכון הורדת לחץ: drift אות, fracture ו-contamination bloom.
+מצע רציפות XO: סריג קלאתרט/פגמים עשיר בקסנון, מיוצב בכימיית תמלחת, מחזורי חום ושארית קטליזה ביולוגית. סיכוני דה-לחיצה: סחיפת אות, שבר, פריחת זיהום.
 
 ## Audio
 
-בגלל זה הם חזרו. לא זהב. צלקת שמכונה יכולה לקרוא.
+בשביל זה הם חזרו. לא זהב. פצע שאפשר לקרוא.
 
 ## Field Note
 
-זה לא עפרה. זה תהליך שזוכר איפה נוצר.
+זה לא עפרה. זה מקום שזוכר מה עשו לו.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/he_IL. -->

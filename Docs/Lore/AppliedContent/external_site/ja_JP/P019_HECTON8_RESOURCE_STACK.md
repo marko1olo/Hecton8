@@ -23,18 +23,18 @@ localization_flags: 1
 
 ## Scanner
 
-資源: reef fiber、brine salts、relay cores、pressure valves、blue debt、pressure glass、Atlas lattice。
+スタック読取: リーフ繊維、塩水塩、リレーコア、圧力弁、噴出口触媒、青い債務、pressure glass、Atlas格子。
 
 ## Terminal
 
-価値モデル: 生存生物資源、人間のサルベージ、経路機材、圧力化学、blue debt、pressure glass、continuity substrate。
+価値モデル: 生存生物資材、人間サルベージ、経路ハード、圧力化学、青い債務、pressure glass、連続性基質。スタックを単一の奇跡素材へ縮めるな。
 
 ## Audio
 
-carrierが名前より質量を先に求めるなら、契約の所有者は分かる。
+carrierが名前より先に質量を求めるなら、契約の所有者は分かる。
 
 ## Field Note
 
-ここにただの戦利品はない。
+ここにただの戦利品はない。すべての試料は圧力経済に属する。
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/ja_JP. -->

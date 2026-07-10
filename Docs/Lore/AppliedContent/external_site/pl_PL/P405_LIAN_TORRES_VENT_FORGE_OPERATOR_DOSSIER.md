@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, operator kuźni kominowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, operator kuźni kominowej
 
-PL LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres osadza przemysł HECTON-8 w rzemiośle, nie cudownym materiale. Dowody z kuźni pokazują, że szkło ciśnieniowe, pierścienie uszczelnień i wkłady ceramiczne nie rodziły się jako łup. Obrabiano je, odrzucano, etykietowano ponownie i czyniono dość bezpiecznymi, by ktoś inny zaufał im pod wodą.
 
 ## Scanner
 
-PL LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Akta: Lian Torres. Rękawica cieplna, timer cyklu i taca odrzutów pasują do tej samej partii szkła ciśnieniowego.
 
 ## Terminal
 
-PL LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+KUŹNIA KOMINOWA V-9 / TORRES, LIAN: taca odrzutów zachowała pęknięte pierścienie uszczelnień, mętne szkło ciśnieniowe i trzy oznaczone kupony przegrzania. Notatka partii: awaria uczy następne uszczelnienie tylko wtedy, gdy pozostaje opisana.
 
 ## Audio
 
-PL LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres trzymał złe części. W kuźni czysta podłoga znaczyła, że ktoś wyrzucił lekcję.
 
 ## Field Note
 
-PL LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Używać Torresa przy rekwizytach kuźni, recepturach szkła ciśnieniowego, odrzuconych pierścieniach i stołach ulepszeń wymagających widocznej historii nieudanych części.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/pl_PL. -->

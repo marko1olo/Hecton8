@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "עיכוב מסלול ללא FTL"
+title: "עיכוב נתיב ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# עיכוב מסלול ללא FTL
+# עיכוב נתיב ללא FTL
 
-ל-HECTON-8 אין ערוץ הצלה מיידי. מערכת Aegir הושגה בעזרת precursor probes, beam infrastructure, pellet-fusion freight ומערכות בלימה שמתייחסות לדחיפות כאל עוד מגבלת מסה. הודעה יכולה להגיע לפני החומרה שהיתה הופכת אותה למועילה. carrier יכול להכיר בקיומך, לתמחר את ה-payload ולהחזיק valid claim, ועדיין לא להיות מסוגל להוציא descent mass תחת weather, relay angle או custody window שגויים. טקסט המסע הציבורי צריך להשאיר את המגבלה הזאת גלויה, כי הבידוד כאן נוצר מהנדסה, חוק ולוגיסטיקה יחד. Black Keel יכול להיות קרוב משפטית ובלתי נגיש פיזית. העיכוב הזה מסביר למה השחקן ממשיך לתקן אטמים ביד אחרי שה-relay עונה.
+ל-HECTON-8 אין ערוץ חילוץ מיידי. תנועת בני אדם אל Aegir בנויה ממפות גשושיות קודמות, תשתית נתיבי אלומה, מטען היתוך גלולות, מערכות בלימה, חלונות נשא והעברות משמורת חוקיות. דחיפות לא מבטלת מסה. ספינה יכולה לתמחר מטען, לקבל תביעה ולהחזיק ברשומה שלך, ועדיין לא לקבל הקצאת ירידה להעביר חפץ שימושי אחד אל המים. לכן המשחק מתייחס לתקשורת כראיה, לא כחילוץ. תשובה מוכיחה שמישהו שמע את החירום. היא לא מטלאת איטום, לא מזיזה bathydrop ולא מקצרת חלון מסלולי גרוע.
 
 ## Scanner
 
-רשומת מעבר. תנועת Aegir תלויה ב-precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody ועיכוב משפטי.
+רשומת מעבר. תעבורת Aegir תלויה במפות גשושיות, נתיבי אלומה, מטען היתוך גלולות, מסת בלימה, גיל חבילה, משמורת ממסר וחלונות ירידה מוכי מזג אוויר.
 
 ## Terminal
 
-צומת ארכיון ציבורי // גבול מעבר. אין FTL. אין Ansible. הצלה חיה דורשת transfer פיזי, braking architecture, carrier position, descent mass ו-local window תקף.
+צומת ארכיון ציבורי // גבול מעבר. FTL: חסר. Ansible: חסר. חילוץ חי דורש מיקום נשא, הקצאת בלימה, מסת ירידה, מזג אוויר מקומי וחלון משמורת שלא פג.
 
 ## Audio
 
-עזרה יכולה להיות נוכחת משפטית ורחוקה פיזית בשנים.
+נשא יכול לרשום את מצב החירום שלך ועדיין להיות במרחק שנות מסה.
 
 ## Field Note
 
-הערת Marauder: כשה-relay עונה, שאל בן כמה המענה ואיזו מסה הוא באמת יכול להזיז.
+הערת Marauder: כל תשובת חילוץ צריכה ארבעה מספרים: גיל חבילה, מסת נשא, חריץ בלימה, חלון ירידה.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/he_IL. -->

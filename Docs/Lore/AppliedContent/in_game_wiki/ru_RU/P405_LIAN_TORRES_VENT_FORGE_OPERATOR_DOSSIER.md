@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Lian Torres/Vent Forge"
+title: "Лиан Торрес, оператор вент-кузницы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Lian Torres/Vent Forge
+# Лиан Торрес, оператор вент-кузницы
 
-RU LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Лиан Торрес работал в вент-кузнице, где тепло HECTON-8 превращалось в детали, достаточно малые, чтобы их нести, и достаточно опасные, чтобы за ними стояло имя. Его досье собрано из обожженной перчатки, таймера цикла, лотка брака, купонов пресс-стекла и уплотнительных колец с процарапанными метками партии. Лоток важнее всего: он доказывает, что сломанные детали не были отходами, пока не научили следующую границу давления держаться. Торрес превращает лор ресурсов в лор труда. Категории salvage начинаются здесь как ожоги, задержки, подписанные отказы и решение сохранить доказательство того, что треснуло.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Досье: Лиан Торрес. Термоперчатка, таймер цикла и лоток брака относятся к одной партии пресс-стекла.
 
 ## Terminal
 
-RU LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+ВЕНТ-КУЗНИЦА V-9 / ТОРРЕС, ЛИАН: в лотке брака оставлены треснувшие кольца уплотнения, мутное пресс-стекло и три перегретых купона с метками. Примечание партии: отказ учит следующий герметик только если отказ остался подписан.
 
 ## Audio
 
-RU LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Торрес хранил плохие детали. В кузнице чистый пол означал, что кто-то выбросил урок.
 
 ## Field Note
 
-RU LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Использовать Торреса рядом с пропами вент-кузницы, рецептами пресс-стекла, отбракованными кольцами и верстаками апгрейдов, где нужна видимая история неудачных деталей.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/ru_RU. -->

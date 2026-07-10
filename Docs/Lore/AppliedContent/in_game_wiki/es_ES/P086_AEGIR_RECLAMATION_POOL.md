@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fondo de Reclamación Aegir"
+title: "Fondo de Reclamacion de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fondo de Reclamación Aegir
+# Fondo de Reclamacion de Aegir
 
-El Fondo de Reclamación Aegir es la cáscara pública de salvamento detrás de Black Keel. Permite que pequeñas licencias marauder alcancen reclamos abandonados de Aegir sin poseer un carrier interplanetario privado. El trato sirve y envenena a la vez: el mismo fondo que puede enviar un tender decide si un operador que respira, un payload sellado, un bloqueo de cuarentena o un paquete de pruebas vale el siguiente burn.
+El Fondo de Reclamacion de Aegir es la carcasa de salvage que pone a Black Keel al alcance de pequenos licensed marauders. Ningun independent operator podria comprar, alimentar y sostener legalmente un interplanetary claim carrier por una sola luna abandonada. El fondo resuelve ese problema juntando riesgo entre claims antiguos, rutas muertas, liens de aseguradora y recovery contracts en cola. Es util porque existe. Es venenoso porque el mismo ledger que lanza el carrier tambien decide que puede valorar el carrier: un sealed sample, un proof bundle, un quarantine lock, un cuerpo que aun respira o la siguiente burn window para salir de HECTON-8.
 
 ## Scanner
 
-Sello de fondo de reclamos. Black Keel fue asignada por deuda de ruta, no regalada al operador.
+Sello del fondo de claim. Black Keel fue enviado por deuda compartida, no por gracia de rescate.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: tender autónomo Black Keel asignado al reclamo HECTON-8, abandonado bajo presión. Clase de bienestar de tripulación: contratista. Clase de custodia de payload: prioridad variable. La extracción humana sigue condicionada hasta cierre de arbitraje del fondo.
+AEGIR RECLAMATION POOL: claim tender autonomo BLACK KEEL asignado al derelict-pressure claim HECTON-8. Clase de bienestar contractor limitada. Clase de custody de payload variable. Human extraction pendiente hasta cerrar arbitraje de lien, quarantine y mass-window.
 
 ## Audio
 
-El fondo posee la ruta. Tú alquilas la respuesta sobreviviendo lo suficiente para pedirla.
+El fondo si envio una nave. Esa es la misericordia. Todo despues de eso es contabilidad.
 
 ## Field Note
 
-Un fondo compartido hace el rescate más barato, más lento y más fácil de negar para cada firmante.
+El fondo hizo posible un carrier en Aegir. Tambien hizo condicional cada promesa.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/es_ES. -->

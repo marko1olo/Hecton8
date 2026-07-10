@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Формування тискового скла"
+title: "Формування pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Формування тискового скла
+# Формування pressure glass
 
-Тискове скло є технічною назвою того, що мародери називають blue debt, а Deep Reach ховає за мовою Xenon-Omega. Воно виникає там, де сходяться тиск, кишені благородних газів, розсіл, мінерали, тепло й змінена біологія.
+Pressure glass - польова назва за синім боргом мародерів і мовою Deep Reach про Xenon-Omega. Він формується тільки там, де кишені благородного газу, дефекти мінералів, гарячий розсіл, змінена біологія й жорстока історія тиску досить довго тримаються разом, щоб замкнути решітку в пам'яті.
 
-Формування тискового скла перетворює Xenon-Omega на матеріальну екологію hard sci-fi, а не на магічну руду. Це не руда. Це процес, який пам'ятає, де його створили.
+Формування pressure glass перетворює Xenon-Omega на матеріальну екологію: створений тиском субстрат, пов'язаний з утриманням, обчисленням, безперервністю Atlas і ризиком salvage. Це не руда. Це місце, яке пам'ятає, що з ним зробили.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/uk_UA. -->

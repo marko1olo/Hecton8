@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ancla Ran / Aegir
 
-Ancla Ran / Aegir fija el sabor visual de HECTON-8: luz solar tenue de ciencia ficción dura arriba, presión hostil y deuda abajo.
+Ran / Aegir Anchor fija la visual logic de HECTON-8: dimmer hard-sci-fi sunlight above, luego depth, weather, turbidity, pressure y debt below.
 
 ## Scanner
 
-Placa estelar clase K. Ran arde con normalidad. Aegir es más tenue que Sol, pero la oscuridad aquí viene de profundidad, clima y deuda.
+K-class star plate. Ran arde con normalidad; el deep aqui no es supernatural, solo demasiado abajo bajo weather, water y debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // La luz de una enana naranja sirve para trabajo de superficie. Dispersión de tormenta, eclipses y turbidez oceánica bajan la lectura de descenso bajo el margen seguro.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity e industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-La estrella está presente. Simplemente no puede seguirte abajo.
+La star esta presente. Simplemente no puede follow you down.
 
 ## Field Note
 
-Una estrella real basta. El océano hace el resto.
+Una real star basta. El ocean hace el resto.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/es_ES. -->

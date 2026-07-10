@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HE LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "זרע חוזה פיתיון תאימות שחזור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Recovery Compliance Bait Contract Seed
+# זרע חוזה פיתיון תאימות שחזור
 
-HE LOC HOLD: A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+פיתיון תאימות שחזור הוא אחד החוזים הנקיים המלוכלכים ביותר על הלוח. התיק עוטה פנים של שירות ציבורי: חילוץ ארוניות רפואיות מוצפות, החזרת מזהי חליפות מתות, פינוי ליבות מכונה מסוכנות, והחזרת מטען אטום לפני שריקבון או נזקי לחץ יהרסו את הרשומה. התשלום הרשום גבוה מספיק כדי להיראות כמו רחמים בשבוע קשה.
 
-## Scanner
+המלכודת נמצאת בשרשרת המקבל. חותמת תאימות שחזור יכולה לעבור דרך משרדי חילוץ ניטרליים, מבטחי מושבות או שולחנות ניקוי אסונות, אבל הקורא האחרון שייך לעיתים קרובות ל-Deep Reach או לשליח שמוכר לה גישה מועדפת. המפעיל מקבל תשלום על שחזור חומרי ונקשר בשקט להוכחת קואורדינטות, לרצועות מצב פתח ולרשומות משמורת. סירוב למסירה אינו מבטל את הסיכון. הוא מסמן את המסלול כרגיש לאי-מסירה והופך מקבלים בטוחים בעתיד לפחות סבלניים.
 
-HE LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
-
-## Terminal
-
-HE LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
-
-## Audio
-
-HE LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
-
-## Field Note
-
-HE LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+החוזים האלה עובדים כי ייאוש גורם לניירת טובה להיראות כמו מחסה. צוות שחסרים לו מסננים, לוחות סוללה או סרט לחץ רואה תשלום נקי ומקבל את התיק לפני קריאת סעיף הקואורדינטות. עד שהתיבה האטומה הראשונה כבר על הסיפון, הלוח למד לאן הצוות עדיין מסוגל להגיע ומה האזור הנטוש עוד לא הצליח לקבור.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/he_IL. -->

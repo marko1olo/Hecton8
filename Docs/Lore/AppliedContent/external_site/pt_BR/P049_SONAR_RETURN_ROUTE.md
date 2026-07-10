@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Rota de retorno por sonar"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rota de retorno por sonar
+# Sonar Return Route
 
-A navegação em HECTON-8 trata o caminho de volta como trabalho, não conforto. Um beacon velho ainda pode apontar o corredor certo enquanto esconde um novo obstáculo, um leito de silte deslocado ou uma porta de pressão que mudou o eco.
+Sonar return routes tornam navigation uma tarefa continua: stale beacons podem apontar para right corridor enquanto escondem new silt, obstruction drift, fauna movement ou pressure-door changes.
 
 ## Scanner
 
-Beacon de retorno obsoleto. O ping seguro antigo já não corresponde ao eco do corredor; a massa da carga vai atrasar a janela de retirada.
+Return beacon stale. Old safe ping nao combina mais com corridor echo; cargo mass vai atrasar a retreat window.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: último eco limpo inválido. Ping da Black Keel recebido com baixa confiança. Deriva de obstáculos e densidade de silte excedem tolerância do mapa. Marcar linha secundária antes da extração de carga.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density e cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-A rota ainda está lá. O eco não é o mesmo.
+The route is still there. O echo nao e o mesmo.
 
 ## Field Note
 
-Dê ping antes de carregar. Se o caminho para casa mudou com suas mãos vazias, ele não vai perdoar uma mochila cheia.
+Ping before loading. Se o way home changed enquanto hands estavam empty, ele nao perdoara um full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/pt_BR. -->

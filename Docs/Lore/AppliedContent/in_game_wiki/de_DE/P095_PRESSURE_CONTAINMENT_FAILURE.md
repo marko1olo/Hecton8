@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Druckcontainment-Ausfall"
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druckcontainment-Ausfall
+# Pressure Containment Failure
 
-Druckcontainment-Ausfall gibt blue debt ein lesbares Materialverhalten. Es ist wertvoll, weil Tiefdruck es kohärent machte, und gefaehrlich, weil flache Handhabung diese Kohärenz zerlegt. Stufe 0 ist versiegelt. Stufe 1 driftet und kann manchmal durch Schlot-Repressur gerettet werden. Stufe 2 bricht das Gitter. Stufe 3 laedt Salzlauge und Biologie ein. Stufe 4 hinterlaesst eine tote Probe, die Ausruestung, Wasser und Routen kontaminiert.
+Pressure containment failure gibt blue debt ein behavior, das ohne myth lesbar ist. Es ist valuable, weil deep pressure made the lattice coherent. Es ist dangerous, weil shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts und kann recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water und route markings. Das material ist nicht cursed. Es ist homesick for pressure.
 
 ## Scanner
 
-Casket-Stufendiagramm. Blue debt versagt durch Druckgedaechtnis, Signalscherung und Bloom; Aberglaube verschwendet Sauerstoff.
+Casket stage chart. Blue debt fails through pressure memory, signal shear und bloom; superstition wastes oxygen.
 
 ## Terminal
 
-CONTAINMENT-STUFEN: 0 versiegeltes Gitter; 1 Signaldrift; 2 Gitterbruch; 3 Salzlauge/biologischer Bloom; 4 tote Probe mit lebender Kontamination. Schlot-Repressur kann nur Stufe 1 retten.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Die Probe hasst dich nicht. Sie versucht, dorthin zurueckzukehren, wo sie entstand.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-Eine Probe kann in einer Tiefe ein Vermoegen wert sein und zehn Meter spaeter zur Haftung werden.
+Ein sample kann an einer depth ein Vermogen wert sein und ten meters later become a liability.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/de_DE. -->

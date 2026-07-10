@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, Triage-Mechanikerin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, Triage-Mechanikerin
 
-DE LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal reparierte Maschinen in dem Raum, in dem verletzte Arbeiter warteten, bis ihre Namen auf einer Schiene aufrückten. Ihr Dossier verbindet Drehmomentnotizen mit Liegenmarken, Scrubberkartuschen, Sauerstoffreservenzetteln und orangefarbenem Quarantäneband. Die Objekte machen Deep-Reach-Verzögerung physisch: dieselbe Tafel, die Schraubenspannung begrenzte, entschied, welcher Körper, welches Ventil oder welcher Filter vor dem nächsten Druckabfall Aufmerksamkeit bekam. Iqbals Arbeit ist keine groß geschriebene Barmherzigkeit. Sie ist eine Hand, die die am wenigsten tödliche Reihenfolge wählt, während die offizielle Reihenfolge sich ändert.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Drehmomenttafel, Liegenmarken und Quarantäneband teilen eine Warteschlange.
 
 ## Terminal
 
-DE LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TRIAGEBUCHT C-2 / IQBAL, SAHANA: Drehmomentgrenzen neben Sauerstoffreservemarken. Werkzeuge, Liegen und Scrubberkartuschen auf derselben Schiene gereiht. Quarantänesprache verschob die Reichweitenlinie erneut.
 
 ## Audio
 
-DE LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal reparierte, was sie erreichen konnte. Die Tafel entschied weiter, was als erreichbar galt.
 
 ## Field Note
 
-DE LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Iqbal in Quarantäne-Reparaturschleifen, Med-Bay-Korridoren, Sauerstoffwarteschlangen und Interfaces einsetzen, bei denen eine Maschinenwahl sichtbar Menschenzeit kostet.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/de_DE. -->

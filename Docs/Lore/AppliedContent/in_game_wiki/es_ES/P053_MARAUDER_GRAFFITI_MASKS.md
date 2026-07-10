@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Máscaras de grafiti merodeador"
+title: "Mascaras de grafiti marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Máscaras de grafiti merodeador
+# Mascaras de grafiti marauder
 
-Las marcas merodeadoras son navegación de campo, aviso social y lenguaje contra vigilancia. Parecen toscas porque debían sobrevivir al agua, al miedo, a lámparas malas y a cámaras corporativas. El jugador aprende qué marcas indican ruido, presión, patrullas, escondites y rutas que ya no coinciden con mapas oficiales.
+El marauder graffiti no es decoracion. Es field navigation, social warning y anti-surveillance language rayado en lugares donde las radios traicionan, los maps caducan y el official signage miente por ser demasiado viejo. Los marks parecen toscos porque tenian que sobrevivir a water, bad lamps, glove tremor y cameras capaces de castigar una readable intent. Un slash puede significar silence. Un black ring puede significar Black Keel ping. Una broken arrow puede indicar pressure changed desde el ultimo route survey. La colony dejo labels; los marauders dejaron weather.
 
 ## Scanner
 
-Código de pintura: el número de cortes marca disciplina de ruido, los anillos negros marcan peligro de ping del portador y las flechas rotas marcan deriva de presión.
+Paint code. Slash count marca noise discipline; black rings marcan carrier-ping danger; broken arrows marcan pressure drift.
 
 ## Terminal
 
-ÍNDICE DE MÁSCARA DE RUTA: tres cortes, seguro solo para señales manuales. Anillo negro significa barrido del portador. Flecha rota significa cambio de presión desde la última marca.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Si la pared parece furiosa, léela como clima.
+Si la pared parece enfadada, leela como weather.
 
 ## Field Note
 
-Los merodeadores escribían para gente que no podía confiar en radios ni pagar mapas.
+Los marauders escribian para gente que no podia confiar en radios ni pagar maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/es_ES. -->

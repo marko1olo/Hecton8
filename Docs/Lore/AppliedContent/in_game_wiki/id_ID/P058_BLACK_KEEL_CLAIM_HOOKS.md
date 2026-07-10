@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kait Klaim Black Keel
 
-Black Keel adalah rute pengantaran pemain, janji pemulihan, dan kandang hukum pertama. Karrier dapat menjawab, tetapi setiap jawaban melewati kait klaim: nilai muatan, status karantina, sertifikat rute, pengawasan utang, dan klausul prioritas lama Deep Reach yang seharusnya sudah kedaluwarsa. Karena itu permukaan bukan tombol penyelamat. Kapal itu cukup dekat untuk berbicara dan cukup jauh untuk menolak; keterlambatannya bukan suasana hati. Itu logika kontrak yang bekerja persis seperti tertulis.
+Black Keel adalah rute pengiriman, janji pemulihan, dan sangkar legal pertama. Carrier bisa menjawab, tetapi setiap jawaban melewati kait klaim: nilai payload, status karantina, sertifikat rute, kustodi utang, dan klausul prioritas Deep Reach lama yang seharusnya kedaluwarsa. Itulah sebabnya permukaan bukan penyelamatan dengan sendirinya. Kapal cukup dekat untuk bicara dan cukup jauh untuk menolak; penundaannya bukan suasana hati. Itu logika kontrak yang berjalan persis seperti tertulis.
 
 ## Scanner
 
-Di manifes, Black Keel adalah perangkat pool klaim; di klausul, ia adalah tuas Deep Reach.
+Black Keel adalah perangkat claim-pool di manifes dan leverage Deep Reach di klausul.
 
 ## Terminal
 
-PENGAWASAN KARRIER: pemulihan operator diizinkan setelah triase muatan, gerbang karantina, sertifikat rute, dan pembersihan tanggung jawab. Segel prioritas Deep Reach dipertahankan dalam klausul tidur.
+CARRIER CUSTODY: pemulihan operator diizinkan setelah triage payload, gerbang karantina, sertifikat rute, dan pembersihan tanggung jawab. Segel prioritas Deep Reach tersimpan di klausul dorman.
 
 ## Audio
 
-Ia bisa mendengarmu. Ia hanya harus memberi harga pada jawabannya terlebih dahulu.
+Ia bisa mendengar. Ia hanya harus memberi harga jawaban lebih dulu.
 
 ## Field Note
 
-Kapal itu tidak jahat. Ia disewakan kepada kontrak yang tahu cara menjadi kejam tanpa terdengar hidup.
+Kapal itu tidak jahat. Ia disewa kontrak yang tahu cara menjadi jahat tanpa terdengar hidup.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/id_ID. -->

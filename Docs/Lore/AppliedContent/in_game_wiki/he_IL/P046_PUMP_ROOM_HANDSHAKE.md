@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "לחיצת שסתום בחדר המשאבות"
+title: "לחיצת שסתום pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# לחיצת שסתום בחדר המשאבות
+# לחיצת שסתום pump room
 
-לחיצת משאבה היא הרגע שבו חדר מוצף מקבל שליטה מקומית. היא נותנת גישה, אבל גם מעבירה מים, רעש ולחץ לחלק אחר של המסלול. קרא את סל היניקה, פעימת היציאה ומכת המים במסדרון החזרה לפני שרצפה יבשה נחשבת בטוחה. חדרי P-63 הראשונים מלמדים את הרגל התיקון המרכזי: מכונה יכולה לשפר תא אחד ולהרע את הדרך הביתה.
+Pump handshake הוא הרגע שבו מכונה שטבעה מקבלת שוב local hand. זה מרגיש כמו control מפני שה-floor מתפנה, ה-lamp מפסיקה לשחות וה-route נראה פתוח. הסכנה היא ש-water לעולם לא נעלמים ב-HECTON-8; הם מועברים אל compromise אחר. Intake baskets תופסים capsule foam, gloves ישנות, shell grit ו-torn labels. Outlets מעירים corridors שהיו שקטים מסיבה. ההרגל הנכון הוא לקרוא pump כ-trade: room אחד נושם, אחר מתחיל knock.
 
 ## Scanner
 
-משאבת הסאמפ המקומית קיבלה קלט מגלגל יד. סל היניקה מזוהם בקצף קפסולה; פעימת היציאה מעמיסה את מסדרון החזרה B.
+Local sump קיבל handwheel input. Capsule foam סותם את intake basket; outlet pulse מטפס אל Return Corridor B.
 
 ## Terminal
 
-P-63 בקרת סאמפ / לחיצה מקומית: סמכות גלגל יד התקבלה. עקיפה מרחוק נדחתה. זרימת יניקה שוחזרה בקצב נמוך. לחץ יציאה עולה ב-RETURN CORRIDOR B; הפעלה מחדש רק אחרי בדיקת האץ' במורד.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-השסתום תפס. היציאה דופקת. אל תקרא לזה בטוח עדיין.
+Valve took. ה-outlet דופק. אל תקרא לזה safe עדיין.
 
 ## Field Note
 
-חדר משאבות יבש יכול להטביע את הדרך חזרה. הקשב למכת מים ביציאה לפני שאתה מפרק את השסתום.
+Floor יבש אינו solved room. הקשב ל-corridor ששילם עליו.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/he_IL. -->

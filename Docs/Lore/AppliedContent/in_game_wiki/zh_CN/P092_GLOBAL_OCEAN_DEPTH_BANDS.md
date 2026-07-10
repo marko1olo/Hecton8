@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 全球海洋深度带
 
-HECTON-8的海洋按深度带阅读，而不是一条海底线。透光陆架仍允许光、残骸、藻类爆发和粗心驾驶。工业陆架承载电缆礁、管笼和旧装载甲板。再往下，盐卤阶梯会弯折声呐和压载。深渊机器场惩罚维修。Atlas盆地让压力像管辖权一样运作。
+HECTON-8的ocean不是通向bottom的one long fall。它是一叠laws。photic shelf仍允许light、algae、broken habitat skin以及能被纠正的bad decisions。industrial shelf是pipe cages、cable reef、loading decks和machines that answer late。brine stairs弯曲sound and ballast，让route可以同时near and unreachable。abyssal machine fields用cold patience惩罚repairs。Atlas basin比danger更深；在那里pressure becomes jurisdiction。
 
 ## Scanner
 
-深度图。第一层陆架还能原谅糟糕压载；更低的水会用压力、热量和寂静结算每个错误。
+depth chart。first shelf原谅poor ballast；lower water用pressure、heat、noise和silence给every mistake开账单。
 
 ## Terminal
 
-深度带：0-250米透光打捞陆架；250-1200米工业陆架与电缆礁；1200-2800米盐卤阶梯/峡谷；2800-4300米深渊机器场；4300-5600米Atlas盆地。
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-每下降一百米，你就会失去一种习惯。
+每一百米都会拿走一个habit。
 
 ## Field Note
 
-HECTON-8的深度，是法律、天气、边界和饥饿穿着同一个数字。
+HECTON-8上的depth是穿同一个number的law、weather、border和hunger。
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/zh_CN. -->

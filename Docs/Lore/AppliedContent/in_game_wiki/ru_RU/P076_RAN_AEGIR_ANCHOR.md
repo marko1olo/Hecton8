@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Якорь Ran / Aegir"
+title: "Ran / Aegir Anchor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Якорь Ran / Aegir
+# Ran / Aegir Anchor
 
-Ran закрепляет систему Aegir как нормальную звезду K-класса, а не мертвый фонарь и не источник сверхъестественной тьмы. У HECTON-8 могут быть яркие мелководья, потому что свет существует.
-
-Ужас начинается там, где атмосфера, шторм, минеральная вода, глубина и промышленный ил стирают этот свет быстрее, чем спасательный контракт успевает среагировать. Над водой система астрономическая. Под водой каждый люмен становится арендованным временем.
+Ran держит Aegir как обычная K-class star: старая, оранжевая, ровная и равнодушная. Это важно, потому что HECTON-8 темный не из-за magic. Shallows могут shine. Weather может вспыхивать белым над sea. Worker на surface raft все еще мог поднять голову и знать, что sun есть. Horror начинается там, где atmosphere, storm shear, mineral water, depth и industrial silt тратят этот light быстрее, чем carrier успевает выставить rescue window. Above the water astronomy clean. Below it every lumen becomes rented time.
 
 ## Scanner
 
-Звездная таблица K-класса. Ran горит нормально. Aegir тусклее Sol, но темнота здесь приходит от глубины, погоды и долга.
+K-class star plate. Ran горит нормально; deep здесь не supernatural, а просто слишком далеко под weather, water и debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Свет оранжевого карлика годится для поверхностных работ. Штормовое рассеяние, затмения и мутность океана опускают видимость спуска ниже безопасного края.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity и industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Звезда на месте. Она просто не может спуститься за тобой.
+Star present. Она просто не может follow you down.
 
 ## Field Note
 
-Настоящей звезды достаточно. Остальное делает океан.
+Реальной star достаточно. Остальное делает ocean.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/ru_RU. -->

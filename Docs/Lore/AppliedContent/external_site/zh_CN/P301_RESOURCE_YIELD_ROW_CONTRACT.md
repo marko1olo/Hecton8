@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "资源产出数据边界"
+title: "资源产出接收行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 资源产出数据边界
+# 资源产出接收行
 
-HECTON-8 的资源价值是一条链，而不是标签。表格拥有数字，但叙事拥有数字存在的原因：谁取了样，在什么压力下，用哪个监管印，以及这条矿脉还能被路线安全剥取多少。
+HECTON-8周边的打捞账册不会只按矿物名称定价。产出记录需要样本类别、压力带、路线保管、耗竭状态、污染阶段和数据包哈希，登记价值才可信。没有压力历史的样本只是未付款质量。
 
 ## Scanner
 
-产出行拒绝松散价值：类别、压力带、监管、枯竭和 hash 必须一致。
+样本行未完成：压力历史、保管等级、耗竭状态、污染阶段和数据包哈希并不一致。
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT：没有 packet hash、资源类别、压力带、监管等级、稀有度曲线和枯竭行为，任何数字都不被接受。没有压力历史的样本是证据，不是价值。
+产出接收模式 / Aegir Reclamation Pool：资源类别、压力带、保管等级、稀有曲线、耗竭行为、污染阶段和数据包见证哈希缺失时，不得登记价值。袋装石块在压力路线得到证明前只是质量。
 
 ## Audio
 
-没有压力历史的样本没有价值。
+Black Keel：样本在压力路线和保管哈希确认后接收。此前按压舱质量运输。
 
 ## Field Note
 
-在 pressure band、custody grade、depletion behavior 和 packet hash 一致前，yield 数字保持临时状态。
+如果行里没有压力带，就别谈价格。放进死质量，保持容器封口，等保管通过后让经纪人付款。
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/zh_CN. -->

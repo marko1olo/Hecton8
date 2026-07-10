@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Lukendichtungsbuch"
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lukendichtungsbuch
+# Hatch Seal Ledger
 
-Lukenrahmen bewahren nützliche Lügen. Ein grünes Dichtlicht heißt, dass die Dichtung hielt, nicht dass die Schließung fair, sicher oder umkehrbar war. Dichtungsbücher speichern Druckschnitte, Override-Stempel und Richtung der letzten manuellen Schließung. In verlassenen Kolonieräumen kann eine Luke Routensperre, Überlebenswerkzeug und Arbeiterbeweis zugleich sein.
+Hatch frames bewahren nutzliche Lugen. Ein green seal light bedeutet, dass der gasket hielt, nicht dass die closure fair, safe oder reversible war. Seal ledgers speichern pressure cuts, override stamps, hinge strain und die direction der letzten manual closure. In abandoned colony spaces kann ein hatch route blocker, survival tool, worker evidence und accusation im selben Objekt sein. Die Frage ist selten, ob er offnet. Die Frage ist, welche pressure, water und human decision er getrennt hielt.
 
 ## Scanner
 
-Dichtungsspeicher wiederhergestellt. Die Dichtung nahm drei Druckschnitte und einen Evakuierungs-Override auf; Rückkehrseitenzugang wurde von der nassen Seite verriegelt.
+Seal memory recovered. Der gasket nahm three pressure cuts und one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / RAHMEN H-17: Dichtungsverformung über Servicetoleranz. Manuelle Schließung unter EVAC OVERRIDE akzeptiert. Operatorenzahl auf Rückkehrseite ungeklärt. Wiederöffnen nur nach Druckausgleich und Scharnierprüfung.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection und wet-side witness check.
 
 ## Audio
 
-Sie hat gedichtet. Mehr hat die Luke nie versprochen.
+It sealed. Mehr hat der hatch nicht versprochen.
 
 ## Field Note
 
-Eine versiegelte Luke ist eine Quittung. Frag vor dem Öffnen, welche Seite bezahlt hat.
+Ein sealed hatch ist ein receipt. Frag vor dem Offnen, welche Seite bezahlt hat.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/de_DE. -->

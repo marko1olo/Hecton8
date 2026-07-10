@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Дрейф черги ретранслятора"
+title: "Дрейф relay-черги"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Дрейф черги ретранслятора
+# Дрейф relay-черги
 
-Затриманий зв'язок небезпечний тим, що може залишатися точним у неправильний час. Попередження носія може описувати справжній клапан, справжню течу і справжній маршрут, який уже змінився під тиском. Гравець має порівняти вік пакета з місцевими доказами перед довірою до віддаленої влади.
+Relay queue drift - найсмертельніший різновид чесності на HECTON-8. Delayed carrier packet може описувати real valve, real safe door, real low-current corridor і real leak, який уже змістився. Order не фальшивий; він належить кімнаті, зміненій pressure, flooding, silt, heat або collapse. Добра field practice - не непокора заради непокори. Це порівняння packet age з wet paint, fresh salt, door strain, pump sound і напрямком, у який прагне рухатися loose debris.
 
 ## Scanner
 
-Штамп ретранслятора старіший за течу, яку називає; інструкція була правдою для кімнати, якої вже немає.
+Relay stamp старіший за leak, який називає. Instruction була правдивою для room, якої вже немає.
 
 ## Terminal
 
-ДРЕЙФ ЧЕРГИ: вік пакета перевищує чинність маршруту. Локальні докази вищі за інструкцію носія до свіжого ретрансляційного вікна.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, якщо pressure, door state і waterline не збігаються.
 
 ## Audio
 
-Повідомлення правильне. У цьому й проблема.
+Message правильне. У цьому й проблема.
 
 ## Field Note
 
-Пізня правда все ще може вбити.
+Запізніла truth все ще може вбити.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/uk_UA. -->

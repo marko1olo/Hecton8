@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "קבועי גיאולוגיית זרע"
+title: "אינווריאנטים גאולוגיים של survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# קבועי גיאולוגיית זרע
+# אינווריאנטים גאולוגיים של survey
 
-קבועי גיאולוגיית זרע שומרים את HECTON-8 עקבי לאורך ריצות ארוכות. קניונים יכולים להיפתח בסדר אחר, ראיות לזוז, כיסים בטוחים להשתנות ולחץ מינים להתחלף. הכוכב נשאר Aegir, הירח נשאר HECTON-8, רצועות העומק שומרות סדר, Great Tide שומר קצב, ואגן Atlas נשאר קשור לאמת העמוקה ביותר.
+Survey geology invariants שומרים את HECTON-8 coherent בתוך contradictory charts, damaged Atlas maps ו-incomplete Black Keel route packets. Canyon approach יכול shift between surveys. Safe pocket יכול collapse. Cache יכול emerge under new silt. Bloom density ו-salvage exposure משתנים עם weather, pressure ומה שה-last expedition disturbed. Deeper truths אינם move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior, ו-Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-הערת יצירת נתיב. מפת החילוץ משתנה, אבל הירח שומר את אותן עצמות.
+Atlas survey note. ה-salvage chart יכול disagree with itself; ה-moon keeps the same bones.
 
 ## Terminal
 
-קבועים: Aegir כראשי, סולם מסלול HECTON-8, מרווח Great Tide, סדר רצועות עומק, יחס אגן Atlas, התנהגות לחץ של blue debt. משתנה: גישת קניון, סדר נקודות, כיסים בטוחים, צפיפות bloom, חשיפת חילוץ.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-דפוס פצע אחר. אותו ירח מתחת.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-ריצה חדשה יכולה לקבור ראיות אחרת; היא לא יכולה לשכתב כבידה, גאות או אשמה.
+Later chart יכול bury evidence differently. הוא לא יכול rewrite gravity, tide או guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/he_IL. -->

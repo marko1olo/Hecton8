@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegirs Mondleiter
 
-Aegirs Mondleiter umfasst Strahlungsmarker, Relaiskörper, ausgebeutete Claims, Resonanzgefahren, HECTON-8, kalte Lagermonde und äußere Irreguläre. HECTON-8 ist wertvoll, weil er zwischen lebendem Ozean und Umlaufdruck liegt.
+Aegirs Monde sind Routenmaschinen. Ihre Namen sind keine Himmelsdekoration; sie entscheiden Schatten, Relaisschweigen, Tidephase, Carrier-Warten und die Kosten von Massebewegung. HECTON-8 ist Aegir-VIII in der Arbeitsleiter, wertvoll, weil Ozeandruck und Relaisgeometrie sowohl Förderung als auch Verlassen teuer machen.
 
 ## Scanner
 
-Mondfolge: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Mondleiter aufgelöst: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel und Mute biegen die Fenster.
 
 ## Terminal
 
-HECTON-8 ist Aegir-VIII: nicht innen, nicht am weitesten draußen. Rake-Resonanz und Pale-Schatten ändern Tide und Paketqualität.
+AEGIR-ROUTENNOTIZ: HECTON-8 folgt Kestrel in der Arbeitsleiter. Relaisschatten, Tidephase, Strahlungsband und Black-Keel-Transfergeometrie müssen vor Massenaufstieg zusammenpassen.
 
 ## Audio
 
-Zähle die Monde, bevor du einem Fenster traust.
+Zähle Kestrel, bevor du dem Fenster glaubst.
 
 ## Field Note
 
-Der Himmel ist Mechanik, keine Kulisse.
+Der Himmel ist ein Arbeitsplan. Verpasst du einen Schatten, wird der Carrier zum Gerücht.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/de_DE. -->

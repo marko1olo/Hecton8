@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Глобальные глубинные пояса океана
 
-HECTON-8 - не плоский океан с растущими числами. Это вертикальная страна, где границы написаны давлением. От 0 до 250 метров фотический шельф еще дает свет, водоросли, мягкие обломки и прощение первых ошибок. От 250 до 1200 метров начинаются промышленный шельф и кабельный риф: сорванные якоря, рамы труб, кости ретрансляторов и старые корпоративные тропы. От 1200 до 2800 метров рапные лестницы гнут сонар, прячут тепло и делают балласт дорогим решением. От 2800 до 4300 метров ремонт становится переговорами с машинным полем. От 4300 до 5600 метров Atlas превращает давление во власть.
+Global Ocean Depth Bands структурируют exploration, salvage, biology, sound, pressure и route risk HECTON-8 от bright shelf до Atlas basin.
+
+## Scanner
+
+Depth chart. First shelf forgives poor ballast; lower water invoices every mistake in pressure, heat, noise и silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth на HECTON-8 - law, weather, border и hunger под одним number.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ru_RU. -->

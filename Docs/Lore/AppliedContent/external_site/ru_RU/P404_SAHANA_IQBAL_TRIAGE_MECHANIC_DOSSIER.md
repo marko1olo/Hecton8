@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Sahana Iqbal/Triage"
+title: "Сахана Икбал, механик триажа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Sahana Iqbal/Triage
+# Сахана Икбал, механик триажа
 
-RU LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Сахана Икбал показывает, как HECTON-8 превратил обслуживание в триаж. Колония не разделяла сломанную технику и людей под угрозой чисто; и те и другие ждали внутри одной системы ограничений, а улики позволяют игроку считать это давление без катсцены.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Досье: Сахана Икбал. Доска моментов, бирки коек и карантинная лента стоят в одной очереди ожидания.
 
 ## Terminal
 
-RU LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+ТРИАЖНЫЙ ОТСЕК C-2 / ИКБАЛ, САХАНА: пределы момента вывешены рядом с бирками кислородного резерва. Инструменты, койки и картриджи скрубберов стоят на одной рейке. Карантинный язык снова сдвинул границу досягаемого.
 
 ## Audio
 
-RU LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Икбал чинила то, до чего могла дотянуться. Доска все время решала, что считается досягаемым.
 
 ## Field Note
 
-RU LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Использовать Икбал в карантинных ремонтных циклах, коридорах медотсека, кислородных очередях и интерфейсах, где выбор машины явно стоит человеческого времени.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/ru_RU. -->

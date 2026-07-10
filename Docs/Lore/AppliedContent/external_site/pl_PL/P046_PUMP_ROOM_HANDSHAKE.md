@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Uzgodnienie zaworu pompowni"
+title: "Handshake zaworu pump room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Uzgodnienie zaworu pompowni
+# Handshake zaworu pump room
 
-Pompownie HECTON-8 nie są prostymi odpływami. Lokalne zawory, koła ręczne i zmęczone zawory zwrotne każą pytać, dokąd poszła woda po osuszeniu podłogi. Działająca pompa może otworzyć drzwi, obudzić korytarz, wprowadzić hałas do sonaru i zmienić powrót w następny problem.
+Pump rooms na HECTON-8 zmieniaja drainage w consequence. Working handwheel moze clear a floor, feed noise into sonar, obciazyc downstream hatch i pogorszyc return path.
 
 ## Scanner
 
-Lokalna pompa zęzowa przyjęła wejście z koła ręcznego. Kosz wlotowy zabrudzony pianą kapsuły; impuls wylotowy obciąża korytarz powrotny B.
+Local sump przyjal handwheel input. Capsule foam zapycha intake basket; outlet pulse wchodzi do Return Corridor B.
 
 ## Terminal
 
-P-63 KONTROLA STUDZIENKI / UZGODNIENIE LOKALNE: koło ręczne przyjęte. Zdalne nadpisanie odrzucone. Przepływ wlotowy przywrócony na niskim poziomie. Ciśnienie wylotu rośnie w RETURN CORRIDOR B; restart tylko po kontroli włazu za odpływem.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Zawór chwycił. Wylot stuka. Nie nazywaj tego jeszcze bezpiecznym.
+Valve took. Outlet puka. Nie nazywaj tego jeszcze safe.
 
 ## Field Note
 
-Sucha pompownia może utopić drogę powrotną. Posłuchaj uderzeń na wylocie, zanim zdejmiesz zawór.
+Suchy floor to nie solved room. Sluchaj corridor, ktory za niego zaplacil.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/pl_PL. -->

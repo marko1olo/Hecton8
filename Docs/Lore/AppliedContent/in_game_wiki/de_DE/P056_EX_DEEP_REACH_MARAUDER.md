@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Ehemaliger Deep-Reach-Marauder
 
-Der Protagonist wurde nicht auf HECTON-8 geboren und jagt keinem Familiengeist nach. Die alte Kolonie erkennt etwas Kälteres: den Reparaturrhythmus von Feldsystemen, Gewohnheiten aus der Notfallroutenführung und die kleinen Abkürzungen, die Deep-Reach-Arbeit lehrte. Diese Vergangenheit macht die ersten verschlossenen Türen persönlich, ohne die Geschichte in Blutlinienmelodram zu verwandeln. Ein Marauder kann ein Anspruchsdepot für Geld aufschneiden; ein ehemaliger Deep-Reach-Spezialist erkennt außerdem, welches Dichtungsprotokoll nicht existieren dürfte, welche Evakuierungsanweisung eine Verzögerung verdeckt und welche Reparatursequenz weiterlief, nachdem die Arbeiter abgeschrieben waren.
+Der Marauder wurde nicht auf HECTON-8 geboren und jagt keinem Familiengeist nach. Die alte Kolonie erkennt etwas Kälteres: den Reparaturrhythmus von Feldsystemen, Gewohnheiten aus der Notfallroutenführung und kleine Abkürzungen, die Deep-Reach-Evakuierungsarbeit lehrte. Diese Geschichte macht die ersten verschlossenen Türen persönlich, ohne sie in Blutlinienmelodram zu verwandeln. Ein Claim-Cache lässt sich für Geld aufschneiden; ein ehemaliger Deep-Reach-Spezialist weiß außerdem, welches Dichtungslog nicht existieren dürfte, welche Evakuierungsanweisung eine Verzögerung deckte und welche Reparatursequenz weiterlief, nachdem die Arbeiter abgeschrieben waren.
 
 ## Scanner
 
-Das alte Deep-Reach-Schloss prüft nicht deinen Namen. Es erkennt den Rhythmus deiner Reparatursequenz.
+Das alte Deep-Reach-Schloss prüft keinen Namen. Es erkennt den Rhythmus einer Feldreparatur.
 
 ## Terminal
 
-BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Bergungsstatus unter Schuldenverwahrung des Anspruchspools akzeptiert.
+BERECHTIGUNGSSPUR: ehemaliger Feldsystemvertrag. Zugriff auf Evakuierungsinfrastruktur widerrufen. Salvage-Status unter Schuldenverwahrung des Claim-Pools akzeptiert.
 
 ## Audio
 

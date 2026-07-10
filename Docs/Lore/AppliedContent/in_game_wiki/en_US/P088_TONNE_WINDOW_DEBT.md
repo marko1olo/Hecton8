@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Tonne-Window Debt
 
-Tonne-window debt is the point where physics becomes finance. Black Keel does not have infinite lift margin, transit fuel, or clean quarantine volume. Every kilogram brought up from HECTON-8 competes with every kilogram needed to keep the operator alive. The debt meter makes the carrier feel cruel without breaking hard science: rescue is possible, but the route budget keeps asking what deserves mass.
+Tonne-window debt is where HECTON-8 stops being only a horror story and becomes orbital logistics. Black Keel has finite lift margin, finite clean volume, finite oxygen reserve, and a route price attached to every kilogram. A spare tank, a sealed sample, a damaged suit, a proof case, a body, and a crate of salvage all compete inside the same window. The system feels cruel because it is exact. It does not need to pretend rescue is impossible. It only keeps asking what the route can afford to lift.
 
 ## Scanner
 
-Mass-window meter. Every kilogram of help has a route price.
+Mass-window ledger. Help has weight before it has language.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: recovery burn margin narrowed. Operator extraction mass conflicts with sealed payload, ballast reserve, oxygen debt, and quarantine sample custody. Manual override requires paid priority or hazard proof.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass conflicts with sealed payload, ballast reserve, oxygen debt, quarantine sample volume, and hull patch inventory. Manual priority requires paid override, verified hazard proof, or custody reclassification.
 
 ## Audio
 
-The ship can carry you or what you found. It prefers a number.
+The ship can lift a life. The question is what else the ledger makes it carry.
 
 ## Field Note
 
-Oxygen, ballast, proof, payload, body: the carrier weighs them before it weighs mercy.
+Oxygen, ballast, proof, samples, hull patch, body: the carrier prices mercy by the kilogram.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/en_US. -->

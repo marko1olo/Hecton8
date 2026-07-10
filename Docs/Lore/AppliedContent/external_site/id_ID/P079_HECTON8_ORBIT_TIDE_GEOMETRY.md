@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Orbit HECTON-8 / Geometri Pasang"
+title: "Orbit / Geometri Pasang HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Orbit HECTON-8 / Geometri Pasang
+# Orbit / Geometri Pasang HECTON-8
 
-Orbit HECTON-8 / Geometri Pasang adalah lapisan bencana hard-sci-fi: pasang, panas, dan tekanan mematahkan koloni lebih dulu; prioritas korporat mengubah kegagalan menjadi kejahatan.
+HECTON-8 Orbit / Tide Geometry adalah hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage, dan pressure menghancurkan colony lebih dulu; corporate priority turns failure into crime.
 
 ## Scanner
 
-MODEL GEOMETRI PASANG // Resonansi, tekanan es, gelombang badai, dan pembuangan panas melampaui prakiraan evakuasi. Flag Atlas continuity menimpa prioritas mundur.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, dan heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-RANTAI GREAT TIDE // Paksaan orbit memperbesar beban samudra. Pembuangan panas buatan dan drainase tersegel mengubah pasang menjadi kegagalan koloni.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, dan sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Fisika membuka pintu. Deep Reach memutuskan siapa yang boleh keluar.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Sebuah bulan dapat menenggelamkan koloni tanpa membencinya.
+Moon bisa drown a colony tanpa membencinya.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/id_ID. -->

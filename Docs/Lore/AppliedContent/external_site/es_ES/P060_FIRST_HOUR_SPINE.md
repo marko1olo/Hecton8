@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Columna de la primera hora
 
-Columna de la primera hora define el ritmo de apertura de HECTON-8. El jugador empieza con tareas de ingeniería tangibles y asombro visual, y luego ve esas tareas conectarse con una mentira corporativa y una ecología de mantenimiento que ha entrado en la biología. Así la primera ruta sigue siendo jugable y atmosférica mientras planta la investigación mayor: el océano no oculta la historia; conserva la evidencia en presión, sal y procedimiento.
+Columna de la primera hora define el ritmo de apertura de HECTON-8. Primero llegan tareas de ingeniería tangibles y asombro visual; luego esas tareas se conectan con una mentira corporativa y con una ecología de mantenimiento que entró en la biología. El océano no oculta la historia; conserva la evidencia en presión, sal y procedimiento.
 
 ## Scanner
 
-Contrato, descenso dañado, aire, bajíos luminosos, refugio de bomba, mentira saneada y luego la primera cicatriz de reparación que usa vida como junta.
+Contrato, descenso dañado, aire, bajíos brillantes, refugio de bomba, mentira higienizada, luego la primera cicatriz de reparación que usa vida como junta.
 
 ## Terminal
 
-ANEXO SOMERO: reinicio manual de bomba válido. Paquete de incidente Deep Reach en caché. Crecimiento de reparación de Atlas detectado alrededor de cable, fragmento de herramienta y residuo biológico.
+SHALLOW ANNEX: reinicio manual de bomba válido. Paquete de incidente Deep Reach en caché. Crecimiento de reparación Atlas detectado alrededor de cable, fragmento de herramienta y residuo biológico.
 
 ## Audio
 
-La primera sala segura no está limpia. Solo contiene la respiración mejor que tú.
+La primera sala segura no está limpia. Solo aguanta la respiración mejor que tú.
 
 ## Field Note
 
-La apertura debe ser hermosa antes de volverse acusadora.
+La apertura tiene que ser bella antes de empezar a acusar.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/es_ES. -->

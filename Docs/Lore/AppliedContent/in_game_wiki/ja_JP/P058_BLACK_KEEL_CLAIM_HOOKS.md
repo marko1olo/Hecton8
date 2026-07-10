@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black Keel の請求フック"
+title: "Black Keel 請求フック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keel の請求フック
+# Black Keel 請求フック
 
-Black Keel はプレイヤーの投入経路であり、回収の約束であり、最初の法的な檻でもある。キャリアは応答できるが、すべての応答は請求フックを通る。ペイロード価値、隔離状態、経路証明、債務管理、そして失効しているべき古い Deep Reach 優先条項である。だから海面は救助ボタンにならない。船は話せるほど近く、拒めるほど遠い。その遅延は気分ではない。契約論理が書かれた通りに動いているだけだ。
+Black Keel は配送経路であり、回収の約束であり、最初の法的檻でもある。キャリアは応答できるが、応答はすべて請求フックを通る。ペイロード価値、検疫状態、航路証明、債務保管、失効しているはずの古い Deep Reach 優先条項である。だから地表はそれだけでは救助ではない。船は話せるほど近く、拒否できるほど遠い。遅延は気分ではなく、書かれた通りに動く契約論理だ。
 
 ## Scanner
 
-マニフェスト上の Black Keel は請求プールの機材であり、条項上では Deep Reach のてこである。
+マニフェスト上の Black Keel は請求プール機材であり、条項上では Deep Reach の梃子である。
 
 ## Terminal
 
-キャリア管理：ペイロード選別、隔離ゲート、経路証明、責任解除後にオペレーター回収を許可。Deep Reach 優先印は休眠条項内に保持。
+CARRIER CUSTODY: ペイロード選別、検疫ゲート、航路証明、責任クリア後に操作者回収可。Deep Reach 優先シールは休眠条項内に保持。
 
 ## Audio
 
-聞こえてはいる。ただ、答える前に価格を付けなければならない。
+聞こえてはいる。ただ、答えの価格を先に計算する必要がある。
 
 ## Field Note
 
-船は邪悪ではない。生きている声を出さずに邪悪になれる契約へ貸し出されているだけだ。
+船は邪悪ではない。生きているように聞こえずに邪悪でいられる契約へ貸し出されている。
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/ja_JP. -->

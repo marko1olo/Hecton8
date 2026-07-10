@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kręgosłup pierwszej godziny
 
-Pierwsza godzina nie powinna zaczynać się w ciemności. Zaczyna się głosem kontraktu, uszkodzonym zejściem, kontrolą oddechu, jasną płytką wodą i praktyczną potrzebą ponownego uruchomienia pompy. Piękno jest częścią pułapki: HECTON-8 musi wyglądać jak miejsce warte pragnienia, zanim jego dokumenty staną się śmiertelne. Potem kręgosłup otwarcia zmienia przetrwanie w dowód. Pierwszy schron jest użyteczny, ale skażony; wyczyszczony pakiet incydentu brzmi zbyt gładko; pierwsza blizna naprawcza Atlas pokazuje kabel, metal narzędzia i żywą pozostałość wciśnięte w jedną decyzję utrzymania. Gracz uczy się podstawowej pętli działaniem, nie wykładem: oddychać, naprawiać, czytać, wątpić, zejść głębiej.
+Pierwsza godzina nie zaczyna się w ciemności. Zaczyna się od głosu kontraktu, uszkodzonego zejścia, kontroli oddechu, jasnej płytkiej wody i praktycznej potrzeby ponownego uruchomienia pompy. Piękno jest częścią pułapki: HECTON-8 musi wyglądać jak miejsce warte pożądania, zanim jego papiery staną się śmiertelne. Pierwsza trasa zmienia przetrwanie w dowód. Pierwsze schronienie jest użyteczne, ale skażone; wysterylizowany pakiet wypadku brzmi zbyt czysto; pierwsza blizna Atlas pokazuje kabel, metal narzędzia i żywą resztkę sprasowane w jedną działającą uszczelkę.
 
 ## Scanner
 
-Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wyczyszczone kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
+Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wysterylizowane kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
 
 ## Terminal
 
-PŁYTKI ANEKS: ręczny restart pompy ważny. Pakiet incydentu Deep Reach zapisany. Wzrost naprawczy Atlas wykryty wokół kabla, fragmentu narzędzia i pozostałości biologicznej.
+SHALLOW ANNEX: ręczny restart pompy ważny. Pakiet incydentu Deep Reach w cache. Wzrost naprawczy Atlas wykryty przy kablu, fragmencie narzędzia i resztce biologicznej.
 
 ## Audio
 
-Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej od ciebie wstrzymuje oddech.
+Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej wstrzymuje oddech niż ty.
 
 ## Field Note
 
-Otwarcie musi być piękne, zanim stanie się oskarżeniem.
+Otwarcie musi być piękne, zanim zacznie oskarżać.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/pl_PL. -->

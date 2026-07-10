@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "طريق عودة بالسونار"
+title: "مسار عودة sonar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# طريق عودة بالسونار
+# مسار عودة sonar
 
-الملاحة في HECTON-8 تعامل طريق العودة كعمل، لا كراحة. منارة قديمة قد تشير إلى الممر الصحيح بينما تخفي عائقا جديدا أو طبقة طمي مزاحة أو باب ضغط غير الصدى.
+تجعل sonar return routes من navigation مهمة مستمرة: يمكن لstale beacons أن تشير إلى right corridor بينما تخفي new silt أوobstruction drift أوfauna movement أوpressure-door changes.
 
 ## Scanner
 
-منارة العودة قديمة. ping الآمن القديم لم يعد يطابق صدى الممر؛ كتلة الحمولة ستبطئ نافذة الانسحاب.
+Return beacon stale. لم يعد old safe ping يطابق corridor echo؛ سوف يبطئ cargo mass نافذة retreat.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: آخر صدى نظيف غير صالح. تم استقبال ping من Black Keel بثقة منخفضة. انجراف العوائق وكثافة الطمي يتجاوزان سماحية الخريطة. ضع علامة خط ثان قبل استخراج الحمولة.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, and cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-الطريق ما زال هناك. الصدى ليس نفسه.
+The route is still there. الecho ليس نفسه.
 
 ## Field Note
 
-أرسل ping قبل التحميل. إذا تغير طريق البيت ويداك فارغتان، فلن يسامح حقيبة كاملة.
+Ping before loading. إذا كان way home changed حين كانت hands empty، فلن يغفر full pack.
 
 <!-- External Site; generated from P049_SONAR_RETURN_ROUTE/ar_SA. -->

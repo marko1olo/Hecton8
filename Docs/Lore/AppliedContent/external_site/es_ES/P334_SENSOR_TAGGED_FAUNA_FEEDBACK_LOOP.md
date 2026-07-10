@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bucle de retroalimentación de fauna con sensores"
+title: "Bucle de fauna con etiqueta sensora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bucle de retroalimentación de fauna con sensores
+# Bucle de fauna con etiqueta sensora
 
-La fauna con sensores no son soldados controlados. Esa distinción importa. Los programas de marcado de Deep Reach empezaron como ciencia de campo y logística normales: seguir migración, tolerancia a presión, exposición a contaminación y densidad de rutas. Años después, las etiquetas ya no son equipo limpio. La concha crece alrededor. El tejido cicatrizal las desalinea. Las tapas minerales cambian su señal.
+Un animal etiquetado no es una marioneta. Es fauna salvaje con un instrumento corporativo que sigue respondiendo bajo concha y cicatriz. Basta para que Atlas confunda movimiento con actualización ambiental, y para que la ruta de un buzo cambie sin que el animal lo note.
 
-Atlas sigue leyendo el retorno. Un herbívoro herido que cruza una pasarela inundada puede parecer un sondeo de presión. Un depredador con una vieja etiqueta puede hacer que un corredor parezca ocupado por riesgo de infraestructura. El animal sigue siendo él mismo, pero el sistema que lo rodea trata el movimiento como datos. Así los encuentros con fauna tienen un segundo filo: la conducta de supervivencia también puede ser retroalimentación de mantenimiento.
+## Scanner
+
+Vieja etiqueta Deep Reach bajo crecimiento de concha en el flanco izquierdo. Paquetes de movimiento aún pinguean la red de mantenimiento.
+
+## Terminal
+
+BUCLE DE ETIQUETA DE FAUNA / DR-2147-MIG: paquetes de presión, movimiento y contaminación aceptados como telemetría ambiental. Intención animal no analizada. Alarmas de ruta pueden seguir la migración.
+
+## Audio
+
+No te está cazando. Su etiqueta aún puede abrir la puerta equivocada.
+
+## Field Note
+
+Si fauna etiquetada cruza un patio de relés, espera antes de confiar en las alarmas. El animal puede haberse ido; el estado de ruta puede seguir alcanzándolo.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/es_ES. -->

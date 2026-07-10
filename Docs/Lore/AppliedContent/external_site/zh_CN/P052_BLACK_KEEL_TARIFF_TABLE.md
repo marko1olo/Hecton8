@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Black Keel费率表
 
-费率表是HECTON-8最清楚说出沉默事实的地方。Black Keel能听见玩家，能分类危险，也能把数据包推过系统，但每个动作在成为帮助前都会先进入计费类别。保存完好的样本可能比还在呼吸的操作员走得更快。密封箱可能比受伤的身体更早提高路线等级。这不是戏剧化的邪恶，而是账本按设计工作。残酷之处很实际：玩家学会用同一套经济语法求生，而这套语法曾让殖民地变成可消耗品。
+Black Keel费率表揭示HECTON-8周围的carrier economy：distress traffic与sample custody、oxygen、debt、proof和asset protection竞争。
+
+## Scanner
+
+tariff plate。distress、oxygen、sample custody、pressure gear、hull damage和body recovery被列成不同项目。
+
+## Terminal
+
+TARIFF CLASS: salvage emergency。Welfare addendum pending。Verified sample custody advances outbound priority by two billing tiers。Breathing mass surcharge applies，直到lien arbitration resolves。
+
+## Audio
+
+evidence有discount，breathing有surcharge。
+
+## Field Note
+
+最快的class不是rescue，而是verified property moving upward。
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/zh_CN. -->

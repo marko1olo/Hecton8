@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "RU LOC HOLD: Juno Kade/Relay"
+title: "Джуно Кейд, релейный нотариус"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Juno Kade/Relay
+# Джуно Кейд, релейный нотариус
 
-RU LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Джуно Кейд превращает предпосылку без FTL в человеческую профессию. Он стоит между паникой и записью: релейный нотариус, следящий, чтобы заявка на эвакуацию, отказ маршрута или отметка смерти пересекли межзвездную дистанцию и не стали слухом.
 
 ## Scanner
 
-RU LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Досье: Джуно Кейд. Лицо печати, лоток пакетов и свидетельская лента несут одну метку позднего окна.
 
 ## Terminal
 
-RU LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+РЕЛЕЙНЫЙ ДВОР A-17 / КЕЙД, ДЖУНО: исходящие пакеты штамповались после каждого окна носителя. Давление печати, пыль в лотке и свидетельская лента подтверждают хранение даже тогда, когда время ответа превышает время спасения.
 
 ## Audio
 
-RU LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Кейд заверял факты, которые приходили слишком поздно, чтобы кого-то спасти, и все равно должны были пережить путь.
 
 ## Field Note
 
-RU LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Использовать Кейда рядом с часами окон связи, лотками пакетов, нотариальными печатями и поздними раскрытиями улик. Его досье должно делать дистанцию юридической, а не абстрактной.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ru_RU. -->

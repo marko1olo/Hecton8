@@ -19,22 +19,22 @@ localization_flags: 1
 
 # خطاف أولوية Deep Reach
 
-ضغط Deep Reach الحالي لا يحتاج إلى تحكم بعيد مستحيل. شهادات الاستمرارية القديمة وبنود الحجر ورموز وصول Atlas وخطافات أولوية payload موجودة أصلا داخل مسار Black Keel القانوني. تستطيع الشركة التأثير في ما يقدره carrier من دون أن تملكه ظاهرا. وهذا يجعل الخصم أصعب في القطع: ليس إشارة تشوش، بل بندا يستيقظ مرارا.
+سلطة Deep Reach على Black Keel ليست instant remote control وليست FTL command chain مخفية. تركت الشركة أشياء أقدم: continuity certificates وquarantine clauses وAtlas access tokens وsealed infrastructure proofs وpayload priorities وevidence suppression queues. كُتبت هذه hooks عندما كانت colony ما تزال تملك meetings وbudgets وsignatures. بعد سنوات، يمكنها أن تستيقظ داخل arbitration path للcarrier. هذا ما يجعل الضغط قابلا للتصديق. لا تتكلم Deep Reach دائما. أحيانا يتكلم paperwork القديم عنها.
 
 ## Scanner
 
-خطاف شهادة قديمة. Deep Reach لا تملك السفينة؛ تملك البند.
+Certificate hook قديم. لا تحتاج Deep Reach إلى bridge ما دامت تملك clause.
 
 ## Terminal
 
-ROUTE OVERRIDE: شهادة استمرارية Deep Reach legacy قد تقدم recovery للـ payload أو قفل الحجر أو رمز وصول Atlas أو طابور كبت الدليل تحت قانون claim في Aegir. أولوية استخراج الإنسان لا تتغير إلا إذا تجاوز دليل الخطر قيمة custody.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate قد يرفع payload recovery أو quarantine lock أو Atlas access token أو evidence suppression queue أو sealed infrastructure proof تحت Aegir claim law. Human extraction priority unchanged ما لم يتجاوز verified hazard proof قيمة custody value.
 
 ## Audio
 
-لا يحتاجون إلى الوقوف على الجسر كي يوجهوا الجواب.
+لا يحتاجون إلى الوقوف على bridge كي يوجهوا الإجابة.
 
 ## Field Note
 
-أنظف من المؤامرة: الأوراق لا تزال حية ولا تزال جائعة.
+أنظف من conspiracy: بقي paperwork بعد من وقعوه.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/ar_SA. -->

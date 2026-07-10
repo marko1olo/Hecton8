@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Akustisches Filterorgan-Relais
 
-Akustische Filterorgane wachsen in alten Relaishälsen, wo Wasser, Druck und Schall die Arbeit erledigen, die Funk nicht leisten kann. Das Gewebe spricht nicht. Es ändert Impedanz, dämpft Pumpendröhnen und lässt enge Pinger-Töne weiter reisen, als sie sollten. Atlas kann dieses wiederholte Echo als billiges Relais nutzen, und ein sorgfältiger Spieler als Routenhinweis.
+Akustische Filterorgane bilden sich in alten Relaisrohren, wo Druck, strömendes Wasser und Schall Gewebe weiter versorgen. Sie können einen Pinger weiter tragen, indem sie Pumpendröhnen schneiden und einen schmalen Ton durchlassen. Dieselbe Falte kann die Rückkehr verzögern und eine kartierte Wand um Meter verschieben, genug für einen Taucher im Sackgang.
 
 ## Scanner
 
-Weiches Bafflegewebe im Relaisrohr lässt Pinger-Töne durch und erstickt Pumpenlärm.
+Prallgewebe im Relaiskehlgang lässt schmalen Pingerton durch und schneidet Pumpenlärm. Rückkehrkarte phasenverschoben.
 
 ## Terminal
 
-RELAISNOTIZ: lebende Falten blocken breiten Maschinenlärm, lassen enge Pinger-Impulse passieren und verschieben Rückechos in der Phase. Kartenvertrauen stromabwärts reduziert.
+RELAISROHR A-17: lebende Falten lassen 8-12-kHz-Pingerimpulse durch, weisen breiten Pumpenlärm ab und fügen Rücklaufverzögerung hinzu. Kartenvertrauen stromab reduziert. Rückweg nicht allein mit diesem Relais zertifizieren.
 
 ## Audio
 
-Wenn es wie Ausrüstung antwortet, denk daran: Ausrüstung blutet nicht.
+Es hat dem Pinger geantwortet. Aus dem Rohr läuft klare Flüssigkeit. Markier es als Tier, nicht als Relais.
 
 ## Field Note
 
-Dort einsetzen, wo Sonar erst hilft und später verdächtig wird.
+Wenn ein Relais in einem gefluteten Rohr zu sauber antwortet, setz einen zweiten Pinger aus anderem Winkel. Guter Klang kann trotzdem schlechte Karte sein.
 
 <!-- In-Game Wiki; generated from P332_ACOUSTIC_FILTER_ORGAN_RELAY/de_DE. -->

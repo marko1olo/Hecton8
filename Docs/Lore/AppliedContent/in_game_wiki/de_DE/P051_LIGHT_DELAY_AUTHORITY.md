@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Autorität der Lichtverzögerung"
+title: "Lichtverzogerungs-Autoritat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Autorität der Lichtverzögerung
+# Lichtverzogerungs-Autoritat
 
-HECTON-8 hat kein Ansible und keine lebende Befehlsstimme aus dem Orbit. Nachrichten laufen mit Lichtgeschwindigkeit und verlieren danach weitere Zeit an Puffern, Sturmfenstern, Relaisgeometrie und Verwahrungsregeln des Trägers. Jede Antwort ist altes Beweismaterial, keine Anweisung.
+HECTON-8 hat kein ansible, keine freundliche Stimme, die sich aus dem Orbit hinunterbeugt, und keine Moglichkeit, zehn Lichtjahre barmherzig zu machen. Messages bewegen sich mit Lichtgeschwindigkeit und verlieren dann weitere Zeit an relay geometry, storm scatter, buffer law und Black Keels custody queues. Eine transmission kann ehrlich sein und trotzdem zu alt zum Befolgen. Die Oberflache lehrt diese Regel fruh: Jede remote answer ist zuerst evidence, danach instruction und niemals comfort. Wenn Wand, Wasser und pressure der message widersprechen, gewinnt die local world.
 
 ## Scanner
 
-Relaismast-Cache: Der Ruf ging sauber hinaus und wartete dann hinter Licht, Warteschlangenrecht, Sturmstreuung und Aegir-Sichtlinie.
+Relay mast cache. Der Ruf ging sauber hinaus, dann wartete er hinter light, queue law, storm scatter und Aegir line-of-sight.
 
 ## Terminal
 
-KOMM-AUTORITÄT: Einwegverzögerung bestätigt. Sturmstreuung hoch. Relaiswarteschlange unter Verwahrungspriorität. Lokale Überlebensautorität bleibt aktiv.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active bis fresh signal window override bestatigt.
 
 ## Audio
 
-Die Antwort kommt. Das macht sie noch nicht zur Rettung.
+Die Antwort kommt. Das macht sie nicht zu rescue.
 
 ## Field Note
 
-Niemand zensierte den ersten Schrei. Die Physik trug ihn langsam genug, damit die Richtlinie aufholen konnte.
+Niemand zensierte den ersten scream. Physics trug ihn langsam genug, damit policy aufholen konnte.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/de_DE. -->

@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Keelmark Mutual Custody
 
-Keelmark Mutual is the insurance-custody shell that lets Black Keel operate in Aegir without a live rescue authority on site. It is not Deep Reach on paper. In practice, old underwriting can be steered by whoever owns the right priority hook, because every body, tool, sample, and sealed case already sits inside a risk schedule before the operator asks for help.
+Keelmark Mutual is the insurance-custody shell behind Black Keel's behavior. It is not Deep Reach wearing a mask, and it is not a secret rescue service. Keelmark exists to keep claim tenders legal, funded, and insured when nobody in Aegir can answer a live phone. That makes it colder than a villain. The policy does not hate the operator; it simply defines the operator as debt, vessel risk, payload interface, quarantine exposure, and possible witness. Once those categories exist, every later plea has to pass through them.
 
 ## Scanner
 
-Insurance shell intact. Keelmark owns the lien before it owns the body.
+Underwriting tag intact. Keelmark does not need malice when the lien already has teeth.
 
 ## Terminal
 
-KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, and quarantine reserve bundled under remote underwriting schedule. Distress status does not suspend lien.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve, and recovery proof bundled under remote underwriting schedule. Distress status does not suspend lien or custody order.
 
 ## Audio
 
-The policy is older than your distress call.
+The policy is older than the distress call. It has had more time to learn the route.
 
 ## Field Note
 
-The insurer is not a hidden mastermind. It is worse: a schedule that never had to care.
+No mastermind in a dark room. Just a schedule old enough to outlive guilt.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/en_US. -->

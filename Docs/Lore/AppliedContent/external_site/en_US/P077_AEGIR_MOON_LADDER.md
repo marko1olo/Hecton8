@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Aegir Moon Ladder
 
-Aegir Moon Ladder gives HECTON-8 a usable local astronomy layer: other moons explain route windows, dead claims, salvage rumors and failed recovery timing.
+Aegir Moon Ladder gives HECTON-8 a local astronomy layer: other moons shape transfer timing, eclipse dark, relay loss, salvage rumors, cold claims, and failed recovery windows.
 
 ## Scanner
 
-Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated level.
+Moon ladder chart. HECTON-8 is one working hazard in a moving system, not an isolated ocean level.
 
 ## Terminal
 
-MAJOR AEGIR MOONS // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer and eclipse model attached.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, and custody windows attached.
 
 ## Audio
 

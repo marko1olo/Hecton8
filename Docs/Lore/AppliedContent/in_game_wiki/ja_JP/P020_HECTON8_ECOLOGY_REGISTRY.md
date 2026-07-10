@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "生態レジストリ"
+title: "生態登録簿"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 生態レジストリ
+# 生態登録簿
 
-HECTON-8には対比が必要だ。明るく有用な浅瀬、人間構造への中層適応、深部のAtlas修復侵入。損傷前に在来生命があったから恐怖が効く。
+生態登録簿は生命と損傷を分ける。明るい棚マットと草食者は基準層を示す。ケーブル植物相と濾過体は生命が人間の機材に適応した姿を示す。センサータグ付き動物、導電膜、shell-seal成長はAtlas修復経路を示す。正しい問いは生きているかではなく、圧力システムの中で何の仕事をしているかだ。
 
 ## Scanner
 
-明るい浅海生態を確認。深部痕跡はケーブル植物、濾過体、Atlas修復侵入を示す。
+登録分割確認: 固有棚生命、ケーブル適応生物、Atlas経路修復生物。切る前に識別せよ。
 
 ## Terminal
 
-登録区分: 在来圧力生態、コロニー適応生物、Atlas改変修復生物。カテゴリを混ぜるな。
+登録分割: 固有圧力生態、植民地適応ケーブル生物、Atlas変質修復生物。誤分類は機能中のシールを壊し、経路証拠を消す。
 
 ## Audio
 
-すべてが怪物なら、侵害は消える。
+すべてを怪物と見れば、圧力を保っているものを切ることになる。
 
 ## Field Note
 

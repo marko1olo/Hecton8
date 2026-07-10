@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Anchor Worker Name Set A"
+title: "Shallow Worker Roster Strip"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,34 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Anchor Worker Name Set A
+# Shallow Worker Roster Strip
 
-Anchor Worker Name Set A is the first human layer the player should start recognizing. Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, and Pavel Sorn belong to shallow and industrial-shelf evidence. Their names should not arrive as biographies. They should arrive on a locker label, a pump tag, a route permission, a stained meal chit, a cracked tool case, then return later in a record that changes the meaning. Set A makes the colony feel lived-in before the deeper conspiracy is clear.
+The shallow roster is a shift-board fragment, not a biography page. Eight names repeat across lockers, pump tags, meal chits, water tallies and early route permits: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita and Pavel Sorn.
+
+Their first use is physical. A name appears on a pump lockout, a tool case, a denied permit or a tally that does not match the room. Later records can change the meaning. The first contact stays local: who signed the object, what job it touched, and which count somebody changed.
 
 ## Scanner
 
-Early names must come back through work, not speeches. The shallow route teaches memory by repetition.
+Water-stained roster strip. Eight names repeat across lockers, pump tags and route permits: Mara Venn; Juno Kade; Ren Okoye; Sahana Iqbal; Lian Torres; Oskar Neumann; Aya Morita; Pavel Sorn.
 
 ## Terminal
 
-ANCHOR SET A: shallow and industrial-shelf recurrence. Each name should bind to one tool, one route permission, one damaged work object, and one later contradiction. These names are the player's first proof that the colony was a workplace before it became salvage.
+SHIFT ROSTER A / P63 SHALLOWS
+Mara Venn: pump lockout K-12
+Juno Kade: board tally / water short
+Ren Okoye: tool case R-4
+Sahana Iqbal: meal chit witness
+Lian Torres: route permit denied
+Oskar Neumann: seal tape issue
+Aya Morita: locker tag recovered
+Pavel Sorn: pressure bunk unclaimed
 
 ## Audio
 
-Do not mourn the name until the tool tells you why.
+Kade owes the water board three ticks. Venn says don't wipe it. Somebody is changing the count.
 
 ## Field Note
 
-Set A anchors: Mara Venn, Juno Kade, Ren Okoye, Sahana Iqbal, Lian Torres, Oskar Neumann, Aya Morita, Pavel Sorn.
+Do not read the names as memorials yet. Read the objects they signed: pump, locker, food chit, route permit, tool case.
 
 <!-- In-Game Wiki; generated from P208_ANCHOR_WORKER_NAME_SET_A/en_US. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir回収プール
 
-Aegir回収プールはBlack Keelの背後にある公的なsalvageの殻だ。小さなmarauder免許でも、私有の惑星間carrierを持たずに放棄されたAegirクレームへ届く。その取引は役に立ち、同時に毒でもある。テンダーを送れる同じプールが、呼吸している操作者、封印payload、隔離ロック、証拠束のどれが次のburnに値するかを決める。
+Aegir回収プールは、小規模なlicensed marauderでもBlack Keelに手が届くようにするsalvage shellである。単独のindependent operatorが、放棄された月ひとつのためにinterplanetary claim carrierを購入し、燃料を満たし、合法的に維持することはできない。プールは古いclaim、死んだ航路、insurer lien、queued recovery contractを束ねてその問題を解く。存在するだけで有用だ。しかし有毒でもある。carrierを発進させる同じledgerが、carrierが何を価値として扱えるかを決めるからだ。sealed sample、proof bundle、quarantine lock、まだ息のある身体、あるいはHECTON-8を離れる次のburn window。
 
 ## Scanner
 
-クレームプール印。Black Keelは経路債務で割り当てられたもので、操作者への贈与ではない。
+共同claimプールの刻印。Black Keelは救助の慈悲ではなく、共有債務で派遣された。
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: 自律テンダーBlack Keelを放棄圧力クレームHECTON-8へ割当。乗員福祉区分: 請負。payload custody区分: 可変優先。人員抽出はプール仲裁終了まで条件付き。
+AEGIR RECLAMATION POOL: 自律claim tender BLACK KEEL、derelict-pressure claim HECTON-8へ割当。contractor welfare classは限定。payload custody classは可変。Human extractionはlien、quarantine、mass-window arbitration完了までpending。
 
 ## Audio
 
-プールが経路を所有する。君は、尋ねられるほど長く生きて答えを借りる。
+プールは確かに船を送った。それが慈悲だ。その先はすべて会計になる。
 
 ## Field Note
 
-共有プールは救助を安く、遅くし、署名者全員が否認しやすくする。
+このプールがAegirでcarrierを可能にした。同時に、すべての約束を条件付きにした。
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ja_JP. -->

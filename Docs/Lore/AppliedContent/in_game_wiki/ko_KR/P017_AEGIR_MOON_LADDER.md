@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir 위성 사다리"
+title: "Aegir 달 사다리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir 위성 사다리
+# Aegir 달 사다리
 
-Aegir의 위성 사다리는 방사선 표지, relay 천체, 고갈된 claim, 공명 위험, HECTON-8, 냉각 저장 위성, 외곽 불규칙체로 이루어진다. HECTON-8은 살아 있는 바다와 궤도 압력 사이에 있어 가치가 있다.
+Aegir의 달들은 경로 기계다. 이름은 하늘 장식이 아니다. 그림자, 중계 침묵, 조석 위상, carrier 대기, 질량 이동 비용을 결정한다. HECTON-8은 작업 사다리의 Aegir-VIII이며, 해양 압력과 중계 기하가 추출과 방치를 모두 비싸게 만들기 때문에 가치가 있다.
 
 ## Scanner
 
-위성 순서: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+달 사다리 확인: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel과 Mute가 창을 휘게 한다.
 
 ## Terminal
 
-HECTON-8은 Aegir-VIII이다. 안쪽도, 가장 바깥도 아니다. Rake 공명과 Pale 그림자가 조석과 패킷 품질을 바꾼다.
+AEGIR 경로 주기: 작업 사다리에서 HECTON-8은 Kestrel 뒤에 있다. 중계 그림자, 조석 위상, 방사선대, Black Keel 전송 기하가 질량 상승 전에 맞아야 한다.
 
 ## Audio
 
-창을 믿기 전에 위성을 세어라.
+창을 믿기 전에 Kestrel을 세라.
 
 ## Field Note
 
-하늘은 배경이 아니라 장치다.
+하늘은 작업 일정표다. 그림자 하나를 놓치면 carrier는 소문이 된다.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/ko_KR. -->

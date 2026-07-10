@@ -19,6 +19,22 @@ localization_flags: 1
 
 # הקול הראשון של Black Keel
 
-הקול הראשון של Black Keel צריך להרגיש כמו דלת שנפתחת רק עד החצי. השמע פגום, ערוץ הטקסט נקי, וה-carrier אינו מבזבז מילה על נחמה. ההיעדר הזה חשוב. AI ידידותי היה מרכך את האוקיינוס. נבל דרמטי היה עושה את הסכנה אנושית מדי. Black Keel מועיל משניהם כי הוא אומר אמת בפורמט שעדיין מסרב לבטיחות. אות נקלט. הישרדות הוכרה. recovery לא פתורה. השחקן לומד שלהישמע אינו להינצל, ושהקול היחיד מעל המים קשור ל-ledgers שהוא עוד לא ראה.
+הקול הראשון של Black Keel מגדיר את הטון של ה-carrier: מדויק, פגום, מועיל, מותנה כספית, ולעולם לא נוכח רגשית.
+
+## Scanner
+
+Carrier voice cache. ה-audio נקרע ב-pressure noise; ה-text channel נקי מספיק כדי לחייב.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity ו-mass-window balance.
+
+## Audio
+
+Operator signal acquired. אל תבלבל acknowledgement עם rescue.
+
+## Field Note
+
+המשפט השימושי הראשון לא מנחם. הוא מסווג.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/he_IL. -->

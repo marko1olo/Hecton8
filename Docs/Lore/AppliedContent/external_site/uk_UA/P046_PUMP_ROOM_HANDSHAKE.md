@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Рукостискання клапана насосної
 
-Насосні HECTON-8 не є простими зливами. Їхні локальні клапани, маховики й втомлені зворотні клапани змушують питати, куди пішла вода після сухої підлоги. Робочий насос може відкрити двері, розбудити коридор, дати шум у сонар і перетворити шлях назад на наступну проблему.
+Насосні HECTON-8 перетворюють drainage на consequence. Working handwheel може clear a floor, feed noise into sonar, навантажити downstream hatch і погіршити return path.
 
 ## Scanner
 
-Локальний трюмний насос прийняв ввід із маховика. Впускний кошик забруднений піною капсули; вихідний імпульс навантажує зворотний коридор B.
+Local sump прийняв handwheel input. Capsule foam забиває intake basket; outlet pulse піднімається в Return Corridor B.
 
 ## Terminal
 
-P-63 / КОНТРОЛЬ ЗУМПФА / ЛОКАЛЬНЕ ПОГОДЖЕННЯ: маховик прийнято. Дистанційну команду відхилено. Впуск відновлено на низькій витраті. Тиск виходу зростає в RETURN CORRIDOR B; перезапуск тільки після перевірки нижнього люка.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Клапан узяв. Вихід стукає. Не називай це безпечним.
+Valve took. Outlet стукає. Safe це ще не стало.
 
 ## Field Note
 
-Суха насосна може втопити шлях назад. Послухай удар у вихідній лінії, перш ніж знімати клапан.
+Сухий floor - ще не solved room. Слухай corridor, який за нього заплатив.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/uk_UA. -->

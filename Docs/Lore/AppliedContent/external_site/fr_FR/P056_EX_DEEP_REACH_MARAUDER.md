@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Maraudeur issu de Deep Reach
 
-Maraudeur issu de Deep Reach fixe le canon du joueur. Le joueur est un ancien spécialiste d’entreprise des systèmes de terrain et de l’infrastructure d’évacuation, poussé vers la récupération indépendante par liste noire ou dette, puis ramené sur HECTON-8 sous garde Black Keel. Le drame vient de la reconnaissance professionnelle : la lune répond avec des procédures que le joueur comprenait autrefois, et chaque serrure familière rend le mensonge d’entreprise plus difficile à classer comme l’accident de quelqu’un d’autre.
+Maraudeur issu de Deep Reach fixe une pression biographique sans faire de HECTON-8 une destinée. L'opérateur de salvage central est un ancien spécialiste corporatif des systèmes de terrain et de l'infrastructure d'évacuation, poussé vers le salvage indépendant par liste noire ou dette, puis ramené sous garde Black Keel. Le drame vient de la reconnaissance professionnelle : la lune répond avec des procédures autrefois comprises par la main, et chaque serrure familière rend le mensonge corporatif plus difficile à classer comme l'accident de quelqu'un d'autre.
 
 ## Scanner
 
-L’ancienne serrure Deep Reach ne vérifie pas ton nom. Elle reconnaît le rythme de ta séquence de réparation.
+L'ancienne serrure Deep Reach ne vérifie pas un nom. Elle reconnaît le rythme d'une réparation de terrain.
 
 ## Terminal
 
-TRACE D’ACCÈS : ancien contrat de systèmes de terrain. Accès à l’infrastructure d’évacuation révoqué. Statut de récupération accepté sous garde de dette du pool de réclamations.
+TRACE D'ACCÈS : ancien contrat de systèmes de terrain. Accès à l'infrastructure d'évacuation révoqué. Statut de salvage accepté sous garde de dette du pool de réclamations.
 
 ## Audio
 
-Tu n’es pas rentré chez toi. Tu es revenu devant une procédure qui n’a jamais cessé de tourner.
+Tu n'es pas rentré chez toi. Tu es revenu devant une procédure qui n'a jamais cessé de tourner.
 
 ## Field Note
 
-Ce n’est pas une affaire de famille. La procédure se souvient des mains qui l’ont utilisée.
+Ce n'est pas une affaire de famille. La procédure se souvient des mains qui l'ont utilisée.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/fr_FR. -->

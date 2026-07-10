@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ciclo de feedback de fauna com sensores"
+title: "Loop de fauna com etiqueta sensora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ciclo de feedback de fauna com sensores
+# Loop de fauna com etiqueta sensora
 
-Fauna com sensores carrega a antiga colônia dentro das cicatrizes. A Deep Reach marcou animais para estudos de migração, pressão e contaminação; depois Atlas leu essas tags como telemetria ambiental barata. A criatura não é fantoche. Seu movimento ainda pode mudar prioridade de reparo, acordar uma rota de drone ou fazer uma passagem segura parecer ocupada.
+Fauna com etiquetas sensoras carrega hardware antigo de pesquisa dentro de tecido cicatrizado. Deep Reach marcou animais para estudos de pressão, migração e contaminação. Atlas continuou ouvindo depois que a colônia morreu e dobrou esses pacotes no estado de manutenção. O animal escolhe o próprio caminho; a etiqueta ainda pode mudar portas, alarmes e confiança do mapa atrás dele.
 
 ## Scanner
 
-Tag antigo da Deep Reach sob crescimento de concha. Traço migratório combina com varredura de manutenção.
+Etiqueta Deep Reach antiga sob crescimento de concha no flanco esquerdo. Pacotes de movimento ainda pingam a rede de manutenção.
 
 ## Terminal
 
-CICLO DE FAUNA: tag embutida retorna pacotes fracos de pressão, movimento e contaminação. Atlas lê movimento como estado ambiental, não intenção animal.
+LOOP DE ETIQUETA DE FAUNA / DR-2147-MIG: pacotes de pressão, movimento e contaminação aceitos como telemetria ambiental. Intenção animal não analisada. Alarmes de rota podem seguir caminho de migração.
 
 ## Audio
 
-Ele não está caçando você. Ainda pode reportar você.
+Não está caçando você. A etiqueta ainda pode abrir a porta errada.
 
 ## Field Note
 
-Bom para encontros em que o animal é inocente e ainda perigoso para a rota.
+Se fauna etiquetada cruza um pátio de relés, espere antes de confiar nos alarmes. O animal pode ter ido; o estado da rota ainda pode estar alcançando.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/pt_BR. -->

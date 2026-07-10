@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Drukgroei van schelpafdichting"
+title: "Drukgroei van schelpafdichter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drukgroei van schelpafdichting
+# Drukgroei van schelpafdichter
 
-Drukgroei van schelpafdichting laat zien waarom Atlas niet te reduceren is tot kapotte machine of kwaadaardigheid. De patch kan mooi zijn: witte schelp over roest, mineraalribben over een scheur, natte hars die onder druk hard wordt. Het is ook een document van verloren prioriteit. Grensintegriteit bleef leesbaar voor Atlas nadat werkersuitgangen, waarschuwingsverf en menselijke routeherinnering ruis werden.
+Schelpafdichter is een van de duidelijkste veldtegenstrijdigheden van Atlas-reparatie. De drukgrens verbetert, de kamer houdt langer stand, en de route kan onleesbaar worden onder dezelfde witte lagen. Een speler die erin snijdt, verwijdert geen decoratie; hij kan heropenen wat het compartiment droog hield.
 
-In spel moet een schelpafdichting twijfel maken. Misschien is dit de enige reden dat een kamer nog lucht heeft. Misschien is dit ook de reden dat een werker twee meter van een verborgen handwiel stierf. Scannerwaarheid is gedeeltelijk: druk stabiel, route bedekt, menselijke markeringen vernietigd. Het doorsnijden is nooit alleen materiaal oogsten. Het is een discussie met een reparatie die al iets heeft gered.
+## Scanner
+
+Witte calciumlaag heeft de breuk gesloten en routepijlen langs de luikrand begraven. Snijden kan het lek heropenen.
+
+## Terminal
+
+REPARATIECONFLICT / DEUR S-9: leksnelheid verlaagd, drukgrens verbeterd, uitgangsmarkeringen bedekt, handwiel 62 procent begraven. Snijtoestemming vereist voorbereid overstromingspad.
+
+## Audio
+
+De wand houdt. Het luikwiel ligt onder tien centimeter schelp.
+
+## Field Note
+
+Voordat je witte schelp van een luik snijdt, zoek waar het water de vorige keer heen ging. Het label kan met reden begraven zijn.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/nl_NL. -->

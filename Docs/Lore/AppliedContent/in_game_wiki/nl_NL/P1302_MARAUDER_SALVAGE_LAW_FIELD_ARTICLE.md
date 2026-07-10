@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Salvage Law And Field Culture Primer
 spoiler_tier: 1
-title: "Marauder Veldartikel over Bergingsrecht"
+title: "Marauder Veldartikel over Salvagewet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,28 +17,30 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder Veldartikel over Bergingsrecht
+# Marauder Veldartikel over Salvagewet
 
-Marauder is het lelijke woord voor iemand die het claimsysteem kan gebruiken zonder reddingsplicht toe te geven. Een piraat steelt buiten het boek. Een redder komt met plicht, crew en publieke autoriteit. Een Marauder zit ertussen: genoeg gelicentieerd om verlaten bezit aan te raken, vervangbaar genoeg om daar te sterven, nuttig genoeg om een betwiste claim te bewegen.
+Marauder is een vuil juridisch woord voordat het een baan is. Een piraat steelt buiten het boek. Een redder komt met plicht, bemanning, publieke autoriteit en genoeg brandstof om toe te geven dat een persoon telt. Een Marauder stapt in de kloof ertussen. De licentie zegt dat je verlaten of betwist eigendom mag aanraken, recoverbare massa mag markeren, getuigemateriaal mag bewaren en een lien mag indienen. Ze zegt ook stil dat als je in de claim sterft, het systeem je contracterverlies kan noemen in plaats van mislukte redding.
 
-Daarom zijn Marauder-markeringen geen slogans zodra je de grammatica kent. Krassen, zwarte ringen, drukpijlen en doorgestreepte bedrijfslabels zijn snelle veldwet: eigenaar vijandig, luchttelling verdacht, deurklok vals, werkersnaam onopgelost, monster meer waard dan lichaam, pakket heeft getuige nodig. Eerdere crews lieten ze achter voor mensen zonder tijd voor een juridisch handboek terwijl de oceaan door de muur drukte.
+            Daarom voelt Marauder-werk verkeerd, zelfs wanneer het nuttig is. Je snijdt panelen uit een dode drukdeur omdat metaal waarde heeft. Je bewaart ook de snijrand omdat die bewijst dat de deur gelast werd nadat mensen verdwenen. Je steekt een naamplaat in je zak omdat legering verkoopt. Je bewaart ook de natte hash omdat de naamplaat een lichaamscategorie weer persoon maakt.
 
-De licentie is vuil omdat ze bedrijven schone werkwoorden laat vermijden. Deep Reach hoeft niet te zeggen dat arbeiders zijn achtergelaten als een zone besmet activaveld kan heten. Keelmark hoeft niet te zeggen dat risico verkocht werd als een lichaam terugwinbare massa wordt. Een Marauder overleeft door die vertalingen sneller te lezen dan kantoren ze archiveren.
+            Veldmarkeringen groeiden omdat formele wet te traag is voor overstroomde kamers. Een zwarte ring betekent vijandige of liegende eigenaar. Een gespleten pijl betekent vals drukpad. Een doorgestempeld bedrijfslabel betekent vertrouw de gedrukte doodsoorzaak niet. Een workernaam naast een routemarkering betekent bewaar persoon met plaats.
+
+            Op HECTON-8 wordt de speler niet zuiver door salvage te weigeren. Weigering laat alleen schone labels staan. De moeilijkere discipline is nemen met context: object, plaats, hash, markering, naam, schadepad. Salvage zonder geheugen is plundering. Salvage met getuige blijft lelijk, maar kan een dode kamer laten spreken in een register dat liever alleen massa telt.
 
 ## Scanner
 
-MARAUDER-MARKERING // Geen piratenverf. Contractsteno: betwiste claim, terugwinbare massa, vijandige eigenaar, getuigerisico. Wie dit achterliet verwachtte dat een andere professional de muur snel las.
+MARAUDER-MARKERING // Contractsteno, geen piratenverf. Impliciete velden: betwiste eigenaar, recoverbare massa, getuigerisico, druktoegang, lienrisico, worker-naamconflict. Lezen voor snijden.
 
 ## Terminal
 
-KEELMARK-VELDADVIES // Een Marauder-licentie geeft geen reddingsbevoegdheid. Ze geeft beperkte salvage-toegang, lien-erkenning, bewijsbewaring en boekhouding van terugwinbare massa onder betwiste claim.
+KEELMARK-VELDADVIES // Marauder-licentie geeft beperkte disputed-claim toegang, salvage-lien melding, noodcustody van bewijs en recoverbare-massa boekhouding. Geen reddingsautoriteit, medisch bevel of schone titel.
 
 ## Audio
 
-Black Keel-contractregel: Je bent hier niet omdat de wet faalde. Je bent hier omdat de wet iemand vond die goedkoper is dan redding.
+Black Keel-contractregel: De wet faalde niet. Ze huurde iemand goedkoop genoeg om de kamer binnen te gaan die ze verliet.
 
 ## Field Note
 
-Vertrouw geen schoon label in een natte kamer. Als het ertoe deed, kraste iemand de lelijke versie ernaast.
+Als je het neemt, bewaar waar het vandaan kwam. Schone buit koopt brandstof. Vuile buit met getuige kan een naam terugkopen.
 
 <!-- In-Game Wiki; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/nl_NL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Utang Tonne-Window"
+title: "Utang Jendela-Tonase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Utang Tonne-Window
+# Utang Jendela-Tonase
 
-Tonne-window adalah irisan kapasitas carrier yang diukur dalam massa, waktu burn, volume karantina, dan prioritas legal. Bagi operator, rasanya seperti utang karena setiap benda berguna dari HECTON-8 masuk ledger yang sama dengan tubuh yang menemukannya. Kotak tersegel bisa ringan tetapi berat secara hukum. Rak sampel bisa murah secara massa namun meminta volume bersih. Ekstraksi manusia tampak jelas sampai ballast, cadangan oksigen, dan payload custody sudah menghabiskan jendela yang tersedia. Ekonomi HECTON-8 menjadi fisik, bukan abstrak. Pemain tidak dihukum oleh meter moral palsu. Pemain terperangkap dalam mesin yang menghargai survival melalui bahan bakar, massa, kontaminasi, dan dokumen.
+Utang Jendela-Tonase mengubah survival menjadi logistics keras: extraction, oxygen, samples, salvage, quarantine volume, dan burn margin menempati priced mass window yang sama.
+
+## Scanner
+
+Mass-window ledger. Bantuan punya berat sebelum punya bahasa.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass bertentangan dengan sealed payload, ballast reserve, oxygen debt, quarantine sample volume, dan hull patch inventory. Manual priority memerlukan paid override, verified hazard proof, atau custody reclassification.
+
+## Audio
+
+Kapal bisa mengangkat satu nyawa. Pertanyaannya apa lagi yang dipaksa ledger untuk ikut dibawa.
+
+## Field Note
+
+Oxygen, ballast, proof, samples, hull patch, body: carrier memberi harga belas kasih per kilogram.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/id_ID. -->

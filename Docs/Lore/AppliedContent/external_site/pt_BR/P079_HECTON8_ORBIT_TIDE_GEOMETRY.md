@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Órbita de HECTON-8 / Geometria de Maré"
+title: "Orbita / Geometria de Mare de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Órbita de HECTON-8 / Geometria de Maré
+# Orbita / Geometria de Mare de HECTON-8
 
-Órbita de HECTON-8 / Geometria de Maré é a camada de desastre hard-sci-fi: marés, calor e pressão quebram a colônia primeiro; prioridade corporativa transforma falha em crime.
+HECTON-8 Orbit / Tide Geometry e a hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage e pressure quebram a colony primeiro; corporate priority turns failure into crime.
 
 ## Scanner
 
-MODELO DE MARÉ // Ressonância, estresse de gelo, ressaca e descarga térmica excederam a previsão de evacuação. Flags Atlas continuity anularam prioridade de recuo.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge e heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-CADEIA GREAT TIDE // Forçamento orbital amplificou carga oceânica. Descarga térmica artificial e drenagem selada converteram uma maré em falha colonial.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge e sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-A física abriu a porta. Deep Reach decidiu quem sairia por ela.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Uma lua pode afogar uma colônia sem odiá-la.
+Uma moon pode drown a colony sem odia-la.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/pt_BR. -->

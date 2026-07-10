@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Cicatriz de empalme de cable"
+title: "Cicatriz de cable splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Cicatriz de empalme de cable
+# Cicatriz de cable splice
 
-Una cicatriz de empalme es una huella temprana de Atlas-6 que aún parece mantenimiento. La reparación mantiene la energía por una línea de servicio dañada, pero el material no coincide con el procedimiento colonial y falta la firma. Estas cicatrices deben aparecer antes de que la red de reparación parezca biológica: útiles, concretas y ligeramente equivocadas.
+Una cable splice scar es una de las primeras Atlas traces que aun puede pasar por maintenance. La line esta broken, la official repair ausente, y power keeps moving de todos modos. El material alrededor de la wound no es flesh ni normal insulation; se comporta como una answer grown around a question nobody filed. Las early scars deben sentirse casi helpful. Lights return. A relay wakes. A door gets one more cycle. La incomodidad llega despues, cuando la misma repair logic aparece donde no hand could have reached y no work order was ever written.
 
 ## Scanner
 
-Empalme no estándar. El aislamiento volvió a crecer alrededor de un cable de servicio tras fallar el ruteo humano; etiqueta Atlas-6 parcial y autoridad de mantenimiento ausente.
+Nonstandard splice. Insulation regrew alrededor de un service cable tras human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: empalme humano falló abierto. Reparación autónoma de continuidad aceptada para preservar carga de relé. Patrón repetido en nodos de arrecife de cables con menor pérdida de aislamiento y sin firma de trabajador.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Alguien arregló el cable después de que parara el papeleo. O algo.
+Alguien fixed the cable despues de que paperwork stopped. O algo lo hizo.
 
 ## Field Note
 
-Útil primero. Incorrecto después. Así se presentan las reparaciones de Atlas.
+Useful primero. Wrong despues. Asi se presentan las Atlas repairs.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/es_ES. -->

@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ретрансляционные опасности внутренних лун"
+title: "Опасности inner-moon relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ретрансляционные опасности внутренних лун
+# Опасности inner-moon relay
 
-Опасности внутренних лун делают провал связи физическим. Всплеск, выровненный со Skarn, может портить антенны, не убивая их. Пыль и лед Vela закрывают оптику, пока маршрут все еще утверждает, что существует.
-
-Claw и Lumen хуже, потому что несут старую маршрутную логику. Handshake может быть формально валидным и операционно бесполезным. Поэтому Black Keel может записать пакет, сохранить custody и все равно оставить тело в воде.
+Inner moon relay hazards делают failed contact физическим, а не удобным. Skarn-aligned surges могут corrupt antennas, не killing them. Vela dust and ice могут shutter optics, пока route все еще reports itself as open. Claw и Lumen хуже, потому что carry old buoy logic: handshake может быть formally valid и operationally useless. Поэтому Black Keel может log a packet, preserve custody и все равно оставить human signal waiting in water. System не нужно было go mute. Ей достаточно answer from the wrong sky.
 
 ## Scanner
 
-ВНУТРЕННЯЯ ЛЕСТНИЦА // Skarn насыщает антенны. Vela рассеивает оптику. Старые маршруты Claw и Lumen могут держать просроченные handshakes живыми.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw и Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-ЗАМЕТКА О РЕТРАНСЛЯТОРАХ // Потеря связи может быть геометрией, погодой заряженных частиц, пылевой шторкой или унаследованным buoy law. В окна всплеска считай чистый UI подозрительным.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge или inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Ретранслятор не замолчал. Он повторил не тот век.
+Relay не замолчал. Он repeated the wrong century.
 
 ## Field Note
 
-Чистая иконка все еще может врать через старое небо.
+Clean icon все еще может lie through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/ru_RU. -->

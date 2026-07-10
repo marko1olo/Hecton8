@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Formação de Vidro de Pressão"
+title: "Formação de Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Formação de Vidro de Pressão
+# Formação de Pressure Glass
 
-Vidro de pressão é o nome técnico por trás do blue debt dos Marauders e da linguagem Xenon-Omega da Deep Reach. Ele se forma onde pressão, bolsões de gás nobre, salmoura, minerais, calor e biologia alterada se encontram.
+Pressure glass é o nome de campo por trás da dívida azul dos marauders e da linguagem Xenon-Omega da Deep Reach. Ele só se forma onde bolsões de gás nobre, defeitos minerais, salmoura quente, biologia alterada e uma história violenta de pressão ficam juntos tempo suficiente para travar uma rede em memória.
 
-A Formação de Vidro de Pressão transforma Xenon-Omega em ecologia material hard-sci-fi, não em minério mágico. Não é minério. É um processo que lembra onde foi feito.
+A formação de pressure glass transforma Xenon-Omega em ecologia material: um substrato feito por pressão, ligado a contenção, computação, continuidade Atlas e risco de salvage. Isto não é minério. É um lugar lembrando o que fizeram com ele.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/pt_BR. -->

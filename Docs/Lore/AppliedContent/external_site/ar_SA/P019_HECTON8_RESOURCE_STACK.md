@@ -19,15 +19,15 @@ localization_flags: 1
 
 # حزمة الموارد
 
-حزمة الموارد تعرض HECTON-8 كاقتصاد ضغط. Xenon-Omega هو القمة الاستراتيجية لا العالم كله.
+تقدم حزمة الموارد HECTON-8 كاقتصاد ضغط: Xenon-Omega هي القمة الاستراتيجية، لا العالم كله.
 
 ## Scanner
 
-الحزمة: ألياف شعاب، أملاح محلول، نوى relay، صمامات ضغط، blue debt، pressure glass، شبكة Atlas.
+قراءة الحزمة: ألياف شعاب، أملاح محلول ملحي، نوى مرحلات، صمامات ضغط، محفزات فتحات، دين أزرق، pressure glass، شبكة Atlas.
 
 ## Terminal
 
-القيمة: كائنات نجاة، salvage بشري، عتاد طريق، كيمياء ضغط، blue debt، pressure glass، continuity substrate.
+نموذج القيمة: أحياء نجاة، salvage بشري، عتاد مسارات، كيمياء ضغط، دين أزرق، pressure glass، ركيزة استمرارية. لا تختزل الحزمة في مادة معجزة واحدة.
 
 ## Audio
 
@@ -35,6 +35,6 @@ localization_flags: 1
 
 ## Field Note
 
-لا شيء هنا غنيمة فقط.
+لا شيء هنا مجرد غنيمة. كل عينة تنتمي إلى اقتصاد ضغط.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/ar_SA. -->

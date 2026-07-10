@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deep-Reach-Haftungsbeweise"
+title: "Deep-Reach-Haftungsbelege"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deep-Reach-Haftungsbeweise
+# Deep-Reach-Haftungsbelege
 
-Deep-Reach-liability funktioniert, weil die Flut keine falsche Physik braucht. Der Great Tide war real. Vermeidbarer Schaden erscheint in margins, Uhren, access holds und Akten, die Arbeiter in Kategorien säuberten, bevor jemand geborgen werden konnte.
+Deep-Reach-Haftung braucht keine falsche Physik. Die Große Flut traf HECTON-8 mit echter Ozeankraft: Resonanz, Kryosphärenscherung, Sturmstapelung und Druckversagen. Der vermeidbare Schaden liegt daneben, in Dokumenten und Räumen. Eine Marge wurde nach einer Sensorwarnung akzeptiert. Eine Tür blieb unter Exekutivbefugnis. Eine Warteschlange wartete auf rechtliche Freigabe. Atlas-Gewichtung hielt Maschinen im falschen Fenster über Menschen. Die Beweiskette funktioniert, weil das Wasser ehrlich ist und die Akten nicht.
 
 ## Scanner
 
-Liability-Datensatz. Reale Gezeitenphysik, akzeptiertes margin risk, Evakuierungsverzug, quarantine holds, Atlas weighting und bereinigte Verlustsprache laufen in derselben Beweiskette zusammen.
+Haftungsdatensatz. Gezeitenkraft ist real; signierte Margenänderungen, Quarantänehalte, Evakuierungswarteschlangen, Atlas-Gewichte und Verlustsprache tragen den vermeidbaren Teil.
 
 ## Terminal
 
-ÖFFENTLICHER ARCHIVKNOTEN // LIABILITY-BEWEISE. Great Tide anerkannt. Prüfung offen zu sensor margins, evacuation queue delay, quarantine holds, Atlas weighting, worker classification und loss conversion.
+ÖFFENTLICHER ARCHIVKNOTEN // HAFTUNGSPRÜFUNG DR-H8. Naturkraft akzeptiert. Offene Felder: Sensormarge, Türbefugnis, Warteschlangenverzug, Quarantänehalt, Atlas-Gewichtung, Arbeiter-zu-Anspruch-Konvertierung.
 
 ## Audio
 
-Eine Katastrophe kann natürlich sein und trotzdem Unterschriften tragen.
+Die Flut brach Stahl. Die Unterschriften entschieden, welche Türen geschlossen blieben.
 
 ## Field Note
 
-Marauder-Notiz: Streite nicht mit der Flut. Streite mit den Unterschriften daneben.
+Marauder-Notiz: Streite nie ab, dass die Flut echt war. Lege die Unterschriften neben die Gezeitenuhr.
 
 <!-- In-Game Wiki; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/de_DE. -->

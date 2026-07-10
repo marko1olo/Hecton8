@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "톤-윈도 부채"
+title: "톤 창 부채"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 톤-윈도 부채
+# 톤 창 부채
 
-톤-윈도 부채는 물리가 금융이 되는 지점이다. Black Keel에는 무한한 양력 여유, 무한한 통과 연료, 무한한 청정 격리 용적이 없다. HECTON-8에서 올라오는 모든 킬로그램은 오퍼레이터를 살리는 모든 킬로그램과 경쟁한다. 부채 계량기는 hard science를 깨지 않고 carrier를 잔혹하게 만든다. 구조는 가능하지만 경로 예산은 무엇이 질량을 받을 자격이 있는지 계속 묻는다.
+톤 창 부채는 HECTON-8이 단순한 공포담을 멈추고 orbital logistics가 되는 지점이다. Black Keel에는 유한한 lift margin, 유한한 clean volume, 유한한 oxygen reserve가 있고 모든 킬로그램에는 route price가 붙는다. Spare tank, sealed sample, damaged suit, proof case, body, crate of salvage가 같은 창 안에서 경쟁한다. 시스템이 잔혹하게 느껴지는 이유는 정확하기 때문이다. rescue가 불가능하다고 꾸밀 필요도 없다. 그저 항로가 무엇을 들어 올릴 수 있는지 계속 묻는다.
 
 ## Scanner
 
-질량 창 계량기. 도움의 모든 킬로그램에는 경로 가격이 있다.
+mass-window ledger. 도움은 언어보다 먼저 무게를 가진다.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: recovery burn 여유 축소. 오퍼레이터 추출 질량이 봉인 payload, 밸러스트 예비, 산소 부채, 격리 샘플 custody와 충돌. 수동 override에는 유료 우선권 또는 위험 증거 필요.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass가 sealed payload, ballast reserve, oxygen debt, quarantine sample volume, hull patch inventory와 충돌. Manual priority에는 paid override, verified hazard proof 또는 custody reclassification 필요.
 
 ## Audio
 
-배는 너나 네가 찾은 것을 실을 수 있다. 배는 숫자를 선호한다.
+배는 한 생명을 들어 올릴 수 있다. 문제는 ledger가 그 밖에 무엇을 싣게 만드느냐다.
 
 ## Field Note
 
-산소, 밸러스트, 증거, payload, 몸: carrier는 자비를 재기 전에 그것들을 잰다.
+oxygen, ballast, proof, samples, hull patch, body: carrier는 자비를 킬로그램으로 가격 매긴다.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/ko_KR. -->

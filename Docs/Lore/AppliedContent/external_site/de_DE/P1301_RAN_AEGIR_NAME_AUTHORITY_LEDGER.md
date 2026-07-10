@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Public Site Setting Primer
 spoiler_tier: 0
-title: "Ran-/Aegir-Namenshoheitsbuch"
+title: "Ran-/Aegir-Namenshoheitsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,12 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ran-/Aegir-Namenshoheitsbuch
+# Ran-/Aegir-Namenshoheitsregister
 
-Das Namenssystem von HECTON-8 ist keine Nebensache. Es zeigt, welche Macht spricht. Astronomie sagt Ran, weil ein Stern Routen und Lichtverzug fixiert. Claim-Büros sagen Aegir, weil der Riese Monde, Infrastruktur und Haftung bündeln lässt. Versicherungen sagen RAN-B:H8, weil sortierte Bücher kein Gedächtnis haben. Die Menschen unter Wasser sagen HECTON-8, weil dort die Luke versagt.
+HECTON-8s Namenssystem ist leise, aber scharf. Der Mond hat nicht vier Namen für Farbe. Jeder Name gehört zu einer anderen Autorität und zu einer anderen moralischen Entfernung vom selben ertrunkenen Ort.
 
-Wenn ein Dokument den Namen wechselt, wechselt es oft die Zuständigkeit. Ran-Sprache gehört zu Physik und Zeitfenstern. Aegir-Sprache gehört zu Eigentum. RAN-B:H8 gehört zu Katalog, Versicherung und Verwahrung. HECTON-8 gehört zu Feldgebrauch und Erinnerung.
+            Ran ist astronomische Sprache: Stern, Routenanker, Lichtverzug, Trägerzeit. Aegir ist Claimsprache: Gasriese als Mutterkörper, öffentliche Kurzform und Firmenschirm. RAN-B:H8 ist Versicherungssprache: ein sortierbarer Monddatensatz, der bepreist und verhandelt werden kann, ohne die Stimme der Kolonie mitzunehmen. HECTON-8 ist gelebte Sprache: Türen, Räume, Gräber und Druckalarme.
+
+            Sobald der Spieler diese Grammatik lernt, verändern Dokumente ihre Form. Ein Firmenschreiben mit Aegir kann wegzoomen, bis ein Mondversagen wie Systemwartung aussieht. Eine Quittung mit RAN-B:H8 bereitet Verwahrungspreise vor. Eine Feldnotiz mit HECTON-8 bewahrt Zeugnis, bevor der Katalog es sauber wäscht.
 
 <!-- External Site; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/de_DE. -->

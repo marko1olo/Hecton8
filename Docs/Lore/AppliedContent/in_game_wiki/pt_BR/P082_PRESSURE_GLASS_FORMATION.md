@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Formação de Vidro de Pressão"
+title: "Formação de Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Formação de Vidro de Pressão
+# Formação de Pressure Glass
 
-Vidro de pressão é o nome técnico por trás do blue debt dos Marauders e da linguagem Xenon-Omega da Deep Reach. Ele se forma onde pressão, bolsões de gás nobre, salmoura, minerais, calor e biologia alterada se encontram.
+Pressure glass é o nome de campo por trás da dívida azul dos marauders e da linguagem Xenon-Omega da Deep Reach. Ele só se forma onde bolsões de gás nobre, defeitos minerais, salmoura quente, biologia alterada e uma história violenta de pressão ficam juntos tempo suficiente para travar uma rede em memória.
 
 ## Scanner
 
-Rede de dívida azul. Gás nobre, salmoura, defeitos minerais e histórico de pressão presos em um erro caro.
+Rede de dívida azul. Gás nobre, salmoura, defeitos minerais, ciclos térmicos e história de pressão fundidos numa cicatriz cara.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: rede de clatrato/defeitos rica em xenônio estabilizada por química de salmoura, ciclos térmicos e resíduo catalítico biológico. Risco de despressurização: deriva de sinal, fratura e bloom contaminante.
+SUBSTRATO DE CONTINUIDADE XO: rede clatrato/defeito rica em xenônio, estabilizada por química de salmoura, ciclos térmicos e resíduo catalítico biológico. Riscos de despressurização: deriva de sinal, fratura, bloom de contaminação.
 
 ## Audio
 
-Foi por isso que voltaram. Não ouro. Uma cicatriz legível por máquina.
+Foi por isso que voltaram. Não ouro. Uma ferida legível.
 
 ## Field Note
 
-Não é minério. É um processo que lembra onde foi feito.
+Isto não é minério. É um lugar lembrando o que fizeram com ele.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/pt_BR. -->

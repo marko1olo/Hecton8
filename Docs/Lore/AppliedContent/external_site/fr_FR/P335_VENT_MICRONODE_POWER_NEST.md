@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Nid de micronoeuds énergétiques de cheminée"
+title: "Nid d'alimentation de micronœuds de vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Nid de micronoeuds énergétiques de cheminée
+# Nid d'alimentation de micronœuds de vent
 
-Les nids de micronoeuds énergétiques de cheminée sont le battement lent du réseau de réparation profond. Près des cheminées, l'océan offre gradients de chaleur, flux minéraux, vibration de pression et déséquilibre chimique. Deep Reach utilisait ces gradients pour les instruments et la charge d'urgence. Atlas a gardé l'habitude après l'échec du réseau propre.
+Un micronœud de vent garde Atlas petit et persistant. Il n'a pas besoin d'une machine centrale parfaite pour causer des problèmes. Puissance locale, dommage local et règles de réparation locales suffisent à changer un couloir entre deux visites.
 
-Un micronoeud ne rend pas Atlas omniscient. Cette limite compte. Il peut pulser un film voisin, durcir une couche de scellement, charger goutte à goutte un nid de drones ou préserver une décision locale dans un substrat endommagé. Des milliers de noeuds ainsi font sentir l'abysse organisée sans la rendre sûre. Le joueur ne combat pas un dieu au fond. Il traverse une ville de petites réparations qui ont oublié à quoi servaient les gens.
+## Scanner
+
+Un groupe de nœuds céramiques dans la gorge du vent capte le gradient thermique. Cicatrices de charge drone et réponse fraîche de scellant à proximité.
+
+## Terminal
+
+NŒUD D'ÉNERGIE LOCAL ATLAS / VENT V-3 : gradient thermique alimentant pile de microcellules, réveillant boucles de biofilm et scellant dans 40 m, intervalle de charge drone irrégulier. Aucun verrou de commande centrale.
+
+## Audio
+
+Chaleur, gorge minérale, nœud. Assez pour réveiller la réparation après ton passage.
+
+## Field Note
+
+Si le nœud du vent est chaud, suppose que la pièce peut se réveiller derrière toi. Marque la sortie avant de toucher la gorge minérale.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/fr_FR. -->

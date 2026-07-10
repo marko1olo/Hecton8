@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "衝突で裂けた月"
+title: "衝突で割れた月"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 衝突で裂けた月
+# 衝突で割れた月
 
-HECTON-8はAegir系内で形成され、後にかすめる衝突で割れた。傷は月を砕かなかった。地殻棚を持ち上げ、塩水断層を開き、熱水回廊を養い、まれな圧力窓から古い海底へ触れられる場所を残した。サルベージ地図はその損傷をたどる。安全な道は水で満ちた古い傷だからだ。
+HECTON-8はmysteryのためにAegirへ落とされたstolen worldではない。ここで形成され、glancing collisionによって死なずに開かれた。woundはshelvesを持ち上げ、brine basinsを割り、fault laddersを熱し、moonが自分のoceanを閉じようとした場所にpressure-glass seamsを残した。そのold damageはいまも、hullがどこへdescendできるか、soundがどこでbendsするか、ventsがどこでstay aliveするか、buried colony evidenceがどこでsurfaceするかを決める。HECTON-8では、salvage mapsはinjuriesを追う。safest routeは、完全にはhealしなかったold breakであることが多い。
 
 ## Scanner
 
-古い地殻サンプル。月はAegirの残骸帯で生まれ、海が記憶するほど大きな衝突で開かれた。
+crust sample。HECTON-8はAegir's debris beltでformedし、その後oceanが記憶するほど広いoblique impactを受けた。
 
 ## Terminal
 
-起源モデル: Aegir周辺での集積、後の斜め衝突、潮汐ロック後の共鳴。結果: 段状地殻、熱い断層の梯子、塩水盆地、圧力ガラス脈、深部床への不均一な到達。
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock。Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, uneven deep-floor access。
 
 ## Audio
 
-ここで生まれた。その後、海に地図を与えるほど強く何かが当たった。
+ここで生まれた。その後、海にmapを与えるほど強く何かが当たった。
 
 ## Field Note
 
-捕獲された月という神話はきれいすぎる。HECTON-8には地元の傷がある。持ち上がった地殻、濃くなった塩水、まだ利子を払う噴出口。
+captured-moon storyは清潔すぎる。この場所はborn local、broken local、billed localだ。
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/ja_JP. -->

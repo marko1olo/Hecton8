@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Frontière de données du paiement de fin"
+title: "Ligne d'enregistrement de paiement final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontière de données du paiement de fin
+# Ligne d'enregistrement de paiement final
 
-La frontière garde les fins comme dossiers de compromis, pas comme scores de victoire. Le paiement compte, mais aussi la garde, la preuve publique, la quarantaine, la dette et le droit du récepteur d'agir après le départ du joueur.
+Les lignes de paiement final stockent l'échange réellement conclu. Une sortie matérielle peut effacer une partie du privilège tout en rendant des coordonnées à Recovery Compliance. Une publication au registre public peut protéger des noms et perdre le contrôle de la preuve. La coupure Atlas ou la quarantaine change le récepteur avant de changer le nombre.
 
 ## Scanner
 
-La ligne de fin lie récepteur, garde, état des preuves, paiement et conséquence non résolue.
+Ligne d'issue en attente : récepteur, route de charge utile, état de preuve, paiement, délai de quarantaine et conséquence non résolue ne sont pas clos.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT : les lignes exigent route de payload, récepteur, état des preuves, paiement matériel, conséquence légale, délai de quarantaine et coût non résolu. Les crédits ne ferment pas une scène de crime.
+SCHÉMA DE PAIEMENT FINAL / contrôle du récepteur de dossier : ne fermer aucun enregistrement avant route de charge utile, récepteur, état de preuve, paiement matériel, ajustement de privilège, délai de quarantaine, conséquence écologique et coût non résolu. Les crédits sont libérés après la garde, pas avant.
 
 ## Audio
 
-Les crédits ne ferment pas une scène de crime.
+Relais de dossier : le récepteur a accepté la garde. L'horloge de quarantaine démarre avant l'effacement du crédit.
 
 ## Field Note
 
-Valeur de crédits, délai de quarantaine et flags de dossier ne sont enregistrés qu'après clarté du récepteur et de l'état des preuves.
+N'appelle pas une fin payée tant que le récepteur n'est pas nommé. Mauvais récepteur, mauvais futur ; même océan, autre facture.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/fr_FR. -->

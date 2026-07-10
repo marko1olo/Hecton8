@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Accessible Seafloor Windows
 
-Accessible seafloor windows are places where HECTON-8's broken crust briefly lowers the cost of descent. They form at collapsed shelves, exposed ridges, reheated vent scars, and brine columns that carry pressure differently from open water. A window is still lethal if rushed. It grants contact with old floor, rare mineral seams, buried colony hardware, and evidence the main ocean would crush out of reach.
+Accessible seafloor windows are not safe places. They are rare permissions written by broken geology. A collapsed shelf lowers the descent angle. A reheated brine column carries pressure differently for a few hundred meters. An exposed ridge lets sonar hold shape where open water would swallow it. Through those windows, old floor becomes reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines, and evidence that the main ocean would keep out of human range. Rush a window and it closes with the same pressure that made it valuable.
 
 ## Scanner
 
@@ -27,7 +27,7 @@ Exposed ridge marker. Here the shell tore thin enough for a crawler to touch old
 
 ## Terminal
 
-WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Mark for slow salvage only.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 

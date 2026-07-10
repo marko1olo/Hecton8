@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, cartógrafo de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, cartógrafo de salmoura
 
-PT LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Ren Okoye dá uma fonte humana à travessia. Os cânions de salmoura de HECTON-8 se tornam mais que perigos quando o jogador encontra o sistema manual que os tornava legíveis: esferas, pinos, linhas apagadas e marcas de rota deixadas por alguém que sabia que um caminho legal podia matar se a água tivesse mudado.
 
 ## Scanner
 
-PT LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossiê: Ren Okoye. Esferas de densidade, cortes no quadro e marcas de fio descrevem uma rota que se moveu durante a noite.
 
 ## Terminal
 
-PT LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+MESA DE MAPA DE SALMOURA / OKOYE, REN: corrente segura deslocada 3,2 m para leste após inversão de densidade. O quadro de permissões ainda lista o corredor de ontem. Marcas de rota dos trabalhadores substituem a rota da gestão até a próxima sondagem.
 
 ## Audio
 
-PT LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye desenhava estradas em água que não queria guardar o desenho.
 
 ## Field Note
 
-PT LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Usar Okoye para revelações de rota de salmoura, navegação por densidade e contradições do quadro de permissões. Suas provas devem dar razões concretas para desconfiar de mapas antigos.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/pt_BR. -->

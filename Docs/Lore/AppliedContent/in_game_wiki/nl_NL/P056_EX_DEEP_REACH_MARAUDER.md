@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Voormalige Deep-Reach-Marauder
 
-De protagonist is niet op HECTON-8 geboren en jaagt niet op een familiespook. De oude kolonie herkent iets kouders: het reparatieritme van veldsystemen, gewoonten uit noodroutering en de kleine omwegen die Deep-Reach-werk leerde. Dat verleden maakt de eerste gesloten deuren persoonlijk zonder het verhaal in bloedlijngoedkoop bloedlijndrama te veranderen. Een Marauder kan een claimcache opensnijden voor geld; een voormalige Deep-Reach-specialist ziet ook welk afdichtingslogboek niet mag bestaan, welke evacuatie-instructie een vertraging moest verbergen en welke reparatiereeks bleef draaien nadat de arbeiders waren afgeschreven.
+De Marauder is niet op HECTON-8 geboren en jaagt niet op een familiespook. De oude kolonie herkent iets kouders: het reparatieritme van veldsystemen, gewoonten uit noodroutering en kleine omwegen die Deep-Reach-evacuatiewerk leerde. Dat verleden maakt de eerste gesloten deuren persoonlijk zonder het verhaal in bloedlijndrama te veranderen. Een claimcache kan voor geld worden opengesneden; een voormalige Deep-Reach-specialist ziet ook welk afdichtingslogboek niet mag bestaan, welke evacuatie-instructie een vertraging moest verbergen en welke reparatiereeks bleef draaien nadat de arbeiders waren afgeschreven.
 
 ## Scanner
 
-Het oude Deep-Reach-slot controleert je naam niet. Het herkent het ritme van je reparatiereeks.
+Het oude Deep-Reach-slot controleert geen naam. Het herkent het ritme van een veldreparatie.
 
 ## Terminal
 
-BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Bergingsstatus geaccepteerd onder schuldbeheer van de claimpool.
+BEVOEGDHEIDSSPOOR: voormalig veldsystemencontract. Toegang tot evacuatie-infrastructuur ingetrokken. Salvage-status geaccepteerd onder schuldbeheer van de claimpool.
 
 ## Audio
 

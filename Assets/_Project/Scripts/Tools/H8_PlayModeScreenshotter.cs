@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -105,20 +106,18 @@ namespace Hecton8.Tools
             rt.Release();
             DestroyImmediate(rt);
 
-            string OutputDir = "C:/hades/Hecton8/Logs/Screenshots/";
-            Directory.CreateDirectory(OutputDir);
-            string outPath = $"{OutputDir}shot_02_PLAYMODE_ACTUAL.png";
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string outputDir = Path.Combine(projectRoot, "Logs", "Screenshots");
+            Directory.CreateDirectory(outputDir);
+            string outPath = Path.Combine(outputDir, "shot_02_PLAYMODE_ACTUAL.png");
             File.WriteAllBytes(outPath, tex.EncodeToPNG());
             DestroyImmediate(tex);
 
             Debug.Log($"[H8PlayModeScreenshotter] Saved -> {outPath}");
 
-#if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
             UnityEditor.EditorApplication.Exit(0);
-#else
-            Application.Quit(0);
-#endif
         }
     }
 }
+#endif

@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "UK LOC HOLD: Ren Okoye/Brine Map"
+title: "Рен Окойє, картограф розсолу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# UK LOC HOLD: Ren Okoye/Brine Map
+# Рен Окойє, картограф розсолу
 
-UK LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Рен Окойє дає переміщенню людське джерело. Розсольні каньйони HECTON-8 стають більшими за небезпеку, коли гравець знаходить ручну систему читання: намистини, шпильки, стерті лінії й маршрутні мітки людини, яка знала, що законний шлях може вбити, якщо вода зрушила.
 
 ## Scanner
 
-UK LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Досьє: Рен Окойє. Намистини щільності, різи на сланці й шрами від ниток описують маршрут, що змістився за ніч.
 
 ## Terminal
 
-UK LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+СТІЛ КАРТ РОЗСОЛУ / ОКОЙЄ, РЕН: безпечна течія змістилася на 3,2 м на схід після інверсії щільності. Дошка дозволів досі показує вчорашній коридор. Робочі мітки маршруту переважають маршрут керування до наступного проміру.
 
 ## Audio
 
-UK LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Окойє креслив дороги у воді, яка не хотіла тримати креслення.
 
 ## Field Note
 
-UK LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Використовувати Окойє для відкриття розсольних маршрутів, навігації шарами щільності й суперечностей з дошкою дозволів. Його докази мають давати гравцям конкретні причини не довіряти старим картам.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/uk_UA. -->

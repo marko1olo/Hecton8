@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Bahaya Relai Bulan Dalam"
+title: "Bahaya Relay Bulan Dalam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bahaya Relai Bulan Dalam
+# Bahaya Relay Bulan Dalam
 
-Bahaya ini menjelaskan hilangnya kontak HECTON-8 lewat radiasi, debu, oklusi, dan route law warisan, bukan gangguan sihir.
+Inner Moon Relay Hazards menjelaskan HECTON-8 contact failure lewat radiation, dust, occlusion, eclipse geometry, dan inherited route law, bukan impossible interference.
 
 ## Scanner
 
-TANGGA DALAM // Skarn menjenuhkan antena. Vela menyebar optik. Rute tua Claw dan Lumen menjaga handshakes basi tetap hidup.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw dan Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-CATATAN BAHAYA RELAI // Hilang kontak bisa berupa geometri, cuaca partikel, tirai debu, atau buoy law warisan. Curigai UI bersih saat jendela lonjakan.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Relai tidak diam. Ia mengulang abad yang salah.
+Relay tidak diam. Ia repeated the wrong century.
 
 ## Field Note
 
-Ikon bersih masih bisa berbohong lewat langit lama.
+Clean icon masih bisa berbohong through old sky.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/id_ID. -->

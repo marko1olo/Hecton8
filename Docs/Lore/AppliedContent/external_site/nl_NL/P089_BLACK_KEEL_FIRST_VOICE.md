@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Black Keels eerste stem"
+title: "Black Keels Eerste Stem"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black Keels eerste stem
+# Black Keels Eerste Stem
 
-De eerste stem van Black Keel moet voelen als een deur die maar half opengaat. De audio is beschadigd, het tekstkanaal schoon, en de carrier verspilt geen woord aan troost. Die afwezigheid telt. Een vriendelijke AI zou de oceaan zachter maken. Een dramatische schurk zou het gevaar te menselijk maken. Black Keel is nuttiger dan beide omdat het de waarheid vertelt in een vorm die veiligheid blijft weigeren. Signaal verworven. Overleving erkend. Recovery onopgelost. De speler leert dat gehoord worden niet hetzelfde is als gered worden, en dat de enige stem boven water vastzit aan ledgers die de speler nog niet heeft gezien.
+Black Keels Eerste Stem bepaalt de toon van de carrier: precies, beschadigd, behulpzaam, financieel voorwaardelijk en nooit emotioneel aanwezig.
+
+## Scanner
+
+Carrier voice cache. Audio gescheurd door pressure noise; text channel schoon genoeg om te factureren.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity en mass-window balance.
+
+## Audio
+
+Operator signal acquired. Verwar acknowledgement niet met rescue.
+
+## Field Note
+
+De eerste nuttige zin troost niet. Hij classificeert.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/nl_NL. -->

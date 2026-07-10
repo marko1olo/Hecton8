@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using Hecton8.Data;
-using Hecton8.EditorValidation;
+using Hecton8.Editor.Validation;
 using Unity.Collections;
 
 namespace Hecton8.Tools.DataMonolithBakeCli

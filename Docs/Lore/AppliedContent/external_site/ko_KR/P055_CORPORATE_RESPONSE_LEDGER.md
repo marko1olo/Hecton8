@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "기업 응답 장부"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 기업 응답 장부
+# Corporate Response Ledger
 
-기업 응답 장부는 악당의 연설이 아니다. 그보다 차갑다. Black Keel이 응답하겠다는 기계 판독 가능한 약속이지만, 계약이 인정하는 순서 안에서만 움직인다. 자산 보관이 먼저다. 책임 봉인이 둘째다. 선체 감사, 샘플 경로, 지불 경로, 그리고 대기열이 허락하면 운영자 회수. 플레이어는 이 장부를 단서, 열쇠, 압박 수단으로 쓸 수 있다. 시스템이 예측 가능하기 때문이다. 그 예측 가능성이 고발이다. HECTON-8은 단 하나의 나쁜 결정으로 버려진 것이 아니라, 사람들이 낮은 우선순위 화물이 되는 동안 계속 작동한 응답 스택에 버려졌다.
+Corporate Response Ledger는 Black Keel 지원의 단단한 한계를 기록한다. response speed, rescue priority, evidence custody, asset preservation, debt settlement는 별도의 systems로 남는다.
+
+## Scanner
+
+모든 reply는 contract language로 도착한다. asset custody, liability lock, sample route, hull risk, 그 다음 operator recovery.
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
+
+## Audio
+
+reply는 automatic이었다. rescue는 conditional이었다.
+
+## Field Note
+
+Immediate response는 immediate rescue가 아니다.
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/ko_KR. -->

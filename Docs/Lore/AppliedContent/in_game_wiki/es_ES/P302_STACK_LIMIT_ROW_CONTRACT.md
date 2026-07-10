@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Límite de datos de apilado"
+title: "Fila de límite de apilado a presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Límite de datos de apilado
+# Fila de límite de apilado a presión
 
-El límite mantiene físico el inventario. Los objetos solo se apilan cuando contenedor, presión, masa y contaminación pueden sobrevivir la misma ruta sin mentirle al archivo de guardado.
+Los límites de apilado son reglas físicas de carga. Dos herramientas pueden compartir caja; dos muestras a presión no comparten historia si un sello está roto o una etiqueta lleva ruido compatible con Atlas. Black Keel cobra la masa que cruza una ventana orbital y rechaza pilas que harían mentir al manifiesto sobre contención.
 
 ## Scanner
 
-La fila de pila rechaza montones de iconos: recipiente, presión, contaminación y masa deciden la cantidad.
+Solicitud de apilado denegada: clase de recipiente, presión nominal, contaminación, cargo de ventana de masa e identidad de manifiesto no coinciden.
 
 ## Terminal
 
-STACK CONTRACT: el conteo de pila requiere tipo de recipiente, rating de presión, etapa de contaminación, clase de masa, nivel de advertencia e identidad estable de guardado. Una caja no es un recipiente de presión.
+ESQUEMA DE INGRESO DE APILADO / mesa de carga de Black Keel: el recuento requiere tipo de recipiente, presión nominal, certificado de sello, fase de contaminación, clase de masa, nivel de aviso, ventana de masa bajo gravamen e identidad estable de manifiesto. La etiqueta de una caja no certifica contención.
 
 ## Audio
 
-Una caja no es un recipiente de presión.
+Mesa de carga: apilado denegado. La caja está certificada para izado, no para custodia de presión.
 
 ## Field Note
 
-Los límites de stack permanecen table-owned y estables para save identity.
+Nunca apiles muestras desconocidas para ahorrar espacio. Un sello malo convierte toda la pila en carga de cuarentena, y el transportista factura la masa de todos modos.
 
 <!-- In-Game Wiki; generated from P302_STACK_LIMIT_ROW_CONTRACT/es_ES. -->

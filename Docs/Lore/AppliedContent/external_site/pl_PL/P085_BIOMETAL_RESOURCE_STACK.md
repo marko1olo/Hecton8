@@ -19,8 +19,8 @@ localization_flags: 1
 
 # Stos zasobów biometalu
 
-Stos zasobów chroni HECTON-8 przed redukcją do jednego magicznego materiału. Xenon-Omega jest ważne, lecz księżyc ma też metale, sole, chemię kominów, ceramikę, biowłókna, fotoproteiny, salvage i biometal zmieniony przez Atlas.
+Stos zasobów chroni HECTON-8 przed sprowadzeniem do jednego magicznego materiału. Niebieski dług ma znaczenie, ale księżyc płaci też metalami siarczkowymi, solami, gazami szlachetnymi, ceramiką, katalizatorami, biowłóknami, fotoproteinami, sprzętem salvage i biometalem zmienionym przez Atlas. Przemoc ma sens, bo wartość jest rozproszona: wiele małych powodów, by ciąć, znakować, ukrywać, wracać i kłamać.
 
-Stos zasobów biometalu pokazuje HECTON-8 jako pełną ekonomię ciśnienia, w której eksploracja nagradza wieloma surowcami, a blue debt pozostaje strategicznym szczytem. Jeśli każda próbka mówi Xenon-Omega, świat głupieje. Policz też inne powody.
+Stos zasobów biometalu przedstawia HECTON-8 jako pełną gospodarkę ciśnienia, gdzie Xenon-Omega jest strategicznym szczytem, a nie jedyną rzeczą wartą czytania. Jeśli każda próbka mówi Xenon-Omega, świat robi się płaski. Policz też mniejsze powody, przez które ludzie umierali.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/pl_PL. -->

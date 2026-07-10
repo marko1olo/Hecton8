@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ending Payout Data Boundary"
+title: "Ending Payout Record Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ending Payout Data Boundary
+# Ending Payout Record Row
 
-Ending Payout Data Boundary keeps endings as tradeoff records, not victory scores. The payout matters, but so do custody, public proof, quarantine, debt, and the receiver's right to act after the player leaves.
+Ending payout rows store the trade you actually made. Material exit can clear part of the lien while returning coordinates to Recovery Compliance. Public ledger release may protect names and lose control of proof. Atlas severance or quarantine changes the receiver before it changes the number.
 
 ## Scanner
 
-Ending row binds receiver, custody, evidence state, payout, and unresolved consequence.
+Outcome row pending: receiver, payload route, evidence state, payout, quarantine delay, and unresolved consequence are not closed.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: rows require payload route, receiver, evidence state, material payout, legal consequence, quarantine delay, and unresolved cost. Credits do not close a crime scene.
+ENDING PAYOUT SCHEMA / dossier receiver check: close no record until payload route, receiver, evidence state, material payout, lien adjustment, quarantine delay, ecological consequence, and unresolved cost are written. Credits release after custody, not before it.
 
 ## Audio
 
-Credits do not close a crime scene.
+Dossier relay: receiver accepted custody. Quarantine clock starts before the credit clears.
 
 ## Field Note
 
-Credit value, quarantine delay, and dossier flags are recorded only after receiver and evidence state are clear.
+Do not call an ending paid until the receiver is named. Wrong receiver, wrong future; same ocean, different bill.
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/en_US. -->

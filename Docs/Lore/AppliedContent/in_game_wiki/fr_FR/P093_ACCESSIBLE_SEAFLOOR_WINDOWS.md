@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Fenetres accessibles du plancher marin"
+title: "Fenetres de seafloor accessibles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Fenetres accessibles du plancher marin
+# Fenetres de seafloor accessibles
 
-Les fenetres de plancher accessible sont des lieux ou la croute brisee de HECTON-8 baisse brievement le prix de la descente. Elles apparaissent aux plateaux effondres, cretes exposees, cicatrices d'events rechauffees et colonnes de saumure qui portent la pression autrement. Une fenetre reste mortelle si on la brusque. Elle donne contact avec un vieux fond, des veines minerales rares, du materiel colonial enterre et des preuves que l'ocean principal garderait hors d'atteinte.
+Les accessible seafloor windows ne sont pas safe places. Ce sont des rare permissions ecrites par broken geology. Un collapsed shelf lowers the descent angle. Une reheated brine column carries pressure differently pendant quelques centaines de metres. Un exposed ridge permet a sonar hold shape la ou open water swallow it. Par ces windows, old floor devient reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines et evidence que le main ocean garderait out of human range. Rush a window et elle closes with the same pressure that made it valuable.
 
 ## Scanner
 
-Marqueur de crete exposee. Ici, la coque s'est dechiree assez mince pour qu'un crawler touche l'ancien fond sans devenir de la pate.
+Exposed ridge marker. Ici la shell s'est dechiree assez thin pour qu'un crawler touche old floor without becoming paste.
 
 ## Terminal
 
-CRITERES DE FENETRE: levre de croute fracturee, colonne de saumure rechauffee par event, rampe de plateau effondre, retour sonar stable, poche de pression sous ligne rouge de combinaison. Marquage pour recuperation lente seulement.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-La mer te laisse toucher le fond par des fenetres, pas la ou tu te sens brave.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-La majeure partie de la lune garde son plancher comme secret de pression. Les fenetres sont des exceptions avec des dents.
+La plupart de la moon garde son floor comme pressure secret. Les windows sont des exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/fr_FR. -->

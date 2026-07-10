@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tumpukan Sumber Daya Biometal
 
-Tumpukan sumber daya mencegah HECTON-8 menyusut menjadi satu bahan ajaib. Xenon-Omega penting, tetapi bulan juga punya logam, garam, kimia vent, keramik tekanan, biofiber, fotoprotein, salvage dan biometal yang diubah Atlas.
+Tumpukan sumber daya mencegah HECTON-8 runtuh menjadi satu bahan ajaib. Utang biru penting, tetapi bulan juga membayar dengan logam sulfida, garam, gas mulia, keramik, katalis, biofiber, fotoprotein, hardware salvage, dan biometal yang diubah Atlas. Kekerasan masuk akal karena nilai tersebar: banyak alasan kecil untuk memotong, menandai, menyembunyikan, kembali, dan berbohong.
 
 ## Scanner
 
-Papan sumber daya. Blue debt di puncak, tetapi sisa bulan masih cukup menguntungkan untuk diperebutkan sampai mati.
+Papan sumber daya ditemukan. Utang biru ada di puncak. Sisa bulan masih cukup menguntungkan untuk dibunuh.
 
 ## Terminal
 
-TUMPUKAN SUMBER DAYA HECTON-8: logam sulfida, garam, kantong gas mulia, keramik tekanan, katalis vent, biofiber, fotoprotein, salvage hardware, biometal yang diubah Atlas dan XO continuity substrate.
+TUMPUKAN HECTON-8: logam sulfida, garam, kantong gas mulia, keramik tekanan, katalis vent, biofiber, fotoprotein, hardware salvage, biometal yang diubah Atlas, substrat kontinuitas XO.
 
 ## Audio
 
-Satu bijih ajaib terlalu malas. HECTON-8 punya ekonomi penuh luka tekanan.
+Satu bijih ajaib akan malas. HECTON-8 punya seluruh ekonomi luka tekanan.
 
 ## Field Note
 
-Jika setiap sampel berkata Xenon-Omega, dunia menjadi bodoh. Hitung alasan lain juga.
+Jika setiap sampel berkata Xenon-Omega, dunia menjadi datar. Hitung juga alasan kecil yang membuat orang mati.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/id_ID. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Pierwszy głos Black Keel"
+title: "Pierwszy glos Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pierwszy głos Black Keel
+# Pierwszy glos Black Keel
 
-Pierwszy głos Black Keel powinien brzmieć jak drzwi otwarte tylko do połowy. Audio jest uszkodzone, kanał tekstowy czysty, a carrier nie marnuje słowa na pociechę. Ta nieobecność ma znaczenie. Przyjazna AI zmiękczyłaby ocean. Dramatyczny złoczyńca uczyniłby zagrożenie zbyt ludzkim. Black Keel jest użyteczniejszy od obu, bo mówi prawdę w formacie, który nadal odmawia bezpieczeństwa. Sygnał pozyskany. Przetrwanie uznane. Recovery nierozstrzygnięte. Gracz uczy się, że bycie usłyszanym nie oznacza ocalenia, a jedyny głos nad wodą jest przywiązany do ledgerów, których gracz jeszcze nie widział.
+Pierwszy glos Black Keel ustala ton carriera: precyzyjny, uszkodzony, pomocny, finansowo warunkowy i nigdy emocjonalnie obecny.
+
+## Scanner
+
+Carrier voice cache. Audio rozdarte przez pressure noise; text channel dosc czysty, by wystawic rachunek.
+
+## Terminal
+
+BLACK KEEL FAILSAFE: operator signal acquired. Audio degraded. Text channel valid. Survival acknowledged. Recovery priority unresolved pending payload custody, quarantine state, lien value, signal integrity i mass-window balance.
+
+## Audio
+
+Operator signal acquired. Nie myl acknowledgement z rescue.
+
+## Field Note
+
+Pierwsze uzyteczne zdanie nie pociesza. Klasyfikuje.
 
 <!-- External Site; generated from P089_BLACK_KEEL_FIRST_VOICE/pl_PL. -->

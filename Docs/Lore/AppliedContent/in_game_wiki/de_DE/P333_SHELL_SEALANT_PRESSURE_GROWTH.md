@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Druckschalen-Dichtwuchs"
+title: "Druckwachstum aus Schalen-Dichtstoff"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Druckschalen-Dichtwuchs
+# Druckwachstum aus Schalen-Dichtstoff
 
-Druckschalen-Dichtwuchs ist Atlas' sauberster Fehler: Die Reparatur funktioniert. Kalziumsilikatschichten und Biopolymerharz schließen eine Fraktur, halten statischen Druck und retten einen Raum, der hätte ertrinken müssen. Derselbe Wuchs kann Schilder, Griffe, Kreidepfeile, Kratzspuren und die letzte menschliche Route durch die Station begraben.
+Schalen-Dichtstoffwachstum kann einen Raum retten und in derselben Stunde einen Menschen einschließen. Kalzium-Silikat-Schichten und Harz schließen einen Riss, senken die Leckrate und liefern Atlas eine messbare Reparatur. Das Wachstum prüft nicht, ob es einen Routenpfeil, ein Druckschild oder das einzige Handrad bedeckt.
 
 ## Scanner
 
-Geschichteter Dichtstoff schließt die Fraktur und begräbt Arbeiterroutenmarken unter weißer Schale.
+Weiße Kalziumschale hat den Riss geschlossen und Routenpfeile am Lukenrand begraben. Schneiden kann das Leck wieder öffnen.
 
 ## Terminal
 
-REPARATURKONFLIKT: Leckrate reduziert, Druckgrenze verbessert, Ausgangsmarkierungen verdeckt. Schale zu schneiden kann Flutweg wieder öffnen.
+REPARATURKONFLIKT / TÜR S-9: Leckrate reduziert, Druckgrenze verbessert, Ausstiegsmarken verdeckt, Handrad zu 62 Prozent begraben. Cutterfreigabe erfordert gestaffelten Flutpfad.
 
 ## Audio
 
-Der Raum überlebte. Der Ausweg nicht.
+Die Wand hält. Das Lukenrad liegt unter zehn Zentimetern Schale.
 
 ## Field Note
 
-Für Türen, Kriechgänge und Druckentscheidungen, bei denen Reparatur und Schaden dasselbe Objekt sind.
+Bevor du weiße Schale von einer Luke schneidest, such, wohin das Wasser beim letzten Mal lief. Das Schild kann aus gutem Grund begraben sein.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/de_DE. -->

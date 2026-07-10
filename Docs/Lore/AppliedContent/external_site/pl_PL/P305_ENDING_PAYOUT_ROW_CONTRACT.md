@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Granica danych wypłaty zakończenia"
+title: "Wiersz zapisu wypłaty końcowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica danych wypłaty zakończenia
+# Wiersz zapisu wypłaty końcowej
 
-Zakończenia HECTON-8 zapisują, kto otrzymał dowód, jaki dozór zyskał, co zapłacił i jaki koszt pozostaje nierozwiązany. Liczba może zamknąć linię kontraktu. Nie może zamknąć oceanu.
+Zakończenia HECTON-8 zapisuje się według odbiorcy i nadzoru. Rekord nazywa, co wyszło z oceanu, kto to otrzymał, jakie dowody przetrwały, co zapłacono i co nadal jest ograniczone. Wypłata może zamknąć pozycję księgową, gdy roszczenie, kwarantanna albo ekologia pozostają otwarte.
 
 ## Scanner
 
-Wiersz zakończenia wiąże odbiorcę, dozór, stan dowodów, wypłatę i nierozwiązany skutek.
+Wiersz wyniku oczekuje: odbiorca, trasa ładunku, stan dowodów, wypłata, opóźnienie kwarantanny i nierozwiązana konsekwencja nie są zamknięte.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: wiersze wymagają trasy payloadu, odbiorcy, stanu dowodów, wypłaty materialnej, skutku prawnego, opóźnienia kwarantanny i nierozwiązanego kosztu. Kredyty nie zamykają miejsca zbrodni.
+SCHEMAT WYPŁATY KOŃCOWEJ / kontrola odbiorcy dossier: nie zamykać rekordu, dopóki nie zapisano trasy ładunku, odbiorcy, stanu dowodów, wypłaty materialnej, korekty zastawu, opóźnienia kwarantanny, konsekwencji ekologicznej i nierozwiązanego kosztu. Kredyty zwalniają się po nadzorze, nie przed nim.
 
 ## Audio
 
-Kredyty nie zamykają miejsca zbrodni.
+Przekaźnik dossier: odbiorca przyjął nadzór. Zegar kwarantanny rusza przed oczyszczeniem kredytu.
 
 ## Field Note
 
-Wartość kredytów, opóźnienie kwarantanny i flagi dossier zapisuje się dopiero po jasnym odbiorcy i stanie dowodów.
+Nie nazywaj zakończenia opłaconym, dopóki odbiorca nie jest nazwany. Zły odbiorca, zła przyszłość; ten sam ocean, inny rachunek.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/pl_PL. -->

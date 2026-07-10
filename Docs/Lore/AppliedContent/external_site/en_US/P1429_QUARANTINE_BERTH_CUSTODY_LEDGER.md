@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Public Site Quarantine Berth Article
 spoiler_tier: 1
-title: "Quarantine Berth Custody Ledger"
+title: "Quarantine Berth Receipt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,12 +17,14 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Quarantine Berth Custody Ledger
+# Quarantine Berth Receipt
 
-HECTON-8 keeps its isolation credible by separating acknowledgement from rescue. The civilization around Aegir is not ignorant, and it is not powerless. It can receive packet evidence, price samples, answer a distress hash and still fail to move a living body because the body is a different class of obligation.
+## Quarantine Berth Receipt QBR-22
 
-A quarantine berth custody ledger is the artifact that makes that difference physical. It names the room, medical owner, contamination hold, receiver liability, lift exception and braking margin required before a survivor becomes cargo the route must catch. Without those fields, a message can be honest and still useless for extraction.
+The card is ceramic because paper rots in the rooms where it matters. QBR-22 lists body mass, pressure exposure, pathogen hold, med owner, receiver berth and lift exception. The packet line is stamped accepted. The person line is still pending.
 
-This is not meant to make the world feel stupid. It should feel industrial. On HECTON-8, rescue is not a blue light arriving because a story needs mercy. Rescue is an expensive transfer from ocean, claim law and corporate evidence into air someone else controls. The player can use that truth: packets create pressure, but filled custody fields create leverage.
+That split is the point of the artifact. A route can receive evidence without receiving a body. Evidence needs a seal, clock and hash. A breathing operator needs air volume, decompression care, waste handling, quarantine authority, legal ownership and a berth that somebody is willing to lock for days or weeks.
+
+The receipt can protect a station from contamination. It can also give a company time to rename a survivor as claimant property, witness inventory or unresolved exposure. The useful read is simple: if med owner and berth are blank, rescue language is still paperwork. If those fields are filled, somebody has started spending power on keeping the body alive.
 
 <!-- External Site; generated from P1429_QUARANTINE_BERTH_CUSTODY_LEDGER/en_US. -->

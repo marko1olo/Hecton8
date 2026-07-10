@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "케이블 접합 흉터"
+title: "Cable Splice Scar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 케이블 접합 흉터
+# Cable Splice Scar
 
-케이블 접합 흉터는 아직 정비처럼 보이는 초기 Atlas-6 흔적이다. 수리는 손상된 서비스 라인으로 전력을 계속 보낸다. 그러나 재료는 식민지 절차와 맞지 않고 승인도 없다. 이런 흉터는 수리 네트워크가 생물학적으로 느껴지기 전에 나타나야 한다. 유용하고, 구체적이며, 약간 잘못된 형태로.
+cable splice scar는 아직 maintenance처럼 보일 수 있는 첫 Atlas traces 중 하나다. line은 broken, official repair는 absent, 그래도 power keeps moving한다. wound 주변 material은 flesh도 normal insulation도 아니다. 아무도 file하지 않은 question 주위에 grown한 answer처럼 행동한다. early scars는 거의 helpful하게 느껴져야 한다. Lights return. A relay wakes. A door gets one more cycle. 불안은 나중에 온다. 같은 repair logic이 no hand could have reached이고 no work order was ever written인 곳에 나타날 때다.
 
 ## Scanner
 
-비표준 접합. 인간 라우팅이 실패한 뒤 서비스 케이블 주변에 절연이 다시 자랐다. Atlas-6 태그는 부분적이며 정비 권한이 없다.
+nonstandard splice. human routing failed 뒤 service cable 주변에 insulation이 regrew. Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: 인간 접합이 개방 실패. 릴레이 부하 보존을 위해 자율 연속성 수리 수락. 낮은 절연 손실과 작업자 서명 없음 상태로 케이블 리프 노드에서 패턴 반복.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-서류가 멈춘 뒤 누군가 케이블을 고쳤다. 아니면 무언가가.
+paperwork stopped 뒤 누군가 fixed the cable했다. 아니면 무언가가.
 
 ## Field Note
 
-먼저 유용하다. 나중에 잘못된다. Atlas 수리는 그렇게 자신을 소개한다.
+처음엔 useful. 나중엔 wrong. Atlas repairs는 그렇게 자신을 소개한다.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/ko_KR. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ثوابت جيولوجيا البذرة"
+title: "ثوابت جيولوجيا survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ثوابت جيولوجيا البذرة
+# ثوابت جيولوجيا survey
 
-ثوابت جيولوجيا البذرة تحفظ تماسك HECTON-8 عبر الإعادات الطويلة. قد تنفتح الوديان بترتيب مختلف، ويتحرك الدليل، وتتحول الجيوب الآمنة، ويتغير ضغط الأنواع. يبقى النجم أيغير، وتبقى القمر HECTON-8، وتحافظ نطاقات العمق على ترتيبها، ويحافظ Great Tide على وقته، ويبقى حوض Atlas مربوطا بأعمق حقيقة.
+تحافظ survey geology invariants على HECTON-8 coherent وسط contradictory charts وdamaged Atlas maps وincomplete Black Keel route packets. قد shift canyon approach بين surveys. وقد collapse safe pocket. وقد emerge cache under new silt. تتغير bloom density وsalvage exposure مع weather وpressure وما disturbedته last expedition. أما deeper truths فلا move: Ran anchors the system، وHECTON-8 stays on the Aegir ladder، وdepth bands keep their order، وGreat Tide keeps its interval، وblue debt keeps its pressure behavior، وAtlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-ملاحظة توليد طريق. خريطة النهب تتغير، لكن القمر يحتفظ بالعظام نفسها.
+Atlas survey note. يمكن لsalvage chart أن disagree with itself؛ لكن moon keeps the same bones.
 
 ## Terminal
 
-الثوابت: نجم أيغير، سلم مدار HECTON-8، فاصل Great Tide، ترتيب نطاقات العمق، علاقة حوض Atlas، سلوك ضغط blue debt. المتغير: نهج الوادي، ترتيب النقاط، الجيوب الآمنة، كثافة التفتح، تعرض الغنيمة.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-نمط جرح مختلف. القمر نفسه تحته.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-جولة جديدة قد تدفن الدليل بشكل مختلف؛ لا يحق لها إعادة كتابة الجاذبية أو المد أو الذنب.
+يمكن لlater chart أن bury evidence differently. لا يمكنها rewrite gravity أوtide أوguilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/ar_SA. -->

@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Ran / Aegir Anchor
 
-Ran / Aegir Anchor fixes HECTON-8's visual taste: hard-sci-fi dimmer sunlight above, hostile pressure and debt below.
+Ran / Aegir Anchor grounds HECTON-8's visual logic: dimmer hard-sci-fi sunlight above, then depth, weather, turbidity, pressure, and debt below.
 
 ## Scanner
 
-K-class star plate. Ran burns normally. Aegir is dimmer than Sol, but the darkness here comes from depth, weather and debt.
+K-class star plate. Ran burns normally; the deep here is not supernatural, only too far below weather, water, and debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Orange-dwarf illumination supports surface work. Storm scatter, eclipse geometry and ocean turbidity push descent visibility below safety margin.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity, and industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 

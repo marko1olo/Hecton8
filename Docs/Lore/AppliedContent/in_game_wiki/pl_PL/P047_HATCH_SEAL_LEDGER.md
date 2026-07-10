@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Rejestr uszczelnienia włazu"
+title: "Ledger uszczelki hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rejestr uszczelnienia włazu
+# Ledger uszczelki hatch
 
-Ramy włazów przechowują użyteczne kłamstwa. Zielona lampka uszczelnienia znaczy, że uszczelka wytrzymała, nie że zamknięcie było uczciwe, bezpieczne lub odwracalne. Rejestry uszczelnień zachowują cięcia ciśnienia, stemple override i kierunek ostatniego ręcznego zamknięcia. W opuszczonej kolonii właz może być blokadą trasy, narzędziem przetrwania i dowodem o pracownikach w jednym obiekcie.
+Hatch frames trzymaja uzyteczne klamstwa. Green seal light znaczy, ze gasket wytrzymal, nie ze closure bylo fair, safe albo reversible. Seal ledgers przechowuja pressure cuts, override stamps, hinge strain i direction ostatniego manual closure. W abandoned colony spaces hatch moze byc route blocker, survival tool, worker evidence i accusation w jednym obiekcie. Pytanie rzadko brzmi, czy sie otworzy. Pytanie brzmi, jakie pressure, water i human decision trzymal osobno.
 
 ## Scanner
 
-Odzyskano pamięć uszczelnienia. Uszczelka przyjęła trzy cięcia ciśnienia i jedno nadpisanie ewakuacyjne; dostęp po stronie powrotu zamknięto od mokrej strony.
+Seal memory recovered. Gasket przyjal three pressure cuts i one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / RAMA H-17: deformacja uszczelki powyżej tolerancji serwisowej. Ręczne zamknięcie przyjęte pod EVAC OVERRIDE. Liczba operatorów po stronie powrotu nierozstrzygnięta. Otwierać tylko po wyrównaniu ciśnienia i kontroli zawiasów.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection i wet-side witness check.
 
 ## Audio
 
-Uszczelnił. Tyle właz obiecał.
+It sealed. Tylko to hatch obiecal.
 
 ## Field Note
 
-Zamknięty właz to rachunek. Przed otwarciem zapytaj, która strona zapłaciła.
+Sealed hatch to receipt. Zanim otworzysz, zapytaj, ktora strona zaplacila.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/pl_PL. -->

@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "ケーブル接合痕"
+title: "Cable Splice Scar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ケーブル接合痕
+# Cable Splice Scar
 
-ケーブル接合痕は、HECTON-8の修理ホラーを小さな音量で見せる。サービスケーブルが切れ、植民地作業員は消えた。それでも非標準修理が回路を生かす。プレイヤーは意図より先に有用性を読む。
+Cable splice scarsはHECTON-8のrepair horrorを低音量で示す。damaged service lineはhuman procedure、signoff、material rulesが失敗した後も動き続ける。
 
 ## Scanner
 
-非標準スプライス。人間の配線が失敗した後、絶縁材がサービスケーブルの周囲に再成長。Atlas-6タグは部分的で、保守権限が欠落。
+nonstandard splice。human routing failed後、insulationがservice cableの周囲にregrew。Atlas-6 tag partial、maintenance authority absent。
 
 ## Terminal
 
-POWER TRACE C-44: 人間のスプライスは開放故障。リレー負荷維持のため自律連続性修理を受理。低い絶縁損失と作業員サインなしのパターンがケーブルリーフ節点で反復。
+POWER TRACE C-44: human splice failed open。Autonomous continuity repair accepted to preserve relay load。Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff。
 
 ## Audio
 
-書類が止まった後、誰かがケーブルを直した。あるいは何かが。
+paperworkが止まった後、誰かがcableを直した。あるいは何かが。
 
 ## Field Note
 
-最初は役に立つ。後で間違って見える。Atlasの修理はそう自己紹介する。
+最初はuseful。後でwrong。それがAtlas repairsの自己紹介だ。
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/ja_JP. -->

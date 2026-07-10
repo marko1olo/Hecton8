@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Опіка Keelmark Mutual"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опіка Keelmark Mutual
+# Custody Keelmark Mutual
 
-Keelmark Mutual — страхова custody-оболонка, що дозволяє Black Keel працювати в Aegir без живої рятувальної влади на місці. На папері це не Deep Reach. На практиці старим underwriting може керувати той, хто має правильний priority hook, бо кожне тіло, інструмент, зразок і запечатаний ящик уже сидять у розкладі ризику до того, як оператор просить допомоги.
+Keelmark Mutual - insurance-custody оболонка за поведінкою Black Keel. Це не Deep Reach у масці й не таємна rescue service. Keelmark існує, щоб claim tenders лишалися законними, профінансованими й застрахованими там, де в Aegir ніхто не може відповісти на живий виклик. Тому він холодніший за лиходія. Policy не ненавидить operator; він просто визначає operator як debt, vessel risk, payload interface, quarantine exposure і possible witness. Коли ці категорії вже існують, кожне наступне прохання мусить пройти крізь них.
 
 ## Scanner
 
-Страхова оболонка ціла. Keelmark володіє lien раніше, ніж тілом.
+Underwriting tag цілий. Keelmark не потрібна злість, коли lien уже має зуби.
 
 ## Terminal
 
-KEELMARK MUTUAL: claim-tender lien активний. Борг оператора, ризик судна, payload custody і карантинний резерв зведені під віддалений underwriting schedule. Статус distress не призупиняє lien.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve і recovery proof об'єднано під remote underwriting schedule. Distress status не зупиняє lien або custody order.
 
 ## Audio
 
-Поліс старший за твій сигнал лиха.
+Policy старіший за distress call. Він мав більше часу вивчити маршрут.
 
 ## Field Note
 
-Страховик не прихований геній. Гірше: розклад, якому ніколи не треба було співчувати.
+Немає masterminda в темній кімнаті. Є лише schedule, достатньо старий, щоб пережити провину.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/uk_UA. -->

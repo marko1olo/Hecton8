@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tabela taryf Black Keel
 
-Wsparcie Black Keel jest użyteczne, ale nigdy neutralne. Wezwanie, próbki, tlen, pieczęcie odpowiedzialności, odzysk operatora i uszkodzenia kadłuba trafiają do różnych kolejek. Gracz może wykorzystać te reguły, ale te same reguły pokazują, czemu pomoc zawsze ma cenę.
+Black Keel support jest uzyteczny, bo carrier naprawde przenosi gear, cache'uje oxygen, przekazuje warnings i otwiera route options. Nigdy nie jest neutralny, bo kazde support action trafia do tariff table, zanim stanie sie help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery i body recovery to rozne line items z roznymi priority speeds. Tabela nie jest ukrytym zlem. W praktyce jest gorsza: czytelna price list dla chwil, ktore nie powinny miec ceny.
 
 ## Scanner
 
-Tablica wycenia wezwanie, pieczę nad próbką, rezerwę tlenu, sprzęt ciśnieniowy i odzysk ciała jako osobne pozycje.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage i body recovery sa w osobnych liniach.
 
 ## Terminal
 
-KLASA TARYFY: awaria salvage. Aneks opiekuńczy w toku. Zweryfikowana piecza próbki podnosi priorytet wyjścia o dwa poziomy rozliczeń.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies do czasu az lien arbitration resolves.
 
 ## Audio
 
-Jest zniżka za dowód i dopłata za oddychanie.
+Jest discount za evidence i surcharge za breathing.
 
 ## Field Note
 
-Najszybsza klasa nie jest ratunkiem. To zweryfikowana własność idąca w górę.
+Najszybsza class to nie rescue. To verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/pl_PL. -->

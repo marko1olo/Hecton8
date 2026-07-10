@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Espinha da primeira hora"
+title: "Espinha da Primeira Hora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Espinha da primeira hora
+# Espinha da Primeira Hora
 
-A primeira hora não deve começar na escuridão. Ela começa com uma voz de contrato, uma descida danificada, controle de respiração, água rasa e clara e a necessidade prática de reiniciar uma bomba. A beleza é parte da armadilha: HECTON-8 precisa parecer desejável antes que sua papelada se torne letal. Depois, a espinha de abertura transforma sobrevivência em evidência. O primeiro abrigo é útil, mas comprometido; o pacote de incidente saneado soa limpo demais; a primeira cicatriz de reparo da Atlas mostra cabo, metal de ferramenta e resíduo vivo comprimidos em uma única decisão de manutenção. O jogador aprende o ciclo básico por ação, não por exposição: respirar, reparar, ler, duvidar, descer mais fundo.
+A primeira hora não começa no escuro. Começa com uma voz de contrato, uma descida danificada, gestão de respiração, água rasa brilhante e a necessidade prática de reiniciar uma bomba. A beleza faz parte da armadilha: HECTON-8 precisa parecer desejável antes que sua papelada se torne letal. A rota inicial transforma sobrevivência em evidência. A primeira sala abrigada é útil, mas comprometida; o pacote de acidente sanitizado soa limpo demais; a primeira cicatriz Atlas mostra cabo, metal de ferramenta e resíduo vivo prensados em uma vedação funcional.
 
 ## Scanner
 
-Contrato, queda danificada, ar, rasos luminosos, abrigo da bomba, mentira saneada, então a primeira cicatriz de reparo que usa vida como junta.
+Contrato, queda danificada, ar, rasos claros, abrigo de bomba, mentira sanitizada, depois a primeira cicatriz de reparo que usa vida como junta.
 
 ## Terminal
 
-ANEXO RASO: reinício manual da bomba válido. Pacote de incidente Deep Reach em cache. Crescimento de reparo da Atlas detectado ao redor de cabo, fragmento de ferramenta e resíduo biológico.
+SHALLOW ANNEX: reinício manual da bomba válido. Pacote de incidente Deep Reach em cache. Crescimento de reparo Atlas detectado ao redor de cabo, fragmento de ferramenta e resíduo biológico.
 
 ## Audio
 
-A primeira sala segura não está limpa. Ela só prende a respiração melhor que você.
+A primeira sala segura não está limpa. Só prende a respiração melhor que você.
 
 ## Field Note
 
-A abertura precisa ser bonita antes de se tornar acusação.
+A abertura precisa ser bonita antes de começar a acusar.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/pt_BR. -->

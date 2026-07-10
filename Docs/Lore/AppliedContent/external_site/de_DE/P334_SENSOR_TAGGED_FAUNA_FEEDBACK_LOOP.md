@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Rückkopplungsschleife sensorgetaggter Fauna
 
-Sensorgetaggte Fauna sind keine kontrollierten Soldaten. Diese Unterscheidung zählt. Deep-Reach-Taggingprogramme begannen als normale Feldwissenschaft und Logistik: Migration, Drucktoleranz, Kontamination und Routendichte verfolgen. Jahre später sind die Tags keine saubere Ausrüstung mehr. Schale wächst um sie. Narbengewebe zieht sie aus der Achse. Mineralkappen verändern ihr Signal.
+Ein sensorgetaggtes Tier ist keine Puppe. Es ist Wildleben mit einem Firmeninstrument, das unter Schale und Narbengewebe noch antwortet. Das reicht, damit Atlas Bewegung als Umweltupdate missversteht, und reicht, damit sich die Route eines Tauchers ändert, ohne dass das Tier es bemerkt.
 
-Atlas liest die Rückgabe immer noch. Ein verletzter Weider, der eine geflutete Brücke quert, kann wie ein Drucksurvey aussehen. Ein Räuber mit altem Tag kann einen Gang wirken lassen, als sei er durch Infrastrukturrisiko belegt. Das Tier bleibt es selbst, aber das System um es herum behandelt Bewegung als Daten. Dadurch bekommen Wildtierbegegnungen eine zweite Schneide: Überlebensverhalten kann zugleich Wartungsrückkopplung sein.
+## Scanner
+
+Altes Deep-Reach-Tag unter Schalenwachstum an linker Flanke. Bewegungspakete pingen noch das Wartungsnetz.
+
+## Terminal
+
+FAUNA-TAG-SCHLEIFE / DR-2147-MIG: Druck-, Bewegungs- und Kontaminationspakete als Umwelttelemetrie akzeptiert. Tierabsicht nicht geparst. Routenalarme können Migrationspfad folgen.
+
+## Audio
+
+Es jagt dich nicht. Sein Tag kann trotzdem die falsche Tür öffnen.
+
+## Field Note
+
+Wenn getaggte Fauna einen Relaishof kreuzt, warte, bevor du den Alarmen traust. Das Tier kann weg sein; der Routenstatus holt vielleicht noch auf.
 
 <!-- External Site; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/de_DE. -->

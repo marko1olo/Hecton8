@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Доступные окна морского дна
 
-Большая часть морского дна HECTON-8 недоступна обычной смелости. Давление строит стену раньше, чем появляется грунт. Доступные окна - исключения: рваные места, где рухнувший шельф, обнаженный гребень, прогретый жерловой шрам или плотный рапный столб меняют кривую спуска. Это не безопасные пещеры. Это узкие сделки с геологией. Экипаж может коснуться старой коры, поднять минералы, выросшие под давлением, найти запечатанное железо колонии или прочитать закопанное событие до того, как океан снова закроет маршрут.
+Accessible Seafloor Windows - редкие pressure breaks, где HECTON-8 exposes ancient floor, high-risk salvage, mineral seams и evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Здесь shell tore thin enough, чтобы crawler touched old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+Sea lets you touch bottom in windows, не wherever you feel brave.
+
+## Field Note
+
+Большая часть moon keeps its floor as a pressure secret. Windows - exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ru_RU. -->

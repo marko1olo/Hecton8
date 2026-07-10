@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "חלונות קרקעית נגישים"
+title: "חלונות seafloor נגישים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# חלונות קרקעית נגישים
+# חלונות seafloor נגישים
 
-חלונות קרקעית נגישים הם מקומות שבהם הקרום השבור של HECTON-8 מוריד לזמן קצר את מחיר הירידה. הם נוצרים במדפים שקרסו, רכסים חשופים, צלקות נביעה שחוממו מחדש ועמודי מלח שנושאים לחץ אחרת. חלון עדיין קטלני אם ממהרים. הוא מעניק מגע עם קרקעית עתיקה, עורקי מינרלים נדירים, ציוד מושבה קבור וראיות שהאוקיינוס הפתוח היה מוחץ מחוץ להישג.
+Accessible seafloor windows אינם safe places. הם rare permissions שנכתבו בידי broken geology. Collapsed shelf lowers the descent angle. Reheated brine column carries pressure differently למשך כמה מאות מטרים. Exposed ridge מאפשר ל-sonar hold shape במקום שבו open water swallow it. דרך ה-windows האלה old floor נעשה reachable: mineral seams, crushed habitat anchors, pressure-glass, dead machines ו-evidence שה-main ocean היה שומר out of human range. Rush a window והוא closes with the same pressure that made it valuable.
 
 ## Scanner
 
-סמן רכס חשוף. כאן המעטפת נקרעה דקה מספיק כדי שזחלן ייגע בקרקעית עתיקה בלי להפוך לעיסה.
+Exposed ridge marker. כאן ה-shell נקרע thin enough כדי ש-crawler ייגע ב-old floor without becoming paste.
 
 ## Terminal
 
-תנאי חלון: שפת קרום שבורה, עמוד מלח שחומם מחדש בנביעה, רמפת מדף שקרסה, החזר סונאר יציב, כיס לחץ מתחת לקו האדום של החליפה. לסמן לחילוץ איטי בלבד.
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
 
 ## Audio
 
-הים נותן לך לגעת בתחתית דרך חלונות, לא בכל מקום שבו אתה מרגיש אמיץ.
+The sea lets you touch bottom in windows, not wherever you feel brave.
 
 ## Field Note
 
-רוב הירח שומר את הקרקעית שלו כסוד לחץ. החלונות הם חריגות עם שיניים.
+רוב ה-moon שומר את ה-floor שלו כ-pressure secret. ה-windows הם exceptions with teeth.
 
 <!-- In-Game Wiki; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/he_IL. -->

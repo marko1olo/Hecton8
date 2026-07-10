@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "DE LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, Vent-Schmiedeoperator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, Vent-Schmiedeoperator
 
-DE LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres betrieb eine Vent-Schmiede, in der HECTON-8-Hitze zu Teilen wurde, klein genug zum Tragen und gefährlich genug, um einen Namen zu schulden. Sein Dossier besteht aus verbranntem Handschuh, Zyklustimer, Ausschussschale, Druckglasproben und Dichtringen mit eingeritzten Chargenmarken. Die Schale zählt am meisten: Sie beweist, dass kaputte Teile kein Abfall waren, bevor sie der nächsten Druckgrenze das Halten beigebracht hatten. Torres macht Ressourcenlore zu Arbeitslore. Salvage-Kategorien beginnen hier als Verbrennungen, Verzögerungen, beschriftete Fehler und die Entscheidung, Beweise für Risse aufzubewahren.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Hitzeschuh, Zyklustimer und Ausschussschale passen zur selben Druckglascharge.
 
 ## Terminal
 
-DE LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+VENT-SCHMIEDE V-9 / TORRES, LIAN: Ausschussschale behielt gerissene Dichtringe, trübes Druckglas und drei markierte Überhitzungsproben. Chargennotiz: Versagen lehrt die nächste Dichtung nur, wenn das Versagen beschriftet bleibt.
 
 ## Audio
 
-DE LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres bewahrte die schlechten Teile auf. In der Schmiede bedeutete ein sauberer Boden, dass jemand die Lektion weggeworfen hatte.
 
 ## Field Note
 
-DE LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Torres bei Vent-Schmiede-Props, Druckglasrezepten, verworfenen Dichtringen und Upgradebänken einsetzen, die eine sichtbare Geschichte gescheiterter Teile brauchen.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/de_DE. -->

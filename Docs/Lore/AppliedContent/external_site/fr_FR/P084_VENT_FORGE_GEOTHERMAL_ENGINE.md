@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Moteur géothermique de forge hydrothermale"
+title: "Moteur géothermique vent forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Moteur géothermique de forge hydrothermale
+# Moteur géothermique vent forge
 
-Les forges hydrothermales relient géologie, fabrication, survie et horreur. Elles fournissent chaleur et cycles de pression pour céramiques, joints et verre de pression, mais les mêmes cycles créent poches d'ébullition, faux oxygène, nuages corrosifs et migrations de faune.
+Les vent forges relient géologie et travail. Leurs pulsations peuvent cuire les céramiques, réinitialiser des joints de pression, recuire le pressure glass et préchauffer des charges d'ascension, mais chaque cycle utile reste un rythme de danger. Le cisaillement bouillant attaque les coutures, le faux oxygène trompe les instruments, le bloom corrosif entre dans les boîtiers ouverts, et la vie proche bouge avant que l'opérateur comprenne pourquoi.
 
-Le Moteur géothermique de forge hydrothermale montre pourquoi HECTON-8 est précieux et mortel: la lune est un moteur industriel avant que les humains n'en bâtissent un. Chaque évent utile est aussi une machine qui punit le mauvais timing.
+Le moteur géothermique vent forge montre pourquoi HECTON-8 est précieuse et mortelle : la lune était industrielle avant l'arrivée humaine. Chaque évent utile est aussi une machine qui punit le mauvais timing.
 
 <!-- External Site; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/fr_FR. -->

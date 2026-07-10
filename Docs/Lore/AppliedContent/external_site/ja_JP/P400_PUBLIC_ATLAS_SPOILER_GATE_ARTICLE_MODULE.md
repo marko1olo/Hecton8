@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Atlasアクセス境界
 
-Atlas-6は単純なrogue machineでも怪物でも奇跡でもない。公開層は産業的だ。圧力機械、ルート、記録、extraction hardwareを故障後も生かすためのcontinuity systemである。不穏な層は、修理が生きたインフラに踏み込む時に現れる。conductive biofilmがケーブルをつなぐ。acoustic organsがtimingを運ぶ。shell sealantが亀裂を閉じる。sensor-tagged faunaがfeedbackになる。最終層は、playerがreceiver custodyとpayload consequenceのproofを得るまで閉じたままだ。その事実は前の場面を書き換える。spoiler-safeなAtlas記事は、最後の証人を早く名指しせず、maintenanceの恐怖を読者に理解させられる。
+Atlas-6を単純な暴走機械や奇跡の知性として紹介すべきではない。公開安全な記事は、プレイヤーが早期に検証できる事実から始める。連続性ロジックは損傷し、修復経路は即席で、HECTON-8の生態はインフラへ引き込まれている。ケーブルはバイオフィルムで起きる。パイプは組織でタイミングを返す。亀裂は殻成長の下で閉じる。タグ付き動物は経路状態を変える。最後の保管層を早く名付けずに、保守を危険にするには十分だ。受信者記録と最終ペイロード結果は回収証拠の後ろに置くべきである。それらは初期修復場面を、転送、保存、損害の証拠に変えるからだ。
 
 ## Scanner
 
-Atlas境界記録。公開証拠はindustrial continuity logicとrepair ecologyを示す。receiver custody、payload consequence、最終選択層には回収証拠が必要。
+Atlas境界記録。公開層は破損した連続性インフラ、修復生態、バイオフィルムバス、音響中継組織、殻シールを扱う。受信者保管は証拠ゲートのまま。
 
 ## Terminal
 
-公開アーカイブノード // ATLASアクセス境界。現在層: failed continuity infrastructure、repair ecology、biofilm bus、acoustic relay tissue、shell seal。制限層: receiver custodyとfinal payload consequence。
+公開アーカイブノード // ATLASアクセス境界。可視層: 圧力連続性修復。制限層: 受信者保管、ペイロード結果、最終転送権限。回収証拠なしに層を統合するな。
 
 ## Audio
 
-修理するとだけ言え。何を修理済みと数えるのか、名付けるのは待て。
+今は修理と呼べ。何を保存しているかは、記録が迫るまで名付けるな。
 
 ## Field Note
 
-Marauderメモ: 機械は証拠を保存しながら、中の人間を傷つけることがある。
+マローダー記録: Atlasが保存済みと言うなら、次に聞け。どの受信者のために保存したのか。
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/ja_JP. -->

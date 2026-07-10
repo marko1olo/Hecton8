@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Registre écologique
 
-Le registre écologique protège le ton: beauté, pression, effondrement des catégories.
+Le registre écologique rend HECTON-8 lisible : beauté native, adaptation industrielle et biologie de réparation Atlas doivent apparaître comme des couches vivantes différentes.
 
 ## Scanner
 
-Écologie lumineuse confirmée. Plus bas: flore câble, corps filtrants et intrusion de réparation Atlas.
+Séparation registre confirmée : vie native de plateau, biote adapté aux câbles, organismes de réparation routés par Atlas. Identifier avant de couper.
 
 ## Terminal
 
-Registre séparé: écologie native sous pression, biote adapté à la colonie, organismes modifiés par Atlas. Ne pas fusionner.
+SEPARATION REGISTRE : écologie de pression native ; biote de câbles adapté à la colonie ; organismes de réparation altérés par Atlas. Une mauvaise étiquette peut détruire un joint actif ou effacer une preuve de route.
 
 ## Audio
 
-Si tout est monstre, rien n’est violation.
+Si tout est monstre, tu couperas ce qui tient la pression.
 
 ## Field Note
 
-Le monde était vivant avant d’être blessé.
+Le monde était vivant avant d'être blessé.
 
 <!-- External Site; generated from P020_HECTON8_ECOLOGY_REGISTRY/fr_FR. -->

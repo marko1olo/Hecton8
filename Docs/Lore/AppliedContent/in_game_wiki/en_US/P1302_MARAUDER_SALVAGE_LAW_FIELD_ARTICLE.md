@@ -19,28 +19,30 @@ localization_flags: 0
 
 # Marauder Salvage Law Field Article
 
-Marauder is the ugly word for a person the claim system can use without admitting a rescue obligation. A pirate steals outside the book. A rescuer arrives with duty, crew and public authority. A Marauder enters the space between those categories: licensed enough to touch abandoned property, disposable enough to die there, useful enough to make a disputed claim move.
+Marauder is a dirty legal word before it is a job. A pirate steals outside the book. A rescuer arrives with duty, crew, public authority and enough fuel to admit that a person matters. A Marauder enters the gap between them. The license says you may touch abandoned or disputed property, mark recoverable mass, preserve witness material and file a lien. It also says, quietly, that if you die inside the claim, the system can call you contractor loss instead of failed rescue.
 
-That is why Marauder marks do not read like slogans when you learn the grammar. The scratches, black rings, pressure arrows and crossed corporate labels are not decoration. They are fast field law: owner hostile, air count suspect, door clock false, worker name unresolved, sample worth more than body, packet needs witness. Past crews left them for people who would not have time to open a legal manual while the ocean pushed through the wall.
+            That is why Marauder work feels wrong even when it is useful. You cut panels from a dead pressure door because metal has value. You also keep the cut edge because it proves the door was welded after people went missing. You pocket a nameplate because it sells as alloy. You also keep the wet hash because the nameplate turns a body category back into a person. The profession lives in that double action: taking value from a ruin while trying not to destroy the reason the ruin matters.
 
-The license is dirty because it lets corporations avoid clean verbs. Deep Reach does not have to say we abandoned workers if a zone can be called contaminated asset field. Keelmark does not have to say we sold risk if a body becomes recoverable mass. Black Keel does not have to say we are choosing cargo over mercy if the tender is only enforcing a tonne-window. A Marauder survives by reading those translations faster than the offices can file them.
+            Field marks grew because the formal law is too slow for flooded rooms. A black ring means owner hostile or lying. A split arrow means the pressure path is false. A crossed corporate stamp means do not trust the printed cause. A worker name beside a route score means preserve personhood with location. A small hook mark near a cabinet means sample first, cargo second, body never last. These are not slogans. They are compressed survival law scratched for the next licensed fool with a cutter.
 
-The strange mercy of the profession is that theft can preserve truth. A stolen nameplate can become a person record. A cut-open cabinet can prove a sealed door was never supposed to open. A sample can pay debt and still carry liability. A packet dragged through the wrong route can become evidence if the Marauder keeps the wet copy, the hash and the place together. The job is not noble. It is useful. On HECTON-8, useful is sometimes the only shape justice can wear before it drowns.
+            Corporations tolerate Marauders because the profession gives them useful verbs. Deep Reach can say contaminated asset recovery instead of abandoned staff. Keelmark can say lien processing instead of sold risk. Black Keel can say tender priority instead of chose cargo. The Marauder's counter-language is uglier and more honest: who got locked in, who paid late, what still floats, what must leave as proof.
+
+            On HECTON-8, the player is not made pure by refusing to scavenge. Refusal only lets the clean labels stand. The harder discipline is to take with context: object, place, hash, mark, name, damage path. Salvage without memory is looting. Salvage with witness is still ugly, but it can force a dead room to speak in a ledger that would rather count only mass.
 
 ## Scanner
 
-MARAUDER MARK // Not pirate paint. Contract shorthand: disputed claim, recoverable mass, hostile owner, witness risk. Whoever left it expected another professional to read the wall fast.
+MARAUDER MARK // Contract shorthand, not pirate paint. Fields implied: disputed owner, recoverable mass, witness hazard, pressure access, lien risk, worker-name conflict. Read before cutting.
 
 ## Terminal
 
-KEELMARK FIELD ADVISORY // Marauder license does not confer rescue authority. It grants limited salvage entry, lien recognition, evidence custody options and recoverable-mass accounting under disputed-claim conditions.
+KEELMARK FIELD ADVISORY // Marauder license grants limited disputed-claim entry, salvage lien notice, emergency evidence custody and recoverable-mass accounting. It does not grant rescue authority, medical command or clean title.
 
 ## Audio
 
-Black Keel contract line: You are not here because the law failed. You are here because the law found someone cheaper than rescue.
+Black Keel contract line: The law did not fail. It hired someone cheap enough to enter the room it abandoned.
 
 ## Field Note
 
-Do not trust a clean label in a wet room. If it mattered, somebody scratched the ugly version nearby.
+If you take it, keep where it came from. A clean haul buys fuel. A dirty haul with a witness can buy a name back.
 
 <!-- In-Game Wiki; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/en_US. -->

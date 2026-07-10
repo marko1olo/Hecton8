@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Deriva da fila de relé"
+title: "Deriva de Relay Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deriva da fila de relé
+# Deriva de Relay Queue
 
-Deriva da fila de relé é a diferença entre verdade e utilidade. HECTON-8 não precisa de estática falsa nem interferência mágica para tornar comunicação assustadora. Uma mensagem pode chegar intacta, autenticada e perfeitamente correta para a sala de trinta minutos atrás. Então a água move uma escotilha, a pressão dobra uma armação, o crescimento Atlas sela a rachadura errada e a mesma instrução vira armadilha. O jogador não decide se o sistema mente, mas se ele está velho demais para confiar.
+Relay Queue Drift torna message age uma variavel de sobrevivencia: remote orders podem ser true, stale e lethal ao mesmo tempo.
+
+## Scanner
+
+Relay stamp mais velho que a leak que ele nomeia. A instruction era verdadeira para uma room que nao existe mais.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction ate uma fresh relay window abrir. Treat delayed route orders as archival a menos que pressure, door state e waterline coincidam.
+
+## Audio
+
+O message esta correto. Esse e o problema.
+
+## Field Note
+
+Uma truth atrasada ainda pode matar.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/pt_BR. -->

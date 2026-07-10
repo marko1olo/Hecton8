@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Invariantes geologicas de semilla"
+title: "Invariantes geologicas de survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Invariantes geologicas de semilla
+# Invariantes geologicas de survey
 
-Las invariantes geologicas de semilla mantienen coherente HECTON-8 durante repeticiones largas. Los canones pueden abrirse en otro orden, las pruebas moverse, las bolsas seguras cambiar y la presion de especies variar. La estrella sigue siendo Aegir, la luna sigue siendo HECTON-8, las bandas conservan su orden, Great Tide mantiene su ritmo y la cuenca Atlas conserva su relacion con la verdad mas profunda.
+Los survey geology invariants mantienen HECTON-8 coherent entre contradictory charts, damaged Atlas maps e incomplete Black Keel route packets. Un canyon approach puede shift between surveys. Una safe pocket puede collapse. Un cache puede emerge under new silt. Bloom density y salvage exposure cambian con weather, pressure y lo que la last expedition disturbed. Las deeper truths no move: Ran anchors the system, HECTON-8 stays on the Aegir ladder, depth bands keep their order, Great Tide keeps its interval, blue debt keeps its pressure behavior y Atlas basin remains tied to the lowest evidence.
 
 ## Scanner
 
-Nota de generacion de ruta. El mapa de saqueo cambia, pero la luna conserva los mismos huesos.
+Atlas survey note. El salvage chart puede disagree with itself; la moon keeps the same bones.
 
 ## Terminal
 
-INVARIANTES: primaria Aegir, escalera orbital de HECTON-8, intervalo de Great Tide, orden de bandas de profundidad, relacion con cuenca Atlas, conducta de presion de blue debt. VARIABLE: acceso a canon, orden de POI, bolsas seguras, densidad de bloom, exposicion de botin.
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
 
 ## Audio
 
-Patron de herida distinto. Misma luna debajo.
+Different wound reading. Same moon under it.
 
 ## Field Note
 
-Una partida nueva puede enterrar pruebas de otro modo; no puede reescribir gravedad, marea ni culpa.
+Una later chart puede bury evidence differently. No puede rewrite gravity, tide ni guilt.
 
 <!-- In-Game Wiki; generated from P094_SEED_GEOLOGY_INVARIANTS/es_ES. -->

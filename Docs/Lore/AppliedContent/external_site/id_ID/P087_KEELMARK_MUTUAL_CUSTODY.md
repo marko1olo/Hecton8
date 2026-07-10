@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Custody Keelmark Mutual"
+title: "Keelmark Mutual Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custody Keelmark Mutual
+# Keelmark Mutual Custody
 
-Keelmark Mutual menakutkan karena tidak membutuhkan kebencian. Ia adalah penanggung, custodian, pemegang lien, dan juru tulis rute dalam satu jadwal jarak jauh. Ketika Black Keel mendengar operator, jalur polis Keelmark sudah membandingkan tubuh dengan kerusakan kapal, massa salvage, risiko karantina, dan nilai bukti. Perusahaan tidak perlu membunuh siapa pun agar laut terasa memusuhi. Ia bisa menunggu, menagih, mengklasifikasi, dan meminta satu konfirmasi lagi sementara tekanan memakan ruangan. Carrier tetap membumi karena musuhnya bukan satu wajah jahat di layar, melainkan kontrak yang cukup tua untuk menjawab sebelum panggilan darurat selesai.
+Keelmark Mutual Custody menjelaskan pemilik legal Black Keel sebagai anyaman insurance lien, route underwriting, quarantine reserve, dan claim-tender custody.
+
+## Scanner
+
+Tag underwriting utuh. Keelmark tidak perlu niat jahat ketika lien sudah punya gigi.
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve, dan recovery proof dibundel di bawah remote underwriting schedule. Distress status tidak menangguhkan lien atau custody order.
+
+## Audio
+
+Policy itu lebih tua dari distress call. Ia punya lebih banyak waktu untuk mempelajari rute.
+
+## Field Note
+
+Tidak ada mastermind di ruang gelap. Hanya schedule yang cukup tua untuk melampaui rasa bersalah.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/id_ID. -->

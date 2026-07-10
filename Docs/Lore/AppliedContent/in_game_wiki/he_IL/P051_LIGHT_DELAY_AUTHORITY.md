@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "סמכות השהיית האור"
+title: "סמכות עיכוב-אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# סמכות השהיית האור
+# סמכות עיכוב-אור
 
-ב-HECTON-8 אין ansible ואין קול פיקוד חי מהמסלול. הודעות נעות במהירות האור, ואז מאבדות עוד זמן בתורים, חלונות סערה, גאומטריית ממסר וכללי משמורת של הנושא. כל תשובה היא ראיה ישנה, לא פקודה.
+ל-HECTON-8 אין ansible, אין קול ידידותי שנשען מהמסלול, ואין דרך להפוך עשר שנות אור לרחומות. Messages נעים במהירות האור, ואז מאבדים עוד זמן ב-relay geometry, storm scatter, buffer law ו-custody queues של Black Keel. Transmission יכולה להיות כנה ועדיין ישנה מדי מכדי לציית לה. פני השטח מלמדים מוקדם: כל remote answer היא קודם evidence, אחר כך instruction, ולעולם לא comfort. אם הקיר, המים וה-pressure סותרים את ה-message, ה-local world מנצח.
 
 ## Scanner
 
-מטמון תורן הממסר: הקריאה יצאה נקייה, ואז חיכתה מאחורי האור, חוק התור, פיזור הסערה וקו הראייה של Aegir.
+Relay mast cache. ה-call יצא נקי, ואז המתין מאחורי light, queue law, storm scatter ו-Aegir line-of-sight.
 
 ## Terminal
 
-סמכות קשר: השהיה חד כיוונית אומתה. פיזור סערה גבוה. תור ממסר תחת עדיפות משמורת. סמכות הישרדות מקומית פעילה.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. Local survival authority remains active עד ש-fresh signal window מאשר override.
 
 ## Audio
 
-התשובה בדרך. זה לא אומר שהיא הצלה.
+התשובה בדרך. זה לא הופך אותה ל-rescue.
 
 ## Field Note
 
-איש לא צינזר את הצעקה הראשונה. הפיזיקה נשאה אותה לאט מספיק כדי שהמדיניות תספיק להגיע.
+אף אחד לא צינזר את ה-scream הראשון. ה-physics נשאה אותו לאט מספיק כדי ש-policy תדביק אותו.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/he_IL. -->

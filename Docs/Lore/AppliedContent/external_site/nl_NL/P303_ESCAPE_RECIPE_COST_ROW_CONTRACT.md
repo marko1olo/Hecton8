@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Kostengrens van ontsnappingsrecept"
+title: "Kostenregel voor opstijgrecept"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kostengrens van ontsnappingsrecept
+# Kostenregel voor opstijgrecept
 
-HECTON-8 verlaten is eerst een reparatieprobleem: signaal, afdichting, geleiding, opstijgenergie, juridische handshake en payloadbewaring. De recepttabel draagt exacte kosten; de lore draagt waarom elke kost tanden heeft.
+HECTON-8 verlaten begint als reparatiewerk en eindigt als papierwerk met massa eraan vast. Een crew moet relais, zegel, geleiding, opstijgenergie en quarantainehandshake herbouwen voordat een carrier een bergingsvenster toont. Payloadautoriteit telt omdat bewijs, blue debt of Atlas-toegang de ontvanger aan de andere kant kan veranderen.
 
 ## Scanner
 
-Receptregel bindt componentklasse, druktier, routebewijs en autoriteitsstaat.
+Opstijgregel vergrendeld: relaisbewijs, zegelgraad, geleidingskern, opstijglading, juridische handshake en payloadautoriteit zijn niet allemaal aanwezig.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: gekwalificeerde kosten moeten relais, afdichting, geleiding, opstijgenergie, juridische handshake, payloadautoriteit en ontvangerrisico noemen. De weg omhoog heeft onderdelen; onderdelen hebben eigenaars.
+OPSTIJGKOSTEN SCHEMA / Black Keel-bergingsinterface: geen opstijgofferte zonder akoestisch relais, drukzegel, timingkern voor geleiding, opstijgenergilading, quarantaine/juridische handshake, payloadautoriteit, ontvangerrisico en routevenster. Het pakket klimt niet op onderdelen alleen.
 
 ## Audio
 
-De weg omhoog heeft onderdelen. Onderdelen hebben eigenaars.
+Bergingsinterface: relais, zegel, timing, lading, handshake. Eén ontbreekt en het pakket blijft nat.
 
 ## Field Note
 
-Drukbanden komen uit insluitingsregels; exacte kosten horen in recepttabellen.
+Verbruik de geleidingskern niet voordat de handshake vrij is. Een werkende opstijglading met de verkeerde ontvanger is alleen een snelle weg naar bewaring.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/nl_NL. -->

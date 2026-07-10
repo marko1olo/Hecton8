@@ -19,22 +19,10 @@ localization_flags: 0
 
 # Recovery Compliance Bait Contract Seed
 
-A late replay seed can reveal how corporate cleanup pressure starts before the player ever reaches Atlas.
+Recovery Compliance bait is one of the dirtiest clean contracts on the board. The docket wears a public-service face: recover flooded medical lockers, retrieve dead-suit identifiers, remove dangerous machine cores, return sealed cargo before decay or pressure damage ruins the record. The listed payout is high enough to look merciful in a hard week.
 
-## Scanner
+The trap sits in the receiver chain. A Recovery Compliance stamp can be routed through neutral salvage offices, colony insurers or disaster-cleanup desks, but the final reader often belongs to Deep Reach or to a proxy that sells them priority access. The operator is paid for material recovery and quietly bound to provide coordinate proof, hatch-state evidence and custody notes. Refusing the handoff does not void the risk. It marks the route as withholding-sensitive and makes future safe receivers less patient.
 
-Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
-
-## Terminal
-
-SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
-
-## Audio
-
-Some contracts are not offers. They are envelopes with your name already on the return line.
-
-## Field Note
-
-Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+These contracts work because desperation makes good paperwork look like shelter. A crew short on filters, battery plates or pressure tape sees a clean payout and accepts the docket before reading the coordinate clause. By the time the first sealed crate is aboard, the board has learned where the crew can still reach and what the abandoned zone has not finished burying.
 
 <!-- External Site; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/en_US. -->

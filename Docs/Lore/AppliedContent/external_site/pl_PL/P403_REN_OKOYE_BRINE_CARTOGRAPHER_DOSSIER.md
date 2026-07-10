@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PL LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, kartograf solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, kartograf solanki
 
-PL LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Ren Okoye daje przemieszczaniu ludzkie źródło. Kaniony solanki HECTON-8 stają się czymś więcej niż zagrożeniami, gdy gracz znajduje ręczny system odczytu: koraliki, szpilki, wymazane linie i znaki tras osoby wiedzącej, że legalna droga mogła zabić, jeśli woda się przesunęła.
 
 ## Scanner
 
-PL LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Akta: Ren Okoye. Koraliki gęstości, nacięcia łupka i blizny po sznurku opisują trasę, która przesunęła się przez noc.
 
 ## Terminal
 
-PL LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+BIURKO MAP SOLANKI / OKOYE, REN: bezpieczny prąd przesunął się 3,2 m na wschód po inwersji gęstości. Tablica zezwoleń nadal podaje wczorajszy korytarz. Znaki tras robotników zastępują trasę zarządu do następnego sondowania.
 
 ## Audio
 
-PL LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye rysował drogi w wodzie, która nie chciała zachować rysunku.
 
 ## Field Note
 
-PL LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Używać Okoye przy odkryciach tras solanki, nawigacji warstw gęstości i sprzecznościach tablicy zezwoleń. Jego dowody mają dawać konkretne powody, by nie ufać starym mapom.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/pl_PL. -->

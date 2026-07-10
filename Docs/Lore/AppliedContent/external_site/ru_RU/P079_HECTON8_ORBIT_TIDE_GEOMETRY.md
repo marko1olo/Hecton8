@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Орбита HECTON-8 / геометрия прилива"
+title: "Орбита / приливная геометрия HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Орбита HECTON-8 / геометрия прилива
+# Орбита / приливная геометрия HECTON-8
 
-Орбита HECTON-8 / геометрия прилива является жестким научно-фантастическим слоем катастрофы: приливы, тепло и давление сначала ломают колонию; корпоративный приоритет превращает отказ в преступление.
+HECTON-8 Orbit / Tide Geometry - hard-sci-fi disaster layer: orbital forcing, ice stress, heat, drainage и pressure сначала ломают colony; corporate priority turns failure into crime.
 
 ## Scanner
 
-МОДЕЛЬ ПРИЛИВНОЙ ГЕОМЕТРИИ // Резонанс, ледовый стресс, штормовой нагон и тепловой сброс превысили прогноз эвакуации. Флаги Atlas continuity перекрыли приоритет отхода.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge и heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-ЦЕПЬ GREAT TIDE // Орбитальное принуждение усилило нагрузку океана. Искусственный тепловой сброс и запертый дренаж превратили приливное событие в отказ колонии.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge и sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Физика открыла дверь. Deep Reach решила, кто выйдет через нее.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Луна может утопить колонию без ненависти.
+Moon может drown a colony без ненависти.
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ru_RU. -->

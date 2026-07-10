@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Опека salvage-инструмента"
+title: "Custody salvage-инструмента"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опека salvage-инструмента
+# Custody salvage-инструмента
 
-Salvage-инструменты не являются нейтральным снаряжением. Резаки, патчеры и доки фабрикаторов могут записывать, кто открыл панель, починил линию или вынес образец. Этот журнал может защитить доказательство, прикрепить права выплаты или усилить claim против игрока. Опека инструмента это место, где поминутное выживание касается широкой экономики salvage.
+Salvage tools на HECTON-8 - survival gear, но не innocent. Cutter открывает panel. Patcher seals a line. Fabricator dock prints a clamp, который keeps air moving. То же действие может write custody: кто used the tool, что было opened, был ли attached sample pouch, и какой claim token owns the next argument. Такая запись может protect evidence или tighten debt. Самая жестокая часть в том, что refusing the tool может kill faster, чем accepting its witness.
 
 ## Scanner
 
-Док инструмента хранит запечатанный журнал опеки. Последний рез, ремонт и мешок образца привязаны к claim-токену Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair и sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: использование резака принято по salvage claim. Ремонтное действие засвидетельствовано. Права на образец привязаны к токену Keelmark Mutual. Экспорт доказательств конфликтует с маршрутом материальной выплаты.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Каждый полезный рез оставляет свидетеля.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Резак может спасти воздух и продать твои руки одним движением. Проверь, что он пишет, прежде чем назвать его своим.
+Cutter может save your air и sell your hands одним stroke. Проверь, что он records, прежде чем назвать его своим.
 
 <!-- In-Game Wiki; generated from P050_SALVAGE_TOOL_CUSTODY/ru_RU. -->

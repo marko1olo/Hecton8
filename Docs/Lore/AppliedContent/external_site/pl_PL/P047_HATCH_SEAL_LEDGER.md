@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Rejestr uszczelnienia włazu"
+title: "Ledger uszczelki hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rejestr uszczelnienia włazu
+# Ledger uszczelki hatch
 
-Włazy są jednymi z najcichszych zapisów HECTON-8. Nie wyjaśniają, kogo zostawiono; przechowują kierunek zamknięcia, naprężenie uszczelki i uprawnienie override. Odczyt rejestru zmienia zamknięte drzwi w decyzję ciśnieniową z czasem.
+Hatches sa cichymi records na HECTON-8: closure direction, gasket stress, override authority i wet-side witness traces zmieniaja locked door w pressure decision z timestamp.
 
 ## Scanner
 
-Odzyskano pamięć uszczelnienia. Uszczelka przyjęła trzy cięcia ciśnienia i jedno nadpisanie ewakuacyjne; dostęp po stronie powrotu zamknięto od mokrej strony.
+Seal memory recovered. Gasket przyjal three pressure cuts i one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / RAMA H-17: deformacja uszczelki powyżej tolerancji serwisowej. Ręczne zamknięcie przyjęte pod EVAC OVERRIDE. Liczba operatorów po stronie powrotu nierozstrzygnięta. Otwierać tylko po wyrównaniu ciśnienia i kontroli zawiasów.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection i wet-side witness check.
 
 ## Audio
 
-Uszczelnił. Tyle właz obiecał.
+It sealed. Tylko to hatch obiecal.
 
 ## Field Note
 
-Zamknięty właz to rachunek. Przed otwarciem zapytaj, która strona zapłaciła.
+Sealed hatch to receipt. Zanim otworzysz, zapytaj, ktora strona zaplacila.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/pl_PL. -->

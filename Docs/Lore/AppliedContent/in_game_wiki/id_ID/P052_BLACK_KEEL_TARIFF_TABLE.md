@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tabel Tarif Black Keel
 
-Dukungan Black Keel berguna, tetapi tidak pernah netral. Distress, sampel, oksigen, segel liabilitas, pemulihan operator, dan kerusakan lambung masuk antrean berbeda. Pemain bisa mengeksploitasi aturan itu, tetapi aturan yang sama menunjukkan mengapa bantuan selalu datang dengan harga.
+Black Keel support berguna karena carrier benar-benar memindahkan gear, menyimpan oxygen, mengirim warnings, dan membuka route options. Ia tidak pernah netral karena setiap support action masuk ke tariff table sebelum menjadi help. Distress, sealed samples, oxygen reserve, pressure gear, hull damage, operator recovery, dan body recovery adalah line items berbeda dengan priority speeds berbeda. Tabel itu bukan kejahatan tersembunyi. Dalam praktiknya lebih buruk: price list yang bisa dibaca untuk momen yang seharusnya tidak punya harga.
 
 ## Scanner
 
-Pelat memberi harga untuk distress, kustodi sampel, cadangan oksigen, perlengkapan tekanan, dan pemulihan jenazah sebagai baris terpisah.
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, dan body recovery berada pada baris terpisah.
 
 ## Terminal
 
-KELAS TARIF: darurat salvage. Adendum kesejahteraan tertunda. Kustodi sampel terverifikasi menaikkan prioritas keluar dua tingkat penagihan.
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies sampai lien arbitration resolves.
 
 ## Audio
 
-Ada diskon untuk bukti dan biaya tambahan untuk bernapas.
+Ada discount untuk evidence dan surcharge untuk breathing.
 
 ## Field Note
 
-Kelas tercepat bukan penyelamatan. Itu properti terverifikasi yang bergerak naik.
+Class tercepat bukan rescue. Itu verified property moving upward.
 
 <!-- In-Game Wiki; generated from P052_BLACK_KEEL_TARIFF_TABLE/id_ID. -->

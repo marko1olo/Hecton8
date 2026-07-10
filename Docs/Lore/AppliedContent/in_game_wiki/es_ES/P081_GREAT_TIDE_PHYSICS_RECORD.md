@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Registro físico de la Gran Marea"
+title: "Registro físico de Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registro físico de la Gran Marea
+# Registro físico de Great Tide
 
-El Registro físico de la Gran Marea mantiene honesta la catástrofe. HECTON-8 era vulnerable a resonancia de marea, colapso de hielo, marejada y descarga de calor. La culpa de Deep Reach aparece en márgenes, capacidad de evacuación y prioridad de decisión, no en una falsa causa mágica.
+El Registro físico de Great Tide mantiene honesta la catástrofe. HECTON-8 ya era peligrosa: la geometría primaveral de Aegir tiraba del mar, la criosfera cargaba las plataformas, las tormentas borraban margen de calendario y el calor colonial empujaba los drenajes sellados hacia atrás. La culpa de Deep Reach llega después. Dejó la reserva de ascenso como coste futuro, protegió la continuidad Atlas y trató los cuerpos como masa de menor prioridad.
 
 ## Scanner
 
-El modelo de inundación está intacto. El mar no necesitaba un villano, sino malos márgenes.
+El modelo de inundación está intacto. El océano no necesitaba malicia. Bastaron malos márgenes, drenajes sellados y jefes que mantuvieron el turno activo.
 
 ## Terminal
 
-MODELO GRAN MAREA: cizalla criosférica, elevación oceánica resonante, descarga térmica artificial y apilado de tormentas superan la envolvente segura de evacuación por factor 3,7. Reserva de ascenso independiente: no financiada.
+MODELO GREAT TIDE: cizalla criosférica, elevación oceánica resonante, descarga térmica industrial y acumulación de tormentas superaron la envolvente segura de evacuación por factor 3.7. Reserva de ascenso independiente: sin financiar. Reserva de continuidad Atlas: protegida.
 
 ## Audio
 
-El informe tenía razón. Por eso lo enterraron.
+El informe tenía razón. Por eso desapareció.
 
 ## Field Note
 
-No lo suavices: la física real mató gente, y Deep Reach se aseguró de que esa física tuviera víctimas.
+No lo conviertas en mística. La física mató gente. Deep Reach se aseguró de que la física tuviera una multitud delante.
 
 <!-- In-Game Wiki; generated from P081_GREAT_TIDE_PHYSICS_RECORD/es_ES. -->

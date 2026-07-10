@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Perakitan Rantai Pelarian"
+title: "Perakitan Rantai Kabur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Perakitan Rantai Pelarian
+# Perakitan Rantai Kabur
 
-Perakitan Rantai Pelarian adalah tulang punggung rekayasa kampanye. HECTON-8 tidak memberi ekstraksi permukaan yang bersih setelah perbaikan pertama; keberangkatan menjadi kumpulan komponen fisik, legal, dan pembuktian yang tersebar di infrastruktur tenggelam. Ini memberi penurunan panjang alasan praktis dan moral: pemain tidak hanya meninggalkan samudra, tetapi merakit rute yang membuktikan mengapa koloni tidak pernah memiliki jalan keluar yang adil.
+Perakitan Rantai Kabur adalah tulang punggung engineering kampanye. HECTON-8 tidak menawarkan ekstraksi permukaan bersih setelah perbaikan pertama; pergi menjadi sekumpulan komponen fisik, legal, dan pembuktian yang tersebar di infrastruktur tenggelam. Ini memberi turun panjang alasan praktis dan moral: jalan keluar harus dibangun dari bagian koloni yang sama yang dulu ditolak jalan keluar adilnya.
 
 ## Scanner
 
-Keberangkatan butuh enam bukti keras: relai, segel, panduan, muatan naik, jabat tangan legal, dan muatan yang tidak bisa diabaikan karrier.
+Pergi membutuhkan enam bukti keras: relay, segel, panduan, muatan naik, handshake legal, dan payload yang tidak bisa diabaikan carrier.
 
 ## Terminal
 
-PAKET NAIK: tulang punggung relai akustik hilang. Rating cincin penjepit tidak cukup. Inti panduan tidak ada. Dudukan muatan kosong. Jabat tangan karantina belum selesai. Muatan bukti opsional, tetapi mengubah otoritas pemulihan.
+ASCENT PACKAGE: acoustic relay spine hilang. Rating clamp ring kurang. Guidance core tidak ada. Charge cradle kosong. Quarantine handshake belum selesai. Evidence payload mengubah recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Kau tidak memperbaiki kapsul. Kau membangun jalan keluar jujur pertama yang tida
 
 ## Field Note
 
-Rute ke atas dibangun dari bagian yang tidak pernah dimaksudkan agar pekerja pergi sendiri.
+Rute naik dibangun dari bagian-bagian yang tidak pernah dimaksudkan agar pekerja bisa pergi sendiri.
 
 <!-- External Site; generated from P059_ESCAPE_CHAIN_ASSEMBLY/id_ID. -->

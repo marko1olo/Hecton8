@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir-maanroutekaart
 
-Aegir-maandata zijn routedata. HECTON-8 is de speelbare oceaanmaan, maar staat in een grotere ladder van relay-, stralings-, verstrooiings- en getijdenbeperkingen. De zichtbare hemel bepaalt mee of een reddingssignaal wordt gehoord, vertraagd, geprijsd, geweigerd of fysiek onmogelijk gemaakt.
+Aegirs manen zijn deel van het routesysteem. HECTON-8 is de oceaanmaan onder de speler, maar de rest van de ladder verandert wat gehoord, geprijsd, verborgen of verplaatst kan worden. Een klein lichaam kan een relaislijn doorsnijden. Een ijsverstrooiingspad kan een pakket beschadigen. Een getijfase kan een bathydrop-opstijging goedkoop maken en daarna dodelijk. Openbare kaarten tellen omdat de hemel geen decoratie boven het water is; hij is een van de machines die beslist of een claim kan vertrekken.
 
 ## Scanner
 
-Systeemkaartrecord. Aegir-manen bepalen relay timing, stralingsdekking, ice scatter, getijdendruk, occultation bands, dode beacons en recovery geometry.
+Systeemkaartrecord. Maanlabels bepalen relaisleeftijd, getijbelasting, stralingsdekking, ijsverstrooiing, occultatiebanden, dode bakens en bergingsgeometrie.
 
 ## Terminal
 
-PUBLIEK ARCHIEFKNOOPPUNT // AEGIR-MAANLADDER. Maannamen zijn routelabels. Elk lichaam verandert signal age, transfer risk, storm exposure, custody timing of claim reliability.
+OPENBARE ARCHIEFKNOOP // AEGIR-MAANLADDER. Maan naam is routedata. Vereiste velden: signaalleeftijd, getijfase, stormdekking, claimvenster, bakenstatus, opstijgrisico.
 
 ## Audio
 
-De kaart verklaart waarom niemand aankomt op het moment dat je vraagt.
+Een maan op de kaart is geen decor. Het is een reden dat het antwoord laat kwam.
 
 ## Field Note
 
-Marauder-notitie: markeer de maan, markeer daarna wat die met de route doet.
+Marauder-notitie: markeer de maan, schrijf daarna wat hij doet met signaal, getij, massa en bewaring.
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/nl_NL. -->

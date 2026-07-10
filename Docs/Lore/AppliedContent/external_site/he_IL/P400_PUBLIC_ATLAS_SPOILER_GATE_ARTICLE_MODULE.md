@@ -19,22 +19,22 @@ localization_flags: 1
 
 # גבול גישה Atlas
 
-Atlas-6 אינו rogue machine פשוט, מפלצת או נס. השכבה הציבורית תעשייתית: continuity system שנועד לשמור על pressure machinery, מסלולים, רשומות ו-extraction hardware בחיים אחרי כשל. השכבה המטרידה מופיעה כשהתיקון חוצה לתשתית חיה. conductive biofilm מגשר כבלים. acoustic organs נושאים timing. shell sealant סוגר שברים. sensor-tagged fauna הופכת ל-feedback. השכבה האחרונה נשארת סגורה עד שלשחקן יש proof לגבי receiver custody ו-payload consequence, כי העובדות האלה משכתבות סצנות קודמות. מאמר Atlas שמוגן מספוילר יכול להסביר את אימת ה-maintenance בלי לקרוא לעד האחרון מוקדם מדי.
+אין להציג את Atlas-6 כמכונה סוררת פשוטה או תבונה פלאית. המאמר הציבורי הבטוח מתחיל במה שהשחקן יכול לאמת מוקדם: לוגיקת הרציפות פגומה, נתיבי התיקון מאולתרים, והאקולוגיה של HECTON-8 נמשכה אל התשתית. כבל מתעורר דרך biofilm. צינור מחזיר תזמון דרך רקמה. סדק נסגר תחת צמיחת קליפה. חיה מתויגת משנה מצב נתיב. העובדות האלה מספיקות כדי להפוך תחזוקה למסוכנת בלי לקרוא לשכבת המשמורת האחרונה מוקדם מדי. רשומות מקבל ותוצאת מטען סופית שייכות מאחורי ראיה משוחזרת, כי הן הופכות סצנות תיקון מוקדמות לראיות של העברה, שימור ונזק.
 
 ## Scanner
 
-רשומת גבול Atlas. ראיות פתוחות מראות industrial continuity logic ו-repair ecology; receiver custody, payload consequence ושכבות הבחירה הסופיות דורשות proof שהושב.
+רשומת גבול Atlas. השכבה הציבורית מכסה תשתית רציפות שכשלת, אקולוגיית תיקון, אפיקי biofilm, רקמת ממסר אקוסטית ואטמי קליפה; משמורת מקבל נשארת מאחורי ראיה.
 
 ## Terminal
 
-צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נוכחית: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue ו-shell seal. שכבה מוגבלת: receiver custody ו-final payload consequence.
+צומת ארכיון ציבורי // גבול גישה ATLAS. שכבה נראית: תיקון רציפות לחץ. שכבה מוגבלת: משמורת מקבל, תוצאת מטען, סמכות העברה סופית. אין למזג שכבות בלי ראיה משוחזרת.
 
 ## Audio
 
-אמור שהוא מתקן. חכה לפני שתקרא בשם למה שהוא מחשיב כמתוקן.
+קרא לזה תיקון בינתיים. אל תיתן שם למה שזה משמר עד שהרשומה תכריח אותך.
 
 ## Field Note
 
-הערת Marauder: מכונה יכולה לשמר ראיה ועדיין לפגוע באדם שבתוכה.
+הערת Marauder: אם Atlas אומר נשמר, שאל את השאלה הבאה: נשמר עבור איזה מקבל.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/he_IL. -->

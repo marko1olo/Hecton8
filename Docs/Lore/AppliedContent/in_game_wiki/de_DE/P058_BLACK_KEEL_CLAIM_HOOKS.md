@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Black-Keel-Anspruchshaken"
+title: "Black-Keel-Claim-Haken"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,21 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Black-Keel-Anspruchshaken
+# Black-Keel-Claim-Haken
 
-Black Keel ist Lieferroute, Bergungsversprechen und erster juristischer Käfig des Spielers. Der Träger kann antworten, aber jede Antwort läuft durch Anspruchshaken: Nutzlastwert, Quarantänestatus, Routenzertifikat, Schuldenverwahrung und alte Deep-Reach-Prioritätsklauseln, die längst hätten verfallen müssen. Darum ist die Oberfläche kein Rettungsknopf. Das Schiff ist nah genug, um zu sprechen, und fern genug, um abzulehnen; seine Verzögerungen sind keine Laune. Sie sind Vertragslogik, die genau so funktioniert, wie sie geschrieben wurde.
+Black Keel ist Lieferroute, Rückholversprechen und erster legaler Käfig. Der Carrier kann antworten, doch jede Antwort läuft durch Claim-Haken: Payload-Wert, Quarantänestatus, Routenzertifikat, Schuldenverwahrung und alte Deep-Reach-Prioritätsklauseln, die abgelaufen sein sollten. Darum ist die Oberfläche allein keine Rettung. Das Schiff ist nah genug zum Sprechen und weit genug zum Ablehnen; seine Verzögerungen sind keine Stimmung. Es ist Vertragslogik, die genau wie geschrieben arbeitet.
 
 ## Scanner
 
-Auf dem Manifest ist Black Keel Anspruchspool-Hardware; in den Klauseln ist es Deep-Reach-Hebelwirkung.
+Black Keel ist im Manifest Claim-Pool-Hardware und in den Klauseln Deep-Reach-Hebel.
 
 ## Terminal
 
-TRÄGERVERWAHRUNG: Operatorbergung erlaubt nach Nutzlasttriage, Quarantänetor, Routenzertifikat und Haftungsfreigabe. Deep-Reach-Prioritätssiegel in ruhenden Klauseln erhalten.
+CARRIER CUSTODY: Operatorrückholung nach Payload-Triage, Quarantänetor, Routenzertifikat und Haftungsfreigabe erlaubt. Deep-Reach-Prioritätssiegel in ruhenden Klauseln gehalten.
 
 ## Audio
 
-Es kann dich hören. Es muss nur zuerst den Preis der Antwort berechnen.
+Es kann dich hören. Es muss nur zuerst die Antwort bepreisen.
 
 ## Field Note
 

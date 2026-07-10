@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Escalera lunar de Aegir
 
-La escalera lunar de Aegir da a HECTON-8 una astronomía local útil: otras lunas explican ventanas de ruta, claims muertos, rumores de salvage y fallos de tiempo de recuperación.
+Aegir Moon Ladder da a HECTON-8 una local astronomy layer: other moons moldean transfer timing, eclipse dark, relay loss, salvage rumors, cold claims y failed recovery windows.
 
 ## Scanner
 
-Carta de escalera lunar. HECTON-8 es un peligro activo en un sistema móvil, no un nivel aislado.
+Moon ladder chart. HECTON-8 es one working hazard in a moving system, no un isolated ocean level.
 
 ## Terminal
 
-LUNAS PRINCIPALES DE AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Modelo de transfer y eclipse adjunto.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay y custody windows attached.
 
 ## Audio
 
-El mapa tiene más lunas que misericordia.
+La map tiene mas moons que mercy.
 
 ## Field Note
 
-Skarn quema. Vela suelta hielo. Anvil alimenta metal. Kestrel corta relés. HECTON se ahoga.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/es_ES. -->

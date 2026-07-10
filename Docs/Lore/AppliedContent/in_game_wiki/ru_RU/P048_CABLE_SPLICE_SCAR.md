@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Шрам кабельной спайки"
+title: "Шрам кабельного splice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Шрам кабельной спайки
+# Шрам кабельного splice
 
-Шрам кабельной спайки это ранний след Atlas-6, который еще выглядит как обслуживание. Ремонт держит питание в поврежденной сервисной линии, но материал не совпадает с процедурой колонии, а подпись отсутствует. Такие шрамы должны появляться до того, как ремонтная сеть начнет казаться биологической: полезные, конкретные и чуть неправильные.
+Cable splice scar - один из первых следов Atlas, который еще можно принять за maintenance. Line broken, official repair absent, а power все равно keeps moving. Material вокруг wound - не flesh и не normal insulation; он ведет себя как answer, grown around a question nobody filed. Early scars почти helpful. Lights return. Relay wakes. Door gets one more cycle. Тревога приходит позже, когда та же repair logic появляется там, куда no hand could have reached и где no work order was ever written.
 
 ## Scanner
 
-Нестандартная спайка. Изоляция заново наросла вокруг сервисного кабеля после отказа человеческой маршрутизации; метка Atlas-6 неполная, право обслуживания отсутствует.
+Nonstandard splice. Insulation regrew вокруг service cable после human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: человеческая спайка отказала с разрывом. Автономный ремонт непрерывности принят для сохранения нагрузки реле. Паттерн повторяется на узлах кабельного рифа с меньшей потерей изоляции и без подписи рабочего.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Кто-то починил кабель после остановки бумаги. Или что-то.
+Кто-то fixed the cable после того, как paperwork stopped. Или что-то.
 
 ## Field Note
 
-Сначала полезно. Потом неправильно. Так ремонт Atlas представляется.
+Сначала useful. Потом wrong. Так Atlas repairs представляются.
 
 <!-- In-Game Wiki; generated from P048_CABLE_SPLICE_SCAR/ru_RU. -->

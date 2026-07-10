@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "NL LOC HOLD: Juno Kade/Relay"
+title: "Juno Kade, relaisnotaris"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Juno Kade/Relay
+# Juno Kade, relaisnotaris
 
-NL LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+Juno Kade maakt van de geen-FTL-premisse een menselijk beroep. Hij is de persoon tussen paniek en register: de relaisnotaris die zorgt dat een evacuatieclaim, routeweigering of doodsmarkering interstellaire afstand kruist zonder gerucht te worden.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+Dossier: Juno Kade. Zegelvlak, pakketbak en getuigenlint dragen dezelfde bewaarmarkering van een laat venster.
 
 ## Terminal
 
-NL LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+RELAISWERF A-17 / KADE, JUNO: uitgaande pakketten gestempeld na elk dragervenster. Zegeldruk, bakstof en getuigenlint bevestigen bewaring zelfs wanneer antwoordtijd reddingstijd overschrijdt.
 
 ## Audio
 
-NL LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+Kade bekrachtigde feiten die te laat zouden aankomen om iemand te redden en toch de reis moesten overleven.
 
 ## Field Note
 
-NL LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+Gebruik Kade bij communicatievensterklokken, pakketbakken, notariszegels en late bewijsopenbaringen. Zijn dossier moet afstand juridisch laten voelen, niet abstract.
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/nl_NL. -->

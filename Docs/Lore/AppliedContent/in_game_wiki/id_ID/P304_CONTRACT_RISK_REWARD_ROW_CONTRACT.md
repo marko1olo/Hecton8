@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Batas Risiko dan Imbalan Kontrak"
+title: "Baris Risiko/Imbalan Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Risiko dan Imbalan Kontrak
+# Baris Risiko/Imbalan Kontrak
 
-Batas ini mengubah tekanan replay menjadi catatan kontrak milik tabel. Rute berubah karena utang, waktu badai, kustodi, dan klausul liabilitas berubah, bukan karena dunia lupa apa yang terjadi.
+Baris kontrak mengubah rute sebelum penyelaman dimulai. Tawaran salvage tenang bisa membayar lebih sedikit tapi kustodi lebih longgar; lari di jendela badai bisa membayar baik dan memaksa waktu buruk; klausul umpan Recovery Compliance bisa menuntut bukti sebelum kredit oksigen. Bangkai lama, dokumen baru, rute lain.
 
 ## Scanner
 
-Baris kontrak mengikat hak gadai, jendela badai, urutan kustodi, plafon pembayaran, dan bobot klausul.
+Baris tawaran bermusuhan: tingkat lien, jendela badai, perintah kustodi, kedalaman bukti, plafon bayaran, dan bobot klausul Deep Reach saling terkait.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT: baris membutuhkan tingkat hak gadai, plafon pembayaran, jendela badai, kustodi sampel, urutan bukti, dan bobot klausul Deep Reach. Kontrak adalah predator pertama.
+SKEMA RISIKO KONTRAK / Aegir Reclamation Pool: pasang imbalan hanya setelah tingkat lien, plafon bayaran, jendela badai atau orbit, tuntutan kustodi sampel, kedalaman urutan bukti, paparan karantina, dan bobot klausul Deep Reach tercatat. Izin rute bersyarat sampai carrier menerima pembagian liabilitas.
 
 ## Audio
 
-Kontrak adalah predator pertama.
+Black Keel: tawaran baru dipasang. Bayaran lebih tinggi, jendela badai lebih pendek, kustodi sampel dulu. Baca klausul sebelum menyelam.
 
 ## Field Note
 
-Perubahan imbalan milik baris kontrak, bukan teks lore improvisasi.
+Jika imbalan melonjak, cari klausul yang bergerak. Biasanya kustodi, cuaca, karantina, atau masalah bukti milik orang lain.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/id_ID. -->

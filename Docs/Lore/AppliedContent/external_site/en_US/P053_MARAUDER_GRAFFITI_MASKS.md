@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Marauder Graffiti Masks
 
-The marauders of HECTON-8 are not a faceless raider faction. They are workers, debt runners, abandoned contractors, and salvage crews who learned to write on walls because every clean channel could be watched or billed. Their graffiti is ugly on purpose: quick enough to paint under stress, blunt enough to read through condensation, and ambiguous enough to pass as panic or vandalism. A black ring is not decoration. It means the carrier may hear you. A broken arrow is not bad draftsmanship. It means the corridor changed since the last safe pass. The best marks feel like someone alive was trying to keep another stranger alive without leaving a confession.
+Marauder Graffiti Masks turn scavenger writing into readable ocean infrastructure: route hints, comm silence, pressure drift, cache risk, and mistrust of carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count marks noise discipline; black rings mark carrier-ping danger; broken arrows mark pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+If the wall looks angry, read it as weather.
+
+## Field Note
+
+Marauders wrote for people who could not trust radios and could not afford maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/en_US. -->

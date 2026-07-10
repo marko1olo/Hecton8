@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Maanladder van Aegir"
+title: "Aegirs maanladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Maanladder van Aegir
+# Aegirs maanladder
 
-De maanladder van Aegir maakt de speelbare maan deel van een bewegend systeem. Andere manen vormen getijden, carrier-wachten, relay-schaduwen en de kost van vertrekken.
+Aegirs maanladder verandert de hemel in een operationele kaart: andere manen vormen getij, signaal, carrier custody en de smalle kansen om weg te gaan.
 
 ## Scanner
 
-Maanvolgorde: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Maanladder opgelost: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel en Mute buigen de vensters.
 
 ## Terminal
 
-HECTON-8 is Aegir-VIII: niet binnenste, niet verste. Rake-resonantie en Pale-schaduw veranderen getij en pakketkwaliteit.
+AEGIR-ROUTENOTITIE: HECTON-8 volgt Kestrel in de werkende ladder. Relaisschaduw, getijfase, stralingsband en Black Keel-overdrachtsgeometrie moeten samenvallen voor massaopstijging.
 
 ## Audio
 
-Tel de manen voordat je een venster vertrouwt.
+Tel Kestrel voordat je het venster vertrouwt.
 
 ## Field Note
 
-De hemel is een mechanisme, geen decor.
+De hemel is een werkschema. Mis één schaduw en de carrier wordt een gerucht.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Frontière d'accès Atlas
 
-Atlas peut être décrit tôt comme une industrial continuity endommagée qui a appris par repair ecology. Les derniers receiver records restent derrière l'evidence gate parce qu'ils changent le sens des réparations antérieures : seal, preserve, sever, quarantine et release ne sont pas des verbes neutres là-dessous.
+Atlas peut être décrit tôt comme une continuité industrielle endommagée. Il tente de garder routes de pression, dossiers, machines et matériel d'extraction dans la chaîne. La partie inquiétante commence quand le chemin de réparation passe par du vivant ou semi-vivant : biofilm conducteur sur ruptures de câble, tissu acoustique dans les conduites relais, joint coquillier sur fractures, faune étiquetée renvoyant l'état de route aux capteurs. La couche receveur finale reste verrouillée parce qu'elle change les verbes. Sceller, préserver, sectionner, mettre en quarantaine et libérer cessent d'être neutres une fois la preuve de garde récupérée.
 
 ## Scanner
 
-Archive de frontière Atlas. Les preuves ouvertes montrent industrial continuity logic et repair ecology ; receiver custody, conséquence de payload et couches de choix final exigent une preuve récupérée.
+Enregistrement de frontière Atlas. La couche publique couvre infrastructure de continuité défaillante, écologie de réparation, bus de biofilm, tissu relais acoustique et joints coquilliers ; la garde receveur reste verrouillée par preuve.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // FRONTIÈRE D'ACCÈS ATLAS. Couche actuelle : failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue et shell seal. Couche restreinte : receiver custody et final payload consequence.
+NOEUD D'ARCHIVE PUBLIC // FRONTIERE D'ACCES ATLAS. Couche visible : réparation de continuité de pression. Couche restreinte : garde receveur, conséquence charge utile, autorité de transfert finale. Ne pas fusionner sans preuve récupérée.
 
 ## Audio
 
-Dis qu'il répare. Attends avant de nommer ce qu'il compte comme réparé.
+Appelle ça réparation pour l'instant. Ne nomme pas ce que ça préserve avant que le dossier t'y force.
 
 ## Field Note
 
-Note de Maraudeur : une machine peut préserver une preuve et blesser encore la personne dedans.
+Note de Maraudeur : si Atlas dit préservé, pose la question suivante : préservé pour quel receveur.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/fr_FR. -->

@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "소나 귀환 경로"
+title: "Sonar Return Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 소나 귀환 경로
+# Sonar Return Route
 
-귀환 비콘은 경로가 마지막으로 안전했을 때의 소리를 기록한다. 그 경로가 계속 안전하다고 약속하지 않는다. 폭풍 해일, 느슨한 케이블, 움직이는 실트, fauna, 새 salvage 절단은 통로를 지우지 않고도 소나 귀환을 휘게 할 수 있다. 화물을 들거나 더 깊이 가기 전에 라인에 ping을 쏴라. 음이 바뀌면 짐을 캐시하거나 두 번째 길을 표시해라.
+return beacon은 route가 last safe였을 때 어떻게 들렸는지 기록한다. route stayed safe를 약속하지 않는다. HECTON-8에서 safety에는 소리가 있다. clear edges, clean delay, no loose metal singing in the low band, no silt swallowing the tail. storm surge, cut cable, moving fauna, fresh salvage mass, pressure 아래 flexed한 door는 corridor를 erased하지 않고 return을 구부릴 수 있다. return route는 work다. loading 전에 ping하고, echo가 다른 shape로 돌아오면 cache the load하라.
 
 ## Scanner
 
-귀환 비콘이 오래됐다. 예전 안전 ping이 더 이상 통로 에코와 맞지 않는다. 화물 질량이 퇴각 창을 늦출 것이다.
+return beacon stale. old safe ping이 더 이상 corridor echo와 맞지 않는다. cargo mass는 retreat window를 늦춘다.
 
 ## Terminal
 
-RETURN ROUTE SONAR / BEACON R-09: 마지막 깨끗한 에코 무효. Black Keel ping 낮은 신뢰도로 수신. 장애물 드리프트와 실트 밀도가 지도 허용치 초과. 화물 추출 전 보조 라인 표시.
+RETURN ROUTE SONAR / BEACON R-09: last clean echo invalid. Black Keel ping received at low confidence. Obstruction drift, silt density, cargo mass exceed map tolerance. Mark secondary line before extraction.
 
 ## Audio
 
-경로는 아직 있다. 에코가 같지 않다.
+The route is still there. echo는 같지 않다.
 
 ## Field Note
 
-싣기 전에 ping을 쏴라. 손이 비었을 때 집길이 바뀌었다면, 가득 찬 배낭은 용서하지 않는다.
+loading 전에 ping하라. hands가 empty일 때 way home changed했다면 full pack을 용서하지 않는다.
 
 <!-- In-Game Wiki; generated from P049_SONAR_RETURN_ROUTE/ko_KR. -->

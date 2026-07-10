@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Vorming van Drukglas"
+title: "Vorming van Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vorming van Drukglas
+# Vorming van Pressure Glass
 
-Drukglas is de technische naam achter Marauder blue debt en Deep Reachs Xenon-Omega-taal. Het vormt waar druk, edelgaszakken, pekel, mineralen, warmte en veranderde biologie samenkomen.
+Pressure glass is de veldnaam achter marauder blauwe schuld en Deep Reachs Xenon-Omega-taal. Het vormt alleen waar edelgaszakken, mineraaldefecten, hete pekel, veranderde biologie en gewelddadige drukgeschiedenis lang genoeg samenblijven om een rooster in geheugen te sluiten.
 
-Vorming van Drukglas maakt Xenon-Omega tot harde materiële ecologie in plaats van magisch erts. Het is geen erts. Het is een proces dat onthoudt waar het gemaakt werd.
+De vorming van pressure glass maakt Xenon-Omega tot materiaaleconomie: een door druk gemaakt substraat, gekoppeld aan insluiting, berekening, Atlas-continuïteit en bergingsrisico. Dit is geen erts. Dit is een plek die onthoudt wat ermee gebeurde.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/nl_NL. -->

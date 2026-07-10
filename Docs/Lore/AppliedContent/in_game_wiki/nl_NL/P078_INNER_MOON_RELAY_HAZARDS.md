@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Relaisgevaren van Binnenmanen"
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Relaisgevaren van Binnenmanen
+# Inner Moon Relay Hazards
 
-Relaisgevaren van binnenmanen maken contactfalen fysiek. Skarn-uitgelijnde surge kan antennes corrumperen zonder ze te doden. Stof en ijs van Vela sluiten optiek terwijl de route nog beweert te bestaan.
-
-Claw en Lumen zijn erger omdat ze oude routelogica dragen. Een handshake kan formeel geldig en operationeel nutteloos zijn. Black Keel kan een pakket loggen, custody bewaren en toch een lichaam in het water laten.
+Inner moon relay hazards maken failed contact fysiek in plaats van handig. Skarn-aligned surges kunnen antennas corrupten zonder killing them. Vela dust and ice kan optics shutter terwijl de route nog reports itself as open. Claw en Lumen zijn erger omdat ze old buoy logic carryen: een handshake kan formally valid en operationally useless zijn. Daarom kan Black Keel log a packet, preserve custody en toch een human signal waiting in water laten. Het system hoefde niet go mute. Het hoefde alleen answer from the wrong sky.
 
 ## Scanner
 
-BINNENLADDER // Skarn verzadigt antennes. Vela verstrooit optiek. Oude Claw- en Lumen-routes houden verlopen handshakes levend.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw en Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-RELAISGEVAAR NOTITIE // Contactverlies kan geometrie, deeltjesweer, stofshutter of geërfde buoy law zijn. Wantrouw schone UI tijdens surgevensters.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Het relais werd niet stil. Het herhaalde de verkeerde eeuw.
+De relay werd niet stil. Hij repeated the wrong century.
 
 ## Field Note
 
-Een schoon icoon kan nog steeds liegen door oude hemel.
+Een clean icon kan nog steeds lying through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/nl_NL. -->

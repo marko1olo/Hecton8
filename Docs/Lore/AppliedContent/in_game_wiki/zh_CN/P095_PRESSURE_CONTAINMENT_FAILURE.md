@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 压力封存失效
 
-压力封存失效给blue debt一个可读的物质行为。它有价值，是因为深压让它保持相干；它危险，是因为浅层处理会拆散这种相干。阶段0为密封。阶段1发生漂移，有时可用喷口再加压恢复。阶段2晶格断裂。阶段3引入盐卤和生物。阶段4留下死样本，但仍会污染装备、水和路线。
+pressure containment failure让blue debt拥有不靠myth也能阅读的behavior。它valuable，因为deep pressure made the lattice coherent。它dangerous，因为shallow handling lets that coherence unwind。Stage 0 stays sealed。Stage 1 drifts，并可能在vent repressure下recover。Stage 2 fractures the lattice。Stage 3 invites brine and biological bloom into the case。Stage 4 leaves a dead sample that still contaminates gear、water和route markings。material并非cursed。它homesick for pressure。
 
 ## Scanner
 
-匣体阶段图。blue debt会因压力记忆、信号剪切和bloom失效；迷信只会浪费氧气。
+casket stage chart。blue debt通过pressure memory、signal shear和bloom失效；superstition wastes oxygen。
 
 ## Terminal
 
-封存阶段：0密封晶格；1信号漂移；2晶格断裂；3盐卤/生物bloom；4死样本伴随活污染。喷口再加压只能恢复阶段1。
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-样本并不恨你。它只是想回到自己形成的地方。
+sample并不恨你。它只是trying to be back where it formed。
 
 ## Field Note
 
-一个样本在某个深度价值连城，十米之后就可能变成负债。
+sample在一个depth可能worth a fortune，十米之后就become a liability。
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/zh_CN. -->

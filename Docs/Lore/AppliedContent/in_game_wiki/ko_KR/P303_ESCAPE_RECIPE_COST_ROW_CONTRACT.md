@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "탈출 제작 비용 경계"
+title: "상승 제작비 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 탈출 제작 비용 경계
+# 상승 제작비 행
 
-이 경계는 출구 사슬을 임의가 아니라 기계적으로 유지한다. 모든 상승 부품에는 압력 이력, 소유자, 증명 요구가 있으므로 탈출은 메뉴 속 퀘스트 토큰이 아니라 법 아래의 수리처럼 느껴진다.
+각 탈출 비용은 손상된 부품이나 막힌 권한을 가리킨다. 손상된 bathydrop은 너를 살리려고 상승 슬리브를 써 버렸고, 귀환 체인은 신호, 봉인, 타이밍, 에너지, 수신자 적법성을 증명해야 한다. 어떤 부품은 기계를 고치고, 어떤 부품은 회수 호출에 응답할 권한을 정한다.
 
 ## Scanner
 
-탈출 제작 행은 부품 등급, 압력 tier, 경로 증명, 권한 상태를 묶는다.
+상승 행 잠김: 중계 증명, 봉인 등급, 유도 코어, 상승 충전, 법적 핸드셰이크, 페이로드 권한이 모두 있지 않다.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: 자격 비용은 중계기, 밀봉, 유도, 상승 에너지, 법적 핸드셰이크, payload 권한, 수신자 위험을 명시해야 한다. 올라가는 길에는 부품이 있다. 부품에는 주인이 있다.
+상승 비용 스키마 / Black Keel 회수 인터페이스: 음향 중계, 압력 봉인, 유도 타이밍 코어, 상승 에너지 충전, 검역/법적 핸드셰이크, 페이로드 권한, 수신자 위험, 경로 창 없이는 상승 견적을 게시할 수 없다. 패키지는 부품만으로 올라가지 않는다.
 
 ## Audio
 
-올라가는 길에는 부품이 있다. 부품에는 주인이 있다.
+회수 인터페이스: 중계, 봉인, 타이밍, 충전, 핸드셰이크. 하나라도 없으면 패키지는 계속 젖어 있다.
 
 ## Field Note
 
-압력대는 격리 규칙에서 오며, 정확한 비용은 recipe table에 속한다.
+핸드셰이크가 통과되기 전에 유도 코어를 쓰지 마라. 잘못된 수신자로 향하는 작동 상승 충전은 빠른 구금 경로일 뿐이다.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/ko_KR. -->

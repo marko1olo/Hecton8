@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Tabla tarifaria de Black Keel
 
-La tabla tarifaria es la forma más clara en que HECTON-8 dice lo callado. Black Keel puede oír al jugador, clasificar el peligro y mover paquetes por el sistema, pero cada acción entra en una categoría de cobro antes de volverse ayuda. Una muestra preservada puede viajar más rápido que un operador vivo. Una caja sellada puede mejorar la ruta antes que un cuerpo herido. No es villanía teatral; es un libro contable haciendo su trabajo. El horror es práctico: el jugador aprende a sobrevivir usando la misma gramática económica que volvió desechable a la colonia.
+La tabla tarifaria de Black Keel expone la carrier economy alrededor de HECTON-8, donde distress traffic compite con sample custody, oxygen, debt, proof y asset protection.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage y body recovery figuran en lineas separadas.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies hasta que lien arbitration resolves.
+
+## Audio
+
+Hay discount para evidence y surcharge por breathing.
+
+## Field Note
+
+La clase mas rapida no es rescue. Es verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/es_ES. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Handshake Katup Ruang Pompa"
+title: "Handshake Katup Pump Room"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Handshake Katup Ruang Pompa
+# Handshake Katup Pump Room
 
-Ruang pompa di HECTON-8 bukan drainase sederhana. Katup lokal, roda tangan, dan check valve yang lelah membuat pemain bertanya ke mana air pergi setelah lantai bersih. Pompa yang bekerja bisa membuka pintu, membangunkan koridor, memasukkan noise ke sonar, dan mengubah rute pulang menjadi masalah berikutnya.
+Pump rooms di HECTON-8 mengubah drainage menjadi consequence. Working handwheel bisa clear a floor, feed noise into sonar, membebani downstream hatch, dan memperburuk return path.
 
 ## Scanner
 
-Pompa sump lokal menerima input roda tangan. Keranjang masuk kotor oleh busa kapsul; pulsa keluar membebani Koridor Pulang B.
+Local sump menerima handwheel input. Capsule foam menyumbat intake basket; outlet pulse naik ke Return Corridor B.
 
 ## Terminal
 
-P-63 KONTROL SUMP / HANDSHAKE LOKAL: otoritas roda tangan diterima. Override jarak jauh ditolak. Aliran masuk pulih pada laju rendah. Tekanan keluar naik di RETURN CORRIDOR B; restart hanya setelah hatch hilir diperiksa.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Katup masuk. Jalur keluar mengetuk. Jangan sebut ini aman dulu.
+Valve took. Outlet mengetuk. Jangan sebut ini safe dulu.
 
 ## Field Note
 
-Ruang pompa yang kering bisa menenggelamkan jalan pulang. Dengarkan hantaman di jalur keluar sebelum melepas katup.
+Floor yang kering bukan solved room. Dengarkan corridor yang membayarnya.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/id_ID. -->

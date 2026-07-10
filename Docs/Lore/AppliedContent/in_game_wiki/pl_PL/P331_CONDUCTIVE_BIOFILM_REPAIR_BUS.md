@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Przewodząca magistrala naprawcza z biofilmu"
+title: "Przewodzący biofilm jako szyna naprawcza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodząca magistrala naprawcza z biofilmu
+# Przewodzący biofilm jako szyna naprawcza
 
-Przewodzący biofilm powstaje tam, gdzie pęknięte osłony kabli wypuszczają do wody HECTON-8 sole miedzi, ciepło i słaby prąd. To nie umysł. To żywy przewodnik, dość użyteczny, by Atlas potraktował go jak magistralę naprawczą. Uszkodzona linia może wyglądać na zdrową, choć film przenosi przez ranę tylko cienki impuls diagnostyczny.
+Przewodzący biofilm rośnie tam, gdzie pęknięte koszulki kabli wypuszczają sole miedzi, ciepło i słaby prąd do wody HECTON-8. Film może przenieść dość sygnału, by Atlas oznaczył martwą linię jako używalną. Panel może obudzić się na kilka sekund, zamek mignąć na zielono, a prawdziwy kabel nadal paść pod obciążeniem.
 
 ## Scanner
 
-Zielonoczarny film przechodzi przez ranę kabla. Upływ jest słaby, uporządkowany i nadal płynie.
+Zielono-czarny film mostkuje rozciętą koszulkę kabla. Słaby prąd wraca przez mokry narost; odczyt ciągłości jest niewiarygodny.
 
 ## Terminal
 
-ŚLAD ATLASA: film mikrobiologiczny mostkuje odsłonięte styki, spowalnia utratę miedzi i zwraca fałszywe impulsy ciągłości. Brak certyfikowanej naprawy linii.
+ŚLAD KONSERWACJI ATLAS / LINIA K-44: odsłonięta miedź, narost solny, niska ucieczka ciepła. Most biofilmu spowalnia korozję i zwraca fałszywe impulsy ciągłości. Nie prowadzić sterowania pompą przez tę linię.
 
 ## Audio
 
-Nie ufaj zielonej lampce. Ten kabel żyje na tyle, by kłamać.
+Pinger przechodzi przez śluz. Zasilanie też. Nie nazywaj tego naprawą.
 
 ## Field Note
 
-Wczesna blizna Atlasa: użyteczna, cicha i dość błędna, by uczyć nieufności wobec skanera.
+Jeśli martwy panel budzi się przez zielony film, oznacz trasę jako tymczasową. Odetnij zasilanie, zanim wejdziesz narzędziem w koszulkę.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pl_PL. -->

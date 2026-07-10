@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Natuurkundig Record van de Grote Vloed"
+title: "Fysisch verslag van de Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Natuurkundig Record van de Grote Vloed
+# Fysisch verslag van de Great Tide
 
-Het Natuurkundig Record van de Grote Vloed houdt de ramp eerlijk. HECTON-8 was kwetsbaar voor getijresonantie, ijsinstorting, stormopzet en industriële warmteafvoer. Deep Reachs schuld zit in marges, evacuatiecapaciteit en beslisprioriteit, niet in een verzonnen magische oorzaak.
+Het fysisch verslag van de Great Tide houdt de ramp eerlijk. HECTON-8 was al gevaarlijk: Aegirs lentegeometrie trok aan de zee, de cryosfeer belastte de platen, stormstapeling at planningsmarge op, en koloniewarmte duwde verzegelde drainage terug. Deep Reachs schuld komt daarna. Het bedrijf liet stijgreserve als toekomstige kostenpost liggen, beschermde Atlas-continuïteit en behandelde lichamen als massa met lagere prioriteit.
 
-Het Natuurkundig Record van de Grote Vloed definieert de rampenlogica van HECTON-8: de oceaan is fysiek gevaarlijk, en de bedrijfsmisdaad was ontwerpen met optimistische marges. Verzacht het niet: echte natuurkunde doodde mensen, en Deep Reach zorgde dat die natuurkunde slachtoffers had.
+Het fysisch verslag van de Great Tide definieert HECTON-8s rampenlogica: een oceaan op maanschaal werd dodelijk toen meetbare natuurkunde botste met bedrijfsoptimisme, uitgestelde evacuatie en beschermde continuïteitshardware. Maak dit niet mystiek. Natuurkunde doodde mensen. Deep Reach zorgde dat de natuurkunde een menigte voor zich had.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/nl_NL. -->

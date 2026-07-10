@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Orbit HECTON-8 / Geometri Pasang"
+title: "Orbit / Geometri Pasang HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Orbit HECTON-8 / Geometri Pasang
+# Orbit / Geometri Pasang HECTON-8
 
-Orbit HECTON-8 membuat Great Tide masuk akal sebelum menjadi politik. Resonansi menarik samudra. Tekanan es dan gelombang badai membebani paparan. Panas industri dan drainase tersumbat membuat sistem koloni mendorong balik pada jam yang salah.
-
-Kejahatannya bukan Deep Reach menciptakan fisika. Kejahatannya adalah matematika evakuasi yang dibangun di sekitar Atlas continuity, muatan diasuransikan, dan kelas kerja, lalu menyebut korban mati sebagai galat prakiraan yang dapat diterima.
+Orbit HECTON-8 membuat Great Tide believable sebelum menjadi political. Aegir pulled. The ocean answered. Ice shelves flexed, storm surge stacked water di tempat colony math menginginkan margins, dan industrial heat membuat sealed drainage fight the sea at the wrong hour. Crime-nya bukan Deep Reach invented physics. Crime-nya adalah evacuation math dibangun di sekitar Atlas continuity, insured payloads, labor classes, dan claim loss, lalu dead filed as forecast error.
 
 ## Scanner
 
-MODEL GEOMETRI PASANG // Resonansi, tekanan es, gelombang badai, dan pembuangan panas melampaui prakiraan evakuasi. Flag Atlas continuity menimpa prioritas mundur.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge, dan heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-RANTAI GREAT TIDE // Paksaan orbit memperbesar beban samudra. Pembuangan panas buatan dan drainase tersegel mengubah pasang menjadi kegagalan koloni.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge, dan sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Fisika membuka pintu. Deep Reach memutuskan siapa yang boleh keluar.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Sebuah bulan dapat menenggelamkan koloni tanpa membencinya.
+Moon bisa drown a colony tanpa membencinya.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/id_ID. -->

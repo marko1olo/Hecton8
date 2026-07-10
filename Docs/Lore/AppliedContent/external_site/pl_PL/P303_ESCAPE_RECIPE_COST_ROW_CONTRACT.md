@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Granica kosztu receptury ucieczki"
+title: "Wiersz kosztu receptury wznoszenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Granica kosztu receptury ucieczki
+# Wiersz kosztu receptury wznoszenia
 
-Opuszczenie HECTON-8 to najpierw problem naprawy: sygnał, uszczelnienie, naprowadzanie, energia wznoszenia, prawny handshake i dozór payloadu. Tabela nosi dokładne koszty; lore nosi powód, dla którego każdy koszt gryzie.
+Opuszczenie HECTON-8 zaczyna się naprawą, a kończy papierami z przyczepioną masą. Załoga musi odbudować przekaźnik, uszczelnienie, naprowadzanie, energię wznoszenia i handshake kwarantanny, zanim przewoźnik pokaże okno odzysku. Uprawnienie ładunku jest ważne, bo dowód, blue debt albo dostęp Atlas mogą zmienić odbiorcę po drugiej stronie.
 
 ## Scanner
 
-Wiersz receptury wiąże klasę komponentu, tier ciśnienia, dowód trasy i stan autorytetu.
+Wiersz wznoszenia zablokowany: dowód przekaźnika, klasa uszczelnienia, rdzeń naprowadzania, ładunek wznoszący, handshake prawny i uprawnienie ładunku nie są kompletne.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: kwalifikowane koszty muszą nazwać przekaźnik, uszczelnienie, naprowadzanie, energię wznoszenia, prawny handshake, autorytet payloadu i ryzyko odbiorcy. Droga w górę ma części; części mają właścicieli.
+SCHEMAT KOSZTU WZNOSZENIA / interfejs odzysku Black Keel: nie wystawiać wyceny bez przekaźnika akustycznego, uszczelnienia ciśnieniowego, rdzenia synchronizacji naprowadzania, ładunku energii wznoszenia, handshake'u kwarantanny/prawnego, uprawnienia ładunku, ryzyka odbiorcy i okna trasy. Pakiet nie wspina się na samych częściach.
 
 ## Audio
 
-Droga w górę ma części. Części mają właścicieli.
+Interfejs odzysku: przekaźnik, uszczelnienie, czas, ładunek, handshake. Brak jednego trzyma pakiet w wodzie.
 
 ## Field Note
 
-Pasma ciśnienia pochodzą z zasad zamknięcia; dokładne koszty należą do tabel receptur.
+Nie zużywaj rdzenia naprowadzania, zanim handshake przejdzie. Sprawny ładunek wznoszący z błędnym odbiorcą to tylko szybka droga do zatrzymania.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/pl_PL. -->

@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Batas Akses Atlas"
+title: "Batas akses Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Batas Akses Atlas
+# Batas akses Atlas
 
-Atlas dapat dijelaskan sejak awal sebagai industrial continuity rusak yang belajar melalui repair ecology. Receiver records akhir tetap berada di balik evidence gate karena mengubah arti perbaikan sebelumnya: seal, preserve, sever, quarantine, dan release bukan kata kerja netral di bawah sana.
+Atlas bisa dibahas sejak awal sebagai kontinuitas industri yang rusak. Ia mencoba menjaga rute tekanan, catatan, mesin, dan perangkat ekstraksi tetap dalam rantai. Bagian yang mengganggu mulai saat jalur perbaikan melewati bahan hidup atau setengah hidup: biofilm konduktif di atas putus kabel, jaringan akustik dalam pipa relai, segel cangkang di atas retakan, fauna bertag yang mengembalikan status rute ke sensor. Lapisan penerima akhir tetap terkunci karena mengubah kata kerja. Menyegel, menyimpan, memutus, mengarantina, dan melepas tidak lagi netral setelah bukti kustodi dipulihkan.
 
 ## Scanner
 
-Catatan batas Atlas. Bukti terbuka menunjukkan industrial continuity logic dan repair ecology; receiver custody, payload consequence, dan lapisan pilihan akhir membutuhkan proof yang dipulihkan.
+Catatan batas Atlas. Lapisan publik mencakup infrastruktur kontinuitas gagal, ekologi perbaikan, bus biofilm, jaringan relai akustik, dan segel cangkang; kustodi penerima tetap terkunci bukti.
 
 ## Terminal
 
-SIMPUL ARSIP PUBLIK // BATAS AKSES ATLAS. Lapisan kini: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue, dan shell seal. Lapisan terbatas: receiver custody dan final payload consequence.
+NODE ARSIP PUBLIK // BATAS AKSES ATLAS. Lapisan terlihat: perbaikan kontinuitas tekanan. Lapisan terbatas: kustodi penerima, akibat muatan, otoritas transfer akhir. Jangan gabungkan lapisan tanpa bukti yang dipulihkan.
 
 ## Audio
 
-Katakan ia memperbaiki. Tunggu sebelum menamai apa yang ia anggap sudah diperbaiki.
+Sebut itu perbaikan untuk saat ini. Jangan beri nama apa yang dijaganya sampai catatan memaksamu.
 
 ## Field Note
 
-Catatan Marauder: mesin dapat menjaga bukti dan tetap merusak orang di dalamnya.
+Catatan Marauder: jika Atlas berkata tersimpan, ajukan pertanyaan berikutnya: tersimpan untuk penerima mana.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/id_ID. -->

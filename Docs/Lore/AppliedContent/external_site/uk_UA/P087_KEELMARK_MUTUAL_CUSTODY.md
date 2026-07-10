@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Опіка Keelmark Mutual"
+title: "Custody Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Опіка Keelmark Mutual
+# Custody Keelmark Mutual
 
-Keelmark Mutual лякає, бо їй не потрібна ненависть. Це страховик, custodian, тримач lien і маршрутний клерк, складені в один віддалений розклад. Коли Black Keel чує оператора, страховий шлях Keelmark уже зіставив тіло з пошкодженням судна, масою salvage, карантинним ризиком і цінністю доказів. Компанії не треба нікого вбивати, щоб океан здавався ворожим. Вона може чекати, виставляти рахунок, класифікувати й просити ще одне підтвердження, поки тиск їсть кімнату. Так carrier лишається приземленим: ворог не зле обличчя на екрані, а контракт, достатньо старий, щоб відповісти раніше, ніж скінчиться сигнал лиха.
+Custody Keelmark Mutual пояснює юридичного власника Black Keel як сітку insurance lien, route underwriting, quarantine reserve і claim-tender custody.
+
+## Scanner
+
+Underwriting tag цілий. Keelmark не потрібна злість, коли lien уже має зуби.
+
+## Terminal
+
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve і recovery proof об'єднано під remote underwriting schedule. Distress status не зупиняє lien або custody order.
+
+## Audio
+
+Policy старіший за distress call. Він мав більше часу вивчити маршрут.
+
+## Field Note
+
+Немає masterminda в темній кімнаті. Є лише schedule, достатньо старий, щоб пережити провину.
 
 <!-- External Site; generated from P087_KEELMARK_MUTUAL_CUSTODY/uk_UA. -->

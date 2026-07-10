@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dívida de janela-tonelada"
+title: "Divida de Janela-Tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dívida de janela-tonelada
+# Divida de Janela-Tonelada
 
-Dívida de janela-tonelada é o ponto em que física vira finanças. Black Keel não tem margem de elevação infinita, combustível de trânsito infinito nem volume limpo de quarentena sem limite. Cada quilograma trazido de HECTON-8 compete com cada quilograma necessário para manter o operador vivo. O medidor de dívida torna o carrier cruel sem quebrar hard science: resgate é possível, mas o orçamento da rota continua perguntando o que merece massa.
+A divida de janela-tonelada e onde HECTON-8 deixa de ser apenas uma historia de horror e se torna orbital logistics. A Black Keel tem lift margin finita, clean volume finito, oxygen reserve finita e route price ligado a cada quilo. Spare tank, sealed sample, damaged suit, proof case, body e crate of salvage competem dentro da mesma janela. O sistema parece cruel porque e exato. Ele nao precisa fingir que o rescue e impossivel. Ele so continua perguntando o que a rota pode se dar ao luxo de erguer.
 
 ## Scanner
 
-Medidor de janela de massa. Cada quilograma de ajuda tem preço de rota.
+Mass-window ledger. A ajuda tem peso antes de ter linguagem.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: margem de recovery burn reduzida. Massa de extração do operador conflita com payload selado, reserva de lastro, dívida de oxigênio e custody de amostra de quarentena. Override manual exige prioridade paga ou prova de risco.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass conflita com sealed payload, ballast reserve, oxygen debt, quarantine sample volume e hull patch inventory. Manual priority exige paid override, verified hazard proof ou custody reclassification.
 
 ## Audio
 
-A nave pode levar você ou o que você encontrou. Ela prefere um número.
+A nave pode erguer uma vida. A pergunta e o que mais o ledger a obriga a carregar.
 
 ## Field Note
 
-Oxigênio, lastro, prova, payload, corpo: o carrier pesa tudo antes de pesar misericórdia.
+Oxygen, ballast, proof, samples, hull patch, body: o carrier precifica misericordia por quilo.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/pt_BR. -->

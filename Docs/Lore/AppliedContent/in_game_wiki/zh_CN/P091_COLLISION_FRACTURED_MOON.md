@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "碰撞裂月"
+title: "碰撞裂伤之月"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 碰撞裂月
+# 碰撞裂伤之月
 
-HECTON-8在Aegir系统内形成，后来被一次擦掠式碰撞撕开。伤口没有把月球击碎。它抬起地壳架，打开盐卤断层，喂养热液走廊，并让古老海底能通过稀有的压力窗口被触及。打捞地图追随这些损伤，因为最安全的路线就是灌满水的旧伤。
+HECTON-8不是为了mystery被丢进Aegir的stolen world。它在这里formed，然后一次glancing collision opened it without killing it。wound抬起shelves，cracked brine basins，加热fault ladders，并在moon试图close around its own ocean的地方留下pressure-glass seams。那道old damage至今决定hull能在哪里descend，sound在哪里bends，vents在哪里stay alive，buried colony evidence在哪里surface。salvage maps追随injuries，因为在HECTON-8，safest route常常是那个没有完全heal的old break。
 
 ## Scanner
 
-古老地壳样本。这颗月球诞生在Aegir的碎屑带中，后来被一次足够巨大的撞击打开，海洋至今记得。
+crust sample。HECTON-8 formed in Aegir's debris belt，随后承受一次足以让ocean remember的oblique impact。
 
 ## Terminal
 
-起源模型：Aegir周边吸积，随后斜向撞击，潮汐锁定后产生共振。结果：阶梯状地壳、炽热断层梯、盐卤盆地、压力玻璃脉，以及通往深底的不均匀入口。
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock。Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, uneven deep-floor access。
 
 ## Audio
 
-它生在这里。然后某个东西重重撞上来，给海留下了一张地图。
+它在这里出生。然后某物重击到足以give the sea a map。
 
 ## Field Note
 
-被俘获的月球传说太干净。HECTON-8带着本地伤口：抬升的地壳、加重的盐卤、仍在收取利息的喷口。
+captured-moon story太干净。这里born local、broken local、billed local。
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/zh_CN. -->

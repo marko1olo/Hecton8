@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, kierowniczka pomp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, kierowniczka pomp
 
-PL LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+Mara Venn była kierowniczką pomp, która utrzymała dolny aneks przy życiu, gdy liczniki wlotowe zaczęły kłamać. Jej akta tworzą przedmioty pracy: identyfikator zjedzony solą, ręcznie znaczona tablica rytmu, rejestr wody poprawiony tuszem ciśnieniowym i uchwyt obejścia wygładzony użyciem. Razem pokazują pracownicę zmuszającą kolonię do przyznania, że utrata wody nie była tłem. Była policzalną awarią maszyny podłączoną do ludzkich płuc.
 
 ## Scanner
 
-PL LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Akta: Mara Venn. Krawędź identyfikatora, tablica rytmu i poprawiony rejestr wody wskazują na pompownię P-63.
 
 ## Terminal
 
-PL LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+POMPOWNIA P-63 / VENN, MARA: uchwyt obejścia wypolerowany przez warstwę rękawic; tablica rytmu przy znacznikach strat na wlocie. Poprawka w rejestrze zmienia brakującą wodę z dekoracyjnego przecieku w obciążenie maszyny.
 
 ## Audio
 
-PL LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn nie zostawiła pożegnania. Zostawiła rytm na tablicy pomp, żeby przestraszeni ludzie mogli liczyć następny oddech.
 
 ## Field Note
 
-PL LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Dowody Venn umieszczać przy zagadkach rytmu pomp, rejestrach wody i uchwytach obejścia. Jej przedmioty mają sprawić, by infrastruktura brzmiała jak oddech.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/pl_PL. -->

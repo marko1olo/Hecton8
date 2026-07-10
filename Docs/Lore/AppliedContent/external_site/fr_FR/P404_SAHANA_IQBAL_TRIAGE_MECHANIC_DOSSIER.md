@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mécanicienne de triage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mécanicienne de triage
 
-FR LOC HOLD: Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Sahana Iqbal montre comment HECTON-8 transforma la maintenance en triage. La colonie ne séparait pas proprement l'équipement cassé des personnes menacées ; les deux attendaient sous le même système de contraintes, et les preuves laissent lire cette pression sans cinématique.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier : Sahana Iqbal. Tableau de couple, étiquettes de lits et ruban de quarantaine partagent le même ordre d'attente.
 
 ## Terminal
 
-FR LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+BAIE DE TRIAGE C-2 / IQBAL, SAHANA : limites de couple affichées près des étiquettes de réserve d'oxygène. Outils, lits et cartouches d'épurateur mis en file sur le même rail. Le langage de quarantaine a encore déplacé la ligne de portée.
 
 ## Audio
 
-FR LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal réparait ce qu'elle pouvait atteindre. Le tableau décidait sans cesse ce qui comptait comme atteignable.
 
 ## Field Note
 
-FR LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Utiliser Iqbal dans boucles de réparation de quarantaine, couloirs médicaux, files d'oxygène et interfaces où un choix de machine coûte visiblement du temps humain.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/fr_FR. -->

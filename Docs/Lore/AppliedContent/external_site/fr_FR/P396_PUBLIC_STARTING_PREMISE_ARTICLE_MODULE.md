@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Réclamation initiale du Maraudeur
 
-Le premier fichier Black Keel sur HECTON-8 ressemble à un travail de salvage jusqu'au moment où sa propre formulation commence à s'accuser. Un Maraudeur endetté accepte la route parce que le lien est réel et que la fenêtre de récupération est étroite. Son passé Deep Reach field-systems compte aussitôt : procédures de pression, abréviations de maintenance, phrases de liability et balises d'évacuation sont familières avant de devenir des preuves. Black Keel donne l'accès, pas la miséricorde. La descente commence par un travail précis autour de P-63 : réparer le bathydrop, vérifier les joints, scanner le shelf, relancer les machines, ramener cargaison ou preuve, puis partir avant que l'orbital timing et la legal custody ne se referment sur le claim. L'accroche tient à la reconnaissance professionnelle : le joueur voit où la langue polie et les dégâts physiques racontent deux histoires différentes.
+HECTON-8 commence par un contrat assez familier pour devenir dangereux. Black Keel donne à un Maraudeur grevé de dette l'accès à une route de récupération au-dessus de P-63, pas une promesse de secours. Le dossier emploie le vocabulaire Deep Reach parce que le personnage joueur a travaillé dedans : systèmes de terrain, infrastructure d'évacuation, procédure de pression, formulaires de route, preuve recevable. Ce passé change la première heure. Un panneau défaillant n'est pas du décor. Une étiquette corrigée n'est pas une couleur locale. Une formule de responsabilité polie peut se comparer à une bosse, une horloge, un état de porte ou une marque de disparu. La descente commence comme salvage payé et devient reconnaissance professionnelle : le papier connaît la pièce, et la pièce prouve que le papier a été nettoyé.
 
 ## Scanner
 
-Archive publique de claim. La première route identifie un Maraudeur sous dette, ancien opérateur Deep Reach field-systems, avec un bathydrop endommagé et une fenêtre Black Keel au-dessus de P-63.
+Enregistrement public de réclamation. Le dossier de privilège Black Keel nomme un ancien spécialiste systèmes de terrain Deep Reach, un bathydrop endommagé, la route P-63 et une fenêtre de garde qui se ferme.
 
 ## Terminal
 
-NOEUD D'ARCHIVE PUBLIQUE // RÉCLAMATION INITIALE. Dossier contractant : ancien spécialiste Deep Reach field-systems. Statut actuel : Maraudeur sous lien. Route : recovery claim Black Keel, descente shelf P-63, retour preuve et cargaison avant fermeture de custody window.
+NOEUD D'ARCHIVE PUBLIC // BLACK KEEL CLAIM BK-P63-2190. Statut : Maraudeur sous privilège. Habilitation antérieure : systèmes de terrain Deep Reach / infrastructure d'évacuation. Livrable : masse cargo plus preuve recevable avant garde locale T+06:40.
 
 ## Audio
 
-Tu ne visites pas HECTON-8. Tu retournes dans une paperasse que tu connais trop bien.
+Le contrat connaît tes anciennes abréviations. Ce n'est pas pareil que dire la vérité.
 
 ## Field Note
 
-Note de Maraudeur : le contrat connaît ton passé. Cela ne le rend pas honnête.
+Note de Maraudeur : si le dossier de réclamation connaît ton niveau d'habilitation, lis les omissions avant le paiement.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/fr_FR. -->

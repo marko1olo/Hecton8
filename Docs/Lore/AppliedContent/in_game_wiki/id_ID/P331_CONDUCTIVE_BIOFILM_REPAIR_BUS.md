@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Bus Perbaikan Biofilm Konduktif
 
-Biofilm konduktif tumbuh di tempat jaket kabel retak membocorkan garam tembaga, panas, dan arus lemah ke air HECTON-8. Itu bukan pikiran. Itu konduktor hidup yang cukup berguna untuk diperlakukan Atlas sebagai bus perbaikan. Jalur rusak bisa tampak sehat sementara film hanya membawa pulsa diagnostik tipis melintasi lukanya.
+Biofilm konduktif tumbuh di tempat jaket kabel retak membocorkan garam tembaga, hangat, dan arus lemah ke air HECTON-8. Film itu bisa membawa sinyal cukup untuk membuat Atlas menandai jalur mati sebagai bisa dipakai. Panel bisa bangun beberapa detik, kunci berkedip hijau, dan kabel asli tetap gagal saat diberi beban.
 
 ## Scanner
 
-Lapisan hijau-hitam melintang di luka kabel. Kebocorannya lemah, berpola, dan masih bergerak.
+Film hijau-hitam menjembatani jaket kabel yang terbelah. Arus rendah kembali lewat pertumbuhan basah; bacaan kontinuitas tidak andal.
 
 ## Terminal
 
-JEJAK ATLAS: film mikroba menjembatani kontak terbuka, memperlambat hilangnya tembaga, dan mengirim pulsa kontinuitas palsu. Tidak ada perbaikan jalur tersertifikasi.
+JEJAK PERAWATAN ATLAS / LINE K-44: tembaga terbuka, pertumbuhan garam, kebocoran panas rendah. Jembatan biofilm memperlambat korosi dan mengirim pulsa kontinuitas palsu. Jangan rute kontrol pompa lewat jalur ini.
 
 ## Audio
 
-Jangan percaya lampu hijau. Kabel itu cukup hidup untuk berbohong.
+Pinger lewat melalui lendir. Daya juga. Jangan sebut itu sudah diperbaiki.
 
 ## Field Note
 
-Luka Atlas awal: berguna, sunyi, dan cukup salah untuk mengajarkan ketidakpercayaan pada pemindai.
+Kalau panel mati bangun lewat film hijau, tandai rute sementara. Matikan daya sebelum memasukkan alat ke jaket.
 
 <!-- In-Game Wiki; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/id_ID. -->

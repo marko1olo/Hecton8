@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "HECTON-8軌道 / 潮汐幾何"
+title: "HECTON-8 Orbit / Tide Geometry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HECTON-8軌道 / 潮汐幾何
+# HECTON-8 Orbit / Tide Geometry
 
-HECTON-8軌道 / 潮汐幾何は硬派SF災害層である。潮汐、熱、圧力がまず植民地を壊し、企業優先が失敗を犯罪に変える。
+HECTON-8 Orbit / Tide Geometryはhard-sci-fi disaster layerである。orbital forcing、ice stress、heat、drainage、pressureがまずcolonyを壊し、corporate priorityがfailureをcrimeに変える。
 
 ## Scanner
 
-潮汐幾何モデル // 共鳴、氷応力、高潮、熱排出が避難予測を超過。Atlas continuityフラグが退避優先を上書き。
+TIDE GEOMETRY MODEL: resonance、ice stress、storm surge、heat dischargeがevacuation forecastを超過。Atlas continuity flagsがretreat priorityをoverrode。
 
 ## Terminal
 
-GREAT TIDE連鎖 // 軌道強制が海洋荷重を増幅。人工熱排出と封鎖排水が潮汐事象を植民地失敗へ変えた。
+GREAT TIDE CHAIN: orbital forcing amplified ocean load。Ice flexure、storm surge、artificial heat discharge、sealed drainage converted a tide event into colony failure。Evacuation priority reweighted by continuity and payload custody。
 
 ## Audio
 
-物理が扉を開けた。Deep Reachが誰を通すかを決めた。
+physicsがdoorを開いた。Deep Reachが誰がそこをleaveできるか決めた。
 
 ## Field Note
 
-月は憎まずに植民地を溺れさせる。
+moonは憎まずにcolonyをdrownできる。
 
 <!-- External Site; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ja_JP. -->

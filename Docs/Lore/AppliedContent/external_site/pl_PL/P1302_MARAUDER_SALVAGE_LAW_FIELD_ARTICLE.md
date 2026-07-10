@@ -19,10 +19,10 @@ localization_flags: 1
 
 # Artykuł Polowy o Prawie Salvage Marauderów
 
-Słowo Marauder powinno brzmieć niewygodnie. Nie jest romantyczną klasą ani czystym tytułem. W HECTON-8 Marauder powstaje tam, gdzie prawo podróżuje szybciej jako papier niż jako pomoc. System claimów potrzebuje kogoś, kto wejdzie do martwego lub spornego aktywa, odzyska wartość, dotknie skażonego mienia, przyjmie ryzyko i zostawi dość śladów, by biura udawały kontrolę.
+Słowo Marauder powinno stawać w gardle. Nie jest etykietą fantazji siły. To tytuł, który wymyśla prawo pogranicza, gdy potrzebuje kogoś do dotknięcia zrujnowanego aktywa bez przyznania, że aktywo było miejscem pracy pełnym ludzi.
 
-To odsłania gracza moralnie od pierwszej minuty. Nie jesteś rycerzem ratującym kolonię. Jesteś zawodowym zbieraczem ze starą procedurą Deep Reach w rękach, oknem długu nad głową i oceanem ludzi, których księgi już próbowały spłaszczyć do kategorii. Horror nie polega na tym, że szabrujesz. Horror polega na tym, że szaber może być jedynym działaniem, które system nadal uznaje.
+            HECTON-8 używa Marauderów, by działania gracza były moralnie obciążone. Szabrujesz, bo tlen, dług i narzędzia czynią to koniecznym. Dokumentujesz też, bo skradzione rzeczy mogą być jedynym dowodem, który przetrwa wodę, ciśnienie i korporacyjne czyszczenie. Dobry Marauder nie jest czysty. Zna różnicę między ogołoceniem pokoju a zachowaniem tego, co pokój udowadnia.
 
-Język polowy Marauderów wyrósł z tego nacisku. Czarny pierścień nie jest wandalizmem, jeśli mówi następnemu nurkowi, że oficjalny właściciel kłamie. Kreska przez ostemplowaną przyczynę śmierci nie jest sentymentem, jeśli wskazuje brakujący certyfikat pompy. Nazwisko pracownika obok znaku trasy może mieć większą siłę prawną niż wypolerowany pomnik.
+            Z tej sprzeczności wynika kultura polowa. Znaki na ścianach, przekreślone etykiety, nazwiska pracowników, strzałki ciśnienia i brzydka stenografia tworzą drugie prawo pod oficjalnym. Jest niegrzeczne, bo uprzejmy język już zawiódł. Jest szybkie, bo nikt nie czyta manuala claimów, gdy gródź oddycha.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/pl_PL. -->

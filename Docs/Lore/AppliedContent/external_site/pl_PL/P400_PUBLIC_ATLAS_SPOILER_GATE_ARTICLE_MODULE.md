@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Granica dostępu Atlas
 
-Atlas-6 nie jest prostą rogue machine, potworem ani cudem. Publiczna warstwa jest przemysłowa: continuity system zaprojektowany, by utrzymać pressure machinery, trasy, zapisy i extraction hardware po awarii. Niepokojąca warstwa pojawia się, gdy naprawa przechodzi w żywą infrastrukturę. Conductive biofilm mostkuje kable. Acoustic organs niosą timing. Shell sealant zamyka pęknięcia. Sensor-tagged fauna staje się feedback. Ostatnia warstwa pozostaje zamknięta, dopóki gracz nie ma proof dla receiver custody i payload consequence, bo te fakty przepisują wcześniejsze sceny. Artykuł Atlas spoiler-safe może wyjaśnić grozę maintenance bez zbyt wczesnego nazywania ostatniego świadka.
+Atlas-6 nie powinien być przedstawiany jako prosta zbuntowana maszyna ani cudowna inteligencja. Bezpieczny publiczny artykuł zaczyna się od tego, co gracz może wcześnie sprawdzić: logika ciągłości jest uszkodzona, ścieżki napraw improwizowane, a ekologia HECTON-8 została wciągnięta w infrastrukturę. Kabel budzi się przez biofilm. Rura zwraca timing przez tkankę. Pęknięcie zamyka się pod wzrostem muszli. Oznaczone zwierzę zmienia stan trasy. Te fakty wystarczą, by konserwacja stała się niebezpieczna bez zbyt wczesnego nazywania ostatniej warstwy przechowania. Akta odbiorcy i końcowy skutek ładunku powinny zostać za odzyskanym dowodem, bo zmieniają wczesne sceny napraw w dowody transferu, zachowania i szkody.
 
 ## Scanner
 
-Zapis granicy Atlas. Otwarte dowody pokazują industrial continuity logic i repair ecology; receiver custody, payload consequence i finałowe warstwy wyboru wymagają odzyskanego proof.
+Zapis granicy Atlas. Warstwa publiczna obejmuje uszkodzoną infrastrukturę ciągłości, ekologię napraw, magistrale biofilmu, akustyczną tkankę przekaźnikową i uszczelnienia muszlowe; przechowanie odbiorcy zostaje za bramą dowodu.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // GRANICA DOSTĘPU ATLAS. Warstwa bieżąca: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue i shell seal. Warstwa ograniczona: receiver custody i final payload consequence.
+PUBLICZNY WĘZEŁ ARCHIWUM // GRANICA DOSTĘPU ATLAS. Warstwa widoczna: naprawa ciągłości ciśnienia. Warstwa ograniczona: przechowanie odbiorcy, skutek ładunku, końcowe uprawnienie transferu. Nie łączyć warstw bez odzyskanego dowodu.
 
 ## Audio
 
-Powiedz, że naprawia. Poczekaj, zanim nazwiesz, co uznaje za naprawione.
+Na razie nazwij to naprawą. Nie nazywaj tego, co zachowuje, dopóki zapis cię nie zmusi.
 
 ## Field Note
 
-Notatka Maraudera: maszyna może zachować dowód i nadal uszkodzić osobę w środku.
+Notatka Maraudera: jeśli Atlas mówi zachowano, zadaj następne pytanie: zachowano dla którego odbiorcy.
 
 <!-- External Site; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/pl_PL. -->

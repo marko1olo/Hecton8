@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "エンディング支払データ境界"
+title: "結末支払記録行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# エンディング支払データ境界
+# 結末支払記録行
 
-境界はエンディングを勝利点ではなく取引記録として保つ。支払は重要だが、保管、公開証拠、隔離、債務、プレイヤーが去った後の受信者の行動権も同じく重要だ。
+結末支払行は、実際に結んだ取引を保存する。物資脱出は抵当の一部を消しつつ座標をRecovery Complianceへ戻すことがある。公開台帳への放出は名前を守り、証拠の制御を失うことがある。Atlas切断や検疫は、数字の前に受信者を変える。
 
 ## Scanner
 
-エンディング行は受信者、保管、証拠状態、支払、未解決結果を結びつける。
+結果行保留：受信者、ペイロード経路、証拠状態、支払い、検疫遅延、未解決の結果が閉じていない。
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: 行には payload ルート、受信者、証拠状態、物質支払、法的結果、隔離遅延、未解決コストが必要。クレジットは犯罪現場を閉じない。
+結末支払スキーマ / ドシエ受信者チェック：ペイロード経路、受信者、証拠状態、物資支払、抵当調整、検疫遅延、生態的結果、未解決費用が書かれるまで記録を閉じない。クレジットは保管後に解放、前ではない。
 
 ## Audio
 
-クレジットは犯罪現場を閉じない。
+ドシエ中継：受信者が保管を受理。クレジット清算前に検疫時計が始まる。
 
 ## Field Note
 
-Credit value、quarantine delay、dossier flags は、受信者と証拠状態が明確になった後だけ記録。
+受信者が名指されるまで、結末を支払済みと呼ぶな。受信者が違えば未来が違う。同じ海、別の請求だ。
 
 <!-- In-Game Wiki; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/ja_JP. -->

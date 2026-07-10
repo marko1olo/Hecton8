@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ksiezyc pekniety po kolizji"
+title: "Ksiezyc pekniety kolizja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ksiezyc pekniety po kolizji
+# Ksiezyc pekniety kolizja
 
-HECTON-8 uformowal sie w systemie Aegira, a pozniej zostal rozciety przez kolizje pod katem. Rana nie rozerwala ksiezyca. Uniosla polki skorupy, otworzyla uskoki solankowe, nakarmila korytarze termalne i zostawila stare dno dostepne przez rzadkie okna cisnienia. Mapy zlomiarzy ida za tym uszkodzeniem, bo najbezpieczniejsze trasy to stare rany wypelnione woda.
+HECTON-8 nie jest stolen world wrzuconym do Aegira dla mystery. Formed here, potem glancing collision opened it without killing it. Wound podniosla shelves, cracked brine basins, rozgrzala fault ladders i zostawila pressure-glass seams tam, gdzie moon probowal close around its own ocean. Ten old damage nadal decyduje, gdzie hull moze descend, gdzie sound bends, gdzie vents stay alive i gdzie buried colony evidence moze surface. Salvage maps ida za injuries, bo na HECTON-8 safest route czesto jest old break that did not quite heal.
 
 ## Scanner
 
-Probka starej skorupy. Ksiezyc powstal w pasie szczatkow Aegira, a potem uderzenie otworzylo go tak szeroko, ze ocean to zapamietal.
+Crust sample. HECTON-8 formed in Aegir's debris belt, potem przyjal oblique impact dosc szeroki, by ocean go zapamietal.
 
 ## Terminal
 
-MODEL POCHODZENIA: akrecja wokol Aegira, pozniejsze ukosne uderzenie, rezonans plywowy po blokadzie. Skutek: schodkowa skorupa, gorace drabiny uskokow, baseny solankowe, zyly szkla cisnieniowego, nierowny dostep do glebokiego dna.
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
 
 ## Audio
 
-Urodzil sie tutaj. Potem cos uderzylo tak mocno, ze morze dostalo mape.
+It was born here. Potem cos uderzylo tak hard, by give the sea a map.
 
 ## Field Note
 
-Mit przechwyconego ksiezyca jest zbyt czysty. HECTON-8 nosi lokalna rane: uniesiona skorupe, ciezsza solanke i kominy, ktore wciaz naliczaja odsetki.
+Captured-moon story jest zbyt czysta. To miejsce jest born local, broken local i billed local.
 
 <!-- In-Game Wiki; generated from P091_COLLISION_FRACTURED_MOON/pl_PL. -->

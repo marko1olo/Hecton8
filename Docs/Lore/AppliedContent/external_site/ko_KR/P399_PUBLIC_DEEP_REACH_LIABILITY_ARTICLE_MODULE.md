@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Deep Reach 책임 증거
 
-Deep Reach가 책임을 지는 이유는 HECTON-8 재난이 자연적이면서 동시에 잘못 관리된 사건일 수 있기 때문이다. 바다는 실제 힘을 제공했다. tide resonance, cryosphere shear, storm stacking, pressure failure. 회사는 얇은 margins, 늦은 authorization, quarantine delay, Atlas priority rules, 그리고 기록된 사람들보다 오래 살아남을 만큼 말끔한 서류를 제공했다. 가장 강한 증거는 물리적이자 절차적이다. executive authority로 붙잡힌 문, 창이 닫히기 전에 바뀐 sensor tolerance, legal clearance 때문에 늦춰진 대기열, 물이 아직 움직이는 동안 노동자를 claim categories로 바꾼 loss ledger. 플레이어는 공식 언어를 움푹 팬 자국, 시계, 루트와 대조하며 의심하는 법을 배운다.
+Deep Reach에 대한 공개 사건은 바다가 실제일 때 가장 강하다. HECTON-8은 만화 같은 음모나 불가능한 과학으로 파괴되지 않았다. 회사가 모델링하고, 가격을 매기고, 지연시키고, 그 뒤 작업자보다 법정에서 더 오래 버틸 언어로 설명한 조건에 맞았다. 쓸모 있는 증거는 물리적이고 절차적이다. 바뀐 허용 시트, 경로 보류, 지연된 대피 창구, 격리 라벨, Atlas 우선순위 표, 그리고 물이 아직 방을 지나갈 때 이름을 청구 분류로 바꾼 손실 장부. Deep Reach는 재난을 발명할 필요가 없었다. 더 싼 대응이 승인된 것처럼 보이게 할 충분한 서명이 필요했다.
 
 ## Scanner
 
-liability 기록. 실제 조석 물리, 승인된 margin risk, 대피 지연, quarantine holds, Atlas weighting, 정리된 손실 언어가 같은 증거 사슬로 모인다.
+책임 기록. 조석 힘은 실제다. 서명된 여유 변경, 격리 보류, 대피 대기열, Atlas 가중치, 손실 문구가 막을 수 있었던 부분을 담는다.
 
 ## Terminal
 
-공개 아카이브 노드 // LIABILITY 증거. Great Tide 인정. sensor margins, evacuation queue 지연, quarantine holds, Atlas weighting, worker classification, loss conversion은 검토 중.
+공개 기록 노드 // 책임 검토 DR-H8. 자연력 인정. 열린 필드: 센서 여유, 문 권한, 대기열 지연, 격리 보류, Atlas 가중치, 작업자-청구 분류 전환.
 
 ## Audio
 
-재난은 자연적일 수 있고 동시에 서명을 가질 수 있다.
+조수는 강철을 부쉈다. 어떤 문이 닫힌 채 남을지는 서명이 정했다.
 
 ## Field Note
 
-Marauder 메모: 조수와 다투지 마라. 그 옆의 서명과 다퉈라.
+마라우더 메모: 조수가 가짜였다고 다투지 마라. 조석 시계 옆에 서명을 놓아라.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/ko_KR. -->

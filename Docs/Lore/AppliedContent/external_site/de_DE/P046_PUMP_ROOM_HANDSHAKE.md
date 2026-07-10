@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Pumpenraum-Ventilhandshake"
+title: "Pumpenraum-Ventil-Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pumpenraum-Ventilhandshake
+# Pumpenraum-Ventil-Handshake
 
-Pumpenräume auf HECTON-8 sind keine einfachen Abflüsse. Lokale Ventile, Handräder und müde Rückschlagventile zwingen zur Frage, wohin das Wasser nach dem trockenen Boden geht. Eine laufende Pumpe kann eine Tür öffnen, einen Korridor wecken, Sonarrauschen erzeugen und den Rückweg zum nächsten Problem machen.
+Pump rooms auf HECTON-8 verwandeln drainage in consequence. Ein working handwheel kann clear a floor, feed noise into sonar, einen downstream hatch belasten und den return path verschlechtern.
 
 ## Scanner
 
-Lokale Sumpfpumpe akzeptiert Handradeingabe. Ansaugkorb ist mit Kapselschaum verschmutzt; Auslasspuls belastet Rückkehrkorridor B.
+Local sump akzeptierte handwheel input. Capsule foam verstopft den intake basket; outlet pulse steigt in Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROL / LOKALER HANDSHAKE: Handradautorität akzeptiert. Fernübersteuerung verweigert. Ansaugfluss mit niedriger Rate wiederhergestellt. Auslassdruck steigt in RETURN CORRIDOR B; Neustart nur nach Prüfung der nachgeschalteten Luke.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-Ventil hat gegriffen. Der Auslass klopft. Nenn es noch nicht sicher.
+Valve took. Der outlet klopft. Nenn das noch nicht safe.
 
 ## Field Note
 
-Ein trockener Pumpenraum kann den Rückweg fluten. Hör auf Wasserschlag am Auslass, bevor du das Ventil ausbaust.
+Ein trockener floor ist keine solved room. Hor auf den corridor, der dafur bezahlt hat.
 
 <!-- External Site; generated from P046_PUMP_ROOM_HANDSHAKE/de_DE. -->

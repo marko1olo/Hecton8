@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "RU LOC HOLD: Recovery Compliance Bait Contract Seed"
+title: "Зерно контракта-приманки Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# RU LOC HOLD: Recovery Compliance Bait Contract Seed
+# Зерно контракта-приманки Recovery Compliance
 
-RU LOC HOLD: Recovery Compliance bait runs make Deep Reach present from the beginning without turning them into a constant radio villain.
+Контракты-приманки Recovery Compliance приходят как щедрые задания на аварийный возврат, но цепочка приемки уже согнута в сторону Deep Reach. Выплата настоящая. Цена — скрытая обязанность раскрыть, где найдены обломок, трупный жетон, ящик образцов или запечатанная машина.
 
 ## Scanner
 
-RU LOC HOLD: Contract seed: Recovery Compliance bait. High payout, high receiver contamination.
+Зерно контракта: приманка Recovery Compliance. Высокая выплата, загрязненная цепочка приемки, скрытое требование координат.
 
 ## Terminal
 
-RU LOC HOLD: SEED BAIT: Recovery Compliance receiver implied, coordinate demand hidden, payout raised, withholding route becomes harder.
+ЗЕРНО-ПРИМАНКА: выплата повышена, приемщик Recovery Compliance замаскирован, пункт раскрытия координат скрыт, давление за удержание активно, вероятна маршрутизация Deep Reach.
 
 ## Audio
 
-RU LOC HOLD: Some contracts are not offers. They are envelopes with your name already on the return line.
+Спасательная печать покупает доверие дока быстрее, чем оружие.
 
 ## Field Note
 
-RU LOC HOLD: Replay seed record: recovery-compliance bait makes a rich contract double as a receiver route trap.
+Заметка мародера: если работа платит слишком чисто, проверь, кому принадлежит полотенце.
 
 <!-- In-Game Wiki; generated from P395_RECOVERY_COMPLIANCE_BAIT_CONTRACT_SEED/ru_RU. -->

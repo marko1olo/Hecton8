@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Były specjalista Deep Reach, dziś marauder"
+title: "Marauder po Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Były specjalista Deep Reach, dziś marauder
+# Marauder po Deep Reach
 
-Były specjalista Deep Reach, dziś marauder ustala kanon gracza. Gracz jest dawnym korporacyjnym specjalistą od systemów terenowych i infrastruktury ewakuacyjnej, wypchniętym do niezależnego odzysku przez dług albo czarną listę, a potem sprowadzonym na HECTON-8 pod nadzorem Black Keel. Dramat bierze się z zawodowego rozpoznania: księżyc odpowiada procedurami, które gracz kiedyś rozumiał, a każdy znajomy zamek utrudnia traktowanie korporacyjnego kłamstwa jako cudzego wraku.
+Marauder po Deep Reach ustawia biograficzną presję bez robienia z HECTON-8 przeznaczenia. Centralny operator salvage był korporacyjnym specjalistą od systemów terenowych i infrastruktury ewakuacyjnej, wypchniętym do niezależnego salvage przez blacklistę albo dług i zwróconym pod custody Black Keel. Dramat bierze się z zawodowego rozpoznania: księżyc odpowiada procedurami kiedyś rozumianymi ręką, a każdy znajomy zamek utrudnia traktowanie korporacyjnego kłamstwa jak cudzego wraku.
 
 ## Scanner
 
-Stary zamek Deep Reach nie sprawdza twojego nazwiska. Rozpoznaje rytm twojej sekwencji naprawczej.
+Stary zamek Deep Reach nie sprawdza nazwiska. Rozpoznaje rytm naprawy terenowej.
 
 ## Terminal
 
-ŚLAD UPRAWNIEŃ: dawny kontrakt systemów terenowych. Dostęp do infrastruktury ewakuacyjnej cofnięty. Status odzysku przyjęty pod opieką długu puli roszczeń.
+ŚLAD UPRAWNIEŃ: dawny kontrakt systemów terenowych. Dostęp do infrastruktury ewakuacyjnej cofnięty. Status salvage przyjęty pod dłużną custody puli roszczeń.
 
 ## Audio
 
-Nie wróciłeś do domu. Wróciłeś do procedury, która nigdy nie przestała działać.
+To nie był powrót do domu. To był powrót do procedury, która nigdy nie przestała działać.
 
 ## Field Note
 
-To nie sprawa rodzinna. Procedura pamięta dłonie, które jej używały.
+To nie sprawa rodzinna. Procedura pamięta ręce, które jej używały.
 
 <!-- External Site; generated from P056_EX_DEEP_REACH_MARAUDER/pl_PL. -->

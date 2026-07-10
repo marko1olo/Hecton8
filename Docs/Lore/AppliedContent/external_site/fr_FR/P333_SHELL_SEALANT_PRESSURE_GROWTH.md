@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Croissance de scellement coquillier sous pression"
+title: "Croissance de scellant coquillier sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Croissance de scellement coquillier sous pression
+# Croissance de scellant coquillier sous pression
 
-La croissance de scellement coquillier sous pression empêche de réduire Atlas à une machine cassée ou à de la malveillance. Le patch peut être beau : coquille blanche sur la rouille, côtes minérales tirées sur une fissure, résine humide qui durcit sous pression. C'est aussi un document de priorité perdue. L'intégrité de frontière restait lisible pour Atlas après que les sorties ouvrières, la peinture d'avertissement et la mémoire humaine de la route sont devenues du bruit.
+Le scellant coquillier est l'une des contradictions de terrain les plus nettes de la réparation Atlas. La frontière de pression s'améliore, la pièce dure plus longtemps, et la route peut devenir illisible sous les mêmes couches blanches. Le joueur qui le coupe n'enlève pas du décor ; il peut rouvrir ce qui gardait le compartiment sec.
 
-En jeu, un scellement coquillier doit créer une hésitation. C'est peut-être la seule raison pour laquelle une chambre garde de l'air. C'est peut-être aussi la raison pour laquelle un ouvrier est mort à deux mètres d'un volant caché. La vérité du scanner est partielle : pression stable, route masquée, marques humaines détruites. Le couper n'est jamais seulement récolter une matière. C'est discuter avec une réparation qui a déjà sauvé quelque chose.
+## Scanner
+
+Une coquille calcique blanche a fermé la fracture et enterré les flèches de route le long du bord d'écoutille. La coupe peut rouvrir la fuite.
+
+## Terminal
+
+CONFLIT DE RÉPARATION / PORTE S-9 : débit de fuite réduit, frontière de pression améliorée, marques d'évacuation masquées, volant manuel enterré à 62 pour cent. Autorisation de coupe exige un chemin d'inondation préparé.
+
+## Audio
+
+Le mur tient. Le volant d'écoutille est sous dix centimètres de coquille.
+
+## Field Note
+
+Avant de couper la coquille blanche d'une écoutille, trouve où l'eau est partie la dernière fois. L'étiquette est peut-être enterrée pour une raison.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/fr_FR. -->

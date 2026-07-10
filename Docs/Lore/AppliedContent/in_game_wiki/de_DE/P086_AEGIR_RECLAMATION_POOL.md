@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir-Rückgewinnungspool"
+title: "Aegir-Reklamationspool"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir-Rückgewinnungspool
+# Aegir-Reklamationspool
 
-Der Aegir-Rückgewinnungspool ist die öffentliche Bergungshülle hinter Black Keel. Er lässt kleine Marauder-Lizenzen verlassene Aegir-Claims erreichen, ohne einen privaten interplanetaren Carrier zu besitzen. Dieser Handel ist nützlich und giftig zugleich: derselbe Pool, der einen Tender schicken kann, entscheidet auch, ob ein atmender Operator, versiegelte Payload, Quarantänesperre oder Beweispaket den nächsten Burn wert ist.
+Der Aegir-Reklamationspool ist die Salvage-Hulle, die Black Keel fur kleine licensed marauders erreichbar macht. Kein independent operator konnte fur einen einzigen verlassenen Mond einen interplanetary claim carrier kaufen, betanken und rechtlich halten. Der Pool lost dieses Problem, indem er Risiken aus alten claims, toten Routen, insurer liens und recovery contracts in Warteschlangen bundelt. Er ist nutzlich, weil es ihn uberhaupt gibt. Er ist giftig, weil dasselbe ledger, das den Carrier startet, auch entscheidet, was der Carrier bewerten darf: sealed sample, proof bundle, quarantine lock, ein noch atmender Korper oder das nachste burn window aus HECTON-8.
 
 ## Scanner
 
-Claim-Pool-Stempel. Black Keel wurde durch Routenschuld zugewiesen, nicht dem Operator geschenkt.
+Claim-Pool-Stempel. Black Keel wurde durch gemeinsame Schuld entsandt, nicht durch Rettungsgnade.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: autonomer Tender Black Keel dem Derelict-Pressure-Claim HECTON-8 zugewiesen. Crew-Welfare-Klasse: Auftragnehmer. Payload-Custody-Klasse: variable Priorität. Menschliche Extraktion bleibt bedingt, bis die Pool-Schlichtung schließt.
+AEGIR RECLAMATION POOL: autonomer claim tender BLACK KEEL dem derelict-pressure claim HECTON-8 zugewiesen. Contractor welfare class begrenzt. Payload custody class variabel. Human extraction bleibt pending, bis lien-, quarantine- und mass-window-arbitration geschlossen sind.
 
 ## Audio
 
-Der Pool besitzt die Route. Du mietest die Antwort, indem du lange genug überlebst, um zu fragen.
+Der Pool hat wirklich ein Schiff geschickt. Das ist die Gnade. Alles danach ist Buchhaltung.
 
 ## Field Note
 
-Ein gemeinsamer Pool macht Rettung billiger, langsamer und für jeden Unterzeichner leichter abzustreiten.
+Der Pool machte einen Carrier in Aegir moglich. Er machte auch jedes Versprechen bedingt.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/de_DE. -->

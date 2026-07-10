@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Escada lunar de Aegir"
+title: "Escada de luas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Escada lunar de Aegir
+# Escada de luas de Aegir
 
-A escada lunar de Aegir inclui marcadores de radiação, corpos relay, claims esgotados, perigos ressonantes, HECTON-8, luas de armazenamento frio e irregulares externos. HECTON-8 vale por ficar entre oceano vivo e pressão orbital.
+As luas de Aegir são maquinaria de rota. Seus nomes não decoram o céu; decidem sombras, silêncio de relés, fase de maré, espera do carrier e custo de mover massa. HECTON-8 é Aegir-VIII na escada operacional, valioso porque sua pressão oceânica e geometria de relé tornam extração e abandono caros.
 
 ## Scanner
 
-Sequência de luas: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Escada de luas resolvida: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel e Mute dobram as janelas.
 
 ## Terminal
 
-HECTON-8 é Aegir-VIII: nem interna, nem a mais distante. A ressonância de Rake e a sombra de Pale alteram maré e pacotes.
+NOTA DE ROTA AEGIR: HECTON-8 segue Kestrel na escada operacional. Sombra de relé, fase de maré, faixa de radiação e geometria de transferência Black Keel devem alinhar antes da ascensão de massa.
 
 ## Audio
 
-Conte as luas antes de confiar numa janela.
+Conte Kestrel antes de confiar na janela.
 
 ## Field Note
 
-O céu é mecanismo, não cenário.
+O céu é uma escala de trabalho. Perca uma sombra e o carrier vira boato.
 
 <!-- In-Game Wiki; generated from P017_AEGIR_MOON_LADDER/pt_BR. -->

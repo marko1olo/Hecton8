@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Sensor-Tagged Fauna Feedback Loop
 
-Sensor-tagged fauna carry the old colony inside their scars. Deep Reach marked animals for migration, pressure, and contamination studies; Atlas later read those tags as cheap environmental telemetry. The creature is not a puppet. Its movement can still change repair priority, wake a drone route, or make a safe passage look occupied.
+Sensor-tagged fauna carry old survey hardware inside healed tissue. Deep Reach marked animals for pressure, migration, and contamination studies. Atlas kept listening after the colony died and folded the packets into maintenance state. The animal chooses its own path; the tag can still change doors, alarms, and map confidence behind it.
 
 ## Scanner
 
-Old Deep Reach tag under shell growth. Migration trace matches a maintenance survey sweep.
+Old Deep Reach tag under shell growth on the left flank. Motion packets still ping the maintenance net.
 
 ## Terminal
 
-FAUNA LOOP: embedded tag returns weak pressure, motion, and contamination packets. Atlas reads movement as environmental state, not animal intent.
+FAUNA TAG LOOP / DR-2147-MIG: pressure, motion, and contamination packets accepted as environmental telemetry. Animal intent not parsed. Route alarms may follow migration path.
 
 ## Audio
 
-It is not hunting you. It may still report you.
+It is not hunting you. Its tag may still open the wrong door.
 
 ## Field Note
 
-Good for encounters where the animal is innocent and still dangerous to your route.
+If tagged fauna crosses a relay yard, wait before you trust the alarms. The animal may be gone; the route state may still be catching up.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/en_US. -->

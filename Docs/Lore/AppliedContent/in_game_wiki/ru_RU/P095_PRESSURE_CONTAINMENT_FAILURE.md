@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Отказ удержания давления"
+title: "Отказ pressure containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Отказ удержания давления
+# Отказ pressure containment
 
-Отказ удержания давления дает blue debt читаемое материальное поведение. Он ценен, потому что глубинное давление сделало его связным, и опасен, потому что мелководное обращение эту связность ломает. Стадия 0 запечатана. Стадия 1 дрейфует и иногда возвращается повторным давлением у жерла. Стадия 2 ломает решетку. Стадия 3 впускает рапу и биологию. Стадия 4 оставляет мертвый образец, который все еще заражает снаряжение, воду и маршруты.
+Pressure containment failure дает blue debt поведение, которое можно read without myth. Он valuable, потому что deep pressure made the lattice coherent. Он dangerous, потому что shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts и может recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water and route markings. Material не cursed. Он homesick for pressure.
 
 ## Scanner
 
-Схема стадий капсулы. Blue debt рушится через память давления, сдвиг сигнала и bloom; суеверие только жжет кислород.
+Casket stage chart. Blue debt fails through pressure memory, signal shear и bloom; superstition wastes oxygen.
 
 ## Terminal
 
-СТАДИИ УДЕРЖАНИЯ: 0 запечатанная решетка; 1 дрейф сигнала; 2 перелом решетки; 3 рапно-биологический bloom; 4 мертвый образец с живым заражением. Повторное давление у жерла может вернуть только стадию 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-Образец тебя не ненавидит. Он пытается вернуться туда, где сформировался.
+Sample не ненавидит тебя. Он trying to be back where it formed.
 
 ## Field Note
 
-Образец может стоить состояние на одной глубине и стать обязательством десять метров спустя.
+Sample может быть worth a fortune at one depth и become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ru_RU. -->

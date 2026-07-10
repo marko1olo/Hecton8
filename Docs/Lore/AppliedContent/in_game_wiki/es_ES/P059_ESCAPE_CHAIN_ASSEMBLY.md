@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Montaje de la cadena de escape
 
-Escapar es una cadena de montaje, no un vehículo reparado. El paquete de descenso dañado puede mantener vivo al jugador, pero no puede crear por sí solo un ascenso confiable. La ruta a casa necesita una columna de relé acústico que atraviese agua y ruido de tormenta, un sello de presión que no convierta el ascenso en ruptura, un núcleo de guía capaz de sobrevivir a los peligros locales de HECTON-8, una carga de energía de ascenso, un enlace legal y de cuarentena y, si el jugador quiere poder sobre el registro de recuperación, una carga de evidencia que Black Keel no pueda devaluar. Cada pieza vive más hondo que la comodidad porque el sistema original fue construido para mover activos, no para dejar que trabajadores abandonados se fueran en sus propios términos.
+Escapar es una cadena de montaje, no un vehículo reparado. El paquete de descenso dañado puede mantener vivo un cuerpo, pero no puede crear por sí solo un ascenso confiable. La ruta a casa necesita un acoustic relay spine para ser oída entre agua y tormenta, un pressure seal que no convierta el ascenso en ruptura, un guidance core que sobreviva a los peligros locales de HECTON-8, una ascent-energy charge, un quarantine/legal handshake y un evidence payload capaz de cambiar la autoridad de recuperación de Black Keel. Cada componente es físico, legal y moral a la vez.
 
 ## Scanner
 
-La salida exige seis pruebas duras: relé, sello, guía, carga de ascenso, enlace legal y una carga que el transportista no pueda ignorar.
+La partida requiere seis pruebas duras: relé, sello, guiado, carga de ascenso, apretón legal y payload que el carrier no pueda ignorar.
 
 ## Terminal
 
-PAQUETE DE ASCENSO: columna de relé acústico ausente. Calificación del anillo de abrazadera insuficiente. Núcleo de guía ausente. Cuna de carga vacía. Enlace de cuarentena sin resolver. Carga de evidencia opcional, pero altera la autoridad de recuperación.
+ASCENT PACKAGE: falta acoustic relay spine. Rating de clamp ring insuficiente. Guidance core ausente. Charge cradle vacío. Quarantine handshake sin resolver. Evidence payload altera recovery authority.
 
 ## Audio
 
@@ -35,6 +35,6 @@ No reparas la cápsula. Construyes la primera salida honesta que la colonia nunc
 
 ## Field Note
 
-La ruta hacia arriba se construye con piezas que nunca fueron pensadas para que los trabajadores se marcharan solos.
+La ruta hacia arriba se construye con piezas que nunca debían dejar salir solos a los trabajadores.
 
 <!-- In-Game Wiki; generated from P059_ESCAPE_CHAIN_ASSEMBLY/es_ES. -->

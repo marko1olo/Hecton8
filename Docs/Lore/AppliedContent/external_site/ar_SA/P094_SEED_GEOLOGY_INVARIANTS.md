@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ثوابت جيولوجيا البذرة"
+title: "ثوابت جيولوجيا survey"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ثوابت جيولوجيا البذرة
+# ثوابت جيولوجيا survey
 
-كل رحلة نهب على HECTON-8 قد تكشف طريقا مختلفا عبر الجرح. قد ينفتح واد مبكرا، أو تخفي شعاب كابلات جيبا آمنا، أو يدفع تفتح حيوانا إلى طريق بدا فارغا سابقا، أو يظهر تسلسل دليل بترتيب جديد. فيزياء القمر لا يعاد ضبطها للتسلية. أيغير يبقى النجم الأساسي. HECTON-8 يبقى في سلم مداره. Great Tide يحافظ على فاصلته. نطاقات العمق تبقى متراكبة بالترتيب القاسي نفسه. blue debt يحتفظ بسلوك الضغط. Atlas يبقى مربوطا بأعمق حوض.
+تسمح Survey Geology Invariants لHECTON-8 بchanging charts وroute uncertainty مع الحفاظ على fixed astronomy وdepth order وGreat Tide logic وblue-debt behavior وAtlas-basin canon.
+
+## Scanner
+
+Atlas survey note. يمكن لsalvage chart أن disagree with itself؛ لكن moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+يمكن لlater chart أن bury evidence differently. لا يمكنها rewrite gravity أوtide أوguilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/ar_SA. -->

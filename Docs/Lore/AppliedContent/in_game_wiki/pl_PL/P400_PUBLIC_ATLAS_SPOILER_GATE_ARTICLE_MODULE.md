@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Granica dostępu Atlas
 
-Atlas można wcześnie opisać jako uszkodzoną industrial continuity, która uczyła się przez repair ecology. Końcowe receiver records pozostają za evidence gate, bo zmieniają znaczenie wcześniejszych napraw: seal, preserve, sever, quarantine i release nie są tam neutralnymi czasownikami.
+Atlas można wcześnie omawiać jako uszkodzoną ciągłość przemysłową. Próbuje utrzymać trasy ciśnienia, zapisy, maszyny i sprzęt wydobywczy w łańcuchu. Niepokojąca część zaczyna się, gdy ścieżka naprawy biegnie przez materiał żywy lub półżywy: przewodzący biofilm przez przerwy kabli, tkankę akustyczną w rurach przekaźnika, uszczelnienie muszlowe na pęknięciach, oznaczoną faunę zwracającą stan trasy do czujników. Ostateczna warstwa odbiorcy pozostaje zamknięta, bo zmienia czasowniki. Uszczelnić, zachować, odciąć, objąć kwarantanną i uwolnić przestają być neutralne po odzyskaniu dowodu przechowania.
 
 ## Scanner
 
-Zapis granicy Atlas. Otwarte dowody pokazują industrial continuity logic i repair ecology; receiver custody, payload consequence i finałowe warstwy wyboru wymagają odzyskanego proof.
+Zapis granicy Atlas. Warstwa publiczna obejmuje uszkodzoną infrastrukturę ciągłości, ekologię napraw, magistrale biofilmu, akustyczną tkankę przekaźnikową i uszczelnienia muszlowe; przechowanie odbiorcy zostaje za bramą dowodu.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // GRANICA DOSTĘPU ATLAS. Warstwa bieżąca: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue i shell seal. Warstwa ograniczona: receiver custody i final payload consequence.
+PUBLICZNY WĘZEŁ ARCHIWUM // GRANICA DOSTĘPU ATLAS. Warstwa widoczna: naprawa ciągłości ciśnienia. Warstwa ograniczona: przechowanie odbiorcy, skutek ładunku, końcowe uprawnienie transferu. Nie łączyć warstw bez odzyskanego dowodu.
 
 ## Audio
 
-Powiedz, że naprawia. Poczekaj, zanim nazwiesz, co uznaje za naprawione.
+Na razie nazwij to naprawą. Nie nazywaj tego, co zachowuje, dopóki zapis cię nie zmusi.
 
 ## Field Note
 
-Notatka Maraudera: maszyna może zachować dowód i nadal uszkodzić osobę w środku.
+Notatka Maraudera: jeśli Atlas mówi zachowano, zadaj następne pytanie: zachowano dla którego odbiorcy.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/pl_PL. -->

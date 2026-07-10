@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "내부 달 중계 위험"
+title: "Inner Moon Relay Hazards"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 내부 달 중계 위험
+# Inner Moon Relay Hazards
 
-이 위험은 HECTON-8의 접촉 상실이 마법이 아니라 방사선, 먼지, 가림, 상속된 route law 때문임을 설명한다.
+Inner Moon Relay Hazards는 HECTON-8 contact failure를 impossible interference가 아니라 radiation, dust, occlusion, eclipse geometry, inherited route law로 설명한다.
 
 ## Scanner
 
-내부 사다리 // Skarn은 안테나를 포화시킨다. Vela는 광학을 흩뜨린다. 오래된 Claw와 Lumen 항로는 낡은 handshakes를 살려 둔다.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw와 Lumen은 stale handshakes를 legally alive하게 둔다.
 
 ## Terminal
 
-중계 위험 메모 // 접촉 상실은 기하, 대전 입자 날씨, 먼지 셔터, 상속된 buoy law일 수 있다. 서지 창에서는 깨끗한 UI를 의심하라.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. surge windows 동안 clean interface state는 suspect로 취급.
 
 ## Audio
 
-중계기는 침묵하지 않았다. 잘못된 세기를 반복했다.
+relay는 침묵하지 않았다. wrong century를 반복했다.
 
 ## Field Note
 
-깨끗한 아이콘도 오래된 하늘을 통해 거짓말할 수 있다.
+clean icon도 old sky를 통해 거짓말할 수 있다.
 
 <!-- External Site; generated from P078_INNER_MOON_RELAY_HAZARDS/ko_KR. -->

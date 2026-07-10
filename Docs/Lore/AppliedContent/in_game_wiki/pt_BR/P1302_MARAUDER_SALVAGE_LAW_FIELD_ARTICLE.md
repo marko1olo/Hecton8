@@ -19,26 +19,28 @@ localization_flags: 1
 
 # Artigo de Campo sobre Lei de Salvage Marauder
 
-Marauder é a palavra feia para uma pessoa que o sistema de reivindicações pode usar sem admitir obrigação de resgate. Pirata rouba fora do livro. Resgatista chega com dever, tripulação e autoridade pública. Marauder entra no meio: licenciado o bastante para tocar propriedade abandonada, descartável o bastante para morrer ali, útil o bastante para mover uma reivindicação disputada.
+Marauder é uma palavra jurídica suja antes de ser trabalho. Pirata rouba fora do livro. Resgatista chega com dever, tripulação, autoridade pública e combustível suficiente para admitir que uma pessoa importa. Marauder entra na fresta entre os dois. A licença diz que você pode tocar propriedade abandonada ou disputada, marcar massa recuperável, preservar material de testemunha e registrar lien. Também diz baixo que, se você morrer dentro da reivindicação, o sistema pode chamar de perda de contratado em vez de resgate fracassado.
 
-Por isso marcas Marauder não são slogans quando você aprende a gramática. Riscos, anéis pretos, setas de pressão e etiquetas corporativas riscadas são lei de campo rápida: dono hostil, contagem de ar suspeita, relógio de porta falso, nome de trabalhador não resolvido, amostra vale mais que corpo, pacote precisa de testemunha. Equipes antigas deixaram isso para quem não teria tempo de abrir manual legal enquanto o oceano empurrava a parede.
+            Por isso trabalho Marauder parece errado mesmo quando ajuda. Você corta painéis de uma porta de pressão morta porque metal tem valor. Também guarda a borda cortada porque prova que a porta foi soldada depois que pessoas sumiram. Você põe uma plaqueta de nome no bolso porque vende como liga. Também guarda o hash molhado porque a plaqueta transforma uma categoria de corpo de volta em pessoa.
 
-A licença é suja porque permite que corporações evitem verbos limpos. Deep Reach não precisa dizer abandonamos trabalhadores se uma zona pode ser chamada de campo de ativos contaminados. Keelmark não precisa dizer vendemos risco se um corpo vira massa recuperável. Um Marauder sobrevive lendo essas traduções mais rápido que os escritórios arquivam.
+            Marcas de campo cresceram porque a lei formal é lenta demais para salas alagadas. Anel preto quer dizer dono hostil ou mentiroso. Seta dividida quer dizer caminho de pressão falso. Selo corporativo riscado quer dizer não confie na causa impressa. Nome de trabalhador perto de marca de rota quer dizer preserve pessoa com lugar.
+
+            Em HECTON-8, o jogador não fica puro recusando salvage. A recusa só deixa etiquetas limpas em pé. A disciplina difícil é levar com contexto: objeto, lugar, hash, marca, nome, caminho do dano. Salvage sem memória é saque. Salvage com testemunha ainda é feio, mas pode forçar uma sala morta a falar num livro que preferia contar só massa.
 
 ## Scanner
 
-MARCA MARAUDER // Não é tinta de pirata. Taquigrafia contratual: reivindicação disputada, massa recuperável, dono hostil, risco de testemunha. Quem deixou esperava que outro profissional lesse a parede rápido.
+MARCA MARAUDER // Taquigrafia contratual, não tinta de pirata. Campos implícitos: dono disputado, massa recuperável, risco de testemunha, acesso de pressão, risco de lien, conflito de nome de trabalhador. Leia antes de cortar.
 
 ## Terminal
 
-AVISO DE CAMPO KEELMARK // Licença Marauder não confere autoridade de resgate. Concede entrada limitada de salvage, reconhecimento de lien, opções de custódia de prova e contabilidade de massa recuperável sob reivindicação disputada.
+AVISO DE CAMPO KEELMARK // Licença Marauder concede entrada limitada em reivindicação disputada, aviso de salvage lien, custódia emergencial de prova e contabilidade de massa recuperável. Não concede autoridade de resgate, comando médico nem título limpo.
 
 ## Audio
 
-Linha de contrato Black Keel: Você não está aqui porque a lei falhou. Você está aqui porque a lei achou alguém mais barato que resgate.
+Linha de contrato Black Keel: a lei não falhou. Ela contratou alguém barato o bastante para entrar na sala que abandonou.
 
 ## Field Note
 
-Não confie em etiqueta limpa numa sala molhada. Se importava, alguém riscou a versão feia por perto.
+Se você levar, guarde de onde veio. Carga limpa compra combustível. Carga suja com testemunha pode comprar um nome de volta.
 
 <!-- In-Game Wiki; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/pt_BR. -->

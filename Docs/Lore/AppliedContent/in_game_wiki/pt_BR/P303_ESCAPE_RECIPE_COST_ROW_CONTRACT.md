@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Limite de Custo da Receita de Escape"
+title: "Linha de custo de receita de ascensão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Limite de Custo da Receita de Escape
+# Linha de custo de receita de ascensão
 
-O limite mantém a cadeia de saída mecânica, não arbitrária. Toda peça de subida tem histórico de pressão, dono e requisitos de prova, então escapar parece reparo sob lei, não tokens de missão num menu.
+Cada custo de escape aponta para uma peça danificada ou uma autoridade bloqueada. O bathydrop danificado gastou a manga de ascensão para te manter vivo, então a cadeia de retorno precisa provar sinal, selo, tempo, energia e legalidade do receptor. Algumas peças consertam a máquina; outras decidem quem pode responder ao chamado de recuperação.
 
 ## Scanner
 
-A linha da receita liga classe de componente, tier de pressão, prova de rota e estado de autoridade.
+Linha de ascensão bloqueada: prova de relé, grau de selo, núcleo de guia, carga de ascensão, handshake legal e autoridade de carga útil não estão completos.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: custos qualificados precisam nomear relé, selo, orientação, energia de subida, handshake legal, autoridade de payload e risco do receptor. O caminho para cima tem peças; as peças têm donos.
+ESQUEMA DE CUSTO DE ASCENSÃO / interface de recuperação da Black Keel: nenhum orçamento de ascensão sem relé acústico, selo de pressão, núcleo de tempo de guia, carga de energia de ascensão, handshake de quarentena/legal, autoridade de carga útil, risco do receptor e janela de rota. O pacote não sobe só com peças.
 
 ## Audio
 
-O caminho para cima tem peças. As peças têm donos.
+Interface de recuperação: relé, selo, tempo, carga, handshake. Falta um e o pacote continua molhado.
 
 ## Field Note
 
-Faixas de pressão vêm de regras de contenção; custos exatos pertencem às tabelas de receita.
+Não gaste o núcleo de guia antes do handshake liberar. Uma carga de ascensão funcional com o receptor errado é só um caminho rápido para custódia.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/pt_BR. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Crochets de réclamation Black Keel
 
-Black Keel est la route de livraison du joueur, la promesse de récupération et la première cage juridique. Le transporteur peut répondre, mais chaque réponse traverse des crochets de réclamation : valeur de charge utile, statut de quarantaine, certificat de route, garde de dette et anciennes clauses prioritaires Deep Reach qui auraient dû expirer. Voilà pourquoi la surface n’est pas un bouton de sauvetage. Le vaisseau est assez proche pour parler et assez loin pour refuser ; ses délais ne sont pas une humeur. C’est la logique contractuelle qui fonctionne exactement comme écrit.
+Black Keel est la route de livraison, la promesse de récupération et la première cage légale. Le carrier peut répondre, mais chaque réponse traverse des crochets de réclamation : valeur de payload, statut de quarantaine, certificat de route, garde de dette et anciennes clauses prioritaires Deep Reach qui auraient dû expirer. Voilà pourquoi la surface n'est pas un secours en soi. Le vaisseau est assez proche pour parler et assez loin pour refuser ; ses délais ne sont pas une humeur. C'est la logique contractuelle qui s'exécute exactement comme écrite.
 
 ## Scanner
 
-Dans le manifeste, Black Keel est du matériel de pool de réclamations ; dans les clauses, c’est un levier Deep Reach.
+Black Keel est matériel de claim-pool dans le manifeste et levier Deep Reach dans les clauses.
 
 ## Terminal
 
-GARDE DU TRANSPORTEUR : récupération de l’opérateur autorisée après tri de charge utile, porte de quarantaine, certificat de route et apurement de responsabilité. Sceau de priorité Deep Reach conservé dans des clauses dormantes.
+CARRIER CUSTODY : récupération opérateur autorisée après triage de payload, porte de quarantaine, certificat de route et décharge de responsabilité. Sceau prioritaire Deep Reach retenu dans clauses dormantes.
 
 ## Audio
 
-Il t’entend. Il doit seulement chiffrer la réponse d’abord.
+Il peut entendre. Il doit seulement chiffrer la réponse d'abord.
 
 ## Field Note
 
-Le vaisseau n’est pas mauvais. Il est loué à un contrat qui sait être cruel sans paraître vivant.
+Le vaisseau n'est pas mauvais. Il est loué à un contrat qui sait être mauvais sans sonner vivant.
 
 <!-- In-Game Wiki; generated from P058_BLACK_KEEL_CLAIM_HOOKS/fr_FR. -->

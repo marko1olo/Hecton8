@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Дрейф очереди ретранслятора"
+title: "Дрейф relay-очереди"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Дрейф очереди ретранслятора
+# Дрейф relay-очереди
 
-Дрейф очереди ретранслятора — это разница между правдой и пригодностью. HECTON-8 не нужны фальшивые помехи или магическое вмешательство, чтобы связь пугала. Сообщение может прийти целым, подтвержденным и идеально правильным для комнаты, какой она была тридцать минут назад. Потом вода сдвигает люк, давление гнет раму, рост Atlas закрывает не ту трещину, и та же инструкция становится ловушкой. Мир получает процедурный страх: игрок выясняет не то, врет ли система, а то, не стала ли она слишком старой для доверия.
+Дрейф relay-очереди делает message age переменной выживания: remote orders могут быть true, stale и lethal одновременно.
+
+## Scanner
+
+Relay stamp старше leak, который он называет. Instruction была верна для room, которой больше нет.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction до fresh relay window opens. Treat delayed route orders as archival, если pressure, door state и waterline не совпадают.
+
+## Audio
+
+Message верное. В этом и проблема.
+
+## Field Note
+
+Поздняя truth все еще может убить.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/ru_RU. -->

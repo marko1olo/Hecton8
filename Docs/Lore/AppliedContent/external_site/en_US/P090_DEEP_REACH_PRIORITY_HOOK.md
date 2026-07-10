@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Deep Reach Priority Hook
 
-The priority hook is the cleanest way for Deep Reach to remain dangerous after the colony falls silent. The company does not need to pilot Black Keel by remote miracle. It only needs an old certificate that the carrier still recognizes, a continuity rule tied to Atlas access, and a payload class that outranks a contractor body under specific hazard conditions. That is enough. A route can be nudged. A sealed case can move up the queue. A quarantine lock can stay closed while the operator's oxygen count becomes another debt entry. The result is colder than sabotage: the system works as written, and Deep Reach learned how to write itself into the parts that survive disasters.
+Deep Reach Priority Hook grounds corporate pressure in legacy certificates, quarantine clauses, Atlas tokens, payload priority, and evidence custody instead of impossible instant command.
+
+## Scanner
+
+Old certificate hook. Deep Reach does not need the bridge when it still owns the clause.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token, evidence suppression queue, or sealed infrastructure proof under Aegir claim law. Human extraction priority unchanged unless verified hazard proof exceeds custody value.
+
+## Audio
+
+They do not need to stand on the bridge to steer the answer.
+
+## Field Note
+
+Cleaner than a conspiracy: the paperwork survived the people who signed it.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/en_US. -->

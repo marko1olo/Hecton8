@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Black Keel 요율표
 
-요율표는 HECTON-8이 조용한 진실을 가장 노골적으로 말하는 곳이다. Black Keel은 플레이어를 들을 수 있고, 위험을 분류하고, 시스템 안에서 패킷을 움직일 수 있다. 하지만 모든 행동은 도움이 되기 전에 과금 분류가 된다. 보존된 샘플은 숨 쉬는 운영자보다 빠르게 이동할 수 있다. 봉인된 상자는 부상자보다 먼저 경로를 승급시킬 수 있다. 이것은 연극적 악행이 아니라 설계대로 작동하는 장부다. 플레이어는 식민지를 소모품으로 만든 바로 그 경제 문법을 이용해 살아남는다.
+Black Keel 요율표는 HECTON-8 주변 carrier economy를 드러낸다. distress traffic은 sample custody, oxygen, debt, proof, asset protection과 경쟁한다.
+
+## Scanner
+
+tariff plate. distress, oxygen, sample custody, pressure gear, hull damage, body recovery가 별도 줄에 놓여 있다.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. lien arbitration resolves까지 Breathing mass surcharge applies.
+
+## Audio
+
+evidence에는 discount가 있고 breathing에는 surcharge가 있다.
+
+## Field Note
+
+가장 빠른 class는 rescue가 아니다. verified property moving upward다.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/ko_KR. -->

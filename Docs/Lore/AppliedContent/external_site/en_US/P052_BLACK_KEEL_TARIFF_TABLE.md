@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Black Keel Tariff Table
 
-The tariff table is the clearest way HECTON-8 says the quiet part aloud. Black Keel can hear the player, can classify the danger, and can move packets through the system, but every action enters a billing category before it becomes help. A preserved sample may travel faster than a breathing operator. A sealed lockbox may upgrade the route before a wounded body does. No executive has to sneer for this to work; the ledger is doing exactly what it was built to do. The cruelty is practical: the player learns to survive by abusing the same economic grammar that made the colony disposable.
+Black Keel Tariff Table exposes the carrier economy around HECTON-8, where distress traffic competes with sample custody, oxygen, debt, proof, and asset protection.
+
+## Scanner
+
+Tariff plate. Distress, oxygen, sample custody, pressure gear, hull damage, and body recovery sit on separate lines.
+
+## Terminal
+
+TARIFF CLASS: salvage emergency. Welfare addendum pending. Verified sample custody advances outbound priority by two billing tiers. Breathing mass surcharge applies until lien arbitration resolves.
+
+## Audio
+
+There is a discount for evidence and a surcharge for breathing.
+
+## Field Note
+
+The fastest class is not rescue. It is verified property moving upward.
 
 <!-- External Site; generated from P052_BLACK_KEEL_TARIFF_TABLE/en_US. -->

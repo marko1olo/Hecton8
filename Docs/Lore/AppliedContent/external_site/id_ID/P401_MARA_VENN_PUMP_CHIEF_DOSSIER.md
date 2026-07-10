@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ID LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, kepala pompa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, kepala pompa
 
-ID LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Mara Venn menambatkan HECTON-8 lewat prosedur, bukan pidato. Bukti ruang pompa tidak menjadikannya patung; bukti itu menunjukkan bagaimana bertahan hidup dihitung, diperdebatkan, dan dijaga tetap terbuka oleh seseorang yang tugasnya berlanjut saat Deep Reach sudah menyebut aneks sebagai liabilitas.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dosier: Mara Venn. Tepi lencana, papan irama, dan buku air yang dikoreksi semuanya mengarah ke ruang pompa P-63.
 
 ## Terminal
 
-ID LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+RUANG POMPA P-63 / VENN, MARA: pegangan bypass mengilap karena dipakai melalui lapisan sarung tangan; papan irama dipasang di samping tanda kehilangan asupan. Koreksi buku mengubah air hilang dari bocor latar menjadi beban mesin.
 
 ## Audio
 
-ID LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn tidak meninggalkan salam perpisahan. Ia meninggalkan irama di papan pompa agar orang yang takut bisa menghitung napas berikutnya.
 
 ## Field Note
 
-ID LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Tempatkan bukti Venn dekat teka-teki irama pompa, buku air, dan pegangan bypass. Bendanya harus membuat pemain mendengar infrastruktur sebagai napas.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/id_ID. -->

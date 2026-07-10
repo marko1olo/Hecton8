@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Kabelspleißnarbe"
+title: "Kabel-Splice-Narbe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kabelspleißnarbe
+# Kabel-Splice-Narbe
 
-Kabelspleißnarben zeigen HECTON-8s Reparaturhorror bei geringer Lautstärke. Ein Servicekabel ist durchtrennt, die Koloniecrew fort, und eine nichtstandardisierte Reparatur hält den Stromkreis trotzdem lebendig. Der Spieler liest Nutzen vor Absicht.
+Cable splice scars zeigen HECTON-8s repair horror leise: Eine damaged service line arbeitet weiter, nachdem human procedure, signoff und material rules schon versagt haben.
 
 ## Scanner
 
-Nichtstandard-Spleiß. Isolierung wuchs nach Ausfall menschlicher Routenführung um ein Servicekabel nach; Atlas-6-Tag unvollständig, Wartungsautorität fehlt.
+Nonstandard splice. Insulation regrew um ein service cable, nachdem human routing failed; Atlas-6 tag partial, maintenance authority absent.
 
 ## Terminal
 
-POWER TRACE C-44: menschlicher Spleiß offen ausgefallen. Autonome Kontinuitätsreparatur zur Erhaltung der Relaislast akzeptiert. Muster wiederholt sich an Kabelriffknoten mit geringerem Isolationsverlust und ohne Arbeitersignatur.
+POWER TRACE C-44: human splice failed open. Autonomous continuity repair accepted to preserve relay load. Pattern repeats at cable-reef nodes with lower insulation loss and no worker signoff.
 
 ## Audio
 
-Jemand reparierte das Kabel, nachdem die Formulare endeten. Oder etwas.
+Jemand fixed the cable, nachdem paperwork stopped. Oder etwas tat es.
 
 ## Field Note
 
-Erst nützlich. Später falsch. So stellen sich Atlas-Reparaturen vor.
+Zuerst useful. Spater wrong. So stellen sich Atlas repairs vor.
 
 <!-- External Site; generated from P048_CABLE_SPLICE_SCAR/de_DE. -->

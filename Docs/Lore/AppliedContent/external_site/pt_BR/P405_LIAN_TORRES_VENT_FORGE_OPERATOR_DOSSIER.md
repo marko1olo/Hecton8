@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "PT LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, operador da forja de venteiro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PT LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, operador da forja de venteiro
 
-PT LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres ancora a indústria de HECTON-8 no ofício, não no material milagroso. As provas da forja mostram que vidro de pressão, anéis de vedação e revestimentos cerâmicos não nasceram como saque. Foram trabalhados, rejeitados, reetiquetados e tornados seguros o bastante para outra pessoa confiar debaixo d'água.
 
 ## Scanner
 
-PT LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossiê: Lian Torres. Luva térmica, temporizador de ciclo e bandeja de rejeito batem com o mesmo lote de vidro de pressão.
 
 ## Terminal
 
-PT LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+FORJA DE VENTEIRO V-9 / TORRES, LIAN: bandeja de rejeito reteve anéis de vedação rachados, vidro de pressão turvo e três cupons de superaquecimento marcados. Nota de lote: a falha só ensina a próxima vedação se continuar rotulada.
 
 ## Audio
 
-PT LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres guardava as peças ruins. Na forja, chão limpo queria dizer que alguém tinha jogado fora a lição.
 
 ## Field Note
 
-PT LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Usar Torres perto de adereços de forja, receitas de vidro de pressão, anéis rejeitados e bancadas de melhoria que precisem de histórico visível de peças falhas.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/pt_BR. -->

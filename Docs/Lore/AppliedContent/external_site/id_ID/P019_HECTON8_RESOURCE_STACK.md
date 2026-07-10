@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tumpukan Sumber Daya
 
-Tumpukan sumber daya membingkai HECTON-8 sebagai ekonomi tekanan. Xenon-Omega adalah puncak strategis, bukan seluruh dunia.
+Tumpukan Sumber Daya membingkai HECTON-8 sebagai ekonomi tekanan: Xenon-Omega adalah puncak strategis, bukan seluruh dunia.
 
 ## Scanner
 
-Tumpukan: reef fiber, brine salts, relay cores, pressure valves, blue debt, pressure glass, Atlas lattice.
+Stack terbaca: serat karang, garam brine, inti relai, katup tekanan, katalis vent, utang biru, pressure glass, kisi Atlas.
 
 ## Terminal
 
-Nilai: biota bertahan, salvage manusia, hardware rute, kimia tekanan, blue debt, pressure glass, continuity substrate.
+MODEL NILAI: biota bertahan hidup, salvage manusia, hardware rute, kimia tekanan, utang biru, pressure glass, substrat kontinuitas. Jangan runtuhkan stack menjadi satu bahan ajaib.
 
 ## Audio
 
-Jika carrier meminta massa sebelum nama, kau tahu siapa pemilik kontrak.
+Jika carrier meminta massa sebelum nama, kamu tahu siapa pemilik kontrak.
 
 ## Field Note
 
-Tidak ada yang cuma loot.
+Tidak ada yang hanya loot. Setiap sampel milik ekonomi tekanan.
 
 <!-- External Site; generated from P019_HECTON8_RESOURCE_STACK/id_ID. -->

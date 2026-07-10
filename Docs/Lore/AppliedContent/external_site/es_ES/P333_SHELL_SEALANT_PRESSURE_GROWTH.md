@@ -19,8 +19,22 @@ localization_flags: 1
 
 # Crecimiento de sellante de concha a presión
 
-El crecimiento de sellante de concha a presión impide reducir Atlas a máquina rota o malicia. El parche puede ser bello: concha blanca sobre óxido, costillas minerales trazadas sobre una grieta, resina húmeda endureciendo bajo presión. También es un documento de prioridad perdida. La integridad de la frontera siguió siendo legible para Atlas después de que la salida obrera, la pintura de aviso y la memoria humana de ruta pasaran a ser ruido.
+El sellante de concha es una de las contradicciones de campo más limpias de la reparación Atlas. La frontera de presión mejora, la sala dura más, y la ruta puede quedar ilegible bajo las mismas capas blancas. El jugador que lo corta no quita decoración; puede reabrir lo que mantenía seco el compartimento.
 
-En juego, un parche de sellante debe crear duda. Puede ser la única razón por la que una cámara aún tiene aire. También puede ser la razón por la que un trabajador murió a dos metros de una rueda manual oculta. La verdad del escáner es parcial: presión estable, ruta oculta, marcas humanas destruidas. Cortarlo nunca es solo recolectar material. Es discutir con una reparación que ya salvó algo.
+## Scanner
+
+La concha blanca de calcio cerró la fractura y enterró flechas de ruta junto al borde de la escotilla. Cortar puede reabrir la fuga.
+
+## Terminal
+
+CONFLICTO DE REPARACIÓN / PUERTA S-9: caudal de fuga reducido, frontera de presión mejorada, marcas de salida ocultas, volante manual enterrado al 62 por ciento. Autorización de corte requiere ruta de inundación preparada.
+
+## Audio
+
+La pared aguanta. El volante de la escotilla está bajo diez centímetros de concha.
+
+## Field Note
+
+Antes de cortar concha blanca de una escotilla, busca adónde fue el agua la última vez. La etiqueta puede estar enterrada por algo.
 
 <!-- External Site; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/es_ES. -->

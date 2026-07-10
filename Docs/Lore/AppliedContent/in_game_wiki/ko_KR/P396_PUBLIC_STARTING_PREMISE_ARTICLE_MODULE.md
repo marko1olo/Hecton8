@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Marauder 시작 claim"
+title: "마라우더 시작 청구"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Marauder 시작 claim
+# 마라우더 시작 청구
 
-도입 기록은 플레이어를 빚의 압력 아래 놓인 훈련된 작업자로 세운다. 관광객도, 선택된 상속자도, 가족의 복수자도 아니다. 그는 잔해가 양식과 모순되기 전부터 펌프, 실링, 루트 양식, Deep Reach 약어를 이해한다. 첫 한 시간은 실무로 고정된다. bathydrop을 봉합하고, 압력을 되돌리고, 망가진 기계를 읽고, 화물을 회수하며, 어떤 공식 문장이 이미 거짓인지 판단한다.
+첫 HECTON-8 기록은 관광객이나 선택받은 생존자를 소개하지 않는다. 빚 압박 아래 있는 훈련된 운영자를 지목한다. 첫 해치가 열리기 전부터 펌프 약어, 밀봉 경고, 대피 태그, Deep Reach 책임 문구를 읽을 줄 아는 사람이다. 시작 작업은 구체적이다. 배시드롭을 막는다. 압력을 확인한다. P-63 선반을 스캔한다. 밀봉 경로가 말이 될 때만 기계를 재시작한다. 돈이 되면 화물을, 보관 시계를 견디면 증거를 회수한다.
 
 ## Scanner
 
-공개 claim 기록. 시작 루트는 Deep Reach field-systems 이력을 가진 채무 Marauder, 손상된 bathydrop, P-63 위 Black Keel 회수 창을 식별한다.
+공개 청구 기록. Black Keel 유치권 파일은 전 Deep Reach 현장 시스템 전문가, 손상된 배시드롭, P-63 경로, 닫히는 보관 창구를 적는다.
 
 ## Terminal
 
-공개 아카이브 노드 // 시작 CLAIM. 계약자 기록: 전 Deep Reach field-systems 전문가. 현재 상태: lien에 묶인 Marauder. 루트: Black Keel recovery claim, P-63 shelf 강하, custody window 종료 전 증거와 화물 반환.
+공개 기록 노드 // BLACK KEEL CLAIM BK-P63-2190. 상태: 유치권에 묶인 마라우더. 이전 허가: Deep Reach 현장 시스템 / 대피 기반시설. 인도물: 현지 보관 T+06:40 전 화물 질량 및 인정 가능한 증거.
 
 ## Audio
 
-당신은 HECTON-8을 구경하러 온 것이 아니다. 너무 잘 아는 서류로 돌아온 것이다.
+계약서는 네 오래된 약어를 안다. 그것이 진실을 말한다는 뜻은 아니다.
 
 ## Field Note
 
-Marauder 메모: 계약은 네 과거를 안다. 그렇다고 정직해지지는 않는다.
+마라우더 메모: 청구 파일이 네 허가 등급을 안다면, 지급액보다 누락된 내용을 먼저 읽어라.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/ko_KR. -->

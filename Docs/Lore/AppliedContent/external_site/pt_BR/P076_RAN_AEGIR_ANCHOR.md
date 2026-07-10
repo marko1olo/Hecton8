@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Âncora Ran / Aegir"
+title: "Ancora Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Âncora Ran / Aegir
+# Ancora Ran / Aegir
 
-Âncora Ran / Aegir fixa o gosto visual de HECTON-8: luz solar tênue de ficção científica dura acima, pressão hostil e dívida abaixo.
+Ran / Aegir Anchor ancora a visual logic de HECTON-8: dimmer hard-sci-fi sunlight above, depois depth, weather, turbidity, pressure e debt below.
 
 ## Scanner
 
-Placa de estrela classe K. Ran queima normalmente. Aegir é mais fraco que Sol, mas a escuridão aqui vem de profundidade, clima e dívida.
+K-class star plate. Ran queima normalmente; o deep aqui nao e supernatural, apenas longe demais sob weather, water e debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Luz de anã laranja sustenta trabalho de superfície. Dispersão de tempestade, geometria de eclipse e turbidez oceânica empurram leitura de descida abaixo da margem segura.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity e industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-A estrela está presente. Ela só não consegue te seguir para baixo.
+A star esta presente. Ela simplesmente nao pode follow you down.
 
 ## Field Note
 
-Uma estrela real basta. O oceano faz o resto.
+Uma real star basta. O ocean faz o resto.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/pt_BR. -->

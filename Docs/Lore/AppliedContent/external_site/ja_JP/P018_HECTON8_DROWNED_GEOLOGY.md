@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "沈んだ地質"
+title: "水没地質"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 沈んだ地質
+# 水没地質
 
-沈んだ地質は、任意の門ではなく地形、塩水、熱、圧力で再プレイ性を作る。
+水没地質は安全経路を期限付きにする。嵐、シルト漂流、塩水移動、サルベージ損傷が昨日の道を罠に変える。
 
 ## Scanner
 
-棚、峡谷、塩水階段、噴出口。月はレベルゲートではなく地形で降下を教える。
+層状棚、峡谷漏斗、塩水階段、噴出口痕、シルト露出を検出。地形は背景ではなく圧力経路だ。
 
 ## Terminal
 
-深度予測: 棚崩落、峡谷流路、塩水密度幕、熱プルーム、深淵シルト。
+深度予測: 棚崩落、サービス峡谷の集中流、塩水密度カーテン、熱プルーム、深海シルト露出。嵐の増水またはサルベージ切断後、経路信頼度は低下。
 
 ## Audio
 
@@ -35,6 +35,6 @@ localization_flags: 1
 
 ## Field Note
 
-最も安全な道は通路ではなく読解だ。
+最も安全な道は通路ではなく読み取りだ。
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/ja_JP. -->

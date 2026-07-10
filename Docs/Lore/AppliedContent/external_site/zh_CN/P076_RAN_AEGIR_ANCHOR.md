@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Ran / Aegir锚点
 
-Ran / Aegir锚点固定HECTON-8的视觉味道：上方是硬科幻的昏暗日光，下方是压力和债务。
+Ran / Aegir锚点奠定HECTON-8的visual logic：上方是dimmer hard-sci-fi sunlight，下方是depth、weather、turbidity、pressure和debt。
 
 ## Scanner
 
-K级恒星板。Ran正常燃烧。Aegir比Sol昏暗，但这里的黑暗来自深度、天气和债务。
+K-class star plate。Ran正常燃烧；这里的deep并非supernatural，只是太深，压在weather、water和debt之下。
 
 ## Terminal
 
-RAN NAV ANCHOR // 橙矮星照明支持表面作业。风暴散射、食几何和海水浑浊会把降下可读性压到安全边界以下。
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows。Storm scatter、eclipse geometry、mineral turbidity和industrial silt reduce descent visibility below contract safety margin。
 
 ## Audio
 
-恒星存在。它只是无法跟着你下去。
+star在那里。它只是无法follow you down。
 
 ## Field Note
 
-一颗真实恒星已经足够。剩下的由海洋完成。
+一颗real star已经足够。剩下的交给ocean。
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/zh_CN. -->

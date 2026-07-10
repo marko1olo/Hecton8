@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Límite de coste de receta de escape"
+title: "Fila de coste de receta de ascenso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Límite de coste de receta de escape
+# Fila de coste de receta de ascenso
 
-Salir de HECTON-8 es primero un problema de reparación: señal, sello, guía, energía de ascenso, apretón legal y custodia de payload. La tabla lleva costes exactos; el lore lleva por qué cada coste tiene dientes.
+Salir de HECTON-8 empieza como reparación y termina como papeleo con masa adjunta. Una tripulación debe reconstruir relé, sello, guía, energía de ascenso y apretón de cuarentena antes de que un transportista exponga una ventana de recuperación. La autoridad de carga útil importa porque prueba, blue debt o acceso Atlas pueden cambiar el receptor al otro lado.
 
 ## Scanner
 
-La fila de receta ata clase de componente, tier de presión, prueba de ruta y estado de autoridad.
+Fila de ascenso bloqueada: prueba de relé, grado de sello, núcleo de guía, carga de ascenso, apretón legal y autoridad de carga útil no están completos.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: los costes cualificados deben nombrar relé, sello, guía, energía de ascenso, apretón legal, autoridad de payload y riesgo de receptor. El camino hacia arriba tiene piezas; las piezas tienen dueños.
+ESQUEMA DE COSTE DE ASCENSO / interfaz de recuperación de Black Keel: no publicar presupuesto sin relé acústico, sello de presión, núcleo de sincronía de guía, carga energética de ascenso, apretón de cuarentena/legal, autoridad de carga útil, riesgo de receptor y ventana de ruta. El paquete no sube solo con piezas.
 
 ## Audio
 
-El camino hacia arriba tiene piezas. Las piezas tienen dueños.
+Interfaz de recuperación: relé, sello, tiempo, carga, apretón. Si falta uno, el paquete sigue mojado.
 
 ## Field Note
 
-Las bandas de presión vienen de reglas de contención; los costes exactos pertenecen a tablas de receta.
+No gastes el núcleo de guía antes de despejar el apretón. Una carga de ascenso funcional con el receptor equivocado es un camino rápido a custodia.
 
 <!-- External Site; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/es_ES. -->

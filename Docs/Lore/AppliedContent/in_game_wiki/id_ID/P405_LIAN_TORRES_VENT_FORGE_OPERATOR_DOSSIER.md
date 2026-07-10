@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, operator tempa ventilasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, operator tempa ventilasi
 
-ID LOC HOLD: Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres mengoperasikan tempa ventilasi tempat panas HECTON-8 menjadi bagian yang cukup kecil untuk dibawa dan cukup berbahaya untuk menanggung nama. Dosiernya terdiri dari sarung hangus, timer siklus, baki tolak, kupon kaca tekanan, dan cincin segel yang digores tanda batch. Baki itu paling penting: ia membuktikan bagian rusak bukan limbah sampai mengajari batas tekanan berikutnya cara bertahan. Torres mengubah lore sumber daya menjadi lore kerja. Kategori salvage dimulai di sini sebagai luka bakar, penundaan, kegagalan berlabel, dan keputusan menyimpan bukti apa yang retak.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dosier: Lian Torres. Sarung panas, timer siklus, dan baki tolak cocok dengan batch kaca tekanan yang sama.
 
 ## Terminal
 
-ID LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+TEMPA VENTILASI V-9 / TORRES, LIAN: baki tolak menyimpan cincin segel retak, kaca tekanan keruh, dan tiga kupon panas berlebih bertanda. Catatan batch: kegagalan mengajar segel berikutnya hanya jika kegagalan tetap diberi label.
 
 ## Audio
 
-ID LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres menyimpan bagian buruk. Di tempat tempa, lantai bersih berarti seseorang membuang pelajaran.
 
 ## Field Note
 
-ID LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Gunakan Torres dekat prop tempa ventilasi, resep kaca tekanan, cincin segel tolak, dan meja upgrade yang membutuhkan sejarah terlihat dari bagian gagal.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/id_ID. -->

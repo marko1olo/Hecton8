@@ -9,34 +9,32 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Propulsion Syllabus
 spoiler_tier: 1
-title: "Doorsnede van de bijna-lichtsnelheid aandrijfstack"
+title: "Doorsnede van Nearlight Drive Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Doorsnede van de bijna-lichtsnelheid aandrijfstack
+# Doorsnede van Nearlight Drive Stack
 
-De doorsnede van Barnard Yards is bot omdat hij voor contractwerkers is gemaakt, niet voor passagiers. Een Atlas-romp begint zijn reis niet wanneer de boordmotoren ontsteken. Hij begint wanneer een bundelarray energie aan een zeil uitgeeft, wanneer een pelletbaan wordt vrijgegeven, wanneer gevangen massa de fusie-elektrische keel bereikt en wanneer het schermlogboek accepteert dat stof jarenlang dure bescherming wegschuurt.
-
-Het midden van de reis is een warmteprobleem met slapende mensen erin. Radiatorribben, cryobaaien, machinewerkplaatsen, boorwiegen en drukgeclassificeerde lading vechten om dezelfde marges. Aankomst is geen overwinningsbrand; het is een andere contractmachine. Magnetzeilspoelen, aerobrake-huiden, ontvangervensters en bewaarsoftware bepalen wie het lokale remslot mag uitgeven. Daarom kan Black Keel boven Aegir een bergingspas prijzen zonder redding te worden. Een bijna-lichtsnelheid carrier beweegt wanneer route-infrastructuur, warmtebudget, remrechten en eigendom op één lijn staan. Een vastzittende Marauder is maar één regel zolang de route niet gedwongen wordt hem mee te tellen.
+Een nearlight-schip is geen magische fakkel op een romp. De drive stack is een hele route die fysiek werd: beam arrays besteden vermogen voor vertrek, pellet lanes leggen vangbare massa waar het schip kan drinken, fusion-electric throats maken brandstof tot elektriciteit en warmte, schilden accepteren stofverlies, radiatoren gooien jaren warmte weg, en remhardware telt evenveel als versnelling.
 
 ## Scanner
 
-AANDRIJFSTACK-DOORSNEDE // Serviceplaat van Barnard Yards. Bundelzeiljuk, pelletvanger, fusie-elektrische keel, schaduwscherm, radiatorribben, magnetzeilspoel, aerobrake-huid en bewaarmeter dragen hetzelfde gestempelde routenummer.
+DRIVE STACK-DOORSNEDE // Barnard Yards-serviceplaat: beam-sail yoke, pellet catcher, fusion-electric throat, shadow shield, radiatorribben, magsail spool, aerobrake skin en custody meter delen één routenummer.
 
 ## Terminal
 
-ATLAS-TRANSITSTACK // Externe bundelarrays leveren de vertrekduw. Pelletbanen voeren gevangen massa naar de fusie-elektrische keel. Schermijs en koolstof vangen stofverlies op. Radiatorribben betalen jaren warmte af. Magnetzeilen, aerobrake-huiden en ontvangerrechten bepalen of de lading mag stoppen.
+ATLAS TRANSIT STACK // Vertrekduw: externe beam array. Kruisvoeding: pellet lane capture. Omzetting: fusion-electric throat. Verliescontrole: schildijs, koolstof, radiatorribben. Aankomstbevoegdheid: magsail spool, aerobrake skin, ontvangslot, custody ledger.
 
 ## Audio
 
-Noem die kegel niet de motor. De motor is de route, de restwarmte en degene die het remslot bezit.
+Noem de kegel niet langer de motor. De motor is de route, de afvalwarmte en wie het remslot bezit.
 
 ## Field Note
 
-Plaat zet warmte vóór stuwkracht. Goede plaat. Goedkope bemanningen sterven aan de radiatormarge voordat ze over snelheid kunnen opscheppen.
+De plaat zet warmte vóór stuwkracht. Goede plaat. Goedkope crews sterven aan de radiatormarge voordat iemand over snelheid opschept.
 
 <!-- In-Game Wiki; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/nl_NL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kotwica Ran / Aegir
 
-Kotwica Ran / Aegir ustala smak wizualny HECTON-8: twarde SF ze słabszym światłem u góry, wrogim ciśnieniem i długiem na dole.
+Ran / Aegir Anchor osadza visual logic HECTON-8: dimmer hard-sci-fi sunlight above, potem depth, weather, turbidity, pressure i debt below.
 
 ## Scanner
 
-Tablica gwiazdy klasy K. Ran pali się normalnie. Aegir jest ciemniejszy niż Sol, ale mrok tutaj pochodzi z głębokości, pogody i długu.
+K-class star plate. Ran pali sie normalnie; deep tutaj nie jest supernatural, tylko zbyt daleko pod weather, water i debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // Światło pomarańczowego karła wspiera prace powierzchniowe. Rozpraszanie burzy, geometria zaćmień i mętność oceanu spychają czytelność zejścia poniżej marginesu bezpieczeństwa.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity i industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-Gwiazda jest obecna. Po prostu nie może zejść za tobą.
+Star jest obecna. Po prostu nie moze follow you down.
 
 ## Field Note
 
-Prawdziwa gwiazda wystarczy. Resztę robi ocean.
+Real star wystarczy. Reszte robi ocean.
 
 <!-- External Site; generated from P076_RAN_AEGIR_ANCHOR/pl_PL. -->

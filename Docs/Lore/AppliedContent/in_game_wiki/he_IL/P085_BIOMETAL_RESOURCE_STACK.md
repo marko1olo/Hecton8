@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "מערך משאבי ביומטל"
+title: "מערום משאבי ביומטאל"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מערך משאבי ביומטל
+# מערום משאבי ביומטאל
 
-מערך המשאבים מונע מ-HECTON-8 להצטמצם לחומר קסום אחד. Xenon-Omega חשוב, אבל לירח יש גם מתכות, מלחים, כימיית פתחים, ceramics לחץ, biofibers, photoproteins, salvage וביומטל ששונה בידי Atlas.
+מערום המשאבים מונע מ-HECTON-8 להתכווץ לחומר קסם אחד. החוב הכחול חשוב, אבל הירח משלם גם במתכות גופריתיות, מלחים, גזים אצילים, קרמיקה, זרזים, ביו-סיבים, פוטופרוטאינים, חומרת salvage וביומטאל ששונה בידי Atlas. האלימות מובנת כי הערך מפוזר: הרבה סיבות קטנות לחתוך, לסמן, להסתיר, לחזור ולשקר.
 
 ## Scanner
 
-לוח מערך משאבים. blue debt בפסגה, אבל שאר הירח עדיין רווחי מספיק כדי להרוג בשבילו.
+לוח משאבים שוחזר. החוב הכחול בפסגה. שאר הירח עדיין רווחי מספיק בשביל להרוג עליו.
 
 ## Terminal
 
-HECTON-8 RESOURCE STACK: מתכות סולפיד, מלחים, כיסי גז אציל, ceramics לחץ, vent catalysts, biofibers, photoproteins, salvage hardware, ביומטל ששונה בידי Atlas ו-XO continuity substrate.
+מערום HECTON-8: מתכות גופריתיות, מלחים, כיסי גז אציל, קרמיקות לחץ, זרזי פתחים, ביו-סיבים, פוטופרוטאינים, חומרת salvage, ביומטאל ששונה בידי Atlas, מצע רציפות XO.
 
 ## Audio
 
-עפרת נס אחת תהיה עצלנות. ל-HECTON-8 יש כלכלה שלמה של פצעי לחץ.
+עפרת פלא אחת תהיה עצלנות. ל-HECTON-8 יש כלכלה שלמה של פצעי לחץ.
 
 ## Field Note
 
-אם כל דגימה אומרת Xenon-Omega, העולם נעשה טיפש. ספור גם את הסיבות האחרות.
+אם כל דגימה אומרת Xenon-Omega, העולם נעשה שטוח. ספור גם את הסיבות הקטנות שבגללן אנשים מתו.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/he_IL. -->

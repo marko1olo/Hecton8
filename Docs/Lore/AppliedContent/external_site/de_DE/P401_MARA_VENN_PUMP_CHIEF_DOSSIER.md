@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, Pumpenleiterin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, Pumpenleiterin
 
-DE LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Mara Venn verankert HECTON-8 durch Verfahren statt durch Reden. Die Belege aus dem Pumpenraum machen sie nicht zur Statue; sie zeigen, wie Überleben gezählt, bestritten und von einer Stelle offen gehalten wurde, während Deep Reach den Annex schon als Haftung benannte.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier: Mara Venn. Markenrand, Takttafel und korrigiertes Wasserbuch verweisen alle auf Pumpenraum P-63.
 
 ## Terminal
 
-DE LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+PUMPENRAUM P-63 / VENN, MARA: Bypassgriff durch Handschuhschichten blank poliert; Takttafel neben Einlassverlustmarken fixiert. Die Korrektur im Buch macht fehlendes Wasser von Kulissenleckage zu Maschinenlast.
 
 ## Audio
 
-DE LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn hinterließ keinen Abschied. Sie hinterließ einen Takt auf der Pumpentafel, damit verängstigte Menschen den nächsten Atemzug zählen konnten.
 
 ## Field Note
 
-DE LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Venn-Belege bei Pumpentakt-Rätseln, Wasserbüchern und Bypassgriffen platzieren. Ihre Objekte sollen Infrastruktur wie Atmung hörbar machen.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/de_DE. -->

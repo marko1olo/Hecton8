@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 충돌로 갈라진 달
 
-HECTON-8은 극적인 효과를 위해 붙잡힌 떠돌이 천체가 아니었다. Aegir의 잔해대에서 뭉쳐 층상 해양 달로 식었고, 이후 세계를 지우지 않으면서 지각을 휘게 한 사선 충돌을 받았다. 충돌은 선반을 들어 올리고 분지를 가라앉히고, 뜨거운 화학이 소금물 속을 흐르는 긴 단층 사다리를 열었다. 조석 공명은 궤도 고정 뒤에도 상처를 살려 두었다. 그래서 바다에는 읽을 수 있는 흉터가 있다. 염수 협곡, 분출구 대장간, 압력유리 맥, 드러난 능선, 오래된 바닥으로 내려가는 드문 창이다.
+Collision-Fractured Moon은 HECTON-8을 local Aegir body로 정의한다. ocean routes, vents, brine basins, salvage windows는 impact scars와 tidal heat에서 온다.
+
+## Scanner
+
+crust sample. HECTON-8은 Aegir's debris belt에서 formed했고, 뒤이어 ocean이 기억할 만큼 넓은 oblique impact를 받았다.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. 그리고 무언가 sea에게 map을 줄 만큼 hard하게 때렸다.
+
+## Field Note
+
+captured-moon story는 너무 깨끗하다. 이곳은 born local, broken local, billed local이다.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/ko_KR. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Door botsing gebroken maan"
+title: "Door Botsing Gebroken Maan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Door botsing gebroken maan
+# Door Botsing Gebroken Maan
 
-HECTON-8 was geen zwervend lichaam dat voor drama werd gevangen. Hij groeide in Aegirs eigen puingordel, koelde af tot een gelaagde oceaanmaan en kreeg daarna een schuine inslag die de korst vervormde zonder de wereld te wissen. De klap tilde platen op, liet bekkens zinken en opende lange breukladders waar hete chemie nog door zout water trekt. Getijdenresonantie hield die wonden actief na orbitale vergrendeling. Daarom heeft de oceaan leesbare littekens: pekelcanyons, bronforges, drukglasaders, open ruggen en zeldzame vensters naar oude bodem.
+Collision-Fractured Moon definieert HECTON-8 als local Aegir body, waar ocean routes, vents, brine basins en salvage windows voortkomen uit impact scars en tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, kreeg daarna een oblique impact breed genoeg voor de ocean om te onthouden.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Daarna raakte iets hard genoeg om give the sea a map.
+
+## Field Note
+
+De captured-moon story is te schoon. Deze plek was born local, broken local en billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/nl_NL. -->

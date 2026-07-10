@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "HE LOC HOLD: Juno Kade/Relay"
+title: "ג'ונו קייד, נוטריון ממסר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# HE LOC HOLD: Juno Kade/Relay
+# ג'ונו קייד, נוטריון ממסר
 
-HE LOC HOLD: Juno Kade's dossier ties HECTON-8 law to physical relay objects. The seal, tray and packet ladder show how testimony survived when messages took too long to rescue anyone.
+ג'ונו קייד עבד בשולחן הממסר שבו חוק HECTON-8 פגש את מהירות האור. החותם שלו, סולם החבילות, סרט העד ושריטות המגש מציגים עבודה שנבנתה לעיכוב: להפוך עובדה לחפץ, לסמן מי נגע בה, ולשמור עליה שלמה עד שנשא או מקבל יקבל משמורת. הראיה אינה מבטיחה הצלה. היא מסבירה למה עדות עדיין חשובה במערכת שבה כל הודעה מגיעה אחרי שהגוף התקרר.
 
 ## Scanner
 
-HE LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+תיק: ג'ונו קייד. פני החותם, מגש החבילות וסרט העד נושאים את אותו סימן משמורת של חלון מאוחר.
 
 ## Terminal
 
-HE LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+חצר ממסר A-17 / KADE, JUNO: חבילות יוצאות נחתמו אחרי כל חלון נשא. לחץ החותם, אבק המגש וסרט העד מאשרים משמורת גם כשזמן התגובה ארוך מזמן חילוץ.
 
 ## Audio
 
-HE LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+קייד אישר עובדות שיגיעו מאוחר מדי כדי להציל מישהו, ובכל זאת היו חייבות לשרוד את המסע.
 
 ## Field Note
 
-HE LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+להשתמש בקייד ליד שעוני חלונות תקשורת, מגשי חבילות, חותמות נוטריון וגילויי ראיות מאוחרים. התיק שלו צריך לגרום למרחק להרגיש משפטי, לא מופשט.
 
 <!-- In-Game Wiki; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/he_IL. -->

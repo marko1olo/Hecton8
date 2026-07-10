@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Deriva de cola de relé"
+title: "Deriva de relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Deriva de cola de relé
+# Deriva de relay queue
 
-La comunicación demorada es peligrosa porque puede seguir siendo exacta en el momento equivocado. Una advertencia del portador puede describir una válvula real, una fuga real y una ruta real que ya cambió bajo presión. El jugador compara edad del paquete con evidencia local antes de obedecer.
+Relay queue drift es la forma mas mortal de honestidad en HECTON-8. Un delayed carrier packet puede describir una real valve, una real safe door, un real low-current corridor y una real leak que ya se movio. La order no es falsa; pertenece a una sala cambiada por pressure, flooding, silt, heat o collapse. La buena field practice no es desobediencia por si misma. Es comparar packet age con wet paint, fresh salt, door strain, pump sound y la direccion hacia la que quiere viajar loose debris.
 
 ## Scanner
 
-El sello de relé es más viejo que la fuga que nombra; la instrucción era cierta para una sala que ya no existe.
+Relay stamp mas viejo que la leak que nombra. La instruction era cierta para una room que ya no existe.
 
 ## Terminal
 
-DERIVA DE COLA: edad del paquete supera validez de ruta. Evidencia local supera instrucción del portador hasta una ventana de relé nueva.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction hasta que se abra fresh relay window. Treat delayed route orders as archival salvo que pressure, door state y waterline coincidan.
 
 ## Audio
 
-El mensaje es correcto. Ese es el problema.
+El message es correcto. Ese es el problema.
 
 ## Field Note
 
-Una verdad tardía todavía puede matar.
+Una truth tardia todavia puede matar.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/es_ES. -->

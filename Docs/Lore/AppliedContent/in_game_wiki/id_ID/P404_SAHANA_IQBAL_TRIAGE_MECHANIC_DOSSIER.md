@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "ID LOC HOLD: Sahana Iqbal/Triage"
+title: "Sahana Iqbal, mekanik triase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ID LOC HOLD: Sahana Iqbal/Triage
+# Sahana Iqbal, mekanik triase
 
-ID LOC HOLD: Sahana Iqbal's dossier binds the evacuation queue to repair triage. Her objects show that people and machines entered the same waiting logic under quarantine language.
+Sahana Iqbal memperbaiki mesin di ruang tempat pekerja terluka menunggu nama mereka naik di rel. Dosiernya mengikat catatan torsi dengan tag ranjang, kartrid scrubber, slip cadangan oksigen, dan pita karantina oranye. Benda-benda itu membuat penundaan Deep Reach menjadi fisik: papan yang sama membatasi tegangan baut dan memutuskan tubuh, katup, atau filter mana yang mendapat perhatian sebelum tekanan turun lagi. Pekerjaan Iqbal bukan belas kasihan besar. Itu tangan yang memilih urutan paling tidak mematikan saat urutan resmi terus berubah.
 
 ## Scanner
 
-ID LOC HOLD: Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dosier: Sahana Iqbal. Papan torsi, tag ranjang, dan pita karantina berbagi satu urutan tunggu.
 
 ## Terminal
 
-ID LOC HOLD: SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TELUK TRIASE C-2 / IQBAL, SAHANA: batas torsi ditempel di samping tag cadangan oksigen. Alat, ranjang, dan kartrid scrubber antre di rel yang sama. Bahasa karantina memindahkan garis jangkau lagi.
 
 ## Audio
 
-ID LOC HOLD: Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal memperbaiki apa yang bisa ia jangkau. Papan terus memutuskan apa yang dianggap terjangkau.
 
 ## Field Note
 
-ID LOC HOLD: Use in evacuation queue terminal and quarantine repair loops.
+Gunakan Iqbal dalam loop perbaikan karantina, koridor medis, antrean oksigen, dan antarmuka tempat pilihan mesin terlihat menghabiskan waktu manusia.
 
 <!-- In-Game Wiki; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/id_ID. -->

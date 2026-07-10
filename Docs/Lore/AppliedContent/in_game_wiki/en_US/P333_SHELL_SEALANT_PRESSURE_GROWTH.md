@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Shell Sealant Pressure Growth
 
-Shell sealant pressure growth is the cleanest Atlas mistake: the repair works. Calcium-silicate layers and biopolymer resin close a fracture, hold static pressure, and save a room that should have drowned. The same growth can bury labels, handles, chalk arrows, scrape marks, and the last human route through the station.
+Shell sealant growth can save a room and block a person in the same hour. Calcium-silicate layers and resin close a fracture, lower the leak rate, and give Atlas a measurable repair. The growth does not check whether it has covered a route arrow, a pressure label, or the only manual wheel.
 
 ## Scanner
 
-Layered sealant closes the fracture and buries worker route marks under white shell.
+White calcium shell has closed the fracture and buried route arrows along the hatch edge. Cutting may reopen the leak.
 
 ## Terminal
 
-REPAIR CONFLICT: leak rate reduced, pressure boundary improved, egress markings occluded. Cutting shell may reopen flood path.
+REPAIR CONFLICT / DOOR S-9: leak rate reduced, pressure boundary improved, egress marks occluded, manual wheel 62 percent buried. Cutter authorization requires staged flood path.
 
 ## Audio
 
-The room survived. The way out did not.
+Wall holds. Hatch wheel is under ten centimeters of shell.
 
 ## Field Note
 
-Best used on doors, crawl routes, and pressure choices where repair and harm are the same object.
+Before you cut white shell off a hatch, find where the water went last time. The label may be buried for a reason.
 
 <!-- In-Game Wiki; generated from P333_SHELL_SEALANT_PRESSURE_GROWTH/en_US. -->

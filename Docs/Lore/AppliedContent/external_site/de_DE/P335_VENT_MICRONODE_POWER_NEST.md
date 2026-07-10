@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Vent-Mikroknoten-Energienest"
+title: "Energienest aus Vent-Mikroknoten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vent-Mikroknoten-Energienest
+# Energienest aus Vent-Mikroknoten
 
-Vent-Mikroknoten-Energienester sind der langsame Herzschlag des tiefen Reparaturnetzes. Nahe den Vents bietet der Ozean Wärmegradienten, Mineralfluss, Druckvibration und chemisches Ungleichgewicht. Deep Reach nutzte diese Gradienten für Instrumente und Notladung. Atlas behielt die Gewohnheit, nachdem das saubere Netz ausfiel.
+Ein Vent-Mikroknoten hält Atlas klein und hartnäckig. Er braucht keine perfekte Zentralmaschine, um Probleme zu machen. Lokale Leistung, lokaler Schaden und lokale Reparaturregeln reichen, damit ein Korridor sich zwischen zwei Besuchen ändert.
 
-Ein Mikroknoten macht Atlas nicht allsehend. Diese Grenze ist wichtig. Er kann einen nahen Film pulsen, eine Dichtschicht härten, Ladung in ein Drohnennest tröpfeln oder eine lokale Entscheidungsaufzeichnung in beschädigtem Substrat erhalten. Tausende solcher Knoten lassen den Abgrund organisiert wirken, ohne ihn sicher zu machen. Der Spieler kämpft am Boden nicht gegen einen Gott. Er bewegt sich durch eine Stadt kleiner Reparaturen, die vergessen haben, wozu Menschen da waren.
+## Scanner
+
+Keramischer Knotenhaufen im Ventkehlgang erntet Wärmegradient. Drohnenladespuren und frische Dichtstoffreaktion in der Nähe.
+
+## Terminal
+
+ATLAS-LOKALKRAFTKNOTEN / VENT V-3: Wärmegradient speist Mikrozellenstapel, weckt Biofilm- und Dichtstoffschleifen im Umkreis von 40 m, Drohnenladeintervall unregelmäßig. Keine zentrale Befehlsverriegelung.
+
+## Audio
+
+Wärme, Mineralkehle, Knoten. Das reicht, damit Reparatur nach deinem Durchgang aufwacht.
+
+## Field Note
+
+Wenn der Ventknoten warm ist, nimm an, dass der Raum hinter dir aufwachen kann. Markier den Ausgang, bevor du die Mineralkehle berührst.
 
 <!-- External Site; generated from P335_VENT_MICRONODE_POWER_NEST/de_DE. -->

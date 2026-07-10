@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Орбита HECTON-8 / геометрия прилива"
+title: "Орбита / приливная геометрия HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Орбита HECTON-8 / геометрия прилива
+# Орбита / приливная геометрия HECTON-8
 
-Орбита HECTON-8 делает Great Tide убедимым до того, как он становится политикой. Резонанс тянул океан. Ледовый стресс и штормовой нагон грузили шельфы. Промышленное тепло и заблокированный дренаж заставили системы колонии ударить в неверный час.
-
-Преступление не в том, что Deep Reach изобрела физику. Преступление в том, что она строила эвакуационную математику вокруг Atlas continuity, застрахованных грузов и классов труда, а потом назвала мертвых допустимой ошибкой прогноза.
+Орбита HECTON-8 делает Great Tide believable раньше, чем он становится political. Aegir pulled. Ocean answered. Ice shelves flexed, storm surge stacked water там, где colony math хотела margins, а industrial heat заставил sealed drainage fight the sea at the wrong hour. Crime не в том, что Deep Reach invented physics. Crime в том, что evacuation math строилась вокруг Atlas continuity, insured payloads, labor classes и claim loss, а dead потом filed as forecast error.
 
 ## Scanner
 
-МОДЕЛЬ ПРИЛИВНОЙ ГЕОМЕТРИИ // Резонанс, ледовый стресс, штормовой нагон и тепловой сброс превысили прогноз эвакуации. Флаги Atlas continuity перекрыли приоритет отхода.
+TIDE GEOMETRY MODEL: resonance, ice stress, storm surge и heat discharge exceeded evacuation forecast; Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-ЦЕПЬ GREAT TIDE // Орбитальное принуждение усилило нагрузку океана. Искусственный тепловой сброс и запертый дренаж превратили приливное событие в отказ колонии.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure, storm surge, artificial heat discharge и sealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-Физика открыла дверь. Deep Reach решила, кто выйдет через нее.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-Луна может утопить колонию без ненависти.
+Moon может drown a colony без ненависти.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ru_RU. -->

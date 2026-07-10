@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "مدار HECTON-8 / هندسة المد"
+title: "مدار / هندسة مد HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# مدار HECTON-8 / هندسة المد
+# مدار / هندسة مد HECTON-8
 
-يجعل مدار HECTON-8 حدث Great Tide قابلاً للتصديق قبل أن يصبح سياسياً. شد الرنين المحيط. حمّل إجهاد الجليد وموجة العاصفة الرفوف. جعلت الحرارة الصناعية والتصريف المسدود أنظمة المستعمرة تدفع في الساعة الخطأ.
-
-ليست الجريمة أن Deep Reach اخترعت الفيزياء. الجريمة أنها بنت حساب الإخلاء حول Atlas continuity والحمولات المؤمنة وطبقات العمل، ثم سمت الموتى خطأ توقع مقبولاً.
+يجعل orbit الخاص بHECTON-8 حادثة Great Tide believable قبل أن تصبح political. Aegir pulled. The ocean answered. Ice shelves flexed، وstorm surge stacked water حيث أرادت colony math هوامش، وجعل industrial heat نظام sealed drainage fight the sea at the wrong hour. ليست الجريمة أن Deep Reach invented physics. الجريمة أن evacuation math بنيت حول Atlas continuity وinsured payloads وlabor classes وclaim loss، ثم جرى filed dead as forecast error.
 
 ## Scanner
 
-نموذج هندسة المد // الرنين وإجهاد الجليد وموجة العاصفة وتصريف الحرارة تجاوزت توقع الإخلاء. أعلام Atlas continuity غلبت أولوية الانسحاب.
+TIDE GEOMETRY MODEL: resonance وice stress وstorm surge وheat discharge exceeded evacuation forecast؛ Atlas continuity flags overrode retreat priority.
 
 ## Terminal
 
-سلسلة GREAT TIDE // عزز الإكراه المداري حمل المحيط. تصريف الحرارة الصناعي والتصريف المختوم حولا حدث المد إلى فشل مستعمرة.
+GREAT TIDE CHAIN: orbital forcing amplified ocean load. Ice flexure وstorm surge وartificial heat discharge وsealed drainage converted a tide event into colony failure. Evacuation priority reweighted by continuity and payload custody.
 
 ## Audio
 
-فتحت الفيزياء الباب. Deep Reach قررت من يخرج عبره.
+Physics opened the door. Deep Reach decided who got to leave through it.
 
 ## Field Note
 
-يمكن لقمر أن يغرق مستعمرة دون أن يكرهها.
+يمكن لmoon أن drown a colony دون كراهية.
 
 <!-- In-Game Wiki; generated from P079_HECTON8_ORBIT_TIDE_GEOMETRY/ar_SA. -->

@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Reclamación inicial del Marauder"
+title: "Reclamación inicial del Merodeador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Reclamación inicial del Marauder
+# Reclamación inicial del Merodeador
 
-El registro inicial presenta al jugador como operador entrenado bajo presión de deuda. No es turista, heredero elegido ni vengador familiar; entiende bombas, sellos, formularios de ruta y abreviaturas Deep Reach antes de que los restos contradigan esos formularios. La primera hora sigue siendo práctica: sellar el bathydrop, restaurar presión, leer maquinaria dañada, recuperar carga y decidir qué líneas oficiales ya mienten.
+El primer registro de HECTON-8 no presenta a un turista ni a un superviviente elegido. Nombra a un operador formado bajo presión de deuda: alguien que ya lee abreviaturas de bomba, avisos de sello, etiquetas de evacuación y frases de responsabilidad de Deep Reach antes de que se abra la primera escotilla. El trabajo inicial es concreto. Parchear el batisalto. Confirmar presión. Escanear la plataforma P-63. Reiniciar maquinaria solo cuando la ruta de sellado tenga sentido. Recuperar carga si paga, y prueba si sobrevive al reloj de custodia.
 
 ## Scanner
 
-Registro público de claim. La ruta inicial identifica a un Marauder endeudado con pasado Deep Reach field-systems, un bathydrop dañado y una ventana de recuperación Black Keel sobre P-63.
+Registro público de reclamación. El archivo de gravamen Black Keel nombra a un antiguo especialista de sistemas de campo de Deep Reach, un batisalto dañado, la ruta P-63 y una ventana de custodia en cierre.
 
 ## Terminal
 
-NODO DE ARCHIVO PÚBLICO // RECLAMACIÓN INICIAL. Registro del contratista: antiguo especialista Deep Reach field-systems. Estado actual: Marauder bajo lien. Ruta: recovery claim Black Keel, descenso al shelf P-63, retorno de prueba y carga antes del cierre de custody window.
+NODO DE ARCHIVO PÚBLICO // BLACK KEEL CLAIM BK-P63-2190. Estado: Merodeador sujeto a gravamen. Autorización previa: sistemas de campo Deep Reach / infraestructura de evacuación. Entrega: masa de carga y prueba admisible antes de custodia local T+06:40.
 
 ## Audio
 
-No visitas HECTON-8. Vuelves a una burocracia que conoces demasiado bien.
+El contrato conoce tus viejas abreviaturas. Eso no equivale a decir la verdad.
 
 ## Field Note
 
-Nota de Marauder: el contrato conoce tu pasado. Eso no lo vuelve honesto.
+Nota de Merodeador: si un archivo de reclamación conoce tu nivel de autorización, lee las omisiones antes del pago.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/es_ES. -->

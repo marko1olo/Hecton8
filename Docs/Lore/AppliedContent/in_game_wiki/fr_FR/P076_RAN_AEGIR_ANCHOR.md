@@ -19,24 +19,22 @@ localization_flags: 1
 
 # Ancre Ran / Aegir
 
-Ran ancre le système Aegir comme une étoile normale de classe K, ni lampe morte ni source de ténèbres surnaturelles. HECTON-8 peut avoir des hauts-fonds lumineux parce que la lumière existe.
-
-L'horreur commence quand atmosphère, tempête, eau minérale, profondeur et limon industriel effacent cette lumière plus vite qu'un contrat de secours ne peut réagir. Au-dessus de l'eau, le système est astronomique. Sous l'eau, chaque lumen devient du temps loué.
+Ran ancre Aegir comme une K-class star ordinaire: vieille, orange, stable et indifferente. C'est important, car HECTON-8 n'est pas sombre par magic. Les shallows peuvent shine. Weather peut flasher blanc au-dessus de la sea. Un worker sur un surface raft pouvait encore lever les yeux et savoir qu'il y avait un sun. L'horror commence quand atmosphere, storm shear, mineral water, depth et industrial silt depensent cette light plus vite qu'un carrier ne peut facturer une rescue window. Above the water, astronomy is clean. Below it, every lumen becomes rented time.
 
 ## Scanner
 
-Plaque stellaire de classe K. Ran brûle normalement. Aegir est plus sombre que Sol, mais l'obscurité vient ici de la profondeur, de la météo et de la dette.
+K-class star plate. Ran brule normalement; le deep ici n'est pas supernatural, seulement trop loin sous weather, water et debt.
 
 ## Terminal
 
-RAN NAV ANCHOR // La lumière d'une naine orange permet le travail de surface. Dispersion de tempête, géométrie d'éclipse et turbidité océanique poussent la visibilité de descente sous la marge sûre.
+RAN NAV ANCHOR: orange-dwarf illumination supports surface work and photic shallows. Storm scatter, eclipse geometry, mineral turbidity et industrial silt reduce descent visibility below contract safety margin.
 
 ## Audio
 
-L'étoile est présente. Elle ne peut simplement pas te suivre en bas.
+La star est presente. Elle ne peut simplement pas follow you down.
 
 ## Field Note
 
-Une vraie étoile suffit. L'océan fait le reste.
+Une real star suffit. L'ocean fait le reste.
 
 <!-- In-Game Wiki; generated from P076_RAN_AEGIR_ANCHOR/fr_FR. -->

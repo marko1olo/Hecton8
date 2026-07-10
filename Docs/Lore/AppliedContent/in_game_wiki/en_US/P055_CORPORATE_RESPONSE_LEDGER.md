@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Corporate Response Ledger
 
-The ledger is how Black Keel speaks when nobody is improvising. It can acknowledge danger, open a queue, preserve a claim, and still leave the operator waiting behind asset rules. Players should read response ledgers as both useful signals and hostile paperwork made executable.
+The corporate response ledger is how Black Keel speaks when nobody is improvising. It can acknowledge distress instantly, open a route queue, preserve a claim, demand sample custody, log hull risk, and still leave a living operator waiting behind asset rules. The ledger is valuable because it exposes what the system knows. It is hostile because knowing is not the same as acting. On HECTON-8, the first reply is often proof that the machine heard everything and promised almost nothing.
 
 ## Scanner
 
-Every reply arrives in contract language: asset custody, liability locks, sample route, hull risk, then operator recovery.
+Every reply arrives in contract language: asset custody, liability lock, sample route, hull risk, then operator recovery.
 
 ## Terminal
 
-RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, and payment route.
+RESPONSE CLASS: asset-preservation. Operator recovery appended after sample custody, liability seal, hull audit, payment route, and evidence retention. Automated acknowledgement valid. Rescue priority unresolved.
 
 ## Audio
 

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Custody Keelmark Mutual
 
-Keelmark Mutual to powłoka insurance-custody, która pozwala Black Keel działać w Aegir bez żywego organu ratunkowego na miejscu. Na papierze to nie Deep Reach. W praktyce stary underwriting może być sterowany przez tego, kto posiada właściwy priority hook, bo każde ciało, narzędzie, próbka i zapieczętowana skrzynia siedzą już w harmonogramie ryzyka, zanim operator poprosi o pomoc.
+Keelmark Mutual to oslona insurance-custody stojaca za zachowaniem Black Keel. To nie Deep Reach w masce ani tajna rescue service. Keelmark istnieje po to, by claim tenders pozostawaly legalne, finansowane i ubezpieczone, gdy nikt w Aegirze nie moze odebrac zywego polaczenia. Dlatego jest zimniejszy niz zloczynca. Policy nie nienawidzi operatora; po prostu definiuje go jako debt, vessel risk, payload interface, quarantine exposure i possible witness. Gdy te kategorie juz istnieja, kazda pozniejsza prosba musi przez nie przejsc.
 
 ## Scanner
 
-Powłoka ubezpieczeniowa nienaruszona. Keelmark posiada lien, zanim posiada ciało.
+Znacznik underwriting nienaruszony. Keelmark nie potrzebuje zlej woli, kiedy lien juz ma zeby.
 
 ## Terminal
 
-KEELMARK MUTUAL: lien claim-tender aktywny. Dług operatora, ryzyko statku, payload custody i rezerwa kwarantanny zebrane pod zdalnym harmonogramem underwriting. Status distress nie zawiesza lien.
+KEELMARK MUTUAL: claim-tender lien active. Operator debt, vessel risk, payload custody, quarantine reserve i recovery proof spiete pod remote underwriting schedule. Distress status nie zawiesza lien ani custody order.
 
 ## Audio
 
-Polisa jest starsza niż twoje wezwanie pomocy.
+Policy jest starsza niz distress call. Miala wiecej czasu, zeby nauczyc sie trasy.
 
 ## Field Note
 
-Ubezpieczyciel nie jest ukrytym mózgiem. Jest gorszy: harmonogram, który nigdy nie musiał się troszczyć.
+Nie ma mastermind w ciemnym pokoju. Jest tylko schedule dostatecznie stary, by przezyc wine.
 
 <!-- In-Game Wiki; generated from P087_KEELMARK_MUTUAL_CUSTODY/pl_PL. -->

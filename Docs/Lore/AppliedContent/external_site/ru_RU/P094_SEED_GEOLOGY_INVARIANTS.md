@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Инварианты геологии сида"
+title: "Геологические инварианты съемки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Инварианты геологии сида
+# Геологические инварианты съемки
 
-Каждый заход на добычу в HECTON-8 может открыть другой путь через рану. Каньон может раскрыться раньше, кабельный риф может спрятать безопасный карман, bloom может вытолкнуть фауну на маршрут, который в прошлый раз был пустым, а цепочка улик может всплыть в новом порядке. Физика луны не перезапускается ради развлечения. Эгир остается главной звездой. HECTON-8 остается на своей орбитальной лестнице. Great Tide держит интервал. Глубинные пояса стоят в том же жестком порядке. Blue debt сохраняет поведение под давлением. Atlas остается привязан к самому глубокому бассейну.
+Survey Geology Invariants позволяют HECTON-8 иметь changing charts и route uncertainty, сохраняя fixed astronomy, depth order, Great Tide logic, blue-debt behavior и Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. Salvage chart может disagree with itself; moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+Later chart может bury evidence differently. Он не может rewrite gravity, tide или guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/ru_RU. -->

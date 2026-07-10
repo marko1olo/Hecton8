@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Faixas globais de profundidade oceanica"
+title: "Bandas Globais de Profundidade Oceanica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Faixas globais de profundidade oceanica
+# Bandas Globais de Profundidade Oceanica
 
-O oceano de HECTON-8 se le por faixas, nao por uma unica linha de fundo. A plataforma fotica ainda permite luz, destrocos, algas e pilotos descuidados. A plataforma industrial carrega recifes de cabos, gaiolas de tubos e velhos conveses de carga. Abaixo, escadas de salmoura entortam sonar e lastro. Campos abissais punem reparos. A bacia Atlas faz a pressao parecer jurisdicao.
+O ocean de HECTON-8 nao e one long fall to a bottom. E stack of laws. O photic shelf ainda permite light, algae, broken habitat skin e bad decisions corrigiveis. O industrial shelf e pipe cages, cable reef, loading decks e machines that answer late. Brine stairs bend sound and ballast ate uma route ser near and unreachable ao mesmo tempo. Abyssal machine fields punem repairs com cold patience. Atlas basin e mais fundo que danger; ali pressure becomes jurisdiction.
 
 ## Scanner
 
-Carta de profundidade. A primeira plataforma perdoa lastro ruim; agua mais baixa cobra cada erro em pressao, calor e silencio.
+Depth chart. The first shelf perdoa poor ballast; lower water cobra every mistake em pressure, heat, noise e silence.
 
 ## Terminal
 
-FAIXAS: 0-250 m plataforma fotica de resgate; 250-1200 m plataforma industrial e recife de cabos; 1200-2800 m escada/canion de salmoura; 2800-4300 m campo abissal de maquinas; 4300-5600 m bacia Atlas.
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
 
 ## Audio
 
-Cada cem metros tira um habito de voce.
+Every hundred meters takes one habit away.
 
 ## Field Note
 
-Profundidade em HECTON-8 e lei, clima, fronteira e fome usando o mesmo numero.
+Depth em HECTON-8 e law, weather, border e hunger usando o mesmo number.
 
 <!-- In-Game Wiki; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/pt_BR. -->

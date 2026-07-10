@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Biometal Resource Stack
 
-The resource stack prevents HECTON-8 from collapsing into one magic material. Xenon-Omega matters, but the moon also has metals, salts, vent chemistry, pressure ceramics, biofibers, photoproteins, salvage, and Atlas-altered biometal.
+The resource stack keeps HECTON-8 from collapsing into one magic material. Blue debt matters, but the moon also pays in sulfide metals, salts, noble gases, ceramics, catalysts, biofibers, photoproteins, salvage hardware, and Atlas-altered biometal. The violence makes sense because the value is distributed: many small reasons to cut, mark, hide, return, and lie.
 
 ## Scanner
 
-Resource stack board. Blue debt is the apex. The rest of the moon is still profitable enough to kill for.
+Resource board recovered. Blue debt sits at the top. The rest of the moon is still profitable enough to kill for.
 
 ## Terminal
 
-HECTON-8 RESOURCE STACK: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and XO continuity substrate.
+HECTON-8 STACK: sulfide metals, salts, noble-gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal, XO continuity substrate.
 
 ## Audio
 
@@ -35,6 +35,6 @@ One miracle ore would be lazy. HECTON-8 has a whole economy of pressure wounds.
 
 ## Field Note
 
-If every sample says Xenon-Omega, the world becomes stupid. Count the other reasons too.
+If every sample says Xenon-Omega, the world goes flat. Count the lesser reasons people died.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/en_US. -->

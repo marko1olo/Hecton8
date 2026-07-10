@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "PL LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, kartograf solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# PL LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, kartograf solanki
 
-PL LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Ren Okoye mapował warstwy solanki HECTON-8 jako robocze drogi, nie dekorację. Zachowany łupek, zabarwione koraliki gęstości, blizny na tablicy szpilek i ostemplowane ciśnieniowo karty tras pokazują kartografa poprawiającego oficjalne korytarze samą wodą jako świadkiem. Jego mapy wyjaśniają, czemu najbezpieczniejsze ścieżki kolonii często żyły poza tablicą zezwoleń: solanka poruszała się szybciej niż zgoda, a ludzie z narzędziami musieli ufać ostatniemu sondowaniu bardziej niż ostatniemu podpisowi.
 
 ## Scanner
 
-PL LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Akta: Ren Okoye. Koraliki gęstości, nacięcia łupka i blizny po sznurku opisują trasę, która przesunęła się przez noc.
 
 ## Terminal
 
-PL LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+BIURKO MAP SOLANKI / OKOYE, REN: bezpieczny prąd przesunął się 3,2 m na wschód po inwersji gęstości. Tablica zezwoleń nadal podaje wczorajszy korytarz. Znaki tras robotników zastępują trasę zarządu do następnego sondowania.
 
 ## Audio
 
-PL LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye rysował drogi w wodzie, która nie chciała zachować rysunku.
 
 ## Field Note
 
-PL LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Używać Okoye przy odkryciach tras solanki, nawigacji warstw gęstości i sprzecznościach tablicy zezwoleń. Jego dowody mają dawać konkretne powody, by nie ufać starym mapom.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/pl_PL. -->

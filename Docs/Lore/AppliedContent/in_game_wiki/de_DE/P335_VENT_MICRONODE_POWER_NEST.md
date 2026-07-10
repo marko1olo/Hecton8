@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vent-Mikroknoten-Energienest"
+title: "Energienest aus Vent-Mikroknoten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vent-Mikroknoten-Energienest
+# Energienest aus Vent-Mikroknoten
 
-Vent-Mikroknotennester erklären, warum Atlas nahe tiefer Maschinenfelder dichter wird, ohne allmächtig zu sein. Jeder Knoten erntet einen lokalen Gradienten: Wärme, Mineralchemie, Vibration und Druck. Ein einzelnes Nest kann die Kolonie nicht befehligen, aber es kann einen Patch wecken, eine Drohnennarbe speisen, ein Erinnerungsfragment erhalten oder eine schlechte Reparatur am Leben halten.
+Vent-Mikroknotennester erklären, warum Atlas-Reparatur in toten Räumen aktiv bleibt. Jeder Knoten erntet einen lokalen Gradienten: Wärme durch Keramik, Solenchemie über Mineraladern, Vibration durch die Ventwand. Ein einzelnes Nest kann HECTON-8 nicht befehligen. Es kann eine Türflickstelle, eine Drohnenwiege oder einen Biofilmstreifen wecken, nachdem der Spieler gegangen ist.
 
 ## Scanner
 
-Thermische Mikroknoten pulsieren in der Ventwand. Drohnenladespuren umgeben den Mineralhals.
+Keramischer Knotenhaufen im Ventkehlgang erntet Wärmegradient. Drohnenladespuren und frische Dichtstoffreaktion in der Nähe.
 
 ## Terminal
 
-ATLAS-ENERGIESPUR: Ventgradient speist lokalen Knoten, Knoten weckt Biofilm- und Dichtreaktion, Drohnenladeintervall unregelmäßig. Zentrale Befehlsgewissheit niedrig.
+ATLAS-LOKALKRAFTKNOTEN / VENT V-3: Wärmegradient speist Mikrozellenstapel, weckt Biofilm- und Dichtstoffschleifen im Umkreis von 40 m, Drohnenladeintervall unregelmäßig. Keine zentrale Befehlsverriegelung.
 
 ## Audio
 
-Hier unten hat sogar Wärme einen Arbeitsauftrag.
+Wärme, Mineralkehle, Knoten. Das reicht, damit Reparatur nach deinem Durchgang aufwacht.
 
 ## Field Note
 
-Bei Ventfeldern, factory-temple-Anmarsch und später Reparaturpersistenz nutzen.
+Wenn der Ventknoten warm ist, nimm an, dass der Raum hinter dir aufwachen kann. Markier den Ausgang, bevor du die Mineralkehle berührst.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/de_DE. -->

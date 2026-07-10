@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 광지연 권한
 
-HECTON-8에는 ansible도 궤도에서 내려오는 실시간 지휘 음성도 없다. 메시지는 빛의 속도로 이동한 뒤 버퍼 대기열, 폭풍 창, 릴레이 기하, 운반선 보관 규칙에서 시간을 더 잃는다. 플레이어는 모든 답장을 명령이 아니라 오래된 증거로 읽는다.
+HECTON-8에는 ansible도, 궤도에서 몸을 숙이는 다정한 목소리도, 10광년을 자비롭게 만들 방법도 없다. messages는 빛의 속도로 움직인 뒤 relay geometry, storm scatter, buffer law, Black Keel의 custody queues에서 더 많은 시간을 잃는다. transmission은 정직하면서도 따르기엔 너무 오래될 수 있다. 표면은 그 규칙을 일찍 가르친다. 모든 remote answer는 먼저 evidence이고, 다음이 instruction이며, comfort는 아니다. 벽과 물과 pressure가 message와 다르면 local world가 이긴다.
 
 ## Scanner
 
-릴레이 마스트 캐시: 호출은 깨끗하게 나갔지만 빛, 대기열 법, 폭풍 산란, Aegir 가시선 뒤에서 기다렸다.
+relay mast cache. call은 깨끗하게 떠났지만 light, queue law, storm scatter, Aegir line-of-sight 뒤에서 기다렸다.
 
 ## Terminal
 
-통신 권한: 단방향 지연 확인. 폭풍 산란 높음. 릴레이 대기열은 보관 우선순위 적용. 현지 생존 권한 활성.
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. fresh signal window가 override를 확인할 때까지 Local survival authority remains active.
 
 ## Audio
 
-답장은 오고 있다. 그것이 구조는 아니다.
+응답은 오고 있다. 그렇다고 rescue는 아니다.
 
 ## Field Note
 
-첫 비명을 검열한 사람은 없었다. 물리가 충분히 느리게 운반했고, 정책이 따라잡았다.
+첫 scream을 검열한 사람은 없었다. physics가 policy가 따라잡을 만큼 천천히 옮겼다.
 
 <!-- In-Game Wiki; generated from P051_LIGHT_DELAY_AUTHORITY/ko_KR. -->

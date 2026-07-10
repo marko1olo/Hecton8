@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ES LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, jefa de bombas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ES LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, jefa de bombas
 
-ES LOC HOLD: Mara Venn is one of HECTON-8's worker anchors: a pump chief remembered through procedure, not melodrama.
+Mara Venn sostiene HECTON-8 mediante procedimiento, no mediante discurso. Las pruebas de la sala de bombas no la convierten en estatua; muestran cómo la supervivencia se contaba, se discutía y seguía abierta por alguien cuyo trabajo continuó cuando Deep Reach ya llamaba pasivo al anexo.
 
 ## Scanner
 
-ES LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier: Mara Venn. Borde de placa, tablero de cadencia y libro de agua corregido señalan a la sala de bombas P-63.
 
 ## Terminal
 
-ES LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+SALA DE BOMBAS P-63 / VENN, MARA: manilla de derivación pulida a través del guante; tablero de cadencia clavado junto a marcas de pérdida de admisión. La corrección del libro convierte el agua perdida de fuga escénica en carga de máquina.
 
 ## Audio
 
-ES LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn no dejó una despedida. Dejó un ritmo en el tablero de bombas para que la gente asustada contara la siguiente respiración.
 
 ## Field Note
 
-ES LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Colocar pruebas de Venn cerca de ritmos de bomba, libros de agua y manillas de derivación. Sus objetos deben hacer que la infraestructura suene como respiración.
 
 <!-- External Site; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/es_ES. -->

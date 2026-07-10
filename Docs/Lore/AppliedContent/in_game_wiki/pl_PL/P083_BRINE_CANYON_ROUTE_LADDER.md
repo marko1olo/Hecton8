@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Drabina trasy kanionu solankowego"
+title: "Drabina trasy kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drabina trasy kanionu solankowego
+# Drabina trasy kanionu solanki
 
-Kaniony solankowe czynią postęp w głąb fizycznym. Gęste warstwy, mineralne ściany, wycieki ciepła i zniekształcenia akustyczne uczą, że głębsza podróż wymaga lepszych instrumentów i dyscypliny ciśnienia.
+Kaniony solanki zamieniają głębokość w substancję. Gęste słone rzeki leżą w oceanie jak podłogi, lustra i pułapki. Czystą trasę buduje się z markerów gęstości, okien balastu, kontroli przekaźników i dyscypliny kąta, nie z odwagi. Głębsze warstwy uczą wartości instrumentów: sonar może odbić pomieszczenie powyżej, pływalność może kłamać, a skafander może mieć rację, kiedy morze się nie zgadza.
 
 ## Scanner
 
-Znacznik gęstości solanki. Zejście jest chemią ze ścianami.
+Marker gęstości potwierdzony. Trasa nie jest korytarzem; to chemia ze ścianami.
 
 ## Terminal
 
-KONTROLA KANIONU SOLANKOWEGO: granica gęstości stabilna do zejścia etapami. Ostrzeżenie: zniekształcenie przekaźnika akustycznego, błąd wyporności pojazdu i fałszywe dno poniżej 1800 m.
+KONTROLA KANIONU SOLANKI: granica gęstości stabilna dla zejścia etapowego. Oczekiwane zagrożenia poniżej 1800 m: zniekształcenie przekaźników akustycznych, błąd pływalności pojazdu, fałszywe dno czujników.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Kanion to schody z niewłaściwej wody.
 
 ## Field Note
 
-Przez kanion się nie płynie. Negocjuje się z warstwami cięższymi od kombinezonu.
+Przez kanion się nie przepływa. Negocjuje się z warstwami cięższymi od skafandra.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/pl_PL. -->

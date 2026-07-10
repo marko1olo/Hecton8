@@ -19,6 +19,22 @@ localization_flags: 1
 
 # Deep Reach Priority Hook
 
-De priority hook is de schoonste manier om Deep Reach gevaarlijk te houden nadat de kolonie stilvalt. Het bedrijf hoeft Black Keel niet met een wonder op afstand te besturen. Het heeft alleen een oud certificaat nodig dat de carrier nog erkent, een continuity rule gekoppeld aan Atlas access en een payload class die onder specifieke hazard conditions boven een contractor body staat. Dat is genoeg. Een route kan worden verschoven. Een verzegelde kist kan stijgen in de queue. Een quarantaineslot kan dicht blijven terwijl de zuurstoftelling van de operator nog een schuldpost wordt. Het resultaat is kouder dan sabotage: het systeem werkt zoals geschreven, en Deep Reach leerde zichzelf te schrijven in de onderdelen die rampen overleven.
+Deep Reach Priority Hook grondt corporate pressure in legacy certificates, quarantine clauses, Atlas tokens, payload priority en evidence custody in plaats van onmogelijk instant command.
+
+## Scanner
+
+Oude certificate hook. Deep Reach heeft de bridge niet nodig zolang het de clause nog bezit.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate kan payload recovery, quarantine lock, Atlas access token, evidence suppression queue of sealed infrastructure proof onder Aegir claim law vooruitzetten. Human extraction priority unchanged tenzij verified hazard proof custody value overstijgt.
+
+## Audio
+
+Ze hoeven niet op de bridge te staan om het antwoord te sturen.
+
+## Field Note
+
+Schoner dan conspiracy: het paperwork overleefde de mensen die het tekenden.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/nl_NL. -->

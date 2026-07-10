@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Deep Reach Priority Hook
 
-Deep Reach's present pressure does not require impossible remote control. Old continuity certificates, quarantine clauses, Atlas access tokens, and payload priority hooks already sit inside Black Keel's legal path. The company can influence what the carrier values without visibly owning the carrier. That makes the antagonist harder to cut out: it is not a signal to jam, but a clause that keeps waking up.
+Deep Reach's power over Black Keel is not instant remote control and not a hidden FTL command chain. The company left older things behind: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities, and evidence suppression queues. Those hooks were written when the colony still had meetings, budgets, and signatures. Years later, they can still wake inside a carrier's arbitration path. That is what makes the pressure credible. Deep Reach is not always speaking. Sometimes the old paperwork speaks for it.
 
 ## Scanner
 
-Old certificate hook. Deep Reach does not own the ship; it owns the clause.
+Old certificate hook. Deep Reach does not need the bridge when it still owns the clause.
 
 ## Terminal
 
-ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token, or evidence suppression queue under Aegir claim law. Human extraction priority unchanged unless hazard proof exceeds custody value.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate may advance payload recovery, quarantine lock, Atlas access token, evidence suppression queue, or sealed infrastructure proof under Aegir claim law. Human extraction priority unchanged unless verified hazard proof exceeds custody value.
 
 ## Audio
 
@@ -35,6 +35,6 @@ They do not need to stand on the bridge to steer the answer.
 
 ## Field Note
 
-Cleaner than conspiracy: the paperwork is still alive and still hungry.
+Cleaner than a conspiracy: the paperwork survived the people who signed it.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/en_US. -->

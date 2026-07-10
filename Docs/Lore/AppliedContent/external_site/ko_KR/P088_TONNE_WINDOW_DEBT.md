@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "톤-윈도 부채"
+title: "톤 창 부채"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 톤-윈도 부채
+# 톤 창 부채
 
-톤-윈도는 질량, burn 타이밍, 격리 용적, 법적 우선순위로 측정되는 carrier 용량의 조각이다. 오퍼레이터에게는 부채처럼 느껴진다. HECTON-8에서 나온 모든 유용한 물체가 그것을 발견한 몸과 같은 ledger에 들어가기 때문이다. 봉인 상자는 가벼워도 법적으로 무거울 수 있다. 샘플 랙은 질량은 적어도 청정 용적을 요구할 수 있다. 인간 추출은 당연해 보이지만 밸러스트, 산소 예비, payload custody가 이미 창을 써 버렸다면 당연하지 않다. HECTON-8의 경제는 추상이 아니라 물리적이다. 플레이어는 가짜 도덕 미터로 벌받지 않는다. 플레이어는 연료, 질량, 오염, 서류로 생존을 가격 매기는 기계 안에 갇힌다.
+톤 창 부채는 생존을 단단한 logistics로 바꾼다. extraction, oxygen, samples, salvage, quarantine volume, burn margin이 같은 priced mass window를 차지한다.
+
+## Scanner
+
+mass-window ledger. 도움은 언어보다 먼저 무게를 가진다.
+
+## Terminal
+
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass가 sealed payload, ballast reserve, oxygen debt, quarantine sample volume, hull patch inventory와 충돌. Manual priority에는 paid override, verified hazard proof 또는 custody reclassification 필요.
+
+## Audio
+
+배는 한 생명을 들어 올릴 수 있다. 문제는 ledger가 그 밖에 무엇을 싣게 만드느냐다.
+
+## Field Note
+
+oxygen, ballast, proof, samples, hull patch, body: carrier는 자비를 킬로그램으로 가격 매긴다.
 
 <!-- External Site; generated from P088_TONNE_WINDOW_DEBT/ko_KR. -->

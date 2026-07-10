@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "企業応答台帳"
+title: "Corporate Response Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 企業応答台帳
+# Corporate Response Ledger
 
-企業応答台帳は悪役の演説ではない。それより冷たい。Black Keelが応答するという機械可読の約束だが、契約が認める順序の内側でしか動かない。資産保管が最初。責任封印が次。船体監査、サンプル経路、支払い経路、そして待ち行列が許せば操作者回収。プレイヤーは台帳を手掛かり、鍵、圧力として使える。システムが予測可能だからだ。その予測可能性こそ告発だ。HECTON-8は一つの悪い判断で見捨てられたのではなく、人間が低優先貨物になる間も働き続けた応答スタックに見捨てられた。
+Corporate Response LedgerはBlack Keel支援の硬い限界を記録する。response speed、rescue priority、evidence custody、asset preservation、debt settlementは別々のsystemsであり続ける。
+
+## Scanner
+
+すべてのreplyはcontract languageで届く。asset custody、liability lock、sample route、hull risk、その後operator recovery。
+
+## Terminal
+
+RESPONSE CLASS: asset-preservation。Operator recovery appended after sample custody、liability seal、hull audit、payment route、evidence retention。Automated acknowledgement valid。Rescue priority unresolved。
+
+## Audio
+
+replyはautomaticだった。rescueはconditionalだった。
+
+## Field Note
+
+immediate responseはimmediate rescueではない。
 
 <!-- External Site; generated from P055_CORPORATE_RESPONSE_LEDGER/ja_JP. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ren Okoye/Brine Map"
+title: "Ren Okoye, Brine Cartographer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Ren Okoye/Brine Map
+# Ren Okoye, Brine Cartographer
 
-Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Ren Okoye mapped HECTON-8's brine layers as working roads, not scenery. The surviving slate, stained density beads, pinboard scars, and pressure-stamped route slips show a cartographer correcting official corridors with the water itself as witness. His maps explain why the colony's safest paths often lived outside the permit board: brine moved faster than approval, and the people carrying tools had to trust the latest sounding over the latest signature.
 
 ## Scanner
 
-Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossier: Ren Okoye. Density beads, slate cuts, and pin-string scars describe a route that moved overnight.
 
 ## Terminal
 
-REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+BRINE MAP DESK / OKOYE, REN: safe current shifted 3.2 m east after density inversion. Permit board still lists yesterday's corridor. Worker route marks override management route until next sounding.
 
 ## Audio
 
-Okoye drew roads that moved while management argued about permission.
+Okoye drew roads in water that did not want to keep the drawing.
 
 ## Field Note
 
-Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Use Okoye for brine route reveals, density-layer navigation, and permit-board contradictions. His evidence should let players distrust old maps for concrete reasons.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/en_US. -->

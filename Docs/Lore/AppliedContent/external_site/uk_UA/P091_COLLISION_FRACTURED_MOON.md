@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Місяць, розламаний зіткненням"
+title: "Місяць, розколотий зіткненням"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Місяць, розламаний зіткненням
+# Місяць, розколотий зіткненням
 
-HECTON-8 не був мандрівним тілом, захопленим заради видовища. Він зібрався у власному поясі уламків Егіра, охолов як шаруватий океанічний місяць, а потім прийняв косий удар, що деформував кору, але не стер світ. Зіткнення підняло шельфи, втопило басейни й відкрило довгі драбини розломів, де гаряча хімія досі рухається крізь солону воду. Припливний резонанс утримав ці рани живими після орбітального замка. Тому океан має читані шрами: ропні каньйони, жерлові кузні, жили скла тиску, оголені гребені й рідкісні вікна до давнього дна.
+Collision-Fractured Moon визначає HECTON-8 як local Aegir body, де ocean routes, vents, brine basins і salvage windows походять від impact scars і tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, потім took an oblique impact wide enough for the ocean to remember.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Потім щось hit hard enough to give the sea a map.
+
+## Field Note
+
+Captured-moon story надто чиста. Це місце born local, broken local і billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/uk_UA. -->

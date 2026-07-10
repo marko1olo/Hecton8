@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Biometal Resource Stack
 
-The Biometal Resource Stack keeps HECTON-8 from becoming a one-ore setting. Blue debt sits at the apex, but the moon is valuable through many pressure-made economies: sulfide metals, salts, noble gas pockets, pressure ceramics, vent catalysts, biofibers, photoproteins, salvage hardware, Atlas-altered biometal and Xenon-Omega continuity substrate.
+The resource stack keeps HECTON-8 from collapsing into one magic material. Blue debt matters, but the moon also pays in sulfide metals, salts, noble gases, ceramics, catalysts, biofibers, photoproteins, salvage hardware, and Atlas-altered biometal. The violence makes sense because the value is distributed: many small reasons to cut, mark, hide, return, and lie.
 
-That variety matters for play and fiction. It gives the player reasons to scan, cut, leave, mark, trade and return. It also makes Deep Reach's violence more believable. A company does not build a world-sized lie for a single shiny rock; it builds one when every layer of the ocean can be turned into a ledger entry.
+Biometal Resource Stack frames HECTON-8 as a full pressure economy, with Xenon-Omega as the strategic apex rather than the only thing worth reading. If every sample says Xenon-Omega, the world goes flat. Count the lesser reasons people died.
 
 <!-- External Site; generated from P085_BIOMETAL_RESOURCE_STACK/en_US. -->

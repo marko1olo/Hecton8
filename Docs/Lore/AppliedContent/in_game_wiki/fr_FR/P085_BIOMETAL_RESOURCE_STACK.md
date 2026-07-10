@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Pile de ressources biométalliques"
+title: "Pile de ressources biométal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pile de ressources biométalliques
+# Pile de ressources biométal
 
-La pile de ressources empêche HECTON-8 de se réduire à un matériau magique unique. Xenon-Omega compte, mais la lune porte aussi métaux, sels, chimie d'évent, céramiques, biofibres, photoprotéines, salvage et biométal altéré par Atlas.
+La pile de ressources empêche HECTON-8 de se réduire à un matériau magique. La dette bleue compte, mais la lune paie aussi en métaux sulfurés, sels, gaz nobles, céramiques, catalyseurs, biofibres, photoprotéines, matériel de récupération et biométal altéré par Atlas. La violence devient logique parce que la valeur est dispersée : mille petites raisons de couper, marquer, cacher, revenir et mentir.
 
 ## Scanner
 
-Tableau de pile ressource. La blue debt est au sommet, mais le reste de la lune vaut encore assez pour tuer.
+Tableau de ressources récupéré. La dette bleue est au sommet. Le reste de la lune reste assez rentable pour tuer.
 
 ## Terminal
 
-PILE RESSOURCE HECTON-8: métaux sulfurés, sels, poches de gaz noble, céramiques de pression, catalyseurs d'évent, biofibres, photoprotéines, salvage hardware, biométal altéré par Atlas et substrat de continuité XO.
+PILE HECTON-8 : métaux sulfurés, sels, poches de gaz noble, céramiques de pression, catalyseurs d'évent, biofibres, photoprotéines, matériel de récupération, biométal altéré par Atlas, substrat de continuité XO.
 
 ## Audio
 
-Un seul minerai miracle serait paresseux. HECTON-8 a toute une économie de blessures de pression.
+Un seul minerai miracle serait paresseux. HECTON-8 a toute une économie de plaies de pression.
 
 ## Field Note
 
-Si chaque échantillon dit Xenon-Omega, le monde devient idiot. Compte aussi les autres raisons.
+Si chaque échantillon dit Xenon-Omega, le monde s'aplatit. Compte aussi les petites raisons pour lesquelles les gens sont morts.
 
 <!-- In-Game Wiki; generated from P085_BIOMETAL_RESOURCE_STACK/fr_FR. -->

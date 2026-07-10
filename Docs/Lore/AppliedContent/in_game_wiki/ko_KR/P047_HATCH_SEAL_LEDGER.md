@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "해치 씰 원장"
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 해치 씰 원장
+# Hatch Seal Ledger
 
-해치 프레임은 쓸모 있는 거짓말을 보관한다. 녹색 씰 등이란 가스켓이 버텼다는 뜻이지, 폐쇄가 공정하거나 안전하거나 되돌릴 수 있었다는 뜻이 아니다. 씰 원장은 압력 절단, 오버라이드 도장, 마지막 수동 폐쇄 방향을 남긴다. 버려진 식민지 공간에서 해치는 경로 차단물, 생존 도구, 노동자 증거가 동시에 될 수 있다.
+Hatch frames는 유용한 거짓말을 보관한다. green seal light는 gasket이 버텼다는 뜻이지 closure가 fair, safe, reversible했다는 뜻이 아니다. Seal ledgers는 pressure cuts, override stamps, hinge strain, 마지막 manual closure의 direction을 보존한다. abandoned colony spaces에서 hatch는 route blocker, survival tool, worker evidence, accusation을 한 물체 안에 동시에 담을 수 있다. 질문은 대개 열리는지가 아니다. 어떤 pressure, water, human decision을 서로 떼어 놓았는지가 질문이다.
 
 ## Scanner
 
-씰 메모리 복구. 가스켓은 세 번의 압력 절단과 한 번의 대피 오버라이드를 견뎠다. 귀환 측 접근은 젖은 쪽에서 잠겼다.
+seal memory recovered. gasket은 three pressure cuts와 one evacuation override를 견뎠고 return-side access는 wet side에서 locked.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: 가스켓 변형이 서비스 허용치를 초과. 수동 폐쇄가 EVAC OVERRIDE 아래 수락됨. 귀환 측 작업자 수 미해결. 압력 평형과 힌지 점검 후에만 재개방.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, wet-side witness check.
 
 ## Audio
 
-밀폐했다. 해치가 약속한 것은 그뿐이다.
+It sealed. hatch가 약속한 것은 그것뿐이다.
 
 ## Field Note
 
-밀폐된 해치는 영수증이다. 열기 전에 어느 쪽이 값을 냈는지 물어라.
+sealed hatch는 receipt다. 열기 전에 어느 쪽이 값을 치렀는지 물어라.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/ko_KR. -->

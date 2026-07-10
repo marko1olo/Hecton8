@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Pressure Containment Failure
 
-Blue debt is not cursed treasure. It is material memory under pressure. Xenon-Omega residue stays useful while its lattice believes it is still deep, cold, and compressed. Remove it too fast, store it badly, or let signal shear creep through the casket, and the sample starts failing in readable stages. First comes drift: meters lie, resonance jitters, containment alarms argue with each other. Then the lattice fractures. Brine enters. Biology follows the chemistry. By stage 4, the sample is dead as value but alive as contamination. That makes every salvage decision physical: carry it now, repressure it, abandon it, or let the route pay for greed.
+Pressure Containment Failure defines blue debt handling stages, tying resource value to depth, pressure memory, bloom contamination, route planning, and salvage liability.
+
+## Scanner
+
+Casket stage chart. Blue debt fails through pressure memory, signal shear, and bloom; superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+A sample can be worth a fortune at one depth and become a liability ten meters later.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/en_US. -->

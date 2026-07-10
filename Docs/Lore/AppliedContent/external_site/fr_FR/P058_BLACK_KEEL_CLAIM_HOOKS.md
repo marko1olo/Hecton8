@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Crochets de réclamation Black Keel
 
-Les crochets de réclamation Black Keel définissent la pression d’ouverture. Black Keel n’est pas un vaisseau de méchant théâtral ; c’est un transporteur lié à l’économie des réclamations, au droit de quarantaine et aux leviers dormants de Deep Reach. Le problème du joueur est pratique et moral à la fois : une voix au-dessus de l’océan peut entendre l’appel de détresse, mais la route du retour doit devenir précieuse, certifiable et juridiquement difficile à ignorer.
+Les Crochets de réclamation Black Keel définissent la pression d'ouverture au-dessus de HECTON-8. Black Keel n'est pas un vaisseau méchant ; c'est un carrier lié à l'économie claim-pool, au droit de quarantaine et à un levier Deep Reach dormant. Le problème est à la fois pratique et moral : une voix au-dessus de l'océan peut entendre la détresse, mais la route du retour doit devenir précieuse, certifiable et juridiquement gênante à ignorer.
 
 ## Scanner
 
-Dans le manifeste, Black Keel est du matériel de pool de réclamations ; dans les clauses, c’est un levier Deep Reach.
+Black Keel est matériel de claim-pool dans le manifeste et levier Deep Reach dans les clauses.
 
 ## Terminal
 
-GARDE DU TRANSPORTEUR : récupération de l’opérateur autorisée après tri de charge utile, porte de quarantaine, certificat de route et apurement de responsabilité. Sceau de priorité Deep Reach conservé dans des clauses dormantes.
+CARRIER CUSTODY : récupération opérateur autorisée après triage de payload, porte de quarantaine, certificat de route et décharge de responsabilité. Sceau prioritaire Deep Reach retenu dans clauses dormantes.
 
 ## Audio
 
-Il t’entend. Il doit seulement chiffrer la réponse d’abord.
+Il peut entendre. Il doit seulement chiffrer la réponse d'abord.
 
 ## Field Note
 
-Le vaisseau n’est pas mauvais. Il est loué à un contrat qui sait être cruel sans paraître vivant.
+Le vaisseau n'est pas mauvais. Il est loué à un contrat qui sait être mauvais sans sonner vivant.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/fr_FR. -->

@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Były specjalista Deep Reach, dziś marauder"
+title: "Marauder po Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Były specjalista Deep Reach, dziś marauder
+# Marauder po Deep Reach
 
-Protagonista nie urodził się na HECTON-8 i nie goni rodzinnego ducha. Stara kolonia rozpoznaje coś chłodniejszego: rytm napraw systemów terenowych, nawyki awaryjnego wyznaczania tras i drobne skróty, których uczyła praca dla Deep Reach. Ta historia sprawia, że pierwsze zamknięte drzwi są osobiste, ale nie zmienia opowieści w tani dramat rodut krwi. Marauder może rozciąć skrytkę roszczeniową dla pieniędzy; były specjalista Deep Reach wie też, który dziennik uszczelnień nie powinien istnieć, która instrukcja ewakuacji przykrywała opóźnienie i która sekwencja naprawcza żyła dalej po spisaniu robotników na straty.
+Marauder nie urodził się na HECTON-8 i nie ściga rodzinnego ducha. Stara kolonia rozpoznaje coś chłodniejszego: rytm napraw systemów terenowych, nawyki awaryjnego trasowania i drobne skróty wyniesione z pracy ewakuacyjnej Deep Reach. Ta historia czyni pierwsze zamknięte drzwi osobistymi, ale nie zmienia opowieści w melodramat krwi. Cache roszczenia można rozciąć dla pieniędzy; były specjalista Deep Reach rozumie też, który log uszczelnienia nie powinien istnieć, która instrukcja ewakuacji zasłaniała zwłokę i która sekwencja naprawcza pracowała dalej po spisaniu robotników.
 
 ## Scanner
 
-Stary zamek Deep Reach nie sprawdza twojego nazwiska. Rozpoznaje rytm twojej sekwencji naprawczej.
+Stary zamek Deep Reach nie sprawdza nazwiska. Rozpoznaje rytm naprawy terenowej.
 
 ## Terminal
 
-ŚLAD UPRAWNIEŃ: dawny kontrakt systemów terenowych. Dostęp do infrastruktury ewakuacyjnej cofnięty. Status odzysku przyjęty pod opieką długu puli roszczeń.
+ŚLAD UPRAWNIEŃ: dawny kontrakt systemów terenowych. Dostęp do infrastruktury ewakuacyjnej cofnięty. Status salvage przyjęty pod dłużną custody puli roszczeń.
 
 ## Audio
 
-Nie wróciłeś do domu. Wróciłeś do procedury, która nigdy nie przestała działać.
+To nie był powrót do domu. To był powrót do procedury, która nigdy nie przestała działać.
 
 ## Field Note
 
-To nie sprawa rodzinna. Procedura pamięta dłonie, które jej używały.
+To nie sprawa rodzinna. Procedura pamięta ręce, które jej używały.
 
 <!-- In-Game Wiki; generated from P056_EX_DEEP_REACH_MARAUDER/pl_PL. -->

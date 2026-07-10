@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Juno Kade/Relay"
+title: "ジュノ・ケイド、中継公証人"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Juno Kade/Relay
+# ジュノ・ケイド、中継公証人
 
-JA LOC HOLD: Juno Kade turns communication delay into a human job: preserving evidence when help is physically absent.
+ジュノ・ケイドは、FTLのない前提を人間の職業に変える。彼は恐慌と記録の間にいる中継公証人であり、避難申請、経路拒否、死亡印が星間距離を越えて噂に変わらないようにした。
 
 ## Scanner
 
-JA LOC HOLD: Dossier: Juno Kade. Seal, packet tray and witness tape agree.
+記録: ジュノ・ケイド。印面、パケットトレイ、証人テープに同じ遅延窓の保管印がある。
 
 ## Terminal
 
-JA LOC HOLD: JUNO KADE/RELAY. Stamped witness trays after each comm window; custody stayed evidence.
+中継ヤードA-17 / KADE, JUNO: 各キャリア窓の後、送信パケットに押印。印圧、トレイの塵、証人テープは、返信時間が救助時間を超えても保管を確認する。
 
 ## Audio
 
-JA LOC HOLD: Kade certified facts that would arrive late and still have to matter.
+ケイドは、誰も救えないほど遅れて届く事実を認証した。それでも旅を生き延びさせる必要があった。
 
 ## Field Note
 
-JA LOC HOLD: Relay-yard objects and law-of-distance records should stay paired: seal, tray, packet ladder, and the late fact that still matters.
+通信窓時計、パケットトレイ、公証印、遅れて明かされる証拠の近くでケイドを使う。彼の記録は距離を抽象ではなく法的なものにするべき。
 
 <!-- External Site; generated from P402_JUNO_KADE_RELAY_NOTARY_DOSSIER/ja_JP. -->

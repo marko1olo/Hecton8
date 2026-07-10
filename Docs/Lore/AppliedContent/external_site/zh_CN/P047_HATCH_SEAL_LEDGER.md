@@ -19,22 +19,22 @@ localization_flags: 1
 
 # 舱门密封账本
 
-舱门是HECTON-8最安静的记录之一。它们不解释谁被留在后面；它们储存关闭方向、垫圈应力和覆盖权限。读取密封账本，会把一扇锁门变成带时间戳的压力决定。
+HECTON-8上的hatches是安静records：closure direction、gasket stress、override authority和wet-side witness traces把locked door变成带timestamp的pressure decision。
 
 ## Scanner
 
-已恢复密封记忆。垫圈承受三次压力切断和一次撤离覆盖；返回侧通路从积水侧被锁定。
+seal memory recovered。gasket承受过three pressure cuts和one evacuation override；return-side access从wet side被locked。
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17：垫圈变形超过维护公差。手动关闭在 EVAC OVERRIDE 下接受。返回侧操作员数量未解决。仅在压力平衡和铰链检查后重新开启。
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance。Manual closure accepted under EVAC OVERRIDE。Return-side count unresolved。只有在pressure equalization、hinge inspection和wet-side witness check后才允许reopen。
 
 ## Audio
 
-它密封了。舱门只承诺了这一点。
+It sealed。这就是hatch承诺的全部。
 
 ## Field Note
 
-密封舱门是一张收据。打开前先问是哪一侧付了账。
+sealed hatch是一张receipt。打开之前，先问是哪一侧付了账。
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/zh_CN. -->

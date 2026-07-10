@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "センサー標識生物フィードバックループ"
+title: "センサータグ付き動物フィードバックループ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# センサー標識生物フィードバックループ
+# センサータグ付き動物フィードバックループ
 
-センサー標識生物は傷痕の中に古いコロニーを運んでいる。Deep Reachは移動、圧力、汚染調査のため動物に標識を付け、Atlasは後にそのタグを安い環境テレメトリーとして読んだ。生物は操り人形ではない。それでも移動は修理優先度を変え、ドローン経路を起こし、安全な通路を占有状態に見せる。
+センサータグ付き動物は、治癒した組織内に古い調査機器を持っている。Deep Reachは圧力、移動、汚染研究のために動物へタグを付けた。Atlasはコロニー死亡後も聞き続け、そのパケットを保守状態へ組み込んだ。動物は自分の経路を選ぶ。タグは背後でドア、警報、地図信頼度を変え続ける。
 
 ## Scanner
 
-殻成長の下に古いDeep Reachタグ。移動痕は保守調査スイープと一致する。
+左脇の殻成長下に古いDeep Reachタグ。移動パケットはまだ保守網へピングを打つ。
 
 ## Terminal
 
-生物ループ: 埋め込みタグが圧力、移動、汚染の弱いパケットを返す。Atlasは移動を動物の意図ではなく環境状態として読む。
+FAUNA TAG LOOP / DR-2147-MIG：圧力、移動、汚染パケットを環境テレメトリとして受理。動物の意図は解析されない。ルート警報が移動経路を追う場合あり。
 
 ## Audio
 
-それは君を狩っていない。それでも君のことを報告するかもしれない。
+そいつは狩っていない。タグが間違ったドアを開けることはある。
 
 ## Field Note
 
-動物は無実だが経路には危険な遭遇に使う。
+タグ付き動物がリレー yard を横切ったら、警報を信じる前に待て。動物はもう去っていても、ルート状態は追いついていないことがある。
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/ja_JP. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limite de Dados de Pagamento do Final"
+title: "Linha de registro de pagamento final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Limite de Dados de Pagamento do Final
+# Linha de registro de pagamento final
 
-Os finais de HECTON-8 registram quem recebeu a prova, qual custódia ganhou, o que pagou e que custo continua sem resolver. Um número pode fechar uma linha de contrato. Não pode fechar o oceano.
+Finais de HECTON-8 são registrados por receptor e custódia. O registro nomeia o que saiu do oceano, quem recebeu, que evidência sobreviveu, o que foi pago e o que continua restrito. Um pagamento pode fechar uma linha contábil enquanto a reivindicação, a quarentena ou a ecologia ficam abertas.
 
 ## Scanner
 
-A linha de final liga receptor, custódia, estado de prova, pagamento e consequência não resolvida.
+Linha de resultado pendente: receptor, rota de carga útil, estado da evidência, pagamento, atraso de quarentena e consequência não resolvida não estão fechados.
 
 ## Terminal
 
-ENDING PAYOUT CONTRACT: linhas exigem rota de payload, receptor, estado de prova, pagamento material, consequência legal, atraso de quarentena e custo não resolvido. Créditos não fecham cena de crime.
+ESQUEMA DE PAGAMENTO FINAL / checagem de receptor de dossiê: não fechar registro até escrever rota de carga útil, receptor, estado da evidência, pagamento material, ajuste de penhor, atraso de quarentena, consequência ecológica e custo não resolvido. Créditos liberam depois da custódia, não antes.
 
 ## Audio
 
-Créditos não fecham cena de crime.
+Relé de dossiê: receptor aceitou custódia. O relógio de quarentena começa antes do crédito limpar.
 
 ## Field Note
 
-Credit value, quarantine delay e dossier flags são registrados só depois de receiver e evidence state estarem claros.
+Não chame um final de pago até o receptor ser nomeado. Receptor errado, futuro errado; mesmo oceano, outra conta.
 
 <!-- External Site; generated from P305_ENDING_PAYOUT_ROW_CONTRACT/pt_BR. -->

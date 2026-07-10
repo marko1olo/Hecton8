@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir衛星ルートマップ"
+title: "Aegir衛星経路図"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir衛星ルートマップ
+# Aegir衛星経路図
 
-Aegir衛星データはルートデータだ。HECTON-8はプレイ対象の海洋衛星だが、relay、放射線、散乱、潮汐制約の大きな梯子の中にある。見える空は、救助信号が聞こえるか、遅れるか、値付けされるか、拒まれるか、物理的に不可能になるかに関わっている。
+Aegirの衛星は経路システムの一部である。HECTON-8はプレイヤーの下にある海洋衛星だが、ラダーの他の部分は何が聞こえ、値付けされ、隠され、動かせるかを変える。小天体は中継線を切る。氷散乱経路はパケットを壊す。潮汐位相はバシドロップ上昇を安くし、その後で致命的にする。公開地図が重要なのは、空が水上の飾りではないからだ。それは請求が出て行けるかを決める機械の一つである。
 
 ## Scanner
 
-系内地図記録。Aegirの衛星はrelay timing、放射線遮蔽、氷散乱、潮汐圧、occultation bands、死んだbeacons、recovery geometryを決める。
+星系図記録。衛星ラベルは中継年齢、潮汐負荷、放射線遮蔽、氷散乱、掩蔽帯、死んだビーコン、回収幾何を設定する。
 
 ## Terminal
 
-公開アーカイブノード // AEGIR衛星梯子。衛星名はルートラベルである。各天体はsignal age、transfer risk、storm exposure、custody timing、claim reliabilityを変える。
+公開アーカイブノード // AEGIR衛星ラダー。衛星名は経路データである。必須項目: 信号年齢、潮汐位相、嵐遮蔽、請求窓、ビーコン状態、上昇リスク。
 
 ## Audio
 
-地図は、頼んだ瞬間に誰も来ない理由を説明する。
+地図上の衛星は景色ではない。返答が遅れた理由だ。
 
 ## Field Note
 
-Marauderメモ: 衛星を記せ。それから、その衛星がルートに何をするか記せ。
+マローダー記録: 衛星を記し、それが信号、潮汐、質量、保管に何をするかを書く。
 
 <!-- In-Game Wiki; generated from P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE/ja_JP. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "AR LOC HOLD: Ren Okoye/Brine Map"
+title: "رين أوكوي، رسام خرائط المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Ren Okoye/Brine Map
+# رين أوكوي، رسام خرائط المحلول الملحي
 
-AR LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+يعطي رين أوكوي للعبور مصدرا بشريا. لا تبقى أخاديد المحلول في HECTON-8 مجرد أخطار عندما يجد اللاعب النظام اليدوي الذي جعلها قابلة للقراءة: خرز، ودبابيس، وخطوط ممسوحة، وعلامات مسار تركها شخص عرف أن الطريق القانوني قد يقتلك إذا تحرك الماء.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+ملف: رين أوكوي. خرز الكثافة، وقطوع اللوح، وندوب خيوط الدبابيس تصف مسارا تحرك خلال الليل.
 
 ## Terminal
 
-AR LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+مكتب خريطة المحلول / OKOYE, REN: انزاح التيار الآمن 3.2 م شرقا بعد انقلاب الكثافة. لوحة التصاريح ما زالت تذكر ممر الأمس. علامات مسار العمال تتقدم على مسار الإدارة حتى القياس التالي.
 
 ## Audio
 
-AR LOC HOLD: Okoye drew roads that moved while management argued about permission.
+كان أوكوي يرسم طرقا في ماء لا يريد حفظ الرسم.
 
 ## Field Note
 
-AR LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+استخدم أوكوي لكشف مسارات المحلول والتنقل بين طبقات الكثافة وتناقضات لوحة التصاريح. يجب أن تعطي أدلته أسبابا ملموسة لعدم الثقة بالخرائط القديمة.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ar_SA. -->

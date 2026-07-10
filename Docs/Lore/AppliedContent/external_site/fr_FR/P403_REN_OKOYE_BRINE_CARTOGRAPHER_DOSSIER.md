@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FR LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, cartographe de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, cartographe de saumure
 
-FR LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+Ren Okoye donne une source humaine à la traversée. Les canyons de saumure de HECTON-8 dépassent le simple danger quand le joueur trouve le système manuel qui les rend lisibles : perles, épingles, lignes effacées et marques de route d'un homme sachant qu'un chemin légal pouvait tuer si l'eau avait bougé.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossier : Ren Okoye. Perles de densité, entailles d'ardoise et cicatrices de fils décrivent une route déplacée pendant la nuit.
 
 ## Terminal
 
-FR LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+TABLE DE CARTE SAUMURE / OKOYE, REN : courant sûr décalé de 3,2 m vers l'est après inversion de densité. Le tableau des permis liste encore le couloir d'hier. Marques de route ouvrières prioritaires sur la route de gestion jusqu'au prochain sondage.
 
 ## Audio
 
-FR LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye dessinait des routes dans une eau qui refusait de garder le dessin.
 
 ## Field Note
 
-FR LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Utiliser Okoye pour révélations de routes de saumure, navigation par couches de densité et contradictions de permis. Ses preuves doivent donner des raisons concrètes de se méfier des vieilles cartes.
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/fr_FR. -->

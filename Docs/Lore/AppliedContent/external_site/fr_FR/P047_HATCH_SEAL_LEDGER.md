@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Registre de joint d’écoutille"
+title: "Ledger de joint de hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre de joint d’écoutille
+# Ledger de joint de hatch
 
-Les écoutilles font partie des archives les plus silencieuses de HECTON-8. Elles n’expliquent pas qui a été laissé derrière; elles stockent direction de fermeture, contrainte du joint et autorité d’override. Lire un registre de joint transforme une porte verrouillée en décision de pression horodatée.
+Les hatches sont des records silencieux sur HECTON-8: closure direction, gasket stress, override authority et wet-side witness traces changent une locked door en pressure decision horodatee.
 
 ## Scanner
 
-Mémoire de joint récupérée. Le joint a subi trois coupures de pression et un override d’évacuation; l’accès côté retour a été verrouillé depuis le côté mouillé.
+Seal memory recovered. Le gasket a pris three pressure cuts et one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / CADRE H-17 : déformation du joint au-dessus de la tolérance de service. Fermeture manuelle acceptée sous EVAC OVERRIDE. Compte d’opérateurs côté retour non résolu. Réouverture seulement après égalisation de pression et inspection des charnières.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection et wet-side witness check.
 
 ## Audio
 
-Elle a scellé. C’est tout ce que l’écoutille promettait.
+It sealed. C'est tout ce que le hatch a promis.
 
 ## Field Note
 
-Une écoutille scellée est un reçu. Avant de l’ouvrir, demande quel côté a payé.
+Un sealed hatch est un receipt. Avant de l'ouvrir, demande quel cote a paye.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/fr_FR. -->

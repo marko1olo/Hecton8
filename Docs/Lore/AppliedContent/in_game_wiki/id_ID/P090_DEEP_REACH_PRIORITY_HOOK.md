@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Priority Hook Deep Reach"
+title: "Deep Reach Priority Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,17 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Priority Hook Deep Reach
+# Deep Reach Priority Hook
 
-Tekanan Deep Reach saat ini tidak membutuhkan kendali jarak jauh yang mustahil. Sertifikat kontinuitas lama, klausul karantina, token akses Atlas, dan priority hook payload sudah berada dalam jalur legal Black Keel. Perusahaan dapat memengaruhi apa yang dinilai carrier tanpa terlihat memiliki carrier. Itu membuat antagonis lebih sulit dipotong: bukan sinyal untuk dijam, melainkan klausul yang terus bangun.
+Kekuasaan Deep Reach atas Black Keel bukan instant remote control dan bukan FTL command chain tersembunyi. Perusahaan meninggalkan hal-hal yang lebih tua: continuity certificates, quarantine clauses, Atlas access tokens, sealed infrastructure proofs, payload priorities, dan evidence suppression queues. Hooks itu ditulis ketika colony masih punya meetings, budgets, dan signatures. Bertahun-tahun kemudian, semuanya masih bisa bangun di dalam arbitration path carrier. Itulah yang membuat tekanannya masuk akal. Deep Reach tidak selalu berbicara. Kadang paperwork lama berbicara untuknya.
 
 ## Scanner
 
-Hook sertifikat lama. Deep Reach tidak memiliki kapal; ia memiliki klausul.
+Certificate hook lama. Deep Reach tidak membutuhkan bridge selama clause masih miliknya.
 
 ## Terminal
 
-ROUTE OVERRIDE: sertifikat kontinuitas legacy Deep Reach dapat memajukan recovery payload, kunci karantina, token akses Atlas, atau antrean penekanan bukti di bawah hukum klaim Aegir. Prioritas ekstraksi manusia tidak berubah kecuali bukti bahaya melampaui nilai custody.
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate dapat memajukan payload recovery, quarantine lock, Atlas access token, evidence suppression queue, atau sealed infrastructure proof di bawah Aegir claim law. Human extraction priority unchanged kecuali verified hazard proof melebihi custody value.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Mereka tidak perlu berdiri di bridge untuk mengarahkan jawaban.
 
 ## Field Note
 
-Lebih bersih daripada konspirasi: dokumennya masih hidup dan masih lapar.
+Lebih bersih dari conspiracy: paperwork bertahan lebih lama daripada orang yang menandatanganinya.
 
 <!-- In-Game Wiki; generated from P090_DEEP_REACH_PRIORITY_HOOK/id_ID. -->

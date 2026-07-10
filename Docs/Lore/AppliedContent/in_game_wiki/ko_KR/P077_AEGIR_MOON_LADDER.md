@@ -9,7 +9,7 @@ locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Aegir 달 사다리"
+title: "Aegir Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Aegir 달 사다리
+# Aegir Moon Ladder
 
-Aegir의 달 사다리는 HECTON-8을 물리계 안에 붙들어 둔다. 안쪽 달들은 방사선과 중계 위험을 만들고, 중간 달들은 금속, 얼음, 항로 부표, 오래된 저장고를 지니며, 바깥 달들은 차가운 claims와 죽은 비컨을 운반한다.
-
-HECTON-8은 가장 안쪽도 가장 바깥도 아니다. 아직 돈을 내는 달이다. 그래서 사다리의 나머지는 그 구조 창, salvage law, 신호 경로를 계속 건드린다.
+Aegir moon ladder는 HECTON-8을 working sky 안에 둔다. Skarn은 charged weather를 antennas로 던진다. Vela는 ice and dust를 optical routes로 sheds한다. Claw와 Lumen은 old buoy logic을 alive하게 둔다. Thorne은 failed quietly. Anvil은 route stopped paying할 때까지 metal을 fed했다. Kestrel은 최악의 angles에서 relay lines를 cuts한다. Mute는 ownership을 nobody's hands로 repeats한다. HECTON-8은 chain의 첫 moon도 마지막도 아니다. drowned infrastructure가 ships, insurers, marauders가 windows를 두고 다투게 할 만큼 value를 가진 moon이다.
 
 ## Scanner
 
-달 사다리 차트. HECTON-8은 움직이는 계의 작업 위험이지 고립된 레벨이 아니다.
+moon ladder chart. HECTON-8은 isolated ocean level이 아니라 moving system 안의 one working hazard다.
 
 ## Terminal
 
-AEGIR 주요 달 // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. transfer 및 eclipse 모델 첨부.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, custody windows attached.
 
 ## Audio
 
-그 지도에는 자비보다 달이 더 많다.
+map에는 mercy보다 moons가 더 많다.
 
 ## Field Note
 
-Skarn은 태운다. Vela는 얼음을 흘린다. Anvil은 금속을 먹인다. Kestrel은 중계를 끊는다. HECTON은 익사한다.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- In-Game Wiki; generated from P077_AEGIR_MOON_LADDER/ko_KR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Bildung von Druckglas"
+title: "Bildung von Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bildung von Druckglas
+# Bildung von Pressure Glass
 
-Druckglas ist der technische Name hinter Marauder blue debt und Deep Reachs Xenon-Omega-Sprache. Es entsteht dort, wo Druck, Edelgastaschen, Sole, Mineralien, Hitze und veränderte Biologie zusammentreffen.
+Pressure Glass ist der Feldname hinter der blauen Schuld der Marauder und Deep Reachs Xenon-Omega-Sprache. Es entsteht nur dort, wo Edelgastaschen, Mineraldefekte, heiße Sole, veränderte Biologie und brutale Druckgeschichte lange genug zusammenbleiben, um ein Gitter in Erinnerung zu sperren.
 
 ## Scanner
 
-Blaues Schuldgitter. Edelgas, Sole, Mineraldfehler und Druckgeschichte stecken in einem teuren Fehler.
+Blau-Schuld-Gitter. Edelgas, Sole, Mineraldefekte, Wärmezyklen und Druckgeschichte zu einer teuren Narbe verschmolzen.
 
 ## Terminal
 
-XO-CONTINUITY-SUBSTRATE: xenonreiches Clathrat-/Defektgitter stabilisiert durch Solechemie, Thermozyklen und biologische Katalysatorreste. Dekompressionsrisiko: Signaldrift, Bruch und Kontaminationsblüte.
+XO-KONTINUITÄTSSUBSTRAT: xenonreiches Clathrat-/Defektgitter, stabilisiert durch Solechemie, Wärmezyklen und biologische Katalysatorreste. Dekompressionsrisiken: Signaldrift, Bruch, Kontaminationsblüte.
 
 ## Audio
 
-Darum kamen sie zurück. Nicht wegen Gold. Wegen einer maschinenlesbaren Narbe.
+Deshalb kamen sie zurück. Nicht Gold. Eine lesbare Wunde.
 
 ## Field Note
 
-Das ist kein Erz. Es ist ein Prozess, der sich erinnert, wo er entstanden ist.
+Das ist kein Erz. Das ist ein Ort, der sich erinnert, was ihm angetan wurde.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/de_DE. -->

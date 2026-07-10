@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "NL LOC HOLD: Mara Venn/Pump Chief"
+title: "Mara Venn, pompenchef"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# NL LOC HOLD: Mara Venn/Pump Chief
+# Mara Venn, pompenchef
 
-NL LOC HOLD: Mara Venn anchors the colony's practical humanity. Her evidence chain is a badge, a cadence board, a corrected water ledger and a bypass handle polished by repeated use.
+Mara Venn was de pompenchef die de lagere annex levend hield nadat de inlaatmeters begonnen te liegen. Haar dossier bestaat uit werkobjecten: een door zout aangevreten badge, een met de hand afgevinkt cadansbord, een waterlogboek gecorrigeerd met drukinkt en een bypasshendel die glad werd door herhaald gebruik. Samen tonen ze een werker die de kolonie dwong toe te geven dat waterverlies geen achtergrondgeluid was. Het was een telbare machinestoring verbonden aan menselijke longen.
 
 ## Scanner
 
-NL LOC HOLD: Dossier: Mara Venn. Pump rhythm and water ledger agree.
+Dossier: Mara Venn. Badge-rand, cadansbord en gecorrigeerd waterlogboek wijzen allemaal naar pompkamer P-63.
 
 ## Terminal
 
-NL LOC HOLD: MARA VENN/PUMPS. Held bypass; water stayed a machine load, not scenery.
+POMPKAMER P-63 / VENN, MARA: bypasshendel door handschoenlagen glad gepolijst; cadansbord naast inlaatverliesmarkeringen vastgezet. De correctie in het logboek maakt ontbrekend water van decorlekkage tot machinebelasting.
 
 ## Audio
 
-NL LOC HOLD: Venn did not leave a speech. She left the pump rhythm everyone else used to breathe.
+Venn liet geen afscheid achter. Ze liet een ritme op het pompbord achter zodat bange mensen de volgende adem konden tellen.
 
 ## Field Note
 
-NL LOC HOLD: Pump-room evidence cluster: badge, cadence board, ledger correction, and polished bypass handle keep Mara Venn procedural, not melodramatic.
+Plaats Venn-bewijs bij pompritmepuzzels, waterlogboeken en bypasshendels. Haar objecten moeten infrastructuur als ademhaling laten klinken.
 
 <!-- In-Game Wiki; generated from P401_MARA_VENN_PUMP_CHIEF_DOSSIER/nl_NL. -->

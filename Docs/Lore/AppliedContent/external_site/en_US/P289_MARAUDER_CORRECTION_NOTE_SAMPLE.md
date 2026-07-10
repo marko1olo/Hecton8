@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Marauder Correction Note Sample"
+title: "Marauder Correction: Auth Delay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,21 +17,25 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Marauder Correction Note Sample
+# Marauder Correction: Auth Delay
 
-Marauder notes are one of HECTON-8's best evidence surfaces because they argue with official systems without turning into omniscient lore. This sample keeps suspicion alive through practical marks: timestamps, certifications, a bad category and a queue delay. It does not solve the case for the player. It teaches the player how to read a lie that was filed as maintenance.
+Marauder Correction MC-12 preserves an accident form and writes the survival audit beside it: not weather, check pump cert, shift count, body category, door clock and authorization queue.
 
 ## Scanner
 
-Grease-pencil correction on an accident form: not weather, not panic, an authorization delay with a body count attached.
+Grease-pencil correction over accident form. Official cause: WEATHER. Correction: AUTH DELAY. Door clock runs six minutes ahead of claim stamp.
 
 ## Terminal
 
-MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch, rescue authorization queue.
+MARAUDER CORRECTION MC-12
+Official cause: weather / rejected
+Check before claim: pump certificate; shift count; body category; door-clock mismatch; rescue authorization queue
+Clock fault: door +00:06 before claim stamp
+Action: hold accident label until queue log is recovered.
 
 ## Audio
 
-Someone smelled the rot in the paperwork before the room dried.
+Weather did not hold the door. The queue did.
 
 ## Field Note
 

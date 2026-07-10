@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Kręgosłup pierwszej godziny
 
-Kręgosłup pierwszej godziny definiuje rytm otwarcia HECTON-8. Gracz zaczyna od namacalnych zadań inżynieryjnych i wizualnego zachwytu, a potem widzi, jak te zadania łączą się z korporacyjnym kłamstwem i ekologią utrzymania, która weszła w biologię. Dzięki temu pierwsza trasa pozostaje grywalna i atmosferyczna, a jednocześnie sadzi większe śledztwo: ocean nie ukrywa historii, tylko przechowuje dowody w ciśnieniu, soli i procedurze.
+Kręgosłup pierwszej godziny definiuje rytm otwarcia HECTON-8. Najpierw przychodzą namacalne zadania inżynieryjne i wizualny zachwyt, potem te zadania łączą się z kłamstwem korporacji i ekologią konserwacji, która weszła w biologię. Ocean nie ukrywa historii; przechowuje dowody w ciśnieniu, soli i procedurze.
 
 ## Scanner
 
-Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wyczyszczone kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
+Kontrakt, uszkodzony zrzut, powietrze, jasne płycizny, schron przy pompie, wysterylizowane kłamstwo, potem pierwsza blizna naprawcza używająca życia jako uszczelki.
 
 ## Terminal
 
-PŁYTKI ANEKS: ręczny restart pompy ważny. Pakiet incydentu Deep Reach zapisany. Wzrost naprawczy Atlas wykryty wokół kabla, fragmentu narzędzia i pozostałości biologicznej.
+SHALLOW ANNEX: ręczny restart pompy ważny. Pakiet incydentu Deep Reach w cache. Wzrost naprawczy Atlas wykryty przy kablu, fragmencie narzędzia i resztce biologicznej.
 
 ## Audio
 
-Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej od ciebie wstrzymuje oddech.
+Pierwszy bezpieczny pokój nie jest czysty. Po prostu lepiej wstrzymuje oddech niż ty.
 
 ## Field Note
 
-Otwarcie musi być piękne, zanim stanie się oskarżeniem.
+Otwarcie musi być piękne, zanim zacznie oskarżać.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/pl_PL. -->

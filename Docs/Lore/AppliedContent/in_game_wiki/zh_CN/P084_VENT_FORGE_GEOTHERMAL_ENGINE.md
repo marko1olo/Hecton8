@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "热泉锻炉地热引擎"
+title: "喷口熔炉地热机"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 热泉锻炉地热引擎
+# 喷口熔炉地热机
 
-热泉锻炉把地质和制造、生存、恐怖连在一起。它们提供陶瓷、密封件和压力玻璃需要的热压循环，但同样的循环也制造沸腾空穴、假氧读数、腐蚀云和动物迁移。
+喷口熔炉把地质和作业连接起来。它的脉冲可以固化陶瓷、复位压力密封、退火压力玻璃、预热上升药柱，但每个有用周期也都是危险节律。沸腾剪切会攻击接缝，假氧会骗过仪器，腐蚀暴发会进入打开的壳体，附近生命会在操作者明白原因前先移动。
 
 ## Scanner
 
-热泉锻炉歧管。热、毒和动力共用同一根管。
+喷口熔炉歧管。热、毒、压力和动力共用同一根管线。
 
 ## Terminal
 
-地热引擎：热泉脉冲适合陶瓷固化、压力玻璃退火和紧急上升充能预热。暴露风险：沸腾剪切、氧气传感器假阳性、腐蚀云。
+地热机：喷口脉冲适用于陶瓷固化、压力玻璃退火、密封复位和紧急上升药柱预热。暴露风险：沸腾剪切、假氧、腐蚀暴发、生物迁移。
 
 ## Audio
 
-你叫它动力还是天气，热泉都不在乎。
+喷口不在乎你把它叫做动力还是天气。
 
 ## Field Note
 
-每个有用的热泉也是惩罚错误时机的机器。
+每个有用喷口，也都是惩罚错误时机的机器。
 
 <!-- In-Game Wiki; generated from P084_VENT_FORGE_GEOTHERMAL_ENGINE/zh_CN. -->

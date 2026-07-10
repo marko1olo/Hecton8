@@ -19,6 +19,8 @@ localization_flags: 0
 
 # Crash Shelf
 
-The Crash Shelf is the player's first room and first crime scene. A descent capsule lies half-buried in salt weed and warm ceramic, too damaged to leave and too useful to abandon. Its surviving frame gives the player shelter, salvage, scanner targets, and a line to Black Keel that sounds procedural before it sounds human. That tone matters. The carrier does not answer like a friend. It inventories the failure: ascent package gone, uplink fractured, operator alive, recovery authority unresolved. The opening location teaches HECTON-8 without a lecture. Beauty is real: shallow bioluminescence, reef color, storm light under Aegir. So is the industrial violence: stamped parts, impact scars, claim language, a rescue chain already counting cost. The first question is practical: stay alive. The second question arrives inside the same wreckage: who benefits if you do?
+A bathy-drop shell lies half-buried in salt weed and warm ceramic on the storm shelf. The crush frame survived. The ascent package did not. Inside the wreck are the first salvage decisions: leave the pressure frame intact, pull insulation without opening the shelter seam, keep the fractured uplink dry, and wait for a carrier window that may not belong to the operator.
+
+Black Keel answers in inventory language: impact survived, ascent lost, uplink fractured, operator alive, recovery authority unresolved. The shelf is beautiful in the useful way HECTON-8 should be beautiful: reef color, storm light, shallow bioluminescence, and a dead machine still warm enough to save you. The wreck is also a record. Strip it too fast and the first proof of what happened becomes scrap.
 
 <!-- External Site; generated from P001_CRASH_SHELF/en_US. -->

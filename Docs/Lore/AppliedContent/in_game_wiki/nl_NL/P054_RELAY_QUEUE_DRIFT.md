@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Drift in relaiswachtrij"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drift in relaiswachtrij
+# Relay Queue Drift
 
-Vertraagde communicatie is gevaarlijk omdat ze accuraat kan blijven in de verkeerde tijd. Een carrierwaarschuwing kan een echte klep, een echt lek en een echte route beschrijven die onder druk al veranderd is. De speler moet pakketleeftijd vergelijken met lokaal bewijs.
+Relay queue drift is de dodelijkste vorm van eerlijkheid op HECTON-8. Een delayed carrier packet kan een real valve, een real safe door, een real low-current corridor en een real leak beschrijven die al is verplaatst. De order is niet nep; hij hoort bij een ruimte die door pressure, flooding, silt, heat of collapse is veranderd. Goede field practice is geen ongehoorzaamheid om zichzelf. Het is packet age vergelijken met wet paint, fresh salt, door strain, pump sound en de richting waarin loose debris wil reizen.
 
 ## Scanner
 
-De relaisstempel is ouder dan het lek dat hij noemt; de instructie was waar voor een kamer die niet meer bestaat.
+Relay stamp ouder dan de leak die hij benoemt. De instruction was waar voor een room die niet meer bestaat.
 
 ## Terminal
 
-WACHTRIJDRIFT: pakketleeftijd overschrijdt routegeldigheid. Lokaal bewijs gaat boven carrierinstructie tot een vers relaisvenster opent.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction tot fresh relay window opent. Treat delayed route orders as archival tenzij pressure, door state en waterline overeenkomen.
 
 ## Audio
 
-Het bericht klopt. Dat is het probleem.
+De message is correct. Dat is het probleem.
 
 ## Field Note
 
-Een late waarheid kan nog steeds doden.
+Een late truth kan nog steeds doden.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/nl_NL. -->

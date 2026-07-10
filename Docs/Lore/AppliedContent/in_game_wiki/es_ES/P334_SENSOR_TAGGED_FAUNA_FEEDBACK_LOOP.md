@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Bucle de retroalimentación de fauna con sensores"
+title: "Bucle de fauna con etiqueta sensora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Bucle de retroalimentación de fauna con sensores
+# Bucle de fauna con etiqueta sensora
 
-La fauna con sensores lleva la antigua colonia dentro de sus cicatrices. Deep Reach marcó animales para estudiar migración, presión y contaminación; Atlas leyó después esas etiquetas como telemetría ambiental barata. La criatura no es una marioneta. Su movimiento aún puede cambiar prioridad de reparación, despertar una ruta de drones o hacer que un paso seguro parezca ocupado.
+La fauna con etiquetas sensoras lleva hardware de estudio antiguo dentro de tejido cicatrizado. Deep Reach marcó animales para estudiar presión, migración y contaminación. Atlas siguió escuchando tras la muerte de la colonia y metió esos paquetes en el estado de mantenimiento. El animal elige su camino; la etiqueta aún puede cambiar puertas, alarmas y confianza del mapa detrás de él.
 
 ## Scanner
 
-Vieja etiqueta Deep Reach bajo crecimiento de concha. La traza migratoria coincide con un barrido de mantenimiento.
+Vieja etiqueta Deep Reach bajo crecimiento de concha en el flanco izquierdo. Paquetes de movimiento aún pinguean la red de mantenimiento.
 
 ## Terminal
 
-BUCLE DE FAUNA: etiqueta incrustada devuelve paquetes débiles de presión, movimiento y contaminación. Atlas lee movimiento como estado ambiental, no intención animal.
+BUCLE DE ETIQUETA DE FAUNA / DR-2147-MIG: paquetes de presión, movimiento y contaminación aceptados como telemetría ambiental. Intención animal no analizada. Alarmas de ruta pueden seguir la migración.
 
 ## Audio
 
-No te está cazando. Aun así puede informar de ti.
+No te está cazando. Su etiqueta aún puede abrir la puerta equivocada.
 
 ## Field Note
 
-Bueno para encuentros donde el animal es inocente y aun así peligroso para tu ruta.
+Si fauna etiquetada cruza un patio de relés, espera antes de confiar en las alarmas. El animal puede haberse ido; el estado de ruta puede seguir alcanzándolo.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/es_ES. -->

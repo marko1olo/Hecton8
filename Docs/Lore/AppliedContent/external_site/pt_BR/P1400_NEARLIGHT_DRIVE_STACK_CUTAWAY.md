@@ -9,22 +9,18 @@ locale: pt_BR
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Corte do conjunto de propulsão quase-luz"
+title: "Corte do drive stack nearlight"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corte do conjunto de propulsão quase-luz
+# Corte do drive stack nearlight
 
-Uma nave quase-luz em HECTON-8 não é uma flecha limpa com um motor impossível. O casco visível é a última peça revisada de uma rota assentada anos antes da tripulação acordar. As placas de treinamento da Barnard Yards desenham o conjunto na ordem em que um trabalhador realmente paga por ele: empurrão de vela de feixe, captura de pellets, garganta fusão-elétrica, blindagem de sombra, nervuras radiadoras, carretel de vela magnética, pele de aerofrenagem e custódia do receptor.
+O corte da Barnard Yards foi feito para contratados, por isso fala a verdade. Ele não desenha uma campânula heroica e finge que o problema acabou. Começa pela rota: quem possui o beam array, quem limpou a pellet lane, quanta perda de poeira o escudo aguenta, quantos anos a margem do radiador fica honesta, e qual receptor tem direito de frear massa humana.
 
-Cada estágio tem um dono diferente e um jeito diferente de falhar. Uma matriz de feixe pode vender a partida antes que alguém tenha pago pela chegada. Uma trilha de pellets pode alimentar a queima e ainda quebrar uma janela de carga se as tolerâncias de captura derivarem. O escudo pode sobreviver à viagem ficando mais fino. Radiadores podem manter todos vivos transformando cada quilo extra em pergunta. As contas de vela magnética e aerofrenagem decidem se a nave pode parar sem queimar o lucro nos tanques.
-
-É assim que a fronteira humana continua grande e cruel sem quebrar a física. A luz carrega reivindicações, pacotes de socorro e ameaças legais por muito menos que corpos. A Deep Reach pode herdar um direito antes de mover um casco. A Black Keel pode estar no sistema Aegir e ainda se comportar como um terminal de contrato porque pertence ao conjunto receptor local, não ao trabalhador preso abaixo.
-
-O corte é útil porque dá ao jogador uma forma de ler resgate como maquinaria. Uma nervura radiadora corroída, um livro de frenagem fechado ou um medidor de custódia não são detalhe de fundo. São parte da resposta a uma pergunta simples: quem pagou para esta massa parar aqui, e quem não pagou?
+Essa é a parte importante. Viajar nearlight não tornou a distância pequena. Tornou a distância agendada, segurada, medida e punível. Uma nave pode levar fusion-electric throat e ainda ser inútil sem infraestrutura de partida. Pode sobreviver ao cruzeiro e morrer politicamente no slot de frenagem. Em HECTON-8, resgate nunca é só uma nave dando meia-volta. O motor é a rota, o calor, a cadeia custody e a massa que alguém aceita pagar para parar.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/pt_BR. -->

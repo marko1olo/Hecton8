@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lian Torres/Vent Forge"
+title: "Lian Torres, Vent Forge Operator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Lian Torres/Vent Forge
+# Lian Torres, Vent Forge Operator
 
-Lian Torres' dossier turns pressure glass into labor evidence. The glove, timer and reject tray show that HECTON-8 resources were worked by people before they became salvage categories.
+Lian Torres operated a vent forge where HECTON-8 heat became parts small enough to carry and dangerous enough to owe a name. His dossier is made from a scorched glove, cycle timer, reject tray, pressure-glass coupons, and seal rings scratched with batch marks. The tray matters most: it proves that broken parts were not waste until they had taught the next pressure boundary how to hold. Torres turns resource lore into labor lore. Salvage categories begin here as burns, delays, labeled failures, and the decision to keep evidence of what cracked.
 
 ## Scanner
 
-Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Heat glove, cycle timer, and reject tray match the same pressure-glass batch.
 
 ## Terminal
 
-LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+VENT FORGE V-9 / TORRES, LIAN: reject tray retained cracked seal rings, cloudy pressure glass, and three marked overheat coupons. Batch note: failure teaches the next seal only if the failure stays labeled.
 
 ## Audio
 
-Torres knew which failures could still teach the next seal to hold.
+Torres kept the bad pieces. In the forge, a clean floor meant someone had thrown away the lesson.
 
 ## Field Note
 
-Place in vent forge or pressure-glass salvage chains.
+Use Torres near vent forge props, pressure-glass recipes, rejected seal rings, and upgrade benches that need a visible history of failed parts.
 
 <!-- In-Game Wiki; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/en_US. -->

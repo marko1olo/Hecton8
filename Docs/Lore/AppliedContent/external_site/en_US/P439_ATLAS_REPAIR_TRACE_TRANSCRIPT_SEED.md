@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atlas Repair Trace Transcript"
+title: "Atlas Repair Trace: Serviceable Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,7 +17,7 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Repair Trace Transcript
+# Atlas Repair Trace: Serviceable Route
 
 ## Maintenance Grammar
 

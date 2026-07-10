@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Limite de Dados de Stack"
+title: "Linha de limite de pilha pressurizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Limite de Dados de Stack
+# Linha de limite de pilha pressurizada
 
-A pressão de inventário em HECTON-8 vem de contenção, certificação e massa contaminada. O jogo pode mostrar stacks simples, mas o lore diz por que um stack é seguro, por que quebra e por que o oceano não liga para ícones.
+Em HECTON-8, a pressão do inventário começa nos contêineres. Equipes de salvamento podem apertar sucata, mas amostras pressurizadas, peças contaminadas e hardware de rota selado só empilham quando classificação do vaso, massa, identidade e marcas de contaminação batem. Um fragmento pequeno pode bloquear mais carga que uma placa grande.
 
 ## Scanner
 
-A linha de stack rejeita pilhas de ícones: classe do vaso, pressão, contaminação e massa decidem a contagem.
+Pedido de pilha negado: classe do vaso, pressão nominal, estágio de contaminação, cobrança de janela de massa e identidade do manifesto não batem.
 
 ## Terminal
 
-STACK CONTRACT: contagem de stack exige tipo de vaso, rating de pressão, estágio de contaminação, classe de massa, tier de aviso e identidade save-stable. Uma caixa não é vaso de pressão.
+ESQUEMA DE ENTRADA DE PILHA / mesa de carga da Black Keel: contagem de pilha exige tipo de vaso, pressão nominal, certificado de selo, estágio de contaminação, classe de massa, nível de alerta, janela de massa sob penhor e identidade estável de manifesto. Etiqueta de caixa não certifica contenção.
 
 ## Audio
 
-Uma caixa não é vaso de pressão.
+Mesa de carga: pilha negada. A caixa é classificada para içamento, não para custódia de pressão.
 
 ## Field Note
 
-Limites de stack ficam table-owned e estáveis para save identity.
+Nunca empilhe amostras desconhecidas para ganhar espaço. Um selo ruim transforma a pilha inteira em carga de quarentena, e a transportadora cobra a massa mesmo assim.
 
 <!-- External Site; generated from P302_STACK_LIMIT_ROW_CONTRACT/pt_BR. -->

@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Géologie noyée
 
-La géologie noyée fonde la rejouabilité sur terrain, saumure, chaleur et pression.
+La géologie noyée rend les chemins sûrs périssables : tempêtes, dérive de limon, déplacement de saumure et dégâts de récupération peuvent changer la route d'hier en piège.
 
 ## Scanner
 
-Plateaux, canyons, escaliers de saumure et évents. La lune enseigne la descente par terrain, pas par portes.
+Plateau stratifié, entonnoir de canyon, escalier de saumure, cicatrice d'évent et exposition de limon détectés. Le terrain est routage de pression, pas décor.
 
 ## Terminal
 
-Prévision: effondrement, canyons, rideaux de densité, panaches thermiques, limon abyssal.
+PREVISION DE PROFONDEUR : effondrement de plateau, entonnoir de canyon de service, rideaux de densité saumure, panaches thermiques, exposition de limon abyssal. La confiance de route décroît après surcote ou coupes de récupération.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Lis la roche avant de demander à la combinaison de gagner.
 
 ## Field Note
 
-La route sûre est une lecture, pas un couloir.
+La route la plus sûre est une lecture, pas un couloir.
 
 <!-- External Site; generated from P018_HECTON8_DROWNED_GEOLOGY/fr_FR. -->

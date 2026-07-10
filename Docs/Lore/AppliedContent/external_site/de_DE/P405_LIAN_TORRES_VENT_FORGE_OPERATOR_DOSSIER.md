@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "DE LOC HOLD: Lian Torres/Vent Forge"
+title: "Lian Torres, Vent-Schmiedeoperator"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# DE LOC HOLD: Lian Torres/Vent Forge
+# Lian Torres, Vent-Schmiedeoperator
 
-DE LOC HOLD: Lian Torres anchors blue-debt-adjacent industry in craft, pressure and risk rather than magic material lore.
+Lian Torres erdet HECTON-8-Industrie in Handwerk statt Wundermaterial. Die Schmiedebelege zeigen, dass Druckglas, Dichtringe und Keramikauskleidungen nicht als Beute geboren wurden. Sie wurden bearbeitet, verworfen, neu beschriftet und sicher genug gemacht, damit jemand anders ihnen unter Wasser vertraute.
 
 ## Scanner
 
-DE LOC HOLD: Dossier: Lian Torres. Glove, timer and reject tray match.
+Dossier: Lian Torres. Hitzeschuh, Zyklustimer und Ausschussschale passen zur selben Druckglascharge.
 
 ## Terminal
 
-DE LOC HOLD: LIAN TORRES/VENT FORGE. Reject trays logged pressure history and the price of each seal.
+VENT-SCHMIEDE V-9 / TORRES, LIAN: Ausschussschale behielt gerissene Dichtringe, trübes Druckglas und drei markierte Überhitzungsproben. Chargennotiz: Versagen lehrt die nächste Dichtung nur, wenn das Versagen beschriftet bleibt.
 
 ## Audio
 
-DE LOC HOLD: Torres knew which failures could still teach the next seal to hold.
+Torres bewahrte die schlechten Teile auf. In der Schmiede bedeutete ein sauberer Boden, dass jemand die Lektion weggeworfen hatte.
 
 ## Field Note
 
-DE LOC HOLD: Place in vent forge or pressure-glass salvage chains.
+Torres bei Vent-Schmiede-Props, Druckglasrezepten, verworfenen Dichtringen und Upgradebänken einsetzen, die eine sichtbare Geschichte gescheiterter Teile brauchen.
 
 <!-- External Site; generated from P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER/de_DE. -->

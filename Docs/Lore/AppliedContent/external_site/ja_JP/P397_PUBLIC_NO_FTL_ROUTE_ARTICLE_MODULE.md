@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "FTLなしのルート遅延"
+title: "FTLなしの経路遅延"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FTLなしのルート遅延
+# FTLなしの経路遅延
 
-HECTON-8には即時救助チャンネルがない。Aegir系はprecursor probes、beam infrastructure、pellet-fusion freight、そして緊急性さえ質量制約として扱う制動系で到達された。メッセージは、それを有用にする機材より先に届き得る。carrierはあなたの存在を認め、payloadを査定し、valid claimを保持できるが、悪いweather、relay angle、custody windowの下でdescent massを使えない場合がある。公開用の航行文はこの制約を見えるままにする必要がある。ここでの孤立は雰囲気ではなく、工学、法律、物流が同時に働いた結果だ。Black Keelは法的には近く、物理的には届かないことがある。だからrelayが応答した後も、プレイヤーは手でシールを直す。
+HECTON-8に即時救助チャンネルはない。Aegirへの人間交通は、先行探査機図、ビームレーン基盤、ペレット核融合貨物、制動システム、キャリア窓、法的保管引き継ぎで成り立つ。緊急性は質量を消さない。船はペイロードに値を付け、請求を受け入れ、記録を保持できるが、水中へ有用な物を一つ降ろす割当を持たない場合がある。だからゲームは通信を救助ではなく証拠として扱う。返答は誰かが緊急を聞いたことを証明する。シールを塞がず、バシドロップを動かさず、悪い軌道窓も短くしない。
 
 ## Scanner
 
-輸送記録。Aegir交通はprecursor probes、beam lanes、pellet-fusion freight、braking mass、packet age、relay custody、法的遅延に依存する。
+輸送記録。Aegir交通は探査機図、ビームレーン、ペレット核融合貨物、制動質量、パケット年齢、中継保管、荒れた降下窓に依存する。
 
 ## Terminal
 
-公開アーカイブノード // 輸送限界。FTLなし。Ansibleなし。生きた救助には物理移送、braking architecture、carrier position、descent mass、有効なlocal windowが必要。
+公開アーカイブノード // 輸送限界。FTL: なし。Ansible: なし。生存救助には、キャリア位置、制動割当、降下質量、現地天候、期限切れでない保管窓が必要。
 
 ## Audio
 
-救助は法的には近く、物理的には何年も遠いことがある。
+キャリアは緊急を記録できる。それでも質量で何年も離れていることがある。
 
 ## Field Note
 
-Marauderメモ: relayが答えたら、その答えが何年前のものか、どの質量を動かせるのかを聞け。
+マローダー記録: 救助返答には四つの数字が要る。パケット年齢、キャリア質量、制動スロット、降下窓。
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/ja_JP. -->

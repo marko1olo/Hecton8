@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Pembentukan Kaca Tekanan"
+title: "Pembentukan Pressure Glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pembentukan Kaca Tekanan
+# Pembentukan Pressure Glass
 
-Kaca tekanan adalah nama teknis di balik blue debt para Marauder dan bahasa Xenon-Omega Deep Reach. Ia terbentuk saat tekanan, kantong gas mulia, brine, mineral, panas dan biologi yang berubah bertemu.
+Pressure glass adalah nama lapangan di balik utang biru marauder dan bahasa Xenon-Omega Deep Reach. Ia hanya terbentuk ketika kantong gas mulia, cacat mineral, brine panas, biologi yang berubah, dan sejarah tekanan keras bertahan bersama cukup lama untuk mengunci kisi menjadi memori.
 
 ## Scanner
 
-Kisi utang biru. Gas mulia, brine, cacat mineral dan riwayat tekanan terkunci dalam satu kesalahan mahal.
+Kisi utang biru. Gas mulia, brine, cacat mineral, siklus panas, dan riwayat tekanan menyatu menjadi satu luka mahal.
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: kisi cacat/clathrate kaya xenon distabilkan oleh kimia brine, siklus panas dan residu katalis biologis. Risiko depresurisasi: drift sinyal, retak dan bloom kontaminasi.
+SUBSTRAT KONTINUITAS XO: kisi klatrat/cacat kaya xenon distabilkan oleh kimia brine, siklus panas, dan sisa katalis biologis. Risiko depresurisasi: drift sinyal, retak, ledakan kontaminasi.
 
 ## Audio
 
-Ini alasan mereka kembali. Bukan emas. Luka yang bisa dibaca mesin.
+Inilah alasan mereka kembali. Bukan emas. Luka yang bisa dibaca.
 
 ## Field Note
 
-Ini bukan bijih. Ini proses yang mengingat tempat pembuatannya.
+Ini bukan bijih. Ini tempat yang mengingat apa yang terjadi padanya.
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/id_ID. -->

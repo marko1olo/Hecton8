@@ -19,22 +19,22 @@ localization_flags: 0
 
 # No-FTL Route Delay
 
-HECTON-8 has no instant rescue channel. The Aegir system was reached by precursor probes, beam infrastructure, pellet-fusion freight and braking systems that treat urgency as another mass constraint. A message can arrive before the hardware that would make the message useful. A carrier can acknowledge your existence, price your payload and hold a valid claim while still being unable to spend descent mass under the wrong weather, relay angle or custody window. Public travel copy has to keep this visible because isolation here is engineering, law and logistics working together. Black Keel can be nearby in legal terms and unreachable in physical terms. That delay is why the player still repairs seals by hand after the relay answers.
+There is no instant rescue channel at HECTON-8. Human traffic to Aegir is built from precursor probe charts, beam-lane infrastructure, pellet-fusion freight, braking systems, carrier windows, and legal custody handoffs. Urgency does not cancel mass. A ship can price a payload, accept a claim, and hold your record while still lacking the descent allocation to move one useful object into the water. This is why the game treats communication as evidence, not rescue. A reply can prove that someone heard the emergency. It cannot patch a seal, move a bathydrop, or shorten a bad orbital window.
 
 ## Scanner
 
-Transit record. Aegir traffic depends on precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody and legal delay.
+Transit record. Aegir traffic depends on probe charts, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody, and weathered descent windows.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL absent. Ansible absent. Live rescue requires physical transfer, braking architecture, carrier position, descent mass and a valid local window.
+PUBLIC ARCHIVE NODE // TRANSIT LIMIT. FTL: absent. Ansible: absent. Live rescue requires carrier position, braking allocation, descent mass, local weather, and a custody window that has not expired.
 
 ## Audio
 
-Help can be legally present and physically years away.
+A carrier can log your emergency and still be years of mass away.
 
 ## Field Note
 
-Marauder note: when the relay answers, ask how old the answer is and what mass it can move.
+Marauder note: every rescue answer needs four numbers: packet age, carrier mass, braking slot, descent window.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/en_US. -->

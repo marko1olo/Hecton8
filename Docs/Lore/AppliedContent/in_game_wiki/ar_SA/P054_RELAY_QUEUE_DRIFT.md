@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "انجراف طابور الترحيل"
+title: "انجراف relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# انجراف طابور الترحيل
+# انجراف relay queue
 
-الاتصال المتأخر خطر لأنه قد يبقى دقيقا في الزمن الخطأ. قد يصف تحذير الناقل صماما حقيقيا وتسربا حقيقيا وطريقا حقيقيا تغير بالفعل تحت الضغط. على اللاعب مقارنة عمر الحزمة بالدليل المحلي قبل الوثوق بسلطة بعيدة.
+Relay queue drift هو أخطر أنواع الصدق على HECTON-8. يمكن لdelayed carrier packet أن يصف real valve وreal safe door وreal low-current corridor وreal leak انتقلت بالفعل. الorder ليست كاذبة؛ إنها تنتمي إلى room غيرتها pressure أوflooding أوsilt أوheat أوcollapse. field practice الجيدة ليست عصيانا من أجل العصيان. إنها مقارنة packet age مع wet paint وfresh salt وdoor strain وpump sound والاتجاه الذي يريد loose debris أن يتحرك فيه.
 
 ## Scanner
 
-ختم الترحيل أقدم من التسرب الذي يسميه؛ كان الأمر صحيحا لغرفة لم تعد موجودة.
+Relay stamp أقدم من leak التي يسميها. كانت instruction صحيحة لغرفة لم تعد موجودة.
 
 ## Terminal
 
-انجراف الطابور: عمر الحزمة يتجاوز صلاحية الطريق. الدليل المحلي يعلو على أمر الناقل حتى تفتح نافذة ترحيل جديدة.
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction حتى تفتح fresh relay window. Treat delayed route orders as archival ما لم تتطابق pressure وdoor state وwaterline.
 
 ## Audio
 
-الرسالة صحيحة. هذه هي المشكلة.
+إن message صحيحة. هذه هي المشكلة.
 
 ## Field Note
 
-الحقيقة المتأخرة قد تقتل أيضا.
+يمكن لtruth متأخرة أن تقتل أيضا.
 
 <!-- In-Game Wiki; generated from P054_RELAY_QUEUE_DRIFT/ar_SA. -->

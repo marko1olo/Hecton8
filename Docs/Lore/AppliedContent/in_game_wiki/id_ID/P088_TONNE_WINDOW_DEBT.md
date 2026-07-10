@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Utang Tonne-Window"
+title: "Utang Jendela-Tonase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Utang Tonne-Window
+# Utang Jendela-Tonase
 
-Utang tonne-window adalah titik ketika fisika menjadi keuangan. Black Keel tidak punya margin angkat, bahan bakar transit, atau volume karantina bersih yang tak terbatas. Setiap kilogram yang dibawa dari HECTON-8 bersaing dengan setiap kilogram yang dibutuhkan untuk menjaga operator tetap hidup. Meter utang membuat carrier terasa kejam tanpa melanggar hard science: penyelamatan mungkin, tetapi anggaran rute terus bertanya apa yang pantas mendapat massa.
+Utang jendela-tonase adalah titik ketika HECTON-8 berhenti menjadi sekadar cerita horor dan menjadi orbital logistics. Black Keel punya lift margin terbatas, clean volume terbatas, oxygen reserve terbatas, dan route price untuk setiap kilogram. Spare tank, sealed sample, damaged suit, proof case, body, dan crate of salvage bersaing dalam jendela yang sama. Sistem itu terasa kejam karena ia tepat. Ia tidak perlu berpura-pura rescue mustahil. Ia hanya terus bertanya apa yang mampu diangkat rute itu.
 
 ## Scanner
 
-Meter jendela massa. Setiap kilogram bantuan punya harga rute.
+Mass-window ledger. Bantuan punya berat sebelum punya bahasa.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: margin recovery burn menyempit. Massa ekstraksi operator bertabrakan dengan payload tersegel, cadangan ballast, utang oksigen, dan custody sampel karantina. Override manual membutuhkan prioritas berbayar atau bukti bahaya.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass bertentangan dengan sealed payload, ballast reserve, oxygen debt, quarantine sample volume, dan hull patch inventory. Manual priority memerlukan paid override, verified hazard proof, atau custody reclassification.
 
 ## Audio
 
-Kapal bisa membawamu atau apa yang kamu temukan. Ia lebih suka angka.
+Kapal bisa mengangkat satu nyawa. Pertanyaannya apa lagi yang dipaksa ledger untuk ikut dibawa.
 
 ## Field Note
 
-Oksigen, ballast, bukti, payload, tubuh: carrier menimbangnya sebelum menimbang belas kasihan.
+Oxygen, ballast, proof, samples, hull patch, body: carrier memberi harga belas kasih per kilogram.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/id_ID. -->

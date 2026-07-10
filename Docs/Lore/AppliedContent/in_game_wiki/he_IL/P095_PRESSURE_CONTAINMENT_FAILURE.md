@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "כשל כליאת לחץ"
+title: "כשל Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# כשל כליאת לחץ
+# כשל Pressure Containment
 
-כשל כליאת לחץ נותן ל-blue debt התנהגות חומרית שאפשר לקרוא. הוא יקר כי לחץ עמוק הפך אותו לקוהרנטי, ומסוכן כי טיפול רדוד מפרק את הקוהרנטיות הזאת. שלב 0 אטום. שלב 1 סוטה ולעתים ניתן להצילו בדחיסת נביעה. שלב 2 שובר את הסריג. שלב 3 מזמין מלח וביולוגיה. שלב 4 משאיר דגימה מתה שמזהמת ציוד, מים ונתיבים.
+Pressure containment failure נותן ל-blue debt behavior שאפשר לקרוא בלי myth. הוא valuable מפני ש-deep pressure made the lattice coherent. הוא dangerous מפני ש-shallow handling lets that coherence unwind. Stage 0 stays sealed. Stage 1 drifts ויכול recover under vent repressure. Stage 2 fractures the lattice. Stage 3 invites brine and biological bloom into the case. Stage 4 leaves a dead sample that still contaminates gear, water ו-route markings. ה-material אינו cursed. הוא homesick for pressure.
 
 ## Scanner
 
-תרשים שלבי ארון. blue debt נכשל דרך זיכרון לחץ, גזירת אות ו-bloom; אמונה תפלה מבזבזת חמצן.
+Casket stage chart. Blue debt fails through pressure memory, signal shear ו-bloom; superstition wastes oxygen.
 
 ## Terminal
 
-שלבי כליאה: 0 סריג אטום; 1 סטיית אות; 2 שבר סריג; 3 bloom מלח/ביולוגיה; 4 דגימה מתה עם זיהום חי. דחיסה מחדש בנביעה יכולה להציל רק שלב 1.
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
 
 ## Audio
 
-הדגימה לא שונאת אותך. היא מנסה לחזור למקום שבו נוצרה.
+The sample does not hate you. It is trying to be back where it formed.
 
 ## Field Note
 
-דגימה יכולה להיות שווה הון בעומק אחד ולהפוך לחבות עשרה מטרים אחר כך.
+Sample יכול להיות worth a fortune at one depth ו-become a liability ten meters later.
 
 <!-- In-Game Wiki; generated from P095_PRESSURE_CONTAINMENT_FAILURE/he_IL. -->

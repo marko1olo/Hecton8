@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Échelle de route du canyon de saumure"
+title: "Echelle de route du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Échelle de route du canyon de saumure
+# Echelle de route du canyon de saumure
 
-Les canyons de saumure rendent la progression en profondeur physique. Couches denses, murs minéraux, fuites thermiques et distorsion acoustique apprennent au joueur pourquoi il faut de meilleurs instruments et une discipline de pression.
+Les canyons de saumure transforment la profondeur en substance. Des rivières de sel dense reposent dans l'océan comme sols, miroirs et pièges. Une route propre vient de marqueurs de densité, de fenêtres de ballast, de contrôles relais et d'angles disciplinés, pas de courage. Les couches profondes enseignent pourquoi les instruments comptent : le sonar peut refléter la salle du dessus, la flottabilité peut mentir, et la combinaison peut avoir raison quand la mer refuse.
 
 ## Scanner
 
-Marqueur de densité de saumure. La descente est une chimie avec des murs.
+Marqueur de densité confirmé. La route n'est pas un couloir ; c'est de la chimie avec des murs.
 
 ## Terminal
 
-CONTRÔLE CANYON SAUMURE: interface de densité assez stable pour une descente étagée. Avertissement: distorsion de relais acoustique, erreur de flottabilité véhicule et faux-planchers attendus sous 1800 m.
+CONTROLE CANYON DE SAUMURE : interface de densité stable pour descente par étapes. Risques attendus sous 1800 m : distorsion relais acoustique, erreur de flottabilité véhicule, faux plancher capteur.
 
 ## Audio
 
-Le canyon est un escalier fait d'eau fausse.
+Le canyon est un escalier fait d'une eau fausse.
 
 ## Field Note
 
-On ne nage pas dans le canyon. On négocie avec des couches plus lourdes que la combinaison.
+On ne traverse pas le canyon à la nage. On négocie avec des couches plus lourdes que la combinaison.
 
 <!-- In-Game Wiki; generated from P083_BRINE_CANYON_ROUTE_LADDER/fr_FR. -->

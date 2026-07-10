@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Tangga Bulan Aegir"
+title: "Aegir Moon Ladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Tangga Bulan Aegir
+# Aegir Moon Ladder
 
-Tangga Bulan Aegir memberi HECTON-8 astronomi lokal yang bisa dipakai: bulan lain menjelaskan jendela rute, claims mati, rumor salvage, dan waktu pemulihan yang gagal.
+Aegir Moon Ladder memberi HECTON-8 local astronomy layer: other moons membentuk transfer timing, eclipse dark, relay loss, salvage rumors, cold claims, dan failed recovery windows.
 
 ## Scanner
 
-Bagan tangga bulan. HECTON-8 adalah bahaya kerja dalam sistem bergerak, bukan level terisolasi.
+Moon ladder chart. HECTON-8 adalah one working hazard in a moving system, bukan isolated ocean level.
 
 ## Terminal
 
-BULAN UTAMA AEGIR // H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Model transfer dan eclipse terlampir.
+MAJOR AEGIR MOONS: H1 Skarn, H2 Vela, H3 Claw, H4 Lumen, H5 Thorne, H6 Anvil, H7 Kestrel, H8 HECTON, H9 Mute. Transfer, eclipse, relay, dan custody windows attached.
 
 ## Audio
 
-Peta memiliki lebih banyak bulan daripada belas kasihan.
+Map punya lebih banyak moons daripada mercy.
 
 ## Field Note
 
-Skarn membakar. Vela melepas es. Anvil memberi logam. Kestrel memotong relai. HECTON tenggelam.
+Skarn burns. Vela sheds ice. Anvil feeds metal. Kestrel cuts relays. HECTON drowns.
 
 <!-- External Site; generated from P077_AEGIR_MOON_LADDER/id_ID. -->

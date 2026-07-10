@@ -9,22 +9,18 @@ locale: es_ES
 surface: external_site
 source_voice: Public Site Ship Systems Article
 spoiler_tier: 1
-title: "Corte del conjunto de propulsión casi lumínica"
+title: "Corte del drive stack cercano a la luz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
-localization_flags: 0
+localization_flags: 1
 ---
 
-# Corte del conjunto de propulsión casi lumínica
+# Corte del drive stack cercano a la luz
 
-Una nave casi lumínica en HECTON-8 no es una flecha limpia con un motor imposible. El casco visible es la última pieza mantenida de una ruta tendida años antes de que la tripulación despierte. Las placas de formación de Barnard Yards dibujan el conjunto en el orden en que un trabajador lo paga de verdad: empuje de vela de haz, captura de pellets, garganta de fusión eléctrica, blindaje de sombra, costillas radiadoras, carrete de vela magnética, piel de aerofrenado y custodia del receptor.
+El corte de Barnard Yards se hizo para contratistas, por eso dice la verdad. No dibuja una campana heroica de motor ni finge que el problema está resuelto. Empieza por la ruta: quién posee el beam array, quién limpió la pellet lane, cuánta pérdida de polvo aguanta el escudo, cuántos años sigue honesto el margen radiador y qué receptor tiene derecho a frenar masa humana.
 
-Cada etapa tiene un dueño distinto y una forma distinta de fallar. Un arreglo de haces puede vender la salida antes de que nadie haya pagado la llegada. Una ruta de pellets puede alimentar la combustión y aun así arruinar una ventana de carga si derivan las tolerancias de captura. El escudo puede sobrevivir al viaje volviéndose más delgado. Los radiadores pueden mantener viva a la tripulación convirtiendo cada kilo extra en una pregunta. Las cuentas de vela magnética y aerofrenado deciden si la nave puede detenerse sin quemar el beneficio en sus tanques.
-
-Así la frontera humana sigue siendo enorme y cruel sin romper la física. La luz transporta reclamaciones, paquetes de socorro y amenazas legales mucho más barato que los cuerpos. Deep Reach puede heredar un derecho antes de mover un casco. Black Keel puede estar en el sistema Aegir y seguir comportándose como una terminal de contratos porque pertenece al conjunto receptor local, no al trabajador atrapado debajo.
-
-El corte sirve porque enseña a leer el rescate como maquinaria. Una costilla radiadora picada, un libro de frenado cerrado o un medidor de custodia no son decorado. Son parte de la respuesta a una pregunta simple: ¿quién pagó para que esta masa se detuviera aquí, y quién no?
+Eso es lo importante. El viaje cercano a la luz no hizo pequeña la distancia. La volvió programada, asegurada, medida y castigable. Una nave puede llevar un fusion-electric throat y seguir indefensa sin infraestructura de salida. Puede sobrevivir al crucero y morir políticamente en la ranura de frenado. En HECTON-8, el rescate nunca es solo una nave dando media vuelta. El motor es la ruta, el calor, la cadena custody y la masa que alguien pagará por detener.
 
 <!-- External Site; generated from P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY/es_ES. -->

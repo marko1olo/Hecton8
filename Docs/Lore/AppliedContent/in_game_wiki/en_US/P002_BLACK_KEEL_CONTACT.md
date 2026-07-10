@@ -19,7 +19,9 @@ localization_flags: 0
 
 # Black Keel Contact
 
-Black Keel is an Aegir-system claim tender, not a home ship. It moves capsules, cargo tugs, sealed samples, lien records, and unlucky operators through local traffic. It can help, but help passes through orbit geometry, weather, automation, debt, and beneficiary hooks hidden in the contract before the player ever touched the ocean.
+Black Keel is an Aegir-system claim tender. It moves capsules, cargo tugs, sealed samples, lien records and operators through local traffic windows. It can carry a rescue request, but the request passes through orbit geometry, weather, debt hooks and payload custody before it becomes help.
+
+The first contact is useful because the sky answers. It is dangerous because the answer arrives as fields: operator alive, dropcraft unrecoverable, claim open, sample unknown, recovery pending, lien mass recorded. Black Keel has enough voice to guide a packet. It does not have loyalty.
 
 ## Scanner
 
@@ -35,6 +37,6 @@ Window is closing. Send one packet. Choose before the storm band rolls over the 
 
 ## Field Note
 
-When a carrier asks what you found before it asks if you are breathing, you are not the client. You are the tool.
+Black Keel logged the sample field before the injury field. Send position last if you need leverage.
 
 <!-- In-Game Wiki; generated from P002_BLACK_KEEL_CONTACT/en_US. -->

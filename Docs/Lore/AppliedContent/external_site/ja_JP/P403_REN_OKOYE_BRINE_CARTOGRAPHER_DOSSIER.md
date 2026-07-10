@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "JA LOC HOLD: Ren Okoye/Brine Map"
+title: "レン・オコエ、塩水層地図師"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# JA LOC HOLD: Ren Okoye/Brine Map
+# レン・オコエ、塩水層地図師
 
-JA LOC HOLD: Ren Okoye frames HECTON-8 traversal as labor: reading brine, pressure and permission together.
+レン・オコエは移動に人間の出所を与える。プレイヤーがビーズ、ピン、消された線、経路印でできた手作業の読解システムを見つけると、HECTON-8の塩水峡谷は単なる危険で終わらない。水が動いたなら合法の道でも死ぬと知っていた人物の痕跡になる。
 
 ## Scanner
 
-JA LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+記録: レン・オコエ。密度ビーズ、スレートの切り傷、糸ピンの痕が一晩で動いた経路を示す。
 
 ## Terminal
 
-JA LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+塩水地図卓 / OKOYE, REN: 密度反転後、安全流は東へ3.2m移動。許可板はまだ昨日の回廊を表示。次の測深まで、作業者の経路印が管理経路に優先する。
 
 ## Audio
 
-JA LOC HOLD: Okoye drew roads that moved while management argued about permission.
+オコエは、図面を保ちたがらない水に道を描いた。
 
 ## Field Note
 
-JA LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+オコエは塩水経路の発見、密度層ナビゲーション、許可板との矛盾に使う。彼の証拠は古い地図を疑う具体的理由を与えるべき。
 
 <!-- External Site; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ja_JP. -->

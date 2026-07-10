@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Ledger Segel Hatch"
+title: "Ledger Seal Hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ledger Segel Hatch
+# Ledger Seal Hatch
 
-Frame hatch menyimpan kebohongan yang berguna. Lampu segel hijau berarti gasket bertahan, bukan bahwa penutupan itu adil, aman, atau bisa dibalik. Ledger segel menyimpan potongan tekanan, stempel override, dan arah penutupan manual terakhir. Di ruang koloni terlantar, satu hatch bisa menjadi penghalang rute, alat bertahan hidup, dan bukti pekerja sekaligus.
+Hatch frames menyimpan kebohongan yang berguna. Green seal light berarti gasket bertahan, bukan closure itu fair, safe, atau reversible. Seal ledgers menyimpan pressure cuts, override stamps, hinge strain, dan direction dari manual closure terakhir. Di abandoned colony spaces, hatch bisa menjadi route blocker, survival tool, worker evidence, dan accusation pada objek yang sama. Pertanyaannya jarang apakah ia terbuka. Pertanyaannya pressure, water, dan human decision apa yang dipisahkannya.
 
 ## Scanner
 
-Memori segel dipulihkan. Gasket menerima tiga potongan tekanan dan satu override evakuasi; akses sisi pulang dikunci dari sisi basah.
+Seal memory recovered. Gasket menerima three pressure cuts dan one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: deformasi gasket melewati toleransi servis. Penutupan manual diterima di bawah EVAC OVERRIDE. Hitungan operator di sisi pulang belum selesai. Buka ulang hanya setelah penyamaan tekanan dan inspeksi engsel.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection, dan wet-side witness check.
 
 ## Audio
 
-Ia tersegel. Hanya itu janji hatch.
+It sealed. Itu saja janji hatch.
 
 ## Field Note
 
-Hatch tersegel adalah kuitansi. Sebelum membukanya, tanya sisi mana yang membayar.
+Sealed hatch adalah receipt. Sebelum membukanya, tanya sisi mana yang membayar.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/id_ID. -->

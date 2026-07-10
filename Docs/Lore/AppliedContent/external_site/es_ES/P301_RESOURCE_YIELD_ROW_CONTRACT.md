@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Límite de datos de rendimiento de recurso"
+title: "Fila de aceptación de rendimiento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Límite de datos de rendimiento de recurso
+# Fila de aceptación de rendimiento
 
-El valor de recurso en HECTON-8 es una cadena, no una etiqueta. La tabla posee el número, pero la ficción posee por qué existe: quién tomó la muestra, bajo qué presión, con qué sello de custodia y cuánto de esa veta puede arrancar aún la ruta con seguridad.
+Los libros de salvamento alrededor de HECTON-8 no tasan minerales solo por nombre. Un registro de rendimiento necesita clase de muestra, banda de presión, custodia de ruta, estado de agotamiento, fase de contaminación y hash de paquete antes de confiar en el valor publicado. Una muestra sin historial de presión es masa sin pagar.
 
 ## Scanner
 
-La fila de rendimiento rechaza valor suelto: clase, banda de presión, custodia, agotamiento y hash deben coincidir.
+Fila de muestra incompleta: historial de presión, grado de custodia, agotamiento, contaminación y hash del paquete no coinciden.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: ningún número se acepta sin packet hash, clase de recurso, banda de presión, grado de custodia, curva de rareza y comportamiento de agotamiento. Una muestra sin historial de presión es evidencia, no valor.
+ESQUEMA DE INGRESO DE RENDIMIENTO / Aegir Reclamation Pool: rechazar valoración hasta tener clase de recurso, banda de presión, grado de custodia, curva de rareza, comportamiento de agotamiento, fase de contaminación y hash testigo del paquete. Una piedra embolsada es masa hasta que se pruebe la ruta de presión.
 
 ## Audio
 
-Una muestra sin historial de presión no tiene valor.
+Black Keel: retención de muestra aceptada tras ruta de presión y hash de custodia. Hasta entonces viaja como lastre.
 
 ## Field Note
 
-Los números de yield siguen provisionales hasta que pressure band, custody grade, depletion behavior y packet hash coinciden.
+Si la fila no trae banda de presión, no regatees. Mándala a masa muerta, deja el contenedor sellado y cobra al corredor cuando despeje la custodia.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/es_ES. -->

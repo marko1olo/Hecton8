@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Atlas Repair Trace Transcript"
+title: "Atlas Repair Trace: Serviceable Route"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Atlas Repair Trace Transcript
+# Atlas Repair Trace: Serviceable Route
 
-Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.
+Atlas repair traces are maintenance records from a damaged classification system. The trace does not speak like a god or a villain. It lists faults and usable material: leak, seal, tissue, cable, pressure, route. The danger is in the queue order. If something carries signal, blocks water or preserves pressure, Atlas can treat it as service material before it resolves what else it is.
+
+ART-09 marks a fauna route as serviceable because it carries signal and sealant through a damaged path. That can make a corridor safer for pressure while making it worse for a trapped person or tagged remains. Deep Reach wrote the permissions, isolation damaged the context, and Atlas kept repairing inside the words it still understood.
 
 ## Scanner
 
-Audio/caption seed: Atlas traces sound like repair telemetry collapsing categories, not a speaking god.
+Repair trace fragment. Atlas marks membrane leak, cable growth and fauna route in the same service queue. No speaker identity attached.
 
 ## Terminal
 
-TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.
+ATLAS REPAIR TRACE ART-09
+Fault: membrane discontinuity
+Accepted material: cable growth / carbonate sleeve / warm body obstruction
+Route status: serviceable for signal and sealant
+Human tag protection: not resolved
+Instruction: restore continuity; preserve pressure boundary.
 
 ## Audio
 
-Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
+Membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.
 
 ## Field Note
 
-For scanner captions, deep audio layers and Atlas spoiler gates. Keep it clipped, taxonomic and damaged.
+Do not read it as a confession. Read the queue: leak, seal, tissue, cable, pressure, route. Atlas is sorting for serviceability.
 
 <!-- In-Game Wiki; generated from P439_ATLAS_REPAIR_TRACE_TRANSCRIPT_SEED/en_US. -->

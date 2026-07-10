@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "קרסי התביעה של Black Keel"
+title: "ווי התביעה של Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# קרסי התביעה של Black Keel
+# ווי התביעה של Black Keel
 
-קרסי התביעה של Black Keel מגדירים את לחץ הפתיחה. Black Keel אינה ספינת נבל תיאטרלית; היא מוביל הכבול לכלכלת מאגר תביעות, לדיני הסגר ולמנופים רדומים של Deep Reach. בעיית השחקן מעשית ומוסרית גם יחד: קול מעל האוקיינוס יכול לשמוע את קריאת המצוקה, אבל הדרך הביתה חייבת להפוך לבעלת ערך, ניתנת לאישור, וקשה להתעלמות מבחינה משפטית.
+ווי התביעה של Black Keel מגדירים את לחץ הפתיחה מעל HECTON-8. Black Keel אינה ספינת נבל, אלא carrier הכבול לכלכלת claim-pool, חוק הסגר ומנוף Deep Reach רדום. הבעיה מעשית ומוסרית יחד: קול מעל האוקיינוס יכול לשמוע distress, אבל הדרך הביתה חייבת להפוך לבעלת ערך, ניתנת לאישור ולא נוחה משפטית להתעלמות.
 
 ## Scanner
 
-במניפסט, Black Keel הוא חומרה של מאגר תביעות; בסעיפים, הוא מנוף של Deep Reach.
+Black Keel הוא חומרת claim-pool במניפסט ומנוף Deep Reach בסעיפים.
 
 ## Terminal
 
-משמורת מוביל: החזרת מפעיל מותרת אחרי מיון מטען, שער הסגר, תעודת מסלול וניקוי אחריות. חותם עדיפות Deep Reach נשמר בסעיפים רדומים.
+CARRIER CUSTODY: התאוששות מפעיל מותרת אחרי triage של payload, שער הסגר, אישור נתיב וניקוי אחריות. חותם עדיפות Deep Reach נשמר בסעיפים רדומים.
 
 ## Audio
 
-היא יכולה לשמוע אותך. היא פשוט חייבת לתמחר את התשובה קודם.
+היא יכולה לשמוע. היא רק צריכה לתמחר את התשובה קודם.
 
 ## Field Note
 
-הספינה אינה רעה. היא מושכרת לחוזה שיודע להיות אכזרי בלי להישמע חי.
+הספינה אינה רעה. היא מושכרת לחוזה שיודע להיות רע בלי להישמע חי.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/he_IL. -->

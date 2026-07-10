@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 광지연 권한
 
-HECTON-8의 조난 호출은 의미를 담은 물리적 화물이다. 침수된 마스트를 떠나 Aegir 공간을 광속으로 건너고, 릴레이 버퍼에서 기다린 뒤, 이미 위험의 가격을 아는 대기열을 통해 Black Keel에 도착한다. 첫 지연은 정직한 거리다. 그 뒤의 지연은 인간의 것이다. 보관 등급, 폭풍 창, 책임 문구, 사람보다 자산에 먼저 답하는 운반선의 습관. 그래서 답장은 기술적으로 새것이어도 무너지는 압력실 안에서는 쓸모없을 수 있다.
+광지연 권한은 HECTON-8 통신을 물리적이고 지연되며 contract-filtered된 것으로 정의한다. distance, weather, relay buffers, custody queues가 signal의 사용 가능 시점을 결정한다.
+
+## Scanner
+
+relay mast cache. call은 깨끗하게 떠났지만 light, queue law, storm scatter, Aegir line-of-sight 뒤에서 기다렸다.
+
+## Terminal
+
+COMM AUTHORITY: one-way delay verified. Storm scatter high. Relay queue under custody priority. fresh signal window가 override를 확인할 때까지 Local survival authority remains active.
+
+## Audio
+
+응답은 오고 있다. 그렇다고 rescue는 아니다.
+
+## Field Note
+
+첫 scream을 검열한 사람은 없었다. physics가 policy가 따라잡을 만큼 천천히 옮겼다.
 
 <!-- External Site; generated from P051_LIGHT_DELAY_AUTHORITY/ko_KR. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Reivindicação Inicial do Marauder"
+title: "Reivindicação inicial do Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Reivindicação Inicial do Marauder
+# Reivindicação inicial do Marauder
 
-O registro de abertura posiciona o jogador como operador treinado sob pressão de dívida. Não é turista, herdeiro escolhido nem vingador familiar; ele entende bombas, vedações, formulários de rota e abreviações Deep Reach antes de os destroços contradizerem esses formulários. A primeira hora permanece prática: vedar o bathydrop, restaurar pressão, ler máquinas danificadas, recuperar carga e decidir quais linhas oficiais já mentem.
+O primeiro registro de HECTON-8 não apresenta turista nem sobrevivente escolhido. Ele nomeia um operador treinado sob pressão de dívida: alguém que já lê abreviações de bomba, avisos de vedação, etiquetas de evacuação e frases de responsabilidade da Deep Reach antes da primeira escotilha abrir. O trabalho inicial é concreto. Remendar o bathydrop. Confirmar pressão. Escanear a plataforma P-63. Reiniciar máquinas só quando o caminho de vedação fizer sentido. Recuperar carga se ela pagar, e prova se ela sobreviver ao relógio de custódia.
 
 ## Scanner
 
-Registro público de claim. A rota inicial identifica um Marauder endividado com histórico Deep Reach field-systems, bathydrop danificado e janela de recuperação Black Keel sobre P-63.
+Registro público de reivindicação. O arquivo de ônus da Black Keel nomeia um ex-especialista em sistemas de campo da Deep Reach, um bathydrop danificado, a rota P-63 e uma janela de custódia fechando.
 
 ## Terminal
 
-NÓ DE ARQUIVO PÚBLICO // REIVINDICAÇÃO INICIAL. Registro do contratado: ex-especialista Deep Reach field-systems. Status atual: Marauder sob lien. Rota: recovery claim Black Keel, descida ao shelf P-63, retorno de prova e carga antes do fechamento da custody window.
+NÓ DE ARQUIVO PÚBLICO // BLACK KEEL CLAIM BK-P63-2190. Status: Marauder preso por ônus. Liberação anterior: sistemas de campo Deep Reach / infraestrutura de evacuação. Entrega: massa de carga mais prova admissível antes da custódia local T+06:40.
 
 ## Audio
 
-Você não está visitando HECTON-8. Você está voltando a uma papelada que conhece bem demais.
+O contrato conhece suas abreviações antigas. Isso não é o mesmo que dizer a verdade.
 
 ## Field Note
 
-Nota de Marauder: o contrato conhece seu passado. Isso não o torna honesto.
+Nota de Marauder: se um arquivo de reivindicação sabe seu nível de liberação, leia as omissões antes do pagamento.
 
 <!-- In-Game Wiki; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/pt_BR. -->

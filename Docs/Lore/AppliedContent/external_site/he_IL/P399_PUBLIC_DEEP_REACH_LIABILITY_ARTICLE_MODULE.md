@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ראיות אחריות Deep Reach"
+title: "ראיות אחריות של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ראיות אחריות Deep Reach
+# ראיות אחריות של Deep Reach
 
-Deep Reach אשמה מפני שאסון HECTON-8 יכול להיות טבעי ומנוהל רע בו זמנית. האוקיינוס סיפק כוח אמיתי: tide resonance, cryosphere shear, storm stacking ו-pressure failure. החברה סיפקה margins דקים, authorization מאוחרת, quarantine delay, Atlas priority rules וניירת נקייה מספיק כדי לשרוד את האנשים שתיארה. הראיות החזקות ביותר הן פיזיות ופרוצדורליות: דלת שהוחזקה תחת executive authority, sensor tolerance ששונה לפני סגירת החלון, תור שעוכב למען legal clearance, loss ledger שהמיר עובדים ל-claim categories בזמן שהמים עוד זזו. השחקן לומד לא לבטוח בשפה הרשמית כשהוא משווה אותה לשקעים, לשעונים ולמסלולים.
+התיק הציבורי נגד Deep Reach חזק ביותר כשהוא משאיר את האוקיינוס אמיתי. HECTON-8 לא הושמדה בידי מזימה מצוירת או מדע בלתי אפשרי. פגעו בה תנאים שהחברה דגמה, תימחרה, עיכבה ואז תיארה בשפה שיכלה לשרוד בית משפט טוב יותר משהעובדים שרדו לחץ. הראיות המועילות הן פיזיות ופרוצדורליות: גיליונות סבילות ששונו, החזקות נתיב, חלונות פינוי מעוכבים, תוויות הסגר, טבלאות עדיפות Atlas ויומני אובדן שהפכו שמות לקטגוריות תביעה בזמן שהמים עוד נעו בחדרים. Deep Reach לא הייתה צריכה להמציא את האסון. היא הייתה צריכה מספיק חתימות כדי שהתגובה הזולה יותר תיראה מורשית.
 
 ## Scanner
 
-רשומת liability. פיזיקת גאות אמיתית, margin risk שאושר, עיכוב פינוי, quarantine holds, Atlas weighting ושפת אובדן מנוקה מתכנסים באותה שרשרת ראיות.
+רשומת אחריות. כוח הגאות אמיתי; שינויי מרווח חתומים, החזקות הסגר, תורי פינוי, משקלי Atlas ושפת אובדן נושאים את החלק שניתן היה למנוע.
 
 ## Terminal
 
-צומת ארכיון ציבורי // ראיות LIABILITY. Great Tide התקבל. בדיקה פתוחה לגבי sensor margins, עיכוב evacuation queue, quarantine holds, Atlas weighting, worker classification ו-loss conversion.
+צומת ארכיון ציבורי // בדיקת אחריות DR-H8. כוח טבעי התקבל. שדות פתוחים: מרווח חיישן, סמכות דלת, עיכוב תור, החזקת הסגר, שקלול Atlas, המרת עובד לקטגוריית תביעה.
 
 ## Audio
 
-אסון יכול להיות טבעי ועדיין לשאת חתימות.
+הגאות שברה פלדה. החתימות החליטו אילו דלתות נשארו סגורות.
 
 ## Field Note
 
-הערת Marauder: אל תתווכח עם הגאות. תתווכח עם החתימות שלידה.
+הערת Marauder: אל תטען שהגאות הייתה שקרית. שים את החתימות ליד שעון הגאות.
 
 <!-- External Site; generated from P399_PUBLIC_DEEP_REACH_LIABILITY_ARTICLE_MODULE/he_IL. -->

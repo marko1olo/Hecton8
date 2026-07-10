@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "FR LOC HOLD: Ren Okoye/Brine Map"
+title: "Ren Okoye, cartographe de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# FR LOC HOLD: Ren Okoye/Brine Map
+# Ren Okoye, cartographe de saumure
 
-FR LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+Ren Okoye cartographiait les couches de saumure de HECTON-8 comme des routes de travail, pas comme un décor. L'ardoise survivante, les perles de densité tachées, les marques du panneau à épingles et les fiches de route estampées montrent un cartographe corrigeant les couloirs officiels avec l'eau comme témoin. Ses cartes expliquent pourquoi les chemins les plus sûrs vivaient souvent hors du tableau des permis : la saumure bougeait plus vite que l'approbation, et les porteurs d'outils devaient croire le dernier sondage plus que la dernière signature.
 
 ## Scanner
 
-FR LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+Dossier : Ren Okoye. Perles de densité, entailles d'ardoise et cicatrices de fils décrivent une route déplacée pendant la nuit.
 
 ## Terminal
 
-FR LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+TABLE DE CARTE SAUMURE / OKOYE, REN : courant sûr décalé de 3,2 m vers l'est après inversion de densité. Le tableau des permis liste encore le couloir d'hier. Marques de route ouvrières prioritaires sur la route de gestion jusqu'au prochain sondage.
 
 ## Audio
 
-FR LOC HOLD: Okoye drew roads that moved while management argued about permission.
+Okoye dessinait des routes dans une eau qui refusait de garder le dessin.
 
 ## Field Note
 
-FR LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+Utiliser Okoye pour révélations de routes de saumure, navigation par couches de densité et contradictions de permis. Ses preuves doivent donner des raisons concrètes de se méfier des vieilles cartes.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/fr_FR. -->

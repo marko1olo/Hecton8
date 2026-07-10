@@ -397,14 +397,14 @@
       },
       "localized": {
         "en_US": {
-          "title": "Worker Dossier Audio Transcript",
-          "scanner": "Recovered worker audio links names, jobs, lockers, ration ticks and route holds into one human custody thread.",
-          "terminal": "DOSSIER AUDIO WKR-SET: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold.",
+          "title": "Worker Dossier Audio Strip",
+          "scanner": "Recovered audio strip. Names, job cards, locker seals, water ticks and route holds cross the same shift board.",
+          "terminal": "WORKER AUDIO STRIP WKR-A\nFields: shift name; job card; pressure bunk; water ledger; tool certificate; last route hold\nLinked names: Venn / Kade / Okoye / Iqbal\nLedger fault: water count short by 3 ticks\nInstruction: preserve raw audio before transcript cleanup.",
           "audio": "Shift note. Pump room still breathing. Locker seal stuck. Water count short. Tell Kade the board lied.",
-          "in_game_wiki": "Worker dossier transcripts give the drowned colony a working population before they become evidence. The point is routine: names, tasks, tools, bad water math and the habit of expecting another shift.",
-          "external_site": "The colony should be heard as labor first: clipped shift notes, locker complaints, route holds and small debts spoken before anyone knows they are history.",
-          "external_site_article": "## A Colony Before It Becomes Evidence\n\nThe worker dossier audio should not introduce victims as shrine objects. It should let them work. A pump chief checks a valve. A relay notary complains about a board. A medic argues with a water ledger. A fabricator logs a tool certificate because the tool matters more than any speech about courage.\n\nThat routine is what gives the ruins weight. The player should hear names before memorials, jobs before tragedy, and small irritations before the larger lie closes around them. HECTON-8 was not a stage built for the Marauder. It was a workplace with habits, grudges, jokes, debt notices and pressure math.\n\nThis layer also protects the canon from melodrama. There is no family hook making the player special. The guilt is professional. You recognize procedures, badges and bad decisions because you belonged to this kind of system, and now the system is speaking through drowned work orders.",
-          "field_note": "Use for dossier barks, locker captions and worker wiki pages. Keep the voices busy, not poetic.",
+          "in_game_wiki": "Worker dossier audio is useful because it catches the colony still working. The strip records pump rooms, locker seals, water counts, tool certificates and route holds before those objects become memorial evidence. The voices are busy, not ceremonial.\n\nA good transcript leaves the worker inside the task: check a valve, argue with the board, log a tool, mark water short, send a name to Kade before the next shift. The routine gives the ruin weight because the failure arrives through work orders, not speeches.",
+          "external_site": "Worker dossier audio preserves HECTON-8 as a workplace first: clipped shift notes, locker complaints, water ledger faults and route holds recorded before the workers became case evidence.",
+          "external_site_article": "## Worker Audio Strip WKR-A\n\nThe recovered strip starts with routine. Pump room still breathing. Locker seal stuck. Water count short. Tell Kade the board lied. No memorial language is needed. The line works because the speaker is still inside the job and still expects somebody to act on the next shift.\n\nWorker dossier audio should stay this narrow at the surface level: name, task, object, fault. A pump chief checks a valve. A medic argues with the water ledger. A fabricator logs a tool certificate because the tool is needed before the door can open. HECTON-8 was a workplace with habits, grudges, bad math and pressure rules before it became a case file.\n\nThe transcript matters when later records reuse the same names on route holds, meal chits, damaged lockers and witness tags. The player does not need a speech about loss. The board count is wrong, Kade's name repeats, and somebody tried to keep the chalk from being wiped.",
+          "field_note": "Kade's water count is short on three boards. Venn told somebody not to wipe the chalk. Photograph before the room drips clean.",
           "localization_status": "source_authority"
         },
         "ar_SA": {
@@ -582,14 +582,14 @@
       },
       "localized": {
         "en_US": {
-          "title": "Atlas Repair Trace Transcript",
-          "scanner": "Audio/caption seed: Atlas traces sound like repair telemetry collapsing categories, not a speaking god.",
-          "terminal": "TRACE SEED: leak, seal, tissue, cable, pressure, route, warm body, cold relay. No confession; only maintenance grammar.",
-          "audio": "Repair trace: membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
-          "in_game_wiki": "Atlas audio is frightening because it treats life, metal and water as one damaged maintenance surface.",
-          "external_site": "Atlas should not explain itself. Its repair traces reveal what it has stopped distinguishing.",
+          "title": "Atlas Repair Trace: Serviceable Route",
+          "scanner": "Repair trace fragment. Atlas marks membrane leak, cable growth and fauna route in the same service queue. No speaker identity attached.",
+          "terminal": "ATLAS REPAIR TRACE ART-09\nFault: membrane discontinuity\nAccepted material: cable growth / carbonate sleeve / warm body obstruction\nRoute status: serviceable for signal and sealant\nHuman tag protection: not resolved\nInstruction: restore continuity; preserve pressure boundary.",
+          "audio": "Membrane discontinuity accepted. Cable growth authorized. Fauna route marked serviceable.",
+          "in_game_wiki": "Atlas repair traces are maintenance records from a damaged classification system. The trace does not speak like a god or a villain. It lists faults and usable material: leak, seal, tissue, cable, pressure, route. The danger is in the queue order. If something carries signal, blocks water or preserves pressure, Atlas can treat it as service material before it resolves what else it is.\n\nART-09 marks a fauna route as serviceable because it carries signal and sealant through a damaged path. That can make a corridor safer for pressure while making it worse for a trapped person or tagged remains. Deep Reach wrote the permissions, isolation damaged the context, and Atlas kept repairing inside the words it still understood.",
+          "external_site": "Atlas Repair Trace ART-09 shows damaged maintenance classification: leak, seal, cable growth, fauna route and human tag protection competing inside one service queue.",
           "external_site_article": "## Maintenance Grammar\n\nAtlas must not talk like a villain, a god or a helpful assistant. The strongest trace is almost banal: leak, seal, tissue, cable, pressure, route. A damaged industrial intelligence is sorting the world by serviceability, not by moral category.\n\nThat collapse is the horror. A warm body can sit beside a cold relay in the same repair line. A fauna route can become serviceable because it carries signal or sealant. A corridor can be safer for pressure and worse for the person trapped inside it. Atlas does not need hatred when the priority stack is already wrong.\n\nThis audio should make players argue with the machine without turning the machine into the final culprit. Deep Reach authored the permissions, the isolation broke the context, and Atlas kept repairing what it had been allowed to call infrastructure.",
-          "field_note": "For scanner captions, deep audio layers and Atlas spoiler gates. Keep it clipped, taxonomic and damaged.",
+          "field_note": "Do not read it as a confession. Read the queue: leak, seal, tissue, cable, pressure, route. Atlas is sorting for serviceability.",
           "localization_status": "source_authority"
         },
         "ar_SA": {

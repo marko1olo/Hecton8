@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "ハッチシール台帳"
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ハッチシール台帳
+# Hatch Seal Ledger
 
-ハッチフレームは役に立つ嘘を保管する。緑のシール灯はガスケットが持ったことを示すだけで、閉鎖が公平、安全、可逆だったとは言わない。シール台帳は圧力カット、上書きスタンプ、最後の手動閉鎖の向きを残す。放棄された植民地では、ハッチは通路障害、生存道具、作業員の証拠を同時に持つ物体になる。
+Hatch framesは有用な嘘を保存する。green seal lightはgasketが持ったという意味であって、closureがfair、safe、reversibleだったという意味ではない。Seal ledgersはpressure cuts、override stamps、hinge strain、最後のmanual closureのdirectionを保存する。abandoned colony spacesでは、hatchはroute blocker、survival tool、worker evidence、accusationを同時に担う。問題は開くかどうかではないことが多い。何のpressure、water、human decisionを分けていたのかが問題だ。
 
 ## Scanner
 
-シール記憶を回収。ガスケットは三回の圧力カットと一回の避難上書きを受けた。帰還側アクセスは濡れた側から施錠。
+seal memory recovered。gasketはthree pressure cutsとone evacuation overrideを受け、return-side accessはwet sideからlocked。
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: ガスケット変形が整備許容値を超過。手動閉鎖はEVAC OVERRIDE下で受理。帰還側の作業員数は未解決。再開放は圧力均衡とヒンジ点検後のみ。
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance。Manual closure accepted under EVAC OVERRIDE。Return-side count unresolved。pressure equalization、hinge inspection、wet-side witness check後のみreopen。
 
 ## Audio
 
-密閉はした。ハッチの約束はそれだけだ。
+It sealed。hatchが約束したのはそれだけだ。
 
 ## Field Note
 
-密閉ハッチは領収書だ。開ける前に、どちら側が払ったかを考えろ。
+sealed hatchはreceiptだ。開ける前に、どちら側が支払ったのかを問え。
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/ja_JP. -->

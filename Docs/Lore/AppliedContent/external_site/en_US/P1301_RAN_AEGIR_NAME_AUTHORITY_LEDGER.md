@@ -19,10 +19,12 @@ localization_flags: 0
 
 # Ran / Aegir Name Authority Ledger
 
-The naming system in HECTON-8 is not flavor trivia. It is one of the cleanest ways to tell which power is speaking. Astronomy says Ran because a star fixes routes, light delay and navigation math. Claim offices say Aegir because the giant planet lets them bundle moons, infrastructure and liabilities into a larger asset field. Insurance tables say RAN-B:H8 because sorted ledgers do not care about memory. The people below the water say HECTON-8 because that is where the hatch fails.
+HECTON-8's naming system is a quiet piece of worldbuilding with teeth. The game does not give the moon four names for texture alone. Each name belongs to a different authority and a different moral distance from the same drowned place.
 
-This creates a useful reading rule for the game and wiki. When a document shifts names, the document is often shifting jurisdiction. Ran language tends to belong to route timing, carrier windows and physics. Aegir language tends to belong to ownership and public shorthand. RAN-B:H8 language belongs to catalog, insurance and custody. HECTON-8 language belongs to field use, player memory and the colony as a place rather than an asset.
+            Ran is astronomical language: star, route anchor, light delay, carrier timing. Aegir is claim language: the gas giant as parent body, public shorthand and corporate umbrella. RAN-B:H8 is insurance language: a sortable moon record that can be priced, transferred and litigated without keeping the colony's voice attached. HECTON-8 is lived language: the name used by workers, Marauders and field systems because it points to the actual doors, rooms, graves and pressure alarms.
 
-The player should learn the grammar slowly. At first the names can feel like a system being large and messy. Later they become evidence. A corporation choosing the largest possible name can hide a local crime. A salvage office choosing the catalog key can make a dead habitat look like a recoverable line item. A worker choosing the field name can pull the moon back from paperwork into lived fact.
+            Once the player learns that grammar, documents start to change shape. A company notice using Aegir may be zooming out to make a moon-scale failure look like system maintenance. A Black Keel receipt using RAN-B:H8 may be preparing the place for custody pricing. A field note using HECTON-8 may be preserving testimony before the catalog can wash it clean.
+
+            The rule is simple enough to be playable: names are evidence. Preserve them. Compare them. Ask who gets paid when the place is called one thing instead of another.
 
 <!-- External Site; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/en_US. -->

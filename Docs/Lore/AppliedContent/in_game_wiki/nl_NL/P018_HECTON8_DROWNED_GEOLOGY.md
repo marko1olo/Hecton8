@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Verdronken geologie
 
-HECTON-8-geologie is gameplaytaal: plateau, verdronken kamers, canyons, pekel, hitte en afgrond. Seeds verplaatsen routes, niet fysieke waarheid.
+Verdronken geologie leert beweging op HECTON-8. Ruggen geven beschutting. Ingestorte platen verzamelen salvage en verstikkend slib. Kloven versterken stroming. Pekelgordijnen buigen sonar en drijfvermogen. Ventlittekens kunnen sealant uitharden of koken. Een route is een tijdelijke interpretatie van rots, water, warmte en druk.
 
 ## Scanner
 
-Gelaagde plateaus, canyons, pekeltrappen en vents. De maan leert afdalen via terrein, niet poorten.
+Gelaagde plaat, klooftrechter, pekeltrap, ventlitteken en slibblootstelling gedetecteerd. Terrein is drukrouting, geen achtergrond.
 
 ## Terminal
 
-Voorspelling: plateau-instorting, canyon-trechters, dichtheidsgordijnen, thermische pluimen, abyssaal slib.
+DIEPTEVOORSPELLING: plaatinstorting, servicekloof-trechtering, pekel-dichtheidsgordijnen, thermische pluimen, abyssale slibblootstelling. Routevertrouwen vervalt na stormvloed of salvage-sneden.
 
 ## Audio
 
-Lees de rots voordat je het pak laat winnen.
+Lees de rots voordat je het pak vraagt te winnen.
 
 ## Field Note
 
-De veilige route is een lezing, geen gang.
+De veiligste route is een lezing, geen gang.
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/nl_NL. -->

@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Ton-vensterschuld"
+title: "Tonnenvenster-Schuld"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ton-vensterschuld
+# Tonnenvenster-Schuld
 
-Ton-vensterschuld is het punt waar natuurkunde financiën wordt. Black Keel heeft geen oneindige liftmarge, transitbrandstof of schoon quarantainevolume. Elke kilogram van HECTON-8 concurreert met elke kilogram die nodig is om de operator levend te houden. De schuldmeter maakt de carrier wreed zonder hard science te breken: redding kan, maar het routebudget blijft vragen wat massa verdient.
+Tonnenvenster-schuld is waar HECTON-8 ophoudt alleen een horrorverhaal te zijn en orbital logistics wordt. Black Keel heeft eindige lift margin, eindig clean volume, eindige oxygen reserve en een route price aan elke kilogram. Spare tank, sealed sample, damaged suit, proof case, body en crate of salvage concurreren binnen hetzelfde venster. Het systeem voelt wreed omdat het exact is. Het hoeft niet te doen alsof rescue onmogelijk is. Het blijft alleen vragen wat de route zich kan veroorloven te tillen.
 
 ## Scanner
 
-Massa-venstermeter. Elke kilogram hulp heeft een routeprijs.
+Mass-window ledger. Hulp heeft gewicht voordat ze taal heeft.
 
 ## Terminal
 
-TONNE-WINDOW LEDGER: recovery-burnmarge smaller. Operator-extractiemassa conflicteert met verzegelde payload, ballastreserve, zuurstofschuld en quarantine sample custody. Handmatige override vereist betaalde prioriteit of gevarenbewijs.
+TONNE-WINDOW LEDGER: recovery burn margin narrowed. Extraction mass botst met sealed payload, ballast reserve, oxygen debt, quarantine sample volume en hull patch inventory. Manual priority vereist paid override, verified hazard proof of custody reclassification.
 
 ## Audio
 
-Het schip kan jou dragen of wat je vond. Het verkiest een getal.
+Het schip kan een leven tillen. De vraag is wat het ledger het nog laat dragen.
 
 ## Field Note
 
-Zuurstof, ballast, bewijs, payload, lichaam: de carrier weegt ze voordat hij genade weegt.
+Oxygen, ballast, proof, samples, hull patch, body: de carrier prijst genade per kilogram.
 
 <!-- In-Game Wiki; generated from P088_TONNE_WINDOW_DEBT/nl_NL. -->

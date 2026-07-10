@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Vent-micronode-energienest"
+title: "Energienest van vent-micronodes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Vent-micronode-energienest
+# Energienest van vent-micronodes
 
-Vent-micronodenesten verklaren waarom Atlas dichter wordt bij de diepe machinevelden zonder almachtig te worden. Elke node oogst een lokale gradiënt: hitte, mineraalchemie, trilling en druk. Eén nest kan de kolonie niet bevelen, maar het kan een patch wekken, een drone-litteken voeden, een geheugenfragment bewaren of een slechte reparatie levend houden.
+Vent-micronodenesten verklaren waarom Atlas-reparatie actief blijft in dode kamers. Elke node oogst een lokale gradiënt: warmte door keramiek, pekelchemie langs mineraaladers, trilling door de ventwand. Eén nest kan HECTON-8 niet commanderen. Het kan één deurpatch, één dronewieg of één strook biofilm wakker maken nadat de speler verder is gegaan.
 
 ## Scanner
 
-Thermische micronodes pulseren in de ventwand. Drone-laadlittekens omringen de minerale keel.
+Keramische nodecluster in de ventkeel oogst warmtegradiënt. Drone-laadsporen en verse afdichterreactie dichtbij.
 
 ## Terminal
 
-ATLAS-ENERGIESPOOR: ventgradient voedt lokale node, node wekt biofilm- en afdichtreactie, drone-laadinterval onregelmatig. Centrale opdrachtzekerheid laag.
+ATLAS LOKALE KRACHTNODE / VENT V-3: thermische gradiënt voedt microcelstapel, wekt biofilm- en afdichterlussen binnen 40 m, drone-laadinterval onregelmatig. Geen centraal commandoslot.
 
 ## Audio
 
-Hier beneden heeft zelfs hitte een werkorder.
+Warmte, mineraalkeel, node. Dat is genoeg om reparatie wakker te maken nadat je passeert.
 
 ## Field Note
 
-Gebruik bij ventvelden, factory-temple-aanloop en late-route reparatiepersistentie.
+Als de ventnode warm is, neem aan dat de kamer achter je wakker kan worden. Markeer de uitgang voordat je de mineraalkeel aanraakt.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/nl_NL. -->

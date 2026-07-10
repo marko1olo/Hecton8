@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Kostengrens van ontsnappingsrecept"
+title: "Kostenregel voor opstijgrecept"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Kostengrens van ontsnappingsrecept
+# Kostenregel voor opstijgrecept
 
-De kostengrens houdt de uitgangsketen mechanisch in plaats van willekeurig. Elk opstijgonderdeel heeft drukgeschiedenis, eigenaar en bewijsvereisten, waardoor ontsnappen voelt als reparatie onder wet, niet als questtokens in een menu.
+Elke ontsnappingskost wijst naar een beschadigd onderdeel of een geblokkeerde autoriteit. De beschadigde bathydrop verbruikte zijn opstijghuls om jou in leven te houden, dus de terugkeerketen moet signaal, zegel, timing, energie en ontvangerlegaliteit bewijzen. Sommige onderdelen repareren de machine; andere bepalen wie de bergingsoproep mag beantwoorden.
 
 ## Scanner
 
-Receptregel bindt componentklasse, druktier, routebewijs en autoriteitsstaat.
+Opstijgregel vergrendeld: relaisbewijs, zegelgraad, geleidingskern, opstijglading, juridische handshake en payloadautoriteit zijn niet allemaal aanwezig.
 
 ## Terminal
 
-ASCENT RECIPE CONTRACT: gekwalificeerde kosten moeten relais, afdichting, geleiding, opstijgenergie, juridische handshake, payloadautoriteit en ontvangerrisico noemen. De weg omhoog heeft onderdelen; onderdelen hebben eigenaars.
+OPSTIJGKOSTEN SCHEMA / Black Keel-bergingsinterface: geen opstijgofferte zonder akoestisch relais, drukzegel, timingkern voor geleiding, opstijgenergilading, quarantaine/juridische handshake, payloadautoriteit, ontvangerrisico en routevenster. Het pakket klimt niet op onderdelen alleen.
 
 ## Audio
 
-De weg omhoog heeft onderdelen. Onderdelen hebben eigenaars.
+Bergingsinterface: relais, zegel, timing, lading, handshake. Eén ontbreekt en het pakket blijft nat.
 
 ## Field Note
 
-Drukbanden komen uit insluitingsregels; exacte kosten horen in recepttabellen.
+Verbruik de geleidingskern niet voordat de handshake vrij is. Een werkende opstijglading met de verkeerde ontvanger is alleen een snelle weg naar bewaring.
 
 <!-- In-Game Wiki; generated from P303_ESCAPE_RECIPE_COST_ROW_CONTRACT/nl_NL. -->

@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Custódia de ferramenta de salvage"
+title: "Custodia de Ferramenta Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Custódia de ferramenta de salvage
+# Custodia de Ferramenta Salvage
 
-Em HECTON-8, uma ferramenta pode ser equipamento de sobrevivência e testemunha contratual ao mesmo tempo. Logs de custódia salvage ligam cortes, reparos e amostras a tokens de claim, fazendo de uma ação útil parte de evidência, dívida ou pressão de payout posterior.
+Salvage tool custody liga minute-to-minute survival a claim economy: cuts, repairs, patches e samples podem virar evidence, payout pressure ou Keelmark debt.
 
 ## Scanner
 
-O dock da ferramenta guarda um log de custódia selado. Último corte, reparo e bolsa de amostra estão ligados a um token de claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair e sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12: uso do cutter aceito sob salvage claim. Ação de reparo testemunhada. Direitos de amostra anexados ao token Keelmark Mutual. Exportação de evidência conflita com rota de payout material.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Todo corte útil deixa uma testemunha.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Um cutter pode salvar seu ar e vender suas mãos no mesmo golpe. Veja o que ele registra antes de chamá-lo de seu.
+Um cutter pode save your air e sell your hands no mesmo stroke. Confira o que ele records antes de chama-lo de seu.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/pt_BR. -->

@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Datengrenze des Ressourcenertrags"
+title: "Annahmezeile für Ressourcenertrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Datengrenze des Ressourcenertrags
+# Annahmezeile für Ressourcenertrag
 
-Ressourcenwert in HECTON-8 ist eine Kette, kein Etikett. Die Tabelle besitzt die Zahl, doch die Fiktion besitzt den Grund: wer die Probe nahm, unter welchem Druck, mit welchem Verwahrungsstempel und wie viel der Ader die Route noch sicher abtragen kann.
+Bergungsbücher um HECTON-8 bepreisen Mineralien nicht nur nach Namen. Ein Ertragsdatensatz braucht Probenklasse, Druckband, Routenverwahrung, Erschöpfungsstatus, Kontaminationsstufe und Pakethash, bevor der gebuchte Wert vertrauenswürdig ist. Eine Probe ohne Druckhistorie ist unbezahlte Masse.
 
 ## Scanner
 
-Ertragszeile weist losen Wert zurück: Klasse, Druckband, Verwahrung, Erschöpfung und Hash müssen stimmen.
+Probenzeile unvollständig: Druckhistorie, Verwahrungsstufe, Erschöpfungsstatus, Kontaminationsstufe und Pakethash stimmen nicht überein.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT: Keine Zahl wird ohne packet hash, Ressourcenklasse, Druckband, Verwahrungsgrad, Seltenheitskurve und Erschöpfungsverhalten akzeptiert. Eine Probe ohne Druckgeschichte ist Beweis, kein Wert.
+ERTRAGSANNAHME-SCHEMA / Aegir Reclamation Pool: Wertbuchung ablehnen, bis Ressourcenklasse, Druckband, Verwahrungsstufe, Seltenheitskurve, Erschöpfungsverhalten, Kontaminationsstufe und Paketzeugenhash vorliegen. Ein Stein im Beutel ist Masse, bis die Druckroute bewiesen ist.
 
 ## Audio
 
-Eine Probe ohne Druckgeschichte ist kein Wert.
+Black Keel: Probenhaltung nach Druckroute und Verwahrungshash angenommen. Bis dahin fliegt sie als Ballast.
 
 ## Field Note
 
-Ertragszahlen bleiben vorläufig, bis Druckband, Verwahrungsgrad, Erschöpfungsverhalten und packet hash übereinstimmen.
+Hat die Zeile kein Druckband, feilsch nicht. Leg sie in tote Masse, lass den Behälter versiegelt und zwing den Broker nach geklärter Verwahrung zur Zahlung.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/de_DE. -->

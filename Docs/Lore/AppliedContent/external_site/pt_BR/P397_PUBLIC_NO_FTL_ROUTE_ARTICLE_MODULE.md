@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Atraso de Rota sem FTL"
+title: "Atraso de rota sem FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Atraso de Rota sem FTL
+# Atraso de rota sem FTL
 
-HECTON-8 não tem canal de resgate instantâneo. O sistema Aegir foi alcançado por precursor probes, beam infrastructure, pellet-fusion freight e sistemas de frenagem que tratam urgência como outra restrição de massa. Uma mensagem pode chegar antes do hardware que a tornaria útil. Um carrier pode reconhecer sua existência, precificar seu payload e manter um valid claim sem poder gastar descent mass sob weather, relay angle ou custody window errados. O texto público de viagem precisa manter essa limitação visível, porque o isolamento aqui nasce de engenharia, lei e logística atuando juntas. Black Keel pode estar perto em termos legais e inalcançável em termos físicos. Esse atraso explica por que o jogador continua consertando vedações à mão depois que o relay responde.
+HECTON-8 não tem canal de resgate instantâneo. O tráfego humano para Aegir é feito de cartas de sondas precursoras, infraestrutura de pistas de feixe, frete de fusão por pellets, sistemas de frenagem, janelas de portador e passagens legais de custódia. Urgência não cancela massa. Uma nave pode precificar carga, aceitar uma reivindicação e manter seu registro sem ter alocação de descida para mover um objeto útil até a água. Por isso o jogo trata comunicação como evidência, não resgate. Uma resposta prova que alguém ouviu a emergência. Não remenda uma vedação, não move um bathydrop nem encurta uma janela orbital ruim.
 
 ## Scanner
 
-Registro de trânsito. O tráfego Aegir depende de precursor probes, beam lanes, pellet-fusion freight, braking mass, packet age, relay custody e demora legal.
+Registro de trânsito. O tráfego de Aegir depende de cartas de sondas, pistas de feixe, frete de fusão por pellets, massa de frenagem, idade de pacote, custódia de relé e janelas de descida com clima.
 
 ## Terminal
 
-NÓ DE ARQUIVO PÚBLICO // LIMITE DE TRÂNSITO. FTL ausente. Ansible ausente. Resgate vivo exige transferência física, braking architecture, carrier position, descent mass e local window válida.
+NÓ DE ARQUIVO PÚBLICO // LIMITE DE TRÂNSITO. FTL: ausente. Ansible: ausente. Resgate vivo requer posição do portador, alocação de frenagem, massa de descida, clima local e janela de custódia não expirada.
 
 ## Audio
 
-Ajuda pode estar presente juridicamente e fisicamente distante por anos.
+Um portador pode registrar sua emergência e ainda estar a anos de massa.
 
 ## Field Note
 
-Nota de Marauder: quando o relay responder, pergunte a idade da resposta e que massa ela pode mover.
+Nota de Marauder: toda resposta de resgate precisa de quatro números: idade do pacote, massa do portador, slot de frenagem, janela de descida.
 
 <!-- External Site; generated from P397_PUBLIC_NO_FTL_ROUTE_ARTICLE_MODULE/pt_BR. -->

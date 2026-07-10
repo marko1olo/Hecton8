@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Atlas Access Boundary
 
-Atlas can be described early as damaged industrial continuity that learned through repair ecology. Final receiver records stay evidence-gated because they change the meaning of earlier repairs: seal, preserve, sever, quarantine and release are not neutral verbs down there.
+Atlas can be discussed early as damaged industrial continuity. It tries to keep pressure routes, records, machinery, and extraction hardware from falling out of the chain. The unsettling part starts when the repair path runs through living or semi-living material: conductive biofilm across cable breaks, acoustic tissue in relay pipes, shell sealant over fractures, tagged fauna feeding route state back into sensors. The final receiver layer remains gated because it changes the verbs. Seal, preserve, sever, quarantine, and release stop being neutral once custody proof is recovered.
 
 ## Scanner
 
-Atlas boundary record. Open evidence shows industrial continuity logic and repair ecology; receiver custody, payload consequence and final choice layers require recovered proof.
+Atlas boundary record. Public layer covers failed continuity infrastructure, repair ecology, biofilm buses, acoustic relay tissue, and shell seals; receiver custody stays proof-gated.
 
 ## Terminal
 
-PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Current layer: failed continuity infrastructure, repair ecology, biofilm bus, acoustic relay tissue and shell seal. Restricted layer: receiver custody and final payload consequence.
+PUBLIC ARCHIVE NODE // ATLAS ACCESS BOUNDARY. Visible layer: pressure continuity repair. Restricted layer: receiver custody, payload consequence, final transfer authority. Do not merge layers without recovered proof.
 
 ## Audio
 
-Say it repairs. Wait before naming what it counts as repaired.
+Call it repair for now. Do not name what it is preserving until the record makes you.
 
 ## Field Note
 
-Marauder note: a machine can preserve proof and still damage the person inside it.
+Marauder note: if Atlas says preserved, ask the next question: preserved for which receiver.
 
 <!-- In-Game Wiki; generated from P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE/en_US. -->

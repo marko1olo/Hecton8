@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Pompkamerklep-handshake"
+title: "Pump Room Valve Handshake"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Pompkamerklep-handshake
+# Pump Room Valve Handshake
 
-Een pomphandshake is het moment waarop een verdronken kamer lokale controle accepteert. Hij geeft toegang, maar verplaatst ook water, geluid en druk naar een ander deel van de route. Lees de inlaatmand, de uitlaatpuls en de waterslag in de terugkeergang voordat een droge vloer als veiligheid geldt. Vroege P-63-pompkamers leren de kerngewoonte van reparatie: een machine kan één compartiment verbeteren en tegelijk de weg naar huis verslechteren.
+Een pump handshake is het moment waarop een verdronken machine opnieuw een local hand accepteert. Het voelt als control omdat de floor leegloopt, de lamp stopt met zwemmen en de route lijkt te openen. Het gevaar is dat water op HECTON-8 nooit verdwijnt; het wordt naar een ander compromise verplaatst. Intake baskets vangen capsule foam, oude gloves, shell grit en torn labels. Outlets wekken corridors die met reden stil waren. De juiste gewoonte is de pump lezen als trade: een room ademt, een andere begint te knock.
 
 ## Scanner
 
-Lokale sumppomp accepteerde handwielinvoer. De inlaatmand is vervuild met capsulefoam; de uitlaatpuls belast Terugkeergang B.
+Local sump accepteerde handwheel input. Capsule foam verstopt de intake basket; outlet pulse klimt naar Return Corridor B.
 
 ## Terminal
 
-P-63 SUMP CONTROLE / LOKALE HANDSHAKE: handwielautoriteit geaccepteerd. Externe override geweigerd. Inlaatstroom hersteld op laag debiet. Uitlaatdruk stijgt in RETURN CORRIDOR B; herstart alleen na controle van de stroomafwaartse hatch.
+P-63 SUMP CONTROL / LOCAL HANDSHAKE: handwheel authority accepted. Remote override denied. Intake flow restored at low rate. Outlet pressure rising in RETURN CORRIDOR B. Restart only after downstream hatch check and hammer interval count.
 
 ## Audio
 
-De klep pakte. De uitlaat klopt. Noem dit nog niet veilig.
+Valve took. De outlet klopt. Noem dit nog niet safe.
 
 ## Field Note
 
-Een droge pompkamer kan de weg terug verdrinken. Luister naar waterslag in de uitlaat voordat je de klep stript.
+Een droge floor is geen solved room. Luister naar de corridor die ervoor betaalde.
 
 <!-- In-Game Wiki; generated from P046_PUMP_ROOM_HANDSHAKE/nl_NL. -->

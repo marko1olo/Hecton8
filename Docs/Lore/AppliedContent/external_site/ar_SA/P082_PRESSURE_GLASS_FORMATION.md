@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "تكون زجاج الضغط"
+title: "تكوين pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# تكون زجاج الضغط
+# تكوين pressure glass
 
-زجاج الضغط هو الاسم التقني وراء blue debt عند المغيرين ولغة Xenon-Omega لدى Deep Reach. يتكون حيث يلتقي الضغط وجيوب الغاز النبيل والمحلول الملحي والمعادن والحرارة والبيولوجيا المعدلة.
+pressure glass هو الاسم الميداني خلف الدين الأزرق للمغيرين ولغة Deep Reach عن Xenon-Omega. لا يتشكل إلا حين تبقى جيوب الغاز النبيل، وعيوب المعادن، والمحلول الملحي الحار، والأحياء المتغيرة، وتاريخ الضغط العنيف معا زمنا كافيا لقفل شبكة في الذاكرة.
 
-تكون زجاج الضغط يجعل Xenon-Omega بيئة مادية للخيال العلمي الصلب، لا خاما سحريا. هذا ليس خاما. إنه عملية تتذكر أين صنعت.
+يحول تكوين pressure glass مادة Xenon-Omega إلى بيئة مادية: ركيزة صنعها الضغط، مرتبطة بالاحتواء، والحساب، واستمرارية Atlas، ومخاطر salvage. هذه ليست خاما. هذا مكان يتذكر ما حدث له.
 
 <!-- External Site; generated from P082_PRESSURE_GLASS_FORMATION/ar_SA. -->

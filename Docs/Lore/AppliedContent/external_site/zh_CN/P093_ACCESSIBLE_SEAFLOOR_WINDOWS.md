@@ -9,7 +9,7 @@ locale: zh_CN
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "可进入海底窗口"
+title: "可接触海底窗口"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 可进入海底窗口
+# 可接触海底窗口
 
-HECTON-8大部分海底不是普通勇气能到达的。压力会在海底出现之前先筑起一堵墙。可进入窗口是例外：坍塌陆架、裸露脊线、重新加热的喷口伤痕或稠密盐卤柱改变下降曲线的撕裂处。它们不是安全洞穴，而是与地质达成的狭窄交易。船员能触碰古老地壳，回收压力生长矿物，找到封存殖民设备，或在海洋再次关闭路线前读出一段被埋事件。
+Accessible Seafloor Windows是罕见pressure breaks，让HECTON-8暴露ancient floor、high-risk salvage、mineral seams，以及通常sealed below lethal water的evidence。
+
+## Scanner
+
+exposed ridge marker。这里的shell撕薄到crawler能touch old floor without becoming paste。
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline。Slow salvage only。
+
+## Audio
+
+sea只在windows里允许你touch bottom，不是在任何feel brave的地方。
+
+## Field Note
+
+moon的大部分把floor作为pressure secret保存。windows是exceptions with teeth。
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/zh_CN. -->

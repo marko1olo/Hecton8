@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ventanas accesibles del lecho marino"
+title: "Ventanas de seafloor accesibles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ventanas accesibles del lecho marino
+# Ventanas de seafloor accesibles
 
-La mayor parte del fondo de HECTON-8 no se alcanza con valentia normal. La presion levanta una pared antes de que aparezca el suelo. Las ventanas accesibles son las excepciones: lugares rasgados donde una plataforma hundida, una cresta expuesta, una cicatriz de ventila caliente o una columna densa de salmuera cambian la curva de descenso. No son cuevas seguras. Son pactos estrechos con la geologia. Una tripulacion puede tocar corteza antigua, recuperar minerales criados a presion, hallar hardware colonial sellado o leer un suceso enterrado antes de que el oceano cierre la ruta.
+Accessible Seafloor Windows son rare pressure breaks donde HECTON-8 expone ancient floor, high-risk salvage, mineral seams y evidence normally sealed below lethal water.
+
+## Scanner
+
+Exposed ridge marker. Aqui la shell se rasgo lo bastante thin para que un crawler toque old floor without becoming paste.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+La mayor parte de la moon guarda su floor como pressure secret. Las windows son exceptions with teeth.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/es_ES. -->

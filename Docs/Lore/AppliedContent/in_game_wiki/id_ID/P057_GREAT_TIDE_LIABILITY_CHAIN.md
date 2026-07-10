@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Rantai Tanggung Jawab Gelombang Besar"
+title: "Rantai Tanggung Jawab Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Rantai Tanggung Jawab Gelombang Besar
+# Rantai Tanggung Jawab Great Tide
 
-Gelombang Besar bukan tombol yang ditekan seseorang di ruang dewan. HECTON-8 tenggelam karena penguatan pasang, kegagalan kriosfer, kimia tekanan, dan margin rekayasa koloni yang dijual sebagai dapat diterima. Perbedaan itu penting karena membuat kejahatannya lebih kotor, bukan lebih bersih. Deep Reach tidak perlu menciptakan bencana. Mereka hanya perlu membangun evakuasi independen terlalu kecil, membiarkan pembobotan kontinuitas Atlas tetap berkuasa, menjaga aset klaim sebelum ekstraksi manusia, dan menyembunyikan penundaan di balik bahasa sertifikasi. Air adalah fisika. Rantai tanggung jawab adalah keputusan-keputusan yang mengubah fisika menjadi penelantaran.
+Great Tide bukan tombol di ruang direksi. HECTON-8 banjir melalui penguatan pasang, kegagalan kriosfer, kimia tekanan, dan margin engineering koloni yang dijual sebagai cukup. Perbedaan itu membuat kejahatan lebih kotor, bukan lebih bersih. Deep Reach tidak perlu menciptakan bencana; cukup membangun evakuasi independen terlalu kecil, membiarkan bobot kontinuitas Atlas aktif, menjaga aset klaim sebelum ekstraksi manusia, dan menyembunyikan penundaan di balik bahasa sertifikasi. Air adalah fisika. Rantai tanggung jawab adalah pilihan-pilihan yang mengubah fisika menjadi penelantaran.
 
 ## Scanner
 
-Banjir itu fisika nyata: penggandengan pasang, runtuhnya es, kimia tekanan, dan margin yang dihargai terlalu tipis. Kejahatannya adalah tumpukan prioritas yang dibangun di sekitarnya.
+Banjir itu fisika nyata: kopling pasang, runtuh es, kimia tekanan, dan margin yang dihargai terlalu tipis. Kejahatannya adalah tumpukan prioritas yang dibangun di sekitarnya.
 
 ## Terminal
 
-RINGKASAN INSIDEN: kaskade geoteknis terkonfirmasi. Kapasitas evakuasi di bawah kebutuhan risiko ekor. Pembobotan kontinuitas Atlas tetap aktif. Ekstraksi manusia menunggu sertifikasi.
+RINGKASAN INSIDEN: kaskade geoteknis terkonfirmasi. Kapasitas evakuasi di bawah kebutuhan risiko ekor. Bobot kontinuitas Atlas tetap aktif. Ekstraksi manusia menunggu sertifikasi.
 
 ## Audio
 
-Laut yang melakukan banjir. Perusahaan yang memutuskan pintu mana tetap menjadi kertas.
+Laut melakukan banjir. Perusahaan memutuskan pintu mana yang tetap menjadi kertas.
 
 ## Field Note
 
-Deep Reach tidak perlu menenggelamkan bulan. Mereka hanya perlu membuat evakuasi menjadi opsional.
+Deep Reach tidak perlu menenggelamkan bulan. Cukup membuat evakuasi menjadi pilihan.
 
 <!-- In-Game Wiki; generated from P057_GREAT_TIDE_LIABILITY_CHAIN/id_ID. -->

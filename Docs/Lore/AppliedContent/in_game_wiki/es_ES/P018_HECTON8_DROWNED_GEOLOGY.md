@@ -19,15 +19,15 @@ localization_flags: 1
 
 # Geología ahogada
 
-La geología de HECTON-8 es lenguaje jugable: supervivencia de plataforma, salas ahogadas, cañones, salmuera, calor y abismo. Las semillas mueven rutas, no verdad física.
+La geología ahogada enseña movimiento en HECTON-8. Las crestas dan refugio. Las plataformas colapsadas juntan salvamento y limo asfixiante. Los cañones amplifican corriente. Las cortinas de salmuera doblan sonar y flotabilidad. Las cicatrices de respiradero pueden curar sellante o cocinarlo. Una ruta es una interpretación temporal de roca, agua, calor y presión.
 
 ## Scanner
 
-Plataformas, cañones, escaleras de salmuera y ventilas. La luna enseña descenso por terreno, no por puertas.
+Plataforma estratificada, embudo de cañón, escalera de salmuera, cicatriz de respiradero y exposición de limo detectadas. El terreno es enrutado de presión, no fondo.
 
 ## Terminal
 
-Pronóstico: colapso de plataforma, embudos, cortinas de densidad, plumas térmicas, limo abisal.
+PRONOSTICO DE PROFUNDIDAD: colapso de plataforma, embudo de cañón de servicio, cortinas de densidad de salmuera, plumas térmicas, exposición de limo abisal. La confianza de ruta decae tras marejada o cortes de salvamento.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Lee la roca antes de pedirle al traje que gane.
 
 ## Field Note
 
-La ruta segura es una lectura, no un pasillo.
+La ruta más segura es una lectura, no un pasillo.
 
 <!-- In-Game Wiki; generated from P018_HECTON8_DROWNED_GEOLOGY/es_ES. -->

@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Worker Locker Nameplate Sample"
+title: "Ren Okoye Locker Plate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,17 +17,23 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Worker Locker Nameplate Sample
+# Ren Okoye Locker Plate
 
-Worker Locker Nameplate Sample turns a single locker into a compact human record. Ren Okoye survives through route access, tool certification, a meal token, and an erasure scar. The object shows HECTON-8's core evidence style: identity preserved by work after payroll memory fails.
+Ren Okoye's locker plate turns one damaged locker into a worker record: route access, cutter certification, meal token, glove-size mark and an erased payroll stripe.
 
 ## Scanner
 
-Ren Okoye's plate keeps the name because the payline was easier to erase than the work.
+Ren Okoye locker plate. Payroll stripe sanded off. Clamp Route B, cutter cert, meal token and glove-size mark remain readable.
 
 ## Terminal
 
-LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.
+LOCKER CROSSCHECK
+Name: OKOYE, REN
+Route: Clamp Route B / valid
+Cutter cert: active
+Meal token: present
+Payroll status: overwritten by Loss Desk
+Erasure: incomplete; glove-size mark and route access remain.
 
 ## Audio
 
@@ -35,6 +41,6 @@ Name retained. Payline erased. Work still attached.
 
 ## Field Note
 
-REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Payroll stripe sanded off; glove-size mark still visible.
+REN OKOYE / Clamp Route B / cutter cert active / meal token under tape. Payroll stripe erased; glove-size mark still fits a hand.
 
 <!-- External Site; generated from P288_WORKER_LOCKER_NAMEPLATE_SAMPLE/en_US. -->

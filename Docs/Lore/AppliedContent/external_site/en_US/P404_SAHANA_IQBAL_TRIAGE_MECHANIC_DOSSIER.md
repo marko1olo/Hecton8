@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Sahana Iqbal/Triage"
+title: "Sahana Iqbal, Triage Mechanic"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Sahana Iqbal/Triage
+# Sahana Iqbal, Triage Mechanic
 
-Sahana Iqbal makes Deep Reach's delay concrete: rescue paperwork appears beside torque limits.
+Sahana Iqbal shows how HECTON-8 turned maintenance into triage. The colony did not separate broken equipment from endangered people cleanly; both waited under the same constraint system, and the evidence lets a player read that pressure without a cutscene.
 
 ## Scanner
 
-Dossier: Sahana Iqbal. Torque board and triage tags match.
+Dossier: Sahana Iqbal. Torque board, cot tags, and quarantine tape share one waiting order.
 
 ## Terminal
 
-SAHANA IQBAL/TRIAGE. Torque limits and cots shared one board; people and machines waited.
+TRIAGE BAY C-2 / IQBAL, SAHANA: torque limits posted beside oxygen reserve tags. Tools, cots, and scrubber cartridges queued on the same rail. Quarantine language moved the reach line again.
 
 ## Audio
 
-Iqbal fixed what she could reach. The system kept moving the reach line.
+Iqbal fixed what she could reach. The board kept deciding what counted as reachable.
 
 ## Field Note
 
-Use in evacuation queue terminal and quarantine repair loops.
+Use Iqbal in quarantine repair loops, med-bay corridors, oxygen queues, and any interface where a machine choice visibly costs human time.
 
 <!-- External Site; generated from P404_SAHANA_IQBAL_TRIAGE_MECHANIC_DOSSIER/en_US. -->

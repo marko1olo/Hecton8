@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ganchos de reivindicação da Black Keel"
+title: "Ganchos de Reivindicação Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ganchos de reivindicação da Black Keel
+# Ganchos de Reivindicação Black Keel
 
-Ganchos de reivindicação da Black Keel define a pressão inicial. A Black Keel não é uma nave vilã teatral; é um transportador preso à economia do pool de reivindicações, à lei de quarentena e a alavancas dormentes da Deep Reach. O problema do jogador é prático e moral ao mesmo tempo: uma voz acima do oceano pode ouvir o pedido de socorro, mas a rota para casa precisa se tornar valiosa, certificável e juridicamente inconveniente de ignorar.
+Ganchos de Reivindicação Black Keel define a pressão inicial acima de HECTON-8. Black Keel não é nave vilã; é um carrier preso à economia claim-pool, lei de quarentena e alavancas Deep Reach dormentes. O problema é prático e moral ao mesmo tempo: uma voz acima do oceano pode ouvir distress, mas a rota para casa precisa se tornar valiosa, certificável e juridicamente inconveniente de ignorar.
 
 ## Scanner
 
-No manifesto, a Black Keel é equipamento do pool de reivindicações; nas cláusulas, é alavanca da Deep Reach.
+Black Keel é hardware de claim-pool no manifesto e alavanca Deep Reach nas cláusulas.
 
 ## Terminal
 
-CUSTÓDIA DO TRANSPORTADOR: recuperação do operador permitida após triagem de carga, portão de quarentena, certificado de rota e limpeza de responsabilidade. Selo de prioridade da Deep Reach mantido em cláusulas dormentes.
+CARRIER CUSTODY: recuperação do operador permitida após triagem de payload, portão de quarentena, certificado de rota e liberação de responsabilidade. Selo de prioridade Deep Reach retido em cláusulas dormentes.
 
 ## Audio
 
-Ela consegue te ouvir. Só precisa precificar a resposta primeiro.
+Ela consegue ouvir. Só precisa precificar a resposta primeiro.
 
 ## Field Note
 
-A nave não é má. Ela está arrendada a um contrato que sabe ser cruel sem soar vivo.
+A nave não é má. Ela é alugada a um contrato que sabe ser mau sem soar vivo.
 
 <!-- External Site; generated from P058_BLACK_KEEL_CLAIM_HOOKS/pt_BR. -->

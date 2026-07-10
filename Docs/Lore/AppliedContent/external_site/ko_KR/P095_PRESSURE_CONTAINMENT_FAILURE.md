@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "압력 격납 실패"
+title: "Pressure Containment Failure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 압력 격납 실패
+# Pressure Containment Failure
 
-Blue debt는 저주받은 보물이 아니다. 압력 아래의 물질 기억이다. Xenon-Omega 잔류물은 그 격자가 아직 깊고 차갑고 압축되어 있다고 믿는 동안 유용하다. 너무 빨리 꺼내거나, 나쁘게 보관하거나, 신호 전단이 케스킷 안으로 스며들게 하면 표본은 읽을 수 있는 단계로 실패한다. 먼저 드리프트가 온다. 계기가 거짓말하고, 공명이 떨리고, 격납 경보가 서로 다툰다. 다음은 격자 균열이다. 염수가 들어온다. 생물이 화학을 따른다. 단계 4에서는 가치는 죽고 오염은 살아 있다.
+Pressure Containment Failure는 blue debt handling stages를 정의하며 resource value를 depth, pressure memory, bloom contamination, route planning, salvage liability와 묶는다.
+
+## Scanner
+
+casket stage chart. blue debt는 pressure memory, signal shear, bloom을 통해 fails한다. superstition wastes oxygen.
+
+## Terminal
+
+CONTAINMENT STAGES: 0 sealed lattice; 1 signal drift; 2 lattice fracture; 3 brine/biological bloom; 4 dead sample with live contamination. Vent repressure may recover stage 1 only.
+
+## Audio
+
+The sample does not hate you. It is trying to be back where it formed.
+
+## Field Note
+
+sample은 한 depth에서 worth a fortune이고 ten meters later에는 become a liability할 수 있다.
 
 <!-- External Site; generated from P095_PRESSURE_CONTAINMENT_FAILURE/ko_KR. -->

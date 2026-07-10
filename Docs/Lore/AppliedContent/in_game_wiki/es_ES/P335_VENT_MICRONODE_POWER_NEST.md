@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Nido de micronodos de energía de respiradero
 
-Los nidos de micronodos de respiradero explican por qué Atlas se vuelve más denso cerca de los campos de máquinas profundos sin hacerse omnipotente. Cada nodo cosecha un gradiente local: calor, química mineral, vibración y presión. Un solo nido no puede mandar sobre la colonia, pero puede despertar un parche, alimentar una cicatriz de dron, preservar un fragmento de memoria o mantener viva una mala reparación.
+Los nidos de micronodos de respiradero explican por qué la reparación Atlas sigue activa en salas muertas. Cada nodo recoge un gradiente local: calor por cerámica, química de salmuera entre vetas minerales, vibración por la pared del respiradero. Un solo nido no dirige HECTON-8. Puede despertar un parche de puerta, una cuna de dron o una tira de biopelícula después de que el jugador se vaya.
 
 ## Scanner
 
-Micronodos térmicos pulsan en la pared del respiradero. Cicatrices de carga de dron rodean la garganta mineral.
+Grupo de nodos cerámicos en la garganta del respiradero cosecha gradiente térmico. Cerca hay cicatrices de carga de dron y respuesta fresca de sellante.
 
 ## Terminal
 
-RASTRO DE ENERGÍA ATLAS: gradiente de respiradero alimenta nodo local, nodo despierta respuesta de biopelícula y sellante, intervalo de carga de dron irregular. Certeza de mando central baja.
+NODO LOCAL DE ENERGÍA ATLAS / VENT V-3: gradiente térmico alimenta pila de microceldas, despierta bucles de biopelícula y sellante en 40 m, intervalo de carga de dron irregular. Sin bloqueo de mando central.
 
 ## Audio
 
-Aquí abajo, hasta el calor tiene orden de trabajo.
+Calor, garganta mineral, nodo. Basta para que la reparación despierte tras tu paso.
 
 ## Field Note
 
-Usar cerca de campos de respiraderos, aproximación factory-temple y persistencia de reparación tardía.
+Si el nodo del respiradero está caliente, asume que la sala puede despertar detrás de ti. Marca la salida antes de tocar la garganta mineral.
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/es_ES. -->

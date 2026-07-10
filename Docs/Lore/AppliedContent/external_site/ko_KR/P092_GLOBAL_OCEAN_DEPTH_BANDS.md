@@ -9,7 +9,7 @@ locale: ko_KR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "전역 해양 심도대"
+title: "전 지구 해양 수심대"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 전역 해양 심도대
+# 전 지구 해양 수심대
 
-HECTON-8은 더 깊은 숫자만 있는 평평한 바다가 아니다. 압력으로 국경을 쓴 수직 국가다. 0에서 250미터까지 유광 인양 선반은 빛, 조류, 부드러운 잔해, 초보 실수에 대한 관용을 남긴다. 250에서 1200미터에는 산업 선반과 케이블 암초가 시작된다. 끊어진 계류, 배관 뼈대, 릴레이 잔해, 오래된 기업 경로가 있다. 1200에서 2800미터에는 염수 계단이 소나를 굽히고 열을 숨긴다. 2800에서 4300미터에는 수리가 기계장과의 협상이 된다. 4300에서 5600미터에는 Atlas가 압력을 권한으로 바꾼다.
+Global Ocean Depth Bands는 bright shelf에서 Atlas basin까지 HECTON-8의 exploration, salvage, biology, sound, pressure, route risk를 구조화한다.
+
+## Scanner
+
+depth chart. first shelf는 poor ballast를 용서한다. lower water는 pressure, heat, noise, silence로 every mistake를 청구한다.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+HECTON-8의 depth는 같은 number를 입은 law, weather, border, hunger다.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/ko_KR. -->

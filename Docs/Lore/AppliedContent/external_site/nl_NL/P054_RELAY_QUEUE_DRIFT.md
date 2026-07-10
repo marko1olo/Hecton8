@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Drift in relaiswachtrij"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Drift in relaiswachtrij
+# Relay Queue Drift
 
-Drift in de relaiswachtrij is het verschil tussen waarheid en bruikbaarheid. HECTON-8 heeft geen nepstatic of magische storing nodig om communicatie eng te maken. Een bericht kan intact, geauthenticeerd en perfect correct aankomen voor de kamer zoals die dertig minuten geleden was. Dan verplaatst water een luik, druk buigt een frame, Atlasgroei sluit de verkeerde scheur en dezelfde instructie wordt een val. De speler onderzoekt niet of het systeem liegt, maar of het te oud is om te vertrouwen.
+Relay Queue Drift maakt message age tot overlevingsvariabele: remote orders kunnen tegelijk true, stale en lethal zijn.
+
+## Scanner
+
+Relay stamp ouder dan de leak die hij benoemt. De instruction was waar voor een room die niet meer bestaat.
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity. Local evidence outranks carrier instruction tot fresh relay window opent. Treat delayed route orders as archival tenzij pressure, door state en waterline overeenkomen.
+
+## Audio
+
+De message is correct. Dat is het probleem.
+
+## Field Note
+
+Een late truth kan nog steeds doden.
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/nl_NL. -->

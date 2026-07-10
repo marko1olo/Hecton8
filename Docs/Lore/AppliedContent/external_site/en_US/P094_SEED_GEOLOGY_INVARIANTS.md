@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Seed Geology Invariants"
+title: "Survey Geology Invariants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Seed Geology Invariants
+# Survey Geology Invariants
 
-Every salvage run on HECTON-8 can expose a different route through the wound. That variation matters: a canyon may open earlier, a cable reef may hide a safer pocket, a bloom may push fauna into a route that felt empty last time, and an evidence chain may surface in a new order. The moon's physics do not reset for entertainment. Aegir remains the primary star. HECTON-8 remains locked in its orbital ladder. The Great Tide keeps its interval. The depth bands stay stacked in the same brutal order. Blue debt keeps its pressure behavior. Atlas remains tied to the deepest basin. Procedural geography changes what the crew finds first; canon geology decides what the crew can never talk the ocean out of.
+Survey Geology Invariants let HECTON-8 support changing charts and route uncertainty while preserving fixed astronomy, depth order, Great Tide logic, blue-debt behavior, and Atlas-basin canon.
+
+## Scanner
+
+Atlas survey note. The salvage chart can disagree with itself; the moon keeps the same bones.
+
+## Terminal
+
+INVARIANTS: Ran/Aegir anchor, HECTON-8 moon ladder, Great Tide interval, depth-band order, Atlas-basin relation, blue-debt pressure behavior. VARIABLE: canyon approach, POI exposure, safe pockets, bloom density, salvage reveal.
+
+## Audio
+
+Different wound reading. Same moon under it.
+
+## Field Note
+
+A later chart may bury evidence differently. It may not rewrite gravity, tide, or guilt.
 
 <!-- External Site; generated from P094_SEED_GEOLOGY_INVARIANTS/en_US. -->

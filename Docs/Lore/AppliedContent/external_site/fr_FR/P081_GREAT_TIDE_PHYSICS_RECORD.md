@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Registre physique de la Grande Marée"
+title: "Archive physique de la Great Tide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Registre physique de la Grande Marée
+# Archive physique de la Great Tide
 
-Le Registre physique de la Grande Marée garde la catastrophe honnête. HECTON-8 était vulnérable à la résonance de marée, à l'effondrement de glace, aux surcotes et aux rejets thermiques. La culpabilité de Deep Reach se lit dans les marges, la capacité d'évacuation et les priorités de décision, pas dans une fausse cause magique.
+L'archive physique de la Great Tide garde la catastrophe honnête. HECTON-8 était déjà dangereuse : la géométrie printanière d'Aegir tirait la mer, la cryosphère chargeait les plateaux, les tempêtes mangeaient les marges de planning, et la chaleur coloniale repoussait les drains scellés. La faute de Deep Reach vient ensuite. Elle a repoussé la réserve d'ascension, protégé la continuité Atlas et traité les corps comme une masse moins prioritaire.
 
-Le Registre physique de la Grande Marée fixe la logique du désastre de HECTON-8: l'océan est dangereux physiquement, et le crime d'entreprise consiste à concevoir avec des marges optimistes jusqu'à ce qu'un système lunaire réclame la dette. N'adoucis pas: une vraie physique a tué des gens, et Deep Reach lui a donné des victimes.
+L'archive physique de la Great Tide fixe la logique du désastre de HECTON-8 : un océan lunaire devient mortel quand la physique mesurable rencontre l'optimisme d'entreprise, l'évacuation différée et le matériel de continuité protégé. N'en fais pas un mythe. La physique a tué. Deep Reach a veillé à placer une foule devant elle.
 
 <!-- External Site; generated from P081_GREAT_TIDE_PHYSICS_RECORD/fr_FR. -->

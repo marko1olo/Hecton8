@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Ksiezyc pekniety po kolizji"
+title: "Ksiezyc pekniety kolizja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Ksiezyc pekniety po kolizji
+# Ksiezyc pekniety kolizja
 
-HECTON-8 nie byl wedrownym cialem przechwyconym dla widowiska. Zrosl sie w pasie szczatkow Aegira, ostygl jako warstwowy ksiezyc oceaniczny, a potem przyjal ukosne uderzenie, ktore zdeformowalo skorupe bez wymazania swiata. Impakt podniosl polki, zatopil baseny i otworzyl dlugie drabiny uskokow, gdzie goraca chemia nadal plynie przez slona wode. Rezonans plywowy utrzymal te rany po blokadzie orbitalnej. Dlatego ocean ma czytelne blizny: kaniony solankowe, kuznice kominow, zyly szkla cisnieniowego, odsloniete grzbiety i rzadkie okna do starego dna.
+Collision-Fractured Moon definiuje HECTON-8 jako local Aegir body, ktorego ocean routes, vents, brine basins i salvage windows pochodza z impact scars i tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, potem przyjal oblique impact dosc szeroki, by ocean go zapamietal.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. Potem cos uderzylo tak hard, by give the sea a map.
+
+## Field Note
+
+Captured-moon story jest zbyt czysta. To miejsce jest born local, broken local i billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/pl_PL. -->

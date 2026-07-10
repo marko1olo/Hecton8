@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Początkowe roszczenie Maraudera
 
-Pierwszy plik Black Keel o HECTON-8 wygląda jak zlecenie salvage, dopóki jego własny język nie zaczyna się oskarżać. Zadłużony Marauder przyjmuje trasę, bo lien jest prawdziwy, a okno odzysku wąskie. Przeszłość Deep Reach field-systems od razu ma znaczenie: procedury ciśnienia, skróty maintenance, frazy liability i znaczniki ewakuacji są znane, zanim staną się dowodami. Black Keel daje dostęp, nie łaskę. Zejście zaczyna się od konkretnej pracy wokół P-63: załatać bathydrop, sprawdzić uszczelnienia, przeskanować shelf, uruchomić maszyny, odzyskać ładunek albo dowód i odejść, zanim orbital timing oraz legal custody zamkną claim. Siłą jest zawodowe rozpoznanie: gracz widzi, gdzie wypolerowany język i fizyczne uszkodzenia mówią różne historie.
+HECTON-8 zaczyna się od kontraktu znajomego na tyle, że staje się groźny. Black Keel daje zadłużonemu Marauderowi dostęp do trasy odzysku nad P-63, nie obietnicę ratunku. Zapis używa słownictwa Deep Reach, bo postać gracza kiedyś w nim pracowała: systemy terenowe, infrastruktura ewakuacji, procedura ciśnienia, formularze tras, dopuszczalne dowody. Ta przeszłość zmienia pierwszą godzinę. Zły panel nie jest tłem. Poprawiona etykieta nie jest kolorytem. Wygładzoną formułę odpowiedzialności można zestawić z wgnieceniem, zegarem, stanem drzwi albo znakiem zaginionego. Zejście zaczyna się jako płatne salvage i staje się zawodowym rozpoznaniem: papier zna pomieszczenie, a pomieszczenie dowodzi, że papier oczyszczono.
 
 ## Scanner
 
-Publiczny zapis claim. Trasa otwarcia wskazuje zadłużonego Maraudera z przeszłością Deep Reach field-systems, uszkodzony bathydrop i okno odzysku Black Keel nad P-63.
+Publiczny zapis roszczenia. Akta zastawu Black Keel wskazują byłego specjalistę systemów terenowych Deep Reach, uszkodzony bathydrop, trasę P-63 i zamykające się okno przechowania.
 
 ## Terminal
 
-WĘZEŁ ARCHIWUM PUBLICZNEGO // ROSZCZENIE POCZĄTKOWE. Akta kontraktora: były specjalista Deep Reach field-systems. Status bieżący: Marauder pod lien. Trasa: recovery claim Black Keel, zejście na shelf P-63, zwrot dowodu i ładunku przed zamknięciem custody window.
+PUBLICZNY WĘZEŁ ARCHIWUM // BLACK KEEL CLAIM BK-P63-2190. Status: Marauder związany zastawem. Dawne uprawnienia: systemy terenowe Deep Reach / infrastruktura ewakuacji. Dostawa: masa ładunku plus dopuszczalny dowód przed lokalnym przechowaniem T+06:40.
 
 ## Audio
 
-Nie zwiedzasz HECTON-8. Wracasz do papierów, które znasz zbyt dobrze.
+Kontrakt zna twoje stare skróty. To nie znaczy, że mówi prawdę.
 
 ## Field Note
 
-Notatka Maraudera: kontrakt zna twoją przeszłość. To nie czyni go uczciwym.
+Notatka Maraudera: jeśli akta roszczenia znają twój poziom uprawnień, najpierw czytaj pominięcia, potem wypłatę.
 
 <!-- External Site; generated from P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE/pl_PL. -->

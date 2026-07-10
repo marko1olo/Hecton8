@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "圧力ガラス形成"
+title: "Pressure Glass形成"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 圧力ガラス形成
+# Pressure Glass形成
 
-圧力ガラスは、Marauderのblue debtとDeep ReachのXenon-Omega語彙の裏にある技術名である。圧力、希ガスポケット、塩水、鉱物、熱、改変生物が交差する場所で形成される。
+Pressure glassは、マローダーの青い債務とDeep ReachのXenon-Omega語彙の背後にある現場名だ。希ガスポケット、鉱物欠陥、熱い塩水、変質した生物、暴力的な圧力履歴が十分長く一緒に残り、格子を記憶へ固定した場所でしか形成されない。
 
 ## Scanner
 
-青い負債格子。希ガス、塩水、鉱物欠陥、圧力履歴が一つの高価な過失に閉じ込められている。
+青い債務の格子。希ガス、塩水、鉱物欠陥、熱サイクル、圧力履歴が一つの高価な傷に融着している。
 
 ## Terminal
 
-XO CONTINUITY SUBSTRATE: キセノン豊富なクラスレート欠陥格子は塩水化学、熱サイクル、生体触媒残渣で安定。減圧リスク: 信号ドリフト、破断、汚染ブルーム。
+XO連続性基質: キセノンに富むクラスレート/欠陥格子。塩水化学、熱サイクル、生物触媒残渣で安定化。減圧リスク: 信号ドリフト、破断、汚染ブルーム。
 
 ## Audio
 
-彼らが戻った理由はこれだ。金ではない。機械が読める傷だ。
+彼らが戻った理由はこれだ。金ではない。読める傷だ。
 
 ## Field Note
 
-これは鉱石ではない。どこで作られたかを記憶する過程だ。
+これは鉱石ではない。何をされたかを覚えている場所だ。
 
 <!-- In-Game Wiki; generated from P082_PRESSURE_GLASS_FORMATION/ja_JP. -->

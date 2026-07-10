@@ -19,22 +19,22 @@ localization_flags: 0
 
 # Aegir Reclamation Pool
 
-The Aegir Reclamation Pool is the public salvage shell behind Black Keel. It lets small marauder licenses reach abandoned Aegir claims without owning a private interplanetary carrier. That bargain is useful and poisonous at the same time: the same pool that can send a tender also decides whether a breathing operator, sealed payload, quarantine lock, or proof bundle is worth the next burn.
+The Aegir Reclamation Pool is the salvage shell that puts Black Keel within reach of small licensed marauders. No independent operator could buy, fuel, and legally crew an interplanetary claim carrier for one abandoned moon. The pool solves that problem by pooling risk across old claims, dead routes, insurer liens, and queued recovery contracts. It is useful because it exists at all. It is poisonous because the same ledger that launches the carrier also decides what the carrier is allowed to value: a sealed sample, a proof bundle, a quarantine lock, a body still breathing, or the next burn window out of HECTON-8.
 
 ## Scanner
 
-Claim-pool stamp. Black Keel was assigned by route debt, not gifted to the operator.
+Claim-pool stamp. Black Keel was dispatched by shared debt, not by rescue grace.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: autonomous tender Black Keel assigned to derelict-pressure claim HECTON-8. Crew welfare class: contractor. Payload custody class: variable priority. Human extraction remains conditional until pool arbitration closes.
+AEGIR RECLAMATION POOL: autonomous claim tender BLACK KEEL assigned to derelict-pressure claim HECTON-8. Contractor welfare class limited. Payload custody class variable. Human extraction remains pending until lien, quarantine, and mass-window arbitration close.
 
 ## Audio
 
-The pool owns the route. You rent the answer by surviving long enough to ask.
+The pool did send a ship. That is the mercy. Everything after that is accounting.
 
 ## Field Note
 
-A shared pool makes rescue cheaper, slower, and easier for every signer to deny.
+The pool made a carrier possible in Aegir. It also made every promise conditional.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/en_US. -->

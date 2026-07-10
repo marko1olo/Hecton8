@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Registre écologique
 
-HECTON-8 exige un contraste: faibles profondeurs utiles et belles, adaptation aux structures humaines, puis intrusion Atlas. L’horreur fonctionne parce que la vie native existait avant les dégâts.
+Le registre écologique sépare la vie du dégât. Les tapis lumineux de plateau et les brouteurs montrent la base. La flore de câble et les corps filtrants montrent l'adaptation au matériel humain. Faune taguée, film conducteur et croissance shell-seal pointent vers la réparation Atlas. La bonne question n'est pas si c'est vivant, mais quel travail cela accomplit dans le système de pression.
 
 ## Scanner
 
-Écologie lumineuse confirmée. Plus bas: flore câble, corps filtrants et intrusion de réparation Atlas.
+Séparation registre confirmée : vie native de plateau, biote adapté aux câbles, organismes de réparation routés par Atlas. Identifier avant de couper.
 
 ## Terminal
 
-Registre séparé: écologie native sous pression, biote adapté à la colonie, organismes modifiés par Atlas. Ne pas fusionner.
+SEPARATION REGISTRE : écologie de pression native ; biote de câbles adapté à la colonie ; organismes de réparation altérés par Atlas. Une mauvaise étiquette peut détruire un joint actif ou effacer une preuve de route.
 
 ## Audio
 
-Si tout est monstre, rien n’est violation.
+Si tout est monstre, tu couperas ce qui tient la pression.
 
 ## Field Note
 
-Le monde était vivant avant d’être blessé.
+Le monde était vivant avant d'être blessé.
 
 <!-- In-Game Wiki; generated from P020_HECTON8_ECOLOGY_REGISTRY/fr_FR. -->

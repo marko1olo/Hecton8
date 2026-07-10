@@ -19,6 +19,22 @@ localization_flags: 0
 
 # Global Ocean Depth Bands
 
-HECTON-8 is not a flat ocean with deeper numbers. It is a vertical country with borders written in pressure. From 0 to 250 meters, the photic salvage shelf still has light, algae, soft wreckage, and enough forgiveness for new mistakes. From 250 to 1200 meters, the industrial shelf and cable reef begin: broken moorings, pipe frames, relay bones, and old corporate routes. From 1200 to 2800 meters, brine stairs and canyons bend sonar, hide heat, and make ballast feel political. From 2800 to 4300 meters, abyssal machine fields turn maintenance into a negotiation with broken systems. From 4300 to 5600 meters, the Atlas basin stops feeling like an environment and starts feeling like an authority.
+Global Ocean Depth Bands structure HECTON-8 exploration, salvage, biology, sound, pressure, and route risk from bright shelf to Atlas basin.
+
+## Scanner
+
+Depth chart. The first shelf forgives poor ballast; lower water invoices every mistake in pressure, heat, noise, and silence.
+
+## Terminal
+
+BANDS: 0-250 m photic salvage shelf; 250-1200 m industrial shelf and cable reef; 1200-2800 m brine stair/canyon; 2800-4300 m abyssal machine field; 4300-5600 m Atlas basin.
+
+## Audio
+
+Every hundred meters takes one habit away.
+
+## Field Note
+
+Depth on HECTON-8 is law, weather, border, and hunger wearing the same number.
 
 <!-- External Site; generated from P092_GLOBAL_OCEAN_DEPTH_BANDS/en_US. -->

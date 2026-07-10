@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Маскувальні графіті мародерів"
+title: "Графіті-маски мародерів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Маскувальні графіті мародерів
+# Графіті-маски мародерів
 
-Мітки мародерів — польова навігація, соціальне попередження і мова проти нагляду. Вони грубі, бо мали пережити воду, страх, погані лампи і корпоративні камери. Гравець вчиться читати, які знаки говорять про шум, тиск, ризик патруля, схрони і маршрути, що вже не збігаються з офіційними картами.
+Marauder graffiti - не decoration. Це field navigation, social warning і anti-surveillance language, видряпаний там, де radios зраджують, maps прострочуються, а official signage бреше вже тому, що надто старий. Marks грубі, бо мусили пережити water, bad lamps, glove tremor і cameras, які могли карати readable intent. Slash може означати silence. Black ring - Black Keel ping. Broken arrow - pressure changed після останнього route survey. Colony лишила labels; marauders лишили weather.
 
 ## Scanner
 
-Код фарби: кількість рисок позначає шумову дисципліну, чорні кільця — небезпеку carrier-ping, зламані стрілки — дрейф тиску.
+Paint code. Slash count позначає noise discipline; black rings - carrier-ping danger; broken arrows - pressure drift.
 
 ## Terminal
 
-ІНДЕКС МАСКИ МАРШРУТУ: три риски — безпечні лише ручні сигнали. Чорне кільце — скан носія. Зламана стрілка — тиск змінився після останньої мітки.
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
 
 ## Audio
 
-Якщо стіна здається лютою, читай її як погоду.
+Якщо wall виглядає злою, читай її як weather.
 
 ## Field Note
 
-Мародери писали для тих, хто не міг довіряти радіо і не міг оплатити карти.
+Marauders писали для тих, хто не міг довіряти radios і не міг дозволити собі maps.
 
 <!-- In-Game Wiki; generated from P053_MARAUDER_GRAFFITI_MASKS/uk_UA. -->

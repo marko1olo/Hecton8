@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Frontière de données du rendement de ressource"
+title: "Ligne d'acceptation de rendement"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontière de données du rendement de ressource
+# Ligne d'acceptation de rendement
 
-La valeur d'une ressource dans HECTON-8 est une chaîne, pas une étiquette. La table possède le nombre, mais la fiction possède sa raison : qui a pris l'échantillon, sous quelle pression, avec quel sceau de garde et combien de la veine la route peut encore arracher sans danger.
+Les registres de récupération autour de HECTON-8 ne fixent pas le prix d'un minerai par son seul nom. Un enregistrement de rendement exige classe d'échantillon, bande de pression, garde de route, état d'épuisement, stade de contamination et hachage de paquet avant que la valeur affichée soit fiable. Un échantillon sans historique de pression reste une masse non payée.
 
 ## Scanner
 
-La ligne de rendement rejette la valeur libre : classe, bande de pression, garde, épuisement et hash doivent concorder.
+Ligne d'échantillon incomplète : historique de pression, grade de garde, état d'épuisement, contamination et hachage de paquet ne concordent pas.
 
 ## Terminal
 
-RESOURCE YIELD CONTRACT : aucun nombre accepté sans packet hash, classe de ressource, bande de pression, grade de garde, courbe de rareté et comportement d'épuisement. Un échantillon sans historique de pression est une preuve, pas une valeur.
+SCHÉMA D'ADMISSION DE RENDEMENT / Aegir Reclamation Pool : refuser toute valeur tant que classe de ressource, bande de pression, grade de garde, courbe de rareté, comportement d'épuisement, stade de contamination et hachage témoin de paquet ne sont pas présents. Une pierre en sac reste de la masse tant que la route de pression n'est pas prouvée.
 
 ## Audio
 
-Un échantillon sans historique de pression n'est pas une valeur.
+Black Keel : retenue d'échantillon acceptée après route de pression et hachage de garde. Avant cela, il voyage comme ballast.
 
 ## Field Note
 
-Les nombres de rendement restent provisoires jusqu'à accord entre bande de pression, grade de garde, comportement d'épuisement et packet hash.
+Sans bande de pression dans la ligne, ne discute pas le prix. Mets-le en masse morte, garde le conteneur scellé et fais payer le courtier après validation de la garde.
 
 <!-- External Site; generated from P301_RESOURCE_YIELD_ROW_CONTRACT/fr_FR. -->

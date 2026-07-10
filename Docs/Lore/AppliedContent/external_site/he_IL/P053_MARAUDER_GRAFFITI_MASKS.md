@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "מסכות הגרפיטי של הבוזזים"
+title: "מסכות גרפיטי של marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# מסכות הגרפיטי של הבוזזים
+# מסכות גרפיטי של marauders
 
-הבוזזים של HECTON-8 אינם סיעת פושטים חסרת פנים. הם עובדים, רצי חוב, קבלנים שנעזבו וצוותי חילוץ שלמדו לכתוב על קירות כי כל ערוץ נקי יכול להיצפות או להיות מחויב. הגרפיטי שלהם מכוער בכוונה: מהיר לצביעה תחת לחץ, ברור דרך עיבוי ומעורפל מספיק כדי להיראות כמו בהלה או ונדליזם. טבעת שחורה אינה קישוט; היא אומרת שהנושא אולי שומע אותך. חץ שבור אינו ציור רע; הוא אומר שהמסדרון השתנה מאז המעבר הבטוח האחרון.
+מסכות גרפיטי של marauders הופכות scavenger writing ל-ocean infrastructure קריאה: route hints, comm silence, pressure drift, cache risk וחוסר אמון ב-carrier surveillance.
+
+## Scanner
+
+Paint code. Slash count מסמן noise discipline; black rings מסמנים carrier-ping danger; broken arrows מסמנים pressure drift.
+
+## Terminal
+
+ROUTE MASK INDEX: three slashes: hand signals only. Black ring: carrier sweep. Broken arrow: pressure changed since last mark. Salt bloom: cache compromised. Double hook: official route no longer honest.
+
+## Audio
+
+אם ה-wall נראה כועס, קרא אותו כ-weather.
+
+## Field Note
+
+Marauders כתבו לאנשים שלא יכלו לסמוך על radios ולא יכלו להרשות לעצמם maps.
 
 <!-- External Site; generated from P053_MARAUDER_GRAFFITI_MASKS/he_IL. -->

@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tulang Punggung Jam Pertama
 
-Tulang Punggung Jam Pertama menetapkan ritme pembuka HECTON-8. Pemain mulai dengan tugas rekayasa yang nyata dan keajaiban visual, lalu melihat tugas itu terhubung pada kebohongan korporat dan ekologi pemeliharaan yang masuk ke biologi. Ini menjaga rute pertama tetap dapat dimainkan dan atmosferik sambil menanam investigasi yang lebih besar: samudra tidak menyembunyikan cerita; ia menyimpan bukti dalam tekanan, garam, dan prosedur.
+Tulang Punggung Jam Pertama menentukan ritme pembukaan HECTON-8. Tugas engineering yang nyata dan keajaiban visual datang lebih dulu, lalu tugas-tugas itu terhubung ke kebohongan korporat dan ekologi pemeliharaan yang masuk ke biologi. Laut tidak menyembunyikan cerita; ia menyimpan bukti dalam tekanan, garam, dan prosedur.
 
 ## Scanner
 
-Kontrak, penurunan rusak, udara, perairan dangkal terang, tempat aman pompa, kebohongan yang dibersihkan, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
+Kontrak, drop rusak, udara, dangkal terang, perlindungan pompa, kebohongan steril, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
 
 ## Terminal
 
-ANEKS DANGKAL: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
+SHALLOW ANNEX: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
 
 ## Audio
 
-Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik daripada kau.
+Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik darimu.
 
 ## Field Note
 
-Pembukaan harus indah sebelum berubah menjadi tuduhan.
+Pembukaan harus indah sebelum mulai menuduh.
 
 <!-- External Site; generated from P060_FIRST_HOUR_SPINE/id_ID. -->

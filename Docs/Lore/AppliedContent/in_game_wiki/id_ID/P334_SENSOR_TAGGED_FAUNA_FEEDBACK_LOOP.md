@@ -9,7 +9,7 @@ locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Lingkar Umpan Balik Fauna Bertag Sensor"
+title: "Loop Umpan Balik Fauna Bertag Sensor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Lingkar Umpan Balik Fauna Bertag Sensor
+# Loop Umpan Balik Fauna Bertag Sensor
 
-Fauna bertag sensor membawa koloni lama di dalam lukanya. Deep Reach menandai hewan untuk studi migrasi, tekanan, dan kontaminasi; Atlas kemudian membaca tag itu sebagai telemetri lingkungan murah. Makhluk itu bukan boneka. Gerakannya tetap bisa mengubah prioritas perbaikan, membangunkan rute drone, atau membuat lorong aman tampak terisi.
+Fauna bertag sensor membawa perangkat survei lama di dalam jaringan yang sembuh. Deep Reach menandai hewan untuk studi tekanan, migrasi, dan kontaminasi. Atlas tetap mendengar setelah koloni mati dan memasukkan paket itu ke status perawatan. Hewan memilih jalurnya sendiri; tag masih bisa mengubah pintu, alarm, dan kepercayaan peta di belakangnya.
 
 ## Scanner
 
-Tag Deep Reach tua di bawah pertumbuhan cangkang. Jejak migrasi cocok dengan sapuan survei perawatan.
+Tag Deep Reach lama di bawah pertumbuhan cangkang pada sisi kiri. Paket gerak masih ping ke jaringan perawatan.
 
 ## Terminal
 
-LINGKAR FAUNA: tag tertanam mengirim paket tekanan, gerak, dan kontaminasi yang lemah. Atlas membaca gerakan sebagai keadaan lingkungan, bukan niat hewan.
+LOOP TAG FAUNA / DR-2147-MIG: paket tekanan, gerak, dan kontaminasi diterima sebagai telemetri lingkungan. Niat hewan tidak diparse. Alarm rute bisa mengikuti jalur migrasi.
 
 ## Audio
 
-Ia tidak memburumu. Ia tetap bisa melaporkanmu.
+Ia tidak memburumu. Tagnya masih bisa membuka pintu yang salah.
 
 ## Field Note
 
-Baik untuk pertemuan saat hewan tidak bersalah namun tetap berbahaya bagi rute.
+Jika fauna bertag melintasi halaman relai, tunggu sebelum percaya alarm. Hewannya mungkin sudah pergi; status rute mungkin masih mengejar.
 
 <!-- In-Game Wiki; generated from P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP/id_ID. -->

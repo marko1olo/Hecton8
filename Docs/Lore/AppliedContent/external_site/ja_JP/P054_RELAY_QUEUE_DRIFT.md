@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "リレー待ち行列ドリフト"
+title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# リレー待ち行列ドリフト
+# Relay Queue Drift
 
-リレー待ち行列ドリフトは、真実と有用性の差だ。HECTON-8は通信を怖くするために偽のノイズや魔法じみた妨害を必要としない。メッセージは完全で、認証済みで、三十分前の部屋には完璧に正しいまま届く。そこから水がハッチを動かし、圧力がフレームを曲げ、Atlas成長が間違った亀裂を塞ぎ、同じ指示が罠になる。プレイヤーが解くのは、システムが嘘をつくかではなく、信じるには古すぎるかだ。
+Relay Queue Driftはmessage ageを生存変数にする。remote ordersは同時にtrue、stale、lethalになりうる。
+
+## Scanner
+
+relay stampは名指しするleakより古い。instructionはもう存在しないroomに対して正しかった。
+
+## Terminal
+
+QUEUE DRIFT: packet age exceeds route validity。fresh relay window opensまでLocal evidence outranks carrier instruction。pressure、door state、waterlineが一致しない限りdelayed route ordersはarchivalとして扱うこと。
+
+## Audio
+
+messageは正しい。それが問題だ。
+
+## Field Note
+
+遅れて届くtruthでも殺せる。
 
 <!-- External Site; generated from P054_RELAY_QUEUE_DRIFT/ja_JP. -->

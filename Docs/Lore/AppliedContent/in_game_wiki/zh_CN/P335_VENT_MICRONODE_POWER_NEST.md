@@ -9,7 +9,7 @@ locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "喷口微节点供能巢"
+title: "热 vent 微节点电力巢"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# 喷口微节点供能巢
+# 热 vent 微节点电力巢
 
-喷口微节点巢解释了Atlas为何在深层机器场附近变得更密集，却没有变成全能。每个节点采集本地梯度：热量、矿物化学、振动和压力。单个巢不能指挥殖民地，但能唤醒一个补丁，供养无人机疤痕，保存记忆碎片，或让一次错误维修继续活着。
+热 vent 微节点巢解释了为什么Atlas维修会在死房间里保持活动。每个节点收集本地梯度：穿过陶瓷的热量、矿脉之间的盐水化学、vent壁中的振动。单个巢无法指挥HECTON-8。它可以在玩家离开后唤醒一块门补丁、一个无人机座或一条生物膜。
 
 ## Scanner
 
-热微节点在喷口壁内脉动。矿物喉口周围有无人机充电疤痕。
+vent喉部的陶瓷节点簇正在收集热梯度。附近有无人机充电疤痕和新鲜密封反应。
 
 ## Terminal
 
-ATLAS供能痕迹：喷口梯度供养本地节点，节点唤醒生物膜与密封反应，无人机充电间隔不规则。中央指令置信度低。
+ATLAS本地电力节点 / VENT V-3：热梯度供给微电池堆，唤醒40 m内的生物膜和密封回路，无人机充电间隔不规则。无中央指令锁定。
 
 ## Audio
 
-在这下面，连热量都有工单。
+热、矿物喉部、节点。足够让维修在你通过后醒来。
 
 ## Field Note
 
-用在喷口场、factory-temple入口和后期路线的维修持续性。
+如果vent节点是温的，就假设房间会在你身后醒来。碰矿物喉部前先标出口。
 
 <!-- In-Game Wiki; generated from P335_VENT_MICRONODE_POWER_NEST/zh_CN. -->

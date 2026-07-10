@@ -19,15 +19,15 @@ localization_flags: 0
 
 # Aegir Host Star
 
-Aegir orbits a normal orange-yellow K-type primary. HECTON-8 is not dark because the system lacks light; it becomes dark through depth, storm water, eclipse timing, silt, pressure and broken industry.
+Aegir orbits a normal K-type primary. HECTON-8 is not dark because the star fails; it becomes dark through water column depth, storm turbidity, eclipse timing, silt, pressure, and broken industry. Surface light can grow shelf life while the abyss remains a legal and physical blind spot.
 
 ## Scanner
 
-K-type primary light confirmed. Surface illumination exists; depth, storms and eclipse do the dark work.
+K-type primary confirmed. There is light in the system; depth, storms, eclipse, and debt do the dark work.
 
 ## Terminal
 
-Ran/Aegir route ephemeris: K-dwarf primary, delayed interstellar packets, no FTL rescue vector. Treat all help as local.
+RAN/AEGIR EPHEMERIS: K-dwarf primary, stable photospheric output, delayed interstellar packet class, no FTL rescue vector. Treat help as local until mass arrives.
 
 ## Audio
 
@@ -35,6 +35,6 @@ Star light reaches the shelf. It does not reach the problem.
 
 ## Field Note
 
-The star is not the horror. The ocean is.
+The star is not the horror. The ocean is where light becomes a rumor.
 
 <!-- In-Game Wiki; generated from P016_AEGIR_HOST_STAR/en_US. -->

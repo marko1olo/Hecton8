@@ -9,7 +9,7 @@ locale: pt_BR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Livro de selo da escotilha"
+title: "Ledger de Selo de Hatch"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Livro de selo da escotilha
+# Ledger de Selo de Hatch
 
-Escotilhas são alguns dos registros mais silenciosos de HECTON-8. Elas não explicam quem ficou para trás; guardam direção de fechamento, estresse da junta e autoridade de override. Ler um livro de selo transforma uma porta trancada em decisão de pressão com timestamp.
+Hatches sao records silenciosos em HECTON-8: closure direction, gasket stress, override authority e wet-side witness traces transformam locked door em pressure decision com timestamp.
 
 ## Scanner
 
-Memória de selo recuperada. A junta recebeu três cortes de pressão e um override de evacuação; acesso do lado de retorno foi travado pelo lado molhado.
+Seal memory recovered. O gasket sofreu three pressure cuts e one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: deformação da junta acima da tolerância de serviço. Fechamento manual aceito sob EVAC OVERRIDE. Contagem de operadores no lado de retorno sem resolução. Reabrir apenas após equalização de pressão e inspeção das dobradiças.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection e wet-side witness check.
 
 ## Audio
 
-Ela selou. Isso é tudo que a escotilha prometeu.
+It sealed. Isso e tudo que o hatch prometeu.
 
 ## Field Note
 
-Uma escotilha selada é um recibo. Antes de abrir, pergunte qual lado pagou.
+Um sealed hatch e um receipt. Antes de abrir, pergunte qual lado pagou.
 
 <!-- External Site; generated from P047_HATCH_SEAL_LEDGER/pt_BR. -->

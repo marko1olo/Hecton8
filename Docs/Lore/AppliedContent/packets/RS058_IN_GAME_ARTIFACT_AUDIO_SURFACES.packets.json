@@ -183,12 +183,12 @@
       "localized": {
         "en_US": {
           "title": "P-63 Pump Room Work Order",
-          "scanner": "The first repair reads like a colony habit: pump, seal, listen, cut only if the room stops lying.",
-          "field_note": "Clipboard soaked through the lower half. The cut line is still readable because somebody circled it twice and wrote if it sings, stop.",
-          "terminal": "WORK ORDER P-63: clear sump; patch cold seam; verify return pinger; cut fused latch only after pressure holds; print gasket from local stock; mark route safe after acoustic return repeats three times. Supervisor initials missing under water stain.",
-          "audio": "Pump first. Seal second. If it sings, stop cutting.",
-          "in_game_wiki": "The P-63 Pump Room Work Order makes the first repair feel like inherited colony procedure instead of tutorial text. It is soaked, practical, and frightened in small ways. The order tells workers to clear the sump, patch the cold seam, wait for the return pinger, and cut a fused latch only after pressure holds. That sequence teaches the player how HECTON-8 workers thought: water first, seal second, sound before force, route trust last. The missing supervisor initials and doubled circle around the cut line make the paper feel used, not authored for the player. It is a small artifact, but it carries the whole game loop in miniature: read the room, restore a system, distrust the easy cut.",
-          "external_site": "P-63 Pump Room Work Order is a small-scale HECTON-8 artifact: water in the room, one tool in hand, an acoustic return line, and a route that cannot be trusted until the environment answers. It makes mechanics feel like colony habit."
+          "scanner": "Waterlogged P-63 work order. Sequence still readable: clear sump, patch cold seam, wait for return pinger, cut only after pressure holds.",
+          "field_note": "Lower clipboard soaked through. Cut line circled twice: IF IT SINGS, STOP.",
+          "terminal": "WORK ORDER P-63\nClear sump.\nPatch cold seam.\nVerify return pinger.\nCut fused latch only after pressure holds.\nPrint gasket from local stock.\nMark route safe after three acoustic-return repeats.\nSupervisor initials lost under water stain.",
+          "audio": "Pump first. Seal second. Three returns before the cut.",
+          "in_game_wiki": "The P-63 pump room order is a wet repair card, not a lesson sheet. It gives the repair sequence in the order a worker needed it: water out, seam sealed, return pinger checked, latch cut only after pressure holds. The doubled circle around the cut line is the warning. Somebody saw a fast cut go wrong before this copy was soaked.\n\nThe artifact carries colony habit in procedure. Workers trusted water level first, seal second, sound before force, and route clearance last. The missing supervisor initials and stained lower half matter because the order was used in a room that was failing while the paper was still on the clipboard.",
+          "external_site": "P-63 Pump Room Work Order is a small repair artifact: water in the sump, a cold seam, a return pinger, and a latch that must not be cut until pressure answers three times."
         },
         "ru_RU": {
           "title": "Рабочий приказ насосной P-63",
@@ -337,13 +337,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Worker Locker Nameplate Sample",
-          "scanner": "Ren Okoye's plate keeps the name because the payline was easier to erase than the work.",
-          "field_note": "REN OKOYE / Clamp Route B / cutter cert active / meal token clipped under tape. Payroll stripe sanded off; glove-size mark still visible.",
-          "terminal": "LOCKER CROSSCHECK / OKOYE, REN / ROUTE B: VALID / CLAMP CERT: ACTIVE / MEAL TOKEN: PRESENT / PAYROLL STATUS: OVERWRITTEN BY LOSS DESK / ERASURE INCOMPLETE.",
+          "title": "Ren Okoye Locker Plate",
+          "scanner": "Ren Okoye locker plate. Payroll stripe sanded off. Clamp Route B, cutter cert, meal token and glove-size mark remain readable.",
+          "field_note": "REN OKOYE / Clamp Route B / cutter cert active / meal token under tape. Payroll stripe erased; glove-size mark still fits a hand.",
+          "terminal": "LOCKER CROSSCHECK\nName: OKOYE, REN\nRoute: Clamp Route B / valid\nCutter cert: active\nMeal token: present\nPayroll status: overwritten by Loss Desk\nErasure: incomplete; glove-size mark and route access remain.",
           "audio": "Name retained. Payline erased. Work still attached.",
-          "in_game_wiki": "Worker Locker Nameplate Sample shows how HECTON-8 remembers people through objects that still had jobs. Ren Okoye is not introduced by biography. The locker plate gives route, tool certification, meal token, glove-size mark, and a payroll stripe sanded away by somebody who did not know which details mattered. That is why the artifact works. It proves that corporate erasure can be clumsy: the payline disappears, but the clamp route remains; the status is overwritten, but the glove-size mark still fits a real hand. The player should read the name through labor first, then feel the violence of the missing account line.",
-          "external_site": "Worker Locker Nameplate Sample turns a single locker into a compact human record. Ren Okoye survives through route access, tool certification, a meal token, and an erasure scar. The object shows HECTON-8's core evidence style: identity preserved by work after payroll memory fails."
+          "in_game_wiki": "Ren Okoye's locker plate preserves identity through work residue. The payroll stripe is sanded off, but the route access, cutter certificate, meal token and glove-size mark remain. Whoever erased the payline knew accounting fields, not the details that tied a person to a shift.\n\nThe plate is useful because the erasure is incomplete. A payroll system can overwrite status. It cannot easily remove tape shadows, glove-size marks, route grime or a meal token clipped under a locker lip. Those leftovers can connect Ren Okoye to tools, rooms and later witness records.",
+          "external_site": "Ren Okoye's locker plate turns one damaged locker into a worker record: route access, cutter certification, meal token, glove-size mark and an erased payroll stripe."
         },
         "ru_RU": {
           "title": "Образец таблички рабочего шкафчика",
@@ -492,13 +492,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Marauder Correction Note Sample",
-          "scanner": "Grease-pencil correction on an accident form: not weather, not panic, an authorization delay with a body count attached.",
+          "title": "Marauder Correction: Auth Delay",
+          "scanner": "Grease-pencil correction over accident form. Official cause: WEATHER. Correction: AUTH DELAY. Door clock runs six minutes ahead of claim stamp.",
           "field_note": "NOT WEATHER. AUTH DELAY. Check pump cert, shift count, body category. Door clock is six minutes ahead of the claim stamp.",
-          "terminal": "MARAUDER NOTE / OFFICIAL CAUSE: REJECTED / REQUIRED BEFORE CLAIM: pump certificate, shift count, body category, door-clock mismatch, rescue authorization queue.",
-          "audio": "Someone smelled the rot in the paperwork before the room dried.",
-          "in_game_wiki": "The Marauder Correction Note Sample is not a confession and it is more useful because of that. It is a dirty annotation on top of an official accident form, written by someone who had learned to distrust clean causes. The note does not say who killed whom. It says what must be checked before the word accident is allowed to stand: pump certificate, shift count, body category, door-clock mismatch and the authorization queue that held rescue long enough for the room to become evidence. In HECTON-8 terms this makes the object a bridge between environmental proof and faction voice. The colony record tries to end the story with weather. The marauder hand forces the player back into the room.",
-          "external_site": "Marauder notes are one of HECTON-8's best evidence surfaces because they argue with official systems without turning into omniscient lore. This sample keeps suspicion alive through practical marks: timestamps, certifications, a bad category and a queue delay. It does not solve the case for the player. It teaches the player how to read a lie that was filed as maintenance."
+          "terminal": "MARAUDER CORRECTION MC-12\nOfficial cause: weather / rejected\nCheck before claim: pump certificate; shift count; body category; door-clock mismatch; rescue authorization queue\nClock fault: door +00:06 before claim stamp\nAction: hold accident label until queue log is recovered.",
+          "audio": "Weather did not hold the door. The queue did.",
+          "in_game_wiki": "This Marauder correction is a dirty annotation on an official accident form. It does not solve the case. It blocks a clean cause from closing the room too early. The official line says weather. The correction points to pump certification, shift count, body category, door-clock mismatch and the rescue authorization queue.\n\nThe six-minute clock offset is the useful cut. It turns suspicion into a checkable record: door log against claim stamp, queue hold against body count. The Marauder hand does not become an omniscient narrator. It leaves the next diver with a short list of records that can prove whether the room was allowed to drown.",
+          "external_site": "Marauder Correction MC-12 preserves an accident form and writes the survival audit beside it: not weather, check pump cert, shift count, body category, door clock and authorization queue."
         },
         "ru_RU": {
           "title": "Образец мародерской правки",
@@ -647,13 +647,13 @@
       },
       "localized": {
         "en_US": {
-          "title": "Quarantine Relay Fragment",
-          "scanner": "The same relay packet approves extraction and denies release. The ocean lets the body go before the colony lets the person leave.",
-          "field_note": "Stamped twice: BODY RECOVERED, PERSON RETAINED. Air review predates the rescue receipt; claimant dispute remains open.",
-          "terminal": "RELAY HOLD QRF-17 / EXTRACTION: ACCEPTED / RELEASE: DENIED / REASONS: sample custody unresolved, air review stale, claimant dispute active, witness status provisional.",
-          "audio": "Relay hold. Extraction accepted. Release denied. You are out of the water, not out of custody.",
-          "in_game_wiki": "Quarantine Relay Fragment is a small ending with teeth. It proves that HECTON-8 can rescue someone from pressure and still refuse to return them to personhood. The packet carries two truths in the same administrative breath: extraction accepted, release denied. The body is recovered. The person is retained. The air review line is older than the rescue receipt, which means the quarantine verdict was waiting before anyone opened the hatch. For gameplay and lore this fragment matters because it makes rescue morally incomplete. A dry floor is not freedom. A med seal is not release. The colony can save what it needs as evidence, sample, claimant property or witness inventory, then keep the human being inside the system that harmed them.",
-          "external_site": "Quarantine Relay Fragment defines the bitter edge of HECTON-8 survival. The setting is not only about escaping water pressure; it is about escaping records, custody chains and ownership claims that survive the flood. The fragment gives endings a harder shape: someone can be recovered from the ocean and still not be free."
+          "title": "Quarantine Relay Hold",
+          "scanner": "Relay packet QRF-17 carries both stamps: EXTRACTION ACCEPTED and RELEASE DENIED. Air review date is older than the rescue receipt.",
+          "field_note": "Two stamps on one card: BODY RECOVERED, PERSON HELD. Check sample custody before you celebrate the dry floor.",
+          "terminal": "RELAY HOLD QRF-17\nExtraction: accepted\nRelease: denied\nAir review: stale before rescue receipt\nCustody: sample chain unresolved\nClaimant dispute: active\nWitness status: provisional\nInstruction: keep recovered operator inside quarantine line.",
+          "audio": "Extraction accepted. Release denied. Do not remove the wrist seal.",
+          "in_game_wiki": "A quarantine relay hold is a rescue document that stops short of release. QRF-17 accepts extraction from the water, then keeps the recovered operator inside quarantine because sample custody, air review and claimant status remain unresolved. The air review date predates the rescue receipt. The hold was already waiting when the hatch opened.\n\nThe fields carry the threat: extraction accepted, release denied, witness provisional, wrist seal stays on. A living operator can be held inside the same custody chain as a contaminated sample until the claim desk decides which one matters more.",
+          "external_site": "QRF-17 separates extraction from release. A person can reach dry floor and still remain inside quarantine custody while sample chain, air review and claimant dispute stay open."
         },
         "ru_RU": {
           "title": "Фрагмент карантинного реле",

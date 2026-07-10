@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 1
-title: "Garde de l’outil de salvage"
+title: "Custody d'outil de salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Garde de l’outil de salvage
+# Custody d'outil de salvage
 
-Sur HECTON-8, un outil peut être équipement de survie et témoin contractuel en même temps. Les registres de garde de salvage lient coupes, réparations et échantillons à des tokens de claim, faisant d’une action utile une future preuve, dette ou pression de paiement.
+La custody d'outil de salvage relie minute-to-minute survival a la claim economy: cuts, repairs, patches et samples peuvent devenir evidence, payout pressure ou Keelmark debt.
 
 ## Scanner
 
-Le dock d’outil contient un registre de garde scellé. Dernière coupe, réparation et pochette d’échantillon sont liées à un token de claim Keelmark.
+Tool dock holds a sealed custody log. Last cut, repair et sample pouch tied to a Keelmark claim token.
 
 ## Terminal
 
-CUSTODY LOG / TOOL DOCK S-12 : usage du cutter accepté sous salvage claim. Action de réparation témoignée. Droits d’échantillon attachés au token Keelmark Mutual. Export de preuve en conflit avec la route de paiement matériel.
+CUSTODY LOG / TOOL DOCK S-12: cutter use accepted under salvage claim. Repair action witnessed. Sample rights attached to Keelmark Mutual token. Evidence export conflicts with material payout route.
 
 ## Audio
 
-Chaque coupe utile laisse un témoin.
+Every useful cut leaves a witness.
 
 ## Field Note
 
-Un cutter peut sauver ton air et vendre tes mains dans le même geste. Vérifie ce qu’il enregistre avant de l’appeler tien.
+Un cutter peut save your air et sell your hands dans le meme stroke. Verifie ce qu'il records avant de l'appeler tien.
 
 <!-- External Site; generated from P050_SALVAGE_TOOL_CUSTODY/fr_FR. -->

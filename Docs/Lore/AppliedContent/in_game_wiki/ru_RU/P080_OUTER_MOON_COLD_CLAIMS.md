@@ -9,7 +9,7 @@ locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Холодные претензии внешних лун"
+title: "Холодные claims внешних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Холодные претензии внешних лун
+# Холодные claims внешних лун
 
-Холодные претензии внешних лун доказывают, что Aegir - система, а не одна проклятая луна. Проваленные соляные проспекты, законсервированные металлические маршруты и мертвые маяки создают salvage-экономику, которая затягивает мародеров в транспортную сеть.
-
-Важно не расстояние, а повторяемость. Маршрут может быть мертвым и все равно оплачиваемым. Маяк может повторять опеку без живого экипажа. HECTON-8 - худший видимый случай, но не первое место, где Aegir научилась оформлять потерю как инфраструктуру.
+Outer moon cold claims доказывают, что Aegir - system, а не one haunted ocean. Failed brine prospects, mothballed metal routes, cold caches и beacons with no living crew создали salvage economy до того, как HECTON-8 стал именем, которое все whisper. Главное - pattern. Route может быть dead и still billable. Beacon может repeat custody into empty space. Company может learn, что loss becomes cheaper, когда он filed as infrastructure. HECTON-8 - worst visible case, а не first lesson.
 
 ## Scanner
 
-Маяк внешней претензии. Не все мертвое в Aegir лежит на HECTON-8.
+Outer claim beacon. Не каждое dead thing in Aegir находится на HECTON-8.
 
 ## Terminal
 
-АРХИВ ВНЕШНЕЙ ЛЕСТНИЦЫ // Соляной проспект Thorne провален. Экспортный маршрут Anvil законсервирован. Маяк Mute повторяет ping опеки без заявления активного экипажа.
+OUTER LADDER ARCHIVE: Thorne brine prospect failed. Anvil export route mothballed. Mute beacon repeats custody ping with no active crew declaration. Claim remains billable under remote salvage law.
 
 ## Audio
 
-Aegir научилась терять людей до того, как HECTON-8 закончила урок.
+Aegir научился lose people раньше, чем HECTON-8 закончил lesson.
 
 ## Field Note
 
-Холодные претензии делают мародеров возможными. Они же учат компании хоронить закономерности.
+Cold claims делают marauders возможными. Они же учат companies bury patterns.
 
 <!-- In-Game Wiki; generated from P080_OUTER_MOON_COLD_CLAIMS/ru_RU. -->

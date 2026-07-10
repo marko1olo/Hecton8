@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Blue Debt Sample Quality"
+title: "Blue Debt Sample Classes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,31 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Blue Debt Sample Quality
+# Blue Debt Sample Classes
 
-Blue Debt Sample Quality keeps HECTON-8 resources from becoming generic treasure. The colony valued Blue Debt because it could be sold, studied, hidden and used as proof of who had been where. Quality therefore has four meanings at once: payout, containment risk, evidence strength and faction pressure. A shard is easy to carry and easy to dismiss. A casketed bloom is more valuable because the container proves someone expected pressure. Harmonic glass is not just expensive; it sings back through acoustic systems and can tie a route to a place. A live-contaminated sample can force Deep Reach, quarantine or a claimant desk to react because it is too dangerous and too useful to ignore. Dead contaminated glass is the bitter class: the value is lower, but the legal smell is stronger because somebody already failed to keep it alive or clean. The player should feel sample quality as a choice, not a price ladder. Richer samples buy options, attract attention and make endings heavier.
+Blue Debt sample quality is a handling class, not a price ladder. A loose shard is easy to carry and easy to deny. A casketed bloom is worth more because the container proves somebody expected pressure. Harmonic glass matters when its acoustic return ties a sample to a route. Live-contaminated material can lock a carrier, quarantine desk or Deep Reach claim into responding.
+
+The player choice is physical. Break the seal and the sample may become easier to sell, but weaker as evidence and harder to keep out of shelter air. Keep the seal and the container is heavy, noisy and valuable to people who may not want the operator released.
 
 ## Scanner
 
-Blue Debt quality is value, risk and evidence in one number. The richer the sample, the less it behaves like loot.
+Blue Debt sample: sealed casket. Pressure tag intact. Acoustic return low and regular. Do not open in shelter air.
 
 ## Terminal
 
-QUALITY CLASSES / shard: low custody, safe trade / casketed bloom: pressure-rated value / harmonic glass: acoustic proof and high Deep Reach interest / live-contaminated sample: evidence priority, unstable handling / dead contaminated glass: low payout, high legal odor.
+SAMPLE INTAKE BD-Q
+Class A: loose shard / payable / low custody
+Class B: casketed bloom / keep pressure tag / quarantine value
+Class C: harmonic glass / acoustic return active / route evidence
+Class D: live-contaminated / do not vent / witness hold possible
+Reject: dead glass in open air; low value, high cleanup.
 
 ## Audio
 
-The more it is worth, the less it is only loot.
+Leave the pretty shard. Take the sealed ugly one. The tag is worth more than the shine.
 
 ## Field Note
 
-Quality changes payout, containment cost, route pressure and ending leverage. A clean shard pays; a live-contaminated sample makes someone answer.
+A loose shard buys a meal. A tagged casket buys trouble and leverage. If the seal strip survived, Black Keel will ask for the container before it asks for you.
 
 <!-- In-Game Wiki; generated from P173_BLUE_DEBT_SAMPLE_QUALITY/en_US. -->

@@ -9,7 +9,7 @@ locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "AR LOC HOLD: Ren Okoye/Brine Map"
+title: "رين أوكوي، رسام خرائط المحلول الملحي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# AR LOC HOLD: Ren Okoye/Brine Map
+# رين أوكوي، رسام خرائط المحلول الملحي
 
-AR LOC HOLD: Ren Okoye's dossier explains why brine traversal belongs to worker knowledge. Density ladders, pinboards and pressure stamps turn a hostile fluid layer into an imperfect route network.
+رسم رين أوكوي طبقات المحلول الملحي في HECTON-8 كطرق عمل لا كمنظر. اللوح الباقي، وخرز الكثافة الملطخ، وندوب لوحة الدبابيس، وقسائم المسار المختومة بالضغط تظهر رسام خرائط يصحح الممرات الرسمية مستخدما الماء نفسه كشاهد. خرائطه تشرح لماذا عاشت أسلم طرق المستعمرة غالبا خارج لوحة التصاريح: كان المحلول يتحرك أسرع من الموافقة، وكان حملة الأدوات مضطرين إلى الثقة بآخر قياس أكثر من آخر توقيع.
 
 ## Scanner
 
-AR LOC HOLD: Dossier: Ren Okoye. Slate and pinboard show brine as a road.
+ملف: رين أوكوي. خرز الكثافة، وقطوع اللوح، وندوب خيوط الدبابيس تصف مسارا تحرك خلال الليل.
 
 ## Terminal
 
-AR LOC HOLD: REN OKOYE/BRINE MAP. Safe currents moved faster than permits; legal routes lagged water.
+مكتب خريطة المحلول / OKOYE, REN: انزاح التيار الآمن 3.2 م شرقا بعد انقلاب الكثافة. لوحة التصاريح ما زالت تذكر ممر الأمس. علامات مسار العمال تتقدم على مسار الإدارة حتى القياس التالي.
 
 ## Audio
 
-AR LOC HOLD: Okoye drew roads that moved while management argued about permission.
+كان أوكوي يرسم طرقا في ماء لا يريد حفظ الرسم.
 
 ## Field Note
 
-AR LOC HOLD: Brine approach evidence: scanner-first cartography turns salt gradients, route marks, and worker traces into Ren Okoye's record.
+استخدم أوكوي لكشف مسارات المحلول والتنقل بين طبقات الكثافة وتناقضات لوحة التصاريح. يجب أن تعطي أدلته أسبابا ملموسة لعدم الثقة بالخرائط القديمة.
 
 <!-- In-Game Wiki; generated from P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER/ar_SA. -->

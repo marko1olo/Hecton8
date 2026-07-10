@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Recovered Operational Note
 spoiler_tier: 1
-title: "Hatch-afdichtingsregister"
+title: "Hatch Seal Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Hatch-afdichtingsregister
+# Hatch Seal Ledger
 
-Hatchframes bewaren nuttige leugens. Een groen afdichtingslampje betekent dat de pakking hield, niet dat de sluiting eerlijk, veilig of omkeerbaar was. Afdichtingsregisters bewaren druksneden, override-stempels en de richting van de laatste handmatige sluiting. In verlaten kolonieruimtes kan een hatch tegelijk routeblokkade, overlevingsgereedschap en arbeidersbewijs zijn.
+Hatch frames bewaren nuttige leugens. Een green seal light betekent dat de gasket hield, niet dat de closure fair, safe of reversible was. Seal ledgers bewaren pressure cuts, override stamps, hinge strain en de direction van de laatste manual closure. In abandoned colony spaces kan een hatch route blocker, survival tool, worker evidence en accusation in hetzelfde object zijn. De vraag is zelden of hij opent. De vraag is welke pressure, water en human decision hij gescheiden hield.
 
 ## Scanner
 
-Afdichtingsgeheugen hersteld. De pakking nam drie druksneden en één evacuatie-override; toegang aan de terugkeerzijde werd vanaf de natte kant vergrendeld.
+Seal memory recovered. De gasket kreeg three pressure cuts en one evacuation override; return-side access locked from the wet side.
 
 ## Terminal
 
-SEAL LEDGER / FRAME H-17: pakkingvervorming boven servicetolerantie. Handmatige sluiting geaccepteerd onder EVAC OVERRIDE. Operatortelling aan terugkeerzijde onopgelost. Alleen heropenen na drukegalisatie en scharnierinspectie.
+SEAL LEDGER / FRAME H-17: gasket deformation above service tolerance. Manual closure accepted under EVAC OVERRIDE. Return-side count unresolved. Reopen only after pressure equalization, hinge inspection en wet-side witness check.
 
 ## Audio
 
-Hij sloot af. Dat is alles wat de hatch beloofde.
+It sealed. Dat is alles wat de hatch beloofde.
 
 ## Field Note
 
-Een afgesloten hatch is een bon. Vraag voor het openen welke kant betaalde.
+Een sealed hatch is een receipt. Vraag voor openen welke kant betaalde.
 
 <!-- In-Game Wiki; generated from P047_HATCH_SEAL_LEDGER/nl_NL. -->

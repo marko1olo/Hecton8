@@ -19,6 +19,22 @@ localization_flags: 1
 
 # 접근 가능한 해저 창
 
-HECTON-8 해저 대부분은 보통의 용기로 닿을 수 없다. 바닥이 보이기 전에 압력이 벽을 세운다. 접근 가능한 해저 창은 예외다. 무너진 선반, 드러난 능선, 재가열된 분출구 흉터, 조밀한 염수 기둥이 하강 곡선을 바꾸는 찢긴 자리다. 안전한 동굴이 아니다. 지질과 맺는 좁은 거래다. 승무원은 오래된 지각을 만지고, 압력에서 자란 광물을 회수하고, 봉인된 식민지 장비를 찾고, 바다가 다시 루트를 닫기 전에 묻힌 사건을 읽을 수 있다.
+Accessible Seafloor Windows는 HECTON-8이 ancient floor, high-risk salvage, mineral seams, normally sealed below lethal water인 evidence를 드러내는 rare pressure breaks다.
+
+## Scanner
+
+exposed ridge marker. 여기서 shell은 crawler가 paste가 되지 않고 old floor를 touch할 만큼 얇게 찢어졌다.
+
+## Terminal
+
+WINDOW CRITERIA: fractured crust lip, vent-reheated brine column, collapsed shelf ramp, stable sonar return, pressure pocket below suit redline. Slow salvage only.
+
+## Audio
+
+The sea lets you touch bottom in windows, not wherever you feel brave.
+
+## Field Note
+
+moon의 대부분은 floor를 pressure secret으로 보관한다. windows는 exceptions with teeth다.
 
 <!-- External Site; generated from P093_ACCESSIBLE_SEAFLOOR_WINDOWS/ko_KR. -->

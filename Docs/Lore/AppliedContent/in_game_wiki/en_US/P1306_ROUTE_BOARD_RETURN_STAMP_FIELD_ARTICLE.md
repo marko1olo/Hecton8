@@ -9,7 +9,7 @@ locale: en_US
 surface: in_game_wiki
 source_voice: PDA Route Board Primer
 spoiler_tier: 1
-title: "Route Board and Return Stamp Field Article"
+title: "Route Board Return Stamp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,29 +17,29 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Route Board and Return Stamp Field Article
+# Route Board Return Stamp
 
-A pressure colony cannot run on memory. Every useful door eventually grows a board beside it: destination, hatch number, window, tool tag, air estimate, pinger channel, return stamp. It looks mundane until the player understands the board is how a room keeps count of people outside its skin.
+A route board is a pressure room counting who is outside it. The useful columns are plain: destination, hatch, work window, tool tag, air estimate, pinger channel, return stamp. Crews used the board because wet corridors destroy verbal promises. Deep Reach later used the same columns as liability language.
 
-Deep Reach did not invent the route board. Crews did, because a wet corridor eats verbal promises. The company made it poisonous by treating the board as liability language. A missing person became delayed. Delayed became held. Held became not cleared. If the column could be changed before the next window, the failure became scheduling instead of death.
+The marks matter more than the headings. Grease pencil over salt means a gloved correction. A dry stamp pad means returns were still expected after the room stopped supporting them. A tool tag with no name means equipment came back through another hand. A name moved into a clean column can be worse than a crossed-out name; it means somebody needed the board to look managed.
 
-The marks matter more than the printed headings. Grease pencil over salt means somebody rewrote the truth with gloves on. A dried stamp pad means returns were expected after the room stopped supporting them. A tool tag beside no name means equipment came back through a different hand. A name moved upward into a clean column can be worse than a crossed-out name, because it means somebody needed the board to look managed.
-
-For a Marauder, the board is a navigation instrument and an accusation. It can reveal which hatch last opened, which service spine still has pinger coverage, where a cache might be hidden, and why a corridor feels lived-in instead of staged. It also tells the player when ordinary workers were still solving practical problems while the corporation was already editing the record.
-
-A return stamp is small, ugly and human. It says a person crossed back through pressure, handed in the tool, and made the room whole for one more line. On HECTON-8, the most frightening boards are not the ones covered in blood or slogans. They are the boards where the final day still looks like a shift that expected tomorrow.
+A return stamp is small and ugly. It says a worker crossed back through pressure, returned the tool and made the room whole for one more line. The worst boards are not covered in slogans. They are boards where the final day still looks like a shift waiting for tomorrow.
 
 ## Scanner
 
-ROUTE BOARD SCAR // Name, hatch, work window, tool custody, air tally, return stamp. One empty stamp box is not absence. It is where the room still owes somebody.
+Route board scar. Columns: name, hatch, work window, tool seal, air tally, pinger channel, return stamp. One stamp box is empty and salt-crusted.
 
 ## Terminal
 
-SHIFT BOARD PROCEDURE // Do not clear a name until return stamp, pinger receipt, tool seal and air count agree. Tide alarm does not authorize erasure.
+SHIFT BOARD PROCEDURE RB-17
+Do not clear a name until return stamp, pinger receipt, tool seal and air count agree.
+Tide alarm does not authorize erasure.
+If tool returns without name: hold route open.
+If name moves columns: preserve previous mark.
 
 ## Audio
 
-The board was never a map. It was a list of people the room still owed.
+Tool came back. Name did not. Leave the line open.
 
 ## Field Note
 

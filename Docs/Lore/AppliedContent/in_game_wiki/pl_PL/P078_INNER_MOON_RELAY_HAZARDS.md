@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Zagrożenia przekaźników księżyców wewnętrznych"
+title: "Zagrozenia relay wewnetrznych ksiezycow"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,26 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Zagrożenia przekaźników księżyców wewnętrznych
+# Zagrozenia relay wewnetrznych ksiezycow
 
-Zagrożenia przekaźników księżyców wewnętrznych czynią utratę kontaktu fizyczną. Skok wyrównany ze Skarn potrafi psuć anteny bez ich zabicia. Pył i lód Vela zamykają optykę, gdy trasa nadal twierdzi, że istnieje.
-
-Claw i Lumen są gorsze, bo niosą starą logikę tras. Handshake może być formalnie ważny i operacyjnie bezużyteczny. Black Keel może zapisać pakiet, zachować custody i zostawić ciało w wodzie.
+Inner moon relay hazards czynia failed contact fizycznym, nie wygodnym. Skarn-aligned surges moga corrupt antennas bez killing them. Vela dust and ice moze shutter optics, gdy route wciaz reports itself as open. Claw i Lumen sa gorsze, bo carry old buoy logic: handshake moze byc formally valid i operationally useless. Dlatego Black Keel moze log a packet, preserve custody i nadal zostawic human signal waiting in water. System nie musial go mute. Wystarczylo answer from the wrong sky.
 
 ## Scanner
 
-DRABINA WEWNĘTRZNA // Skarn nasyca anteny. Vela rozprasza optykę. Stare trasy Claw i Lumen utrzymują przeterminowane handshakes.
+INNER LADDER: Skarn saturates antennas. Vela shutters optics. Claw i Lumen keep stale handshakes legally alive.
 
 ## Terminal
 
-NOTA ZAGROŻENIA PRZEKAŹNIKA // Utrata kontaktu to geometria, pogoda cząstek, migawka pyłu albo odziedziczone buoy law. Czysty UI podejrzany w oknach skoku.
+RELAY HAZARD NOTE: contact loss may be geometry, charged-particle weather, dust shutter, eclipse edge, or inherited buoy law. Treat clean interface state as suspect during surge windows.
 
 ## Audio
 
-Przekaźnik nie zamilkł. Powtarzał zły wiek.
+Relay nie zamilkl. Repeated the wrong century.
 
 ## Field Note
 
-Czysta ikona wciąż może kłamać przez stare niebo.
+Clean icon wciaz moze klamac through old sky.
 
 <!-- In-Game Wiki; generated from P078_INNER_MOON_RELAY_HAZARDS/pl_PL. -->

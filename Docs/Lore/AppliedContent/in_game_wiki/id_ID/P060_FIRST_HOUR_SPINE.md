@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Tulang Punggung Jam Pertama
 
-Jam pertama tidak boleh dimulai dalam gelap. Ia dimulai dengan suara kontrak, penurunan rusak, pengelolaan napas, air dangkal yang terang, dan kebutuhan praktis untuk menyalakan ulang pompa. Keindahan adalah bagian dari perangkap: HECTON-8 harus terlihat layak diinginkan sebelum dokumennya menjadi mematikan. Lalu tulang punggung pembukaan mengubah bertahan hidup menjadi bukti. Ruang aman pertama berguna tetapi tercemar; paket insiden yang dibersihkan terdengar terlalu rapi; bekas perbaikan Atlas pertama menunjukkan kabel, logam alat, dan residu hidup ditekan menjadi satu keputusan pemeliharaan. Pemain mempelajari loop dasar lewat tindakan, bukan paparan: bernapas, memperbaiki, membaca, meragukan, turun lebih dalam.
+Jam pertama tidak dimulai dalam gelap. Ia dimulai dengan suara kontrak, turun yang rusak, pengelolaan napas, air dangkal terang, dan kebutuhan praktis menyalakan ulang pompa. Keindahan adalah bagian dari perangkap: HECTON-8 harus tampak layak diinginkan sebelum paperwork-nya menjadi mematikan. Rute pembuka mengubah bertahan hidup menjadi bukti. Ruang berlindung pertama berguna tetapi tercemar; paket kecelakaan yang disterilkan terdengar terlalu bersih; bekas perbaikan Atlas pertama memperlihatkan kabel, logam alat, dan residu hidup dipres menjadi satu segel yang bekerja.
 
 ## Scanner
 
-Kontrak, penurunan rusak, udara, perairan dangkal terang, tempat aman pompa, kebohongan yang dibersihkan, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
+Kontrak, drop rusak, udara, dangkal terang, perlindungan pompa, kebohongan steril, lalu bekas perbaikan pertama yang memakai hidup sebagai gasket.
 
 ## Terminal
 
-ANEKS DANGKAL: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
+SHALLOW ANNEX: restart pompa manual valid. Paket insiden Deep Reach tersimpan. Pertumbuhan perbaikan Atlas terdeteksi di sekitar kabel, fragmen alat, dan residu biologis.
 
 ## Audio
 
-Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik daripada kau.
+Ruang aman pertama tidak bersih. Ia hanya menahan napas lebih baik darimu.
 
 ## Field Note
 
-Pembukaan harus indah sebelum berubah menjadi tuduhan.
+Pembukaan harus indah sebelum mulai menuduh.
 
 <!-- In-Game Wiki; generated from P060_FIRST_HOUR_SPINE/id_ID. -->

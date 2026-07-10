@@ -9,7 +9,7 @@ locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Frontière risque-récompense du contrat"
+title: "Ligne risque/récompense de contrat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Frontière risque-récompense du contrat
+# Ligne risque/récompense de contrat
 
-La frontière convertit la pression de replay en dossiers contractuels table-owned. La route change parce que dette, timing de tempête, garde et clauses de responsabilité ont changé, pas parce que le monde a oublié.
+Les lignes de contrat changent la route avant la plongée. Une récupération calme paie moins mais relâche la garde ; une course en fenêtre de tempête paie bien et impose un mauvais timing ; une clause appât de Recovery Compliance peut exiger une preuve avant crédit d'oxygène. Vieille épave, nouveau papier, autre route.
 
 ## Scanner
 
-La ligne de contrat lie privilège, fenêtre de tempête, ordre de garde, plafond de paiement et poids de clause.
+Ligne d'offre hostile : gravité du privilège, fenêtre de tempête, ordre de garde, profondeur de preuve, plafond de paiement et poids de clause Deep Reach sont liés.
 
 ## Terminal
 
-CONTRACT RISK CONTRACT : les lignes exigent gravité du privilège, plafond de paiement, fenêtre de tempête, garde d'échantillon, ordre de preuve et poids de clause Deep Reach. Le contrat est le premier prédateur.
+SCHÉMA DE RISQUE CONTRACTUEL / Aegir Reclamation Pool : publier la récompense seulement après gravité du privilège, plafond de paiement, fenêtre de tempête ou orbitale, demande de garde d'échantillon, profondeur d'ordre de preuve, exposition de quarantaine et poids de clause Deep Reach. L'autorisation de route reste conditionnelle jusqu'à acceptation du partage de responsabilité par le transporteur.
 
 ## Audio
 
-Le contrat est le premier prédateur.
+Black Keel : nouvelle offre publiée. Paiement plus haut, fenêtre de tempête plus courte, garde d'échantillon d'abord. Lis la clause avant de plonger.
 
 ## Field Note
 
-Les changements de récompense appartiennent à la ligne de contrat, pas au texte lore improvisé.
+Si la récompense monte d'un coup, cherche la clause qui a bougé. C'est souvent la garde, la météo, la quarantaine ou le problème de preuve de quelqu'un d'autre.
 
 <!-- In-Game Wiki; generated from P304_CONTRACT_RISK_REWARD_ROW_CONTRACT/fr_FR. -->

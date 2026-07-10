@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Лунная лестница Aegir
 
-Лунная лестница Aegir делает игровую луну частью движущейся системы. Другие луны задают приливы, ожидание carrier, тени relay и цену выхода.
+Лунная лестница Aegir превращает небо в операционную карту: другие луны формируют прилив, сигнал, custody carrier и узкие шансы уйти.
 
 ## Scanner
 
-Последовательность лун: Cinder, Hook, Glass, Switch, Drywell, Brinehook, Rake, HECTON-8, Pale, Longmark, Grave, Farline.
+Лунная лестница решена: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON-8, Mute. Kestrel и Mute гнут окна.
 
 ## Terminal
 
-HECTON-8 это Aegir-VIII: не внутренняя и не самая дальняя. Резонанс Rake и тень Pale меняют прилив и качество пакетов.
+МАРШРУТНАЯ ЗАПИСЬ AEGIR: HECTON-8 идет после Kestrel в рабочей лестнице. Тень ретранслятора, фаза прилива, радиационная полоса и геометрия передачи Black Keel должны совпасть до подъема массы.
 
 ## Audio
 
-Считай луны, прежде чем верить окну.
+Сначала посчитай Kestrel, потом верь окну.
 
 ## Field Note
 
-Небо здесь механизм, а не фон.
+Небо - рабочее расписание. Пропусти одну тень, и carrier станет слухом.
 
 <!-- External Site; generated from P017_AEGIR_MOON_LADDER/ru_RU. -->

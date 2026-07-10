@@ -9,7 +9,7 @@ locale: he_IL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "ירח שסוע מפגיעה"
+title: "ירח שנשבר בהתנגשות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# ירח שסוע מפגיעה
+# ירח שנשבר בהתנגשות
 
-HECTON-8 לא היה גוף נודד שנלכד למען דרמה. הוא הצטבר בחגורת הפסולת של Aegir, התקרר כירח אוקיינוס שכבתי, ואז ספג פגיעה אלכסונית שעיוותה את הקרום בלי למחוק את העולם. הפגיעה הרימה מדפים, השקיעה אגנים ופתחה סולמות שבר ארוכים שבהם כימיה חמה עדיין נעה במים מלוחים. תהודת הגאות השאירה את הפצעים פעילים אחרי הנעילה המסלולית. לכן לאוקיינוס יש צלקות שאפשר לקרוא: קניוני מלח, כורי נביעה, עורקי זכוכית לחץ, רכסים חשופים וחלונות נדירים אל הקרקעית העתיקה.
+Collision-Fractured Moon מגדיר את HECTON-8 כ-local Aegir body, שבו ocean routes, vents, brine basins ו-salvage windows באים מ-impact scars ו-tidal heat.
+
+## Scanner
+
+Crust sample. HECTON-8 formed in Aegir's debris belt, ואז ספג oblique impact רחב מספיק כדי שה-ocean יזכור.
+
+## Terminal
+
+ORIGIN MODEL: circum-Aegir accretion, later oblique impact, tidal resonance after lock. Results: stepped crust shelves, hot fault ladders, brine basins, pressure-glass seams, and uneven deep-floor access.
+
+## Audio
+
+It was born here. ואז משהו פגע hard מספיק כדי give the sea a map.
+
+## Field Note
+
+ה-captured-moon story נקייה מדי. המקום הזה born local, broken local ו-billed local.
 
 <!-- External Site; generated from P091_COLLISION_FRACTURED_MOON/he_IL. -->

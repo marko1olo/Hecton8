@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Przewodząca magistrala naprawcza z biofilmu"
+title: "Przewodzący biofilm jako szyna naprawcza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,10 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Przewodząca magistrala naprawcza z biofilmu
+# Przewodzący biofilm jako szyna naprawcza
 
-Przewodząca magistrala naprawcza z biofilmu zaczyna się od praktycznego wypadku. Stare osłony kabli Deep Reach pękają pod ciśnieniem, sole miedzi sączą się do wody, a miejscowe maty mikrobiologiczne, już przywykłe do ciepła minerałów, osiadają w ranie. Atlas czyta słaby prąd jako ścieżkę serwisową. Ocean nie musi mówić; wystarczy mokry film zdolny przenieść impuls.
+Kabel owinięty przewodzącym biofilmem jest jednocześnie użyteczny i niebezpieczny. Narost spowalnia korozję, przepuszcza słaby ping i daje Atlas tanią ścieżkę naprawy. Ukrywa też przerwany przewodnik przed każdym systemem, który sprawdza tylko ciągłość.
 
-Dla marudera to dar i pułapka. Most z biofilmu może obudzić grodzie, przenieść uścisk dłoni skanera albo sprawić, że milcząca od lat pompa odpowie na chwilę. Ten sam most potrafi kłamać. Linia może świecić na zielono, choć utraciła nośność, a czyste cięcie może zmienić przechodni korytarz w zalaną rurę. Pytanie nie brzmi, czy wzrost jest naturalny, czy sztuczny. Pytanie brzmi, co Atlas już zaliczył jako naprawione.
+## Scanner
+
+Zielono-czarny film mostkuje rozciętą koszulkę kabla. Słaby prąd wraca przez mokry narost; odczyt ciągłości jest niewiarygodny.
+
+## Terminal
+
+ŚLAD KONSERWACJI ATLAS / LINIA K-44: odsłonięta miedź, narost solny, niska ucieczka ciepła. Most biofilmu spowalnia korozję i zwraca fałszywe impulsy ciągłości. Nie prowadzić sterowania pompą przez tę linię.
+
+## Audio
+
+Pinger przechodzi przez śluz. Zasilanie też. Nie nazywaj tego naprawą.
+
+## Field Note
+
+Jeśli martwy panel budzi się przez zielony film, oznacz trasę jako tymczasową. Odetnij zasilanie, zanim wejdziesz narzędziem w koszulkę.
 
 <!-- External Site; generated from P331_CONDUCTIVE_BIOFILM_REPAIR_BUS/pl_PL. -->

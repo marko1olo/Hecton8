@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Пріоритетний гачок Deep Reach"
+title: "Priority hook Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,8 +17,24 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Пріоритетний гачок Deep Reach
+# Priority hook Deep Reach
 
-Пріоритетний гачок — найчистіший спосіб залишити Deep Reach небезпечною після того, як колонія замовкла. Компанії не треба пілотувати Black Keel віддаленим дивом. Їй достатньо старого сертифіката, який carrier досі визнає, continuity rule, прив'язаного до доступу Atlas, і класу payload, що за особливих умов небезпеки випереджає тіло контрактника. Цього вистачає. Маршрут можна зсунути. Запечатаний кейс може піднятися в черзі. Карантинний замок може лишитися закритим, поки лічильник кисню оператора стає ще одним борговим записом. Підсумок холодніший за саботаж: система працює як написано, а Deep Reach навчилася вписувати себе в частини, що переживають катастрофи.
+Priority hook Deep Reach заземлює corporate pressure в legacy certificates, quarantine clauses, Atlas tokens, payload priority і evidence custody, а не в неможливому instant command.
+
+## Scanner
+
+Старий certificate hook. Deep Reach не потрібен bridge, доки clause все ще належить їм.
+
+## Terminal
+
+ROUTE OVERRIDE: legacy Deep Reach continuity certificate може просувати payload recovery, quarantine lock, Atlas access token, evidence suppression queue або sealed infrastructure proof за Aegir claim law. Human extraction priority unchanged, якщо verified hazard proof не перевищує custody value.
+
+## Audio
+
+Їм не треба стояти на bridge, щоб скеровувати відповідь.
+
+## Field Note
+
+Чистіше за conspiracy: paperwork пережив людей, які його підписали.
 
 <!-- External Site; generated from P090_DEEP_REACH_PRIORITY_HOOK/uk_UA. -->

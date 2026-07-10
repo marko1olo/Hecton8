@@ -19,22 +19,22 @@ localization_flags: 1
 
 # Aegir 회수 풀
 
-Aegir 회수 풀은 Black Keel 뒤에 있는 공적 salvage 껍데기다. 작은 marauder 면허도 개인 행성간 carrier 없이 버려진 Aegir 클레임에 닿게 해 준다. 그 거래는 유용하면서 독이기도 하다. 텐더를 보낼 수 있는 같은 풀이 숨 쉬는 오퍼레이터, 봉인 payload, 격리 잠금, 증거 묶음 중 무엇이 다음 burn을 받을 가치가 있는지 결정한다.
+Aegir 회수 풀은 소규모 licensed marauders도 Black Keel에 닿게 해 주는 salvage shell이다. 어떤 independent operator도 버려진 달 하나를 위해 interplanetary claim carrier를 구매하고 연료를 넣고 합법적으로 유지할 수 없다. 풀은 오래된 claims, 죽은 항로, insurer liens, 대기 중인 recovery contracts의 위험을 묶어 그 문제를 해결한다. 존재한다는 사실만으로 유용하다. 그러나 유독하다. carrier를 출발시키는 같은 ledger가 carrier가 무엇을 가치로 볼 수 있는지도 결정하기 때문이다. sealed sample, proof bundle, quarantine lock, 아직 숨 쉬는 몸, 혹은 HECTON-8을 떠나는 다음 burn window.
 
 ## Scanner
 
-클레임 풀 도장. Black Keel은 경로 부채로 배정된 것이지 오퍼레이터에게 주어진 선물이 아니다.
+공동 claim 풀 도장. Black Keel은 구조의 은혜가 아니라 공유 부채로 파견되었다.
 
 ## Terminal
 
-AEGIR RECLAMATION POOL: 자율 텐더 Black Keel을 폐기 압력 클레임 HECTON-8에 배정. 승무원 복지 등급: 계약자. payload custody 등급: 가변 우선순위. 인간 추출은 풀 중재가 닫힐 때까지 조건부 유지.
+AEGIR RECLAMATION POOL: 자율 claim tender BLACK KEEL이 derelict-pressure claim HECTON-8에 배정됨. Contractor welfare class 제한. Payload custody class 가변. Human extraction은 lien, quarantine, mass-window arbitration 종료 전까지 pending.
 
 ## Audio
 
-풀은 경로를 소유한다. 너는 물어볼 만큼 오래 살아남아 답을 빌릴 뿐이다.
+풀은 실제로 배를 보냈다. 그게 자비다. 그 다음은 전부 회계다.
 
 ## Field Note
 
-공유 풀은 구조를 더 싸고 느리게 만들며, 모든 서명자가 부인하기 쉽게 만든다.
+그 풀은 Aegir에서 carrier를 가능하게 했다. 동시에 모든 약속을 조건부로 만들었다.
 
 <!-- In-Game Wiki; generated from P086_AEGIR_RECLAMATION_POOL/ko_KR. -->
