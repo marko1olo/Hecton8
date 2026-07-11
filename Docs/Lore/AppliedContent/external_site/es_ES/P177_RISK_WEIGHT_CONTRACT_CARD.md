@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Tarjeta de peso de riesgo contractual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Tarjeta de peso de riesgo contractual
 
-ES LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+Las tarjetas de peso de riesgo varían el contrato alrededor de una escena de crimen fija. Ajustan gravamen, custodia, tiempo, apagón y presión de prueba sin cambiar identidad, hechos del mundo ni equipo heredado.
 
 ## Scanner
 
-ES LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Tarjeta de peso de reclamación. Variables: masa de gravamen, ventana de tormenta, custodia de muestra, apagón de ruta, demanda de witness hash, carga de cláusulas Deep Reach. Registro del incidente e identidad del operador bloqueados.
 
 ## Terminal
 
-ES LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+TARJETA DE CONTRATO BLACK KEEL
+Campos de peso: masa de gravamen, ventana tormenta/orbita, grado de custodia de muestra, apagón de ruta, demanda de witness hash, demora de cuarentena, carga de cláusulas Deep Reach
+Campos bloqueados: identidad del operador, registro del incidente, nombres de trabajadores, reserva de oxígeno, clase de casco, grado de herramienta
+Nota de retorno: más peso aumenta exposición de pago y superficie de denegación de recuperación
 
 ## Audio
 
-ES LOC HOLD: The contract changes the cost, not the crime.
+La tarjeta cambia la factura. No cambia lo que pasó ahí abajo.
 
 ## Field Note
 
-ES LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Una tarjeta más pesada deja menos piedad en las cláusulas. No reescribe el crimen ni te presta mejor equipo.
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/es_ES. -->

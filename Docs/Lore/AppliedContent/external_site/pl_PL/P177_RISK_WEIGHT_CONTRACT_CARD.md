@@ -9,7 +9,7 @@ locale: pl_PL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Karta wagi ryzyka kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Karta wagi ryzyka kontraktu
 
-PL LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+Karty wagi ryzyka różnicują kontrakt wokół stałego miejsca zbrodni. Regulują zastaw, depozyt, czas, blackout i presję dowodową bez zmiany tożsamości, faktów świata lub dziedziczonego sprzętu.
 
 ## Scanner
 
-PL LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Karta wagi roszczenia. Zmienne: masa zastawu, okno sztormu, depozyt próbki, blackout trasy, żądanie witness hash, obciążenie klauzul Deep Reach. Zapis incydentu i tożsamość operatora zablokowane.
 
 ## Terminal
 
-PL LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+KARTA KONTRAKTU BLACK KEEL
+Pola wagi: masa zastawu, okno sztorm/orbita, stopień depozytu próbki, blackout trasy, żądanie witness hash, opóźnienie kwarantanny, obciążenie klauzul Deep Reach
+Pola zablokowane: tożsamość operatora, zapis incydentu, nazwiska pracowników, rezerwa tlenu, klasa kadłuba, klasa narzędzi
+Notatka powrotu: wyższa waga zwiększa ekspozycję wypłaty i powierzchnię odmowy odzysku
 
 ## Audio
 
-PL LOC HOLD: The contract changes the cost, not the crime.
+Karta zmienia rachunek. Nie zmienia tego, co stało się tam na dole.
 
 ## Field Note
 
-PL LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Cięższa karta oznacza mniej litości w klauzulach. Nie przepisuje zbrodni i nie pożycza lepszego sprzętu.
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/pl_PL. -->

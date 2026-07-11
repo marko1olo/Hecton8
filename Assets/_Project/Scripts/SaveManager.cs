@@ -220,7 +220,6 @@ namespace Hecton8.SaveSystem
         private bool _isBusy;
         private int _playerDialogueChoiceFlags;
         private H8BinaryWorldPager _worldPager;
-        private bool _worldPagerSavingNotificationArmed;
 
         private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
         private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
@@ -1248,7 +1247,6 @@ namespace Hecton8.SaveSystem
             _saveableCapacityWarningLogged = false;
             _lastLoadPriorityConflictCount = 0;
             _lastLoadPriorityConflictFrame = 0;
-            _worldPagerSavingNotificationArmed = false;
             ClearSaveNotificationDiagnostics();
 
             Exception firstDisposeException = null;
@@ -1704,7 +1702,11 @@ namespace Hecton8.SaveSystem
                 return false;
 
             H8BinaryWorldPager pager = EnsureWorldPager();
-            return pager != null && pager.TryEnqueueWrite(sectorHash, payloadType, payload, byteCount, sourceHash, frame);
+            bool queued = pager != null && pager.TryEnqueueWrite(sectorHash, payloadType, payload, byteCount, sourceHash, frame);
+            if (queued)
+                TryPublishWorldPagerSavingNotification();
+
+            return queued;
         }
 
         public bool TryRequestChunkPageRead(
@@ -2100,7 +2102,6 @@ namespace Hecton8.SaveSystem
             DrainWfcOutpostStateChangedSignals();
             DrainWfcSectorHydratedSignals();
             DrainChunkDehydratedSignals();
-            PollWorldPagerSavingNotification();
         }
 
         public bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u)
@@ -2695,25 +2696,31 @@ namespace Hecton8.SaveSystem
             if (inventory != null &&
                 inventory.TryCopyInventoryShadowPayload(_saveStagingBuffer, out int inventoryPayloadLength, out _))
             {
-                _worldPager.TryEnqueueWrite(
-                    DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.InventoryState),
-                    H8WorldPagePayloadTypes.InventoryState,
-                    _saveStagingBuffer,
-                    inventoryPayloadLength,
-                    WorldPagerSourceHash,
-                    signal.Frame);
+                if (_worldPager.TryEnqueueWrite(
+                        DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.InventoryState),
+                        H8WorldPagePayloadTypes.InventoryState,
+                        _saveStagingBuffer,
+                        inventoryPayloadLength,
+                        WorldPagerSourceHash,
+                        signal.Frame))
+                {
+                    TryPublishWorldPagerSavingNotification();
+                }
             }
 
             int metadataPayloadLength = StageChunkDehydrationMetadata(in signal);
             if (metadataPayloadLength > 0)
             {
-                _worldPager.TryEnqueueWrite(
-                    DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.ChunkDehydratedMetadata),
-                    H8WorldPagePayloadTypes.ChunkDehydratedMetadata,
-                    _saveStagingBuffer,
-                    metadataPayloadLength,
-                    WorldPagerSourceHash,
-                    signal.Frame);
+                if (_worldPager.TryEnqueueWrite(
+                        DerivePayloadSectorHash(signal.SectorHash, H8WorldPagePayloadTypes.ChunkDehydratedMetadata),
+                        H8WorldPagePayloadTypes.ChunkDehydratedMetadata,
+                        _saveStagingBuffer,
+                        metadataPayloadLength,
+                        WorldPagerSourceHash,
+                        signal.Frame))
+                {
+                    TryPublishWorldPagerSavingNotification();
+                }
             }
         }
 
@@ -3341,32 +3348,22 @@ namespace Hecton8.SaveSystem
             DumpWfcOutpostBlackBox();
         }
 
-        private void PollWorldPagerSavingNotification()
+        private void TryPublishWorldPagerSavingNotification()
         {
-            if (_worldPager == null)
+            H8BinaryWorldPager pager = _worldPager;
+            if (pager == null || !pager.TryConsumePendingWriteBacklogNotification())
                 return;
 
-            H8WorldPagerTelemetrySnapshot telemetry = _worldPager.GetTelemetry();
-            if (telemetry.PendingDiskWrites > 10)
+            HUDNotificationSignal notification = new HUDNotificationSignal
             {
-                if (_worldPagerSavingNotificationArmed)
-                    return;
-
-                _worldPagerSavingNotificationArmed = true;
-                HUDNotificationSignal notification = new HUDNotificationSignal
-                {
-                    MessageHash = WorldPagerSavingMessageHash,
-                    ContextHash = WorldPagerSavingContextHash,
-                    SourceId = WorldPagerSourceHash,
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Severity = 0,
-                    Flags = 0
-                };
-                TryPushSignalTrackedBestEffort(in notification);
-                return;
-            }
-
-            _worldPagerSavingNotificationArmed = false;
+                MessageHash = WorldPagerSavingMessageHash,
+                ContextHash = WorldPagerSavingContextHash,
+                SourceId = WorldPagerSourceHash,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                Severity = 0,
+                Flags = 0
+            };
+            TryPushSignalTrackedBestEffort(in notification);
         }
 
         private uint ResolveOperationId(uint requestedOperationId)
@@ -3455,6 +3452,7 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+                SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
 
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
@@ -3494,6 +3492,7 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+                SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
 
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
@@ -6766,6 +6765,151 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private static bool TryDeleteAbsoluteFileIfExists(string absolutePath, out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absolutePath))
+                return true;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            try
+            {
+                if (File.Exists(absolutePath))
+                    File.Delete(absolutePath);
+                return true;
+            }
+            catch (Exception exception) when (exception is IOException ||
+                                             exception is UnauthorizedAccessException ||
+                                             exception is ArgumentException ||
+                                             exception is NotSupportedException ||
+                                             exception is System.Security.SecurityException)
+            {
+                error = exception.Message;
+                return false;
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePath);
+            }
+        }
+
+        private static bool TryStageFileCopyForPromotion(string absoluteSourcePath, string absoluteTempPath, long expectedBytes, out string error)
+        {
+            error = string.Empty;
+            if (!TryDeleteAbsoluteFileIfExists(absoluteTempPath, out error))
+                return false;
+
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteSourcePath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            try
+            {
+                string directory = Path.GetDirectoryName(absoluteTempPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.Copy(absoluteSourcePath, absoluteTempPath, true);
+            }
+            catch (Exception exception) when (exception is IOException ||
+                                             exception is UnauthorizedAccessException ||
+                                             exception is ArgumentException ||
+                                             exception is NotSupportedException ||
+                                             exception is System.Security.SecurityException)
+            {
+                error = exception.Message;
+                TryDeleteAbsoluteFileIfExists(absoluteTempPath, out _);
+                return false;
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteSourcePath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            }
+
+            if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError))
+            {
+                error = string.IsNullOrEmpty(tempLengthError)
+                    ? "Staged backup rotation temp file length could not be resolved."
+                    : tempLengthError;
+                TryDeleteAbsoluteFileIfExists(absoluteTempPath, out _);
+                return false;
+            }
+
+            if (tempBytes != expectedBytes)
+            {
+                error = "Staged backup rotation temp file length did not match source.";
+                TryDeleteAbsoluteFileIfExists(absoluteTempPath, out _);
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out string flushError))
+            {
+                error = string.IsNullOrEmpty(flushError)
+                    ? "Staged backup rotation temp critical flush failed."
+                    : flushError;
+                TryDeleteAbsoluteFileIfExists(absoluteTempPath, out _);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryPromoteStagedFile(string absoluteTempPath, string absoluteTargetPath, long expectedBytes, out string error)
+        {
+            error = string.Empty;
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTargetPath);
+            try
+            {
+                string directory = Path.GetDirectoryName(absoluteTargetPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                if (File.Exists(absoluteTargetPath))
+                    File.Replace(absoluteTempPath, absoluteTargetPath, null, true);
+                else
+                    File.Move(absoluteTempPath, absoluteTargetPath);
+            }
+            catch (Exception exception) when (exception is IOException ||
+                                             exception is UnauthorizedAccessException ||
+                                             exception is ArgumentException ||
+                                             exception is NotSupportedException ||
+                                             exception is PlatformNotSupportedException ||
+                                             exception is System.Security.SecurityException)
+            {
+                error = exception.Message;
+                return false;
+            }
+            finally
+            {
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTargetPath);
+            }
+
+            if (!AsyncWriteManager.TryGetFileLength(absoluteTargetPath, out long targetBytes, out string lengthError))
+            {
+                error = string.IsNullOrEmpty(lengthError)
+                    ? "Promoted backup rotation target length could not be resolved."
+                    : lengthError;
+                return false;
+            }
+
+            if (targetBytes != expectedBytes)
+            {
+                error = "Promoted backup rotation target length did not match source.";
+                return false;
+            }
+
+            if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTargetPath, targetBytes, out string flushError))
+            {
+                error = string.IsNullOrEmpty(flushError)
+                    ? "Promoted backup rotation target critical flush failed."
+                    : flushError;
+                return false;
+            }
+
+            return true;
+        }
+
         public static string[] GetAllKnownArtifactPaths(string slotName)
         {
             int maxGeneration = GetMaxBackupGenerationCount();
@@ -6808,77 +6952,51 @@ namespace Hecton8.SaveSystem
         {
             error = string.Empty;
             if (retentionCount <= 0)
-            {
                 return true;
-            }
 
             for (int generation = retentionCount; generation >= 1; generation--)
             {
                 string targetPath = backupPathFactory(generation);
-                if (generation == retentionCount)
+                string sourcePath = generation == 1 ? primaryPath : backupPathFactory(generation - 1);
+                string absoluteTargetPath = GetPersistentAbsolutePath(targetPath);
+                string absoluteSourcePath = GetPersistentAbsolutePath(sourcePath);
+                string absoluteTempPath = absoluteTargetPath + ".rotate.tmp";
+
+                if (!File.Exists(absoluteSourcePath))
                 {
-                    string absoluteDroppedTargetPath = GetPersistentAbsolutePath(targetPath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteDroppedTargetPath);
-                    DeleteFileIfExists(targetPath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteDroppedTargetPath);
+                    if (!TryDeleteAbsoluteFileIfExists(absoluteTempPath, out error))
+                        return false;
+                    if (!TryDeleteAbsoluteFileIfExists(absoluteTargetPath, out error))
+                        return false;
+                    continue;
                 }
 
-                string sourcePath = generation == 1 ? primaryPath : backupPathFactory(generation - 1);
-                if (FileExists(sourcePath))
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteSourcePath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTargetPath);
+                if (!AsyncWriteManager.TryGetFileLength(absoluteSourcePath, out long sourceBytes, out string sourceLengthError))
                 {
-                    string absoluteSourcePath = GetPersistentAbsolutePath(sourcePath);
-                    string absoluteTargetPath = GetPersistentAbsolutePath(targetPath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteSourcePath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTargetPath);
+                    error = string.IsNullOrEmpty(sourceLengthError)
+                        ? "Backup rotation source save file length could not be resolved."
+                        : sourceLengthError;
+                    return false;
+                }
 
-                    if (!AsyncWriteManager.TryGetFileLength(absoluteSourcePath, out long sourceBytes, out string sourceLengthError))
-                    {
-                        error = string.IsNullOrEmpty(sourceLengthError)
-                            ? "Backup rotation source save file length could not be resolved."
-                            : sourceLengthError;
-                        return false;
-                    }
+                if (!TryStageFileCopyForPromotion(absoluteSourcePath, absoluteTempPath, sourceBytes, out error))
+                    return false;
 
-                    bool isPrimarySource = generation == 1;
-                    if (isPrimarySource)
-                        File.Copy(absoluteSourcePath, absoluteTargetPath, true);
-                    else
-                        File.Move(absoluteSourcePath, absoluteTargetPath);
-
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteSourcePath);
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTargetPath);
-                    if (!AsyncWriteManager.TryGetFileLength(absoluteTargetPath, out long backupBytes, out string lengthError))
-                    {
-                        error = string.IsNullOrEmpty(lengthError)
-                            ? "Rotated backup save file length could not be resolved."
-                            : lengthError;
-                        return false;
-                    }
-
-                    if (backupBytes != sourceBytes)
-                    {
-                        error = "Rotated backup save file length did not match source.";
-                        return false;
-                    }
-
-                    if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTargetPath, backupBytes, out string flushError))
-                    {
-                        error = string.IsNullOrEmpty(flushError)
-                            ? "Rotated backup save critical flush failed."
-                            : flushError;
-                        return false;
-                    }
+                if (!TryPromoteStagedFile(absoluteTempPath, absoluteTargetPath, sourceBytes, out error))
+                {
+                    TryDeleteAbsoluteFileIfExists(absoluteTempPath, out _);
+                    return false;
                 }
             }
 
             int maxGeneration = GetMaxBackupGenerationCount();
             for (int generation = retentionCount + 1; generation <= maxGeneration; generation++)
             {
-                string staleBackupPath = backupPathFactory(generation);
-                string absoluteStaleBackupPath = GetPersistentAbsolutePath(staleBackupPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteStaleBackupPath);
-                DeleteFileIfExists(staleBackupPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteStaleBackupPath);
+                string absoluteStaleBackupPath = GetPersistentAbsolutePath(backupPathFactory(generation));
+                if (!TryDeleteAbsoluteFileIfExists(absoluteStaleBackupPath, out error))
+                    return false;
             }
 
             return true;
@@ -6910,36 +7028,8 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteFinalPath);
-                if (File.Exists(absoluteFinalPath))
-                    File.Replace(absoluteTempPath, absoluteFinalPath, null);
-                else
-                    File.Move(absoluteTempPath, absoluteFinalPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                AsyncWriteManager.InvalidateCachedReadWindows(absoluteFinalPath);
-
-                if (!AsyncWriteManager.TryGetFileLength(absoluteFinalPath, out long promotedBytes, out string lengthError))
-                {
-                    error = string.IsNullOrEmpty(lengthError)
-                        ? "Primary save promoted file length could not be resolved."
-                        : lengthError;
+                if (!TryPromoteStagedFile(absoluteTempPath, absoluteFinalPath, tempBytesBeforePromotion, out error))
                     return false;
-                }
-
-                if (promotedBytes != tempBytesBeforePromotion)
-                {
-                    error = "Primary save promoted file length did not match verified temp source.";
-                    return false;
-                }
-
-                if (!AsyncWriteManager.FlushCriticalSavePath(absoluteFinalPath, promotedBytes, out string flushError))
-                {
-                    error = string.IsNullOrEmpty(flushError)
-                        ? "Primary save critical flush failed."
-                        : flushError;
-                    return false;
-                }
             }
             catch (Exception ex)
             {

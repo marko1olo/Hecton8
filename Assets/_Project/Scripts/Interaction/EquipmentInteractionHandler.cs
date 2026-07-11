@@ -6,6 +6,7 @@ using Hecton8.Gameplay;
 using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -44,13 +45,19 @@ namespace Hecton8.Interaction
         private static int _voxelLayer = int.MinValue;
         private static ISubmarineRuntimeContext s_submarineRuntimeContext;
         private static IOrganicToolHitService s_organicToolHits;
+        private static readonly uint _surfaceQuerySimulationSystemHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("equipment_interaction_surface_query_simulation");
+        private static readonly uint _surfaceQueryPostSimulationSystemHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("equipment_interaction_surface_query_post_simulation");
 
         // COLD ALLOC: Collider[256] - queued target side-channel aligned with the vault interaction queue - owner: EquipmentInteractionHandler
         private readonly Collider[] _queuedTargetColliders = new Collider[MaxQueuedSignals];
         // COLD ALLOC: ulong[64] - requester ids for the writable surface-query staging lane - owner: EquipmentInteractionHandler
         private readonly ulong[] _stagingRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: InteractionSurfaceQueryDTO[64] - owner-local surface-query staging lane mirrored to DataVault - owner: EquipmentInteractionHandler
+        private readonly InteractionSurfaceQueryDTO[] _stagedSurfaceRequests = new InteractionSurfaceQueryDTO[MaxQueuedSurfaceRequests];
         // COLD ALLOC: ulong[64] - requester ids paired with the scheduled surface-query lane - owner: EquipmentInteractionHandler
         private readonly ulong[] _scheduledRequesterIds = new ulong[MaxQueuedSurfaceRequests];
+        // COLD ALLOC: InteractionSurfaceQueryDTO[64] - scheduled surface-query lane owned by the SIMULATION->POST_SIMULATION bridge - owner: EquipmentInteractionHandler
+        private readonly InteractionSurfaceQueryDTO[] _scheduledSurfaceRequests = new InteractionSurfaceQueryDTO[MaxQueuedSurfaceRequests];
         // COLD ALLOC: InteractionSurfaceQueryDTO[64] - lock-flattened scheduled query snapshot - owner: EquipmentInteractionHandler
         private readonly InteractionSurfaceQueryDTO[] _scheduledResolveRequests = new InteractionSurfaceQueryDTO[MaxQueuedSurfaceRequests];
         // COLD ALLOC: InteractionSurfaceHitDTO[64] - lock-flattened completed hit writeback snapshot - owner: EquipmentInteractionHandler
@@ -85,12 +92,17 @@ namespace Hecton8.Interaction
         private VaultGenerationHandle<InteractionSurfaceQueryDTO> _scheduledRequestsHandle;
         private VaultGenerationHandle<InteractionSurfaceHitDTO> _scheduledHitsHandle;
         private VaultGenerationHandle<InteractionSurfaceQueryDTO> _stagingRequestsHandle;
+        private SimulationPhaseSystem _surfaceQuerySimulationPhase;
+        private PostSimulationPhaseSystem _surfaceQueryPostSimulationPhase;
         private int _queueHead;
         private int _queueTail;
         private int _queueCount;
         private int _stagedRequestCount;
         private int _scheduledRequestCount;
         private int _completedResultCount;
+        private int _previousStagedRequestCount;
+        private int _previousScheduledRequestCount;
+        private int _previousScheduledHitCount;
         private int _pendingEquipmentSocketClearCount;
         private int _packetAdmissionFrame = -1;
         private int _packetAdmissionCount;
@@ -98,6 +110,8 @@ namespace Hecton8.Interaction
         private bool _scheduledSurfaceQueryActive;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
+        private bool _simulationSystemRegistered;
+        private bool _postSimulationSystemRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -981,9 +995,6 @@ namespace Hecton8.Interaction
 
         private void QueuePrimarySurfaceQuery(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
-            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
-                return;
-
             int requestIndex = FindStagedRequestIndex(requesterId);
             bool newRequest = requestIndex < 0;
             if (requestIndex < 0)
@@ -993,6 +1004,15 @@ namespace Hecton8.Interaction
 
                 requestIndex = _stagedRequestCount;
             }
+
+            InteractionSurfaceQueryDTO request = CreateSurfaceQueryRequest(origin, direction, range, layerMask, queryTriggerInteraction);
+            if (newRequest)
+            {
+                _stagingRequesterIds[_stagedRequestCount] = requesterId;
+                _stagedRequestCount++;
+            }
+
+            _stagedSurfaceRequests[requestIndex] = request;
 
             IDataVault vault = ResolveDataVault();
             if (!TryAcquireInteractionGuard(vault, StagingCommandsMutationGuardMask))
@@ -1010,13 +1030,7 @@ namespace Hecton8.Interaction
                     return;
                 }
 
-                if (newRequest)
-                {
-                    _stagingRequesterIds[_stagedRequestCount] = requesterId;
-                    _stagedRequestCount++;
-                }
-
-                stagingRequests[requestIndex] = CreateSurfaceQueryRequest(origin, direction, range, layerMask, queryTriggerInteraction);
+                stagingRequests[requestIndex] = request;
             }
             finally
             {

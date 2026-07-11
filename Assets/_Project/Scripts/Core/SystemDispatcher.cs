@@ -2954,6 +2954,7 @@ namespace Hecton8.Core
                 }
 
                 ProcessDeferredArenaGrowthPostSimulation();
+                SignalCorridorRuntime.FlushPostSimulation();
             }
 
             _masterLastPostSimulationMs = ElapsedMilliseconds(_masterPostSimulationStartTimestamp);
@@ -5456,7 +5457,6 @@ namespace Hecton8.Core
                 }
                 finally
                 {
-                    SignalCorridorRuntime.FlushPostSimulation();
                     NativeArenaAllocator.Reset();
 
 #if UNITY_EDITOR

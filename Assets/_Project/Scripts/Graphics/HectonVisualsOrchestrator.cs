@@ -26,7 +26,7 @@ namespace Hecton8.Graphics
         public void LoadAndApplyVisuals()
         {
             string fullPath = Path.Combine(Application.streamingAssetsPath, BinaryPath);
-            if (!File.Exists(fullPath))
+            if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath))
             {
                 Debug.LogWarning($"[HectonVisualsOrchestrator] Missing tuning binary at {fullPath}. Using defaults.");
                 ApplyState(VisualTuningState.Default());
@@ -35,31 +35,65 @@ namespace Hecton8.Graphics
 
             try
             {
-                // File I/O allowed ONLY during cold initialization/staged reload, NOT in Tick.
-                byte[] data = File.ReadAllBytes(fullPath);
-                
-                int expectedSize = UnsafeUtility.SizeOf<VisualTuningState>();
-                if (data.Length != expectedSize)
-                {
-                    Debug.LogError($"[HectonVisualsOrchestrator] Size mismatch. Expected {expectedSize}, got {data.Length}.");
-                    return;
-                }
-
-                VisualTuningState state = default;
-                unsafe
-                {
-                    fixed (byte* ptr = data)
-                    {
-                        UnsafeUtility.CopyPtrToStructure(ptr, out state);
-                    }
-                }
-
+                VisualTuningState state = LoadValidatedVisualTuningState(fullPath);
                 ApplyState(state);
                 Debug.Log("[HectonVisualsOrchestrator] Successfully applied binary visual tuning state.");
+            }
+            catch (DataCorruptionException exception)
+            {
+                Debug.LogError($"[HectonVisualsOrchestrator] Visual tuning binary rejected: {exception.Message}");
+                throw;
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"[HectonVisualsOrchestrator] Failed to load binary visual tuning: {e.Message}");
+                throw;
+            }
+        }
+
+        private static unsafe VisualTuningState LoadValidatedVisualTuningState(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath) || !File.Exists(fullPath))
+                throw new DataCorruptionException($"Missing tuning binary at {fullPath}.");
+
+            int expectedSize = UnsafeUtility.SizeOf<VisualTuningState>();
+            FileInfo info = new FileInfo(fullPath);
+            if (info.Length < expectedSize)
+                throw new DataCorruptionException($"Visual tuning payload too small. Expected at least {expectedSize} bytes, got {info.Length}.");
+
+            if (info.Length != expectedSize)
+                throw new DataCorruptionException($"Visual tuning payload size mismatch. Expected exactly {expectedSize} bytes, got {info.Length}.");
+
+            VisualTuningState state = default;
+            using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read, expectedSize, FileOptions.SequentialScan))
+            {
+                byte* destination = (byte*)UnsafeUtility.AddressOf(ref state);
+                int totalRead = 0;
+                while (totalRead < expectedSize)
+                {
+                    int read = stream.Read(new System.Span<byte>(destination + totalRead, expectedSize - totalRead));
+                    if (read <= 0)
+                        throw new DataCorruptionException($"Visual tuning payload ended after {totalRead} of {expectedSize} bytes.");
+
+                    totalRead += read;
+                }
+            }
+
+            ValidateFinite(in state);
+            return state;
+        }
+
+        private static void ValidateFinite(in VisualTuningState state)
+        {
+            if (!math.all(math.isfinite(state.OceanScatterBase)) ||
+                !math.all(math.isfinite(state.OceanScatterShallow)) ||
+                !math.isfinite(state.PlanetCenterRadius) ||
+                !math.all(math.isfinite(state.SunColor)) ||
+                !math.isfinite(state.OceanScatterShallowDepthMax) ||
+                !math.isfinite(state.SunIntensity) ||
+                !math.isfinite(state.Exposure))
+            {
+                throw new DataCorruptionException("Visual tuning payload contains non-finite values.");
             }
         }
 
@@ -75,6 +109,14 @@ namespace Hecton8.Graphics
             if (_celestialEngine != null)
             {
                 _celestialEngine.ApplyTuningState(state.PlanetCenterRadius, state.SunIntensity, new Color(state.SunColor.x, state.SunColor.y, state.SunColor.z, state.SunColor.w));
+            }
+        }
+
+        private sealed class DataCorruptionException : System.Exception
+        {
+            public DataCorruptionException(string message)
+                : base(message)
+            {
             }
         }
 

@@ -17,7 +17,9 @@ import re
 import shutil
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -85,6 +87,7 @@ REQUIRED_FIELDS = (
 )
 DEPENDENCY_GUARD_TERMS = ("same-wave", "sibling")
 DEPENDENCY_OUTPUT_TERMS = ("dependency", "required output", "unverified output", "candidate", "blocked")
+DEFAULT_HISTORICAL_CUTOFF = datetime(2026, 6, 1, tzinfo=timezone.utc)
 
 
 def read_text(path: Path) -> str:
@@ -161,9 +164,39 @@ def task_files(batch_dir: Path) -> list[Path]:
     return sorted(files)
 
 
-def add_issue(issues: list[str], strict: bool, message: str) -> None:
-    prefix = "ERROR" if strict else "WARN"
-    issues.append(f"{prefix}: {message}")
+class Issue(NamedTuple):
+    strict: bool
+    message: str
+
+
+def add_issue(issues: list[Issue], strict: bool, message: str) -> None:
+    issues.append(Issue(strict=strict, message=message))
+
+
+def format_issue(issue: Issue) -> str:
+    prefix = "ERROR" if issue.strict else "WARN"
+    return f"{prefix}: {issue.message}"
+
+
+def issue_list_has_errors(issues: list[Issue]) -> bool:
+    return any(issue.strict for issue in issues)
+
+
+def parse_historical_date_from_name(path: Path) -> datetime | None:
+    for part in (path.stem, path.parent.name):
+        match = re.search(r"(?<!\d)(20\d{2})(\d{2})(\d{2})(?!\d)", part)
+        if not match:
+            continue
+        try:
+            return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3)), tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def is_historical_file(path: Path, cutoff: datetime) -> bool:
+    dated = parse_historical_date_from_name(path)
+    return dated is not None and dated < cutoff
 
 
 def has_field_label(text: str, field: str) -> bool:
@@ -251,8 +284,8 @@ def check_index_dependency_guard(index: Path, text: str, strict: bool, issues: l
         add_issue(issues, strict, f"{rel(index)} missing same-wave/sibling dependency guard")
 
 
-def check_batch(batch_dir: Path, strict: bool) -> tuple[list[str], list[str]]:
-    errors_or_warnings: list[str] = []
+def check_batch(batch_dir: Path, strict: bool, strict_historical: bool = False, historical_cutoff: datetime = DEFAULT_HISTORICAL_CUTOFF) -> tuple[list[Issue], list[str]]:
+    errors_or_warnings: list[Issue] = []
     notes: list[str] = []
 
     batch_dir = batch_dir.resolve()
@@ -280,26 +313,28 @@ def check_batch(batch_dir: Path, strict: bool) -> tuple[list[str], list[str]]:
         add_issue(errors_or_warnings, strict, f"{rel(batch_dir)} missing BATCH_INDEX.txt")
     else:
         index_text = read_text(index)
-        check_required_fields(index, index_text, strict, errors_or_warnings)
-        index_lane = parse_lane_value(index, index_text, strict, errors_or_warnings)
-        index_deliverable = parse_deliverable_value(index, index_text, strict, errors_or_warnings)
-        check_lane_deliverable_pair(index, index_lane, index_deliverable, strict, errors_or_warnings)
-        check_proof_route(index, index_text, index_lane, strict, errors_or_warnings)
+        index_strict = strict and (strict_historical or not is_historical_file(index, historical_cutoff))
+        check_required_fields(index, index_text, index_strict, errors_or_warnings)
+        index_lane = parse_lane_value(index, index_text, index_strict, errors_or_warnings)
+        index_deliverable = parse_deliverable_value(index, index_text, index_strict, errors_or_warnings)
+        check_lane_deliverable_pair(index, index_lane, index_deliverable, index_strict, errors_or_warnings)
+        check_proof_route(index, index_text, index_lane, index_strict, errors_or_warnings)
         for ident in ids:
             if ident not in index_text:
-                add_issue(errors_or_warnings, strict, f"{rel(index)} missing task id {ident}")
-        check_index_lane_roster(index, index_text, ids, strict, errors_or_warnings)
-        check_index_dependency_guard(index, index_text, strict, errors_or_warnings)
+                add_issue(errors_or_warnings, index_strict, f"{rel(index)} missing task id {ident}")
+        check_index_lane_roster(index, index_text, ids, index_strict, errors_or_warnings)
+        check_index_dependency_guard(index, index_text, index_strict, errors_or_warnings)
 
     for path in files:
         text = read_text(path)
-        check_required_fields(path, text, strict, errors_or_warnings)
-        lane = parse_lane_value(path, text, strict, errors_or_warnings)
-        deliverable = parse_deliverable_value(path, text, strict, errors_or_warnings)
-        check_lane_deliverable_pair(path, lane, deliverable, strict, errors_or_warnings)
-        check_proof_route(path, text, lane, strict, errors_or_warnings)
+        path_strict = strict and (strict_historical or not is_historical_file(path, historical_cutoff))
+        check_required_fields(path, text, path_strict, errors_or_warnings)
+        lane = parse_lane_value(path, text, path_strict, errors_or_warnings)
+        deliverable = parse_deliverable_value(path, text, path_strict, errors_or_warnings)
+        check_lane_deliverable_pair(path, lane, deliverable, path_strict, errors_or_warnings)
+        check_proof_route(path, text, lane, path_strict, errors_or_warnings)
 
-    notes.append(f"batch={rel(batch_dir)} tasks={len(files)} strict={strict}")
+    notes.append(f"batch={rel(batch_dir)} tasks={len(files)} strict={strict} strict_historical={strict_historical} cutoff={historical_cutoff.date().isoformat()}")
     return errors_or_warnings, notes
 
 
@@ -344,7 +379,7 @@ def run_self_test() -> int:
         if issues:
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             for issue in issues:
-                print(f"- {issue}")
+                print(f"- {format_issue(issue)}")
             return 1
 
         weak_batch = Path(tmp) / "weak_batch"
@@ -381,7 +416,7 @@ def run_self_test() -> int:
             encoding="utf-8",
         )
         weak_issues, _ = check_batch(weak_batch, strict=True)
-        if not any("same-wave/sibling dependency guard" in issue for issue in weak_issues):
+        if not any("same-wave/sibling dependency guard" in issue.message for issue in weak_issues):
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             print("- weak dependency wording passed without same-wave/sibling output policy")
             return 1
@@ -420,7 +455,7 @@ def run_self_test() -> int:
             encoding="utf-8",
         )
         invalid_deliverable_issues, _ = check_batch(invalid_deliverable_batch, strict=True)
-        if not any("invalid DELIVERABLE_CLASS REPORT_ONLY" in issue for issue in invalid_deliverable_issues):
+        if not any("invalid DELIVERABLE_CLASS REPORT_ONLY" in issue.message for issue in invalid_deliverable_issues):
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             print("- invalid deliverable class passed strict validation")
             return 1
@@ -459,7 +494,7 @@ def run_self_test() -> int:
             encoding="utf-8",
         )
         incompatible_issues, _ = check_batch(incompatible_deliverable_batch, strict=True)
-        if not any("not valid for LANE_CLASS RUNTIME_SYSTEM" in issue for issue in incompatible_issues):
+        if not any("not valid for LANE_CLASS RUNTIME_SYSTEM" in issue.message for issue in incompatible_issues):
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             print("- incompatible deliverable class passed strict validation")
             return 1
@@ -498,7 +533,7 @@ def run_self_test() -> int:
             encoding="utf-8",
         )
         weak_proof_issues, _ = check_batch(weak_proof_batch, strict=True)
-        if not any("PROOF_ROUTE is report/status-only" in issue for issue in weak_proof_issues):
+        if not any("PROOF_ROUTE is report/status-only" in issue.message for issue in weak_proof_issues):
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             print("- report-only proof route passed strict validation")
             return 1
@@ -537,7 +572,7 @@ def run_self_test() -> int:
             encoding="utf-8",
         )
         generic_lore_issues, _ = check_batch(generic_lore_batch, strict=True)
-        if not any("lacks AppliedLore/Grand Library" in issue for issue in generic_lore_issues):
+        if not any("lacks AppliedLore/Grand Library" in issue.message for issue in generic_lore_issues):
             print("TASKLOCAL_LANE_CONTRACT_SELFTEST=FAIL")
             print("- generic lore proof route passed strict validation")
             return 1
@@ -549,8 +584,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("batches", nargs="*", help="taskslocal batch directories to validate")
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--strict", action="store_true", help="fail on missing lane contracts")
+    mode.add_argument("--strict", action="store_true", help="fail on missing lane contracts for files modified on or after the historical cutoff")
     mode.add_argument("--allow-legacy", action="store_true", help="warn on missing lane contracts")
+    parser.add_argument("--strict-historical", action="store_true", help="with --strict, enforce historical files before the cutoff as errors too")
+    parser.add_argument("--historical-cutoff", default="2026-06-01", help="UTC YYYY-MM-DD cutoff for historical task files; default: 2026-06-01")
     parser.add_argument("--self-test", action="store_true", help="run an internal positive fixture")
     return parser.parse_args(argv)
 
@@ -559,6 +596,13 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     if args.self_test:
         return run_self_test()
+    try:
+        historical_cutoff = datetime.strptime(args.historical_cutoff, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        print("TASKLOCAL_LANE_CONTRACT_CHECK=USAGE")
+        print("--historical-cutoff must use YYYY-MM-DD")
+        return 2
+
     if not args.batches:
         print("TASKLOCAL_LANE_CONTRACT_CHECK=USAGE")
         print("Provide one or more taskslocal/<batch_name> paths.")
@@ -566,14 +610,19 @@ def main(argv: list[str]) -> int:
         return 2
 
     strict = not args.allow_legacy
-    all_issues: list[str] = []
+    all_issues: list[Issue] = []
     all_notes: list[str] = []
 
     for raw_batch in args.batches:
         batch = Path(raw_batch)
         if not batch.is_absolute():
             batch = ROOT / batch
-        issues, notes = check_batch(batch, strict=strict)
+        issues, notes = check_batch(
+            batch,
+            strict=strict,
+            strict_historical=args.strict_historical,
+            historical_cutoff=historical_cutoff,
+        )
         all_issues.extend(issues)
         all_notes.extend(notes)
 
@@ -581,11 +630,12 @@ def main(argv: list[str]) -> int:
         print(note)
 
     if all_issues:
-        status = "FAIL" if strict else "WARN"
+        has_errors = issue_list_has_errors(all_issues)
+        status = "FAIL" if has_errors else "WARN"
         print(f"TASKLOCAL_LANE_CONTRACT_CHECK={status}")
         for issue in all_issues:
-            print(f"- {issue}")
-        return 1 if strict else 0
+            print(f"- {format_issue(issue)}")
+        return 1 if has_errors else 0
 
     print("TASKLOCAL_LANE_CONTRACT_CHECK=PASS")
     return 0

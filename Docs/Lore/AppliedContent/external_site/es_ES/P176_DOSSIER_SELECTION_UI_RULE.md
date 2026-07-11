@@ -9,7 +9,7 @@ locale: es_ES
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Registro de reclamación de expedientes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Registro de reclamación de expedientes
 
-ES LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 convierte la selección de expedientes en un registro de reclamación. Conserva conocimiento, rumores y presión legal, mientras deja equipo de supervivencia y hechos del mundo fuera del archivo.
 
 ## Scanner
 
-ES LOC HOLD: Dossier UI should choose risk, not inherited power.
+Registro DR-902. Los expedientes activos exponen familias de rumores, registros de finales, presión de gravamen, custodia, cláusulas orbitales/climáticas y pistas de orden de pruebas. Sin herencia de equipo.
 
 ## Terminal
 
-ES LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+FORMULARIO DEEP REACH DR-902
+Registro: reclamación de expediente Marauder
+Campos activos: familia de rumor, registro de final, masa de gravamen, término de custodia, ventana orbital/climática, pista de orden de pruebas
+Campos denegados: reserva de oxígeno, clase de casco, estado de arma, arrastre de inventario
+Estado: solo registro de conocimiento; el equipo de supervivencia se reinicia por contrato
 
 ## Audio
 
-ES LOC HOLD: You keep suspicion, not a stronger body.
+Las carpetas guardan nombres y malas cláusulas. No te dan un traje más fuerte.
 
 ## Field Note
 
-ES LOC HOLD: No permanent gear advantage in dossier selection.
+Abres una carpeta y Black Keel le pone precio. Guarda la sospecha vieja; pulmones, casco y herramientas fuera del archivo.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/es_ES. -->

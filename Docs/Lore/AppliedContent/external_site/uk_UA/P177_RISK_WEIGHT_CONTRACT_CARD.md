@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Картка вагового ризику контракту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Картка вагового ризику контракту
 
-UA LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+Картки вагового ризику змінюють контракт навколо незмінного місця злочину. Вони регулюють заставу, зберігання, час, затемнення й тиск доказів, не змінюючи особу, факти світу або успадковане спорядження.
 
 ## Scanner
 
-UA LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Картка ваги претензії. Змінні: маса застави, штормове вікно, зберігання зразка, маршрутне затемнення, вимога witness hash, навантаження пунктів Deep Reach. Запис інциденту й особа оператора заблоковані.
 
 ## Terminal
 
-UA LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+КАРТКА КОНТРАКТУ BLACK KEEL
+Поля ваги: маса застави, штормове/орбітальне вікно, клас зберігання зразка, маршрутне затемнення, вимога witness hash, затримка карантину, навантаження пунктів Deep Reach
+Заблоковані поля: особа оператора, запис інциденту, імена працівників, запас кисню, клас корпусу, клас інструмента
+Примітка повернення: більша вага підвищує експозицію виплати й поверхню відмови у відновленні
 
 ## Audio
 
-UA LOC HOLD: The contract changes the cost, not the crime.
+Картка змінює рахунок. Вона не змінює того, що сталося внизу.
 
 ## Field Note
 
-UA LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Важча картка означає менше милості в пунктах договору. Вона не переписує злочин і не позичає краще спорядження.
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/uk_UA. -->

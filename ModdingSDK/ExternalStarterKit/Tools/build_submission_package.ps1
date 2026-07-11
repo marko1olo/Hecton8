@@ -112,6 +112,12 @@ function Require-File([string]$RelativePath) {
     }
 
     $path = Join-StarterPath $rootFull $RelativePath
+    try {
+        Assert-H8PathExactCase $rootFull $RelativePath $true
+        Assert-NoFilesystemLinks (Get-Item -LiteralPath $path -Force)
+    } catch {
+        Fail $_.Exception.Message
+    }
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         Fail ('Missing package source file: ' + $RelativePath)
     }
@@ -181,8 +187,7 @@ if (-not (Test-Path -LiteralPath $outputDirectory -PathType Container)) {
 }
 
 $sourceEntries = New-Object 'System.Collections.Generic.List[string]'
-$seenEntries = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
-$seenCaseFoldEntries = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$entryNames = New-Object 'System.Collections.Generic.List[string]'
 foreach ($file in @($review.Files)) {
     $relative = [string]$file.Path
     if (-not (Test-SafeRelativePath $relative '')) {
@@ -198,29 +203,33 @@ foreach ($file in @($review.Files)) {
     if (-not (Test-Sha256Hex ([string]$file.Sha256))) {
         Fail ('Review file SHA-256 is invalid: ' + $relative)
     }
-    if ($relative.StartsWith('Generated/', [System.StringComparison]::OrdinalIgnoreCase)) {
-        Fail ('Review manifest must not package Generated output: ' + $relative)
+    if (Test-H8GeneratedOrTransientPath $relative) {
+        Fail ('Review manifest must not package generated or transient path: ' + $relative)
     }
-    if ($relative.StartsWith('Reports/', [System.StringComparison]::OrdinalIgnoreCase)) {
-        Fail ('Review manifest must not package Reports output: ' + $relative)
+
+    $sourcePath = Require-File $relative
+    $actualItem = Get-Item -LiteralPath $sourcePath -Force
+    if ([long]$actualItem.Length -ne $expectedBytes) {
+        Fail ('Review file byte count does not match current source file: ' + $relative)
+    }
+    $actualHash = Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256
+    if ($actualHash.Hash.ToLowerInvariant() -ne ([string]$file.Sha256)) {
+        Fail ('Review file SHA-256 does not match current source file: ' + $relative)
     }
 
     $entry = Normalize-EntryName $relative
-    if ($seenEntries.ContainsKey($entry) -or $seenCaseFoldEntries.ContainsKey($entry)) {
-        Fail ('Review manifest source path duplicate or case-fold duplicate: ' + $entry)
-    }
-    $seenEntries[$entry] = $true
-    $seenCaseFoldEntries[$entry] = $true
+    [void]$entryNames.Add($entry)
     [void]$sourceEntries.Add($relative)
 }
 
 $reviewEntry = Normalize-EntryName $ReviewOutput
-if ($seenEntries.ContainsKey($reviewEntry) -or $seenCaseFoldEntries.ContainsKey($reviewEntry)) {
-    Fail ('Review manifest path duplicate or case-fold duplicate: ' + $reviewEntry)
-}
-$seenEntries[$reviewEntry] = $true
-$seenCaseFoldEntries[$reviewEntry] = $true
+[void]$entryNames.Add($reviewEntry)
 [void]$sourceEntries.Add($ReviewOutput)
+try {
+    Assert-NoCaseFoldDuplicates $entryNames.ToArray()
+} catch {
+    Fail $_.Exception.Message
+}
 
 try {
     Add-Type -AssemblyName System.IO.Compression -ErrorAction Stop

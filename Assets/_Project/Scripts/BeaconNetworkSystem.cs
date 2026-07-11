@@ -50,6 +50,10 @@ namespace Hecton8.Gameplay
         [SerializeField] private string defaultLabelPrefix = "BEACON";
         [SerializeField] private bool verboseLogging;
         private const string DefaultBeaconPrefix = "BEACON";
+        private const uint BeaconPoolMissingTelemetryHash = 0x42504D53u; // BPMS
+        private const uint BeaconPoolUnwarmedTelemetryHash = 0x4250554Eu; // BPUN
+        private const uint BeaconPoolExhaustedTelemetryHash = 0x42504558u; // BPEX
+        private const uint BeaconPoolContextHash = 0x42434E50u; // BCNP
 
         [Header("Prefabs")]
         [Tooltip("Authored beacon prefab spawned from save data and deployment. Must include BeaconRuntime, Renderer, Light, and authored static materials.")]
@@ -118,6 +122,7 @@ namespace Hecton8.Gameplay
                 return;
 
             CacheRegistryServicesCold();
+            EnsureBeaconPoolPrewarmedCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegisterSaveParticipant();
@@ -141,6 +146,7 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.ObjectPool:
                     CacheObjectPoolService(currentService as ObjectPoolManager);
+                    EnsureBeaconPoolPrewarmedCold();
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _cachedLocalization = currentService as ILocalizationTextReadModel;
@@ -583,6 +589,8 @@ namespace Hecton8.Gameplay
             _nextSequence = Mathf.Max(1, dto.nextSequence);
 
             int count = Mathf.Clamp(dto.activeCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            if (count > 0)
+                EnsureBeaconPoolPrewarmedCold(beaconPrefab, count, topUpToRequestedCount: true);
             for (int i = 0; i < count; i++)
             {
                 BeaconEntryDTO entry = dto.entries[i];
@@ -631,6 +639,9 @@ namespace Hecton8.Gameplay
         {
             CleanupNullEntries();
 
+            int cap = Mathf.Clamp(maxActive > 0 ? maxActive : maxTrackedBeacons, 1, BeaconNetworkDTO.MaxEntries);
+            EnsureBeaconPoolPrewarmedCold(worldBeaconPrefab, 1);
+
             beacon = SpawnRuntimeBeacon(worldBeaconPrefab, position, rotation, color, lightRange, fallbackScale);
             if (beacon == null)
             {
@@ -642,7 +653,6 @@ namespace Hecton8.Gameplay
             beacon.Configure(label, label, worldBeaconPrefab, color, lightRange);
             _activeBeacons.Add(beacon);
 
-            int cap = Mathf.Clamp(maxActive > 0 ? maxActive : maxTrackedBeacons, 1, BeaconNetworkDTO.MaxEntries);
             TrimOldestBeaconsToCap(cap);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -817,43 +827,47 @@ namespace Hecton8.Gameplay
             if (worldBeaconPrefab == null)
                 return null;
 
-            if (TryResolveCachedObjectPool(out IObjectPoolService pool))
+            if (!TryResolveCachedObjectPool(out IObjectPoolService pool))
             {
-                GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
-                if (instance != null)
-                {
-                    instance.TryGetComponent(out BeaconRuntime pooled);
-                    if (pooled == null)
-                    {
-                        DespawnBeaconInstanceOrDeactivate(instance, pool);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        if (verboseLogging)
-                            Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; spawn rejected.");
-#endif
-                        return null;
-                    }
-
-                    pooled.SetPooledOwner(pool);
-                    return pooled;
-                }
+                ReportBeaconPoolFailure(BeaconPoolMissingTelemetryHash, "[BeaconNetwork] Beacon pool service unavailable; runtime beacon spawn rejected.");
+                return null;
             }
 
-            GameObject directInstance = Instantiate(worldBeaconPrefab, position, rotation);
-            if (directInstance == null)
-                return null;
-
-            directInstance.TryGetComponent(out BeaconRuntime direct);
-            if (direct == null)
+            if (!pool.HasPool(worldBeaconPrefab))
             {
-                Destroy(directInstance);
+                ReportBeaconPoolFailure(BeaconPoolUnwarmedTelemetryHash, "[BeaconNetwork] Beacon pool was not prewarmed; runtime beacon spawn rejected.");
+                return null;
+            }
+
+            GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation, false);
+            if (instance == null)
+            {
+                ReportBeaconPoolFailure(BeaconPoolExhaustedTelemetryHash, "[BeaconNetwork] Beacon pool exhausted; runtime beacon spawn rejected.");
+                return null;
+            }
+
+            instance.TryGetComponent(out BeaconRuntime pooled);
+            if (pooled == null)
+            {
+                DespawnBeaconInstanceOrDeactivate(instance, pool);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (verboseLogging)
-                    Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; direct spawn rejected.");
+                    Hecton8.Core.H8Debug.LogWarning("[BeaconNetwork] Beacon prefab is missing BeaconRuntime; pooled spawn rejected.");
 #endif
                 return null;
             }
 
-            return direct;
+            pooled.SetPooledOwner(pool);
+            return pooled;
+        }
+
+        private void ReportBeaconPoolFailure(uint warningHash, string editorMessage)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, BeaconPoolContextHash, 1f);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (verboseLogging)
+                Hecton8.Core.H8Debug.LogWarning(editorMessage);
+#endif
         }
 
         private void UnregisterRuntime(BeaconRuntime beacon)
@@ -960,6 +974,34 @@ namespace Hecton8.Gameplay
             CacheObjectPoolService(null);
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             _cachedSaveService = GlobalRegistry.Save;
+        }
+
+        private void EnsureBeaconPoolPrewarmedCold()
+        {
+            EnsureBeaconPoolPrewarmedCold(beaconPrefab, Mathf.Clamp(maxTrackedBeacons, 1, BeaconNetworkDTO.MaxEntries));
+        }
+
+        private void EnsureBeaconPoolPrewarmedCold(GameObject prefab, int requestedCount)
+        {
+            EnsureBeaconPoolPrewarmedCold(prefab, requestedCount, topUpToRequestedCount: false);
+        }
+
+        private void EnsureBeaconPoolPrewarmedCold(GameObject prefab, int requestedCount, bool topUpToRequestedCount)
+        {
+            if (prefab == null || !TryResolveCachedObjectPool(out IObjectPoolService pool))
+                return;
+
+            int clampedCount = Mathf.Clamp(requestedCount, 1, BeaconNetworkDTO.MaxEntries);
+            if (!pool.HasPool(prefab))
+            {
+                pool.Warmup(prefab, clampedCount);
+                return;
+            }
+
+            int availableCount = pool.GetAvailableCount(prefab);
+            int minimumAvailable = topUpToRequestedCount ? clampedCount : 1;
+            if (availableCount < minimumAvailable)
+                pool.Warmup(prefab, minimumAvailable - availableCount);
         }
 
         private void CacheObjectPoolService(ObjectPoolManager candidate)

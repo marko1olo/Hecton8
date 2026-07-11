@@ -1,20 +1,20 @@
 # PROJECT_LTS_Compatibility_Layer.md
 
 Status: ACTIVE_COMPATIBILITY_PATTERN_WITH_LEGACY_EXAMPLES
-Current HECTON-8 correction: this file contains preserved legacy examples, not current implementation authority. `Hecton.Core`, `Hecton.Simulation`, `Hecton.Voxel`, `Hecton.EngineAbstraction`, `Hecton.UnityBackend`, `Hecton.ModdingFacade`, Unity 2022, dual-LTS matrices, and old layer diagrams below are quarantined examples only.
+Current HECTON-8 correction: this file contains preserved legacy examples, not current project authority. `Hecton.Core`, `Hecton.Simulation`, `Hecton.Voxel`, `Hecton.EngineAbstraction`, `Hecton.UnityBackend`, `Hecton.ModdingFacade`, Unity 2022, dual-LTS matrices, and old layer diagrams below are quarantined examples only.
 
-Current use rule: apply compatibility-layer principles only after reading live `.asmdef` files, current source owners, `AGENTS.md`, `PROJECT_BIBLES.md`, `platform.md`, `release.md`, and the relevant route bible. Current first-party namespaces and assemblies use source-owned `Hecton8.*` names unless live source proves a narrower exception. Current engine target is Unity 6000.4 with proof from current project artifacts, not Unity 2022 dual-LTS examples.
+Current use rule: apply compatibility-layer principles only after reading live `.asmdef` files, current source owners, `AGENTS.md`, `PROJECT_BIBLES.md`, `platform.md`, `release.md`, and the relevant route bible. Current first-party namespaces and assemblies use source-owned `Hecton8.*` names unless live source proves a narrower exception. Current engine target is Unity 6000.4 with proof from current project artifacts, not Unity 2022 dual-LTS examples (older illustrative example).
 
-[FORBID] Copying any legacy `Hecton.*` assembly name, Unity 2022 gate, dual-LTS matrix entry, old layer diagram, or old adapter snippet below into new code, task files, route cards, acceptance criteria, or reports as current HECTON-8 authority.
+[FORBID] Copying any legacy `Hecton.*` assembly name, Unity 2022 gate, dual-LTS matrix entry, old layer diagram, or old adapter snippet below into new code, task files, route cards, acceptance criteria, or reports as current HECTON-8 authority (not current project authority).
 [FORBID] Treating old examples below as compile, import, platform, modding, or release proof.
-[RULE] Treat every remaining `Hecton.*`, Unity 2022, dual-LTS, or old adapter phrase below as preserved compatibility example text only. The current project route is live `Hecton8.*` asmdefs plus Unity 6000.4 proof.
+[RULE] Treat every remaining `Hecton.*`, Unity 2022, dual-LTS, or old adapter phrase below as preserved compatibility example text only. The current project route is live `Hecton8.*` asmdefs plus Unity 6000.4 proof (older illustrative example).
 [RULE] If legacy example text conflicts with live source, `AGENTS.md`, current route bibles, or current mandates, the current authority wins.
 
 ## Legacy Example Quarantine
 
 [RULE] The body below is retained for no-loss compatibility principles: assembly isolation, adapter boundaries, reflection-free modding seams, API surface fingerprinting, and third-party anti-corruption patterns.
 [RULE] Before using any principle from this file, translate it through current live `Hecton8.*` asmdefs, current source owner names, current Unity 6000.4 package state, and the selected route bible.
-[FORBID] Using this file to create legacy assemblies, restore Unity 2022 gates, widen modding surface, claim platform readiness, or bypass current proof gates.
+[FORBID] Using this file to create legacy assemblies, restore Unity 2022 gates, widen modding surface, claim platform readiness, or bypass current proof gates (Do not create).
 
 ---
 

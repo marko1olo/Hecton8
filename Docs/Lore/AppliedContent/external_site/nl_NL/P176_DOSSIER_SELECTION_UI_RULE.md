@@ -9,7 +9,7 @@ locale: nl_NL
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Dossierclaimregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Dossierclaimregister
 
-NL LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 maakt van dossierselectie een claimrecord. Het bewaart kennis, geruchten en juridische druk, terwijl overlevingsuitrusting en wereldfeiten buiten het bestand blijven.
 
 ## Scanner
 
-NL LOC HOLD: Dossier UI should choose risk, not inherited power.
+DR-902 claimregister. Actieve dossiers tonen geruchtenfamilies, eindrecords, panddruk, bewaartermen, orbit-/weerclausules en bewijsvolgorde-hints. Geen uitrustingserfenis.
 
 ## Terminal
 
-NL LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+DEEP REACH FORMULIER DR-902
+Register: Marauder-dossierclaim
+Actieve velden: geruchtenfamilie, eindrecord, pandmassa, bewaarterm, orbit-/weervenster, bewijsvolgorde-hint
+Geweigerde velden: zuurstofreserve, rompklasse, wapenstatus, inventarisoverdracht
+Status: alleen kennisrecord; overlevingsuitrusting reset per contract
 
 ## Audio
 
-NL LOC HOLD: You keep suspicion, not a stronger body.
+Mappen bewaren namen en slechte clausules. Ze geven je geen sterker pak.
 
 ## Field Note
 
-NL LOC HOLD: No permanent gear advantage in dossier selection.
+Open een map en Black Keel prijst haar. Bewaar de oude argwaan; longen, romp en gereedschap blijven buiten het dossier.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/nl_NL. -->

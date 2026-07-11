@@ -9,7 +9,7 @@ locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "ドシエ請求登録簿"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# ドシエ請求登録簿
 
-JP LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.
+ドシエ請求登録簿は過去の証拠を Black Keel に渡す受付フォームであり、装備ロッカーではない。選択されたドシエは古いエンディング記録、噂系統、リーエン圧、保管条件、ルート警告を新しい契約へ持ち込む。これらの記録は操作者の疑いと carrier の請求額を変える。酸素予備、船体等級、武器、在庫、請求書に記された作業者の身元は変えない。
 
 ## Scanner
 
-JP LOC HOLD: Dossier UI should choose risk, not inherited power.
+DR-902 請求登録簿。アクティブなドシエは噂系統、エンディング記録、リーエン圧、保管条件、軌道/気象条項、証拠順序ヒントを示す。装備継承なし。
 
 ## Terminal
 
-JP LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+DEEP REACH FORM DR-902
+登録: Marauder ドシエ請求
+有効欄: 噂系統、エンディング記録、リーエン質量、保管条件、軌道/気象ウィンドウ、証拠順序ヒント
+拒否欄: 酸素予備、船体等級、武器状態、在庫持越し
+状態: 知識記録のみ。生存装備は契約ごとにリセット
 
 ## Audio
 
-JP LOC HOLD: You keep suspicion, not a stronger body.
+フォルダーは名前と悪い条項を残す。強いスーツはくれない。
 
 ## Field Note
 
-JP LOC HOLD: No permanent gear advantage in dossier selection.
+フォルダーを開けば Black Keel が値を付ける。古い疑いだけ持て。肺、船体、工具はファイルの外だ。
 
 <!-- In-Game Wiki; generated from P176_DOSSIER_SELECTION_UI_RULE/ja_JP. -->

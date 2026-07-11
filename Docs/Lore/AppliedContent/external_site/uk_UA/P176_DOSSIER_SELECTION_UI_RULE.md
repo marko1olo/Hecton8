@@ -9,7 +9,7 @@ locale: uk_UA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Реєстр претензійних досьє"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Реєстр претензійних досьє
 
-UA LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 перетворює вибір досьє на претензійний запис. Він зберігає знання, чутки й юридичний тиск, але тримає спорядження виживання та факти світу поза файлом.
 
 ## Scanner
 
-UA LOC HOLD: Dossier UI should choose risk, not inherited power.
+Реєстр претензій DR-902. Активні досьє відкривають родини чуток, записи фіналів, тиск застави, умови зберігання, орбітально-погодні пункти й підказки порядку доказів. Без успадкування спорядження.
 
 ## Terminal
 
-UA LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+ФОРМА DEEP REACH DR-902
+Реєстр: претензія за досьє Marauder
+Активні поля: родина чутки, запис фіналу, маса застави, умова зберігання, орбітально-погодне вікно, підказка порядку доказів
+Відхилені поля: запас кисню, клас корпусу, стан зброї, перенесення інвентарю
+Статус: лише запис знання; спорядження виживання скидається для кожного контракту
 
 ## Audio
 
-UA LOC HOLD: You keep suspicion, not a stronger body.
+Теки зберігають імена й погані пункти договору. Міцнішого костюма вони не дають.
 
 ## Field Note
 
-UA LOC HOLD: No permanent gear advantage in dossier selection.
+Відкрив теку — Black Keel вже ставить ціну. Стару підозру бери; легені, корпус і інструменти лишаються поза файлом.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/uk_UA. -->

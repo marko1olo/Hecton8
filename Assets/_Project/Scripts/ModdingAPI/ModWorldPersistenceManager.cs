@@ -19,6 +19,7 @@ namespace Hecton8.Modding
     internal sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, IModRegistryEventListener, IGameBootstrapperEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const string SaveKey = "hecton.internal.mod_world_spawns";
+        private const int MaxModWorldPayloadChars = SaveBinaryStorage.ModPayloadMaxBytes / sizeof(char);
 
         // COLD ALLOC: List<ModWorldSpawnRecord>[32] — persistent mod world spawn records — owner: ModWorldPersistenceManager
         private readonly List<ModWorldSpawnRecord> _records = new List<ModWorldSpawnRecord>(32);
@@ -65,7 +66,6 @@ namespace Hecton8.Modding
 
         private void Awake()
         {
-            Debug.Log($"[ModWorldPersistenceManager] Awake: this={this.GetHashCode()}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             if (TryAbortForUsableExistingRuntime())
                 return;
 
@@ -74,7 +74,6 @@ namespace Hecton8.Modding
 
         private void OnEnable()
         {
-            Debug.Log($"[ModWorldPersistenceManager] OnEnable: this={this.GetHashCode()}, _serviceShuttingDown={_serviceShuttingDown}");
             if (_serviceShuttingDown)
                 return;
 
@@ -96,7 +95,6 @@ namespace Hecton8.Modding
 
         private void OnDisable()
         {
-            Debug.Log($"[ModWorldPersistenceManager] OnDisable: this={this.GetHashCode()}, _serviceRegistered={_serviceRegistered}");
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             if (_bootstrapListenerRegistered)
             {
@@ -125,7 +123,6 @@ namespace Hecton8.Modding
 
         public void InitializeService()
         {
-            Debug.Log($"[ModWorldPersistenceManager] InitializeService: this={this.GetHashCode()}, _serviceShuttingDown={_serviceShuttingDown}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             if (_serviceShuttingDown || !Application.isPlaying)
                 return;
 
@@ -136,7 +133,6 @@ namespace Hecton8.Modding
                 GlobalRegistry.RegisterModWorldPersistenceRuntime(this);
 
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ModWorldPersistence, this);
-            Debug.Log($"[ModWorldPersistenceManager] InitializeService finished: _serviceRegistered={_serviceRegistered}, GlobalRegistry.ModWorldPersistence={GlobalRegistry.ModWorldPersistence?.GetHashCode()}");
             TryRegisterHotSwapListener();
             RefreshColdRegistryDependencies();
             TryRegisterWithSaveManager();
@@ -145,34 +141,28 @@ namespace Hecton8.Modding
         private bool TryAbortForUsableExistingRuntime()
         {
             ModWorldPersistenceManager registered = GlobalRegistry.ModWorldPersistence;
-            Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime: this={this.GetHashCode()}, registered={registered?.GetHashCode()}, ReferenceEquals(registered, this)={ReferenceEquals(registered, this)}");
             if (ReferenceEquals(registered, null) || ReferenceEquals(registered, this))
                 return false;
 
             if (IsModWorldPersistenceRuntimeUsable(registered))
             {
-                Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime -> ABORTING (registered is usable)");
                 Destroy(gameObject);
                 return true;
             }
 
-            Debug.Log($"[ModWorldPersistenceManager] TryAbortForUsableExistingRuntime -> registered is NOT usable, unregistering registered");
             GlobalRegistry.UnregisterModWorldPersistenceRuntime(registered);
             return false;
         }
 
         private static bool IsModWorldPersistenceRuntimeUsable(ModWorldPersistenceManager manager)
         {
-            bool usable = manager != null &&
+            return manager != null &&
                    manager._serviceRegistered &&
                    !manager._serviceShuttingDown;
-            Debug.Log($"[ModWorldPersistenceManager] IsModWorldPersistenceRuntimeUsable: manager={manager?.GetHashCode()}, usable={usable} (manager!=null={manager!=null}, _serviceRegistered={manager?._serviceRegistered}, !_serviceShuttingDown={manager != null && !manager._serviceShuttingDown})");
-            return usable;
         }
 
         public void OnServiceShutdown()
         {
-            Debug.Log($"[ModWorldPersistenceManager] OnServiceShutdown: this={this.GetHashCode()}");
             if (_serviceShutdownComplete)
                 return;
 
@@ -265,7 +255,8 @@ namespace Hecton8.Modding
             if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
                 return null;
 
-            GameObject instance = pool.Spawn(prefab, position, rotation);
+            EnsurePoolWarmup(pool, prefab, 1);
+            GameObject instance = pool.Spawn(prefab, position, rotation, false);
             if (instance == null)
                 return null;
 
@@ -333,7 +324,11 @@ namespace Hecton8.Modding
                 NextSpawnSequence = _nextSpawnSequence
             };
 
-            ModSaveStateStore.SetEngineString(SaveKey, JsonUtility.ToJson(payload));
+            string json = JsonUtility.ToJson(payload);
+            if (json.Length > MaxModWorldPayloadChars)
+                throw new ModPayloadExceededException(json.Length, MaxModWorldPayloadChars);
+
+            ModSaveStateStore.SetEngineString(SaveKey, json);
         }
 
         /// <summary>
@@ -348,8 +343,8 @@ namespace Hecton8.Modding
             _nextSpawnSequence = 1;
             _restorePending = false;
 
-            string json = ModSaveStateStore.GetEngineString(SaveKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(json))
+            string storedPayload = ModSaveStateStore.GetEngineString(SaveKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(storedPayload))
             {
                 _restorePending = false;
                 return;
@@ -358,7 +353,12 @@ namespace Hecton8.Modding
             ModWorldSavePayload payload;
             try
             {
-                payload = JsonUtility.FromJson<ModWorldSavePayload>(json);
+                if (storedPayload.Length > MaxModWorldPayloadChars)
+                    throw new ModPayloadExceededException(storedPayload.Length, MaxModWorldPayloadChars);
+
+                payload = JsonUtility.FromJson<ModWorldSavePayload>(storedPayload);
+                if (payload.Records == null && payload.NextSpawnSequence <= 0)
+                    throw new FormatException("Mod world payload was empty or malformed.");
             }
             catch (Exception exception)
             {
@@ -503,7 +503,8 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                GameObject instance = pool.Spawn(prefab, ResolveRuntimePosition(in record), record.Rotation);
+                EnsurePoolWarmup(pool, prefab, 1);
+                GameObject instance = pool.Spawn(prefab, ResolveRuntimePosition(in record), record.Rotation, false);
                 if (instance == null)
                 {
                     restoreStillPending = true;
@@ -558,6 +559,23 @@ namespace Hecton8.Modding
 
             marker.Initialize(record.SpawnId, record.SpawnHash, record.ModId, record.AssetName, record.SceneName);
             return marker;
+        }
+
+        private static void EnsurePoolWarmup(IObjectPoolService pool, GameObject prefab, int minimumAvailableCount)
+        {
+            if (pool == null || prefab == null)
+                return;
+
+            int requestedCount = Mathf.Max(1, minimumAvailableCount);
+            if (!pool.HasPool(prefab))
+            {
+                pool.Warmup(prefab, requestedCount);
+                return;
+            }
+
+            int availableCount = pool.GetAvailableCount(prefab);
+            if (availableCount < requestedCount)
+                pool.Warmup(prefab, requestedCount - availableCount);
         }
 
         private void AddOrReplaceRecord(ModWorldSpawnRecord record)
@@ -861,6 +879,15 @@ namespace Hecton8.Modding
             public List<ModWorldSpawnRecord> Records;
             public int NextSpawnSequence;
         }
+
+        private sealed class ModPayloadExceededException : Exception
+        {
+            public ModPayloadExceededException(int payloadChars, int maxChars)
+                : base($"Mod world payload size {payloadChars} UTF-16 chars exceeds cap {maxChars} UTF-16 chars.")
+            {
+            }
+        }
+
     }
 
     /// <summary>

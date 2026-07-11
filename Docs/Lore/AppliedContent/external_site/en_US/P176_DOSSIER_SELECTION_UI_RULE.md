@@ -9,7 +9,7 @@ locale: en_US
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Dossier Claim Registry"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: source_authority
 localization_flags: 0
 ---
 
-# Dossier Selection UI Rule
+# Dossier Claim Registry
 
-Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 turns dossier selection into a claim record. It preserves knowledge, rumors and legal pressure while keeping survival equipment and world facts outside the file.
 
 ## Scanner
 
-Dossier UI should choose risk, not inherited power.
+DR-902 claim registry. Active dossiers expose rumor families, ending records, lien pressure, custody terms, orbit/weather clauses and evidence-order hints. No equipment inheritance.
 
 ## Terminal
 
-DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+DEEP REACH FORM DR-902
+Registry: Marauder dossier claim
+Active fields: rumor family, ending record, lien mass, custody term, orbit/weather window, evidence-order hint
+Denied fields: oxygen reserve, hull rating, weapon state, inventory carryover
+Status: knowledge record only; survival equipment resets per contract
 
 ## Audio
 
-You keep suspicion, not a stronger body.
+Folders keep names and bad clauses. They do not give you a stronger suit.
 
 ## Field Note
 
-No permanent gear advantage in dossier selection.
+Open a folder and Black Keel prices it. Keep the old suspicion; leave lungs, hull and tools out of the file.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/en_US. -->

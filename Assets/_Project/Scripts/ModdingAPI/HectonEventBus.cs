@@ -123,15 +123,15 @@ namespace Hecton8.Modding
     /// </summary>
     internal static class HectonEventBus
     {
-        private const int MaxEventDispatchDepth = 5;
+        private const int MaxEventDispatchDepth = 3;
         private const uint ManagedEventCascadeBreakerSubjectHash = 0x45564450u; // EVDP
         private const uint ManagedEventCascadeBreakerFallbackHash = 0x43415343u; // CASC
         private const string RecursiveCascadeCriticalMessage = "[HectonEventBus] RECURSIVE_CASCADE_CRITICAL: dispatch recursion depth exceeded; payload dropped.";
-        private const string ModStallWarningMessage = "[HectonEventBus] STALL_WARNING: mod callback exceeded 2.0ms.";
-        private const string ModStallDisableReason = "Event callback exceeded 2.0ms watchdog for 3 consecutive frames.";
+        private const string ModStallWarningMessage = "[HectonEventBus] STALL_WARNING: mod callback exceeded 1.0ms.";
+        private const string ModStallDisableReason = "Event callback exceeded 1.0ms watchdog for 3 consecutive frames.";
         private const string ModCallbackExceptionDisableReason = "Event callback exception.";
         private const string EnvelopeOnlyEventSurfaceDisabledMessage = "Managed mod event surfaces are disabled. Submit 64-byte FutureCommandEnvelope packets through HectonAPI.Commands.RequestFuture.";
-        private static readonly long _modCallbackWatchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
+        private static readonly long _modCallbackWatchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.001d));
         // COLD ALLOC: List<IResettableEventChannel>[32] — typed event channel registry for play-session resets — owner: HectonEventBus
         private static readonly List<IResettableEventChannel> _channels = new List<IResettableEventChannel>(32);
         // COLD ALLOC: NativeQueueBridge[1] - read-only first-party queue listener for mod event projection - owner: HectonEventBus
@@ -549,7 +549,8 @@ namespace Hecton8.Modding
                 _dispatchDepth++;
                 try
                 {
-                    for (int i = 0; i < _subscriptions.Count; i++)
+                    int dispatchCount = _subscriptions.Count;
+                    for (int i = 0; i < dispatchCount; i++)
                     {
                         SubscriptionEntry entry = _subscriptions[i];
                         if (!entry.IsActive || entry.Handler == null)
@@ -712,7 +713,8 @@ namespace Hecton8.Modding
                 _dispatchDepth++;
                 try
                 {
-                    for (int i = 0; i < _subscriptions.Count; i++)
+                    int dispatchCount = _subscriptions.Count;
+                    for (int i = 0; i < dispatchCount; i++)
                     {
                         SubscriptionEntry entry = _subscriptions[i];
                         if (!entry.IsActive || entry.Handler == null)
@@ -884,7 +886,8 @@ namespace Hecton8.Modding
 
                 try
                 {
-                    for (int i = 0; i < _subscriptions.Count; i++)
+                    int dispatchCount = _subscriptions.Count;
+                    for (int i = 0; i < dispatchCount; i++)
                     {
                         SubscriptionEntry entry = _subscriptions[i];
                         if (!entry.IsActive || entry.Handler == null)

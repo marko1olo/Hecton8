@@ -65,6 +65,7 @@ namespace Hecton8.Core.Persistence.Paging
         private const uint PagerTelemetryFlagFileStreamCommit = 1u << 11;
         private const uint PagerTelemetryFlagDirectoryCollision = 1u << 12;
         private const uint PagerTelemetryFlagPayloadOverflowRejected = 1u << 13;
+        public const int PendingWriteBacklogNotificationThreshold = WriteSlotCount - 2;
 
         private VaultGenerationHandle<byte> _readStagingHandle;
         private VaultGenerationHandle<H8BinaryWorldPagerTelemetryEntry> _telemetryRingHandle;
@@ -127,6 +128,8 @@ namespace Hecton8.Core.Persistence.Paging
         private long _lastSectorHash;
         private uint _lastPayloadType;
         private uint _lastFrame;
+        private int _pendingWriteBacklogNotificationArmed;
+        private int _pendingWriteBacklogNotificationPending;
 
         public string FileName => WorldDataFileName;
 
@@ -287,6 +290,7 @@ namespace Hecton8.Core.Persistence.Paging
                 _writeQueueCount.Value++;
 
                 int queued = Interlocked.Increment(ref _pendingWriteCount.Value);
+                UpdatePendingWriteBacklogNotificationState(queued);
                 SetQueueHighWatermark(queued);
                 _workerEvent.Set();
                 return true;
@@ -725,6 +729,23 @@ namespace Hecton8.Core.Persistence.Paging
             };
         }
 
+        public bool TryConsumePendingWriteBacklogNotification()
+        {
+            return Interlocked.Exchange(ref _pendingWriteBacklogNotificationPending, 0) != 0;
+        }
+
+        private void UpdatePendingWriteBacklogNotificationState(int pendingWrites)
+        {
+            if (pendingWrites > PendingWriteBacklogNotificationThreshold)
+            {
+                if (Interlocked.Exchange(ref _pendingWriteBacklogNotificationArmed, 1) == 0)
+                    Volatile.Write(ref _pendingWriteBacklogNotificationPending, 1);
+                return;
+            }
+
+            Volatile.Write(ref _pendingWriteBacklogNotificationArmed, 0);
+        }
+
         public void Flush()
         {
             if (!IsInitialized)
@@ -1005,6 +1026,8 @@ namespace Hecton8.Core.Persistence.Paging
             _readQueueTail = 0;
             _readQueueCount.Value = 0;
             _workerFlushRequestCount.Value = 0;
+            _pendingWriteBacklogNotificationArmed = 0;
+            _pendingWriteBacklogNotificationPending = 0;
         }
 
         private void ClearPagerTransientBuffers()
@@ -1398,7 +1421,8 @@ namespace Hecton8.Core.Persistence.Paging
             }
             finally
             {
-                Interlocked.Decrement(ref _pendingWriteCount.Value);
+                int pendingWrites = Interlocked.Decrement(ref _pendingWriteCount.Value);
+                UpdatePendingWriteBacklogNotificationState(pendingWrites);
             }
 
             if (!faulted)
@@ -1479,6 +1503,8 @@ namespace Hecton8.Core.Persistence.Paging
             _workerEvent.Set();
             Volatile.Write(ref _initializationFault.Value, 1);
             Volatile.Write(ref _pendingWriteCount.Value, 0);
+            Volatile.Write(ref _pendingWriteBacklogNotificationArmed, 0);
+            Volatile.Write(ref _pendingWriteBacklogNotificationPending, 0);
             Volatile.Write(ref _pendingReadCount.Value, 0);
             Volatile.Write(ref _writeQueueCount.Value, 0);
             Volatile.Write(ref _readQueueCount.Value, 0);

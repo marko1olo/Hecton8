@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Rejestr roszczeń dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Rejestr roszczeń dossier
 
-PL LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.
+Rejestr roszczeń dossier jest formularzem przyjęcia Black Keel dla wcześniejszych dowodów, nie szafką ze sprzętem. Wybrane dossier może przenieść stare zapisy zakończeń, rodziny plotek, presję zastawu, warunki depozytu i ostrzeżenia trasowe do nowego kontraktu. Te zapisy zmieniają podejrzenia operatora i opłatę naliczaną przez carrier. Nie zmieniają rezerwy tlenu, klasy kadłuba, broni, ekwipunku ani tożsamości pracownika wpisanej do roszczenia.
 
 ## Scanner
 
-PL LOC HOLD: Dossier UI should choose risk, not inherited power.
+Rejestr roszczeń DR-902. Aktywne dossier odsłaniają rodziny plotek, zapisy zakończeń, presję zastawu, warunki depozytu, klauzule orbity/pogody i wskazówki kolejności dowodów. Bez dziedziczenia sprzętu.
 
 ## Terminal
 
-PL LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+FORMULARZ DEEP REACH DR-902
+Rejestr: roszczenie dossier Maraudera
+Pola aktywne: rodzina plotki, zapis zakończenia, masa zastawu, warunek depozytu, okno orbity/pogody, wskazówka kolejności dowodów
+Pola odrzucone: rezerwa tlenu, klasa kadłuba, stan broni, przeniesienie ekwipunku
+Status: wyłącznie zapis wiedzy; sprzęt przetrwania resetowany w każdym kontrakcie
 
 ## Audio
 
-PL LOC HOLD: You keep suspicion, not a stronger body.
+Teczki trzymają nazwiska i złe klauzule. Nie dają mocniejszego skafandra.
 
 ## Field Note
 
-PL LOC HOLD: No permanent gear advantage in dossier selection.
+Otwórz teczkę, a Black Keel ją wyceni. Zachowaj stare podejrzenie; płuca, kadłub i narzędzia zostają poza aktami.
 
 <!-- In-Game Wiki; generated from P176_DOSSIER_SELECTION_UI_RULE/pl_PL. -->

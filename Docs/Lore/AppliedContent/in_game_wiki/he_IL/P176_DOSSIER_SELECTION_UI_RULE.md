@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "מרשם תביעת תיק"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# מרשם תביעת תיק
 
-HE LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.
+מרשם תביעת התיקים הוא טופס קליטה של Black Keel לראיות קודמות, לא ארון ציוד. תיק שנבחר יכול לשאת רשומות סיום ישנות, משפחות שמועה, לחץ שעבוד, תנאי משמורת ואזהרות נתיב אל חוזה חדש. הרשומות משנות מה המפעיל חושד ומה ה-carrier מחייב. הן לא משנות עתודת חמצן, דירוג גוף, נשק, מלאי או את זהות העובד הרשומה בתביעה.
 
 ## Scanner
 
-HE LOC HOLD: Dossier UI should choose risk, not inherited power.
+מרשם תביעה DR-902. תיקים פעילים חושפים משפחות שמועה, רשומות סיום, לחץ שעבוד, תנאי משמורת, סעיפי מסלול/מזג אוויר ורמזי סדר ראיות. אין ירושת ציוד.
 
 ## Terminal
 
-HE LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+טופס DEEP REACH DR-902
+מרשם: תביעת תיק Marauder
+שדות פעילים: משפחת שמועה, רשומת סיום, מסת שעבוד, תנאי משמורת, חלון מסלול/מזג אוויר, רמז סדר ראיות
+שדות נדחים: עתודת חמצן, דירוג גוף, מצב נשק, נשיאת מלאי
+סטטוס: רשומת ידע בלבד; ציוד הישרדות מאופס לכל חוזה
 
 ## Audio
 
-HE LOC HOLD: You keep suspicion, not a stronger body.
+תיקים שומרים שמות וסעיפים רעים. הם לא נותנים לך חליפה חזקה יותר.
 
 ## Field Note
 
-HE LOC HOLD: No permanent gear advantage in dossier selection.
+פתח תיק ו Black Keel מתמחר אותו. שמור את החשד הישן; ריאות, גוף חליפה וכלים נשארים מחוץ לקובץ.
 
 <!-- In-Game Wiki; generated from P176_DOSSIER_SELECTION_UI_RULE/he_IL. -->

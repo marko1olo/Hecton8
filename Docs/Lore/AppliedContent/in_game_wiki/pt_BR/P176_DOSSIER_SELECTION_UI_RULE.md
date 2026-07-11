@@ -9,7 +9,7 @@ locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Registro de reivindicação de dossiê"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Registro de reivindicação de dossiê
 
-PT LOC HOLD: Dossier selection turns replay into informed contracts while preserving survival difficulty.
+O registro de reivindicação de dossiê é um formulário de entrada da Black Keel para evidência anterior, não um armário de equipamento. Um dossiê selecionado pode levar registros de finais antigos, famílias de rumor, pressão de penhor, termos de custódia e avisos de rota para um novo contrato. Esses registros mudam o que o operador suspeita e o que o carrier cobra. Não alteram reserva de oxigênio, classe de casco, armas, inventário nem a identidade do trabalhador escrita na reivindicação.
 
 ## Scanner
 
-PT LOC HOLD: Dossier UI should choose risk, not inherited power.
+Registro DR-902. Dossiês ativos expõem famílias de rumor, registros de finais, pressão de penhor, termos de custódia, cláusulas orbitais/climáticas e pistas de ordem de evidência. Sem herança de equipamento.
 
 ## Terminal
 
-PT LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+FORMULÁRIO DEEP REACH DR-902
+Registro: reivindicação de dossiê Marauder
+Campos ativos: família de rumor, registro de final, massa de penhor, termo de custódia, janela orbital/climática, pista de ordem de evidência
+Campos negados: reserva de oxigênio, classe de casco, estado de arma, transferência de inventário
+Status: apenas registro de conhecimento; equipamento de sobrevivência reinicia por contrato
 
 ## Audio
 
-PT LOC HOLD: You keep suspicion, not a stronger body.
+Pastas guardam nomes e cláusulas ruins. Não dão um traje mais forte.
 
 ## Field Note
 
-PT LOC HOLD: No permanent gear advantage in dossier selection.
+Abra uma pasta e a Black Keel coloca preço nela. Guarde a suspeita antiga; pulmões, casco e ferramentas ficam fora do arquivo.
 
 <!-- In-Game Wiki; generated from P176_DOSSIER_SELECTION_UI_RULE/pt_BR. -->

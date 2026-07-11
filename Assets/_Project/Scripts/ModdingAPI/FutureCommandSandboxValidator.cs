@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -475,7 +476,7 @@ namespace Hecton8.Modding
         private const string SandboxDumpPayloadLabel = "FutureCommandSandboxBlackBoxPayload";
         private const string KernelDumpPayloadLabel = "FutureCommandKernelTelemetryPayload";
         private const int DefaultMemoryBytes = FutureCommandSandboxConstants.DefaultMaxModMemoryMb * 1024 * 1024;
-        private const uint EnabledAllEmergencyOpcodes = 0xFFFu;
+        private const uint EnabledNoOpcodeMaskBypass = 0u;
         private const uint RollbackRuntimeStateBufferId = 70752u;
         private const uint RollbackFlagResimulating = 1u << 4;
         private const uint KernelIdSurvivalOverride = 1u;
@@ -661,15 +662,21 @@ namespace Hecton8.Modding
             if (!_initialized)
                 return 0;
 
-            if (!bytes.IsCreated || byteLength < FutureCommandSandboxConstants.EnvelopeSizeBytes)
+            const int envelopeBytes = FutureCommandSandboxConstants.EnvelopeSizeBytes;
+            if (!bytes.IsCreated ||
+                byteLength <= 0 ||
+                byteLength > bytes.Length ||
+                byteLength < envelopeBytes ||
+                byteLength % envelopeBytes != 0)
+            {
                 return 0;
+            }
 
             AcquireVaultBuffers();
             if (!TryReadRingStateSnapshot(out ModSandboxRingState state))
                 return 0;
 
-            int safeBytes = math.min(byteLength, bytes.Length);
-            int count = safeBytes / FutureCommandSandboxConstants.EnvelopeSizeBytes;
+            int count = byteLength / envelopeBytes;
             int accepted = 0;
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
             IDataVault lockedVault = null;
@@ -686,7 +693,9 @@ namespace Hecton8.Modding
                     if (sourceBigEndian)
                         envelope = SwapEnvelopeEndian(in envelope);
 
-                    EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
+                    if (!TryEnqueuePendingEnvelope(pendingRing, ref state, in envelope))
+                        break;
+
                     accepted++;
                 }
             }
@@ -695,7 +704,7 @@ namespace Hecton8.Modding
                 lockedVault.ReleaseWriteLock(in _pendingRingHandle.Handle, SystemID.ModSandbox);
             }
 
-            return accepted > 0 && TryWriteRingStateSnapshot(in state) ? accepted : 0;
+            return TryWriteRingStateSnapshot(in state) ? accepted : 0;
         }
 
         internal static int RequestFromExternalQueue(NativeQueue<FutureCommandEnvelope> sourceQueue, int maxEnvelopeCount)
@@ -719,19 +728,25 @@ namespace Hecton8.Modding
 
             try
             {
-                int limit = math.min(maxEnvelopeCount, pendingRing.Length);
+                int available = math.max(0, pendingRing.Length - state.PendingCount);
+                int limit = math.min(maxEnvelopeCount, available);
                 while (accepted < limit && sourceQueue.TryDequeue(out FutureCommandEnvelope envelope))
                 {
-                    EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
+                    if (!TryEnqueuePendingEnvelope(pendingRing, ref state, in envelope))
+                        break;
+
                     accepted++;
                 }
+
+                if (accepted == 0 && available == 0 && maxEnvelopeCount > 0)
+                    IncrementPendingQueueFullDropped(ref state);
             }
             finally
             {
                 lockedVault.ReleaseWriteLock(in _pendingRingHandle.Handle, SystemID.ModSandbox);
             }
 
-            return accepted > 0 && TryWriteRingStateSnapshot(in state) ? accepted : 0;
+            return TryWriteRingStateSnapshot(in state) ? accepted : 0;
         }
 
         internal static void DrainPreSimulation()
@@ -1069,52 +1084,33 @@ namespace Hecton8.Modding
         internal static bool SetOpcodeEnabled(uint opcodeHash, bool enabled)
         {
             Initialize();
-            if (opcodeHash == 0u || !TryReadRingStateSnapshot(out ModSandboxRingState state))
+            if (opcodeHash == 0u ||
+                !IsRuntimeAllowedFutureCommandOpcode(opcodeHash) ||
+                !TryReadRingStateSnapshot(out _))
                 return false;
 
             bool recordFound = false;
-            bool inserted = false;
             IDataVault lockedVault = null;
             if (!TryAcquireVaultLaneWrite(ref _opcodeRecordsHandle, out NativeArray<FutureCommandOpcodeRecord> opcodeRecords, out lockedVault))
                 return false;
 
             try
             {
-                for (int i = 0; i < opcodeRecords.Length; i++)
+                int slot = FindOpcodeRecordSlot(opcodeRecords, opcodeHash, out bool found);
+                if (slot >= 0 && found)
                 {
-                    FutureCommandOpcodeRecord record = opcodeRecords[i];
-                    if (record.OpcodeHash != opcodeHash)
-                        continue;
-
+                    FutureCommandOpcodeRecord record = opcodeRecords[slot];
                     record.Flags = enabled ? 1u : 0u;
-                    opcodeRecords[i] = record;
+                    opcodeRecords[slot] = record;
                     recordFound = true;
-                    return true;
                 }
-
-                if (!enabled)
-                    return true;
-
-                int slot = state.OpcodeCount;
-                if ((uint)slot >= (uint)opcodeRecords.Length)
-                    return false;
-
-                opcodeRecords[slot] = new FutureCommandOpcodeRecord
-                {
-                    OpcodeHash = opcodeHash,
-                    Flags = 1u,
-                    ManifestCrc32 = 0u,
-                    Reserved = 0u
-                };
-                state.OpcodeCount = slot + 1;
-                inserted = true;
             }
             finally
             {
                 lockedVault.ReleaseWriteLock(in _opcodeRecordsHandle.Handle, SystemID.ModSandbox);
             }
 
-            return recordFound || (inserted && TryWriteRingStateSnapshot(in state));
+            return recordFound;
         }
 
         internal static bool IsOpcodeEnabled(uint opcodeHash)
@@ -1126,14 +1122,14 @@ namespace Hecton8.Modding
                 return false;
 
             int count = math.min(state.OpcodeCount, opcodeRecords.Length);
-            for (int i = 0; i < count; i++)
-            {
-                FutureCommandOpcodeRecord record = opcodeRecords[i];
-                if (record.OpcodeHash == opcodeHash && (record.Flags & 1u) != 0u)
-                    return true;
-            }
+            if (count <= 0)
+                return false;
 
-            return false;
+            int slot = FindOpcodeRecordSlot(opcodeRecords, opcodeHash, out bool found);
+            if (!found || slot < 0)
+                return false;
+
+            return (opcodeRecords[slot].Flags & 1u) != 0u;
         }
 
         internal static FutureCommandSandboxTuning GetTuningSnapshot()
@@ -1501,11 +1497,12 @@ namespace Hecton8.Modding
                 overflowProbe.PendingCount = auditInputs.Length;
                 overflowProbe.PendingHead = 0;
                 overflowProbe.PendingTail = 0;
-                EnqueuePendingEnvelope(auditInputs, ref overflowProbe, in maliciousPayload);
+                bool overflowRejected = !TryEnqueuePendingEnvelope(auditInputs, ref overflowProbe, in maliciousPayload);
                 bool overflowCounterWorked =
+                    overflowRejected &&
                     overflowProbe.PendingOverflowDropped == 1u &&
                     overflowProbe.PendingCount == auditInputs.Length &&
-                    overflowProbe.PendingHead == 1;
+                    overflowProbe.PendingHead == 0;
                 bool selfAuditPassed = rejectedInvalidPackets && exactAupTelemetry && overflowCounterWorked;
                 uint auditFaultHash = rejectedInvalidPackets
                     ? FutureCommandSandboxConstants.FaultHashLayout
@@ -2174,21 +2171,22 @@ namespace Hecton8.Modding
                 return false;
 
             int count = math.min(state.OpcodeCount, opcodeRecords.Length);
-            for (int i = 0; i < count; i++)
-            {
-                FutureCommandOpcodeRecord existing = opcodeRecords[i];
-                if (existing.OpcodeHash != opcodeHash)
-                    continue;
+            int slot = FindOpcodeRecordSlot(opcodeRecords, opcodeHash, out bool found);
+            if (slot < 0)
+                return false;
 
+            if (found)
+            {
+                FutureCommandOpcodeRecord existing = opcodeRecords[slot];
                 existing.Flags = flags;
-                opcodeRecords[i] = existing;
+                opcodeRecords[slot] = existing;
                 return false;
             }
 
             if (count >= opcodeRecords.Length)
                 return false;
 
-            opcodeRecords[count] = new FutureCommandOpcodeRecord
+            opcodeRecords[slot] = new FutureCommandOpcodeRecord
             {
                 OpcodeHash = opcodeHash,
                 Flags = flags,
@@ -2199,7 +2197,88 @@ namespace Hecton8.Modding
             return true;
         }
 
-        private static void EnsureModderLease(
+        private static int FindOpcodeRecordSlot(NativeArray<FutureCommandOpcodeRecord> opcodeRecords, uint opcodeHash, out bool found)
+        {
+            found = false;
+            if (!opcodeRecords.IsCreated || opcodeHash == 0u || opcodeRecords.Length == 0)
+                return -1;
+
+            uint capacity = (uint)opcodeRecords.Length;
+            uint mixed = MixOpcodeHash(opcodeHash);
+            int start = IsPowerOfTwo(opcodeRecords.Length)
+                ? (int)(mixed & (capacity - 1u))
+                : (int)(mixed % capacity);
+
+            for (int probe = 0; probe < opcodeRecords.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= opcodeRecords.Length)
+                    index -= opcodeRecords.Length;
+
+                uint stored = opcodeRecords[index].OpcodeHash;
+                if (stored == opcodeHash)
+                {
+                    found = true;
+                    return index;
+                }
+
+                if (stored == 0u)
+                    return index;
+            }
+
+            return -1;
+        }
+
+        private static int FindOpcodeRecordSlot(NativeArray<FutureCommandOpcodeRecord>.ReadOnly opcodeRecords, uint opcodeHash, out bool found)
+        {
+            found = false;
+            if (!opcodeRecords.IsCreated || opcodeHash == 0u || opcodeRecords.Length == 0)
+                return -1;
+
+            uint capacity = (uint)opcodeRecords.Length;
+            uint mixed = MixOpcodeHash(opcodeHash);
+            int start = IsPowerOfTwo(opcodeRecords.Length)
+                ? (int)(mixed & (capacity - 1u))
+                : (int)(mixed % capacity);
+
+            for (int probe = 0; probe < opcodeRecords.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= opcodeRecords.Length)
+                    index -= opcodeRecords.Length;
+
+                uint stored = opcodeRecords[index].OpcodeHash;
+                if (stored == opcodeHash)
+                {
+                    found = true;
+                    return index;
+                }
+
+                if (stored == 0u)
+                    return index;
+            }
+
+            return -1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MixOpcodeHash(uint opcodeHash)
+        {
+            opcodeHash ^= opcodeHash >> 16;
+            opcodeHash *= 0x7FEB352Du;
+            opcodeHash ^= opcodeHash >> 15;
+            opcodeHash *= 0x846CA68Bu;
+            opcodeHash ^= opcodeHash >> 16;
+            return opcodeHash;
+        }
+
+        private static void EnsureModderLease
             uint signature,
             int maxMemoryMb,
             NativeArray<byte> modderBlackboxMemory,
@@ -2255,7 +2334,7 @@ namespace Hecton8.Modding
             tuning.MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature;
             tuning.MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb;
             tuning.GlobalQualityWeightOverride = -1f;
-            tuning.EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes;
+            tuning.EnabledOpcodeMaskLo = EnabledNoOpcodeMaskBypass;
             tuning.MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes;
             tuning.Flags = 0u;
             tuning.CpuThermalPressure01 = 0f;
@@ -2271,7 +2350,7 @@ namespace Hecton8.Modding
                 if (stored.MaxAssetBytes > 0u)
                     tuning.MaxAssetBytes = stored.MaxAssetBytes;
                 tuning.GlobalQualityWeightOverride = stored.GlobalQualityWeightOverride;
-                tuning.EnabledOpcodeMaskLo = stored.EnabledOpcodeMaskLo == 0u ? EnabledAllEmergencyOpcodes : stored.EnabledOpcodeMaskLo;
+                tuning.EnabledOpcodeMaskLo = EnabledNoOpcodeMaskBypass;
                 tuning.Flags = stored.Flags;
                 tuning.CpuThermalPressure01 = math.saturate(math.isfinite(stored.CpuThermalPressure01) ? stored.CpuThermalPressure01 : 0f);
             }
@@ -2285,7 +2364,7 @@ namespace Hecton8.Modding
             tuning.MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature;
             tuning.MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb;
             tuning.GlobalQualityWeightOverride = -1f;
-            tuning.EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes;
+            tuning.EnabledOpcodeMaskLo = EnabledNoOpcodeMaskBypass;
             tuning.MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes;
             tuning.Flags = 0u;
             tuning.CpuThermalPressure01 = 0f;
@@ -2301,7 +2380,7 @@ namespace Hecton8.Modding
                 if (stored.MaxAssetBytes > 0u)
                     tuning.MaxAssetBytes = stored.MaxAssetBytes;
                 tuning.GlobalQualityWeightOverride = stored.GlobalQualityWeightOverride;
-                tuning.EnabledOpcodeMaskLo = stored.EnabledOpcodeMaskLo == 0u ? EnabledAllEmergencyOpcodes : stored.EnabledOpcodeMaskLo;
+                tuning.EnabledOpcodeMaskLo = EnabledNoOpcodeMaskBypass;
                 tuning.Flags = stored.Flags;
                 tuning.CpuThermalPressure01 = math.saturate(math.isfinite(stored.CpuThermalPressure01) ? stored.CpuThermalPressure01 : 0f);
             }
@@ -2767,7 +2846,7 @@ namespace Hecton8.Modding
                 MaxCommandsPerFrame = FutureCommandSandboxConstants.DefaultMaxCommandsPerSignature,
                 MaxModMemoryMb = FutureCommandSandboxConstants.DefaultMaxModMemoryMb,
                 GlobalQualityWeightOverride = -1f,
-                EnabledOpcodeMaskLo = EnabledAllEmergencyOpcodes,
+                EnabledOpcodeMaskLo = EnabledNoOpcodeMaskBypass,
                 MaxAssetBytes = FutureCommandSandboxConstants.DefaultMaxAssetBytes,
                 Flags = 0u,
                 CpuThermalPressure01 = 0f,
@@ -3234,8 +3313,7 @@ namespace Hecton8.Modding
 
             try
             {
-                EnqueuePendingEnvelope(pendingRing, ref state, in envelope);
-                return true;
+                return TryEnqueuePendingEnvelope(pendingRing, ref state, in envelope);
             }
             finally
             {
@@ -3270,23 +3348,29 @@ namespace Hecton8.Modding
             return index >= capacity ? 0 : index;
         }
 
-        private static void EnqueuePendingEnvelope(NativeArray<FutureCommandEnvelope> pendingRing, ref ModSandboxRingState state, in FutureCommandEnvelope envelope)
+        private static bool TryEnqueuePendingEnvelope(NativeArray<FutureCommandEnvelope> pendingRing, ref ModSandboxRingState state, in FutureCommandEnvelope envelope)
         {
             if (!pendingRing.IsCreated || pendingRing.Length == 0)
-                return;
+                return false;
 
             if (state.PendingCount >= pendingRing.Length)
             {
-                state.PendingHead = AdvanceRingIndex(state.PendingHead, pendingRing.Length);
-                state.PendingCount = math.max(0, state.PendingCount - 1);
-                state.PendingOverflowDropped = state.PendingOverflowDropped == uint.MaxValue
-                    ? uint.MaxValue
-                    : state.PendingOverflowDropped + 1u;
+                IncrementPendingQueueFullDropped(ref state);
+                return false;
             }
 
             pendingRing[state.PendingTail] = envelope;
             state.PendingTail = AdvanceRingIndex(state.PendingTail, pendingRing.Length);
             state.PendingCount = math.min(pendingRing.Length, state.PendingCount + 1);
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void IncrementPendingQueueFullDropped(ref ModSandboxRingState state)
+        {
+            state.PendingOverflowDropped = state.PendingOverflowDropped == uint.MaxValue
+                ? uint.MaxValue
+                : state.PendingOverflowDropped + 1u;
         }
 
         private static FutureCommandEnvelope SwapEnvelopeEndian(in FutureCommandEnvelope envelope)
@@ -3435,7 +3519,7 @@ namespace Hecton8.Modding
 
             uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             uint rollbackActive = IsRollbackFrozen() ? 1u : 0u;
-            uint enqueueOverflowDropped = state.PendingOverflowDropped;
+            uint queueFullDropped = state.PendingOverflowDropped;
             state.PendingOverflowDropped = 0u;
 
             int smallestProfileBudget = ResolveSmallestKernelProfileFrameBudget(kernelProfiles, int.MaxValue);
@@ -3451,7 +3535,14 @@ namespace Hecton8.Modding
                     out uint shedDropped))
                 return false;
 
-            uint thermalDropped = SaturatingAdd(enqueueOverflowDropped, shedDropped);
+            uint thermalDropped = shedDropped;
+            uint droppedBeforeValidation = SaturatingAdd(queueFullDropped, thermalDropped);
+            uint preValidationRejectionMask = 0u;
+            if (queueFullDropped != 0u)
+                preValidationRejectionMask |= (uint)FutureCommandRejectReason.QueueFull;
+            if (thermalDropped != 0u)
+                preValidationRejectionMask |= (uint)FutureCommandRejectReason.ThermalShed;
+
             if (!TryEnsureModderLeasesForInputs(staging, drainCount, tuning.MaxModMemoryMb, ref state, frame) ||
                 !TryWriteRingStateSnapshot(in state))
                 return false;
@@ -3465,20 +3556,18 @@ namespace Hecton8.Modding
                         0u,
                         0u,
                         0u,
-                        thermalDropped,
+                        droppedBeforeValidation,
                         0u,
                         0UL,
                         quality,
-                        0u,
+                        preValidationRejectionMask,
                         0u,
                         (uint)state.PendingCount,
                         0u,
                         (uint)maxPerSignature);
                     FutureCommandValidationStats kernelNoWorkStats = default;
-                    kernelNoWorkStats.Dropped = thermalDropped;
-                    kernelNoWorkStats.RejectionMask = thermalDropped > 0u
-                        ? (uint)FutureCommandRejectReason.ThermalShed
-                        : 0u;
+                    kernelNoWorkStats.Dropped = droppedBeforeValidation;
+                    kernelNoWorkStats.RejectionMask = preValidationRejectionMask;
                     RecordKernelTelemetry(
                         frame,
                         in kernelNoWorkStats,
@@ -3513,8 +3602,9 @@ namespace Hecton8.Modding
                 MaxCommandsPerSignature = (uint)maxPerSignature,
                 ThermalDropped = thermalDropped,
                 Quality = quality,
-                Flags = rollbackActive,
-                StartTicks = Stopwatch.GetTimestamp()
+                Flags = rollbackActive | (preValidationRejectionMask << 16),
+                StartTicks = Stopwatch.GetTimestamp(),
+                Reserved0 = queueFullDropped
             };
 
             job = new ValidateFutureCommandEnvelopeJob
@@ -3876,9 +3966,13 @@ namespace Hecton8.Modding
             ulong elapsedNs = (ulong)((double)elapsedTicks * 1000000000.0d / Stopwatch.Frequency);
             ulong elapsedKernelTicks = (ulong)elapsedTicks;
             FutureCommandValidationStats telemetryStats = stats;
-            if (validationState.ThermalDropped != 0u)
-                telemetryStats.RejectionMask |= (uint)FutureCommandRejectReason.ThermalShed;
-            uint totalDropped = SaturatingAdd(stats.Dropped, validationState.ThermalDropped);
+            uint preValidationRejectionMask = validationState.Flags >> 16;
+            if (preValidationRejectionMask != 0u)
+                telemetryStats.RejectionMask |= preValidationRejectionMask;
+            uint queueFullDropped = validationState.Reserved0 > uint.MaxValue
+                ? uint.MaxValue
+                : (uint)validationState.Reserved0;
+            uint totalDropped = SaturatingAdd(stats.Dropped, SaturatingAdd(queueFullDropped, validationState.ThermalDropped));
             RecordTelemetry(
                 validationState.Frame,
                 stats.Incoming,
@@ -4512,9 +4606,19 @@ namespace Hecton8.Modding
                         }
                         return true;
 
+                    case FutureCommandOpcodes.AlterHealth:
+                    case FutureCommandOpcodes.AlterGravity:
+                        if (!math.all(math.isfinite(envelope.PayloadData)))
+                        {
+                            RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.InvalidPayload, FutureCommandSandboxConstants.FaultHashInvalidPayload);
+                            return false;
+                        }
+                        return true;
+
                     case FutureCommandOpcodes.FaunaAcousticStimulus:
                     case FutureCommandOpcodes.FaunaDamageStimulus:
-                        if (!math.all(math.isfinite(envelope.PayloadData)))
+                        if (!math.isfinite(envelope.PayloadData.x) ||
+                            !math.isfinite(envelope.PayloadData.y))
                         {
                             RejectEnvelope(in envelope, ref stats, FutureCommandRejectReason.InvalidPayload, FutureCommandSandboxConstants.FaultHashInvalidPayload);
                             return false;
@@ -4528,15 +4632,31 @@ namespace Hecton8.Modding
 
             private bool IsAllowedOpcode(uint opcodeHash)
             {
-                if (!OpcodeRecords.IsCreated || opcodeHash == 0u)
+                if (!OpcodeRecords.IsCreated || opcodeHash == 0u || OpcodeRecords.Length == 0)
                     return false;
 
                 int count = math.min(OpcodeRecordCount, OpcodeRecords.Length);
-                for (int i = 0; i < count; i++)
+                if (count <= 0)
+                    return false;
+
+                uint capacity = (uint)OpcodeRecords.Length;
+                uint mixed = MixOpcodeHash(opcodeHash);
+                uint start = IsPowerOfTwo((int)capacity)
+                    ? mixed & (capacity - 1u)
+                    : mixed % capacity;
+
+                for (int probe = 0; probe < OpcodeRecords.Length; probe++)
                 {
-                    FutureCommandOpcodeRecord record = OpcodeRecords[i];
-                    if (record.OpcodeHash == opcodeHash && (record.Flags & 1u) != 0u)
-                        return true;
+                    int index = (int)(start + (uint)probe);
+                    if (index >= OpcodeRecords.Length)
+                        index -= OpcodeRecords.Length;
+
+                    FutureCommandOpcodeRecord record = OpcodeRecords[index];
+                    if (record.OpcodeHash == opcodeHash)
+                        return (record.Flags & 1u) != 0u;
+
+                    if (record.OpcodeHash == 0u)
+                        return false;
                 }
 
                 return false;
@@ -4690,7 +4810,8 @@ namespace Hecton8.Modding
             {
                 double3 abs = math.abs(aup);
                 return math.all(math.isfinite(aup)) &&
-                       math.all(abs <= new double3(FutureCommandSandboxConstants.MaxAupMagnitudeMeters));
+                       math.all(abs <= new double3(FutureCommandSandboxConstants.MaxAupMagnitudeMeters)) &&
+                       math.abs(aup.y) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

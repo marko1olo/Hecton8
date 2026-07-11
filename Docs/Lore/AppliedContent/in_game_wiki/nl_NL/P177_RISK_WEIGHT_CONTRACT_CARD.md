@@ -9,7 +9,7 @@ locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Contractrisicogewichtkaart"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Contractrisicogewichtkaart
 
-NL LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+Een contractrisicogewichtkaart is een prijsblad voor claims. Zij kan een afdaling harder maken door pandmassa, stormtiming, monsterbewaring, blackoutroute, witness-hash-eisen en Deep-Reach-clausuledruk te wijzigen. Zij kan niet veranderen wie de operator is, wat in 2147 gebeurde, welke werkers bestonden of met welke uitrusting het pak begint. Een zwaardere kaart koopt een hogere mogelijke opbrengst door Black Keel of Recovery Compliance meer manieren te geven om die te weigeren.
 
 ## Scanner
 
-NL LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Claimgewichtkaart. Variabelen: pandmassa, stormvenster, monsterbewaring, routeblackout, witness-hash-eis, Deep-Reach-clausulelast. Incidentrecord en operatoridentiteit vergrendeld.
 
 ## Terminal
 
-NL LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+BLACK KEEL CONTRACTKAART
+Gewichtsvelden: pandmassa, storm-/orbitvenster, monsterbewaringsgraad, routeblackout, witness-hash-eis, quarantainedelay, Deep-Reach-clausulelast
+Vergrendelde velden: operatoridentiteit, incidentrecord, werknamen, zuurstofreserve, rompklasse, gereedschapsklasse
+Terugkeernotitie: hoger gewicht verhoogt betalingsblootstelling en herstelweigeringsvlak
 
 ## Audio
 
-NL LOC HOLD: The contract changes the cost, not the crime.
+De kaart verandert de rekening. Zij verandert niet wat daar beneden gebeurde.
 
 ## Field Note
 
-NL LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Een zwaardere kaart betekent minder genade in de clausules. Zij herschrijft de misdaad niet en leent je geen betere uitrusting.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/nl_NL. -->

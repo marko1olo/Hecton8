@@ -179,6 +179,28 @@ def assert_no_unguarded_route_bible_language(errors: list[str], path: Path) -> N
             fail(errors, f"{path}:{line_number}: unguarded ambiguous route-bible language: {line.strip()}")
 
 
+def mirror_matches_or_delegates(mirror: Path, primary: Path, primary_bytes: bytes) -> bool:
+    mirror_bytes = mirror.read_bytes()
+    if mirror_bytes == primary_bytes:
+        return True
+
+    text = mirror_bytes.decode("utf-8-sig", errors="replace")
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if len(lines) != 1:
+        return False
+
+    delegate_match = re.match(r"^\[DELEGATE\]:\s*(.+?)\s*$", lines[0])
+    if not delegate_match:
+        return False
+
+    raw_target = delegate_match.group(1).strip().strip("`").strip('"')
+    if not raw_target:
+        return False
+
+    target = resolve_reference(raw_target).resolve()
+    return target == primary.resolve()
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -225,8 +247,8 @@ def main() -> int:
 
     root_text = root_agents.read_bytes()
     for mirror in (codex_agents, github_agents):
-        if mirror.read_bytes() != root_text:
-            fail(errors, f"{mirror}: must byte-match root AGENTS.md or become an explicit shim")
+        if not mirror_matches_or_delegates(mirror, root_agents, root_text):
+            fail(errors, f"{mirror}: must byte-match root AGENTS.md or contain an explicit [DELEGATE]: path to root AGENTS.md")
 
     for path in (root_agents, routing, project_bibles):
         assert_contains(errors, path, "complete document")

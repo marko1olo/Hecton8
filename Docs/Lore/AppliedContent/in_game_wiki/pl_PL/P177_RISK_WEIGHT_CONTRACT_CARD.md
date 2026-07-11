@@ -9,7 +9,7 @@ locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Karta wagi ryzyka kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Karta wagi ryzyka kontraktu
 
-PL LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+Karta wagi ryzyka kontraktu jest arkuszem wyceny roszczenia. Może zaostrzyć zejście przez zmianę masy zastawu, czasu sztormu, depozytu próbki, trasy blackout, wymagań witness hash i presji klauzul Deep Reach. Nie może zmienić tego, kim jest operator, co stało się w 2147 roku, którzy pracownicy istnieli ani jaki sprzęt zaczyna w skafandrze. Cięższa karta kupuje wyższy możliwy zwrot, dodając Black Keel lub Recovery Compliance więcej dróg odmowy.
 
 ## Scanner
 
-PL LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Karta wagi roszczenia. Zmienne: masa zastawu, okno sztormu, depozyt próbki, blackout trasy, żądanie witness hash, obciążenie klauzul Deep Reach. Zapis incydentu i tożsamość operatora zablokowane.
 
 ## Terminal
 
-PL LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+KARTA KONTRAKTU BLACK KEEL
+Pola wagi: masa zastawu, okno sztorm/orbita, stopień depozytu próbki, blackout trasy, żądanie witness hash, opóźnienie kwarantanny, obciążenie klauzul Deep Reach
+Pola zablokowane: tożsamość operatora, zapis incydentu, nazwiska pracowników, rezerwa tlenu, klasa kadłuba, klasa narzędzi
+Notatka powrotu: wyższa waga zwiększa ekspozycję wypłaty i powierzchnię odmowy odzysku
 
 ## Audio
 
-PL LOC HOLD: The contract changes the cost, not the crime.
+Karta zmienia rachunek. Nie zmienia tego, co stało się tam na dole.
 
 ## Field Note
 
-PL LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Cięższa karta oznacza mniej litości w klauzulach. Nie przepisuje zbrodni i nie pożycza lepszego sprzętu.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/pl_PL. -->

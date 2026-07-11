@@ -9,7 +9,7 @@ locale: ru_RU
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Правило UI выбора dossier"
+title: "Реестр претензионных досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Правило UI выбора dossier
+# Реестр претензионных досье
 
-Правило UI выбора dossier задает, как replay knowledge выглядит для игрока.
+DR-902 превращает выбор досье в претензионную запись. Он сохраняет знание, слухи и юридическое давление, но оставляет аварийное снаряжение и факты мира вне файла.
 
 ## Scanner
 
-Dossier UI должен выбирать risk, а не inherited power.
+Реестр претензий DR-902. Активные досье раскрывают семьи слухов, записи исходов, давление залога, условия хранения, орбитальные/погодные пункты и подсказки порядка улик. Без наследования снаряжения.
 
 ## Terminal
 
-DOSSIER UI: показывать rumor families, ending records, lien pressure, weather/orbit risk, custody terms и evidence-order hints. Не показывать oxygen или hull upgrades.
+ФОРМА DEEP REACH DR-902
+Реестр: претензия по досье Marauder
+Активные поля: семья слухов, запись исхода, масса залога, условие хранения, орбитально-погодное окно, подсказка порядка улик
+Отклоненные поля: запас кислорода, класс корпуса, состояние оружия, перенос инвентаря
+Статус: только запись знания; аварийное снаряжение сбрасывается по каждому контракту
 
 ## Audio
 
-Ты сохраняешь подозрение, не более сильное тело.
+Папки хранят имена и плохие пункты договора. Более крепкий костюм они не выдают.
 
 ## Field Note
 
-Никакого permanent gear advantage в выборе dossier.
+Открыл папку — Black Keel уже выставляет цену. Старое подозрение бери с собой; легкие, корпус и инструменты оставь вне файла.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/ru_RU. -->

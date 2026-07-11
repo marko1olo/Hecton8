@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "بطاقة وزن خطر العقد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# بطاقة وزن خطر العقد
 
-AR LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+بطاقات وزن الخطر تغير العقد حول مسرح جريمة ثابت. تعدل الرهن والعهدة والتوقيت والتعتيم وضغط الإثبات من دون تغيير الهوية أو حقائق العالم أو المعدات الموروثة.
 
 ## Scanner
 
-AR LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+بطاقة وزن مطالبة. المتغيرات: كتلة رهن، نافذة عاصفة، عهدة عينة، تعتيم طريق، طلب witness hash، حمل بنود Deep Reach. سجل الحادث وهوية المشغل مقفلان.
 
 ## Terminal
 
-AR LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+بطاقة عقد BLACK KEEL
+حقول الوزن: كتلة رهن، نافذة عاصفة/مدار، درجة عهدة عينة، تعتيم طريق، طلب witness hash، تأخير حجر، حمل بنود Deep Reach
+حقول مقفلة: هوية المشغل، سجل الحادث، أسماء العمال، احتياطي أكسجين، تصنيف بدن، درجة أداة
+ملاحظة عودة: الوزن الأعلى يزيد تعرض الدفع وسطح رفض الاستعادة
 
 ## Audio
 
-AR LOC HOLD: The contract changes the cost, not the crime.
+البطاقة تغير الفاتورة. لا تغير ما حدث هناك تحت.
 
 ## Field Note
 
-AR LOC HOLD: Use weights that alter contract conditions, not canon truth.
+البطاقة الأثقل تعني رحمة أقل في البنود. لا تعيد كتابة الجريمة ولا تقرضك عتادا أفضل.
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/ar_SA. -->

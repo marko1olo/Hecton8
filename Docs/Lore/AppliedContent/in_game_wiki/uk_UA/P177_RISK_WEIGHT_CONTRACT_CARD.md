@@ -9,7 +9,7 @@ locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Картка вагового ризику контракту"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Картка вагового ризику контракту
 
-UA LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+Картка вагового ризику контракту — це претензійний лист ціни. Вона може зробити спуск жорсткішим через масу застави, час шторму, зберігання зразка, маршрутне затемнення, вимоги witness hash і тиск пунктів Deep Reach. Вона не може змінити особу оператора, події 2147 року, працівників, що існували, або стартове спорядження в костюмі. Важча картка купує більший можливий повернений дохід, додаючи Black Keel або Recovery Compliance більше способів відмовити.
 
 ## Scanner
 
-UA LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Картка ваги претензії. Змінні: маса застави, штормове вікно, зберігання зразка, маршрутне затемнення, вимога witness hash, навантаження пунктів Deep Reach. Запис інциденту й особа оператора заблоковані.
 
 ## Terminal
 
-UA LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+КАРТКА КОНТРАКТУ BLACK KEEL
+Поля ваги: маса застави, штормове/орбітальне вікно, клас зберігання зразка, маршрутне затемнення, вимога witness hash, затримка карантину, навантаження пунктів Deep Reach
+Заблоковані поля: особа оператора, запис інциденту, імена працівників, запас кисню, клас корпусу, клас інструмента
+Примітка повернення: більша вага підвищує експозицію виплати й поверхню відмови у відновленні
 
 ## Audio
 
-UA LOC HOLD: The contract changes the cost, not the crime.
+Картка змінює рахунок. Вона не змінює того, що сталося внизу.
 
 ## Field Note
 
-UA LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Важча картка означає менше милості в пунктах договору. Вона не переписує злочин і не позичає краще спорядження.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/uk_UA. -->

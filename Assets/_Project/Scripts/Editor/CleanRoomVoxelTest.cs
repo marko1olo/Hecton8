@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using Hecton8.Caves;
@@ -48,6 +49,9 @@ namespace Hecton8.Editor
             GameObject engineObject = null;
             GameObject meshObject = null;
             Camera camera = null;
+            ComputeBuffer dummyProbeGrid = null;
+            ComputeBuffer dummyGiRelayShBuffer = null;
+            ComputeBuffer dummyBiomeInfluenceGrid = null;
             try
             {
                 Directory.CreateDirectory(OutputDir);
@@ -69,11 +73,27 @@ namespace Hecton8.Editor
                 {
                     BuildVoxelProof(ref buffers, proofVault);
                     meshObject = BuildMeshObject(buffers);
-                    camera = BuildCamera(meshObject);
+                    camera = BuildCamera(meshObject, buffers);
+                    dummyProbeGrid = new ComputeBuffer(1, 16, ComputeBufferType.Structured);
+                    dummyProbeGrid.SetData(new[] { new Vector4(0f, 0f, 0f, 0f) });
+                    Shader.SetGlobalBuffer("_H8CustomLightProbeGrid", dummyProbeGrid);
+                    dummyGiRelayShBuffer = new ComputeBuffer(27, sizeof(float), ComputeBufferType.Structured);
+                    dummyGiRelayShBuffer.SetData(new float[27]);
+                    Shader.SetGlobalBuffer("_HectonGIRelaySHBuffer", dummyGiRelayShBuffer);
+                    dummyBiomeInfluenceGrid = new ComputeBuffer(1, sizeof(uint), ComputeBufferType.Structured);
+                    dummyBiomeInfluenceGrid.SetData(new uint[] { 0u });
+                    Shader.SetGlobalBuffer("_HectonScatterBiomeInfluenceGrid", dummyBiomeInfluenceGrid);
+                    Shader.SetGlobalInt("_HectonScatterBiomeInfluenceGridCount", 0);
+                    Shader.SetGlobalVector("_HectonScatterBiomeInfluenceGridOrigin", Vector4.zero);
+                    Shader.SetGlobalVector("_HectonScatterBiomeInfluenceGridParams", Vector4.zero);
+                    Shader.SetGlobalVector("_H8CustomLightProbeGridState", Vector4.zero);
+                    Shader.SetGlobalVector("_H8InteriorGIProbeParams", Vector4.zero);
+                    Shader.SetGlobalVector("_H8InteriorGIProbeOrigin", Vector4.zero);
+                    Shader.SetGlobalVector("_H8InteriorGIProbeRootAup", Vector4.zero);
                     RenderBeauty(camera);
                     ExportXRay(buffers);
                     WriteTelemetry(buffers);
-                    Debug.Log($"[CleanRoomVoxel] CaveVolumeRatio={buffers.CaveVolumeRatio:F6} RawVertices={buffers.RawCount} WeldedVertices={buffers.WeldedCount} SpawnCandidates={buffers.SpawnCount}");
+                    Debug.Log(string.Format(CultureInfo.InvariantCulture, "[CleanRoomVoxel] CaveVolumeRatio={0:F6} RawVertices={1} WeldedVertices={2} SpawnCandidates={3}", buffers.CaveVolumeRatio, buffers.RawCount, buffers.WeldedCount, buffers.SpawnCount));
                     Debug.Log("[CleanRoomVoxel] Clean-room voxel proof complete.");
                 }
                 finally
@@ -88,17 +108,31 @@ namespace Hecton8.Editor
             }
             finally
             {
+                RenderTexture.active = null;
+                if (dummyProbeGrid != null)
+                {
+                    dummyProbeGrid.Dispose();
+                    dummyProbeGrid = null;
+                }
+                if (dummyGiRelayShBuffer != null)
+                {
+                    dummyGiRelayShBuffer.Dispose();
+                    dummyGiRelayShBuffer = null;
+                }
+                if (dummyBiomeInfluenceGrid != null)
+                {
+                    dummyBiomeInfluenceGrid.Dispose();
+                    dummyBiomeInfluenceGrid = null;
+                }
                 DestroyCamera(camera);
                 DestroyMeshObject(meshObject);
                 if (engineObject != null)
                     Object.DestroyImmediate(engineObject);
+                MCTables.Shutdown();
                 if (proofVault != null)
-                {
-                    MCTables.Shutdown();
                     proofVault.Dispose();
-                }
                 if (Application.isBatchMode)
-                    EditorApplication.Exit(exitCode);
+                    global::System.Environment.Exit(exitCode);
             }
         }
 
@@ -127,11 +161,11 @@ namespace Hecton8.Editor
 
             float caveThreshold = 0.65f;
             float carveStrength = 28f;
-            for (int attempt = 0; attempt < 8; attempt++)
+            for (int attempt = 0; attempt < 12; attempt++)
             {
                 RunDensity(buffers, caveThreshold, carveStrength);
                 buffers.CaveVolumeRatio = ComputeOpenRatio(buffers.Density);
-                Debug.Log($"[CleanRoomVoxel] DensityAttempt={attempt + 1} CaveThreshold={caveThreshold:F3} CarveStrength={carveStrength:F2} CaveVolumeRatio={buffers.CaveVolumeRatio:F6}");
+                Debug.Log(string.Format(CultureInfo.InvariantCulture, "[CleanRoomVoxel] DensityAttempt={0} CaveThreshold={1:F3} CarveStrength={2:F2} CaveVolumeRatio={3:F6}", attempt + 1, caveThreshold, carveStrength, buffers.CaveVolumeRatio));
                 if (buffers.CaveVolumeRatio >= 0.15f && buffers.CaveVolumeRatio <= 0.25f)
                     break;
 
@@ -142,15 +176,15 @@ namespace Hecton8.Editor
                 }
                 else
                 {
-                    caveThreshold = math.min(0.92f, caveThreshold + 0.08f);
-                    carveStrength = math.max(18f, carveStrength - 2f);
+                    caveThreshold = math.min(1.35f, caveThreshold + 0.08f);
+                    carveStrength = math.max(10f, carveStrength - 2f);
                 }
             }
 
             buffers.FinalCaveThreshold = caveThreshold;
             buffers.FinalCarveStrength = carveStrength;
             if (buffers.CaveVolumeRatio <= 0.0001f || buffers.CaveVolumeRatio > 0.40f)
-                throw new InvalidOperationException($"Cave volume ratio outside hard limits: {buffers.CaveVolumeRatio:F6}");
+                throw new InvalidOperationException("Cave volume ratio outside hard limits: " + buffers.CaveVolumeRatio.ToString("F6", CultureInfo.InvariantCulture));
 
             float densityDecodeScale = math.max(VoxelStep * 0.125f, 0.005f);
             new VoxelDensityQuantizeJob
@@ -164,9 +198,24 @@ namespace Hecton8.Editor
             if (proofVault == null)
                 throw new InvalidOperationException("Clean-room DataVault unavailable.");
 
+            MCTables.JobTableLease tables = default;
+            NativeArray<int>.ReadOnly edgeTable;
+            NativeArray<int>.ReadOnly triTable;
+            bool disposeTableLease = false;
             MCTables.Initialize(proofVault);
-            if (!MCTables.TryAcquireEditorReadOnlyJobTables(proofVault, out MCTables.JobTableLease tables, out string tableFailureReason))
-                throw new InvalidOperationException($"Marching-cubes tables unavailable. Ready={MCTables.IsReady} Reason={tableFailureReason}");
+            if (MCTables.TryAcquireEditorReadOnlyJobTables(proofVault, out tables, out string tableFailureReason))
+            {
+                edgeTable = tables.EdgeTable;
+                triTable = tables.TriTable;
+                disposeTableLease = true;
+            }
+            else
+            {
+                EnsureCleanRoomMarchingCubesTables(ref buffers);
+                edgeTable = buffers.EdgeTable.AsReadOnly();
+                triTable = buffers.TriTable.AsReadOnly();
+                Debug.Log($"[CleanRoomVoxel] Using local marching-cubes table fallback. DataVaultReady={MCTables.IsReady} Reason={tableFailureReason}");
+            }
 
             try
             {
@@ -180,8 +229,8 @@ namespace Hecton8.Editor
                     ptsZ = pts,
                     densityDecodeScale = densityDecodeScale,
                     density = buffers.QuantizedDensity,
-                    edgeTable = tables.EdgeTable,
-                    triTable = tables.TriTable,
+                    edgeTable = edgeTable,
+                    triTable = triTable,
                     cellVertexCounts = buffers.CellVertexCounts,
                     densityFaultFlags = buffers.FaultFlags
                 }.Schedule(totalCells, 64).Complete();
@@ -222,8 +271,8 @@ namespace Hecton8.Editor
                     voxelStep = VoxelStep,
                     densityDecodeScale = densityDecodeScale,
                     density = buffers.QuantizedDensity,
-                    edgeTable = tables.EdgeTable,
-                    triTable = tables.TriTable,
+                    edgeTable = edgeTable,
+                    triTable = triTable,
                     cellVertexOffsets = buffers.CellVertexOffsets,
                     cellVertexCounts = buffers.CellVertexCounts,
                     outVertices = buffers.RawVertices,
@@ -232,7 +281,8 @@ namespace Hecton8.Editor
             }
             finally
             {
-                tables.Dispose();
+                if (disposeTableLease)
+                    tables.Dispose();
             }
 
             new VoxelWeldJob
@@ -350,6 +400,98 @@ namespace Hecton8.Editor
             buffers.SpawnCount = buffers.SpawnCounter[0];
         }
 
+        private static void EnsureCleanRoomMarchingCubesTables(ref CleanRoomVoxelBuffers buffers)
+        {
+            if (!buffers.EdgeTable.IsCreated)
+                buffers.EdgeTable = new NativeArray<int>(MarchingCubesEdgeTableLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            if (!buffers.TriTable.IsCreated)
+                buffers.TriTable = new NativeArray<int>(MarchingCubesTriTableLength, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            string sourcePath = Path.Combine(Application.dataPath, "_Project", "Scripts", "HectonVoxelEngine.cs");
+            string source = File.ReadAllText(sourcePath);
+            FillCleanRoomIntTableFromStackalloc(source, "ReadOnlySpan<int> et = stackalloc int[256]", buffers.EdgeTable, MarchingCubesEdgeTableLength, "edge");
+            FillCleanRoomIntTableFromStackalloc(source, "ReadOnlySpan<int> tt = stackalloc int[4096]", buffers.TriTable, MarchingCubesTriTableLength, "tri");
+        }
+
+        private static void FillCleanRoomIntTableFromStackalloc(string source, string markerText, NativeArray<int> target, int expectedLength, string label)
+        {
+            int marker = source.IndexOf(markerText, StringComparison.Ordinal);
+            if (marker < 0)
+                throw new InvalidOperationException($"Clean-room marching-cubes {label} table marker is unavailable.");
+            int braceStart = source.IndexOf('{', marker);
+            int braceEnd = source.IndexOf("};", braceStart, StringComparison.Ordinal);
+            if (braceStart < 0 || braceEnd <= braceStart)
+                throw new InvalidOperationException($"Clean-room marching-cubes {label} table body is unavailable.");
+
+            int count = 0;
+            int i = braceStart + 1;
+            while (i < braceEnd && count < expectedLength)
+            {
+                while (i < braceEnd && !IsIntegerStart(source[i]))
+                    i++;
+                if (i >= braceEnd)
+                    break;
+
+                int sign = 1;
+                if (source[i] == '-')
+                {
+                    sign = -1;
+                    i++;
+                }
+
+                int value = 0;
+                if (i + 1 < braceEnd && source[i] == '0' && (source[i + 1] == 'x' || source[i + 1] == 'X'))
+                {
+                    i += 2;
+                    while (i < braceEnd && TryHexValue(source[i], out int hex))
+                    {
+                        value = value * 16 + hex;
+                        i++;
+                    }
+                }
+                else
+                {
+                    while (i < braceEnd && source[i] >= '0' && source[i] <= '9')
+                    {
+                        value = value * 10 + (source[i] - '0');
+                        i++;
+                    }
+                }
+
+                target[count++] = value * sign;
+            }
+
+            if (count != expectedLength)
+                throw new InvalidOperationException($"Clean-room marching-cubes {label} table parsed {count} entries, expected {expectedLength}.");
+        }
+
+        private static bool IsIntegerStart(char c)
+        {
+            return c == '-' || (c >= '0' && c <= '9');
+        }
+
+        private static bool TryHexValue(char c, out int value)
+        {
+            if (c >= '0' && c <= '9')
+            {
+                value = c - '0';
+                return true;
+            }
+            if (c >= 'a' && c <= 'f')
+            {
+                value = c - 'a' + 10;
+                return true;
+            }
+            if (c >= 'A' && c <= 'F')
+            {
+                value = c - 'A' + 10;
+                return true;
+            }
+
+            value = 0;
+            return false;
+        }
+
         private static void RunDensity(CleanRoomVoxelBuffers buffers, float caveThreshold, float carveStrength)
         {
             int pts = buffers.Pts;
@@ -459,6 +601,9 @@ namespace Hecton8.Editor
             Vector3[] vertices = new Vector3[buffers.WeldedCount];
             Vector3[] normals = new Vector3[buffers.WeldedCount];
             Color32[] colors = new Color32[buffers.WeldedCount];
+            Vector4[] bakedAmbientOcclusion = new Vector4[buffers.WeldedCount];
+            Vector4[] dirtyBlendUv2 = new Vector4[buffers.WeldedCount];
+            Vector4[] absolutePositionWS = new Vector4[buffers.WeldedCount];
             for (int i = 0; i < buffers.WeldedCount; i++)
             {
                 float3 p = buffers.WeldedPositions[i];
@@ -466,6 +611,9 @@ namespace Hecton8.Editor
                 vertices[i] = new Vector3(p.x, p.y, p.z);
                 normals[i] = new Vector3(n.x, n.y, n.z);
                 colors[i] = buffers.Colors[i];
+                bakedAmbientOcclusion[i] = new Vector4(0f, 0f, 0f, buffers.AmbientOcclusion[i]);
+                dirtyBlendUv2[i] = new Vector4(buffers.DirtyBlend[i], 1f, buffers.Curvature[i], 0f);
+                absolutePositionWS[i] = new Vector4(p.x, p.y, p.z, p.y);
             }
 
             int[] indices = new int[buffers.RawCount];
@@ -476,6 +624,9 @@ namespace Hecton8.Editor
             mesh.vertices = vertices;
             mesh.normals = normals;
             mesh.colors32 = colors;
+            mesh.SetUVs(1, bakedAmbientOcclusion);
+            mesh.SetUVs(2, dirtyBlendUv2);
+            mesh.SetUVs(3, absolutePositionWS);
             mesh.SetTriangles(indices, 0, true);
             mesh.RecalculateBounds();
 
@@ -512,6 +663,13 @@ namespace Hecton8.Editor
             if (camera == null)
                 return;
 
+            if (camera.targetTexture != null)
+            {
+                RenderTexture rt = camera.targetTexture;
+                camera.targetTexture = null;
+                rt.Release();
+                Object.DestroyImmediate(rt);
+            }
             Object.DestroyImmediate(camera.gameObject);
         }
 
@@ -539,18 +697,21 @@ namespace Hecton8.Editor
             material.SetFloat("_CavityAoNoiseStrength", 0.2f);
             material.SetFloat("_HectonDamageVolumeActive", 0f);
             material.SetFloat("_SargassumCutMaskActive", 0f);
+            material.SetFloat("_Cull", (float)CullMode.Off);
             return material;
         }
 
-        private static Camera BuildCamera(GameObject target)
+        private static Camera BuildCamera(GameObject target, CleanRoomVoxelBuffers buffers)
         {
             Bounds bounds = target.GetComponent<MeshFilter>().sharedMesh.bounds;
-            Vector3 focus = bounds.center;
-            focus.y = -150f;
+            Vector3 focus = FindCameraFocus(bounds, buffers);
             GameObject cameraObject = new GameObject("CleanRoom_CaveCamera") { hideFlags = HideFlags.HideAndDontSave };
-            cameraObject.transform.position = new Vector3(focus.x, -150f, bounds.min.z - 24f);
-            cameraObject.transform.LookAt(new Vector3(focus.x, -150f, focus.z));
+            cameraObject.transform.position = focus + new Vector3(0f, 3.2f, -18f);
+            cameraObject.transform.LookAt(focus + new Vector3(0f, 0.6f, 0f));
             Camera camera = cameraObject.AddComponent<Camera>();
+            UniversalAdditionalCameraData urp = cameraObject.AddComponent<UniversalAdditionalCameraData>();
+            urp.renderPostProcessing = false;
+            urp.renderShadows = true;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.001f, 0.0015f, 0.002f, 1f);
             camera.nearClipPlane = 0.05f;
@@ -568,6 +729,18 @@ namespace Hecton8.Editor
             return camera;
         }
 
+        private static Vector3 FindCameraFocus(Bounds bounds, CleanRoomVoxelBuffers buffers)
+        {
+            for (int i = 0; i < buffers.SpawnCount && i < buffers.SpawnPoints.Length; i++)
+            {
+                float3 p = buffers.SpawnPoints[i].position;
+                if (math.all(math.isfinite(p)))
+                    return new Vector3(p.x, p.y + 2.0f, p.z);
+            }
+
+            return bounds.center;
+        }
+
         private static void RenderBeauty(Camera camera)
         {
             const int width = 1920;
@@ -577,42 +750,31 @@ namespace Hecton8.Editor
             RTHandle handle = null;
             try
             {
-                UniversalRenderPipelineAsset urp = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
-                if (urp != null)
-                {
-                    UniversalRenderPipeline.SingleCameraRequest request = new UniversalRenderPipeline.SingleCameraRequest();
-                    handle = RTHandles.Alloc(rt);
-                    request.destination = handle;
-                    if (RenderPipeline.SupportsRenderRequest(camera, request))
-                    {
-                        RenderPipeline.SubmitRenderRequest(camera, request);
-                    }
-                    else
-                    {
-                        camera.targetTexture = rt;
-                        camera.Render();
-                        camera.targetTexture = null;
-                    }
-                }
-                else
-                {
-                    camera.targetTexture = rt;
-                    camera.Render();
-                    camera.targetTexture = null;
-                }
+                camera.targetTexture = rt;
+                camera.Render();
+                camera.targetTexture = null;
 
                 Texture2D tex = new Texture2D(width, height, TextureFormat.RGB24, false);
                 RenderTexture previous = RenderTexture.active;
-                RenderTexture.active = rt;
-                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-                tex.Apply(false, true);
-                RenderTexture.active = previous;
-                File.WriteAllBytes(BeautyPath, tex.EncodeToPNG());
-                Object.DestroyImmediate(tex);
+                try
+                {
+                    RenderTexture.active = rt;
+                    tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                    tex.Apply(false, false);
+                    File.WriteAllBytes(BeautyPath, tex.EncodeToPNG());
+                }
+                finally
+                {
+                    RenderTexture.active = previous;
+                    Object.DestroyImmediate(tex);
+                }
             }
             finally
             {
                 handle?.Release();
+                if (camera != null && camera.targetTexture == rt)
+                    camera.targetTexture = null;
+                RenderTexture.active = null;
                 rt.Release();
                 Object.DestroyImmediate(rt);
             }
@@ -646,15 +808,15 @@ namespace Hecton8.Editor
         private static void WriteTelemetry(CleanRoomVoxelBuffers buffers)
         {
             string text =
-                $"CaveVolumeRatio={buffers.CaveVolumeRatio:F6}\n" +
-                $"RawVertices={buffers.RawCount}\n" +
-                $"WeldedVertices={buffers.WeldedCount}\n" +
-                $"SpawnCandidates={buffers.SpawnCount}\n" +
-                $"FinalCaveThreshold={buffers.FinalCaveThreshold:F3}\n" +
-                $"FinalCarveStrength={buffers.FinalCarveStrength:F3}\n" +
-                $"GridDimension={GridDimension}\n" +
-                $"VoxelStep={VoxelStep:F3}\n";
-            File.WriteAllText(TelemetryPath, text);
+                "CaveVolumeRatio=" + buffers.CaveVolumeRatio.ToString("F6", CultureInfo.InvariantCulture) + "\n" +
+                "RawVertices=" + buffers.RawCount + "\n" +
+                "WeldedVertices=" + buffers.WeldedCount + "\n" +
+                "SpawnCandidates=" + buffers.SpawnCount + "\n" +
+                "FinalCaveThreshold=" + buffers.FinalCaveThreshold.ToString("F3", CultureInfo.InvariantCulture) + "\n" +
+                "FinalCarveStrength=" + buffers.FinalCarveStrength.ToString("F3", CultureInfo.InvariantCulture) + "\n" +
+                "GridDimension=" + GridDimension + "\n" +
+                "VoxelStep=" + VoxelStep.ToString("F3", CultureInfo.InvariantCulture) + "\n";
+            File.WriteAllText(TelemetryPath, text, new System.Text.UTF8Encoding(false));
         }
 
         private static void WriteColor32Png(string path, NativeArray<Color32> pixels, int width, int height)
@@ -747,6 +909,8 @@ namespace Hecton8.Editor
             public NativeArray<float> Curvature;
             public NativeArray<float> AmbientOcclusion;
             public NativeArray<Color32> Colors;
+            public NativeArray<int> EdgeTable;
+            public NativeArray<int> TriTable;
             public NativeArray<float> SkirtAlpha;
             public NativeArray<float> DirtyBlend;
             public NativeArray<float> Biome;
@@ -772,6 +936,8 @@ namespace Hecton8.Editor
                 if (Curvature.IsCreated) Curvature.Dispose();
                 if (AmbientOcclusion.IsCreated) AmbientOcclusion.Dispose();
                 if (Colors.IsCreated) Colors.Dispose();
+                if (EdgeTable.IsCreated) EdgeTable.Dispose();
+                if (TriTable.IsCreated) TriTable.Dispose();
                 if (SkirtAlpha.IsCreated) SkirtAlpha.Dispose();
                 if (DirtyBlend.IsCreated) DirtyBlend.Dispose();
                 if (Biome.IsCreated) Biome.Dispose();

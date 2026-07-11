@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Unity.Collections;
 using Unity.Mathematics;
 
@@ -43,6 +44,7 @@ namespace Hecton8.SaveSystem
         private const int PendingEventCapacity = 16;
         private const int ListenerCapacity = 16;
         private const int MessageSlotCapacity = 16;
+        private const int StatusSlotCapacity = ManualSlotCount + 1;
         private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         public const int ManualSlotCount = 3;
         private const string Slot0Name = "slot_0";
@@ -91,6 +93,20 @@ namespace Hecton8.SaveSystem
             public void Clear()
             {
                 Listener = null;
+            }
+        }
+
+        private struct SaveStatusSlot
+        {
+            public global::Hecton8.Core.Contracts.Signals.SaveStatusSignal Status;
+            public uint Sequence;
+            public byte IsValid;
+
+            public void Clear()
+            {
+                Status = default;
+                Sequence = 0u;
+                IsValid = 0;
             }
         }
 
@@ -164,6 +180,8 @@ namespace Hecton8.SaveSystem
         private static readonly MessageSlot[] _messageSlots = new MessageSlot[MessageSlotCapacity];
         // COLD ALLOC: SaveEventPayload[16] - preserves event order when terminal backpressure must skip protected failure events - owner: SaveEvents
         private static readonly SaveEventPayload[] _eventEvictionScratch = new SaveEventPayload[PendingEventCapacity];
+        // COLD ALLOC: SaveStatusSlot[4] - deterministic current save/load status latch for manual slots plus unknown slot - owner: SaveEvents
+        private static readonly SaveStatusSlot[] _statusSlots = new SaveStatusSlot[StatusSlotCapacity];
         private static NativeQueue<SaveEventPayload> _pendingEvents;
         private static NativeQueue<SaveEventPayload> _nextFrameEvents;
         private static int _pendingEventsSentinelId;
@@ -397,6 +415,42 @@ namespace Hecton8.SaveSystem
             return !string.IsNullOrEmpty(message);
         }
 
+        public static void PublishCurrentStatus(in global::Hecton8.Core.Contracts.Signals.SaveStatusSignal status)
+        {
+            int slot = ResolveStatusSlotIndex(status.SlotHash);
+            if ((uint)slot >= StatusSlotCapacity)
+                slot = StatusSlotCapacity - 1;
+
+            ref SaveStatusSlot statusSlot = ref _statusSlots[slot];
+            unchecked
+            {
+                statusSlot.Sequence++;
+                if (statusSlot.Sequence == 0u)
+                    statusSlot.Sequence = 1u;
+            }
+
+            statusSlot.Status = status;
+            statusSlot.IsValid = 1;
+        }
+
+        public static bool TryGetCurrentStatus(uint slotHash, ref uint lastSeenSequence, out global::Hecton8.Core.Contracts.Signals.SaveStatusSignal status)
+        {
+            int slot = ResolveStatusSlotIndex(slotHash);
+            if ((uint)slot >= StatusSlotCapacity)
+                slot = StatusSlotCapacity - 1;
+
+            SaveStatusSlot statusSlot = _statusSlots[slot];
+            if (statusSlot.IsValid == 0 || statusSlot.Sequence == 0u || statusSlot.Sequence == lastSeenSequence)
+            {
+                status = default;
+                return false;
+            }
+
+            status = statusSlot.Status;
+            lastSeenSequence = statusSlot.Sequence;
+            return true;
+        }
+
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -425,6 +479,7 @@ namespace Hecton8.SaveSystem
             _lastQueueInitializationFailureTelemetryFrame = -1;
             _lastQueueReleaseFailureTelemetryFrame = -1;
             ClearUiFailureSnapshot();
+            ClearStatusSlots();
             _lastUiFailureSequence = 0u;
             _isDispatching = false;
 
@@ -1054,6 +1109,24 @@ namespace Hecton8.SaveSystem
                    expectedPayload.SlotHash == snapshotPayload.SlotHash &&
                    expectedPayload.MessageHash == snapshotPayload.MessageHash &&
                    expectedPayload.TimestampTicks == snapshotPayload.TimestampTicks;
+        }
+
+        private static int ResolveStatusSlotIndex(uint slotHash)
+        {
+            if (slotHash == Slot0Hash)
+                return 0;
+            if (slotHash == Slot1Hash)
+                return 1;
+            if (slotHash == Slot2Hash)
+                return 2;
+
+            return StatusSlotCapacity - 1;
+        }
+
+        private static void ClearStatusSlots()
+        {
+            for (int i = 0; i < _statusSlots.Length; i++)
+                _statusSlots[i].Clear();
         }
 
         private static bool TryEvictOldestQueuedEvent(

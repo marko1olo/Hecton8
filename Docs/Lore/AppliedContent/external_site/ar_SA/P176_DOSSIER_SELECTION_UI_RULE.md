@@ -9,7 +9,7 @@ locale: ar_SA
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "سجل مطالبة الملفات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# سجل مطالبة الملفات
 
-AR LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 يحول اختيار الملف إلى سجل مطالبة. يحفظ المعرفة والشائعات والضغط القانوني، ويبقي معدات البقاء وحقائق العالم خارج الملف.
 
 ## Scanner
 
-AR LOC HOLD: Dossier UI should choose risk, not inherited power.
+سجل مطالبة DR-902. الملفات النشطة تكشف عائلات شائعات، سجلات نهايات، ضغط رهن، شروط عهدة، بنود مدار/طقس وتلميحات ترتيب أدلة. لا توريث معدات.
 
 ## Terminal
 
-AR LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+نموذج DEEP REACH DR-902
+السجل: مطالبة ملف Marauder
+حقول نشطة: عائلة شائعة، سجل نهاية، كتلة رهن، شرط عهدة، نافذة مدار/طقس، تلميح ترتيب أدلة
+حقول مرفوضة: احتياطي أكسجين، تصنيف بدن، حالة سلاح، ترحيل مخزون
+الحالة: سجل معرفة فقط؛ معدات البقاء تعاد لكل عقد
 
 ## Audio
 
-AR LOC HOLD: You keep suspicion, not a stronger body.
+الملفات تحفظ الأسماء والبنود السيئة. لا تعطيك بدلة أقوى.
 
 ## Field Note
 
-AR LOC HOLD: No permanent gear advantage in dossier selection.
+افتح ملفا و Black Keel يضع له سعرا. احتفظ بالريبة القديمة؛ اترك الرئتين والبدن والأدوات خارج الملف.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/ar_SA. -->

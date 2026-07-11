@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 from pathlib import Path
 
 
@@ -149,7 +150,25 @@ def main() -> int:
 
     if args.check:
         current = normalize_text(OUTPUT.read_text(encoding="utf-8-sig")) if OUTPUT.is_file() else ""
-        return 0 if current == generated.rstrip("\n") else 1
+        expected = generated.rstrip("\n")
+        if current == expected:
+            return 0
+
+        print(f"{OUTPUT}: generated snapshot differs from live root docs")
+        diff = difflib.unified_diff(
+            current.splitlines(),
+            expected.splitlines(),
+            fromfile=str(OUTPUT),
+            tofile="generated",
+            lineterm="",
+            n=3,
+        )
+        for index, line in enumerate(diff):
+            if index >= 80:
+                print("... diff truncated; regenerate with Tools/Docs/BuildProjectRootBiblesCombined.py")
+                break
+            print(line)
+        return 1
 
     OUTPUT.write_text(generated, encoding="utf-8", newline="\n")
     return 0

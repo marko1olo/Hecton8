@@ -36,41 +36,23 @@ function Join-StarterPath([string]$BasePath, [string]$RelativePath) {
 }
 
 function Test-StarterPathExactCase([string]$BasePath, [string]$RelativePath, [bool]$RequireLeaf) {
-    $current = (Resolve-Path -LiteralPath $BasePath).Path
-    foreach ($segment in ($RelativePath.Replace('\','/') -split '/')) {
-        if ([string]::IsNullOrWhiteSpace($segment)) {
-            continue
-        }
-
-        if (-not (Test-Path -LiteralPath $current -PathType Container)) {
-            return $false
-        }
-
-        $exactChild = $null
-        foreach ($child in (Get-ChildItem -LiteralPath $current -Force)) {
-            if ([string]::Equals($child.Name, $segment, [System.StringComparison]::Ordinal)) {
-                $exactChild = $child
-                break
-            }
-        }
-
-        if ($null -eq $exactChild) {
-            return $false
-        }
-
-        $current = $exactChild.FullName
+    try {
+        Assert-H8PathExactCase $BasePath $RelativePath $RequireLeaf
+        return $true
+    } catch {
+        return $false
     }
-
-    if ($RequireLeaf) {
-        return Test-Path -LiteralPath $current -PathType Leaf
-    }
-
-    return Test-Path -LiteralPath $current -PathType Container
 }
 
 function Assert-NoReservedTopLevelCaseVariants {
     $reserved = @('Content','Docs','Generated','Graphs','Locales','Reference','Reports','Schemas','Tables','Tools','.vscode')
     foreach ($child in (Get-ChildItem -LiteralPath $Root -Force -Directory)) {
+        try {
+            Assert-NoFilesystemLinks $child
+        } catch {
+            Fail $_.Exception.Message
+        }
+
         foreach ($reservedName in $reserved) {
             if ([string]::Equals($child.Name, $reservedName, [System.StringComparison]::OrdinalIgnoreCase) -and
                 -not [string]::Equals($child.Name, $reservedName, [System.StringComparison]::Ordinal)) {
@@ -82,16 +64,22 @@ function Assert-NoReservedTopLevelCaseVariants {
 
 function Require-File([string]$RelativePath) {
     $path = Join-StarterPath $Root $RelativePath
-    if (-not (Test-StarterPathExactCase $Root $RelativePath $true)) {
-        Fail ('Missing required file: ' + $RelativePath)
+    try {
+        Assert-H8PathExactCase $Root $RelativePath $true
+        Assert-NoFilesystemLinks (Get-Item -LiteralPath $path -Force)
+    } catch {
+        Fail $_.Exception.Message
     }
     return $path
 }
 
 function Require-Directory([string]$RelativePath) {
     $path = Join-StarterPath $Root $RelativePath
-    if (-not (Test-StarterPathExactCase $Root $RelativePath $false)) {
-        Fail ('Missing required directory: ' + $RelativePath)
+    try {
+        Assert-H8PathExactCase $Root $RelativePath $false
+        Assert-NoFilesystemLinks (Get-Item -LiteralPath $path -Force)
+    } catch {
+        Fail $_.Exception.Message
     }
 }
 
@@ -414,7 +402,12 @@ function Validate-AssetManifest([object]$AssetDocument, [long]$MaxAssetBytes) {
             Fail ($label + ' file is missing: ' + $relativePath)
         }
 
-        $fileInfo = Get-Item -LiteralPath $fullPath
+        $fileInfo = Get-Item -LiteralPath $fullPath -Force
+        try {
+            Assert-NoFilesystemLinks $fileInfo
+        } catch {
+            Fail $_.Exception.Message
+        }
         if ([long]$fileInfo.Length -gt 4194304) {
             Fail ($label + ' file exceeds 4194304 bytes: ' + $relativePath)
         }

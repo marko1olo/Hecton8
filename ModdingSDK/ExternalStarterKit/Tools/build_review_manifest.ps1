@@ -100,41 +100,55 @@ Invoke-RequiredTool { & $validator -Root $rootFull } 'starter validation'
 
 $rootPrefix = $rootFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
 $files = New-Object 'System.Collections.Generic.List[object]'
-$seenReviewPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
-$seenReviewCaseFoldPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)
+$reviewRelativePaths = New-Object 'System.Collections.Generic.List[string]'
 $totalBytes = [long]0
 
-Get-ChildItem -LiteralPath $rootFull -Recurse -File | ForEach-Object {
-    $fullPath = [System.IO.Path]::GetFullPath($_.FullName)
+try {
+    $sourceFiles = Get-H8SafeSourceFiles $rootFull -ExcludeGeneratedOrTransient
+} catch {
+    Fail $_.Exception.Message
+}
+
+foreach ($sourceFile in $sourceFiles) {
+    try {
+        Assert-NoFilesystemLinks $sourceFile
+    } catch {
+        Fail $_.Exception.Message
+    }
+
+    $fullPath = [System.IO.Path]::GetFullPath($sourceFile.FullName)
     $relative = $fullPath.Substring($rootPrefix.Length).Replace('\','/')
     if (Test-ReservedTopLevelCaseVariant $relative) {
         Fail ('Reserved starter top-level folder casing mismatch in review source: ' + $relative)
     }
-
-    $excluded = Test-ReviewOutputPath $relative
-    if (-not $excluded) {
-        if ($files.Count -ge $MaxReviewFiles) {
-            Fail ('Review manifest source file limit exceeded: ' + $MaxReviewFiles)
-        }
-        if ($_.Length -gt $MaxReviewFileBytes) {
-            Fail ('Review file exceeds max bytes: ' + $relative)
-        }
-        $totalBytes += [long]$_.Length
-        if ($totalBytes -gt $MaxReviewTotalBytes) {
-            Fail ('Review manifest total byte limit exceeded: ' + $MaxReviewTotalBytes)
-        }
-        if ($seenReviewPaths.ContainsKey($relative) -or $seenReviewCaseFoldPaths.ContainsKey($relative)) {
-            Fail ('Review manifest source path duplicate or case-fold duplicate: ' + $relative)
-        }
-        $seenReviewPaths[$relative] = $true
-        $seenReviewCaseFoldPaths[$relative] = $true
-        $hash = Get-FileHash -LiteralPath $fullPath -Algorithm SHA256
-        [void]$files.Add([pscustomobject][ordered]@{
-            Path = $relative
-            Bytes = $_.Length
-            Sha256 = $hash.Hash.ToLowerInvariant()
-        })
+    if (Test-ReviewOutputPath $relative -or (Test-H8GeneratedOrTransientPath $relative)) {
+        continue
     }
+
+    if ($files.Count -ge $MaxReviewFiles) {
+        Fail ('Review manifest source file limit exceeded: ' + $MaxReviewFiles)
+    }
+    if ($sourceFile.Length -gt $MaxReviewFileBytes) {
+        Fail ('Review file exceeds max bytes: ' + $relative)
+    }
+    $totalBytes += [long]$sourceFile.Length
+    if ($totalBytes -gt $MaxReviewTotalBytes) {
+        Fail ('Review manifest total byte limit exceeded: ' + $MaxReviewTotalBytes)
+    }
+
+    [void]$reviewRelativePaths.Add($relative)
+    $hash = Get-FileHash -LiteralPath $fullPath -Algorithm SHA256
+    [void]$files.Add([pscustomobject][ordered]@{
+        Path = $relative
+        Bytes = $sourceFile.Length
+        Sha256 = $hash.Hash.ToLowerInvariant()
+    })
+}
+
+try {
+    Assert-NoCaseFoldDuplicates $reviewRelativePaths.ToArray()
+} catch {
+    Fail $_.Exception.Message
 }
 
 $orderedFiles = @($files | Sort-Object -Property Path)

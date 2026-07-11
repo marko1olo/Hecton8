@@ -218,9 +218,10 @@ namespace Hecton8.World
             _ecosystemDirector = null;
             _playerContext = null;
             _submarineState = null;
-            CompleteRadarJob(forceComplete: true);
+            ForceCompleteRadarJobForTeardown();
             ReleaseRadarPendingJob(ref _radarJob);
             ReleaseScanJobBufferPins();
+            ReleaseGprVaultBuffers(_dataVault, allowCompactionFence: true);
             _voxelSdfReadModel = null;
             _voxelSdfReadLeaseModel = null;
 
@@ -451,6 +452,9 @@ namespace Hecton8.World
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
+
+            if (AreGprHandlesCreated())
+                return true;
 
             _gprHitsHandle = vault.EnsureGenerationHandle<float3>(
                 BufferID.GroundRadarHits,
@@ -948,6 +952,22 @@ namespace Hecton8.World
                 RetireRadarPendingJobForReuse(ref _radarJob);
                 _radarJobScheduled = 0;
                 _radarJobHandle = default;
+            }
+        }
+
+        private void ForceCompleteRadarJobForTeardown()
+        {
+            if (_radarJobScheduled == 0)
+                return;
+
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                CompleteRadarJob(forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
             }
         }
 
@@ -1540,6 +1560,47 @@ namespace Hecton8.World
             TryApplyPendingDataVaultRebindCold();
         }
 
+        private bool ReleaseGprVaultBuffers(IDataVault vault, bool allowCompactionFence = false)
+        {
+            if (vault == null || (!allowCompactionFence && vault.IsCompactionFenceActive))
+                return false;
+
+            bool released = true;
+            released &= ReleaseGprVaultBuffer(vault, ref _gprHitsHandle, BufferID.GroundRadarHits);
+            released &= ReleaseGprVaultBuffer(vault, ref _gprSignalStrengthHandle, BufferID.GroundRadarSignalStrength);
+            released &= ReleaseGprVaultBuffer(vault, ref _gprAgeSecondsHandle, BufferID.GroundRadarAgeSeconds);
+            released &= ReleaseGprVaultBuffer(vault, ref _gprOreTypesHandle, BufferID.GroundRadarOreTypes);
+            released &= ReleaseGprVaultBuffer(vault, ref _gprPingGpuHandle, BufferID.GroundRadarPingGpu);
+            released &= ReleaseGprVaultBuffer(vault, ref _gprCountersHandle, BufferID.GroundRadarCounters);
+            released &= ReleaseGprVaultBuffer(vault, ref _maxSignalStrengthHandle, BufferID.GroundRadarMaxSignalStrength);
+            released &= ReleaseGprVaultBuffer(vault, ref _telemetryRingHandle, BufferID.GroundRadarTelemetryRing);
+            _gprReadSnapshotsValid = false;
+            _activeGprPings = 0;
+            _highestSignalStrength = 0f;
+            _telemetryWriteIndex = 0;
+            QueueIndirectArgsClear();
+            return released;
+        }
+
+        private static bool ReleaseGprVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            if (vault == null || !IsGroundRadarVaultHandle(in handle, expectedBufferId))
+            {
+                handle = default;
+                return true;
+            }
+
+            vault.TryUnlockBuffer(expectedBufferId, SystemID.WorldStreaming);
+            if (!vault.ReleaseBuffer(in handle))
+                return false;
+
+            handle = default;
+            return true;
+        }
+
         private bool TryApplyPendingDataVaultRebindCold()
         {
             if (_radarJobScheduled != 0)
@@ -1548,7 +1609,26 @@ namespace Hecton8.World
             if (!_pendingDataVaultRebind)
                 return _dataVault != null;
 
-            _dataVault = _pendingDataVault;
+            IDataVault oldVault = _dataVault;
+            IDataVault nextVault = _pendingDataVault;
+            if (ReferenceEquals(oldVault, nextVault))
+            {
+                _pendingDataVault = null;
+                _pendingDataVaultRebind = false;
+                return _dataVault != null;
+            }
+
+            if ((oldVault != null && oldVault.IsCompactionFenceActive) ||
+                (nextVault != null && nextVault.IsCompactionFenceActive))
+            {
+                return false;
+            }
+
+            ReleaseScanJobBufferPins();
+            if (oldVault != null && !ReleaseGprVaultBuffers(oldVault))
+                return false;
+
+            _dataVault = nextVault;
             _pendingDataVault = null;
             _pendingDataVaultRebind = false;
             ClearGprVaultDescriptors();

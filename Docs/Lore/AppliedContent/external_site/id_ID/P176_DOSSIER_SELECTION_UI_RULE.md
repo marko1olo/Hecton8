@@ -9,7 +9,7 @@ locale: id_ID
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Registri Klaim Dosier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Registri Klaim Dosier
 
-ID LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 mengubah pemilihan dosier menjadi catatan klaim. Ia menyimpan pengetahuan, rumor, dan tekanan hukum sambil menjaga peralatan bertahan hidup dan fakta dunia di luar berkas.
 
 ## Scanner
 
-ID LOC HOLD: Dossier UI should choose risk, not inherited power.
+Registri klaim DR-902. Dosier aktif membuka keluarga rumor, catatan akhir, tekanan lien, syarat kustodi, klausul orbit/cuaca, dan petunjuk urutan bukti. Tidak ada warisan peralatan.
 
 ## Terminal
 
-ID LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+FORMULIR DEEP REACH DR-902
+Registri: klaim dosier Marauder
+Bidang aktif: keluarga rumor, catatan akhir, massa lien, syarat kustodi, jendela orbit/cuaca, petunjuk urutan bukti
+Bidang ditolak: cadangan oksigen, rating hull, status senjata, bawaan inventaris
+Status: catatan pengetahuan saja; peralatan bertahan hidup direset per kontrak
 
 ## Audio
 
-ID LOC HOLD: You keep suspicion, not a stronger body.
+Map menyimpan nama dan klausul buruk. Map tidak memberimu suit yang lebih kuat.
 
 ## Field Note
 
-ID LOC HOLD: No permanent gear advantage in dossier selection.
+Buka satu map dan Black Keel memberi harga. Simpan kecurigaan lama; paru-paru, hull, dan alat tetap di luar berkas.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/id_ID. -->

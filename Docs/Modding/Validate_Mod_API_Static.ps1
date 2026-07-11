@@ -2138,9 +2138,10 @@ $externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace =
 $externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates =
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Assert-StandardReviewOutput') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Reports/review_manifest.json') -and
-    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
-    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('seenReviewCaseFoldPaths') -and
-    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('source path duplicate or case-fold duplicate') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Get-H8SafeSourceFiles') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Assert-NoFilesystemLinks') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Assert-NoCaseFoldDuplicates') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('reviewRelativePaths') -and
     $externalStarterKitContractText.Contains('case-fold duplicate source paths')
 $externalStarterKitSubmissionPackageUsesCaseExactSourceEntries =
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$MaxSubmissionPackageEntryBytes = 4194304') -and
@@ -2148,9 +2149,10 @@ $externalStarterKitSubmissionPackageUsesCaseExactSourceEntries =
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('ReviewOutput path must be exactly Reports/review_manifest.json') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Test-Sha256Hex') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Get-NumericLong') -and
-    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
-    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('seenCaseFoldEntries') -and
-    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('source path duplicate or case-fold duplicate') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Assert-H8PathExactCase') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Assert-NoFilesystemLinks') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Assert-NoCaseFoldDuplicates') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Review file SHA-256 does not match current source file') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains(".EndsWith('.zip', [System.StringComparison]::Ordinal)") -and
     $externalStarterKitContractText.Contains('case-exact submission package builder')
 $externalStarterKitValidatorRequiresExactPathCasing =
@@ -2171,8 +2173,11 @@ $externalStarterKitReviewManifestUsesExactReservedOutputFolders =
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains("StartsWith('Generated/', [System.StringComparison]::Ordinal)") -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains("StartsWith('Reports/', [System.StringComparison]::Ordinal)") -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Output path must be exactly Reports/review_manifest.json') -and
-    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Reserved starter top-level folder casing mismatch in review source') -and
-    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Reserved starter top-level folder casing mismatch in review file path') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Test-H8GeneratedOrTransientPath') -and
+    $externalStarterKitTemplateStrictJsonIoSource.Contains('$script:H8GeneratedOrTransientPathNames') -and
+    $externalStarterKitTemplateStrictJsonIoSource.Contains("'node_modules'") -and
+    $externalStarterKitTemplateStrictJsonIoSource.Contains("'System Volume Information'") -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Review manifest must not package generated or transient path') -and
     $externalStarterKitContractText.Contains('review and submission builders exclude only exact `Generated/` and `Reports/` output folders')
 $externalStarterKitWritesIdentityTool =
     $moddingSdkHubSource.Contains('Tools", "set_mod_identity.ps1"') -and

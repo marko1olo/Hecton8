@@ -9,7 +9,7 @@ locale: fr_FR
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Carte de poids de risque contractuel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Carte de poids de risque contractuel
 
-FR LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+Les cartes de poids de risque varient le contrat autour d'une scène de crime fixe. Elles ajustent privilège, garde, timing, blackout et pression de preuve sans changer identité, faits du monde ou équipement hérité.
 
 ## Scanner
 
-FR LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Carte de poids de réclamation. Variables : masse de privilège, fenêtre de tempête, garde d'échantillon, blackout de route, demande de witness hash, charge de clauses Deep Reach. Enregistrement d'incident et identité opérateur verrouillés.
 
 ## Terminal
 
-FR LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+CARTE DE CONTRAT BLACK KEEL
+Champs de poids : masse de privilège, fenêtre tempête/orbite, grade de garde d'échantillon, blackout de route, demande de witness hash, délai de quarantaine, charge de clauses Deep Reach
+Champs verrouillés : identité opérateur, enregistrement d'incident, noms des travailleurs, réserve d'oxygène, classe de coque, grade d'outil
+Note de retour : un poids plus haut augmente l'exposition de paiement et les surfaces de refus de récupération
 
 ## Audio
 
-FR LOC HOLD: The contract changes the cost, not the crime.
+La carte change la facture. Elle ne change pas ce qui s'est passé en bas.
 
 ## Field Note
 
-FR LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Une carte plus lourde laisse moins de clémence dans les clauses. Elle ne réécrit pas le crime et ne prête pas de meilleur équipement.
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/fr_FR. -->

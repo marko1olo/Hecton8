@@ -9,7 +9,7 @@ locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "כרטיס משקל סיכון חוזה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: rtl
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# כרטיס משקל סיכון חוזה
 
-HE LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+כרטיס משקל סיכון חוזה הוא גיליון תמחור תביעה. הוא יכול להקשות ירידה באמצעות שינוי מסת שעבוד, תזמון סערה, משמורת דגימה, ניתוב האפלה, דרישות witness hash ולחץ סעיפי Deep Reach. הוא לא יכול לשנות מי המפעיל, מה קרה ב-2147, אילו עובדים היו קיימים או איזה ציוד מתחיל בחליפה. כרטיס כבד יותר קונה החזר אפשרי גבוה יותר בכך שהוא מוסיף ל-Black Keel או Recovery Compliance עוד דרכי דחייה.
 
 ## Scanner
 
-HE LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+כרטיס משקל תביעה. משתנים: מסת שעבוד, חלון סערה, משמורת דגימה, האפלת נתיב, דרישת witness hash, עומס סעיפי Deep Reach. רשומת אירוע וזהות מפעיל נעולות.
 
 ## Terminal
 
-HE LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+כרטיס חוזה BLACK KEEL
+שדות משקל: מסת שעבוד, חלון סערה/מסלול, דרגת משמורת דגימה, האפלת נתיב, דרישת witness hash, עיכוב הסגר, עומס סעיפי Deep Reach
+שדות נעולים: זהות מפעיל, רשומת אירוע, שמות עובדים, עתודת חמצן, דירוג גוף, דרגת כלי
+הערת חזרה: משקל גבוה מגדיל חשיפת תשלום ומשטח דחיית חילוץ
 
 ## Audio
 
-HE LOC HOLD: The contract changes the cost, not the crime.
+הכרטיס משנה את החשבון. הוא לא משנה את מה שקרה שם למטה.
 
 ## Field Note
 
-HE LOC HOLD: Use weights that alter contract conditions, not canon truth.
+כרטיס כבד יותר אומר פחות רחמים בסעיפים. הוא לא כותב מחדש את הפשע ולא משאיל ציוד טוב יותר.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/he_IL. -->

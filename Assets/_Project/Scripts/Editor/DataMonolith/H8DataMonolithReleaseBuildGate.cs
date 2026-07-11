@@ -64,9 +64,18 @@ namespace Hecton8.Editor.Validation
             result.TargetName = target.ToString();
             result.TargetHasProductionMonolithLoader = IsSupportedProductionMonolithTarget(target);
             result.TargetHasNativeMonolithPal = IsNativeMonolithPalTarget(target);
-            if (!developmentBuild && !result.TargetHasNativeMonolithPal)
-                result.UnsupportedPlatformPalFindingCount++;
             StringBuilder findingsJson = new StringBuilder(32768);
+            if (!developmentBuild && !result.TargetHasNativeMonolithPal)
+            {
+                result.UnsupportedPlatformPalFindingCount++;
+                AppendFinding(
+                    findingsJson,
+                    ref result,
+                    "BUILD_TARGET:" + result.TargetName,
+                    0,
+                    "unsupportedStaticDataMonolithNativePal",
+                    "Release target has no proven native static_data.h8bin PAL. Production monolith loader support without native PAL is release-blocking.");
+            }
 
             string root = Path.Combine(projectRoot, RuntimeRoot.Replace('/', Path.DirectorySeparatorChar));
             if (!Directory.Exists(root))
@@ -427,7 +436,7 @@ namespace Hecton8.Editor.Validation
             report.AppendLine("  \"blockingFindingCount\": " + result.BlockingFindingCount + ",");
             report.AppendLine("  \"unsupportedPlatformLoaderFindingCount\": " + result.UnsupportedPlatformLoaderFindingCount + ",");
             report.AppendLine("  \"unsupportedPlatformPalFindingCount\": " + result.UnsupportedPlatformPalFindingCount + ",");
-            report.AppendLine("  \"unsupportedPlatformPalIsBlocking\": false,");
+            report.AppendLine("  \"unsupportedPlatformPalIsBlocking\": true,");
             report.AppendLine("  \"allowedPersistenceFindingCount\": " + result.AllowedPersistenceFindingCount + ",");
             report.AppendLine("  \"writtenFindingLimit\": " + MaxFindingsWritten + ",");
             report.AppendLine("  \"writtenFindingCount\": " + result.WrittenFindingCount + ",");
@@ -476,9 +485,6 @@ namespace Hecton8.Editor.Validation
             if (result.TargetHasNativeMonolithPal)
                 return "NATIVE_MONOLITH_PAL_PRESENT";
 
-            if (result.TargetHasProductionMonolithLoader)
-                return "NO_NATIVE_PAL_PRODUCTION_LOADER_PRESENT";
-
             return result.DevelopmentBuild
                 ? "DEVELOPMENT_TARGET_NOT_RELEASE_PROOF"
                 : "FAIL_NO_NATIVE_MONOLITH_PAL";
@@ -496,13 +502,13 @@ namespace Hecton8.Editor.Validation
         private static bool IsAllowedRuntimePersistencePath(string relativePath)
         {
             string normalized = relativePath.Replace('\\', '/');
-            return string.Equals(normalized, "Assets/_Project/Scripts/SaveThumbnailSystem.cs", StringComparison.OrdinalIgnoreCase) ||
+            return string.Equals(normalized, "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(normalized, "Assets/_Project/Scripts/SaveThumbnailSystem.cs", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalized, "Assets/_Project/Scripts/Core/RebindingManager.cs", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalized, "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalized, "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs", StringComparison.OrdinalIgnoreCase) ||
                    string.Equals(normalized, "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", StringComparison.OrdinalIgnoreCase) ||
-                   string.Equals(normalized, "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs", StringComparison.OrdinalIgnoreCase);
+                   string.Equals(normalized, "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string StripLineComment(string line)

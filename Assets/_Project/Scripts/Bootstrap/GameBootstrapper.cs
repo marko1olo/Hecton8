@@ -140,6 +140,11 @@ namespace Hecton8.Bootstrap
         private const string DontDestroyOnLoadSceneName = "DontDestroyOnLoad";
         private const string HectonHeadlessCommandLineArg = "-h8headless";
         private const string HeadlessCommandLineArg = "-headless";
+        private const string AllowMissingDataMonolithEditorCommandLineArg = "-h8AllowMissingStaticDataMonolith";
+        private const string AllowMissingDataMonolithEditorEnvironmentVariable = "H8_ALLOW_MISSING_STATIC_DATA_MONOLITH_EDITOR";
+#if UNITY_EDITOR
+        private const string AllowMissingDataMonolithEditorPrefsKey = "Hecton8.AllowMissingStaticDataMonolith.EditorOnly";
+#endif
         private const string TierLowAddressableLabel = "Tier_Low";
         private const string TierHighAddressableLabel = "Tier_High";
         private const int OptionalServiceTimeoutMilliseconds = 5000;
@@ -2809,11 +2814,8 @@ namespace Hecton8.Bootstrap
 
         private static async Awaitable<bool> InitializeBootstrapDataMonolithAsync(uint appVersionHash, CancellationToken ct)
         {
-#if UNITY_EDITOR
-            bool failIfMissing = false;
-#else
             bool failIfMissing = true;
-#endif
+            bool allowEditorMissingOverride = IsEditorMissingDataMonolithOverrideEnabled();
             global::Hecton8.Data.H8DataBlobLoadResult result = default;
             for (int attempt = 0; attempt < DataMonolithBootstrapMaxAttempts; attempt++)
             {
@@ -2837,19 +2839,22 @@ namespace Hecton8.Bootstrap
                     return true;
                 }
 
-#if UNITY_EDITOR
                 if (result.Status == global::Hecton8.Data.H8DataBlobLoadStatus.Missing)
                 {
-                    _lastDataMonolithBootstrapStatus = ResolveDataMonolithStatusLabel(result.Status);
-                    return true;
-                }
-#else
-                if (result.Status == global::Hecton8.Data.H8DataBlobLoadStatus.Missing)
-                {
-                    _lastDataMonolithBootstrapStatus = ResolveDataMonolithStatusLabel(result.Status);
+                    _lastDataMonolithBootstrapStatus = allowEditorMissingOverride
+                        ? "missing_editor_local_override"
+                        : ResolveDataMonolithStatusLabel(result.Status);
+                    if (allowEditorMissingOverride)
+                    {
+                        RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+                        RuntimeDiagnosticsTrace.WriteEvent(
+                            "bootstrap.datamonolith.editor_missing_override",
+                            _lastDataMonolithBootstrapStatus);
+                        return true;
+                    }
+
                     return false;
                 }
-#endif
 
                 if (ct.IsCancellationRequested ||
                     result.Status != global::Hecton8.Data.H8DataBlobLoadStatus.ReadFailed)
@@ -2867,6 +2872,34 @@ namespace Hecton8.Bootstrap
                 "bootstrap.datamonolith.failed",
                 _lastDataMonolithBootstrapStatus);
             return false;
+        }
+
+        private static bool IsEditorMissingDataMonolithOverrideEnabled()
+        {
+#if UNITY_EDITOR
+            if (UnityEditor.EditorPrefs.GetBool(AllowMissingDataMonolithEditorPrefsKey, false))
+                return true;
+
+            string environmentValue = global::System.Environment.GetEnvironmentVariable(AllowMissingDataMonolithEditorEnvironmentVariable);
+            if (IsExplicitTrue(environmentValue))
+                return true;
+
+            string[] arguments = global::System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < arguments.Length; i++)
+            {
+                if (string.Equals(arguments[i], AllowMissingDataMonolithEditorCommandLineArg, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+#endif
+            return false;
+        }
+
+        private static bool IsExplicitTrue(string value)
+        {
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                   string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(value, "on", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string ResolveDataMonolithStatusLabel(global::Hecton8.Data.H8DataBlobLoadStatus status)

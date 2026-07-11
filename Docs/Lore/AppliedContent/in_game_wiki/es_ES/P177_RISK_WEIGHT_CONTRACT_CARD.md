@@ -9,7 +9,7 @@ locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "Tarjeta de peso de riesgo contractual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# Tarjeta de peso de riesgo contractual
 
-ES LOC HOLD: Risk cards let replay be harsher or stranger without becoming a roguelite upgrade ladder.
+Una tarjeta de peso de riesgo contractual es una hoja de precio de reclamación. Puede endurecer un descenso cambiando masa de gravamen, momento de tormenta, custodia de muestra, enrutado de apagón, requisitos de witness hash y presión de cláusulas Deep Reach. No puede cambiar quién es el operador, qué ocurrió en 2147, qué trabajadores existieron ni qué equipo empieza en el traje. Una tarjeta más pesada compra un retorno posible más alto al añadir más formas de rechazo para Black Keel o Recovery Compliance.
 
 ## Scanner
 
-ES LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+Tarjeta de peso de reclamación. Variables: masa de gravamen, ventana de tormenta, custodia de muestra, apagón de ruta, demanda de witness hash, carga de cláusulas Deep Reach. Registro del incidente e identidad del operador bloqueados.
 
 ## Terminal
 
-ES LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+TARJETA DE CONTRATO BLACK KEEL
+Campos de peso: masa de gravamen, ventana tormenta/orbita, grado de custodia de muestra, apagón de ruta, demanda de witness hash, demora de cuarentena, carga de cláusulas Deep Reach
+Campos bloqueados: identidad del operador, registro del incidente, nombres de trabajadores, reserva de oxígeno, clase de casco, grado de herramienta
+Nota de retorno: más peso aumenta exposición de pago y superficie de denegación de recuperación
 
 ## Audio
 
-ES LOC HOLD: The contract changes the cost, not the crime.
+La tarjeta cambia la factura. No cambia lo que pasó ahí abajo.
 
 ## Field Note
 
-ES LOC HOLD: Use weights that alter contract conditions, not canon truth.
+Una tarjeta más pesada deja menos piedad en las cláusulas. No reescribe el crimen ni te presta mejor equipo.
 
 <!-- In-Game Wiki; generated from P177_RISK_WEIGHT_CONTRACT_CARD/es_ES. -->

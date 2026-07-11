@@ -9,7 +9,7 @@ locale: de_DE
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Dossier Selection UI Rule"
+title: "Dossier-Anspruchsregister"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,28 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Dossier Selection UI Rule
+# Dossier-Anspruchsregister
 
-DE LOC HOLD: Dossier Selection UI Rule defines how replay knowledge appears to players.
+DR-902 macht die Dossierwahl zu einem Anspruchsdatensatz. Wissen, Gerüchte und Rechtsdruck bleiben erhalten; Überlebensausrüstung und Weltfakten bleiben außerhalb der Akte.
 
 ## Scanner
 
-DE LOC HOLD: Dossier UI should choose risk, not inherited power.
+DR-902 Anspruchsregister. Aktive Dossiers zeigen Gerüchtefamilien, Enddatensätze, Pfanddruck, Verwahrbedingungen, Orbit-/Wetterklauseln und Hinweise zur Beweisreihenfolge. Keine Ausrüstungsvererbung.
 
 ## Terminal
 
-DE LOC HOLD: DOSSIER UI: show rumor families, ending records, lien pressure, weather/orbit risk, custody terms and evidence-order hints. Do not show oxygen or hull upgrades.
+DEEP REACH FORMULAR DR-902
+Register: Marauder-Dossieranspruch
+Aktive Felder: Gerüchtefamilie, Enddatensatz, Pfandmasse, Verwahrbedingung, Orbit-/Wetterfenster, Hinweis zur Beweisreihenfolge
+Gesperrte Felder: Sauerstoffreserve, Hüllenklasse, Waffenstatus, Inventarübertrag
+Status: Wissensdatensatz; Überlebensausrüstung wird pro Vertrag zurückgesetzt
 
 ## Audio
 
-DE LOC HOLD: You keep suspicion, not a stronger body.
+Mappen behalten Namen und schlechte Klauseln. Sie geben dir keinen stärkeren Anzug.
 
 ## Field Note
 
-DE LOC HOLD: No permanent gear advantage in dossier selection.
+Öffnest du eine Mappe, bepreist Black Keel sie. Behalte den alten Verdacht; Lungen, Hülle und Werkzeuge bleiben aus der Akte.
 
 <!-- External Site; generated from P176_DOSSIER_SELECTION_UI_RULE/de_DE. -->

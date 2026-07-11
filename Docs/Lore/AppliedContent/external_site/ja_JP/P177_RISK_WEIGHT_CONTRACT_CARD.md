@@ -9,7 +9,7 @@ locale: ja_JP
 surface: external_site
 source_voice: Website Public
 spoiler_tier: 0
-title: "Risk Weight Contract Card"
+title: "契約リスク重量カード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,24 +17,27 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# Risk Weight Contract Card
+# 契約リスク重量カード
 
-JP LOC HOLD: Risk Weight Contract Card defines replay contract knobs.
+リスク重量カードは固定された犯罪現場の周囲で契約を変える。リーエン、保管、時刻、遮断、証明圧を調整するが、身元、世界事実、継承装備は変えない。
 
 ## Scanner
 
-JP LOC HOLD: Risk should be continuous pressure, not a binary difficulty switch.
+請求重量カード。変数: リーエン質量、嵐ウィンドウ、サンプル保管、ルート遮断、witness hash 要求、Deep Reach 条項負荷。事故記録と操作者身元は固定。
 
 ## Terminal
 
-JP LOC HOLD: RISK CARD: lien weight, storm window, sample custody, route blackout, witness hash demand and Deep Reach clause pressure can scale. World truth and player identity do not.
+BLACK KEEL 契約カード
+重量欄: リーエン質量、嵐/軌道ウィンドウ、サンプル保管等級、ルート遮断、witness hash 要求、検疫遅延、Deep Reach 条項負荷
+固定欄: 操作者身元、事故記録、作業者名、酸素予備、船体等級、工具等級
+帰還注記: 重量上昇は支払い露出と回収拒否面を増やす
 
 ## Audio
 
-JP LOC HOLD: The contract changes the cost, not the crime.
+カードは請求書を変える。下で起きたことは変えない。
 
 ## Field Note
 
-JP LOC HOLD: Use weights that alter contract conditions, not canon truth.
+重いカードほど条項の猶予は少ない。犯罪を書き換えず、良い装備も貸さない。
 
 <!-- External Site; generated from P177_RISK_WEIGHT_CONTRACT_CARD/ja_JP. -->

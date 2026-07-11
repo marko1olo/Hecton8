@@ -1,0 +1,8 @@
+CaveVolumeRatio=0.231381
+RawVertices=658872
+WeldedVertices=108652
+SpawnCandidates=286
+FinalCaveThreshold=1.130
+FinalCarveStrength=16.000
+GridDimension=64
+VoxelStep=3.000
