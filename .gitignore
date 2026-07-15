@@ -223,3 +223,9 @@ CheckSplat.cs
 secrets.json
 
 keys.json
+
+.env*
+
+secrets.json
+
+keys.json
