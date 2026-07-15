@@ -217,3 +217,9 @@ pr_summary.json
 CheckSplat.exe
 alphamap_check.txt
 CheckSplat.cs
+
+.env*
+
+secrets.json
+
+keys.json
