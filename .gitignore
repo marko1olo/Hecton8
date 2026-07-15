@@ -217,3 +217,38 @@ pr_summary.json
 CheckSplat.exe
 alphamap_check.txt
 CheckSplat.cs
+
+# ============================================================================
+# Root scratch/diagnostic artifacts (kept out of the repo — regenerated locally)
+# ============================================================================
+# Unity / render / setup run logs dropped at repo root
+/RenderLog*.txt
+/SetupGrid_Log.txt
+/unity_*_log.txt
+/sweep_log.txt
+/log_new.txt
+# PR / merge / audit report snapshots
+/open_prs.json
+/merge_results.json
+/grouped_prs_report.json
+/integration_audit_report.json
+/pr.json
+/pr_body.txt
+/pr_desc.txt
+/pr_description.txt
+# One-off dumps and probe outputs
+/scene_mats.txt
+/shader_dump.txt
+/srp_check.txt
+/cam_color.txt
+/generated_mat.txt
+/terrain_mat_dump2.txt
+/cube_test.txt
+/done.txt
+/SlopeTestResult.txt
+# Runtime probe screenshots + committed native binaries at root
+/SphereTest.png
+/terrain_runtime_*.png
+/CheckMagenta.*
+# Source-file backup dumps
+/*.cs.txt

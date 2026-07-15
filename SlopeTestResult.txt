@@ -1,5 +1,0 @@
-Heights: min=-4389.40, max=620.00, avg=-1269.85, delta=5009.40
-Histogram: 7936, 27127, 76638, 167216, 99286, 61292, 51402, 106152, 344445, 58506
-Slopes: min=0.00, max=74.87, avg=23.04
-Over 60 degrees: 0.68%
-Under 10 degrees: 17.51%

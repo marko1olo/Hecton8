@@ -1,7 +1,0 @@
-Shader: Hecton8/URP/Terrain_TextureArray
-_TerrainBaseMapArray: null
-_TerrainNormalMapArray: null
-_TerrainMaskMapArray: null
-_Control1: null
-_Control2: null
-Keywords: 
