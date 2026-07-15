@@ -7981,6 +7981,7 @@ namespace Hecton8.Physics
         private static bool TryResolveRuntimeWaterLevelY(float candidateWaterLevelY, out float waterLevelY)
         {
             if (math.isfinite(candidateWaterLevelY) &&
+                math.abs(candidateWaterLevelY) > 0.0001f &&
                 math.abs(candidateWaterLevelY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterLevelY = candidateWaterLevelY;

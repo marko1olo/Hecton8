@@ -113,7 +113,7 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-29980)]
     public sealed class GameBootstrapper : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
-        private static bool HectonForceSandboxScene = true;
+        private static bool HectonForceSandboxScene = false;
 
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";

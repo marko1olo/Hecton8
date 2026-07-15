@@ -5693,6 +5693,18 @@ namespace Hecton8.Core
         /// <returns>True when an event queue may dispatch one payload this frame.</returns>
         public static bool TryConsumeLateFrameEventDispatch()
         {
+            return TryReserveLateFrameEventDispatches(1);
+        }
+
+        /// <summary>
+        /// Atomically reserves multiple deferred event dispatch slots from the current LateUpdate budget.
+        /// </summary>
+        /// <returns>True when all requested payloads may dispatch this frame.</returns>
+        public static bool TryReserveLateFrameEventDispatches(int dispatchCount)
+        {
+            if (dispatchCount <= 0)
+                return true;
+
             if (!_lateFrameEventBudgetActive)
                 return true;
 
@@ -5711,9 +5723,9 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (_lateFrameEventDispatchBudget > 0)
+            if (_lateFrameEventDispatchBudget >= dispatchCount)
             {
-                _lateFrameEventDispatchBudget--;
+                _lateFrameEventDispatchBudget -= dispatchCount;
                 return true;
             }
 

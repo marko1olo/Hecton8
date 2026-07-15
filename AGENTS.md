@@ -169,6 +169,12 @@ Naming defaults:
 
 Do not invent new prefixes, folders, manager APIs, tick overloads, service names, or route names without local source proof and justification.
 
+## Absolute Standards (The "Zero Mocks" Rule)
+
+[RULE] NO boilerplate. NO placeholders. NO `// TODO`. NO mock interfaces.
+Every line produced by ANY agent MUST be production-ready, mathematically pure, Burst-compiled C# or URP HLSL.
+Zero tolerance for algorithmic laziness (e.g., unnormalized splat weights, heavy noise calculations inside hot loops, ignored Data-Oriented Design rules).
+
 ## Concrete Project Contracts
 
 These contracts are always-on guardrails because they prevent agents from forgetting old root-law clauses or inventing APIs. Live source still wins on exact signatures, but only after reading the owner file, not guessing.
@@ -181,7 +187,9 @@ Core runtime contracts include `IUpdatable`, `ITickable`, `IFixedTickable`, `IPo
 
 Dispatcher registration is source-owned. Current code uses `GlobalRegistry.TryRegisterUpdatable`, `TryRegisterFixedTickable`, `TryRegisterSlowTickable`, `TryRegisterColdTickable`, `TryRegisterLateFrameTickable`, `TryRegisterPostFixedTickable`, corresponding unregister methods, and `PriorityLayer` lanes. `GameTickManager` still exists for legacy tick lists and diagnostics. Do not invent `RegisterTickable`, new priority layers, tick groups, or overloads without source proof.
 
-Save/persistence is source-owned by `SaveManager.cs`, `SaveEvents.cs`, `persistence.md`, and matching mandates. First-party save is binary/checksummed/delta-oriented, uses manual slots `slot_0`, `slot_1`, `slot_2`, primary `.sav`, backup `.sav.bak`, temp `.sav.tmp`, `ISaveable` registration, save/load priority ordering, checksum verification, backup fallback, and `SaveDataMigration`. Do not add Easy Save 3, JSON save, BinaryFormatter, direct `.sav` writes, or save during scene transitions. Save failures must raise the current `SaveEvents` route and reach UI/telemetry where applicable.
+Save/persistence is source-owned by `SaveManager.cs`, `SaveEvents.cs`, `persistence.md`, and matching mandates. First-party save is binary/checksummed/delta-oriented, uses manual slots `slot_0`, `slot_1`, `slot_2`, primary `.sav`, backup `.sav.bak`, temp `.sav.tmp`, `ISaveable` registration, save/load priority ordering, checksum verification, backup fallback, and `SaveDataMigration`. Do not add Easy Save 3, JSON save, BinaryFormatter, direct `.sav` writes, or save during scene transitions. Save failures must raise the current `SaveEvents` route and reach UI/telemetry where applicable. Managed-collections with dynamic allocations (e.g., `Dictionary<string, T>` or `HashSet<string>`) in the root structures of `SaveData.cs` are banned; serialization must rely on `ISerializationCallbackReceiver` and parallel flat lists.
+
+Streaming/import and Player Spawning: To prevent falling through async-generated voxel terrain, spawner/KCC logic must execute a Kinematic Arrest Gate. The player must remain suspended (`IsSuspended = true`, gravity/velocity zero, input locked, screen blacked out) until `WorldStreamingDirector` broadcasts `WorldChunkPhysicsBakedSignal` for the spawning coordinate's AUP chunk. Time-based coroutine timeouts for loading are banned.
 
 Event/signal contracts are not string-RPC contracts. Current first-party hot broadcasts use typed unmanaged `SignalBus<T>` lanes. Legacy static event lanes such as `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `ScanEvents`, `ModuleStatusEvents`, `FlashlightEvents`, and `PDAEvents` are fixed-capacity/NativeQueue-style bridge lanes only where current source proves them. `HectonEventBus` is for mod/API/cold managed isolation. Do not create string event names or single-use EventIDs.
 
@@ -243,7 +251,7 @@ Streaming/import defaults: heavy terrain, ocean, caves, generated asset families
 
 [FORBID] GC allocations in gameplay hot paths. Hot paths include Tick, Update, LateUpdate, FixedUpdate, render cadence, input cadence, UI HUD cadence, gameplay signals, physics query cadence, save staging cadence, GPU upload cadence, and repeated per-frame editor/play loops.
 
-[FORBID] Hot-path LINQ, string concat/interpolation, `ToString`, `Enum.ToString`, `Enum.Parse`, uncached `GetComponent`, `GetComponents<T>()` allocation, scene search, `GameObject.Find`, `FindObjectOfType`, `FindObjectsOfType`, `Camera.main`, `Resources.Load`, `renderer.material`, `renderer.materials`, `mesh.vertices`, `mesh.normals`, `mesh.triangles`, `Input.touches`, `SendMessage`, `BroadcastMessage`, reflection, coroutines, runtime exceptions for gameplay flow, or delegate/lambda creation.
+[FORBID] Hot-path LINQ, string concat/interpolation, `ToString` (including HUD text formatting in `Update()` like `O2.ToString() + "%"` — must use reactive subscriptions and `ZString` or preallocated `char[]` buffers), `Enum.ToString`, `Enum.Parse`, uncached `GetComponent`, `GetComponents<T>()` allocation, scene search, `GameObject.Find`, `FindObjectOfType`, `FindObjectsOfType`, `Camera.main`, `Resources.Load`, `renderer.material`, `renderer.materials`, `mesh.vertices`, `mesh.normals`, `mesh.triangles`, `Input.touches`, `SendMessage`, `BroadcastMessage`, reflection, coroutines, runtime exceptions for gameplay flow, or delegate/lambda creation.
 
 [REQ] Use cached owner interfaces, injected dependencies, fixed-capacity buffers, spans/char arrays for HUD text, preallocated NonAlloc buffers only for strict synchronous one-off physics queries, and job/Burst batch paths for primary expensive work.
 
@@ -304,7 +312,9 @@ Use these defaults unless a current route bible, mandate, or live source owner p
 
 [RULE] Prefer scoped checks before full builds: targeted source reads, `rg`, static analyzers, or narrow project/asmdef compile only when they answer the current task. Full solution builds, player builds, restore, clean, `--no-incremental`, and Unity reimport require explicit current-task need or an assigned proof gate.
 
-[REQ] Heavy proof actions must back off after a blocked preflight. Wait for load to clear or stop with the exact blocker; do not retry in a tight loop. After two blocked attempts over unchanged state, report the blocker instead of polling.
+[REQ] Heavy proof actions must back off after a blocked preflight. Wait for load to clear or stop with the exact blocker; do not retry in a tight loop. After two blocked attempts over unchanged state, report the blocker instead of polling. Prior to any heavy compilation/build/import task, execute a process preflight to stop/clear any hanging `dotnet`, `csc.exe`, Unity, or MSBuild processes: `powershell.exe -Command "Get-Process Unity,dotnet,csc,msbuild -ErrorAction SilentlyContinue | Stop-Process -Force"`.
+
+[REQ] Batchmode Compile Validation: Exit Code 0 in the IDE does not constitute compile validation. You must invoke the batchmode architecture validator: `Unity.exe -batchmode -quit -executeMethod Hecton8.Editor.BootstrapArchitectureValidator.ValidateBootstrapArchitecture` and scan the resulting log file to ensure zero CSxxxx errors.
 
 [REQ] Heavy commands must be reported with exact command, target, timestamp, exit code, and warning/error count. If skipped by a build gate, final chat or batch log must name the gate reason and keep compile/import/player readiness at `PENDING VERIFICATION`.
 
@@ -390,6 +400,12 @@ Tiny doc edits, narrow typo fixes, and targeted non-runtime text changes do not 
 
 [REQ] Subagents inherit HECTON-8 law, but they do not become authority. The primary agent remains responsible for selecting subagent scope, merging evidence-backed findings, and verifying final claims.
 
+[RULE] Team Hierarchy & Operational Mandate:
+- YOU (The CTO): Act as the Enforcer and Auditor. You control the agents, review their code surgically, criticize, and reject garbage. If a subagent cuts a corner, simplifies logic improperly, or hallucinates success despite architectural flaws, expose the mathematical failure immediately and order a strict rewrite.
+- Claude Opus: The Elite AI Architect. Used strictly for critical, complex math (Burst/HLSL/ECS).
+- Gemini / Antigravity: The Workhorse AI. Smart but prone to corner-cutting and "hacky" solutions. Requires your paranoid oversight.
+
+
 ## Orchestration
 
 [REQ] If and only if acting as local orchestrator, batch dispatcher, controller, task-file generator, GUI operator, external-agent process operator, or explicit standalone multi-agent wave controller, read `HECTON8_ORCHESTRATOR.md`.
@@ -463,6 +479,12 @@ During work, conduct a self-audit for:
 
 [RULE] Atomic File Delete Rule: Before ANY automated Unity batchmode test or render run, all `.png` diagnostic artifacts and `.log` files in the output directory must be physically deleted using `Remove-Item -Force`. This prevents hallucinatory visual checks against old screenshots.
 
-[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic.
+[RULE] The Hollow System Ban (Mock Data Trap): Do not write "hollow" systems. The words `TODO`, `NotImplementedException`, `Mock`, and `Fake` are BANNED in implementation logic. Do not write facades that return `true` with a `Debug.Log` instead of actual logic. If you cannot write the full integration, write a Pure C# mathematical function that works entirely, with no mock logic. Every line produced by any agent must be production-ready, mathematically pure, Burst-compiled C# or URP HLSL.
+
+[RULE] The Paranoia Doctrine (Systemic Doubt): Before approving any architectural rewrite, execution plan, or trusting a reconnaissance report, the agent must perform:
+1. Global System Census: Execute a codebase search (`grep`/`Select-String`) for duplicate or competing systems before modifying code.
+2. Execution Chain Verification: Audit the call stack. Do not assume a system/method is active just because it exists in a file. Verify who calls it.
+3. Historical Cross-Referencing: If project docs mention a specific math/architectural pattern, verify it is still present in the current codebase before modifying. If missing, flag the discrepancy immediately.
+
 
 [RULE] Test-Driven Logic Verification (No Dead Variables): Avoid "Logical Hallucinations" where you write complex math (e.g., `radiationDamage`) but forget to apply it to the actual state. For every new mechanical calculation, you MUST generate an EditMode test (e.g., `Assert.AreEqual(expected, Calculate(...))`) to mathematically prove the variable is consumed and works correctly.

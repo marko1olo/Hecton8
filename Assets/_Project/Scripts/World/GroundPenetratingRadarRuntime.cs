@@ -29,6 +29,7 @@ namespace Hecton8.World
         private const uint GprReturnHash = 0x47505252u; // GPRR
         private const uint TelemetryFaultFlag = 1u << 31;
         private const uint TelemetryPublishDropFlag = 1u << 30;
+        private const int GprSignalDispatchSlotsPerSweep = 2;
         private const uint GroundRadarProceduralVertexCount = 6u;
         private const int GroundRadarIndirectArgsSizeBytes = 16;
         private const int BlackBoxDumpHeaderBytes = 8;
@@ -221,7 +222,7 @@ namespace Hecton8.World
             ForceCompleteRadarJobForTeardown();
             ReleaseRadarPendingJob(ref _radarJob);
             ReleaseScanJobBufferPins();
-            ReleaseGprVaultBuffers(_dataVault, allowCompactionFence: true);
+            bool gprVaultBuffersReleased = ReleaseGprVaultBuffersInPostSimulationSwapWindow(_dataVault);
             _voxelSdfReadModel = null;
             _voxelSdfReadLeaseModel = null;
 
@@ -232,17 +233,20 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _gprArgsBufferB);
             _activeGprPingBuffer = null;
             _activeGprArgsBuffer = null;
-            _gprHitsHandle = default;
-            _gprSignalStrengthHandle = default;
-            _gprAgeSecondsHandle = default;
-            _gprOreTypesHandle = default;
-            _gprPingGpuHandle = default;
-            _gprCountersHandle = default;
-            _maxSignalStrengthHandle = default;
-            _telemetryRingHandle = default;
-            _dataVault = null;
-            _pendingDataVault = null;
-            _pendingDataVaultRebind = false;
+            if (gprVaultBuffersReleased)
+            {
+                _gprHitsHandle = default;
+                _gprSignalStrengthHandle = default;
+                _gprAgeSecondsHandle = default;
+                _gprOreTypesHandle = default;
+                _gprPingGpuHandle = default;
+                _gprCountersHandle = default;
+                _maxSignalStrengthHandle = default;
+                _telemetryRingHandle = default;
+                _dataVault = null;
+                _pendingDataVault = null;
+                _pendingDataVaultRebind = false;
+            }
             _blackBoxDumpSnapshotCount = 0;
             _blackBoxDumpSnapshotCursor = 0;
             _gprReadSnapshotsValid = false;
@@ -1017,15 +1021,16 @@ namespace Hecton8.World
             }
 
             bool hasTelemetryFault = !math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(highestSignalStrength);
-            WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, hasTelemetryFault ? TelemetryFaultFlag : 0u);
+            uint telemetryFlags = hasTelemetryFault ? TelemetryFaultFlag : 0u;
+            if (addedCount > 0 && !TryPublishGprSignals(frameId, highestSignalStrength))
+                telemetryFlags |= TelemetryPublishDropFlag;
+
+            WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, telemetryFlags);
             ReportOreScannerSweepTelemetry(pending.Flags, oreAddedCount, frameId);
             if (hasTelemetryFault)
             {
                 DumpBlackBox();
             }
-
-            if (addedCount > 0)
-                PublishGprSignals(frameId, highestSignalStrength);
         }
 
         private void ReportOreScannerSweepTelemetry(uint pendingFlags, int addedCount, uint frameId)
@@ -1415,13 +1420,46 @@ namespace Hecton8.World
             return _fallbackFrameId;
         }
 
-        private void PublishGprSignals(uint frameId, float highestStrength)
+        private static bool TryReserveLateFrameEventDispatchSlots(int slotCount)
+        {
+            if (slotCount <= 0)
+                return true;
+
+            if (SystemDispatcher.TryReserveLateFrameEventDispatches(slotCount))
+                return true;
+
+            IncrementSignalPushDropCount(slotCount);
+            SystemDispatcher.MarkLateFrameEventDispatchDeferred();
+            return false;
+        }
+
+        private static void IncrementSignalPushDropCount(int dropCount)
+        {
+            for (int i = 0; i < dropCount; i++)
+            {
+                int current = Volatile.Read(ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount);
+                while (current < int.MaxValue)
+                {
+                    int next = current + 1;
+                    int observed = Interlocked.CompareExchange(ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount, next, current);
+                    if (observed == current)
+                        break;
+
+                    current = observed;
+                }
+            }
+        }
+
+        private bool TryPublishGprSignals(uint frameId, float highestStrength)
         {
             float clampedStrength = math.saturate(highestStrength);
             if (!TryResolveRuntimeAup(_lastProbeOrigin, out AbsoluteUniversePosition positionAup))
-                return;
+                return false;
 
-            SignalBus<AcousticPingSignal>.TryPushTracked(new AcousticPingSignal
+            if (!TryReserveLateFrameEventDispatchSlots(GprSignalDispatchSlotsPerSweep))
+                return false;
+
+            bool acousticPublished = SignalBus<AcousticPingSignal>.TryPushTracked(new AcousticPingSignal
             {
                 PositionAup = positionAup,
                 RadiusMeters = scanRadiusMeters,
@@ -1431,7 +1469,7 @@ namespace Hecton8.World
                 Flags = 1
             }, ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount);
 
-            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
+            bool toolPublished = SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
             {
                 ToolHash = GprSourceHash,
                 TargetHash = GprReturnHash,
@@ -1442,6 +1480,8 @@ namespace Hecton8.World
                 State = GprReturnState,
                 Flags = 1
             }, ref s_x001GroundPenetratingRadarRuntimeSignalPushDropCount);
+
+            return acousticPublished && toolPublished;
         }
 
         private static bool TryResolveRuntimeAup(float3 runtimePosition, out AbsoluteUniversePosition positionAup)
@@ -1560,6 +1600,22 @@ namespace Hecton8.World
             TryApplyPendingDataVaultRebindCold();
         }
 
+        private bool ReleaseGprVaultBuffersInPostSimulationSwapWindow(IDataVault vault)
+        {
+            if (vault == null)
+                return true;
+
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                return ReleaseGprVaultBuffers(vault);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
+        }
+
         private bool ReleaseGprVaultBuffers(IDataVault vault, bool allowCompactionFence = false)
         {
             if (vault == null || (!allowCompactionFence && vault.IsCompactionFenceActive))
@@ -1625,7 +1681,7 @@ namespace Hecton8.World
             }
 
             ReleaseScanJobBufferPins();
-            if (oldVault != null && !ReleaseGprVaultBuffers(oldVault))
+            if (oldVault != null && !ReleaseGprVaultBuffersInPostSimulationSwapWindow(oldVault))
                 return false;
 
             _dataVault = nextVault;

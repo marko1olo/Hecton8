@@ -2775,6 +2775,11 @@ namespace Hecton8.Core
         bool TryGetMovementStressRuntimeState(out PlayerMovementStressRuntimeState state);
 
         /// <summary>
+        /// Reads the latest owner-published effort/load snapshot without synchronizing scene state.
+        /// </summary>
+        bool TryGetEffortLoadRuntimeState(out PlayerEffortLoadRuntimeState state);
+
+        /// <summary>
         /// Reads the latest owner-published survival snapshot without synchronizing scene state.
         /// </summary>
         bool TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState state);

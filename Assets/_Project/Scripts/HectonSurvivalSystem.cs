@@ -1164,9 +1164,9 @@ namespace Hecton8.Gameplay
 
         private void DrainPassiveEnergy(float dt)
         {
-            float weightFactor = 1f + weight * 0.005f;
+            float effortLoadMetabolicFactor = ResolveEffortLoadEnergyMetabolicMultiplier();
             float temperatureAdjustedConsumptionRate = stats.EnergyConsumptionRate * Hecton8.PureLogic.Systems.SuitBatteryThermalEfficiencyCalculator.Compute(_environmentTemperature, stats.EnergyConsumptionRate);
-            energy = math.max(0f, energy - temperatureAdjustedConsumptionRate * weightFactor * dt);
+            energy = math.max(0f, energy - temperatureAdjustedConsumptionRate * effortLoadMetabolicFactor * dt);
         }
 
         private void ApplyPressureDamage(float dt)
@@ -1196,7 +1196,9 @@ namespace Hecton8.Gameplay
             if (stats == null)
                 return 0f;
 
-            return math.max(0f, stats.EnergyConsumptionRate) * math.max(0f, _movementStaminaDrainMultiplier);
+            return math.max(0f, stats.EnergyConsumptionRate) *
+                   math.max(0f, _movementStaminaDrainMultiplier) *
+                   ResolveEffortLoadEnergyMetabolicMultiplier();
         }
 
         private void RefreshSurvivalStatusMask(uint seedStatusMask = 0u)
@@ -1784,6 +1786,20 @@ namespace Hecton8.Gameplay
             if (_playerMovement == null || stats == null)
                 return;
 
+            if (TryResolveEffortLoadSnapshot(out PlayerEffortLoadRuntimeState state))
+            {
+                if (Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ShouldTriggerCriticalStaminaFailure(
+                        state.LoadRatio,
+                        state.Stamina01,
+                        state.CriticalEncumbranceRatio,
+                        state.CriticalStaminaFailureThreshold01))
+                {
+                    _playerMovement.TriggerCriticalStaminaFailure();
+                }
+
+                return;
+            }
+
             float encumbranceRatio = weight / math.max(0.01f, stats.CarryCapacityKg);
             if (HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(encumbranceRatio, EnergyNormalized))
                 _playerMovement.TriggerCriticalStaminaFailure();
@@ -2023,9 +2039,47 @@ namespace Hecton8.Gameplay
             float equipmentFactor = ResolveOxygenRebreatherScale();
             float barotraumaFactor = ResolveBarotraumaOxygenDrainMultiplier();
 
+            float effortLoadMetabolicFactor = ResolveEffortLoadOxygenMetabolicMultiplier();
             float pureO2Drain = Hecton8.PureLogic.Systems.SurvivalSuitOxygenBurnRate.Calculate(baseRate, movementFactor, pressureFactor);
 
-            return pureO2Drain * stressFactor * leakFactor * carryMassFactor * equipmentFactor * barotraumaFactor;
+            return pureO2Drain * stressFactor * leakFactor * carryMassFactor * equipmentFactor * barotraumaFactor * effortLoadMetabolicFactor;
+        }
+
+        private float ResolveEffortLoadEnergyMetabolicMultiplier()
+        {
+            return TryResolveEffortLoadSnapshot(out PlayerEffortLoadRuntimeState state)
+                ? Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeEnergyMetabolicMultiplier(
+                    state.Load01,
+                    state.MovementIntent01,
+                    state.MovementStaminaDrainMultiplier,
+                    state.UpwardSwimMultiplier,
+                    (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.Sprinting) != 0u,
+                    (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.Submerged) != 0u,
+                    Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultMaximumEnergyMetabolicMultiplier)
+                : 1f;
+        }
+
+        private float ResolveEffortLoadOxygenMetabolicMultiplier()
+        {
+            return TryResolveEffortLoadSnapshot(out PlayerEffortLoadRuntimeState state)
+                ? Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeOxygenMetabolicMultiplier(
+                    state.Load01,
+                    state.MovementIntent01,
+                    state.UpwardSwimMultiplier,
+                    (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.Sprinting) != 0u,
+                    (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.Submerged) != 0u,
+                    Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultMaximumOxygenMetabolicMultiplier)
+                : 1f;
+        }
+
+        private bool TryResolveEffortLoadSnapshot(out PlayerEffortLoadRuntimeState state)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.TryGetEffortLoadRuntimeState(out state))
+                return true;
+
+            state = default;
+            return false;
         }
 
         private float ResolveOxygenRebreatherScale()
@@ -2118,6 +2172,9 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenCarryMassScale()
         {
+            if (TryResolveEffortLoadSnapshot(out _))
+                return 1f;
+
             float carry01 = math.saturate(weight / math.max(0.01f, stats.CarryCapacityKg));
             return 1f + carry01 * OxygenCarryMassScaleCeilingBonus;
         }

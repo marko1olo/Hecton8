@@ -90,6 +90,14 @@ namespace Hecton8.Editor
                     Shader.SetGlobalVector("_H8InteriorGIProbeParams", Vector4.zero);
                     Shader.SetGlobalVector("_H8InteriorGIProbeOrigin", Vector4.zero);
                     Shader.SetGlobalVector("_H8InteriorGIProbeRootAup", Vector4.zero);
+                    Shader.SetGlobalVector("_H8EnvironmentAmbientColor", new Vector4(0.18f, 0.22f, 0.28f, 0f));
+                    Shader.SetGlobalVector("_H8EnvironmentFogColor", Vector4.zero);
+                    Shader.SetGlobalVector("_H8EnvironmentDirectionalLightColor", new Vector4(0.82f, 0.92f, 1f, 0f));
+                    Shader.SetGlobalVector("_H8EnvironmentScalarParams", Vector4.zero);
+                    Shader.SetGlobalVector("_HectonXRNearClipDitherParams", Vector4.zero);
+                    Shader.SetGlobalVector("_HectonXRFoveatedParams", Vector4.zero);
+                    Shader.SetGlobalFloat("_HectonMathLodMode", 1f);
+                    Shader.SetGlobalFloat("_HectonMathLodWeight", 1f);
                     RenderBeauty(camera);
                     ExportXRay(buffers);
                     WriteTelemetry(buffers);
@@ -695,6 +703,12 @@ namespace Hecton8.Editor
             material.SetFloat("_OcclusionStrength", 1f);
             material.SetFloat("_Smoothness", 0.18f);
             material.SetFloat("_CavityAoNoiseStrength", 0.2f);
+            material.SetFloat("_ChunkDissolveFade", 1f);
+            material.SetFloat("_SkirtBlendContrast", 1.4f);
+            material.SetFloat("_TerrainSeamFadeDistance", 2f);
+            material.SetFloat("_TerrainSeamBandMeters", 3.5f);
+            material.SetFloat("_BiomeFamilyTintStrength", 0f);
+            material.SetFloat("_BiomeFamilyTintVolumeStrength", 0f);
             material.SetFloat("_HectonDamageVolumeActive", 0f);
             material.SetFloat("_SargassumCutMaskActive", 0f);
             material.SetFloat("_Cull", (float)CullMode.Off);
@@ -717,6 +731,15 @@ namespace Hecton8.Editor
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 500f;
             camera.fieldOfView = 64f;
+
+            GameObject keyObject = new GameObject("CleanRoom_CaveCamera_KeyLight") { hideFlags = HideFlags.HideAndDontSave };
+            keyObject.transform.SetParent(cameraObject.transform, false);
+            keyObject.transform.rotation = Quaternion.LookRotation(cameraObject.transform.forward, Vector3.up);
+            Light key = keyObject.AddComponent<Light>();
+            key.type = LightType.Directional;
+            key.intensity = 2.4f;
+            key.shadows = LightShadows.None;
+            key.color = new Color(0.82f, 0.92f, 1f, 1f);
 
             GameObject lightObject = new GameObject("CleanRoom_CaveCamera_PointLight") { hideFlags = HideFlags.HideAndDontSave };
             lightObject.transform.SetParent(cameraObject.transform, false);

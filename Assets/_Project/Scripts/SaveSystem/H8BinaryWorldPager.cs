@@ -30,8 +30,12 @@ namespace Hecton8.Core.Persistence.Paging
         private const uint PageMagic = 0x48385047u; // H8PG
         private const uint WalMagic = 0x4C573848u; // H8WL
         private const uint DirectoryMagic = 0x44573848u; // H8WD
+        private const uint BlackBoxDumpMagic = 0x48384450u; // H8DP
+        private const uint BlackBoxDumpOwnerHash = 0x48385047u; // H8PG
+        private const uint BlackBoxDumpSchemaHash = 0x48385031u; // H8P1
         private const ushort PageVersion = 1;
         private const ushort WalVersion = 1;
+        private const ushort BlackBoxDumpVersion = 1;
         private const int SectorHeaderBytes = 64;
         private const int WalHeaderBytes = 64;
         private const int WalTailBytes = 4;
@@ -39,6 +43,7 @@ namespace Hecton8.Core.Persistence.Paging
         private const int WorldDirectoryHeaderBytes = 64;
         private const int DirectoryEntryBytes = 16;
         private const int DirectorySlotCount = (WorldDirectoryBytes - WorldDirectoryHeaderBytes) / DirectoryEntryBytes;
+        private const int BlackBoxDumpHeaderBytes = 64;
         private const int HotStateMaxBytes = 512;
         private const int SectorSizeBytes = 256 * 1024;
         private const int SectorPayloadBytes = SectorSizeBytes - SectorHeaderBytes;
@@ -78,7 +83,7 @@ namespace Hecton8.Core.Persistence.Paging
         private readonly object _walLock = new object();
         private readonly object _hotStateLock = new object();
         private readonly object _workerStopLock = new object();
-        private readonly AutoResetEvent _workerEvent = new AutoResetEvent(false);
+        private AutoResetEvent _workerEvent;
         private FileStream _stream;
         private FileStream _walStream;
         private string _path;
@@ -169,6 +174,7 @@ namespace Hecton8.Core.Persistence.Paging
 
             try
             {
+                EnsureWorkerEventCold();
                 HectonPersistentPathPolicy.EnsureParentDirectory(_path);
                 HectonPersistentPathPolicy.EnsureParentDirectory(_walPath);
                 HectonPersistentPathPolicy.EnsureParentDirectory(_dumpPath);
@@ -292,7 +298,7 @@ namespace Hecton8.Core.Persistence.Paging
                 int queued = Interlocked.Increment(ref _pendingWriteCount.Value);
                 UpdatePendingWriteBacklogNotificationState(queued);
                 SetQueueHighWatermark(queued);
-                _workerEvent.Set();
+                SignalWorkerEvent();
                 return true;
             }
             finally
@@ -398,7 +404,7 @@ namespace Hecton8.Core.Persistence.Paging
                 int queued = Interlocked.Increment(ref _pendingReadCount.Value);
                 SetQueueHighWatermark(queued + Volatile.Read(ref _pendingWriteCount.Value));
                 ticket.Status = H8WorldPageStatus.Queued;
-                _workerEvent.Set();
+                SignalWorkerEvent();
                 return true;
             }
             finally
@@ -752,13 +758,13 @@ namespace Hecton8.Core.Persistence.Paging
                 return;
 
             Interlocked.Exchange(ref _workerFlushRequestCount.Value, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
         }
 
         public void Dispose()
         {
             Volatile.Write(ref _disposeRequested, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
             bool workerStopped = WaitForWorkerExit();
 
             FileStream stream = _stream;
@@ -785,7 +791,60 @@ namespace Hecton8.Core.Persistence.Paging
             DisposeNativeState();
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _initializationFault.Value, 0);
-            _workerEvent.Dispose();
+            DisposeWorkerEventCold();
+        }
+
+        private void EnsureWorkerEventCold()
+        {
+            if (Volatile.Read(ref _workerEvent) != null)
+                return;
+
+            AutoResetEvent workerEvent = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - persistent world pager worker wake gate - owner: H8BinaryWorldPager
+            AutoResetEvent existing = Interlocked.CompareExchange(ref _workerEvent, workerEvent, null);
+            if (existing != null)
+                workerEvent.Dispose();
+        }
+
+        private void SignalWorkerEvent()
+        {
+            AutoResetEvent workerEvent = Volatile.Read(ref _workerEvent);
+            if (workerEvent == null)
+                return;
+
+            try
+            {
+                workerEvent.Set();
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        private void WaitWorkerEvent()
+        {
+            AutoResetEvent workerEvent = Volatile.Read(ref _workerEvent);
+            if (workerEvent == null)
+            {
+                Thread.Sleep(WorkerIdleSleepMilliseconds);
+                return;
+            }
+
+            try
+            {
+                workerEvent.WaitOne(WorkerIdleSleepMilliseconds);
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        private void DisposeWorkerEventCold()
+        {
+            AutoResetEvent workerEvent = Interlocked.Exchange(ref _workerEvent, null);
+            if (workerEvent == null)
+                return;
+
+            workerEvent.Dispose();
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
@@ -797,7 +856,7 @@ namespace Hecton8.Core.Persistence.Paging
                 return;
 
             Volatile.Write(ref _disposeRequested, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
             bool workerStopped = WaitForWorkerExit();
             if (!workerStopped)
             {
@@ -819,6 +878,7 @@ namespace Hecton8.Core.Persistence.Paging
             _hotStateCrc32 = 0u;
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _initializationFault.Value, 1);
+            DisposeWorkerEventCold();
         }
 
         private void AbortInitializationAttempt(IDataVault vault)
@@ -844,7 +904,8 @@ namespace Hecton8.Core.Persistence.Paging
             _hotStateCrc32 = 0u;
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
+            DisposeWorkerEventCold();
         }
 
         private void MarkInitializationFault(PagerInitializationFaultReason reason = PagerInitializationFaultReason.Unknown)
@@ -862,7 +923,8 @@ namespace Hecton8.Core.Persistence.Paging
             DisposeNativeState();
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
+            DisposeWorkerEventCold();
             Volatile.Write(ref _initializationFault.Value, 1);
             Interlocked.Increment(ref _ioErrorCount.Value);
 
@@ -1344,7 +1406,7 @@ namespace Hecton8.Core.Persistence.Paging
 
                     if (!didWork)
                     {
-                        _workerEvent.WaitOne(WorkerIdleSleepMilliseconds);
+                        WaitWorkerEvent();
                     }
                 }
             }
@@ -1500,7 +1562,7 @@ namespace Hecton8.Core.Persistence.Paging
         {
             Volatile.Write(ref _initialized, 0);
             Volatile.Write(ref _disposeRequested, 1);
-            _workerEvent.Set();
+            SignalWorkerEvent();
             Volatile.Write(ref _initializationFault.Value, 1);
             Volatile.Write(ref _pendingWriteCount.Value, 0);
             Volatile.Write(ref _pendingWriteBacklogNotificationArmed, 0);
@@ -3195,7 +3257,7 @@ namespace Hecton8.Core.Persistence.Paging
                 Thread.CurrentThread.ManagedThreadId != Volatile.Read(ref _workerThreadId))
             {
                 Volatile.Write(ref _dumpRequestPending, 1);
-                _workerEvent.Set();
+                SignalWorkerEvent();
                 return;
             }
 
@@ -3212,13 +3274,20 @@ namespace Hecton8.Core.Persistence.Paging
             if (!TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            WriteBlackBoxDump(_dumpPath, telemetryRing);
-            WriteBlackBoxDump(_dumpH8Path, telemetryRing);
+            WriteBlackBoxDump(_dumpPath, telemetryRing, crashDump: false);
+            WriteBlackBoxDump(_dumpH8Path, telemetryRing, crashDump: false);
+
+            if (HasInitializationFault || Volatile.Read(ref _disposeRequested) != 0)
+            {
+                WriteBlackBoxDump(_crashDumpPath, telemetryRing, crashDump: true);
+                WriteBlackBoxDump(_crashDumpH8Path, telemetryRing, crashDump: true);
+            }
         }
 
         private unsafe void WriteBlackBoxDump(
             string dumpPath,
-            NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing)
+            NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing,
+            bool crashDump)
         {
             if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
                 return;
@@ -3232,7 +3301,9 @@ namespace Hecton8.Core.Persistence.Paging
                 HectonPersistentPathPolicy.EnsureParentDirectory(absoluteDumpPath);
                 TryDeleteBlackBoxDumpTempFile(tempPath);
                 int count = math.min(telemetryRing.Length, TelemetryCapacity);
-                long expectedBytes = (long)count * UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();
+                int entryBytes = UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();
+                long expectedBytes = BlackBoxDumpHeaderBytes + ((long)count * entryBytes);
+                uint payloadHash = ComputeBlackBoxDumpPayloadHash(telemetryRing, count, entryBytes);
                 AsyncWriteManager.InvalidateCachedReadWindows(tempPath);
                 try
                 {
@@ -3245,6 +3316,7 @@ namespace Hecton8.Core.Persistence.Paging
                                FileOptions.WriteThrough | FileOptions.SequentialScan))
                     using (BinaryWriter writer = new BinaryWriter(stream))
                     {
+                        WriteBlackBoxDumpHeader(writer, count, entryBytes, payloadHash, crashDump);
                         for (int i = 0; i < count; i++)
                         {
                             H8BinaryWorldPagerTelemetryEntry entry = telemetryRing[i];
@@ -3323,6 +3395,50 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 TryDeleteBlackBoxDumpTempFile(tempPath);
             }
+        }
+
+        private void WriteBlackBoxDumpHeader(
+            BinaryWriter writer,
+            int count,
+            int entryBytes,
+            uint payloadHash,
+            bool crashDump)
+        {
+            writer.Write(BlackBoxDumpMagic);
+            writer.Write(BlackBoxDumpVersion);
+            writer.Write((ushort)BlackBoxDumpHeaderBytes);
+            writer.Write(BlackBoxDumpOwnerHash);
+            writer.Write(BlackBoxDumpSchemaHash);
+            writer.Write((uint)count);
+            writer.Write((uint)TelemetryCapacity);
+            writer.Write((uint)entryBytes);
+            writer.Write(payloadHash);
+            writer.Write(Volatile.Read(ref _telemetryCursor.Value));
+            writer.Write(crashDump ? 1u : 0u);
+            writer.Write(DateTime.UtcNow.Ticks);
+            writer.Write(Volatile.Read(ref _pendingWriteCount.Value));
+            writer.Write(Volatile.Read(ref _pendingReadCount.Value));
+            writer.Write(Volatile.Read(ref _ioErrorCount.Value));
+            writer.Write((ushort)(IsInitialized ? 1u : 0u));
+            writer.Write((byte)Volatile.Read(ref _workerRunning));
+            writer.Write((byte)Volatile.Read(ref _initializationFault.Value));
+        }
+
+        private static unsafe uint ComputeBlackBoxDumpPayloadHash(
+            NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing,
+            int count,
+            int entryBytes)
+        {
+            uint hash = 2166136261u ^ BlackBoxDumpOwnerHash ^ (uint)count ^ (uint)entryBytes;
+            for (int i = 0; i < count; i++)
+            {
+                H8BinaryWorldPagerTelemetryEntry entry = telemetryRing[i];
+                byte* source = (byte*)UnsafeUtility.AddressOf(ref entry);
+                for (int byteIndex = 0; byteIndex < entryBytes; byteIndex++)
+                    hash = (hash ^ source[byteIndex]) * 16777619u;
+            }
+
+            return hash == 0u ? 2166136261u : hash;
         }
 
         private static bool TryFlushAndValidateBlackBoxDumpFile(string path, long expectedBytes)

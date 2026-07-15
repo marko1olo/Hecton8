@@ -1086,6 +1086,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ConsumeCraftingCompletedSignals();
+            ConsumeItemAcquiredSignals();
             FlushQueuedNotifications();
         }
 
@@ -1735,6 +1736,42 @@ namespace Hecton8.Gameplay
 
                 CheckMilestone(FirstHourMilestone.FirstCraft, true);
                 return;
+            }
+        }
+
+        // Drill and manual-pickup acquisition publish ItemAcquiredSignal on the double-buffered
+        // SignalBus, not the legacy InteractionEvents.ItemCollected lane that OnInteractionEvent
+        // listens to. Without this drain, copper mined by the drill or picked up off the seafloor
+        // never advances quest_copper_sample, so the first-hour drill-blueprint gate hangs. The
+        // hash-based quest advances below are idempotent (ActivateQuest/CompleteQuest guard on
+        // IsActive/IsCompleted), so an item that ever hits both lanes cannot double-count.
+        private void ConsumeItemAcquiredSignals()
+        {
+            if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
+                return;
+
+            ReadOnlySpan<ItemAcquiredSignal> signals = SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                uint itemHash = signals[i].ItemHash;
+                if (itemHash == 0u)
+                    continue;
+
+                if (_starterToolItemHash != 0 && itemHash == unchecked((uint)_starterToolItemHash))
+                {
+                    CompleteQuest(_starterToolQuestHash);
+                    _starterToolReminderIssued = true;
+                    ActivateQuest(_firstResourceQuestHash);
+                    continue;
+                }
+
+                if (_firstResourceItemHash != 0 && itemHash == unchecked((uint)_firstResourceItemHash))
+                {
+                    CompleteQuest(_firstResourceQuestHash);
+                    _firstResourceReminderIssued = true;
+                    ActivateQuest(_firstDepthQuestHash);
+                    _firstDepthReminderIssued = false;
+                }
             }
         }
 

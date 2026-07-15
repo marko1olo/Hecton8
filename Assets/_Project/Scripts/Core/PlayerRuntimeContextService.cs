@@ -336,6 +336,16 @@ namespace Hecton8.Core
         }
 
         /// <inheritdoc />
+        public bool TryGetEffortLoadRuntimeState(out PlayerEffortLoadRuntimeState state)
+        {
+            state = _runtimeContext.EffortLoadState;
+            return _isInitialized &&
+                   _runtimeContext.IsBound &&
+                   (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.HasPlayerRoot) != 0u &&
+                   (state.Flags & ((uint)PlayerEffortLoadRuntimeFlags.HasInventory | (uint)PlayerEffortLoadRuntimeFlags.HasMovement)) != 0u;
+        }
+
+        /// <inheritdoc />
         public bool TryGetSurvivalRuntimeState(out PlayerSurvivalRuntimeState state)
         {
             state = _runtimeContext.SurvivalState;
@@ -1071,6 +1081,114 @@ namespace Hecton8.Core
             lookState.AimForward = SafeDirection(cameraForward, forward);
             lookState.Flags = flags;
             _runtimeContext.PublishLookState(in lookState);
+
+            PublishEffortLoadSnapshot();
+        }
+
+        private void PublishEffortLoadSnapshot()
+        {
+            float carriedMassKg = ResolveEffortLoadCarriedMassKg();
+            float carryCapacityKg = ResolveEffortLoadCarryCapacityKg();
+            float loadRatio = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoadRatio(carriedMassKg, carryCapacityKg);
+            float load01 = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoad01(carriedMassKg, carryCapacityKg);
+            float criticalEncumbranceRatio = ResolveEffortLoadCriticalEncumbranceRatio();
+            float criticalStaminaFailureThreshold01 = ResolveEffortLoadCriticalStaminaFailureThreshold01();
+            float stamina01 = _survivalSystem != null ? Sanitize01(_survivalSystem.EnergyNormalized) : 1f;
+
+            uint flags = 0u;
+            if (_runtimeContext.IsBound)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.HasPlayerRoot;
+            if (_inventory != null)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.HasInventory;
+            if (_playerMovement != null)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.HasMovement;
+            if (_survivalSystem != null)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.HasSurvival;
+            if (Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.IsCriticalInventoryLoad(loadRatio, criticalEncumbranceRatio))
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.CriticallyEncumbered;
+            if (_playerMovement != null && _playerMovement.IsCriticalStaminaFailureActive)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.CriticalStaminaFailureActive;
+            if (_playerMovement != null && _playerMovement.IsSprinting)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.Sprinting;
+            if (_playerMovement != null && _playerMovement.IsPlayerSubmerged)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.Submerged;
+            if (_playerMovement != null && _playerMovement.IsWalking)
+                flags |= (uint)PlayerEffortLoadRuntimeFlags.Walking;
+
+            PlayerEffortLoadRuntimeState effortLoadState = default;
+            effortLoadState.CarriedMassKg = carriedMassKg;
+            effortLoadState.CarryCapacityKg = carryCapacityKg;
+            effortLoadState.LoadRatio = loadRatio;
+            effortLoadState.Load01 = load01;
+            effortLoadState.MovementMultiplier = ResolveEffortLoadMovementMultiplier(carriedMassKg, carryCapacityKg);
+            effortLoadState.UpwardSwimMultiplier = ResolveEffortLoadUpwardSwimMultiplier(load01);
+            effortLoadState.Stamina01 = stamina01;
+            effortLoadState.MovementIntent01 = _playerMovement != null ? Sanitize01(_playerMovement.CurrentMovementIntent01) : 0f;
+            effortLoadState.MovementStaminaDrainMultiplier = _playerMovement != null ? SanitizeNonNegative(_playerMovement.CurrentMovementStaminaDrainMultiplier) : 0f;
+            effortLoadState.CriticalEncumbranceRatio = criticalEncumbranceRatio;
+            effortLoadState.CriticalStaminaFailureThreshold01 = criticalStaminaFailureThreshold01;
+            effortLoadState.LocomotionModeCode = _playerMovement != null ? (uint)_playerMovement.CurrentLocomotionMode : 0u;
+            effortLoadState.Flags = flags;
+            _runtimeContext.PublishEffortLoadState(in effortLoadState);
+        }
+
+        private float ResolveEffortLoadCarriedMassKg()
+        {
+            if (_inventory != null)
+                return SanitizeNonNegative(_inventory.TotalMassKg);
+
+            if (_survivalSystem != null)
+                return SanitizeNonNegative(_survivalSystem.Weight);
+
+            return _playerMovement != null ? SanitizeNonNegative(_playerMovement.InventoryCarriedMassKg) : 0f;
+        }
+
+        private float ResolveEffortLoadCarryCapacityKg()
+        {
+            return _survivalSystem != null && _survivalSystem.Stats != null
+                ? SanitizePositive(_survivalSystem.Stats.CarryCapacityKg, Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultCarryCapacityKg)
+                : Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultCarryCapacityKg;
+        }
+
+        private float ResolveEffortLoadMovementMultiplier(float carriedMassKg, float carryCapacityKg)
+        {
+            float fallback = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplier(
+                carriedMassKg,
+                carryCapacityKg,
+                Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultMinimumMovementMultiplier);
+
+            if (_playerMovement != null)
+                return SanitizeMultiplier01(_playerMovement.InventoryLoadMovementMultiplier, fallback);
+
+            if (_inventory != null)
+                return SanitizeMultiplier01(_inventory.CachedMaxSwimSpeedMultiplier, fallback);
+
+            return SanitizeMultiplier01(fallback, 1f);
+        }
+
+        private float ResolveEffortLoadUpwardSwimMultiplier(float load01)
+        {
+            float fallback = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeUpwardSwimMultiplier(
+                load01,
+                Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultMinimumUpwardSwimMultiplier);
+
+            return _playerMovement != null
+                ? SanitizeMultiplier01(_playerMovement.InventoryUpwardSwimMultiplier, fallback)
+                : SanitizeMultiplier01(fallback, 1f);
+        }
+
+        private float ResolveEffortLoadCriticalEncumbranceRatio()
+        {
+            return _playerMovement != null
+                ? SanitizePositive(_playerMovement.CurrentCriticalEncumbranceRatio, Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultCriticalEncumbranceRatio)
+                : Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultCriticalEncumbranceRatio;
+        }
+
+        private float ResolveEffortLoadCriticalStaminaFailureThreshold01()
+        {
+            return _playerMovement != null
+                ? Sanitize01(_playerMovement.CurrentCriticalStaminaFailureThreshold01)
+                : Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultCriticalStaminaFailureThreshold01;
         }
 
         private Transform ResolvePlayerCameraTransform()
@@ -1126,6 +1244,20 @@ namespace Hecton8.Core
         private static float SanitizeNonNegative(float value)
         {
             return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float SanitizePositive(float value, float fallback)
+        {
+            return math.isfinite(value) && value > 0f
+                ? value
+                : math.max(0.001f, fallback);
+        }
+
+        private static float SanitizeMultiplier01(float value, float fallback)
+        {
+            return math.isfinite(value)
+                ? math.saturate(value)
+                : math.saturate(fallback);
         }
 
         private static float3 SafeFiniteVector(float3 value)

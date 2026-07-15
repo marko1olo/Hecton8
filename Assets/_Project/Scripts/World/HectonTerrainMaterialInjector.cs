@@ -170,13 +170,13 @@ namespace Hecton8.World
             TerrainCallbacks.textureChanged -= OnTerrainTextureChanged;
         }
 
-        private void OnTerrainHeightmapChanged(Terrain terrain, RectInt heightRegion, bool synched)
+        private void OnTerrainHeightmapChanged(UnityEngine.Terrain terrain, RectInt heightRegion, bool synched)
         {
             if (terrain == _terrain)
                 RefreshTerrainBindings(forceAlphamapRefresh: false);
         }
 
-        private void OnTerrainTextureChanged(Terrain terrain, string textureName, RectInt texelRegion, bool synched)
+        private void OnTerrainTextureChanged(UnityEngine.Terrain terrain, string textureName, RectInt texelRegion, bool synched)
         {
             if (terrain == _terrain)
                 RefreshTerrainBindings(forceAlphamapRefresh: true);

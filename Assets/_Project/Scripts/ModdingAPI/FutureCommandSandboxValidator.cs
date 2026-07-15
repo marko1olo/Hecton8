@@ -2278,7 +2278,7 @@ namespace Hecton8.Modding
             return opcodeHash;
         }
 
-        private static void EnsureModderLease
+        private static void EnsureModderLease(
             uint signature,
             int maxMemoryMb,
             NativeArray<byte> modderBlackboxMemory,

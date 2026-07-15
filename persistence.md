@@ -84,7 +84,7 @@ Fault boundary:
 
 - Telemetry record: `H8BinaryWorldPagerTelemetryEntry` stores sector hash, offset, UTC ticks, payload type, frame, request id, payload bytes, pending read/write counts, page faults, metrics, directory slot, flags, operation, and status.
 - Declared dump files: `Dump_1312_VoxelPaging.bin`, `Dump_CRASH.bin`, `Dump_SAVE_SURGEON.h8dump`, and `Dump_CRASH.h8dump`.
-- Static source currently leaves `WriteBlackBoxDumps()` and `WriteBlackBoxDump(...)` empty. Black-box dump output is PENDING VERIFICATION.
+- Static source now writes bounded black-box artifacts with a 64-byte `H8DP` header plus fixed telemetry-entry payload, temp-file write-through, critical flush/length validation, cached-read invalidation, and atomic promote. Crash-named mirrors are gated to pager fault/dispose paths. Runtime dump artifact generation remains PENDING VERIFICATION.
 
 Hot-path prohibitions:
 

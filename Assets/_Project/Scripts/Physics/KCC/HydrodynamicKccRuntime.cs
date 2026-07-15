@@ -394,6 +394,7 @@ namespace Hecton8.Physics.KCC
         public static float ResolveRuntimeWaterSurfaceY(float candidateWaterSurfaceY)
         {
             return math.isfinite(candidateWaterSurfaceY) &&
+                   math.abs(candidateWaterSurfaceY) > MinDenominator &&
                    math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY
                 ? candidateWaterSurfaceY
                 : DefaultWaterSurfaceY;
@@ -4875,6 +4876,7 @@ namespace Hecton8.Physics.KCC
         private static bool TryResolveOceanWaterSurfaceY(float candidateWaterSurfaceY, out float waterSurfaceY)
         {
             if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) > HydrodynamicKccMath.MinDenominator &&
                 math.abs(candidateWaterSurfaceY) <= Hecton8.World.WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceY = candidateWaterSurfaceY;

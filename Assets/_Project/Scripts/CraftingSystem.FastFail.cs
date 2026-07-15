@@ -1135,6 +1135,171 @@ namespace Hecton8.Crafting
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct CraftingRecipeValidatorJob : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<int> PlayerItemHashes;
+        [ReadOnly, NoAlias] public NativeArray<int> PlayerItemCounts;
+        [ReadOnly, NoAlias] public NativeArray<int> RequiredRecipeHashes;
+        [ReadOnly, NoAlias] public NativeArray<int> RequiredRecipeCounts;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> CraftableResults;
+        [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> StatusResults;
+        public int PlayerItemCount;
+        public int RecipeCount;
+        public int MaxRequirementsPerRecipe;
+
+        public void Execute(int recipeIndex)
+        {
+            if (!CraftableResults.IsCreated || (uint)recipeIndex >= (uint)CraftableResults.Length)
+                return;
+
+            int recipeLimit = math.min(math.max(0, RecipeCount), CraftableResults.Length);
+            if ((uint)recipeIndex >= (uint)recipeLimit)
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.InvalidInput);
+                return;
+            }
+
+            int stride = MaxRequirementsPerRecipe;
+            if (stride != CraftingFastFailValidator.MaxIngredientsPerRecipe ||
+                !PlayerItemHashes.IsCreated ||
+                !PlayerItemCounts.IsCreated ||
+                !RequiredRecipeHashes.IsCreated ||
+                !RequiredRecipeCounts.IsCreated)
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.InvalidInput);
+                return;
+            }
+
+            int requiredStart = recipeIndex * stride;
+            if (requiredStart < 0 ||
+                requiredStart > RequiredRecipeHashes.Length - CraftingFastFailValidator.MaxIngredientsPerRecipe ||
+                requiredStart > RequiredRecipeCounts.Length - CraftingFastFailValidator.MaxIngredientsPerRecipe)
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.InvalidInput);
+                return;
+            }
+
+            uint hashA = 0u;
+            uint hashB = 0u;
+            uint hashC = 0u;
+            uint hashD = 0u;
+            uint requiredA = 0u;
+            uint requiredB = 0u;
+            uint requiredC = 0u;
+            uint requiredD = 0u;
+            ReadRequirement(requiredStart, 0, ref hashA, ref requiredA);
+            ReadRequirement(requiredStart, 1, ref hashB, ref requiredB);
+            ReadRequirement(requiredStart, 2, ref hashC, ref requiredC);
+            ReadRequirement(requiredStart, 3, ref hashD, ref requiredD);
+            CraftingFastFailValidator.NormalizeDuplicateRequirements(ref hashA, ref requiredA, ref hashB, ref requiredB, ref hashC, ref requiredC, ref hashD, ref requiredD);
+
+            ulong requirementMask = BuildRequirementMask(hashA, requiredA, hashB, requiredB, hashC, requiredC, hashD, requiredD);
+            if (requirementMask == 0UL)
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.InvalidInput);
+                return;
+            }
+
+            int playerLimit = math.min(math.max(0, PlayerItemCount), math.min(PlayerItemHashes.Length, PlayerItemCounts.Length));
+            ulong inventoryMask = BuildInventoryMask(playerLimit);
+            if ((inventoryMask & requirementMask) != requirementMask)
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.MaskMissing);
+                return;
+            }
+
+            uint haveA = CountAvailable(playerLimit, hashA);
+            uint haveB = CountAvailable(playerLimit, hashB);
+            uint haveC = CountAvailable(playerLimit, hashC);
+            uint haveD = CountAvailable(playerLimit, hashD);
+            if (!CraftingFastFailValidator.CompareQuantities4(haveA, haveB, haveC, haveD, requiredA, requiredB, requiredC, requiredD, out _))
+            {
+                WriteResult(recipeIndex, 0, CraftingFastFailStatus.MissingQuantity);
+                return;
+            }
+
+            WriteResult(recipeIndex, 1, CraftingFastFailStatus.Success);
+        }
+
+        private void ReadRequirement(int startIndex, int offset, ref uint hash, ref uint quantity)
+        {
+            int rawHash = RequiredRecipeHashes[startIndex + offset];
+            int rawQuantity = RequiredRecipeCounts[startIndex + offset];
+            if (rawHash == 0 || rawQuantity <= 0)
+                return;
+
+            hash = unchecked((uint)rawHash);
+            quantity = (uint)rawQuantity;
+        }
+
+        private static ulong BuildRequirementMask(
+            uint hashA,
+            uint requiredA,
+            uint hashB,
+            uint requiredB,
+            uint hashC,
+            uint requiredC,
+            uint hashD,
+            uint requiredD)
+        {
+            ulong mask = 0UL;
+            if (hashA != 0u && requiredA != 0u)
+                mask |= InventoryMaterialMask.ResolveBit(hashA);
+            if (hashB != 0u && requiredB != 0u)
+                mask |= InventoryMaterialMask.ResolveBit(hashB);
+            if (hashC != 0u && requiredC != 0u)
+                mask |= InventoryMaterialMask.ResolveBit(hashC);
+            if (hashD != 0u && requiredD != 0u)
+                mask |= InventoryMaterialMask.ResolveBit(hashD);
+            return mask;
+        }
+
+        private ulong BuildInventoryMask(int playerLimit)
+        {
+            ulong mask = 0UL;
+            for (int i = 0; i < playerLimit; i++)
+            {
+                int rawHash = PlayerItemHashes[i];
+                int rawQuantity = PlayerItemCounts[i];
+                if (rawHash != 0 && rawQuantity > 0)
+                    mask |= InventoryMaterialMask.ResolveBit(unchecked((uint)rawHash));
+            }
+
+            return mask;
+        }
+
+        private uint CountAvailable(int playerLimit, uint targetHash)
+        {
+            if (targetHash == 0u)
+                return 0u;
+
+            int rawTargetHash = unchecked((int)targetHash);
+            uint total = 0u;
+            for (int i = 0; i < playerLimit; i++)
+            {
+                if (PlayerItemHashes[i] != rawTargetHash)
+                    continue;
+
+                int rawQuantity = PlayerItemCounts[i];
+                if (rawQuantity <= 0)
+                    continue;
+
+                uint quantity = (uint)rawQuantity;
+                total = total > uint.MaxValue - quantity ? uint.MaxValue : total + quantity;
+            }
+
+            return total;
+        }
+
+        private void WriteResult(int recipeIndex, int craftable, CraftingFastFailStatus status)
+        {
+            CraftableResults[recipeIndex] = craftable;
+            if (StatusResults.IsCreated && (uint)recipeIndex < (uint)StatusResults.Length)
+                StatusResults[recipeIndex] = (int)status;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct EvaluateCraftingAvailabilityJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<RecipeRequirementDTO> Recipes;

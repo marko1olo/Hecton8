@@ -1,5 +1,6 @@
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -56,7 +57,9 @@ namespace Hecton8.Physics
             get
             {
                 global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
-                return oceanRenderer != null && oceanRenderer.CollisionProvider != null;
+                return oceanRenderer != null &&
+                       oceanRenderer.CollisionProvider != null &&
+                       TryResolveBoundRootSeaLevel(oceanRenderer, out _);
             }
         }
 
@@ -116,11 +119,11 @@ namespace Hecton8.Physics
         {
             tuning = default;
             global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
-            if (oceanRenderer == null)
+            if (oceanRenderer == null || !TryResolveBoundRootSeaLevel(oceanRenderer, out float seaLevelY))
                 return false;
 
             tuning.OceanRootAUP = ResolveOceanRootAUP(oceanRenderer);
-            tuning.OceanSurfaceY = ResolveSeaLevel(oceanRenderer);
+            tuning.OceanSurfaceY = seaLevelY;
             tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
             tuning.TimeSeconds = math.max(0f, math.select(0f, simulationTimeSeconds, math.isfinite(simulationTimeSeconds)));
             tuning.DepthCullingThresholdMeters = Mathf.Max(0f, burstDepthCullingThresholdMeters);
@@ -530,7 +533,7 @@ namespace Hecton8.Physics
                 return false;
 
             global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
-            if (oceanRenderer == null || oceanRenderer.FlowProvider == null)
+            if (oceanRenderer == null || oceanRenderer.FlowProvider == null || !TryResolveBoundRootSeaLevel(oceanRenderer, out _))
                 return false;
 
             global::Crest.IFlowProvider flowProvider = oceanRenderer.FlowProvider;
@@ -639,7 +642,9 @@ namespace Hecton8.Physics
         private bool TryReadCollisionProvider(out global::Crest.ICollProvider collisionProvider)
         {
             global::Crest.OceanRenderer oceanRenderer = TryReadBoundOceanRenderer();
-            collisionProvider = oceanRenderer != null ? oceanRenderer.CollisionProvider : null;
+            collisionProvider = oceanRenderer != null && TryResolveBoundRootSeaLevel(oceanRenderer, out _)
+                ? oceanRenderer.CollisionProvider
+                : null;
             return collisionProvider != null;
         }
 
@@ -685,10 +690,33 @@ namespace Hecton8.Physics
             return math.select(double3.zero, rootAup, math.isfinite(rootAup));
         }
 
-        private static float ResolveSeaLevel(global::Crest.OceanRenderer oceanRenderer)
+        private static bool TryResolveBoundRootSeaLevel(global::Crest.OceanRenderer oceanRenderer, out float seaLevelY)
         {
             if (oceanRenderer != null && oceanRenderer.Root != null)
-                return OceanKinematicsWaterlineUtility.ResolveRuntimeSeaLevelY(oceanRenderer.Root.position.y);
+            {
+                float rootWaterLevelY = oceanRenderer.Root.position.y;
+                if (OceanKinematicsWaterlineUtility.TryResolveRuntimeSeaLevelY(rootWaterLevelY, out seaLevelY) &&
+                    math.abs(seaLevelY) > 0.0001f)
+                {
+                    return true;
+                }
+            }
+
+            seaLevelY = AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
+            return false;
+        }
+
+        private static float ResolveSeaLevel(global::Crest.OceanRenderer oceanRenderer)
+        {
+            if (TryResolveBoundRootSeaLevel(oceanRenderer, out float seaLevelY))
+                return seaLevelY;
+
+            if (WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO snapshot) &&
+                OceanKinematicsWaterlineUtility.TryResolveRuntimeSeaLevelY(snapshot.ResolvedWaterLevelY, out float calibratedWaterLevelY) &&
+                math.abs(calibratedWaterLevelY) > 0.0001f)
+            {
+                return calibratedWaterLevelY;
+            }
 
             return AnalyticalGerstnerWaveConstants.DefaultSeaLevelY;
         }

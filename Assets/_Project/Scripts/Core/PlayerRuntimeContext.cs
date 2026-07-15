@@ -32,6 +32,41 @@ namespace Hecton8.Core
         Underwater = 1u << 12,
     }
 
+    [System.Flags]
+    public enum PlayerEffortLoadRuntimeFlags : uint
+    {
+        None = 0u,
+        HasPlayerRoot = 1u << 0,
+        HasInventory = 1u << 1,
+        HasMovement = 1u << 2,
+        HasSurvival = 1u << 3,
+        CriticallyEncumbered = 1u << 4,
+        CriticalStaminaFailureActive = 1u << 5,
+        Sprinting = 1u << 6,
+        Submerged = 1u << 7,
+        Walking = 1u << 8,
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct PlayerEffortLoadRuntimeState
+    {
+        [FieldOffset(0)] public float CarriedMassKg;
+        [FieldOffset(4)] public float CarryCapacityKg;
+        [FieldOffset(8)] public float LoadRatio;
+        [FieldOffset(12)] public float Load01;
+        [FieldOffset(16)] public float MovementMultiplier;
+        [FieldOffset(20)] public float UpwardSwimMultiplier;
+        [FieldOffset(24)] public float Stamina01;
+        [FieldOffset(28)] public float MovementIntent01;
+        [FieldOffset(32)] public float MovementStaminaDrainMultiplier;
+        [FieldOffset(36)] public float CriticalEncumbranceRatio;
+        [FieldOffset(40)] public float CriticalStaminaFailureThreshold01;
+        [FieldOffset(44)] public uint LocomotionModeCode;
+        [FieldOffset(48)] public uint Flags;
+        [FieldOffset(52)] private uint _padding0;
+        [FieldOffset(56)] private ulong _padding1;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public struct PlayerMovementRuntimeState
     {
@@ -150,6 +185,7 @@ namespace Hecton8.Core
 
         public PlayerMovementRuntimeState MovementState;
         public PlayerMovementStressRuntimeState MovementStressState;
+        public PlayerEffortLoadRuntimeState EffortLoadState;
         public PlayerLookState LookState;
         public PlayerSurvivalRuntimeState SurvivalState;
         public PlayerInteractionRuntimeState InteractionState;
@@ -184,6 +220,7 @@ namespace Hecton8.Core
             HudNotification = null;
             MovementState = default;
             MovementStressState = default;
+            EffortLoadState = default;
             LookState = default;
             SurvivalState = default;
             InteractionState = default;
@@ -259,6 +296,25 @@ namespace Hecton8.Core
                         : 1f));
             sanitized.Flags = state.Flags;
             MovementStressState = sanitized;
+        }
+
+        public void PublishEffortLoadState(in PlayerEffortLoadRuntimeState state)
+        {
+            PlayerEffortLoadRuntimeState sanitized = state;
+            sanitized.CarriedMassKg = MathGuard.SanitizeNonNegative(state.CarriedMassKg, EffortLoadState.CarriedMassKg);
+            sanitized.CarryCapacityKg = math.max(0.001f, MathGuard.SanitizeNonNegative(state.CarryCapacityKg, EffortLoadState.CarryCapacityKg > 0f ? EffortLoadState.CarryCapacityKg : 200f));
+            sanitized.LoadRatio = MathGuard.SanitizeNonNegative(state.LoadRatio, EffortLoadState.LoadRatio);
+            sanitized.Load01 = MathGuard.Sanitize01(state.Load01, EffortLoadState.Load01);
+            sanitized.MovementMultiplier = math.saturate(MathGuard.SanitizeFinite(state.MovementMultiplier, EffortLoadState.MovementMultiplier > 0f ? EffortLoadState.MovementMultiplier : 1f));
+            sanitized.UpwardSwimMultiplier = math.saturate(MathGuard.SanitizeFinite(state.UpwardSwimMultiplier, EffortLoadState.UpwardSwimMultiplier > 0f ? EffortLoadState.UpwardSwimMultiplier : 1f));
+            sanitized.Stamina01 = MathGuard.Sanitize01(state.Stamina01, EffortLoadState.Stamina01 > 0f ? EffortLoadState.Stamina01 : 1f);
+            sanitized.MovementIntent01 = MathGuard.Sanitize01(state.MovementIntent01, EffortLoadState.MovementIntent01);
+            sanitized.MovementStaminaDrainMultiplier = MathGuard.SanitizeNonNegative(state.MovementStaminaDrainMultiplier, EffortLoadState.MovementStaminaDrainMultiplier);
+            sanitized.CriticalEncumbranceRatio = MathGuard.SanitizeNonNegative(state.CriticalEncumbranceRatio, EffortLoadState.CriticalEncumbranceRatio > 0f ? EffortLoadState.CriticalEncumbranceRatio : 1.5f);
+            sanitized.CriticalStaminaFailureThreshold01 = MathGuard.Sanitize01(state.CriticalStaminaFailureThreshold01, EffortLoadState.CriticalStaminaFailureThreshold01);
+            sanitized.LocomotionModeCode = state.LocomotionModeCode;
+            sanitized.Flags = state.Flags;
+            EffortLoadState = sanitized;
         }
 
         /// <summary>

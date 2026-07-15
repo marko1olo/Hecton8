@@ -118,6 +118,7 @@ namespace Hecton8.Gameplay
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+        private static readonly ProfilerMarker _waterLevelResolveProfilerMarker = new ProfilerMarker("H8.Player.ResolveWaterLevel");
         private static readonly int _kccNanErrorCode = unchecked((int)LocHash.Compute("NAN_ERROR_HASH_KCC"));
         private const float InventoryLoadMinimumMovementMultiplier = 0.5f;
         private const float InventoryUpwardSwimMinimumMultiplier = 0.6f;
@@ -1834,7 +1835,6 @@ namespace Hecton8.Gameplay
         public void SetRuntimeInventoryLoadMovementMultiplier(float multiplier)
         {
             _runtimeInventoryLoadMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
-            _playerMotor?.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
             _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
         }
 
@@ -1858,6 +1858,27 @@ namespace Hecton8.Gameplay
 
         /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
         public float InventoryLoad01 => _runtimeInventoryLoad01;
+
+        /// <summary>Unclamped carried-mass ratio against the resolved survival carry capacity.</summary>
+        public float InventoryLoadRatio => _runtimeInventoryLoadRatio;
+
+        /// <summary>Runtime-carried inventory mass in kilograms.</summary>
+        public float InventoryCarriedMassKg => _runtimeInventoryTotalMassKg;
+
+        /// <summary>Resolved upward-swim multiplier after inventory mass encumbrance.</summary>
+        public float InventoryUpwardSwimMultiplier => _runtimeInventoryUpwardSwimMultiplier;
+
+        /// <summary>Normalized 0-1 movement intent from the latest kinematic input snapshot.</summary>
+        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+
+        /// <summary>Movement-owned stamina drain multiplier forwarded to survival.</summary>
+        public float CurrentMovementStaminaDrainMultiplier => MovementStaminaDrainMultiplier;
+
+        /// <summary>Movement-owned emergency encumbrance ratio threshold.</summary>
+        public float CurrentCriticalEncumbranceRatio => CriticalEncumbranceRatio;
+
+        /// <summary>Movement-owned stamina threshold for critical encumbrance failure.</summary>
+        public float CurrentCriticalStaminaFailureThreshold01 => CriticalStaminaFailureThreshold01;
 
         /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
         public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
@@ -2454,6 +2475,49 @@ namespace Hecton8.Gameplay
             return value - normal * (DotVector(value, normal) * math.rcp(normalSqr));
         }
 
+        private static Vector3 ProjectVelocityOntoGroundPlanePreserveMagnitude(Vector3 velocity, Vector3 groundNormal)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float3 normal3 = new float3(groundNormal.x, groundNormal.y, groundNormal.z);
+            if (!math.all(math.isfinite(velocity3)) || !math.all(math.isfinite(normal3)))
+                return Vector3.zero;
+
+            float normalSq = math.lengthsq(normal3);
+            float velocitySq = math.lengthsq(velocity3);
+            if (normalSq <= 0.000001f || velocitySq <= 0.000001f)
+                return new Vector3(velocity3.x, velocity3.y, velocity3.z);
+
+            normal3 *= math.rsqrt(math.max(normalSq, 0.000001f));
+            float3 projected = velocity3 - math.project(velocity3, normal3);
+            float projectedSq = math.lengthsq(projected);
+            if (projectedSq <= 0.000001f)
+                return Vector3.zero;
+
+            float speed = velocitySq * math.rsqrt(math.max(velocitySq, 0.000001f));
+            projected *= speed * math.rsqrt(math.max(projectedSq, 0.000001f));
+            return new Vector3(projected.x, projected.y, projected.z);
+        }
+
+        private static Vector3 SuppressGroundPenetratingVelocity(Vector3 velocity, Vector3 groundNormal)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float3 normal3 = new float3(groundNormal.x, groundNormal.y, groundNormal.z);
+            if (!math.all(math.isfinite(velocity3)) || !math.all(math.isfinite(normal3)))
+                return Vector3.zero;
+
+            float normalSq = math.lengthsq(normal3);
+            if (normalSq <= 0.000001f)
+                return new Vector3(velocity3.x, velocity3.y, velocity3.z);
+
+            normal3 *= math.rsqrt(math.max(normalSq, 0.000001f));
+            float normalVelocity = math.dot(velocity3, normal3);
+            if (normalVelocity >= 0f)
+                return new Vector3(velocity3.x, velocity3.y, velocity3.z);
+
+            velocity3 -= normal3 * normalVelocity;
+            return new Vector3(velocity3.x, velocity3.y, velocity3.z);
+        }
+
         private static Vector3 FastLerpNormal(Vector3 from, Vector3 to, float t, Vector3 fallback)
         {
             float safeT = math.saturate(t);
@@ -2517,11 +2581,7 @@ namespace Hecton8.Gameplay
             }
 
             if (_playerMotor != null)
-            {
                 _playerMotor.Bind(_rb, _capsuleCollider);
-                _playerMotor.BindEncumbranceSource(_inventoryLoadSource);
-                _playerMotor.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
-            }
 
             if (_environmentHandler != null)
                 _environmentHandler.Bind(this, _playerMotor);
@@ -5137,7 +5197,6 @@ namespace Hecton8.Gameplay
 
             UnbindInventoryLoadSource();
             _inventoryLoadSource = resolvedInventory;
-            _playerMotor?.BindEncumbranceSource(_inventoryLoadSource);
             BaselineInventoryLoadSignalRevision();
             HandleInventoryLoadChanged();
         }
@@ -5148,7 +5207,6 @@ namespace Hecton8.Gameplay
             _boundInventoryLoadSignalSource = null;
             _inventoryLoadSignalHash = 0u;
             _lastInventoryLoadSignalRevision = 0u;
-            _playerMotor?.BindEncumbranceSource(null);
             _runtimeInventoryTotalMassKg = 0f;
             _runtimeInventoryLoadRatio = 0f;
             _runtimeInventoryLoad01 = 0f;
@@ -5226,14 +5284,7 @@ namespace Hecton8.Gameplay
             }
 
             float carryCapacityKg = ResolveInventoryCarryCapacityKg();
-            float cachedLoad01 = _inventoryLoadSource != null ? _inventoryLoadSource.CachedInventoryLoad01 : 0f;
-            float cachedMovementMultiplier = _inventoryLoadSource != null ? _inventoryLoadSource.CachedMaxSwimSpeedMultiplier : 1f;
-            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg, cachedMovementMultiplier, cachedLoad01);
-            InventoryEvents.TryNotifyEncumbranceChanged(new EncumbranceChangedEvent(
-                _inventoryLoadSource,
-                totalMassKg,
-                carryCapacityKg,
-                _runtimeInventoryLoad01));
+            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg);
         }
 
         private float ResolveInventoryCarryCapacityKg()
@@ -5245,37 +5296,41 @@ namespace Hecton8.Gameplay
 
         private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
         {
-            return Hecton8.PureLogic.Kinematics.InventoryMassLoadSpeedScalar.Calculate(totalMassKg, carryCapacityKg, InventoryLoadMinimumMovementMultiplier);
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplier(
+                totalMassKg,
+                carryCapacityKg,
+                InventoryLoadMinimumMovementMultiplier);
         }
 
         private float ResolveRuntimeInventoryLoadMovementMultiplier()
         {
-            return _playerMotor != null
-                ? _playerMotor.EncumbranceMovementMultiplier
-                : _runtimeInventoryLoadMovementMultiplier;
+            return _runtimeInventoryLoadMovementMultiplier;
         }
 
         private static float ResolveInventoryLoad01(float totalMassKg, float carryCapacityKg)
         {
-            return math.saturate(ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg));
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoad01(totalMassKg, carryCapacityKg);
         }
 
         private static float ResolveInventoryLoadRatio(float totalMassKg, float carryCapacityKg)
         {
-            return math.max(0f, totalMassKg) / math.max(0.01f, carryCapacityKg);
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoadRatio(totalMassKg, carryCapacityKg);
         }
 
         internal static bool IsCriticalInventoryLoad(float totalMassKg, float carryCapacityKg)
         {
-            return ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg) >= CriticalEncumbranceRatio;
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.IsCriticalInventoryLoad(
+                ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg),
+                CriticalEncumbranceRatio);
         }
 
         internal static bool ShouldTriggerCriticalStaminaFailure(float encumbranceRatio, float stamina01)
         {
-            return math.isfinite(encumbranceRatio) &&
-                   math.isfinite(stamina01) &&
-                   encumbranceRatio >= CriticalEncumbranceRatio &&
-                   stamina01 < CriticalStaminaFailureThreshold01;
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ShouldTriggerCriticalStaminaFailure(
+                encumbranceRatio,
+                stamina01,
+                CriticalEncumbranceRatio,
+                CriticalStaminaFailureThreshold01);
         }
 
         internal static Vector3 ResolveCriticalEncumbranceSwimForce(Vector3 swimForce, bool criticallyEncumbered)
@@ -5289,12 +5344,16 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
         {
-            return Hecton8.PureLogic.Kinematics.InventoryMassLoadSpeedScalar.Calculate(load01, 1f, InventoryLoadMinimumMovementMultiplier);
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplierFromLoad(
+                load01,
+                InventoryLoadMinimumMovementMultiplier);
         }
 
         internal static float ResolveInventoryUpwardSwimMultiplierFromLoad(float load01)
         {
-            return math.lerp(1f, InventoryUpwardSwimMinimumMultiplier, math.saturate(load01));
+            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeUpwardSwimMultiplier(
+                load01,
+                InventoryUpwardSwimMinimumMultiplier);
         }
 
         /// <inheritdoc />
@@ -7371,10 +7430,12 @@ namespace Hecton8.Gameplay
             }
 
             PhysicsOceanKinematics oceanKinematics = ResolveOceanKinematics();
-            if (oceanKinematics != null && oceanKinematics.IsAvailable)
+            if (oceanKinematics != null &&
+                oceanKinematics.IsAvailable &&
+                TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out float oceanSeaLevel))
             {
                 _crestAvailable = true;
-                _dynamicWaterSurfaceY = ResolveOceanSeaLevel(oceanKinematics);
+                _dynamicWaterSurfaceY = oceanSeaLevel;
             }
 
             UpdateCrestDiagnostics();
@@ -7398,6 +7459,18 @@ namespace Hecton8.Gameplay
 
             PhysicsOceanKinematics oceanKinematics = ResolveOceanKinematics();
             if (oceanKinematics == null || !oceanKinematics.IsAvailable)
+            {
+                _crestAvailable = false;
+                _crestSamplingSucceeded = false;
+                ResetDynamicWaveSampling();
+                _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+                _dynamicWaterFlowVelocity = Vector3.zero;
+                _crestFlowSamplingSucceeded = false;
+                UpdateCrestDiagnostics();
+                return;
+            }
+
+            if (!TryResolveOceanWaterSurfaceY(oceanKinematics.SeaLevel, out _))
             {
                 _crestAvailable = false;
                 _crestSamplingSucceeded = false;
@@ -7453,42 +7526,67 @@ namespace Hecton8.Gameplay
 
         private float ResolveFallbackWaterSurfaceY()
         {
+            using (_waterLevelResolveProfilerMarker.Auto())
+            {
+                float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();
+                bool hasOceanWaterSurface = TryResolveOceanFallbackWaterSurfaceY(out float oceanWaterSurface);
+
+                bool hasTerrainProviderWaterSurface = false;
+                float terrainProviderWaterSurface = DefaultWaterSurfaceY;
+                ITerrainProvider terrainProvider = _terrainProviderRuntime;
+                if (terrainProvider != null)
+                    hasTerrainProviderWaterSurface = TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out terrainProviderWaterSurface);
+
+                bool hasFluidWaterSurface = TryResolveFluidFallbackWaterSurfaceY(out float fluidWaterSurface);
+                return ResolveEffectiveFallbackWaterSurfaceY(
+                    serializedFallbackWaterSurface,
+                    hasOceanWaterSurface,
+                    oceanWaterSurface,
+                    hasTerrainProviderWaterSurface,
+                    terrainProviderWaterSurface,
+                    hasFluidWaterSurface,
+                    fluidWaterSurface);
+            }
+        }
+
+        private static float ResolveEffectiveFallbackWaterSurfaceY(
+            float serializedFallbackWaterSurface,
+            bool hasOceanWaterSurface,
+            float oceanWaterSurface,
+            bool hasTerrainProviderWaterSurface,
+            float terrainProviderWaterSurface,
+            bool hasFluidWaterSurface,
+            float fluidWaterSurface)
+        {
             const float ProviderMismatchRejectMeters = 128f;
 
-            float serializedFallbackWaterSurface = ResolveSerializedFallbackWaterSurfaceY();
-            float referenceWaterSurface = serializedFallbackWaterSurface;
+            float safeSerializedFallbackWaterSurface = TryResolveWaterSurfaceY(serializedFallbackWaterSurface, out float serializedWaterSurface)
+                ? serializedWaterSurface
+                : DefaultWaterSurfaceY;
+            float referenceWaterSurface = safeSerializedFallbackWaterSurface;
             bool hasReferenceWaterSurface = false;
-            if (TryResolveOceanFallbackWaterSurfaceY(out float oceanWaterSurface))
+
+            if (hasOceanWaterSurface && TryResolveOceanWaterSurfaceY(oceanWaterSurface, out float safeOceanWaterSurface))
             {
-                referenceWaterSurface = oceanWaterSurface;
+                referenceWaterSurface = safeOceanWaterSurface;
                 hasReferenceWaterSurface = true;
             }
 
-            ITerrainProvider terrainProvider = _terrainProviderRuntime;
-            if (terrainProvider != null && TryResolveWaterSurfaceY(terrainProvider.WaterSurfaceLevel, out float terrainProviderWaterSurface))
+            if (hasTerrainProviderWaterSurface &&
+                TryResolveWaterSurfaceY(terrainProviderWaterSurface, out float safeTerrainProviderWaterSurface) &&
+                !hasReferenceWaterSurface)
             {
-                if (!hasReferenceWaterSurface)
-                {
-                    referenceWaterSurface = terrainProviderWaterSurface;
-                    hasReferenceWaterSurface = true;
-                }
+                referenceWaterSurface = safeTerrainProviderWaterSurface;
+                hasReferenceWaterSurface = true;
             }
 
-            IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceRuntime;
-            if (fluidSurface != null && TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out float fluidWaterSurface))
+            if (hasFluidWaterSurface && TryResolveWaterSurfaceY(fluidWaterSurface, out float safeFluidWaterSurface))
             {
-                if (math.abs(fluidWaterSurface - referenceWaterSurface) <= ProviderMismatchRejectMeters)
-                {
-                    return fluidWaterSurface;
-                }
+                if (!hasReferenceWaterSurface || math.abs(safeFluidWaterSurface - referenceWaterSurface) <= ProviderMismatchRejectMeters)
+                    return safeFluidWaterSurface;
             }
 
-            if (hasReferenceWaterSurface)
-            {
-                return referenceWaterSurface;
-            }
-
-            return serializedFallbackWaterSurface;
+            return hasReferenceWaterSurface ? referenceWaterSurface : safeSerializedFallbackWaterSurface;
         }
 
         private bool TryResolveOceanFallbackWaterSurfaceY(out float waterSurfaceY)
@@ -7505,9 +7603,26 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private bool TryResolveFluidFallbackWaterSurfaceY(out float waterSurfaceY)
+        {
+            IFluidSurfaceCurrentReadModel fluidSurface = _fluidSurfaceRuntime;
+            if (fluidSurface != null)
+            {
+                if (TryResolveWaterSurfaceY(fluidSurface.CurrentWaterLevelY, out waterSurfaceY))
+                    return true;
+
+                if (TryResolveWaterSurfaceY(fluidSurface.WaterLevel, out waterSurfaceY))
+                    return true;
+            }
+
+            waterSurfaceY = DefaultWaterSurfaceY;
+            return false;
+        }
+
         private static bool TryResolveOceanWaterSurfaceY(float candidateWaterSurfaceY, out float waterSurfaceY)
         {
             if (math.isfinite(candidateWaterSurfaceY) &&
+                math.abs(candidateWaterSurfaceY) > 0.0001f &&
                 math.abs(candidateWaterSurfaceY) <= WorldWaterLevelCalibrationMath.MaximumAbsoluteWaterLevelY)
             {
                 waterSurfaceY = candidateWaterSurfaceY;
@@ -7520,6 +7635,12 @@ namespace Hecton8.Gameplay
 
         private float ResolveSerializedFallbackWaterSurfaceY()
         {
+            if (WorldWaterLevelCalibrationRuntimeRegistry.TryGetActiveSnapshot(out WorldWaterLevelCalibrationDTO calibrationSnapshot) &&
+                TryResolveWaterSurfaceY(calibrationSnapshot.ResolvedWaterLevelY, out float calibratedWaterSurfaceY))
+            {
+                return calibratedWaterSurfaceY;
+            }
+
             if (TryResolveWaterSurfaceY(waterSurfaceY, out float safeWaterSurfaceY))
                 return safeWaterSurfaceY;
 
@@ -7538,6 +7659,20 @@ namespace Hecton8.Gameplay
 
             waterSurfaceY = DefaultWaterSurfaceY;
             return false;
+        }
+
+        private static float ComputeImmersionRatio(float surfaceY, float feetY, float headY, float bodyHeight)
+        {
+            if (!math.isfinite(surfaceY) || !math.isfinite(feetY) || !math.isfinite(headY))
+                return 0f;
+
+            if (feetY >= surfaceY)
+                return 0f;
+
+            if (headY <= surfaceY)
+                return 1f;
+
+            return math.clamp((surfaceY - feetY) / math.max(bodyHeight, 0.0001f), 0f, 1f);
         }
 
         private float ResolveOceanSeaLevel(PhysicsOceanKinematics oceanKinematics)
@@ -9861,9 +9996,12 @@ namespace Hecton8.Gameplay
                 _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
             }
 
+            bool wasWalkingBeforeModeResolution = _isWalking;
             if (shouldWalk != _isWalking)
             {
                 _isWalking = shouldWalk;
+                if (_isWalking)
+                    ApplyShorelineWalkHandoffVelocity(wasWalkingBeforeModeResolution, hasShoreGroundSupport, hasImmediateShoreFooting);
                 ApplyModePhysics(suit);
                 UpdateModeDiagnostics();
             }
@@ -10265,11 +10403,7 @@ namespace Hecton8.Gameplay
             float surfaceY = EffectiveWaterSurfaceY;
             float feetY = GetBodyBottomY();
             float headY = GetBodyTopY();
-
-            if (feetY >= surfaceY) return 0f;
-            if (headY <= surfaceY) return 1f;
-
-            return math.clamp((surfaceY - feetY) / playerHeight, 0f, 1f);
+            return ComputeImmersionRatio(surfaceY, feetY, headY, playerHeight);
         }
 
         /// <summary>
@@ -10346,6 +10480,31 @@ namespace Hecton8.Gameplay
                 ? PlayerLocomotionMode.SurfaceSwim
                 : PlayerLocomotionMode.UnderwaterSwim;
         }
+
+        private void ApplyShorelineWalkHandoffVelocity(bool wasWalkingBeforeModeResolution, bool hasShoreGroundSupport, bool hasImmediateShoreFooting)
+        {
+            if (wasWalkingBeforeModeResolution || IsInDryInterior() || !_isGrounded)
+                return;
+
+            if (!hasShoreGroundSupport && !hasImmediateShoreFooting)
+                return;
+
+            Vector3 groundNormal = _smoothedGroundNormal.sqrMagnitude > 0.0001f
+                ? NormalizeVectorRsqrt(_smoothedGroundNormal, Vector3.up)
+                : Vector3.up;
+            if (groundNormal.y < _minGroundNormalY)
+                return;
+
+            Vector3 currentVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+            Vector3 handoffVelocity = ProjectVelocityOntoGroundPlanePreserveMagnitude(currentVelocity, groundNormal);
+            if (handoffVelocity.sqrMagnitude <= 0.000001f)
+                handoffVelocity = SuppressGroundPenetratingVelocity(currentVelocity, groundNormal);
+
+            handoffVelocity = HectonPlayerMotor.SafeVelocity(handoffVelocity, currentVelocity);
+            if ((handoffVelocity - currentVelocity).sqrMagnitude > 0.000001f)
+                ApplyMotorLinearVelocity(handoffVelocity);
+        }
+
 
         private PlayerEnvironmentState ResolveEnvironmentState(bool exosuitActive, float physicsImmersion)
         {
@@ -12318,7 +12477,10 @@ namespace Hecton8.Gameplay
             _isGrounded = false;
             float bestDistance = float.MaxValue;
             float bestNormalY = requiredGroundNormalY;
-            float maxGroundDistance = groundCheckDistance + GroundCheckSkin + speculativeHoverHeight;
+            float shorelineSnapDistance = (!_isWalking && _smoothedImmersionRatio < swimTransitionThreshold)
+                ? math.min(0.1f, math.max(0f, shoreBuoyancyRecoveryClearance))
+                : 0f;
+            float maxGroundDistance = math.max(groundCheckDistance, shorelineSnapDistance) + GroundCheckSkin + speculativeHoverHeight;
 
             FindBestStandardGroundHit(requiredGroundNormalY, maxGroundDistance, ref bestDistance, ref bestNormalY);
 
@@ -12407,6 +12569,44 @@ namespace Hecton8.Gameplay
                 _forceVector.z = -_smoothedGroundNormal.z * snapForce;
                 ApplyMotorForce(_forceVector);
             }
+
+            ApplyKinematicGroundSnap(scale);
+        }
+
+        private void ApplyKinematicGroundSnap(float scale)
+        {
+            if (!_isGrounded || scale <= 0.001f)
+                return;
+
+            Vector3 groundPoint = _groundHit.point;
+            if (!math.isfinite(groundPoint.x) || !math.isfinite(groundPoint.y) || !math.isfinite(groundPoint.z))
+                return;
+
+            Vector3 groundNormal = _smoothedGroundNormal.sqrMagnitude > 0.0001f
+                ? NormalizeVectorRsqrt(_smoothedGroundNormal, Vector3.up)
+                : Vector3.up;
+            if (groundNormal.y < _minGroundNormalY)
+                return;
+
+            Vector3 currentVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+            Vector3 groundedVelocity = SuppressGroundPenetratingVelocity(currentVelocity, groundNormal);
+            groundedVelocity = HectonPlayerMotor.SafeVelocity(groundedVelocity, currentVelocity);
+            if ((groundedVelocity - currentVelocity).sqrMagnitude > 0.000001f)
+                ApplyMotorLinearVelocity(groundedVelocity);
+
+            float currentBottomY = GetBodyBottomY();
+            float snapDeltaY = groundPoint.y - currentBottomY;
+            float maxSnapDistance = math.min(0.1f, math.max(0f, groundCheckDistance)) + GroundCheckSkin;
+            if (!math.isfinite(snapDeltaY) || math.abs(snapDeltaY) > maxSnapDistance)
+                return;
+
+            float scaledDeltaY = snapDeltaY * math.saturate(scale);
+            if (math.abs(scaledDeltaY) <= GroundCheckSkin)
+                return;
+
+            Vector3 bodyPosition = _useFixedFrameSpatialCache ? _fixedFrameBodyPosition : ResolveBodyRuntimePosition();
+            bodyPosition.y += scaledDeltaY;
+            MoveMotorPosition(HectonPlayerMotor.SafeVelocity(bodyPosition, ResolveBodyRuntimePosition()));
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â

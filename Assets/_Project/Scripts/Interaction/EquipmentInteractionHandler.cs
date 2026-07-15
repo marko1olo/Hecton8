@@ -86,6 +86,7 @@ namespace Hecton8.Interaction
         private readonly bool[] _pendingEquipmentSocketClears = new bool[MaxEquipmentSocketSlots];
 
         private IDataVault _dataVault;
+        private IDataVault _pendingDataVault;
         private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _voxelSdfReadModel;
         private ITerrainProvider _terrainProvider;
         private VaultGenerationHandle<InteractionSignal> _signalQueueHandle;
@@ -108,6 +109,7 @@ namespace Hecton8.Interaction
         private int _packetAdmissionCount;
         private int _lastOverflowWarningFrame = -1;
         private bool _scheduledSurfaceQueryActive;
+        private bool _pendingDataVaultRebind;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
         private bool _simulationSystemRegistered;
@@ -276,10 +278,24 @@ namespace Hecton8.Interaction
                 return false;
             }
 
-            bool hasCompletedHit = TryGetCompletedSurfaceHit(requesterId, ResolveSimulationFrameIndex(), out hit);
+            bool hasCompletedHit = TryGetCompletedSurfaceHit(requesterId, ResolveSimulationFrameIndex(), out InteractionSurfaceHit completedHit);
             Vector3 normalizedDirection = NormalizeFinite(direction, Vector3.forward);
-            QueuePrimarySurfaceQuery(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
-            return hasCompletedHit;
+            InteractionSurfaceQueryDTO request = CreateSurfaceQueryRequest(origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
+            bool hasCurrentHit = TryResolveKinematicSurfaceHit(in request, out InteractionSurfaceHit currentHit);
+            QueuePrimarySurfaceQuery(requesterId, in request);
+            if (hasCurrentHit)
+            {
+                hit = currentHit;
+                return true;
+            }
+
+            if (hasCompletedHit)
+            {
+                hit = completedHit;
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
@@ -408,9 +424,9 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            CompleteScheduledSurfaceQueries();
-            FlushSignals();
-            ScheduleStagedSurfaceQueries();
+            if (_pendingDataVaultRebind && !TryApplyPendingDataVaultRebindCold())
+                return;
+
             if (EquipmentMetadata.HasPendingRuntimeSocketPublications)
                 FlushPendingEquipmentSocketPublications(MaxLateFramePendingSocketPublishes);
             if (_pendingEquipmentSocketClearCount > 0)
@@ -436,9 +452,11 @@ namespace Hecton8.Interaction
 
             ClearQueuedSignals(createVaultLane: false);
 
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
+            bool signalDescriptorReleased = ReleaseInteractionVaultDescriptor(_dataVault, ref _signalQueueHandle);
             TryClearEquipmentSocketRange(0, MaxEquipmentSocketSlots);
-            DisposeSurfaceQueryBuffers();
+            bool surfaceDescriptorsReleased = DisposeSurfaceQueryBuffers();
+            if (signalDescriptorReleased && surfaceDescriptorsReleased)
+                _dataVault = null;
             System.Array.Clear(_equipmentSocketSlotOwners, 0, _equipmentSocketSlotOwners.Length);
             System.Array.Clear(_equipmentSocketScratch, 0, _equipmentSocketScratch.Length);
             System.Array.Clear(_pendingEquipmentSocketClears, 0, _pendingEquipmentSocketClears.Length);
@@ -446,6 +464,21 @@ namespace Hecton8.Interaction
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
             _completedResultCount = 0;
+            _previousStagedRequestCount = 0;
+            _previousScheduledRequestCount = 0;
+            _previousScheduledHitCount = 0;
+            _pendingDataVault = null;
+            _pendingDataVaultRebind = false;
+            System.Array.Clear(_stagedSurfaceRequests, 0, _stagedSurfaceRequests.Length);
+            System.Array.Clear(_scheduledSurfaceRequests, 0, _scheduledSurfaceRequests.Length);
+            System.Array.Clear(_scheduledResolveRequests, 0, _scheduledResolveRequests.Length);
+            System.Array.Clear(_scheduledResolveHitDtos, 0, _scheduledResolveHitDtos.Length);
+            System.Array.Clear(_stagingRequesterIds, 0, _stagingRequesterIds.Length);
+            System.Array.Clear(_scheduledRequesterIds, 0, _scheduledRequesterIds.Length);
+            System.Array.Clear(_completedRequesterIds, 0, _completedRequesterIds.Length);
+            System.Array.Clear(_completedHasHit, 0, _completedHasHit.Length);
+            System.Array.Clear(_completedHits, 0, _completedHits.Length);
+            System.Array.Clear(_completedHitFrames, 0, _completedHitFrames.Length);
             _pendingEquipmentSocketClearCount = 0;
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -486,20 +519,64 @@ namespace Hecton8.Interaction
 
         private void TryRegisterToDispatcher()
         {
-            if (_dispatcherRegistered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
-            _dispatcherRegistered = _lateFrameRegistered;
+            if (_surfaceQuerySimulationPhase == null)
+                _surfaceQuerySimulationPhase = new SimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - interaction surface query schedule bridge - owner: EquipmentInteractionHandler
+            if (_surfaceQueryPostSimulationPhase == null)
+                _surfaceQueryPostSimulationPhase = new PostSimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - interaction surface query completion bridge - owner: EquipmentInteractionHandler
+
+            if (!_simulationSystemRegistered || !_postSimulationSystemRegistered)
+            {
+                bool simulationRegistered = _simulationSystemRegistered || GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQuerySimulationPhase);
+                bool postSimulationRegistered = _postSimulationSystemRegistered || GlobalRegistry.TryRegisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
+                if (simulationRegistered && postSimulationRegistered)
+                {
+                    _simulationSystemRegistered = true;
+                    _postSimulationSystemRegistered = true;
+                }
+                else
+                {
+                    if (simulationRegistered)
+                        GlobalRegistry.UnregisterDispatcherSystem(_surfaceQuerySimulationPhase);
+                    if (postSimulationRegistered)
+                        GlobalRegistry.UnregisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
+                    _simulationSystemRegistered = false;
+                    _postSimulationSystemRegistered = false;
+                }
+            }
+
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+
+            _dispatcherRegistered = _simulationSystemRegistered || _postSimulationSystemRegistered || _lateFrameRegistered;
         }
 
         private void TryUnregisterFromDispatcher()
         {
-            if (!_dispatcherRegistered && !_lateFrameRegistered)
+            if (!_dispatcherRegistered &&
+                !_simulationSystemRegistered &&
+                !_postSimulationSystemRegistered &&
+                !_lateFrameRegistered)
+            {
                 return;
+            }
+
+            if (_simulationSystemRegistered)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_surfaceQuerySimulationPhase);
+                _simulationSystemRegistered = false;
+            }
+
+            if (_postSimulationSystemRegistered)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_surfaceQueryPostSimulationPhase);
+                _postSimulationSystemRegistered = false;
+            }
 
             if (_lateFrameRegistered)
             {
@@ -508,6 +585,72 @@ namespace Hecton8.Interaction
             }
 
             _dispatcherRegistered = false;
+        }
+
+        private sealed class SimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly EquipmentInteractionHandler _owner;
+
+            public SimulationPhaseSystem(EquipmentInteractionHandler owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => _surfaceQuerySimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.Simulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                _owner?.ScheduleStagedSurfaceQueries();
+                return dependsOn;
+            }
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly EquipmentInteractionHandler _owner;
+
+            public PostSimulationPhaseSystem(EquipmentInteractionHandler owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => _surfaceQueryPostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                if (_owner == null)
+                    return;
+
+                _owner.CompleteScheduledSurfaceQueries();
+                _owner.FlushSignals();
+            }
         }
 
         private void TryRegisterSignalService()
@@ -889,10 +1032,35 @@ namespace Hecton8.Interaction
             }
 
             Vector3 normalizedDirection = NormalizeFinite(request.Direction, Vector3.forward);
-            if (TryResolveSdfSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit))
-                return true;
+            InteractionSurfaceHit bestHit = default;
+            float bestDistance = request.Range;
+            bool hasBestHit = false;
 
-            return TryResolveTerrainSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out hit);
+            Ray ray = new Ray(request.Origin, normalizedDirection);
+            if (InteractableRegistry.TryResolveSpatialTarget(
+                    in ray,
+                    request.Range,
+                    request.LayerMask,
+                    ResolveQueryTriggerInteraction(request.TriggerMode),
+                    out InteractableRegistry.SpatialHit spatialHit))
+            {
+                InteractionSurfaceHit colliderHit = InteractionSurfaceHit.FromSurface(
+                    spatialHit.Point,
+                    spatialHit.Normal,
+                    spatialHit.Distance,
+                    spatialHit.Collider,
+                    spatialHit.Collider != null ? spatialHit.Collider.gameObject.layer : -1);
+                TrySelectNearestSurfaceHit(in colliderHit, ref bestHit, ref bestDistance, ref hasBestHit);
+            }
+
+            if (TryResolveSdfSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out InteractionSurfaceHit sdfHit))
+                TrySelectNearestSurfaceHit(in sdfHit, ref bestHit, ref bestDistance, ref hasBestHit);
+
+            if (TryResolveTerrainSurfaceHit(request.Origin, normalizedDirection, request.Range, request.LayerMask, out InteractionSurfaceHit terrainHit))
+                TrySelectNearestSurfaceHit(in terrainHit, ref bestHit, ref bestDistance, ref hasBestHit);
+
+            hit = bestHit;
+            return hasBestHit;
         }
 
         private bool TryResolveSdfSurfaceHit(Vector3 origin, Vector3 direction, float range, int layerMask, out InteractionSurfaceHit hit)
@@ -933,9 +1101,15 @@ namespace Hecton8.Interaction
             if (math.dot(normal, direction3) >= 0f)
                 normal = -normal;
 
-            hit.point = new Vector3(sdfHit.Point.x, sdfHit.Point.y, sdfHit.Point.z);
-            hit.normal = new Vector3(normal.x, normal.y, normal.z);
-            hit.distance = math.max(0f, sdfHit.Distance);
+            int sdfLayer = IncludesAnyLayer(layerMask, HectonLayerMasks.VoxelCaveLayerMask)
+                ? HectonLayerMasks.VoxelCave
+                : HectonLayerMasks.VoxelProxy;
+            hit = InteractionSurfaceHit.FromSurface(
+                new Vector3(sdfHit.Point.x, sdfHit.Point.y, sdfHit.Point.z),
+                new Vector3(normal.x, normal.y, normal.z),
+                math.max(0f, sdfHit.Distance),
+                null,
+                sdfLayer);
             return true;
         }
 
@@ -973,10 +1147,26 @@ namespace Hecton8.Interaction
             if (Vector3.Dot(normal, direction) >= 0f)
                 normal = -normal;
 
-            hit.point = point;
-            hit.normal = normal;
-            hit.distance = distance;
+            hit = InteractionSurfaceHit.FromSurface(point, normal, distance, null, HectonLayerMasks.Terrain);
             return true;
+        }
+
+        private static void TrySelectNearestSurfaceHit(in InteractionSurfaceHit candidate, ref InteractionSurfaceHit bestHit, ref float bestDistance, ref bool hasBestHit)
+        {
+            if (!candidate.HasHit || !math.isfinite(candidate.distance) || candidate.distance < 0f || candidate.distance > bestDistance)
+                return;
+
+            bestHit = candidate;
+            bestDistance = candidate.distance;
+            hasBestHit = true;
+        }
+
+        private static QueryTriggerInteraction ResolveQueryTriggerInteraction(int triggerMode)
+        {
+            return triggerMode == (int)QueryTriggerInteraction.Ignore ||
+                   triggerMode == (int)QueryTriggerInteraction.Collide
+                ? (QueryTriggerInteraction)triggerMode
+                : QueryTriggerInteraction.UseGlobal;
         }
 
         private static bool IncludesAnyLayer(int queryMask, int requiredMask)
@@ -993,7 +1183,7 @@ namespace Hecton8.Interaction
             return math.lerp(coarse, fine, quality);
         }
 
-        private void QueuePrimarySurfaceQuery(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
+        private void QueuePrimarySurfaceQuery(ulong requesterId, in InteractionSurfaceQueryDTO request)
         {
             int requestIndex = FindStagedRequestIndex(requesterId);
             bool newRequest = requestIndex < 0;
@@ -1005,7 +1195,6 @@ namespace Hecton8.Interaction
                 requestIndex = _stagedRequestCount;
             }
 
-            InteractionSurfaceQueryDTO request = CreateSurfaceQueryRequest(origin, direction, range, layerMask, queryTriggerInteraction);
             if (newRequest)
             {
                 _stagingRequesterIds[_stagedRequestCount] = requesterId;
@@ -1013,6 +1202,8 @@ namespace Hecton8.Interaction
             }
 
             _stagedSurfaceRequests[requestIndex] = request;
+            if (_stagedRequestCount > _previousStagedRequestCount)
+                _previousStagedRequestCount = _stagedRequestCount;
 
             IDataVault vault = ResolveDataVault();
             if (!TryAcquireInteractionGuard(vault, StagingCommandsMutationGuardMask))
@@ -1078,89 +1269,30 @@ namespace Hecton8.Interaction
             if (!_scheduledSurfaceQueryActive)
                 return;
 
-            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
+            int scheduledCount = math.min(_scheduledRequestCount, MaxQueuedSurfaceRequests);
+            int staleRequestCount = math.min(math.max(_previousScheduledRequestCount, scheduledCount), MaxQueuedSurfaceRequests);
+            for (int i = 0; i < scheduledCount; i++)
             {
-                _scheduledRequestCount = 0;
-                _scheduledSurfaceQueryActive = false;
-                return;
+                _scheduledResolveRequests[i] = _scheduledSurfaceRequests[i];
+                _completedRequesterIds[i] = _scheduledRequesterIds[i];
+                _scheduledSurfaceRequests[i] = default;
+                _scheduledRequesterIds[i] = 0UL;
             }
 
-            IDataVault vault = ResolveDataVault();
-            if (vault == null || vault.IsCompactionFenceActive)
+            for (int i = scheduledCount; i < staleRequestCount; i++)
             {
-                _scheduledRequestCount = 0;
-                _scheduledSurfaceQueryActive = false;
-                return;
+                _scheduledSurfaceRequests[i] = default;
+                _scheduledResolveRequests[i] = default;
+                _scheduledResolveHitDtos[i] = default;
+                _completedRequesterIds[i] = 0UL;
+                _completedHasHit[i] = false;
+                _completedHits[i] = default;
+                _completedHitFrames[i] = -1;
             }
 
-            bool mutationGuardAcquired = false;
-            int scheduledCount = 0;
-            try
-            {
-                if (!vault.TryAcquireMutationGuard(SurfaceQueryScheduledMutationGuardMask))
-                {
-                    _scheduledRequestCount = 0;
-                    _scheduledSurfaceQueryActive = false;
-                    return;
-                }
-
-                mutationGuardAcquired = true;
-                if (vault.IsCompactionFenceActive)
-                {
-                    _scheduledRequestCount = 0;
-                    _scheduledSurfaceQueryActive = false;
-                    return;
-                }
-
-                scheduledCount = math.min(_scheduledRequestCount, MaxQueuedSurfaceRequests);
-                if (!TryOpenExistingInteractionVaultBuffer(
-                        vault,
-                        ref _scheduledRequestsHandle,
-                        BufferID.InteractionRaycastScheduledCommands,
-                        MaxQueuedSurfaceRequests,
-                        out NativeArray<InteractionSurfaceQueryDTO> scheduledRequests) ||
-                    !TryOpenExistingInteractionVaultBuffer(
-                        vault,
-                        ref _scheduledHitsHandle,
-                        BufferID.InteractionRaycastScheduledHits,
-                        MaxQueuedSurfaceRequests,
-                        out NativeArray<InteractionSurfaceHitDTO> scheduledHits))
-                {
-                    _scheduledRequestCount = 0;
-                    _scheduledSurfaceQueryActive = false;
-                    return;
-                }
-
-                for (int i = 0; i < scheduledCount; i++)
-                {
-                    _scheduledResolveRequests[i] = scheduledRequests[i];
-                    _completedRequesterIds[i] = _scheduledRequesterIds[i];
-                    _scheduledRequesterIds[i] = 0UL;
-                }
-
-                for (int i = scheduledCount; i < MaxQueuedSurfaceRequests; i++)
-                {
-                    _scheduledResolveRequests[i] = default;
-                    _scheduledResolveHitDtos[i] = default;
-                    _completedRequesterIds[i] = 0UL;
-                    _completedHasHit[i] = false;
-                    _completedHits[i] = default;
-                    _completedHitFrames[i] = -1;
-                }
-
-                _scheduledRequestCount = 0;
-                _scheduledSurfaceQueryActive = false;
-                for (int i = 0; i < scheduledRequests.Length; i++)
-                    scheduledRequests[i] = default;
-                for (int i = 0; i < scheduledHits.Length; i++)
-                    scheduledHits[i] = default;
-            }
-            finally
-            {
-                if (mutationGuardAcquired)
-                    vault.ReleaseMutationGuard(SurfaceQueryScheduledMutationGuardMask);
-            }
-
+            _scheduledRequestCount = 0;
+            _scheduledSurfaceQueryActive = false;
+            _previousScheduledRequestCount = 0;
             _completedResultCount = scheduledCount;
 
             int completionFrame = ResolveSimulationFrameIndex();
@@ -1175,32 +1307,55 @@ namespace Hecton8.Interaction
                 _scheduledResolveRequests[i] = default;
             }
 
-            mutationGuardAcquired = false;
+            MirrorCompletedSurfaceQueriesToVault(scheduledCount, staleRequestCount);
+        }
+
+        private void MirrorCompletedSurfaceQueriesToVault(int completedCount, int staleRequestCount)
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || vault.IsCompactionFenceActive || !EnsureSurfaceQueryBufferHandles(createIfMissing: false))
+                return;
+
+            bool mutationGuardAcquired = false;
             try
             {
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireMutationGuard(SurfaceQueryScheduledMutationGuardMask))
+                if (!vault.TryAcquireMutationGuard(SurfaceQueryScheduledMutationGuardMask))
                     return;
 
                 mutationGuardAcquired = true;
                 if (vault.IsCompactionFenceActive)
                     return;
 
-                if (!TryOpenExistingInteractionVaultBuffer(
-                        vault,
-                        ref _scheduledHitsHandle,
-                        BufferID.InteractionRaycastScheduledHits,
-                        MaxQueuedSurfaceRequests,
-                        out NativeArray<InteractionSurfaceHitDTO> scheduledHits))
+                bool hasScheduledRequests = TryOpenExistingInteractionVaultBuffer(
+                    vault,
+                    ref _scheduledRequestsHandle,
+                    BufferID.InteractionRaycastScheduledCommands,
+                    MaxQueuedSurfaceRequests,
+                    out NativeArray<InteractionSurfaceQueryDTO> scheduledRequests);
+                bool hasScheduledHits = TryOpenExistingInteractionVaultBuffer(
+                    vault,
+                    ref _scheduledHitsHandle,
+                    BufferID.InteractionRaycastScheduledHits,
+                    MaxQueuedSurfaceRequests,
+                    out NativeArray<InteractionSurfaceHitDTO> scheduledHits);
+
+                if (hasScheduledRequests)
                 {
-                    return;
+                    int clearCount = math.min(staleRequestCount, scheduledRequests.Length);
+                    for (int i = 0; i < clearCount; i++)
+                        scheduledRequests[i] = default;
                 }
 
-                int writeCount = math.min(scheduledCount, scheduledHits.Length);
-                for (int i = 0; i < writeCount; i++)
-                    scheduledHits[i] = _scheduledResolveHitDtos[i];
-                for (int i = writeCount; i < scheduledHits.Length; i++)
-                    scheduledHits[i] = default;
+                if (hasScheduledHits)
+                {
+                    int writeCount = math.min(completedCount, scheduledHits.Length);
+                    int clearCount = math.min(math.max(_previousScheduledHitCount, writeCount), scheduledHits.Length);
+                    for (int i = 0; i < writeCount; i++)
+                        scheduledHits[i] = _scheduledResolveHitDtos[i];
+                    for (int i = writeCount; i < clearCount; i++)
+                        scheduledHits[i] = default;
+                    _previousScheduledHitCount = writeCount;
+                }
             }
             finally
             {
@@ -1214,15 +1369,47 @@ namespace Hecton8.Interaction
             if (_scheduledSurfaceQueryActive || _stagedRequestCount <= 0)
                 return;
 
-            if (!EnsureSurfaceQueryBufferHandles(createIfMissing: false))
-                return;
+            int scheduledCount = math.min(_stagedRequestCount, MaxQueuedSurfaceRequests);
+            int staleStagedCount = math.min(math.max(_previousStagedRequestCount, scheduledCount), MaxQueuedSurfaceRequests);
+            int staleScheduledCount = math.min(math.max(_previousScheduledRequestCount, scheduledCount), MaxQueuedSurfaceRequests);
+            int staleHitCount = math.min(_previousScheduledHitCount, MaxQueuedSurfaceRequests);
 
+            for (int i = 0; i < scheduledCount; i++)
+            {
+                _scheduledSurfaceRequests[i] = _stagedSurfaceRequests[i];
+                _scheduledRequesterIds[i] = _stagingRequesterIds[i];
+                _stagedSurfaceRequests[i] = default;
+                _stagingRequesterIds[i] = 0UL;
+            }
+
+            for (int i = scheduledCount; i < staleScheduledCount; i++)
+            {
+                _scheduledSurfaceRequests[i] = default;
+                _scheduledRequesterIds[i] = 0UL;
+            }
+
+            for (int i = scheduledCount; i < staleStagedCount; i++)
+            {
+                _stagedSurfaceRequests[i] = default;
+                _stagingRequesterIds[i] = 0UL;
+            }
+
+            _scheduledSurfaceQueryActive = true;
+            _scheduledRequestCount = scheduledCount;
+            _stagedRequestCount = 0;
+            _previousStagedRequestCount = 0;
+            _previousScheduledRequestCount = scheduledCount;
+
+            MirrorScheduledSurfaceQueriesToVault(scheduledCount, staleScheduledCount, staleStagedCount, staleHitCount);
+        }
+
+        private void MirrorScheduledSurfaceQueriesToVault(int scheduledCount, int staleScheduledCount, int staleStagedCount, int staleHitCount)
+        {
             IDataVault vault = ResolveDataVault();
-            if (vault == null || vault.IsCompactionFenceActive)
+            if (vault == null || vault.IsCompactionFenceActive || !EnsureSurfaceQueryBufferHandles(createIfMissing: false))
                 return;
 
             bool mutationGuardAcquired = false;
-
             try
             {
                 if (!vault.TryAcquireMutationGuard(SurfaceQueryScheduleMutationGuardMask))
@@ -1254,24 +1441,21 @@ namespace Hecton8.Interaction
                     return;
                 }
 
-                int scheduledCount = _stagedRequestCount;
-                for (int i = 0; i < scheduledRequests.Length; i++)
+                int scheduledWriteCount = math.min(scheduledCount, scheduledRequests.Length);
+                int scheduledClearCount = math.min(staleScheduledCount, scheduledRequests.Length);
+                for (int i = 0; i < scheduledWriteCount; i++)
+                    scheduledRequests[i] = _scheduledSurfaceRequests[i];
+                for (int i = scheduledWriteCount; i < scheduledClearCount; i++)
                     scheduledRequests[i] = default;
 
-                for (int i = 0; i < scheduledCount; i++)
-                    scheduledRequests[i] = stagingRequests[i];
-                for (int i = 0; i < scheduledHits.Length; i++)
-                    scheduledHits[i] = default;
-
-                _scheduledSurfaceQueryActive = true;
-                _scheduledRequestCount = scheduledCount;
-
-                System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
-                System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
-                for (int i = 0; i < stagingRequests.Length; i++)
+                int stagingClearCount = math.min(staleStagedCount, stagingRequests.Length);
+                for (int i = 0; i < stagingClearCount; i++)
                     stagingRequests[i] = default;
 
-                _stagedRequestCount = 0;
+                int hitClearCount = math.min(staleHitCount, scheduledHits.Length);
+                for (int i = 0; i < hitClearCount; i++)
+                    scheduledHits[i] = default;
+                _previousScheduledHitCount = 0;
             }
             finally
             {
@@ -1280,12 +1464,13 @@ namespace Hecton8.Interaction
             }
         }
 
-        private void DisposeSurfaceQueryBuffers()
+        private bool DisposeSurfaceQueryBuffers()
         {
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledRequestsHandle);
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledHitsHandle);
-            ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingRequestsHandle);
-            _dataVault = null;
+            bool released = true;
+            released &= ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledRequestsHandle);
+            released &= ReleaseInteractionVaultDescriptor(_dataVault, ref _scheduledHitsHandle);
+            released &= ReleaseInteractionVaultDescriptor(_dataVault, ref _stagingRequestsHandle);
+            return released;
         }
 
         private bool TryReserveEquipmentSocketSlots(EquipmentMetadata metadata, int slotCount, out int startIndex)
@@ -1584,22 +1769,66 @@ namespace Hecton8.Interaction
             if (ReferenceEquals(_dataVault, dataVault))
                 return;
 
+            _pendingDataVault = dataVault;
+            _pendingDataVaultRebind = true;
+            TryApplyPendingDataVaultRebindCold();
+        }
+
+        private bool TryApplyPendingDataVaultRebindCold()
+        {
+            if (!_pendingDataVaultRebind)
+                return true;
+
             IDataVault oldVault = _dataVault;
-            ReleaseAllInteractionVaultDescriptors(oldVault);
-            _dataVault = dataVault;
+            IDataVault nextVault = _pendingDataVault;
+            if (ReferenceEquals(oldVault, nextVault))
+            {
+                _pendingDataVault = null;
+                _pendingDataVaultRebind = false;
+                return true;
+            }
+
+            if ((oldVault != null && oldVault.IsCompactionFenceActive) ||
+                (nextVault != null && nextVault.IsCompactionFenceActive))
+            {
+                return false;
+            }
+
+            bool releasedOldDescriptors = ReleaseAllInteractionVaultDescriptors(oldVault);
+            if (!releasedOldDescriptors)
+                return false;
+
+            _dataVault = nextVault;
+            _pendingDataVault = null;
+            _pendingDataVaultRebind = false;
             _scheduledSurfaceQueryActive = false;
             _scheduledRequestCount = 0;
             _stagedRequestCount = 0;
+            _completedResultCount = 0;
+            _previousStagedRequestCount = 0;
+            _previousScheduledRequestCount = 0;
+            _previousScheduledHitCount = 0;
             System.Array.Clear(_pendingEquipmentSocketClears, 0, _pendingEquipmentSocketClears.Length);
+            System.Array.Clear(_stagedSurfaceRequests, 0, _stagedSurfaceRequests.Length);
+            System.Array.Clear(_scheduledSurfaceRequests, 0, _scheduledSurfaceRequests.Length);
+            System.Array.Clear(_scheduledResolveRequests, 0, _scheduledResolveRequests.Length);
+            System.Array.Clear(_scheduledResolveHitDtos, 0, _scheduledResolveHitDtos.Length);
+            System.Array.Clear(_stagingRequesterIds, 0, _stagingRequesterIds.Length);
+            System.Array.Clear(_scheduledRequesterIds, 0, _scheduledRequesterIds.Length);
+            System.Array.Clear(_completedRequesterIds, 0, _completedRequesterIds.Length);
+            System.Array.Clear(_completedHasHit, 0, _completedHasHit.Length);
+            System.Array.Clear(_completedHits, 0, _completedHits.Length);
+            System.Array.Clear(_completedHitFrames, 0, _completedHitFrames.Length);
             _pendingEquipmentSocketClearCount = 0;
 
             if (_dataVault == null)
-                return;
+                return false;
 
             EnsureSignalQueueHandle(createIfMissing: true);
             EnsureSurfaceQueryBufferHandles(createIfMissing: true);
             RepublishOwnedEquipmentSocketsCold();
             FlushPendingEquipmentSocketPublications(MaxEquipmentSocketSlots);
+            return true;
         }
 
         private void TryRegisterHotSwapListenerCold()
@@ -1660,7 +1889,7 @@ namespace Hecton8.Interaction
 
         private IDataVault ResolveDataVault()
         {
-            return _dataVault;
+            return _pendingDataVaultRebind ? null : _dataVault;
         }
 
         private static int ResolveSimulationFrameIndex()
@@ -1895,21 +2124,30 @@ namespace Hecton8.Interaction
             }
         }
 
-        private void ReleaseAllInteractionVaultDescriptors(IDataVault vault)
+        private bool ReleaseAllInteractionVaultDescriptors(IDataVault vault)
         {
-            ReleaseInteractionVaultDescriptor(vault, ref _signalQueueHandle);
-            ReleaseInteractionVaultDescriptor(vault, ref _scheduledRequestsHandle);
-            ReleaseInteractionVaultDescriptor(vault, ref _scheduledHitsHandle);
-            ReleaseInteractionVaultDescriptor(vault, ref _stagingRequestsHandle);
+            bool released = true;
+            released &= ReleaseInteractionVaultDescriptor(vault, ref _signalQueueHandle);
+            released &= ReleaseInteractionVaultDescriptor(vault, ref _scheduledRequestsHandle);
+            released &= ReleaseInteractionVaultDescriptor(vault, ref _scheduledHitsHandle);
+            released &= ReleaseInteractionVaultDescriptor(vault, ref _stagingRequestsHandle);
+            return released;
         }
 
-        private static void ReleaseInteractionVaultDescriptor<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static bool ReleaseInteractionVaultDescriptor<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u)
-                vault.ReleaseBuffer(in handle);
+            if (vault == null || handle.BufferID == 0u)
+            {
+                handle = default;
+                return true;
+            }
+
+            if (!vault.ReleaseBuffer(in handle))
+                return false;
 
             handle = default;
+            return true;
         }
 
         private static InteractionSurfaceQueryDTO CreateSurfaceQueryRequest(Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)

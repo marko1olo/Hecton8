@@ -112,17 +112,31 @@ namespace Hecton8.Tests.Editor
         public void BlackBoxDumpWritesTempFlushesAndPromotesAtomically()
         {
             string source = ReadProjectFile("Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs");
+            string dumpsBody = ExtractMethodBody(source, "private unsafe void WriteBlackBoxDumps()");
             string dumpBody = ExtractMethodBody(source, "private unsafe void WriteBlackBoxDump(");
+            string headerBody = ExtractMethodBody(source, "private void WriteBlackBoxDumpHeader(");
+            string hashBody = ExtractMethodBody(source, "private static unsafe uint ComputeBlackBoxDumpPayloadHash(");
             string validateBody = ExtractMethodBody(source, "private static bool TryFlushAndValidateBlackBoxDumpFile");
             string cleanupBody = ExtractMethodBody(source, "private static void TryDeleteBlackBoxDumpTempFile");
 
             Assert.IsFalse(dumpBody.Contains("new FileStream(dumpPath", StringComparison.Ordinal));
             Assert.IsFalse(dumpBody.Contains("dumpPath,\r\n                           FileMode.Create", StringComparison.Ordinal));
             Assert.IsFalse(dumpBody.Contains("dumpPath,\n                           FileMode.Create", StringComparison.Ordinal));
+            StringAssert.Contains("private const uint BlackBoxDumpMagic = 0x48384450u;", source);
+            StringAssert.Contains("private const ushort BlackBoxDumpVersion = 1;", source);
+            StringAssert.Contains("private const int BlackBoxDumpHeaderBytes = 64;", source);
+            StringAssert.Contains("WriteBlackBoxDump(_dumpPath, telemetryRing, crashDump: false);", dumpsBody);
+            StringAssert.Contains("WriteBlackBoxDump(_dumpH8Path, telemetryRing, crashDump: false);", dumpsBody);
+            StringAssert.Contains("if (HasInitializationFault || Volatile.Read(ref _disposeRequested) != 0)", dumpsBody);
+            StringAssert.Contains("WriteBlackBoxDump(_crashDumpPath, telemetryRing, crashDump: true);", dumpsBody);
+            StringAssert.Contains("WriteBlackBoxDump(_crashDumpH8Path, telemetryRing, crashDump: true);", dumpsBody);
             StringAssert.Contains("absoluteDumpPath = Path.GetFullPath(dumpPath);", dumpBody);
             StringAssert.Contains("tempPath = absoluteDumpPath + \".tmp\";", dumpBody);
             StringAssert.Contains("TryDeleteBlackBoxDumpTempFile(tempPath);", dumpBody);
-            StringAssert.Contains("long expectedBytes = (long)count * UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();", dumpBody);
+            StringAssert.Contains("int entryBytes = UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();", dumpBody);
+            StringAssert.Contains("long expectedBytes = BlackBoxDumpHeaderBytes + ((long)count * entryBytes);", dumpBody);
+            StringAssert.Contains("uint payloadHash = ComputeBlackBoxDumpPayloadHash(telemetryRing, count, entryBytes);", dumpBody);
+            StringAssert.Contains("WriteBlackBoxDumpHeader(writer, count, entryBytes, payloadHash, crashDump);", dumpBody);
             StringAssert.Contains("FileOptions.WriteThrough | FileOptions.SequentialScan", dumpBody);
             StringAssert.Contains("writer.Flush();", dumpBody);
             StringAssert.Contains("stream.Flush(true);", dumpBody);
@@ -138,10 +152,14 @@ namespace Hecton8.Tests.Editor
                 "absoluteDumpPath = Path.GetFullPath(dumpPath);",
                 "tempPath = absoluteDumpPath + \".tmp\";",
                 "TryDeleteBlackBoxDumpTempFile(tempPath);",
+                "int entryBytes = UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();",
+                "long expectedBytes = BlackBoxDumpHeaderBytes + ((long)count * entryBytes);",
+                "uint payloadHash = ComputeBlackBoxDumpPayloadHash(telemetryRing, count, entryBytes);",
                 "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
                 "new FileStream(",
                 "tempPath",
                 "FileOptions.WriteThrough | FileOptions.SequentialScan",
+                "WriteBlackBoxDumpHeader(writer, count, entryBytes, payloadHash, crashDump);",
                 "writer.Flush();",
                 "stream.Flush(true);",
                 "stream.Length != expectedBytes",
@@ -154,12 +172,68 @@ namespace Hecton8.Tests.Editor
                 "AsyncWriteManager.InvalidateCachedReadWindows(absoluteDumpPath);",
                 "TryFlushAndValidateBlackBoxDumpFile(absoluteDumpPath, expectedBytes)"));
 
+            StringAssert.Contains("writer.Write(BlackBoxDumpMagic);", headerBody);
+            StringAssert.Contains("writer.Write(BlackBoxDumpVersion);", headerBody);
+            StringAssert.Contains("writer.Write((ushort)BlackBoxDumpHeaderBytes);", headerBody);
+            StringAssert.Contains("writer.Write(BlackBoxDumpOwnerHash);", headerBody);
+            StringAssert.Contains("writer.Write(BlackBoxDumpSchemaHash);", headerBody);
+            StringAssert.Contains("writer.Write((uint)count);", headerBody);
+            StringAssert.Contains("writer.Write((uint)TelemetryCapacity);", headerBody);
+            StringAssert.Contains("writer.Write((uint)entryBytes);", headerBody);
+            StringAssert.Contains("writer.Write(payloadHash);", headerBody);
+            StringAssert.Contains("writer.Write(Volatile.Read(ref _telemetryCursor.Value));", headerBody);
+            StringAssert.Contains("writer.Write(crashDump ? 1u : 0u);", headerBody);
+            StringAssert.Contains("writer.Write(DateTime.UtcNow.Ticks);", headerBody);
+            StringAssert.Contains("writer.Write(Volatile.Read(ref _ioErrorCount.Value));", headerBody);
+            StringAssert.Contains("UnsafeUtility.AddressOf(ref entry)", hashBody);
+            StringAssert.Contains("hash = (hash ^ source[byteIndex]) * 16777619u;", hashBody);
+            StringAssert.Contains("return hash == 0u ? 2166136261u : hash;", hashBody);
             StringAssert.Contains("AsyncWriteManager.FlushCriticalSavePath(path, expectedBytes, out _)", validateBody);
             Assert.IsTrue(ContainsTokensInOrder(
                 cleanupBody,
                 "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);",
                 "File.Delete(tempPath);",
                 "AsyncWriteManager.InvalidateCachedReadWindows(tempPath);"));
+        }
+
+        [Test]
+        public void WorkerWakeEventIsRecreatedAndDisposedIdempotently()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs");
+            string initializeBody = ExtractMethodBody(source, "public void Initialize(string absolutePath)");
+            string disposeBody = ExtractMethodBody(source, "public void Dispose()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureWorkerEventCold()");
+            string signalBody = ExtractMethodBody(source, "private void SignalWorkerEvent()");
+            string waitEventBody = ExtractMethodBody(source, "private void WaitWorkerEvent()");
+            string disposeEventBody = ExtractMethodBody(source, "private void DisposeWorkerEventCold()");
+            string workerLoopBody = ExtractMethodBody(source, "private void RunWorkerLoop()");
+
+            Assert.IsFalse(source.Contains("readonly AutoResetEvent _workerEvent", StringComparison.Ordinal));
+            StringAssert.Contains("private AutoResetEvent _workerEvent;", source);
+            Assert.AreEqual(0, CountToken(source, "_workerEvent.Set("));
+            Assert.AreEqual(0, CountToken(source, "_workerEvent.WaitOne("));
+            Assert.AreEqual(0, CountToken(source, "_workerEvent.Dispose("));
+
+            Assert.IsTrue(ContainsTokensInOrder(
+                initializeBody,
+                "Dispose();",
+                "EnsureWorkerEventCold();",
+                "Volatile.Write(ref _disposeRequested, 0);",
+                "if (!StartWorker())"));
+
+            StringAssert.Contains("new AutoResetEvent(false)", ensureBody);
+            StringAssert.Contains("Interlocked.CompareExchange(ref _workerEvent, workerEvent, null)", ensureBody);
+            StringAssert.Contains("SignalWorkerEvent();", disposeBody);
+            StringAssert.Contains("WaitForWorkerExit();", disposeBody);
+            StringAssert.Contains("DisposeWorkerEventCold();", disposeBody);
+            StringAssert.Contains("Interlocked.Exchange(ref _workerEvent, null)", disposeEventBody);
+            StringAssert.Contains("workerEvent.Dispose();", disposeEventBody);
+            StringAssert.Contains("workerEvent.Set();", signalBody);
+            StringAssert.Contains("catch (ObjectDisposedException)", signalBody);
+            StringAssert.Contains("workerEvent.WaitOne(WorkerIdleSleepMilliseconds);", waitEventBody);
+            StringAssert.Contains("Thread.Sleep(WorkerIdleSleepMilliseconds);", waitEventBody);
+            StringAssert.Contains("WaitWorkerEvent();", workerLoopBody);
+            Assert.IsFalse(workerLoopBody.Contains("_workerEvent.WaitOne(", StringComparison.Ordinal));
         }
 
         private static string ReadProjectFile(string relativePath)

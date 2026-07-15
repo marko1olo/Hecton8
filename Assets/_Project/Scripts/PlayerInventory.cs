@@ -1403,6 +1403,7 @@ namespace Hecton8.Inventory
             DropDeferredInventoryCommandSignals();
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
+            TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
             TryUnregisterPostSimulationDispatcher();
             TryUnregisterHotSwapListener();
@@ -6353,9 +6354,11 @@ namespace Hecton8.Inventory
                 survival.SetWeight(_currentWeightKg);
 
             float carryCapacityKg = ResolveCarryCapacityKilograms();
-            float inverseCarryCapacityKg = math.rcp(carryCapacityKg);
-            CachedInventoryLoad01 = math.saturate(_currentWeightKg * inverseCarryCapacityKg);
-            CachedMaxSwimSpeedMultiplier = Hecton8.PureLogic.Systems.WeightPenaltyCurveCalculator.Compute(_currentWeightKg, carryCapacityKg, 0f, 1f - InventoryLoadMinimumMovementMultiplier);
+            CachedInventoryLoad01 = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoad01(_currentWeightKg, carryCapacityKg);
+            CachedMaxSwimSpeedMultiplier = Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplier(
+                _currentWeightKg,
+                carryCapacityKg,
+                InventoryLoadMinimumMovementMultiplier);
 
             WriteInventoryBlackBoxFrame(invalidTotals ? 1 : 0);
             if (invalidTotals)

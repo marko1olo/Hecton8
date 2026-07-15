@@ -3,7 +3,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Caves;
-using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Physics.KCC;
@@ -21,7 +20,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
-    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPlayerSeatLockMotorSink, IPlayerKinematicsMotorSyncSink, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPlayerSeatLockMotorSink, IPlayerKinematicsMotorSyncSink, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int MaxSlideSweepIterations = 2;
@@ -29,7 +28,6 @@ namespace Hecton8.Gameplay
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float DenormalVelocityFlushThresholdMetersPerSecondSq =
             DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond;
-        private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecondSq =
             WakeSiltEmissionSpeedThresholdMetersPerSecond * WakeSiltEmissionSpeedThresholdMetersPerSecond;
@@ -46,7 +44,6 @@ namespace Hecton8.Gameplay
         private Rigidbody _body;
         private CapsuleCollider _capsule;
         private HydrodynamicKccRuntime _hydrodynamicKccRuntime;
-        private PlayerInventory _encumbranceSource;
         private bool _isGrounded;
         private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
@@ -63,7 +60,6 @@ namespace Hecton8.Gameplay
         private Quaternion _queuedPoseRotation;
         private int _queuedPoseFrame = -1;
         private bool _hasQueuedPoseTarget;
-        private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
         private Vector3 _lastKccContactNormal;
         private Vector3 _lastKccContactPoint;
@@ -97,8 +93,8 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public bool IsGrounded => _isGrounded;
 
-        /// <summary>Current event-driven carry-load movement scalar.</summary>
-        public float EncumbranceMovementMultiplier => _encumbranceMovementMultiplier;
+        /// <summary>Current carry-load movement scalar published by the player effort/load runtime snapshot.</summary>
+        public float EncumbranceMovementMultiplier => ResolveEffortLoadMovementMultiplier();
 
         /// <summary>Returns the most recent KCC wall projection contact if it is still within the requested fixed-frame window.</summary>
         public bool TryGetRecentWallSlideContact(
@@ -318,17 +314,10 @@ namespace Hecton8.Gameplay
 
         }
 
-        /// <summary>Binds the inventory source accepted by encumbrance events.</summary>
-        public void BindEncumbranceSource(PlayerInventory inventory)
-        {
-            _encumbranceSource = inventory;
-        }
-
         private void OnEnable()
         {
             if (_hydrodynamicKccRuntime == null)
                 TryGetComponent(out _hydrodynamicKccRuntime);
-            InventoryEvents.Register(this);
             TryRegisterLateFrameTick();
             TryRegisterPostFixedTick();
             TryRegisterMotorService();
@@ -337,7 +326,6 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            InventoryEvents.Unregister(this);
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
@@ -350,7 +338,6 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            InventoryEvents.Unregister(this);
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
@@ -367,31 +354,20 @@ namespace Hecton8.Gameplay
             _isGrounded = isGrounded;
         }
 
-        /// <summary>Applies a pre-resolved carry-load movement scalar.</summary>
-        public void SetEncumbranceMovementMultiplier(float multiplier)
+        private float ResolveEffortLoadMovementMultiplier()
         {
-            _encumbranceMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
-        }
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null ||
+                !playerContext.TryGetEffortLoadRuntimeState(out PlayerEffortLoadRuntimeState state) ||
+                (state.Flags & (uint)PlayerEffortLoadRuntimeFlags.HasMovement) == 0u)
+            {
+                return 1f;
+            }
 
-        /// <inheritdoc />
-        public void OnInventoryEvent(in InventoryEventPayload payload)
-        {
-            if ((InventoryEventType)payload.EventType != InventoryEventType.EncumbranceChanged)
-                return;
-
-            if (!InventoryEvents.TryBuildEncumbranceChangedEvent(in payload, out EncumbranceChangedEvent encumbranceEvent))
-                return;
-
-            HandleEncumbranceChanged(encumbranceEvent);
-        }
-
-        private void HandleEncumbranceChanged(EncumbranceChangedEvent payload)
-        {
-            if (_encumbranceSource != null && payload.Inventory != _encumbranceSource)
-                return;
-
-            float load01 = math.saturate(payload.Load01);
-            SetEncumbranceMovementMultiplier(math.lerp(1f, InventoryLoadMinimumMovementMultiplier, load01));
+            float multiplier = state.MovementMultiplier;
+            return math.isfinite(multiplier)
+                ? math.clamp(multiplier, Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.DefaultMinimumMovementMultiplier, 1f)
+                : 1f;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object newService)
