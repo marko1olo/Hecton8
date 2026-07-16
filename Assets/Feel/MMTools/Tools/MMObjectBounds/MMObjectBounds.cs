@@ -32,17 +32,17 @@ namespace MoreMountains.Tools
 		protected virtual void DefineBoundsChoice()
 		{
 			BoundsBasedOn = WaysToDetermineBounds.Undefined;
-			if (GetComponent<Renderer>()!=null)
+			if (TryGetComponent<Collider2D>(out _))
 			{
-				BoundsBasedOn = WaysToDetermineBounds.Renderer;
+				BoundsBasedOn = WaysToDetermineBounds.Collider2D;
 			}
-			if (GetComponent<Collider>()!=null)
+			else if (TryGetComponent<Collider>(out _))
 			{
 				BoundsBasedOn = WaysToDetermineBounds.Collider;
 			}
-			if (GetComponent<Collider2D>()!=null)
+			else if (TryGetComponent<Renderer>(out _))
 			{
-				BoundsBasedOn = WaysToDetermineBounds.Collider2D;
+				BoundsBasedOn = WaysToDetermineBounds.Renderer;
 			}
 		}
 
@@ -53,29 +53,29 @@ namespace MoreMountains.Tools
 		{
 			if (BoundsBasedOn==WaysToDetermineBounds.Renderer)
 			{
-				if (GetComponent<Renderer>()==null)
+				if (!TryGetComponent<Renderer>(out var renderer))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Renderer based bounds but no Renderer component can be found.");
 				}
-				return GetComponent<Renderer>().bounds;
+				return renderer.bounds;
 			}
 
 			if (BoundsBasedOn==WaysToDetermineBounds.Collider)
 			{
-				if (GetComponent<Collider>()==null)
+				if (!TryGetComponent<Collider>(out var collider))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Collider based bounds but no Collider component can be found.");
 				}
-				return GetComponent<Collider>().bounds;				
+				return collider.bounds;
 			}
 
 			if (BoundsBasedOn==WaysToDetermineBounds.Collider2D)
 			{
-				if (GetComponent<Collider2D>()==null)
+				if (!TryGetComponent<Collider2D>(out var collider2D))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Collider2D based bounds but no Collider2D component can be found.");
 				}
-				return GetComponent<Collider2D>().bounds;				
+				return collider2D.bounds;
 			}
 
 			return new Bounds(Vector3.zero,Vector3.zero);
