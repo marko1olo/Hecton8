@@ -74,6 +74,7 @@ namespace MoreMountains.Feedbacks
 		protected bool[] _propertiesFound;
 		protected Coroutine[] _coroutines;
 		protected MaterialPropertyBlock _propertyBlock;
+		protected Material[] _materials;
 		protected SpriteRenderer _spriteRenderer;
 		protected Texture2D _spriteRendererTexture;
 		protected bool _spriteRendererIsNull;
@@ -97,6 +98,7 @@ namespace MoreMountains.Feedbacks
 			_propertyIDs = new int[MaterialIndexes.Length];
 			_propertiesFound = new bool[MaterialIndexes.Length];
 			_propertyBlock = new MaterialPropertyBlock();
+			_materials = new Material[MaterialIndexes.Length];
             
 			if (Active && (BoundRenderer == null) && (owner != null))
 			{
@@ -126,21 +128,26 @@ namespace MoreMountains.Feedbacks
 
 				if (Active && (BoundRenderer != null))
 				{
+					if (!UseMaterialPropertyBlocks)
+					{
+						_materials[i] = BoundRenderer.materials[index];
+					}
+
 					if (Mode == Modes.Color)
 					{
-						_propertiesFound[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].HasProperty(_colorPropertyName) : BoundRenderer.materials[index].HasProperty(_colorPropertyName);
+						_propertiesFound[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].HasProperty(_colorPropertyName) : _materials[i].HasProperty(_colorPropertyName);
 						if (_propertiesFound[i])
 						{
-							_initialFlickerColors[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].color : BoundRenderer.materials[index].color;
+							_initialFlickerColors[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].color : _materials[i].color;
 						}
 					}
 					else
 					{
-						_propertiesFound[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].HasProperty(PropertyName) : BoundRenderer.materials[index].HasProperty(PropertyName); 
+						_propertiesFound[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].HasProperty(PropertyName) : _materials[i].HasProperty(PropertyName);
 						if (_propertiesFound[i])
 						{
 							_propertyIDs[i] = Shader.PropertyToID(PropertyName);
-							_initialFlickerColors[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].GetColor(_propertyIDs[i]) : BoundRenderer.materials[index].GetColor(_propertyIDs[i]);
+							_initialFlickerColors[i] = UseMaterialPropertyBlocks ? BoundRenderer.sharedMaterials[index].GetColor(_propertyIDs[i]) : _materials[i].GetColor(_propertyIDs[i]);
 						}
 					}
 				}
@@ -256,7 +263,7 @@ namespace MoreMountains.Feedbacks
 				}
 				else
 				{
-					BoundRenderer.materials[MaterialIndexes[materialIndex]].color = color;
+					_materials[materialIndex].color = color;
 				}
 			}
 			else
@@ -270,7 +277,7 @@ namespace MoreMountains.Feedbacks
 				}
 				else
 				{
-					BoundRenderer.materials[MaterialIndexes[materialIndex]].SetColor(_propertyIDs[materialIndex], color);
+					_materials[materialIndex].SetColor(_propertyIDs[materialIndex], color);
 				}
 			}            
 		}
