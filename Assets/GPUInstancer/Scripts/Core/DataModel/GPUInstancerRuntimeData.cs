@@ -278,8 +278,8 @@ namespace GPUInstancer
                 }
             }
 
-            if (prototype.prefabObject.GetComponent<LODGroup>() != null)
-                return GenerateLODsFromLODGroup(prototype);
+            if (prototype.prefabObject.TryGetComponent(out LODGroup lodGroup))
+                return GenerateLODsFromLODGroup(prototype, lodGroup);
             else
             {
                 if (instanceLODs == null || instanceLODs.Count == 0)
@@ -294,9 +294,10 @@ namespace GPUInstancer
         /// <param name="prototype">The GPUI prototype</param>
         /// <param name="gpuiSettings">GPU Instancer settings to find appropriate shader for materials</param>
         /// <returns></returns>
-        public virtual bool GenerateLODsFromLODGroup(GPUInstancerPrototype prototype)
+        public virtual bool GenerateLODsFromLODGroup(GPUInstancerPrototype prototype, LODGroup lodGroup = null)
         {
-            LODGroup lodGroup = prototype.prefabObject.GetComponent<LODGroup>();
+            if (lodGroup == null)
+                lodGroup = prototype.prefabObject.GetComponent<LODGroup>();
 
             if (instanceLODs == null)
                 instanceLODs = new List<GPUInstancerPrototypeLOD>();
