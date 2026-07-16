@@ -29,9 +29,15 @@ namespace MoreMountains.Tools
 		/// <summary>
 		/// The Key to use to save and load the file
 		/// </summary>
-		public virtual string Key { get; set; } = "yourDefaultKey";
+		public virtual string Key { get; set; }
 
-		protected string _saltText = "SaltTextGoesHere";
+		protected string _saltText;
+
+		public MMSaveLoadManagerEncrypter(string key, string saltText)
+		{
+			Key = key;
+			_saltText = saltText;
+		}
 
 		/// <summary>
 		/// Encrypts the specified input stream into the specified output stream using the key passed in parameters

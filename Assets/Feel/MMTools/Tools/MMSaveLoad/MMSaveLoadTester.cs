@@ -39,7 +39,11 @@ namespace MoreMountains.Tools
 		public string SaveFileExtension = ".testObject";
 		/// the key to use to encrypt the file (if needed)
 		[Tooltip("the key to use to encrypt the file (if needed)")]
-		public string EncryptionKey = "ThisIsTheKey";
+		public string EncryptionKey;
+
+		/// the salt to use to encrypt the file (if needed)
+		[Tooltip("the salt to use to encrypt the file (if needed)")]
+		public string EncryptionSalt;
 
 		/// Test button
 		[MMInspectorButton("Save")]
@@ -93,15 +97,13 @@ namespace MoreMountains.Tools
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinary();
 					break;
 				case MMSaveLoadManagerMethods.BinaryEncrypted:
-					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinaryEncrypted();
-					(_saveLoadManagerMethod as MMSaveLoadManagerEncrypter).Key = EncryptionKey;
+					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinaryEncrypted(EncryptionKey, EncryptionSalt);
 					break;
 				case MMSaveLoadManagerMethods.Json:
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJson();
 					break;
 				case MMSaveLoadManagerMethods.JsonEncrypted:
-					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJsonEncrypted();
-					(_saveLoadManagerMethod as MMSaveLoadManagerEncrypter).Key = EncryptionKey;
+					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJsonEncrypted(EncryptionKey, EncryptionSalt);
 					break;
 			}
 			MMSaveLoadManager.SaveLoadMethod = _saveLoadManagerMethod;
