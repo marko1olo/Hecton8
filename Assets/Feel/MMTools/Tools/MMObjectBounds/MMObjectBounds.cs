@@ -53,29 +53,29 @@ namespace MoreMountains.Tools
 		{
 			if (BoundsBasedOn==WaysToDetermineBounds.Renderer)
 			{
-				if (GetComponent<Renderer>()==null)
+				if (!TryGetComponent<Renderer>(out Renderer renderer))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Renderer based bounds but no Renderer component can be found.");
 				}
-				return GetComponent<Renderer>().bounds;
+				return renderer.bounds;
 			}
 
 			if (BoundsBasedOn==WaysToDetermineBounds.Collider)
 			{
-				if (GetComponent<Collider>()==null)
+				if (!TryGetComponent<Collider>(out Collider collider))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Collider based bounds but no Collider component can be found.");
 				}
-				return GetComponent<Collider>().bounds;				
+				return collider.bounds;
 			}
 
 			if (BoundsBasedOn==WaysToDetermineBounds.Collider2D)
 			{
-				if (GetComponent<Collider2D>()==null)
+				if (!TryGetComponent<Collider2D>(out Collider2D collider2D))
 				{
 					throw new Exception("The PoolableObject "+gameObject.name+" is set as having Collider2D based bounds but no Collider2D component can be found.");
 				}
-				return GetComponent<Collider2D>().bounds;				
+				return collider2D.bounds;
 			}
 
 			return new Bounds(Vector3.zero,Vector3.zero);
