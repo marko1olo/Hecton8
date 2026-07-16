@@ -793,10 +793,7 @@ namespace GPUInstancer
             {
                 if (renderingCameraData.hiZOcclusionGenerator == null)
                 {
-                    GPUInstancerHiZOcclusionGenerator hiZOcclusionGenerator =
-                        renderingCameraData.mainCamera.GetComponent<GPUInstancerHiZOcclusionGenerator>();
-
-                    if (hiZOcclusionGenerator == null)
+                    if (!renderingCameraData.mainCamera.TryGetComponent<GPUInstancerHiZOcclusionGenerator>(out GPUInstancerHiZOcclusionGenerator hiZOcclusionGenerator))
                         hiZOcclusionGenerator = renderingCameraData.mainCamera.gameObject.AddComponent<GPUInstancerHiZOcclusionGenerator>();
 
                     renderingCameraData.hiZOcclusionGenerator = hiZOcclusionGenerator;
