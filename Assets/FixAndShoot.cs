@@ -34,8 +34,8 @@ public static class FixAndShoot
         // FIND EXISTING CAMERA INSTEAD OF CREATING ONE
         Camera cam = Camera.main;
         if (cam == null) {
-            Camera[] cams = Object.FindObjectsOfType<Camera>();
-            if (cams.Length > 0) cam = cams[0];
+            if (Camera.allCamerasCount > 0) { cam = Camera.allCameras[0]; }
+
         }
         
         if (cam == null) {
