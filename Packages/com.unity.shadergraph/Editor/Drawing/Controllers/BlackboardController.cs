@@ -450,7 +450,7 @@ namespace UnityEditor.ShaderGraph.Drawing
             return selectedCategoryGuid;
         }
 
-        void InitializeViewModel(bool useDropdowns)
+        void InitializeViewModel()
         {
             // Clear the view model
             ViewModel.ResetViewModelData();
@@ -462,6 +462,12 @@ namespace UnityEditor.ShaderGraph.Drawing
             {
                 if (shaderInputType.IsAbstract)
                     continue;
+
+                if (Activator.CreateInstance(shaderInputType, true) is ShaderInput dummyInput)
+                {
+                    if (!Model.IsInputAllowedInGraph(dummyInput))
+                        continue;
+                }
 
                 var info = Attribute.GetCustomAttribute(shaderInputType, typeof(BlackboardInputInfo)) as BlackboardInputInfo;
                 string name = info?.name ?? ObjectNames.NicifyVariableName(shaderInputType.Name.Replace("ShaderProperty", ""));
@@ -483,14 +489,21 @@ namespace UnityEditor.ShaderGraph.Drawing
             BlackboardShaderInputOrder keywordTypesOrder = new BlackboardShaderInputOrder();
             keywordTypesOrder.isKeyword = true;
             keywordTypesOrder.keywordType = KeywordType.Boolean;
-            ViewModel.defaultKeywordNameToAddActionMap.Add("Boolean", AddShaderInputAction.AddKeywordAction(keywordTypesOrder));
+            var dummyBoolKeyword = BlackboardShaderInputFactory.GetShaderInput(keywordTypesOrder);
+            if (Model.IsInputAllowedInGraph(dummyBoolKeyword))
+                ViewModel.defaultKeywordNameToAddActionMap.Add("Boolean", AddShaderInputAction.AddKeywordAction(keywordTypesOrder));
             keywordTypesOrder.keywordType = KeywordType.Enum;
-            ViewModel.defaultKeywordNameToAddActionMap.Add("Enum", AddShaderInputAction.AddKeywordAction(keywordTypesOrder));
+            var dummyEnumKeyword = BlackboardShaderInputFactory.GetShaderInput(keywordTypesOrder);
+            if (Model.IsInputAllowedInGraph(dummyEnumKeyword))
+                ViewModel.defaultKeywordNameToAddActionMap.Add("Enum", AddShaderInputAction.AddKeywordAction(keywordTypesOrder));
 
             // Built-In Keywords after that
             foreach (var builtinKeywordDescriptor in KeywordUtil.GetBuiltinKeywordDescriptors())
             {
                 var keyword = ShaderKeyword.CreateBuiltInKeyword(builtinKeywordDescriptor);
+                if (!Model.IsInputAllowedInGraph(keyword))
+                    continue;
+
                 // Do not allow user to add built-in keywords that conflict with user-made keywords that have the same reference name or display name
                 if (Model.keywords.Any(x => x.referenceName == keyword.referenceName || x.displayName == keyword.displayName))
                 {
@@ -503,10 +516,11 @@ namespace UnityEditor.ShaderGraph.Drawing
                 }
             }
 
-            if (useDropdowns)
+            BlackboardShaderInputOrder dropdownsOrder = new BlackboardShaderInputOrder();
+            dropdownsOrder.isDropdown = true;
+            var dummyDropdown = BlackboardShaderInputFactory.GetShaderInput(dropdownsOrder);
+            if (Model.IsInputAllowedInGraph(dummyDropdown))
             {
-                BlackboardShaderInputOrder dropdownsOrder = new BlackboardShaderInputOrder();
-                dropdownsOrder.isDropdown = true;
                 ViewModel.defaultDropdownNameToAdd = new Tuple<string, IGraphDataAction>("Dropdown", AddShaderInputAction.AddDropdownAction(dropdownsOrder));
             }
 
@@ -521,9 +535,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         internal BlackboardController(GraphData model, BlackboardViewModel inViewModel, GraphDataStore graphDataStore)
             : base(model, inViewModel, graphDataStore)
         {
-            // TODO: hide this more generically for category types.
-            bool useDropdowns = model.isSubGraph;
-            InitializeViewModel(useDropdowns);
+            InitializeViewModel();
 
             blackboard = new SGBlackboard(ViewModel, this);
 
@@ -538,19 +550,16 @@ namespace UnityEditor.ShaderGraph.Drawing
                 // Any properties that don't already have a category (for example, if this graph is being loaded from an older version that doesn't have category data)
                 var uncategorizedBlackboardItems = new List<ShaderInput>();
                 foreach (var shaderProperty in DataStore.State.properties)
-                    if (IsInputUncategorized(shaderProperty))
+                    if (Model.IsInputAllowedInGraph(shaderProperty) && IsInputUncategorized(shaderProperty))
                         uncategorizedBlackboardItems.Add(shaderProperty);
 
                 foreach (var shaderKeyword in DataStore.State.keywords)
-                    if (IsInputUncategorized(shaderKeyword))
+                    if (Model.IsInputAllowedInGraph(shaderKeyword) && IsInputUncategorized(shaderKeyword))
                         uncategorizedBlackboardItems.Add(shaderKeyword);
 
-                if (useDropdowns)
-                {
-                    foreach (var shaderDropdown in DataStore.State.dropdowns)
-                        if (IsInputUncategorized(shaderDropdown))
-                            uncategorizedBlackboardItems.Add(shaderDropdown);
-                }
+                foreach (var shaderDropdown in DataStore.State.dropdowns)
+                    if (Model.IsInputAllowedInGraph(shaderDropdown) && IsInputUncategorized(shaderDropdown))
+                        uncategorizedBlackboardItems.Add(shaderDropdown);
 
                 var addCategoryAction = new AddCategoryAction();
                 addCategoryAction.categoryDataReference = CategoryData.DefaultCategory(uncategorizedBlackboardItems);
@@ -624,9 +633,7 @@ namespace UnityEditor.ShaderGraph.Drawing
         {
             if (ViewModel == null) return;
             // Reconstruct view-model first
-            // TODO: hide this more generically for category types.
-            bool useDropdowns = graphData.isSubGraph;
-            InitializeViewModel(useDropdowns);
+            InitializeViewModel();
 
             var graphView = ViewModel.parentView as MaterialGraphView;
 
