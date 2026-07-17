@@ -98,10 +98,10 @@ namespace UnityEditor.ShaderGraph
                     // This could be from another graph, in which case we add a copy of the ShaderInput to this graph.
                     if (graphData.properties.FirstOrDefault(p => p == property) == null)
                     {
-                        var copyShaderInputAction = new CopyShaderInputAction();
-                        copyShaderInputAction.shaderInputToCopy = property;
-                        graphData.owner.graphDataStore.Dispatch(copyShaderInputAction);
-                        property = (AbstractShaderProperty)copyShaderInputAction.copiedShaderInput;
+                        var copyAction = new CopyShaderPropertyAction();
+                        copyAction.shaderPropertyToCopy = property;
+                        graphData.owner.graphDataStore.Dispatch(copyAction);
+                        property = copyAction.copiedShaderProperty;
                     }
 
                     var node = new PropertyNode();
@@ -117,10 +117,10 @@ namespace UnityEditor.ShaderGraph
                     // This could be from another graph, in which case we add a copy of the ShaderInput to this graph.
                     if (graphData.keywords.FirstOrDefault(k => k == keyword) == null)
                     {
-                        var copyShaderInputAction = new CopyShaderInputAction();
-                        copyShaderInputAction.shaderInputToCopy = keyword;
-                        graphData.owner.graphDataStore.Dispatch(copyShaderInputAction);
-                        keyword = (ShaderKeyword)copyShaderInputAction.copiedShaderInput;
+                        var copyAction = new CopyShaderKeywordAction();
+                        copyAction.shaderKeywordToCopy = keyword;
+                        graphData.owner.graphDataStore.Dispatch(copyAction);
+                        keyword = copyAction.copiedShaderKeyword;
                     }
 
                     var node = new KeywordNode();
@@ -138,10 +138,10 @@ namespace UnityEditor.ShaderGraph
                         // This could be from another graph, in which case we add a copy of the ShaderInput to this graph.
                         if (graphData.dropdowns.FirstOrDefault(d => d == dropdown) == null)
                         {
-                            var copyShaderInputAction = new CopyShaderInputAction();
-                            copyShaderInputAction.shaderInputToCopy = dropdown;
-                            graphData.owner.graphDataStore.Dispatch(copyShaderInputAction);
-                            dropdown = (ShaderDropdown)copyShaderInputAction.copiedShaderInput;
+                            var copyAction = new CopyShaderDropdownAction();
+                            copyAction.shaderDropdownToCopy = dropdown;
+                            graphData.owner.graphDataStore.Dispatch(copyAction);
+                            dropdown = copyAction.copiedShaderDropdown;
                         }
 
                         var node = new DropdownNode();
