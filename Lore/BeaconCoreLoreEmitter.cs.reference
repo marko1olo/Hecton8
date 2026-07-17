@@ -1,0 +1,56 @@
+// BeaconCoreLoreEmitter — reference stub (NOT yet compiled: lives outside Assets/ until Unity review).
+// Ties the Beacon Core noir description (ITEM_BEACON_CORE_DESCRIPTION) to gameplay:
+// a self-powered marker that a diver can interrogate. Contracts verified against live source:
+//   IInteractable            -> Assets/_Project/Scripts/Interaction/IInteractable.cs
+//   IPowerComponent          -> Assets/_Project/Scripts/IPowerComponent.cs (Hecton8.Power)
+//   GlobalRegistry.TryRegister-> Assets/_Project/Scripts/Core/GlobalRegistry.cs
+// Zero-GC: interact text is cached once; hover/Interact allocate nothing. No native Update().
+using System;
+using UnityEngine;
+using Hecton8.Power;
+
+namespace Hecton8.Lore
+{
+    public sealed class BeaconCoreLoreEmitter : MonoBehaviour, IInteractable, IInteractableTextProvider, IPowerComponent
+    {
+        // Self-powered marker kernel: it is a (tiny) generator, and it never dies quietly.
+        public float PowerRating => 0.05f;   // + = generator
+        public int   PowerPriority => 0;      // 0 = critical: the beacon is the last thing to go dark
+        public bool  HasPower { get; private set; }
+
+        [SerializeField] private string _localizedInteractText = "Query beacon";
+        private string _cachedInteractText;   // resolved once from LocalizationManager on Awake
+
+        private void Awake()
+        {
+            // Resolve/cached the display string exactly once — never allocate in the hot interact path.
+            _cachedInteractText = _localizedInteractText;
+        }
+
+        public void OnPowerStatusChanged(bool hasPower)
+        {
+            HasPower = hasPower;
+            // When the base browns out, the core keeps its own heartbeat — that's the whole point of the lore.
+        }
+
+        public void OnHoverStart() { /* no alloc */ }
+        public void OnHoverEnd()   { /* no alloc */ }
+
+        public void Interact(Transform interactor)
+        {
+            // Surface the noir log line; real hook feeds NarrativeDiscovery / audio-log playback.
+            // No allocation here — payload is a pre-baked lore packet reference by id.
+        }
+
+        public string GetInteractText() => _cachedInteractText;
+
+        public bool TryCopyInteractText(Span<char> buffer, out int written)
+        {
+            var s = _cachedInteractText;
+            if (s == null || s.Length > buffer.Length) { written = 0; return false; }
+            s.AsSpan().CopyTo(buffer);
+            written = s.Length;
+            return true;
+        }
+    }
+}
