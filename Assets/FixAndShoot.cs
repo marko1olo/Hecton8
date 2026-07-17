@@ -44,7 +44,7 @@ public static class FixAndShoot
             cam = camGO.AddComponent<Camera>();
         }
 
-        Terrain t = Object.FindObjectOfType<Terrain>();
+        Terrain t = Terrain.activeTerrain;
         if (t != null && t.terrainData != null)
         {
             Texture2D[] alphamaps = t.terrainData.alphamapTextures;
