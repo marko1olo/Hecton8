@@ -9,6 +9,7 @@ namespace MoreMountains.Tools
 {
 	public class MMSaveLoadManagerMethodJsonEncrypted : MMSaveLoadManagerEncrypter, IMMSaveLoadManagerMethod
 	{
+		public MMSaveLoadManagerMethodJsonEncrypted(string key, string salt) : base(key, salt) { }
 		/// <summary>
 		/// Saves the specified object at the specified location to disk, converts it to json and encrypts it
 		/// </summary>

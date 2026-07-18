@@ -20,7 +20,11 @@ namespace MoreMountains.Tools
 		public MMSaveLoadManagerMethods SaveLoadMethod = MMSaveLoadManagerMethods.Binary;
 		/// the key to use to encrypt the file (if using an encryption method)
 		[Tooltip("the key to use to encrypt the file (if using an encryption method)")]
-		public string EncryptionKey = "ThisIsTheKey";
+		public string EncryptionKey;
+
+		/// the salt to use to encrypt the file (if using an encryption method)
+		[Tooltip("the salt to use to encrypt the file (if using an encryption method)")]
+		public string EncryptionSalt;
 
 		protected IMMSaveLoadManagerMethod _saveLoadManagerMethod;
 
@@ -43,15 +47,13 @@ namespace MoreMountains.Tools
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinary();
 					break;
 				case MMSaveLoadManagerMethods.BinaryEncrypted:
-					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinaryEncrypted();
-					((MMSaveLoadManagerEncrypter)_saveLoadManagerMethod).Key = EncryptionKey;
+					_saveLoadManagerMethod = new MMSaveLoadManagerMethodBinaryEncrypted(EncryptionKey, EncryptionSalt);
 					break;
 				case MMSaveLoadManagerMethods.Json:
 					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJson();
 					break;
 				case MMSaveLoadManagerMethods.JsonEncrypted:
-					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJsonEncrypted();
-					((MMSaveLoadManagerEncrypter)_saveLoadManagerMethod).Key = EncryptionKey;
+					_saveLoadManagerMethod = new MMSaveLoadManagerMethodJsonEncrypted(EncryptionKey, EncryptionSalt);
 					break;
 			}
 			MMSaveLoadManager.SaveLoadMethod = _saveLoadManagerMethod;

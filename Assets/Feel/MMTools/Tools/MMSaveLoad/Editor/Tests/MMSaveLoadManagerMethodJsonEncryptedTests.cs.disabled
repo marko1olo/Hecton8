@@ -16,7 +16,7 @@ namespace MoreMountains.Tools.Tests
         public void SetUp()
         {
             testFilePath = Path.Combine(Application.temporaryCachePath, "test_json_encrypted.save");
-            saveMethod = new MMSaveLoadManagerMethodJsonEncrypted();
+            saveMethod = new MMSaveLoadManagerMethodJsonEncrypted("InitialKey", "InitialSalt");
         }
 
         [TearDown]
