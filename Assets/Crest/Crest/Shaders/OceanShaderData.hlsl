@@ -187,8 +187,8 @@ static const WaveHarmonic::Crest::TiledTexture _CausticsDistortionTiledTexture =
     WaveHarmonic::Crest::TiledTexture::Make(_Normals, sampler_Normals, _Normals_TexelSize, _CausticsDistortionScale);
 #endif
 
-// TODO: This can be removed once we use the underwater post-process effect.
-float _HeightOffset;
+
+
 
 CBUFFER_END
 
