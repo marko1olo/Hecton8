@@ -304,13 +304,14 @@ namespace GPUInstancer
             else
                 instanceLODs.Clear();
 
-            for (int lod = 0; lod < lodGroup.GetLODs().Length; lod++)
+            LOD[] lods = lodGroup.GetLODs();
+            for (int lod = 0; lod < lods.Length; lod++)
             {
                 bool hasBillboardRenderer = false;
                 List<Renderer> lodRenderers = new List<Renderer>();
-                if (lodGroup.GetLODs()[lod].renderers != null)
+                if (lods[lod].renderers != null)
                 {
-                    foreach (Renderer renderer in lodGroup.GetLODs()[lod].renderers)
+                    foreach (Renderer renderer in lods[lod].renderers)
                     {
                         if (renderer != null && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out _))
                         {
@@ -332,7 +333,7 @@ namespace GPUInstancer
                     continue;
                 }
 
-                AddLod(lodGroup.GetLODs()[lod].screenRelativeTransitionHeight);
+                AddLod(lods[lod].screenRelativeTransitionHeight);
 
                 for (int r = 0; r < lodRenderers.Count; r++)
                 {
