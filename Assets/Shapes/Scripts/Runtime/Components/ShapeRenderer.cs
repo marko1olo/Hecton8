@@ -604,13 +604,26 @@ namespace Shapes {
 
 		static System.Collections.Generic.List<ShapeGroup> tempGroups = new System.Collections.Generic.List<ShapeGroup>();
 
+		internal bool colorTintDirty = true;
+		Color cachedColorTint = Color.white;
+
+		void OnTransformParentChanged() {
+			colorTintDirty = true;
+			UpdateAllMaterialProperties();
+		}
+
 		private protected void SetColor( int prop, Color value ) {
 			if( ShapeGroup.shapeGroupsInScene > 0 ) { // if color tint groups exist, see if we have any
-				GetComponentsInParent<ShapeGroup>( false, tempGroups );
-				foreach( ShapeGroup shapeGroup in tempGroups ) {
-					if( shapeGroup.IsEnabled )
-						value *= shapeGroup.Color;
+				if (colorTintDirty) {
+					cachedColorTint = Color.white;
+					GetComponentsInParent<ShapeGroup>( false, tempGroups );
+					foreach( ShapeGroup shapeGroup in tempGroups ) {
+						if( shapeGroup.IsEnabled )
+							cachedColorTint *= shapeGroup.Color;
+					}
+					colorTintDirty = false;
 				}
+				value *= cachedColorTint;
 			}
 
 			Mpb.SetColor( prop, value );

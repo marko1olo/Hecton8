@@ -47,8 +47,10 @@ namespace Shapes {
 
 		void UpdateChildShapes() {
 			GetComponentsInChildren<ShapeRenderer>( false, tempShapes );
-			foreach( ShapeRenderer shape in tempShapes )
+			foreach( ShapeRenderer shape in tempShapes ) {
+				shape.colorTintDirty = true;
 				shape.UpdateAllMaterialProperties();
+			}
 		}
 	}
 
