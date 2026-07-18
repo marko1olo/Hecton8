@@ -1287,7 +1287,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 
 			for (int t=0; t<dst.count; t++)
 				Slide(ref dst.arr[t], stratum, resIndepIterations, moveFactor, stopDelta, data.globals.height);
-			//TODO: test resolution independance
 
 			data.StoreProduct(this, dst);
 		}
