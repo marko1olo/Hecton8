@@ -578,6 +578,7 @@ namespace Hecton8.AI
                 PredatorCognitionDomain.NotifyAttackPerformed(_slot, currentTime, cooldownSeconds);
         }
 
+
         public CreatureUtilityEvaluation Evaluate(int frameId, float dt, float currentTime, in CreatureUtilityContext context)
         {
             if (_initialized == 0)
@@ -594,100 +595,30 @@ namespace Hecton8.AI
 
             float3 fallbackForward = (float3)context.SelfForward;
             double3 floatingOriginOffset = ResolveCurrentRuntimeOriginOffset();
-            float acousticPingStrength01 = 0f;
-            float acousticTransmission01 = 0f;
-            bool hasNoisePlayerTarget = false;
-            Vector3 noisePlayerPosition = default;
-            AbsoluteUniversePosition noisePlayerAup = default;
-            bool hasNoisePlayerAup = false;
-            AcousticEchoHuntResult acousticEchoHunt = default;
-            bool hasAcousticEchoBreadcrumb = false;
-            if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
-            {
-                float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / PlayerNoiseReferenceSpeedSqr);
-                float tool01 = math.saturate(playerNoise.ToolUseNoise01);
-                float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
-                float flashlight01 = NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in playerNoise) ? 0.2f : 0f;
-                acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
-                acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
-                if (UsesPredatorRole == 0)
-                {
-                    noisePlayerPosition = playerNoise.Position;
-                    noisePlayerAup = playerNoise.PositionAup;
-                    hasNoisePlayerAup = true;
-                }
-            }
 
-            if (UsesPredatorRole != 0)
-            {
-                if (TryResolveRuntimeAup(context.SelfPosition, out AbsoluteUniversePosition predatorAup) &&
-                    AcousticEchoLocationRuntime.TryUpdatePredatorEcho(
-                        frameId,
-                        in predatorAup,
-                        currentTime,
-                        out acousticEchoHunt))
-                {
-                    noisePlayerPosition = new Vector3(
-                        acousticEchoHunt.RuntimePosition.x,
-                        acousticEchoHunt.RuntimePosition.y,
-                        acousticEchoHunt.RuntimePosition.z);
-                    noisePlayerAup = acousticEchoHunt.InvestigateAup;
-                    hasNoisePlayerAup = true;
-                    acousticPingStrength01 = math.max(acousticPingStrength01, acousticEchoHunt.Intensity01);
-                    acousticTransmission01 = math.max(acousticTransmission01, 0.35f);
-                    hasNoisePlayerTarget = acousticEchoHunt.Intensity01 >= PredatorAcousticSightThreshold01;
-                    hasAcousticEchoBreadcrumb = hasNoisePlayerTarget;
-                }
-            }
+            ResolveAcousticSignals(
+                frameId, currentTime, in context,
+                out float acousticPingStrength01, out float acousticTransmission01,
+                out bool hasNoisePlayerTarget, out Vector3 noisePlayerPosition,
+                out AbsoluteUniversePosition noisePlayerAup, out bool hasNoisePlayerAup,
+                out AcousticEchoHuntResult acousticEchoHunt, out bool hasAcousticEchoBreadcrumb);
 
-            bool contextHasPlayerTarget = CreatureUtilityContext.HasPlayerTarget(in context);
-            Vector3 resolvedPlayerPosition = contextHasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
-            bool hasAnyPlayerTarget = contextHasPlayerTarget || hasNoisePlayerTarget;
-            AbsoluteUniversePositionBlit128 playerTargetAup = default;
-            bool hasPlayerTargetAup = false;
-            if (hasAnyPlayerTarget)
-            {
-                if (!contextHasPlayerTarget && hasNoisePlayerAup)
-                {
-                    playerTargetAup = noisePlayerAup.ToAlignedBlit();
-                    hasPlayerTargetAup = true;
-                }
-                else if (TryResolveRuntimeAup(resolvedPlayerPosition, out AbsoluteUniversePosition resolvedPlayerAup))
-                {
-                    playerTargetAup = resolvedPlayerAup.ToAlignedBlit();
-                    hasPlayerTargetAup = true;
-                }
-
-                hasAnyPlayerTarget &= hasPlayerTargetAup;
-            }
+            ResolvePlayerTarget(
+                in context, hasNoisePlayerTarget, noisePlayerPosition, noisePlayerAup, hasNoisePlayerAup,
+                out bool contextHasPlayerTarget, out Vector3 resolvedPlayerPosition,
+                out bool hasAnyPlayerTarget, out AbsoluteUniversePositionBlit128 playerTargetAup,
+                out bool hasPlayerTargetAup);
 
             bool contextHasPreyTarget = CreatureUtilityContext.HasPreyTarget(in context);
             bool contextHasScavengeTarget = CreatureUtilityContext.HasScavengeTarget(in context);
             bool contextHasVisualContact = CreatureUtilityContext.HasVisualContact(in context);
             bool contextIsApexPredator = CreatureUtilityContext.IsApexPredator(in context);
-            bool hasPackTarget = _archetype != null && _archetype.usePackHunt && ((hasAnyPlayerTarget && hasPlayerTargetAup) || contextHasPreyTarget);
-            Vector3 resolvedPackTargetPosition = hasAnyPlayerTarget
-                ? resolvedPlayerPosition
-                : context.PreyPosition;
-            Vector3 resolvedPackTargetVelocity = hasAnyPlayerTarget
-                ? context.PlayerVelocity
-                : Vector3.zero;
-            AbsoluteUniversePositionBlit128 packTargetAup = default;
-            if (hasPackTarget)
-            {
-                if (!contextHasPlayerTarget && hasNoisePlayerAup && hasAnyPlayerTarget)
-                {
-                    packTargetAup = noisePlayerAup.ToAlignedBlit();
-                }
-                else if (TryResolveRuntimeAup(resolvedPackTargetPosition, out AbsoluteUniversePosition resolvedPackAup))
-                {
-                    packTargetAup = resolvedPackAup.ToAlignedBlit();
-                }
-                else
-                {
-                    hasPackTarget = false;
-                }
-            }
+
+            ResolvePackTarget(
+                in context, hasAnyPlayerTarget, hasPlayerTargetAup, contextHasPreyTarget,
+                resolvedPlayerPosition, hasNoisePlayerAup, noisePlayerAup, contextHasPlayerTarget,
+                out bool hasPackTarget, out Vector3 resolvedPackTargetPosition,
+                out Vector3 resolvedPackTargetVelocity, out AbsoluteUniversePositionBlit128 packTargetAup);
 
             float chemicalSignal01 = 0f;
             if (contextHasScavengeTarget)
@@ -786,74 +717,15 @@ namespace Hecton8.AI
             input.SpeciesId = ResolveSpeciesId();
             input.ClaimedBoidIndex = -1;
             input.FlockCount = math.max(0, context.FlockCount);
-            input.Flags = (int)CognitionInputFlags.Active;
-            if (UsesPredatorRole != 0)
-                input.Flags |= (int)CognitionInputFlags.PredatorRole;
-            if (CreatureUtilityContext.CanFlee(in context))
-                input.Flags |= (int)CognitionInputFlags.CanFlee;
-            if (hasAnyPlayerTarget)
-                input.Flags |= (int)CognitionInputFlags.HasPlayerTarget;
-            if (CreatureUtilityContext.HasThreatTarget(in context))
-                input.Flags |= (int)CognitionInputFlags.HasThreatTarget;
-            if (CreatureUtilityContext.HasApexRivalTarget(in context))
-                input.Flags |= (int)CognitionInputFlags.HasApexRivalTarget;
-            if (contextHasPreyTarget)
-                input.Flags |= (int)CognitionInputFlags.HasPreyTarget;
-            if (contextHasScavengeTarget)
-                input.Flags |= (int)CognitionInputFlags.HasScavengeTarget;
-            if (CreatureUtilityContext.UseHomeTerritory(in context))
-                input.Flags |= (int)CognitionInputFlags.UseHomeTerritory;
-            if (CreatureUtilityContext.IsFlocking(in context))
-                input.Flags |= (int)CognitionInputFlags.IsFlocking;
-            if (CreatureUtilityContext.HasScatterDirection(in context))
-                input.Flags |= (int)CognitionInputFlags.HasScatterDirection;
-            if (CreatureUtilityContext.IsAggressive(in context))
-                input.Flags |= (int)CognitionInputFlags.IsAggressive;
-            if (contextHasVisualContact)
-                input.Flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
-            if (contextIsApexPredator)
-                input.Flags |= (int)CognitionInputFlags.IsApexPredator;
-            if (CreatureUtilityContext.UseAlphaLeviathanCognition(in context))
-                input.Flags |= (int)CognitionInputFlags.UseAlphaLeviathanCognition;
-            if (UsesApexCognitionSteering(contextIsApexPredator))
-                input.Flags |= (int)CognitionInputFlags.ApexSmoothSteering;
-            if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
-                (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
-            {
-                input.Flags |= (int)CognitionInputFlags.IsAmbusher;
-            }
-            if (hasPackTarget)
-                input.Flags |= (int)CognitionInputFlags.HasPackTarget;
 
-            if (hasAnyPlayerTarget && contextHasVisualContact)
-            {
-                PredatorCognitionDomain.RecordStimulus(
-                    _slot,
-                    resolvedPlayerPosition,
-                    currentTime,
-                    1f,
-                    CognitionStimulusType.Visual);
-            }
+            input.Flags = BuildCognitionInputFlags(
+                in context, hasAnyPlayerTarget, contextHasPreyTarget, contextHasScavengeTarget,
+                contextHasVisualContact, contextIsApexPredator, hasPackTarget);
 
-            if (hasAnyPlayerTarget && acousticPingStrength01 > 0.01f)
-            {
-                PredatorCognitionDomain.RecordStimulus(
-                    _slot,
-                    resolvedPlayerPosition,
-                    currentTime,
-                    acousticPingStrength01 * math.max(0.25f, acousticTransmission01),
-                    CognitionStimulusType.Acoustic);
-            }
-
-            if (contextHasScavengeTarget && chemicalSignal01 > 0.01f)
-            {
-                PredatorCognitionDomain.RecordStimulus(
-                    _slot,
-                    context.ScavengePosition,
-                    currentTime,
-                    chemicalSignal01,
-                    CognitionStimulusType.Chemical);
-            }
+            RecordStimuli(
+                currentTime, hasAnyPlayerTarget, contextHasVisualContact, resolvedPlayerPosition,
+                acousticPingStrength01, acousticTransmission01, contextHasScavengeTarget,
+                context.ScavengePosition, chemicalSignal01);
 
             PredatorCognitionDomain.SubmitInput(_slot, in input);
 
@@ -882,6 +754,232 @@ namespace Hecton8.AI
                 hasAcousticHeadLook,
                 acousticHeadLookTarget,
                 acousticHeadLookWeight);
+        }
+
+
+        private void ResolveAcousticSignals(
+            int frameId,
+            float currentTime,
+            in CreatureUtilityContext context,
+            out float acousticPingStrength01,
+            out float acousticTransmission01,
+            out bool hasNoisePlayerTarget,
+            out Vector3 noisePlayerPosition,
+            out AbsoluteUniversePosition noisePlayerAup,
+            out bool hasNoisePlayerAup,
+            out AcousticEchoHuntResult acousticEchoHunt,
+            out bool hasAcousticEchoBreadcrumb)
+        {
+            acousticPingStrength01 = 0f;
+            acousticTransmission01 = 0f;
+            hasNoisePlayerTarget = false;
+            noisePlayerPosition = default;
+            noisePlayerAup = default;
+            hasNoisePlayerAup = false;
+            acousticEchoHunt = default;
+            hasAcousticEchoBreadcrumb = false;
+
+            if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
+            {
+                float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / PlayerNoiseReferenceSpeedSqr);
+                float tool01 = math.saturate(playerNoise.ToolUseNoise01);
+                float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
+                float flashlight01 = NoiseSystem.PlayerNoiseSignal.IsFlashlightOn(in playerNoise) ? 0.2f : 0f;
+                acousticPingStrength01 = math.saturate(math.max(movement01, math.max(tool01, transport01)) + flashlight01);
+                acousticTransmission01 = math.saturate(playerNoise.AcousticTransmission01);
+                if (UsesPredatorRole == 0)
+                {
+                    noisePlayerPosition = playerNoise.Position;
+                    noisePlayerAup = playerNoise.PositionAup;
+                    hasNoisePlayerAup = true;
+                }
+            }
+
+            if (UsesPredatorRole != 0)
+            {
+                if (TryResolveRuntimeAup(context.SelfPosition, out AbsoluteUniversePosition predatorAup) &&
+                    AcousticEchoLocationRuntime.TryUpdatePredatorEcho(
+                        frameId,
+                        in predatorAup,
+                        currentTime,
+                        out acousticEchoHunt))
+                {
+                    noisePlayerPosition = new Vector3(
+                        acousticEchoHunt.RuntimePosition.x,
+                        acousticEchoHunt.RuntimePosition.y,
+                        acousticEchoHunt.RuntimePosition.z);
+                    noisePlayerAup = acousticEchoHunt.InvestigateAup;
+                    hasNoisePlayerAup = true;
+                    acousticPingStrength01 = math.max(acousticPingStrength01, acousticEchoHunt.Intensity01);
+                    acousticTransmission01 = math.max(acousticTransmission01, 0.35f);
+                    hasNoisePlayerTarget = acousticEchoHunt.Intensity01 >= PredatorAcousticSightThreshold01;
+                    hasAcousticEchoBreadcrumb = hasNoisePlayerTarget;
+                }
+            }
+        }
+
+        private void ResolvePlayerTarget(
+            in CreatureUtilityContext context,
+            bool hasNoisePlayerTarget,
+            Vector3 noisePlayerPosition,
+            AbsoluteUniversePosition noisePlayerAup,
+            bool hasNoisePlayerAup,
+            out bool contextHasPlayerTarget,
+            out Vector3 resolvedPlayerPosition,
+            out bool hasAnyPlayerTarget,
+            out AbsoluteUniversePositionBlit128 playerTargetAup,
+            out bool hasPlayerTargetAup)
+        {
+            contextHasPlayerTarget = CreatureUtilityContext.HasPlayerTarget(in context);
+            resolvedPlayerPosition = contextHasPlayerTarget ? context.PlayerPosition : noisePlayerPosition;
+            hasAnyPlayerTarget = contextHasPlayerTarget || hasNoisePlayerTarget;
+            playerTargetAup = default;
+            hasPlayerTargetAup = false;
+
+            if (hasAnyPlayerTarget)
+            {
+                if (!contextHasPlayerTarget && hasNoisePlayerAup)
+                {
+                    playerTargetAup = noisePlayerAup.ToAlignedBlit();
+                    hasPlayerTargetAup = true;
+                }
+                else if (TryResolveRuntimeAup(resolvedPlayerPosition, out AbsoluteUniversePosition resolvedPlayerAup))
+                {
+                    playerTargetAup = resolvedPlayerAup.ToAlignedBlit();
+                    hasPlayerTargetAup = true;
+                }
+
+                hasAnyPlayerTarget &= hasPlayerTargetAup;
+            }
+        }
+
+        private void ResolvePackTarget(
+            in CreatureUtilityContext context,
+            bool hasAnyPlayerTarget,
+            bool hasPlayerTargetAup,
+            bool contextHasPreyTarget,
+            Vector3 resolvedPlayerPosition,
+            bool hasNoisePlayerAup,
+            AbsoluteUniversePosition noisePlayerAup,
+            bool contextHasPlayerTarget,
+            out bool hasPackTarget,
+            out Vector3 resolvedPackTargetPosition,
+            out Vector3 resolvedPackTargetVelocity,
+            out AbsoluteUniversePositionBlit128 packTargetAup)
+        {
+            hasPackTarget = _archetype != null && _archetype.usePackHunt && ((hasAnyPlayerTarget && hasPlayerTargetAup) || contextHasPreyTarget);
+            resolvedPackTargetPosition = hasAnyPlayerTarget ? resolvedPlayerPosition : context.PreyPosition;
+            resolvedPackTargetVelocity = hasAnyPlayerTarget ? context.PlayerVelocity : Vector3.zero;
+            packTargetAup = default;
+
+            if (hasPackTarget)
+            {
+                if (!contextHasPlayerTarget && hasNoisePlayerAup && hasAnyPlayerTarget)
+                {
+                    packTargetAup = noisePlayerAup.ToAlignedBlit();
+                }
+                else if (TryResolveRuntimeAup(resolvedPackTargetPosition, out AbsoluteUniversePosition resolvedPackAup))
+                {
+                    packTargetAup = resolvedPackAup.ToAlignedBlit();
+                }
+                else
+                {
+                    hasPackTarget = false;
+                }
+            }
+        }
+
+        private int BuildCognitionInputFlags(
+            in CreatureUtilityContext context,
+            bool hasAnyPlayerTarget,
+            bool contextHasPreyTarget,
+            bool contextHasScavengeTarget,
+            bool contextHasVisualContact,
+            bool contextIsApexPredator,
+            bool hasPackTarget)
+        {
+            int flags = (int)CognitionInputFlags.Active;
+            if (UsesPredatorRole != 0)
+                flags |= (int)CognitionInputFlags.PredatorRole;
+            if (CreatureUtilityContext.CanFlee(in context))
+                flags |= (int)CognitionInputFlags.CanFlee;
+            if (hasAnyPlayerTarget)
+                flags |= (int)CognitionInputFlags.HasPlayerTarget;
+            if (CreatureUtilityContext.HasThreatTarget(in context))
+                flags |= (int)CognitionInputFlags.HasThreatTarget;
+            if (CreatureUtilityContext.HasApexRivalTarget(in context))
+                flags |= (int)CognitionInputFlags.HasApexRivalTarget;
+            if (contextHasPreyTarget)
+                flags |= (int)CognitionInputFlags.HasPreyTarget;
+            if (contextHasScavengeTarget)
+                flags |= (int)CognitionInputFlags.HasScavengeTarget;
+            if (CreatureUtilityContext.UseHomeTerritory(in context))
+                flags |= (int)CognitionInputFlags.UseHomeTerritory;
+            if (CreatureUtilityContext.IsFlocking(in context))
+                flags |= (int)CognitionInputFlags.IsFlocking;
+            if (CreatureUtilityContext.HasScatterDirection(in context))
+                flags |= (int)CognitionInputFlags.HasScatterDirection;
+            if (CreatureUtilityContext.IsAggressive(in context))
+                flags |= (int)CognitionInputFlags.IsAggressive;
+            if (contextHasVisualContact)
+                flags |= (int)CognitionInputFlags.HasVisualPlayerHint;
+            if (contextIsApexPredator)
+                flags |= (int)CognitionInputFlags.IsApexPredator;
+            if (CreatureUtilityContext.UseAlphaLeviathanCognition(in context))
+                flags |= (int)CognitionInputFlags.UseAlphaLeviathanCognition;
+            if (UsesApexCognitionSteering(contextIsApexPredator))
+                flags |= (int)CognitionInputFlags.ApexSmoothSteering;
+            if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
+                (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
+            {
+                flags |= (int)CognitionInputFlags.IsAmbusher;
+            }
+            if (hasPackTarget)
+                flags |= (int)CognitionInputFlags.HasPackTarget;
+
+            return flags;
+        }
+
+        private void RecordStimuli(
+            float currentTime,
+            bool hasAnyPlayerTarget,
+            bool contextHasVisualContact,
+            Vector3 resolvedPlayerPosition,
+            float acousticPingStrength01,
+            float acousticTransmission01,
+            bool contextHasScavengeTarget,
+            Vector3 scavengePosition,
+            float chemicalSignal01)
+        {
+            if (hasAnyPlayerTarget && contextHasVisualContact)
+            {
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    resolvedPlayerPosition,
+                    currentTime,
+                    1f,
+                    CognitionStimulusType.Visual);
+            }
+
+            if (hasAnyPlayerTarget && acousticPingStrength01 > 0.01f)
+            {
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    resolvedPlayerPosition,
+                    currentTime,
+                    acousticPingStrength01 * math.max(0.25f, acousticTransmission01),
+                    CognitionStimulusType.Acoustic);
+            }
+
+            if (contextHasScavengeTarget && chemicalSignal01 > 0.01f)
+            {
+                PredatorCognitionDomain.RecordStimulus(
+                    _slot,
+                    scavengePosition,
+                    currentTime,
+                    chemicalSignal01,
+                    CognitionStimulusType.Chemical);
+            }
         }
 
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
