@@ -185,7 +185,7 @@ VertexOutput vert (VertexInput v) {
     // todo: this causes *bad things* with anti-aliasing
     // it's complicated - this doesn't work due to how barycentric interpolation skews coordinates.
     // just scaling the UVs overscales those skew regions leading to dents in the AA region
-    o.IP_nrmCoordLat = v.uv0.x * vertexRadius; // Use physical distance to avoid barycentric kink
+    o.IP_nrmCoordLat = v.uv0.x;
     o.IP_nrmCoordLong = v.uv0.z;
 
     //float depth = unity_ObjectToWorld[2][3];
@@ -225,16 +225,13 @@ FRAG_OUTPUT_V4 frag( VertexOutput i ) : SV_Target {
         float lat_sq = dot(g_lat, g_lat);
         float lat_inv = lat_sq > 1e-10 ? 1.0 / lat_sq : 0.0;
 
-        float2 g_rad = float2(ddx(i.IP_radius), ddy(i.IP_radius));
-        float rad_unskewed = i.IP_radius - i.IP_nrmCoordLat * dot(g_rad, g_lat) * lat_inv;
-
         float2 g_cov = float2(ddx(i.IP_pxCoverage), ddy(i.IP_pxCoverage));
         float cov_unskewed = i.IP_pxCoverage - i.IP_nrmCoordLat * dot(g_cov, g_lat) * lat_inv;
 
         float2 g_long = float2(ddx(i.IP_nrmCoordLong), ddy(i.IP_nrmCoordLong));
         float long_unskewed = i.IP_nrmCoordLong - i.IP_nrmCoordLat * dot(g_long, g_lat) * lat_inv;
 
-        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat / rad_unskewed, cov_unskewed );
+        half maskEdges = GetLineLocalAA( i.IP_nrmCoordLat, cov_unskewed );
         half maskEdgesCap = GetLineLocalAA( long_unskewed, cov_unskewed );
         shape_mask = min( shape_mask, min( maskEdges, maskEdgesCap ) );
     #else
