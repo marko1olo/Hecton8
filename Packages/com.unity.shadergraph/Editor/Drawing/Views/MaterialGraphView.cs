@@ -1411,26 +1411,33 @@ namespace UnityEditor.ShaderGraph.Drawing
                     associatedCategoryGuid = graphView.graph.FindCategoryForInput(input);
                 }
 
-                var copyShaderInputAction = new CopyShaderInputAction { shaderInputToCopy = input, containingCategoryGuid = associatedCategoryGuid };
-                copyShaderInputAction.insertIndex = insertionIndex;
-
                 if (graphView.graph.IsInputAllowedInGraph(input))
                 {
+                    IGraphDataAction copyAction = null;
                     switch (input)
                     {
                         case AbstractShaderProperty property:
-                            copyShaderInputAction.dependentNodeList = copyGraph.GetNodes<PropertyNode>().Where(x => x.property == input);
+                            var copyPropertyAction = new CopyShaderPropertyAction { shaderPropertyToCopy = property, containingCategoryGuid = associatedCategoryGuid };
+                            copyPropertyAction.insertIndex = insertionIndex;
+                            copyPropertyAction.dependentNodeList = copyGraph.GetNodes<PropertyNode>().Where(x => x.property == input);
+                            copyAction = copyPropertyAction;
                             break;
 
                         case ShaderKeyword shaderKeyword:
-                            copyShaderInputAction.dependentNodeList = copyGraph.GetNodes<KeywordNode>().Where(x => x.keyword == input);
+                            var copyKeywordAction = new CopyShaderKeywordAction { shaderKeywordToCopy = shaderKeyword, containingCategoryGuid = associatedCategoryGuid };
+                            copyKeywordAction.insertIndex = insertionIndex;
+                            copyKeywordAction.dependentNodeList = copyGraph.GetNodes<KeywordNode>().Where(x => x.keyword == input);
                             // Pasting a new Keyword so need to test against variant limit
                             keywordsDirty = true;
+                            copyAction = copyKeywordAction;
                             break;
 
                         case ShaderDropdown shaderDropdown:
-                            copyShaderInputAction.dependentNodeList = copyGraph.GetNodes<DropdownNode>().Where(x => x.dropdown == input);
+                            var copyDropdownAction = new CopyShaderDropdownAction { shaderDropdownToCopy = shaderDropdown, containingCategoryGuid = associatedCategoryGuid };
+                            copyDropdownAction.insertIndex = insertionIndex;
+                            copyDropdownAction.dependentNodeList = copyGraph.GetNodes<DropdownNode>().Where(x => x.dropdown == input);
                             dropdownsDirty = true;
+                            copyAction = copyDropdownAction;
                             break;
 
                         default:
@@ -1438,11 +1445,13 @@ namespace UnityEditor.ShaderGraph.Drawing
                             break;
                     }
 
-                    graphView.graph.owner.graphDataStore.Dispatch(copyShaderInputAction);
+                    if (copyAction != null)
+                        graphView.graph.owner.graphDataStore.Dispatch(copyAction);
 
                     // Increment insertion index for next input
                     insertionIndex++;
                 }
+
             }
 
             // Make new categories from the copied graph

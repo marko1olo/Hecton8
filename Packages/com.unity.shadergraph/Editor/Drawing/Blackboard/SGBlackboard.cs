@@ -382,9 +382,21 @@ namespace UnityEditor.ShaderGraph.Drawing
                     bool doesInputExistInGraph = controller.Model.ContainsInput(selectedBlackboardItem);
                     if (doesInputExistInGraph == false)
                     {
-                        var copyShaderInputAction = new CopyShaderInputAction();
-                        copyShaderInputAction.shaderInputToCopy = selectedBlackboardItem;
-                        ViewModel.requestModelChangeAction(copyShaderInputAction);
+                        IGraphDataAction copyAction = null;
+                        switch (selectedBlackboardItem)
+                        {
+                            case AbstractShaderProperty property:
+                                copyAction = new CopyShaderPropertyAction { shaderPropertyToCopy = property };
+                                break;
+                            case ShaderKeyword keyword:
+                                copyAction = new CopyShaderKeywordAction { shaderKeywordToCopy = keyword };
+                                break;
+                            case ShaderDropdown dropdown:
+                                copyAction = new CopyShaderDropdownAction { shaderDropdownToCopy = dropdown };
+                                break;
+                        }
+                        if (copyAction != null)
+                            ViewModel.requestModelChangeAction(copyAction);
                         selection.Remove(item);
                     }
                 }

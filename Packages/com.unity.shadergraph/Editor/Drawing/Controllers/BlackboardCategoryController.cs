@@ -173,11 +173,34 @@ namespace UnityEditor.ShaderGraph.Drawing
                     }
                     break;
 
-                case CopyShaderInputAction copyShaderInputAction:
-                    // In the specific case of only-one keywords like Material Quality and Raytracing, they can get copied, but because only one can exist, the output copied value is null
-                    if (copyShaderInputAction.copiedShaderInput != null && IsInputInCategory(copyShaderInputAction.copiedShaderInput))
+                case CopyShaderPropertyAction copyShaderPropertyAction:
+                    if (copyShaderPropertyAction.copiedShaderProperty != null && IsInputInCategory(copyShaderPropertyAction.copiedShaderProperty))
                     {
-                        var blackboardRow = InsertBlackboardRow(copyShaderInputAction.copiedShaderInput, copyShaderInputAction.insertIndex, ensureVisible: true);
+                        var blackboardRow = InsertBlackboardRow(copyShaderPropertyAction.copiedShaderProperty, copyShaderPropertyAction.insertIndex, ensureVisible: true);
+                        if (blackboardRow != null)
+                        {
+                            var graphView = ViewModel.parentView.GetFirstAncestorOfType<MaterialGraphView>();
+                            var propertyView = blackboardRow.Q<SGBlackboardField>();
+                            graphView?.AddToSelectionNoUndoRecord(propertyView);
+                        }
+                    }
+                    break;
+                case CopyShaderKeywordAction copyShaderKeywordAction:
+                    if (copyShaderKeywordAction.copiedShaderKeyword != null && IsInputInCategory(copyShaderKeywordAction.copiedShaderKeyword))
+                    {
+                        var blackboardRow = InsertBlackboardRow(copyShaderKeywordAction.copiedShaderKeyword, copyShaderKeywordAction.insertIndex, ensureVisible: true);
+                        if (blackboardRow != null)
+                        {
+                            var graphView = ViewModel.parentView.GetFirstAncestorOfType<MaterialGraphView>();
+                            var propertyView = blackboardRow.Q<SGBlackboardField>();
+                            graphView?.AddToSelectionNoUndoRecord(propertyView);
+                        }
+                    }
+                    break;
+                case CopyShaderDropdownAction copyShaderDropdownAction:
+                    if (copyShaderDropdownAction.copiedShaderDropdown != null && IsInputInCategory(copyShaderDropdownAction.copiedShaderDropdown))
+                    {
+                        var blackboardRow = InsertBlackboardRow(copyShaderDropdownAction.copiedShaderDropdown, copyShaderDropdownAction.insertIndex, ensureVisible: true);
                         if (blackboardRow != null)
                         {
                             var graphView = ViewModel.parentView.GetFirstAncestorOfType<MaterialGraphView>();

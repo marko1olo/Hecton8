@@ -162,92 +162,32 @@ namespace UnityEditor.ShaderGraph.Drawing
         public string NewGraphPath { get; set; }
     }
 
-    class CopyShaderInputAction : IGraphDataAction
+
+    class CopyShaderPropertyAction : IGraphDataAction
     {
-        void CopyShaderInput(GraphData graphData)
+        void CopyProperty(GraphData graphData)
         {
-            AssertHelpers.IsNotNull(graphData, "GraphData is null while carrying out CopyShaderInputAction");
-            AssertHelpers.IsNotNull(shaderInputToCopy, "ShaderInputToCopy is null while carrying out CopyShaderInputAction");
+            AssertHelpers.IsNotNull(graphData, "GraphData is null while carrying out CopyShaderPropertyAction");
+            AssertHelpers.IsNotNull(shaderPropertyToCopy, "ShaderPropertyToCopy is null while carrying out CopyShaderPropertyAction");
 
-            // Don't handle undo here as there are different contexts in which this action is used, that define the undo action
-            // TODO: Perhaps a sign that each of those need to be made their own actions instead of conflating intent into a single action
-
-            switch (shaderInputToCopy)
+            insertIndex = Mathf.Clamp(insertIndex, -1, graphData.properties.Count() - 1);
+            var copiedProperty = (AbstractShaderProperty)graphData.AddCopyOfShaderInput(shaderPropertyToCopy, insertIndex);
+            if (copiedProperty != null) // some property types cannot be duplicated (unknown types)
             {
-                case AbstractShaderProperty property:
-
-                    insertIndex = Mathf.Clamp(insertIndex, -1, graphData.properties.Count() - 1);
-                    var copiedProperty = (AbstractShaderProperty)graphData.AddCopyOfShaderInput(property, insertIndex);
-                    if (copiedProperty != null) // some property types cannot be duplicated (unknown types)
+                // Update the property nodes that depends on the copied node
+                foreach (var node in dependentNodeList)
+                {
+                    if (node is PropertyNode propertyNode)
                     {
-                        // Update the property nodes that depends on the copied node
-                        foreach (var node in dependentNodeList)
-                        {
-                            if (node is PropertyNode propertyNode)
-                            {
-                                propertyNode.owner = graphData;
-                                propertyNode.property = copiedProperty;
-                            }
-                        }
+                        propertyNode.owner = graphData;
+                        propertyNode.property = copiedProperty;
                     }
-
-
-                    copiedShaderInput = copiedProperty;
-                    break;
-
-                case ShaderKeyword shaderKeyword:
-                    // InsertIndex gets passed in relative to the blackboard position of an item overall,
-                    // and not relative to the array sizes of the properties/keywords/dropdowns
-                    var keywordInsertIndex = insertIndex - graphData.properties.Count();
-
-                    keywordInsertIndex = Mathf.Clamp(keywordInsertIndex, -1, graphData.keywords.Count() - 1);
-
-                    // Don't duplicate built-in keywords within the same graph
-                    if (shaderKeyword.isBuiltIn && graphData.keywords.Any(p => p.referenceName == shaderInputToCopy.referenceName))
-                        return;
-
-                    var copiedKeyword = (ShaderKeyword)graphData.AddCopyOfShaderInput(shaderKeyword, keywordInsertIndex);
-
-                    // Update the keyword nodes that depends on the copied node
-                    foreach (var node in dependentNodeList)
-                    {
-                        if (node is KeywordNode propertyNode)
-                        {
-                            propertyNode.owner = graphData;
-                            propertyNode.keyword = copiedKeyword;
-                        }
-                    }
-
-                    copiedShaderInput = copiedKeyword;
-                    break;
-
-                case ShaderDropdown shaderDropdown:
-                    // InsertIndex gets passed in relative to the blackboard position of an item overall,
-                    // and not relative to the array sizes of the properties/keywords/dropdowns
-                    var dropdownInsertIndex = insertIndex - graphData.properties.Count() - graphData.keywords.Count();
-
-                    dropdownInsertIndex = Mathf.Clamp(dropdownInsertIndex, -1, graphData.dropdowns.Count() - 1);
-
-                    var copiedDropdown = (ShaderDropdown)graphData.AddCopyOfShaderInput(shaderDropdown, dropdownInsertIndex);
-
-                    // Update the dropdown nodes that depends on the copied node
-                    foreach (var node in dependentNodeList)
-                    {
-                        if (node is DropdownNode propertyNode)
-                        {
-                            propertyNode.owner = graphData;
-                            propertyNode.dropdown = copiedDropdown;
-                        }
-                    }
-
-                    copiedShaderInput = copiedDropdown;
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException();
+                }
             }
 
-            if (copiedShaderInput != null)
+            copiedShaderProperty = copiedProperty;
+
+            if (copiedShaderProperty != null)
             {
                 // If specific category to copy to is provided, find and use it
                 foreach (var category in graphData.categories)
@@ -259,29 +199,156 @@ namespace UnityEditor.ShaderGraph.Drawing
                         // If the source item was already the last item in list, just add to end of list
                         if (insertIndex >= category.childCount)
                             insertIndex = -1;
-                        graphData.InsertItemIntoCategory(category.objectId, copiedShaderInput, insertIndex);
+                        graphData.InsertItemIntoCategory(category.objectId, copiedShaderProperty, insertIndex);
                         return;
                     }
                 }
 
                 // Else, add to default category
-                graphData.categories.First().InsertItemIntoCategory(copiedShaderInput);
+                graphData.categories.First().InsertItemIntoCategory(copiedShaderProperty);
             }
         }
 
-        public Action<GraphData> modifyGraphDataAction => CopyShaderInput;
+        public Action<GraphData> modifyGraphDataAction => CopyProperty;
 
         public IEnumerable<AbstractMaterialNode> dependentNodeList { get; set; } = new List<AbstractMaterialNode>();
 
-        public BlackboardItem shaderInputToCopy { get; set; }
+        public AbstractShaderProperty shaderPropertyToCopy { get; set; }
 
-        public BlackboardItem copiedShaderInput { get; set; }
+        public AbstractShaderProperty copiedShaderProperty { get; set; }
 
         public string containingCategoryGuid { get; set; }
 
         public int insertIndex { get; set; } = -1;
     }
 
+    class CopyShaderKeywordAction : IGraphDataAction
+    {
+        void CopyKeyword(GraphData graphData)
+        {
+            AssertHelpers.IsNotNull(graphData, "GraphData is null while carrying out CopyShaderKeywordAction");
+            AssertHelpers.IsNotNull(shaderKeywordToCopy, "ShaderKeywordToCopy is null while carrying out CopyShaderKeywordAction");
+
+            // InsertIndex gets passed in relative to the blackboard position of an item overall,
+            // and not relative to the array sizes of the properties/keywords/dropdowns
+            var keywordInsertIndex = insertIndex - graphData.properties.Count();
+
+            keywordInsertIndex = Mathf.Clamp(keywordInsertIndex, -1, graphData.keywords.Count() - 1);
+
+            // Don't duplicate built-in keywords within the same graph
+            if (shaderKeywordToCopy.isBuiltIn && graphData.keywords.Any(p => p.referenceName == shaderKeywordToCopy.referenceName))
+                return;
+
+            var copiedKeyword = (ShaderKeyword)graphData.AddCopyOfShaderInput(shaderKeywordToCopy, keywordInsertIndex);
+
+            // Update the keyword nodes that depends on the copied node
+            foreach (var node in dependentNodeList)
+            {
+                if (node is KeywordNode propertyNode)
+                {
+                    propertyNode.owner = graphData;
+                    propertyNode.keyword = copiedKeyword;
+                }
+            }
+
+            copiedShaderKeyword = copiedKeyword;
+
+            if (copiedShaderKeyword != null)
+            {
+                // If specific category to copy to is provided, find and use it
+                foreach (var category in graphData.categories)
+                {
+                    if (category.categoryGuid == containingCategoryGuid)
+                    {
+                        // Ensures that the new item gets added after the item it was duplicated from
+                        insertIndex += 1;
+                        // If the source item was already the last item in list, just add to end of list
+                        if (insertIndex >= category.childCount)
+                            insertIndex = -1;
+                        graphData.InsertItemIntoCategory(category.objectId, copiedShaderKeyword, insertIndex);
+                        return;
+                    }
+                }
+
+                // Else, add to default category
+                graphData.categories.First().InsertItemIntoCategory(copiedShaderKeyword);
+            }
+        }
+
+        public Action<GraphData> modifyGraphDataAction => CopyKeyword;
+
+        public IEnumerable<AbstractMaterialNode> dependentNodeList { get; set; } = new List<AbstractMaterialNode>();
+
+        public ShaderKeyword shaderKeywordToCopy { get; set; }
+
+        public ShaderKeyword copiedShaderKeyword { get; set; }
+
+        public string containingCategoryGuid { get; set; }
+
+        public int insertIndex { get; set; } = -1;
+    }
+
+    class CopyShaderDropdownAction : IGraphDataAction
+    {
+        void CopyDropdown(GraphData graphData)
+        {
+            AssertHelpers.IsNotNull(graphData, "GraphData is null while carrying out CopyShaderDropdownAction");
+            AssertHelpers.IsNotNull(shaderDropdownToCopy, "ShaderDropdownToCopy is null while carrying out CopyShaderDropdownAction");
+
+            // InsertIndex gets passed in relative to the blackboard position of an item overall,
+            // and not relative to the array sizes of the properties/keywords/dropdowns
+            var dropdownInsertIndex = insertIndex - graphData.properties.Count() - graphData.keywords.Count();
+
+            dropdownInsertIndex = Mathf.Clamp(dropdownInsertIndex, -1, graphData.dropdowns.Count() - 1);
+
+            var copiedDropdown = (ShaderDropdown)graphData.AddCopyOfShaderInput(shaderDropdownToCopy, dropdownInsertIndex);
+
+            // Update the dropdown nodes that depends on the copied node
+            foreach (var node in dependentNodeList)
+            {
+                if (node is DropdownNode propertyNode)
+                {
+                    propertyNode.owner = graphData;
+                    propertyNode.dropdown = copiedDropdown;
+                }
+            }
+
+            copiedShaderDropdown = copiedDropdown;
+
+            if (copiedShaderDropdown != null)
+            {
+                // If specific category to copy to is provided, find and use it
+                foreach (var category in graphData.categories)
+                {
+                    if (category.categoryGuid == containingCategoryGuid)
+                    {
+                        // Ensures that the new item gets added after the item it was duplicated from
+                        insertIndex += 1;
+                        // If the source item was already the last item in list, just add to end of list
+                        if (insertIndex >= category.childCount)
+                            insertIndex = -1;
+                        graphData.InsertItemIntoCategory(category.objectId, copiedShaderDropdown, insertIndex);
+                        return;
+                    }
+                }
+
+                // Else, add to default category
+                graphData.categories.First().InsertItemIntoCategory(copiedShaderDropdown);
+            }
+        }
+
+        public Action<GraphData> modifyGraphDataAction => CopyDropdown;
+
+        public IEnumerable<AbstractMaterialNode> dependentNodeList { get; set; } = new List<AbstractMaterialNode>();
+
+        public ShaderDropdown shaderDropdownToCopy { get; set; }
+
+        public ShaderDropdown copiedShaderDropdown { get; set; }
+
+        public string containingCategoryGuid { get; set; }
+
+        public int insertIndex { get; set; } = -1;
+    }
     class AddCategoryAction : IGraphDataAction
     {
         void AddCategory(GraphData graphData)
@@ -669,15 +736,31 @@ namespace UnityEditor.ShaderGraph.Drawing
                     m_DefaultCategoryController = m_BlackboardCategoryControllers.Values.FirstOrDefault();
 
                     break;
-                case CopyShaderInputAction copyShaderInputAction:
-                    // In the specific case of only-one keywords like Material Quality and Raytracing, they can get copied, but because only one can exist, the output copied value is null
-                    if (copyShaderInputAction.copiedShaderInput != null && IsInputUncategorized(copyShaderInputAction.copiedShaderInput))
+                case CopyShaderPropertyAction copyShaderPropertyAction:
+                    if (copyShaderPropertyAction.copiedShaderProperty != null && IsInputUncategorized(copyShaderPropertyAction.copiedShaderProperty))
                     {
-                        var blackboardRow = InsertBlackboardRow(copyShaderInputAction.copiedShaderInput, copyShaderInputAction.insertIndex, ensureVisible: true);
+                        var blackboardRow = InsertBlackboardRow(copyShaderPropertyAction.copiedShaderProperty, copyShaderPropertyAction.insertIndex, ensureVisible: true);
                         var propertyView = blackboardRow.Q<SGBlackboardField>();
                         graphView?.AddToSelectionNoUndoRecord(propertyView);
                     }
+                    break;
 
+                case CopyShaderKeywordAction copyShaderKeywordAction:
+                    if (copyShaderKeywordAction.copiedShaderKeyword != null && IsInputUncategorized(copyShaderKeywordAction.copiedShaderKeyword))
+                    {
+                        var blackboardRow = InsertBlackboardRow(copyShaderKeywordAction.copiedShaderKeyword, copyShaderKeywordAction.insertIndex, ensureVisible: true);
+                        var propertyView = blackboardRow.Q<SGBlackboardField>();
+                        graphView?.AddToSelectionNoUndoRecord(propertyView);
+                    }
+                    break;
+
+                case CopyShaderDropdownAction copyShaderDropdownAction:
+                    if (copyShaderDropdownAction.copiedShaderDropdown != null && IsInputUncategorized(copyShaderDropdownAction.copiedShaderDropdown))
+                    {
+                        var blackboardRow = InsertBlackboardRow(copyShaderDropdownAction.copiedShaderDropdown, copyShaderDropdownAction.insertIndex, ensureVisible: true);
+                        var propertyView = blackboardRow.Q<SGBlackboardField>();
+                        graphView?.AddToSelectionNoUndoRecord(propertyView);
+                    }
                     break;
 
                 case AddCategoryAction addCategoryAction:
