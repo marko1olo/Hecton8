@@ -526,22 +526,32 @@ namespace MapMagic.Nodes.MatrixGenerators {
 				
 				colorNames[textureNum] = names[m];
 
-				if (matrices[m] != null)
+				if (matrices[m] != null || masks[m] != null)
 				{
 					if (bytes[textureNum] == null)
 						bytes[textureNum] = new byte[data.area.active.rect.size.x * data.area.active.rect.size.z * 4];
 
-					// TODO: Support exporting masks to byte array channels directly, for now filling using Matrix byte export and then copying if necessary. Actually we can just write custom logic here.
 					int resX = data.area.active.rect.size.x;
 					int resZ = data.area.active.rect.size.z;
 					CoordRect activeRect = data.area.active.rect;
 					for (int x=0; x<resX; x++)
 					    for (int z=0; z<resZ; z++)
 					    {
-					        int matrixPos = (z+activeRect.offset.z-matrices[m].rect.offset.z)*matrices[m].rect.size.x + x+activeRect.offset.x - matrices[m].rect.offset.x;
+					        float val = 1;
+
+					        if (matrices[m] != null)
+					        {
+					            int matrixPos = (z+activeRect.offset.z-matrices[m].rect.offset.z)*matrices[m].rect.size.x + x+activeRect.offset.x - matrices[m].rect.offset.x;
+					            val *= matrices[m].arr[matrixPos];
+					        }
+
+					        if (masks[m] != null)
+					        {
+					            int maskPos = (z+activeRect.offset.z-masks[m].rect.offset.z)*masks[m].rect.size.x + x+activeRect.offset.x - masks[m].rect.offset.x;
+					            val *= masks[m].arr[maskPos];
+					        }
+
 					        int bytesPos = (z*resX + x)*4 + chIndexes[m];
-					        float val = matrices[m].arr[matrixPos];
-					        if (masks[m] != null) val *= masks[m].arr[matrixPos];
 					        if (val < 0) val = 0; if (val > 1) val = 1;
 					        bytes[textureNum][bytesPos] = (byte)(val * 255f);
 					    }
