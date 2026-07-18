@@ -32,7 +32,7 @@ namespace Hecton8.Dev
         [Tooltip("Emit a pass log with sampled graphics and RenderTexture budget values.")]
         [SerializeField] private bool verboseLogging = false;
 
-#pragma warning disable CS0414
+#pragma warning disable IDE0051, CS0414, CS0169
         [Header("Debug")]
         [SerializeField] private float _debugGraphicsDriverMemoryMb;
         [SerializeField] private float _debugGraphicsBudgetMb;
@@ -40,7 +40,7 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugVisorRenderTextureMemoryMb;
         [SerializeField] private float _debugPostFxRenderTextureMemoryMb;
         [SerializeField] private float _debugUiRenderTextureMemoryMb;
-#pragma warning restore CS0414
+#pragma warning restore IDE0051, CS0414, CS0169
 
         // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — visual budget Visor RT query — owner: VisualBudgetSmokeTester
         private readonly List<RenderTextureAllocationRecord> _visorRtRecords = new List<RenderTextureAllocationRecord>(64);
