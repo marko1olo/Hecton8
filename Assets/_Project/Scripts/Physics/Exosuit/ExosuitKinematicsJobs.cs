@@ -244,6 +244,97 @@ namespace Hecton8.Physics.Exosuit
             bool voxelSdfAvailable = IsVoxelSdfPayloadValid();
             if (voxelSdfAvailable)
                 mask |= ExosuitStateFlags.VoxelSdfSampled;
+
+            float pressure = 0.0f;
+            float heat = math.saturate(SanitizeNonNegative(state.ThrusterHeat));
+            float3 desiredVelocity = float3.zero;
+            bool emitSilt = false;
+
+            ProcessLocomotion(
+                dt, input, ref tuning, previousOutput, flow, crush,
+                quality, previousMask, ref mask, ref velocity, ref angularVelocity,
+                ref pressure, ref heat, ref desiredVelocity, ref emitSilt);
+
+            localPosition += velocity * dt;
+
+            float sdfSkinMeters = math.lerp(tuning.SdfEpsilonMeters * 1.5f, tuning.SdfEpsilonMeters * 0.55f, Smooth01(0.0f, 1.0f, quality));
+            float contactRadius = tuning.Radius + sdfSkinMeters;
+
+            float pushMagnitude = 0.0f;
+            float lostVelocityMagnitude = 0.0f;
+            float3 pushNormal = new float3(0.0f, 1.0f, 0.0f);
+            bool floorContact = false;
+            SdfSample postPushSdf = default;
+
+            ProcessCollisions(
+                dt, terrain, tuning, quality, contactRadius, input,
+                ref mask, ref localPosition, ref velocity, ref angularVelocity,
+                ref pushMagnitude, ref lostVelocityMagnitude, ref pushNormal,
+                ref floorContact, ref postPushSdf);
+
+            EvaluateClamps(
+                terrain, tuning, quality, contactRadius, input, previousMask,
+                ref mask, ref localPosition, ref velocity, ref angularVelocity, ref desiredVelocity,
+                ref pushMagnitude, ref pushNormal, ref postPushSdf);
+
+            bool badMath = false;
+            CheckAndHandleNaN(
+                ref mask, ref localPosition, ref velocity, ref angularVelocity, ref desiredVelocity,
+                ref pressure, ref heat, ref pushMagnitude, ref lostVelocityMagnitude, ref pushNormal,
+                ref floorContact, postPushSdf, ref badMath);
+
+            float3 snappedLocalPosition = SnapMillimeter(localPosition);
+            float3 snappedVelocity = SnapMillimeter(velocity);
+            float3 snappedAngularVelocity = SnapMillimeter(angularVelocity);
+            if (pushMagnitude > 0.0001f)
+                mask |= ExosuitStateFlags.SdfContact;
+
+            state.AUP_Position = cameraAup + new double3(snappedLocalPosition);
+            state.Velocity = snappedVelocity;
+            state.AngularVelocity = snappedAngularVelocity;
+            state.ThrusterHeat = heat;
+            state.Flags = mask | (tuning.Flags & ExosuitStateFlags.EmergencyMockData);
+            State[0] = state;
+            Tuning[0] = tuning;
+
+            uint outputFlags = 0u;
+            if (pushMagnitude > 0.0001f)
+                outputFlags |= ExosuitSolverOutput.FlagCollision;
+            if (lostVelocityMagnitude > 0.05f || pushMagnitude > 0.02f)
+                outputFlags |= ExosuitSolverOutput.FlagHaptic;
+            if (emitSilt)
+                outputFlags |= ExosuitSolverOutput.FlagSilt;
+            if (badMath)
+                outputFlags |= ExosuitSolverOutput.FlagFault;
+
+            if (floorContact)
+                outputFlags |= AccumulateFootstep(state.AUP_Position, LengthFromSq(math.lengthsq(velocity)) * dt, tuning.FootstepStrideMeters);
+
+            uint stateHash = ComputeStateHash(snappedLocalPosition, snappedVelocity, pressure, state.ThrusterHeat, state.Flags);
+            ExosuitSolverOutput solverOutput = default;
+            solverOutput.LocalPosition = snappedLocalPosition;
+            solverOutput.DesiredVelocity = SnapMillimeter(desiredVelocity);
+            solverOutput.PushNormal = pushNormal;
+            solverOutput.PushOutMagnitude = pushMagnitude;
+            solverOutput.LostVelocityMagnitude = lostVelocityMagnitude;
+            solverOutput.Speed = LengthFromSq(math.lengthsq(velocity));
+            solverOutput.Flags = outputFlags;
+            solverOutput.Frame = Frame;
+            solverOutput.StateHash = stateHash;
+            Output[0] = solverOutput;
+
+            WriteOptionalOutputs(state, crush, outputFlags, pushMagnitude, lostVelocityMagnitude, tuning.CurrentMass, quality, emitSilt);
+            WriteScreen(state, crush, pressure);
+            WriteTelemetry(state, pushMagnitude, stateHash, math.select(0u, 1u, badMath));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ProcessLocomotion(
+            float dt, in ExosuitFrameInputDTO input, ref ExosuitTuningDTO tuning, in ExosuitSolverOutput previousOutput,
+            in MockFlowField flow, in MockCrushDepthSignal crush, float quality, uint previousMask, ref uint mask,
+            ref float3 velocity, ref float3 angularVelocity, ref float pressure, ref float heat,
+            ref float3 desiredVelocity, ref bool emitSilt)
+        {
             float2 moveAxis = SanitizeFloat2(input.MoveAxis, float2.zero);
             float verticalAxis = math.clamp(SanitizeFloat(input.VerticalAxis, 0.0f), -1.0f, 1.0f);
             float desiredYaw = WrapRadians(SanitizeFloat(input.DesiredYawRadians, 0.0f));
@@ -260,8 +351,8 @@ namespace Hecton8.Physics.Exosuit
             float previousHydraulicPressure = Screen.IsCreated && Screen.Length > 0
                 ? SanitizeNonNegative(Screen[0].HydraulicPressure)
                 : 0.0f;
-            float pressure = MoveTowards(previousHydraulicPressure, pressureTarget, pressureStep);
-            float heat = math.saturate(SanitizeNonNegative(state.ThrusterHeat));
+            pressure = MoveTowards(previousHydraulicPressure, pressureTarget, pressureStep);
+
             float externalPressure = math.saturate(SanitizeNonNegative(crush.ExternalPressure01));
             pressure *= math.saturate(1.0f - externalPressure * dt * 0.35f);
 
@@ -270,7 +361,6 @@ namespace Hecton8.Physics.Exosuit
 
             bool purgeRequested = (input.ActionMask & ExosuitInputActions.Purge) != 0u;
             bool purgeLatched = (mask & ExosuitStateFlags.PurgeLatched) != 0u;
-            bool emitSilt = false;
             if (purgeRequested && !purgeLatched)
             {
                 tuning.CurrentMass = math.max(MinMass, tuning.CurrentMass * 0.5f);
@@ -290,7 +380,7 @@ namespace Hecton8.Physics.Exosuit
             float3 previousDesiredVelocity = SanitizeFloat3(previousOutput.DesiredVelocity, float3.zero);
             float actuatorRateScale = math.lerp(0.62f, 1.35f, Smooth01(0.0f, 1.0f, quality));
             float actuatorMaxDelta = tuning.MaxSpeedMetersPerSecond * actuatorRateScale * dt * math.rcp(math.max(0.05f, tuning.HydraulicLatencySeconds));
-            float3 desiredVelocity = MoveTowardsVector(previousDesiredVelocity, rawDesiredVelocity, actuatorMaxDelta);
+            desiredVelocity = MoveTowardsVector(previousDesiredVelocity, rawDesiredVelocity, actuatorMaxDelta);
             float desiredSpeedSq = math.max(0.0f, math.lengthsq(desiredVelocity));
             float desiredSpeed = desiredSpeedSq * math.rsqrt(math.max(desiredSpeedSq, 0.0001f));
             float actuatorPressure = math.saturate(desiredSpeed * math.rcp(math.max(0.1f, tuning.MaxSpeedMetersPerSecond)));
@@ -340,26 +430,28 @@ namespace Hecton8.Physics.Exosuit
                 maxSpeed = math.max(maxSpeed, tuning.PurgeImpulse * math.lerp(0.85f, 1.25f, Smooth01(0.0f, 1.0f, quality)));
             if (speedSq > maxSpeed * maxSpeed)
                 velocity *= maxSpeed * math.rsqrt(math.max(speedSq, 0.0001f));
+        }
 
-            localPosition += velocity * dt;
-            float sdfSkinMeters = math.lerp(tuning.SdfEpsilonMeters * 1.5f, tuning.SdfEpsilonMeters * 0.55f, Smooth01(0.0f, 1.0f, quality));
-            float contactRadius = tuning.Radius + sdfSkinMeters;
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ProcessCollisions(
+            float dt, in MockTerrainSDF terrain, in ExosuitTuningDTO tuning, float quality, float contactRadius,
+            in ExosuitFrameInputDTO input, ref uint mask, ref float3 localPosition, ref float3 velocity,
+            ref float3 angularVelocity, ref float pushMagnitude, ref float lostVelocityMagnitude,
+            ref float3 pushNormal, ref bool floorContact, ref SdfSample postPushSdf)
+        {
             float reducedProbeBudget = 1.0f - Smooth01(0.05f, ReducedProbeCutoff, quality);
             mask |= math.select(0u, ExosuitStateFlags.ReducedProbeBudget, reducedProbeBudget > 0.0001f);
 
             float secondaryWeight = Smooth01(SecondaryProbeStart, SecondaryProbeFull, quality);
             mask |= ((uint)math.step(0.0001f, secondaryWeight)) * ExosuitStateFlags.SecondaryProbeBlend;
 
-            float pushMagnitude = 0.0f;
-            float lostVelocityMagnitude = 0.0f;
-            float3 pushNormal = new float3(0.0f, 1.0f, 0.0f);
-            float pendingSecondaryPush = 0.0f;
-            float3 pendingSecondaryNormal = pushNormal;
-
             int maxSubsteps = math.clamp((int)tuning.MaxSubsteps, 2, 8);
             int iterations = math.clamp((int)math.lerp(2.0f, maxSubsteps, quality), 2, maxSubsteps);
             float ccdWeight = Smooth01(0.72f, 1.0f, quality);
+
+            float pendingSecondaryPush = 0.0f;
+            float3 pendingSecondaryNormal = pushNormal;
+
             for (int iteration = 0; iteration < iterations; iteration++)
             {
                 float substepT = (iteration + 1.0f) * math.rcp(iterations);
@@ -403,8 +495,7 @@ namespace Hecton8.Physics.Exosuit
                     mask |= ExosuitStateFlags.Grounded;
             }
 
-            bool grabRequested = (input.ActionMask & ExosuitInputActions.Grab) != 0u;
-            SdfSample postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
+            postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
             float residualPenetration = contactRadius - postPushSdf.Distance;
             if (residualPenetration > 0.0001f)
             {
@@ -446,10 +537,19 @@ namespace Hecton8.Physics.Exosuit
                 postPushSdf = SampleExosuitSdf(localPosition, terrain, quality);
             }
 
-            bool floorContact = postPushSdf.Normal.y > 0.5f && postPushSdf.Distance <= contactRadius + 0.05f;
+            floorContact = postPushSdf.Normal.y > 0.5f && postPushSdf.Distance <= contactRadius + 0.05f;
             if (floorContact)
                 mask |= ExosuitStateFlags.Grounded;
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EvaluateClamps(
+            in MockTerrainSDF terrain, in ExosuitTuningDTO tuning, float quality, float contactRadius,
+            in ExosuitFrameInputDTO input, uint previousMask, ref uint mask, ref float3 localPosition,
+            ref float3 velocity, ref float3 angularVelocity, ref float3 desiredVelocity,
+            ref float pushMagnitude, ref float3 pushNormal, ref SdfSample postPushSdf)
+        {
+            bool grabRequested = (input.ActionMask & ExosuitInputActions.Grab) != 0u;
             bool wasClamped = (previousMask & ExosuitStateFlags.Clamped) != 0u;
             float clampAcquireRange = math.max(tuning.ClampRange, contactRadius);
             float clampReleaseRange = clampAcquireRange + math.lerp(0.18f, 0.06f, Smooth01(0.0f, 1.0f, quality));
@@ -459,6 +559,7 @@ namespace Hecton8.Physics.Exosuit
             float clampAcquireWeight = (1.0f - math.step(clampAcquireDistance, postPushSdf.Distance)) * clampWallness;
             float clampReleaseWeight = (1.0f - math.step(clampReleaseDistance, postPushSdf.Distance)) * clampWallness;
             bool clampEligible = math.max(clampAcquireWeight, math.select(0.0f, clampReleaseWeight, wasClamped)) > 0.0001f;
+
             if (grabRequested && clampEligible)
             {
                 float3 clampAnchorNormal = NormalizeWithFallback(postPushSdf.Normal, pushNormal);
@@ -486,14 +587,23 @@ namespace Hecton8.Physics.Exosuit
                 pushMagnitude = math.max(pushMagnitude, math.abs(clampCorrection));
                 mask |= ExosuitStateFlags.Clamped;
             }
+        }
 
-            bool badMath = !math.all(math.isfinite(localPosition)) ||
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void CheckAndHandleNaN(
+            ref uint mask, ref float3 localPosition, ref float3 velocity, ref float3 angularVelocity,
+            ref float3 desiredVelocity, ref float pressure, ref float heat, ref float pushMagnitude,
+            ref float lostVelocityMagnitude, ref float3 pushNormal, ref bool floorContact,
+            in SdfSample postPushSdf, ref bool badMath)
+        {
+            badMath = !math.all(math.isfinite(localPosition)) ||
                            !math.all(math.isfinite(velocity)) ||
                            !math.all(math.isfinite(angularVelocity)) ||
                            !math.isfinite(heat) ||
                            !math.isfinite(pressure) ||
                            !math.all(math.isfinite(pushNormal)) ||
                            !math.isfinite(postPushSdf.Distance);
+
             if (badMath)
             {
                 localPosition = float3.zero;
@@ -508,50 +618,6 @@ namespace Hecton8.Physics.Exosuit
                 floorContact = false;
                 mask |= ExosuitStateFlags.NaNDetected;
             }
-
-            float3 snappedLocalPosition = SnapMillimeter(localPosition);
-            float3 snappedVelocity = SnapMillimeter(velocity);
-            float3 snappedAngularVelocity = SnapMillimeter(angularVelocity);
-            if (pushMagnitude > 0.0001f)
-                mask |= ExosuitStateFlags.SdfContact;
-
-            state.AUP_Position = cameraAup + new double3(snappedLocalPosition);
-            state.Velocity = snappedVelocity;
-            state.AngularVelocity = snappedAngularVelocity;
-            state.ThrusterHeat = heat;
-            state.Flags = mask | (tuning.Flags & ExosuitStateFlags.EmergencyMockData);
-            State[0] = state;
-            Tuning[0] = tuning;
-
-            uint outputFlags = 0u;
-            if (pushMagnitude > 0.0001f)
-                outputFlags |= ExosuitSolverOutput.FlagCollision;
-            if (lostVelocityMagnitude > 0.05f || pushMagnitude > 0.02f)
-                outputFlags |= ExosuitSolverOutput.FlagHaptic;
-            if (emitSilt)
-                outputFlags |= ExosuitSolverOutput.FlagSilt;
-            if (badMath)
-                outputFlags |= ExosuitSolverOutput.FlagFault;
-
-            if (floorContact)
-                outputFlags |= AccumulateFootstep(state.AUP_Position, LengthFromSq(math.lengthsq(velocity)) * dt, tuning.FootstepStrideMeters);
-
-            uint stateHash = ComputeStateHash(snappedLocalPosition, snappedVelocity, pressure, state.ThrusterHeat, state.Flags);
-            ExosuitSolverOutput solverOutput = default;
-            solverOutput.LocalPosition = snappedLocalPosition;
-            solverOutput.DesiredVelocity = SnapMillimeter(desiredVelocity);
-            solverOutput.PushNormal = pushNormal;
-            solverOutput.PushOutMagnitude = pushMagnitude;
-            solverOutput.LostVelocityMagnitude = lostVelocityMagnitude;
-            solverOutput.Speed = LengthFromSq(math.lengthsq(velocity));
-            solverOutput.Flags = outputFlags;
-            solverOutput.Frame = Frame;
-            solverOutput.StateHash = stateHash;
-            Output[0] = solverOutput;
-
-            WriteOptionalOutputs(state, crush, outputFlags, pushMagnitude, lostVelocityMagnitude, tuning.CurrentMass, quality, emitSilt);
-            WriteScreen(state, crush, pressure);
-            WriteTelemetry(state, pushMagnitude, stateHash, math.select(0u, 1u, badMath));
         }
 
         private uint AccumulateFootstep(double3 aup, float distanceMeters, float strideMeters)
