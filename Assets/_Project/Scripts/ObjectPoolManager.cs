@@ -198,6 +198,13 @@ namespace Hecton8.Core
             public GameObject prefab;
             public int prefabId;
             public int capacity;
+
+            public int markerIndex = -1;
+            public int rendererIndex = -1;
+            public int rigidbodyIndex = -1;
+            public int despawnTimerIndex = -1;
+            public int[] poolableIndices = Array.Empty<int>();
+            public bool hasDynamicMarker = false;
         }
 
         private void Awake()
@@ -979,6 +986,27 @@ namespace Hecton8.Core
             GameObject containerObject = new GameObject(PoolContainerRuntimeName);
             containerObject.transform.SetParent(transform, false);
 
+            prefab.GetComponents(s_componentCache);
+            int markerIdx = -1, rendererIdx = -1, rigidbodyIdx = -1, despawnTimerIdx = -1;
+            s_poolableCache.Clear();
+            List<int> poolableIdxList = new List<int>();
+            for (int i = 0; i < s_componentCache.Count; i++)
+            {
+                Component c = s_componentCache[i];
+                if (markerIdx == -1 && c is PoolItemMarker) markerIdx = i;
+                else if (rendererIdx == -1 && c is Renderer) rendererIdx = i;
+                else if (rigidbodyIdx == -1 && c is Rigidbody) rigidbodyIdx = i;
+                else if (despawnTimerIdx == -1 && c is DespawnTimer) despawnTimerIdx = i;
+                if (c is IPoolable) poolableIdxList.Add(i);
+            }
+            bool hasDynamicMarker = markerIdx == -1;
+            if (hasDynamicMarker)
+            {
+                markerIdx = s_componentCache.Count; // It will be added at the end
+            }
+            s_poolableCache.Clear();
+            s_componentCache.Clear();
+
             Pool pool = new Pool
             {
                 // COLD ALLOC: Queue<GameObject>[32] — inactive pooled instances for one prefab — owner: ObjectPoolManager
@@ -986,7 +1014,13 @@ namespace Hecton8.Core
                 container = containerObject.transform,
                 prefab = prefab,
                 prefabId = prefabId,
-                capacity = 0
+                capacity = 0,
+                markerIndex = markerIdx,
+                rendererIndex = rendererIdx,
+                rigidbodyIndex = rigidbodyIdx,
+                despawnTimerIndex = despawnTimerIdx,
+                poolableIndices = poolableIdxList.ToArray(),
+                hasDynamicMarker = hasDynamicMarker
             };
 
             _pools.Add(prefabId, pool);
@@ -1025,30 +1059,25 @@ namespace Hecton8.Core
 
             instance.GetComponents(s_componentCache);
 
-            PoolItemMarker marker = null;
-            Renderer rootRenderer = null;
-            Rigidbody rootRigidbody = null;
-            DespawnTimer rootDespawnTimer = null;
-
-            s_poolableCache.Clear();
-
-            int count = s_componentCache.Count;
-            for (int i = 0; i < count; i++)
-            {
-                Component c = s_componentCache[i];
-
-                if (marker == null && c is PoolItemMarker m) marker = m;
-                else if (rootRenderer == null && c is Renderer r) rootRenderer = r;
-                else if (rootRigidbody == null && c is Rigidbody rb) rootRigidbody = rb;
-                else if (rootDespawnTimer == null && c is DespawnTimer dt) rootDespawnTimer = dt;
-
-                if (c is IPoolable p) s_poolableCache.Add(p);
-            }
-
-            if (marker == null)
+            PoolItemMarker marker;
+            if (pool.hasDynamicMarker)
             {
                 marker = instance.AddComponent<PoolItemMarker>();
                 s_componentCache.Add(marker);
+            }
+            else
+            {
+                marker = (PoolItemMarker)s_componentCache[pool.markerIndex];
+            }
+
+            Renderer rootRenderer = pool.rendererIndex >= 0 ? (Renderer)s_componentCache[pool.rendererIndex] : null;
+            Rigidbody rootRigidbody = pool.rigidbodyIndex >= 0 ? (Rigidbody)s_componentCache[pool.rigidbodyIndex] : null;
+            DespawnTimer rootDespawnTimer = pool.despawnTimerIndex >= 0 ? (DespawnTimer)s_componentCache[pool.despawnTimerIndex] : null;
+
+            s_poolableCache.Clear();
+            for (int i = 0; i < pool.poolableIndices.Length; i++)
+            {
+                s_poolableCache.Add((IPoolable)s_componentCache[pool.poolableIndices[i]]);
             }
 
             marker.Initialize(this, prefabId, rootRenderer, rootRigidbody, rootDespawnTimer, s_poolableCache, s_componentCache);

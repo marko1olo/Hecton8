@@ -211,7 +211,7 @@ namespace MapMagic.Editor.Diagnostics
                             }
                             else if (gen is Levels200 levels)
                             {
-                                paramStr = $"inMin: {levels.inMin:F4}, inMax: {levels.inMax:F4}, outMin: {levels.outMin:F4}, outMax: {levels.outMax:F4}";
+                                paramStr = $"inMin: {levels.inMin:F4}, inMax: {levels.inMax:F4}, gamma: {levels.gamma:F4}, outMin: {levels.outMin:F4}, outMax: {levels.outMax:F4}";
                             }
                             else if (gen.GetType().Name == "HectonSandboxAbyssalShelfMapMagicNode")
                             {
