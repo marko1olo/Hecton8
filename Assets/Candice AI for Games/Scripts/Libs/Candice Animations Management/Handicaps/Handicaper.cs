@@ -16,11 +16,14 @@ namespace CandiceAIforGames.AI
         public TMPro.TMP_Dropdown HandicapDrop;
         public static string SelectedHandicap;
 
+        void Awake()
+        {
+            HandicapDrop = GetComponent<TMPro.TMP_Dropdown>();
+        }
+
         // Start is called before the first frame update
         void Start()
         {
-            //Get available handicaps
-            HandicapDrop = GetHandicaps();
             //When changing Handicap
             if (HandicapDrop != null) {
                 HandicapDrop.onValueChanged.AddListener(delegate { ChangeHandicap(); });
@@ -30,7 +33,7 @@ namespace CandiceAIforGames.AI
 
         public TMPro.TMP_Dropdown GetHandicaps() {
 
-            return GetComponent<TMPro.TMP_Dropdown>();
+            return HandicapDrop;
 
         }
 
