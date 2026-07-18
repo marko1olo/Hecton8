@@ -15,6 +15,7 @@ namespace Hecton8.Editor
 {
     public static class ConstructionBootstrapAuthoring
     {
+        private static readonly List<Renderer> s_RendererCache = new List<Renderer>(32);
         private const string DataFolder = "Assets/_Project/Data/Construction";
         private const string MaterialFolder = "Assets/_Project/Art/Materials/Construction";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
@@ -1988,15 +1989,48 @@ namespace Hecton8.Editor
             if (lods == null || lods.Length <= 0)
                 return;
 
-            Renderer[] additions = new Renderer[childNames.Length];
+            s_RendererCache.Clear();
             for (int i = 0; i < childNames.Length; i++)
-                additions[i] = ResolveRenderer(lod0, childNames[i]);
+            {
+                Renderer resolved = ResolveRenderer(lod0, childNames[i]);
+                if (resolved != null)
+                {
+                    s_RendererCache.Add(resolved);
+                }
+            }
 
-            lods[0].renderers = AppendRenderers(lods[0].renderers, additions);
+            lods[0].renderers = AppendRenderers(lods[0].renderers, s_RendererCache);
 
             lodGroup.SetLODs(lods);
             lodGroup.RecalculateBounds();
             EditorUtility.SetDirty(lodGroup);
+        }
+
+        private static Renderer[] AppendRenderers(Renderer[] existing, List<Renderer> additions)
+        {
+            int existingCount = existing != null ? existing.Length : 0;
+            int additionCount = 0;
+            for (int i = 0; i < additions.Count; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    additionCount++;
+            }
+
+            if (additionCount <= 0)
+                return existing ?? System.Array.Empty<Renderer>();
+
+            Renderer[] combined = new Renderer[existingCount + additionCount];
+            int writeIndex = 0;
+            for (int i = 0; i < existingCount; i++)
+                combined[writeIndex++] = existing[i];
+
+            for (int i = 0; i < additions.Count; i++)
+            {
+                if (additions[i] != null && !ContainsRenderer(existing, additions[i]))
+                    combined[writeIndex++] = additions[i];
+            }
+
+            return combined;
         }
 
         private static Renderer[] AppendRenderers(Renderer[] existing, params Renderer[] additions)
