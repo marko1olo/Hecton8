@@ -82,4 +82,78 @@ public sealed class CurrentManagerEditTests
         Assert.That(currentH1.x, Is.EqualTo(currentFull.x).Within(0.000001f));
         Assert.That(currentH1.z, Is.EqualTo(currentFull.z).Within(0.000001f));
     }
+
+    [Test]
+    public void SampleCurrent_EdgeCases_HandledCorrectly()
+    {
+        float3 pos = new float3(1f, 2f, 3f);
+        float time = 5f;
+
+        // Edge Case 1: Zero strength should result in zero current
+        float3 zeroStrength = CurrentManager.SampleCurrent(pos, time, noiseScale: 1f, timeScale: 1f, strength: 0f, verticalFactor: 1f);
+        Assert.That(zeroStrength.x, Is.EqualTo(0f));
+        Assert.That(zeroStrength.y, Is.EqualTo(0f));
+        Assert.That(zeroStrength.z, Is.EqualTo(0f));
+
+        // Edge Case 2: Zero vertical factor should result in zero Y current
+        float3 zeroVertical = CurrentManager.SampleCurrent(pos, time, noiseScale: 1f, timeScale: 1f, strength: 10f, verticalFactor: 0f);
+        Assert.That(zeroVertical.y, Is.EqualTo(0f));
+
+        // Edge Case 3: Zero noise scale makes current homogeneous across space
+        float3 pos1 = new float3(10f, 20f, 30f);
+        float3 pos2 = new float3(-50f, 100f, -200f);
+        float3 homogeneous1 = CurrentManager.SampleCurrent(pos1, time, noiseScale: 0f, timeScale: 1f, strength: 10f, verticalFactor: 1f);
+        float3 homogeneous2 = CurrentManager.SampleCurrent(pos2, time, noiseScale: 0f, timeScale: 1f, strength: 10f, verticalFactor: 1f);
+        Assert.That(homogeneous1.x, Is.EqualTo(homogeneous2.x).Within(0.000001f));
+        Assert.That(homogeneous1.y, Is.EqualTo(homogeneous2.y).Within(0.000001f));
+        Assert.That(homogeneous1.z, Is.EqualTo(homogeneous2.z).Within(0.000001f));
+
+        // Edge Case 4: Negative noise scale still produces bounded results
+        float3 negativeNoise = CurrentManager.SampleCurrent(pos, time, noiseScale: -1f, timeScale: 1f, strength: 10f, verticalFactor: 1f);
+        Assert.That(math.abs(negativeNoise.x), Is.LessThanOrEqualTo(10f));
+        Assert.That(math.abs(negativeNoise.y), Is.LessThanOrEqualTo(10f));
+        Assert.That(math.abs(negativeNoise.z), Is.LessThanOrEqualTo(10f));
+
+        // Edge Case 5: Zero time scale makes current static over time
+        float3 static1 = CurrentManager.SampleCurrent(pos, time: 10f, noiseScale: 1f, timeScale: 0f, strength: 10f, verticalFactor: 1f);
+        float3 static2 = CurrentManager.SampleCurrent(pos, time: 50f, noiseScale: 1f, timeScale: 0f, strength: 10f, verticalFactor: 1f);
+        Assert.That(static1.x, Is.EqualTo(static2.x).Within(0.000001f));
+        Assert.That(static1.y, Is.EqualTo(static2.y).Within(0.000001f));
+        Assert.That(static1.z, Is.EqualTo(static2.z).Within(0.000001f));
+    }
+
+    [Test]
+    public void SampleHorizontal_EdgeCases_HandledCorrectly()
+    {
+        float3 pos = new float3(1f, 2f, 3f);
+        float time = 5f;
+
+        // Zero strength
+        float3 zeroStrength = CurrentManager.SampleHorizontal(pos, time, noiseScale: 1f, timeScale: 1f, strength: 0f);
+        Assert.That(zeroStrength.x, Is.EqualTo(0f));
+        Assert.That(zeroStrength.y, Is.EqualTo(0f));
+        Assert.That(zeroStrength.z, Is.EqualTo(0f));
+
+        // Zero noise scale
+        float3 pos1 = new float3(10f, 20f, 30f);
+        float3 pos2 = new float3(-50f, 100f, -200f);
+        float3 homogeneous1 = CurrentManager.SampleHorizontal(pos1, time, noiseScale: 0f, timeScale: 1f, strength: 10f);
+        float3 homogeneous2 = CurrentManager.SampleHorizontal(pos2, time, noiseScale: 0f, timeScale: 1f, strength: 10f);
+        Assert.That(homogeneous1.x, Is.EqualTo(homogeneous2.x).Within(0.000001f));
+        Assert.That(homogeneous1.y, Is.EqualTo(0f));
+        Assert.That(homogeneous1.z, Is.EqualTo(homogeneous2.z).Within(0.000001f));
+
+        // Negative noise scale
+        float3 negativeNoise = CurrentManager.SampleHorizontal(pos, time, noiseScale: -1f, timeScale: 1f, strength: 10f);
+        Assert.That(math.abs(negativeNoise.x), Is.LessThanOrEqualTo(10f));
+        Assert.That(math.abs(negativeNoise.y), Is.EqualTo(0f));
+        Assert.That(math.abs(negativeNoise.z), Is.LessThanOrEqualTo(10f));
+
+        // Zero time scale
+        float3 static1 = CurrentManager.SampleHorizontal(pos, time: 10f, noiseScale: 1f, timeScale: 0f, strength: 10f);
+        float3 static2 = CurrentManager.SampleHorizontal(pos, time: 50f, noiseScale: 1f, timeScale: 0f, strength: 10f);
+        Assert.That(static1.x, Is.EqualTo(static2.x).Within(0.000001f));
+        Assert.That(static1.y, Is.EqualTo(0f));
+        Assert.That(static1.z, Is.EqualTo(static2.z).Within(0.000001f));
+    }
 }
