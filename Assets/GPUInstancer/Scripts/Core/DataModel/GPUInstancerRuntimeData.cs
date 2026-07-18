@@ -448,20 +448,19 @@ namespace GPUInstancer
 
         public virtual void GetMeshRenderersOfTransform(Transform objectTransform, List<MeshRenderer> meshRenderers)
         {
-            if (objectTransform.GetComponent<LODGroup>() != null)
+            if (objectTransform.TryGetComponent<LODGroup>(out _))
             {
                 Debug.LogError("\"" + objectTransform.name + "\" has an LOD Group component which is not the parent GameObject of the prefab. GPUI allows for only one LOD Group component per prototype which has to be at the parent GameObject.", prototype.prefabObject);
                 return;
             }
-            MeshRenderer meshRenderer = objectTransform.GetComponent<MeshRenderer>();
-            if (meshRenderer != null)
+            if (objectTransform.TryGetComponent<MeshRenderer>(out var meshRenderer))
                 meshRenderers.Add(meshRenderer);
 
             Transform childTransform;
             for (int i = 0; i < objectTransform.childCount; i++)
             {
                 childTransform = objectTransform.GetChild(i);
-                if (childTransform.GetComponent<GPUInstancerPrefab>() != null)
+                if (childTransform.TryGetComponent<GPUInstancerPrefab>(out _))
                     continue;
                 GetMeshRenderersOfTransform(childTransform, meshRenderers);
             }
