@@ -85,7 +85,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 			applyData.scatterMode = data.globals.grassScatterMode;
 			#endif
 
-			Graph.OnOutputFinalized?.Invoke(typeof(GrassOutput200), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(GrassOutput200), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
 

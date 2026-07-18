@@ -44,7 +44,7 @@ namespace MapMagic.Locks
 			{
 				TerrainTile.OnBeforeTilePrepare += OnTilePrepare_ReadLocks;
 				TerrainTile.OnBeforeTileGenerate += OnGenerateStarted_ResizeDrafts;
-				Graph.OnOutputFinalized += OnOutputFinalized_WriteLocksInThread;
+				Graph.OnBeforeApplyAssign += OnBeforeApplyAssign_WriteLocksInThread;
 				//TerrainTile.OnTileComplete += OnTileComplete_WriteLocksInApply; //using apply in thread instead
 				TerrainTile.OnAllComplete += OnAllComplete_FlushAllLocks;  //just in case some locks still left
 
@@ -123,7 +123,7 @@ namespace MapMagic.Locks
 			}
 
 
-			public static void OnOutputFinalized_WriteLocksInThread (Type type, TileData tileData, IApplyData applyData, StopToken stop)
+			public static void OnBeforeApplyAssign_WriteLocksInThread (Type type, TileData tileData, IApplyData applyData, StopToken stop)
 			{
 				Dictionary<Lock, LockDataSet> lockDatasDict;
 				if (!lockDatas.TryGetValue(tileData, out lockDatasDict)) 

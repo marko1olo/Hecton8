@@ -95,7 +95,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 			//pushing to apply
 			if (stop!=null && stop.stop) return;
 			ApplyData applyData = new ApplyData() {holes2D=holes2D};
-			Graph.OnOutputFinalized?.Invoke(typeof(HolesOutput2112), data, applyData, stop);
+			Graph.OnBeforeApplyAssign?.Invoke(typeof(HolesOutput2112), data, applyData, stop);
 			data.MarkApply(applyData);
 		}
 
