@@ -123,8 +123,8 @@ namespace Hecton8.Diagnostics
                 DepressionSpawnBias = 0f,
                 ChannelSpawnBias = 0f,
                 ChannelFlowBias = 0f,
-                CellSizeMeters = 2f,
-                HeightScaleMeters = 600f,
+                CellSizeMeters = targetTerrain.terrainData.size.x / w,
+                HeightScaleMeters = targetTerrain.terrainData.size.y,
                 SedimentaryFlatSlopeDegrees = 5f,
                 SpawnCandidateCount = 1,
                 MinWater = 0.01f
