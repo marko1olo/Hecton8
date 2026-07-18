@@ -50,11 +50,95 @@ namespace Hecton8.Data.Editor
             Run(projectRoot);
         }
 
+        private struct AuditMetrics
+        {
+            public long startTicks;
+            public bool androidReferencesGuarded;
+            public bool nativeBridgePresent;
+            public bool nativeOverflowGuard;
+            public bool nativeUncompressedFdGuard;
+            public int AndroidAssetCompressed;
+            public bool nativeNoHeapStaging;
+            public bool nativeBoundedDumpPath;
+            public bool nativeExportVisibilityPresent;
+            public bool androidNativeTelemetryDumpPresent;
+            public bool androidNativeTelemetryAgentDumpMirrorPresent;
+            public bool legacyOk;
+            public bool agentOk;
+            public bool telemetryDumpLayoutExplicit;
+            public bool writerReleaseRetryCrossPlatformPresent;
+            public int DataMonolithWriterReleaseRetryCount;
+            public int payloadWriteAcquireCount;
+            public int payloadWriteReleaseCount;
+            public int payloadWriteFinallyReleaseCount;
+            public bool payloadWriteLockFinallyProofPresent;
+            public bool globalDataVaultDeferredWriterReleaseQueueContract;
+            public bool dumpTelemetryReadOnlyOnly;
+            public bool telemetryDumpChronologicalOrderPresent;
+            public bool jniLocalReferenceLifetimeBounded;
+            public bool nativeAssetManagerNoCache;
+            public bool nativeJniEnvironmentReleaseBalanced;
+            public bool csharpRawJniRoute;
+            public bool androidAssetNameStackAsciiRoute;
+            public bool androidTelemetryRouteFlagsPresent;
+            public bool pInvokeSourcePluginRoute;
+            public bool namedLibraryRouteAbsent;
+            public bool zeroPointerGuards;
+            public bool dataVaultPointerRoute;
+            public bool windowsCreateFileRoute;
+            public bool androidBranchRoute;
+            public bool bootstrapRoute;
+            public bool cmakeReferenceValid;
+            public bool gradleNoCompress;
+            public bool gradleExternalNativeBuildAbsent;
+            public bool unitySourceBuildGradlePlaceholdersPresent;
+            public bool nativeSourcePluginDefaultImporterMetaComplete;
+            public bool androidSourcePluginRouteSerialized;
+            public bool androidIl2Cpp;
+            public bool androidArm64OnlySerialized;
+            public bool androidSplitApplicationBinaryDisabled;
+            public bool gameActivity;
+            public bool androidGameActivityNoLooperDependency;
+            public bool mockJniPointerFuzzerTest;
+            public bool auditScriptPresent;
+            public bool auditRegeneratesFdBackedStatus;
+            public bool auditStatusDowngradeGuardPresent;
+            public bool editorStaticTestsPresent;
+            public bool nativeMatrixValidatorGuard;
+            public bool nativeMatrixValidatorDumpMirrorGuard;
+            public bool legacyAuditGuard;
+            public bool legacyTestsGuard;
+            public bool architectureDocsUpdated;
+            public bool activeArchitectureDocsAligned;
+            public bool unityMetaFilesComplete;
+            public bool h8binValidatorScopedPass;
+            public long staticDataBytes;
+            public long elapsedMicroseconds;
+            public bool fatalPass;
+            public int androidLeakCount;
+        }
+
         internal static void Run(string projectRoot)
         {
             if (string.IsNullOrEmpty(projectRoot))
                 throw new ArgumentException("Project root is empty.", nameof(projectRoot));
 
+            AuditMetrics m = EvaluateRules(projectRoot);
+            string json = BuildReportJson(projectRoot, in m);
+
+            string reportAbsolutePath = Path.Combine(projectRoot, ReportPath);
+            string reportDirectory = Path.GetDirectoryName(reportAbsolutePath);
+            if (!string.IsNullOrEmpty(reportDirectory))
+                Directory.CreateDirectory(reportDirectory);
+
+            File.WriteAllText(reportAbsolutePath, json, Encoding.UTF8);
+
+            if (!m.fatalPass)
+                throw new FatalArchitectureException("Android asset bridge 1504 static audit failed. See " + ReportPath + ".");
+        }
+
+        private static AuditMetrics EvaluateRules(string projectRoot)
+        {
             long startTicks = DateTime.UtcNow.Ticks;
             string arena = ReadRequired(projectRoot, ArenaPath);
             string types = ReadRequired(projectRoot, TypesPath);
@@ -84,7 +168,7 @@ namespace Hecton8.Data.Editor
             string h8binValidationJunit = ReadRequired(projectRoot, H8binValidationJunitPath);
             string h8binValidationMetricPhi = ReadRequired(projectRoot, H8binValidationMetricPhiPath);
 
-            int androidLeakCount;
+            int androidLeakCount = 0;
             bool androidReferencesGuarded = AreAndroidReferencesGuarded(arena, out androidLeakCount);
             bool nativeBridgePresent = native.Contains("#include <android/asset_manager.h>", StringComparison.Ordinal) &&
                                        native.Contains("#include <android/asset_manager_jni.h>", StringComparison.Ordinal) &&
@@ -444,12 +528,83 @@ namespace Hecton8.Data.Editor
                              h8binValidatorScopedPass &&
                              staticDataBytes > 0L;
 
+            return new AuditMetrics
+            {
+                startTicks = startTicks,
+                androidReferencesGuarded = androidReferencesGuarded,
+                nativeBridgePresent = nativeBridgePresent,
+                nativeOverflowGuard = nativeOverflowGuard,
+                nativeUncompressedFdGuard = nativeUncompressedFdGuard,
+                AndroidAssetCompressed = AndroidAssetCompressed,
+                nativeNoHeapStaging = nativeNoHeapStaging,
+                nativeBoundedDumpPath = nativeBoundedDumpPath,
+                nativeExportVisibilityPresent = nativeExportVisibilityPresent,
+                androidNativeTelemetryDumpPresent = androidNativeTelemetryDumpPresent,
+                androidNativeTelemetryAgentDumpMirrorPresent = androidNativeTelemetryAgentDumpMirrorPresent,
+                legacyOk = legacyOk,
+                agentOk = agentOk,
+                telemetryDumpLayoutExplicit = telemetryDumpLayoutExplicit,
+                writerReleaseRetryCrossPlatformPresent = writerReleaseRetryCrossPlatformPresent,
+                DataMonolithWriterReleaseRetryCount = DataMonolithWriterReleaseRetryCount,
+                payloadWriteAcquireCount = payloadWriteAcquireCount,
+                payloadWriteReleaseCount = payloadWriteReleaseCount,
+                payloadWriteFinallyReleaseCount = payloadWriteFinallyReleaseCount,
+                payloadWriteLockFinallyProofPresent = payloadWriteLockFinallyProofPresent,
+                globalDataVaultDeferredWriterReleaseQueueContract = globalDataVaultDeferredWriterReleaseQueueContract,
+                dumpTelemetryReadOnlyOnly = dumpTelemetryReadOnlyOnly,
+                telemetryDumpChronologicalOrderPresent = telemetryDumpChronologicalOrderPresent,
+                jniLocalReferenceLifetimeBounded = jniLocalReferenceLifetimeBounded,
+                nativeAssetManagerNoCache = nativeAssetManagerNoCache,
+                nativeJniEnvironmentReleaseBalanced = nativeJniEnvironmentReleaseBalanced,
+                csharpRawJniRoute = csharpRawJniRoute,
+                androidAssetNameStackAsciiRoute = androidAssetNameStackAsciiRoute,
+                androidTelemetryRouteFlagsPresent = androidTelemetryRouteFlagsPresent,
+                pInvokeSourcePluginRoute = pInvokeSourcePluginRoute,
+                namedLibraryRouteAbsent = namedLibraryRouteAbsent,
+                zeroPointerGuards = zeroPointerGuards,
+                dataVaultPointerRoute = dataVaultPointerRoute,
+                windowsCreateFileRoute = windowsCreateFileRoute,
+                androidBranchRoute = androidBranchRoute,
+                bootstrapRoute = bootstrapRoute,
+                cmakeReferenceValid = cmakeReferenceValid,
+                gradleNoCompress = gradleNoCompress,
+                gradleExternalNativeBuildAbsent = gradleExternalNativeBuildAbsent,
+                unitySourceBuildGradlePlaceholdersPresent = unitySourceBuildGradlePlaceholdersPresent,
+                nativeSourcePluginDefaultImporterMetaComplete = nativeSourcePluginDefaultImporterMetaComplete,
+                androidSourcePluginRouteSerialized = androidSourcePluginRouteSerialized,
+                androidIl2Cpp = androidIl2Cpp,
+                androidArm64OnlySerialized = androidArm64OnlySerialized,
+                androidSplitApplicationBinaryDisabled = androidSplitApplicationBinaryDisabled,
+                gameActivity = gameActivity,
+                androidGameActivityNoLooperDependency = androidGameActivityNoLooperDependency,
+                mockJniPointerFuzzerTest = mockJniPointerFuzzerTest,
+                auditScriptPresent = auditScriptPresent,
+                auditRegeneratesFdBackedStatus = auditRegeneratesFdBackedStatus,
+                auditStatusDowngradeGuardPresent = auditStatusDowngradeGuardPresent,
+                editorStaticTestsPresent = editorStaticTestsPresent,
+                nativeMatrixValidatorGuard = nativeMatrixValidatorGuard,
+                nativeMatrixValidatorDumpMirrorGuard = nativeMatrixValidatorDumpMirrorGuard,
+                legacyAuditGuard = legacyAuditGuard,
+                legacyTestsGuard = legacyTestsGuard,
+                architectureDocsUpdated = architectureDocsUpdated,
+                activeArchitectureDocsAligned = activeArchitectureDocsAligned,
+                unityMetaFilesComplete = unityMetaFilesComplete,
+                h8binValidatorScopedPass = h8binValidatorScopedPass,
+                staticDataBytes = staticDataBytes,
+                elapsedMicroseconds = elapsedMicroseconds,
+                fatalPass = fatalPass,
+                androidLeakCount = androidLeakCount
+            };
+        }
+
+        private static string BuildReportJson(string projectRoot, in AuditMetrics m)
+        {
             StringBuilder builder = new StringBuilder(4096);
             builder.AppendLine("{"); // }
             AppendJson(builder, "agentId", "1504", true);
             AppendJson(builder, "role", "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT", true);
             AppendJson(builder, "evidenceClass", "STATIC_SOURCE", true);
-            AppendJson(builder, "status", fatalPass ? "PASS_STATIC_SOURCE_FD_BACKED_GUARD" : "FATAL_STATIC_SOURCE", true);
+            AppendJson(builder, "status", m.fatalPass ? "PASS_STATIC_SOURCE_FD_BACKED_GUARD" : "FATAL_STATIC_SOURCE", true);
             AppendJson(builder, "nativeLinkageMode", "Unity Android IL2CPP source plugin via DllImport(\"__Internal\"); no packaged libHectonAndroidBridge.so was present", true);
             AppendJson(builder, "namedDllImportRejectedReason", "Named DllImport requires a packaged shared library route; current project validator owns the source-plugin route", true);
             AppendJson(builder, "fdBackedGuardBasis", "Android NDK AAsset_openFileDescriptor64 returns negative when direct fd access is not possible, including compressed assets", true);
@@ -481,80 +636,72 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "h8binValidationReportPath", H8binValidationReportPath, true);
             AppendJson(builder, "h8binValidationJunitPath", H8binValidationJunitPath, true);
             AppendJson(builder, "h8binValidationMetricPhiPath", H8binValidationMetricPhiPath, true);
-            AppendJson(builder, "staticDataBytes", staticDataBytes, true);
-            AppendJson(builder, "androidReferencesGuarded", androidReferencesGuarded, true);
-            AppendJson(builder, "androidReferenceLeakCount", androidLeakCount, true);
-            AppendJson(builder, "nativeAAssetBridgePresent", nativeBridgePresent, true);
-            AppendJson(builder, "nativeOverflowGuardPresent", nativeOverflowGuard, true);
-            AppendJson(builder, "nativeUncompressedFdGuardPresent", nativeUncompressedFdGuard, true);
-            AppendJson(builder, "nativeHeapStagingTokensAbsent", nativeNoHeapStaging, true);
-            AppendJson(builder, "nativeBoundedDumpPathPresent", nativeBoundedDumpPath, true);
-            AppendJson(builder, "nativeExportVisibilityPresent", nativeExportVisibilityPresent, true);
-            AppendJson(builder, "androidNativeTelemetryDumpPresent", androidNativeTelemetryDumpPresent, true);
-            AppendJson(builder, "androidNativeTelemetryAgentDumpMirrorPresent", androidNativeTelemetryAgentDumpMirrorPresent, true);
-            AppendJson(builder, "telemetryDumpLayoutExplicit", telemetryDumpLayoutExplicit, true);
-            AppendJson(builder, "writerReleaseRetryCrossPlatformPresent", writerReleaseRetryCrossPlatformPresent, true);
-            AppendJson(builder, "payloadWriteLockFinallyProofPresent", payloadWriteLockFinallyProofPresent, true);
-            AppendJson(builder, "payloadWriteAcquireCount", payloadWriteAcquireCount, true);
-            AppendJson(builder, "payloadWriteReleaseCount", payloadWriteReleaseCount, true);
-            AppendJson(builder, "globalDataVaultDeferredWriterReleaseQueueContract", globalDataVaultDeferredWriterReleaseQueueContract, true);
-            AppendJson(builder, "dumpTelemetryReadOnlyOnly", dumpTelemetryReadOnlyOnly, true);
-            AppendJson(builder, "telemetryDumpChronologicalOrderPresent", telemetryDumpChronologicalOrderPresent, true);
-            AppendJson(builder, "jniLocalReferenceLifetimeBounded", jniLocalReferenceLifetimeBounded, true);
-            AppendJson(builder, "nativeAssetManagerNoCache", nativeAssetManagerNoCache, true);
-            AppendJson(builder, "nativeJniEnvironmentReleaseBalanced", nativeJniEnvironmentReleaseBalanced, true);
-            AppendJson(builder, "csharpRawJniRoutePresent", csharpRawJniRoute, true);
-            AppendJson(builder, "androidAssetNameStackAsciiRoutePresent", androidAssetNameStackAsciiRoute, true);
-            AppendJson(builder, "androidTelemetryRouteFlagsPresent", androidTelemetryRouteFlagsPresent, true);
-            AppendJson(builder, "pInvokeSourcePluginRoutePresent", pInvokeSourcePluginRoute, true);
-            AppendJson(builder, "pInvokeNamedLibraryRouteAbsent", namedLibraryRouteAbsent, true);
-            AppendJson(builder, "unitySourceBuildGradlePlaceholdersPresent", unitySourceBuildGradlePlaceholdersPresent, true);
-            AppendJson(builder, "nativeSourcePluginDefaultImporterMetaComplete", nativeSourcePluginDefaultImporterMetaComplete, true);
-            AppendJson(builder, "androidSourcePluginRouteSerialized", androidSourcePluginRouteSerialized, true);
-            AppendJson(builder, "mockJniZeroPointerGuardsPresent", zeroPointerGuards, true);
-            AppendJson(builder, "dataVaultDestinationPointerRoutePresent", dataVaultPointerRoute, true);
-            AppendJson(builder, "windowsCreateFileRouteRetained", windowsCreateFileRoute, true);
-            AppendJson(builder, "androidBranchRoutePresent", androidBranchRoute, true);
-            AppendJson(builder, "bootstrapPrewarmRoutePresent", bootstrapRoute, true);
-            AppendJson(builder, "cmakeStandaloneReferenceValid", cmakeReferenceValid, true);
-            AppendJson(builder, "h8binNoCompressConfigured", gradleNoCompress, true);
-            AppendJson(builder, "gradleExternalNativeBuildAbsent", gradleExternalNativeBuildAbsent, true);
-            AppendJson(builder, "androidIl2CppBackendSerialized", androidIl2Cpp, true);
-            AppendJson(builder, "androidArm64OnlySerialized", androidArm64OnlySerialized, true);
-            AppendJson(builder, "androidSplitApplicationBinaryDisabled", androidSplitApplicationBinaryDisabled, true);
-            AppendJson(builder, "androidGameActivityManifestPresent", gameActivity, true);
-            AppendJson(builder, "androidGameActivityNoLooperDependency", androidGameActivityNoLooperDependency, true);
-            AppendJson(builder, "mockJniPointerFuzzerTestPresent", mockJniPointerFuzzerTest, true);
-            AppendJson(builder, "auditScriptPresent", auditScriptPresent, true);
-            AppendJson(builder, "auditRegeneratesFdBackedStatus", auditRegeneratesFdBackedStatus, true);
-            AppendJson(builder, "auditStatusDowngradeGuardPresent", auditStatusDowngradeGuardPresent, true);
-            AppendJson(builder, "editorStaticTestsPresent", editorStaticTestsPresent, true);
-            AppendJson(builder, "nativeMatrixValidatorGuardPresent", nativeMatrixValidatorGuard, true);
-            AppendJson(builder, "nativeMatrixValidatorDumpMirrorGuardPresent", nativeMatrixValidatorDumpMirrorGuard, true);
-            AppendJson(builder, "legacyAuditGuardPresent", legacyAuditGuard, true);
-            AppendJson(builder, "legacyTestsGuardPresent", legacyTestsGuard, true);
-            AppendJson(builder, "architectureDocsUpdated", architectureDocsUpdated, true);
-            AppendJson(builder, "activeArchitectureDocsAligned", activeArchitectureDocsAligned, true);
-            AppendJson(builder, "unityMetaFilesComplete", unityMetaFilesComplete, true);
-            AppendJson(builder, "h8binValidatorScopedPass", h8binValidatorScopedPass, true);
-            AppendJson(builder, "h8binValidatorScopedStatus", h8binValidatorScopedPass ? "PASS" : "FAIL", true);
+            AppendJson(builder, "staticDataBytes", m.staticDataBytes, true);
+            AppendJson(builder, "androidReferencesGuarded", m.androidReferencesGuarded, true);
+            AppendJson(builder, "androidReferenceLeakCount", m.androidLeakCount, true);
+            AppendJson(builder, "nativeAAssetBridgePresent", m.nativeBridgePresent, true);
+            AppendJson(builder, "nativeOverflowGuardPresent", m.nativeOverflowGuard, true);
+            AppendJson(builder, "nativeUncompressedFdGuardPresent", m.nativeUncompressedFdGuard, true);
+            AppendJson(builder, "nativeHeapStagingTokensAbsent", m.nativeNoHeapStaging, true);
+            AppendJson(builder, "nativeBoundedDumpPathPresent", m.nativeBoundedDumpPath, true);
+            AppendJson(builder, "nativeExportVisibilityPresent", m.nativeExportVisibilityPresent, true);
+            AppendJson(builder, "androidNativeTelemetryDumpPresent", m.androidNativeTelemetryDumpPresent, true);
+            AppendJson(builder, "androidNativeTelemetryAgentDumpMirrorPresent", m.androidNativeTelemetryAgentDumpMirrorPresent, true);
+            AppendJson(builder, "telemetryDumpLayoutExplicit", m.telemetryDumpLayoutExplicit, true);
+            AppendJson(builder, "writerReleaseRetryCrossPlatformPresent", m.writerReleaseRetryCrossPlatformPresent, true);
+            AppendJson(builder, "payloadWriteLockFinallyProofPresent", m.payloadWriteLockFinallyProofPresent, true);
+            AppendJson(builder, "payloadWriteAcquireCount", m.payloadWriteAcquireCount, true);
+            AppendJson(builder, "payloadWriteReleaseCount", m.payloadWriteReleaseCount, true);
+            AppendJson(builder, "globalDataVaultDeferredWriterReleaseQueueContract", m.globalDataVaultDeferredWriterReleaseQueueContract, true);
+            AppendJson(builder, "dumpTelemetryReadOnlyOnly", m.dumpTelemetryReadOnlyOnly, true);
+            AppendJson(builder, "telemetryDumpChronologicalOrderPresent", m.telemetryDumpChronologicalOrderPresent, true);
+            AppendJson(builder, "jniLocalReferenceLifetimeBounded", m.jniLocalReferenceLifetimeBounded, true);
+            AppendJson(builder, "nativeAssetManagerNoCache", m.nativeAssetManagerNoCache, true);
+            AppendJson(builder, "nativeJniEnvironmentReleaseBalanced", m.nativeJniEnvironmentReleaseBalanced, true);
+            AppendJson(builder, "csharpRawJniRoutePresent", m.csharpRawJniRoute, true);
+            AppendJson(builder, "androidAssetNameStackAsciiRoutePresent", m.androidAssetNameStackAsciiRoute, true);
+            AppendJson(builder, "androidTelemetryRouteFlagsPresent", m.androidTelemetryRouteFlagsPresent, true);
+            AppendJson(builder, "pInvokeSourcePluginRoutePresent", m.pInvokeSourcePluginRoute, true);
+            AppendJson(builder, "pInvokeNamedLibraryRouteAbsent", m.namedLibraryRouteAbsent, true);
+            AppendJson(builder, "unitySourceBuildGradlePlaceholdersPresent", m.unitySourceBuildGradlePlaceholdersPresent, true);
+            AppendJson(builder, "nativeSourcePluginDefaultImporterMetaComplete", m.nativeSourcePluginDefaultImporterMetaComplete, true);
+            AppendJson(builder, "androidSourcePluginRouteSerialized", m.androidSourcePluginRouteSerialized, true);
+            AppendJson(builder, "mockJniZeroPointerGuardsPresent", m.zeroPointerGuards, true);
+            AppendJson(builder, "dataVaultDestinationPointerRoutePresent", m.dataVaultPointerRoute, true);
+            AppendJson(builder, "windowsCreateFileRouteRetained", m.windowsCreateFileRoute, true);
+            AppendJson(builder, "androidBranchRoutePresent", m.androidBranchRoute, true);
+            AppendJson(builder, "bootstrapPrewarmRoutePresent", m.bootstrapRoute, true);
+            AppendJson(builder, "cmakeStandaloneReferenceValid", m.cmakeReferenceValid, true);
+            AppendJson(builder, "h8binNoCompressConfigured", m.gradleNoCompress, true);
+            AppendJson(builder, "gradleExternalNativeBuildAbsent", m.gradleExternalNativeBuildAbsent, true);
+            AppendJson(builder, "androidIl2CppBackendSerialized", m.androidIl2Cpp, true);
+            AppendJson(builder, "androidArm64OnlySerialized", m.androidArm64OnlySerialized, true);
+            AppendJson(builder, "androidSplitApplicationBinaryDisabled", m.androidSplitApplicationBinaryDisabled, true);
+            AppendJson(builder, "androidGameActivityManifestPresent", m.gameActivity, true);
+            AppendJson(builder, "androidGameActivityNoLooperDependency", m.androidGameActivityNoLooperDependency, true);
+            AppendJson(builder, "mockJniPointerFuzzerTestPresent", m.mockJniPointerFuzzerTest, true);
+            AppendJson(builder, "auditScriptPresent", m.auditScriptPresent, true);
+            AppendJson(builder, "auditRegeneratesFdBackedStatus", m.auditRegeneratesFdBackedStatus, true);
+            AppendJson(builder, "auditStatusDowngradeGuardPresent", m.auditStatusDowngradeGuardPresent, true);
+            AppendJson(builder, "editorStaticTestsPresent", m.editorStaticTestsPresent, true);
+            AppendJson(builder, "nativeMatrixValidatorGuardPresent", m.nativeMatrixValidatorGuard, true);
+            AppendJson(builder, "nativeMatrixValidatorDumpMirrorGuardPresent", m.nativeMatrixValidatorDumpMirrorGuard, true);
+            AppendJson(builder, "legacyAuditGuardPresent", m.legacyAuditGuard, true);
+            AppendJson(builder, "legacyTestsGuardPresent", m.legacyTestsGuard, true);
+            AppendJson(builder, "architectureDocsUpdated", m.architectureDocsUpdated, true);
+            AppendJson(builder, "activeArchitectureDocsAligned", m.activeArchitectureDocsAligned, true);
+            AppendJson(builder, "unityMetaFilesComplete", m.unityMetaFilesComplete, true);
+            AppendJson(builder, "h8binValidatorScopedPass", m.h8binValidatorScopedPass, true);
+            AppendJson(builder, "h8binValidatorScopedStatus", m.h8binValidatorScopedPass ? "PASS" : "FAIL", true);
             AppendJson(builder, "h8binValidatorScopedFiles", 2L, true);
             AppendJson(builder, "h8binValidatorScopedStructs", 32L, true);
             AppendJson(builder, "h8binValidatorIgnoredLogExcluded", true, true);
             AppendJson(builder, "h8binValidatorThoroughStatus", "BLOCKED_BY_TOOL_WATCHDOG", true);
-            AppendJson(builder, "staticScanMicroseconds", elapsedMicroseconds, true);
-            AppendHashes(builder, projectRoot, staticDataBytes);
+            AppendJson(builder, "staticScanMicroseconds", m.elapsedMicroseconds, true);
+            AppendHashes(builder, projectRoot, m.staticDataBytes);
             builder.AppendLine("}"); // {
 
-            string reportAbsolutePath = Path.Combine(projectRoot, ReportPath);
-            string reportDirectory = Path.GetDirectoryName(reportAbsolutePath);
-            if (!string.IsNullOrEmpty(reportDirectory))
-                Directory.CreateDirectory(reportDirectory);
-
-            File.WriteAllText(reportAbsolutePath, builder.ToString(), Encoding.UTF8);
-
-            if (!fatalPass)
-                throw new FatalArchitectureException("Android asset bridge 1504 static audit failed. See " + ReportPath + ".");
+            return builder.ToString();
         }
 
         private static void AppendHashes(StringBuilder builder, string projectRoot, long staticDataBytes)
