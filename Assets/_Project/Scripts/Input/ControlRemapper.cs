@@ -336,20 +336,25 @@ namespace Hecton8.Input
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
+                H8Debug.LogWarning("[ControlRemapper] Failed to delete telemetry dump temp file: " + ex.Message);
             }
-            catch (IOException)
+            catch (IOException ex)
             {
+                H8Debug.LogWarning("[ControlRemapper] Failed to delete telemetry dump temp file: " + ex.Message);
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
+                H8Debug.LogWarning("[ControlRemapper] Failed to delete telemetry dump temp file: " + ex.Message);
             }
-            catch (NotSupportedException)
+            catch (NotSupportedException ex)
             {
+                H8Debug.LogWarning("[ControlRemapper] Failed to delete telemetry dump temp file: " + ex.Message);
             }
-            catch (System.Security.SecurityException)
+            catch (System.Security.SecurityException ex)
             {
+                H8Debug.LogWarning("[ControlRemapper] Failed to delete telemetry dump temp file: " + ex.Message);
             }
             finally
             {
