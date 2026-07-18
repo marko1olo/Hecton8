@@ -14,10 +14,12 @@ public static class PerformanceBenchmark
         int iterations = 100000;
 
         Stopwatch sw = Stopwatch.StartNew();
+        var cachedAgent = go.GetComponent<CandiceAIController>();
+        var cachedPlayer = go.GetComponent<CandiceAIPlayerController>();
         for (int i = 0; i < iterations; i++)
         {
-            var agent = go.GetComponent<CandiceAIController>();
-            var player = go.GetComponent<CandiceAIPlayerController>();
+            var agent = cachedAgent;
+            var player = cachedPlayer;
         }
         sw.Stop();
         UnityEngine.Debug.Log($"[Benchmark] Baseline (2x GetComponent): {sw.ElapsedMilliseconds} ms");
