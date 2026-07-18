@@ -340,12 +340,6 @@ namespace Hecton8.AtlasSignal
                 : unchecked((uint)LocHash.Compute(conflictId));
         }
 
-        [Obsolete("Use TryRaisePlayerStatusChanged(Atlas6PlayerStatus) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePlayerStatusChanged(Atlas6PlayerStatus status)
-        {
-            TryRaisePlayerStatusChanged(status);
-        }
-
         public static bool TryRaisePlayerStatusChanged(Atlas6PlayerStatus status)
         {
             if (!IsKnownPlayerStatus(status))
@@ -360,34 +354,6 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)Atlas6EventType.PlayerStatusChanged,
                 StatusValue = (ushort)status
             });
-        }
-
-        [Obsolete("Use TryRaiseDirectiveConflict(uint conflictHash). String ingress is not allowed on first-party event lanes.", true)]
-        public static void RaiseDirectiveConflict(string conflictId)
-        {
-            TryRaiseDirectiveConflictFromString(conflictId);
-        }
-
-        private static bool TryRaiseDirectiveConflictFromString(string conflictId)
-        {
-            uint conflictHash = ComputeDirectiveConflictHash(conflictId);
-            if (conflictHash == 0u)
-                return false;
-
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-                return false;
-
-            if (!TryRegisterConflictId(conflictHash, conflictId))
-                return false;
-
-            return TryRaiseDirectiveConflict(conflictHash);
-        }
-
-        [Obsolete("Use TryRaiseDirectiveConflict(uint conflictHash) so overflow/drop semantics stay visible at the producer.", true)]
-        public static bool RaiseDirectiveConflict(uint conflictHash)
-        {
-            return TryRaiseDirectiveConflict(conflictHash);
         }
 
         public static bool TryRaiseDirectiveConflict(uint conflictHash)
@@ -406,12 +372,6 @@ namespace Hecton8.AtlasSignal
             });
         }
 
-        [Obsolete("Use TryRaiseBarterAccepted(int) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseBarterAccepted(int transactionCount)
-        {
-            TryRaiseBarterAccepted(transactionCount);
-        }
-
         public static bool TryRaiseBarterAccepted(int transactionCount)
         {
             if (transactionCount <= 0)
@@ -426,12 +386,6 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)Atlas6EventType.BarterAccepted,
                 StatusValue = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseScarcityDirective(uint,uint) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseScarcityDirective(uint questHash, uint resourceHash)
-        {
-            TryRaiseScarcityDirective(questHash, resourceHash);
         }
 
         public static bool TryRaiseScarcityDirective(uint questHash, uint resourceHash)
