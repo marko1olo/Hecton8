@@ -10,6 +10,7 @@ namespace Hecton8.Editor
         [InitializeOnLoadMethod]
         private static void Run()
         {
+            return;
             if (SessionState.GetBool("UpdateSandboxSceneTaskRun", false)) return;
             SessionState.SetBool("UpdateSandboxSceneTaskRun", true);
 

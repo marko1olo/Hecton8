@@ -170,7 +170,7 @@ namespace Den.Tools.Tasks
 			for (int i=list.Count-1; i>=0; i--) //for FIFO
 			{
 				int priority = list[i].priority;
-				if (priority > maxPriority)
+				if (priority >= maxPriority) // HECTON headless-gen fix: priority underflow when no camera
 				{
 					maxPriority = priority;
 					maxPriorityNum = i;

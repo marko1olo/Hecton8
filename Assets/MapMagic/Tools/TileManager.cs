@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -629,9 +629,10 @@ namespace Den.Tools
 			protected static float GetRemoteness (Coord coord, Coord[] camCoords, int camCoordsCount=-1)
 			/// Returns an axis/priority distance to the closest cam
 			{
+				if (camCoords == null || camCoords.Length == 0 || camCoordsCount == 0) return 0; // HECTON headless-gen fix: priority underflow when no camera
+
 				float minDist = float.MaxValue;
 
-				if (camCoords == null) return minDist;
 				if (camCoordsCount < 0 || camCoordsCount > camCoords.Length) camCoordsCount = camCoords.Length;
 
 				for (int r=0; r<camCoordsCount; r++)

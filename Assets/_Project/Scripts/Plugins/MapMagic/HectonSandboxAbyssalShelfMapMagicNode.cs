@@ -142,16 +142,37 @@ namespace MapMagic.Nodes.MatrixGenerators
                     MacroGeologyArtifactVersion = WorldMacroGeologyFields.ArtifactVersion
                 };
 
-                var baseJob = new HectonSandboxAbyssalShelfBaseJob
+                int presampledWidth = width + 2;
+                int presampledCount = presampledWidth * presampledWidth;
+                NativeArray<PresampledMacroNode> presampledNodes = new NativeArray<PresampledMacroNode>(
+                    presampledCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                var presampleJob = new HectonSandboxAbyssalShelfPresampleJob
                 {
+                    PresampledNodes = presampledNodes,
+                    Parameters = parameters,
+                    PresampledWidth = presampledWidth,
+                    WorldOriginAup = worldOriginAup,
+                    CellSizeMeters = sampleCellSizeMeters
+                };
+                
+                JobHandle presampleHandle = presampleJob.Schedule(presampledCount, ResolveBatchCount(presampledCount));
+
+                var differentialJob = new HectonSandboxAbyssalShelfDifferentialJob
+                {
+                    PresampledNodes = presampledNodes,
                     OutputHeights01 = rawHeights,
                     Parameters = parameters,
                     Width = width,
+                    PresampledWidth = presampledWidth,
                     WorldOriginAup = worldOriginAup,
                     CellSizeMeters = sampleCellSizeMeters
                 };
 
-                generationHandle = baseJob.Schedule(cellCount, ResolveBatchCount(cellCount));
+                generationHandle = differentialJob.Schedule(cellCount, ResolveBatchCount(cellCount), presampleHandle);
+                
+                // Dispose of the temp array after the generation handle completes
+                generationHandle = presampledNodes.Dispose(generationHandle);
                 generationHandleScheduled = true;
                 NativeArray<float> finalHeights = rawHeights;
 

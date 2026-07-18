@@ -174,9 +174,9 @@ namespace Hecton8.World
             float terrace = math.saturate(sample.TerraceMask);
             float slump = math.saturate(sample.SlumpScarMask);
             float tributary = math.saturate(sample.TributaryCanyonMask);
-            float provinceJitter = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x51A7E531u, 900f);
-            float localPatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0xB34ACE21u, 240f);
-            float finePatch = CoarseValueNoise01(absoluteX, absoluteZ, seed ^ 0x6E9CF5A1u, 72f);
+            float provinceJitter = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 900f, seed ^ 0x51A7E531u, 3);
+            float localPatch = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 240f, seed ^ 0xB34ACE21u, 3);
+            float finePatch = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 72f, seed ^ 0x6E9CF5A1u, 3);
             float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
             float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
             float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
@@ -482,7 +482,7 @@ namespace Hecton8.World
             float depth = math.max(0f, macro.DepthMeters);
 
             float sediment = math.saturate((1f - slope) * 0.54f + basin * 0.36f + shelf * 0.18f - ridge * 0.24f - trench * 0.18f);
-            float terracePatch = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x334EAA71u, 588f);
+            float terracePatch = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 588f, p.Seed ^ 0x334EAA71u, 3);
             float terrace = math.saturate(shelfBreak * 0.45f + shelf * 0.12f + curvature * 0.16f - trench * 0.18f);
             terrace *= 0.24f + math.smoothstep(0.22f, 0.82f, terracePatch) * 0.76f;
 
@@ -493,7 +493,7 @@ namespace Hecton8.World
             float reefDetail = math.saturate(shelf * 0.45f + (1f - slope) * 0.24f - trench * 0.40f);
 
             float terraceStep = 18f + shelfBreak * 48f + ridge * 24f;
-            float terraceWarp = (ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x7D4B9143u, 910f) - 0.5f) * terraceStep * 0.42f;
+            float terraceWarp = (WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 910f, p.Seed ^ 0x7D4B9143u, 3) - 0.5f) * terraceStep * 0.42f;
             float terraceHeight = macro.HeightMeters + terraceWarp;
             float terraceLocal = terraceHeight / math.max(1f, terraceStep);
             float terraceBase = math.floor(terraceLocal);
@@ -511,8 +511,8 @@ namespace Hecton8.World
                 p.TerraceStrengthMeters *
                 detailGate;
 
-            float channelNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x58B9D13Du, 238f);
-            float channelWeave = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x9C31B8EFu, 769f);
+            float channelNoise = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 238f, p.Seed ^ 0x58B9D13Du, 3);
+            float channelWeave = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 769f, p.Seed ^ 0x9C31B8EFu, 3);
             float channelLines = math.smoothstep(0.56f, 0.94f, channelNoise) *
                 tributary *
                 (0.30f + math.smoothstep(0.12f, 0.84f, channelWeave) * 0.46f);
@@ -521,16 +521,16 @@ namespace Hecton8.World
                 p.TributaryStrengthMeters *
                 math.saturate(0.32f + shelfBreak * 0.72f + fault * 0.36f);
 
-            float slumpLobes = math.smoothstep(0.58f, 0.91f, ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x711CE4A9u, 476f)) * slump;
+            float slumpLobes = math.smoothstep(0.58f, 0.91f, WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 476f, p.Seed ^ 0x711CE4A9u, 3)) * slump;
             float slumpDelta = -slumpLobes * (5f + 34f * detailGate) * p.SlumpStrengthMeters;
 
-            float talusNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xA9C3EF17u, 100f);
+            float talusNoise = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 100f, p.Seed ^ 0xA9C3EF17u, 3);
             float talusDelta = (talusNoise - 0.5f) * (4f + 16f * detailGate) * talus * p.TalusStrengthMeters;
 
-            float rubbleNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0xC361A27Fu, 45f);
+            float rubbleNoise = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 45f, p.Seed ^ 0xC361A27Fu, 3);
             float rubbleDelta = (rubbleNoise - 0.5f) * (1.6f + 6.5f * detailGate) * rubble * p.RubbleStrengthMeters;
 
-            float reefNoise = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x91D4C0DEu, 29f);
+            float reefNoise = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 29f, p.Seed ^ 0x91D4C0DEu, 3);
             float reefDelta = (reefNoise - 0.5f) *
                 (0.8f + 3.8f * detailGate) *
                 reefDetail *
@@ -544,8 +544,8 @@ namespace Hecton8.World
                 maxDelta = math.min(maxDelta, 24f);
 
             // [MICRO-GEOLOGY CALIBRATION] Add Ridged Noise for Hard Rock/Talus
-            float rockNoise1 = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x1A2B3C4Du, 15f);
-            float rockNoise2 = ValueNoise01(absoluteX, absoluteZ, p.Seed ^ 0x4D3C2B1Au, 6f);
+            float rockNoise1 = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 15f, p.Seed ^ 0x1A2B3C4Du, 3);
+            float rockNoise2 = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 6f, p.Seed ^ 0x4D3C2B1Au, 3);
             float ridged1 = 1f - math.abs(rockNoise1 * 2f - 1f);
             float ridged2 = 1f - math.abs(rockNoise2 * 2f - 1f);
             // Sharp, aggressive erosion that bites into slopes and talus regions

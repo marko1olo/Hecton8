@@ -1,0 +1,1 @@
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod "Hecton8.Diagnostics.HeadlessRunAll.Run" -batchmode -logFile "C:\hades\Hecton8\run_audit.log"

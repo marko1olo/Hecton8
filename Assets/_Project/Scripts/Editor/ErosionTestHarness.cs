@@ -279,14 +279,28 @@ namespace Hecton8.Editor
                     ShelfPreviewOriginMeters,
                     ShelfPreviewOriginMeters,
                     ShelfAupCellSizeMeters);
-                handle = new HectonSandboxAbyssalShelfBaseJob
+                int presampledWidth = Resolution + 2;
+                var presampledNodes = new NativeArray<PresampledMacroNode>(presampledWidth * presampledWidth, Allocator.TempJob);
+                var presampleJob = new HectonSandboxAbyssalShelfPresampleJob
                 {
+                    PresampledNodes = presampledNodes,
+                    Parameters = parameters,
+                    PresampledWidth = presampledWidth,
+                    WorldOriginAup = previewOriginAup,
+                    CellSizeMeters = ShelfPreviewCellSizeMeters
+                };
+                var presampleHandle = presampleJob.Schedule(presampledWidth * presampledWidth, 64);
+                handle = new HectonSandboxAbyssalShelfDifferentialJob
+                {
+                    PresampledNodes = presampledNodes,
                     OutputHeights01 = raw,
                     Parameters = parameters,
                     Width = Resolution,
+                    PresampledWidth = presampledWidth,
                     WorldOriginAup = previewOriginAup,
                     CellSizeMeters = ShelfPreviewCellSizeMeters
-                }.Schedule(PixelCount, 64);
+                }.Schedule(PixelCount, 64, presampleHandle);
+                presampledNodes.Dispose(handle);
                 handleScheduled = true;
 
                 const float plateauSourceAngle = 15f;
