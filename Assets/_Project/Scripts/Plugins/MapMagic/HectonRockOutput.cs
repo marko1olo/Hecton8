@@ -199,7 +199,7 @@ namespace Hecton8.World
                 layerBuildStates[lid] = state;
             }
 
-            Graph.OnOutputFinalized?.Invoke(typeof(HectonRockOutput), data, applyData, stop);
+
             data.MarkApply(applyData);
         }
 

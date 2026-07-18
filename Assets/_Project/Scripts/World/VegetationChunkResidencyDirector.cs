@@ -832,7 +832,7 @@ namespace Hecton8.World
                         in sharedData, grassRecords,
                         grassCountX, grassCountZ, chunkWidth, chunkDepth,
                         minimumNormalY, normalOffset, waterLevel, edgeDitherDistance,
-                        proceduralScaleJitter);
+                        (uint)proceduralScaleJitter);
 
                     buildHandle = CombineOptionalHandles(
                         buildHandle,
@@ -846,7 +846,7 @@ namespace Hecton8.World
                         in sharedData, kelpRecords,
                         kelpCountX, kelpCountZ, chunkWidth, chunkDepth,
                         minimumNormalY, normalOffset, waterLevel, edgeDitherDistance,
-                        proceduralScaleJitter);
+                        (uint)proceduralScaleJitter);
 
                     buildHandle = CombineOptionalHandles(
                         buildHandle,
@@ -860,7 +860,7 @@ namespace Hecton8.World
                         in sharedData, floatingRecords,
                         floatingCountX, floatingCountZ, chunkWidth, chunkDepth,
                         minimumNormalY, waterLevel, edgeDitherDistance,
-                        proceduralScaleJitter);
+                        (uint)proceduralScaleJitter);
 
                     buildHandle = CombineOptionalHandles(
                         buildHandle,
