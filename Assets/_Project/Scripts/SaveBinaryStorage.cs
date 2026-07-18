@@ -5699,6 +5699,56 @@ namespace Hecton8.SaveSystem
             }
 
             int payloadCursor = cursor + saveDataLength;
+            if (!TryReadIndexedPackedQuestStateWords(rawPtr, metadataRawLength, in header, ref payloadCursor, out packedQuestHeader, out packedQuestStateWords, out error))
+                return false;
+
+            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
+                header.Version,
+                playerDialogueChoiceFlags,
+                packedQuestStateWords);
+
+            if (!TryReadIndexedEcosystemSectorStates(rawPtr, metadataRawLength, in header, ref payloadCursor, out ecosystemSectorStates, out error))
+                return false;
+
+            if (!TryReadIndexedVoxelDeltaSnapshot(rawPtr, metadataRawLength, ref payloadCursor, voxelDeltaSnapshotDestination, out voxelDeltaSnapshotBytes, out error))
+                return false;
+
+            if (!TryReadIndexedPersistentWorldDeltas(absolutePath, sectorEntries, in prefix, ref mapping, out persistentWorldDeltas, out indexedBackupRecoveryUsed, out error))
+                return false;
+            rawPayloadLength = metadataRawLength;
+            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
+            {
+                error = "Indexed save payload contains an invalid player AUP position.";
+                return false;
+            }
+
+            metadata = new SaveMetadata
+            {
+                SlotName = slotName,
+                GameVersion = gameVersion,
+                Timestamp = ToUtcTicks(header.TimestampUnixMs),
+                PlayTimeSeconds = prefix.PlayTimeSeconds,
+                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
+                PlayerPosition = playerPosition,
+                Checksum = FormatPayloadChecksum(in header)
+            };
+            return true;
+        }
+
+
+        private static unsafe bool TryReadIndexedPackedQuestStateWords(
+            byte* rawPtr,
+            int metadataRawLength,
+            in SaveFileHeader header,
+            ref int payloadCursor,
+            out QuestSaveHeader packedQuestHeader,
+            out uint[] packedQuestStateWords,
+            out string error)
+        {
+            packedQuestHeader = default;
+            packedQuestStateWords = null;
+            error = string.Empty;
+
             if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
                 return false;
             if (packedQuestWordCount > 0)
@@ -5747,10 +5797,20 @@ namespace Hecton8.SaveSystem
                 packedQuestHeader = default;
                 packedQuestStateWords = Array.Empty<uint>();
             }
-            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
-                header.Version,
-                playerDialogueChoiceFlags,
-                packedQuestStateWords);
+
+            return true;
+        }
+
+        private static unsafe bool TryReadIndexedEcosystemSectorStates(
+            byte* rawPtr,
+            int metadataRawLength,
+            in SaveFileHeader header,
+            ref int payloadCursor,
+            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            out string error)
+        {
+            ecosystemSectorStates = null;
+            error = string.Empty;
 
             int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
             if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
@@ -5788,6 +5848,20 @@ namespace Hecton8.SaveSystem
             }
 
             payloadCursor += ecosystemSectionLength;
+            return true;
+        }
+
+        private static unsafe bool TryReadIndexedVoxelDeltaSnapshot(
+            byte* rawPtr,
+            int metadataRawLength,
+            ref int payloadCursor,
+            NativeArray<byte> voxelDeltaSnapshotDestination,
+            out int voxelDeltaSnapshotBytes,
+            out string error)
+        {
+            voxelDeltaSnapshotBytes = 0;
+            error = string.Empty;
+
             int voxelByteLength = math.max(0, metadataRawLength - payloadCursor);
             if (voxelByteLength > 0)
             {
@@ -5806,6 +5880,22 @@ namespace Hecton8.SaveSystem
 
                 voxelDeltaSnapshotBytes = voxelByteLength;
             }
+
+            return true;
+        }
+
+        private static unsafe bool TryReadIndexedPersistentWorldDeltas(
+            string absolutePath,
+            SectorEntry[] sectorEntries,
+            in PayloadPrefixInfo prefix,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            out PersistentWorldDeltaRecord[] persistentWorldDeltas,
+            out bool indexedBackupRecoveryUsed,
+            out string error)
+        {
+            persistentWorldDeltas = null;
+            indexedBackupRecoveryUsed = false;
+            error = string.Empty;
 
             NativeList<PersistentWorldDeltaRecord> aggregatedWorldDeltas = CreateRegisteredTransientNativeList<PersistentWorldDeltaRecord>(
                 256,
@@ -5902,26 +5992,8 @@ namespace Hecton8.SaveSystem
                     IndexedSectorAggregatedWorldDeltasScratchLabel);
             }
 
-            rawPayloadLength = metadataRawLength;
-            if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
-            {
-                error = "Indexed save payload contains an invalid player AUP position.";
-                return false;
-            }
-
-            metadata = new SaveMetadata
-            {
-                SlotName = slotName,
-                GameVersion = gameVersion,
-                Timestamp = ToUtcTicks(header.TimestampUnixMs),
-                PlayTimeSeconds = prefix.PlayTimeSeconds,
-                SceneName = SaveMetadata.NormalizeSceneName(sceneName),
-                PlayerPosition = playerPosition,
-                Checksum = FormatPayloadChecksum(in header)
-            };
             return true;
         }
-
         internal static bool TryReadIndexedPersistentWorldDirectory(
             string absolutePath,
             List<IndexedSectorEntryInfo> results,
