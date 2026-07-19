@@ -2,7 +2,7 @@
   "schema": "hecton8.doc_structure.v1",
   "docScope": "authority_spine",
   "repoRoot": "/app",
-  "activeDocCount": 283,
+  "activeDocCount": 285,
   "allowedRootTextDocs": [
     "3DMODEL_EQUIPMENT_PROPS.md",
     "3DMODEL_FAUNA.md",
@@ -15,6 +15,8 @@
     "3dmodel.md",
     "AGENTS.md",
     "BUILD_PLAYTEST_ISSUES.md",
+    "CLAUDE.md",
+    "COMMON_SENSE.md",
     "GEMINI.md",
     "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
     "HECTON8_ORCHESTRATOR.md",
@@ -93,6 +95,8 @@
     "3dmodel.md",
     "AGENTS.md",
     "BUILD_PLAYTEST_ISSUES.md",
+    "CLAUDE.md",
+    "COMMON_SENSE.md",
     "GEMINI.md",
     "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
     "HECTON8_ORCHESTRATOR.md",
@@ -159,20 +163,13 @@
     "writing.md",
     "xr.md"
   ],
-  "rootTextDocCount": 76,
+  "rootTextDocCount": 78,
   "missingRootTextDocs": [],
   "unexpectedRootTextDocs": [
-    "COMMON_SENSE.md"
+    "pr_description.md"
   ],
   "rootTextDocPolicyPass": false,
-  "duplicateHeaderFiles": [
-    {
-      "path": "Docs/AGENT_AUTHORITY_ROUTING.md",
-      "headers": [
-        "# hecton-8 agent authority routing"
-      ]
-    }
-  ],
+  "duplicateHeaderFiles": [],
   "brokenLinkFiles": [
     {
       "path": "AGENTS.md",
@@ -193,6 +190,8 @@
     "3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md",
     "3dmodel.md",
     "AGENTS.md",
+    "CLAUDE.md",
+    "COMMON_SENSE.md",
     "GEMINI.md",
     "HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md",
     "HECTON8_ORCHESTRATOR.md",
