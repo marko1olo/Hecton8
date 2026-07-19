@@ -116,9 +116,9 @@ namespace MapMagic.Editor.Diagnostics
 
             TileData data = new TileData();
             data.area = area;
-            data.globals = graph.defaults;
-            if (data.globals == null) data.globals = new Globals();
-            data.random = new MapMagic.Nodes.MatrixGenerators.Noise200.Random(12345);
+            data.globals = new Globals();
+            data.globals.height = 12000f;
+            data.random = new Den.Tools.Noise(12345);
             // random dict instance for storing products
             data.ClearProducts();
 
@@ -132,11 +132,13 @@ namespace MapMagic.Editor.Diagnostics
 
             foreach (var gen in topoOrder)
             {
+                StopToken stop = new StopToken();
                 // Generate
                 try {
-                    gen.Generate(data, null);
+                    gen.Generate(data, stop);
                 } catch (Exception ex) {
-                    sb.AppendLine($"| {gen.id} | {gen.GetType().Name} | ERROR | ERROR | ERROR | - | {ex.Message} |");
+                    string st = ex.ToString().Replace('\n', ' ').Replace('\r', ' ').Replace('|', ':');
+                    sb.AppendLine($"| {gen.id} | {gen.GetType().Name} | ERROR | ERROR | ERROR | - | {st} |");
                     continue;
                 }
 
@@ -144,26 +146,31 @@ namespace MapMagic.Editor.Diagnostics
                 if (pathNodes.Contains(gen))
                 {
                     // Find ANY valid outlet if not tracing a single line
-                    IOutlet<object> mainOutlet = null;
+                    IUnit mainOutlet = null;
                     if (gen is IMultiOutlet multiOutlet)
                     {
                         foreach (var outlet in multiOutlet.Outlets())
                         {
                             if (outlet != null) {
-                                mainOutlet = outlet;
+                                mainOutlet = outlet as IUnit;
                                 break;
                             }
                         }
                     }
                     else
                     {
-                        // Fallback using reflection for single outlet
                         var outletField = gen.GetType().GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
-                            .FirstOrDefault(f => typeof(IOutlet<object>).IsAssignableFrom(f.FieldType));
+                            .FirstOrDefault(f => typeof(IUnit).IsAssignableFrom(f.FieldType) && f.FieldType.Name.Contains("Outlet"));
                         if (outletField != null)
                         {
-                            mainOutlet = outletField.GetValue(gen) as IOutlet<object>;
+                            mainOutlet = outletField.GetValue(gen) as IUnit;
                         }
+                    }
+
+                    if (mainOutlet == null && gen is IUnit genUnit) 
+                    {
+                        // Some generators ARE the outlet themselves!
+                        mainOutlet = genUnit;
                     }
 
                     if (mainOutlet != null)
@@ -171,10 +178,7 @@ namespace MapMagic.Editor.Diagnostics
                         MatrixWorld mx = null;
                         try
                         {
-                            if (mainOutlet == null) throw new Exception("mainOutlet is null");
-                            IUnit unit = mainOutlet as IUnit;
-                            if (unit == null) throw new Exception("mainOutlet is not IUnit");
-                            var id = unit.Id;
+                            ulong id = mainOutlet.Id;
                             if (data == null) throw new Exception("data is null");
                             
                             // Let's use reflection just to be absolutely safe if ReadProduct throws NRE internally
