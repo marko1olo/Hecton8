@@ -98,5 +98,29 @@ namespace Hecton8.PureLogic.Tests
             Assert.AreEqual(0, lodNaN);
             Assert.AreEqual(3, lodMaxVal);
         }
+
+        [Test]
+        public void Test_InvalidThresholds_Case06()
+        {
+            // Arrange: Setup invalid elements within thresholds array
+            float[] thresholdsWithNegative = new float[] { -100f, 100f };
+            float[] thresholdsWithNaN = new float[] { float.NaN, 100f };
+            float[] thresholdsUnordered = new float[] { 300f, 100f, 200f };
+
+            // Act
+            int lodNegativeThreshold = LodChunkSelector.Calculate(50f, thresholdsWithNegative, 3);
+            int lodNaNThreshold = LodChunkSelector.Calculate(150f, thresholdsWithNaN, 3);
+            int lodUnorderedThreshold = LodChunkSelector.Calculate(150f, thresholdsUnordered, 3);
+
+            // Assert
+            // distanceFromCamera (50) > -100 (yes -> +1), > 100 (no -> break) => lod = 1
+            Assert.AreEqual(1, lodNegativeThreshold);
+
+            // distanceFromCamera (150) > NaN is false, so it breaks => lod = 0
+            Assert.AreEqual(0, lodNaNThreshold);
+
+            // distanceFromCamera (150) > 300 (no -> break) => breaks at i=0 => lod = 0
+            Assert.AreEqual(0, lodUnorderedThreshold);
+        }
     }
 }

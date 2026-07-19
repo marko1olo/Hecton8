@@ -868,6 +868,7 @@ namespace Hecton8.Core.Generated
         public const uint SA007_ATLAS6_DAMAGED_REPAIR_LOGIC = 0xDD36FED1u;
         public const uint SA008_BLUE_DEBT_PRESSURE_HISTORY_AND_CUSTODY = 0x50D5CA93u;
         public const uint SA009_PRESSURE_BUNKS_SHIFT_BOARDS_AND_NAME_CHAINS = 0x67DCED80u;
+        public const uint SA010_PHOTIC_BLOOM_PRESSURE_ANOMALY_AND_LOST_DIVE_LOG = 0x69F9F3A9u;
         public const uint Salvage_Carrier = 0x64ECD515u;
         public const uint Salvage_Economy = 0x1C7DD4D5u;
         public const uint Seed_Program = 0x372C8D7Fu;
