@@ -14,7 +14,7 @@ using UnityEngine.UIElements;
 namespace UnityEditor.ShaderGraph
 {
     [Title("Input", "Texture", SampleVirtualTextureNode.DefaultNodeTitle)]
-    class SampleVirtualTextureNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireMeshUV, IMayRequireTime, IMayRequireScreenPosition
+    class SampleVirtualTextureNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireMeshUV, IMayRequireTime, IMayRequireScreenPosition, IGeneratesVirtualTextureFeedback
     {
         public const string DefaultNodeTitle = "Sample Virtual Texture";
 
@@ -312,6 +312,13 @@ namespace UnityEditor.ShaderGraph
                     owner.AddValidationError(objectId, $"VT slot is not connected to a valid VirtualTexture property");
                 }
             }
+        }
+
+        public IEnumerable<string> GetFeedbackVariables()
+        {
+            if (noFeedback)
+                yield break;
+            yield return GetFeedbackVariableName();
         }
 
         public string GetFeedbackVariableName()

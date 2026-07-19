@@ -45,31 +45,16 @@ namespace UnityEditor.ShaderGraph
                 int index = 0; //for keywordPermutationsPerNode
                 foreach (var node in downstreamNodesIncludingRoot)
                 {
-                    if (node is SampleVirtualTextureNode vtNode)
+                    if (node is IGeneratesVirtualTextureFeedback vtFeedbackNode)
                     {
-                        if (vtNode.noFeedback) continue;
+                        var vars = vtFeedbackNode.GetFeedbackVariables();
                         if (keywordPermutationsPerNode[index] == null)
                         {
-                            feedbackVariablesPerPermutation[0].Add(vtNode.GetFeedbackVariableName());
+                            feedbackVariablesPerPermutation[0].AddRange(vars);
                         }
                         else
                         {
-                            foreach (int perm in keywordPermutationsPerNode[index])
-                            {
-                                feedbackVariablesPerPermutation[perm].Add(vtNode.GetFeedbackVariableName());
-                            }
-                        }
-                    }
-
-                    if (node is SubGraphNode sgNode)
-                    {
-                        if (keywordPermutationsPerNode[index] == null)
-                        {
-                            feedbackVariablesPerPermutation[0].AddRange(sgNode.GetFeedbackVariableNames());
-                        }
-                        else
-                        {
-                            foreach (var feedbackVar in sgNode.GetFeedbackVariableNames())
+                            foreach (var feedbackVar in vars)
                             {
                                 foreach (int perm in keywordPermutationsPerNode[index])
                                 {
@@ -142,29 +127,13 @@ namespace UnityEditor.ShaderGraph
         // Automatically add a  streaming feedback node and correctly connect it to stack samples are connected to it and it is connected to the master node output
         public static List<string> GetFeedbackVariables(SubGraphOutputNode masterNode)
         {
-            // TODO: make use a generic interface instead of hard-coding the node types that we need to look at here
-            var VTNodes = GraphUtil.FindDownStreamNodesOfType<SampleVirtualTextureNode>(masterNode);
-            var subGraphNodes = GraphUtil.FindDownStreamNodesOfType<SubGraphNode>(masterNode);
+            var nodes = GraphUtil.FindDownStreamNodesOfType<IGeneratesVirtualTextureFeedback>(masterNode);
 
             List<string> result = new List<string>();
 
-            // Early out if there are no nodes we care about in the graph
-            if (subGraphNodes.Count <= 0 && VTNodes.Count <= 0)
+            foreach (var node in nodes)
             {
-                return result;
-            }
-
-            // Add inputs to feedback node
-            foreach (var node in VTNodes)
-            {
-                if (node.noFeedback) continue;
-                result.Add(node.GetFeedbackVariableName());
-            }
-
-            foreach (var node in subGraphNodes)
-            {
-                if (node.asset == null) continue;
-                result.AddRange(node.GetFeedbackVariableNames());
+                result.AddRange(node.GetFeedbackVariables());
             }
 
             return result;

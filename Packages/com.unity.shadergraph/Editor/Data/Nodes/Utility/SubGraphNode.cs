@@ -11,6 +11,7 @@ namespace UnityEditor.ShaderGraph
     [HasDependencies(typeof(MinimalSubGraphNode))]
     [Title("Utility", "Sub-graph")]
     class SubGraphNode : AbstractMaterialNode
+        , IGeneratesVirtualTextureFeedback
         , IGeneratesBodyCode
         , IOnAssetEnabled
         , IGeneratesFunction
@@ -751,7 +752,7 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
-        public IEnumerable<string> GetFeedbackVariableNames()
+        public IEnumerable<string> GetFeedbackVariables()
         {
             if (asset == null)
                 yield break;
