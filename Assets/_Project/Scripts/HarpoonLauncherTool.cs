@@ -1111,88 +1111,113 @@ namespace Hecton8.Gameplay
         {
             if (target == null)
             {
-                return new HarpoonAssessment(
-                    StableText(LocalizationKeys.HARPOON_HEADLINE_NO_TARGET_DATA, "HARPOON - NO TARGET DATA"),
-                    StableText(LocalizationKeys.HARPOON_SUMMARY_NO_TARGET_DATA, "Contact data collapsed before assessment completed."),
-                    StableText(LocalizationKeys.HARPOON_RECOMMEND_NO_TARGET_DATA, "Sweep a new lane and reacquire."),
-                    "WARN");
+                return BuildMissingTargetAssessment();
             }
 
             if (!ToolHitUtility.TryGetRigidbody(target, out Rigidbody body))
             {
-                if (TryBuildDescriptorAssessment(target, null, distance, tetherReady, out HarpoonAssessment noBodyDescriptorAssessment))
-                    return noBodyDescriptorAssessment;
-
-                if (tetherReady && IsGrappleValid())
-                {
-                    return new HarpoonAssessment(
-                        new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
-                        HarpoonTextSegment.FormatStringFloat("{0} accepted a static grapple lane at {1:0.0} m.", ResolveAnchorLabel(), distance),
-                        new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
-                        "INFO");
-                }
-
-                return new HarpoonAssessment(
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED")),
-                    HarpoonTextSegment.FormatString(
-                        StableText(LocalizationKeys.HARPOON_SUMMARY_CANNOT_REEL, "{0} has no valid mass body for tether control."),
-                        ResolveTargetLabel()),
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, "Use cutter, builder, or move on.")),
-                    "WARN");
+                return BuildNoBodyAssessment(target, distance, tetherReady);
             }
 
             if (body == null || body.isKinematic)
             {
-                if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment staticDescriptorAssessment))
-                    return staticDescriptorAssessment;
-
-                if (tetherReady && IsGrappleValid())
-                {
-                    return new HarpoonAssessment(
-                        new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
-                        HarpoonTextSegment.FormatStringFloat("{0} is fixed hard enough to hold a climb line at {1:0.0} m.", ResolveAnchorLabel(), distance),
-                        new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
-                        "INFO");
-                }
-
-                return new HarpoonAssessment(
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE")),
-                    HarpoonTextSegment.FormatString(
-                        StableText(LocalizationKeys.HARPOON_SUMMARY_LOCKED_STRUCTURE, "{0} is fixed in place and will not reel."),
-                        ResolveTargetLabel()),
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, "Do not waste reel force on anchored structures.")),
-                    "WARN");
+                return BuildKinematicAssessment(target, body, distance, tetherReady);
             }
 
             if (body.mass > maxReelMass)
             {
-                if (_heavyTowWinch != null && _heavyTowWinch.CanTowMass(body.mass))
-                {
-                    return new HarpoonAssessment(
-                        new HarpoonTextSegment(tetherReady
-                            ? "HARPOON - HEAVY TOW LOCKED"
-                            : "HARPOON - HEAVY TOW CANDIDATE"),
-                        HarpoonTextSegment.FormatStringFloatFloat("{0} weighs {1:0.0} kg at {2:0.0} m.", ResolveCargoLabel(), body.mass, distance),
-                        new HarpoonTextSegment(tetherReady
-                            ? "Maintain thrust discipline. Excess speed delta will snap the cable."
-                            : "Primary fire can lock a heavy tow line. Expect major drag and current drift."),
-                        "WARN");
-                }
+                return BuildHeavyMassAssessment(target, body, distance, tetherReady);
+            }
 
-                if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))
-                    return descriptorAssessment;
+            return BuildReelableAssessment(target, body, distance, tetherReady);
+        }
 
+        private HarpoonAssessment BuildMissingTargetAssessment()
+        {
+            return new HarpoonAssessment(
+                StableText(LocalizationKeys.HARPOON_HEADLINE_NO_TARGET_DATA, "HARPOON - NO TARGET DATA"),
+                StableText(LocalizationKeys.HARPOON_SUMMARY_NO_TARGET_DATA, "Contact data collapsed before assessment completed."),
+                StableText(LocalizationKeys.HARPOON_RECOMMEND_NO_TARGET_DATA, "Sweep a new lane and reacquire."),
+                "WARN");
+        }
+
+        private HarpoonAssessment BuildNoBodyAssessment(Collider target, float distance, bool tetherReady)
+        {
+            if (TryBuildDescriptorAssessment(target, null, distance, tetherReady, out HarpoonAssessment noBodyDescriptorAssessment))
+                return noBodyDescriptorAssessment;
+
+            if (tetherReady && IsGrappleValid())
+            {
                 return new HarpoonAssessment(
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, "HARPOON - MASS EXCEEDS REEL LIMIT")),
-                    HarpoonTextSegment.FormatStringFloatFloat(
-                        StableText(LocalizationKeys.HARPOON_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
-                        ResolveCargoLabel(),
-                        body.mass,
-                        distance),
-                    new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, "Use propulsion or another route; reel force is not enough.")),
+                    new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
+                    HarpoonTextSegment.FormatStringFloat("{0} accepted a static grapple lane at {1:0.0} m.", ResolveAnchorLabel(), distance),
+                    new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
+                    "INFO");
+            }
+
+            return new HarpoonAssessment(
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED")),
+                HarpoonTextSegment.FormatString(
+                    StableText(LocalizationKeys.HARPOON_SUMMARY_CANNOT_REEL, "{0} has no valid mass body for tether control."),
+                    ResolveTargetLabel()),
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, "Use cutter, builder, or move on.")),
+                "WARN");
+        }
+
+        private HarpoonAssessment BuildKinematicAssessment(Collider target, Rigidbody body, float distance, bool tetherReady)
+        {
+            if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment staticDescriptorAssessment))
+                return staticDescriptorAssessment;
+
+            if (tetherReady && IsGrappleValid())
+            {
+                return new HarpoonAssessment(
+                    new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
+                    HarpoonTextSegment.FormatStringFloat("{0} is fixed hard enough to hold a climb line at {1:0.0} m.", ResolveAnchorLabel(), distance),
+                    new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
+                    "INFO");
+            }
+
+            return new HarpoonAssessment(
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE")),
+                HarpoonTextSegment.FormatString(
+                    StableText(LocalizationKeys.HARPOON_SUMMARY_LOCKED_STRUCTURE, "{0} is fixed in place and will not reel."),
+                    ResolveTargetLabel()),
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, "Do not waste reel force on anchored structures.")),
+                "WARN");
+        }
+
+        private HarpoonAssessment BuildHeavyMassAssessment(Collider target, Rigidbody body, float distance, bool tetherReady)
+        {
+            if (_heavyTowWinch != null && _heavyTowWinch.CanTowMass(body.mass))
+            {
+                return new HarpoonAssessment(
+                    new HarpoonTextSegment(tetherReady
+                        ? "HARPOON - HEAVY TOW LOCKED"
+                        : "HARPOON - HEAVY TOW CANDIDATE"),
+                    HarpoonTextSegment.FormatStringFloatFloat("{0} weighs {1:0.0} kg at {2:0.0} m.", ResolveCargoLabel(), body.mass, distance),
+                    new HarpoonTextSegment(tetherReady
+                        ? "Maintain thrust discipline. Excess speed delta will snap the cable."
+                        : "Primary fire can lock a heavy tow line. Expect major drag and current drift."),
                     "WARN");
             }
 
+            if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment descriptorAssessment))
+                return descriptorAssessment;
+
+            return new HarpoonAssessment(
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, "HARPOON - MASS EXCEEDS REEL LIMIT")),
+                HarpoonTextSegment.FormatStringFloatFloat(
+                    StableText(LocalizationKeys.HARPOON_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
+                    ResolveCargoLabel(),
+                    body.mass,
+                    distance),
+                new HarpoonTextSegment(StableText(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, "Use propulsion or another route; reel force is not enough.")),
+                "WARN");
+        }
+
+        private HarpoonAssessment BuildReelableAssessment(Collider target, Rigidbody body, float distance, bool tetherReady)
+        {
             if (TryBuildDescriptorAssessment(target, body, distance, tetherReady, out HarpoonAssessment authoredAssessment))
                 return authoredAssessment;
 
