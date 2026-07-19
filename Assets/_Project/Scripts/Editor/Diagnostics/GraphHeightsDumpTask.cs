@@ -114,12 +114,11 @@ namespace MapMagic.Editor.Diagnostics
             CoordRect rect = new CoordRect(0, 0, 1024, 1024);
             Area area = new Area(worldPos, worldSize, rect, 0);
 
-            Globals globals = new Globals();
-            globals.height = 12000f; // from globals
-            
             TileData data = new TileData();
             data.area = area;
-            data.globals = globals;
+            data.globals = graph.defaults;
+            if (data.globals == null) data.globals = new Globals();
+            data.random = new MapMagic.Nodes.MatrixGenerators.Noise200.Random(12345);
             // random dict instance for storing products
             data.ClearProducts();
 
