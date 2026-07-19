@@ -169,7 +169,33 @@ namespace MapMagic.Editor.Diagnostics
 
                     if (mainOutlet != null)
                     {
-                        MatrixWorld mx = data.ReadOutletProduct(mainOutlet) as MatrixWorld;
+                        MatrixWorld mx = null;
+                        try
+                        {
+                            if (mainOutlet == null) throw new Exception("mainOutlet is null");
+                            IUnit unit = mainOutlet as IUnit;
+                            if (unit == null) throw new Exception("mainOutlet is not IUnit");
+                            var id = unit.Id;
+                            if (data == null) throw new Exception("data is null");
+                            
+                            // Let's use reflection just to be absolutely safe if ReadProduct throws NRE internally
+                            object productObj = null;
+                            try {
+                                productObj = data.ReadProduct(id);
+                            } catch (Exception innerE) {
+                                throw new Exception($"ReadProduct threw {innerE.GetType().Name}: {innerE.Message}");
+                            }
+
+                            mx = productObj as MatrixWorld;
+                        }
+                        catch (Exception e)
+                        {
+                            Exception inner = e;
+                            while (inner.InnerException != null) inner = inner.InnerException;
+                            sb.AppendLine($"| {gen.id} | {gen.GetType().Name} | ERROR | ERROR | ERROR | - | {inner.Message} |");
+                            continue;
+                        }
+
                         if (mx != null)
                         {
                             float min = float.MaxValue;
@@ -177,6 +203,7 @@ namespace MapMagic.Editor.Diagnostics
                             double sum = 0;
                             double sumSq = 0;
                             int count = mx.arr.Length;
+                            if (count == 0) continue;
 
                             for (int i = 0; i < count; i++)
                             {
