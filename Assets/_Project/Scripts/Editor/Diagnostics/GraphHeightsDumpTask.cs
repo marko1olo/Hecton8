@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using MapMagic.Nodes;
 using MapMagic.Nodes.MatrixGenerators;
 using MapMagic.Core;
 using MapMagic.Terrains;
+using MapMagic.Products;
 using Den.Tools;
+using Den.Tools.Matrices;
 
 namespace MapMagic.Editor.Diagnostics
 {
@@ -40,9 +43,7 @@ namespace MapMagic.Editor.Diagnostics
 
             // Find start and end nodes
             Generator startNode = graph.generators.FirstOrDefault(g => g.GetType().Name == "HectonSandboxAbyssalShelfMapMagicNode");
-            Generator endNode = graph.generators.FirstOrDefault(g => g.GetType().Name == "HeightOutput200");
-
-            if (startNode == null || endNode == null) throw new Exception("Could not find start or end node");
+            // endNode is defined below
 
             // Build forward mapping to trace path
             Dictionary<Generator, List<Generator>> forwardLinks = new Dictionary<Generator, List<Generator>>();
@@ -54,60 +55,42 @@ namespace MapMagic.Editor.Diagnostics
                 backwardLinks[g] = new List<Generator>();
             }
 
-            foreach (var g in graph.generators)
+            foreach (var kvp in graph.links)
             {
-                foreach (var inlet in g.Inlets())
+                IInlet<object> inlet = kvp.Key;
+                IOutlet<object> outlet = kvp.Value;
+                if (inlet != null && outlet != null)
                 {
-                    IOutlet<object> outlet = graph.GetLink(inlet);
-                    if (outlet != null)
+                    Generator child = inlet.Gen;
+                    Generator parent = outlet.Gen;
+                    if (child != null && parent != null && forwardLinks.ContainsKey(parent) && backwardLinks.ContainsKey(child))
                     {
-                        Generator parent = outlet.Gen;
-                        if (parent != null && forwardLinks.ContainsKey(parent))
-                        {
-                            forwardLinks[parent].Add(g);
-                            backwardLinks[g].Add(parent);
-                        }
+                        forwardLinks[parent].Add(child);
+                        backwardLinks[child].Add(parent);
                     }
                 }
             }
 
-            // Find path using DFS
-            List<Generator> pathNodes = new List<Generator>();
-            HashSet<Generator> visited = new HashSet<Generator>();
-            
-            bool DFS(Generator current)
-            {
-                visited.Add(current);
-                pathNodes.Add(current);
-                if (current == endNode) return true;
-                
-                foreach (var next in forwardLinks[current])
-                {
-                    if (!visited.Contains(next))
-                    {
-                        if (DFS(next)) return true;
-                    }
-                }
-                
-                pathNodes.RemoveAt(pathNodes.Count - 1);
-                return false;
-            }
-            
-            DFS(startNode);
+            // We don't trace from Shelf anymore, we just trace ALL ancestors of HeightOutput200
+            Generator endNode = graph.generators.FirstOrDefault(g => g.GetType().Name == "HeightOutput200");
+            if (endNode == null) throw new Exception("Could not find HeightOutput200");
 
-            if (pathNodes.Count == 0) throw new Exception("No path found from Shelf to HeightOutput");
-
-            // Gather all ancestors of the path nodes because generation requires dependencies
             HashSet<Generator> requiredNodes = new HashSet<Generator>();
             void GatherAncestors(Generator node)
             {
                 if (!requiredNodes.Add(node)) return;
-                foreach (var parent in backwardLinks[node])
+                if (backwardLinks.ContainsKey(node))
                 {
-                    GatherAncestors(parent);
+                    foreach (var parent in backwardLinks[node])
+                    {
+                        GatherAncestors(parent);
+                    }
                 }
             }
-            foreach (var n in pathNodes) GatherAncestors(n);
+            GatherAncestors(endNode);
+
+            // The nodes to dump are exactly requiredNodes
+            List<Generator> pathNodes = new List<Generator>(requiredNodes);
 
             // Topological sort
             List<Generator> topoOrder = new List<Generator>();
@@ -161,13 +144,26 @@ namespace MapMagic.Editor.Diagnostics
                 // If this is one of our path nodes, inspect its output
                 if (pathNodes.Contains(gen))
                 {
-                    // Find the main outlet
+                    // Find ANY valid outlet if not tracing a single line
                     IOutlet<object> mainOutlet = null;
-                    foreach (var outlet in gen.Outlets())
+                    if (gen is IMultiOutlet multiOutlet)
                     {
-                        if (outlet != null) {
-                            mainOutlet = outlet;
-                            break;
+                        foreach (var outlet in multiOutlet.Outlets())
+                        {
+                            if (outlet != null) {
+                                mainOutlet = outlet;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Fallback using reflection for single outlet
+                        var outletField = gen.GetType().GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)
+                            .FirstOrDefault(f => typeof(IOutlet<object>).IsAssignableFrom(f.FieldType));
+                        if (outletField != null)
+                        {
+                            mainOutlet = outletField.GetValue(gen) as IOutlet<object>;
                         }
                     }
 

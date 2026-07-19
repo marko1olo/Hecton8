@@ -7,6 +7,7 @@ using UnityEditor.ShaderGraph.Drawing.Views;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.ShaderGraph;
+using UnityEditor.ShaderGraph.Internal;
 
 namespace UnityEditor.ShaderGraph.Drawing
 {
