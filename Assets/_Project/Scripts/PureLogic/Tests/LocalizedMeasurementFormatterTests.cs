@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Hecton.Localization;
 using System;
 using Hecton8.Core.Contracts;
+using Hecton8.Core;
 
 namespace Hecton.Localization.Tests
 {
@@ -136,6 +137,11 @@ namespace Hecton.Localization.Tests
                 }
                 return fallback;
             }
+
+            public ushort ActiveLanguageId => (ushort)GameLanguage.English;
+            public string GetOrFallback(string key, string fallback) => fallback;
+            public string GetFormatted(string key, params object[] args) => string.Empty;
+            public ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback) => fallback;
         }
 
         [Test]

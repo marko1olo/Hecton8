@@ -182,11 +182,12 @@ VertexOutput vert (VertexInput v) {
 
     o.color = v.color * PROP(_Color);
 
-    // todo: this causes *bad things* with anti-aliasing
-    // it's complicated - this doesn't work due to how barycentric interpolation skews coordinates.
-    // just scaling the UVs overscales those skew regions leading to dents in the AA region
-    o.IP_nrmCoordLat = v.uv0.x;
-    o.IP_nrmCoordLong = v.uv0.z;
+    // To prevent barycentric interpolation skew (which causes anti-aliasing dents),
+    // we multiply all longitudinally-constant variables by the local width (vertexRadius).
+    // In the fragment shader, dividing by the interpolated radius yields the perfect unskewed value.
+    o.IP_nrmCoordLat = v.uv0.x * vertexRadius;
+    o.IP_nrmCoordLong = v.uv0.z * vertexRadius;
+    o.IP_pxCoverage *= vertexRadius;
 
     //float depth = unity_ObjectToWorld[2][3];
     switch( alignment ){

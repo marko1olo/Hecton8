@@ -1,24 +1,30 @@
 {
-    "name": "Hecton8.PureLogic.Tests",
-    "rootNamespace": "Hecton8.PureLogic.Tests",
-    "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Hecton8.PureLogic"
-    ],
-    "includePlatforms": [
-        "Editor"
-    ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false
+    "name":  "Hecton8.PureLogic.Tests",
+    "rootNamespace":  "Hecton8.PureLogic.Tests",
+    "references":  [
+                       "UnityEngine.TestRunner",
+                       "UnityEditor.TestRunner",
+                       "Hecton8.PureLogic",
+                       "Hecton8.Core.Contracts",
+                       "Hecton8.Core"
+                   ],
+    "includePlatforms":  [
+                             "Editor"
+                         ],
+    "excludePlatforms":  [
+
+                         ],
+    "allowUnsafeCode":  false,
+    "overrideReferences":  true,
+    "precompiledReferences":  [
+                                  "nunit.framework.dll"
+                              ],
+    "autoReferenced":  false,
+    "defineConstraints":  [
+                              "UNITY_INCLUDE_TESTS"
+                          ],
+    "versionDefines":  [
+
+                       ],
+    "noEngineReferences":  false
 }
