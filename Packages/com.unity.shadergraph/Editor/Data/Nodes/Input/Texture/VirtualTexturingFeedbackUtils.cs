@@ -45,31 +45,15 @@ namespace UnityEditor.ShaderGraph
                 int index = 0; //for keywordPermutationsPerNode
                 foreach (var node in downstreamNodesIncludingRoot)
                 {
-                    if (node is SampleVirtualTextureNode vtNode)
-                    {
-                        if (vtNode.noFeedback) continue;
-                        if (keywordPermutationsPerNode[index] == null)
-                        {
-                            feedbackVariablesPerPermutation[0].Add(vtNode.GetFeedbackVariableName());
-                        }
-                        else
-                        {
-                            foreach (int perm in keywordPermutationsPerNode[index])
-                            {
-                                feedbackVariablesPerPermutation[perm].Add(vtNode.GetFeedbackVariableName());
-                            }
-                        }
-                    }
-
-                    if (node is SubGraphNode sgNode)
+                    if (node is IHasVirtualTextureFeedback feedbackNode)
                     {
                         if (keywordPermutationsPerNode[index] == null)
                         {
-                            feedbackVariablesPerPermutation[0].AddRange(sgNode.GetFeedbackVariableNames());
+                            feedbackVariablesPerPermutation[0].AddRange(feedbackNode.GetFeedbackVariables());
                         }
                         else
                         {
-                            foreach (var feedbackVar in sgNode.GetFeedbackVariableNames())
+                            foreach (var feedbackVar in feedbackNode.GetFeedbackVariables())
                             {
                                 foreach (int perm in keywordPermutationsPerNode[index])
                                 {
@@ -142,29 +126,34 @@ namespace UnityEditor.ShaderGraph
         // Automatically add a  streaming feedback node and correctly connect it to stack samples are connected to it and it is connected to the master node output
         public static List<string> GetFeedbackVariables(SubGraphOutputNode masterNode)
         {
-            // TODO: make use a generic interface instead of hard-coding the node types that we need to look at here
-            var VTNodes = GraphUtil.FindDownStreamNodesOfType<SampleVirtualTextureNode>(masterNode);
-            var subGraphNodes = GraphUtil.FindDownStreamNodesOfType<SubGraphNode>(masterNode);
-
             List<string> result = new List<string>();
 
-            // Early out if there are no nodes we care about in the graph
-            if (subGraphNodes.Count <= 0 && VTNodes.Count <= 0)
-            {
-                return result;
-            }
+            HashSet<AbstractMaterialNode> visitedNodes = new HashSet<AbstractMaterialNode>();
+            Queue<AbstractMaterialNode> nodeQueue = new Queue<AbstractMaterialNode>();
+            nodeQueue.Enqueue(masterNode);
+            visitedNodes.Add(masterNode);
 
-            // Add inputs to feedback node
-            foreach (var node in VTNodes)
+            while (nodeQueue.Count > 0)
             {
-                if (node.noFeedback) continue;
-                result.Add(node.GetFeedbackVariableName());
-            }
+                AbstractMaterialNode visit = nodeQueue.Dequeue();
 
-            foreach (var node in subGraphNodes)
-            {
-                if (node.asset == null) continue;
-                result.AddRange(node.GetFeedbackVariableNames());
+                if (visit is IHasVirtualTextureFeedback feedbackNode)
+                {
+                    result.AddRange(feedbackNode.GetFeedbackVariables());
+                }
+
+                foreach (var slot in visit.GetInputSlots<MaterialSlot>())
+                {
+                    foreach (var edge in visit.owner.GetEdges(slot.slotReference))
+                    {
+                        var inputNode = edge.outputSlot.node;
+                        if (!visitedNodes.Contains(inputNode))
+                        {
+                            nodeQueue.Enqueue(inputNode);
+                            visitedNodes.Add(inputNode);
+                        }
+                    }
+                }
             }
 
             return result;

@@ -26,6 +26,7 @@ namespace UnityEditor.ShaderGraph
         , IMayRequirePosition
         , IMayRequirePositionPredisplacement
         , IMayRequireVertexColor
+        , IHasVirtualTextureFeedback
         , IMayRequireTime
         , IMayRequireFaceSign
         , IMayRequireCameraOpaqueTexture
@@ -749,6 +750,11 @@ namespace UnityEditor.ShaderGraph
             {
                 properties.Add(property.GetPreviewMaterialProperty());
             }
+        }
+
+        public IEnumerable<string> GetFeedbackVariables()
+        {
+            return GetFeedbackVariableNames();
         }
 
         public IEnumerable<string> GetFeedbackVariableNames()
