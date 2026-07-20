@@ -483,10 +483,15 @@ namespace Hecton8.World
             if (writeMaxX - writeMinX < 5 || writeMaxZ - writeMinZ < 5)
                 return;
 
-            int motionMinX = writeMinX + 1;
-            int motionMinZ = writeMinZ + 1;
-            int motionMaxX = writeMaxX - 1;
-            int motionMaxZ = writeMaxZ - 1;
+            // Motion bounds are extended well beyond the write window so droplets can read and traverse
+            // terrain across the full heightmap. Without this, droplets terminate exactly at the sub-grid
+            // boundary, creating a hard erosion seam every SubGridSize pixels (the 32px checkerboard).
+            // Writes are still clamped to [writeMin, writeMax) by ErodeBrush and DepositBrush.
+            int motionOverlap = math.max(MaxLifetime, safeSubGridSize * 2);
+            int motionMinX = math.max(1, writeMinX - motionOverlap);
+            int motionMinZ = math.max(1, writeMinZ - motionOverlap);
+            int motionMaxX = math.min(Width - 1, writeMaxX + motionOverlap);
+            int motionMaxZ = math.min(Height - 1, writeMaxZ + motionOverlap);
             int safeDropletCount = math.max(0, DropletCount);
             int baseDroplets = totalSubGrids > 0 ? safeDropletCount / totalSubGrids : 0;
             int remainderDroplets = totalSubGrids > 0 ? safeDropletCount - baseDroplets * totalSubGrids : 0;
@@ -874,7 +879,7 @@ namespace Hecton8.World
             }
 
             if (totalWeight <= 0.000001f)
-                return DepositBilinear(position, amount);
+                return DepositBilinear(position, amount, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
 
             for (int oz = -2; oz <= 2; oz++)
             {
@@ -961,7 +966,7 @@ namespace Hecton8.World
 
             if (remaining > 0.000001f)
             {
-                float deposited = DepositBilinear(position, remaining);
+                float deposited = DepositBilinear(position, remaining, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
                 remaining -= deposited;
             }
 
@@ -969,10 +974,12 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float DepositBilinear(float2 position, float amount)
+        private float DepositBilinear(float2 position, float amount, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
         {
-            int x = math.clamp((int)math.floor(position.x), 0, Width - 2);
-            int z = math.clamp((int)math.floor(position.y), 0, Height - 2);
+            // Clamp to write window to prevent cross-sub-grid writes when droplets travel
+            // beyond their spawn sub-grid under the expanded motion bounds.
+            int x = math.clamp((int)math.floor(position.x), writeMinX, writeMaxX - 2);
+            int z = math.clamp((int)math.floor(position.y), writeMinZ, writeMaxZ - 2);
             float fx = position.x - x;
             float fz = position.y - z;
 
