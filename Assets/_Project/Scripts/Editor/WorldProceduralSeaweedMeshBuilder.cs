@@ -319,7 +319,24 @@ namespace Hecton8.Editor
                 scale.x * Mathf.Lerp(0.015f, 0.009f, normalized),
                 lod,
                 new Color32(spec.TintByte, 184, 52, 255));
-            AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
+            AddBladeRibbon(new BladeRibbonParams
+                {
+                    Buffers = buffers,
+                    Spec = spec,
+                    Anchor = anchor,
+                    WidthAxis = lateral,
+                    UpAxis = up,
+                    Width = width,
+                    Length = length,
+                    TwistDegrees = twist,
+                    Segments = bladeSegments,
+                    SideCurveDegrees = sideCurve,
+                    Serration = serration,
+                    Color = new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255),
+                    BladeProfile = primaryProfile,
+                    ForwardHint = forward,
+                    LodLevel = lod
+                });
 
             BuildUnderstoryBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, foldedGiant, frilledRibbon);
 
@@ -383,22 +400,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0062f,
                     understoryStemLod,
                     new Color32(spec.TintByte, 176, 54, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    understoryAnchor,
-                    understoryLateral,
-                    understoryUp,
-                    understoryWidth,
-                    understoryLength,
-                    twist * 0.74f,
-                    understoryBladeSegments,
-                    sideCurve * 0.58f,
-                    serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 204, (byte)Mathf.Lerp(54f, 168f, understoryNormalized), 255),
-                    understoryProfile,
-                    understoryForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = understoryAnchor,
+                        WidthAxis = understoryLateral,
+                        UpAxis = understoryUp,
+                        Width = understoryWidth,
+                        Length = understoryLength,
+                        TwistDegrees = twist * 0.74f,
+                        Segments = understoryBladeSegments,
+                        SideCurveDegrees = sideCurve * 0.58f,
+                        Serration = serration * 0.62f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 204, (byte)Mathf.Lerp(54f, 168f, understoryNormalized), 255),
+                        BladeProfile = understoryProfile,
+                        ForwardHint = understoryForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -432,22 +451,24 @@ namespace Hecton8.Editor
                     scale.x * Mathf.Lerp(0.009f, 0.0065f, normalized),
                     companionStemLod,
                     new Color32(spec.TintByte, 172, 58, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    companionAnchor,
-                    companionLateral,
-                    companionUp,
-                    companionWidth,
-                    companionLength,
-                    companionTwist,
-                    companionBladeSegments,
-                    companionCurve,
-                    companionSerration,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(56f, 196f, normalized), 255),
-                    companionProfile,
-                    companionForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = companionAnchor,
+                        WidthAxis = companionLateral,
+                        UpAxis = companionUp,
+                        Width = companionWidth,
+                        Length = companionLength,
+                        TwistDegrees = companionTwist,
+                        Segments = companionBladeSegments,
+                        SideCurveDegrees = companionCurve,
+                        Serration = companionSerration,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(56f, 196f, normalized), 255),
+                        BladeProfile = companionProfile,
+                        ForwardHint = companionForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -481,22 +502,24 @@ namespace Hecton8.Editor
                     scale.x * Mathf.Lerp(0.0075f, 0.0052f, normalized),
                     tertiaryStemLod,
                     new Color32(spec.TintByte, 166, 62, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    tertiaryAnchor,
-                    tertiaryLateral,
-                    tertiaryUp,
-                    tertiaryWidth,
-                    tertiaryLength,
-                    tertiaryTwist,
-                    tertiaryBladeSegments,
-                    tertiaryCurve,
-                    tertiarySerration,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 220, (byte)Mathf.Lerp(64f, 188f, normalized), 255),
-                    tertiaryProfile,
-                    tertiaryForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = tertiaryAnchor,
+                        WidthAxis = tertiaryLateral,
+                        UpAxis = tertiaryUp,
+                        Width = tertiaryWidth,
+                        Length = tertiaryLength,
+                        TwistDegrees = tertiaryTwist,
+                        Segments = tertiaryBladeSegments,
+                        SideCurveDegrees = tertiaryCurve,
+                        Serration = tertiarySerration,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 220, (byte)Mathf.Lerp(64f, 188f, normalized), 255),
+                        BladeProfile = tertiaryProfile,
+                        ForwardHint = tertiaryForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -534,22 +557,24 @@ namespace Hecton8.Editor
                     scale.x * Mathf.Lerp(0.0082f, 0.0058f, bridgingNormalized),
                     1,
                     new Color32(spec.TintByte, 170, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    bridgingAnchor,
-                    bridgingLateral,
-                    bridgingUp,
-                    bridgingWidth,
-                    bridgingLength,
-                    bridgingTwist,
-                    Mathf.Max(2, bladeSegments - 4),
-                    bridgingCurve,
-                    bridgingSerration,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(62f, 188f, bridgingNormalized), 255),
-                    bridgingProfile,
-                    bridgingForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = bridgingAnchor,
+                        WidthAxis = bridgingLateral,
+                        UpAxis = bridgingUp,
+                        Width = bridgingWidth,
+                        Length = bridgingLength,
+                        TwistDegrees = bridgingTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 4),
+                        SideCurveDegrees = bridgingCurve,
+                        Serration = bridgingSerration,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(62f, 188f, bridgingNormalized), 255),
+                        BladeProfile = bridgingProfile,
+                        ForwardHint = bridgingForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -584,22 +609,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0064f,
                     1,
                     new Color32(spec.TintByte, 178, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    curtainAnchor,
-                    curtainLateral,
-                    curtainUp,
-                    curtainWidth,
-                    curtainLength,
-                    curtainTwist,
-                    Mathf.Max(2, bladeSegments - 2),
-                    curtainCurve,
-                    serration * 0.66f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
-                    BladeProfile.FoldedLamina,
-                    curtainForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = curtainAnchor,
+                        WidthAxis = curtainLateral,
+                        UpAxis = curtainUp,
+                        Width = curtainWidth,
+                        Length = curtainLength,
+                        TwistDegrees = curtainTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 2),
+                        SideCurveDegrees = curtainCurve,
+                        Serration = serration * 0.66f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
+                        BladeProfile = BladeProfile.FoldedLamina,
+                        ForwardHint = curtainForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -636,22 +663,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0064f,
                     1,
                     new Color32(spec.TintByte, 180, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    sailAnchor,
-                    sailLateral,
-                    sailUp,
-                    sailWidth,
-                    sailLength,
-                    sailTwist,
-                    Mathf.Max(2, bladeSegments - 2),
-                    sailCurve,
-                    serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
-                    BladeProfile.FoldedLamina,
-                    sailForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = sailAnchor,
+                        WidthAxis = sailLateral,
+                        UpAxis = sailUp,
+                        Width = sailWidth,
+                        Length = sailLength,
+                        TwistDegrees = sailTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 2),
+                        SideCurveDegrees = sailCurve,
+                        Serration = serration * 0.62f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
+                        BladeProfile = BladeProfile.FoldedLamina,
+                        ForwardHint = sailForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -686,22 +715,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0061f,
                     1,
                     new Color32(spec.TintByte, 178, 62, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    fanAnchor,
-                    fanLateral,
-                    fanUp,
-                    fanWidth,
-                    fanLength,
-                    fanTwist,
-                    Mathf.Max(2, bladeSegments - (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
-                    fanCurve,
-                    serration * 0.74f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
-                    BladeProfile.PaddleLobed,
-                    fanForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = fanAnchor,
+                        WidthAxis = fanLateral,
+                        UpAxis = fanUp,
+                        Width = fanWidth,
+                        Length = fanLength,
+                        TwistDegrees = fanTwist,
+                        Segments = Mathf.Max(2, bladeSegments - (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
+                        SideCurveDegrees = fanCurve,
+                        Serration = serration * 0.74f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
+                        BladeProfile = BladeProfile.PaddleLobed,
+                        ForwardHint = fanForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -737,22 +768,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0059f,
                     1,
                     new Color32(spec.TintByte, 178, 62, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    mantleAnchor,
-                    mantleLateral,
-                    mantleUp,
-                    mantleWidth,
-                    mantleLength,
-                    mantleTwist,
-                    Mathf.Max(2, bladeSegments - 3),
-                    mantleCurve,
-                    serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
-                    BladeProfile.BroadUndulate,
-                    mantleForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = mantleAnchor,
+                        WidthAxis = mantleLateral,
+                        UpAxis = mantleUp,
+                        Width = mantleWidth,
+                        Length = mantleLength,
+                        TwistDegrees = mantleTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 3),
+                        SideCurveDegrees = mantleCurve,
+                        Serration = serration * 0.62f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
+                        BladeProfile = BladeProfile.BroadUndulate,
+                        ForwardHint = mantleForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -787,22 +820,24 @@ namespace Hecton8.Editor
                     scale.x * 0.006f,
                     1,
                     new Color32(spec.TintByte, 178, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    backingAnchor,
-                    backingLateral,
-                    backingUp,
-                    backingWidth,
-                    backingLength,
-                    backingTwist,
-                    Mathf.Max(2, bladeSegments - 5),
-                    backingCurve,
-                    serration * 0.58f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
-                    BladeProfile.FoldedLamina,
-                    backingForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = backingAnchor,
+                        WidthAxis = backingLateral,
+                        UpAxis = backingUp,
+                        Width = backingWidth,
+                        Length = backingLength,
+                        TwistDegrees = backingTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 5),
+                        SideCurveDegrees = backingCurve,
+                        Serration = serration * 0.58f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
+                        BladeProfile = BladeProfile.FoldedLamina,
+                        ForwardHint = backingForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -837,22 +872,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0054f,
                     1,
                     new Color32(spec.TintByte, 176, 62, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    lowerMantleAnchor,
-                    lowerMantleLateral,
-                    lowerMantleUp,
-                    lowerMantleWidth,
-                    lowerMantleLength,
-                    lowerMantleTwist,
-                    Mathf.Max(2, bladeSegments - 4),
-                    lowerMantleCurve,
-                    serration * 0.56f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 208, (byte)Mathf.Lerp(70f, 184f, lowerMantleNormalized), 255),
-                    BladeProfile.BroadUndulate,
-                    lowerMantleForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = lowerMantleAnchor,
+                        WidthAxis = lowerMantleLateral,
+                        UpAxis = lowerMantleUp,
+                        Width = lowerMantleWidth,
+                        Length = lowerMantleLength,
+                        TwistDegrees = lowerMantleTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 4),
+                        SideCurveDegrees = lowerMantleCurve,
+                        Serration = serration * 0.56f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 4, 0, 255), 208, (byte)Mathf.Lerp(70f, 184f, lowerMantleNormalized), 255),
+                        BladeProfile = BladeProfile.BroadUndulate,
+                        ForwardHint = lowerMantleForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -887,22 +924,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0058f,
                     1,
                     new Color32(spec.TintByte, 176, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    innerAnchor,
-                    innerLateral,
-                    innerUp,
-                    innerWidth,
-                    innerLength,
-                    innerTwist,
-                    Mathf.Max(2, bladeSegments - 4),
-                    innerCurve,
-                    serration * 0.54f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 210, (byte)Mathf.Lerp(62f, 182f, innerNormalized), 255),
-                    BladeProfile.BroadUndulate,
-                    innerForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = innerAnchor,
+                        WidthAxis = innerLateral,
+                        UpAxis = innerUp,
+                        Width = innerWidth,
+                        Length = innerLength,
+                        TwistDegrees = innerTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 4),
+                        SideCurveDegrees = innerCurve,
+                        Serration = serration * 0.54f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 210, (byte)Mathf.Lerp(62f, 182f, innerNormalized), 255),
+                        BladeProfile = BladeProfile.BroadUndulate,
+                        ForwardHint = innerForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -937,22 +976,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0056f,
                     1,
                     new Color32(spec.TintByte, 170, 60, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    shroudAnchor,
-                    shroudLateral,
-                    shroudUp,
-                    shroudWidth,
-                    shroudLength,
-                    shroudTwist,
-                    Mathf.Max(2, bladeSegments - 4),
-                    shroudCurve,
-                    serration * 0.56f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 206, (byte)Mathf.Lerp(72f, 176f, shroudNormalized), 255),
-                    BladeProfile.BroadUndulate,
-                    shroudForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = shroudAnchor,
+                        WidthAxis = shroudLateral,
+                        UpAxis = shroudUp,
+                        Width = shroudWidth,
+                        Length = shroudLength,
+                        TwistDegrees = shroudTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 4),
+                        SideCurveDegrees = shroudCurve,
+                        Serration = serration * 0.56f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 206, (byte)Mathf.Lerp(72f, 176f, shroudNormalized), 255),
+                        BladeProfile = BladeProfile.BroadUndulate,
+                        ForwardHint = shroudForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -987,22 +1028,24 @@ namespace Hecton8.Editor
                     scale.x * 0.0054f,
                     1,
                     new Color32(spec.TintByte, 174, 62, 255));
-                AddBladeRibbon(
-                    buffers,
-                    spec,
-                    veilAnchor,
-                    veilLateral,
-                    veilUp,
-                    veilWidth,
-                    veilLength,
-                    veilTwist,
-                    Mathf.Max(2, bladeSegments - 3),
-                    veilCurve,
-                    serration * 1.12f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
-                    BladeProfile.FrilledRibbon,
-                    veilForward,
-                    lod);
+                AddBladeRibbon(new BladeRibbonParams
+                    {
+                        Buffers = buffers,
+                        Spec = spec,
+                        Anchor = veilAnchor,
+                        WidthAxis = veilLateral,
+                        UpAxis = veilUp,
+                        Width = veilWidth,
+                        Length = veilLength,
+                        TwistDegrees = veilTwist,
+                        Segments = Mathf.Max(2, bladeSegments - 3),
+                        SideCurveDegrees = veilCurve,
+                        Serration = serration * 1.12f,
+                        Color = new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
+                        BladeProfile = BladeProfile.FrilledRibbon,
+                        ForwardHint = veilForward,
+                        LodLevel = lod
+                    });
             }
         }
 
@@ -1882,8 +1925,42 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void AddBladeRibbon(MeshBuffers buffers, VariantSpec spec, Vector3 anchor, Vector3 widthAxis, Vector3 upAxis, float width, float length, float twistDegrees, int segments, float sideCurveDegrees, float serration, Color32 color, BladeProfile bladeProfile, Vector3? forwardHint = null, int lodLevel = 0)
+                private struct BladeRibbonParams
         {
+            public MeshBuffers Buffers;
+            public VariantSpec Spec;
+            public Vector3 Anchor;
+            public Vector3 WidthAxis;
+            public Vector3 UpAxis;
+            public float Width;
+            public float Length;
+            public float TwistDegrees;
+            public int Segments;
+            public float SideCurveDegrees;
+            public float Serration;
+            public Color32 Color;
+            public BladeProfile BladeProfile;
+            public Vector3? ForwardHint;
+            public int LodLevel;
+        }
+
+        private static void AddBladeRibbon(in BladeRibbonParams p)
+        {
+            MeshBuffers buffers = p.Buffers;
+            VariantSpec spec = p.Spec;
+            Vector3 anchor = p.Anchor;
+            Vector3 widthAxis = p.WidthAxis;
+            Vector3 upAxis = p.UpAxis;
+            float width = p.Width;
+            float length = p.Length;
+            float twistDegrees = p.TwistDegrees;
+            int segments = p.Segments;
+            float sideCurveDegrees = p.SideCurveDegrees;
+            float serration = p.Serration;
+            Color32 color = p.Color;
+            BladeProfile bladeProfile = p.BladeProfile;
+            Vector3? forwardHint = p.ForwardHint;
+            int lodLevel = p.LodLevel;
             Vector3 widthDir = widthAxis.sqrMagnitude > 0f ? widthAxis.normalized : Vector3.right;
             Vector3 upDir = upAxis.sqrMagnitude > 0f ? upAxis.normalized : Vector3.up;
             Vector3 forwardDir = forwardHint.HasValue && forwardHint.Value.sqrMagnitude > 0f
