@@ -329,7 +329,7 @@ namespace Hecton8.Editor
 
             BuildBridgingBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, frilledRibbon, broadleafKelp);
 
-            BuildCurtainBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedSheet);
+            BuildCurtainBlade(new CurtainBladeParameters(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedSheet));
 
             BuildSailBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedGiant, sailKelp);
 
@@ -553,53 +553,53 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildCurtainBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool foldedSheet)
+        private static void BuildCurtainBlade(in CurtainBladeParameters p)
         {
-            if (foldedSheet
-                && lod == 0
-                && normalized > 0.36f
-                && normalized < 0.94f
-                && (bladeIndex % 2 == 1))
+            if (p.FoldedSheet
+                && p.Lod == 0
+                && p.Normalized > 0.36f
+                && p.Normalized < 0.94f
+                && (p.BladeIndex % 2 == 1))
             {
-                float curtainNormalized = Mathf.Clamp01(normalized - 0.04f);
-                float curtainSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(3f, 7f, curtainNormalized);
-                BladeSocket curtainSocket = EvaluateBladeSocket(spec, scale, curtainNormalized, curtainSweep, baseOffset, clusterYawOffsetDegrees);
+                float curtainNormalized = Mathf.Clamp01(p.Normalized - 0.04f);
+                float curtainSweep = p.PrimaryAngleOffset + (((p.BladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(3f, 7f, curtainNormalized);
+                BladeSocket curtainSocket = EvaluateBladeSocket(p.Spec, p.Scale, curtainNormalized, curtainSweep, p.BaseOffset, p.ClusterYawOffsetDegrees);
                 Vector3 curtainLateral = curtainSocket.WidthAxis;
                 Vector3 curtainForward = curtainSocket.ForwardAxis;
                 Vector3 curtainUp = curtainSocket.GrowthAxis;
                 Vector3 curtainStemBase = curtainSocket.StemBase;
                 Vector3 curtainAnchor = curtainSocket.Anchor;
-                float curtainWidth = width * Mathf.Lerp(0.52f, 0.72f, 1f - curtainNormalized * 0.22f);
-                float curtainLength = length * Mathf.Lerp(0.62f, 0.84f, 1f - curtainNormalized * 0.18f);
-                float curtainTwist = twist * 0.72f + Mathf.Lerp(-4f, 7f, curtainNormalized);
-                float curtainCurve = sideCurve * 0.38f + Mathf.Lerp(-4f, 4f, curtainNormalized);
+                float curtainWidth = p.Width * Mathf.Lerp(0.52f, 0.72f, 1f - curtainNormalized * 0.22f);
+                float curtainLength = p.Length * Mathf.Lerp(0.62f, 0.84f, 1f - curtainNormalized * 0.18f);
+                float curtainTwist = p.Twist * 0.72f + Mathf.Lerp(-4f, 7f, curtainNormalized);
+                float curtainCurve = p.SideCurve * 0.38f + Mathf.Lerp(-4f, 4f, curtainNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    p.Buffers,
                     curtainStemBase,
-                    curtainAnchor + curtainUp * (scale.y * 0.024f) + curtainForward * (curtainLength * 0.026f),
+                    curtainAnchor + curtainUp * (p.Scale.y * 0.024f) + curtainForward * (curtainLength * 0.026f),
                     curtainSocket.StipeTangentAxis,
                     curtainForward,
-                    Mathf.Max(scale.x * 0.0072f, (curtainAnchor - curtainStemBase).magnitude * 0.16f),
-                    scale.x * 0.0064f,
+                    Mathf.Max(p.Scale.x * 0.0072f, (curtainAnchor - curtainStemBase).magnitude * 0.16f),
+                    p.Scale.x * 0.0064f,
                     1,
-                    new Color32(spec.TintByte, 178, 60, 255));
+                    new Color32(p.Spec.TintByte, 178, 60, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    p.Buffers,
+                    p.Spec,
                     curtainAnchor,
                     curtainLateral,
                     curtainUp,
                     curtainWidth,
                     curtainLength,
                     curtainTwist,
-                    Mathf.Max(2, bladeSegments - 2),
+                    Mathf.Max(2, p.BladeSegments - 2),
                     curtainCurve,
-                    serration * 0.66f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
+                    p.Serration * 0.66f,
+                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
                     BladeProfile.FoldedLamina,
                     curtainForward,
-                    lod);
+                    p.Lod);
             }
         }
 
@@ -2546,6 +2546,47 @@ namespace Hecton8.Editor
             FoldedLamina = 3,
             PaddleLobed = 4,
             FrilledRibbon = 5
+        }
+
+
+        private readonly struct CurtainBladeParameters
+        {
+            public readonly MeshBuffers Buffers;
+            public readonly VariantSpec Spec;
+            public readonly Vector3 Scale;
+            public readonly int Lod;
+            public readonly int BladeIndex;
+            public readonly float Normalized;
+            public readonly float PrimaryAngleOffset;
+            public readonly Vector3 BaseOffset;
+            public readonly float ClusterYawOffsetDegrees;
+            public readonly float Width;
+            public readonly float Length;
+            public readonly float Twist;
+            public readonly float SideCurve;
+            public readonly float Serration;
+            public readonly int BladeSegments;
+            public readonly bool FoldedSheet;
+
+            public CurtainBladeParameters(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool foldedSheet)
+            {
+                Buffers = buffers;
+                Spec = spec;
+                Scale = scale;
+                Lod = lod;
+                BladeIndex = bladeIndex;
+                Normalized = normalized;
+                PrimaryAngleOffset = primaryAngleOffset;
+                BaseOffset = baseOffset;
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees;
+                Width = width;
+                Length = length;
+                Twist = twist;
+                SideCurve = sideCurve;
+                Serration = serration;
+                BladeSegments = bladeSegments;
+                FoldedSheet = foldedSheet;
+            }
         }
 
         private sealed class MeshBuffers
