@@ -1,0 +1,1 @@
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -quit -batchmode -projectPath "C:\hades\Hecton8" -executeMethod "MapMagic.Editor.Diagnostics.GraphHeightsDumpTask.Dump" -logFile "C:\hades\Hecton8\HeightsDump.log"

@@ -53,9 +53,8 @@ public static class HectonJobProfilerAndRenderer
                 HighWorldY = p.HighWorldY,
                 PlateauSourceGradient = 0.05f,
                 PlateauTargetGradient = 0.01f,
-                CliffSourceGradient = 0.1f,
-                CliffRampEndGradient = 0.3f,
-                CliffTargetGradient = 0.5f,
+                CliffRampEndGradient = math.tan(60f * math.PI / 180f),
+                CliffTargetGradient = math.tan(30f * math.PI / 180f),
                 Strength = 1.0f
             };
 
@@ -102,3 +101,5 @@ public static class HectonJobProfilerAndRenderer
         }
     }
 }
+
+

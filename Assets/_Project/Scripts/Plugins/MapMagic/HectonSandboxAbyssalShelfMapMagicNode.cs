@@ -215,7 +215,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 }
 
                 long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);
+                DispatcherJobSwap.ForceCompleteFromWorkerThread(ref generationHandle);
                 generationHandleScheduled = false;
                 double completeMilliseconds =
                     (System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
@@ -239,7 +239,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             finally
             {
                 if (generationHandleScheduled)
-                    DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);
+                    DispatcherJobSwap.ForceCompleteFromWorkerThread(ref generationHandle);
 
                 DisposeTracked(ref rawHeights, ref rawHeightsRegistrationId);
                 DisposeTracked(ref quantizedHeights, ref quantizedHeightsRegistrationId);

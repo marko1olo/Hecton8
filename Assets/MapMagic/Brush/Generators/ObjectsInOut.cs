@@ -303,7 +303,7 @@ namespace MapMagic.Brush
 				//spawning
 				GameObject instance;
 				#if UNITY_EDITOR
-				if (!UnityEditor.EditorApplication.isPlaying && 
+				if (!MapMagicObject.isPlaying && 
 					UnityEditor.PrefabUtility.GetPrefabAssetType(prefab)!=UnityEditor.PrefabAssetType.NotAPrefab)  //if not playing and prefab is prefab
 						instance = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab);
 				else

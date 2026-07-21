@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -314,7 +314,7 @@ namespace Den.Tools
 			private void PrepareCamCoordsStorage ()
 			{
 				#if UNITY_EDITOR
-				if (!Application.isPlaying)
+				if (!UnityEditor.EditorApplication.isPlaying)
 					return;
 				#endif
 

@@ -292,7 +292,7 @@ namespace MapMagic.Terrains
 				//tile.Resize(mapMagic.tileSize, (int)mapMagic.tileResolution, mapMagic.tileMargins, (int)mapMagic.lodResolution, mapMagic.lodMargins);
 				
 				//creating detail levels in playmode (for editor Pin us used)
-				if (MapMagicObject.isPlaying) //if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+				if (MapMagicObject.isPlaying) //if (MapMagicObject.isPlayingOrWillChangePlaymode)
 				{
 					tile.main = new DetailLevel(tile, isDraft:false); //tile created in any case and generated at the background
 
@@ -396,7 +396,7 @@ namespace MapMagic.Terrains
 				Stop();
 
 				#if UNITY_EDITOR
-				if (!UnityEditor.EditorApplication.isPlaying)
+				if (!MapMagicObject.isPlaying)
 					GameObject.DestroyImmediate(gameObject);
 				else
 				#endif

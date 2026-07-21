@@ -93,5 +93,19 @@ namespace Hecton8.World
         {
             return DispatcherJobFence.TryFinalizeCompleted(ref handle);
         }
+
+        /// <summary>
+        /// Blocks until the job completes, safe to call from a MapMagic worker thread.
+        /// Use ONLY from within MapMagic's ThreadManager.TaskThreadAction context — never on the main thread.
+        /// Unlike TryComplete, this does NOT call JobHandle.IsCompleted (which triggers
+        /// ScheduleBatchedJobsAndIsCompleted and crashes with "Managing jobs from within jobs" in Unity 6
+        /// when other Burst jobs are active). It uses direct handle.Complete() which is allowed from managed
+        /// worker threads.
+        /// </summary>
+        public static void ForceCompleteFromWorkerThread(ref JobHandle handle)
+        {
+            handle.Complete();
+            handle = default;
+        }
     }
 }
