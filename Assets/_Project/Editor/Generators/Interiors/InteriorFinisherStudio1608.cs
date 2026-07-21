@@ -1179,7 +1179,14 @@ namespace Hecton8.Editor.Interiors
                 Mesh cableMesh = CreateCableBundleMeshAsset(settings, socketList, out string cableMeshPath);
 
                 watch.Restart();
-                BakeStampedTextureAssets(settings, microSockets, placements, counters, out string normalPath, out string grimePath);
+                var bakeArgs = new BakeStampedTextureArgs1608
+                {
+                    Settings = settings,
+                    MicroSockets = microSockets,
+                    Placements = placements,
+                    Counters = counters
+                };
+                BakeStampedTextureAssets(bakeArgs, out string normalPath, out string grimePath);
                 watch.Stop();
                 counterValue = counters[0];
                 counterValue.NormalStampMilliseconds = (float)watch.Elapsed.TotalMilliseconds;
@@ -1638,9 +1645,18 @@ namespace Hecton8.Editor.Interiors
             return new Bounds(new Vector3(center.x, center.y, center.z), new Vector3(size.x, size.y, size.z));
         }
 
-        private static void BakeStampedTextureAssets(InteriorFinisherSettings1608 settings, NativeArray<InteriorSocketDTO1608> microSockets, NativeArray<InstrumentPlacementDTO1608> placements, NativeArray<InteriorBakeCountersDTO1608> counters, out string normalPath, out string grimePath)
+
+    public struct BakeStampedTextureArgs1608
+    {
+        public InteriorFinisherSettings1608 Settings;
+        public NativeArray<InteriorSocketDTO1608> MicroSockets;
+        public NativeArray<InstrumentPlacementDTO1608> Placements;
+        public NativeArray<InteriorBakeCountersDTO1608> Counters;
+    }
+
+        private static void BakeStampedTextureAssets(BakeStampedTextureArgs1608 args, out string normalPath, out string grimePath)
         {
-            int size = settings.TextureSize;
+            int size = args.Settings.TextureSize;
             int pixelCount = size * size;
             var normalPixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             var grimePixels = new NativeArray<InteriorRgba32DTO1608>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -1662,18 +1678,18 @@ namespace Hecton8.Editor.Interiors
                 {
                     NormalPixels = normalPixels,
                     GrimePixels = grimePixels,
-                    MicroSockets = microSockets,
-                    Placements = placements,
+                    MicroSockets = args.MicroSockets,
+                    Placements = args.Placements,
                     Width = size,
                     Height = size,
-                    GlobalQualityWeight = settings.GlobalQualityWeight
+                    GlobalQualityWeight = args.Settings.GlobalQualityWeight
                 }.Run();
 
-                if (counters.IsCreated && counters.Length > 0)
+                if (args.Counters.IsCreated && args.Counters.Length > 0)
                 {
-                    InteriorBakeCountersDTO1608 counterValue = counters[0];
+                    InteriorBakeCountersDTO1608 counterValue = args.Counters[0];
                     bool wroteAnyStamp =
-                        (microSockets.IsCreated && microSockets.Length > 0) ||
+                        (args.MicroSockets.IsCreated && args.MicroSockets.Length > 0) ||
                         counterValue.PlacementCount > 0u;
                     if (wroteAnyStamp)
                     {
@@ -1681,11 +1697,11 @@ namespace Hecton8.Editor.Interiors
                         counterValue.GrimePixelsWritten = (uint)pixelCount;
                     }
 
-                    counters[0] = counterValue;
+                    args.Counters[0] = counterValue;
                 }
 
-                normalPath = $"{settings.OutputFolder}/TX_{settings.OutputName}_Normal.png";
-                grimePath = $"{settings.OutputFolder}/TX_{settings.OutputName}_Grime.png";
+                normalPath = $"{args.Settings.OutputFolder}/TX_{args.Settings.OutputName}_Normal.png";
+                grimePath = $"{args.Settings.OutputFolder}/TX_{args.Settings.OutputName}_Grime.png";
                 WriteTexture(normalPath, normalPixels, size, InteriorTextureRole1608.Normal);
                 WriteTexture(grimePath, grimePixels, size, InteriorTextureRole1608.Grime);
                 SetTextureImportSettings(normalPath, InteriorTextureRole1608.Normal);
