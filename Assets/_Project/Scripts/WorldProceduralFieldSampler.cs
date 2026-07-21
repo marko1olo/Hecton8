@@ -1003,7 +1003,19 @@ namespace Hecton8.World
                 }
             }
 
-            output.RuggedBias = EvaluateRuggedBiomeBias(output.ZoneDataIndex, output.ResolvedZoneKind, output.BiomeFamilyDataIndex, zones, zoneCount, biomeMatrices, biomeMatrixCount, biomeFamilies, biomeFamilyCount);
+            BiomeEvaluationContext ruggedContext = new BiomeEvaluationContext
+            {
+                ZoneDataIndex = output.ZoneDataIndex,
+                ResolvedZoneKind = output.ResolvedZoneKind,
+                BiomeFamilyDataIndex = output.BiomeFamilyDataIndex,
+                Zones = zones,
+                ZoneCount = zoneCount,
+                BiomeMatrices = biomeMatrices,
+                BiomeMatrixCount = biomeMatrixCount,
+                BiomeFamilies = biomeFamilies,
+                BiomeFamilyCount = biomeFamilyCount
+            };
+            output.RuggedBias = EvaluateRuggedBiomeBias(in ruggedContext);
             output.FertileBias = EvaluateFertileBiomeBias(output.ZoneDataIndex, output.ResolvedZoneKind, output.BiomeFamilyDataIndex, zones, zoneCount, biomeFamilies, biomeFamilyCount);
             output.HazardBias = EvaluateHazardBias(output.ZoneDataIndex, output.ResolvedZoneKind, zones, zoneCount, biomeMatrices, biomeMatrixCount);
             output.ServiceBias = EvaluateServiceBias(output.ZoneDataIndex, output.ResolvedZoneKind, zones, zoneCount);
@@ -1670,25 +1682,38 @@ namespace Hecton8.World
             return thirdChoice;
         }
 
-        private static float EvaluateRuggedBiomeBias(int zoneDataIndex, int resolvedZoneKind, int biomeFamilyDataIndex, NativeArray<ZoneData> zones, int zoneCount, NativeArray<BiomeMatrixData> biomeMatrices, int biomeMatrixCount, NativeArray<BiomeFamilyData> biomeFamilies, int biomeFamilyCount)
+        public struct BiomeEvaluationContext
         {
-            if (zoneDataIndex >= 0 && zoneDataIndex < zoneCount)
+            public int ZoneDataIndex;
+            public int ResolvedZoneKind;
+            public int BiomeFamilyDataIndex;
+            public NativeArray<ZoneData> Zones;
+            public int ZoneCount;
+            public NativeArray<BiomeMatrixData> BiomeMatrices;
+            public int BiomeMatrixCount;
+            public NativeArray<BiomeFamilyData> BiomeFamilies;
+            public int BiomeFamilyCount;
+        }
+
+        private static float EvaluateRuggedBiomeBias(in BiomeEvaluationContext context)
+        {
+            if (context.ZoneDataIndex >= 0 && context.ZoneDataIndex < context.ZoneCount)
             {
-                ZoneData zoneData = zones[zoneDataIndex];
-                float familyBias = ContainsFamilyFlags(zoneData.DominantFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, biomeFamilies, biomeFamilyCount);
-                if (zoneData.DominantMatrixDataIndex < 0 || zoneData.DominantMatrixDataIndex >= biomeMatrixCount)
+                ZoneData zoneData = context.Zones[context.ZoneDataIndex];
+                float familyBias = ContainsFamilyFlags(zoneData.DominantFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, context.BiomeFamilies, context.BiomeFamilyCount);
+                if (zoneData.DominantMatrixDataIndex < 0 || zoneData.DominantMatrixDataIndex >= context.BiomeMatrixCount)
                     return math.lerp(0.25f, 1f, familyBias);
 
-                BiomeMatrixData biomeData = biomeMatrices[zoneData.DominantMatrixDataIndex];
+                BiomeMatrixData biomeData = context.BiomeMatrices[zoneData.DominantMatrixDataIndex];
                 float rugged = math.clamp((biomeData.LandmarkStrength + biomeData.RoutePressure) / 10f, 0f, 1f);
                 return math.clamp((rugged * 0.65f) + (familyBias * 0.35f), 0f, 1f);
             }
 
-            float fallbackFamilyBias = ContainsFamilyFlags(biomeFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, biomeFamilies, biomeFamilyCount);
+            float fallbackFamilyBias = ContainsFamilyFlags(context.BiomeFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, context.BiomeFamilies, context.BiomeFamilyCount);
             if (fallbackFamilyBias > 0f)
                 return math.lerp(0.25f, 1f, fallbackFamilyBias);
 
-            return resolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || resolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Progression ? 0.56f : 0.38f;
+            return context.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || context.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Progression ? 0.56f : 0.38f;
         }
 
         private static float EvaluateFertileBiomeBias(int zoneDataIndex, int resolvedZoneKind, int biomeFamilyDataIndex, NativeArray<ZoneData> zones, int zoneCount, NativeArray<BiomeFamilyData> biomeFamilies, int biomeFamilyCount)
