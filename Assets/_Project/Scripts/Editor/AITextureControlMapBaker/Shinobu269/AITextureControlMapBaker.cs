@@ -164,26 +164,66 @@ namespace Hecton8.Editor.AITextureControlMaps
             float quality = Mathf.Clamp01(settings.GlobalQualityWeight);
             int superSampleMultiplier = SelectSupersampleMultiplier(settings.AntiAliasing, quality, resolution);
 
+            BakePassContext bakeContext;
+            bakeContext.Mesh = mesh;
+            bakeContext.Pass = AITextureControlPass.Normal;
+            bakeContext.Resolution = resolution;
+            bakeContext.SuperSampleMultiplier = superSampleMultiplier;
+            bakeContext.BoundsMin = min;
+            bakeContext.BoundsInvSize = invSize;
+            bakeContext.BoundsExtents = extents;
+            bakeContext.SafeName = safeName;
+            bakeContext.MeshHash = meshHash;
+            bakeContext.Quality = quality;
+            bakeContext.State = state;
+
             if ((settings.PassMask & AITexturePassMask.Normal) != (AITexturePassMask)0)
-                BakePass(mesh, AITextureControlPass.Normal, resolution, superSampleMultiplier, min, invSize, extents, safeName, meshHash, quality, state, ref rig);
+            {
+                bakeContext.Pass = AITextureControlPass.Normal;
+                BakePass(in bakeContext, ref rig);
+            }
             if ((settings.PassMask & AITexturePassMask.Depth) != (AITexturePassMask)0)
-                BakePass(mesh, AITextureControlPass.Depth, resolution, superSampleMultiplier, min, invSize, extents, safeName, meshHash, quality, state, ref rig);
+            {
+                bakeContext.Pass = AITextureControlPass.Depth;
+                BakePass(in bakeContext, ref rig);
+            }
             if ((settings.PassMask & AITexturePassMask.ColorId) != (AITexturePassMask)0)
-                BakePass(mesh, AITextureControlPass.ColorId, resolution, superSampleMultiplier, min, invSize, extents, safeName, meshHash, quality, state, ref rig);
+            {
+                bakeContext.Pass = AITextureControlPass.ColorId;
+                BakePass(in bakeContext, ref rig);
+            }
             if ((settings.PassMask & AITexturePassMask.Curvature) != (AITexturePassMask)0)
-                BakePass(mesh, AITextureControlPass.Curvature, resolution, superSampleMultiplier, min, invSize, extents, safeName, meshHash, quality, state, ref rig);
+            {
+                bakeContext.Pass = AITextureControlPass.Curvature;
+                BakePass(in bakeContext, ref rig);
+            }
         }
 
-        private static void BakePass(Mesh mesh, AITextureControlPass pass, int resolution, int superSampleMultiplier, Vector4 boundsMin, Vector4 boundsInvSize, Vector3 boundsExtents, string safeName, uint meshHash, float quality, BakeBatchState state, ref UvCaptureRig rig)
+        private struct BakePassContext
         {
-            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(SelectShaderPath(pass));
+            public Mesh Mesh;
+            public AITextureControlPass Pass;
+            public int Resolution;
+            public int SuperSampleMultiplier;
+            public Vector4 BoundsMin;
+            public Vector4 BoundsInvSize;
+            public Vector3 BoundsExtents;
+            public string SafeName;
+            public uint MeshHash;
+            public float Quality;
+            public BakeBatchState State;
+        }
+
+        private static void BakePass(in BakePassContext bakeContext, ref UvCaptureRig rig)
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(SelectShaderPath(bakeContext.Pass));
             if (shader == null)
             {
-                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Missing shader for pass " + pass + ".");
-                state.AddCriticalWarning();
-                AITextureBakeBlackBox.Record(BuildTelemetry(meshHash, resolution, pass, 0.0, 0.0, 0.0, mesh.vertexCount, mesh.subMeshCount, WarningReadback, boundsExtents, quality));
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Missing shader for pass " + bakeContext.Pass + ".");
+                bakeContext.State.AddCriticalWarning();
+                AITextureBakeBlackBox.Record(BuildTelemetry(bakeContext.MeshHash, bakeContext.Resolution, bakeContext.Pass, 0.0, 0.0, 0.0, bakeContext.Mesh.vertexCount, bakeContext.Mesh.subMeshCount, WarningReadback, bakeContext.BoundsExtents, bakeContext.Quality));
                 AITextureBakeBlackBox.Dump(AITextureControlMapConstants.BakeBlackBoxDumpPath);
-                state.MarkComplete(safeName + "_" + pass);
+                bakeContext.State.MarkComplete(bakeContext.SafeName + "_" + bakeContext.Pass);
                 return;
             }
 
@@ -197,7 +237,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             Stopwatch renderStopwatch = Stopwatch.StartNew();
             try
             {
-                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(resolution, resolution, GraphicsFormat.R8G8B8A8_UNorm, 0)
+                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(bakeContext.Resolution, bakeContext.Resolution, GraphicsFormat.R8G8B8A8_UNorm, 0)
                 {
                     msaaSamples = 1,
                     sRGB = false,
@@ -206,19 +246,19 @@ namespace Hecton8.Editor.AITextureControlMaps
                 };
                 readbackTexture = new RenderTexture(descriptor)
                 {
-                    name = "SHINOBU_269_" + safeName + "_" + pass,
+                    name = "SHINOBU_269_" + bakeContext.SafeName + "_" + bakeContext.Pass,
                     hideFlags = HideFlags.HideAndDontSave,
                     filterMode = FilterMode.Bilinear
                 };
                 readbackTexture.Create();
-                if (superSampleMultiplier > 1)
+                if (bakeContext.SuperSampleMultiplier > 1)
                 {
                     RenderTextureDescriptor supersampleDescriptor = descriptor;
-                    supersampleDescriptor.width = resolution * superSampleMultiplier;
-                    supersampleDescriptor.height = resolution * superSampleMultiplier;
+                    supersampleDescriptor.width = bakeContext.Resolution * bakeContext.SuperSampleMultiplier;
+                    supersampleDescriptor.height = bakeContext.Resolution * bakeContext.SuperSampleMultiplier;
                     drawTexture = new RenderTexture(supersampleDescriptor)
                     {
-                        name = "SHINOBU_269_" + safeName + "_" + pass + "_SS" + superSampleMultiplier.ToString(CultureInfo.InvariantCulture),
+                        name = "SHINOBU_269_" + bakeContext.SafeName + "_" + bakeContext.Pass + "_SS" + bakeContext.SuperSampleMultiplier.ToString(CultureInfo.InvariantCulture),
                         hideFlags = HideFlags.HideAndDontSave,
                         filterMode = FilterMode.Bilinear
                     };
@@ -233,30 +273,30 @@ namespace Hecton8.Editor.AITextureControlMaps
 
                 commandBuffer = new CommandBuffer
                 {
-                    name = "SHINOBU_269_AITexture_" + pass
+                    name = "SHINOBU_269_AITexture_" + bakeContext.Pass
                 };
                 commandBuffer.SetRenderTarget(drawTexture);
-                commandBuffer.ClearRenderTarget(false, true, SelectClearColor(pass));
+                commandBuffer.ClearRenderTarget(false, true, SelectClearColor(bakeContext.Pass));
                 rig.Configure(commandBuffer);
-                commandBuffer.SetGlobalVector(BakeBoundsMinId, boundsMin);
-                commandBuffer.SetGlobalVector(BakeBoundsInvSizeId, boundsInvSize);
-                commandBuffer.SetGlobalFloat(CurvatureScaleId, SelectCurvatureScale(quality));
-                commandBuffer.SetGlobalFloat(CurvatureEdgeGainId, SelectCurvatureEdgeGain(quality));
-                int subMeshCount = Mathf.Max(1, mesh.subMeshCount);
+                commandBuffer.SetGlobalVector(BakeBoundsMinId, bakeContext.BoundsMin);
+                commandBuffer.SetGlobalVector(BakeBoundsInvSizeId, bakeContext.BoundsInvSize);
+                commandBuffer.SetGlobalFloat(CurvatureScaleId, SelectCurvatureScale(bakeContext.Quality));
+                commandBuffer.SetGlobalFloat(CurvatureEdgeGainId, SelectCurvatureEdgeGain(bakeContext.Quality));
+                int subMeshCount = Mathf.Max(1, bakeContext.Mesh.subMeshCount);
                 for (int subMesh = 0; subMesh < subMeshCount; subMesh++)
                 {
-                    if (pass == AITextureControlPass.ColorId)
+                    if (bakeContext.Pass == AITextureControlPass.ColorId)
                         commandBuffer.SetGlobalVector(BakeColorIdId, BuildColorId(subMesh));
 
-                    commandBuffer.DrawMesh(mesh, Matrix4x4.identity, material, subMesh, 0);
+                    commandBuffer.DrawMesh(bakeContext.Mesh, Matrix4x4.identity, material, subMesh, 0);
                 }
-                if (superSampleMultiplier > 1)
+                if (bakeContext.SuperSampleMultiplier > 1)
                     commandBuffer.Blit(drawTexture, readbackTexture);
 
                 UnityEngine.Graphics.ExecuteCommandBuffer(commandBuffer);
                 renderStopwatch.Stop();
-                string outputPath = AITextureControlMapConstants.TemplateOutputFolder + "/" + safeName + "_" + SelectPassToken(pass) + ".png";
-                ReadbackContext context = new ReadbackContext(readbackTexture, drawTexture != readbackTexture ? drawTexture : null, material, outputPath, resolution, pass, state, renderStopwatch.Elapsed.TotalMilliseconds, meshHash, mesh.vertexCount, mesh.subMeshCount, boundsExtents, quality);
+                string outputPath = AITextureControlMapConstants.TemplateOutputFolder + "/" + bakeContext.SafeName + "_" + SelectPassToken(bakeContext.Pass) + ".png";
+                ReadbackContext context = new ReadbackContext(readbackTexture, drawTexture != readbackTexture ? drawTexture : null, material, outputPath, bakeContext.Resolution, bakeContext.Pass, bakeContext.State, renderStopwatch.Elapsed.TotalMilliseconds, bakeContext.MeshHash, bakeContext.Mesh.vertexCount, bakeContext.Mesh.subMeshCount, bakeContext.BoundsExtents, bakeContext.Quality);
                 if (!SystemInfo.IsFormatSupported(GraphicsFormat.R8G8B8A8_UNorm, GraphicsFormatUsage.ReadPixels))
                 {
                     context.WarningFlags |= WarningUnsupportedFormat;
@@ -270,7 +310,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 }
 
                 context.ReadbackData = AITextureNativeMemory.AllocateArray<byte>(
-                    resolution * resolution * 4,
+                    bakeContext.Resolution * bakeContext.Resolution * 4,
                     Allocator.TempJob,
                     NativeArrayOptions.UninitializedMemory,
                     NativeMemoryOwner,
@@ -296,11 +336,11 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             catch (Exception ex)
             {
-                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Bake pass failed for " + safeName + "_" + pass + ": " + ex.Message);
-                state.AddCriticalWarning();
-                AITextureBakeBlackBox.Record(BuildTelemetry(meshHash, resolution, pass, renderStopwatch.Elapsed.TotalMilliseconds, 0.0, 0.0, mesh.vertexCount, mesh.subMeshCount, WarningReadback, boundsExtents, quality));
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Bake pass failed for " + bakeContext.SafeName + "_" + bakeContext.Pass + ": " + ex.Message);
+                bakeContext.State.AddCriticalWarning();
+                AITextureBakeBlackBox.Record(BuildTelemetry(bakeContext.MeshHash, bakeContext.Resolution, bakeContext.Pass, renderStopwatch.Elapsed.TotalMilliseconds, 0.0, 0.0, bakeContext.Mesh.vertexCount, bakeContext.Mesh.subMeshCount, WarningReadback, bakeContext.BoundsExtents, bakeContext.Quality));
                 AITextureBakeBlackBox.Dump(AITextureControlMapConstants.BakeBlackBoxDumpPath);
-                state.MarkComplete(safeName + "_" + pass);
+                bakeContext.State.MarkComplete(bakeContext.SafeName + "_" + bakeContext.Pass);
             }
             finally
             {
