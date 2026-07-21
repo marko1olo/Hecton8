@@ -8695,82 +8695,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, header.Version, out PayloadPrefixInfo prefix, out error))
-                return false;
-
-            int payloadCursor = prefix.PrefixSizeBytes;
-            if (!IsByteRangeWithin(payloadCursor, prefix.SceneNameByteLength, metadataRawLength))
-            {
-                error = "Indexed metadata scene-name range is invalid.";
-                return false;
-            }
-
-            payloadCursor += prefix.SceneNameByteLength;
-            if (!IsByteRangeWithin(payloadCursor, prefix.GameVersionByteLength, metadataRawLength))
-            {
-                error = "Indexed metadata game-version range is invalid.";
-                return false;
-            }
-
-            payloadCursor += prefix.GameVersionByteLength;
-            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
-                return false;
-            if (!IsByteRangeWithin(payloadCursor, saveDataLength, metadataRawLength))
-            {
-                error = "Indexed metadata save-data range is invalid.";
-                return false;
-            }
-
-            payloadCursor += saveDataLength;
-            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
-                return false;
-            if (packedQuestWordCount > 0)
-            {
-                if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
-                {
-                    error = "Indexed packed quest section header is truncated.";
-                    return false;
-                }
-
-                QuestSaveHeader packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
-                if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
-                    return false;
-
-                int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
-                payloadCursor += PackedQuestStateSectionHeaderSize;
-                if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
-                {
-                    error = "Indexed packed quest section exceeds the metadata payload bounds.";
-                    return false;
-                }
-
-                payloadCursor += packedQuestBytes;
-            }
-
-            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
-            if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
-            {
-                error = "Indexed ecosystem section header is truncated.";
-                return false;
-            }
-
-            EcosystemSectionHeader ecosystemHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, payloadCursor), ecosystemHeaderSize);
-            if (!TryConvertSectionCount(ecosystemHeader.RecordCount, out int ecosystemRecordCount) ||
-                !TryComputeEcosystemSectionLength(ecosystemRecordCount, header.Version, out int ecosystemSectionLength))
-            {
-                error = "Indexed ecosystem section header exceeds supported bounds.";
-                return false;
-            }
-
-            if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
-            {
-                error = "Indexed ecosystem section exceeds the metadata payload bounds.";
-                return false;
-            }
-
-            payloadCursor += ecosystemSectionLength;
-            voxelDeltaSnapshotByteLength = math.max(0, metadataRawLength - payloadCursor);
-            return true;
+            return TryResolveIndexedV8VoxelDeltaSnapshotByteRange(rawPtr, metadataRawLength, in header, out _, out voxelDeltaSnapshotByteLength, out error);
         }
 
         internal static bool TryLoadSaveData(
@@ -10463,6 +10388,97 @@ namespace Hecton8.SaveSystem
                 persistentWorldDeltas[i] = legacyRecord.ToRuntimeRecord();
             }
 
+            return true;
+        }
+
+        private static unsafe bool TryResolveIndexedV8VoxelDeltaSnapshotByteRange(
+            byte* rawPtr,
+            int metadataRawLength,
+            in SaveFileHeader header,
+            out int voxelSectionOffset,
+            out int voxelByteLength,
+            out string error)
+        {
+            voxelSectionOffset = 0;
+            voxelByteLength = 0;
+            error = string.Empty;
+
+            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, header.Version, out PayloadPrefixInfo prefix, out error))
+                return false;
+
+            int payloadCursor = prefix.PrefixSizeBytes;
+            if (!IsByteRangeWithin(payloadCursor, prefix.SceneNameByteLength, metadataRawLength))
+            {
+                error = "Indexed metadata scene-name range is invalid.";
+                return false;
+            }
+
+            payloadCursor += prefix.SceneNameByteLength;
+            if (!IsByteRangeWithin(payloadCursor, prefix.GameVersionByteLength, metadataRawLength))
+            {
+                error = "Indexed metadata game-version range is invalid.";
+                return false;
+            }
+
+            payloadCursor += prefix.GameVersionByteLength;
+            if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
+                return false;
+            if (!IsByteRangeWithin(payloadCursor, saveDataLength, metadataRawLength))
+            {
+                error = "Indexed metadata save-data range is invalid.";
+                return false;
+            }
+
+            payloadCursor += saveDataLength;
+            if (!TryDecodePackedQuestWordCount(in header, out int packedQuestWordCount, out error))
+                return false;
+            if (packedQuestWordCount > 0)
+            {
+                if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
+                {
+                    error = "Indexed packed quest section header is truncated.";
+                    return false;
+                }
+
+                QuestSaveHeader packedQuestHeader = UnsafeUtility.ReadArrayElement<QuestSaveHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
+                if (!TryValidatePackedQuestSectionHeader(in packedQuestHeader, packedQuestWordCount, out error))
+                    return false;
+
+                int packedQuestBytes = packedQuestWordCount * UnsafeUtility.SizeOf<uint>();
+                payloadCursor += PackedQuestStateSectionHeaderSize;
+                if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
+                {
+                    error = "Indexed packed quest section exceeds the metadata payload bounds.";
+                    return false;
+                }
+
+                payloadCursor += packedQuestBytes;
+            }
+
+            int ecosystemHeaderSize = ResolveEcosystemSectionHeaderSize(header.Version);
+            if (!IsByteRangeWithin(payloadCursor, ecosystemHeaderSize, metadataRawLength))
+            {
+                error = "Indexed ecosystem section header is truncated.";
+                return false;
+            }
+
+            EcosystemSectionHeader ecosystemHeader = ReadEcosystemSectionHeader(AddByteOffset(rawPtr, payloadCursor), ecosystemHeaderSize);
+            if (!TryConvertSectionCount(ecosystemHeader.RecordCount, out int ecosystemRecordCount) ||
+                !TryComputeEcosystemSectionLength(ecosystemRecordCount, header.Version, out int ecosystemSectionLength))
+            {
+                error = "Indexed ecosystem section header exceeds supported bounds.";
+                return false;
+            }
+
+            if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
+            {
+                error = "Indexed ecosystem section exceeds the metadata payload bounds.";
+                return false;
+            }
+
+            payloadCursor += ecosystemSectionLength;
+            voxelSectionOffset = payloadCursor;
+            voxelByteLength = math.max(0, metadataRawLength - payloadCursor);
             return true;
         }
 
