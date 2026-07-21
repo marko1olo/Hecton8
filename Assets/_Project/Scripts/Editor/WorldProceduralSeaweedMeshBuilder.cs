@@ -331,7 +331,27 @@ namespace Hecton8.Editor
 
             BuildCurtainBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedSheet);
 
-            BuildSailBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedGiant, sailKelp);
+            SailBladeParams sailParams = new SailBladeParams
+            {
+                Buffers = buffers,
+                Spec = spec,
+                Scale = scale,
+                Lod = lod,
+                BladeIndex = bladeIndex,
+                Normalized = normalized,
+                PrimaryAngleOffset = primaryAngleOffset,
+                BaseOffset = baseOffset,
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees,
+                Width = width,
+                Length = length,
+                Twist = twist,
+                SideCurve = sideCurve,
+                Serration = serration,
+                BladeSegments = bladeSegments,
+                FoldedGiant = foldedGiant,
+                SailKelp = sailKelp
+            };
+            BuildSailBlade(ref sailParams);
 
             BuildFanBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, broadleafKelp, paddlefanKelp);
 
@@ -603,55 +623,76 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildSailBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool foldedGiant, bool sailKelp)
+                private struct SailBladeParams
         {
-            if (foldedGiant
-                && !sailKelp
-                && !IsVeilwallVariant(spec)
-                && lod == 0
-                && normalized > 0.22f
-                && normalized < 0.88f
-                && (bladeIndex % 2 == 0))
+            public MeshBuffers Buffers;
+            public VariantSpec Spec;
+            public Vector3 Scale;
+            public int Lod;
+            public int BladeIndex;
+            public float Normalized;
+            public float PrimaryAngleOffset;
+            public Vector3 BaseOffset;
+            public float ClusterYawOffsetDegrees;
+            public float Width;
+            public float Length;
+            public float Twist;
+            public float SideCurve;
+            public float Serration;
+            public int BladeSegments;
+            public bool FoldedGiant;
+            public bool SailKelp;
+        }
+
+private static void BuildSailBlade(ref SailBladeParams p)
+        {
+            if (p.FoldedGiant
+                && !p.SailKelp
+                && !IsVeilwallVariant(p.Spec)
+                && p.Lod == 0
+                && p.Normalized > 0.22f
+                && p.Normalized < 0.88f
+                && (p.BladeIndex % 2 == 0))
             {
-                float sailNormalized = Mathf.Clamp01(normalized - 0.04f);
-                float sailSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(2f, 8f, sailNormalized);
-                BladeSocket sailSocket = EvaluateBladeSocket(spec, scale, sailNormalized, sailSweep, baseOffset, clusterYawOffsetDegrees);
+                float sailNormalized = Mathf.Clamp01(p.Normalized - 0.04f);
+                float sailSweep = p.PrimaryAngleOffset + (((p.BladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(2f, 8f, sailNormalized);
+                BladeSocket sailSocket = EvaluateBladeSocket(p.Spec, p.Scale, sailNormalized, sailSweep, p.BaseOffset, p.ClusterYawOffsetDegrees);
                 Vector3 sailLateral = sailSocket.WidthAxis;
                 Vector3 sailForward = sailSocket.ForwardAxis;
                 Vector3 sailUp = sailSocket.GrowthAxis;
                 Vector3 sailStemBase = sailSocket.StemBase;
                 Vector3 sailAnchor = sailSocket.Anchor;
-                float sailWidth = width * Mathf.Lerp(0.52f, 0.74f, 1f - sailNormalized * 0.2f);
-                float sailLength = length * Mathf.Lerp(0.66f, 0.9f, 1f - sailNormalized * 0.14f);
-                float sailTwist = twist * 0.62f + Mathf.Lerp(-4f, 6f, sailNormalized);
-                float sailCurve = sideCurve * 0.32f + Mathf.Lerp(-5f, 5f, sailNormalized);
+                float sailWidth = p.Width * Mathf.Lerp(0.52f, 0.74f, 1f - sailNormalized * 0.2f);
+                float sailLength = p.Length * Mathf.Lerp(0.66f, 0.9f, 1f - sailNormalized * 0.14f);
+                float sailTwist = p.Twist * 0.62f + Mathf.Lerp(-4f, 6f, sailNormalized);
+                float sailCurve = p.SideCurve * 0.32f + Mathf.Lerp(-5f, 5f, sailNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    p.Buffers,
                     sailStemBase,
-                    sailAnchor + sailUp * (scale.y * 0.024f) + sailForward * (sailLength * 0.026f),
+                    sailAnchor + sailUp * (p.Scale.y * 0.024f) + sailForward * (sailLength * 0.026f),
                     sailSocket.StipeTangentAxis,
                     sailForward,
-                    Mathf.Max(scale.x * 0.0072f, (sailAnchor - sailStemBase).magnitude * 0.16f),
-                    scale.x * 0.0064f,
+                    Mathf.Max(p.Scale.x * 0.0072f, (sailAnchor - sailStemBase).magnitude * 0.16f),
+                    p.Scale.x * 0.0064f,
                     1,
-                    new Color32(spec.TintByte, 180, 60, 255));
+                    new Color32(p.Spec.TintByte, 180, 60, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    p.Buffers,
+                    p.Spec,
                     sailAnchor,
                     sailLateral,
                     sailUp,
                     sailWidth,
                     sailLength,
                     sailTwist,
-                    Mathf.Max(2, bladeSegments - 2),
+                    Mathf.Max(2, p.BladeSegments - 2),
                     sailCurve,
-                    serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
+                    p.Serration * 0.62f,
+                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
                     BladeProfile.FoldedLamina,
                     sailForward,
-                    lod);
+                    p.Lod);
             }
         }
 
