@@ -1,6 +1,6 @@
 {
   "criticalCount": 154,
-  "filesScanned": 2079,
+  "filesScanned": 2297,
   "findings": [
     {
       "detail": "Hecton8.Core references Hecton8.Environment.Fluids; move through contracts or EventBus/DataVault surfaces.",
@@ -308,14 +308,6 @@
     },
     {
       "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
-      "line": 6296,
-      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
-      "rule": "CORE_SOURCE_DOMAIN_EDGE",
-      "scanner": "Compile_Wall",
-      "severity": 2
-    },
-    {
-      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
       "line": 6301,
       "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
       "rule": "CORE_SOURCE_DOMAIN_EDGE",
@@ -325,6 +317,14 @@
     {
       "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
       "line": 6306,
+      "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
+      "rule": "CORE_SOURCE_DOMAIN_EDGE",
+      "scanner": "Compile_Wall",
+      "severity": 2
+    },
+    {
+      "detail": "Core source references Hecton8.AI; mirror DTOs through contracts, EventBus, or DataVault handles.",
+      "line": 6311,
       "path": "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
       "rule": "CORE_SOURCE_DOMAIN_EDGE",
       "scanner": "Compile_Wall",
