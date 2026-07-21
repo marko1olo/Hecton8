@@ -6271,6 +6271,38 @@ namespace Hecton8.SaveSystem
         {
             VoxelDeltaProcessor voxelDeltaProcessor = null;
             bool loadedVoxelDeltaSnapshotRejectedForLoad = false;
+
+            async Awaitable<(bool success, bool rejected)> FailLoad(string message, bool requiresMainThread)
+            {
+                if (requiresMainThread)
+                    await Awaitable.MainThreadAsync();
+                RecordFailure(slotName, "load", message);
+                LastOperationError = message;
+                LogError("[SaveManager] Load failed: " + message);
+                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(message), message);
+                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
+                HideLoadingPipelineScreen();
+                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+            }
+
+            void TryRestoreRollbackSnapshot(bool rollbackAcquired, NativeArray<byte> rollbackSnapshot, string failureContext)
+            {
+                bool rollbackRestoreSucceeded = false;
+                if (rollbackAcquired)
+                {
+                    if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackSnapshot, out string rollbackError))
+                    {
+                        rollbackRestoreSucceeded = true;
+                    }
+                    else
+                    {
+                        LogError($"[SaveManager] Failed to restore voxel state after rejected {failureContext}: {rollbackError}");
+                    }
+                }
+
+                if (!rollbackRestoreSucceeded)
+                    voxelDeltaProcessor.LoadFromSaveData(null);
+            }
             for (int i = 0; i < _saveableCount; i++)
             {
                 ISaveable saveable = _saveables[i];
@@ -6301,15 +6333,7 @@ namespace Hecton8.SaveSystem
                         }
                         else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
                         {
-                            const string loadFailure = "Voxel delta rollback snapshot copy failed before load.";
-                            await Awaitable.MainThreadAsync();
-                            RecordFailure(slotName, "load", loadFailure);
-                            LastOperationError = loadFailure;
-                            LogError("[SaveManager] Load failed: " + loadFailure);
-                            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                            HideLoadingPipelineScreen();
-                            return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                            return await FailLoad("Voxel delta rollback snapshot copy failed before load.", requiresMainThread: true);
                         }
 
                         if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
@@ -6323,64 +6347,22 @@ namespace Hecton8.SaveSystem
                                 LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
                                 if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
                                 {
-                                    bool rollbackRestoreSucceeded = false;
-                                    if (rollbackVoxelDeltaSnapshotAcquired)
-                                    {
-                                        if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackVoxelDeltaSnapshot, out string rollbackError))
-                                        {
-                                            rollbackRestoreSucceeded = true;
-                                        }
-                                        else
-                                        {
-                                            LogError("[SaveManager] Failed to restore voxel state after rejected fallback payload: " + rollbackError);
-                                        }
-                                    }
+                                    TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
 
-                                    if (!rollbackRestoreSucceeded)
-                                        voxelDeltaProcessor.LoadFromSaveData(null);
-
-                                    await Awaitable.MainThreadAsync();
                                     string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
                                         ? "Voxel delta binary payload load failed."
                                         : voxelFallbackError;
-                                    RecordFailure(slotName, "load", loadFailure);
-                                    LastOperationError = loadFailure;
-                                    LogError("[SaveManager] Load failed: " + loadFailure);
-                                    SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                    PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                    HideLoadingPipelineScreen();
-                                    return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                                    return await FailLoad(loadFailure, requiresMainThread: true);
                                 }
                             }
                             else
                             {
-                                bool rollbackRestoreSucceeded = false;
-                                if (rollbackVoxelDeltaSnapshotAcquired)
-                                {
-                                    if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackVoxelDeltaSnapshot, out string rollbackError))
-                                    {
-                                        rollbackRestoreSucceeded = true;
-                                    }
-                                    else
-                                    {
-                                        LogError("[SaveManager] Failed to restore voxel state after rejected load snapshot: " + rollbackError);
-                                    }
-                                }
+                                TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
 
-                                if (!rollbackRestoreSucceeded)
-                                    voxelDeltaProcessor.LoadFromSaveData(null);
-
-                                await Awaitable.MainThreadAsync();
                                 string loadFailure = string.IsNullOrEmpty(voxelLoadError)
                                     ? "Voxel delta native snapshot load failed."
                                     : voxelLoadError;
-                                RecordFailure(slotName, "load", loadFailure);
-                                LastOperationError = loadFailure;
-                                LogError("[SaveManager] Load failed: " + loadFailure);
-                                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                HideLoadingPipelineScreen();
-                                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                                return await FailLoad(loadFailure, requiresMainThread: true);
                             }
                         }
                     }
@@ -6394,30 +6376,16 @@ namespace Hecton8.SaveSystem
                 {
                     if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
                     {
-                        await Awaitable.MainThreadAsync();
                         string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
                             ? "Voxel delta binary payload load failed."
                             : voxelFallbackError;
-                        RecordFailure(slotName, "load", loadFailure);
-                        LastOperationError = loadFailure;
-                        LogError("[SaveManager] Load failed: " + loadFailure);
-                        SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                        PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                        HideLoadingPipelineScreen();
-                        return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                        return await FailLoad(loadFailure, requiresMainThread: true);
                     }
                 }
             }
             else if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
             {
-                const string loadFailure = "Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.";
-                RecordFailure(slotName, "load", loadFailure);
-                LastOperationError = loadFailure;
-                LogError("[SaveManager] Load failed: " + loadFailure);
-                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                HideLoadingPipelineScreen();
-                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                return await FailLoad("Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", requiresMainThread: false);
             }
 
 

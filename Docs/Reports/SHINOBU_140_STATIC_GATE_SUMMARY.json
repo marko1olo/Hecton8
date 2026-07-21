@@ -9,52 +9,52 @@
   "scanners": {
     "AUP_Compliance": {
       "criticalCount": 22,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Burst_Job_Directives": {
-      "criticalCount": 417,
-      "filesScanned": 1854,
+      "criticalCount": 419,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Compile_Wall": {
       "criticalCount": 154,
-      "filesScanned": 2079,
+      "filesScanned": 2297,
       "warningCount": 0
     },
     "Dev_Virtualization": {
       "criticalCount": 0,
-      "filesScanned": 1854,
-      "warningCount": 44
+      "filesScanned": 2064,
+      "warningCount": 42
     },
     "Hot_Helper_Complete": {
       "criticalCount": 0,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Hot_Helper_Registry_Polling": {
       "criticalCount": 73,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Hot_Registry_Polling": {
       "criticalCount": 4,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Mid_Frame_Complete": {
       "criticalCount": 0,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Rollback_Fence_Compliance": {
       "criticalCount": 0,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Runtime_Struct_Layout": {
-      "criticalCount": 56,
-      "filesScanned": 1854,
+      "criticalCount": 70,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Self_Audit_Proof": {
@@ -64,7 +64,7 @@
     },
     "Signal_Bus_Topology": {
       "criticalCount": 0,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     },
     "Static_Gate_Regression": {
@@ -74,11 +74,11 @@
     },
     "Vault_Sovereignty": {
       "criticalCount": 48,
-      "filesScanned": 1854,
+      "filesScanned": 2064,
       "warningCount": 0
     }
   },
   "status": "PENDING VERIFICATION",
-  "totalCritical": 776,
-  "totalWarnings": 44
+  "totalCritical": 792,
+  "totalWarnings": 42
 }

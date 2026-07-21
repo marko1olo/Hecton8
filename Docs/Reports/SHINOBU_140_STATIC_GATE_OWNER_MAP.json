@@ -8,14 +8,14 @@
       "warningCount": 0
     },
     {
-      "criticalCount": 110,
+      "criticalCount": 112,
       "domainHint": "World",
       "warningCount": 3
     },
     {
-      "criticalCount": 65,
+      "criticalCount": 77,
       "domainHint": "RootScripts",
-      "warningCount": 24
+      "warningCount": 22
     },
     {
       "criticalCount": 65,
@@ -109,12 +109,12 @@
     },
     {
       "criticalCount": 8,
-      "domainHint": "Economy",
+      "domainHint": "Environment",
       "warningCount": 0
     },
     {
-      "criticalCount": 7,
-      "domainHint": "Environment",
+      "criticalCount": 8,
+      "domainHint": "Economy",
       "warningCount": 0
     },
     {
@@ -185,6 +185,11 @@
     {
       "criticalCount": 1,
       "domainHint": "Hecton8.Core.asmdef",
+      "warningCount": 0
+    },
+    {
+      "criticalCount": 1,
+      "domainHint": "Graphics",
       "warningCount": 0
     },
     {
@@ -286,7 +291,7 @@
       "warningCount": 0
     },
     "Burst_Job_Directives": {
-      "criticalCount": 417,
+      "criticalCount": 419,
       "topPaths": [
         {
           "criticalCount": 11,
@@ -604,7 +609,7 @@
           "criticalCount": 0,
           "domainHint": "RootScripts",
           "path": "Assets/_Project/Scripts/PowerGrid.cs",
-          "warningCount": 13
+          "warningCount": 11
         },
         {
           "criticalCount": 0,
@@ -739,7 +744,7 @@
           "warningCount": 1
         }
       ],
-      "warningCount": 44
+      "warningCount": 42
     },
     "Hot_Helper_Complete": {
       "criticalCount": 0,
@@ -925,7 +930,7 @@
       "warningCount": 0
     },
     "Runtime_Struct_Layout": {
-      "criticalCount": 56,
+      "criticalCount": 70,
       "topPaths": [
         {
           "criticalCount": 10,
@@ -955,6 +960,12 @@
           "criticalCount": 3,
           "domainHint": "RootScripts",
           "path": "Assets/_Project/Scripts/WorldChunkStreamingProfile.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 3,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
           "warningCount": 0
         },
         {
@@ -989,6 +1000,18 @@
         },
         {
           "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 2,
           "domainHint": "Fauna",
           "path": "Assets/_Project/Scripts/Fauna/FaunaStateMachine.cs",
           "warningCount": 0
@@ -1000,6 +1023,12 @@
           "warningCount": 0
         },
         {
+          "criticalCount": 2,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/BaseModule.cs",
+          "warningCount": 0
+        },
+        {
           "criticalCount": 1,
           "domainHint": "RootScripts",
           "path": "Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs",
@@ -1007,8 +1036,32 @@
         },
         {
           "criticalCount": 1,
+          "domainHint": "World",
+          "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/SaveManager.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
           "domainHint": "RootScripts",
           "path": "Assets/_Project/Scripts/SaveData.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+          "warningCount": 0
+        },
+        {
+          "criticalCount": 1,
+          "domainHint": "RootScripts",
+          "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
           "warningCount": 0
         },
         {
@@ -1027,36 +1080,6 @@
           "criticalCount": 1,
           "domainHint": "Interaction",
           "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs",
-          "warningCount": 0
-        },
-        {
-          "criticalCount": 1,
-          "domainHint": "RootScripts",
-          "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
-          "warningCount": 0
-        },
-        {
-          "criticalCount": 1,
-          "domainHint": "RootScripts",
-          "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
-          "warningCount": 0
-        },
-        {
-          "criticalCount": 1,
-          "domainHint": "Gameplay",
-          "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_VaultViews.cs",
-          "warningCount": 0
-        },
-        {
-          "criticalCount": 1,
-          "domainHint": "Fauna",
-          "path": "Assets/_Project/Scripts/Fauna/FaunaDataTemplate.cs",
-          "warningCount": 0
-        },
-        {
-          "criticalCount": 1,
-          "domainHint": "RootScripts",
-          "path": "Assets/_Project/Scripts/EncounterProfile.cs",
           "warningCount": 0
         }
       ],
