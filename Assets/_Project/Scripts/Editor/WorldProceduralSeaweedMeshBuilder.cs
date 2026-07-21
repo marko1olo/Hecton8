@@ -337,7 +337,25 @@ namespace Hecton8.Editor
 
             BuildMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed);
 
-            BuildBackingBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, sailKelp);
+            BuildBackingBlade(new BackingBladeParameters
+            {
+                Buffers = buffers,
+                Spec = spec,
+                Scale = scale,
+                Lod = lod,
+                BladeIndex = bladeIndex,
+                Normalized = normalized,
+                PrimaryAngleOffset = primaryAngleOffset,
+                BaseOffset = baseOffset,
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees,
+                Width = width,
+                Length = length,
+                Twist = twist,
+                SideCurve = sideCurve,
+                Serration = serration,
+                BladeSegments = bladeSegments,
+                SailKelp = sailKelp
+            });
 
             BuildLowerMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddlefanKelp);
 
@@ -756,53 +774,73 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildBackingBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool sailKelp)
+        private struct BackingBladeParameters
         {
-            if (sailKelp
-                && lod == 0
-                && normalized > 0.46f
-                && normalized < 0.78f
-                && (bladeIndex % 5 == 2))
+            public MeshBuffers Buffers;
+            public VariantSpec Spec;
+            public Vector3 Scale;
+            public int Lod;
+            public int BladeIndex;
+            public float Normalized;
+            public float PrimaryAngleOffset;
+            public Vector3 BaseOffset;
+            public float ClusterYawOffsetDegrees;
+            public float Width;
+            public float Length;
+            public float Twist;
+            public float SideCurve;
+            public float Serration;
+            public int BladeSegments;
+            public bool SailKelp;
+        }
+
+        private static void BuildBackingBlade(BackingBladeParameters p)
+        {
+            if (p.SailKelp
+                && p.Lod == 0
+                && p.Normalized > 0.46f
+                && p.Normalized < 0.78f
+                && (p.BladeIndex % 5 == 2))
             {
-                float backingNormalized = Mathf.Clamp01(normalized - 0.03f);
-                float backingSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 20f, backingNormalized);
-                BladeSocket backingSocket = EvaluateBladeSocket(spec, scale, backingNormalized, backingSweep, baseOffset, clusterYawOffsetDegrees);
+                float backingNormalized = Mathf.Clamp01(p.Normalized - 0.03f);
+                float backingSweep = p.PrimaryAngleOffset + (((p.BladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 20f, backingNormalized);
+                BladeSocket backingSocket = EvaluateBladeSocket(p.Spec, p.Scale, backingNormalized, backingSweep, p.BaseOffset, p.ClusterYawOffsetDegrees);
                 Vector3 backingLateral = backingSocket.WidthAxis;
                 Vector3 backingForward = backingSocket.ForwardAxis;
                 Vector3 backingUp = backingSocket.GrowthAxis;
                 Vector3 backingStemBase = backingSocket.StemBase;
                 Vector3 backingAnchor = backingSocket.Anchor;
-                float backingWidth = width * Mathf.Lerp(0.3f, 0.46f, 1f - backingNormalized * 0.18f);
-                float backingLength = length * Mathf.Lerp(0.42f, 0.62f, 1f - backingNormalized * 0.12f);
-                float backingTwist = twist * 0.56f + Mathf.Lerp(-8f, 10f, backingNormalized);
-                float backingCurve = sideCurve * 0.34f + Mathf.Lerp(-10f, 10f, backingNormalized);
+                float backingWidth = p.Width * Mathf.Lerp(0.3f, 0.46f, 1f - backingNormalized * 0.18f);
+                float backingLength = p.Length * Mathf.Lerp(0.42f, 0.62f, 1f - backingNormalized * 0.12f);
+                float backingTwist = p.Twist * 0.56f + Mathf.Lerp(-8f, 10f, backingNormalized);
+                float backingCurve = p.SideCurve * 0.34f + Mathf.Lerp(-10f, 10f, backingNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    p.Buffers,
                     backingStemBase,
-                    backingAnchor + backingUp * (scale.y * 0.022f) + backingForward * (backingLength * 0.028f),
+                    backingAnchor + backingUp * (p.Scale.y * 0.022f) + backingForward * (backingLength * 0.028f),
                     backingSocket.StipeTangentAxis,
                     backingForward,
-                    Mathf.Max(scale.x * 0.0068f, (backingAnchor - backingStemBase).magnitude * 0.15f),
-                    scale.x * 0.006f,
+                    Mathf.Max(p.Scale.x * 0.0068f, (backingAnchor - backingStemBase).magnitude * 0.15f),
+                    p.Scale.x * 0.006f,
                     1,
-                    new Color32(spec.TintByte, 178, 60, 255));
+                    new Color32(p.Spec.TintByte, 178, 60, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    p.Buffers,
+                    p.Spec,
                     backingAnchor,
                     backingLateral,
                     backingUp,
                     backingWidth,
                     backingLength,
                     backingTwist,
-                    Mathf.Max(2, bladeSegments - 5),
+                    Mathf.Max(2, p.BladeSegments - 5),
                     backingCurve,
-                    serration * 0.58f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
+                    p.Serration * 0.58f,
+                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
                     BladeProfile.FoldedLamina,
                     backingForward,
-                    lod);
+                    p.Lod);
             }
         }
 
