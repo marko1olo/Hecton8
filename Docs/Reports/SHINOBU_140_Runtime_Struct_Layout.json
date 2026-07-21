@@ -1,7 +1,23 @@
 {
-  "criticalCount": 56,
-  "filesScanned": 1854,
+  "criticalCount": 70,
+  "filesScanned": 2064,
   "findings": [
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 83,
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 89,
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
       "line": 164,
@@ -91,8 +107,16 @@
       "severity": 2
     },
     {
+      "detail": "Runtime structs must not use packed layout; copy file records into aligned DTOs instead.",
+      "line": 10,
+      "path": "Assets/_Project/Scripts/Graphics/VisualTuningState.cs",
+      "rule": "PACKED_RUNTIME_STRUCT",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 943,
+      "line": 919,
       "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -103,6 +127,22 @@
       "line": 185,
       "path": "Assets/_Project/Scripts/Interaction/EquipmentInteractionContracts.cs",
       "rule": "PACKED_RUNTIME_STRUCT",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 3115,
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 3116,
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
       "severity": 2
     },
@@ -124,6 +164,38 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 65,
+      "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 558,
+      "path": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 915,
+      "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 924,
+      "path": "Assets/_Project/Scripts/PlayerPDA.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
       "line": 56,
       "path": "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerFeature.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
@@ -140,8 +212,40 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 37,
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 53,
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 163,
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
       "line": 627,
       "path": "Assets/_Project/Scripts/SaveData.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 3534,
+      "path": "Assets/_Project/Scripts/SaveManager.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
       "severity": 2
@@ -180,7 +284,7 @@
     },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
-      "line": 12919,
+      "line": 12929,
       "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
       "rule": "STRUCT_PROPERTY_DEFENSIVE_COPY_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -188,7 +292,7 @@
     },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
-      "line": 12922,
+      "line": 12932,
       "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
       "rule": "STRUCT_PROPERTY_DEFENSIVE_COPY_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -196,7 +300,7 @@
     },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
-      "line": 12925,
+      "line": 12935,
       "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
       "rule": "STRUCT_PROPERTY_DEFENSIVE_COPY_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -204,7 +308,7 @@
     },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
-      "line": 12931,
+      "line": 12941,
       "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
       "rule": "STRUCT_PROPERTY_DEFENSIVE_COPY_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -212,7 +316,7 @@
     },
     {
       "detail": "Runtime structs in native/hot paths must expose raw fields, not C# properties.",
-      "line": 12934,
+      "line": 12944,
       "path": "Assets/_Project/Scripts/SpatialAudioManager.cs",
       "rule": "STRUCT_PROPERTY_DEFENSIVE_COPY_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -220,7 +324,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 231,
+      "line": 232,
       "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -228,7 +332,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 829,
+      "line": 830,
       "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -308,7 +412,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 991,
+      "line": 992,
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -316,7 +420,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 1028,
+      "line": 1029,
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -324,7 +428,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 1065,
+      "line": 1066,
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -332,7 +436,7 @@
     },
     {
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
-      "line": 1097,
+      "line": 1098,
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
@@ -414,6 +518,14 @@
       "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
       "line": 2108,
       "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
+      "scanner": "Runtime_Struct_Layout",
+      "severity": 2
+    },
+    {
+      "detail": "Runtime structs must use byte or bit flags instead of bool fields.",
+      "line": 415,
+      "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
       "rule": "STRUCT_BOOL_FIELD_ARM64_RISK",
       "scanner": "Runtime_Struct_Layout",
       "severity": 2

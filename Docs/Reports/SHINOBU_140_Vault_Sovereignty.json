@@ -1,6 +1,6 @@
 {
   "criticalCount": 48,
-  "filesScanned": 1854,
+  "filesScanned": 2064,
   "findings": [
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
@@ -132,7 +132,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 674,
+      "line": 688,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -140,7 +140,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 675,
+      "line": 689,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -148,7 +148,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 676,
+      "line": 690,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -156,7 +156,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 677,
+      "line": 691,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -164,7 +164,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 678,
+      "line": 692,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -172,7 +172,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 679,
+      "line": 693,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -180,7 +180,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 680,
+      "line": 694,
       "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -196,7 +196,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 2552,
+      "line": 2638,
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -204,7 +204,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 2639,
+      "line": 2725,
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -212,7 +212,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 2708,
+      "line": 2794,
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -220,7 +220,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 4061,
+      "line": 4039,
       "path": "Assets/_Project/Scripts/SaveManager.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -228,7 +228,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 4087,
+      "line": 4065,
       "path": "Assets/_Project/Scripts/SaveManager.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -252,7 +252,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 3407,
+      "line": 3562,
       "path": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -308,7 +308,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 5715,
+      "line": 5710,
       "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -316,7 +316,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 5716,
+      "line": 5711,
       "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -324,7 +324,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 5717,
+      "line": 5712,
       "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -332,7 +332,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 319,
+      "line": 320,
       "path": "Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -348,7 +348,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 8536,
+      "line": 8540,
       "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -356,7 +356,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 241,
+      "line": 213,
       "path": "Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
@@ -364,7 +364,7 @@
     },
     {
       "detail": "Runtime native memory must be DataVault-owned or explicitly exempted.",
-      "line": 266,
+      "line": 287,
       "path": "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
       "rule": "DIRECT_NATIVE_ALLOCATION",
       "scanner": "Vault_Sovereignty",
