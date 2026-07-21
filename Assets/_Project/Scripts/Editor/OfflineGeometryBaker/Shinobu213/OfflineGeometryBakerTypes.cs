@@ -32,6 +32,18 @@ namespace Hecton8.Editor.OfflineGeometry
         public const string LodManifestPath = "Assets/_Project/BakedGeometry/Optimized/offline_lod_manifest.h8lod";
     }
 
+    internal struct CreateColliderArgs
+    {
+        public Transform SourceRoot;
+        public Transform SourceTransform;
+        public Transform Parent;
+        public NativeArray<OfflineGeometryRawVertex> RawVertices;
+        public string SourceToken;
+        public int FilterIndex;
+        public float PrimitiveTolerance;
+        public int ConvexHullVertexLimit;
+    }
+
     internal enum OfflineColliderKind : byte
     {
         ConvexHull = 0,
