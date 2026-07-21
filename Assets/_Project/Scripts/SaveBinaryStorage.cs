@@ -4300,6 +4300,7 @@ namespace Hecton8.SaveSystem
             out string error)
         {
             metadata = null;
+            error = string.Empty;
             detectedVersion = 0;
 
             if (TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping v8Mapping, out SaveFileHeader v8Header, out _, out string headerError))
@@ -5640,6 +5641,7 @@ namespace Hecton8.SaveSystem
             out string error)
         {
             metadata = null;
+            error = string.Empty;
             detectedVersion = 0;
             error = string.Empty;
 
@@ -5732,7 +5734,7 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryLoadSaveDataIndexedV8(
+        private static unsafe bool TryLoadSaveDataIndexedV8(
             string absolutePath,
             string slotName,
             NativeArray<byte> rawBuffer,
@@ -5761,6 +5763,7 @@ namespace Hecton8.SaveSystem
             voxelDeltaSnapshotBytes = 0;
             playerDialogueChoiceFlags = DecodePlayerDialogueChoiceFlags(in header);
             metadata = null;
+            error = string.Empty;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             detectedVersion = 0;
@@ -5774,6 +5777,49 @@ namespace Hecton8.SaveSystem
                 return false;
 
             byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBuffer);
+
+            if (!TryValidateIndexedPayloadChecksum(in header, ref mapping, sectorEntries, rawPtr, metadataRawLength, out payloadHash64, out error))
+                return false;
+
+            if (!TryReadIndexedCoreSaveData(rawPtr, metadataRawLength, header.Version, out PayloadPrefixInfo prefix, out string sceneName, out string gameVersion, out data, out int payloadCursor, out error))
+                return false;
+
+            detectedVersion = prefix.SaveDataVersion;
+
+            if (!TryReadIndexedPackedQuestStateWords(rawPtr, metadataRawLength, in header, ref payloadCursor, out packedQuestHeader, out packedQuestStateWords, out error))
+                return false;
+
+            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
+                header.Version,
+                playerDialogueChoiceFlags,
+                packedQuestStateWords);
+
+            if (!TryReadIndexedEcosystemSectorStates(rawPtr, metadataRawLength, in header, ref payloadCursor, out ecosystemSectorStates, out error))
+                return false;
+
+            if (!TryReadIndexedVoxelDeltaSnapshot(rawPtr, metadataRawLength, ref payloadCursor, voxelDeltaSnapshotDestination, out voxelDeltaSnapshotBytes, out error))
+                return false;
+
+            if (!TryReadIndexedPersistentWorldDeltas(absolutePath, sectorEntries, in prefix, ref mapping, out persistentWorldDeltas, out indexedBackupRecoveryUsed, out error))
+                return false;
+
+            rawPayloadLength = metadataRawLength;
+
+            if (!TryCreateIndexedSaveMetadata(in header, slotName, in prefix, sceneName, gameVersion, out metadata, out error))
+                return false;
+
+            return true;
+        }
+        private static unsafe bool TryValidateIndexedPayloadChecksum(
+            in SaveFileHeader header,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            SectorEntry[] sectorEntries,
+            byte* rawPtr,
+            int metadataRawLength,
+            out ulong payloadHash64,
+            out string error)
+        {
+            error = string.Empty;
             ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
             int headerSizeBytes = ResolveExpectedHeaderSize(header.Version);
             ulong directoryHash64 = header.PlayerOffset > headerSizeBytes
@@ -5795,15 +5841,32 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, header.Version, out PayloadPrefixInfo prefix, out error))
-                return false;
+            return true;
+        }
 
-            detectedVersion = prefix.SaveDataVersion;
+        private static unsafe bool TryReadIndexedCoreSaveData(
+            byte* rawPtr,
+            int metadataRawLength,
+            int headerVersion,
+            out PayloadPrefixInfo prefix,
+            out string sceneName,
+            out string gameVersion,
+            out SaveData data,
+            out int payloadCursor,
+            out string error)
+        {
+            sceneName = string.Empty;
+            gameVersion = string.Empty;
+            data = null;
+            payloadCursor = 0;
+
+            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, headerVersion, out prefix, out error))
+                return false;
 
             int cursor = prefix.PrefixSizeBytes;
-            if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.SceneNameByteLength, out string sceneName, out error))
+            if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.SceneNameByteLength, out sceneName, out error))
                 return false;
-            if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.GameVersionByteLength, out string gameVersion, out error))
+            if (!TryReadUtf16String(rawPtr, metadataRawLength, ref cursor, prefix.GameVersionByteLength, out gameVersion, out error))
                 return false;
 
             if (!TryDecodeSaveDataByteLength(in prefix, out int saveDataLength, out error))
@@ -5822,24 +5885,21 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int payloadCursor = cursor + saveDataLength;
-            if (!TryReadIndexedPackedQuestStateWords(rawPtr, metadataRawLength, in header, ref payloadCursor, out packedQuestHeader, out packedQuestStateWords, out error))
-                return false;
+            payloadCursor = cursor + saveDataLength;
+            return true;
+        }
 
-            playerDialogueChoiceFlags = ResolveLoadedPlayerDialogueChoiceFlags(
-                header.Version,
-                playerDialogueChoiceFlags,
-                packedQuestStateWords);
-
-            if (!TryReadIndexedEcosystemSectorStates(rawPtr, metadataRawLength, in header, ref payloadCursor, out ecosystemSectorStates, out error))
-                return false;
-
-            if (!TryReadIndexedVoxelDeltaSnapshot(rawPtr, metadataRawLength, ref payloadCursor, voxelDeltaSnapshotDestination, out voxelDeltaSnapshotBytes, out error))
-                return false;
-
-            if (!TryReadIndexedPersistentWorldDeltas(absolutePath, sectorEntries, in prefix, ref mapping, out persistentWorldDeltas, out indexedBackupRecoveryUsed, out error))
-                return false;
-            rawPayloadLength = metadataRawLength;
+        private static bool TryCreateIndexedSaveMetadata(
+            in SaveFileHeader header,
+            string slotName,
+            in PayloadPrefixInfo prefix,
+            string sceneName,
+            string gameVersion,
+            out SaveMetadata metadata,
+            out string error)
+        {
+            metadata = null;
+            error = string.Empty;
             if (!TryToRuntimePosition(prefix.PlayerPosition, out Vector3 playerPosition))
             {
                 error = "Indexed save payload contains an invalid player AUP position.";
@@ -5858,6 +5918,7 @@ namespace Hecton8.SaveSystem
             };
             return true;
         }
+
 
 
         private static unsafe bool TryReadIndexedPackedQuestStateWords(
@@ -8740,6 +8801,7 @@ namespace Hecton8.SaveSystem
             voxelDeltaSnapshotBytes = 0;
             playerDialogueChoiceFlags = 0;
             metadata = null;
+            error = string.Empty;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             detectedVersion = 0;
