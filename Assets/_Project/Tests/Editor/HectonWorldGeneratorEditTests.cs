@@ -52,4 +52,22 @@ public class HectonWorldGeneratorEditTests
         Assert.AreEqual(expectedConstantValue, biomeValue1, 0.001f);
         Assert.AreEqual(expectedConstantValue, biomeValue2, 0.001f);
     }
+
+    [Test]
+    public void ClearAll_WhenCalled_DestroysAllChildren()
+    {
+        // Arrange
+        var child1 = new GameObject("Child1");
+        var child2 = new GameObject("Child2");
+        child1.transform.SetParent(_worldGenerator.transform);
+        child2.transform.SetParent(_worldGenerator.transform);
+
+        Assert.AreEqual(2, _worldGenerator.transform.childCount);
+
+        // Act
+        _worldGenerator.ClearAll();
+
+        // Assert
+        Assert.AreEqual(0, _worldGenerator.transform.childCount);
+    }
 }
