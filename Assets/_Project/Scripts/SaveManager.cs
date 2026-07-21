@@ -6203,8 +6203,21 @@ namespace Hecton8.SaveSystem
                         WorldGenerationVersionId = data.ecosystemState.worldGenerationVersionId
                     };
                     int repairBackupRetention = GetBackupRetentionCount(slotName);
+                    RepairPrimaryArtifactsArgs repairArgs = new RepairPrimaryArtifactsArgs(
+                        slotName: slotName,
+                        data: data,
+                        metadataSource: repairMetadata,
+                        packedQuestHeader: loadedQuestHeader,
+                        packedQuestStateWords: loadedQuestStateWords,
+                        playerDialogueChoiceFlags: PlayerDialogueChoiceFlags,
+                        persistentWorldItems: loadedWorldDeltas,
+                        ecosystemSectorStates: loadedEcosystemSectors,
+                        voxelDeltaSnapshot: loadedVoxelDeltaSnapshot,
+                        backupRetentionCount: repairBackupRetention,
+                        overwritePrimarySave: true
+                    );
                     await Awaitable.BackgroundThreadAsync();
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, PlayerDialogueChoiceFlags, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot, repairBackupRetention);
+                    repairedPrimaryArtifacts = RepairPrimaryArtifacts(in repairArgs);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -7255,6 +7268,47 @@ namespace Hecton8.SaveSystem
             public string ErrorMessage;
         }
 
+        private readonly struct RepairPrimaryArtifactsArgs
+        {
+            public readonly string SlotName;
+            public readonly SaveData Data;
+            public readonly SaveMetadata MetadataSource;
+            public readonly QuestSaveHeader PackedQuestHeader;
+            public readonly uint[] PackedQuestStateWords;
+            public readonly ushort PlayerDialogueChoiceFlags;
+            public readonly PersistentWorldDeltaRecord[] PersistentWorldItems;
+            public readonly EcosystemSectorSaveRecord[] EcosystemSectorStates;
+            public readonly NativeArray<byte> VoxelDeltaSnapshot;
+            public readonly int BackupRetentionCount;
+            public readonly bool OverwritePrimarySave;
+
+            public RepairPrimaryArtifactsArgs(
+                string slotName,
+                SaveData data,
+                SaveMetadata metadataSource,
+                QuestSaveHeader packedQuestHeader,
+                uint[] packedQuestStateWords,
+                ushort playerDialogueChoiceFlags,
+                PersistentWorldDeltaRecord[] persistentWorldItems,
+                EcosystemSectorSaveRecord[] ecosystemSectorStates,
+                NativeArray<byte> voxelDeltaSnapshot,
+                int backupRetentionCount,
+                bool overwritePrimarySave)
+            {
+                SlotName = slotName;
+                Data = data;
+                MetadataSource = metadataSource;
+                PackedQuestHeader = packedQuestHeader;
+                PackedQuestStateWords = packedQuestStateWords;
+                PlayerDialogueChoiceFlags = playerDialogueChoiceFlags;
+                PersistentWorldItems = persistentWorldItems;
+                EcosystemSectorStates = ecosystemSectorStates;
+                VoxelDeltaSnapshot = voxelDeltaSnapshot;
+                BackupRetentionCount = backupRetentionCount;
+                OverwritePrimarySave = overwritePrimarySave;
+            }
+        }
+
         private static bool TryFindValidRepairCandidate(string slotName, out RepairCandidateResult result)
         {
             result = new RepairCandidateResult();
@@ -7368,18 +7422,20 @@ namespace Hecton8.SaveSystem
             bool shouldRewritePrimaryMetadata = shouldRewritePrimarySave
                 || metadataSource == null;
 
-            bool changedAnything = RepairPrimaryArtifacts(
-                slotName,
-                candidateResult.Data,
-                metadataSource,
-                candidateResult.PackedQuestHeader,
-                candidateResult.PackedQuestStateWords,
-                candidateResult.PlayerDialogueChoiceFlags,
-                candidateResult.PersistentWorldItems,
-                candidateResult.EcosystemSectorStates,
-                candidateResult.VoxelDeltaSnapshot,
-                GetBackupRetentionCountStatic(slotName),
-                shouldRewritePrimarySave);
+            RepairPrimaryArtifactsArgs repairArgs = new RepairPrimaryArtifactsArgs(
+                slotName: slotName,
+                data: candidateResult.Data,
+                metadataSource: metadataSource,
+                packedQuestHeader: candidateResult.PackedQuestHeader,
+                packedQuestStateWords: candidateResult.PackedQuestStateWords,
+                playerDialogueChoiceFlags: candidateResult.PlayerDialogueChoiceFlags,
+                persistentWorldItems: candidateResult.PersistentWorldItems,
+                ecosystemSectorStates: candidateResult.EcosystemSectorStates,
+                voxelDeltaSnapshot: candidateResult.VoxelDeltaSnapshot,
+                backupRetentionCount: GetBackupRetentionCountStatic(slotName),
+                overwritePrimarySave: shouldRewritePrimarySave
+            );
+            bool changedAnything = RepairPrimaryArtifacts(in repairArgs);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
 
@@ -7558,32 +7614,6 @@ namespace Hecton8.SaveSystem
                 return true;
 
             return usedLegacyFormat;
-        }
-
-        private bool SelfRepairPrimaryArtifacts(
-            string slotName,
-            SaveData data,
-            SaveMetadata metadata,
-            QuestSaveHeader packedQuestHeader,
-            uint[] packedQuestStateWords,
-            ushort playerDialogueChoiceFlags,
-            PersistentWorldDeltaRecord[] persistentWorldItems,
-            EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            NativeArray<byte> voxelDeltaSnapshot,
-            int backupRetentionCount)
-        {
-            return RepairPrimaryArtifacts(
-                slotName,
-                data,
-                metadata,
-                packedQuestHeader,
-                packedQuestStateWords,
-                playerDialogueChoiceFlags,
-                persistentWorldItems,
-                ecosystemSectorStates,
-                voxelDeltaSnapshot,
-                backupRetentionCount,
-                overwritePrimarySave: true);
         }
 
         private static bool TryLoadAndPromoteCriticalBackup(
@@ -8076,109 +8106,108 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
-        private static bool RepairPrimaryArtifacts(
-            string slotName,
-            SaveData data,
-            SaveMetadata metadataSource,
-            QuestSaveHeader packedQuestHeader,
-            uint[] packedQuestStateWords,
-            ushort playerDialogueChoiceFlags,
-            PersistentWorldDeltaRecord[] persistentWorldItems,
-            EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            NativeArray<byte> voxelDeltaSnapshot,
-            int backupRetentionCount,
-            bool overwritePrimarySave)
+        private static bool RepairPrimaryArtifacts(in RepairPrimaryArtifactsArgs args)
         {
-            string primarySavePath = GetPrimarySaveFilePath(slotName);
-            string tempSavePath = GetTempSaveFilePath(slotName);
+            string primarySavePath = GetPrimarySaveFilePath(args.SlotName);
+            string tempSavePath = GetTempSaveFilePath(args.SlotName);
 
             bool changedAnything = false;
-            if (overwritePrimarySave || !FileExists(primarySavePath))
+            if (args.OverwritePrimarySave || !FileExists(primarySavePath))
             {
-                SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
-                AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
-                NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
-                NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
-                NativeArray<uint> packedQuestStateBuffer = default;
-                try
+                SaveMetadata writeMetadata = CreateMetadataFromData(args.SlotName, args.Data, args.MetadataSource);
+
+                if (!ExecutePrimaryArtifactRepairWrite(in args, tempSavePath, primarySavePath, writeMetadata))
                 {
-                    if (persistentWorldItems != null && persistentWorldItems.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
-                        persistentWorldItemBuffer = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
-                            persistentWorldItems.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "persistentWorldItemBuffer");
-                        persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
-                    }
-
-                    if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
-                        ecosystemSectorBuffer = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
-                            ecosystemSectorStates.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "ecosystemSectorBuffer");
-                        ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
-                    }
-
-                    if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
-                        packedQuestStateBuffer = CreateTransientNativeArray<uint>(
-                            packedQuestStateWords.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "packedQuestStateBuffer");
-                        packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
-                    }
-
-                    if (!TryExecuteVerifiedSavePipeline(
-                        slotName,
-                        tempSavePath,
-                        primarySavePath,
-                        writeMetadata,
-                        data,
-                        persistentWorldItemBuffer.IsCreated ? persistentWorldItemBuffer.AsReadOnly() : default,
-                        ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
-                        packedQuestHeader,
-                        packedQuestStateBuffer,
-                        playerDialogueChoiceFlags,
-                        voxelDeltaSnapshot,
-                        rawBuffer,
-                        compressedBuffer,
-                        backupRetentionCount,
-                        out _,
-                        out _,
-                        out _,
-                        out _))
-                    {
-                        return false;
-                    }
-                }
-                finally
-                {
-                    Exception cleanupException = null;
-
-                    if (persistentWorldItemBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref persistentWorldItemBuffer, ref cleanupException, sentinelLabel: "persistentWorldItemBuffer");
-
-                    if (ecosystemSectorBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref ecosystemSectorBuffer, ref cleanupException, sentinelLabel: "ecosystemSectorBuffer");
-
-                    if (packedQuestStateBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref packedQuestStateBuffer, ref cleanupException, sentinelLabel: "packedQuestStateBuffer");
-
-                    ReleaseWriteBuffersBestEffort(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer, ref cleanupException);
-                    ReportPersistenceCleanupFailure("save", cleanupException);
+                    return false;
                 }
 
                 changedAnything = true;
             }
 
             return changedAnything;
+        }
+
+        private static bool ExecutePrimaryArtifactRepairWrite(
+            in RepairPrimaryArtifactsArgs args,
+            string tempSavePath,
+            string primarySavePath,
+            SaveMetadata writeMetadata)
+        {
+            AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
+            NativeArray<uint> packedQuestStateBuffer = default;
+            try
+            {
+                if (args.PersistentWorldItems != null && args.PersistentWorldItems.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
+                    persistentWorldItemBuffer = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
+                        args.PersistentWorldItems.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "persistentWorldItemBuffer");
+                    persistentWorldItemBuffer.CopyFrom(args.PersistentWorldItems);
+                }
+
+                if (args.EcosystemSectorStates != null && args.EcosystemSectorStates.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
+                    ecosystemSectorBuffer = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
+                        args.EcosystemSectorStates.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "ecosystemSectorBuffer");
+                    ecosystemSectorBuffer.CopyFrom(args.EcosystemSectorStates);
+                }
+
+                if (args.PackedQuestStateWords != null && args.PackedQuestStateWords.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
+                    packedQuestStateBuffer = CreateTransientNativeArray<uint>(
+                        args.PackedQuestStateWords.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "packedQuestStateBuffer");
+                    packedQuestStateBuffer.CopyFrom(args.PackedQuestStateWords);
+                }
+
+                return TryExecuteVerifiedSavePipeline(
+                    args.SlotName,
+                    tempSavePath,
+                    primarySavePath,
+                    writeMetadata,
+                    args.Data,
+                    persistentWorldItemBuffer.IsCreated ? persistentWorldItemBuffer.AsReadOnly() : default,
+                    ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
+                    args.PackedQuestHeader,
+                    packedQuestStateBuffer,
+                    args.PlayerDialogueChoiceFlags,
+                    args.VoxelDeltaSnapshot,
+                    rawBuffer,
+                    compressedBuffer,
+                    args.BackupRetentionCount,
+                    out _,
+                    out _,
+                    out _,
+                    out _);
+            }
+            finally
+            {
+                Exception cleanupException = null;
+
+                if (persistentWorldItemBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref persistentWorldItemBuffer, ref cleanupException, sentinelLabel: "persistentWorldItemBuffer");
+
+                if (ecosystemSectorBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref ecosystemSectorBuffer, ref cleanupException, sentinelLabel: "ecosystemSectorBuffer");
+
+                if (packedQuestStateBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref packedQuestStateBuffer, ref cleanupException, sentinelLabel: "packedQuestStateBuffer");
+
+                ReleaseWriteBuffersBestEffort(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer, ref cleanupException);
+                ReportPersistenceCleanupFailure("save", cleanupException);
+            }
         }
 
         private static SaveMetadata CreateMetadataFromData(string slotName, SaveData data, SaveMetadata source)
