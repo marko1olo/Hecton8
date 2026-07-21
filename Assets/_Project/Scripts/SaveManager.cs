@@ -8346,7 +8346,10 @@ namespace Hecton8.SaveSystem
             for (int generation = 1; generation <= backupRetention; generation++)
             {
                 if (!hasBackupSave && FileExists(GetBackupSaveFilePath(slotName, generation)))
+                {
                     hasBackupSave = true;
+                    break;
+                }
             }
 
             if (!hasPrimarySave && !hasBackupSave)
@@ -8356,6 +8359,10 @@ namespace Hecton8.SaveSystem
             bool metadataRecoveredFromBackup = false;
             bool metadataSynthesized = false;
             bool metadataCorrupted = false;
+
+            long lastWriteTicksUtc = 0L;
+            long primaryBytes = 0L;
+            long backupBytes = 0L;
 
             if (hasPrimarySave)
             {
@@ -8374,6 +8381,9 @@ namespace Hecton8.SaveSystem
                 {
                     metadataCorrupted = true;
                 }
+
+                primaryBytes = GetPersistentFileSize(primarySavePath);
+                UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
             }
 
             for (int generation = 1; generation <= backupRetention; generation++)
@@ -8403,11 +8413,6 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            long lastWriteTicksUtc = 0L;
-            long primaryBytes = GetPersistentFileSize(primarySavePath);
-            long backupBytes = 0L;
-
-            UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
             UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref lastWriteTicksUtc);
             UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref lastWriteTicksUtc);
 
