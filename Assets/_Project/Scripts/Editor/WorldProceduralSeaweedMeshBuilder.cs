@@ -345,7 +345,7 @@ namespace Hecton8.Editor
 
             BuildShroudBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
 
-            BuildVeilBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, frilledRibbon);
+            BuildVeilBlade(new VeilBladeParameters(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, frilledRibbon));
         }
 
         private static void BuildUnderstoryBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool foldedGiant, bool frilledRibbon)
@@ -956,53 +956,53 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildVeilBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool frilledRibbon)
+        private static void BuildVeilBlade(VeilBladeParameters parameters)
         {
-            if (frilledRibbon
-                && lod == 0
-                && normalized > (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.28f : 0.38f)
-                && normalized < (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.78f)
-                && (bladeIndex % (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 1))
+            if (parameters.FrilledRibbon
+                && parameters.Lod == 0
+                && parameters.Normalized > (parameters.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.28f : 0.38f)
+                && parameters.Normalized < (parameters.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.78f)
+                && (parameters.BladeIndex % (parameters.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 1))
             {
-                float veilNormalized = Mathf.Clamp01(normalized - 0.06f);
-                float veilSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(10f, 18f, veilNormalized);
-                BladeSocket veilSocket = EvaluateBladeSocket(spec, scale, veilNormalized, veilSweep, baseOffset, clusterYawOffsetDegrees);
+                float veilNormalized = Mathf.Clamp01(parameters.Normalized - 0.06f);
+                float veilSweep = parameters.PrimaryAngleOffset + (((parameters.BladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(10f, 18f, veilNormalized);
+                BladeSocket veilSocket = EvaluateBladeSocket(parameters.Spec, parameters.Scale, veilNormalized, veilSweep, parameters.BaseOffset, parameters.ClusterYawOffsetDegrees);
                 Vector3 veilLateral = veilSocket.WidthAxis;
                 Vector3 veilForward = veilSocket.ForwardAxis;
                 Vector3 veilUp = veilSocket.GrowthAxis;
                 Vector3 veilStemBase = veilSocket.StemBase;
                 Vector3 veilAnchor = veilSocket.Anchor;
-                float veilWidth = width * Mathf.Lerp(0.26f, 0.42f, 1f - veilNormalized * 0.26f);
-                float veilLength = length * Mathf.Lerp(0.46f, 0.68f, 1f - veilNormalized * 0.14f);
-                float veilTwist = twist * 1.08f + Mathf.Lerp(-12f, 18f, veilNormalized);
-                float veilCurve = sideCurve * 0.42f + Mathf.Lerp(-8f, 8f, veilNormalized);
+                float veilWidth = parameters.Width * Mathf.Lerp(0.26f, 0.42f, 1f - veilNormalized * 0.26f);
+                float veilLength = parameters.Length * Mathf.Lerp(0.46f, 0.68f, 1f - veilNormalized * 0.14f);
+                float veilTwist = parameters.Twist * 1.08f + Mathf.Lerp(-12f, 18f, veilNormalized);
+                float veilCurve = parameters.SideCurve * 0.42f + Mathf.Lerp(-8f, 8f, veilNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    parameters.Buffers,
                     veilStemBase,
-                    veilAnchor + veilUp * (scale.y * 0.02f) + veilForward * (veilLength * 0.028f),
+                    veilAnchor + veilUp * (parameters.Scale.y * 0.02f) + veilForward * (veilLength * 0.028f),
                     veilSocket.StipeTangentAxis,
                     veilForward,
-                    Mathf.Max(scale.x * 0.0062f, (veilAnchor - veilStemBase).magnitude * 0.14f),
-                    scale.x * 0.0054f,
+                    Mathf.Max(parameters.Scale.x * 0.0062f, (veilAnchor - veilStemBase).magnitude * 0.14f),
+                    parameters.Scale.x * 0.0054f,
                     1,
-                    new Color32(spec.TintByte, 174, 62, 255));
+                    new Color32(parameters.Spec.TintByte, 174, 62, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    parameters.Buffers,
+                    parameters.Spec,
                     veilAnchor,
                     veilLateral,
                     veilUp,
                     veilWidth,
                     veilLength,
                     veilTwist,
-                    Mathf.Max(2, bladeSegments - 3),
+                    Mathf.Max(2, parameters.BladeSegments - 3),
                     veilCurve,
-                    serration * 1.12f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
+                    parameters.Serration * 1.12f,
+                    new Color32((byte)Mathf.Clamp(parameters.Spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
                     BladeProfile.FrilledRibbon,
                     veilForward,
-                    lod);
+                    parameters.Lod);
             }
         }
 
@@ -2424,6 +2424,46 @@ namespace Hecton8.Editor
             public Vector3 Radial { get; }
             public Vector3 Binormal { get; }
             public float Radius { get; }
+        }
+
+        private readonly struct VeilBladeParameters
+        {
+            public MeshBuffers Buffers { get; }
+            public VariantSpec Spec { get; }
+            public Vector3 Scale { get; }
+            public int Lod { get; }
+            public int BladeIndex { get; }
+            public float Normalized { get; }
+            public float PrimaryAngleOffset { get; }
+            public Vector3 BaseOffset { get; }
+            public float ClusterYawOffsetDegrees { get; }
+            public float Width { get; }
+            public float Length { get; }
+            public float Twist { get; }
+            public float SideCurve { get; }
+            public float Serration { get; }
+            public int BladeSegments { get; }
+            public bool FrilledRibbon { get; }
+
+            public VeilBladeParameters(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool frilledRibbon)
+            {
+                Buffers = buffers;
+                Spec = spec;
+                Scale = scale;
+                Lod = lod;
+                BladeIndex = bladeIndex;
+                Normalized = normalized;
+                PrimaryAngleOffset = primaryAngleOffset;
+                BaseOffset = baseOffset;
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees;
+                Width = width;
+                Length = length;
+                Twist = twist;
+                SideCurve = sideCurve;
+                Serration = serration;
+                BladeSegments = bladeSegments;
+                FrilledRibbon = frilledRibbon;
+            }
         }
 
         private readonly struct BladeSocket
