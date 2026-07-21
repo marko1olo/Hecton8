@@ -1,6 +1,6 @@
 {
   "criticalCount": 4,
-  "filesScanned": 1854,
+  "filesScanned": 2064,
   "findings": [
     {
       "detail": "Global authority lookup in hot method; cache at boot or consume dispatcher snapshot.",

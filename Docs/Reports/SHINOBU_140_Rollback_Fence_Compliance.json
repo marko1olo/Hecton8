@@ -1,6 +1,6 @@
 {
   "criticalCount": 0,
-  "filesScanned": 1854,
+  "filesScanned": 2064,
   "findings": [],
   "scanner": "Rollback_Fence_Compliance",
   "warningCount": 0

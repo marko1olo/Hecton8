@@ -1,10 +1,10 @@
 {
   "criticalCount": 22,
-  "filesScanned": 1854,
+  "filesScanned": 2064,
   "findings": [
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 634,
+      "line": 624,
       "path": "Assets/_Project/Scripts/Gameplay/BioReactor.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -20,7 +20,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 379,
+      "line": 369,
       "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -28,7 +28,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 402,
+      "line": 392,
       "path": "Assets/_Project/Scripts/Gameplay/Floater.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -52,7 +52,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 1134,
+      "line": 1142,
       "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -76,7 +76,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 605,
+      "line": 595,
       "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -84,7 +84,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 613,
+      "line": 603,
       "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
@@ -92,7 +92,7 @@
     },
     {
       "detail": "World-space transform/math access inside hot method; route through AUP snapshot or local-sector DTO.",
-      "line": 622,
+      "line": 612,
       "path": "Assets/_Project/Scripts/Gameplay/ScannableFragment.cs",
       "rule": "AUP_WORLD_SPACE_HOT_PATH",
       "scanner": "AUP_Compliance",
