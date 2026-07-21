@@ -637,13 +637,13 @@ namespace Hecton8.Editor.ModdingSDK
             using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("Validate + Build Review", GUILayout.Height(28f)))
-                    RunStarterTool("Tools/prepare_mod.ps1", string.Empty, true);
+                    RunStarterTool("Tools/prepare_mod.ps1", System.Array.Empty<string>(), true);
 
                 if (GUILayout.Button("Build Submission Package", GUILayout.Height(28f)))
-                    RunStarterTool("Tools/build_submission_package.ps1", string.Empty, true);
+                    RunStarterTool("Tools/build_submission_package.ps1", System.Array.Empty<string>(), true);
 
                 if (GUILayout.Button("Validate Structure Only", GUILayout.Height(28f)))
-                    RunStarterTool("Tools/validate_structure.ps1", string.Empty, true);
+                    RunStarterTool("Tools/validate_structure.ps1", System.Array.Empty<string>(), true);
 
                 if (GUILayout.Button("Run Package Doctor", GUILayout.Height(28f)))
                     RunPackageDoctor();
@@ -652,7 +652,7 @@ namespace Hecton8.Editor.ModdingSDK
             using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("List Graph Opcodes", GUILayout.Height(28f)))
-                    RunStarterTool("Tools/list_allowed_opcodes.ps1", string.Empty, false);
+                    RunStarterTool("Tools/list_allowed_opcodes.ps1", System.Array.Empty<string>(), false);
 
                 if (GUILayout.Button("Open Submission Package", GUILayout.Height(28f)))
                     OpenSubmissionPackage();
@@ -788,112 +788,119 @@ namespace Hecton8.Editor.ModdingSDK
 
         private void ApplyIdentity()
         {
-            string arguments =
-                " -Id " + QuoteArgument(_modId) +
-                " -DisplayName " + QuoteArgument(_displayName) +
-                " -Author " + QuoteArgument(_author) +
-                " -Version " + QuoteArgument(_version);
-            RunStarterTool("Tools/set_mod_identity.ps1", arguments, true);
+            RunStarterTool("Tools/set_mod_identity.ps1", new string[] {
+                "-Id", _modId,
+                "-DisplayName", _displayName,
+                "-Author", _author,
+                "-Version", _version
+            }, true);
         }
 
         private void GenerateGraphNodeSnippet()
         {
-            string arguments =
-                " -Id " + QuoteArgument(_graphNodeSnippetId) +
-                " -Opcode " + QuoteArgument(_graphNodeSnippetOpcode) +
-                " -ParametersJson " + QuoteArgument(_graphNodeParametersJson);
+            List<string> args = new List<string> {
+                "-Id", _graphNodeSnippetId,
+                "-Opcode", _graphNodeSnippetOpcode,
+                "-ParametersJson", _graphNodeParametersJson
+            };
             if (_graphNodeDisabled)
-                arguments += " -Disabled";
+                args.Add("-Disabled");
 
-            RunStarterTool("Tools/create_graph_node_snippet.ps1", arguments, false);
+            RunStarterTool("Tools/create_graph_node_snippet.ps1", args.ToArray(), false);
         }
 
         private void ApplyGraphNodeSnippet()
         {
-            string arguments = _graphNodeReplaceExisting ? " -Replace" : string.Empty;
-            RunStarterTool("Tools/apply_graph_node_snippet.ps1", arguments, true);
+            string[] args = _graphNodeReplaceExisting ? new string[] { "-Replace" } : System.Array.Empty<string>();
+            RunStarterTool("Tools/apply_graph_node_snippet.ps1", args, true);
         }
 
         private void GenerateSettingsRowSnippet()
         {
-            string arguments =
-                " -Id " + QuoteArgument(_settingsRowSnippetId) +
-                " -Kind " + QuoteArgument(_settingsRowSnippetKind) +
-                " -Default " + QuoteArgument(_settingsRowSnippetDefault);
-            RunStarterTool("Tools/create_settings_row_snippet.ps1", arguments, false);
+            RunStarterTool("Tools/create_settings_row_snippet.ps1", new string[] {
+                "-Id", _settingsRowSnippetId,
+                "-Kind", _settingsRowSnippetKind,
+                "-Default", _settingsRowSnippetDefault
+            }, false);
         }
 
         private void GenerateLocaleEntrySnippet()
         {
-            string arguments =
-                " -Key " + QuoteArgument(_localeEntrySnippetKey) +
-                " -Value " + QuoteArgument(_localeEntrySnippetValue);
-            RunStarterTool("Tools/create_locale_entry_snippet.ps1", arguments, false);
+            RunStarterTool("Tools/create_locale_entry_snippet.ps1", new string[] {
+                "-Key", _localeEntrySnippetKey,
+                "-Value", _localeEntrySnippetValue
+            }, false);
         }
 
         private void ApplySettingsRowSnippet()
         {
-            RunStarterTool("Tools/apply_settings_row_snippet.ps1", string.Empty, true);
+            RunStarterTool("Tools/apply_settings_row_snippet.ps1", System.Array.Empty<string>(), true);
         }
 
         private void ApplyLocaleEntrySnippet()
         {
-            RunStarterTool("Tools/apply_locale_entry_snippet.ps1", string.Empty, true);
+            RunStarterTool("Tools/apply_locale_entry_snippet.ps1", System.Array.Empty<string>(), true);
         }
 
         private void GenerateAssetEntrySnippet()
         {
-            string arguments =
-                " -Id " + QuoteArgument(_assetEntrySnippetId) +
-                " -Kind " + QuoteArgument(_assetEntrySnippetKind) +
-                " -Path " + QuoteArgument(_assetEntrySnippetPath) +
-                " -Crc32 " + QuoteArgument(_assetEntrySnippetCrc32) +
-                " -Bytes " + _assetEntrySnippetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture);
-            RunStarterTool("Tools/create_asset_entry_snippet.ps1", arguments, false);
+            RunStarterTool("Tools/create_asset_entry_snippet.ps1", new string[] {
+                "-Id", _assetEntrySnippetId,
+                "-Kind", _assetEntrySnippetKind,
+                "-Path", _assetEntrySnippetPath,
+                "-Crc32", _assetEntrySnippetCrc32,
+                "-Bytes", _assetEntrySnippetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture)
+            }, false);
         }
 
         private void ApplyAssetEntrySnippet()
         {
-            string arguments = _assetEntryReplaceExisting ? " -Replace" : string.Empty;
-            RunStarterTool("Tools/apply_asset_entry_snippet.ps1", arguments, true);
+            string[] args = _assetEntryReplaceExisting ? new string[] { "-Replace" } : System.Array.Empty<string>();
+            RunStarterTool("Tools/apply_asset_entry_snippet.ps1", args, true);
         }
 
         private void ConfigureManifestContract()
         {
             int capabilityIndex = Mathf.Clamp(_manifestCapabilityPopupIndex, 0, ManifestCapabilityValues.Length - 1);
             int actionIndex = Mathf.Clamp(_manifestCapabilityActionPopupIndex, 0, ManifestCapabilityActionValues.Length - 1);
-            string arguments =
-                " -Capability " + QuoteArgument(ManifestCapabilityValues[capabilityIndex]) +
-                " -CapabilityState " + QuoteArgument(ManifestCapabilityActionValues[actionIndex]) +
-                " -MaxEnvelopesPerFrame " + _manifestMaxEnvelopesPerFrame.ToString(global::System.Globalization.CultureInfo.InvariantCulture) +
-                " -MaxAssetBytes " + _manifestMaxAssetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture);
-            RunStarterTool("Tools/configure_manifest_contract.ps1", arguments, true);
+            RunStarterTool("Tools/configure_manifest_contract.ps1", new string[] {
+                "-Capability", ManifestCapabilityValues[capabilityIndex],
+                "-CapabilityState", ManifestCapabilityActionValues[actionIndex],
+                "-MaxEnvelopesPerFrame", _manifestMaxEnvelopesPerFrame.ToString(global::System.Globalization.CultureInfo.InvariantCulture),
+                "-MaxAssetBytes", _manifestMaxAssetBytes.ToString(global::System.Globalization.CultureInfo.InvariantCulture)
+            }, true);
         }
 
         private void ConfigureDependencies(string action)
         {
-            string arguments = " -Action " + QuoteArgument(action);
+            List<string> args = new List<string> { "-Action", action };
             if (action == "add" || action == "remove")
-                arguments += " -DependencyId " + QuoteArgument(_dependencyId);
+            {
+                args.Add("-DependencyId");
+                args.Add(_dependencyId);
+            }
 
-            RunStarterTool("Tools/configure_dependencies.ps1", arguments, true);
+            RunStarterTool("Tools/configure_dependencies.ps1", args.ToArray(), true);
         }
 
         private void InstallLocalDiscoveryCopy()
         {
-            string arguments = " -ProjectRoot " + QuoteArgument(GetProjectRootPath()) + " -Replace";
-            RunStarterTool("Tools/install_local_mod.ps1", arguments, true);
+            RunStarterTool("Tools/install_local_mod.ps1", new string[] {
+                "-ProjectRoot", GetProjectRootPath(),
+                "-Replace"
+            }, true);
         }
 
         private void DiagnoseLocalMods()
         {
-            string arguments = " -ProjectRoot " + QuoteArgument(GetProjectRootPath());
-            RunStarterTool("Tools/diagnose_local_mods.ps1", arguments, false);
+            RunStarterTool("Tools/diagnose_local_mods.ps1", new string[] {
+                "-ProjectRoot", GetProjectRootPath()
+            }, false);
         }
 
         private void RunPackageDoctor()
         {
-            RunStarterTool("Tools/run_doctor.ps1", string.Empty, false);
+            RunStarterTool("Tools/run_doctor.ps1", System.Array.Empty<string>(), false);
         }
 
         private void CreateOrRefreshStarterKit()
@@ -2518,7 +2525,7 @@ namespace Hecton8.Editor.ModdingSDK
             return normalizedFull.Replace(Path.DirectorySeparatorChar, '/').Replace(Path.AltDirectorySeparatorChar, '/');
         }
 
-        private void RunStarterTool(string scriptRelativePath, string extraArguments, bool reloadAfterSuccess)
+        private void RunStarterTool(string scriptRelativePath, string[] extraArguments, bool reloadAfterSuccess)
         {
             if (IsToolRunning)
             {
@@ -2558,9 +2565,13 @@ namespace Hecton8.Editor.ModdingSDK
                 startInfo.ArgumentList.Add("-Root");
                 startInfo.ArgumentList.Add(rootPath);
 
-                foreach (string arg in ParseArguments(extraArguments))
+                if (extraArguments != null)
                 {
-                    startInfo.ArgumentList.Add(arg);
+                    foreach (string arg in extraArguments)
+                    {
+                        if (arg != null)
+                            startInfo.ArgumentList.Add(arg);
+                    }
                 }
 
                 DiagnosticsProcess process = new DiagnosticsProcess
@@ -2771,73 +2782,7 @@ namespace Hecton8.Editor.ModdingSDK
             return Application.platform == RuntimePlatform.WindowsEditor ? "powershell.exe" : "pwsh";
         }
 
-        private static string QuoteArgument(string value)
-        {
-            return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\"";
-        }
 
-        private static List<string> ParseArguments(string arguments)
-        {
-            List<string> result = new List<string>();
-            if (string.IsNullOrEmpty(arguments))
-                return result;
-
-            bool inQuotes = false;
-            int startIndex = 0;
-            for (int i = 0; i < arguments.Length; i++)
-            {
-                if (arguments[i] == '\"')
-                {
-                    inQuotes = !inQuotes;
-                }
-                else if (arguments[i] == ' ' && !inQuotes)
-                {
-                    if (i > startIndex)
-                    {
-                        string arg = arguments.Substring(startIndex, i - startIndex);
-                        if (arg.StartsWith("\"") && arg.EndsWith("\"") && arg.Length >= 2)
-                        {
-                            arg = arg.Substring(1, arg.Length - 2);
-                        }
-                        else if (arg.StartsWith("\""))
-                        {
-                            arg = arg.Substring(1);
-                        }
-                        else if (arg.EndsWith("\""))
-                        {
-                            arg = arg.Substring(0, arg.Length - 1);
-                        }
-                        result.Add(arg);
-                    }
-                    startIndex = i + 1;
-                }
-            }
-            if (startIndex < arguments.Length)
-            {
-                string arg = arguments.Substring(startIndex);
-                if (arg.StartsWith("\"") && arg.EndsWith("\"") && arg.Length >= 2)
-                {
-                    arg = arg.Substring(1, arg.Length - 2);
-                }
-                else if (arg.StartsWith("\""))
-                {
-                    arg = arg.Substring(1);
-                }
-                else if (arg.EndsWith("\""))
-                {
-                    arg = arg.Substring(0, arg.Length - 1);
-                }
-                result.Add(arg);
-            }
-
-            for (int i = result.Count - 1; i >= 0; i--)
-            {
-                if (string.IsNullOrWhiteSpace(result[i]))
-                    result.RemoveAt(i);
-            }
-
-            return result;
-        }
 
         private readonly struct SubmissionExpectedEntry
         {
