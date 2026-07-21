@@ -6085,12 +6085,7 @@ namespace Hecton8.SaveSystem
                         ? "No load candidate could be restored."
                         : lastErrorMessage;
                     await Awaitable.MainThreadAsync();
-                    RecordFailure(slotName, "load", loadFailure);
-                    LastOperationError = loadFailure;
-                    LogError("[SaveManager] Load failed: " + loadFailure);
-                    SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                    PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                    HideLoadingPipelineScreen();
+                    HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                     return;
                 }
 
@@ -6238,12 +6233,7 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
                 await Awaitable.MainThreadAsync();
-                RecordFailure(slotName, "load", ex.Message);
-                LastOperationError = ex.Message;
-                LogError("[SaveManager] Load failed: " + ex);
-                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(ex.Message), ex.Message);
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                HideLoadingPipelineScreen();
+                HandleLoadFailure(slotName, slotIndex, operationId, ex);
             }
             finally
             {
@@ -6265,6 +6255,26 @@ namespace Hecton8.SaveSystem
                 NotifyMacroDatabasePersistenceGateBestEffort(false, ref cleanupException);
                 ReportPersistenceCleanupFailure("load", cleanupException);
             }
+        }
+
+        private void HandleLoadFailure(string slotName, byte slotIndex, uint operationId, string loadFailure)
+        {
+            RecordFailure(slotName, "load", loadFailure);
+            LastOperationError = loadFailure;
+            LogError("[SaveManager] Load failed: " + loadFailure);
+            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
+            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
+            HideLoadingPipelineScreen();
+        }
+
+        private void HandleLoadFailure(string slotName, byte slotIndex, uint operationId, Exception ex)
+        {
+            RecordFailure(slotName, "load", ex.Message);
+            LastOperationError = ex.Message;
+            LogError("[SaveManager] Load failed: " + ex);
+            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(ex.Message), ex.Message);
+            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
+            HideLoadingPipelineScreen();
         }
 
         private async Awaitable<(bool success, bool rejected)> TryRestoreVoxelDataAsync(string slotName, byte slotIndex, uint operationId, SaveData data, NativeArray<byte> loadedVoxelDeltaSnapshot)
@@ -6303,12 +6313,7 @@ namespace Hecton8.SaveSystem
                         {
                             const string loadFailure = "Voxel delta rollback snapshot copy failed before load.";
                             await Awaitable.MainThreadAsync();
-                            RecordFailure(slotName, "load", loadFailure);
-                            LastOperationError = loadFailure;
-                            LogError("[SaveManager] Load failed: " + loadFailure);
-                            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                            HideLoadingPipelineScreen();
+                            HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                             return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
                         }
 
@@ -6343,12 +6348,7 @@ namespace Hecton8.SaveSystem
                                     string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
                                         ? "Voxel delta binary payload load failed."
                                         : voxelFallbackError;
-                                    RecordFailure(slotName, "load", loadFailure);
-                                    LastOperationError = loadFailure;
-                                    LogError("[SaveManager] Load failed: " + loadFailure);
-                                    SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                    PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                    HideLoadingPipelineScreen();
+                                    HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                                     return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
                                 }
                             }
@@ -6374,12 +6374,7 @@ namespace Hecton8.SaveSystem
                                 string loadFailure = string.IsNullOrEmpty(voxelLoadError)
                                     ? "Voxel delta native snapshot load failed."
                                     : voxelLoadError;
-                                RecordFailure(slotName, "load", loadFailure);
-                                LastOperationError = loadFailure;
-                                LogError("[SaveManager] Load failed: " + loadFailure);
-                                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                HideLoadingPipelineScreen();
+                                HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                                 return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
                             }
                         }
@@ -6398,12 +6393,7 @@ namespace Hecton8.SaveSystem
                         string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
                             ? "Voxel delta binary payload load failed."
                             : voxelFallbackError;
-                        RecordFailure(slotName, "load", loadFailure);
-                        LastOperationError = loadFailure;
-                        LogError("[SaveManager] Load failed: " + loadFailure);
-                        SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                        PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                        HideLoadingPipelineScreen();
+                        HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                         return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
                     }
                 }
@@ -6411,12 +6401,7 @@ namespace Hecton8.SaveSystem
             else if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
             {
                 const string loadFailure = "Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.";
-                RecordFailure(slotName, "load", loadFailure);
-                LastOperationError = loadFailure;
-                LogError("[SaveManager] Load failed: " + loadFailure);
-                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                HideLoadingPipelineScreen();
+                HandleLoadFailure(slotName, slotIndex, operationId, loadFailure);
                 return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
             }
 
