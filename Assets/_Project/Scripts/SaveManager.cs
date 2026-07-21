@@ -4647,12 +4647,12 @@ namespace Hecton8.SaveSystem
 
         public Awaitable SaveGameAsync(string slotName)
         {
+            CachePersistentDataPathRoot();
             return SaveGameAsyncInternal(slotName, ResolveManualSlotIndex(slotName), ResolveOperationId(0u));
         }
 
         private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
         {
-            CachePersistentDataPathRoot();
             LastOperationSucceeded = false;
             LastOperationError = string.Empty;
             LastOperationSlot = string.Empty;
@@ -5864,11 +5864,14 @@ namespace Hecton8.SaveSystem
                    VoxelDeltaProcessor.TryValidateSaveDataForLoad(data, out _);
         }
 
-        public async Awaitable LoadGameAsync(string slotName)
+        public Awaitable LoadGameAsync(string slotName)
         {
             CachePersistentDataPathRoot();
-            uint operationId = ResolveOperationId(0u);
-            byte slotIndex = ResolveManualSlotIndex(slotName);
+            return LoadGameAsyncInternal(slotName, ResolveManualSlotIndex(slotName), ResolveOperationId(0u));
+        }
+
+        private async Awaitable LoadGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
+        {
             LastOperationSucceeded = false;
             LastOperationError = string.Empty;
             LastOperationSlot = string.Empty;
@@ -5896,7 +5899,6 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            slotIndex = ResolveManualSlotIndex(slotName);
             LastOperationSlot = slotName;
 
             if (_isBusy)
