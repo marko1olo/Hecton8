@@ -1,5 +1,5 @@
 <SELF_AUDIT agent="SHINOBU_140" role="CORE_INTEGRATION_WARDEN" date="2026-06-12" taskCount="20">
-  <Hygiene totalCritical="776" totalWarnings="44" scannerCount="14" regressionCritical="2" />
+  <Hygiene totalCritical="792" totalWarnings="42" scannerCount="14" regressionCritical="2" />
   <TaskReconciliation>
     <Task id="01" criticalDebt="77" warningDebt="0">Task 01 description</Task>
     <Task id="02" criticalDebt="0" warningDebt="0">Task 02 description</Task>
