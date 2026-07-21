@@ -783,7 +783,6 @@ namespace VLB
             if (serializedVersion == -1) return;            // freshly new spawned entity: nothing to do
             if (serializedVersion == newVersion) return;    // same version: nothing to do
 
-            // TODO
         }
 
 #if UNITY_EDITOR && DEBUG_SHOW_APEX
