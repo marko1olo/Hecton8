@@ -16,6 +16,9 @@ namespace Hecton8.Editor
     public static class ConstructionBootstrapAuthoring
     {
         private static readonly List<Renderer> s_RendererCache = new List<Renderer>(32);
+        private static GameObject s_StagingRoot;
+        private static GameObject s_TrialRangeRoot;
+
         private const string DataFolder = "Assets/_Project/Data/Construction";
         private const string MaterialFolder = "Assets/_Project/Art/Materials/Construction";
         private const string FinalPrefabFolder = "Assets/_Project/Prefabs/Construction/Final";
@@ -331,20 +334,36 @@ namespace Hecton8.Editor
                 return;
             }
 
-            GameObject stagingRoot = GameObject.Find("Tool_Staging");
+            if (s_StagingRoot == null)
+            {
+                s_StagingRoot = GameObject.Find("Tool_Staging");
+            }
+
+            GameObject stagingRoot = s_StagingRoot;
             if (stagingRoot == null)
             {
                 stagingRoot = new GameObject("Tool_Staging");
                 SceneManager.MoveGameObjectToScene(stagingRoot, activeScene);
+                s_StagingRoot = stagingRoot;
             }
 
-            Transform rangeRoot = FindChild(stagingRoot.transform, "Tool_TrialRange");
+            Transform rangeRoot = null;
+            if (s_TrialRangeRoot != null)
+            {
+                rangeRoot = s_TrialRangeRoot.transform;
+            }
+            else
+            {
+                rangeRoot = FindChild(stagingRoot.transform, "Tool_TrialRange");
+            }
+
             if (rangeRoot == null)
             {
                 GameObject rangeRootObject = new GameObject("Tool_TrialRange");
                 rangeRoot = rangeRootObject.transform;
                 rangeRoot.SetParent(stagingRoot.transform, false);
             }
+            s_TrialRangeRoot = rangeRoot.gameObject;
 
             ClearChildren(rangeRoot);
             rangeRoot.localPosition = new Vector3(10f, 0f, 18f);
@@ -539,7 +558,11 @@ namespace Hecton8.Editor
             int errorCount = 0;
             int warningCount = 0;
 
-            GameObject root = GameObject.Find("Tool_TrialRange");
+            if (s_TrialRangeRoot == null)
+            {
+                s_TrialRangeRoot = GameObject.Find("Tool_TrialRange");
+            }
+            GameObject root = s_TrialRangeRoot;
             if (root == null)
             {
                 Debug.LogError("[ToolTrialRangeValidation] Missing Tool_TrialRange root.");
