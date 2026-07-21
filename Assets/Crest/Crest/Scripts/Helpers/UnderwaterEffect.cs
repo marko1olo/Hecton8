@@ -6,7 +6,6 @@
 // with ExecuteAlways as it might be re-introduced if a fix is found. It is very likely the underwater post-processing
 // branch will arrive before then though.
 
-// TODO - this likely will need more work to disable itself if URP is compiled in but disabled
 #if CREST_URP
 
 using UnityEngine;
@@ -66,11 +65,22 @@ namespace Crest
 
         private void OnEnable()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                enabled = false;
+                return;
+            }
+
             EnsurePropertyWrapper();
         }
 
         private void Start()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                return;
+            }
+
             if (!TryGetComponent(out _rend))
             {
                 Debug.LogError($"Crest: No renderer attached to <i>{this}</i>. Please attach on or use the prefab.");
@@ -155,6 +165,11 @@ namespace Crest
 
         private void LateUpdate()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                return;
+            }
+
             if (OceanRenderer.Instance == null || _rend == null || !ShowEffect())
             {
                 if (_rend != null)
