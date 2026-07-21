@@ -335,7 +335,26 @@ namespace Hecton8.Editor
 
             BuildFanBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, broadleafKelp, paddlefanKelp);
 
-            BuildMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed);
+            MantleBladeParameters mantleParams = new MantleBladeParameters
+            {
+                buffers = buffers,
+                spec = spec,
+                scale = scale,
+                lod = lod,
+                bladeIndex = bladeIndex,
+                normalized = normalized,
+                primaryAngleOffset = primaryAngleOffset,
+                baseOffset = baseOffset,
+                clusterYawOffsetDegrees = clusterYawOffsetDegrees,
+                width = width,
+                length = length,
+                twist = twist,
+                sideCurve = sideCurve,
+                serration = serration,
+                bladeSegments = bladeSegments,
+                paddleLobed = paddleLobed
+            };
+            BuildMantleBlade(in mantleParams);
 
             BuildBackingBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, sailKelp);
 
@@ -705,54 +724,74 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildMantleBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed)
+                private struct MantleBladeParameters
         {
-            if (spec.GrowthStyle == GrowthStyle.CrownCanopy
-                && paddleLobed
-                && lod == 0
-                && normalized > 0.24f
-                && normalized < 0.9f
-                && (bladeIndex % 2 == 1))
+            public MeshBuffers buffers;
+            public VariantSpec spec;
+            public Vector3 scale;
+            public int lod;
+            public int bladeIndex;
+            public float normalized;
+            public float primaryAngleOffset;
+            public Vector3 baseOffset;
+            public float clusterYawOffsetDegrees;
+            public float width;
+            public float length;
+            public float twist;
+            public float sideCurve;
+            public float serration;
+            public int bladeSegments;
+            public bool paddleLobed;
+        }
+
+        private static void BuildMantleBlade(in MantleBladeParameters p)
+        {
+            if (p.spec.GrowthStyle == GrowthStyle.CrownCanopy
+                && p.paddleLobed
+                && p.lod == 0
+                && p.normalized > 0.24f
+                && p.normalized < 0.9f
+                && (p.bladeIndex % 2 == 1))
             {
-                float mantleNormalized = Mathf.Clamp01(normalized - 0.04f);
-                float mantleSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 18f, mantleNormalized);
-                BladeSocket mantleSocket = EvaluateBladeSocket(spec, scale, mantleNormalized, mantleSweep, baseOffset, clusterYawOffsetDegrees);
+                float mantleNormalized = Mathf.Clamp01(p.normalized - 0.04f);
+                float mantleSweep = p.primaryAngleOffset + (((p.bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(8f, 18f, mantleNormalized);
+                BladeSocket mantleSocket = EvaluateBladeSocket(p.spec, p.scale, mantleNormalized, mantleSweep, p.baseOffset, p.clusterYawOffsetDegrees);
                 Vector3 mantleLateral = mantleSocket.WidthAxis;
                 Vector3 mantleForward = mantleSocket.ForwardAxis;
                 Vector3 mantleUp = mantleSocket.GrowthAxis;
                 Vector3 mantleStemBase = mantleSocket.StemBase;
                 Vector3 mantleAnchor = mantleSocket.Anchor;
-                float mantleWidth = width * Mathf.Lerp(0.42f, 0.62f, 1f - mantleNormalized * 0.18f);
-                float mantleLength = length * Mathf.Lerp(0.5f, 0.7f, 1f - mantleNormalized * 0.12f);
-                float mantleTwist = twist * 0.58f + Mathf.Lerp(-6f, 8f, mantleNormalized);
-                float mantleCurve = sideCurve * 0.34f + Mathf.Lerp(-7f, 7f, mantleNormalized);
+                float mantleWidth = p.width * Mathf.Lerp(0.42f, 0.62f, 1f - mantleNormalized * 0.18f);
+                float mantleLength = p.length * Mathf.Lerp(0.5f, 0.7f, 1f - mantleNormalized * 0.12f);
+                float mantleTwist = p.twist * 0.58f + Mathf.Lerp(-6f, 8f, mantleNormalized);
+                float mantleCurve = p.sideCurve * 0.34f + Mathf.Lerp(-7f, 7f, mantleNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    p.buffers,
                     mantleStemBase,
-                    mantleAnchor + mantleUp * (scale.y * 0.022f) + mantleForward * (mantleLength * 0.026f),
+                    mantleAnchor + mantleUp * (p.scale.y * 0.022f) + mantleForward * (mantleLength * 0.026f),
                     mantleSocket.StipeTangentAxis,
                     mantleForward,
-                    Mathf.Max(scale.x * 0.0068f, (mantleAnchor - mantleStemBase).magnitude * 0.15f),
-                    scale.x * 0.0059f,
+                    Mathf.Max(p.scale.x * 0.0068f, (mantleAnchor - mantleStemBase).magnitude * 0.15f),
+                    p.scale.x * 0.0059f,
                     1,
-                    new Color32(spec.TintByte, 178, 62, 255));
+                    new Color32(p.spec.TintByte, 178, 62, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    p.buffers,
+                    p.spec,
                     mantleAnchor,
                     mantleLateral,
                     mantleUp,
                     mantleWidth,
                     mantleLength,
                     mantleTwist,
-                    Mathf.Max(2, bladeSegments - 3),
+                    Mathf.Max(2, p.bladeSegments - 3),
                     mantleCurve,
-                    serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
+                    p.serration * 0.62f,
+                    new Color32((byte)Mathf.Clamp(p.spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
                     BladeProfile.BroadUndulate,
                     mantleForward,
-                    lod);
+                    p.lod);
             }
         }
 
