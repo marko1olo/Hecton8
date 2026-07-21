@@ -333,7 +333,7 @@ namespace Hecton8.Editor
 
             BuildSailBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, foldedGiant, sailKelp);
 
-            BuildFanBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, broadleafKelp, paddlefanKelp);
+            BuildFanBlade(new FanBladeParameters(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed, broadleafKelp, paddlefanKelp));
 
             BuildMantleBlade(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments, paddleLobed);
 
@@ -655,53 +655,98 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildFanBlade(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool broadleafKelp, bool paddlefanKelp)
+
+        private readonly struct FanBladeParameters
         {
-            if (paddleLobed
-                && lod == 0
-                && normalized > (broadleafKelp ? 0.24f : spec.ClusterCount > 1 ? 0.42f : 0.38f)
-                && normalized < (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.8f)
-                && (bladeIndex % (broadleafKelp ? 2 : paddlefanKelp ? 2 : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 0))
+            public readonly MeshBuffers Buffers;
+            public readonly VariantSpec Spec;
+            public readonly Vector3 Scale;
+            public readonly int Lod;
+            public readonly int BladeIndex;
+            public readonly float Normalized;
+            public readonly float PrimaryAngleOffset;
+            public readonly Vector3 BaseOffset;
+            public readonly float ClusterYawOffsetDegrees;
+            public readonly float Width;
+            public readonly float Length;
+            public readonly float Twist;
+            public readonly float SideCurve;
+            public readonly float Serration;
+            public readonly int BladeSegments;
+            public readonly bool PaddleLobed;
+            public readonly bool BroadleafKelp;
+            public readonly bool PaddlefanKelp;
+
+            public FanBladeParameters(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments, bool paddleLobed, bool broadleafKelp, bool paddlefanKelp)
             {
-                float fanNormalized = Mathf.Clamp01(normalized - 0.05f);
-                float fanSweep = primaryAngleOffset + (((bladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(broadleafKelp ? 10f : paddlefanKelp ? 8f : 4f, broadleafKelp ? 26f : paddlefanKelp ? 22f : 11f, fanNormalized);
-                BladeSocket fanSocket = EvaluateBladeSocket(spec, scale, fanNormalized, fanSweep, baseOffset, clusterYawOffsetDegrees);
+                Buffers = buffers;
+                Spec = spec;
+                Scale = scale;
+                Lod = lod;
+                BladeIndex = bladeIndex;
+                Normalized = normalized;
+                PrimaryAngleOffset = primaryAngleOffset;
+                BaseOffset = baseOffset;
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees;
+                Width = width;
+                Length = length;
+                Twist = twist;
+                SideCurve = sideCurve;
+                Serration = serration;
+                BladeSegments = bladeSegments;
+                PaddleLobed = paddleLobed;
+                BroadleafKelp = broadleafKelp;
+                PaddlefanKelp = paddlefanKelp;
+            }
+        }
+
+        private static void BuildFanBlade(in FanBladeParameters p)
+        {
+            if (p.PaddleLobed
+                && p.Lod == 0
+                && p.Normalized > (p.BroadleafKelp ? 0.24f : p.Spec.ClusterCount > 1 ? 0.42f : 0.38f)
+                && p.Normalized < (p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.86f : 0.8f)
+                && (p.BladeIndex % (p.BroadleafKelp ? 2 : p.PaddlefanKelp ? 2 : p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4) == 0))
+            {
+                float fanNormalized = Mathf.Clamp01(p.Normalized - 0.05f);
+                float fanSweep = p.PrimaryAngleOffset + (((p.BladeIndex & 2) == 0) ? -1f : 1f) * Mathf.Lerp(p.BroadleafKelp ? 10f : p.PaddlefanKelp ? 8f : 4f, p.BroadleafKelp ? 26f : p.PaddlefanKelp ? 22f : 11f, fanNormalized);
+                BladeSocket fanSocket = EvaluateBladeSocket(p.Spec, p.Scale, fanNormalized, fanSweep, p.BaseOffset, p.ClusterYawOffsetDegrees);
                 Vector3 fanLateral = fanSocket.WidthAxis;
                 Vector3 fanForward = fanSocket.ForwardAxis;
                 Vector3 fanUp = fanSocket.GrowthAxis;
                 Vector3 fanStemBase = fanSocket.StemBase;
                 Vector3 fanAnchor = fanSocket.Anchor;
-                float fanWidth = width * Mathf.Lerp(broadleafKelp ? 0.58f : paddlefanKelp ? 0.54f : 0.46f, broadleafKelp ? 0.78f : paddlefanKelp ? 0.82f : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.68f : 0.6f, 1f - fanNormalized * 0.18f);
-                float fanLength = length * Mathf.Lerp(broadleafKelp ? 0.56f : paddlefanKelp ? 0.52f : 0.46f, broadleafKelp ? 0.82f : paddlefanKelp ? 0.8f : spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.72f : 0.62f, 1f - fanNormalized * 0.12f);
-                float fanTwist = twist * (broadleafKelp ? 0.74f : paddlefanKelp ? 0.7f : 0.62f) + Mathf.Lerp(broadleafKelp ? -8f : paddlefanKelp ? -6f : -3f, broadleafKelp ? 10f : paddlefanKelp ? 12f : 6f, fanNormalized);
-                float fanCurve = sideCurve * (broadleafKelp ? 0.46f : paddlefanKelp ? 0.4f : 0.3f) + Mathf.Lerp(broadleafKelp ? -10f : paddlefanKelp ? -12f : -5f, broadleafKelp ? 10f : paddlefanKelp ? 12f : 5f, fanNormalized);
+                float fanWidth = p.Width * Mathf.Lerp(p.BroadleafKelp ? 0.58f : p.PaddlefanKelp ? 0.54f : 0.46f, p.BroadleafKelp ? 0.78f : p.PaddlefanKelp ? 0.82f : p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.68f : 0.6f, 1f - fanNormalized * 0.18f);
+                float fanLength = p.Length * Mathf.Lerp(p.BroadleafKelp ? 0.56f : p.PaddlefanKelp ? 0.52f : 0.46f, p.BroadleafKelp ? 0.82f : p.PaddlefanKelp ? 0.8f : p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 0.72f : 0.62f, 1f - fanNormalized * 0.12f);
+                float fanTwist = p.Twist * (p.BroadleafKelp ? 0.74f : p.PaddlefanKelp ? 0.7f : 0.62f) + Mathf.Lerp(p.BroadleafKelp ? -8f : p.PaddlefanKelp ? -6f : -3f, p.BroadleafKelp ? 10f : p.PaddlefanKelp ? 12f : 6f, fanNormalized);
+                float fanCurve = p.SideCurve * (p.BroadleafKelp ? 0.46f : p.PaddlefanKelp ? 0.4f : 0.3f) + Mathf.Lerp(p.BroadleafKelp ? -10f : p.PaddlefanKelp ? -12f : -5f, p.BroadleafKelp ? 10f : p.PaddlefanKelp ? 12f : 5f, fanNormalized);
 
                 AddBladeStem(
-                    buffers,
+                    p.Buffers,
                     fanStemBase,
-                    fanAnchor + fanUp * (scale.y * 0.023f) + fanForward * (fanLength * 0.028f),
+                    fanAnchor + fanUp * (p.Scale.y * 0.023f) + fanForward * (fanLength * 0.028f),
                     fanSocket.StipeTangentAxis,
                     fanForward,
-                    Mathf.Max(scale.x * 0.0068f, (fanAnchor - fanStemBase).magnitude * 0.15f),
-                    scale.x * 0.0061f,
+                    Mathf.Max(p.Scale.x * 0.0068f, (fanAnchor - fanStemBase).magnitude * 0.15f),
+                    p.Scale.x * 0.0061f,
                     1,
-                    new Color32(spec.TintByte, 178, 62, 255));
+                    new Color32(p.Spec.TintByte, 178, 62, 255));
                 AddBladeRibbon(
-                    buffers,
-                    spec,
+                    p.Buffers,
+                    p.Spec,
                     fanAnchor,
                     fanLateral,
                     fanUp,
                     fanWidth,
                     fanLength,
                     fanTwist,
-                    Mathf.Max(2, bladeSegments - (spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
+                    Mathf.Max(2, p.BladeSegments - (p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
                     fanCurve,
-                    serration * 0.74f,
-                    new Color32((byte)Mathf.Clamp(spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
+                    p.Serration * 0.74f,
+                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
                     BladeProfile.PaddleLobed,
                     fanForward,
-                    lod);
+                    p.Lod);
             }
         }
 
