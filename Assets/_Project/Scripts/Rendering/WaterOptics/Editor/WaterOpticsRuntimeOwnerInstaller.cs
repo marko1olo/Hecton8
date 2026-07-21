@@ -101,18 +101,14 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             if (!scene.IsValid() || !scene.isLoaded)
                 return false;
 
-            GameObject[] roots = scene.GetRootGameObjects();
-            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            WaterOpticsRuntime[] runtimes = UnityEngine.Object.FindObjectsByType<WaterOpticsRuntime>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (int i = 0; i < runtimes.Length; i++)
             {
-                if (roots[rootIndex].TryGetComponent(out runtime))
+                if (runtimes[i].gameObject.scene == scene)
+                {
+                    runtime = runtimes[i];
                     return true;
-            }
-
-            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
-            {
-                runtime = roots[rootIndex].GetComponentInChildren<WaterOpticsRuntime>(true);
-                if (runtime != null)
-                    return true;
+                }
             }
 
             return false;
