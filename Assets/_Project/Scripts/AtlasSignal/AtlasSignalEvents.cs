@@ -354,12 +354,6 @@ namespace Hecton8.AtlasSignal
             });
         }
 
-        [Obsolete("Use TryRaiseStrengthChanged(float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseStrengthChanged(float strength)
-        {
-            TryRaiseStrengthChanged(strength);
-        }
-
         public static bool TryRaiseStrengthChanged(float strength)
         {
             if (!math.isfinite(strength))
