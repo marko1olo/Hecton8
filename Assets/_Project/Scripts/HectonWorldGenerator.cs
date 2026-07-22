@@ -981,7 +981,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     /// </summary>
     public void LateFrameTick()
     {
-        if (!_streaming)
+        if (!IsInitialized)
             return;
 
         ProcessPendingChunks();
