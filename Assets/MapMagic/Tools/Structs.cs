@@ -836,7 +836,7 @@ namespace Den.Tools
 
 				return new CoordRect (minX, minZ, maxX-minX, maxZ-minZ);
 			}
-			//public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center-range, center+range), cellRes); } //TODO: test, might be broken when cellSize = 1
+			public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center.x - range, center.z - range, range * 2, range * 2), cellRes); }
 
 			[Obsolete]
 			public static CoordRect PickIntersectingCellsByPos (float rectMinX, float rectMinZ, float rectMaxX, float rectMaxZ, float cellSize)
