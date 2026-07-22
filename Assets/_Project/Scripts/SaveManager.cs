@@ -8389,63 +8389,53 @@ namespace Hecton8.SaveSystem
             return BuildSaveSlotInfoInternal(slotName);
         }
 
-        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        private struct SaveSlotInfoBuilderContext
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-                return null;
+            public SaveMetadata Metadata;
+            public bool HasPrimaryMetadata;
+            public bool HasBackupMetadata;
+            public bool MetadataRecoveredFromBackup;
+            public bool MetadataSynthesized;
+            public bool MetadataCorrupted;
+            public long LastWriteTicksUtc;
+            public long PrimaryBytes;
+            public long BackupBytes;
+        }
 
-            int backupRetention = GetBackupRetentionCountStatic(slotName);
-            string primarySavePath = GetPrimarySaveFilePath(slotName);
-
-            bool hasPrimarySave = FileExists(primarySavePath);
-            bool hasPrimaryMetadata = false;
-            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
-            bool hasBackupSave = false;
-            bool hasBackupMetadata = false;
-
+        private static bool HasAnyBackupSave(string slotName, int backupRetention)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
-                if (!hasBackupSave && FileExists(GetBackupSaveFilePath(slotName, generation)))
+                if (FileExists(GetBackupSaveFilePath(slotName, generation)))
                 {
-                    hasBackupSave = true;
-                    break;
+                    return true;
                 }
             }
+            return false;
+        }
 
-            if (!hasPrimarySave && !hasBackupSave)
-                return null;
-
-            SaveMetadata metadata = null;
-            bool metadataRecoveredFromBackup = false;
-            bool metadataSynthesized = false;
-            bool metadataCorrupted = false;
-
-            long lastWriteTicksUtc = 0L;
-            long primaryBytes = 0L;
-            long backupBytes = 0L;
-
-            if (hasPrimarySave)
+        private static void ProcessPrimarySaveInfo(string slotName, string primarySavePath, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (TryReadCandidateMetadata(
+                slotName,
+                SaveLoadCandidate.Primary(),
+                out SaveMetadata primaryMetadata,
+                out _, out _, out _))
             {
-                if (TryReadCandidateMetadata(
-                    slotName,
-                    SaveLoadCandidate.Primary(),
-                    out SaveMetadata primaryMetadata,
-                    out _,
-                    out _,
-                    out _))
-                {
-                    metadata = primaryMetadata;
-                    hasPrimaryMetadata = primaryMetadata != null;
-                }
-                else
-                {
-                    metadataCorrupted = true;
-                }
-
-                primaryBytes = GetPersistentFileSize(primarySavePath);
-                UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
+                ctx.Metadata = primaryMetadata;
+                ctx.HasPrimaryMetadata = primaryMetadata != null;
+            }
+            else
+            {
+                ctx.MetadataCorrupted = true;
             }
 
+            ctx.PrimaryBytes = GetPersistentFileSize(primarySavePath);
+            UpdateLastWrite(primarySavePath, ref ctx.LastWriteTicksUtc);
+        }
+
+        private static void ProcessBackupSaves(string slotName, int backupRetention, bool hasPrimarySave, ref SaveSlotInfoBuilderContext ctx)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
                 string backupSavePath = GetBackupSaveFilePath(slotName, generation);
@@ -8456,90 +8446,102 @@ namespace Hecton8.SaveSystem
                     slotName,
                     SaveLoadCandidate.Backup(generation),
                     out SaveMetadata backupMetadata,
-                    out _,
-                    out _,
-                    out _))
+                    out _, out _, out _))
                 {
-                    hasBackupMetadata = backupMetadata != null;
-                    if (metadata == null && backupMetadata != null)
+                    ctx.HasBackupMetadata = backupMetadata != null;
+                    if (ctx.Metadata == null && backupMetadata != null)
                     {
-                        metadata = backupMetadata;
-                        metadataRecoveredFromBackup = hasPrimarySave && !hasPrimaryMetadata;
+                        ctx.Metadata = backupMetadata;
+                        ctx.MetadataRecoveredFromBackup = hasPrimarySave && !ctx.HasPrimaryMetadata;
                     }
                 }
                 else
                 {
-                    metadataCorrupted = true;
+                    ctx.MetadataCorrupted = true;
                 }
+
+                ctx.BackupBytes += GetPersistentFileSize(backupSavePath);
+                UpdateLastWrite(backupSavePath, ref ctx.LastWriteTicksUtc);
+            }
+        }
+
+        private static SaveSlotIntegrityState DetermineIntegrityState(bool hasPrimarySave, bool hasBackupSave, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (ctx.MetadataCorrupted && ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.HealthyWithBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata)
+                return SaveSlotIntegrityState.Healthy;
+
+            if (!hasPrimarySave && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.BackupOnly;
+
+            if (ctx.MetadataCorrupted && !ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.CorruptedMetadata;
+
+            if (ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.MetadataSynthesized;
+
+            return SaveSlotIntegrityState.MissingMetadata;
+        }
+
+        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+                return null;
+
+            int backupRetention = GetBackupRetentionCountStatic(slotName);
+            string primarySavePath = GetPrimarySaveFilePath(slotName);
+
+            bool hasPrimarySave = FileExists(primarySavePath);
+            bool hasBackupSave = HasAnyBackupSave(slotName, backupRetention);
+
+            if (!hasPrimarySave && !hasBackupSave)
+                return null;
+
+            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
+
+            SaveSlotInfoBuilderContext ctx = new SaveSlotInfoBuilderContext();
+
+            if (hasPrimarySave)
+            {
+                ProcessPrimarySaveInfo(slotName, primarySavePath, ref ctx);
             }
 
-            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref lastWriteTicksUtc);
-            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref lastWriteTicksUtc);
+            ProcessBackupSaves(slotName, backupRetention, hasPrimarySave, ref ctx);
 
-            for (int generation = 1; generation <= backupRetention; generation++)
-            {
-                string backupSavePath = GetBackupSaveFilePath(slotName, generation);
-                backupBytes += GetPersistentFileSize(backupSavePath);
-                UpdateLastWrite(backupSavePath, ref lastWriteTicksUtc);
-            }
+            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref ctx.LastWriteTicksUtc);
+            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref ctx.LastWriteTicksUtc);
 
-            if (metadata == null)
+            if (ctx.Metadata == null)
             {
-                metadata = SaveMetadata.CreateFallback(slotName, lastWriteTicksUtc);
-                metadataSynthesized = true;
+                ctx.Metadata = SaveMetadata.CreateFallback(slotName, ctx.LastWriteTicksUtc);
+                ctx.MetadataSynthesized = true;
             }
 
-            SaveSlotIntegrityState integrityState;
-            if (metadataCorrupted && metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.HealthyWithBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.Healthy;
-            }
-            else if (!hasPrimarySave && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.BackupOnly;
-            }
-            else if (metadataCorrupted && !metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.CorruptedMetadata;
-            }
-            else if (metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataSynthesized;
-            }
-            else
-            {
-                integrityState = SaveSlotIntegrityState.MissingMetadata;
-            }
-
-            metadata.SlotName = slotName;
+            ctx.Metadata.SlotName = slotName;
 
             return new SaveSlotInfo
             {
                 SlotName = slotName,
-                Metadata = metadata,
-                IntegrityState = integrityState,
+                Metadata = ctx.Metadata,
+                IntegrityState = DetermineIntegrityState(hasPrimarySave, hasBackupSave, ref ctx),
                 HasPrimarySave = hasPrimarySave,
                 HasBackupSave = hasBackupSave,
-                HasPrimaryMetadata = hasPrimaryMetadata,
-                HasBackupMetadata = hasBackupMetadata,
+                HasPrimaryMetadata = ctx.HasPrimaryMetadata,
+                HasBackupMetadata = ctx.HasBackupMetadata,
                 HasThumbnail = hasThumbnail,
-                MetadataRecoveredFromBackup = metadataRecoveredFromBackup,
-                MetadataSynthesized = metadataSynthesized,
-                LastWriteTicksUtc = lastWriteTicksUtc,
-                PrimarySaveBytes = primaryBytes,
-                BackupSaveBytes = backupBytes
+                MetadataRecoveredFromBackup = ctx.MetadataRecoveredFromBackup,
+                MetadataSynthesized = ctx.MetadataSynthesized,
+                LastWriteTicksUtc = ctx.LastWriteTicksUtc,
+                PrimarySaveBytes = ctx.PrimaryBytes,
+                BackupSaveBytes = ctx.BackupBytes
             };
         }
 
