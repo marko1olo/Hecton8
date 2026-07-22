@@ -81,7 +81,7 @@ namespace MapMagic.Locks
 		}
 
 
-		public void ApplyHeightDelta (Matrix src, Matrix dst) { }
+		public void ApplyHeightDelta (Matrix src, Matrix dst, float terrainHeight) { }
 
 
 		public void ResizeFrom (ILockData otherData)
