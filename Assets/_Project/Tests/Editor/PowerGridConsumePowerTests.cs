@@ -19,6 +19,7 @@ public sealed class PowerGridConsumePowerTests
         _grid.Dispose();
     }
 
+
     [Test]
     public void ConsumePower_AmountZeroOrNegative_DoesNotChangeState()
     {
@@ -60,6 +61,55 @@ public sealed class PowerGridConsumePowerTests
         AssertState(_grid, totalGeneration: 80f, balance: -20f, supplyRatio: 0.8f, hasPowerDeficit: true, brownoutTier: LogisticsBrownoutTier.AmbientLightsOnly, isDirty: true);
     }
 
+    [Test]
+    public void ConsumePower_TotalConsumptionZero_SetsSupplyRatioToOne()
+    {
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 0f, balance: 100f, supplyRatio: 0f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        _grid.ConsumePower(20f);
+        AssertState(_grid, totalGeneration: 80f, balance: 80f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: true);
+    }
+
+    [Test]
+    public void ConsumePower_DeficitTolerance_NoDeficitIfWithinTolerance()
+    {
+        // totalGeneration + 0.0001f >= totalConsumption
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 100.00005f, balance: 0f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        _grid.ConsumePower(0.00002f);
+        // Gen will be 99.99998f, + 0.0001f = 100.00008f > 100.00005f => No deficit
+        AssertState(_grid, totalGeneration: 99.99998f, balance: -0.00007000001f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: true);
+    }
+
+    [Test]
+    public void ConsumePower_SupplyRatioBelow10Percent_SetsEmergencyOnly()
+    {
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 100f, balance: 0f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        // supplyRatio < 0.10f
+        _grid.ConsumePower(95f);
+        AssertState(_grid, totalGeneration: 5f, balance: -95f, supplyRatio: 0.05f, hasPowerDeficit: true, brownoutTier: LogisticsBrownoutTier.EmergencyOnly, isDirty: true);
+    }
+
+    [Test]
+    public void ConsumePower_SupplyRatioBelow40Percent_SetsEssentialOnly()
+    {
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 100f, balance: 0f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        // 0.10f <= supplyRatio < 0.40f
+        _grid.ConsumePower(80f);
+        AssertState(_grid, totalGeneration: 20f, balance: -80f, supplyRatio: 0.20f, hasPowerDeficit: true, brownoutTier: LogisticsBrownoutTier.EssentialOnly, isDirty: true);
+    }
+
+    [Test]
+    public void ConsumePower_SupplyRatioAt85Percent_SetsNone()
+    {
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 100f, balance: 0f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        _grid.ConsumePower(15f);
+        AssertState(_grid, totalGeneration: 85f, balance: -15f, supplyRatio: 0.85f, hasPowerDeficit: true, brownoutTier: LogisticsBrownoutTier.None, isDirty: true);
+    }
+
     private void SetGridState(PowerGrid grid, float totalGeneration, float totalConsumption, float balance, float supplyRatio, bool hasPowerDeficit, LogisticsBrownoutTier brownoutTier, bool isDirty)
     {
         typeof(PowerGrid).GetField("_totalGeneration", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(grid, totalGeneration);
@@ -73,11 +123,11 @@ public sealed class PowerGridConsumePowerTests
 
     private void AssertState(PowerGrid grid, float totalGeneration, float balance, float supplyRatio, bool hasPowerDeficit, LogisticsBrownoutTier brownoutTier, bool isDirty)
     {
-        Assert.AreEqual(totalGeneration, grid.TotalGeneration, 0.0001f);
-        Assert.AreEqual(balance, grid.Balance, 0.0001f);
-        Assert.AreEqual(supplyRatio, grid.SupplyRatio, 0.0001f);
-        Assert.AreEqual(hasPowerDeficit, grid.HasPowerDeficit);
-        Assert.AreEqual(brownoutTier, grid.BrownoutTier);
-        Assert.AreEqual(isDirty, grid.IsDirty);
+        Assert.That(grid.TotalGeneration, Is.EqualTo(totalGeneration).Within(0.0001f));
+        Assert.That(grid.Balance, Is.EqualTo(balance).Within(0.0001f));
+        Assert.That(grid.SupplyRatio, Is.EqualTo(supplyRatio).Within(0.0001f));
+        Assert.That(grid.HasPowerDeficit, Is.EqualTo(hasPowerDeficit));
+        Assert.That(grid.BrownoutTier, Is.EqualTo(brownoutTier));
+        Assert.That(grid.IsDirty, Is.EqualTo(isDirty));
     }
 }
