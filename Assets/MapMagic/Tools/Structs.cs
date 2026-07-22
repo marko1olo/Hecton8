@@ -231,7 +231,6 @@ namespace Den.Tools
 			return distX+distZ;
 		}
 
-		//TODO: test
 		public static int DistanceAxisAligned (Coord c, CoordRect rect) //NOT manhattan dist. offset and size are instead of UnityEngine.Rect
 		{
 			//finding x distance
