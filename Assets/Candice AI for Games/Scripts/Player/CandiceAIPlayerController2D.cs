@@ -20,12 +20,14 @@ public class CandiceAIPlayerController2D : MonoBehaviour
     private bool grounded = false;
     #pragma warning restore CS0414
     private bool rolling = false;
+    private SpriteRenderer spriteRenderer;
 
     // Start is called before the first frame update
     void Start()
     {
         if (rb == null)
             rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -37,13 +39,13 @@ public class CandiceAIPlayerController2D : MonoBehaviour
         // Swap direction of sprite depending on walk direction
         //if (inputX > 0)
         //{
-        //    GetComponent<SpriteRenderer>().flipX = false;
+        //    spriteRenderer.flipX = false;
         //    direction = 1;
         //}
 
         //else if (inputX < 0)
         //{
-        //    GetComponent<SpriteRenderer>().flipX = true;
+        //    spriteRenderer.flipX = true;
         //    direction = -1;
         //}
 
