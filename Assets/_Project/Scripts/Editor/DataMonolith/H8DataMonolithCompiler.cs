@@ -266,13 +266,15 @@ namespace Hecton8.Editor.Validation
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "python",
-                Arguments = QuoteArg(toolPath) + " --root " + QuoteArg(projectRoot),
                 WorkingDirectory = projectRoot,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
+            startInfo.ArgumentList.Add(toolPath);
+            startInfo.ArgumentList.Add("--root");
+            startInfo.ArgumentList.Add(projectRoot);
 
             using Process process = TryStartPythonProjectToolNoThrow(startInfo);
             if (process == null)
@@ -392,11 +394,6 @@ namespace Hecton8.Editor.Validation
             catch (Exception)
             {
             }
-        }
-
-        private static string QuoteArg(string value)
-        {
-            return "\"" + value.Replace("\"", "\\\"") + "\"";
         }
 
         private static DataSet BuildDataSetFromSources(LocalizationPool localizationPool, out int csvFileCount, out int jsonFileCount)

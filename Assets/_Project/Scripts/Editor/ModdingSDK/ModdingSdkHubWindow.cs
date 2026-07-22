@@ -216,13 +216,17 @@ namespace Hecton8.Editor.ModdingSDK
                 DiagnosticsProcessStartInfo startInfo = new DiagnosticsProcessStartInfo
                 {
                     FileName = ResolvePowerShellExecutable(),
-                    Arguments = "-NoProfile -ExecutionPolicy Bypass -File " + QuoteArgument(scriptPath),
                     WorkingDirectory = GetProjectRootPath(),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
+                startInfo.ArgumentList.Add("-NoProfile");
+                startInfo.ArgumentList.Add("-ExecutionPolicy");
+                startInfo.ArgumentList.Add("Bypass");
+                startInfo.ArgumentList.Add("-File");
+                startInfo.ArgumentList.Add(scriptPath);
 
                 DiagnosticsProcess process = new DiagnosticsProcess
                 {
@@ -1274,11 +1278,6 @@ namespace Hecton8.Editor.ModdingSDK
         private static string ResolvePowerShellExecutable()
         {
             return Application.platform == RuntimePlatform.WindowsEditor ? "powershell.exe" : "pwsh";
-        }
-
-        private static string QuoteArgument(string value)
-        {
-            return "\"" + value.Replace("\"", "\\\"") + "\"";
         }
     }
 }
