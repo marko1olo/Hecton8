@@ -312,12 +312,6 @@ namespace Hecton8.AtlasSignal
             return TryResolveDecodedMessage(messageHash, out messageId);
         }
 
-        [Obsolete("Use TryRaisePulse(float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePulse(float intensity)
-        {
-            TryRaisePulse(intensity);
-        }
-
         public static bool TryRaisePulse(float intensity)
         {
             if (!math.isfinite(intensity))
