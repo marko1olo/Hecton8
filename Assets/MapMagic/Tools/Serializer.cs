@@ -268,7 +268,7 @@ namespace Den.Tools
 		}
 
 
-		private static Object SerializeObject (object obj, Dictionary<object,Object> serialized, bool skipNoCopyAttribute=false, Action<object,Object> onAfterSerialize=null)
+		public static Object SerializeObject (object obj, Dictionary<object,Object> serialized, bool skipNoCopyAttribute=false, Action<object,Object> onAfterSerialize=null)
 		///If skipNotCopyAttribute will skip all fields marked with NoCopy attribute
 		{
 			//null
@@ -434,7 +434,7 @@ namespace Den.Tools
 		}
 
 
-		private static object DeserializeObject (int refId, Object[] serialized, object[] deserialized, object[] reuse = null, Action<Object> onBeforeDeserialize=null)
+		public static object DeserializeObject (int refId, Object[] serialized, object[] deserialized, object[] reuse = null, Action<Object> onBeforeDeserialize=null)
 		/// Loading object from serialized list.
 		/// Will try to get object from reuse at the same position first. Note that reuse exists before the serialization and deserialized objs have no fields loaded, but to the end deserialised and reuse members are equal.
 		{

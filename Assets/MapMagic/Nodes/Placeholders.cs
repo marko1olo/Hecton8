@@ -40,18 +40,49 @@ namespace MapMagic.Nodes
 			}
 		}
 
-		public abstract class GenericPlaceholder : Generator,  Serializer.ICustomSerialization
+		public abstract class GenericPlaceholder : Generator,  Serializer.ICustomSerialization, ISerializationCallbackReceiver
 		{
 			public string origType;
 
 			[NonSerialized] public string[] origFields = new string[0];
 			[NonSerialized] public Serializer.Value[] origValues = new Serializer.Value[0];
 			[NonSerialized] public UnityEngine.Object[] origUnityObjects = new UnityEngine.Object[0];
+			[NonSerialized] public object[] origObjects = new object[0];
 
-			//TODO: does not serialize layers or multi-inlet links
+			[NonSerialized] private Serializer.Object[] tempAllSerialized;
+			[NonSerialized] private object[] tempAllDeserialized;
+			[NonSerialized] private Serializer.Object tempSerObj;
 
 			public override void Generate (TileData data, StopToken stop) { }
 
+			public void OnBeforeSerialize () { }
+
+			public void OnAfterDeserialize ()
+			{
+				if (tempSerObj != null && tempAllSerialized != null && tempAllDeserialized != null)
+				{
+					for (int v=0; v<tempSerObj.values.Length; v++)
+					{
+						if (tempSerObj.values[v].t == 255) // reference
+						{
+							int refId = tempSerObj.values[v];
+							if (refId >= 0 && refId < tempAllSerialized.Length)
+							{
+								Serializer.Object fieldObj = tempAllSerialized[refId];
+								if (fieldObj != null && fieldObj.uniObj == null) // C# object
+								{
+									object val = Serializer.DeserializeObject(refId, tempAllSerialized, tempAllDeserialized);
+									origObjects[v] = val;
+								}
+							}
+						}
+					}
+
+					tempSerObj = null;
+					tempAllSerialized = null;
+					tempAllDeserialized = null;
+				}
+			}
 
 			public void PreprocessBeforeDeserialize (Serializer.Object serObj, Serializer.Object[] allSerialized, object[] allDeserialized) 
 			/// Loading placeholder
@@ -61,32 +92,48 @@ namespace MapMagic.Nodes
 
 				List<string> fieldsList = new List<string>();
 				List<Serializer.Value> valuesList = new List<Serializer.Value>();
-
 				List<UnityEngine.Object> unityObjectsList = new List<UnityEngine.Object>();
+				List<object> objectsList = new List<object>();
 
 				for (int v=0; v<serObj.values.Length; v++)
 				{
+					fieldsList.Add(serObj.fields[v]);
+					valuesList.Add(serObj.values[v]);
+
 					if (serObj.values[v].t != 255) //if not reference
 					{
-						fieldsList.Add(serObj.fields[v]);
-						valuesList.Add(serObj.values[v]);
 						unityObjectsList.Add(null);
+						objectsList.Add(null);
 					}
 					else if (serObj.values[v] >= 0 && serObj.values[v] < allSerialized.Length) //if not null
 					{
 						Serializer.Object fieldObj = allSerialized[serObj.values[v]];
 						if (fieldObj != null && fieldObj.uniObj != null)
 						{
-							fieldsList.Add(serObj.fields[v]);
-							valuesList.Add(serObj.values[v]);
 							unityObjectsList.Add(fieldObj.uniObj);
+							objectsList.Add(null); // It's a Unity object, not a C# object to be handled by origObjects
 						}
+						else
+						{
+							unityObjectsList.Add(null);
+							objectsList.Add(null); // C# object, will be populated in OnAfterDeserialize
+						}
+					}
+					else
+					{
+						unityObjectsList.Add(null);
+						objectsList.Add(null);
 					}
 				}
 
 				origFields = fieldsList.ToArray();
 				origValues = valuesList.ToArray();
 				origUnityObjects = unityObjectsList.ToArray();
+				origObjects = objectsList.ToArray();
+
+				this.tempSerObj = serObj;
+				this.tempAllSerialized = allSerialized;
+				this.tempAllDeserialized = allDeserialized;
 			}
 
 
@@ -100,7 +147,7 @@ namespace MapMagic.Nodes
 				ArrayTools.Append(ref serObj.values, origValues); 
 
 				int length = serObj.values.Length;
-				for (int i=0; i<origUnityObjects.Length; i++)
+				for (int i=0; i<origValues.Length; i++)
 				{
 					if (origUnityObjects[i] != null)
 					{
@@ -109,10 +156,11 @@ namespace MapMagic.Nodes
 							fieldSerObj = new Serializer.Object() { refId = allSerialized.Count, type = origUnityObjects[i].GetType().AssemblyQualifiedName, uniObj = origUnityObjects[i] };
 							allSerialized.Add(origUnityObjects[i], fieldSerObj);
 						}
-
-						// Update the reference id in the values array
-						// Since we appended origValues to serObj.values, we need to update the end portion.
-						// The offset for this value is length - origValues.Length + i.
+						serObj.values[length - origValues.Length + i] = fieldSerObj.refId;
+					}
+					else if (origObjects[i] != null)
+					{
+						Serializer.Object fieldSerObj = Serializer.SerializeObject(origObjects[i], allSerialized);
 						serObj.values[length - origValues.Length + i] = fieldSerObj.refId;
 					}
 				}
@@ -135,10 +183,56 @@ namespace MapMagic.Nodes
 		public class Placeholder : GenericPlaceholder { }
 
 
-		/*[GeneratorMenu (name = "Unknown", iconName="GeneratorIcons/Generator")]
-		public class MultiInletOutletPlaceholder : GenericPlaceholder, IMultiInlet, IMultiOutlet 
+		[GeneratorMenu (name = "Unknown", iconName="GeneratorIcons/Generator")]
+		public class MultiInletOutletPlaceholder : GenericPlaceholder, IMultiInlet, IMultiOutlet, IMultiLayer
 		{ 
-			
-		}*/
+			public IEnumerable<IInlet<object>> Inlets ()
+			{
+				for (int i=0; i<origObjects.Length; i++)
+				{
+					if (origObjects[i] is IInlet<object> inlet) yield return inlet;
+					else if (origObjects[i] is IEnumerable enumerable)
+					{
+						foreach (object obj in enumerable)
+							if (obj is IInlet<object> subInlet) yield return subInlet;
+					}
+				}
+			}
+
+			public IEnumerable<IOutlet<object>> Outlets ()
+			{
+				for (int i=0; i<origObjects.Length; i++)
+				{
+					if (origObjects[i] is IOutlet<object> outlet) yield return outlet;
+					else if (origObjects[i] is IEnumerable enumerable)
+					{
+						foreach (object obj in enumerable)
+							if (obj is IOutlet<object> subOutlet) yield return subOutlet;
+					}
+				}
+			}
+
+			public IList<IUnit> Layers
+			{
+				get
+				{
+					List<IUnit> layerList = new List<IUnit>();
+					for (int i=0; i<origObjects.Length; i++)
+					{
+						if (origObjects[i] is IUnit unit) layerList.Add(unit);
+						else if (origObjects[i] is IEnumerable enumerable)
+						{
+							foreach (object obj in enumerable)
+								if (obj is IUnit subUnit) layerList.Add(subUnit);
+						}
+					}
+					return layerList;
+				}
+				set { }
+			}
+
+			public bool Inversed => false;
+			public bool HideFirst => false;
+		}
 	}
 }

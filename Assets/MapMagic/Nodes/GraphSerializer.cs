@@ -151,7 +151,7 @@ namespace MapMagic.Nodes
 		private static void AfterSerialize (object obj, Serializer.Object serObj)
 		{
 			if (obj is Generator)
-				serObj.altType = typeof(Placeholders.InletOutletPlaceholder).AssemblyQualifiedName;
+				serObj.altType = typeof(Placeholders.MultiInletOutletPlaceholder).AssemblyQualifiedName;
 
 			//if (obj is Placeholders.Placeholder placeholder)
 			//{
