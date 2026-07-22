@@ -1,6 +1,6 @@
 namespace UnityEditor.ShaderGraph
 {
-    enum GenerationMode
+    public enum GenerationMode
     {
         Preview,
         ForReals,
