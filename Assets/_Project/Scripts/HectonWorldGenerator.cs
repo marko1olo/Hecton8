@@ -2557,14 +2557,19 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         return y;
     }
 
-    [ContextMenu("▶ Generate World Preview")]
+    public void Initialize()
+    {
+        EnsureLUTs();
+    }
+
+    [ContextMenu("⟳ Generate Preview")]
     public void GenerateWorldPreview()
     {
         if (Application.isPlaying)
             return;
 
-        ClearPreview();
-        EnsureLUTs();
+        ClearAll();
+        Initialize();
         bool ownsPreviewLuts = false;
         NativeArray<float> westLut;
         NativeArray<float> eastLut;
