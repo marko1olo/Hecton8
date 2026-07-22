@@ -231,12 +231,11 @@ namespace Den.Tools
 			return distX+distZ;
 		}
 
-		//TODO: test
 		public static int DistanceAxisAligned (Coord c, CoordRect rect) //NOT manhattan dist. offset and size are instead of UnityEngine.Rect
 		{
 			//finding x distance
 			int distPosX = rect.offset.x - c.x;
-			int distNegX = c.x - rect.offset.x - rect.size.x;
+			int distNegX = c.x - (rect.offset.x + rect.size.x - 1);
 			
 			int distX;
 			if (distPosX >= 0) distX = distPosX;
@@ -245,7 +244,7 @@ namespace Den.Tools
 
 			//finding z distance
 			int distPosZ = rect.offset.z - c.z;
-			int distNegZ = c.z - rect.offset.z - rect.size.z;
+			int distNegZ = c.z - (rect.offset.z + rect.size.z - 1);
 			
 			int distZ;
 			if (distPosZ >= 0) distZ = distPosZ;
