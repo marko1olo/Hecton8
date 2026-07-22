@@ -9,6 +9,7 @@ public class CandiceAIPlayerController2D : MonoBehaviour
 
     //player movement
     [SerializeField] private Rigidbody2D rb;
+    [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] float speed = 4.0f;    
     public float animSpeedControl = 1f; //animation speed control
     [SerializeField] float jumpForce = 7.5f;
@@ -26,6 +27,8 @@ public class CandiceAIPlayerController2D : MonoBehaviour
     {
         if (rb == null)
             rb = GetComponent<Rigidbody2D>();
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     // Update is called once per frame
@@ -37,13 +40,13 @@ public class CandiceAIPlayerController2D : MonoBehaviour
         // Swap direction of sprite depending on walk direction
         //if (inputX > 0)
         //{
-        //    GetComponent<SpriteRenderer>().flipX = false;
+        //    spriteRenderer.flipX = false;
         //    direction = 1;
         //}
 
         //else if (inputX < 0)
         //{
-        //    GetComponent<SpriteRenderer>().flipX = true;
+        //    spriteRenderer.flipX = true;
         //    direction = -1;
         //}
 
