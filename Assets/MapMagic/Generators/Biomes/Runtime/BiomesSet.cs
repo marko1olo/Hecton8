@@ -47,18 +47,9 @@ namespace MapMagic.Nodes.Biomes
 		public bool Inversed => true;
 		public bool HideFirst => true;
 
-		public IEnumerable<IInlet<object>> Inlets() 
-		{ 
-			foreach (BiomeLayer layer in layers)
-				yield return layer;
-			//TODO: return layers
-		}
+		public IEnumerable<IInlet<object>> Inlets() => layers;
 
-		public IEnumerable<IBiome> Biomes() 
-		{ 
-			foreach (BiomeLayer layer in layers)
-				yield return layer;
-		}
+		public IEnumerable<IBiome> Biomes() => layers;
 
 		public IEnumerable<(IInlet<MatrixWorld>,Graph,TileData)> InletsSubgraphsDatas(TileData data) 
 		/// Iterates in active generated layers (ones that have subgraph assigned and data generated) and returns their subgraph and data
