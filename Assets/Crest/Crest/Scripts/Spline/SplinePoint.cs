@@ -39,6 +39,7 @@ namespace Crest.Spline
     [AddComponentMenu(Internal.Constants.MENU_PREFIX_SPLINE + "Spline Point")]
     public class SplinePoint : CustomMonoBehaviour
     {
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_ChangeReceivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
         /// <summary>
         /// The version of this asset. Can be used to migrate across versions. This value should
         /// only be changed when the editor upgrades the version.
@@ -82,7 +83,8 @@ namespace Crest.Spline
                 return;
             }
 
-            foreach (var receiver in parent.GetComponents<IReceiveSplineChangeMessages>())
+            parent.GetComponents(s_ChangeReceivers);
+            foreach (var receiver in s_ChangeReceivers)
             {
                 receiver.OnSplineChange();
             }
@@ -114,6 +116,8 @@ namespace Crest.Spline
             Gizmos.DrawIcon(transform.position, iconName, true);
         }
 
+        static readonly System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages> s_GizmoReceivers = new System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages>();
+
         void OnDrawGizmosSelected()
         {
             // Reduces spam. May have edge cases where spline will not update but that is fine for now.
@@ -122,7 +126,8 @@ namespace Crest.Spline
                 return;
             }
 
-            foreach (var receiver in transform.parent.GetComponents<IReceiveSplinePointOnDrawGizmosSelectedMessages>())
+            transform.parent.GetComponents(s_GizmoReceivers);
+            foreach (var receiver in s_GizmoReceivers)
             {
                 receiver.OnSplinePointDrawGizmosSelected(this);
             }
@@ -150,6 +155,7 @@ namespace Crest.Spline
     [CustomEditor(typeof(SplinePoint))]
     public class SplinePointEditor : CustomBaseEditor
     {
+        static readonly System.Collections.Generic.List<ISplinePointCustomDataSetup> s_CustomDatas = new System.Collections.Generic.List<ISplinePointCustomDataSetup>();
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -165,8 +171,8 @@ namespace Crest.Spline
             }
 
             // For any components on spline that want custom data added to spline points, add them
-            var customDatas = parent.GetComponents<ISplinePointCustomDataSetup>();
-            foreach (var customData in customDatas)
+            parent.GetComponents(s_CustomDatas);
+            foreach (var customData in s_CustomDatas)
             {
                 // NOTE: This will not be registered with the undo/redo history, but with the way these are attached, it
                 // wouldn't make sense to register them. These data objects are harmless.
