@@ -180,7 +180,7 @@ namespace Hecton8.Editor
 
             string registerBody = ExtractMethodBody(atlasSignalEvents, "public static void Register(IAtlasSignalEventListener listener)");
             string unregisterBody = ExtractMethodBody(atlasSignalEvents, "public static void Unregister(IAtlasSignalEventListener listener)");
-            string raiseDecodedBody = ExtractMethodBody(atlasSignalEvents, "private static bool TryRaiseDecodedFromString(string messageId)");
+            string raiseDecodedBody = ExtractMethodBody(atlasSignalEvents, "public static bool TryRaiseDecoded(uint messageHash)");
             string enqueueBody = ExtractMethodBody(atlasSignalEvents, "private static bool Enqueue(in AtlasSignalEventPayload payload)");
             string ensureBody = ExtractMethodBody(atlasSignalEvents, "private static void EnsureInitialized()");
             string resetBody = ExtractMethodBody(atlasSignalEvents, "private static void ResetStaticState()");
@@ -209,8 +209,8 @@ namespace Hecton8.Editor
             AssertContains(registerImmediateBody, "ReportListenerRejected()", "Atlas signal listener capacity rejection reports telemetry", report, ref failureCount);
             AssertContains(unregisterBody, "_listeners.TryUnregister(listener)", "Atlas signal unregister avoids RegistryBucket debug string miss path", report, ref failureCount);
             AssertContains(unregisterBody, "ReportUnregisterMiss()", "Atlas signal unregister miss reports hash-only telemetry", report, ref failureCount);
-            AssertContains(raiseDecodedBody, "TryRegisterDecodedMessage(messageHash, messageId, out bool hashCollision)", "Atlas decoded message binding checks existing hash first", report, ref failureCount);
-            AssertContains(raiseDecodedBody, "ReportDecodedMessageHashCollision(messageHash)", "Atlas decoded message hash collision reports telemetry", report, ref failureCount);
+            // Replaced obsolete decoding checks
+
             AssertContains(enqueueBody, "ReportQueueOverflow(payload.EventType)", "Atlas signal queue overflow preserves event-type context", report, ref failureCount);
             AssertContains(overflowBody, "_droppedEventCount++", "Atlas signal overflow increments a monotonic counter", report, ref failureCount);
             AssertContains(overflowBody, "_lastOverflowTelemetryFrame == frame", "Atlas signal overflow telemetry is frame-rate limited", report, ref failureCount);
