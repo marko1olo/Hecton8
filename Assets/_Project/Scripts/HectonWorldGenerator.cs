@@ -958,6 +958,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     public void Tick(float deltaTime)
     {
+        if (!IsInitialized)
+            return;
+
+        UpdateStreaming(deltaTime);
+    }
+
+    private void UpdateStreaming(float deltaTime)
+    {
         using (_tickProfilerMarker.Auto())
         {
             if (!_streaming) return;
