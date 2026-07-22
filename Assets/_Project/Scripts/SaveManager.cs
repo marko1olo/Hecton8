@@ -4159,6 +4159,8 @@ namespace Hecton8.SaveSystem
                 throw firstException;
         }
 
+        internal static Action<Exception> s_TestDisposeNativeArrayBestEffortHook;
+
         private static void DisposeNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
             ref Exception firstException,
@@ -4168,6 +4170,10 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+                if (s_TestDisposeNativeArrayBestEffortHook != null)
+                {
+                    s_TestDisposeNativeArrayBestEffortHook(firstException);
+                }
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
