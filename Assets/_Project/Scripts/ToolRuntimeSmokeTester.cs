@@ -370,6 +370,12 @@ namespace Hecton8.Dev
 
         private bool RunToolInvocation(string toolName, PlayerTool liveTool)
         {
+            if (liveTool == null)
+            {
+                Hecton8.Core.H8Debug.LogError($"[ToolSmoke] EXCEPTION {toolName}: liveTool is null");
+                return false;
+            }
+
             try
             {
                 LogVerbose($"PRIMARY {toolName}");
