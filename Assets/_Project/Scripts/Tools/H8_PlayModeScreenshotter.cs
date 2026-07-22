@@ -25,9 +25,9 @@ namespace Hecton8.Tools
                 _searchTimer -= Time.unscaledDeltaTime;
                 if (_searchTimer <= 0f)
                 {
-                    player = GameObject.FindWithTag("Player");
-                    if (player == null) player = GameObject.Find("HectonPlayer");
-                    if (player == null) player = GameObject.Find("Player(Clone)");
+                    var motor = Hecton8.Core.GlobalRegistry.PlayerMotor;
+                    if (motor != null) player = motor.gameObject;
+                    if (player == null) player = GameObject.FindWithTag("Player");
                     if (player != null) _cachedPlayer = player;
 
                     // Only check every 1 second instead of every frame
