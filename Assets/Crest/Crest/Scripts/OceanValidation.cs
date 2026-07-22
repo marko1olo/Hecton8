@@ -404,9 +404,13 @@ namespace Crest
                                 if (GUILayout.Button(s_fixButtonContent, GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true)))
                                 {
                                     // Run fix function
-                                    var serializedObject = new SerializedObject(message._object);
+                                    SerializedObject serializedObject = null;
+                                    if (message._object != null)
+                                    {
+                                        serializedObject = new SerializedObject(message._object);
+                                    }
                                     message._action.Invoke(serializedObject);
-                                    if (serializedObject.ApplyModifiedProperties())
+                                    if (serializedObject != null && serializedObject.ApplyModifiedProperties())
                                     {
                                         // SerializedObject does this for us, but gives the history item a nicer label.
                                         Undo.RecordObject(message._object, s_fixButtonContent.tooltip);
