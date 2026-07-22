@@ -1165,7 +1165,9 @@ namespace MapMagic.Nodes.ObjectsGenerators
 						//growing tree
 						forest.SetHeight(x,z, ++age);
 
-						//killing the tree
+							int id = Noise.Pair(x, z);
+
+							//killing the tree
 						float curSurvivalRate = survivalRate;
 						if (soil != null) 
 						{ 
@@ -1173,15 +1175,14 @@ namespace MapMagic.Nodes.ObjectsGenerators
 							if (!soil.ContainsWorldValue(wpos.x, wpos.z)) curSurvivalRate = 0;
 							else curSurvivalRate *= soil.GetWorldValue(wpos.x, wpos.z); 
 						}
-						if (age > lifeAge || random.Random(x,z,iAge,0) > curSurvivalRate) 
+						if (age > lifeAge || random.Random(id,iAge,0) > curSurvivalRate)
 							forest.SetHeight(x,z, 0);
 
 						//breeding the tree
-						//TODO: use id random
-						if (age > reproductiveAge && random.Random(x,z,iAge,1) < fecundity)
+							if (age > reproductiveAge && random.Random(id,iAge,1) < fecundity)
 						{
-							float angleRad = random.Random(x,z,iAge,2) * 6.283f;
-							float dist = random.Random(x,z,iAge,3) * seedDist/forest.cellSize + 1;
+							float angleRad = random.Random(id,iAge,2) * 6.283f;
+							float dist = random.Random(id,iAge,3) * seedDist/forest.cellSize + 1;
 
 							int nx = (int)(x + Mathf.Sin(angleRad)*dist); 
 							int nz = (int)(z + Mathf.Cos(angleRad)*dist);
