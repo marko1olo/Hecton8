@@ -66,15 +66,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 			//interpolated if resolution doesn't match
 			else
 			{
-				Matrix tmpMatrix = new Matrix( new Coord(0,0), new Coord(splatsResolution,splatsResolution) );
+				Matrix tmpMatrix = new Matrix( new CoordRect(0, 0, splatsResolution, splatsResolution) );
 
 				for (int x=0; x<splatsResolution; x++)
 					for (int z=0; z<splatsResolution; z++)
 						tmpMatrix.array[z*splatsResolution + x] = splats3D[z,x, channel];
 				
-				Debug.Log("could not read heightmap - resolutions mismatch");
-
-				//TODO: interpolated
+				Den.Tools.Matrices.MatrixOps.Resize(tmpMatrix, matrix);
 			}
 		}
 	}*/
