@@ -49,14 +49,18 @@ namespace MapMagic.Nodes.MatrixGenerators
 			//simple case if resolution match
 			if (area.active.resolution == splatsResolution)
 			{
-				for (int x=0; x<splatsResolution; x++)
-					for (int z=0; z<splatsResolution; z++)
+				for (int x=0; x<matrix.rect.size.x; x++)
+					for (int z=0; z<matrix.rect.size.z; z++)
 					{
-						float val = splats3D[z,x, channel];
-						matrix.array[(z+margins)*matrix.rect.size.x + x+margins] = val; //do not use matrix[x,z] since x/z are 0-based
-					}
+						int ax = x - margins;
+						int az = z - margins;
 
-				//TODO: fill margins
+						if (ax<0) ax = 0; else if (ax>=splatsResolution) ax = splatsResolution-1;
+						if (az<0) az = 0; else if (az>=splatsResolution) az = splatsResolution-1;
+
+						float val = splats3D[az,ax, channel];
+						matrix.array[z*matrix.rect.size.x + x] = val; //do not use matrix[x,z] since x/z are 0-based
+					}
 			}
 		
 			//interpolated if resolution doesn't match
