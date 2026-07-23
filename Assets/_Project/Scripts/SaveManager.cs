@@ -442,6 +442,7 @@ namespace Hecton8.SaveSystem
 
         private static class StaticNativeBuffers
         {
+            internal static System.Action TestHook_DisposeThrow;
             private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
             public static NativeArray<byte> RawWriteBuffer;
@@ -521,6 +522,7 @@ namespace Hecton8.SaveSystem
 
             public static void Dispose()
             {
+                TestHook_DisposeThrow?.Invoke();
                 lock (SaveLoadCandidateScratchSync)
                 {
                     lock (Sync)
