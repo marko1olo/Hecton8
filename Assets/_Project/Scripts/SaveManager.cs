@@ -48,6 +48,10 @@ namespace Hecton8.SaveSystem
         private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
         private static int s_criticalSectorCorruptionNotificationMissCount;
+
+#if UNITY_EDITOR
+        internal static Action Test_OnBeforeShutdownServiceState;
+#endif
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -641,6 +645,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR
+                    Test_OnBeforeShutdownServiceState?.Invoke();
+#endif
                     manager.ShutdownServiceState();
                 }
                 catch (Exception exception)
