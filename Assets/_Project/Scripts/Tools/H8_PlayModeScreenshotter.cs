@@ -26,8 +26,7 @@ namespace Hecton8.Tools
                 if (_searchTimer <= 0f)
                 {
                     player = GameObject.FindWithTag("Player");
-                    if (player == null) player = GameObject.Find("HectonPlayer");
-                    if (player == null) player = GameObject.Find("Player(Clone)");
+                    if (player == null) player = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.HectonPlayerMovement>()?.gameObject;
                     if (player != null) _cachedPlayer = player;
 
                     // Only check every 1 second instead of every frame
