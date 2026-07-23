@@ -104,7 +104,6 @@ namespace CandiceAIforGames.Data
 
         public void LoadSaveItems()
         {
-            ClearChildren(container);
             Vector3 parentScale = new Vector3(container.transform.localScale.x, container.transform.localScale.y, container.transform.localScale.z);
 
             pos = new Vector3(parentScale.x / 2, 140, parentScale.z / 2);
@@ -112,23 +111,35 @@ namespace CandiceAIforGames.Data
 
             bool hasSaveItemPrefab = saveObject.TryGetComponent<CandiceSaveItem>(out var saveItemPrefab);
 
+            int childCount = container.transform.childCount;
+            int i = 0;
+
             foreach (string file in filenames)
             {
                 CandiceSaveItem saveItem = null;
                 GameObject obj;
 
-                if (hasSaveItemPrefab)
+                if (i < childCount)
                 {
-                    saveItem = Instantiate(saveItemPrefab, pos, Quaternion.identity);
-                    obj = saveItem.gameObject;
+                    obj = container.transform.GetChild(i).gameObject;
+                    obj.SetActive(true);
+                    obj.TryGetComponent(out saveItem);
+                    obj.transform.localPosition = new Vector3(pos.x, pos.y, pos.z);
                 }
                 else
                 {
-                    obj = Instantiate(saveObject, pos, Quaternion.identity);
-                    obj.TryGetComponent(out saveItem);
+                    if (hasSaveItemPrefab)
+                    {
+                        saveItem = Instantiate(saveItemPrefab, pos, Quaternion.identity);
+                        obj = saveItem.gameObject;
+                    }
+                    else
+                    {
+                        obj = Instantiate(saveObject, pos, Quaternion.identity);
+                        obj.TryGetComponent(out saveItem);
+                    }
+                    obj.transform.SetParent(container.transform, false);
                 }
-
-                obj.transform.SetParent(container.transform, false);
 
 
                 int lastSlash = file.LastIndexOf('/');
@@ -142,6 +153,12 @@ namespace CandiceAIforGames.Data
 
                 }
                 pos.y -= 35f;
+                i++;
+            }
+
+            for (int j = i; j < childCount; j++)
+            {
+                container.transform.GetChild(j).gameObject.SetActive(false);
             }
         }
         private void ClearChildren(GameObject parent)
