@@ -111,6 +111,11 @@ namespace Crest
 
         void OnDisable()
         {
+            if (_rend != null)
+            {
+                _rend.enabled = false;
+            }
+
             Shader.DisableKeyword("CREST_UNDERWATER_BEFORE_TRANSPARENT");
         }
 
@@ -167,6 +172,7 @@ namespace Crest
         {
             if (!RenderPipelineHelper.IsUniversal)
             {
+                enabled = false;
                 return;
             }
 
