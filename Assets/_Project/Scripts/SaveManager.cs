@@ -4078,6 +4078,10 @@ namespace Hecton8.SaveSystem
             DisposeNativeArray(ref array, dependency, deferDisposal);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static System.Action DisposeNativeArrayTestHook;
+#endif
+
         private static void DisposeTransientNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
             ref Exception firstException,
@@ -4087,6 +4091,9 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                DisposeNativeArrayTestHook?.Invoke();
+#endif
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
