@@ -1586,367 +1586,312 @@ namespace Hecton8.Editor
             return profile;
         }
 
-
-        private class BiomeFamilyData
-        {
-            public string familyLabel;
-            public Color debugColor;
-            public string geologicalIdentity;
-            public string gameplayIdentity;
-            public string atmosphereMood;
-            public string navigationStyle;
-            public string hazardStyle;
-            public string landmarkStyle;
-            public string primaryResourceTheme;
-            public string secondaryResourceTheme;
-            public string suggestedZoneFamily;
-            public string progressionFeeling;
-            public string primaryResourcePath;
-            public string secondaryResourcePath;
-            public string tertiaryResourcePath;
-            public string signatureComponentPath;
-            public string nearInteractiveFamilyPath;
-            public string midVisualFamilyPath;
-            public string farSilhouetteFamilyPath;
-            public string preferredZonePlanPath;
-        }
-
-        private static readonly Dictionary<string, BiomeFamilyData> FamilyDataMap = new Dictionary<string, BiomeFamilyData>
-        {
-            { "biome.family.littoral_karst", new BiomeFamilyData
-                {
-                    familyLabel = "Littoral Karst",
-                    debugColor = new Color(0.77f, 0.9f, 0.96f, 1f),
-                    geologicalIdentity = "Ð˜Ð·Ð²ÐµÑÑ‚Ð½ÑÐºÐ¾Ð²Ñ‹Ðµ ÑÑ‚Ð¾Ð»Ð±Ñ‹, ÐºÐ°Ñ€ÑÑ‚Ð¾Ð²Ñ‹Ðµ Ð°Ñ€ÐºÐ¸, ÑÐ²ÐµÑ‚Ð»Ñ‹Ðµ ÐºÑ€Ð¾Ð¼ÐºÐ¸ Ð¸ ÑÐ¸Ð»ÑŒÐ½Ð¾ Ñ‡Ð¸Ñ‚Ð°ÐµÐ¼Ñ‹Ðµ Ð¿Ñ€Ð¸Ð±Ñ€ÐµÐ¶Ð½Ñ‹Ðµ Ñ„Ð¾Ñ€Ð¼Ñ‹.",
-                    gameplayIdentity = "Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½ÐµÐµ Ð´Ð»Ñ ÑÑ‚Ð°Ñ€Ñ‚Ð°, Ñ…Ð¾Ñ€Ð¾ÑˆÐ¾ Ð·Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÐµÑ‚ÑÑ Ð¿Ð¾ ÑÐ¸Ð»ÑƒÑÑ‚Ñƒ, Ð²ÐµÐ´Ñ‘Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð¾Ñ‚ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ðº Ð¿ÐµÑ€Ð²Ñ‹Ð¼ ÑÐ±Ð¾Ñ€Ð½Ñ‹Ð¼ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°Ð¼.",
-                    atmosphereMood = "bright_exposed",
-                    navigationStyle = "landmark_horizon",
-                    hazardStyle = "dropoffs_and_surf",
-                    landmarkStyle = "arches_and_stacks",
-                    primaryResourceTheme = "starter_scrap_and_shell_minerals",
-                    secondaryResourceTheme = "surface_organics",
-                    suggestedZoneFamily = "resources.landmarks.far",
-                    progressionFeeling = "surface_to_shelf",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_SilicaShards.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_FiberKelp.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_GlassPanel.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_resources_pickups_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_resources_clutter_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_navigation_silhouette_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Resources_Starter.asset"
-                } },
-            { "biome.family.sediment_drift", new BiomeFamilyData
-                {
-                    familyLabel = "Sediment Drift",
-                    debugColor = new Color(0.87f, 0.81f, 0.67f, 1f),
-                    geologicalIdentity = "ÐÐ°Ð½Ð¾ÑÐ½Ñ‹Ðµ Ð¿Ð¾Ð»Ñ, Ð¼ÑÐ³ÐºÐ¸Ðµ Ð´ÑŽÐ½Ñ‹, Ð²Ð¾Ñ€Ð¾Ð½ÐºÐ¸ Ð¸ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹ Ñ€Ñ‹Ñ…Ð»Ð¾Ð³Ð¾ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð°.",
-                    gameplayIdentity = "Ð¥Ð¾Ñ€Ð¾ÑˆÐ¾ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ð°Ñ Ð·Ð¾Ð½Ð° ÑÐ±Ð¾Ñ€Ð° Ð¸ ÐºÐ°Ðº Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´Ð½Ñ‹Ð¹ Ñ„Ð¾Ð½ Ð¼ÐµÐ¶Ð´Ñƒ Ð±Ð¾Ð»ÐµÐµ Ð²Ñ‹Ñ€Ð°Ð·Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¼Ð¸ Ð¼ÐµÑÑ‚Ð°Ð¼Ð¸.",
-                    atmosphereMood = "soft_hazy",
-                    navigationStyle = "micro_relief",
-                    hazardStyle = "poor_visibility",
-                    landmarkStyle = "dunes_and_bowls",
-                    primaryResourceTheme = "silica_salts_and_loose_ore",
-                    secondaryResourceTheme = "light_organics",
-                    suggestedZoneFamily = "resources.clutter.mid",
-                    progressionFeeling = "calm_gathering",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_SilicaShards.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_SealantPack.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_resources_pickups_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_resources_clutter_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_resources_landmarks_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Resources_Starter.asset"
-                } },
-            { "biome.family.granite_escarpment", new BiomeFamilyData
-                {
-                    familyLabel = "Granite Escarpment",
-                    debugColor = new Color(0.56f, 0.6f, 0.66f, 1f),
-                    geologicalIdentity = "Ð¡Ñ‚ÐµÐ½Ñ‹, ÑƒÑÑ‚ÑƒÐ¿Ñ‹, ÑÑƒÑ…Ð¸Ðµ Ð¿Ð»Ð°Ñ‚Ð¾ Ð¸ Ð±Ð¾Ð»ÑŒÑˆÐ¸Ðµ ÐºÐ°Ð¼ÐµÐ½Ð½Ñ‹Ðµ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°.",
-                    gameplayIdentity = "Ð Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð¹ Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€ Ð¸ ÐºÑ€Ð°Ð¹ ÐºÐ°Ñ€Ñ‚Ñ‹ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ ÑÑ‚Ð°Ð¿Ð°, Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°ÐµÑ‚ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸ÑŽ Ð¿Ð¾ ÐºÐ¾Ð½Ñ‚ÑƒÑ€Ð°Ð¼.",
-                    atmosphereMood = "cold_clear",
-                    navigationStyle = "wall_following",
-                    hazardStyle = "sheer_drop",
-                    landmarkStyle = "walls_and_terraces",
-                    primaryResourceTheme = "structural_stone_and_metal_veins",
-                    secondaryResourceTheme = "salvage_caches",
-                    suggestedZoneFamily = "navigation.silhouette.far",
-                    progressionFeeling = "edge_descent",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_StructuralBracket.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_navigation_markers_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_navigation_route_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_navigation_silhouette_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Navigation_Mid.asset"
-                } },
-            { "biome.family.fossil_reef", new BiomeFamilyData
-                {
-                    familyLabel = "Fossil Carbonate Shelf",
-                    debugColor = new Color(0.72f, 0.82f, 0.74f, 1f),
-                    geologicalIdentity = "Porous fossil carbonate walls, mineral tubes, and organic pockets locked into old pressure stone.",
-                    gameplayIdentity = "Provides organics, cover, short detours, and strong place memory while keeping exposure and route risk visible.",
-                    atmosphereMood = "organic_murmur",
-                    navigationStyle = "porous_carbonate_paths",
-                    hazardStyle = "ambush_and_maze",
-                    landmarkStyle = "carbonate_walls",
-                    primaryResourceTheme = "fiber_membrane_and_dim_biolum",
-                    secondaryResourceTheme = "fine_minerals",
-                    suggestedZoneFamily = "resources.pickups.near",
-                    progressionFeeling = "evidence_led_exploration",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_FiberKelp.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_BiolumPaste.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_FiberMesh.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_resources_pickups_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_resources_landmarks_far.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Resources_Starter.asset"
-                } },
-            { "biome.family.tectonic_spine", new BiomeFamilyData
-                {
-                    familyLabel = "Tectonic Spine",
-                    debugColor = new Color(0.59f, 0.52f, 0.72f, 1f),
-                    geologicalIdentity = "Ð Ð°Ð·Ð»Ð¾Ð¼Ð½Ñ‹Ðµ Ð³Ñ€ÐµÐ±Ð½Ð¸, ÐºÐ°Ð¼ÐµÐ½Ð½Ñ‹Ðµ Ñ€Ñ‘Ð±Ñ€Ð°, ÑÑ‚ÑƒÐ¿ÐµÐ½Ð¸ Ð¸ Ñ€ÐµÐ·ÐºÐ¸Ðµ Ð¿Ð¾Ð²Ð¾Ñ€Ð¾Ñ‚Ñ‹ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°.",
-                    gameplayIdentity = "Ð¥Ð¾Ñ€Ð¾ÑˆÐ¾ Ð²ÐµÐ´Ñ‘Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð²Ð½Ð¸Ð·, Ñ€Ð°Ð·Ð´ÐµÐ»ÑÐµÑ‚ Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ñ‹Ðµ Ð¸ Ð¾Ð¿Ð°ÑÐ½Ñ‹Ðµ ÑÑ‚Ð¾Ñ€Ð¾Ð½Ñ‹ Ð¸ Ð´ÐµÐ»Ð°ÐµÑ‚ Ð¿ÑƒÑ‚ÑŒ Ð·Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÑŽÑ‰Ð¸Ð¼ÑÑ.",
-                    atmosphereMood = "tense_structural",
-                    navigationStyle = "ridge_tracking",
-                    hazardStyle = "pinch_points",
-                    landmarkStyle = "spines_and_steps",
-                    primaryResourceTheme = "copper_cobalt_and_support_minerals",
-                    secondaryResourceTheme = "route_salvage",
-                    suggestedZoneFamily = "progression.route.mid",
-                    progressionFeeling = "controlled_descent",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_CobaltAlloy.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_CopperWire.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_navigation_markers_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_progression_route_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Navigation_Mid.asset"
-                } },
-            { "biome.family.crystal_growth", new BiomeFamilyData
-                {
-                    familyLabel = "Crystal Growth",
-                    debugColor = new Color(0.52f, 0.85f, 0.94f, 1f),
-                    geologicalIdentity = "ÐšÑ€Ð¸ÑÑ‚Ð°Ð»Ð»Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð²Ñ‹ÑÑ‚ÑƒÐ¿Ñ‹, Ð¸Ð³Ð»Ñ‹ Ð¸ Ð¼Ð¸Ð½ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ð³Ñ€Ð¾Ð·Ð´Ð¸ Ñ ÑÐ¸Ð»ÑŒÐ½Ð¾Ð¹ Ð²Ð¸Ð·ÑƒÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´ÑƒÐ°Ð»ÑŒÐ½Ð¾ÑÑ‚ÑŒÑŽ.",
-                    gameplayIdentity = "Ð”Ð°Ñ‘Ñ‚ Ñ€ÐµÐ´ÐºÐ¸Ðµ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ñ‹ Ð¸ Ð¿Ð¾Ð¾Ñ‰Ñ€ÑÐµÑ‚ Ñ€Ð¸ÑÐºÐ¾Ð²Ð°Ð½Ð½Ñ‹Ðµ Ð·Ð°Ñ…Ð¾Ð´Ñ‹ Ñ€Ð°Ð´Ð¸ Ð²Ñ‹ÑÐ¾ÐºÐ¾Ñ†ÐµÐ½Ð½Ð¾Ð¹ Ð´Ð¾Ð±Ñ‹Ñ‡Ð¸.",
-                    atmosphereMood = "resonant_clear",
-                    navigationStyle = "needle_gardens",
-                    hazardStyle = "contact_damage",
-                    landmarkStyle = "crystal_spires",
-                    primaryResourceTheme = "silver_gold_lithium_rare_earth",
-                    secondaryResourceTheme = "precision_optics_materials",
-                    suggestedZoneFamily = "resources.landmarks.far",
-                    progressionFeeling = "rewarding_risk",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_SilverOre.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_GoldOre.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_LithiumCrystal.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_PrecisionLens.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_resources_pickups_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_resources_landmarks_far.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Progression_Endgame.asset"
-                } },
-            { "biome.family.abyssal_silt", new BiomeFamilyData
-                {
-                    familyLabel = "Abyssal Silt",
-                    debugColor = new Color(0.36f, 0.42f, 0.48f, 1f),
-                    geologicalIdentity = "Ð¢Ð¸Ñ…Ð¸Ðµ Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¸Ðµ Ð¿Ð¾Ð»Ñ, Ð´Ð»Ð¸Ð½Ð½Ñ‹Ðµ Ð²Ð¾Ð»Ð½Ñ‹ Ð½Ð°Ð½Ð¾ÑÐ¾Ð² Ð¸ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²Ð¾, Ð³Ð´Ðµ Ñ„Ð¾Ñ€Ð¼Ð° Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ ÑÐ»Ð°Ð±Ð¾.",
-                    gameplayIdentity = "Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ ÑÐ²ÐµÑ‚Ð°, ÑÐºÐ°Ð½ÐµÑ€Ð° Ð¸ Ð¾Ð¿Ð¾Ñ€Ñ‹ Ð½Ð° Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€Ñ‹; Ñ…Ð¾Ñ€Ð¾ÑˆÐ¾ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð½Ð°Ð¿Ñ€ÑÐ¶Ñ‘Ð½Ð½Ñ‹Ð¹ Ñ‚Ñ€Ð°Ð½Ð·Ð¸Ñ‚ Ð¸ Ð¿Ð¾Ð¸ÑÐº.",
-                    atmosphereMood = "mute_pressure",
-                    navigationStyle = "instrument_led",
-                    hazardStyle = "concealed_sinks",
-                    landmarkStyle = "negative_space",
-                    primaryResourceTheme = "bulk_metals_and_salts",
-                    secondaryResourceTheme = "salvage_drifts",
-                    suggestedZoneFamily = "navigation.route.mid",
-                    progressionFeeling = "isolation_and_scale",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_StabilizerCoil.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_navigation_markers_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_navigation_route_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_combat_silhouette_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Navigation_Mid.asset"
-                } },
-            { "biome.family.volcanic_glass", new BiomeFamilyData
-                {
-                    familyLabel = "Volcanic Glass",
-                    debugColor = new Color(0.78f, 0.28f, 0.18f, 1f),
-                    geologicalIdentity = "ÐžÐ±ÑÐ¸Ð´Ð¸Ð°Ð½Ð¾Ð²Ñ‹Ðµ Ð¿Ð¾Ñ‚Ð¾ÐºÐ¸, ÑˆÐ»Ð°ÐºÐ¾Ð²Ñ‹Ðµ Ð¿Ð¾Ð»Ñ Ð¸ ÑÑ‚ÐµÐºÐ»ÑÐ½Ð½Ñ‹Ðµ ÐºÐ¾Ñ€ÐºÐ¸ Ñ Ð¶Ñ‘ÑÑ‚ÐºÐ¾Ð¹ Ð³ÐµÐ¾Ð¼ÐµÑ‚Ñ€Ð¸ÐµÐ¹.",
-                    gameplayIdentity = "Ð Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð¾Ð¿Ð°ÑÐ½Ð°Ñ Ð³Ð¾Ñ€ÑÑ‡Ð°Ñ ÑÑ€ÐµÐ´Ð° Ñ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼Ð¸ ÑÐ¸Ð»ÑƒÑÑ‚Ð°Ð¼Ð¸ Ð¸ Ñ…Ð¾Ñ€Ð¾ÑˆÐ¸Ð¼Ð¸ power-Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð°Ð¼Ð¸.",
-                    atmosphereMood = "hot_menace",
-                    navigationStyle = "thermal_veins",
-                    hazardStyle = "heat_and_rupture",
-                    landmarkStyle = "black_flows",
-                    primaryResourceTheme = "sulfur_thermal_gel_tungsten",
-                    secondaryResourceTheme = "power_materials",
-                    suggestedZoneFamily = "hazard.probe",
-                    progressionFeeling = "volatile_pressure",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_ThermalGel.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_CoolingCartridge.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_hazard_probe.asset",
-                    midVisualFamilyPath = "FamilyProfile_power_network_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Power_Mid.asset"
-                } },
-            { "biome.family.volcanic_hadal", new BiomeFamilyData
-                {
-                    familyLabel = "Volcanic Hadal",
-                    debugColor = new Color(0.9f, 0.18f, 0.12f, 1f),
-                    geologicalIdentity = "ÐšÑ€Ð°Ð¹Ð½Ðµ Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¸Ðµ Ð¼Ð°Ð³Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð¸ Ð»Ð°Ð²Ð¾Ð²Ñ‹Ðµ Ð·Ð¾Ð½Ñ‹ Ñ ÐºÑ€Ð°ÑÐ½Ñ‹Ð¼ ÑÐ²ÐµÑ‚Ð¾Ð¼ Ð¸ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼ Ñ€Ð¸ÑÐºÐ¾Ð¼.",
-                    gameplayIdentity = "Ð­Ñ‚Ð¾ ÑƒÐ¶Ðµ Ð¿Ð¾Ñ€Ð¾Ð³ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð¸Ð³Ñ€Ñ‹: Ð´Ð¾Ñ€Ð¾Ð³Ð¾, Ð¾Ð¿Ð°ÑÐ½Ð¾, Ð½Ð¾ Ð±Ð¾Ð³Ð°Ñ‚Ð¾ Ð½Ð° ÐºÑ€Ð¸Ñ‚Ð¸Ñ‡Ð½Ñ‹Ðµ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ñ‹.",
-                    atmosphereMood = "red_pressure",
-                    navigationStyle = "vent_lines",
-                    hazardStyle = "catastrophic_heat",
-                    landmarkStyle = "lava_seams",
-                    primaryResourceTheme = "endgame_heat_materials",
-                    secondaryResourceTheme = "power_core_materials",
-                    suggestedZoneFamily = "hazard.probe",
-                    progressionFeeling = "threshold_to_endgame",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_ThermalGel.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_AbyssPressureShell.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_hazard_probe.asset",
-                    midVisualFamilyPath = "FamilyProfile_power_network_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Progression_Endgame.asset"
-                } },
-            { "biome.family.chemosynthetic_brine", new BiomeFamilyData
-                {
-                    familyLabel = "Chemosynthetic Brine",
-                    debugColor = new Color(0.34f, 0.78f, 0.64f, 1f),
-                    geologicalIdentity = "Ð‘Ñ€Ð°Ð¹Ð½Ð¾Ð²Ñ‹Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹, Ð¼ÐµÑ‚Ð°Ð½Ð¾Ð²Ñ‹Ðµ ÐºÑƒÐ¿Ð¾Ð»Ð° Ð¸ Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ ÑÑ‚Ð¾Ð»Ð±Ñ‹, Ð³Ð´Ðµ ÑÐ°Ð¼Ð° ÑÑ€ÐµÐ´Ð° Ñ„Ð¾Ñ€Ð¼Ð¸Ñ€ÑƒÐµÑ‚ gameplay.",
-                    gameplayIdentity = "Ð—Ð¾Ð½Ð° Ð½Ð°ÑƒÑ‡Ð½Ð¾Ð³Ð¾ Ñ€Ð¸ÑÐºÐ°: Ð¼Ð½Ð¾Ð³Ð¾ ÑƒÐ³Ñ€Ð¾Ð· ÑÑ€ÐµÐ´Ñ‹, Ð½Ð¾ Ð¸ Ð¼Ð½Ð¾Ð³Ð¾ Ñ†ÐµÐ½Ð½Ñ‹Ñ… Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… Ð¸ power-Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð¾Ð².",
-                    atmosphereMood = "alien_chemical",
-                    navigationStyle = "hazard_channeling",
-                    hazardStyle = "chemical_pools",
-                    landmarkStyle = "vents_and_pools",
-                    primaryResourceTheme = "salts_resin_sulfur_nickel",
-                    secondaryResourceTheme = "enzyme_and_thermal_materials",
-                    suggestedZoneFamily = "power.route.far",
-                    progressionFeeling = "science_and_risk",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_HydrocarbonResin.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_PumpRotor.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_hazard_probe.asset",
-                    midVisualFamilyPath = "FamilyProfile_power_devices_near.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_power_route_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Power_Mid.asset"
-                } },
-            { "biome.family.metallic_hadal", new BiomeFamilyData
-                {
-                    familyLabel = "Metallic Hadal",
-                    debugColor = new Color(0.74f, 0.52f, 0.34f, 1f),
-                    geologicalIdentity = "Ð–ÐµÐ»ÐµÐ·Ð½Ñ‹Ðµ Ð¿Ð¸ÐºÐ¸, Ð¼ÐµÑ‚Ð°Ð»Ð»Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð¿Ð»Ð°ÑÑ‚Ð¸Ð½Ñ‹ Ð¸ ÑÐ²ÐµÑ€Ñ…Ð´Ð°Ð²Ð»ÐµÐ½Ñ‡ÐµÑÐºÐ¸Ðµ Ð¶Ñ‘ÑÑ‚ÐºÐ¸Ðµ Ñ„Ð¾Ñ€Ð¼Ñ‹ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.",
-                    gameplayIdentity = "ÐŸÐ¾Ð·Ð´Ð½Ð¸Ð¹ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»-Ñ…Ð°Ð½Ñ‚ Ð¸ Ñ‚ÐµÑ…Ð½Ð¸Ñ‡Ð½Ñ‹Ðµ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹, Ð³Ð´Ðµ ÑƒÐ¶Ðµ Ð½ÑƒÐ¶Ð½Ð° ÑÐµÑ€ÑŒÑ‘Ð·Ð½Ð°Ñ ÑÐºÐ¸Ð¿Ð¸Ñ€Ð¾Ð²ÐºÐ°.",
-                    atmosphereMood = "industrial_hadal",
-                    navigationStyle = "spike_and_plate",
-                    hazardStyle = "abrasive_contact",
-                    landmarkStyle = "metal_needles",
-                    primaryResourceTheme = "nickel_tungsten_cobalt_abyssal_crystal",
-                    secondaryResourceTheme = "high_capacity_power_parts",
-                    suggestedZoneFamily = "progression.setpieces.near",
-                    progressionFeeling = "endgame_material_hunt",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_NickelOre.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_CobaltAlloy.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_HighCapacityCell.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_progression_setpieces_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_power_network_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Progression_Endgame.asset"
-                } },
-            { "biome.family.rift_spine", new BiomeFamilyData
-                {
-                    familyLabel = "Rift Spine",
-                    debugColor = new Color(0.54f, 0.34f, 0.7f, 1f),
-                    geologicalIdentity = "ÐŸÐ¾Ð·Ð´Ð½ÐµÐ³Ð»ÑƒÐ±Ð¸Ð½Ð½Ñ‹Ðµ Ñ€Ð°Ð·Ð»Ð¾Ð¼Ð½Ñ‹Ðµ Ñ€Ñ‘Ð±Ñ€Ð° Ð¸ Ñ‰ÐµÐ»Ð¸, ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ðµ Ð½Ð°Ð¿Ñ€Ð°Ð²Ð»ÑÑŽÑ‚ Ð¸ ÑÐ¶Ð¸Ð¼Ð°ÑŽÑ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚.",
-                    gameplayIdentity = "Ð­Ñ‚Ð¾ Ð±Ð¸Ð¾Ð¼ Ð´Ð»Ñ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ³Ð¾ Ð¿Ñ€Ð¾Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ñ: Ð¿ÑƒÑ‚ÑŒ Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð¿Ð¾ Ð±Ð¾Ð»ÑŒÑˆÐ¸Ð¼ Ñ„Ð¾Ñ€Ð¼Ð°Ð¼, Ð° Ð¾ÑˆÐ¸Ð±ÐºÐ° Ð´Ð¾Ñ€Ð¾Ð³Ð¾ ÑÑ‚Ð¾Ð¸Ñ‚.",
-                    atmosphereMood = "severe_directional",
-                    navigationStyle = "rift_edge_following",
-                    hazardStyle = "collapse_and_fall",
-                    landmarkStyle = "rift_fins",
-                    primaryResourceTheme = "deep_power_and_structural_ores",
-                    secondaryResourceTheme = "combat_salvage",
-                    suggestedZoneFamily = "progression.route.landmark",
-                    progressionFeeling = "late_route_commitment",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_LithiumCrystal.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_PowerCoupler.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_progression_setpieces_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_progression_route_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Progression_Endgame.asset"
-                } },
-            { "biome.family.rift_void", new BiomeFamilyData
-                {
-                    familyLabel = "Rift Void",
-                    debugColor = new Color(0.24f, 0.24f, 0.34f, 1f),
-                    geologicalIdentity = "ÐŸÐ°ÑÑ‚Ð¸, ÑˆÐ°Ñ…Ñ‚Ñ‹, Ð¿Ñ€Ð¾Ð²Ð°Ð»Ñ‹ Ð¸ Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ð½Ñ‹Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹, Ð³Ð´Ðµ ÑÐ°Ð¼ Ð¼Ð°ÑÑˆÑ‚Ð°Ð± Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²Ð° ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑÑ ÑƒÐ³Ñ€Ð¾Ð·Ð¾Ð¹.",
-                    gameplayIdentity = "Ð­Ñ‚Ð¾ ÑƒÐ¶Ðµ Ð¿Ð¾Ð·Ð´Ð½ÑÑ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ Ð½Ð° ÑÑ‚Ñ€Ð°Ñ…Ðµ, Ð³Ð»ÑƒÐ±Ð¸Ð½Ðµ Ð¸ Ñ€ÐµÐ´ÐºÐ¸Ñ… Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€Ð°Ñ…, Ð¿Ð¾Ñ‡Ñ‚Ð¸ Ð±ÐµÐ· Ð»Ð¸ÑˆÐ½ÐµÐ³Ð¾ ÑˆÑƒÐ¼Ð°.",
-                    atmosphereMood = "void_awe",
-                    navigationStyle = "anchor_to_anchor",
-                    hazardStyle = "falloff_and_ambush",
-                    landmarkStyle = "negative_depth_landmarks",
-                    primaryResourceTheme = "rare_salvage_and_abyssal_crystal",
-                    secondaryResourceTheme = "late_pressure_components",
-                    suggestedZoneFamily = "progression.route.landmark",
-                    progressionFeeling = "final_descent",
-                    primaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset",
-                    secondaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset",
-                    tertiaryResourcePath = "Assets/_Project/Data/Items/Resources/Raw/Data_GoldOre.asset",
-                    signatureComponentPath = "Assets/_Project/Data/Items/Resources/Components/Comp_AbyssPressureShell.asset",
-                    nearInteractiveFamilyPath = "FamilyProfile_progression_setpieces_near.asset",
-                    midVisualFamilyPath = "FamilyProfile_progression_route_mid.asset",
-                    farSilhouetteFamilyPath = "FamilyProfile_progression_skyline_far.asset",
-                    preferredZonePlanPath = "ZonePlan_ZoneProfile_Progression_Endgame.asset"
-                } },
-        };
-
-
         private static void ApplyFamilyTemplate(HectonBiomeFamilyProfile profile, string familyId)
         {
             profile.familyId = familyId;
 
-            if (!FamilyDataMap.TryGetValue(familyId, out var data))
+            switch (familyId)
             {
-                data = FamilyDataMap["biome.family.rift_void"];
+                case "biome.family.littoral_karst":
+                    profile.familyLabel = "Littoral Karst";
+                    profile.debugColor = new Color(0.77f, 0.9f, 0.96f, 1f);
+                    profile.geologicalIdentity = "Ð˜Ð·Ð²ÐµÑÑ‚Ð½ÑÐºÐ¾Ð²Ñ‹Ðµ ÑÑ‚Ð¾Ð»Ð±Ñ‹, ÐºÐ°Ñ€ÑÑ‚Ð¾Ð²Ñ‹Ðµ Ð°Ñ€ÐºÐ¸, ÑÐ²ÐµÑ‚Ð»Ñ‹Ðµ ÐºÑ€Ð¾Ð¼ÐºÐ¸ Ð¸ ÑÐ¸Ð»ÑŒÐ½Ð¾ Ñ‡Ð¸Ñ‚Ð°ÐµÐ¼Ñ‹Ðµ Ð¿Ñ€Ð¸Ð±Ñ€ÐµÐ¶Ð½Ñ‹Ðµ Ñ„Ð¾Ñ€Ð¼Ñ‹.";
+                    profile.gameplayIdentity = "Ð‘ÐµÐ·Ð¾Ð¿Ð°ÑÐ½ÐµÐµ Ð´Ð»Ñ ÑÑ‚Ð°Ñ€Ñ‚Ð°, Ñ…Ð¾Ñ€Ð¾ÑˆÐ¾ Ð·Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÐµÑ‚ÑÑ Ð¿Ð¾ ÑÐ¸Ð»ÑƒÑÑ‚Ñƒ, Ð²ÐµÐ´Ñ‘Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð¾Ñ‚ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ðº Ð¿ÐµÑ€Ð²Ñ‹Ð¼ ÑÐ±Ð¾Ñ€Ð½Ñ‹Ð¼ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°Ð¼.";
+                    profile.atmosphereMood = "bright_exposed";
+                    profile.navigationStyle = "landmark_horizon";
+                    profile.hazardStyle = "dropoffs_and_surf";
+                    profile.landmarkStyle = "arches_and_stacks";
+                    profile.primaryResourceTheme = "starter_scrap_and_shell_minerals";
+                    profile.secondaryResourceTheme = "surface_organics";
+                    profile.suggestedZoneFamily = "resources.landmarks.far";
+                    profile.progressionFeeling = "surface_to_shelf";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_SilicaShards.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_FiberKelp.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_GlassPanel.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_resources_pickups_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_resources_clutter_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_silhouette_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Resources_Starter.asset");
+                    break;
+
+                case "biome.family.sediment_drift":
+                    profile.familyLabel = "Sediment Drift";
+                    profile.debugColor = new Color(0.87f, 0.81f, 0.67f, 1f);
+                    profile.geologicalIdentity = "ÐÐ°Ð½Ð¾ÑÐ½Ñ‹Ðµ Ð¿Ð¾Ð»Ñ, Ð¼ÑÐ³ÐºÐ¸Ðµ Ð´ÑŽÐ½Ñ‹, Ð²Ð¾Ñ€Ð¾Ð½ÐºÐ¸ Ð¸ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹ Ñ€Ñ‹Ñ…Ð»Ð¾Ð³Ð¾ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð°.";
+                    profile.gameplayIdentity = "Ð¥Ð¾Ñ€Ð¾ÑˆÐ¾ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ð°Ñ Ð·Ð¾Ð½Ð° ÑÐ±Ð¾Ñ€Ð° Ð¸ ÐºÐ°Ðº Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´Ð½Ñ‹Ð¹ Ñ„Ð¾Ð½ Ð¼ÐµÐ¶Ð´Ñƒ Ð±Ð¾Ð»ÐµÐµ Ð²Ñ‹Ñ€Ð°Ð·Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¼Ð¸ Ð¼ÐµÑÑ‚Ð°Ð¼Ð¸.";
+                    profile.atmosphereMood = "soft_hazy";
+                    profile.navigationStyle = "micro_relief";
+                    profile.hazardStyle = "poor_visibility";
+                    profile.landmarkStyle = "dunes_and_bowls";
+                    profile.primaryResourceTheme = "silica_salts_and_loose_ore";
+                    profile.secondaryResourceTheme = "light_organics";
+                    profile.suggestedZoneFamily = "resources.clutter.mid";
+                    profile.progressionFeeling = "calm_gathering";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_SilicaShards.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_SealantPack.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_resources_pickups_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_resources_clutter_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_resources_landmarks_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Resources_Starter.asset");
+                    break;
+
+                case "biome.family.granite_escarpment":
+                    profile.familyLabel = "Granite Escarpment";
+                    profile.debugColor = new Color(0.56f, 0.6f, 0.66f, 1f);
+                    profile.geologicalIdentity = "Ð¡Ñ‚ÐµÐ½Ñ‹, ÑƒÑÑ‚ÑƒÐ¿Ñ‹, ÑÑƒÑ…Ð¸Ðµ Ð¿Ð»Ð°Ñ‚Ð¾ Ð¸ Ð±Ð¾Ð»ÑŒÑˆÐ¸Ðµ ÐºÐ°Ð¼ÐµÐ½Ð½Ñ‹Ðµ Ð³Ñ€Ð°Ð½Ð¸Ñ†Ñ‹ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°.";
+                    profile.gameplayIdentity = "Ð Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð¹ Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€ Ð¸ ÐºÑ€Ð°Ð¹ ÐºÐ°Ñ€Ñ‚Ñ‹ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ ÑÑ‚Ð°Ð¿Ð°, Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶Ð¸Ð²Ð°ÐµÑ‚ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸ÑŽ Ð¿Ð¾ ÐºÐ¾Ð½Ñ‚ÑƒÑ€Ð°Ð¼.";
+                    profile.atmosphereMood = "cold_clear";
+                    profile.navigationStyle = "wall_following";
+                    profile.hazardStyle = "sheer_drop";
+                    profile.landmarkStyle = "walls_and_terraces";
+                    profile.primaryResourceTheme = "structural_stone_and_metal_veins";
+                    profile.secondaryResourceTheme = "salvage_caches";
+                    profile.suggestedZoneFamily = "navigation.silhouette.far";
+                    profile.progressionFeeling = "edge_descent";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_StructuralBracket.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_markers_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_route_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_silhouette_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Navigation_Mid.asset");
+                    break;
+
+                case "biome.family.fossil_reef":
+                    profile.familyLabel = "Fossil Carbonate Shelf";
+                    profile.debugColor = new Color(0.72f, 0.82f, 0.74f, 1f);
+                    profile.geologicalIdentity = "Porous fossil carbonate walls, mineral tubes, and organic pockets locked into old pressure stone.";
+                    profile.gameplayIdentity = "Provides organics, cover, short detours, and strong place memory while keeping exposure and route risk visible.";
+                    profile.atmosphereMood = "organic_murmur";
+                    profile.navigationStyle = "porous_carbonate_paths";
+                    profile.hazardStyle = "ambush_and_maze";
+                    profile.landmarkStyle = "carbonate_walls";
+                    profile.primaryResourceTheme = "fiber_membrane_and_dim_biolum";
+                    profile.secondaryResourceTheme = "fine_minerals";
+                    profile.suggestedZoneFamily = "resources.pickups.near";
+                    profile.progressionFeeling = "evidence_led_exploration";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_FiberKelp.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_BiolumPaste.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_FiberMesh.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_resources_pickups_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_resources_landmarks_far.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Resources_Starter.asset");
+                    break;
+
+                case "biome.family.tectonic_spine":
+                    profile.familyLabel = "Tectonic Spine";
+                    profile.debugColor = new Color(0.59f, 0.52f, 0.72f, 1f);
+                    profile.geologicalIdentity = "Ð Ð°Ð·Ð»Ð¾Ð¼Ð½Ñ‹Ðµ Ð³Ñ€ÐµÐ±Ð½Ð¸, ÐºÐ°Ð¼ÐµÐ½Ð½Ñ‹Ðµ Ñ€Ñ‘Ð±Ñ€Ð°, ÑÑ‚ÑƒÐ¿ÐµÐ½Ð¸ Ð¸ Ñ€ÐµÐ·ÐºÐ¸Ðµ Ð¿Ð¾Ð²Ð¾Ñ€Ð¾Ñ‚Ñ‹ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð°.";
+                    profile.gameplayIdentity = "Ð¥Ð¾Ñ€Ð¾ÑˆÐ¾ Ð²ÐµÐ´Ñ‘Ñ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð²Ð½Ð¸Ð·, Ñ€Ð°Ð·Ð´ÐµÐ»ÑÐµÑ‚ Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ñ‹Ðµ Ð¸ Ð¾Ð¿Ð°ÑÐ½Ñ‹Ðµ ÑÑ‚Ð¾Ñ€Ð¾Ð½Ñ‹ Ð¸ Ð´ÐµÐ»Ð°ÐµÑ‚ Ð¿ÑƒÑ‚ÑŒ Ð·Ð°Ð¿Ð¾Ð¼Ð¸Ð½Ð°ÑŽÑ‰Ð¸Ð¼ÑÑ.";
+                    profile.atmosphereMood = "tense_structural";
+                    profile.navigationStyle = "ridge_tracking";
+                    profile.hazardStyle = "pinch_points";
+                    profile.landmarkStyle = "spines_and_steps";
+                    profile.primaryResourceTheme = "copper_cobalt_and_support_minerals";
+                    profile.secondaryResourceTheme = "route_salvage";
+                    profile.suggestedZoneFamily = "progression.route.mid";
+                    profile.progressionFeeling = "controlled_descent";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_Copper.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_CobaltAlloy.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_CopperWire.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_markers_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_progression_route_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Navigation_Mid.asset");
+                    break;
+
+                case "biome.family.crystal_growth":
+                    profile.familyLabel = "Crystal Growth";
+                    profile.debugColor = new Color(0.52f, 0.85f, 0.94f, 1f);
+                    profile.geologicalIdentity = "ÐšÑ€Ð¸ÑÑ‚Ð°Ð»Ð»Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð²Ñ‹ÑÑ‚ÑƒÐ¿Ñ‹, Ð¸Ð³Ð»Ñ‹ Ð¸ Ð¼Ð¸Ð½ÐµÑ€Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ð³Ñ€Ð¾Ð·Ð´Ð¸ Ñ ÑÐ¸Ð»ÑŒÐ½Ð¾Ð¹ Ð²Ð¸Ð·ÑƒÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð¸Ð½Ð´Ð¸Ð²Ð¸Ð´ÑƒÐ°Ð»ÑŒÐ½Ð¾ÑÑ‚ÑŒÑŽ.";
+                    profile.gameplayIdentity = "Ð”Ð°Ñ‘Ñ‚ Ñ€ÐµÐ´ÐºÐ¸Ðµ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ñ‹ Ð¸ Ð¿Ð¾Ð¾Ñ‰Ñ€ÑÐµÑ‚ Ñ€Ð¸ÑÐºÐ¾Ð²Ð°Ð½Ð½Ñ‹Ðµ Ð·Ð°Ñ…Ð¾Ð´Ñ‹ Ñ€Ð°Ð´Ð¸ Ð²Ñ‹ÑÐ¾ÐºÐ¾Ñ†ÐµÐ½Ð½Ð¾Ð¹ Ð´Ð¾Ð±Ñ‹Ñ‡Ð¸.";
+                    profile.atmosphereMood = "resonant_clear";
+                    profile.navigationStyle = "needle_gardens";
+                    profile.hazardStyle = "contact_damage";
+                    profile.landmarkStyle = "crystal_spires";
+                    profile.primaryResourceTheme = "silver_gold_lithium_rare_earth";
+                    profile.secondaryResourceTheme = "precision_optics_materials";
+                    profile.suggestedZoneFamily = "resources.landmarks.far";
+                    profile.progressionFeeling = "rewarding_risk";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_SilverOre.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_GoldOre.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_LithiumCrystal.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_PrecisionLens.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_resources_pickups_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_resources_landmarks_far.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Progression_Endgame.asset");
+                    break;
+
+                case "biome.family.abyssal_silt":
+                    profile.familyLabel = "Abyssal Silt";
+                    profile.debugColor = new Color(0.36f, 0.42f, 0.48f, 1f);
+                    profile.geologicalIdentity = "Ð¢Ð¸Ñ…Ð¸Ðµ Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¸Ðµ Ð¿Ð¾Ð»Ñ, Ð´Ð»Ð¸Ð½Ð½Ñ‹Ðµ Ð²Ð¾Ð»Ð½Ñ‹ Ð½Ð°Ð½Ð¾ÑÐ¾Ð² Ð¸ Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²Ð¾, Ð³Ð´Ðµ Ñ„Ð¾Ñ€Ð¼Ð° Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ ÑÐ»Ð°Ð±Ð¾.";
+                    profile.gameplayIdentity = "Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ ÑÐ²ÐµÑ‚Ð°, ÑÐºÐ°Ð½ÐµÑ€Ð° Ð¸ Ð¾Ð¿Ð¾Ñ€Ñ‹ Ð½Ð° Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€Ñ‹; Ñ…Ð¾Ñ€Ð¾ÑˆÐ¾ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð½Ð°Ð¿Ñ€ÑÐ¶Ñ‘Ð½Ð½Ñ‹Ð¹ Ñ‚Ñ€Ð°Ð½Ð·Ð¸Ñ‚ Ð¸ Ð¿Ð¾Ð¸ÑÐº.";
+                    profile.atmosphereMood = "mute_pressure";
+                    profile.navigationStyle = "instrument_led";
+                    profile.hazardStyle = "concealed_sinks";
+                    profile.landmarkStyle = "negative_space";
+                    profile.primaryResourceTheme = "bulk_metals_and_salts";
+                    profile.secondaryResourceTheme = "salvage_drifts";
+                    profile.suggestedZoneFamily = "navigation.route.mid";
+                    profile.progressionFeeling = "isolation_and_scale";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_IronComposite.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_StabilizerCoil.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_markers_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_navigation_route_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_combat_silhouette_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Navigation_Mid.asset");
+                    break;
+
+                case "biome.family.volcanic_glass":
+                    profile.familyLabel = "Volcanic Glass";
+                    profile.debugColor = new Color(0.78f, 0.28f, 0.18f, 1f);
+                    profile.geologicalIdentity = "ÐžÐ±ÑÐ¸Ð´Ð¸Ð°Ð½Ð¾Ð²Ñ‹Ðµ Ð¿Ð¾Ñ‚Ð¾ÐºÐ¸, ÑˆÐ»Ð°ÐºÐ¾Ð²Ñ‹Ðµ Ð¿Ð¾Ð»Ñ Ð¸ ÑÑ‚ÐµÐºÐ»ÑÐ½Ð½Ñ‹Ðµ ÐºÐ¾Ñ€ÐºÐ¸ Ñ Ð¶Ñ‘ÑÑ‚ÐºÐ¾Ð¹ Ð³ÐµÐ¾Ð¼ÐµÑ‚Ñ€Ð¸ÐµÐ¹.";
+                    profile.gameplayIdentity = "Ð Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ ÐºÐ°Ðº Ð¾Ð¿Ð°ÑÐ½Ð°Ñ Ð³Ð¾Ñ€ÑÑ‡Ð°Ñ ÑÑ€ÐµÐ´Ð° Ñ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼Ð¸ ÑÐ¸Ð»ÑƒÑÑ‚Ð°Ð¼Ð¸ Ð¸ Ñ…Ð¾Ñ€Ð¾ÑˆÐ¸Ð¼Ð¸ power-Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð°Ð¼Ð¸.";
+                    profile.atmosphereMood = "hot_menace";
+                    profile.navigationStyle = "thermal_veins";
+                    profile.hazardStyle = "heat_and_rupture";
+                    profile.landmarkStyle = "black_flows";
+                    profile.primaryResourceTheme = "sulfur_thermal_gel_tungsten";
+                    profile.secondaryResourceTheme = "power_materials";
+                    profile.suggestedZoneFamily = "hazard.probe";
+                    profile.progressionFeeling = "volatile_pressure";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_ThermalGel.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_CoolingCartridge.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_hazard_probe.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_power_network_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Power_Mid.asset");
+                    break;
+
+                case "biome.family.volcanic_hadal":
+                    profile.familyLabel = "Volcanic Hadal";
+                    profile.debugColor = new Color(0.9f, 0.18f, 0.12f, 1f);
+                    profile.geologicalIdentity = "ÐšÑ€Ð°Ð¹Ð½Ðµ Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¸Ðµ Ð¼Ð°Ð³Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð¸ Ð»Ð°Ð²Ð¾Ð²Ñ‹Ðµ Ð·Ð¾Ð½Ñ‹ Ñ ÐºÑ€Ð°ÑÐ½Ñ‹Ð¼ ÑÐ²ÐµÑ‚Ð¾Ð¼ Ð¸ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼ Ñ€Ð¸ÑÐºÐ¾Ð¼.";
+                    profile.gameplayIdentity = "Ð­Ñ‚Ð¾ ÑƒÐ¶Ðµ Ð¿Ð¾Ñ€Ð¾Ð³ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð¸Ð³Ñ€Ñ‹: Ð´Ð¾Ñ€Ð¾Ð³Ð¾, Ð¾Ð¿Ð°ÑÐ½Ð¾, Ð½Ð¾ Ð±Ð¾Ð³Ð°Ñ‚Ð¾ Ð½Ð° ÐºÑ€Ð¸Ñ‚Ð¸Ñ‡Ð½Ñ‹Ðµ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ñ‹.";
+                    profile.atmosphereMood = "red_pressure";
+                    profile.navigationStyle = "vent_lines";
+                    profile.hazardStyle = "catastrophic_heat";
+                    profile.landmarkStyle = "lava_seams";
+                    profile.primaryResourceTheme = "endgame_heat_materials";
+                    profile.secondaryResourceTheme = "power_core_materials";
+                    profile.suggestedZoneFamily = "hazard.probe";
+                    profile.progressionFeeling = "threshold_to_endgame";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_ThermalGel.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_AbyssPressureShell.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_hazard_probe.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_power_network_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Progression_Endgame.asset");
+                    break;
+
+                case "biome.family.chemosynthetic_brine":
+                    profile.familyLabel = "Chemosynthetic Brine";
+                    profile.debugColor = new Color(0.34f, 0.78f, 0.64f, 1f);
+                    profile.geologicalIdentity = "Ð‘Ñ€Ð°Ð¹Ð½Ð¾Ð²Ñ‹Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹, Ð¼ÐµÑ‚Ð°Ð½Ð¾Ð²Ñ‹Ðµ ÐºÑƒÐ¿Ð¾Ð»Ð° Ð¸ Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ ÑÑ‚Ð¾Ð»Ð±Ñ‹, Ð³Ð´Ðµ ÑÐ°Ð¼Ð° ÑÑ€ÐµÐ´Ð° Ñ„Ð¾Ñ€Ð¼Ð¸Ñ€ÑƒÐµÑ‚ gameplay.";
+                    profile.gameplayIdentity = "Ð—Ð¾Ð½Ð° Ð½Ð°ÑƒÑ‡Ð½Ð¾Ð³Ð¾ Ñ€Ð¸ÑÐºÐ°: Ð¼Ð½Ð¾Ð³Ð¾ ÑƒÐ³Ñ€Ð¾Ð· ÑÑ€ÐµÐ´Ñ‹, Ð½Ð¾ Ð¸ Ð¼Ð½Ð¾Ð³Ð¾ Ñ†ÐµÐ½Ð½Ñ‹Ñ… Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… Ð¸ power-Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»Ð¾Ð².";
+                    profile.atmosphereMood = "alien_chemical";
+                    profile.navigationStyle = "hazard_channeling";
+                    profile.hazardStyle = "chemical_pools";
+                    profile.landmarkStyle = "vents_and_pools";
+                    profile.primaryResourceTheme = "salts_resin_sulfur_nickel";
+                    profile.secondaryResourceTheme = "enzyme_and_thermal_materials";
+                    profile.suggestedZoneFamily = "power.route.far";
+                    profile.progressionFeeling = "science_and_risk";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_ElectrolyteSalts.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_HydrocarbonResin.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_SulfurClumps.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_PumpRotor.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_hazard_probe.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_power_devices_near.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_power_route_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Power_Mid.asset");
+                    break;
+
+                case "biome.family.metallic_hadal":
+                    profile.familyLabel = "Metallic Hadal";
+                    profile.debugColor = new Color(0.74f, 0.52f, 0.34f, 1f);
+                    profile.geologicalIdentity = "Ð–ÐµÐ»ÐµÐ·Ð½Ñ‹Ðµ Ð¿Ð¸ÐºÐ¸, Ð¼ÐµÑ‚Ð°Ð»Ð»Ð¸Ñ‡ÐµÑÐºÐ¸Ðµ Ð¿Ð»Ð°ÑÑ‚Ð¸Ð½Ñ‹ Ð¸ ÑÐ²ÐµÑ€Ñ…Ð´Ð°Ð²Ð»ÐµÐ½Ñ‡ÐµÑÐºÐ¸Ðµ Ð¶Ñ‘ÑÑ‚ÐºÐ¸Ðµ Ñ„Ð¾Ñ€Ð¼Ñ‹ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.";
+                    profile.gameplayIdentity = "ÐŸÐ¾Ð·Ð´Ð½Ð¸Ð¹ Ð¼Ð°Ñ‚ÐµÑ€Ð¸Ð°Ð»-Ñ…Ð°Ð½Ñ‚ Ð¸ Ñ‚ÐµÑ…Ð½Ð¸Ñ‡Ð½Ñ‹Ðµ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹, Ð³Ð´Ðµ ÑƒÐ¶Ðµ Ð½ÑƒÐ¶Ð½Ð° ÑÐµÑ€ÑŒÑ‘Ð·Ð½Ð°Ñ ÑÐºÐ¸Ð¿Ð¸Ñ€Ð¾Ð²ÐºÐ°.";
+                    profile.atmosphereMood = "industrial_hadal";
+                    profile.navigationStyle = "spike_and_plate";
+                    profile.hazardStyle = "abrasive_contact";
+                    profile.landmarkStyle = "metal_needles";
+                    profile.primaryResourceTheme = "nickel_tungsten_cobalt_abyssal_crystal";
+                    profile.secondaryResourceTheme = "high_capacity_power_parts";
+                    profile.suggestedZoneFamily = "progression.setpieces.near";
+                    profile.progressionFeeling = "endgame_material_hunt";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_NickelOre.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_CobaltAlloy.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_HighCapacityCell.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_progression_setpieces_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_power_network_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Progression_Endgame.asset");
+                    break;
+
+                case "biome.family.rift_spine":
+                    profile.familyLabel = "Rift Spine";
+                    profile.debugColor = new Color(0.54f, 0.34f, 0.7f, 1f);
+                    profile.geologicalIdentity = "ÐŸÐ¾Ð·Ð´Ð½ÐµÐ³Ð»ÑƒÐ±Ð¸Ð½Ð½Ñ‹Ðµ Ñ€Ð°Ð·Ð»Ð¾Ð¼Ð½Ñ‹Ðµ Ñ€Ñ‘Ð±Ñ€Ð° Ð¸ Ñ‰ÐµÐ»Ð¸, ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ðµ Ð½Ð°Ð¿Ñ€Ð°Ð²Ð»ÑÑŽÑ‚ Ð¸ ÑÐ¶Ð¸Ð¼Ð°ÑŽÑ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚.";
+                    profile.gameplayIdentity = "Ð­Ñ‚Ð¾ Ð±Ð¸Ð¾Ð¼ Ð´Ð»Ñ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ³Ð¾ Ð¿Ñ€Ð¾Ð´Ð²Ð¸Ð¶ÐµÐ½Ð¸Ñ: Ð¿ÑƒÑ‚ÑŒ Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð¿Ð¾ Ð±Ð¾Ð»ÑŒÑˆÐ¸Ð¼ Ñ„Ð¾Ñ€Ð¼Ð°Ð¼, Ð° Ð¾ÑˆÐ¸Ð±ÐºÐ° Ð´Ð¾Ñ€Ð¾Ð³Ð¾ ÑÑ‚Ð¾Ð¸Ñ‚.";
+                    profile.atmosphereMood = "severe_directional";
+                    profile.navigationStyle = "rift_edge_following";
+                    profile.hazardStyle = "collapse_and_fall";
+                    profile.landmarkStyle = "rift_fins";
+                    profile.primaryResourceTheme = "deep_power_and_structural_ores";
+                    profile.secondaryResourceTheme = "combat_salvage";
+                    profile.suggestedZoneFamily = "progression.route.landmark";
+                    profile.progressionFeeling = "late_route_commitment";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_TungstenChunk.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_LithiumCrystal.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_PowerCoupler.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_progression_setpieces_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_progression_route_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Progression_Endgame.asset");
+                    break;
+
+                case "biome.family.rift_void":
+                default:
+                    profile.familyLabel = "Rift Void";
+                    profile.debugColor = new Color(0.24f, 0.24f, 0.34f, 1f);
+                    profile.geologicalIdentity = "ÐŸÐ°ÑÑ‚Ð¸, ÑˆÐ°Ñ…Ñ‚Ñ‹, Ð¿Ñ€Ð¾Ð²Ð°Ð»Ñ‹ Ð¸ Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ð½Ñ‹Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹, Ð³Ð´Ðµ ÑÐ°Ð¼ Ð¼Ð°ÑÑˆÑ‚Ð°Ð± Ð¿Ñ€Ð¾ÑÑ‚Ñ€Ð°Ð½ÑÑ‚Ð²Ð° ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑÑ ÑƒÐ³Ñ€Ð¾Ð·Ð¾Ð¹.";
+                    profile.gameplayIdentity = "Ð­Ñ‚Ð¾ ÑƒÐ¶Ðµ Ð¿Ð¾Ð·Ð´Ð½ÑÑ Ð½Ð°Ð²Ð¸Ð³Ð°Ñ†Ð¸Ñ Ð½Ð° ÑÑ‚Ñ€Ð°Ñ…Ðµ, Ð³Ð»ÑƒÐ±Ð¸Ð½Ðµ Ð¸ Ñ€ÐµÐ´ÐºÐ¸Ñ… Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð¸Ñ€Ð°Ñ…, Ð¿Ð¾Ñ‡Ñ‚Ð¸ Ð±ÐµÐ· Ð»Ð¸ÑˆÐ½ÐµÐ³Ð¾ ÑˆÑƒÐ¼Ð°.";
+                    profile.atmosphereMood = "void_awe";
+                    profile.navigationStyle = "anchor_to_anchor";
+                    profile.hazardStyle = "falloff_and_ambush";
+                    profile.landmarkStyle = "negative_depth_landmarks";
+                    profile.primaryResourceTheme = "rare_salvage_and_abyssal_crystal";
+                    profile.secondaryResourceTheme = "late_pressure_components";
+                    profile.suggestedZoneFamily = "progression.route.landmark";
+                    profile.progressionFeeling = "final_descent";
+                    profile.primaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_AbyssalCrystal.asset");
+                    profile.secondaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_RareEarthDust.asset");
+                    profile.tertiaryResource = LoadItemData("Assets/_Project/Data/Items/Resources/Raw/Data_GoldOre.asset");
+                    profile.signatureComponent = LoadItemData("Assets/_Project/Data/Items/Resources/Components/Comp_AbyssPressureShell.asset");
+                    profile.nearInteractiveFamily = LoadWorldFamilyProfile("FamilyProfile_progression_setpieces_near.asset");
+                    profile.midVisualFamily = LoadWorldFamilyProfile("FamilyProfile_progression_route_mid.asset");
+                    profile.farSilhouetteFamily = LoadWorldFamilyProfile("FamilyProfile_progression_skyline_far.asset");
+                    profile.preferredZonePlan = LoadZonePlanProfile("ZonePlan_ZoneProfile_Progression_Endgame.asset");
+                    break;
             }
-
-            profile.familyLabel = data.familyLabel;
-            profile.debugColor = data.debugColor;
-            profile.geologicalIdentity = data.geologicalIdentity;
-            profile.gameplayIdentity = data.gameplayIdentity;
-            profile.atmosphereMood = data.atmosphereMood;
-            profile.navigationStyle = data.navigationStyle;
-            profile.hazardStyle = data.hazardStyle;
-            profile.landmarkStyle = data.landmarkStyle;
-            profile.primaryResourceTheme = data.primaryResourceTheme;
-            profile.secondaryResourceTheme = data.secondaryResourceTheme;
-            profile.suggestedZoneFamily = data.suggestedZoneFamily;
-            profile.progressionFeeling = data.progressionFeeling;
-
-            profile.primaryResource = LoadItemData(data.primaryResourcePath);
-            profile.secondaryResource = LoadItemData(data.secondaryResourcePath);
-            profile.tertiaryResource = LoadItemData(data.tertiaryResourcePath);
-            profile.signatureComponent = LoadItemData(data.signatureComponentPath);
-
-            profile.nearInteractiveFamily = LoadWorldFamilyProfile(data.nearInteractiveFamilyPath);
-            profile.midVisualFamily = LoadWorldFamilyProfile(data.midVisualFamilyPath);
-            profile.farSilhouetteFamily = LoadWorldFamilyProfile(data.farSilhouetteFamilyPath);
-
-            profile.preferredZonePlan = LoadZonePlanProfile(data.preferredZonePlanPath);
 
             ApplyFamilyEnvironment(profile, familyId);
             ApplyFamilyLoadout(profile, familyId);
