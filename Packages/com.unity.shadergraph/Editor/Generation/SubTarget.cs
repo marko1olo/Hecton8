@@ -6,8 +6,8 @@ using UnityEditor.ShaderGraph.Serialization;
 
 namespace UnityEditor.ShaderGraph
 {
-    [Serializable, GenerationAPI] // TODO: Public
-    internal abstract class SubTarget : JsonObject
+    [Serializable, GenerationAPI]
+    public abstract class SubTarget : JsonObject
     {
         internal abstract Type targetType { get; }
         internal Target target { get; set; }
@@ -36,8 +36,8 @@ namespace UnityEditor.ShaderGraph
         virtual internal IEnumerable<(string key, string value)> SearchTerms => null;
     }
 
-    [GenerationAPI] // TODO: Public
-    internal abstract class SubTarget<T> : SubTarget where T : Target
+    [GenerationAPI]
+    public abstract class SubTarget<T> : SubTarget where T : Target
     {
         internal override Type targetType => typeof(T);
 

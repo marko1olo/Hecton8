@@ -1,59 +1,59 @@
 // ============================================================================
 // HECTON-8 — ScavengePopulator.cs  (Refactored — Direct API Mode)
-// Sistema zaseleniya mira resursnymi uzlami (ResourceNode).
+// System for populating the world with resource nodes (ResourceNode).
 //
-// OTVETSTVENNOSTI:
-//   1. Priem dannyh generatsii ot HectonScatterOutput (Custom MapMagic Node).
-//   2. Spavn ResourceNode cherez ObjectPoolManager (zero-allocation pool).
-//   3. Generatsiya determinirovannyh Unique ID dlya sistemy sohraneniy.
-//   4. Proverka WorldStateManager — propusk uzhe sobrannyh uzlov.
-//   5. Time-sliced spavn — bez frizov pri zagruzke chanka (500+ uzlov).
-//   6. Culling: despavn uzlov pri vygruzke chanka.
-//   7. Reestr aktivnyh uzlov po chankam (ActiveNodesPerChunk).
-//   8. Podsvetka blizhayshego resursa po zaprosu Direktora
+// RESPONSIBILITIES:
+//   1. Receiving generation data from HectonScatterOutput (Custom MapMagic Node).
+//   2. Spawning ResourceNode via ObjectPoolManager (zero-allocation pool).
+//   3. Generating deterministic Unique IDs for the save system.
+//   4. Checking WorldStateManager — skipping already collected nodes.
+//   5. Time-sliced spawning — without freezes during chunk loading (500+ nodes).
+//   6. Culling: despawning nodes upon chunk unloading.
+//   7. Registry of active nodes per chunk (ActiveNodesPerChunk).
+//   8. Highlighting the closest resource upon Director's request
 //      (HighlightNearbyResource).
 //
-// ARHITEKTURA (v2 — Direct API):
+// ARCHITECTURE (v2 — Direct API):
 //   • Registry service — custom MapMagic node resolves through WorldRuntimeReferenceUtility.
-//   • ISlowTickable — dlya time-sliced spavna (ne blokiruet osnovnoy potok).
-//   • HectonScatterOutput → live ScavengePopulator → RegisterSpawnPoint() — pryamye vyzovy, zero GC.
-//   • ObjectPoolManager — spavn/despavn vseh ResourceNode.
-//   • WorldStateManager — proverka depleted sostoyaniya.
+//   • ISlowTickable — for time-sliced spawning (does not block the main thread).
+//   • HectonScatterOutput → live ScavengePopulator → RegisterSpawnPoint() — direct calls, zero GC.
+//   • ObjectPoolManager — spawning/despawning of all ResourceNodes.
+//   • WorldStateManager — checking the depleted state.
 //   • Deterministic ID: hash(chunkCoord, localIndex) → StringBuilder → string.
 //
-// ChTO UDALENO (v1 → v2):
-//   ✗ MapMagicObject ssylka i pole.
+// WHAT WAS REMOVED (v1 → v2):
+//   ✗ MapMagicObject reference and field.
 //   ✗ SubscribeMapMagicEvents / UnsubscribeMapMagicEvents.
-//   ✗ HandleTileApplied — bolshe ne perehvatyvaem sobytie.
-//   ✗ ExtractScatterData — bolshe ne chitaem TerrainData.treeInstances.
-//   ✗ RegisterSpawnPoints(Vector3[], Quaternion[]) — massivnye peregruzki.
-//   Vse zameneno edinym RegisterSpawnPoint(pos, rot, scale, coord, idx).
+//   ✗ HandleTileApplied — no longer intercepting the event.
+//   ✗ ExtractScatterData — no longer reading TerrainData.treeInstances.
+//   ✗ RegisterSpawnPoints(Vector3[], Quaternion[]) — massive overloads.
+//   Everything is replaced by a single RegisterSpawnPoint(pos, rot, scale, coord, idx).
 //
 // DOUBLE DESPAWN PROTECTION (v2.1):
-//   DespawnChunk proveryaet activeInHierarchy pered vozvratom v pul.
-//   Esli obekt uzhe neaktiven — znachit on byl unichtozhen igrokom
-//   i uzhe vozvraschen v pul samim ResourceNode. Povtornyy Despawn propuskaetsya.
+//   DespawnChunk checks activeInHierarchy before returning to the pool.
+//   If the object is already inactive, it means it was destroyed by the player
+//   and already returned to the pool by ResourceNode itself. Repeated Despawn is skipped.
 //
 // HIGHLIGHT (HighlightNearbyResource):
-//   • Ischet blizhayshiy ActiveNode po sqrMagnitude vo vseh zagruzhennyh chankah.
-//   • Iteratsiya: foreach po Dictionary (KeyValuePair), for po List<ActiveNode>.
-//   • Bez LINQ. Bez allokatsiy (struct math only).
-//   • Aktiviruet InteractionHighlighter na naydennom uzle.
-//   • Fallback: Debug.Log esli komponent podsvetki ne nayden.
+//   • Finds the closest ActiveNode by sqrMagnitude in all loaded chunks.
+//   • Iteration: foreach over Dictionary (KeyValuePair), for over List<ActiveNode>.
+//   • No LINQ. No allocations (struct math only).
+//   • Activates InteractionHighlighter on the found node.
+//   • Fallback: Debug.Log if the highlight component is not found.
 //
 // ZERO GC:
-//   • StringBuilder keshirovan — odna allokatsiya navsegda.
+//   • StringBuilder is cached — one allocation forever.
 //   • SpawnRequest — struct (stack allocated).
 //   • Queue<SpawnRequest> — pre-allocated, Enqueue/Dequeue = 0 GC.
-//   • Dictionary<Vector2Int, ChunkData> — allokatsiya pri pervom chanke.
+//   • Dictionary<Vector2Int, ChunkData> — allocation on the first chunk.
 //   • List<ActiveNode> — pre-allocated per chunk.
-//   • Nikakih Find, LINQ, foreach v goryachih putyah.
+//   • No Find, LINQ, or foreach in hot paths.
 //
 // TIME-SLICING:
-//   Spavn raspredelen po neskolkim SlowTick-am:
-//     • maxSpawnsPerTick = 20 (nastraivaemo).
-//     • 500 uzlov = 25 tikov × 0.5s = ~12.5 sekund polnoy zagruzki.
-//     • No igrok vidit uzly poyavlyayuschimisya ot blizhnih k dalnim.
+//   Spawning is distributed across several SlowTicks:
+//     • maxSpawnsPerTick = 20 (configurable).
+//     • 500 nodes = 25 ticks × 0.5s = ~12.5 seconds for a full load.
+//     • But the player sees the nodes appearing from nearest to farthest.
 // ============================================================================
 
 using System.Collections.Generic;

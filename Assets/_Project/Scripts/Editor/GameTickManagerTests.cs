@@ -96,6 +96,20 @@ namespace Hecton8.Tests.Core
             // Act & Assert
             Assert.DoesNotThrow(() => _manager.Unregister((ITickable)null));
         }
+        [Test]
+        public void RegisterAll_NullObject_DoesNotThrow()
+        {
+            // Act & Assert
+            Assert.DoesNotThrow(() => _manager.RegisterAll(null));
+        }
+
+        [Test]
+        public void UnregisterAll_NullObject_DoesNotThrow()
+        {
+            // Act & Assert
+            Assert.DoesNotThrow(() => _manager.UnregisterAll(null));
+        }
+
     }
 }
 #endif

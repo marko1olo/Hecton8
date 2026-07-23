@@ -3057,7 +3057,6 @@ namespace Hecton8.Bootstrap
                         return true;
                     }
 
-                    Debug.Log("[GameBootstrapper-DEBUG] Calling LoadMainMenuAsync");
 #if UNITY_EDITOR
                     if (HectonForceSandboxScene)
                     {
