@@ -874,12 +874,11 @@ namespace Den.Tools.Matrices
 			public void ExportHeightStrips (float[][,] heights) { ExportHeightStrips(heights, rect.offset); }
 			public void ExportHeightStrips (float[][,] heights, Coord heightsOffset)
 			{
-				//TODO: offset doesnt work
-				int offset = 0;
+				int offset = heightsOffset.z;
 				for (int s=0; s<heights.Length; s++)
 				{
-					ExportHeights(heights[s], new Coord(0,offset));
-					offset+=heights[s].GetLength(0);
+					ExportHeights(heights[s], new Coord(heightsOffset.x, offset));
+					offset += heights[s].GetLength(0);
 				}
 			}
 
