@@ -18,6 +18,10 @@ namespace Crest.Spline
 
         public abstract Vector2 GetData();
 
+#if UNITY_EDITOR
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+#endif
+
         public void NotifyOfSplineChange()
         {
             if (transform.parent == null)
@@ -57,6 +61,9 @@ namespace Crest.Spline
         Transform _parent;
 
 #if UNITY_EDITOR
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+        static readonly System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages> s_gizmoReceivers = new System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages>();
+
         void Update()
         {
             _parent = transform.parent;
@@ -130,7 +137,8 @@ namespace Crest.Spline
                 return;
             }
 
-            foreach (var receiver in transform.parent.GetComponents<IReceiveSplinePointOnDrawGizmosSelectedMessages>())
+            transform.parent.GetComponents(s_gizmoReceivers);
+            foreach (var receiver in s_gizmoReceivers)
             {
                 receiver.OnSplinePointDrawGizmosSelected(this);
             }
