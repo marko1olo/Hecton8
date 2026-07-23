@@ -43,14 +43,11 @@ namespace Hecton8.Tests.Core
             if (_prefab != null)
                 UnityEngine.Object.DestroyImmediate(_prefab);
 
-            // Ensure static list is always restored just in case
+            // Ensure test hook is always restored
             var type = typeof(ObjectPoolManager);
-            var cacheField = type.GetField("s_componentCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            if (cacheField != null)
-            {
-                if (cacheField.GetValue(null) == null)
-                    cacheField.SetValue(null, new System.Collections.Generic.List<Component>(8));
-            }
+            var hookField = type.GetField("s_testHook_BeforeAwaitableDebtMonitorNextFrameAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            if (hookField != null)
+                hookField.SetValue(null, null);
         }
 
         [Test]
@@ -72,9 +69,9 @@ namespace Hecton8.Tests.Core
             entryArray.SetValue(entry, 0);
             warmupPresetsField.SetValue(_poolManager, entryArray);
 
-            // Null out static component cache to force a NullReferenceException when InstantiatePooled calls GetComponents(s_componentCache)
-            var s_componentCacheField = type.GetField("s_componentCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-            s_componentCacheField.SetValue(null, null);
+            // Inject test hook to simulate a dependency crash before AwaitableDebtMonitor.NextFrameAsync
+            var hookField = type.GetField("s_testHook_BeforeAwaitableDebtMonitorNextFrameAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            hookField.SetValue(null, new Action(() => throw new Exception("Simulated dependency crash.")));
 
             var cts = new CancellationTokenSource();
 
@@ -90,8 +87,8 @@ namespace Hecton8.Tests.Core
 
             Assert.IsTrue(isCompleted, "Expected _warmupPresetsCompleted to be true after a crash.");
 
-            // Restore the static cache to not break other tests
-            s_componentCacheField.SetValue(null, new System.Collections.Generic.List<Component>(8));
+            // Cleanup test hook
+            hookField.SetValue(null, null);
         }
     }
 }
