@@ -44,6 +44,9 @@ namespace Hecton8.SaveSystem
     [DefaultExecutionOrder(-8000)]
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
+        internal static Action TestHookSimulateCleanupFailure;
+#endif
         private static int _signalPushDropCount;
         private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
@@ -4087,6 +4090,13 @@ namespace Hecton8.SaveSystem
             catch (Exception exception)
             {
                 Exception cleanupException = null;
+#if UNITY_EDITOR
+                if (TestHookSimulateCleanupFailure != null)
+                {
+                    try { TestHookSimulateCleanupFailure(); }
+                    catch (Exception hookEx) { cleanupException = hookEx; }
+                }
+#endif
                 DisposeNativeArrayBestEffort(ref array, ref cleanupException, sentinelLabel: sentinelLabel);
                 if (cleanupException != null)
                     throw new AggregateException(
