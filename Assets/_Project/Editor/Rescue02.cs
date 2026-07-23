@@ -75,7 +75,8 @@ namespace Hecton8.EditorTools
             }
 
             bool hasDirectional = false;
-            foreach (var l in Object.FindObjectsByType<Light>(FindObjectsInactive.Include))
+            var allLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
+            foreach (var l in allLights)
             {
                 if (l.type == LightType.Directional)
                 {
