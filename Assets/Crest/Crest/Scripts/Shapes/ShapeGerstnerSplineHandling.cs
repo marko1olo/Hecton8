@@ -222,7 +222,7 @@ namespace Crest
 
             // For each point after the first, check that it is "in front" of the last, compared
             // to the spline tangent
-            var lastGoodPoint = points[1];
+            var lastGoodPoint = points[0];
             for (int i = 1; i < points.Length; i++)
             {
                 var tangentSpline = pointsOnSpline[i] - pointsOnSpline[i - 1];
