@@ -7480,41 +7480,18 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        private static void EvaluateAuditCandidates(
+            string slotName,
+            SaveSlotAuditResult result,
+            out bool hasSelectedCandidate,
+            out SaveLoadCandidate selectedCandidate,
+            out SaveData selectedData,
+            out bool selectedLegacyFormat)
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-            {
-                result = new SaveSlotAuditResult
-                {
-                    SlotName = string.Empty,
-                    IntegrityState = SaveSlotIntegrityState.Empty,
-                    Message = InvalidSlotNameReason
-                };
-                return false;
-            }
-
-            result = new SaveSlotAuditResult
-            {
-                SlotName = slotName,
-                Success = false,
-                Message = "Audit not attempted."
-            };
-
-            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
-            if (info == null || !info.HasAnySaveData)
-            {
-                result.Message = "No save data found for this slot.";
-                result.IntegrityState = SaveSlotIntegrityState.Empty;
-                return false;
-            }
-
-            result.Success = true;
-            result.IntegrityState = info.IntegrityState;
-
-            SaveLoadCandidate selectedCandidate = default;
-            SaveData selectedData = null;
-            bool selectedLegacyFormat = false;
-            bool hasSelectedCandidate = false;
+            hasSelectedCandidate = false;
+            selectedCandidate = default;
+            selectedData = null;
+            selectedLegacyFormat = false;
 
             int candidateCount = 0;
             lock (SaveLoadCandidateScratchSync)
@@ -7581,6 +7558,46 @@ namespace Hecton8.SaveSystem
                     ClearLoadCandidates(candidates, candidateCount);
                 }
             }
+        }
+
+        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+            {
+                result = new SaveSlotAuditResult
+                {
+                    SlotName = string.Empty,
+                    IntegrityState = SaveSlotIntegrityState.Empty,
+                    Message = InvalidSlotNameReason
+                };
+                return false;
+            }
+
+            result = new SaveSlotAuditResult
+            {
+                SlotName = slotName,
+                Success = false,
+                Message = "Audit not attempted."
+            };
+
+            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
+            if (info == null || !info.HasAnySaveData)
+            {
+                result.Message = "No save data found for this slot.";
+                result.IntegrityState = SaveSlotIntegrityState.Empty;
+                return false;
+            }
+
+            result.Success = true;
+            result.IntegrityState = info.IntegrityState;
+
+            EvaluateAuditCandidates(
+                slotName,
+                result,
+                out bool hasSelectedCandidate,
+                out SaveLoadCandidate selectedCandidate,
+                out SaveData selectedData,
+                out bool selectedLegacyFormat);
 
             result.SlotReadable = hasSelectedCandidate;
             if (!hasSelectedCandidate)
