@@ -163,7 +163,9 @@ namespace Shapes {
 			SerializedObject so = prop.serializedObject;
 			if( so.isEditingMultipleObjects ) {
 				bool[] bools = new bool[entryCount];
-				foreach( int shapeID in so.targetObjects.Select( obj => new SerializedObject( obj ).FindProperty( prop.propertyPath ).GetIntValue( indexOverride ) ) ) {
+				string propPath = prop.propertyPath;
+				foreach( Object obj in so.targetObjects ) {
+					int shapeID = new SerializedObject( obj ).FindProperty( propPath ).GetIntValue( indexOverride );
 					int index = indexOverride == null ? shapeID : Array.IndexOf( indexOverride, shapeID );
 					if( index >= entryCount || index < 0 )
 						continue;

@@ -424,12 +424,11 @@ namespace Den.Tools.Matrices
 			public void ImportHeightStrips (float[][,] heights) { ImportHeightStrips(heights, rect.offset); }
 			public void ImportHeightStrips (float[][,] heights, Coord heightsOffset)
 			{
-				//TODO: offset doesnt work
-				int offset = 0;
+				int offsetZ = 0;
 				for (int s=0; s<heights.Length; s++)
 				{
-					ImportHeights(heights[s], new Coord(0,offset));
-					offset+=heights[s].GetLength(0);
+					ImportHeights(heights[s], new Coord(heightsOffset.x, heightsOffset.z + offsetZ));
+					offsetZ+=heights[s].GetLength(0);
 				}
 			}
 
@@ -874,12 +873,11 @@ namespace Den.Tools.Matrices
 			public void ExportHeightStrips (float[][,] heights) { ExportHeightStrips(heights, rect.offset); }
 			public void ExportHeightStrips (float[][,] heights, Coord heightsOffset)
 			{
-				//TODO: offset doesnt work
-				int offset = 0;
+				int offsetZ = 0;
 				for (int s=0; s<heights.Length; s++)
 				{
-					ExportHeights(heights[s], new Coord(0,offset));
-					offset+=heights[s].GetLength(0);
+					ExportHeights(heights[s], new Coord(heightsOffset.x, heightsOffset.z + offsetZ));
+					offsetZ+=heights[s].GetLength(0);
 				}
 			}
 

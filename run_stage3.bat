@@ -1,0 +1,1 @@
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod "Hecton8.Editor.Diagnostics.Stage3PlaymodeTest.RunTest" -batchmode -nographics -logFile "C:\hades\Hecton8\Logs\Stage3PlaymodeTest.log"

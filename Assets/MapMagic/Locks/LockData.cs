@@ -17,7 +17,7 @@ namespace MapMagic.Locks
 		void Read (Terrain terrain, Lock lk);
 		void WriteInThread (IApplyData applyData);
 		void WriteInApply (Terrain terrain, bool resizeTerrain);
-		void ApplyHeightDelta (Matrix src, Matrix dst);
+		void ApplyHeightDelta (Matrix src, Matrix dst, float terrainHeight);
 		void ResizeFrom (ILockData lockData);
 
 		//void Write (TypeDict apply, out float heightDelta, float relativeHeight); //writes heightdelta for height locks
@@ -91,7 +91,7 @@ namespace MapMagic.Locks
 					(Matrix heightSrc, Matrix heightDst) = HeightData.WriteWithHeightDelta(applyHeightData);
 
 					for (int i=1; i<lockDatas.Length; i++)
-						lockDatas[i].ApplyHeightDelta(heightSrc, heightDst);
+						lockDatas[i].ApplyHeightDelta(heightSrc, heightDst, HeightData.terrainHeight);
 				}
 
 				//or write others

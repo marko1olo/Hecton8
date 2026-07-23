@@ -52,12 +52,16 @@ namespace Crest.Spline
         public float Radius { get => _radius; set => _radius = value; }
         public int Subdivisions { get => _subdivisions; set => _subdivisions = value; }
 
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+
         public void UpdateSpline()
         {
-            foreach (var receiver in transform.GetComponents<IReceiveSplineChangeMessages>())
+            transform.GetComponents(s_receivers);
+            foreach (var receiver in s_receivers)
             {
                 receiver.OnSplineChange();
             }
+            s_receivers.Clear();
         }
 
         public bool AttachDataToSplinePoint(GameObject splinePoint)

@@ -16,6 +16,8 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour
     [Header("Legacy Compatibility")]
     [SerializeField] private Camera hudCamera;
     [SerializeField] private SuitHUDProfile fallbackProfile;
+    [SerializeField] private Canvas _canvas;
+
     public Camera HudCamera => hudCamera;
 
     public static void CopyActiveHudsTo(List<HectonSuitHUD_v4> results)
@@ -53,6 +55,8 @@ public sealed class HectonSuitHUD_v4 : MonoBehaviour
     public void SetHudCamera(Camera camera)
     {
         hudCamera = camera;
+        if (_canvas != null)
+            _canvas.worldCamera = camera;
     }
 
     public void SetFallbackProfile(SuitHUDProfile profile)

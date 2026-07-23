@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton8.Lighting;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -157,10 +158,11 @@ namespace Hecton8.Lighting.Editor
         {
             Lightmapping.realtimeGI = false;
             GameObject[] selected = Selection.gameObjects;
+            List<Renderer> renderers = new List<Renderer>();
             for (int i = 0; i < selected.Length; i++)
             {
-                Renderer[] renderers = selected[i].GetComponentsInChildren<Renderer>(true);
-                for (int r = 0; r < renderers.Length; r++)
+                selected[i].GetComponentsInChildren<Renderer>(true, renderers);
+                for (int r = 0; r < renderers.Count; r++)
                     renderers[r].lightProbeUsage = LightProbeUsage.Off;
             }
         }

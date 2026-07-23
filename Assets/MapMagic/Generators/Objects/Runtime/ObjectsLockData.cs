@@ -167,7 +167,7 @@ namespace MapMagic.Locks
 		}
 
 
-		public void ApplyHeightDelta (Matrix srcHeights, Matrix dstHeights)
+		public void ApplyHeightDelta (Matrix srcHeights, Matrix dstHeights, float terrainHeightDelta)
 		{
 			heightChanged = true;
 
@@ -191,7 +191,7 @@ namespace MapMagic.Locks
 				float hDst = dstHeights.GetRelative(relPos.x, relPos.z);
 				float heightDelta = hDst-hSrc;
 
-				pos.y += heightDelta*terrainHeight;
+				pos.y += heightDelta*terrainHeightDelta;
 
 				adjustedObjsPoses.Add(obj, pos);
 			}

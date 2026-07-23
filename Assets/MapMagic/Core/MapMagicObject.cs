@@ -1,4 +1,4 @@
-﻿
+
 using UnityEngine;
 using System;
 using System.Threading;
@@ -294,8 +294,8 @@ namespace MapMagic.Core
 
 			private void TrySetGenerationCameraFromRender (Camera camera)
 			{
-				if (!Application.isPlaying || !tiles.genAroundMainCam || generationCamera != null)
-					return;
+				if (!isPlaying || !tiles.genAroundMainCam || generationCamera != null)
+				return;
 
 				if (camera == null || !camera.isActiveAndEnabled || camera.cameraType != CameraType.Game)
 					return;

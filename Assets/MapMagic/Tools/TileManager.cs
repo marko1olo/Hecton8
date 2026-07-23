@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -80,10 +80,9 @@ namespace Den.Tools
 		}
 
 
-		protected T ConstructTile (MonoBehaviour holder)
+		protected virtual T ConstructTile (MonoBehaviour holder)
 		{
 			return (T)typeof(T).GetMethod("Construct", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).Invoke(null,new object[]{holder});
-			//TODO: make smth with it
 		}
 
 
@@ -314,7 +313,7 @@ namespace Den.Tools
 			private void PrepareCamCoordsStorage ()
 			{
 				#if UNITY_EDITOR
-				if (!Application.isPlaying)
+				if (!UnityEditor.EditorApplication.isPlaying)
 					return;
 				#endif
 

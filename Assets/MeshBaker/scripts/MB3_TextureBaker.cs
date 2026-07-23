@@ -500,7 +500,11 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
         }
         else if (resultType == MB2_TextureBakeResults.ResultType.textureArray)
         {
-            //TODO validate texture arrays.
+            if (!_ValidateResultMaterialsTexArray())
+            {
+                coroutineResult.isFinished = true;
+                yield break;
+            }
         }
         else if (!_doMultiMaterial)
         {
@@ -707,6 +711,86 @@ public class MB3_TextureBaker : MB3_MeshBakerRoot
             sb.Append(m + ",");
         }
         return sb.ToString();
+    }
+
+
+    bool _ValidateResultMaterialsTexArray()
+    {
+        HashSet<Material> allMatsOnObjs = new HashSet<Material>();
+        for (int i = 0; i < objsToMesh.Count; i++)
+        {
+            if (objsToMesh[i] != null)
+            {
+                Material[] ms = MB_Utility.GetGOMaterials(objsToMesh[i]);
+                for (int j = 0; j < ms.Length; j++)
+                {
+                    if (ms[j] != null) allMatsOnObjs.Add(ms[j]);
+                }
+            }
+        }
+
+        if (resultMaterialsTexArray == null || resultMaterialsTexArray.Length < 1)
+        {
+            Debug.LogError("Using multiple materials but there are no 'Source Material To Combined Mappings'. You need at least one.");
+            return false;
+        }
+
+        HashSet<Material> allMatsInMapping = new HashSet<Material>();
+        for (int i = 0; i < resultMaterialsTexArray.Length; i++)
+        {
+            for (int j = i + 1; j < resultMaterialsTexArray.Length; j++)
+            {
+                if (resultMaterialsTexArray[i].combinedMaterial == resultMaterialsTexArray[j].combinedMaterial)
+                {
+                    Debug.LogError(String.Format("Source To Combined Mapping: Submesh {0} and Submesh {1} use the same combined material. These should be different", i, j));
+                    return false;
+                }
+            }
+
+            MB_MultiMaterialTexArray mm = resultMaterialsTexArray[i];
+            if (mm.combinedMaterial == null)
+            {
+                Debug.LogError("Combined Material is null please create and assign a result material.");
+                return false;
+            }
+            Shader targShader = mm.combinedMaterial.shader;
+            for (int j = 0; j < mm.slices.Count; j++)
+            {
+                MB_TexArraySlice slice = mm.slices[j];
+                for (int k = 0; k < slice.sourceMaterials.Count; k++)
+                {
+                    MB_TexArraySliceRendererMatPair srcMatPair = slice.sourceMaterials[k];
+                    if (srcMatPair.sourceMaterial == null)
+                    {
+                        Debug.LogError("There are null entries in the list of Source Materials");
+                        return false;
+                    }
+                    if (targShader != srcMatPair.sourceMaterial.shader)
+                    {
+                        Debug.LogWarning("Source material " + srcMatPair.sourceMaterial + " does not use shader " + targShader + " it may not have the required textures. If not empty textures will be generated.");
+                    }
+                    if (allMatsInMapping.Contains(srcMatPair.sourceMaterial))
+                    {
+                        Debug.LogError("A Material " + srcMatPair.sourceMaterial + " appears more than once in the list of source materials in the source material to combined mapping. Each source material must be unique.");
+                        return false;
+                    }
+                    allMatsInMapping.Add(srcMatPair.sourceMaterial);
+                }
+            }
+        }
+
+        if (allMatsOnObjs.IsProperSubsetOf(allMatsInMapping))
+        {
+            allMatsInMapping.ExceptWith(allMatsOnObjs);
+            Debug.LogWarning("There are materials in the mapping that are not used on your source objects: " + PrintSet(allMatsInMapping));
+        }
+        if (resultMaterialsTexArray != null && resultMaterialsTexArray.Length > 0 && allMatsInMapping.IsProperSubsetOf(allMatsOnObjs))
+        {
+            allMatsOnObjs.ExceptWith(allMatsInMapping);
+            Debug.LogError("There are materials on the objects to combine that are not in the mapping: " + PrintSet(allMatsOnObjs));
+            return false;
+        }
+        return true;
     }
 
     bool _ValidateResultMaterials()

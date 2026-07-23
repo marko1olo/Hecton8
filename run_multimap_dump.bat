@@ -1,0 +1,1 @@
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -projectPath "C:\hades\Hecton8" -executeMethod "MapMagic.Editor.Diagnostics.MultiMapDumpTask.Dump" -batchmode -nographics -logFile "C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\multimap_unity.log"

@@ -231,12 +231,11 @@ namespace Den.Tools
 			return distX+distZ;
 		}
 
-		//TODO: test
 		public static int DistanceAxisAligned (Coord c, CoordRect rect) //NOT manhattan dist. offset and size are instead of UnityEngine.Rect
 		{
 			//finding x distance
 			int distPosX = rect.offset.x - c.x;
-			int distNegX = c.x - rect.offset.x - rect.size.x;
+			int distNegX = c.x - (rect.offset.x + rect.size.x - 1);
 			
 			int distX;
 			if (distPosX >= 0) distX = distPosX;
@@ -245,7 +244,7 @@ namespace Den.Tools
 
 			//finding z distance
 			int distPosZ = rect.offset.z - c.z;
-			int distNegZ = c.z - rect.offset.z - rect.size.z;
+			int distNegZ = c.z - (rect.offset.z + rect.size.z - 1);
 			
 			int distZ;
 			if (distPosZ >= 0) distZ = distPosZ;
@@ -836,7 +835,8 @@ namespace Den.Tools
 
 				return new CoordRect (minX, minZ, maxX-minX, maxZ-minZ);
 			}
-			//public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center-range, center+range), cellRes); } //TODO: test, might be broken when cellSize = 1
+			[Obsolete]
+			public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center, range), cellRes); }
 
 			[Obsolete]
 			public static CoordRect PickIntersectingCellsByPos (float rectMinX, float rectMinZ, float rectMaxX, float rectMaxZ, float cellSize)
@@ -937,12 +937,12 @@ namespace Den.Tools
 		public static Coord3D operator / (Coord3D c, int s) { return  new Coord3D(c.x/s, c.y/s, c.z/s); }
 		public static Coord3D operator / (Coord3D c, float s) { return new Coord3D((int)(c.x/s), (int)(c.y/s), (int)(c.z/s)); }
 
-		public static readonly Coord3D up = new Coord3D(0,1,0); //TODO: could be changed externally
-		public static readonly Coord3D down = new Coord3D(0,-1,0);
-		public static readonly Coord3D front = new Coord3D(0,0,1);
-		public static readonly Coord3D back = new Coord3D(0,0,-1);
-		public static readonly Coord3D left = new Coord3D(-1,0,0);
-		public static readonly Coord3D right = new Coord3D(1,0,0);
+		public static Coord3D up { get; set; } = new Coord3D(0,1,0);
+		public static Coord3D down { get; set; } = new Coord3D(0,-1,0);
+		public static Coord3D front { get; set; } = new Coord3D(0,0,1);
+		public static Coord3D back { get; set; } = new Coord3D(0,0,-1);
+		public static Coord3D left { get; set; } = new Coord3D(-1,0,0);
+		public static Coord3D right { get; set; } = new Coord3D(1,0,0);
 
 		public override bool Equals(object obj) { if (obj is Coord3D co) return co.x==x && co.y==y && co.z==z; return false; }
 		public override int GetHashCode() {return x*1000000 + y*1000 + z;}

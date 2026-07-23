@@ -145,7 +145,7 @@ namespace VLB
 
         void DrawLODBeamsList()
         {
-            if (m_Target.IsPropertlyLoaded()) // fix errors when Unity's LODGroup component is disabled
+            if (m_Target.IsPropertlyLoaded()) // prevent errors when Unity's LODGroup component is disabled
             {
                 Debug.Assert(m_LODBeamsList != null);
                 m_LODBeamsList.DoLayoutList();

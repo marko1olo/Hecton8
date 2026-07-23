@@ -44,10 +44,17 @@ namespace Hecton8.SaveSystem
     [DefaultExecutionOrder(-8000)]
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
+        internal static Action TestHookSimulateCleanupFailure;
+#endif
         private static int _signalPushDropCount;
         private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
         private static int s_criticalSectorCorruptionNotificationMissCount;
+
+#if UNITY_EDITOR
+        internal static Action Test_OnBeforeShutdownServiceState;
+#endif
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -442,6 +449,7 @@ namespace Hecton8.SaveSystem
 
         private static class StaticNativeBuffers
         {
+            internal static System.Action TestHook_DisposeThrow;
             private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
             public static NativeArray<byte> RawWriteBuffer;
@@ -521,6 +529,7 @@ namespace Hecton8.SaveSystem
 
             public static void Dispose()
             {
+                TestHook_DisposeThrow?.Invoke();
                 lock (SaveLoadCandidateScratchSync)
                 {
                     lock (Sync)
@@ -641,6 +650,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR
+                    Test_OnBeforeShutdownServiceState?.Invoke();
+#endif
                     manager.ShutdownServiceState();
                 }
                 catch (Exception exception)
@@ -3436,6 +3448,11 @@ namespace Hecton8.SaveSystem
             return value > uint.MaxValue ? uint.MaxValue : (uint)value;
         }
 
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static Action TestHook_PublishSaveStatus_SimulateException;
+#endif
+
         private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
         {
             try
@@ -3455,6 +3472,10 @@ namespace Hecton8.SaveSystem
                 SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TestHook_PublishSaveStatus_SimulateException?.Invoke();
+#endif
+
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
                 {
                     SlotHash = slotHash,
@@ -3464,6 +3485,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3476,6 +3500,10 @@ namespace Hecton8.SaveSystem
         {
             PublishSaveStatus(ResolveSlotHash(slotIndex, slotName), operationId, state, progress01, flags);
         }
+
+#if UNITY_EDITOR
+        internal static System.Action PublishSaveLifecycleTestHook;
+#endif
 
         private static void PublishSaveStatus(uint slotHash, uint operationId, byte state, float progress01, uint flags)
         {
@@ -3504,6 +3532,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3547,6 +3578,9 @@ namespace Hecton8.SaveSystem
                     Result = args.Succeeded ? (byte)1 : (byte)0,
                     Flags = args.Succeeded ? (byte)0 : (byte)1
                 };
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_PublishSaveCompleted_BeforePush?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in completed);
             }
             catch (Exception exception)
@@ -4040,6 +4074,11 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR
+        internal static Action s_testHookCreatePersistentNativeArrayException;
+        internal static Action s_testHookDisposeNativeArrayException;
+#endif
+
         private static NativeArray<T> CreatePersistentNativeArray<T>(
             int length,
             NativeArrayOptions options,
@@ -4049,6 +4088,9 @@ namespace Hecton8.SaveSystem
             try
             {
                 array = new NativeArray<T>(length, Allocator.Persistent, options);
+#if UNITY_EDITOR
+                s_testHookCreatePersistentNativeArrayException?.Invoke();
+#endif
                 int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
                 if (registrationId <= 0)
                     throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
@@ -4058,6 +4100,13 @@ namespace Hecton8.SaveSystem
             catch (Exception exception)
             {
                 Exception cleanupException = null;
+#if UNITY_EDITOR
+                if (TestHookSimulateCleanupFailure != null)
+                {
+                    try { TestHookSimulateCleanupFailure(); }
+                    catch (Exception hookEx) { cleanupException = hookEx; }
+                }
+#endif
                 DisposeNativeArrayBestEffort(ref array, ref cleanupException, sentinelLabel: sentinelLabel);
                 if (cleanupException != null)
                     throw new AggregateException(
@@ -4078,6 +4127,10 @@ namespace Hecton8.SaveSystem
             DisposeNativeArray(ref array, dependency, deferDisposal);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static System.Action DisposeNativeArrayTestHook;
+#endif
+
         private static void DisposeTransientNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
             ref Exception firstException,
@@ -4087,6 +4140,9 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                DisposeNativeArrayTestHook?.Invoke();
+#endif
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
@@ -4155,9 +4211,15 @@ namespace Hecton8.SaveSystem
 
             array = default;
 
+#if UNITY_EDITOR
+            s_testHookDisposeNativeArrayException?.Invoke();
+#endif
+
             if (firstException != null)
                 throw firstException;
         }
+
+        internal static Action<Exception> s_TestDisposeNativeArrayBestEffortHook;
 
         private static void DisposeNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
@@ -4168,6 +4230,10 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+                if (s_TestDisposeNativeArrayBestEffortHook != null)
+                {
+                    s_TestDisposeNativeArrayBestEffortHook(firstException);
+                }
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
@@ -4280,6 +4346,9 @@ namespace Hecton8.SaveSystem
             LogErrorBestEffort("[SaveManager] signal bridge failed: " + exception);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static Action TestHook_PublishSaveCompleted_BeforePush;
+#endif
         private static void TryPushSignalTrackedBestEffort<TSignal>(in TSignal signal)
             where TSignal : unmanaged, ISignal
         {
@@ -4650,17 +4719,214 @@ namespace Hecton8.SaveSystem
             return SaveGameAsyncInternal(slotName, ResolveManualSlotIndex(slotName), ResolveOperationId(0u));
         }
 
-        private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
+        private bool TryPopulateSaveDataAndCaptureVoxelSnapshot(
+            string slotName,
+            byte slotIndex,
+            uint operationId,
+            SaveData data,
+            long elapsedMilliseconds,
+            ref NativeArray<byte> voxelDeltaSnapshot,
+            ref bool ownsVoxelDeltaSnapshot,
+            ref VoxelDeltaProcessor borrowedVoxelDeltaSnapshotOwner,
+            ref bool snapshotPauseActive)
         {
-            CachePersistentDataPathRoot();
-            LastOperationSucceeded = false;
-            LastOperationError = string.Empty;
-            LastOperationSlot = string.Empty;
-            LastLoadUsedBackup = false;
-            LastLoadBackupGeneration = 0;
-            LastLoadSelfRepaired = false;
-            LastLoadUsedLegacyCompression = false;
+            SortRegistryIfDirty(SavePriorityComparer);
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                ISaveable saveable = _saveables[i];
+                if (!IsAlive(saveable))
+                    continue;
 
+                if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
+                {
+                    Exception cleanupException = null;
+                    if (borrowedVoxelDeltaSnapshotOwner != null)
+                    {
+                        ReleaseBorrowedVoxelDeltaSnapshotBestEffort(borrowedVoxelDeltaSnapshotOwner, ref cleanupException);
+                        borrowedVoxelDeltaSnapshotOwner = null;
+                    }
+
+                    if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
+                        DisposeTransientNativeArrayBestEffort(ref voxelDeltaSnapshot, ref cleanupException, sentinelLabel: "voxelDeltaSnapshot");
+                    else
+                        voxelDeltaSnapshot = default;
+
+                    ReportPersistenceCleanupFailure("save", cleanupException);
+                    ownsVoxelDeltaSnapshot = false;
+                    if (!voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                            out voxelDeltaSnapshot,
+                            out int voxelDeltaSnapshotByteCount) ||
+                        voxelDeltaSnapshotByteCount <= 0)
+                    {
+                        if (voxelDeltaSnapshotByteCount > 0)
+                        {
+                            const string reason = "Voxel delta native snapshot copy failed.";
+                            const string logReason = "[SaveManager] Save failed: voxel delta native snapshot copy failed.";
+                            const uint failureCode = 3u;
+                            voxelDeltaSnapshot = default;
+                            HandleSaveFailure(slotName, slotIndex, operationId, reason, logReason, failureCode, elapsedMilliseconds, ref cleanupException, ref snapshotPauseActive);
+                            return false;
+                        }
+
+                        voxelDeltaSnapshot = default;
+                    }
+                    else
+                    {
+                        borrowedVoxelDeltaSnapshotOwner = voxelDeltaProcessor;
+                    }
+                }
+
+                saveable.PopulateSaveData(data);
+            }
+            return true;
+        }
+
+        private bool TryCapturePersistentWorldSnapshot(
+            string slotName,
+            byte slotIndex,
+            uint operationId,
+            PersistentWorldRegistry persistentWorldRegistry,
+            long elapsedMilliseconds,
+            ref NativeArray<PersistentWorldDeltaRecord>.ReadOnly persistentWorldDeltaSnapshot,
+            ref NativeArray<PersistentWorldDeltaRecord> persistentWorldDeltaSnapshotOwner,
+            ref bool snapshotPauseActive)
+        {
+            if (persistentWorldRegistry != null)
+            {
+                if (!persistentWorldRegistry.CaptureSaveSnapshot())
+                {
+                    const string reason = "Persistent world save snapshot capture failed.";
+                    const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
+                    const uint failureCode = 3u;
+                    Exception cleanupException = null;
+                    HandleSaveFailure(slotName, slotIndex, operationId, reason, logReason, failureCode, elapsedMilliseconds, ref cleanupException, ref snapshotPauseActive);
+                    return false;
+                }
+
+                int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
+                if (persistentWorldSnapshotCapacity > 0)
+                {
+                    persistentWorldDeltaSnapshotOwner = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
+                        persistentWorldSnapshotCapacity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory,
+                        "persistentWorldDeltaSnapshotOwner");
+
+                    if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
+                        persistentWorldDeltaSnapshotOwner,
+                        persistentWorldSnapshotCapacity,
+                        out int copiedPersistentWorldDeltas))
+                    {
+                        Exception cleanupException = null;
+                        DisposeTransientNativeArrayBestEffort(ref persistentWorldDeltaSnapshotOwner, ref cleanupException, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
+                        const string reason = "Persistent world save snapshot copy failed.";
+                        const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
+                        const uint failureCode = 3u;
+                        HandleSaveFailure(slotName, slotIndex, operationId, reason, logReason, failureCode, elapsedMilliseconds, ref cleanupException, ref snapshotPauseActive);
+                        return false;
+                    }
+
+                    if (copiedPersistentWorldDeltas > 0)
+                    {
+                        NativeArray<PersistentWorldDeltaRecord> copiedView = copiedPersistentWorldDeltas < persistentWorldDeltaSnapshotOwner.Length
+                            ? persistentWorldDeltaSnapshotOwner.GetSubArray(0, copiedPersistentWorldDeltas)
+                            : persistentWorldDeltaSnapshotOwner;
+                        persistentWorldDeltaSnapshot = copiedView.AsReadOnly();
+                    }
+                }
+            }
+            return true;
+        }
+
+        private void CaptureEcosystemSnapshot(
+            ref NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemSectorSnapshot,
+            ref NativeArray<EcosystemSectorSaveRecord> ecosystemSectorSnapshotOwner)
+        {
+            EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
+            if (ecosystemDirector != null)
+            {
+                ecosystemDirector.CaptureSaveSnapshot();
+                NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
+                if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
+                {
+                    ecosystemSectorSnapshotOwner = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
+                        ecosystemRecordCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory,
+                        "ecosystemSectorSnapshotOwner");
+
+                    for (int i = 0; i < ecosystemRecordCount; i++)
+                        ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
+
+                    ecosystemSectorSnapshot = ecosystemSectorSnapshotOwner.AsReadOnly();
+                }
+            }
+        }
+
+        private void CaptureQuestSnapshot(
+            long saveTimestampTicks,
+            ref NativeArray<uint> packedQuestStateSnapshot,
+            ref QuestSaveHeader packedQuestSaveHeader)
+        {
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (questManager != null)
+            {
+                int packedQuestWordCount = questManager.PackedStateWordCount;
+                if (packedQuestWordCount > 0)
+                {
+                    packedQuestStateSnapshot = CreateTransientNativeArray<uint>(
+                        packedQuestWordCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory,
+                        "packedQuestStateSnapshot");
+
+                    bool copiedQuestState;
+                    unsafe
+                    {
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateSnapshot);
+                        copiedQuestState = questManager.TryCopyPackedStateSnapshot(
+                            destinationPtr,
+                            packedQuestStateSnapshot.Length,
+                            out packedQuestSaveHeader,
+                            saveTimestampTicks);
+                    }
+
+                    if (!copiedQuestState)
+                        DisposeTransientNativeArrayBestEffortAndReport(ref packedQuestStateSnapshot, "save", "packedQuestStateSnapshot");
+                }
+            }
+        }
+
+        private void HandleSaveFailure(
+            string slotName,
+            byte slotIndex,
+            uint operationId,
+            string reason,
+            string logReason,
+            uint failureCode,
+            long elapsedMilliseconds,
+            ref Exception cleanupException,
+            ref bool snapshotPauseActive)
+        {
+            if (snapshotPauseActive)
+            {
+                ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
+                snapshotPauseActive = false;
+            }
+
+            ReportPersistenceCleanupFailure("save", cleanupException);
+            RecordAsyncPersistenceTelemetry(operationId, slotName, elapsedMilliseconds, 0L, 0, 0, failureCode);
+            PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: elapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
+            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
+            DumpSaveBlackBox();
+            RecordFailure(slotName, "save", reason);
+            LastOperationError = reason;
+            LogError(logReason);
+            SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
+        }
+
+        private bool TryPassPreflightChecks(ref string slotName, byte slotIndex, uint operationId)
+        {
             if (_runtimeOwnerAborted || !_serviceRegistered)
             {
                 uint unavailableSlotHash = ResolveUnavailableSlotContext(slotName, slotIndex, out string unavailableSlotName);
@@ -4668,7 +4934,7 @@ namespace Hecton8.SaveSystem
                 LastOperationSlot = unavailableSlotName;
                 SaveEvents.TryRaiseSaveFailed(unavailableSlotHash, SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);
                 PublishSaveStatus(unavailableSlotHash, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                return;
+                return false;
             }
 
             if (!TryResolveSafeSlotName(slotName, out slotName))
@@ -4677,7 +4943,7 @@ namespace Hecton8.SaveSystem
                 LogWarning("[SaveManager] Ignored save request: invalid slot name.");
                 SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);
                 PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                return;
+                return false;
             }
 
             LastOperationSlot = slotName;
@@ -4689,11 +4955,11 @@ namespace Hecton8.SaveSystem
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
                 SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                return;
+                return false;
             }
 
             if (TryRejectSaveDuringRespawnReconciliation(slotIndex, operationId, slotName))
-                return;
+                return false;
 
             if (HectonFloatingOrigin.IsShiftInProgress || HectonFloatingOrigin.IsPhysicsPausedForShift)
             {
@@ -4702,7 +4968,7 @@ namespace Hecton8.SaveSystem
                 LogWarning($"[SaveManager] Ignored save request for '{slotName}': {reason}");
                 SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, 1u);
-                return;
+                return false;
             }
 
             _isBusy = true;
@@ -4718,8 +4984,25 @@ namespace Hecton8.SaveSystem
                 ReportPersistenceCleanupFailure("save", startupException);
                 SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, 1u);
-                return;
+                return false;
             }
+
+            return true;
+        }
+
+        private async Awaitable SaveGameAsyncInternal(string slotName, byte slotIndex, uint operationId)
+        {
+            CachePersistentDataPathRoot();
+            LastOperationSucceeded = false;
+            LastOperationError = string.Empty;
+            LastOperationSlot = string.Empty;
+            LastLoadUsedBackup = false;
+            LastLoadBackupGeneration = 0;
+            LastLoadSelfRepaired = false;
+            LastLoadUsedLegacyCompression = false;
+
+            if (!TryPassPreflightChecks(ref slotName, slotIndex, operationId))
+                return;
 
             SaveThumbnailSystem.CaptureTicket thumbnailTicket = default;
             var totalTimer = Stopwatch.StartNew();
@@ -4759,196 +5042,33 @@ namespace Hecton8.SaveSystem
                 thumbnailTicket = SaveThumbnailSystem.CaptureThumbnailForSave(slotName, slotIndex, operationId);
                 ThreadSafeCommandQueue.PrepareStorageReservationCommitBridgeForPersistenceSnapshot();
                 snapshotTimer.Restart();
-                SortRegistryIfDirty(SavePriorityComparer);
-                for (int i = 0; i < _saveableCount; i++)
+
+                if (!TryPopulateSaveDataAndCaptureVoxelSnapshot(
+                    slotName, slotIndex, operationId, data, totalTimer.ElapsedMilliseconds,
+                    ref voxelDeltaSnapshot, ref ownsVoxelDeltaSnapshot,
+                    ref borrowedVoxelDeltaSnapshotOwner, ref snapshotPauseActive))
                 {
-                    ISaveable saveable = _saveables[i];
-                    if (!IsAlive(saveable))
-                        continue;
-
-                    if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
-                    {
-                        Exception cleanupException = null;
-                        if (borrowedVoxelDeltaSnapshotOwner != null)
-                        {
-                            ReleaseBorrowedVoxelDeltaSnapshotBestEffort(borrowedVoxelDeltaSnapshotOwner, ref cleanupException);
-                            borrowedVoxelDeltaSnapshotOwner = null;
-                        }
-
-                        if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
-                            DisposeTransientNativeArrayBestEffort(ref voxelDeltaSnapshot, ref cleanupException, sentinelLabel: "voxelDeltaSnapshot");
-                        else
-                            voxelDeltaSnapshot = default;
-
-                        ReportPersistenceCleanupFailure("save", cleanupException);
-                        ownsVoxelDeltaSnapshot = false;
-                        if (!voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
-                                out voxelDeltaSnapshot,
-                                out int voxelDeltaSnapshotByteCount) ||
-                            voxelDeltaSnapshotByteCount <= 0)
-                        {
-                            if (voxelDeltaSnapshotByteCount > 0)
-                            {
-                                const string reason = "Voxel delta native snapshot copy failed.";
-                                const string logReason = "[SaveManager] Save failed: voxel delta native snapshot copy failed.";
-                                const uint failureCode = 3u;
-                                voxelDeltaSnapshot = default;
-                                if (snapshotPauseActive)
-                                {
-                                    ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                                    snapshotPauseActive = false;
-                                }
-
-                                ReportPersistenceCleanupFailure("save", cleanupException);
-                                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                                DumpSaveBlackBox();
-                                RecordFailure(slotName, "save", reason);
-                                LastOperationError = reason;
-                                LogError(logReason);
-                                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                                return;
-                            }
-
-                            voxelDeltaSnapshot = default;
-                        }
-                        else
-                        {
-                            borrowedVoxelDeltaSnapshotOwner = voxelDeltaProcessor;
-                        }
-
-                    }
-
-                    saveable.PopulateSaveData(data);
+                    return;
                 }
 
                 StampRuntimeWorldSeed(data);
                 StampProceduralTerrainIdentity(data);
                 ModSaveStateStore.PopulateSaveData(data);
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
-                if (persistentWorldRegistry != null)
+
+                if (!TryCapturePersistentWorldSnapshot(
+                    slotName, slotIndex, operationId, persistentWorldRegistry, totalTimer.ElapsedMilliseconds,
+                    ref persistentWorldDeltaSnapshot, ref persistentWorldDeltaSnapshotOwner, ref snapshotPauseActive))
                 {
-                    if (!persistentWorldRegistry.CaptureSaveSnapshot())
-                    {
-                        const string reason = "Persistent world save snapshot capture failed.";
-                        const string logReason = "[SaveManager] Save failed: persistent world save snapshot capture failed.";
-                        const uint failureCode = 3u;
-                        Exception cleanupException = null;
-                        if (snapshotPauseActive)
-                        {
-                            ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                            snapshotPauseActive = false;
-                        }
-
-                        ReportPersistenceCleanupFailure("save", cleanupException);
-                        RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                        PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                        PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                        DumpSaveBlackBox();
-                        RecordFailure(slotName, "save", reason);
-                        LastOperationError = reason;
-                        LogError(logReason);
-                        SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                        return;
-                    }
-
-                    int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
-                    if (persistentWorldSnapshotCapacity > 0)
-                    {
-                        persistentWorldDeltaSnapshotOwner = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
-                            persistentWorldSnapshotCapacity,
-                            Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory,
-                            "persistentWorldDeltaSnapshotOwner");
-
-                        if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
-                            persistentWorldDeltaSnapshotOwner,
-                            persistentWorldSnapshotCapacity,
-                            out int copiedPersistentWorldDeltas))
-                        {
-                            Exception cleanupException = null;
-                            DisposeTransientNativeArrayBestEffort(ref persistentWorldDeltaSnapshotOwner, ref cleanupException, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
-                            const string reason = "Persistent world save snapshot copy failed.";
-                            const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
-                            const uint failureCode = 3u;
-                            if (snapshotPauseActive)
-                            {
-                                ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                                snapshotPauseActive = false;
-                            }
-
-                            ReportPersistenceCleanupFailure("save", cleanupException);
-                            RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                            PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                            DumpSaveBlackBox();
-                            RecordFailure(slotName, "save", reason);
-                            LastOperationError = reason;
-                            LogError(logReason);
-                            SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);
-                            return;
-                        }
-
-                        if (copiedPersistentWorldDeltas > 0)
-                        {
-                            NativeArray<PersistentWorldDeltaRecord> copiedView = copiedPersistentWorldDeltas < persistentWorldDeltaSnapshotOwner.Length
-                                ? persistentWorldDeltaSnapshotOwner.GetSubArray(0, copiedPersistentWorldDeltas)
-                                : persistentWorldDeltaSnapshotOwner;
-                            persistentWorldDeltaSnapshot = copiedView.AsReadOnly();
-                        }
-                    }
+                    return;
                 }
 
-                EcosystemDirector ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
-                if (ecosystemDirector != null)
-                {
-                    ecosystemDirector.CaptureSaveSnapshot();
-                    NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
-                    if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
-                    {
-                        ecosystemSectorSnapshotOwner = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
-                            ecosystemRecordCount,
-                            Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory,
-                            "ecosystemSectorSnapshotOwner");
-
-                        for (int i = 0; i < ecosystemRecordCount; i++)
-                            ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
-
-                        ecosystemSectorSnapshot = ecosystemSectorSnapshotOwner.AsReadOnly();
-                    }
-                }
+                CaptureEcosystemSnapshot(ref ecosystemSectorSnapshot, ref ecosystemSectorSnapshotOwner);
 
                 divergenceSnapshotTimer.Stop();
                 long saveTimestampTicks = DateTime.UtcNow.Ticks;
-                QuestManager questManager = GlobalRegistry.Quest;
-                if (questManager != null)
-                {
-                    int packedQuestWordCount = questManager.PackedStateWordCount;
-                    if (packedQuestWordCount > 0)
-                    {
-                        packedQuestStateSnapshot = CreateTransientNativeArray<uint>(
-                            packedQuestWordCount,
-                            Allocator.Persistent,
-                            NativeArrayOptions.ClearMemory,
-                            "packedQuestStateSnapshot");
 
-                        bool copiedQuestState;
-                        unsafe
-                        {
-                            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(packedQuestStateSnapshot);
-                            copiedQuestState = questManager.TryCopyPackedStateSnapshot(
-                                destinationPtr,
-                                packedQuestStateSnapshot.Length,
-                                out packedQuestSaveHeader,
-                                saveTimestampTicks);
-                        }
-
-                        if (!copiedQuestState)
-                            DisposeTransientNativeArrayBestEffortAndReport(ref packedQuestStateSnapshot, "save", "packedQuestStateSnapshot");
-                    }
-                }
+                CaptureQuestSnapshot(saveTimestampTicks, ref packedQuestStateSnapshot, ref packedQuestSaveHeader);
 
                 RecordPlayerDialogueChoiceFlag(SaveBinaryStorage.ExtractPlayerDialogueChoiceFlags(packedQuestStateSnapshot));
                 ushort playerDialogueChoiceFlagsSnapshot = PlayerDialogueChoiceFlags;
@@ -5012,14 +5132,8 @@ namespace Hecton8.SaveSystem
                     string failureMessage = string.IsNullOrEmpty(savePipelineError)
                         ? "Verified save pipeline failed."
                         : savePipelineError;
-                    RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, failureCode);
-                    PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                    PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, failureCode);
-                    DumpSaveBlackBox();
-                    RecordFailure(slotName, "save", failureMessage);
-                    LastOperationError = failureMessage;
-                    LogError("[SaveManager] Save failed: " + failureMessage);
-                    SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(failureMessage), failureMessage);
+                    Exception pipelineException = null;
+                    HandleSaveFailure(slotName, slotIndex, operationId, failureMessage, "[SaveManager] Save failed: " + failureMessage, failureCode, totalTimer.ElapsedMilliseconds, ref pipelineException, ref snapshotPauseActive);
                     return;
                 }
 
@@ -5053,22 +5167,8 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
                 await Awaitable.MainThreadAsync();
-                if (snapshotPauseActive)
-                {
-                    Exception cleanupException = null;
-                    ReleaseSnapshotPauseBestEffort(operationId, ref cleanupException);
-                    snapshotPauseActive = false;
-                    ReportPersistenceCleanupFailure("save", cleanupException);
-                }
-
-                RecordAsyncPersistenceTelemetry(operationId, slotName, totalTimer.ElapsedMilliseconds, 0L, 0, 0, 1u);
-                PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: false));
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, 1u);
-                DumpSaveBlackBox();
-                RecordFailure(slotName, "save", ex.Message);
-                LastOperationError = ex.Message;
-                LogError("[SaveManager] Save failed: " + ex);
-                SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(ex.Message), ex.Message);
+                Exception cleanupException = null;
+                HandleSaveFailure(slotName, slotIndex, operationId, ex.Message, "[SaveManager] Save failed: " + ex, 1u, totalTimer.ElapsedMilliseconds, ref cleanupException, ref snapshotPauseActive);
             }
             finally
             {
@@ -5264,110 +5364,59 @@ namespace Hecton8.SaveSystem
             data.proceduralTerrainIdentity = identity;
         }
 
-        private static void ValidateProceduralTerrainIdentity(SaveData data)
+        private static bool CheckProceduralTerrainMacroMismatch(ProceduralTerrainIdentityDTO saved, TerrainArtifactIdentityDTO expected)
         {
-            if (data == null || !data.proceduralTerrainIdentity.HasMacroIdentity)
-                return;
+            return saved.authoringSeed != expected.AuthoringSeed ||
+                   saved.macroArtifactVersion != expected.MacroArtifactVersion ||
+                   math.abs(saved.macroChunkSizeMeters - expected.ChunkSizeMeters) > 0.001f ||
+                   saved.chunkMinX != expected.ChunkMinX ||
+                   saved.chunkMinZ != expected.ChunkMinZ ||
+                   saved.chunkMaxX != expected.ChunkMaxX ||
+                   saved.chunkMaxZ != expected.ChunkMaxZ ||
+                   saved.chunkArtifactRangeHash != expected.ChunkArtifactRangeHash;
+        }
 
-            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
-            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
-            int runtimeSeed = seedProvider != null && seedProvider.IsInitialized
-                ? seedProvider.RuntimeWorldSeed
-                : saved.runtimeSeed;
-            int worldGenerationVersionId = seedProvider != null && seedProvider.IsInitialized
-                ? math.max(0, seedProvider.RuntimeWorldGenerationVersionId)
-                : saved.worldGenerationVersionId;
+        private static bool CheckProceduralTerrainSeedMismatch(
+            ProceduralTerrainIdentityDTO saved,
+            IWorldSeedProvider seedProvider,
+            int runtimeSeed,
+            int worldGenerationVersionId)
+        {
+            return seedProvider != null &&
+                   seedProvider.IsInitialized &&
+                   ((saved.runtimeSeed != 0 && saved.runtimeSeed != runtimeSeed) ||
+                    (saved.worldGenerationVersionId > 0 &&
+                     saved.worldGenerationVersionId != worldGenerationVersionId));
+        }
 
-            TerrainArtifactIdentityDTO expected = ResolveRuntimeTerrainArtifactIdentity(
-                runtimeSeed,
-                worldGenerationVersionId);
-
-            bool macroMismatch =
-                saved.authoringSeed != expected.AuthoringSeed ||
-                saved.macroArtifactVersion != expected.MacroArtifactVersion ||
-                math.abs(saved.macroChunkSizeMeters - expected.ChunkSizeMeters) > 0.001f ||
-                saved.chunkMinX != expected.ChunkMinX ||
-                saved.chunkMinZ != expected.ChunkMinZ ||
-                saved.chunkMaxX != expected.ChunkMaxX ||
-                saved.chunkMaxZ != expected.ChunkMaxZ ||
-                saved.chunkArtifactRangeHash != expected.ChunkArtifactRangeHash;
-
-            bool seedMismatch = seedProvider != null &&
-                                seedProvider.IsInitialized &&
-                                ((saved.runtimeSeed != 0 && saved.runtimeSeed != runtimeSeed) ||
-                                 (saved.worldGenerationVersionId > 0 &&
-                                  saved.worldGenerationVersionId != worldGenerationVersionId));
-
-            bool waterMismatch = false;
+        private static bool CheckProceduralTerrainWaterMismatch(ProceduralTerrainIdentityDTO saved)
+        {
             bool hasSavedWaterCalibration =
                 (saved.flags & ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent) != 0u &&
                 saved.waterCalibrationSourceHash != 0u;
+
             if (hasSavedWaterCalibration &&
                 TryResolveActiveWaterCalibration(out WorldWaterLevelCalibrationDTO waterSnapshot))
             {
-                waterMismatch =
+                bool waterMismatch =
                     waterSnapshot.SourceHash != 0u &&
                     waterSnapshot.SourceHash != saved.waterCalibrationSourceHash;
                 waterMismatch |=
                     math.abs(waterSnapshot.ResolvedWaterLevelY - saved.selectedWaterLevelY) > 0.01f;
-            }
-            else if (hasSavedWaterCalibration)
-            {
-                waterMismatch = true;
+                return waterMismatch;
             }
 
-            uint expectedMesoParamsHash = BuildTerrainMesoParamsHash(expected.AuthoringSeed, expected.RuntimeSeed);
-            bool materialContractMismatch =
-                saved.surfaceMaterialContractVersion != 0u &&
-                saved.surfaceMaterialContractVersion != WorldTerrainSurfaceMaterialResolver.ContractVersion;
-            bool mesoContractMismatch =
-                (saved.mesoDetailContractVersion != 0u &&
-                 saved.mesoDetailContractVersion != WorldTerrainMesoDetailFields.ContractVersion) ||
-                (saved.detailEligibilityContractVersion != 0u &&
-                 saved.detailEligibilityContractVersion != WorldTerrainDetailContracts.ContractVersion) ||
-                (saved.mesoParamsHash != 0u &&
-                 saved.mesoParamsHash != expectedMesoParamsHash);
-            bool providerIdentityMismatch =
-                saved.terrainProviderFlags != 0u &&
-                expected.Flags != 0u &&
-                (saved.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider) !=
-                (expected.Flags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider);
-            bool heightPayloadMismatch =
-                saved.heightCacheRevision > 0 &&
-                expected.CacheRevision > 0 &&
-                saved.heightCacheRevision != expected.CacheRevision;
-            bool terrainEntityMismatch =
-                saved.terrainEntityHash != 0u &&
-                expected.TerrainEntityHash != 0u &&
-                saved.terrainEntityHash != expected.TerrainEntityHash;
-
-            if (!macroMismatch &&
-                !seedMismatch &&
-                !waterMismatch &&
-                !materialContractMismatch &&
-                !mesoContractMismatch &&
-                !providerIdentityMismatch &&
-                !heightPayloadMismatch &&
-                !terrainEntityMismatch)
-            {
-                return;
-            }
-
-            float mismatchMask = 0f;
-            if (macroMismatch) mismatchMask += 1f;
-            if (seedMismatch) mismatchMask += 2f;
-            if (waterMismatch) mismatchMask += 4f;
-            if (materialContractMismatch) mismatchMask += 8f;
-            if (mesoContractMismatch) mismatchMask += 16f;
-            if (providerIdentityMismatch) mismatchMask += 32f;
-            if (heightPayloadMismatch) mismatchMask += 64f;
-            if (terrainEntityMismatch) mismatchMask += 128f;
-            PublishPerformanceWarningBestEffort(
-                TerrainIdentityMismatchTelemetryHash,
-                TerrainIdentityMismatchContextHash,
-                mismatchMask);
+            return hasSavedWaterCalibration;
+        }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void LogProceduralTerrainIdentityMismatch(
+            ProceduralTerrainIdentityDTO saved,
+            TerrainArtifactIdentityDTO expected,
+            int runtimeSeed,
+            int worldGenerationVersionId,
+            uint expectedMesoParamsHash)
+        {
             LogWarning(
                 "[SaveManager] Procedural terrain identity mismatch: saved seed " +
                 saved.runtimeSeed +
@@ -5420,6 +5469,87 @@ namespace Hecton8.SaveSystem
                 " / terrain entity " +
                 expected.TerrainEntityHash +
                 ".");
+        }
+#endif
+
+        private static void ValidateProceduralTerrainIdentity(SaveData data)
+        {
+            if (data == null || !data.proceduralTerrainIdentity.HasMacroIdentity)
+                return;
+
+            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+
+            int runtimeSeed = seedProvider != null && seedProvider.IsInitialized
+                ? seedProvider.RuntimeWorldSeed
+                : saved.runtimeSeed;
+            int worldGenerationVersionId = seedProvider != null && seedProvider.IsInitialized
+                ? math.max(0, seedProvider.RuntimeWorldGenerationVersionId)
+                : saved.worldGenerationVersionId;
+
+            TerrainArtifactIdentityDTO expected = ResolveRuntimeTerrainArtifactIdentity(
+                runtimeSeed,
+                worldGenerationVersionId);
+
+            bool macroMismatch = CheckProceduralTerrainMacroMismatch(saved, expected);
+            bool seedMismatch = CheckProceduralTerrainSeedMismatch(saved, seedProvider, runtimeSeed, worldGenerationVersionId);
+            bool waterMismatch = CheckProceduralTerrainWaterMismatch(saved);
+
+            uint expectedMesoParamsHash = BuildTerrainMesoParamsHash(expected.AuthoringSeed, expected.RuntimeSeed);
+            bool materialContractMismatch =
+                saved.surfaceMaterialContractVersion != 0u &&
+                saved.surfaceMaterialContractVersion != WorldTerrainSurfaceMaterialResolver.ContractVersion;
+            bool mesoContractMismatch =
+                (saved.mesoDetailContractVersion != 0u &&
+                 saved.mesoDetailContractVersion != WorldTerrainMesoDetailFields.ContractVersion) ||
+                (saved.detailEligibilityContractVersion != 0u &&
+                 saved.detailEligibilityContractVersion != WorldTerrainDetailContracts.ContractVersion) ||
+                (saved.mesoParamsHash != 0u &&
+                 saved.mesoParamsHash != expectedMesoParamsHash);
+            bool providerIdentityMismatch =
+                saved.terrainProviderFlags != 0u &&
+                expected.Flags != 0u &&
+                (saved.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider) !=
+                (expected.Flags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider);
+            bool heightPayloadMismatch =
+                saved.heightCacheRevision > 0 &&
+                expected.CacheRevision > 0 &&
+                saved.heightCacheRevision != expected.CacheRevision;
+            bool terrainEntityMismatch =
+                saved.terrainEntityHash != 0u &&
+                expected.TerrainEntityHash != 0u &&
+                saved.terrainEntityHash != expected.TerrainEntityHash;
+
+            if (!macroMismatch &&
+                !seedMismatch &&
+                !waterMismatch &&
+                !materialContractMismatch &&
+                !mesoContractMismatch &&
+                !providerIdentityMismatch &&
+                !heightPayloadMismatch &&
+                !terrainEntityMismatch)
+            {
+                return;
+            }
+
+            float mismatchMask = 0f;
+            if (macroMismatch) mismatchMask += 1f;
+            if (seedMismatch) mismatchMask += 2f;
+            if (waterMismatch) mismatchMask += 4f;
+            if (materialContractMismatch) mismatchMask += 8f;
+            if (mesoContractMismatch) mismatchMask += 16f;
+            if (providerIdentityMismatch) mismatchMask += 32f;
+            if (heightPayloadMismatch) mismatchMask += 64f;
+            if (terrainEntityMismatch) mismatchMask += 128f;
+
+            PublishPerformanceWarningBestEffort(
+                TerrainIdentityMismatchTelemetryHash,
+                TerrainIdentityMismatchContextHash,
+                mismatchMask);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogProceduralTerrainIdentityMismatch(
+                saved, expected, runtimeSeed, worldGenerationVersionId, expectedMesoParamsHash);
 #endif
             if (macroMismatch || seedMismatch || waterMismatch || materialContractMismatch || mesoContractMismatch)
                 TryPushGeologicalAnomalyNotification();
@@ -6203,8 +6333,21 @@ namespace Hecton8.SaveSystem
                         WorldGenerationVersionId = data.ecosystemState.worldGenerationVersionId
                     };
                     int repairBackupRetention = GetBackupRetentionCount(slotName);
+                    RepairPrimaryArtifactsArgs repairArgs = new RepairPrimaryArtifactsArgs(
+                        slotName: slotName,
+                        data: data,
+                        metadataSource: repairMetadata,
+                        packedQuestHeader: loadedQuestHeader,
+                        packedQuestStateWords: loadedQuestStateWords,
+                        playerDialogueChoiceFlags: PlayerDialogueChoiceFlags,
+                        persistentWorldItems: loadedWorldDeltas,
+                        ecosystemSectorStates: loadedEcosystemSectors,
+                        voxelDeltaSnapshot: loadedVoxelDeltaSnapshot,
+                        backupRetentionCount: repairBackupRetention,
+                        overwritePrimarySave: true
+                    );
                     await Awaitable.BackgroundThreadAsync();
-                    repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, PlayerDialogueChoiceFlags, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot, repairBackupRetention);
+                    repairedPrimaryArtifacts = RepairPrimaryArtifacts(in repairArgs);
                     await Awaitable.MainThreadAsync();
                 }
 
@@ -6270,7 +6413,6 @@ namespace Hecton8.SaveSystem
         private async Awaitable<(bool success, bool rejected)> TryRestoreVoxelDataAsync(string slotName, byte slotIndex, uint operationId, SaveData data, NativeArray<byte> loadedVoxelDeltaSnapshot)
         {
             VoxelDeltaProcessor voxelDeltaProcessor = null;
-            bool loadedVoxelDeltaSnapshotRejectedForLoad = false;
             for (int i = 0; i < _saveableCount; i++)
             {
                 ISaveable saveable = _saveables[i];
@@ -6286,142 +6428,118 @@ namespace Hecton8.SaveSystem
 
             if (voxelDeltaProcessor != null)
             {
-                if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
-                {
-                    NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
-                    bool rollbackVoxelDeltaSnapshotAcquired = false;
-                    try
-                    {
-                        bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
-                            out rollbackVoxelDeltaSnapshot,
-                            out int rollbackVoxelDeltaSnapshotBytes);
-                        if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            rollbackVoxelDeltaSnapshotAcquired = true;
-                        }
-                        else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            const string loadFailure = "Voxel delta rollback snapshot copy failed before load.";
-                            await Awaitable.MainThreadAsync();
-                            RecordFailure(slotName, "load", loadFailure);
-                            LastOperationError = loadFailure;
-                            LogError("[SaveManager] Load failed: " + loadFailure);
-                            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                            HideLoadingPipelineScreen();
-                            return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
-                        }
-
-                        if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
-                        {
-                            loadedVoxelDeltaSnapshotRejectedForLoad = true;
-                            if (HasLoadableVoxelDeltaDtoFallback(data))
-                            {
-                                string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
-                                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
-                                {
-                                    bool rollbackRestoreSucceeded = false;
-                                    if (rollbackVoxelDeltaSnapshotAcquired)
-                                    {
-                                        if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackVoxelDeltaSnapshot, out string rollbackError))
-                                        {
-                                            rollbackRestoreSucceeded = true;
-                                        }
-                                        else
-                                        {
-                                            LogError("[SaveManager] Failed to restore voxel state after rejected fallback payload: " + rollbackError);
-                                        }
-                                    }
-
-                                    if (!rollbackRestoreSucceeded)
-                                        voxelDeltaProcessor.LoadFromSaveData(null);
-
-                                    await Awaitable.MainThreadAsync();
-                                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                                        ? "Voxel delta binary payload load failed."
-                                        : voxelFallbackError;
-                                    RecordFailure(slotName, "load", loadFailure);
-                                    LastOperationError = loadFailure;
-                                    LogError("[SaveManager] Load failed: " + loadFailure);
-                                    SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                    PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                    HideLoadingPipelineScreen();
-                                    return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
-                                }
-                            }
-                            else
-                            {
-                                bool rollbackRestoreSucceeded = false;
-                                if (rollbackVoxelDeltaSnapshotAcquired)
-                                {
-                                    if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackVoxelDeltaSnapshot, out string rollbackError))
-                                    {
-                                        rollbackRestoreSucceeded = true;
-                                    }
-                                    else
-                                    {
-                                        LogError("[SaveManager] Failed to restore voxel state after rejected load snapshot: " + rollbackError);
-                                    }
-                                }
-
-                                if (!rollbackRestoreSucceeded)
-                                    voxelDeltaProcessor.LoadFromSaveData(null);
-
-                                await Awaitable.MainThreadAsync();
-                                string loadFailure = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                RecordFailure(slotName, "load", loadFailure);
-                                LastOperationError = loadFailure;
-                                LogError("[SaveManager] Load failed: " + loadFailure);
-                                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                                HideLoadingPipelineScreen();
-                                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (rollbackVoxelDeltaSnapshotAcquired)
-                            voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
-                    }
-                }
-                else
-                {
-                    if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
-                    {
-                        await Awaitable.MainThreadAsync();
-                        string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                            ? "Voxel delta binary payload load failed."
-                            : voxelFallbackError;
-                        RecordFailure(slotName, "load", loadFailure);
-                        LastOperationError = loadFailure;
-                        LogError("[SaveManager] Load failed: " + loadFailure);
-                        SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                        PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                        HideLoadingPipelineScreen();
-                        return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
-                    }
-                }
+                return await RestoreVoxelProcessorDataAsync(slotName, slotIndex, operationId, data, loadedVoxelDeltaSnapshot, voxelDeltaProcessor);
             }
             else if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
             {
-                const string loadFailure = "Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.";
-                RecordFailure(slotName, "load", loadFailure);
-                LastOperationError = loadFailure;
-                LogError("[SaveManager] Load failed: " + loadFailure);
-                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(loadFailure), loadFailure);
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                HideLoadingPipelineScreen();
-                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
+                return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, "Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", false, false);
             }
 
+            return (true, false);
+        }
 
-        return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+        private async Awaitable<(bool success, bool rejected)> RestoreVoxelProcessorDataAsync(string slotName, byte slotIndex, uint operationId, SaveData data, NativeArray<byte> loadedVoxelDeltaSnapshot, VoxelDeltaProcessor voxelDeltaProcessor)
+        {
+            bool loadedVoxelDeltaSnapshotRejectedForLoad = false;
+
+            if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
+            {
+                NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
+                bool rollbackVoxelDeltaSnapshotAcquired = false;
+                try
+                {
+                    bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                        out rollbackVoxelDeltaSnapshot,
+                        out int rollbackVoxelDeltaSnapshotBytes);
+                    if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                    {
+                        rollbackVoxelDeltaSnapshotAcquired = true;
+                    }
+                    else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                    {
+                        return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, "Voxel delta rollback snapshot copy failed before load.", true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                    }
+
+                    if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
+                    {
+                        loadedVoxelDeltaSnapshotRejectedForLoad = true;
+                        if (HasLoadableVoxelDeltaDtoFallback(data))
+                        {
+                            string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
+                                ? "Voxel delta native snapshot load failed."
+                                : voxelLoadError;
+                            LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
+                            if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                            {
+                                TryRestoreRollbackSnapshot(voxelDeltaProcessor, rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
+
+                                string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                                    ? "Voxel delta binary payload load failed."
+                                    : voxelFallbackError;
+                                return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                            }
+                        }
+                        else
+                        {
+                            TryRestoreRollbackSnapshot(voxelDeltaProcessor, rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
+
+                            string loadFailure = string.IsNullOrEmpty(voxelLoadError)
+                                ? "Voxel delta native snapshot load failed."
+                                : voxelLoadError;
+                            return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                        }
+                    }
+                }
+                finally
+                {
+                    if (rollbackVoxelDeltaSnapshotAcquired)
+                        voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
+                }
+            }
+            else
+            {
+                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                {
+                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                        ? "Voxel delta binary payload load failed."
+                        : voxelFallbackError;
+                    return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                }
+            }
+
+            return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+        }
+
+        private async Awaitable<(bool success, bool rejected)> FailVoxelDataLoadAsync(string slotName, byte slotIndex, uint operationId, string message, bool requiresMainThread, bool rejected)
+        {
+            if (requiresMainThread)
+                await Awaitable.MainThreadAsync();
+            RecordFailure(slotName, "load", message);
+            LastOperationError = message;
+            LogError("[SaveManager] Load failed: " + message);
+            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(message), message);
+            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
+            HideLoadingPipelineScreen();
+            return (false, rejected);
+        }
+
+        private void TryRestoreRollbackSnapshot(VoxelDeltaProcessor voxelDeltaProcessor, bool rollbackAcquired, NativeArray<byte> rollbackSnapshot, string failureContext)
+        {
+            bool rollbackRestoreSucceeded = false;
+            if (rollbackAcquired)
+            {
+                if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackSnapshot, out string rollbackError))
+                {
+                    rollbackRestoreSucceeded = true;
+                }
+                else
+                {
+                    LogError($"[SaveManager] Failed to restore voxel state after rejected {failureContext}: {rollbackError}");
+                }
+            }
+
+            if (!rollbackRestoreSucceeded)
+                voxelDeltaProcessor.LoadFromSaveData(null);
         }
 
         public bool SaveExists(string slotName)
@@ -7255,6 +7373,47 @@ namespace Hecton8.SaveSystem
             public string ErrorMessage;
         }
 
+        private readonly struct RepairPrimaryArtifactsArgs
+        {
+            public readonly string SlotName;
+            public readonly SaveData Data;
+            public readonly SaveMetadata MetadataSource;
+            public readonly QuestSaveHeader PackedQuestHeader;
+            public readonly uint[] PackedQuestStateWords;
+            public readonly ushort PlayerDialogueChoiceFlags;
+            public readonly PersistentWorldDeltaRecord[] PersistentWorldItems;
+            public readonly EcosystemSectorSaveRecord[] EcosystemSectorStates;
+            public readonly NativeArray<byte> VoxelDeltaSnapshot;
+            public readonly int BackupRetentionCount;
+            public readonly bool OverwritePrimarySave;
+
+            public RepairPrimaryArtifactsArgs(
+                string slotName,
+                SaveData data,
+                SaveMetadata metadataSource,
+                QuestSaveHeader packedQuestHeader,
+                uint[] packedQuestStateWords,
+                ushort playerDialogueChoiceFlags,
+                PersistentWorldDeltaRecord[] persistentWorldItems,
+                EcosystemSectorSaveRecord[] ecosystemSectorStates,
+                NativeArray<byte> voxelDeltaSnapshot,
+                int backupRetentionCount,
+                bool overwritePrimarySave)
+            {
+                SlotName = slotName;
+                Data = data;
+                MetadataSource = metadataSource;
+                PackedQuestHeader = packedQuestHeader;
+                PackedQuestStateWords = packedQuestStateWords;
+                PlayerDialogueChoiceFlags = playerDialogueChoiceFlags;
+                PersistentWorldItems = persistentWorldItems;
+                EcosystemSectorStates = ecosystemSectorStates;
+                VoxelDeltaSnapshot = voxelDeltaSnapshot;
+                BackupRetentionCount = backupRetentionCount;
+                OverwritePrimarySave = overwritePrimarySave;
+            }
+        }
+
         private static bool TryFindValidRepairCandidate(string slotName, out RepairCandidateResult result)
         {
             result = new RepairCandidateResult();
@@ -7368,18 +7527,20 @@ namespace Hecton8.SaveSystem
             bool shouldRewritePrimaryMetadata = shouldRewritePrimarySave
                 || metadataSource == null;
 
-            bool changedAnything = RepairPrimaryArtifacts(
-                slotName,
-                candidateResult.Data,
-                metadataSource,
-                candidateResult.PackedQuestHeader,
-                candidateResult.PackedQuestStateWords,
-                candidateResult.PlayerDialogueChoiceFlags,
-                candidateResult.PersistentWorldItems,
-                candidateResult.EcosystemSectorStates,
-                candidateResult.VoxelDeltaSnapshot,
-                GetBackupRetentionCountStatic(slotName),
-                shouldRewritePrimarySave);
+            RepairPrimaryArtifactsArgs repairArgs = new RepairPrimaryArtifactsArgs(
+                slotName: slotName,
+                data: candidateResult.Data,
+                metadataSource: metadataSource,
+                packedQuestHeader: candidateResult.PackedQuestHeader,
+                packedQuestStateWords: candidateResult.PackedQuestStateWords,
+                playerDialogueChoiceFlags: candidateResult.PlayerDialogueChoiceFlags,
+                persistentWorldItems: candidateResult.PersistentWorldItems,
+                ecosystemSectorStates: candidateResult.EcosystemSectorStates,
+                voxelDeltaSnapshot: candidateResult.VoxelDeltaSnapshot,
+                backupRetentionCount: GetBackupRetentionCountStatic(slotName),
+                overwritePrimarySave: shouldRewritePrimarySave
+            );
+            bool changedAnything = RepairPrimaryArtifacts(in repairArgs);
 
             SaveSlotInfo afterInfo = BuildSaveSlotInfoInternal(slotName);
 
@@ -7402,41 +7563,18 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        private static void EvaluateAuditCandidates(
+            string slotName,
+            SaveSlotAuditResult result,
+            out bool hasSelectedCandidate,
+            out SaveLoadCandidate selectedCandidate,
+            out SaveData selectedData,
+            out bool selectedLegacyFormat)
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-            {
-                result = new SaveSlotAuditResult
-                {
-                    SlotName = string.Empty,
-                    IntegrityState = SaveSlotIntegrityState.Empty,
-                    Message = InvalidSlotNameReason
-                };
-                return false;
-            }
-
-            result = new SaveSlotAuditResult
-            {
-                SlotName = slotName,
-                Success = false,
-                Message = "Audit not attempted."
-            };
-
-            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
-            if (info == null || !info.HasAnySaveData)
-            {
-                result.Message = "No save data found for this slot.";
-                result.IntegrityState = SaveSlotIntegrityState.Empty;
-                return false;
-            }
-
-            result.Success = true;
-            result.IntegrityState = info.IntegrityState;
-
-            SaveLoadCandidate selectedCandidate = default;
-            SaveData selectedData = null;
-            bool selectedLegacyFormat = false;
-            bool hasSelectedCandidate = false;
+            hasSelectedCandidate = false;
+            selectedCandidate = default;
+            selectedData = null;
+            selectedLegacyFormat = false;
 
             int candidateCount = 0;
             lock (SaveLoadCandidateScratchSync)
@@ -7503,6 +7641,46 @@ namespace Hecton8.SaveSystem
                     ClearLoadCandidates(candidates, candidateCount);
                 }
             }
+        }
+
+        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+            {
+                result = new SaveSlotAuditResult
+                {
+                    SlotName = string.Empty,
+                    IntegrityState = SaveSlotIntegrityState.Empty,
+                    Message = InvalidSlotNameReason
+                };
+                return false;
+            }
+
+            result = new SaveSlotAuditResult
+            {
+                SlotName = slotName,
+                Success = false,
+                Message = "Audit not attempted."
+            };
+
+            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
+            if (info == null || !info.HasAnySaveData)
+            {
+                result.Message = "No save data found for this slot.";
+                result.IntegrityState = SaveSlotIntegrityState.Empty;
+                return false;
+            }
+
+            result.Success = true;
+            result.IntegrityState = info.IntegrityState;
+
+            EvaluateAuditCandidates(
+                slotName,
+                result,
+                out bool hasSelectedCandidate,
+                out SaveLoadCandidate selectedCandidate,
+                out SaveData selectedData,
+                out bool selectedLegacyFormat);
 
             result.SlotReadable = hasSelectedCandidate;
             if (!hasSelectedCandidate)
@@ -7558,32 +7736,6 @@ namespace Hecton8.SaveSystem
                 return true;
 
             return usedLegacyFormat;
-        }
-
-        private bool SelfRepairPrimaryArtifacts(
-            string slotName,
-            SaveData data,
-            SaveMetadata metadata,
-            QuestSaveHeader packedQuestHeader,
-            uint[] packedQuestStateWords,
-            ushort playerDialogueChoiceFlags,
-            PersistentWorldDeltaRecord[] persistentWorldItems,
-            EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            NativeArray<byte> voxelDeltaSnapshot,
-            int backupRetentionCount)
-        {
-            return RepairPrimaryArtifacts(
-                slotName,
-                data,
-                metadata,
-                packedQuestHeader,
-                packedQuestStateWords,
-                playerDialogueChoiceFlags,
-                persistentWorldItems,
-                ecosystemSectorStates,
-                voxelDeltaSnapshot,
-                backupRetentionCount,
-                overwritePrimarySave: true);
         }
 
         private static bool TryLoadAndPromoteCriticalBackup(
@@ -8076,109 +8228,108 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
-        private static bool RepairPrimaryArtifacts(
-            string slotName,
-            SaveData data,
-            SaveMetadata metadataSource,
-            QuestSaveHeader packedQuestHeader,
-            uint[] packedQuestStateWords,
-            ushort playerDialogueChoiceFlags,
-            PersistentWorldDeltaRecord[] persistentWorldItems,
-            EcosystemSectorSaveRecord[] ecosystemSectorStates,
-            NativeArray<byte> voxelDeltaSnapshot,
-            int backupRetentionCount,
-            bool overwritePrimarySave)
+        private static bool RepairPrimaryArtifacts(in RepairPrimaryArtifactsArgs args)
         {
-            string primarySavePath = GetPrimarySaveFilePath(slotName);
-            string tempSavePath = GetTempSaveFilePath(slotName);
+            string primarySavePath = GetPrimarySaveFilePath(args.SlotName);
+            string tempSavePath = GetTempSaveFilePath(args.SlotName);
 
             bool changedAnything = false;
-            if (overwritePrimarySave || !FileExists(primarySavePath))
+            if (args.OverwritePrimarySave || !FileExists(primarySavePath))
             {
-                SaveMetadata writeMetadata = CreateMetadataFromData(slotName, data, metadataSource);
-                AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
-                NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
-                NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
-                NativeArray<uint> packedQuestStateBuffer = default;
-                try
+                SaveMetadata writeMetadata = CreateMetadataFromData(args.SlotName, args.Data, args.MetadataSource);
+
+                if (!ExecutePrimaryArtifactRepairWrite(in args, tempSavePath, primarySavePath, writeMetadata))
                 {
-                    if (persistentWorldItems != null && persistentWorldItems.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
-                        persistentWorldItemBuffer = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
-                            persistentWorldItems.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "persistentWorldItemBuffer");
-                        persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
-                    }
-
-                    if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
-                        ecosystemSectorBuffer = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
-                            ecosystemSectorStates.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "ecosystemSectorBuffer");
-                        ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
-                    }
-
-                    if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
-                    {
-                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
-                        packedQuestStateBuffer = CreateTransientNativeArray<uint>(
-                            packedQuestStateWords.Length,
-                            Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory,
-                            "packedQuestStateBuffer");
-                        packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
-                    }
-
-                    if (!TryExecuteVerifiedSavePipeline(
-                        slotName,
-                        tempSavePath,
-                        primarySavePath,
-                        writeMetadata,
-                        data,
-                        persistentWorldItemBuffer.IsCreated ? persistentWorldItemBuffer.AsReadOnly() : default,
-                        ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
-                        packedQuestHeader,
-                        packedQuestStateBuffer,
-                        playerDialogueChoiceFlags,
-                        voxelDeltaSnapshot,
-                        rawBuffer,
-                        compressedBuffer,
-                        backupRetentionCount,
-                        out _,
-                        out _,
-                        out _,
-                        out _))
-                    {
-                        return false;
-                    }
-                }
-                finally
-                {
-                    Exception cleanupException = null;
-
-                    if (persistentWorldItemBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref persistentWorldItemBuffer, ref cleanupException, sentinelLabel: "persistentWorldItemBuffer");
-
-                    if (ecosystemSectorBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref ecosystemSectorBuffer, ref cleanupException, sentinelLabel: "ecosystemSectorBuffer");
-
-                    if (packedQuestStateBuffer.IsCreated)
-                        DisposeTransientNativeArrayBestEffort(ref packedQuestStateBuffer, ref cleanupException, sentinelLabel: "packedQuestStateBuffer");
-
-                    ReleaseWriteBuffersBestEffort(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer, ref cleanupException);
-                    ReportPersistenceCleanupFailure("save", cleanupException);
+                    return false;
                 }
 
                 changedAnything = true;
             }
 
             return changedAnything;
+        }
+
+        private static bool ExecutePrimaryArtifactRepairWrite(
+            in RepairPrimaryArtifactsArgs args,
+            string tempSavePath,
+            string primarySavePath,
+            SaveMetadata writeMetadata)
+        {
+            AcquireWriteBuffers(out NativeArray<byte> rawBuffer, out bool ownsRawBuffer, out NativeArray<byte> compressedBuffer, out bool ownsCompressedBuffer);
+            NativeArray<PersistentWorldDeltaRecord> persistentWorldItemBuffer = default;
+            NativeArray<EcosystemSectorSaveRecord> ecosystemSectorBuffer = default;
+            NativeArray<uint> packedQuestStateBuffer = default;
+            try
+            {
+                if (args.PersistentWorldItems != null && args.PersistentWorldItems.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
+                    persistentWorldItemBuffer = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
+                        args.PersistentWorldItems.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "persistentWorldItemBuffer");
+                    persistentWorldItemBuffer.CopyFrom(args.PersistentWorldItems);
+                }
+
+                if (args.EcosystemSectorStates != null && args.EcosystemSectorStates.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
+                    ecosystemSectorBuffer = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
+                        args.EcosystemSectorStates.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "ecosystemSectorBuffer");
+                    ecosystemSectorBuffer.CopyFrom(args.EcosystemSectorStates);
+                }
+
+                if (args.PackedQuestStateWords != null && args.PackedQuestStateWords.Length > 0)
+                {
+                    // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
+                    packedQuestStateBuffer = CreateTransientNativeArray<uint>(
+                        args.PackedQuestStateWords.Length,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "packedQuestStateBuffer");
+                    packedQuestStateBuffer.CopyFrom(args.PackedQuestStateWords);
+                }
+
+                return TryExecuteVerifiedSavePipeline(
+                    args.SlotName,
+                    tempSavePath,
+                    primarySavePath,
+                    writeMetadata,
+                    args.Data,
+                    persistentWorldItemBuffer.IsCreated ? persistentWorldItemBuffer.AsReadOnly() : default,
+                    ecosystemSectorBuffer.IsCreated ? ecosystemSectorBuffer.AsReadOnly() : default,
+                    args.PackedQuestHeader,
+                    packedQuestStateBuffer,
+                    args.PlayerDialogueChoiceFlags,
+                    args.VoxelDeltaSnapshot,
+                    rawBuffer,
+                    compressedBuffer,
+                    args.BackupRetentionCount,
+                    out _,
+                    out _,
+                    out _,
+                    out _);
+            }
+            finally
+            {
+                Exception cleanupException = null;
+
+                if (persistentWorldItemBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref persistentWorldItemBuffer, ref cleanupException, sentinelLabel: "persistentWorldItemBuffer");
+
+                if (ecosystemSectorBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref ecosystemSectorBuffer, ref cleanupException, sentinelLabel: "ecosystemSectorBuffer");
+
+                if (packedQuestStateBuffer.IsCreated)
+                    DisposeTransientNativeArrayBestEffort(ref packedQuestStateBuffer, ref cleanupException, sentinelLabel: "packedQuestStateBuffer");
+
+                ReleaseWriteBuffersBestEffort(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer, ref cleanupException);
+                ReportPersistenceCleanupFailure("save", cleanupException);
+            }
         }
 
         private static SaveMetadata CreateMetadataFromData(string slotName, SaveData data, SaveMetadata source)
@@ -8361,53 +8512,53 @@ namespace Hecton8.SaveSystem
             return BuildSaveSlotInfoInternal(slotName);
         }
 
-        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        private struct SaveSlotInfoBuilderContext
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-                return null;
+            public SaveMetadata Metadata;
+            public bool HasPrimaryMetadata;
+            public bool HasBackupMetadata;
+            public bool MetadataRecoveredFromBackup;
+            public bool MetadataSynthesized;
+            public bool MetadataCorrupted;
+            public long LastWriteTicksUtc;
+            public long PrimaryBytes;
+            public long BackupBytes;
+        }
 
-            int backupRetention = GetBackupRetentionCountStatic(slotName);
-            string primarySavePath = GetPrimarySaveFilePath(slotName);
-
-            bool hasPrimarySave = FileExists(primarySavePath);
-            bool hasPrimaryMetadata = false;
-            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
-            bool hasBackupSave = false;
-            bool hasBackupMetadata = false;
-
+        private static bool HasAnyBackupSave(string slotName, int backupRetention)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
-                if (!hasBackupSave && FileExists(GetBackupSaveFilePath(slotName, generation)))
-                    hasBackupSave = true;
+                if (FileExists(GetBackupSaveFilePath(slotName, generation)))
+                {
+                    return true;
+                }
             }
+            return false;
+        }
 
-            if (!hasPrimarySave && !hasBackupSave)
-                return null;
-
-            SaveMetadata metadata = null;
-            bool metadataRecoveredFromBackup = false;
-            bool metadataSynthesized = false;
-            bool metadataCorrupted = false;
-
-            if (hasPrimarySave)
+        private static void ProcessPrimarySaveInfo(string slotName, string primarySavePath, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (TryReadCandidateMetadata(
+                slotName,
+                SaveLoadCandidate.Primary(),
+                out SaveMetadata primaryMetadata,
+                out _, out _, out _))
             {
-                if (TryReadCandidateMetadata(
-                    slotName,
-                    SaveLoadCandidate.Primary(),
-                    out SaveMetadata primaryMetadata,
-                    out _,
-                    out _,
-                    out _))
-                {
-                    metadata = primaryMetadata;
-                    hasPrimaryMetadata = primaryMetadata != null;
-                }
-                else
-                {
-                    metadataCorrupted = true;
-                }
+                ctx.Metadata = primaryMetadata;
+                ctx.HasPrimaryMetadata = primaryMetadata != null;
+            }
+            else
+            {
+                ctx.MetadataCorrupted = true;
             }
 
+            ctx.PrimaryBytes = GetPersistentFileSize(primarySavePath);
+            UpdateLastWrite(primarySavePath, ref ctx.LastWriteTicksUtc);
+        }
+
+        private static void ProcessBackupSaves(string slotName, int backupRetention, bool hasPrimarySave, ref SaveSlotInfoBuilderContext ctx)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
                 string backupSavePath = GetBackupSaveFilePath(slotName, generation);
@@ -8418,95 +8569,102 @@ namespace Hecton8.SaveSystem
                     slotName,
                     SaveLoadCandidate.Backup(generation),
                     out SaveMetadata backupMetadata,
-                    out _,
-                    out _,
-                    out _))
+                    out _, out _, out _))
                 {
-                    hasBackupMetadata = backupMetadata != null;
-                    if (metadata == null && backupMetadata != null)
+                    ctx.HasBackupMetadata = backupMetadata != null;
+                    if (ctx.Metadata == null && backupMetadata != null)
                     {
-                        metadata = backupMetadata;
-                        metadataRecoveredFromBackup = hasPrimarySave && !hasPrimaryMetadata;
+                        ctx.Metadata = backupMetadata;
+                        ctx.MetadataRecoveredFromBackup = hasPrimarySave && !ctx.HasPrimaryMetadata;
                     }
                 }
                 else
                 {
-                    metadataCorrupted = true;
+                    ctx.MetadataCorrupted = true;
                 }
+
+                ctx.BackupBytes += GetPersistentFileSize(backupSavePath);
+                UpdateLastWrite(backupSavePath, ref ctx.LastWriteTicksUtc);
+            }
+        }
+
+        private static SaveSlotIntegrityState DetermineIntegrityState(bool hasPrimarySave, bool hasBackupSave, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (ctx.MetadataCorrupted && ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.HealthyWithBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata)
+                return SaveSlotIntegrityState.Healthy;
+
+            if (!hasPrimarySave && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.BackupOnly;
+
+            if (ctx.MetadataCorrupted && !ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.CorruptedMetadata;
+
+            if (ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.MetadataSynthesized;
+
+            return SaveSlotIntegrityState.MissingMetadata;
+        }
+
+        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+                return null;
+
+            int backupRetention = GetBackupRetentionCountStatic(slotName);
+            string primarySavePath = GetPrimarySaveFilePath(slotName);
+
+            bool hasPrimarySave = FileExists(primarySavePath);
+            bool hasBackupSave = HasAnyBackupSave(slotName, backupRetention);
+
+            if (!hasPrimarySave && !hasBackupSave)
+                return null;
+
+            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
+
+            SaveSlotInfoBuilderContext ctx = new SaveSlotInfoBuilderContext();
+
+            if (hasPrimarySave)
+            {
+                ProcessPrimarySaveInfo(slotName, primarySavePath, ref ctx);
             }
 
-            long lastWriteTicksUtc = 0L;
-            long primaryBytes = GetPersistentFileSize(primarySavePath);
-            long backupBytes = 0L;
+            ProcessBackupSaves(slotName, backupRetention, hasPrimarySave, ref ctx);
 
-            UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
-            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref lastWriteTicksUtc);
-            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref lastWriteTicksUtc);
+            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref ctx.LastWriteTicksUtc);
+            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref ctx.LastWriteTicksUtc);
 
-            for (int generation = 1; generation <= backupRetention; generation++)
+            if (ctx.Metadata == null)
             {
-                string backupSavePath = GetBackupSaveFilePath(slotName, generation);
-                backupBytes += GetPersistentFileSize(backupSavePath);
-                UpdateLastWrite(backupSavePath, ref lastWriteTicksUtc);
+                ctx.Metadata = SaveMetadata.CreateFallback(slotName, ctx.LastWriteTicksUtc);
+                ctx.MetadataSynthesized = true;
             }
 
-            if (metadata == null)
-            {
-                metadata = SaveMetadata.CreateFallback(slotName, lastWriteTicksUtc);
-                metadataSynthesized = true;
-            }
-
-            SaveSlotIntegrityState integrityState;
-            if (metadataCorrupted && metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.HealthyWithBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.Healthy;
-            }
-            else if (!hasPrimarySave && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.BackupOnly;
-            }
-            else if (metadataCorrupted && !metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.CorruptedMetadata;
-            }
-            else if (metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataSynthesized;
-            }
-            else
-            {
-                integrityState = SaveSlotIntegrityState.MissingMetadata;
-            }
-
-            metadata.SlotName = slotName;
+            ctx.Metadata.SlotName = slotName;
 
             return new SaveSlotInfo
             {
                 SlotName = slotName,
-                Metadata = metadata,
-                IntegrityState = integrityState,
+                Metadata = ctx.Metadata,
+                IntegrityState = DetermineIntegrityState(hasPrimarySave, hasBackupSave, ref ctx),
                 HasPrimarySave = hasPrimarySave,
                 HasBackupSave = hasBackupSave,
-                HasPrimaryMetadata = hasPrimaryMetadata,
-                HasBackupMetadata = hasBackupMetadata,
+                HasPrimaryMetadata = ctx.HasPrimaryMetadata,
+                HasBackupMetadata = ctx.HasBackupMetadata,
                 HasThumbnail = hasThumbnail,
-                MetadataRecoveredFromBackup = metadataRecoveredFromBackup,
-                MetadataSynthesized = metadataSynthesized,
-                LastWriteTicksUtc = lastWriteTicksUtc,
-                PrimarySaveBytes = primaryBytes,
-                BackupSaveBytes = backupBytes
+                MetadataRecoveredFromBackup = ctx.MetadataRecoveredFromBackup,
+                MetadataSynthesized = ctx.MetadataSynthesized,
+                LastWriteTicksUtc = ctx.LastWriteTicksUtc,
+                PrimarySaveBytes = ctx.PrimaryBytes,
+                BackupSaveBytes = ctx.BackupBytes
             };
         }
 

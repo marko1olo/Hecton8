@@ -225,6 +225,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <inheritdoc />
         public override void Generate(TileData data, StopToken stop)
         {
+            if (stop != null && stop.stop) return;
+
             MatrixWorld src = data.ReadInletProduct(heightIn);
             if (src == null)
                 return;
@@ -258,6 +260,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> sediment = default;
             NativeArray<float> silt = default;
             NativeArray<float> wear = default;
+            NativeQueue<HydraulicErosionHeightDelta> dummyQueue = default;
+            NativeArray<int> dummyBudget = default;
             int heightARegistrationId = 0;
             int heightBRegistrationId = 0;
             int sedimentRegistrationId = 0;
@@ -268,11 +272,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             try
             {
-                heightA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                heightB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                silt = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                wear = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                heightA = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                heightB = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                sediment = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                silt = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                wear = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                dummyQueue = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.Persistent);
+                dummyBudget = new NativeArray<int>(2, Allocator.Persistent);
                 RegisterTempJobBuffers(
                     heightA,
                     heightB,
@@ -329,7 +335,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                     SedimentaryFlatSlopeDegrees = sedimentaryFlatSlopeDegrees,
                     SpawnCandidateCount = math.max(12, spawnCandidateCount),
                     MinWater = 0.01f,
-                    DropletIndexOffset = 0
+                    DropletIndexOffset = 0,
+                    HeightDeltaQueue = dummyQueue.AsParallelWriter(),
+                    HeightDeltaBudget = dummyBudget
                 };
 
                 using (ErosionScheduleProfilerMarker.Auto())
@@ -483,7 +491,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 long barrierStartTicks = Stopwatch.GetTimestamp();
                 using (PublishBarrierProfilerMarker.Auto())
                 {
-                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    DispatcherJobSwap.ForceCompleteFromWorkerThread(ref handle);
                     handleScheduled = false;
                 }
                 PublishBarrierWarning(ElapsedMilliseconds(barrierStartTicks, Stopwatch.GetTimestamp()));
@@ -503,13 +511,16 @@ namespace MapMagic.Nodes.MatrixGenerators
             finally
             {
                 if (handleScheduled)
-                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    DispatcherJobSwap.ForceCompleteFromWorkerThread(ref handle);
 
                 DisposeTracked(ref heightA, ref heightARegistrationId);
                 DisposeTracked(ref heightB, ref heightBRegistrationId);
                 DisposeTracked(ref sediment, ref sedimentRegistrationId);
                 DisposeTracked(ref silt, ref siltRegistrationId);
                 DisposeTracked(ref wear, ref wearRegistrationId);
+
+                if (dummyQueue.IsCreated) dummyQueue.Dispose();
+                if (dummyBudget.IsCreated) dummyBudget.Dispose();
             }
         }
 

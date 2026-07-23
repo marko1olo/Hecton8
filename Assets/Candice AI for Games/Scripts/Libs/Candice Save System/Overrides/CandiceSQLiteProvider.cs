@@ -462,6 +462,13 @@ namespace CandiceAIforGames.Data
                 return -1;
             }
 
+            List<string> existingTables = GetTableNames();
+            string safeTableName = existingTables.Find(t => t.Equals(tableName, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(safeTableName))
+            {
+                return 0;
+            }
+
             int rc = 0;
             SqliteConnection sqlCon = null;
             SqliteCommand sqlCmd = null;
@@ -471,7 +478,7 @@ namespace CandiceAIforGames.Data
             {
                 sqlCon = new SqliteConnection(conStr);
                 sqlCon.Open();
-                createQuery = "DROP TABLE IF EXISTS " + EscapeIdentifier(tableName) + ";";
+                createQuery = "DROP TABLE IF EXISTS " + EscapeIdentifier(safeTableName) + ";";
                 sqlCmd = new SqliteCommand(createQuery, sqlCon);
                 rc = sqlCmd.ExecuteNonQuery();
                 sqlCmd.Dispose();

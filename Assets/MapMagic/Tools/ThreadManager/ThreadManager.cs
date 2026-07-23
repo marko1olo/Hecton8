@@ -184,7 +184,7 @@ namespace Den.Tools.Tasks
 				int curMaxThreads = maxThreads;
 				if (autoMaxThreads) 
 				{
-					if (processorThreads < 0) processorThreads = SystemInfo.processorCount; //the first time LaunchThreads is called from main thread
+					if (processorThreads < 0) processorThreads = System.Environment.ProcessorCount; //the first time LaunchThreads is called from main thread
 					curMaxThreads = processorThreads-1;
 				}
 

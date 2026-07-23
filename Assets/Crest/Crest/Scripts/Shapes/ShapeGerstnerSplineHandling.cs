@@ -178,7 +178,7 @@ namespace Crest
                 sampledPtsOffSplineRight[0] = sampledPtsOffSplineRight[sampledPtsOffSplineRight.Length - 1] = midPoint;
             }
 
-            // Fix cases where points reverse direction causing flipped triangles in result
+            // Prevent cases where points reverse direction causing flipped triangles in result
             ResolveOverlaps(ref sampledPtsOffSplineLeft, sampledPtsOnSpline);
             ResolveOverlaps(ref sampledPtsOffSplineRight, sampledPtsOnSpline);
 

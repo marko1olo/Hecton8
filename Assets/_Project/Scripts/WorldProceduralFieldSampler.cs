@@ -542,6 +542,21 @@ namespace Hecton8.World
             public byte isValid;
         }
 
+        public struct PatternHeatContext
+        {
+            public float SedimentField;
+            public float FertileField;
+            public float ReefField;
+            public float IndustrialField;
+            public float HazardField;
+            public float LandmarkField;
+            public float ShelterField;
+            public float AbyssField;
+            public float RuggedBias;
+            public float TerrainNoise;
+            public float DetailNoise;
+        }
+
         public struct CellSamplingContext
         {
             public float TerrainNoise;
@@ -988,7 +1003,19 @@ namespace Hecton8.World
                 }
             }
 
-            output.RuggedBias = EvaluateRuggedBiomeBias(output.ZoneDataIndex, output.ResolvedZoneKind, output.BiomeFamilyDataIndex, zones, zoneCount, biomeMatrices, biomeMatrixCount, biomeFamilies, biomeFamilyCount);
+            BiomeEvaluationContext ruggedContext = new BiomeEvaluationContext
+            {
+                ZoneDataIndex = output.ZoneDataIndex,
+                ResolvedZoneKind = output.ResolvedZoneKind,
+                BiomeFamilyDataIndex = output.BiomeFamilyDataIndex,
+                Zones = zones,
+                ZoneCount = zoneCount,
+                BiomeMatrices = biomeMatrices,
+                BiomeMatrixCount = biomeMatrixCount,
+                BiomeFamilies = biomeFamilies,
+                BiomeFamilyCount = biomeFamilyCount
+            };
+            output.RuggedBias = EvaluateRuggedBiomeBias(in ruggedContext);
             output.FertileBias = EvaluateFertileBiomeBias(output.ZoneDataIndex, output.ResolvedZoneKind, output.BiomeFamilyDataIndex, zones, zoneCount, biomeFamilies, biomeFamilyCount);
             output.HazardBias = EvaluateHazardBias(output.ZoneDataIndex, output.ResolvedZoneKind, zones, zoneCount, biomeMatrices, biomeMatrixCount);
             output.ServiceBias = EvaluateServiceBias(output.ZoneDataIndex, output.ResolvedZoneKind, zones, zoneCount);
@@ -1655,25 +1682,38 @@ namespace Hecton8.World
             return thirdChoice;
         }
 
-        private static float EvaluateRuggedBiomeBias(int zoneDataIndex, int resolvedZoneKind, int biomeFamilyDataIndex, NativeArray<ZoneData> zones, int zoneCount, NativeArray<BiomeMatrixData> biomeMatrices, int biomeMatrixCount, NativeArray<BiomeFamilyData> biomeFamilies, int biomeFamilyCount)
+        public struct BiomeEvaluationContext
         {
-            if (zoneDataIndex >= 0 && zoneDataIndex < zoneCount)
+            public int ZoneDataIndex;
+            public int ResolvedZoneKind;
+            public int BiomeFamilyDataIndex;
+            public NativeArray<ZoneData> Zones;
+            public int ZoneCount;
+            public NativeArray<BiomeMatrixData> BiomeMatrices;
+            public int BiomeMatrixCount;
+            public NativeArray<BiomeFamilyData> BiomeFamilies;
+            public int BiomeFamilyCount;
+        }
+
+        private static float EvaluateRuggedBiomeBias(in BiomeEvaluationContext context)
+        {
+            if (context.ZoneDataIndex >= 0 && context.ZoneDataIndex < context.ZoneCount)
             {
-                ZoneData zoneData = zones[zoneDataIndex];
-                float familyBias = ContainsFamilyFlags(zoneData.DominantFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, biomeFamilies, biomeFamilyCount);
-                if (zoneData.DominantMatrixDataIndex < 0 || zoneData.DominantMatrixDataIndex >= biomeMatrixCount)
+                ZoneData zoneData = context.Zones[context.ZoneDataIndex];
+                float familyBias = ContainsFamilyFlags(zoneData.DominantFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, context.BiomeFamilies, context.BiomeFamilyCount);
+                if (zoneData.DominantMatrixDataIndex < 0 || zoneData.DominantMatrixDataIndex >= context.BiomeMatrixCount)
                     return math.lerp(0.25f, 1f, familyBias);
 
-                BiomeMatrixData biomeData = biomeMatrices[zoneData.DominantMatrixDataIndex];
+                BiomeMatrixData biomeData = context.BiomeMatrices[zoneData.DominantMatrixDataIndex];
                 float rugged = math.clamp((biomeData.LandmarkStrength + biomeData.RoutePressure) / 10f, 0f, 1f);
                 return math.clamp((rugged * 0.65f) + (familyBias * 0.35f), 0f, 1f);
             }
 
-            float fallbackFamilyBias = ContainsFamilyFlags(biomeFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, biomeFamilies, biomeFamilyCount);
+            float fallbackFamilyBias = ContainsFamilyFlags(context.BiomeFamilyDataIndex, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass, context.BiomeFamilies, context.BiomeFamilyCount);
             if (fallbackFamilyBias > 0f)
                 return math.lerp(0.25f, 1f, fallbackFamilyBias);
 
-            return resolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || resolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Progression ? 0.56f : 0.38f;
+            return context.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Navigation || context.ResolvedZoneKind == (int)WorldZoneAnchor.ZoneKind.Progression ? 0.56f : 0.38f;
         }
 
         private static float EvaluateFertileBiomeBias(int zoneDataIndex, int resolvedZoneKind, int biomeFamilyDataIndex, NativeArray<ZoneData> zones, int zoneCount, NativeArray<BiomeFamilyData> biomeFamilies, int biomeFamilyCount)
@@ -1905,179 +1945,193 @@ namespace Hecton8.World
             float shelterField = math.clamp(output.ShelterBias * 0.34f + flat01 * 0.18f + fertileField * 0.14f + output.BasinFieldNoise * 0.18f + output.DetailNoise * 0.16f, 0f, 1f);
             float abyssField = math.clamp(abyss01 * 0.44f + hazardField * 0.16f + output.RuggedBias * 0.12f + output.TerrainNoise * 0.12f + output.IndustrialFieldNoise * 0.08f + (1f - fertileField) * 0.08f, 0f, 1f);
 
-            float shapedValue = ResolvePatternShapedHeat(channelIndex, output.ResolvedPattern, sedimentField, fertileField, reefField, industrialField, hazardField, landmarkField, shelterField, abyssField, output.RuggedBias, output.TerrainNoise, output.DetailNoise);
+            PatternHeatContext heatContext = new PatternHeatContext
+            {
+                SedimentField = sedimentField,
+                FertileField = fertileField,
+                ReefField = reefField,
+                IndustrialField = industrialField,
+                HazardField = hazardField,
+                LandmarkField = landmarkField,
+                ShelterField = shelterField,
+                AbyssField = abyssField,
+                RuggedBias = output.RuggedBias,
+                TerrainNoise = output.TerrainNoise,
+                DetailNoise = output.DetailNoise
+            };
+            float shapedValue = ResolvePatternShapedHeat(channelIndex, output.ResolvedPattern, in heatContext);
             shapedValue = math.clamp(shapedValue + biomeMatrixBonus * 0.92f, 0f, 1f);
             float blend = ResolvePatternFieldBlend((SeafloorSource)output.SeafloorSource, output.ZoneDataIndex >= 0);
             return math.clamp(math.lerp(baseValue, shapedValue, blend), 0f, 1f);
         }
 
-        private static float ResolvePatternShapedHeat(int channelIndex, int resolvedPattern, float sedimentField, float fertileField, float reefField, float industrialField, float hazardField, float landmarkField, float shelterField, float abyssField, float ruggedBias, float terrainNoise, float detailNoise)
+        private static float ResolvePatternShapedHeat(int channelIndex, int resolvedPattern, in PatternHeatContext context)
         {
             return (WorldProceduralPattern)resolvedPattern switch
             {
                 WorldProceduralPattern.FertileShallows => channelIndex switch
                 {
-                    0 => 0.18f + sedimentField * 0.22f + ruggedBias * 0.12f + shelterField * 0.08f,
-                    1 => fertileField * 0.92f,
-                    2 => fertileField * 0.84f,
-                    3 => reefField * 0.90f,
-                    4 => fertileField * 0.62f + shelterField * 0.24f,
-                    5 => industrialField * 0.26f,
-                    6 => industrialField * 0.22f + landmarkField * 0.16f,
-                    7 => landmarkField * 0.28f + hazardField * 0.16f,
-                    8 => landmarkField * 0.48f + reefField * 0.12f,
-                    9 => fertileField * 0.56f + shelterField * 0.30f,
-                    10 => hazardField * 0.26f,
-                    11 => sedimentField * 0.40f + fertileField * 0.18f,
-                    12 => shelterField * 0.78f,
-                    13 => industrialField * 0.22f,
-                    _ => fertileField * 0.58f + sedimentField * 0.14f
+                    0 => 0.18f + context.SedimentField * 0.22f + context.RuggedBias * 0.12f + context.ShelterField * 0.08f,
+                    1 => context.FertileField * 0.92f,
+                    2 => context.FertileField * 0.84f,
+                    3 => context.ReefField * 0.90f,
+                    4 => context.FertileField * 0.62f + context.ShelterField * 0.24f,
+                    5 => context.IndustrialField * 0.26f,
+                    6 => context.IndustrialField * 0.22f + context.LandmarkField * 0.16f,
+                    7 => context.LandmarkField * 0.28f + context.HazardField * 0.16f,
+                    8 => context.LandmarkField * 0.48f + context.ReefField * 0.12f,
+                    9 => context.FertileField * 0.56f + context.ShelterField * 0.30f,
+                    10 => context.HazardField * 0.26f,
+                    11 => context.SedimentField * 0.40f + context.FertileField * 0.18f,
+                    12 => context.ShelterField * 0.78f,
+                    13 => context.IndustrialField * 0.22f,
+                    _ => context.FertileField * 0.58f + context.SedimentField * 0.14f
                 },
                 WorldProceduralPattern.ReefNavigation => channelIndex switch
                 {
-                    0 => 0.20f + sedimentField * 0.18f + ruggedBias * 0.12f,
-                    1 => fertileField * 0.72f + reefField * 0.14f,
-                    2 => fertileField * 0.70f + reefField * 0.12f,
-                    3 => reefField * 0.94f,
-                    4 => fertileField * 0.44f + shelterField * 0.22f,
-                    5 => industrialField * 0.24f,
-                    6 => industrialField * 0.20f + landmarkField * 0.18f,
-                    7 => landmarkField * 0.38f + hazardField * 0.18f,
-                    8 => landmarkField * 0.68f + reefField * 0.16f,
-                    9 => fertileField * 0.42f + shelterField * 0.18f,
-                    10 => hazardField * 0.28f,
-                    11 => sedimentField * 0.32f + landmarkField * 0.12f,
-                    12 => shelterField * 0.54f + reefField * 0.12f,
-                    13 => industrialField * 0.22f,
-                    _ => reefField * 0.56f + landmarkField * 0.18f
+                    0 => 0.20f + context.SedimentField * 0.18f + context.RuggedBias * 0.12f,
+                    1 => context.FertileField * 0.72f + context.ReefField * 0.14f,
+                    2 => context.FertileField * 0.70f + context.ReefField * 0.12f,
+                    3 => context.ReefField * 0.94f,
+                    4 => context.FertileField * 0.44f + context.ShelterField * 0.22f,
+                    5 => context.IndustrialField * 0.24f,
+                    6 => context.IndustrialField * 0.20f + context.LandmarkField * 0.18f,
+                    7 => context.LandmarkField * 0.38f + context.HazardField * 0.18f,
+                    8 => context.LandmarkField * 0.68f + context.ReefField * 0.16f,
+                    9 => context.FertileField * 0.42f + context.ShelterField * 0.18f,
+                    10 => context.HazardField * 0.28f,
+                    11 => context.SedimentField * 0.32f + context.LandmarkField * 0.12f,
+                    12 => context.ShelterField * 0.54f + context.ReefField * 0.12f,
+                    13 => context.IndustrialField * 0.22f,
+                    _ => context.ReefField * 0.56f + context.LandmarkField * 0.18f
                 },
                 WorldProceduralPattern.SedimentResources => channelIndex switch
                 {
-                    0 => 0.18f + sedimentField * 0.86f + ruggedBias * 0.12f,
-                    1 => fertileField * 0.24f + shelterField * 0.10f,
-                    2 => fertileField * 0.14f + shelterField * 0.08f,
-                    3 => reefField * 0.14f + fertileField * 0.06f,
-                    4 => shelterField * 0.52f + fertileField * 0.12f,
-                    5 => industrialField * 0.42f + hazardField * 0.08f,
-                    6 => industrialField * 0.44f + landmarkField * 0.22f + sedimentField * 0.08f,
-                    7 => hazardField * 0.30f + landmarkField * 0.30f + ruggedBias * 0.18f + sedimentField * 0.06f,
-                    8 => landmarkField * 0.58f + sedimentField * 0.14f + ruggedBias * 0.08f,
-                    9 => shelterField * 0.42f + fertileField * 0.14f,
-                    10 => hazardField * 0.34f,
-                    11 => sedimentField * 0.92f,
-                    12 => shelterField * 0.88f,
-                    13 => industrialField * 0.48f + sedimentField * 0.08f + landmarkField * 0.06f,
-                    _ => sedimentField * 0.62f + shelterField * 0.18f
+                    0 => 0.18f + context.SedimentField * 0.86f + context.RuggedBias * 0.12f,
+                    1 => context.FertileField * 0.24f + context.ShelterField * 0.10f,
+                    2 => context.FertileField * 0.14f + context.ShelterField * 0.08f,
+                    3 => context.ReefField * 0.14f + context.FertileField * 0.06f,
+                    4 => context.ShelterField * 0.52f + context.FertileField * 0.12f,
+                    5 => context.IndustrialField * 0.42f + context.HazardField * 0.08f,
+                    6 => context.IndustrialField * 0.44f + context.LandmarkField * 0.22f + context.SedimentField * 0.08f,
+                    7 => context.HazardField * 0.30f + context.LandmarkField * 0.30f + context.RuggedBias * 0.18f + context.SedimentField * 0.06f,
+                    8 => context.LandmarkField * 0.58f + context.SedimentField * 0.14f + context.RuggedBias * 0.08f,
+                    9 => context.ShelterField * 0.42f + context.FertileField * 0.14f,
+                    10 => context.HazardField * 0.34f,
+                    11 => context.SedimentField * 0.92f,
+                    12 => context.ShelterField * 0.88f,
+                    13 => context.IndustrialField * 0.48f + context.SedimentField * 0.08f + context.LandmarkField * 0.06f,
+                    _ => context.SedimentField * 0.62f + context.ShelterField * 0.18f
                 },
                 WorldProceduralPattern.IndustrialService => channelIndex switch
                 {
-                    0 => 0.18f + sedimentField * 0.34f + ruggedBias * 0.10f,
-                    1 => fertileField * 0.18f,
-                    2 => fertileField * 0.16f,
-                    3 => reefField * 0.14f,
-                    4 => shelterField * 0.24f,
-                    5 => industrialField * 0.90f,
-                    6 => industrialField * 0.76f + landmarkField * 0.12f,
-                    7 => hazardField * 0.22f + landmarkField * 0.18f + industrialField * 0.12f,
-                    8 => landmarkField * 0.44f + industrialField * 0.22f,
-                    9 => hazardField * 0.16f + shelterField * 0.14f,
-                    10 => hazardField * 0.46f + industrialField * 0.12f,
-                    11 => sedimentField * 0.26f + industrialField * 0.12f,
-                    12 => shelterField * 0.22f,
-                    13 => industrialField * 0.96f,
-                    _ => industrialField * 0.64f + landmarkField * 0.14f
+                    0 => 0.18f + context.SedimentField * 0.34f + context.RuggedBias * 0.10f,
+                    1 => context.FertileField * 0.18f,
+                    2 => context.FertileField * 0.16f,
+                    3 => context.ReefField * 0.14f,
+                    4 => context.ShelterField * 0.24f,
+                    5 => context.IndustrialField * 0.90f,
+                    6 => context.IndustrialField * 0.76f + context.LandmarkField * 0.12f,
+                    7 => context.HazardField * 0.22f + context.LandmarkField * 0.18f + context.IndustrialField * 0.12f,
+                    8 => context.LandmarkField * 0.44f + context.IndustrialField * 0.22f,
+                    9 => context.HazardField * 0.16f + context.ShelterField * 0.14f,
+                    10 => context.HazardField * 0.46f + context.IndustrialField * 0.12f,
+                    11 => context.SedimentField * 0.26f + context.IndustrialField * 0.12f,
+                    12 => context.ShelterField * 0.22f,
+                    13 => context.IndustrialField * 0.96f,
+                    _ => context.IndustrialField * 0.64f + context.LandmarkField * 0.14f
                 },
                 WorldProceduralPattern.BrineToxic => channelIndex switch
                 {
-                    0 => 0.16f + sedimentField * 0.28f + industrialField * 0.18f + ruggedBias * 0.08f,
-                    1 => fertileField * 0.08f,
-                    2 => fertileField * 0.10f,
-                    3 => reefField * 0.08f,
-                    4 => fertileField * 0.16f + shelterField * 0.12f + hazardField * 0.08f,
-                    5 => industrialField * 0.82f,
-                    6 => industrialField * 0.58f + landmarkField * 0.14f,
-                    7 => hazardField * 0.24f + landmarkField * 0.18f + industrialField * 0.12f,
-                    8 => landmarkField * 0.36f + industrialField * 0.18f,
-                    9 => fertileField * 0.12f + hazardField * 0.14f,
-                    10 => hazardField * 0.54f + industrialField * 0.12f,
-                    11 => sedimentField * 0.24f + industrialField * 0.14f,
-                    12 => shelterField * 0.18f,
-                    13 => industrialField * 0.82f,
-                    _ => industrialField * 0.62f + hazardField * 0.10f
+                    0 => 0.16f + context.SedimentField * 0.28f + context.IndustrialField * 0.18f + context.RuggedBias * 0.08f,
+                    1 => context.FertileField * 0.08f,
+                    2 => context.FertileField * 0.10f,
+                    3 => context.ReefField * 0.08f,
+                    4 => context.FertileField * 0.16f + context.ShelterField * 0.12f + context.HazardField * 0.08f,
+                    5 => context.IndustrialField * 0.82f,
+                    6 => context.IndustrialField * 0.58f + context.LandmarkField * 0.14f,
+                    7 => context.HazardField * 0.24f + context.LandmarkField * 0.18f + context.IndustrialField * 0.12f,
+                    8 => context.LandmarkField * 0.36f + context.IndustrialField * 0.18f,
+                    9 => context.FertileField * 0.12f + context.HazardField * 0.14f,
+                    10 => context.HazardField * 0.54f + context.IndustrialField * 0.12f,
+                    11 => context.SedimentField * 0.24f + context.IndustrialField * 0.14f,
+                    12 => context.ShelterField * 0.18f,
+                    13 => context.IndustrialField * 0.82f,
+                    _ => context.IndustrialField * 0.62f + context.HazardField * 0.10f
                 },
                 WorldProceduralPattern.VolcanicPressure => channelIndex switch
                 {
-                    0 => 0.20f + sedimentField * 0.46f + ruggedBias * 0.18f + hazardField * 0.10f,
-                    1 => fertileField * 0.06f,
-                    2 => fertileField * 0.08f,
-                    3 => reefField * 0.06f,
-                    4 => fertileField * 0.10f + hazardField * 0.10f + abyssField * 0.06f,
-                    5 => industrialField * 0.34f + hazardField * 0.16f,
-                    6 => industrialField * 0.42f + landmarkField * 0.18f + hazardField * 0.12f,
-                    7 => landmarkField * 0.48f + hazardField * 0.28f + ruggedBias * 0.10f,
-                    8 => landmarkField * 0.86f + hazardField * 0.10f,
-                    9 => hazardField * 0.18f + abyssField * 0.10f,
-                    10 => hazardField * 0.76f,
-                    11 => sedimentField * 0.22f + hazardField * 0.10f,
-                    12 => shelterField * 0.14f,
-                    13 => industrialField * 0.42f + hazardField * 0.10f,
-                    _ => landmarkField * 0.52f + hazardField * 0.16f + sedimentField * 0.12f
+                    0 => 0.20f + context.SedimentField * 0.46f + context.RuggedBias * 0.18f + context.HazardField * 0.10f,
+                    1 => context.FertileField * 0.06f,
+                    2 => context.FertileField * 0.08f,
+                    3 => context.ReefField * 0.06f,
+                    4 => context.FertileField * 0.10f + context.HazardField * 0.10f + context.AbyssField * 0.06f,
+                    5 => context.IndustrialField * 0.34f + context.HazardField * 0.16f,
+                    6 => context.IndustrialField * 0.42f + context.LandmarkField * 0.18f + context.HazardField * 0.12f,
+                    7 => context.LandmarkField * 0.48f + context.HazardField * 0.28f + context.RuggedBias * 0.10f,
+                    8 => context.LandmarkField * 0.86f + context.HazardField * 0.10f,
+                    9 => context.HazardField * 0.18f + context.AbyssField * 0.10f,
+                    10 => context.HazardField * 0.76f,
+                    11 => context.SedimentField * 0.22f + context.HazardField * 0.10f,
+                    12 => context.ShelterField * 0.14f,
+                    13 => context.IndustrialField * 0.42f + context.HazardField * 0.10f,
+                    _ => context.LandmarkField * 0.52f + context.HazardField * 0.16f + context.SedimentField * 0.12f
                 },
                 WorldProceduralPattern.RiftHazard => channelIndex switch
                 {
-                    0 => 0.18f + hazardField * 0.36f + ruggedBias * 0.18f + sedimentField * 0.16f,
-                    1 => fertileField * 0.10f,
-                    2 => fertileField * 0.12f,
-                    3 => reefField * 0.10f,
-                    4 => hazardField * 0.24f + abyssField * 0.10f,
-                    5 => industrialField * 0.36f + hazardField * 0.12f,
-                    6 => industrialField * 0.42f + hazardField * 0.18f + landmarkField * 0.10f,
-                    7 => hazardField * 0.82f,
-                    8 => landmarkField * 0.52f + hazardField * 0.16f,
-                    9 => hazardField * 0.48f + abyssField * 0.18f,
-                    10 => hazardField * 0.98f,
-                    11 => sedimentField * 0.24f + hazardField * 0.10f,
-                    12 => shelterField * 0.18f,
-                    13 => industrialField * 0.34f,
-                    _ => hazardField * 0.64f + industrialField * 0.14f
+                    0 => 0.18f + context.HazardField * 0.36f + context.RuggedBias * 0.18f + context.SedimentField * 0.16f,
+                    1 => context.FertileField * 0.10f,
+                    2 => context.FertileField * 0.12f,
+                    3 => context.ReefField * 0.10f,
+                    4 => context.HazardField * 0.24f + context.AbyssField * 0.10f,
+                    5 => context.IndustrialField * 0.36f + context.HazardField * 0.12f,
+                    6 => context.IndustrialField * 0.42f + context.HazardField * 0.18f + context.LandmarkField * 0.10f,
+                    7 => context.HazardField * 0.82f,
+                    8 => context.LandmarkField * 0.52f + context.HazardField * 0.16f,
+                    9 => context.HazardField * 0.48f + context.AbyssField * 0.18f,
+                    10 => context.HazardField * 0.98f,
+                    11 => context.SedimentField * 0.24f + context.HazardField * 0.10f,
+                    12 => context.ShelterField * 0.18f,
+                    13 => context.IndustrialField * 0.34f,
+                    _ => context.HazardField * 0.64f + context.IndustrialField * 0.14f
                 },
                 WorldProceduralPattern.AbyssSparse => channelIndex switch
                 {
-                    0 => 0.20f + abyssField * 0.44f + ruggedBias * 0.16f + sedimentField * 0.18f,
-                    1 => fertileField * 0.06f,
-                    2 => fertileField * 0.08f,
-                    3 => reefField * 0.08f,
-                    4 => abyssField * 0.18f + shelterField * 0.10f,
-                    5 => industrialField * 0.18f + abyssField * 0.08f,
-                    6 => industrialField * 0.22f + landmarkField * 0.18f,
-                    7 => hazardField * 0.22f + landmarkField * 0.22f,
-                    8 => landmarkField * 0.48f + abyssField * 0.12f,
-                    9 => abyssField * 0.16f,
-                    10 => hazardField * 0.24f + abyssField * 0.12f,
-                    11 => sedimentField * 0.18f + abyssField * 0.08f,
-                    12 => shelterField * 0.14f,
-                    13 => industrialField * 0.16f,
-                    _ => abyssField * 0.52f + landmarkField * 0.12f
+                    0 => 0.20f + context.AbyssField * 0.44f + context.RuggedBias * 0.16f + context.SedimentField * 0.18f,
+                    1 => context.FertileField * 0.06f,
+                    2 => context.FertileField * 0.08f,
+                    3 => context.ReefField * 0.08f,
+                    4 => context.AbyssField * 0.18f + context.ShelterField * 0.10f,
+                    5 => context.IndustrialField * 0.18f + context.AbyssField * 0.08f,
+                    6 => context.IndustrialField * 0.22f + context.LandmarkField * 0.18f,
+                    7 => context.HazardField * 0.22f + context.LandmarkField * 0.22f,
+                    8 => context.LandmarkField * 0.48f + context.AbyssField * 0.12f,
+                    9 => context.AbyssField * 0.16f,
+                    10 => context.HazardField * 0.24f + context.AbyssField * 0.12f,
+                    11 => context.SedimentField * 0.18f + context.AbyssField * 0.08f,
+                    12 => context.ShelterField * 0.14f,
+                    13 => context.IndustrialField * 0.16f,
+                    _ => context.AbyssField * 0.52f + context.LandmarkField * 0.12f
                 },
                 WorldProceduralPattern.LandmarkCorridor => channelIndex switch
                 {
-                    0 => 0.22f + sedimentField * 0.26f + ruggedBias * 0.18f,
-                    1 => fertileField * 0.24f,
-                    2 => fertileField * 0.22f + landmarkField * 0.08f,
-                    3 => reefField * 0.28f,
-                    4 => shelterField * 0.22f + fertileField * 0.10f,
-                    5 => industrialField * 0.26f,
-                    6 => industrialField * 0.34f + landmarkField * 0.24f,
-                    7 => landmarkField * 0.84f,
-                    8 => landmarkField * 0.98f,
-                    9 => shelterField * 0.18f + hazardField * 0.10f,
-                    10 => hazardField * 0.34f + landmarkField * 0.08f,
-                    11 => sedimentField * 0.22f + landmarkField * 0.10f,
-                    12 => shelterField * 0.28f,
-                    13 => industrialField * 0.26f + landmarkField * 0.10f,
-                    _ => landmarkField * 0.74f + sedimentField * 0.10f
+                    0 => 0.22f + context.SedimentField * 0.26f + context.RuggedBias * 0.18f,
+                    1 => context.FertileField * 0.24f,
+                    2 => context.FertileField * 0.22f + context.LandmarkField * 0.08f,
+                    3 => context.ReefField * 0.28f,
+                    4 => context.ShelterField * 0.22f + context.FertileField * 0.10f,
+                    5 => context.IndustrialField * 0.26f,
+                    6 => context.IndustrialField * 0.34f + context.LandmarkField * 0.24f,
+                    7 => context.LandmarkField * 0.84f,
+                    8 => context.LandmarkField * 0.98f,
+                    9 => context.ShelterField * 0.18f + context.HazardField * 0.10f,
+                    10 => context.HazardField * 0.34f + context.LandmarkField * 0.08f,
+                    11 => context.SedimentField * 0.22f + context.LandmarkField * 0.10f,
+                    12 => context.ShelterField * 0.28f,
+                    13 => context.IndustrialField * 0.26f + context.LandmarkField * 0.10f,
+                    _ => context.LandmarkField * 0.74f + context.SedimentField * 0.10f
                 },
-                _ => (terrainNoise * 0.55f) + (detailNoise * 0.45f)
+                _ => (context.TerrainNoise * 0.55f) + (context.DetailNoise * 0.45f)
             };
         }
 

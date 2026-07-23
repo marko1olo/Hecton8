@@ -6,7 +6,6 @@
 // with ExecuteAlways as it might be re-introduced if a fix is found. It is very likely the underwater post-processing
 // branch will arrive before then though.
 
-// TODO - this likely will need more work to disable itself if URP is compiled in but disabled
 #if CREST_URP
 
 using UnityEngine;
@@ -66,11 +65,22 @@ namespace Crest
 
         private void OnEnable()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                enabled = false;
+                return;
+            }
+
             EnsurePropertyWrapper();
         }
 
         private void Start()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                return;
+            }
+
             if (!TryGetComponent(out _rend))
             {
                 Debug.LogError($"Crest: No renderer attached to <i>{this}</i>. Please attach on or use the prefab.");
@@ -92,15 +102,16 @@ namespace Crest
             }
 #endif
 
-            // hack - push forward so the geometry wont be frustum culled. there might be better ways to draw
-            // this stuff.
-            transform.localPosition = Vector3.forward;
-
             ConfigureMaterial();
         }
 
         void OnDisable()
         {
+            if (_rend != null)
+            {
+                _rend.enabled = false;
+            }
+
             Shader.DisableKeyword("CREST_UNDERWATER_BEFORE_TRANSPARENT");
         }
 
@@ -155,6 +166,12 @@ namespace Crest
 
         private void LateUpdate()
         {
+            if (!RenderPipelineHelper.IsUniversal)
+            {
+                enabled = false;
+                return;
+            }
+
             if (OceanRenderer.Instance == null || _rend == null || !ShowEffect())
             {
                 if (_rend != null)
@@ -289,6 +306,10 @@ namespace Crest
             mesh.vertices = verts;
             mesh.uv = uvs;
             mesh.SetIndices(indices, MeshTopology.Triangles, 0);
+
+            // push bounds out so that the underwater effect won't be frustum culled.
+            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 10000f);
+
             return mesh;
         }
     }

@@ -18,6 +18,42 @@ namespace Hecton8.Tools.Editor
             Debug.Log("[SHINOBU_225] Cutter raycast inquisition wrote " + reportPath);
         }
 
+                private struct ResolveVerdictArgs
+        {
+            public int syncRaycasts;
+            public int particleSystems;
+            public int instantiateSites;
+            public int meshMutationSites;
+            public int legacyGlobalSignalsPublishSites;
+            public int unityTimeSites;
+            public int liveDiagnosisReadSites;
+            public int managedDiagnosisSeveritySites;
+            public int blackBoxBinaryWriterSites;
+            public int prematureAupFloatHashSites;
+            public int directPowerRuntimeDependencySites;
+            public int directLogisticsGridRuntimeDependencySites;
+            public int wfcRuntimeDataVaultRegistrySites;
+            public int wfcRuntimePropertyAccessorSites;
+            public int cutterPropertyAccessorSites;
+            public int laserEventLegacyGlobalInitSites;
+            public int laserEventHotEnsureSites;
+            public int sargassumRuntimeRegistrationSites;
+            public int dodHotSchedulerEnsureSites;
+            public int laserHotComponentDiscoverySites;
+            public int wfcRouteSnapshotScanSites;
+            public int dodRuntimeDataVaultRegistrySites;
+            public int explicitSecondaryDiagnosisComponentLookupSites;
+            public int originBridgeReadSites;
+            public int dodRuntimeDirectOriginSites;
+            public int dodDebugGizmoDirectOriginSites;
+            public int dodRuntimeOriginZeroFallbackSites;
+            public int hotManagedIterationSites;
+            public int hotManagedTextAllocationSites;
+            public int mockForceCompleteSites;
+            public int mockForceCompleteFenceHits;
+            public bool layoutOk;
+        }
+
         public static string RunToFile()
         {
             DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
@@ -434,74 +470,109 @@ namespace Hecton8.Tools.Editor
             builder.AppendLine("  \"compile_attempt\": \"static inquisition only; guarded Hecton8.Core.csproj build previously failed on external dependencies and generated project coverage omits DOD/WFC/editor files\",");
             builder.AppendLine("  \"laser_cut_request_layout_ok\": " + (layoutOk ? "true" : "false") + ",");
             builder.AppendLine("  \"laser_cut_request_layout_faults\": " + layoutFaults + ",");
-            builder.AppendLine("  \"verdict\": \"" + ResolveVerdict(cutterSyncRaycasts, cutterParticleSystems, cutterInstantiateSites, cutterMeshMutationSites, legacyGlobalSignalsPublishSites, unityTimeSites, liveDiagnosisReadSites, managedDiagnosisSeveritySites, blackBoxBinaryWriterSites, prematureAupFloatHashSites, directPowerRuntimeDependencySites, directLogisticsGridRuntimeDependencySites, wfcRuntimeDataVaultRegistrySites, wfcRuntimePropertyAccessorSites, cutterPropertyAccessorSites, laserEventLegacyGlobalInitSites, laserEventHotEnsureSites, sargassumRuntimeRegistrationSites, dodHotSchedulerEnsureSites, laserHotComponentDiscoverySites, wfcRouteSnapshotScanSites, dodRuntimeDataVaultRegistrySites, explicitSecondaryDiagnosisComponentLookupSites, originBridgeReadSites, dodRuntimeDirectOriginSites, dodDebugGizmoDirectOriginSites, dodRuntimeOriginZeroFallbackSites, hotManagedIterationSites, hotManagedTextAllocationSites, mockForceCompleteSites, mockForceCompleteFenceHits, layoutOk) + "\"");
+            ResolveVerdictArgs args = new ResolveVerdictArgs
+            {
+                syncRaycasts = cutterSyncRaycasts,
+                particleSystems = cutterParticleSystems,
+                instantiateSites = cutterInstantiateSites,
+                meshMutationSites = cutterMeshMutationSites,
+                legacyGlobalSignalsPublishSites = legacyGlobalSignalsPublishSites,
+                unityTimeSites = unityTimeSites,
+                liveDiagnosisReadSites = liveDiagnosisReadSites,
+                managedDiagnosisSeveritySites = managedDiagnosisSeveritySites,
+                blackBoxBinaryWriterSites = blackBoxBinaryWriterSites,
+                prematureAupFloatHashSites = prematureAupFloatHashSites,
+                directPowerRuntimeDependencySites = directPowerRuntimeDependencySites,
+                directLogisticsGridRuntimeDependencySites = directLogisticsGridRuntimeDependencySites,
+                wfcRuntimeDataVaultRegistrySites = wfcRuntimeDataVaultRegistrySites,
+                wfcRuntimePropertyAccessorSites = wfcRuntimePropertyAccessorSites,
+                cutterPropertyAccessorSites = cutterPropertyAccessorSites,
+                laserEventLegacyGlobalInitSites = laserEventLegacyGlobalInitSites,
+                laserEventHotEnsureSites = laserEventHotEnsureSites,
+                sargassumRuntimeRegistrationSites = sargassumRuntimeRegistrationSites,
+                dodHotSchedulerEnsureSites = dodHotSchedulerEnsureSites,
+                laserHotComponentDiscoverySites = laserHotComponentDiscoverySites,
+                wfcRouteSnapshotScanSites = wfcRouteSnapshotScanSites,
+                dodRuntimeDataVaultRegistrySites = dodRuntimeDataVaultRegistrySites,
+                explicitSecondaryDiagnosisComponentLookupSites = explicitSecondaryDiagnosisComponentLookupSites,
+                originBridgeReadSites = originBridgeReadSites,
+                dodRuntimeDirectOriginSites = dodRuntimeDirectOriginSites,
+                dodDebugGizmoDirectOriginSites = dodDebugGizmoDirectOriginSites,
+                dodRuntimeOriginZeroFallbackSites = dodRuntimeOriginZeroFallbackSites,
+                hotManagedIterationSites = hotManagedIterationSites,
+                hotManagedTextAllocationSites = hotManagedTextAllocationSites,
+                mockForceCompleteSites = mockForceCompleteSites,
+                mockForceCompleteFenceHits = mockForceCompleteFenceHits,
+                layoutOk = layoutOk
+            };
+            builder.AppendLine("  \"verdict\": \"" + ResolveVerdict(args) + "\"");
             builder.AppendLine("}");
             return builder.ToString();
         }
 
-        private static string ResolveVerdict(int syncRaycasts, int particleSystems, int instantiateSites, int meshMutationSites, int legacyGlobalSignalsPublishSites, int unityTimeSites, int liveDiagnosisReadSites, int managedDiagnosisSeveritySites, int blackBoxBinaryWriterSites, int prematureAupFloatHashSites, int directPowerRuntimeDependencySites, int directLogisticsGridRuntimeDependencySites, int wfcRuntimeDataVaultRegistrySites, int wfcRuntimePropertyAccessorSites, int cutterPropertyAccessorSites, int laserEventLegacyGlobalInitSites, int laserEventHotEnsureSites, int sargassumRuntimeRegistrationSites, int dodHotSchedulerEnsureSites, int laserHotComponentDiscoverySites, int wfcRouteSnapshotScanSites, int dodRuntimeDataVaultRegistrySites, int explicitSecondaryDiagnosisComponentLookupSites, int originBridgeReadSites, int dodRuntimeDirectOriginSites, int dodDebugGizmoDirectOriginSites, int dodRuntimeOriginZeroFallbackSites, int hotManagedIterationSites, int hotManagedTextAllocationSites, int mockForceCompleteSites, int mockForceCompleteFenceHits, bool layoutOk)
+        private static string ResolveVerdict(ResolveVerdictArgs args)
         {
-            if (!layoutOk)
+            if (!args.layoutOk)
                 return "FAIL: LaserCutRequestDTO layout contract broken.";
-            if (syncRaycasts > 0)
+            if (args.syncRaycasts > 0)
                 return "FAIL: synchronous cutter Physics.Raycast pattern remains.";
-            if (particleSystems > 0)
+            if (args.particleSystems > 0)
                 return "FAIL: cutter ParticleSystem pattern remains.";
-            if (instantiateSites > 0)
+            if (args.instantiateSites > 0)
                 return "FAIL: cutter Instantiate pattern remains.";
-            if (legacyGlobalSignalsPublishSites > 0)
+            if (args.legacyGlobalSignalsPublishSites > 0)
                 return "FAIL: legacy GlobalSignals.Publish remains in the scanned cutter route.";
-            if (unityTimeSites > 0)
+            if (args.unityTimeSites > 0)
                 return "FAIL: Unity Time.* authority remains in the scanned cutter route.";
-            if (liveDiagnosisReadSites > 0)
+            if (args.liveDiagnosisReadSites > 0)
                 return "FAIL: operational read route can still trigger live diagnosis.";
-            if (managedDiagnosisSeveritySites > 0)
+            if (args.managedDiagnosisSeveritySites > 0)
                 return "FAIL: managed diagnosis severity string remains in cutter state.";
-            if (blackBoxBinaryWriterSites > 0)
+            if (args.blackBoxBinaryWriterSites > 0)
                 return "FAIL: black-box dump still uses BinaryWriter field loops.";
-            if (prematureAupFloatHashSites > 0)
+            if (args.prematureAupFloatHashSites > 0)
                 return "FAIL: absolute hitAup is still cast to float in cutter proof/hash math.";
-            if (directPowerRuntimeDependencySites > 0)
+            if (args.directPowerRuntimeDependencySites > 0)
                 return "FAIL: scanned cutter route still has direct Hecton8.Power runtime dependency text.";
-            if (directLogisticsGridRuntimeDependencySites > 0)
+            if (args.directLogisticsGridRuntimeDependencySites > 0)
                 return "FAIL: scanned cutter route still has direct Logistics.Grid runtime dependency text.";
-            if (wfcRuntimeDataVaultRegistrySites > 0)
+            if (args.wfcRuntimeDataVaultRegistrySites > 0)
                 return "FAIL: WFC laser cut runtime still queries GlobalRegistry.DataVault.";
-            if (wfcRuntimePropertyAccessorSites > 0)
+            if (args.wfcRuntimePropertyAccessorSites > 0)
                 return "FAIL: WfcLaserCutRuntime still exposes dead static property accessors instead of telemetry proof rows.";
-            if (cutterPropertyAccessorSites > 0)
+            if (args.cutterPropertyAccessorSites > 0)
                 return "FAIL: cutter-adjacent runtime state still exposes public property facades instead of explicit Read* methods or owner-private math.";
-            if (laserEventLegacyGlobalInitSites > 0)
+            if (args.laserEventLegacyGlobalInitSites > 0)
                 return "FAIL: LaserCutterEvents still initializes legacy GlobalSignals queues.";
-            if (laserEventHotEnsureSites > 0)
+            if (args.laserEventHotEnsureSites > 0)
                 return "FAIL: LaserCutterEvents.Enqueue can still run cold EnsureInitialized work.";
-            if (sargassumRuntimeRegistrationSites > 0)
+            if (args.sargassumRuntimeRegistrationSites > 0)
                 return "FAIL: SargassumCutResponder still registers dispatcher/updatable state from cut impulse.";
-            if (dodHotSchedulerEnsureSites > 0)
+            if (args.dodHotSchedulerEnsureSites > 0)
                 return "FAIL: TryScheduleRaycastBatch can still run cold EnsureInitialized work.";
-            if (laserHotComponentDiscoverySites > 0)
+            if (args.laserHotComponentDiscoverySites > 0)
                 return "FAIL: active laser route still discovers components through TryGetComponent/GetComponentInParent.";
-            if (wfcRouteSnapshotScanSites > 0)
+            if (args.wfcRouteSnapshotScanSites > 0)
                 return "FAIL: WFC cutter hit route still scans SignalBus snapshots instead of cached owner-phase context.";
-            if (dodRuntimeDataVaultRegistrySites > 0)
+            if (args.dodRuntimeDataVaultRegistrySites > 0)
                 return "FAIL: LaserCutterDodRuntime still has an implicit GlobalRegistry.DataVault fallback.";
-            if (explicitSecondaryDiagnosisComponentLookupSites > 0)
+            if (args.explicitSecondaryDiagnosisComponentLookupSites > 0)
                 return "FAIL: explicit secondary diagnosis still discovers components through TryGetComponent/GetComponentInParent.";
-            if (originBridgeReadSites > 0)
+            if (args.originBridgeReadSites > 0)
                 return "FAIL: GlobalSignals.CurrentRuntimeOriginAup remains in scanned cutter AUP conversion.";
-            if (dodRuntimeDirectOriginSites > 0)
+            if (args.dodRuntimeDirectOriginSites > 0)
                 return "FAIL: LaserCutterDodRuntime still reads HectonFloatingOrigin.CurrentTotalOffsetDouble directly instead of cached owner-phase origin.";
-            if (dodDebugGizmoDirectOriginSites > 0)
+            if (args.dodDebugGizmoDirectOriginSites > 0)
                 return "FAIL: LaserCutterDodDebugGizmo still reads HectonFloatingOrigin.CurrentTotalOffsetDouble directly instead of cached DOD presentation origin.";
-            if (dodRuntimeOriginZeroFallbackSites > 0)
+            if (args.dodRuntimeOriginZeroFallbackSites > 0)
                 return "FAIL: LaserCutterDodRuntime can still fall back to zero presentation origin instead of failing closed.";
-            if (hotManagedIterationSites > 0)
+            if (args.hotManagedIterationSites > 0)
                 return "FAIL: hot cutter route still contains foreach/LINQ-style managed iteration text.";
-            if (hotManagedTextAllocationSites > 0)
+            if (args.hotManagedTextAllocationSites > 0)
                 return "FAIL: hot cutter route still contains managed text allocation/formatting text.";
-            if (mockForceCompleteSites > 0 && mockForceCompleteFenceHits < mockForceCompleteSites)
+            if (args.mockForceCompleteSites > 0 && args.mockForceCompleteFenceHits < args.mockForceCompleteSites)
                 return "FAIL: mock cutter trigger force-complete is not compile-fenced to editor/development.";
-            if (meshMutationSites > 0)
+            if (args.meshMutationSites > 0)
                 return "REVIEW: cutter-related mesh mutation text remains.";
             return "PASS: cutter path has deferred raycast/DOD evidence and no direct sync raycast, prefab spawn, ParticleSystem, legacy GlobalSignals publish/init, GlobalSignals origin bridge read, direct DOD runtime floating-origin read, direct DOD debug-gizmo floating-origin read, zero-origin presentation fallback, Unity Time clock, live diagnosis read, BinaryWriter dump, premature AUP float hash, direct Power/Grid runtime dependency, WFC hot DataVault registry query, dead WFC runtime property accessor, cutter-adjacent public property facade, DOD runtime DataVault registry fallback, hot event EnsureInitialized, sargassum cut impulse dispatcher registration, hot DOD scheduler EnsureInitialized, active-route component discovery, explicit secondary diagnosis component lookup, hot managed iteration/text allocation, unfenced mock force-complete, WFC route snapshot scan, mesh mutation, or request-padding metadata text.";
         }

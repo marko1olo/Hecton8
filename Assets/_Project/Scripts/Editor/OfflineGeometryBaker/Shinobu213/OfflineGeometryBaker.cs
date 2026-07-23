@@ -308,7 +308,17 @@ namespace Hecton8.Editor.OfflineGeometry
                         CopyRenderer(sourceRoot.transform, sourceFilter.transform, lod0Root.transform, sourceRenderer, lod0Asset, lod0Renderers, "LOD0_" + filterIndex.ToString("000", CultureInfo.InvariantCulture));
                         CopyRenderer(sourceRoot.transform, sourceFilter.transform, lod1Root.transform, sourceRenderer, lod1Asset, lod1Renderers, "LOD1_" + filterIndex.ToString("000", CultureInfo.InvariantCulture));
                         CopyRenderer(sourceRoot.transform, sourceFilter.transform, lod2Root.transform, sourceRenderer, lod2Asset, lod2Renderers, "LOD2_" + filterIndex.ToString("000", CultureInfo.InvariantCulture));
-                        CreateCollider(sourceRoot.transform, sourceFilter.transform, colliderRoot.transform, lod0Raw, sourceToken, filterIndex, primitiveTolerance, settings.ConvexHullVertexLimit, ref metric);
+                        CreateCollider(new CreateColliderArgs
+                        {
+                            SourceRoot = sourceRoot.transform,
+                            SourceTransform = sourceFilter.transform,
+                            Parent = colliderRoot.transform,
+                            RawVertices = lod0Raw,
+                            SourceToken = sourceToken,
+                            FilterIndex = filterIndex,
+                            PrimitiveTolerance = primitiveTolerance,
+                            ConvexHullVertexLimit = settings.ConvexHullVertexLimit
+                        }, ref metric);
 
                         LodConfigurationDTO dto = new LodConfigurationDTO
                         {
@@ -929,7 +939,7 @@ namespace Hecton8.Editor.OfflineGeometry
             return copied;
         }
 
-        private static void CreateCollider(Transform sourceRoot, Transform sourceTransform, Transform parent, NativeArray<OfflineGeometryRawVertex> rawVertices, string sourceToken, int filterIndex, float primitiveTolerance, int convexHullVertexLimit, ref OfflineBakeMetrics metric)
+        private static void CreateCollider(in CreateColliderArgs args, ref OfflineBakeMetrics metric)
         {
             NativeArray<OfflinePrimitiveFitResult> fit = default;
             try
@@ -940,17 +950,17 @@ namespace Hecton8.Editor.OfflineGeometry
                 {
                     new FitGeometricPrimitivesJob
                     {
-                        Vertices = rawVertices,
+                        Vertices = args.RawVertices,
                         Result = fit,
-                        PrimitiveTolerance = primitiveTolerance
+                        PrimitiveTolerance = args.PrimitiveTolerance
                     }.Schedule().Complete();
                 }
 
                 OfflinePrimitiveFitResult result = fit[0];
-                string name = "COL_" + filterIndex.ToString("000", CultureInfo.InvariantCulture);
+                string name = "COL_" + args.FilterIndex.ToString("000", CultureInfo.InvariantCulture);
                 GameObject colliderObject = new GameObject(name);
-                colliderObject.transform.SetParent(parent, false);
-                ApplyRelativeTransform(sourceRoot, sourceTransform, colliderObject.transform);
+                colliderObject.transform.SetParent(args.Parent, false);
+                ApplyRelativeTransform(args.SourceRoot, args.SourceTransform, colliderObject.transform);
 
                 if (result.ColliderType == (byte)OfflineColliderKind.Sphere)
                 {
@@ -970,7 +980,7 @@ namespace Hecton8.Editor.OfflineGeometry
                     return;
                 }
 
-                Mesh hull = BuildConvexHullMesh(rawVertices, "GEN_" + sourceToken + "_COL_" + filterIndex.ToString("000", CultureInfo.InvariantCulture), convexHullVertexLimit);
+                Mesh hull = BuildConvexHullMesh(args.RawVertices, "GEN_" + args.SourceToken + "_COL_" + args.FilterIndex.ToString("000", CultureInfo.InvariantCulture), args.ConvexHullVertexLimit);
                 if (hull == null)
                 {
                     AddFallbackBoxCollider(colliderObject, result, ref metric, 4u);

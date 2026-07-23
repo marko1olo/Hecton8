@@ -97,6 +97,9 @@ namespace Hecton8.Core
         private static int _exportInFlight;
         private static int _mmfWriteInProgress;
         private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+        // Volatile bool: thread-safe cached version of Application.isPlaying.
+        // Replaces direct Application.isPlaying calls in Publish() which are illegal from worker threads.
+        private static volatile bool _isPlayingVolatile = false;
         private static int _pendingEventCount;
         private static int _pendingByteCount;
         private static long _pendingGeneratedUtcTicks;
@@ -113,6 +116,9 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            // Capture main thread ID now, guaranteed to run on main thread.
+            _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+            _isPlayingVolatile = true;
             DisposeStaticState();
         }
 
@@ -130,9 +136,15 @@ namespace Hecton8.Core
 
         private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange change)
         {
-            if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
+            if (change == UnityEditor.PlayModeStateChange.EnteredPlayMode)
+            {
+                _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+                _isPlayingVolatile = true;
+            }
+            else if (change == UnityEditor.PlayModeStateChange.ExitingPlayMode ||
                 change == UnityEditor.PlayModeStateChange.EnteredEditMode)
             {
+                _isPlayingVolatile = false;
                 DisposeStaticState();
             }
         }
@@ -699,7 +711,8 @@ namespace Hecton8.Core
             bool isMainThread = Thread.CurrentThread.ManagedThreadId == _mainThreadId;
             if (isMainThread)
             {
-                if (!Application.isPlaying)
+                // Use volatile cached bool — Application.isPlaying is illegal from non-main threads.
+                if (!_isPlayingVolatile)
                     return;
 
                 EnsureInitialized();

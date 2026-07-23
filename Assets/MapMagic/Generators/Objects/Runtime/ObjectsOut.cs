@@ -196,7 +196,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 			ApplyObjectsData applyData = new ApplyObjectsData() { 
 				prototypes=objs.Keys.ToArray(), 
 				transitions=objs.Values.ToArray(), 
-				terrainHeight = data.globals.height,
 				objsPerIteration = data.globals.objectsNumPerFrame};
 			Graph.OnBeforeApplyAssign?.Invoke(typeof(ObjectsOutput), data, applyData, stop);
 			data.MarkApply(applyData);
@@ -207,7 +206,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 		{
 			public ObjectsPool.Prototype[] prototypes;
 			public List<Transition>[] transitions;
-			public float terrainHeight; //to get relative object height (since all of the terrain data is 0-1). //TODO: maybe move it to HeightData in "Height in meters" task
 			public int objsPerIteration=500;
 
 			public void Apply(Terrain terrain)

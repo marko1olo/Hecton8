@@ -138,7 +138,7 @@ namespace AmplifyImpostors
 						for( int i = 0; i < m_renderers.Length; i++ )
 						{
 							if( m_renderers[ i ] != null )
-								m_meshFilters[ i ] = m_renderers[ i ].GetComponent<MeshFilter>();
+								m_renderers[ i ].TryGetComponent<MeshFilter>(out m_meshFilters[ i ]);
 						}
 					}
 					else

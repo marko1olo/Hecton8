@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using Den.Tools;
 using MapMagic.Core;
 
@@ -41,7 +41,7 @@ namespace MapMagic.Terrains
 		public void Remove ()
 		{
 			#if UNITY_EDITOR
-			if (!UnityEditor.EditorApplication.isPlaying)
+			if (!MapMagicObject.isPlaying)
 				GameObject.DestroyImmediate(gameObject);
 			else
 			#endif

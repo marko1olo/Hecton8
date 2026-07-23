@@ -1,0 +1,244 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using UnityEditor;
+using UnityEngine;
+using MapMagic.Nodes;
+using MapMagic.Nodes.MatrixGenerators;
+using MapMagic.Core;
+using MapMagic.Terrains;
+using MapMagic.Products;
+using Den.Tools;
+using Den.Tools.Matrices;
+
+namespace MapMagic.Editor.Diagnostics
+{
+    public static class Stage1VerifyAndRelink
+    {
+        [MenuItem("Hecton8/Diagnostics/Stage 1 Verify And Relink")]
+        public static void Run()
+        {
+            try
+            {
+                DoRun();
+            }
+            catch (Exception ex)
+            {
+                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\stage1_error.txt", ex.ToString());
+            }
+            finally
+            {
+                EditorApplication.Exit(0);
+            }
+        }
+
+        private static void DoRun()
+        {
+            string outDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+            var sb = new StringBuilder();
+            sb.AppendLine("STAGE 1 VERIFICATION REPORT");
+
+            string path = "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset";
+            Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(path);
+
+            // 1. Relink HeightOutput if needed
+            var heightOut = graph.generators.OfType<HeightOutput200>().FirstOrDefault();
+            var erosionNodes = graph.generators.Where(g => g.GetType().Name.Contains("HydraulicErosion")).ToList();
+
+            if (heightOut != null && erosionNodes.Count > 0)
+            {
+                Generator erosionNode = erosionNodes[0];
+                IOutlet<object> erodedHeightOutlet = null;
+
+                // Try casting to IMultiOutlet
+                if (erosionNode is IMultiOutlet multiOutlet)
+                {
+                    erodedHeightOutlet = multiOutlet.Outlets().FirstOrDefault();
+                }
+
+                // Try reflection just in case
+                var erodedOutField = erosionNode.GetType().GetField("erodedHeightOut");
+                if (erodedOutField != null)
+                {
+                    erodedHeightOutlet = erodedOutField.GetValue(erosionNode) as IOutlet<object>;
+                }
+
+                if (erodedHeightOutlet != null)
+                {
+                    IInlet<object> heightInlet = heightOut as IInlet<object>;
+
+                    // Check if already linked
+                    bool alreadyLinked = false;
+                    if (graph.links.TryGetValue(heightInlet, out IOutlet<object> currentLink))
+                    {
+                        if (currentLink == erodedHeightOutlet) alreadyLinked = true;
+                    }
+
+                    if (!alreadyLinked)
+                    {
+                        graph.UnlinkInlet(heightInlet);
+                        graph.Link(erodedHeightOutlet, heightInlet);
+                        EditorUtility.SetDirty(graph);
+                        AssetDatabase.SaveAssets();
+                        sb.AppendLine("[x] Relinked HeightOutput to HydraulicErosion");
+                    }
+                }
+            }
+
+            // 2. Connections Check
+            bool hasOldImports = graph.generators.Any(g => g.GetType().Name.Contains("Import"));
+            sb.AppendLine($"[x] No old Import nodes: {!hasOldImports}");
+
+            var splatNode = graph.generators.FirstOrDefault(g => g.GetType().Name.Contains("SplatmapMapMagicNode"));
+            var texturesOut = graph.generators.OfType<TexturesOutput200>().FirstOrDefault();
+
+            string heightOutSource = "NULL";
+            if (heightOut != null && graph.links.TryGetValue(heightOut as IInlet<object>, out IOutlet<object> hoLink)) {
+                heightOutSource = hoLink.Gen.GetType().Name;
+            }
+            sb.AppendLine($"[x] HeightOutput reads from: {heightOutSource}");
+
+            string splatSource = "NULL";
+            if (splatNode != null) {
+                var heightIn = splatNode.GetType().GetField("heightIn")?.GetValue(splatNode) as IInlet<object>;
+                if (heightIn != null && graph.links.TryGetValue(heightIn, out IOutlet<object> spLink)) {
+                    splatSource = spLink.Gen.GetType().Name;
+                }
+            }
+            sb.AppendLine($"[x] SplatmapNode heightIn reads from: {splatSource}");
+
+            // 3. Generate Graph to get outputs
+            Dictionary<Generator, List<Generator>> backwardLinks = new Dictionary<Generator, List<Generator>>();
+            foreach (var g in graph.generators) backwardLinks[g] = new List<Generator>();
+
+            foreach (var kvp in graph.links)
+            {
+                if (kvp.Key != null && kvp.Value != null)
+                {
+                    Generator child = kvp.Key.Gen;
+                    Generator parent = kvp.Value.Gen;
+                    if (child != null && parent != null && backwardLinks.ContainsKey(child))
+                    {
+                        backwardLinks[child].Add(parent);
+                    }
+                }
+            }
+
+            HashSet<Generator> requiredNodes = new HashSet<Generator>();
+            Action<Generator> GatherAncestors = null;
+            GatherAncestors = (node) => {
+                if (!requiredNodes.Add(node)) return;
+                foreach (var parent in backwardLinks[node]) GatherAncestors(parent);
+            };
+
+            if (heightOut != null) GatherAncestors(heightOut);
+            if (texturesOut != null) GatherAncestors(texturesOut);
+            // also gather SplatmapNode just in case
+            if (splatNode != null) GatherAncestors(splatNode);
+
+            List<Generator> topoOrder = new List<Generator>();
+            HashSet<Generator> topoVisited = new HashSet<Generator>();
+            Action<Generator> TopoSort = null;
+            TopoSort = (node) => {
+                if (topoVisited.Contains(node)) return;
+                topoVisited.Add(node);
+                foreach (var parent in backwardLinks[node])
+                {
+                    if (requiredNodes.Contains(parent)) TopoSort(parent);
+                }
+                topoOrder.Add(node);
+            };
+            foreach (var n in requiredNodes) TopoSort(n);
+
+            Vector2D worldSize = new Vector2D(1000, 1000);
+            CoordRect rect = new CoordRect(0, 0, 512, 512);
+            Area area = new Area(new Vector2D(0, 0), worldSize, rect, 0);
+
+            TileData data = new TileData();
+            data.area = area;
+            data.globals = new Globals();
+            data.globals.height = 12000f;
+            data.random = new Den.Tools.Noise(12345);
+            data.ClearProducts();
+
+            foreach (var gen in topoOrder)
+            {
+                try {
+                    gen.Generate(data, new StopToken());
+                } catch (Exception e) {
+                    sb.AppendLine($"ERROR generating {gen.GetType().Name}: {e.Message}");
+                }
+            }
+
+            // 4. Save Hillshade + Splat preview
+            MatrixWorld heightMatrix = null;
+            if (heightOut != null && graph.links.TryGetValue(heightOut as IInlet<object>, out IOutlet<object> heightLink)) {
+                heightMatrix = data.ReadProduct(heightLink.Id) as MatrixWorld;
+            }
+
+            if (heightMatrix != null)
+            {
+                Texture2D preview = new Texture2D(rect.size.x, rect.size.z, TextureFormat.RGB24, false);
+                Vector3 lightDir = new Vector3(-1f, 0.5f, 1f).normalized;
+                float hScale = 12000f / 1000f;
+
+                Color[] layerColors = new Color[] {
+                    Color.yellow, // Sand
+                    Color.grey,   // Rock
+                    new Color(0.4f, 0.2f, 0f), // Sediment
+                    Color.white,
+                    Color.green
+                };
+
+                for (int z = 1; z < rect.size.z - 1; z++)
+                {
+                    for (int x = 1; x < rect.size.x - 1; x++)
+                    {
+                        float hL = heightMatrix[x - 1, z] * hScale;
+                        float hR = heightMatrix[x + 1, z] * hScale;
+                        float hD = heightMatrix[x, z - 1] * hScale;
+                        float hU = heightMatrix[x, z + 1] * hScale;
+                        Vector3 n = new Vector3(hL - hR, 2f, hD - hU).normalized;
+                        float i = Mathf.Max(0f, Vector3.Dot(n, lightDir));
+
+                        Color finalColor = new Color(i, i, i, 1f);
+
+                        if (texturesOut != null)
+                        {
+                            Color splatCol = Color.black;
+                            float totalWeight = 0;
+                            for (int l = 0; l < texturesOut.layers.Length; l++)
+                            {
+                                MatrixWorld texMatrix = null;
+                                if (graph.links.TryGetValue(texturesOut.layers[l] as IInlet<object>, out IOutlet<object> texLink)) {
+                                    texMatrix = data.ReadProduct(texLink.Id) as MatrixWorld;
+                                }
+                                if (texMatrix != null)
+                                {
+                                    float w = texMatrix[x, z];
+                                    splatCol += layerColors[l % layerColors.Length] * w;
+                                    totalWeight += w;
+                                }
+                            }
+                            if (totalWeight > 0)
+                            {
+                                splatCol /= totalWeight;
+                                finalColor = splatCol * i;
+                            }
+                        }
+
+                        preview.SetPixel(x, z, finalColor);
+                    }
+                }
+
+                string imgPath = Path.Combine(outDir, "hillshade_splat_preview.png");
+                File.WriteAllBytes(imgPath, preview.EncodeToPNG());
+                sb.AppendLine($"[x] Generated hillshade_splat_preview.png");
+            }
+
+            File.WriteAllText(Path.Combine(outDir, "stage1_report.txt"), sb.ToString());
+        }
+    }
+}

@@ -321,35 +321,36 @@ namespace Hecton8.Editor
                 new Color32(spec.TintByte, 184, 52, 255));
             AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
 
-            BladeBuildParams p = new BladeBuildParams(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
-            BuildUnderstoryBlade(p, paddleLobed, foldedGiant, frilledRibbon);
+            BladeBuildParams buildParams = new BladeBuildParams(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
 
-            BuildCompanionBlade(p);
+            BuildUnderstoryBlade(in buildParams, paddleLobed, foldedGiant, frilledRibbon);
 
-            BuildTertiaryBlade(p);
+            BuildCompanionBlade(in buildParams);
 
-            BuildBridgingBlade(p, paddleLobed, frilledRibbon, broadleafKelp);
+            BuildTertiaryBlade(in buildParams);
 
-            BuildCurtainBlade(p, foldedSheet);
+            BuildBridgingBlade(in buildParams, paddleLobed, frilledRibbon, broadleafKelp);
 
-            BuildSailBlade(p, foldedGiant, sailKelp);
+            BuildCurtainBlade(in buildParams, foldedSheet);
 
-            BuildFanBlade(p, paddleLobed, broadleafKelp, paddlefanKelp);
+            BuildSailBlade(in buildParams, foldedGiant, sailKelp);
 
-            BuildMantleBlade(p, paddleLobed);
+            BuildFanBlade(in buildParams, paddleLobed, broadleafKelp, paddlefanKelp);
 
-            BuildBackingBlade(p, sailKelp);
+            BuildMantleBlade(in buildParams, paddleLobed);
 
-            BuildLowerMantleBlade(p, paddlefanKelp);
+            BuildBackingBlade(in buildParams, sailKelp);
 
-            BuildInnerBlade(p, broadleafKelp);
+            BuildLowerMantleBlade(in buildParams, paddlefanKelp);
 
-            BuildShroudBlade(p);
+            BuildInnerBlade(in buildParams, broadleafKelp);
 
-            BuildVeilBlade(p, frilledRibbon);
+            BuildShroudBlade(in buildParams);
+
+            BuildVeilBlade(in buildParams, frilledRibbon);
         }
 
-        private static void BuildUnderstoryBlade(BladeBuildParams p, bool paddleLobed, bool foldedGiant, bool frilledRibbon)
+        private static void BuildUnderstoryBlade(in BladeBuildParams p, bool paddleLobed, bool foldedGiant, bool frilledRibbon)
         {
             if (p.Spec.ClusterCount > 1
                 && !paddleLobed
@@ -403,7 +404,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildCompanionBlade(BladeBuildParams p)
+        private static void BuildCompanionBlade(in BladeBuildParams p)
         {
             if (ShouldAddCompanionBlade(p.Spec, p.Lod, p.BladeIndex, p.Normalized))
             {
@@ -452,7 +453,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildTertiaryBlade(BladeBuildParams p)
+        private static void BuildTertiaryBlade(in BladeBuildParams p)
         {
             if (ShouldAddTertiaryBlade(p.Spec, p.Lod, p.BladeIndex, p.Normalized))
             {
@@ -501,7 +502,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildBridgingBlade(BladeBuildParams p, bool paddleLobed, bool frilledRibbon, bool broadleafKelp)
+        private static void BuildBridgingBlade(in BladeBuildParams p, bool paddleLobed, bool frilledRibbon, bool broadleafKelp)
         {
             if (p.Spec.GrowthStyle == GrowthStyle.GiantFrond
                 && p.Spec.ClusterCount <= 1
@@ -554,7 +555,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildCurtainBlade(BladeBuildParams p, bool foldedSheet)
+        private static void BuildCurtainBlade(in BladeBuildParams p, bool foldedSheet)
         {
             if (foldedSheet
                 && p.Lod == 0
@@ -604,7 +605,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildSailBlade(BladeBuildParams p, bool foldedGiant, bool sailKelp)
+        private static void BuildSailBlade(in BladeBuildParams p, bool foldedGiant, bool sailKelp)
         {
             if (foldedGiant
                 && !sailKelp
@@ -656,7 +657,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildFanBlade(BladeBuildParams p, bool paddleLobed, bool broadleafKelp, bool paddlefanKelp)
+        private static void BuildFanBlade(in BladeBuildParams p, bool paddleLobed, bool broadleafKelp, bool paddlefanKelp)
         {
             if (paddleLobed
                 && p.Lod == 0
@@ -706,7 +707,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildMantleBlade(BladeBuildParams p, bool paddleLobed)
+        private static void BuildMantleBlade(in BladeBuildParams p, bool paddleLobed)
         {
             if (p.Spec.GrowthStyle == GrowthStyle.CrownCanopy
                 && paddleLobed
@@ -757,7 +758,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildBackingBlade(BladeBuildParams p, bool sailKelp)
+        private static void BuildBackingBlade(in BladeBuildParams p, bool sailKelp)
         {
             if (sailKelp
                 && p.Lod == 0
@@ -807,7 +808,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildLowerMantleBlade(BladeBuildParams p, bool paddlefanKelp)
+        private static void BuildLowerMantleBlade(in BladeBuildParams p, bool paddlefanKelp)
         {
             if (paddlefanKelp
                 && p.Lod == 0
@@ -857,7 +858,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildInnerBlade(BladeBuildParams p, bool broadleafKelp)
+        private static void BuildInnerBlade(in BladeBuildParams p, bool broadleafKelp)
         {
             if (broadleafKelp
                 && p.Lod == 0
@@ -907,7 +908,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildShroudBlade(BladeBuildParams p)
+        private static void BuildShroudBlade(in BladeBuildParams p)
         {
             if (IsDeepPetalVariant(p.Spec)
                 && p.Lod == 0
@@ -957,7 +958,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void BuildVeilBlade(BladeBuildParams p, bool frilledRibbon)
+        private static void BuildVeilBlade(in BladeBuildParams p, bool frilledRibbon)
         {
             if (frilledRibbon
                 && p.Lod == 0
@@ -2547,6 +2548,44 @@ namespace Hecton8.Editor
             FoldedLamina = 3,
             PaddleLobed = 4,
             FrilledRibbon = 5
+        }
+
+        private readonly struct BladeBuildParams
+        {
+            public readonly MeshBuffers Buffers;
+            public readonly VariantSpec Spec;
+            public readonly Vector3 Scale;
+            public readonly int Lod;
+            public readonly int BladeIndex;
+            public readonly float Normalized;
+            public readonly float PrimaryAngleOffset;
+            public readonly Vector3 BaseOffset;
+            public readonly float ClusterYawOffsetDegrees;
+            public readonly float Width;
+            public readonly float Length;
+            public readonly float Twist;
+            public readonly float SideCurve;
+            public readonly float Serration;
+            public readonly int BladeSegments;
+
+            public BladeBuildParams(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod, int bladeIndex, float normalized, float primaryAngleOffset, Vector3 baseOffset, float clusterYawOffsetDegrees, float width, float length, float twist, float sideCurve, float serration, int bladeSegments)
+            {
+                Buffers = buffers;
+                Spec = spec;
+                Scale = scale;
+                Lod = lod;
+                BladeIndex = bladeIndex;
+                Normalized = normalized;
+                PrimaryAngleOffset = primaryAngleOffset;
+                BaseOffset = baseOffset;
+                ClusterYawOffsetDegrees = clusterYawOffsetDegrees;
+                Width = width;
+                Length = length;
+                Twist = twist;
+                SideCurve = sideCurve;
+                Serration = serration;
+                BladeSegments = bladeSegments;
+            }
         }
 
         private readonly struct BladeBuildParams

@@ -789,14 +789,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            BaseAirlock airlock = FindRepairAirlock(_hit.collider);
-            if (airlock != null && airlock.TryApplyWeldOverride(safeDeltaTime, _hit.point))
-            {
-                UpdateBeamHit(_hit.point, _hit.normal);
-                ClearIntegrityDiagnostic();
-                InvalidateDiagnosisCache();
-                return;
-            }
+            if (TryHandleAirlockHit(safeDeltaTime)) return;
 
             if (TryHandleSubmarineDamageControlHit(safeDeltaTime))
             {
@@ -808,104 +801,13 @@ namespace Hecton8.Gameplay
             CacheRepairTargetsForCollider(_hit.collider, out IRepairableModuleTarget module, out IVoxelRepairWeldTarget voxelRepairTarget);
             if (module != null)
             {
-                if (!module.TryReadRepairState(out ModuleRepairReadSnapshot beforeState))
-                {
-                    UpdateBeamMiss();
-                    ClearIntegrityDiagnostic();
-                    InvalidateDiagnosisCache();
-                    return;
-                }
-
-                float beforeIntegrity = beforeState.CurrentIntegrity;
-                float beforeMaxIntegrity = beforeState.MaxIntegrity;
-                bool beforeFlooded = (beforeState.Flags & ModuleRepairReadSnapshot.FlagFlooded) != 0u;
-
-                if (IsIntegrityAtMax(beforeIntegrity, beforeMaxIntegrity) && !beforeFlooded)
-                {
-                    if (!_healthyTargetReportedThisUse)
-                    {
-                        PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
-                        _healthyTargetReportedThisUse = true;
-                    }
-
-                    UpdateBeamHit(_hit.point, _hit.normal);
-                    PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
-                    InvalidateDiagnosisCache();
-                    return;
-                }
-
-                float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
-                ToolEffectEvents.TryRaiseEffectApplied(
-                    EffectType.Weld,
-                    module,
-                    null,
-                    repairAmount,
-                    _hit.point);
-                module.ApplyRepair(repairAmount);
-                UpdateBeamHit(_hit.point, _hit.normal);
-                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
-
-                if (!_activeRepairReportedThisUse)
-                {
-                    ServiceDiagnosis diagnosis = BuildDiagnosis(module);
-                    PublishActiveRepairInfo(diagnosis.headline);
-                    s_hudBuffer.Clear();
-                    if (TryWriteRepairStartedLogSummary(ref s_hudBuffer, diagnosis))
-                    {
-                        FieldOperationLogSystem.RecordOperation(
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
-                            in s_hudBuffer,
-                            "INFO");
-                    }
-
-                    _activeRepairReportedThisUse = true;
-                }
-
-                if ((IsIntegrityBelowMax(beforeIntegrity, beforeMaxIntegrity) || beforeFlooded) &&
-                    TryReadModuleRepairState(module, out ModuleRepairReadSnapshot restoredState) &&
-                    IsModuleIntegrityAtMax(in restoredState) &&
-                    (restoredState.Flags & ModuleRepairReadSnapshot.FlagFlooded) == 0u)
-                {
-                    PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
-                    s_hudBuffer.Clear();
-                    if (TryWriteRepairRestoredLogSummary(ref s_hudBuffer))
-                    {
-                        FieldOperationLogSystem.RecordOperation(
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
-                            in s_hudBuffer,
-                            "INFO");
-                    }
-                }
+                if (TryHandleModuleRepair(safeDeltaTime, module)) return;
             }
             else
             {
                 if (voxelRepairTarget != null)
                 {
-                    bool repairVoxelHit = false;
-                    if (TryResolveAupFromPlayerPose(_hit.point, out AbsoluteUniversePosition hitAup))
-                    {
-                        double3 absoluteHitPoint = hitAup.ToAbsoluteDouble3();
-                        Vector3 repairDirection = TryResolveRepairRay(out _, out Vector3 poseDirection)
-                            ? poseDirection
-                            : ResolveRepairForwardFallback();
-                        repairVoxelHit = math.all(math.isfinite(absoluteHitPoint)) &&
-                                         voxelRepairTarget.TryApplyRepairWeldDda(
-                                             absoluteHitPoint,
-                                             repairDirection,
-                                             ResolveRuntimeRepairPowerNormalized(),
-                                             ResolveRuntimeRepairRange());
-                    }
-
-                    if (repairVoxelHit)
-                    {
-                        UpdateBeamHit(_hit.point, _hit.normal);
-                        ClearIntegrityDiagnostic();
-                        QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), FiniteAtLeast(repairSpeed, 1f));
-                        InvalidateDiagnosisCache();
-                        return;
-                    }
+                    if (TryHandleVoxelRepair(voxelRepairTarget)) return;
                 }
 
                 if (!_invalidTargetReportedThisUse)
@@ -918,6 +820,122 @@ namespace Hecton8.Gameplay
             }
 
             InvalidateDiagnosisCache();
+        }
+
+        private bool TryHandleAirlockHit(float safeDeltaTime)
+        {
+            BaseAirlock airlock = FindRepairAirlock(_hit.collider);
+            if (airlock != null && airlock.TryApplyWeldOverride(safeDeltaTime, _hit.point))
+            {
+                UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
+                InvalidateDiagnosisCache();
+                return true;
+            }
+            return false;
+        }
+
+        private bool TryHandleModuleRepair(float safeDeltaTime, IRepairableModuleTarget module)
+        {
+            if (!module.TryReadRepairState(out ModuleRepairReadSnapshot beforeState))
+            {
+                UpdateBeamMiss();
+                ClearIntegrityDiagnostic();
+                InvalidateDiagnosisCache();
+                return true;
+            }
+
+            float beforeIntegrity = beforeState.CurrentIntegrity;
+            float beforeMaxIntegrity = beforeState.MaxIntegrity;
+            bool beforeFlooded = (beforeState.Flags & ModuleRepairReadSnapshot.FlagFlooded) != 0u;
+
+            if (IsIntegrityAtMax(beforeIntegrity, beforeMaxIntegrity) && !beforeFlooded)
+            {
+                if (!_healthyTargetReportedThisUse)
+                {
+                    PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
+                    _healthyTargetReportedThisUse = true;
+                }
+
+                UpdateBeamHit(_hit.point, _hit.normal);
+                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
+                InvalidateDiagnosisCache();
+                return true;
+            }
+
+            float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
+            ToolEffectEvents.TryRaiseEffectApplied(
+                EffectType.Weld,
+                module,
+                null,
+                repairAmount,
+                _hit.point);
+            module.ApplyRepair(repairAmount);
+            UpdateBeamHit(_hit.point, _hit.normal);
+            PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
+
+            if (!_activeRepairReportedThisUse)
+            {
+                ServiceDiagnosis diagnosis = BuildDiagnosis(module);
+                PublishActiveRepairInfo(diagnosis.headline);
+                s_hudBuffer.Clear();
+                if (TryWriteRepairStartedLogSummary(ref s_hudBuffer, diagnosis))
+                {
+                    FieldOperationLogSystem.RecordOperation(
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
+                        in s_hudBuffer,
+                        "INFO");
+                }
+
+                _activeRepairReportedThisUse = true;
+            }
+
+            if ((IsIntegrityBelowMax(beforeIntegrity, beforeMaxIntegrity) || beforeFlooded) &&
+                TryReadModuleRepairState(module, out ModuleRepairReadSnapshot restoredState) &&
+                IsModuleIntegrityAtMax(in restoredState) &&
+                (restoredState.Flags & ModuleRepairReadSnapshot.FlagFlooded) == 0u)
+            {
+                PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
+                s_hudBuffer.Clear();
+                if (TryWriteRepairRestoredLogSummary(ref s_hudBuffer))
+                {
+                    FieldOperationLogSystem.RecordOperation(
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
+                        in s_hudBuffer,
+                        "INFO");
+                }
+            }
+            return false;
+        }
+
+        private bool TryHandleVoxelRepair(IVoxelRepairWeldTarget voxelRepairTarget)
+        {
+            bool repairVoxelHit = false;
+            if (TryResolveAupFromPlayerPose(_hit.point, out AbsoluteUniversePosition hitAup))
+            {
+                double3 absoluteHitPoint = hitAup.ToAbsoluteDouble3();
+                Vector3 repairDirection = TryResolveRepairRay(out _, out Vector3 poseDirection)
+                    ? poseDirection
+                    : ResolveRepairForwardFallback();
+                repairVoxelHit = math.all(math.isfinite(absoluteHitPoint)) &&
+                                 voxelRepairTarget.TryApplyRepairWeldDda(
+                                     absoluteHitPoint,
+                                     repairDirection,
+                                     ResolveRuntimeRepairPowerNormalized(),
+                                     ResolveRuntimeRepairRange());
+            }
+
+            if (repairVoxelHit)
+            {
+                UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
+                QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), FiniteAtLeast(repairSpeed, 1f));
+                InvalidateDiagnosisCache();
+                return true;
+            }
+            return false;
         }
 
         public override void UseSecondary(float deltaTime)
@@ -2608,112 +2626,135 @@ namespace Hecton8.Gameplay
             bool hasPower = (snapshot.Flags & ModuleRepairReadSnapshot.FlagHasPower) != 0u;
 
             if (isFlooded && !hasPower && IsModuleIntegrityAtMax(in snapshot))
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "FLOODED",
-                    headline = RepairToolNoPowerHeadline,
-                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER,
-                    summaryFallback = "Integrity {0:0}% // compartment flooded // pumps offline.",
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER,
-                        "Restore power before expecting water evacuation."),
-                    severity = "WARN",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED"),
-                    integrityPercent = integrityPercent,
-                    hasIntegrityPercent = true
-                };
-            }
+                return BuildNoPowerDiagnosis(integrityPercent);
 
             if (isFlooded && isDraining)
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "DRAINING",
-                    headline = RepairToolDrainingHeadline,
-                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING,
-                    summaryFallback = "Integrity {0:0}% // pumps are clearing floodwater.",
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING,
-                        "Hold perimeter and let the compartment finish draining."),
-                    severity = "INFO",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING"),
-                    integrityPercent = integrityPercent,
-                    hasIntegrityPercent = true
-                };
-            }
+                return BuildDrainingDiagnosis(integrityPercent);
 
             if (isFlooded)
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "FLOODED",
-                    headline = RepairToolFloodedHeadline,
-                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED,
-                    summaryFallback = "Integrity {0:0}% // compartment breach still active.",
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED,
-                        "Continue repair until integrity reaches 100% and pump cycle can start."),
-                    severity = "WARN",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE"),
-                    integrityPercent = integrityPercent,
-                    hasIntegrityPercent = true
-                };
-            }
+                return BuildFloodedDiagnosis(integrityPercent);
 
             if (integrity01 >= 0.999f)
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "SEALED",
-                    headline = RepairToolSealedHeadline,
-                    summary = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED,
-                        "Integrity 100% // hull stable // compartment dry."),
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED,
-                        "No further repair action required."),
-                    severity = "INFO",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE")
-                };
-            }
+                return BuildSealedDiagnosis();
 
             if (integrity01 <= 0.25f)
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "CRITICAL",
-                    headline = RepairToolCriticalDamageHeadline,
-                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL,
-                    summaryFallback = "Integrity {0:0}% // hull failure risk elevated.",
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL,
-                        "Maintain continuous repair contact until the module exits critical range."),
-                    severity = "CRITICAL",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE"),
-                    integrityPercent = integrityPercent,
-                    hasIntegrityPercent = true
-                };
-            }
+                return BuildCriticalDamageDiagnosis(integrityPercent);
 
             if (integrity01 <= 0.65f)
-            {
-                return new ServiceDiagnosis
-                {
-                    status = "DAMAGED",
-                    headline = RepairToolHeavyDamageHeadline,
-                    summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY,
-                    summaryFallback = "Integrity {0:0}% // hull is compromised but recoverable.",
-                    recommendation = StableText(
-                        H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY,
-                        "Keep the repair beam on target and avoid leaving the module unattended."),
-                    severity = "WARN",
-                    priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE"),
-                    integrityPercent = integrityPercent,
-                    hasIntegrityPercent = true
-                };
-            }
+                return BuildHeavyDamageDiagnosis(integrityPercent);
 
+            return BuildPatchingDiagnosis(integrityPercent);
+        }
+
+        private static ServiceDiagnosis BuildNoPowerDiagnosis(int integrityPercent)
+        {
+            return new ServiceDiagnosis
+            {
+                status = "FLOODED",
+                headline = RepairToolNoPowerHeadline,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_NO_POWER,
+                summaryFallback = "Integrity {0:0}% // compartment flooded // pumps offline.",
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_NO_POWER,
+                    "Restore power before expecting water evacuation."),
+                severity = "WARN",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_BLOCKED, "SERVICE BLOCKED"),
+                integrityPercent = integrityPercent,
+                hasIntegrityPercent = true
+            };
+        }
+
+        private static ServiceDiagnosis BuildDrainingDiagnosis(int integrityPercent)
+        {
+            return new ServiceDiagnosis
+            {
+                status = "DRAINING",
+                headline = RepairToolDrainingHeadline,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_DRAINING,
+                summaryFallback = "Integrity {0:0}% // pumps are clearing floodwater.",
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_DRAINING,
+                    "Hold perimeter and let the compartment finish draining."),
+                severity = "INFO",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_STABILIZING, "STABILIZING"),
+                integrityPercent = integrityPercent,
+                hasIntegrityPercent = true
+            };
+        }
+
+        private static ServiceDiagnosis BuildFloodedDiagnosis(int integrityPercent)
+        {
+            return new ServiceDiagnosis
+            {
+                status = "FLOODED",
+                headline = RepairToolFloodedHeadline,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_FLOODED,
+                summaryFallback = "Integrity {0:0}% // compartment breach still active.",
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_FLOODED,
+                    "Continue repair until integrity reaches 100% and pump cycle can start."),
+                severity = "WARN",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_IMMEDIATE_SERVICE, "IMMEDIATE SERVICE"),
+                integrityPercent = integrityPercent,
+                hasIntegrityPercent = true
+            };
+        }
+
+        private static ServiceDiagnosis BuildSealedDiagnosis()
+        {
+            return new ServiceDiagnosis
+            {
+                status = "SEALED",
+                headline = RepairToolSealedHeadline,
+                summary = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_SUMMARY_SEALED,
+                    "Integrity 100% // hull stable // compartment dry."),
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_SEALED,
+                    "No further repair action required."),
+                severity = "INFO",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_SERVICE_COMPLETE, "SERVICE COMPLETE")
+            };
+        }
+
+        private static ServiceDiagnosis BuildCriticalDamageDiagnosis(int integrityPercent)
+        {
+            return new ServiceDiagnosis
+            {
+                status = "CRITICAL",
+                headline = RepairToolCriticalDamageHeadline,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_CRITICAL,
+                summaryFallback = "Integrity {0:0}% // hull failure risk elevated.",
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_CRITICAL,
+                    "Maintain continuous repair contact until the module exits critical range."),
+                severity = "CRITICAL",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_CRITICAL_RESPONSE, "CRITICAL RESPONSE"),
+                integrityPercent = integrityPercent,
+                hasIntegrityPercent = true
+            };
+        }
+
+        private static ServiceDiagnosis BuildHeavyDamageDiagnosis(int integrityPercent)
+        {
+            return new ServiceDiagnosis
+            {
+                status = "DAMAGED",
+                headline = RepairToolHeavyDamageHeadline,
+                summaryKey = H8ToolLocHashes.REPAIR_TOOL_SUMMARY_HEAVY,
+                summaryFallback = "Integrity {0:0}% // hull is compromised but recoverable.",
+                recommendation = StableText(
+                    H8ToolLocHashes.REPAIR_TOOL_RECOMMEND_HEAVY,
+                    "Keep the repair beam on target and avoid leaving the module unattended."),
+                severity = "WARN",
+                priority = StableText(H8ToolLocHashes.REPAIR_TOOL_PRIORITY_ACTIVE_SERVICE, "ACTIVE SERVICE"),
+                integrityPercent = integrityPercent,
+                hasIntegrityPercent = true
+            };
+        }
+
+        private static ServiceDiagnosis BuildPatchingDiagnosis(int integrityPercent)
+        {
             return new ServiceDiagnosis
             {
                 status = "DAMAGED",

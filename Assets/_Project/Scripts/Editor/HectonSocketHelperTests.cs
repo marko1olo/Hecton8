@@ -110,6 +110,32 @@ namespace Hecton8.Tests.Editor
                 method.Invoke(_helper, new object[] { true });
             });
         }
+
+        [Test]
+        public void GetSocketColor_UnknownSocket_ReturnsCyan()
+        {
+            var method = typeof(HectonSocketHelper).GetMethod("GetSocketColor", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method, "GetSocketColor method not found.");
+
+            var color = (Color)method.Invoke(null, new object[] { (HectonSocketHelper.SocketType)999, true });
+            Assert.That(color, Is.EqualTo(Color.cyan));
+        }
+
+        [Test]
+        public void ResetStaticState_ResetsFieldsToDefault()
+        {
+            var resetMethod = typeof(HectonSocketHelper).GetMethod("ResetStaticState", BindingFlags.NonPublic | BindingFlags.Static);
+            resetMethod?.Invoke(null, null);
+
+            var labelStyleField = typeof(HectonSocketHelper).GetField("s_LabelStyle", BindingFlags.NonPublic | BindingFlags.Static);
+            var lastLabelColorField = typeof(HectonSocketHelper).GetField("s_LastLabelColor", BindingFlags.NonPublic | BindingFlags.Static);
+
+            Assert.IsNotNull(labelStyleField, "s_LabelStyle field not found.");
+            Assert.IsNotNull(lastLabelColorField, "s_LastLabelColor field not found.");
+
+            Assert.IsNull(labelStyleField.GetValue(null));
+            Assert.That((Color)lastLabelColorField.GetValue(null), Is.EqualTo(new Color(-1f, -1f, -1f, -1f)));
+        }
     }
 }
 #endif
