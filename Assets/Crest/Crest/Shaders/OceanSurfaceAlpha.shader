@@ -80,7 +80,10 @@ Shader "Crest/Ocean Surface Alpha"
 
 				// vertex snapping and lod transition
 				float meshScaleLerp = _CrestPerCascadeInstanceData[_LD_SliceIndex]._meshScaleLerp;
-				float lodAlpha = ComputeLodAlpha(worldPos, meshScaleLerp, cascadeData0);
+				float2 offsetFromCenter = abs(float2(worldPos.x - _OceanCenterPosWorld.x, worldPos.z - _OceanCenterPosWorld.z));
+				float taxicab_norm = max(offsetFromCenter.x, offsetFromCenter.y);
+				float lodAlpha = taxicab_norm / cascadeData0._scale - 1.0;
+				lodAlpha = ComputeLodAlpha(lodAlpha, meshScaleLerp);
 
 				// sample shape textures - always lerp between 2 scales, so sample two textures
 
