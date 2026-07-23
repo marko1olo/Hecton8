@@ -449,6 +449,9 @@ namespace Hecton8.SaveSystem
 
         private static class StaticNativeBuffers
         {
+            #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            internal static System.Action s_TestReleaseOwnedBufferUnregisterHook;
+            #endif
             internal static System.Action TestHook_DisposeThrow;
             private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
@@ -594,6 +597,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    s_TestReleaseOwnedBufferUnregisterHook?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (System.Exception nativeSentinelException0)
