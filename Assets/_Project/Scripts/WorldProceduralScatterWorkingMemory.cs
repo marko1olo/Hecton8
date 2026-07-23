@@ -423,7 +423,15 @@ namespace Hecton8.World
                 EnsureCandidateMapInitialized(ref PredatorSpawnCandidates, 96);
             }
 
+
             public void Dispose()
+            {
+                DisposeNativeCollections();
+                DisposeCandidateMaps();
+                ClearManagedState();
+            }
+
+            private void DisposeNativeCollections()
             {
                 DisposeNativeArray(ref CellSamplingInputs);
                 DisposeNativeArray(ref CellSamplingOutputs);
@@ -444,7 +452,10 @@ namespace Hecton8.World
                 DisposeNativeArray(ref CandidateAcceptanceStructureAccentCountsScratch);
                 DisposeNativeArray(ref CandidateAcceptanceClusterAccentRoleMaxRatiosScratch);
                 DisposeNativeArray(ref CandidateAcceptanceStructureAccentRoleMaxCountsScratch);
+            }
 
+            private void DisposeCandidateMaps()
+            {
                 GroundRescueCandidates.Dispose();
                 ClusterRescueCandidates.Dispose();
                 ClusterFertileCandidates.Dispose();
@@ -460,7 +471,10 @@ namespace Hecton8.World
                 StructureBioCandidates.Dispose();
                 PassiveSpawnCandidates.Dispose();
                 PredatorSpawnCandidates.Dispose();
+            }
 
+            private void ClearManagedState()
+            {
                 DesiredPlacements.Clear();
                 RetainedPlacements.Clear();
                 PlacementLastSeenTimes.Clear();
