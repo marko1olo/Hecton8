@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class DependencyCollection : IEnumerable<DependencyCollection.Item>
+    public class DependencyCollection : IEnumerable<DependencyCollection.Item>
     {
         public class Item
         {

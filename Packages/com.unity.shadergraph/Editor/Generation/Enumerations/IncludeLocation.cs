@@ -3,8 +3,7 @@ using System;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    [Serializable]
-    internal enum IncludeLocation
+    public enum IncludeLocation
     {
         Pregraph,
         Graph,

@@ -179,7 +179,7 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R31_2026-07-23_KILL_CELLULAR_NOISE";
+        public static string BuildSentinel => "SENTINEL_R32_2026-07-24_RIVERS_AND_LAKES";
 
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
@@ -912,42 +912,68 @@ namespace Hecton8.World
                 depth += craterDepthDelta;
             }
 
-            // --- B2: RIVERS & DENDRITIC CHANNELS ---
+            // --- B2: RIVERS & DENDRITIC CHANNELS (Asymmetric & Rugged Inland Canyons) ---
+            float riverRegion = FractalSimplexNoise01(warpedPos * 0.00015f + new float2(-19.3f, 44.1f), seed ^ 0x1A2B3C4Du, 3);
+            float riverGate = math.smoothstep(0.35f, 0.65f, riverRegion) * continentality * recipe.Rivers;
+
             float riverMask = 0f;
-            if (recipe.Rivers > 0.01f && continentality > 0.05f)
+            if (riverGate > 0.01f)
             {
+                // Heavy domain warp to twist the rivers organically
                 float2 canyonWarp = new float2(
-                    FractalSimplexNoise01(warpedPos * 0.00015f + new float2(31.4f, -9.2f), seed ^ 0x0CA14405u) * 2f - 1f,
-                    FractalSimplexNoise01(warpedPos * 0.00015f + new float2(-14.8f, 27.3f), seed ^ 0x9E3779B9u) * 2f - 1f);
-                float dendritic = RidgedMultifractal01(warpedPos * 0.000288f + canyonWarp * 1.8f, seed ^ 0x6DCD4A37u, 5);
-                float rimNoise = FractalSimplexNoise01(warpedPos * 0.0028f + new float2(7.1f, -4.3f), seed ^ 0xCAFE1234u, 2);
-                float rimRise = math.smoothstep(0.28f, 0.65f, dendritic);
-                float rimFall = 1f - math.smoothstep(0.65f, 0.96f, dendritic);
-                float canyonRim = rimRise * rimFall * (0.75f + rimNoise * 0.25f);
-                float floorDither = FractalSimplexNoise01(warpedPos * 0.0035f + new float2(5.5f, -8.8f), seed ^ 0xF3A1B2C4u, 2) * 0.06f;
-                float canyonFloor = math.smoothstep(0.40f, 0.99f, dendritic + floorDither);
-                // R20-S2: Gate continentality at 0.05f to match smoothstep(0.05f, 0.60f, continentality)
-                // zero-crossing, ensuring 100% C0 continuity without any step discontinuity at the ocean edge.
-                float riverContinentalityFade = math.smoothstep(0.05f, 0.60f, continentality);
-                riverMask = canyonRim * riverContinentalityFade * recipe.Rivers;
-
-                float riverCutDither = FractalSimplexNoise01(warpedPos * 0.0041f + new float2(2.2f, -9.1f), seed ^ 0xB3C4D5E6u, 2) * 0.08f;
-                float riverCut = RidgedMultifractal01(warpedPos * 0.00072f + new float2(9.5f, -3.1f), seed ^ 0x8A4B2C1Du, 4) + riverCutDither;
-                depth += riverCut * 320f * riverMask * canyonFloor;
-                depth += riverMask * canyonRim * 220f;
+                    FractalSimplexNoise01(warpedPos * 0.0005f + new float2(12.1f, -5.5f), seed ^ 0x7E1A2B3Cu) * 2f - 1f,
+                    FractalSimplexNoise01(warpedPos * 0.0005f + new float2(-9.2f, 18.4f), seed ^ 0x3C4D5E6Fu) * 2f - 1f) * 1200f;
+                
+                // Base canyon channel
+                float dendritic = RidgedMultifractal01(warpedPos * 0.00025f + canyonWarp, seed ^ 0x6DCD4A37u, 5);
+                
+                // Ragged outer rim
+                float rimNoise = FractalSimplexNoise01(warpedPos * 0.003f, seed ^ 0xCAFE1234u, 3);
+                float canyonRim = math.smoothstep(0.30f, 0.85f, dendritic) * (0.8f + rimNoise * 0.2f);
+                
+                // Asymmetric bank slope via offset sampling
+                float dendriticOffset = RidgedMultifractal01(warpedPos * 0.00025f + canyonWarp + new float2(150f, -150f), seed ^ 0x6DCD4A37u, 5);
+                float bankAsymmetry = math.smoothstep(0.4f, 0.9f, dendriticOffset);
+                
+                // Rough, rocky, uneven floor (no smooth ramps!)
+                float floorRoughness = BillowNoise01(warpedPos * 0.008f + new float2(7.7f, -3.3f), seed ^ 0x8899AABBu, 4) * 25f;
+                
+                float canyonFloor = math.smoothstep(0.50f, 0.99f, dendritic);
+                riverMask = canyonRim * riverGate;
+                
+                // Deep cut influenced by asymmetry, minus the floor roughness
+                float cutDepth = 280f * riverMask * canyonFloor * (0.6f + bankAsymmetry * 0.4f);
+                depth += cutDepth - floorRoughness * canyonFloor * riverMask;
             }
-            float canyonMask = riverMask;
+            float canyonMask = riverMask; // Export for downstream
 
-            // --- B3: LAKES & PLAYA BASINS ---
+            // --- B3: LAKES & PLAYAS (Sediment-filled basins) ---
+            float lakeRegion = FractalSimplexNoise01(warpedPos * 0.0002f + new float2(44.4f, 11.1f), seed ^ 0x55443322u, 3);
+            float lakeGate = math.smoothstep(0.5f, 0.8f, lakeRegion) * continentality * recipe.Lakes;
+
             float lakeMask = 0f;
-            if (recipe.Lakes > 0.01f && continentality > 0.35f)
+            if (lakeGate > 0.01f)
             {
-                float lakeNoise = FractalSimplexNoise01(warpedPos * 0.00022f + new float2(-18.3f, 44.1f), seed ^ 0x5E2B1A4Cu, 4);
-                if (lakeNoise < 0.28f)
+                // Find natural regional depressions
+                float bowlNoise = FractalSimplexNoise01(warpedPos * 0.0004f + new float2(-22.2f, 33.3f), seed ^ 0x99887766u, 4);
+                lakeMask = math.smoothstep(0.55f, 0.85f, bowlNoise) * lakeGate;
+                
+                if (lakeMask > 0.01f)
                 {
-                    lakeMask = math.smoothstep(0.28f, 0.10f, lakeNoise) * recipe.Lakes;
-                    float basinFloorLevel = 850f;
-                    depth = math.lerp(depth, math.max(depth, basinFloorLevel), lakeMask * 0.65f);
+                    // Ragged, irregular shorelines
+                    float shoreFeather = FractalSimplexNoise01(warpedPos * 0.005f, seed ^ 0xE4F5A6B7u, 3);
+                    lakeMask *= (0.7f + shoreFeather * 0.3f);
+                    
+                    // Sediment level varies slightly across the continent but forms local flat planes
+                    float localSedimentLevel = 450f + FractalSimplexNoise01(warpedPos * 0.0001f, seed ^ 0x5A5A5A5Au, 2) * 400f;
+                    
+                    // FILL valleys with sediment. math.min(depth, level) pulls deep valleys UP to the sediment level,
+                    // but does not affect mountains (where depth is smaller/higher elevation).
+                    depth = math.lerp(depth, math.min(depth, localSedimentLevel), lakeMask * 0.85f);
+                    
+                    // Subtle dry mud cracks/texture on the flat playa bed
+                    float playaCracks = RidgedMultifractal01(warpedPos * 0.015f, seed ^ 0x6E01091Cu, 3);
+                    depth += playaCracks * 4f * lakeMask;
                 }
             }
 

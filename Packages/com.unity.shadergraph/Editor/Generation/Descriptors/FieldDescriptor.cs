@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class FieldDescriptor
+    public class FieldDescriptor
     {
         // Default
         public string tag { get; }

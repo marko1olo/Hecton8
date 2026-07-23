@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum StructFieldOptions
+    public enum StructFieldOptions
     {
         Static = 0,
         Optional = 1 << 0,

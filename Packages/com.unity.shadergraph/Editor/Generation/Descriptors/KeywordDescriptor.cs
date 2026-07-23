@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal struct KeywordDescriptor
+    public struct KeywordDescriptor
     {
         public string displayName;
         public string referenceName;

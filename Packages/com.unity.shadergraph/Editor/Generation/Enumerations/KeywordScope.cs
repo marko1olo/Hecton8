@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum KeywordScope
+    public enum KeywordScope
     {
         Local,
         Global

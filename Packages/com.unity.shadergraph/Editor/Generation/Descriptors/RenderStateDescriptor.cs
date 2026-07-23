@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum RenderStateType
+    public enum RenderStateType
     {
         Cull,
         Blend,
@@ -15,7 +15,7 @@ namespace UnityEditor.ShaderGraph
     }
 
     [GenerationAPI]
-    internal struct RenderStateDescriptor
+    public struct RenderStateDescriptor
     {
         public string value;
         public RenderStateType type;

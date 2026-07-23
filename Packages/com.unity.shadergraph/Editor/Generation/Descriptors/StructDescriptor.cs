@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal struct StructDescriptor
+    public struct StructDescriptor
     {
         public string name;
         public bool packFields;

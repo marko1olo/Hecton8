@@ -1,7 +1,7 @@
 using System;
 namespace UnityEditor.ShaderGraph
 {
-    internal class BlockFieldDescriptor : FieldDescriptor
+    public class BlockFieldDescriptor : FieldDescriptor
     {
         public string displayName { get; }
         public IControl control { get; }

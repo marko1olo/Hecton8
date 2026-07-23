@@ -5,7 +5,7 @@ namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
     [Serializable]
-    internal class IncludeDescriptor : IConditional
+    public class IncludeDescriptor : IConditional
     {
         public IncludeDescriptor(string guid, string path, IncludeLocation location, FieldCondition[] fieldConditions, bool shouldIncludeWithPragmas = false)
         {

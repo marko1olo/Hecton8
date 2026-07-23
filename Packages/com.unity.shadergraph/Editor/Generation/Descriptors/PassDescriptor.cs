@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal struct PassDescriptor
+    public struct PassDescriptor
     {
         // Definition
         public string displayName;

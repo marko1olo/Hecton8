@@ -23,7 +23,7 @@ namespace UnityEditor.ShaderGraph
         public virtual void ProcessPreviewMaterial(Material material) { }
         public virtual object saveContext => null;
         public virtual bool IsNodeAllowedBySubTarget(Type nodeType) => true;
-        public virtual bool ValidateNodeCompatibility(AbstractMaterialNode node, out string errorMessage, out Rendering.ShaderCompilerMessageSeverity severity)
+        internal virtual bool ValidateNodeCompatibility(AbstractMaterialNode node, out string errorMessage, out Rendering.ShaderCompilerMessageSeverity severity)
         {
             errorMessage = null;
             severity = Rendering.ShaderCompilerMessageSeverity.Warning;

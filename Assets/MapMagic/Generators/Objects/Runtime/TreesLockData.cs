@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,6 +19,8 @@ namespace MapMagic.Locks
 		public Vector2D center; //int 0-1 range relatively to terrain
 		public float radius;
 		public float transition;
+
+		public void ApplyHeightDelta(Matrix heights, Matrix deltas, float transition) { }
 
 		
 		public void Read (Terrain terrain, Lock lk) 

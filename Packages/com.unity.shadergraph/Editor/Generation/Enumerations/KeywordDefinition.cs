@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum KeywordDefinition
+    public enum KeywordDefinition
     {
         ShaderFeature,      // adds #pragma shaderfeature for the keyword
         MultiCompile,       // adds #pragma multicompile for the keyword        

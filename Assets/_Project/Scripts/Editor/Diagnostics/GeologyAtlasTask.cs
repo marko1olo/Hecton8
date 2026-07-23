@@ -10,7 +10,7 @@ namespace MapMagic.Editor.Diagnostics
 {
     public static class GeologyAtlasTask
     {
-        // R31 RECOMPILE TOUCH: 2026-07-23T23:53:00 kill_cellular_noise
+        // R32 RECOMPILE TOUCH: 2026-07-24T01:05:00 rivers_and_lakes
         private const string OutDir =
             @"C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-c29b-4dac-8a24-2f14ca51d3d2\atlas";
 

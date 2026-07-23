@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum KeywordType
+    public enum KeywordType
     {
         Boolean,
         Enum

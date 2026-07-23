@@ -16,7 +16,7 @@ namespace UnityEditor.ShaderGraph
         public int count { get; set; }
     }
 
-    class ShaderStringBuilder : IDisposable
+    public class ShaderStringBuilder : IDisposable
     {
         enum ScopeType
         {

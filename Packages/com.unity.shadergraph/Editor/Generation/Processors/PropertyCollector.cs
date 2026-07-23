@@ -144,7 +144,7 @@ namespace UnityEditor.ShaderGraph
             return m_HLSLProperties;
         }
 
-        public void GetPropertiesDeclaration(ShaderStringBuilder builder, GenerationMode mode, ConcretePrecision defaultPrecision)
+        internal void GetPropertiesDeclaration(ShaderStringBuilder builder, GenerationMode mode, ConcretePrecision defaultPrecision)
         {
             foreach (var prop in properties)
             {
