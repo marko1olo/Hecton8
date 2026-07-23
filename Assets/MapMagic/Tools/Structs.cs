@@ -937,12 +937,12 @@ namespace Den.Tools
 		public static Coord3D operator / (Coord3D c, int s) { return  new Coord3D(c.x/s, c.y/s, c.z/s); }
 		public static Coord3D operator / (Coord3D c, float s) { return new Coord3D((int)(c.x/s), (int)(c.y/s), (int)(c.z/s)); }
 
-		public static Coord3D up { get; set; } = new Coord3D(0,1,0);
-		public static Coord3D down { get; set; } = new Coord3D(0,-1,0);
-		public static Coord3D front { get; set; } = new Coord3D(0,0,1);
-		public static Coord3D back { get; set; } = new Coord3D(0,0,-1);
-		public static Coord3D left { get; set; } = new Coord3D(-1,0,0);
-		public static Coord3D right { get; set; } = new Coord3D(1,0,0);
+		public static Coord3D up { get; } = new Coord3D(0,1,0);
+		public static Coord3D down { get; } = new Coord3D(0,-1,0);
+		public static Coord3D front { get; } = new Coord3D(0,0,1);
+		public static Coord3D back { get; } = new Coord3D(0,0,-1);
+		public static Coord3D left { get; } = new Coord3D(-1,0,0);
+		public static Coord3D right { get; } = new Coord3D(1,0,0);
 
 		public override bool Equals(object obj) { if (obj is Coord3D co) return co.x==x && co.y==y && co.z==z; return false; }
 		public override int GetHashCode() {return x*1000000 + y*1000 + z;}
