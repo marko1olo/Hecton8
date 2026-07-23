@@ -6,7 +6,7 @@ using System.Text;
 class Test {
     static void Main() {
         string textToEncrypt = "Hello world!";
-        string key = "mysecretkey";
+        string key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? throw new InvalidOperationException("ENCRYPTION_KEY environment variable is not set.");
 
         byte[] encryptedBytes;
 
