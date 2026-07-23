@@ -10,21 +10,24 @@ Purpose: keep active docs small, source-backed, and free of work-log noise.
 ## Authority Order
 
 1. `../AGENTS.md`
-2. `Docs/AGENT_AUTHORITY_ROUTING.md` for non-trivial task intake and no-loss rule routing
-3. `../PROJECT_BIBLES.md`
-4. `../VISION_LOCKS.md` for product vision or ambiguity
-5. `../TASTE.md` and the matching standing root route bible
-6. `../.agents-skills/README.md`
-7. task-relevant `../.agents-skills/*` mandates
-8. `Docs/AGENTS_RULE_DETAIL_LEDGER.md` only for no-loss conflict resolution or migration provenance
-9. `../textes.md` for public copy only
-10. current source under `Assets/_Project`
-11. `Docs/PROJECT_BASELINE.md`
-12. `Docs/ARCHITECTURE/README.md`
-13. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
-14. active architecture contracts
-15. fresh verification artifacts
-16. dated reports and archives
+2. `../COMMON_SENSE.md` for non-trivial work
+3. `Docs/AGENT_AUTHORITY_ROUTING.md` for non-trivial task intake and no-loss rule routing
+4. `../PROJECT_BIBLES.md`
+5. `Docs/SYSTEMS_CONTRACTS.md` for non-asset runtime systems, architecture, signals, data vaults, or core memory
+6. `../VISION_LOCKS.md` for product vision or ambiguity
+7. `../TASTE.md` and the matching standing root route bible
+8. `../.agents-skills/README.md`
+9. task-relevant `../.agents-skills/*` mandates
+10. `Docs/QUALITY_GATES.md` before claiming `VERIFIED` or `COMPLETE`
+11. `Docs/AGENTS_RULE_DETAIL_LEDGER.md` only for no-loss conflict resolution or migration provenance
+12. `../textes.md` for public copy only
+13. current source under `Assets/_Project`
+14. `Docs/PROJECT_BASELINE.md`
+15. `Docs/ARCHITECTURE/README.md`
+16. `Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md`
+17. active architecture contracts
+18. fresh verification artifacts
+19. dated reports and archives
 
 ## Placement Rules
 
@@ -64,7 +67,7 @@ Stable distilled facts belong in `Docs/PROJECT_BASELINE.md` or `Docs/ARCHITECTUR
 
 - Do not use dated reports as active contracts unless a current stable doc imports the fact.
 - Do not hand-edit generated snapshots such as `Docs/PROJECT_ROOT_BIBLES_COMBINED.md`; update the live source file and rerun the generator.
-- Keep `C:\Users\danat\.codex\AGENTS.md` as a global router, not a duplicate HECTON-8 law copy.
+- Keep `C:\Users\Admin\.codex\AGENTS.md` as a global router, not a duplicate HECTON-8 law copy.
 - Keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as no-loss detail/provenance, not as an always-on substitute for `PROJECT_BIBLES.md`, root route bibles, or `.agents-skills` mandates.
 - Keep `.agent/rules/*.md` as historical/reference guidance with a strong HECTON-8 override header; they are not independent authority.
 - Keep local AGENTS derivatives delegated to or synchronized with root `AGENTS.md`; they are not independent law sources.

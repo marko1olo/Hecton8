@@ -3464,6 +3464,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3476,6 +3479,10 @@ namespace Hecton8.SaveSystem
         {
             PublishSaveStatus(ResolveSlotHash(slotIndex, slotName), operationId, state, progress01, flags);
         }
+
+#if UNITY_EDITOR
+        internal static System.Action PublishSaveLifecycleTestHook;
+#endif
 
         private static void PublishSaveStatus(uint slotHash, uint operationId, byte state, float progress01, uint flags)
         {
@@ -3504,6 +3511,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3547,6 +3557,9 @@ namespace Hecton8.SaveSystem
                     Result = args.Succeeded ? (byte)1 : (byte)0,
                     Flags = args.Succeeded ? (byte)0 : (byte)1
                 };
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_PublishSaveCompleted_BeforePush?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in completed);
             }
             catch (Exception exception)
@@ -4078,6 +4091,10 @@ namespace Hecton8.SaveSystem
             DisposeNativeArray(ref array, dependency, deferDisposal);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static System.Action DisposeNativeArrayTestHook;
+#endif
+
         private static void DisposeTransientNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
             ref Exception firstException,
@@ -4087,6 +4104,9 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                DisposeNativeArrayTestHook?.Invoke();
+#endif
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
@@ -4280,6 +4300,9 @@ namespace Hecton8.SaveSystem
             LogErrorBestEffort("[SaveManager] signal bridge failed: " + exception);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static Action TestHook_PublishSaveCompleted_BeforePush;
+#endif
         private static void TryPushSignalTrackedBestEffort<TSignal>(in TSignal signal)
             where TSignal : unmanaged, ISignal
         {

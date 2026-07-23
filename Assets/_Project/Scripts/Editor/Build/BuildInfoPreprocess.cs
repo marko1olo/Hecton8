@@ -84,6 +84,11 @@ namespace Hecton8.Editor.Build
                 };
                 foreach (string arg in arguments)
                 {
+                    if (arg != "rev-parse" && arg != "--abbrev-ref" && arg != "HEAD" && arg != "--short=12" && arg != "status" && arg != "--porcelain")
+                    {
+                        Debug.LogWarning("[BuildInfoPreprocess] Unauthorized git argument: " + arg);
+                        return "unknown";
+                    }
                     info.ArgumentList.Add(arg);
                 }
 

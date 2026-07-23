@@ -36,6 +36,8 @@ Technical report means an audit, policy review, architecture review, proof revie
 
 After intake, every non-trivial task must name one primary deliverable class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or explicit `POLICY_DOC`. Routing, scanning, checklist filling, validator output, and report synthesis are support work only unless the user directly requested that class.
 
+FIRST_20_MINUTES RULE: Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, every non-trivial gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content task must state which first-20-minutes route moment it improves or which route blocker it removes. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
+
 Subagent use by an ordinary implementation, content, QA, or docs agent is governed by root `AGENTS.md` `Delegation And Subagents`. It does not require `HECTON8_ORCHESTRATOR.md`, `C:\hades\.codex_ops\ORCHESTRATION_MEMORY.md`, `AgentGuiOps.ps1`, or `ProbeAgents.ps1`.
 
 Read `HECTON8_ORCHESTRATOR.md` only when the agent is actually creating/judging standalone agent batches, writing `taskslocal` files, controlling external IDE/browser/GUI sessions, operating local external-agent processes, or acting as the explicit controller for a multi-agent wave. Internal subagent spawning for bounded review, evidence gathering, synthesis, or disjoint implementation remains ordinary delegation, not local orchestration.
@@ -89,7 +91,7 @@ Routing sources:
 
 Delegated or generated surfaces:
 
-- `C:\Users\danat\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work to root `AGENTS.md` and this file, and must not carry a divergent HECTON-8 law copy. If shortened, preserve the full previous text in an explicit recovery/provenance file.
+- `C:\Users\Admin\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work to root `AGENTS.md` and this file, and must not carry a divergent HECTON-8 law copy. If shortened, preserve the full previous text in an explicit recovery/provenance file.
 - `.codexrules/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.github/agents/AGENTS.md` must delegate to or stay byte-intent synced with root `AGENTS.md`.
 - `.agent/rules/AGENTS.md` delegates to root `AGENTS.md`.
