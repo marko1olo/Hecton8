@@ -3547,6 +3547,9 @@ namespace Hecton8.SaveSystem
                     Result = args.Succeeded ? (byte)1 : (byte)0,
                     Flags = args.Succeeded ? (byte)0 : (byte)1
                 };
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_PublishSaveCompleted_BeforePush?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in completed);
             }
             catch (Exception exception)
@@ -4280,6 +4283,9 @@ namespace Hecton8.SaveSystem
             LogErrorBestEffort("[SaveManager] signal bridge failed: " + exception);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static Action TestHook_PublishSaveCompleted_BeforePush;
+#endif
         private static void TryPushSignalTrackedBestEffort<TSignal>(in TSignal signal)
             where TSignal : unmanaged, ISignal
         {
