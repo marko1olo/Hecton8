@@ -3464,6 +3464,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3476,6 +3479,10 @@ namespace Hecton8.SaveSystem
         {
             PublishSaveStatus(ResolveSlotHash(slotIndex, slotName), operationId, state, progress01, flags);
         }
+
+#if UNITY_EDITOR
+        internal static System.Action PublishSaveLifecycleTestHook;
+#endif
 
         private static void PublishSaveStatus(uint slotHash, uint operationId, byte state, float progress01, uint flags)
         {
@@ -3504,6 +3511,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
