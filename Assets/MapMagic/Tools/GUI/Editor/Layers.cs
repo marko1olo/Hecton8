@@ -19,6 +19,25 @@ namespace Den.Tools.GUI
 
 
 		public static void DrawLayers<T> (
+			ref T[] layers,
+			Action<T[], int> onDraw,
+			Func<int,T> onCreate = null)
+		{
+			T[] newLayers = layers;
+			T[] localLayers = layers; // To capture in the closure safely
+
+			DrawLayers(
+				layers.Length,
+				onDraw: n => onDraw(localLayers, n),
+				onAdd:n => ArrayTools.Insert(ref newLayers, n, onCreate!=null ? onCreate(n) : default ),
+				onRemove: n => ArrayTools.RemoveAt(ref newLayers, n),
+				onMove: (n,m) => ArrayTools.Switch(newLayers, n, m) );
+
+			if (layers != newLayers)
+				layers = newLayers;
+		}
+
+		public static void DrawLayers<T> (
 			ref T[] layers, 
 			Action<int> onDraw,
 			Func<int,T> onCreate = null)
