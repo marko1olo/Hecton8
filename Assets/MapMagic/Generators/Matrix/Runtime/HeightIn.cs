@@ -25,6 +25,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 	{
 		[Val("Use Initial TerrainData Holder")] public bool useInitial;
 		[Val("Subtract MapMagic Changes")] public bool useDelta;
+		[Val("Last Applied Height")] public MatrixAsset lastAppliedHeight;
 
 		public override IEnumerable<Inlet> Inlets () { yield break; }
 
@@ -81,17 +82,17 @@ namespace MapMagic.Nodes.MatrixGenerators
 			//subtracting mapmagic apply
 			if (useDelta)
 			{
-				Matrix lastAppliedHeight = data.heights; //TODO: use a special applied data (asset? for serialization)
-				if (matrix.rect == lastAppliedHeight.rect)
+				if (lastAppliedHeight != null && lastAppliedHeight.matrix != null && matrix.rect == lastAppliedHeight.matrix.rect)
 				{
 					for (int i=0; i<matrix.arr.Length; i++)
 					{
-						float delta = lastAppliedHeight.arr[i] - matrix.arr[i];
+						float delta = lastAppliedHeight.matrix.arr[i] - matrix.arr[i];
+						//TODO: what to do with delta?
 					}
 				}
 			}
 			
-			data.products[this] = ,matrix);
+			data.products[this] = matrix;
 		}
 
 
@@ -164,7 +165,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 				matrix = new MatrixWorld(rescaledMatrix.rect, data.area.full.worldPos, data.area.full.worldSize, rescaledMatrix.arr);
 			}
 
-			data.products[this] = ,matrix);
+			data.products[this] = matrix;
 		}
 
 		public void FillMatrixWithFloat3D (Matrix matrix, CoordRect rect, float[,,] splats, int ch)
