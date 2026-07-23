@@ -230,8 +230,8 @@ namespace MapMagic.Terrains
 			
 
 			//welding
-			//TODO: check active terrain to know if the switch is for real 
-			if (lodSwitched &&
+			bool isTerrainActive = newActiveTerrain != null && newActiveTerrain.isActiveAndEnabled;
+			if (lodSwitched && isTerrainActive &&
 				mapMagic.tiles.Contains(coord) ) //otherwise error on SwitchLod called from Generate (when tile has been moved)
 			{
 				if (useMain)
