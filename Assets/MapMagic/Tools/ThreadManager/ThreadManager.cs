@@ -241,13 +241,15 @@ namespace Den.Tools.Tasks
 
 		public static int GetMaxPriorityNum (List<Task> list)
 		{
-			int maxPriority = int.MinValue;
-			int maxPriorityNum = -1;
+			if (list.Count == 0) return -1;
 
-			for (int i=list.Count-1; i>=0; i--) //for FIFO
+			int maxPriority = list[0].priority;
+			int maxPriorityNum = 0;
+
+			for (int i=1; i<list.Count; i++) //for FIFO
 			{
 				int priority = list[i].priority;
-				if (priority >= maxPriority) // HECTON headless-gen fix: priority underflow when no camera
+				if (priority > maxPriority)
 				{
 					maxPriority = priority;
 					maxPriorityNum = i;

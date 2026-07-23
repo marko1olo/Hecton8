@@ -628,7 +628,7 @@ namespace Den.Tools
 			protected static float GetRemoteness (Coord coord, Coord[] camCoords, int camCoordsCount=-1)
 			/// Returns an axis/priority distance to the closest cam
 			{
-				if (camCoords == null || camCoords.Length == 0 || camCoordsCount == 0) return 0; // HECTON headless-gen fix: priority underflow when no camera
+				if (camCoords == null || camCoords.Length == 0 || camCoordsCount == 0) return 0;
 
 				float minDist = float.MaxValue;
 
