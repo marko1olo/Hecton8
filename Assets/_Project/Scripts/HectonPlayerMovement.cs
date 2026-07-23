@@ -9886,32 +9886,7 @@ namespace Hecton8.Gameplay
             GroundCheck();
             _playerMotor?.SetGroundedState(_isGrounded);
 
-            UpdateOceanWaterHeight();
-            _waterImmersionRatio = ComputeImmersionRatio();
-            _currentDepth = ComputeDepth();
-            UpdateBottomClearance();
-
-            if (IsInDryInterior())
-            {
-                _waterImmersionRatio = 0f;
-                _smoothedImmersionRatio = 0f;
-                _currentDepth = 0f;
-            }
-
-            UpdateBrineLayerState(fixedDeltaTime);
-
-            ApplyLadderSplineSnapFromAsyncProbe(exosuitKinematicAuthority);
-
-            if (_waterImmersionRatio > _smoothedImmersionRatio)
-            {
-                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
-                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
-            }
-            else
-            {
-                float exitT = ResolveLinearBlendT(3f, fixedDeltaTime);
-                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
-            }
+            UpdateImmersionState(fixedDeltaTime, exosuitKinematicAuthority);
 
             float physicsImmersion = _smoothedImmersionRatio;
             float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
@@ -10030,6 +10005,45 @@ namespace Hecton8.Gameplay
 
             ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
 
+            ProcessLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+
+            FinalizeFixedTick(suit, exosuitKinematicAuthority, fixedDeltaTime);
+            _useFixedFrameSpatialCache = false;
+            }
+        }
+
+        private void UpdateImmersionState(float fixedDeltaTime, bool exosuitKinematicAuthority)
+        {
+            UpdateOceanWaterHeight();
+            _waterImmersionRatio = ComputeImmersionRatio();
+            _currentDepth = ComputeDepth();
+            UpdateBottomClearance();
+
+            if (IsInDryInterior())
+            {
+                _waterImmersionRatio = 0f;
+                _smoothedImmersionRatio = 0f;
+                _currentDepth = 0f;
+            }
+
+            UpdateBrineLayerState(fixedDeltaTime);
+
+            ApplyLadderSplineSnapFromAsyncProbe(exosuitKinematicAuthority);
+
+            if (_waterImmersionRatio > _smoothedImmersionRatio)
+            {
+                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
+            }
+            else
+            {
+                float exitT = ResolveLinearBlendT(3f, fixedDeltaTime);
+                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
+            }
+        }
+
+        private void ProcessLocomotionPhysics(float fixedDeltaTime, SuitData suit, PlayerTransportPreset activeTransportPreset, bool exosuitActive, bool exosuitKinematicAuthority, bool groundedOnDryLand, bool groundedOnShore)
+        {
             if (exosuitKinematicAuthority)
             {
                 CoolExosuitJumpJets(fixedDeltaTime);
@@ -10075,7 +10089,10 @@ namespace Hecton8.Gameplay
                 if (_waterImmersionRatio > 0.3f)
                     ApplyAmbientCurrent(suit, fixedDeltaTime, activeTransportPreset);
             }
+        }
 
+        private void FinalizeFixedTick(SuitData suit, bool exosuitKinematicAuthority, float fixedDeltaTime)
+        {
             if (!exosuitKinematicAuthority)
             {
                 TryProcessKccWallScrapeFeedback();
@@ -10085,7 +10102,7 @@ namespace Hecton8.Gameplay
             }
             SanitizeKccFiniteState();
             Vector3 safeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
-            bodyRuntimePosition = ResolveBodyRuntimePosition();
+            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
             WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
             _playerKinematicsNativeState.WriteTelemetry(
                 _dataVault,
@@ -10099,9 +10116,8 @@ namespace Hecton8.Gameplay
             CaptureFixedInterpolationState();
             UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
             UpdateGroundDiagnostics();
-            _useFixedFrameSpatialCache = false;
-            }
         }
+
 
         private void AdvanceCooldownTimers(float fixedDeltaTime)
         {
