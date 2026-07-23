@@ -122,6 +122,43 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TestSingleToolAsync_WhenSetupThrows_ReturnsFalse()
+        {
+            var mockToolGo = new GameObject("MockTool");
+            var mockTool = mockToolGo.AddComponent<MockThrowingPlayerTool>();
+
+            // Set up a mock ItemData via reflection to bypass setup checks before the exception
+            var itemData = ScriptableObject.CreateInstance<Hecton8.Items.ItemData>();
+            itemData.name = "MockItem";
+            var idField = typeof(Hecton8.Items.ItemData).GetField("stableId", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (idField != null) idField.SetValue(itemData, "MockItem");
+
+            var toolDataField = typeof(PlayerTool).GetField("_toolData", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (toolDataField != null) toolDataField.SetValue(mockTool, itemData);
+
+            var testMethod = typeof(ToolRuntimeSmokeTester).GetMethod("TestSingleToolAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(testMethod, "TestSingleToolAsync method not found");
+
+            // Intentionally set toolManager to null to cause a NullReferenceException in setup
+            var toolManagerField = typeof(ToolRuntimeSmokeTester).GetField("toolManager", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (toolManagerField != null) toolManagerField.SetValue(smokeTester, null);
+
+            var awaitable = testMethod.Invoke(smokeTester, new object[] { mockToolGo, mockTool, new System.Threading.CancellationToken() });
+
+            var getAwaiterMethod = awaitable.GetType().GetMethod("GetAwaiter");
+            var awaiter = getAwaiterMethod.Invoke(awaitable, null);
+            var getResultMethod = awaiter.GetType().GetMethod("GetResult");
+
+            var result = (bool?)getResultMethod.Invoke(awaiter, null);
+
+            Assert.IsFalse(result);
+            Assert.AreEqual("Setup exception for MockTool", smokeTester.DebugLastIssue);
+
+            UnityEngine.Object.DestroyImmediate(mockToolGo);
+            UnityEngine.Object.DestroyImmediate(itemData);
+        }
+
+        [Test]
         public void RunSmokePassAsync_WhenToolManagerOrInventoryMissing_SetsDebugLastIssue()
         {
             // TryRunImmediately starts the async method, which synchronously bails out if dependencies are missing.
