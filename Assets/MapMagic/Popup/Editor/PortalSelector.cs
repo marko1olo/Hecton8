@@ -36,7 +36,7 @@ namespace MapMagic.Nodes.GUI
 				IPortalEnter<object> portalEnter = graph.generators[g] as IPortalEnter<object>;
 				if (portalEnter == null) continue;
 				if (portalEnter.GetType().BaseType.GetGenericArguments()[0] != exitType) continue;
-				// Note: Implementing generic portals may require significant changes to the portal selection UI and underlying data structures.
+				// Note: Implementing generic portals implies an architectural expansion which could be complex and broad in scope.
 
 				Item item = new Item( portalEnter.Name, 
 					onDraw: (i, r) => EditorGUI.LabelField(r, i.name, itemTextStyle),
