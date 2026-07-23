@@ -14,7 +14,7 @@ class Test {
         using (MemoryStream inputStream = new MemoryStream(Encoding.UTF8.GetBytes(textToEncrypt)))
         using (MemoryStream outputStream = new MemoryStream()) {
             byte[] salt = new byte[16];
-            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider()) {
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create()) {
                 rng.GetBytes(salt);
             }
             outputStream.Write(salt, 0, salt.Length);
