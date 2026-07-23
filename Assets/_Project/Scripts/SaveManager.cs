@@ -6360,80 +6360,80 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            if (voxelDeltaProcessor != null)
+            if (voxelDeltaProcessor == null)
             {
-                if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
+                if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
                 {
-                    NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
-                    bool rollbackVoxelDeltaSnapshotAcquired = false;
-                    try
-                    {
-                        bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
-                            out rollbackVoxelDeltaSnapshot,
-                            out int rollbackVoxelDeltaSnapshotBytes);
-                        if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            rollbackVoxelDeltaSnapshotAcquired = true;
-                        }
-                        else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            return await FailLoad("Voxel delta rollback snapshot copy failed before load.", requiresMainThread: true);
-                        }
-
-                        if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
-                        {
-                            loadedVoxelDeltaSnapshotRejectedForLoad = true;
-                            if (HasLoadableVoxelDeltaDtoFallback(data))
-                            {
-                                string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
-                                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
-                                {
-                                    TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
-
-                                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                                        ? "Voxel delta binary payload load failed."
-                                        : voxelFallbackError;
-                                    return await FailLoad(loadFailure, requiresMainThread: true);
-                                }
-                            }
-                            else
-                            {
-                                TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
-
-                                string loadFailure = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                return await FailLoad(loadFailure, requiresMainThread: true);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (rollbackVoxelDeltaSnapshotAcquired)
-                            voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
-                    }
+                    return await FailLoad("Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", requiresMainThread: false);
                 }
-                else
+                return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+            }
+
+            if (!loadedVoxelDeltaSnapshot.IsCreated || loadedVoxelDeltaSnapshot.Length == 0)
+            {
+                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
                 {
-                    if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                        ? "Voxel delta binary payload load failed."
+                        : voxelFallbackError;
+                    return await FailLoad(loadFailure, requiresMainThread: true);
+                }
+                return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+            }
+
+            NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
+            bool rollbackVoxelDeltaSnapshotAcquired = false;
+            try
+            {
+                bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                    out rollbackVoxelDeltaSnapshot,
+                    out int rollbackVoxelDeltaSnapshotBytes);
+                if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                {
+                    rollbackVoxelDeltaSnapshotAcquired = true;
+                }
+                else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                {
+                    return await FailLoad("Voxel delta rollback snapshot copy failed before load.", requiresMainThread: true);
+                }
+
+                if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
+                {
+                    loadedVoxelDeltaSnapshotRejectedForLoad = true;
+                    if (HasLoadableVoxelDeltaDtoFallback(data))
                     {
-                        string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                            ? "Voxel delta binary payload load failed."
-                            : voxelFallbackError;
+                        string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
+                            ? "Voxel delta native snapshot load failed."
+                            : voxelLoadError;
+                        LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
+                        if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                        {
+                            TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
+
+                            string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                                ? "Voxel delta binary payload load failed."
+                                : voxelFallbackError;
+                            return await FailLoad(loadFailure, requiresMainThread: true);
+                        }
+                    }
+                    else
+                    {
+                        TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
+
+                        string loadFailure = string.IsNullOrEmpty(voxelLoadError)
+                            ? "Voxel delta native snapshot load failed."
+                            : voxelLoadError;
                         return await FailLoad(loadFailure, requiresMainThread: true);
                     }
                 }
             }
-            else if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
+            finally
             {
-                return await FailLoad("Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", requiresMainThread: false);
+                if (rollbackVoxelDeltaSnapshotAcquired)
+                    voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
             }
 
-
-        return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+            return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
         }
 
         public bool SaveExists(string slotName)
