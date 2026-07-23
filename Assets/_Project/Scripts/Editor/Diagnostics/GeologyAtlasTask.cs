@@ -10,7 +10,7 @@ namespace MapMagic.Editor.Diagnostics
 {
     public static class GeologyAtlasTask
     {
-        // R19 RECOMPILE TOUCH: 2026-07-23T11:20:00
+        // R31 RECOMPILE TOUCH: 2026-07-23T23:53:00 kill_cellular_noise
         private const string OutDir =
             @"C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-c29b-4dac-8a24-2f14ca51d3d2\atlas";
 
@@ -103,7 +103,8 @@ namespace MapMagic.Editor.Diagnostics
             Vector3 lightDir = new Vector3(-1f, 0.6f, 1f).normalized;
             WorldMacroGeologyParams localP = p;
 
-            for (int stage = 1; stage <= 7; stage++)
+            int[] stagesToRender = new int[] { 1, 2, 3, 4, 5, 6, 7 };
+            foreach (int stage in stagesToRender)
             {
                 int st = stage;
                 System.Threading.Tasks.Parallel.For(0, Res, z =>
