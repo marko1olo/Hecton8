@@ -789,14 +789,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            BaseAirlock airlock = FindRepairAirlock(_hit.collider);
-            if (airlock != null && airlock.TryApplyWeldOverride(safeDeltaTime, _hit.point))
-            {
-                UpdateBeamHit(_hit.point, _hit.normal);
-                ClearIntegrityDiagnostic();
-                InvalidateDiagnosisCache();
-                return;
-            }
+            if (TryHandleAirlockHit(safeDeltaTime)) return;
 
             if (TryHandleSubmarineDamageControlHit(safeDeltaTime))
             {
@@ -808,104 +801,13 @@ namespace Hecton8.Gameplay
             CacheRepairTargetsForCollider(_hit.collider, out IRepairableModuleTarget module, out IVoxelRepairWeldTarget voxelRepairTarget);
             if (module != null)
             {
-                if (!module.TryReadRepairState(out ModuleRepairReadSnapshot beforeState))
-                {
-                    UpdateBeamMiss();
-                    ClearIntegrityDiagnostic();
-                    InvalidateDiagnosisCache();
-                    return;
-                }
-
-                float beforeIntegrity = beforeState.CurrentIntegrity;
-                float beforeMaxIntegrity = beforeState.MaxIntegrity;
-                bool beforeFlooded = (beforeState.Flags & ModuleRepairReadSnapshot.FlagFlooded) != 0u;
-
-                if (IsIntegrityAtMax(beforeIntegrity, beforeMaxIntegrity) && !beforeFlooded)
-                {
-                    if (!_healthyTargetReportedThisUse)
-                    {
-                        PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
-                        _healthyTargetReportedThisUse = true;
-                    }
-
-                    UpdateBeamHit(_hit.point, _hit.normal);
-                    PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
-                    InvalidateDiagnosisCache();
-                    return;
-                }
-
-                float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
-                ToolEffectEvents.TryRaiseEffectApplied(
-                    EffectType.Weld,
-                    module,
-                    null,
-                    repairAmount,
-                    _hit.point);
-                module.ApplyRepair(repairAmount);
-                UpdateBeamHit(_hit.point, _hit.normal);
-                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
-
-                if (!_activeRepairReportedThisUse)
-                {
-                    ServiceDiagnosis diagnosis = BuildDiagnosis(module);
-                    PublishActiveRepairInfo(diagnosis.headline);
-                    s_hudBuffer.Clear();
-                    if (TryWriteRepairStartedLogSummary(ref s_hudBuffer, diagnosis))
-                    {
-                        FieldOperationLogSystem.RecordOperation(
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
-                            in s_hudBuffer,
-                            "INFO");
-                    }
-
-                    _activeRepairReportedThisUse = true;
-                }
-
-                if ((IsIntegrityBelowMax(beforeIntegrity, beforeMaxIntegrity) || beforeFlooded) &&
-                    TryReadModuleRepairState(module, out ModuleRepairReadSnapshot restoredState) &&
-                    IsModuleIntegrityAtMax(in restoredState) &&
-                    (restoredState.Flags & ModuleRepairReadSnapshot.FlagFlooded) == 0u)
-                {
-                    PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
-                    s_hudBuffer.Clear();
-                    if (TryWriteRepairRestoredLogSummary(ref s_hudBuffer))
-                    {
-                        FieldOperationLogSystem.RecordOperation(
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
-                            StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
-                            in s_hudBuffer,
-                            "INFO");
-                    }
-                }
+                if (TryHandleModuleRepair(safeDeltaTime, module)) return;
             }
             else
             {
                 if (voxelRepairTarget != null)
                 {
-                    bool repairVoxelHit = false;
-                    if (TryResolveAupFromPlayerPose(_hit.point, out AbsoluteUniversePosition hitAup))
-                    {
-                        double3 absoluteHitPoint = hitAup.ToAbsoluteDouble3();
-                        Vector3 repairDirection = TryResolveRepairRay(out _, out Vector3 poseDirection)
-                            ? poseDirection
-                            : ResolveRepairForwardFallback();
-                        repairVoxelHit = math.all(math.isfinite(absoluteHitPoint)) &&
-                                         voxelRepairTarget.TryApplyRepairWeldDda(
-                                             absoluteHitPoint,
-                                             repairDirection,
-                                             ResolveRuntimeRepairPowerNormalized(),
-                                             ResolveRuntimeRepairRange());
-                    }
-
-                    if (repairVoxelHit)
-                    {
-                        UpdateBeamHit(_hit.point, _hit.normal);
-                        ClearIntegrityDiagnostic();
-                        QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), FiniteAtLeast(repairSpeed, 1f));
-                        InvalidateDiagnosisCache();
-                        return;
-                    }
+                    if (TryHandleVoxelRepair(voxelRepairTarget)) return;
                 }
 
                 if (!_invalidTargetReportedThisUse)
@@ -918,6 +820,122 @@ namespace Hecton8.Gameplay
             }
 
             InvalidateDiagnosisCache();
+        }
+
+        private bool TryHandleAirlockHit(float safeDeltaTime)
+        {
+            BaseAirlock airlock = FindRepairAirlock(_hit.collider);
+            if (airlock != null && airlock.TryApplyWeldOverride(safeDeltaTime, _hit.point))
+            {
+                UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
+                InvalidateDiagnosisCache();
+                return true;
+            }
+            return false;
+        }
+
+        private bool TryHandleModuleRepair(float safeDeltaTime, IRepairableModuleTarget module)
+        {
+            if (!module.TryReadRepairState(out ModuleRepairReadSnapshot beforeState))
+            {
+                UpdateBeamMiss();
+                ClearIntegrityDiagnostic();
+                InvalidateDiagnosisCache();
+                return true;
+            }
+
+            float beforeIntegrity = beforeState.CurrentIntegrity;
+            float beforeMaxIntegrity = beforeState.MaxIntegrity;
+            bool beforeFlooded = (beforeState.Flags & ModuleRepairReadSnapshot.FlagFlooded) != 0u;
+
+            if (IsIntegrityAtMax(beforeIntegrity, beforeMaxIntegrity) && !beforeFlooded)
+            {
+                if (!_healthyTargetReportedThisUse)
+                {
+                    PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_SEALED, "REPAIR TOOL - MODULE SEALED"));
+                    _healthyTargetReportedThisUse = true;
+                }
+
+                UpdateBeamHit(_hit.point, _hit.normal);
+                PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
+                InvalidateDiagnosisCache();
+                return true;
+            }
+
+            float repairAmount = ResolveRuntimeRepairPowerPerSecond() * safeDeltaTime;
+            ToolEffectEvents.TryRaiseEffectApplied(
+                EffectType.Weld,
+                module,
+                null,
+                repairAmount,
+                _hit.point);
+            module.ApplyRepair(repairAmount);
+            UpdateBeamHit(_hit.point, _hit.normal);
+            PublishIntegrityDiagnostic(module, _hit.point, _hit.normal);
+
+            if (!_activeRepairReportedThisUse)
+            {
+                ServiceDiagnosis diagnosis = BuildDiagnosis(module);
+                PublishActiveRepairInfo(diagnosis.headline);
+                s_hudBuffer.Clear();
+                if (TryWriteRepairStartedLogSummary(ref s_hudBuffer, diagnosis))
+                {
+                    FieldOperationLogSystem.RecordOperation(
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_STARTED_TITLE, "MODULE REPAIR STARTED"),
+                        in s_hudBuffer,
+                        "INFO");
+                }
+
+                _activeRepairReportedThisUse = true;
+            }
+
+            if ((IsIntegrityBelowMax(beforeIntegrity, beforeMaxIntegrity) || beforeFlooded) &&
+                TryReadModuleRepairState(module, out ModuleRepairReadSnapshot restoredState) &&
+                IsModuleIntegrityAtMax(in restoredState) &&
+                (restoredState.Flags & ModuleRepairReadSnapshot.FlagFlooded) == 0u)
+            {
+                PublishInfoMessage(StableText(H8ToolLocHashes.REPAIR_TOOL_HUD_RESTORED, "REPAIR TOOL - MODULE RESTORED"));
+                s_hudBuffer.Clear();
+                if (TryWriteRepairRestoredLogSummary(ref s_hudBuffer))
+                {
+                    FieldOperationLogSystem.RecordOperation(
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_CATEGORY, RepairToolCategory),
+                        StableText(H8ToolLocHashes.REPAIR_TOOL_LOG_RESTORED_TITLE, "MODULE RESTORED"),
+                        in s_hudBuffer,
+                        "INFO");
+                }
+            }
+            return false;
+        }
+
+        private bool TryHandleVoxelRepair(IVoxelRepairWeldTarget voxelRepairTarget)
+        {
+            bool repairVoxelHit = false;
+            if (TryResolveAupFromPlayerPose(_hit.point, out AbsoluteUniversePosition hitAup))
+            {
+                double3 absoluteHitPoint = hitAup.ToAbsoluteDouble3();
+                Vector3 repairDirection = TryResolveRepairRay(out _, out Vector3 poseDirection)
+                    ? poseDirection
+                    : ResolveRepairForwardFallback();
+                repairVoxelHit = math.all(math.isfinite(absoluteHitPoint)) &&
+                                 voxelRepairTarget.TryApplyRepairWeldDda(
+                                     absoluteHitPoint,
+                                     repairDirection,
+                                     ResolveRuntimeRepairPowerNormalized(),
+                                     ResolveRuntimeRepairRange());
+            }
+
+            if (repairVoxelHit)
+            {
+                UpdateBeamHit(_hit.point, _hit.normal);
+                ClearIntegrityDiagnostic();
+                QueueToolHapticFeedback(ResolveRuntimeRepairPowerPerSecond(), FiniteAtLeast(repairSpeed, 1f));
+                InvalidateDiagnosisCache();
+                return true;
+            }
+            return false;
         }
 
         public override void UseSecondary(float deltaTime)
