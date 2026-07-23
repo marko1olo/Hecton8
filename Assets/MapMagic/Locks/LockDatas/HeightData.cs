@@ -18,6 +18,7 @@ namespace MapMagic.Locks
 		CoordCircle circle;
 		int resolution; //to determine if it's changed and avoid writing. And to rescale terraindata on terrain reset
 
+		public float terrainHeight; //to get relative object height (since all of the terrain data is 0-1).
 
 		public void Read (Terrain terrain, Lock lk) 
 		{
@@ -33,6 +34,8 @@ namespace MapMagic.Locks
 		public void WriteInThread (IApplyData applyData)
 		{
 			if (!(applyData is HeightOutput200.IApplyHeightData)) return;
+
+			terrainHeight = ((HeightOutput200.IApplyHeightData)applyData).terrainHeight;
 
 			if (applyData.Resolution != resolution) return; //Don't perform lock if resolution changed
 
@@ -52,6 +55,8 @@ namespace MapMagic.Locks
 
 		public (Matrix heightSrc, Matrix heightDst) WriteWithHeightDelta (HeightOutput200.IApplyHeightData applyData)
 		{
+			terrainHeight = applyData.terrainHeight;
+
 			Matrix terrainMatrix = new Matrix(circle.rect); //changed matrix with new height
 			ImportMatrix(terrainMatrix, applyData);
 
@@ -93,12 +98,13 @@ namespace MapMagic.Locks
 			terrainData.SetHeights(circle.rect.offset.x, circle.rect.offset.z, heightsArr);
 		}
 
-		public void ApplyHeightDelta (Matrix src, Matrix dst) { }
+		public void ApplyHeightDelta (Matrix src, Matrix dst, float terrainHeight) { }
 
 
 		public void ResizeFrom (ILockData otherData)
 		{
 			HeightData other = (HeightData)otherData;
+			terrainHeight = other.terrainHeight;
 
 			Matrix otherMatrix = new Matrix(other.circle.rect);
 			otherMatrix.ImportHeights(other.heightsArr);
