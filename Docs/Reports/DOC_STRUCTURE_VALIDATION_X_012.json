@@ -2,7 +2,7 @@
   "schema": "hecton8.doc_structure.v1",
   "docScope": "authority_spine",
   "repoRoot": "/app",
-  "activeDocCount": 283,
+  "activeDocCount": 282,
   "allowedRootTextDocs": [
     "3DMODEL_EQUIPMENT_PROPS.md",
     "3DMODEL_FAUNA.md",
@@ -163,22 +163,8 @@
   "missingRootTextDocs": [],
   "unexpectedRootTextDocs": [],
   "rootTextDocPolicyPass": true,
-  "duplicateHeaderFiles": [
-    {
-      "path": "Docs/AGENT_AUTHORITY_ROUTING.md",
-      "headers": [
-        "# hecton-8 agent authority routing"
-      ]
-    }
-  ],
-  "brokenLinkFiles": [
-    {
-      "path": "AGENTS.md",
-      "links": [
-        "file:///C:/hades/Hecton8/terrain.md"
-      ]
-    }
-  ],
+  "duplicateHeaderFiles": [],
+  "brokenLinkFiles": [],
   "fenceIssueFiles": [],
   "encodingWithoutUtf8Sig": [
     "3DMODEL_EQUIPMENT_PROPS.md",
@@ -258,7 +244,6 @@
     "Docs/AGENTS_RULE_DETAIL_LEDGER.md",
     "Docs/AGENT_AUTHORITY_ROUTING.md",
     "Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md",
-    "Docs/ARCHITECTURE/MACRO_GEOLOGY_STABLE_BASELINE.md",
     "Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md",
     "Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md",
     "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
@@ -270,5 +255,5 @@
   "encodingPolicy": "utf-8 or utf-8-sig accepted; missing BOM is informational",
   "encodingPolicyPass": true,
   "staleParameterFiles": [],
-  "pass": false
+  "pass": true
 }

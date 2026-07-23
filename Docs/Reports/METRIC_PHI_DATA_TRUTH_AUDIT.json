@@ -1,186 +1,781 @@
 {
-  "atlas": {
-    "domainCount": 85
-  },
-  "binaryAlignment": {
-    "alignmentBytes": 16,
-    "fileCount": 45,
-    "unaligned": []
-  },
-  "checks": [
+  "schema": "hecton8.metric_phi.binary_schema_ast_rows.v1",
+  "rows": [
     {
-      "name": "verify_sweep_pass",
-      "passed": true
+      "legacyPayload": {
+        "atlas": {
+          "domainCount": 85
+        },
+        "binaryAlignment": {
+          "alignmentBytes": 16,
+          "fileCount": 45,
+          "unaligned": []
+        },
+        "checks": [
+          {
+            "name": "verify_sweep_pass",
+            "passed": true
+          },
+          {
+            "name": "verify_sweep_required_failures_zero",
+            "passed": true
+          },
+          {
+            "name": "verify_sweep_command_count_35",
+            "passed": true
+          },
+          {
+            "name": "all_data_binaries_aligned16",
+            "passed": true
+          },
+          {
+            "name": "project_atlas_has_85_domain_map",
+            "passed": true
+          },
+          {
+            "name": "python_struct_endianness_explicit",
+            "passed": true
+          },
+          {
+            "name": "hash_catalog_collision_count_zero",
+            "passed": true
+          },
+          {
+            "name": "hash_catalog_records_present",
+            "passed": true
+          },
+          {
+            "name": "economy_monte_carlo_million_steps",
+            "passed": true
+          },
+          {
+            "name": "data_inquisition_report_pass",
+            "passed": true
+          },
+          {
+            "name": "binary_hygiene_report_pass",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_raw_utf8",
+            "passed": true
+          },
+          {
+            "name": "lore_h8bin_aligned16",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_toaster_tier",
+            "passed": true
+          },
+          {
+            "name": "lore_manifest_rtx_overkill_tier",
+            "passed": true
+          },
+          {
+            "name": "optics_manifest_beer_lambert",
+            "passed": true
+          },
+          {
+            "name": "optics_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "optics_manifest_rtx_overkill",
+            "passed": true
+          },
+          {
+            "name": "dalton_manifest_dalton_law",
+            "passed": true
+          },
+          {
+            "name": "dalton_manifest_hydrostatic_pressure",
+            "passed": true
+          },
+          {
+            "name": "dalton_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "dalton_toaster_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "dalton_overkill_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "sabine_manifest_sabine_basis",
+            "passed": true
+          },
+          {
+            "name": "sabine_manifest_thorp_basis",
+            "passed": true
+          },
+          {
+            "name": "sabine_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "crafting_cost_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "crafting_toaster_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "babel_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "taxonomy_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "ai_navigation_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "vr_comfort_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "vram_budget_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "visual_lod_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "quest_dag_binary_aligned16",
+            "passed": true
+          },
+          {
+            "name": "replay_hasher_reference_passed",
+            "passed": true
+          },
+          {
+            "name": "runtime_proof_boundary_declared",
+            "passed": true
+          }
+        ],
+        "economy": {
+          "status": "ECONOMY PROVEN",
+          "steps": 1000000
+        },
+        "endianness": {
+          "failures": [],
+          "formatSites": 375
+        },
+        "hashing": {
+          "collisionCount": 0,
+          "records": 1249
+        },
+        "schema": "H8.MetricPhi.DataTruthAudit.v1",
+        "status": "DATA_TRUTH_VERIFIED",
+        "summary": {
+          "failedChecks": 0,
+          "failedNames": [],
+          "totalChecks": 37
+        },
+        "tool": "Tools/VerifyMetricPhiDataTruth.py",
+        "verifySweep": {
+          "requiredFailures": 0,
+          "selfCheckPending": false,
+          "status": "VERIFY_SWEEP_PASS",
+          "totalCommands": 35
+        }
+      }
     },
     {
-      "name": "verify_sweep_required_failures_zero",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.259,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "verify_sweep_command_count_35",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.113,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "all_data_binaries_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.151,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "project_atlas_has_85_domain_map",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.295,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "python_struct_endianness_explicit",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 2,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.072,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "hash_catalog_collision_count_zero",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.06,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "hash_catalog_records_present",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.763,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "economy_monte_carlo_million_steps",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.349,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "data_inquisition_report_pass",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.356,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "binary_hygiene_report_pass",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.435,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_raw_utf8",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 2.312,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_h8bin_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.732,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_toaster_tier",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.15,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "lore_manifest_rtx_overkill_tier",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.104,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_manifest_beer_lambert",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.05,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.048,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "optics_manifest_rtx_overkill",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.061,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_manifest_dalton_law",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.025,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_manifest_hydrostatic_pressure",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.971,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.996,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_toaster_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.021,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "dalton_overkill_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.971,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_manifest_sabine_basis",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 0,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.684,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_manifest_thorp_basis",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 0.881,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "sabine_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.61,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "crafting_cost_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.187,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "crafting_toaster_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.331,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "babel_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 2.011,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "taxonomy_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.138,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "ai_navigation_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 0,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 0.86,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "vr_comfort_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.161,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "vram_budget_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.205,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "visual_lod_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.244,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "quest_dag_binary_aligned16",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.099,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "replay_hasher_reference_passed",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.163,
+      "performanceRegressionWarning": false
     },
     {
-      "name": "runtime_proof_boundary_declared",
-      "passed": true
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.218,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.31,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.177,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.87,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.824,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.166,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.405,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.275,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 1,
+      "executionTimeMs": 1.254,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 6,
+      "arm64Violations": 1,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.233,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "FAIL",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.312,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.256,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.157,
+      "performanceRegressionWarning": false
+    },
+    {
+      "agentId": "SHINOBU_358",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 1,
+      "structsValidated": 5,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 1.068,
+      "performanceRegressionWarning": false
     }
-  ],
-  "economy": {
-    "status": "ECONOMY PROVEN",
-    "steps": 1000000
-  },
-  "endianness": {
-    "failures": [],
-    "formatSites": 375
-  },
-  "hashing": {
-    "collisionCount": 0,
-    "records": 1249
-  },
-  "schema": "H8.MetricPhi.DataTruthAudit.v1",
-  "status": "DATA_TRUTH_VERIFIED",
-  "summary": {
-    "failedChecks": 0,
-    "failedNames": [],
-    "totalChecks": 37
-  },
-  "tool": "Tools/VerifyMetricPhiDataTruth.py",
-  "verifySweep": {
-    "requiredFailures": 0,
-    "selfCheckPending": false,
-    "status": "VERIFY_SWEEP_PASS",
-    "totalCommands": 35
-  }
+  ]
 }
