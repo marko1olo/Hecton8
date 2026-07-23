@@ -132,6 +132,53 @@ namespace Hecton8.Tests.Editor
 
             Object.DestroyImmediate(node.gameObject);
         }
+
+        [Test]
+        public void OnSpawn_InitializesOrClearsComponentsAndNeighbors()
+        {
+            // Setup
+            GameObject root = new GameObject("TestRoot");
+            var node = new GameObject("Node1").AddComponent<Hecton8.Power.PowerNode>();
+            node.transform.SetParent(root.transform);
+
+            FieldInfo componentsField = typeof(Hecton8.Power.PowerNode).GetField("_components", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo neighborsField = typeof(Hecton8.Power.PowerNode).GetField("_neighbors", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            // 1. Edge Case: Lists are initially null
+            componentsField.SetValue(node, null);
+            neighborsField.SetValue(node, null);
+
+            node.OnSpawn();
+
+            var components = (List<IPowerComponent>)componentsField.GetValue(node);
+            var neighbors = (List<Hecton8.Power.PowerNode>)neighborsField.GetValue(node);
+
+            Assert.IsNotNull(components, "Components list should be initialized from null.");
+            Assert.IsNotNull(neighbors, "Neighbors list should be initialized from null.");
+            Assert.AreEqual(1, components.Count, "Components should contain the PowerNode itself.");
+            Assert.AreEqual(0, neighbors.Count, "Neighbors should be empty if no authored neighbors exist.");
+
+            // 2. Edge Case: Lists are already initialized but contain old data
+            var oldComponents = new List<IPowerComponent>();
+            var oldNeighbors = new List<Hecton8.Power.PowerNode>();
+            oldNeighbors.Add(node); // Dummy data
+
+            componentsField.SetValue(node, oldComponents);
+            neighborsField.SetValue(node, oldNeighbors);
+
+            node.OnSpawn();
+
+            var newComponents = (List<IPowerComponent>)componentsField.GetValue(node);
+            var newNeighbors = (List<Hecton8.Power.PowerNode>)neighborsField.GetValue(node);
+
+            Assert.AreSame(oldComponents, newComponents, "Components list should be reused.");
+            Assert.AreSame(oldNeighbors, newNeighbors, "Neighbors list should be reused.");
+            Assert.AreEqual(1, newComponents.Count, "Components should contain only the PowerNode itself.");
+            Assert.AreEqual(0, newNeighbors.Count, "Neighbors should be cleared and empty.");
+
+            // Teardown
+            Object.DestroyImmediate(root);
+        }
 }
 }
 #endif

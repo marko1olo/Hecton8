@@ -588,7 +588,7 @@ namespace Hecton8.Editor
                 current = current.parent;
             }
 
-            return string.Join("/", names.ToArray());
+            return string.Join("/", names);
         }
 
         private readonly struct MaterialTarget

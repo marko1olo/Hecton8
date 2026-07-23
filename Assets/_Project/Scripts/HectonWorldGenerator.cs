@@ -958,6 +958,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     public void Tick(float deltaTime)
     {
+        if (!IsInitialized)
+            return;
+
+        UpdateStreaming(deltaTime);
+    }
+
+    private void UpdateStreaming(float deltaTime)
+    {
         using (_tickProfilerMarker.Auto())
         {
             if (!_streaming) return;
@@ -981,7 +989,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     /// </summary>
     public void LateFrameTick()
     {
-        if (!_streaming)
+        if (!IsInitialized)
             return;
 
         ProcessPendingChunks();
@@ -2557,14 +2565,19 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         return y;
     }
 
-    [ContextMenu("▶ Generate World Preview")]
+    public void Initialize()
+    {
+        EnsureLUTs();
+    }
+
+    [ContextMenu("⟳ Generate Preview")]
     public void GenerateWorldPreview()
     {
         if (Application.isPlaying)
             return;
 
-        ClearPreview();
-        EnsureLUTs();
+        ClearAll();
+        Initialize();
         bool ownsPreviewLuts = false;
         NativeArray<float> westLut;
         NativeArray<float> eastLut;

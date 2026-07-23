@@ -60,6 +60,15 @@ public sealed class PowerGridConsumePowerTests
         AssertState(_grid, totalGeneration: 80f, balance: -20f, supplyRatio: 0.8f, hasPowerDeficit: true, brownoutTier: LogisticsBrownoutTier.AmbientLightsOnly, isDirty: true);
     }
 
+    [Test]
+    public void ConsumePower_TotalConsumptionZero_SetsSupplyRatioToOne()
+    {
+        SetGridState(_grid, totalGeneration: 100f, totalConsumption: 0f, balance: 100f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: false);
+
+        _grid.ConsumePower(20f);
+        AssertState(_grid, totalGeneration: 80f, balance: 80f, supplyRatio: 1f, hasPowerDeficit: false, brownoutTier: LogisticsBrownoutTier.None, isDirty: true);
+    }
+
     private void SetGridState(PowerGrid grid, float totalGeneration, float totalConsumption, float balance, float supplyRatio, bool hasPowerDeficit, LogisticsBrownoutTier brownoutTier, bool isDirty)
     {
         typeof(PowerGrid).GetField("_totalGeneration", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(grid, totalGeneration);

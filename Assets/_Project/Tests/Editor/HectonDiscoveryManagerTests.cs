@@ -70,5 +70,31 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(2, _manager.TotalDiscovered);
             Assert.AreEqual(15, _manager.LastDiscoveredId);
         }
-    }
+
+        [Test]
+        public void OnScanEvent_NullOrEmptyEntryHash_DoesNotThrow()
+        {
+            var payload = new ScanEventPayload
+            {
+                EventType = (ushort)ScanEventType.FaunaFeedingObserved,
+                EntryHash = 0u
+            };
+
+            // This should not throw or modify anything
+            Assert.DoesNotThrow(() => _manager.OnScanEvent(in payload));
+        }
+
+        [Test]
+        public void OnScanEvent_IrrelevantEventType_DoesNotThrow()
+        {
+            var payload = new ScanEventPayload
+            {
+                EventType = (ushort)ScanEventType.NodeFound,
+                EntryHash = 12345u
+            };
+
+            // This should not throw or modify anything
+            Assert.DoesNotThrow(() => _manager.OnScanEvent(in payload));
+        }
+}
 }

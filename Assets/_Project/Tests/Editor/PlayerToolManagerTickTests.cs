@@ -127,6 +127,27 @@ namespace Hecton8.Tests.Editor
 
             UnityEngine.Object.DestroyImmediate(toolGo);
         }
+
+        [Test]
+        public void TryRegisterToTickManager_NotInPlayMode_ReturnsEarlyWithoutException()
+        {
+            var method = typeof(PlayerToolManager).GetMethod("TryRegisterToTickManager", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.DoesNotThrow(() => method.Invoke(_manager, null));
+        }
+
+        [Test]
+        public void TryRegisterToTickManager_AlreadyRegistered_ReturnsEarlyWithoutException()
+        {
+            var method = typeof(PlayerToolManager).GetMethod("TryRegisterToTickManager", BindingFlags.NonPublic | BindingFlags.Instance);
+            var tickField = typeof(PlayerToolManager).GetField("_registeredToTick", BindingFlags.NonPublic | BindingFlags.Instance);
+            var lateTickField = typeof(PlayerToolManager).GetField("_registeredToLateFrame", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            tickField.SetValue(_manager, true);
+            lateTickField.SetValue(_manager, true);
+
+            Assert.DoesNotThrow(() => method.Invoke(_manager, null));
+        }
+
     }
 }
 #endif

@@ -204,6 +204,8 @@ namespace Hecton8.BlackboxDiagnostics
             return s.Substring(0, maxLen) + "...";
         }
 
+        private static readonly List<Component> s_componentScratch = new List<Component>();
+
         /// <summary>
         /// Build a H8KeyObjectInfo from a GameObject found by a search key.
         /// </summary>
@@ -230,7 +232,11 @@ namespace Hecton8.BlackboxDiagnostics
             info.tag = go.tag;
 
             info.components = new List<H8ComponentInfo>();
-            foreach (var comp in go.GetComponents<Component>())
+
+            s_componentScratch.Clear();
+            go.GetComponents(s_componentScratch);
+
+            foreach (var comp in s_componentScratch)
             {
                 if (comp == null) continue;
                 var ci = new H8ComponentInfo();

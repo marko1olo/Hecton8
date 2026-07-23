@@ -70,4 +70,17 @@ public class HectonWorldGeneratorEditTests
         // Assert
         Assert.AreEqual(0, _worldGenerator.transform.childCount);
     }
+
+    [Test]
+    public void GenerateWorldPreview_WhenNotPlaying_CreatesPreviewObject()
+    {
+        // Act
+        _worldGenerator.GenerateWorldPreview();
+
+        // Assert
+        Assert.IsNotNull(_worldGenerator.previewObj);
+        Assert.IsNotNull(_worldGenerator.previewObj.GetComponent<MeshFilter>());
+        Assert.IsNotNull(_worldGenerator.previewObj.GetComponent<MeshRenderer>());
+        Assert.AreEqual(_worldGenerator.transform, _worldGenerator.previewObj.transform.parent);
+    }
 }

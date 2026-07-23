@@ -7,7 +7,7 @@ using TextureDimension = UnityEngine.Rendering.TextureDimension;
 
 namespace UnityEditor.ShaderGraph
 {
-    class PropertyCollector
+    public class PropertyCollector
     {
         public struct TextureInfo
         {

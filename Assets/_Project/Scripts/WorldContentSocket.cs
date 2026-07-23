@@ -80,6 +80,7 @@ namespace Hecton8.World
         [SerializeField] private float _debugProceduralClusterRadiusMeters;
 
         private WorldZoneAnchor _cachedZoneAnchor;
+        private bool _hasCachedZoneAnchor;
 
         public string SocketId => socketId;
         public string SocketLabel => socketLabel;
@@ -132,6 +133,8 @@ namespace Hecton8.World
 
         public WorldZoneAnchor GetZoneAnchor()
         {
+            if (!_hasCachedZoneAnchor)
+                RefreshZoneAnchorCold();
             return _cachedZoneAnchor;
         }
 
@@ -139,6 +142,7 @@ namespace Hecton8.World
         {
             if (!TryGetComponent(out _cachedZoneAnchor))
                 TryResolveComponentInParents(transform.parent, out _cachedZoneAnchor);
+            _hasCachedZoneAnchor = true;
         }
 
         private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
@@ -332,6 +336,7 @@ namespace Hecton8.World
         private void OnTransformParentChanged()
         {
             _cachedZoneAnchor = null;
+            _hasCachedZoneAnchor = false;
         }
 
         private WorldSliceAnchor.SliceState ResolvePopulationFidelity()

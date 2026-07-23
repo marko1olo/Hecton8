@@ -660,112 +660,6 @@ namespace MapMagic.Nodes.ObjectsGenerators
 
 
 
-	//TODO: could be unified with stamp
-	/*[System.Serializable]
-	[GeneratorMenu (menu="Objects", name ="Blob", disengageable = true, helpLink = "https://gitlab.com/denispahunov/mapmagic/wikis/object_generators/Blob")]
-	public class BlobGenerator : Generator, IOutlet<MatrixWorld>
-	{
-		[Val(name="Objects", priority=2)]	public readonly Inlet<PosTab> objectsIn = new Inlet<PosTab>();
-		[Val(name="Canvas", priority=2)]	public readonly Inlet<MatrixWorld> canvasIn = new Inlet<MatrixWorld>();
-		[Val(name="Mask", priority=2)]		public readonly Inlet<MatrixWorld> maskIn = new Inlet<MatrixWorld>();
-
-		[Val("Blend Algorithm")]			public MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm blendAlgorithm = MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add;
-		[Val(name="Intensity")]		public float intensity = 1f;
-		[Val(name="Radius")]		public float radius = 10;
-		[Val(name="Size Factor")]	public float sizeFactor = 0;
-		[Val(name="Fallof")]		public AnimationCurve fallof = new AnimationCurve( new Keyframe[] { new Keyframe(0,0,1,1), new Keyframe(1,1,1,1) } );
-		[Val(name="Noise Amount")]	public float noiseAmount = 0.1f;
-		[Val(name="Noise Size")]	public float noiseSize = 100;
-		[Val(name="Safe Borders")]	public int safeBorders = 0;
-
-		public override void Generate (TileData data, StopToken stop)
-		{
-			//getting inputs
-			PosTab objects = results.GetProduct<PosTab>(objectsIn);
-			MatrixWorld src = results.GetProduct<MatrixWorld>(canvasIn);
-			
-			if (objects==null) { results.SetProduct(this, null); return; }  //should set anything to mark as generated
-
-			//preparing output
-			MatrixWorld dst; 
-			if (src != null) dst = (MatrixWorld)src.Clone(); 
-			else dst = new MatrixWorld(area.full.resolution, area.full.position, area.full.size);
-
-				foreach (Transition obj in objects.AllObjs())
-					DrawBlob(dst, obj.pos.x, obj.pos.z, intensity, radius, fallof, noiseAmount, noiseSize, blendAlgorithm);
-
-			MatrixWorld mask = results.GetProduct<MatrixWorld>(maskIn);
-			if (mask != null) MatrixWorld.Mask(src, dst, mask);
-			if (safeBorders != 0) MatrixWorld.SafeBorders(src, dst, safeBorders);
-
-			//setting output
-			if (stop!=null && stop(0)) return;
-			results.SetProduct(this, dst);
-		}
-
-		public override void Clear (TileData data, StopToken stop) 
-		{
-			data.products.Remove(this);
-			data.ready.CheckRemove(this);
-		}
-
-		public override bool IsReady (TileData data, StopToken stop)
-		{
-			return data.products.Exists(this);
-		}
-
-		public static void DrawBlob (MatrixWorld canvas, float posX, float posZ, float val, float radius, AnimationCurve fallof, float noiseAmount=0, float noiseSize=20, MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm blendAlgorithm = MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add)
-		{
-			Coord mapCoord = new Coord(canvas.WorldToMap(posX), canvas.WorldToMap(posZ));
-			int mapRadius = canvas.WorldToMap(radius);
-			CoordRect blobRect = new CoordRect(mapCoord-mapRadius, new Coord(mapRadius*2 + 1, mapRadius*2 + 1));
-
-			Curve curve = new Curve(fallof);
-			Noise noise = new Noise(12345 + 123, 512);
-
-			CoordRect intersection = CoordRect.Intersected(canvas.rect, blobRect);
-			Coord center = blobRect.Center;
-			Coord min = intersection.Min; Coord max = intersection.Max; 
-			for (int x=min.x; x<max.x; x++)
-				for (int z=min.z; z<max.z; z++)
-			{
-				//float dist = Coord.Distance(center, new Coord(x,z));
-				float distX = canvas.MapToWorld(x) - posX;
-				float distZ = canvas.MapToWorld(z) - posZ; 
-				float dist = Mathf.Sqrt(distX*distX + distZ*distZ);
-					
-				float percent = curve.Evaluate(1f - dist/radius);
-				float result = percent;
-
-				if (noiseAmount > 0.001f)
-				{
-					float maxNoise = percent; if (percent > 0.5f) maxNoise = 1-percent;
-					result += (noise.Fractal(x,z,noiseSize)*2 - 1) * maxNoise * noiseAmount;
-				}
-
-				float dstVal = canvas[x,z];
-				float srcVal = val;
-				float blendedVal = dstVal;
-				switch (blendAlgorithm)
-				{
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.mix: blendedVal = srcVal; break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.add: blendedVal = dstVal + srcVal; break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.subtract: blendedVal = dstVal - srcVal; break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.multiply: blendedVal = dstVal * srcVal; break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.divide: blendedVal = srcVal != 0 ? dstVal / srcVal : dstVal; break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.difference: blendedVal = Mathf.Abs(dstVal - srcVal); break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.min: blendedVal = Mathf.Min(dstVal, srcVal); break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.max: blendedVal = Mathf.Max(dstVal, srcVal); break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.overlay: blendedVal = dstVal < 0.5f ? 2*dstVal*srcVal : 1 - 2*(1-dstVal)*(1-srcVal); break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.hardLight: blendedVal = srcVal < 0.5f ? 2*dstVal*srcVal : 1 - 2*(1-dstVal)*(1-srcVal); break;
-					case MapMagic.Nodes.MatrixGenerators.Blend200.BlendAlgorithm.softLight: blendedVal = (1-2*srcVal)*dstVal*dstVal + 2*srcVal*dstVal; break;
-				}
-				canvas[x,z] = blendedVal*result + dstVal*(1-result);
-			}
-		}
-	}*/
-
-
 	[System.Serializable]
 	[GeneratorMenu (
 		menu="Objects/Modifiers", 
@@ -1165,7 +1059,9 @@ namespace MapMagic.Nodes.ObjectsGenerators
 						//growing tree
 						forest.SetHeight(x,z, ++age);
 
-						//killing the tree
+							int id = Noise.Pair(x, z);
+
+							//killing the tree
 						float curSurvivalRate = survivalRate;
 						if (soil != null) 
 						{ 
@@ -1173,15 +1069,14 @@ namespace MapMagic.Nodes.ObjectsGenerators
 							if (!soil.ContainsWorldValue(wpos.x, wpos.z)) curSurvivalRate = 0;
 							else curSurvivalRate *= soil.GetWorldValue(wpos.x, wpos.z); 
 						}
-						if (age > lifeAge || random.Random(x,z,iAge,0) > curSurvivalRate) 
+						if (age > lifeAge || random.Random(id,iAge,0) > curSurvivalRate)
 							forest.SetHeight(x,z, 0);
 
 						//breeding the tree
-						//TODO: use id random
-						if (age > reproductiveAge && random.Random(x,z,iAge,1) < fecundity)
+							if (age > reproductiveAge && random.Random(id,iAge,1) < fecundity)
 						{
-							float angleRad = random.Random(x,z,iAge,2) * 6.283f;
-							float dist = random.Random(x,z,iAge,3) * seedDist/forest.cellSize + 1;
+							float angleRad = random.Random(id,iAge,2) * 6.283f;
+							float dist = random.Random(id,iAge,3) * seedDist/forest.cellSize + 1;
 
 							int nx = (int)(x + Mathf.Sin(angleRad)*dist); 
 							int nz = (int)(z + Mathf.Cos(angleRad)*dist);

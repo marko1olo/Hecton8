@@ -37,6 +37,8 @@ namespace CandiceAIforGames.AI
         public static GameObject enviro;
         public static GameObject decor;
 
+        private List<GameObject> _instantiatedObjects = new List<GameObject>();
+
         //store these in an array of objects
         public static GameObject[] sceneBuilderObjects;
         private int sceneBuilderObjectsTotal = 9;
@@ -110,11 +112,13 @@ namespace CandiceAIforGames.AI
             Store();
 
             //destroy
-            GameObject[] allObj = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Exclude);
-            foreach (GameObject sceneObject in allObj) {
-                if (sceneObject.name != "SceneBuilder") {
-                    Destroy(sceneObject);
+            if (_instantiatedObjects != null) {
+                foreach (GameObject obj in _instantiatedObjects) {
+                    if (obj != null) {
+                        Destroy(obj);
+                    }
                 }
+                _instantiatedObjects.Clear();
             }
 
             //after destroy drop a loading object
@@ -132,7 +136,9 @@ namespace CandiceAIforGames.AI
 
                     if (sceneBuilderObject != null) {
 
-                        Instantiate(sceneBuilderObject, sceneBuilderObject.transform.position, Quaternion.identity);
+                        GameObject instantiatedObj = Instantiate(sceneBuilderObject, sceneBuilderObject.transform.position, Quaternion.identity);
+                        if (_instantiatedObjects == null) _instantiatedObjects = new List<GameObject>();
+                        _instantiatedObjects.Add(instantiatedObj);
 
                     } 
 

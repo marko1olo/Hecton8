@@ -34,6 +34,7 @@ namespace Shapes {
 		void Awake() => instance = this;
 
 		Dictionary<CustomPassInjectionPoint, CustomPassVolume> volumes = new Dictionary<CustomPassInjectionPoint, CustomPassVolume>();
+		static readonly List<CustomPassVolume> volumeCache = new List<CustomPassVolume>();
 
 		public void MakeSureVolumeExistsForInjectionPoint( CustomPassInjectionPoint injPt ) {
 			if( volumes.ContainsKey( injPt ) )
@@ -41,12 +42,14 @@ namespace Shapes {
 
 			// not found in the dictionary - see if there is one on this object
 			CustomPassVolume volume = null;
-			foreach( CustomPassVolume v in GetComponents<CustomPassVolume>() ) {
+			GetComponents( volumeCache );
+			foreach( CustomPassVolume v in volumeCache ) {
 				if( v.injectionPoint == injPt ) {
 					volume = v;
 					break;
 				}
 			}
+			volumeCache.Clear();
 
 			if( volume == null ) {
 				// not found on this object, create it

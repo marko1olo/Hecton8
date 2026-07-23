@@ -14,6 +14,7 @@ namespace MoreMountains.Feedbacks
 	[CustomEditor(typeof(MMFeedbacks))]
 	public class MMFeedbacksEditor : Editor
 	{
+		protected static readonly List<Component> _components = new List<Component>();
 		/// <summary>
 		/// A data structure to store types and names
 		/// </summary>
@@ -644,13 +645,15 @@ namespace MoreMountains.Feedbacks
 			if (wasRemoved)
 			{
 				GameObject gameObject = (target as MMFeedbacks).gameObject;
-				foreach (var c in gameObject.GetComponents<Component>())
+				gameObject.GetComponents<Component>(_components);
+				foreach (var c in _components)
 				{
 					if (c != null)
 					{
 						c.hideFlags = HideFlags.None;    
 					}
 				}
+				_components.Clear();
 			}
 
 			// Apply changes

@@ -560,16 +560,19 @@ namespace Hecton8.UI
 
         // COLD ALLOC: SpatialQueryHit[24] - cached bioform proximity buffer for intrusion scans - owner: PDAIntrusionManager
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
-        // COLD ALLOC: TextMeshProUGUI[96] - cached PDA text targets for hacked-line drift - owner: PDAIntrusionManager
-        private readonly TextMeshProUGUI[] _driftTargets = new TextMeshProUGUI[MaxDriftTargets];
-        // COLD ALLOC: RectTransform[96] - cached rect owners for hacked-line drift - owner: PDAIntrusionManager
-        private readonly RectTransform[] _driftRects = new RectTransform[MaxDriftTargets];
-        // COLD ALLOC: Vector3[96] - cached pre-hack anchored positions for text drift restore - owner: PDAIntrusionManager
-        private readonly Vector3[] _driftBaseAnchoredPositions = new Vector3[MaxDriftTargets];
-        // COLD ALLOC: float[96] - deterministic phase offsets for hacked-line drift - owner: PDAIntrusionManager
-        private readonly float[] _driftPhaseOffsets = new float[MaxDriftTargets];
-        // COLD ALLOC: float[96] - cached applied offsets for text drift restore - owner: PDAIntrusionManager
-        private readonly float[] _driftAppliedOffsets = new float[MaxDriftTargets];
+                private struct TextDriftState
+        {
+            public TextMeshProUGUI Target;
+            public RectTransform Rect;
+            public Vector3 BaseAnchoredPosition;
+            public float PhaseOffset;
+            public float AppliedOffset;
+        }
+
+        // COLD ALLOC: TextDriftState[96] - unified text drift state - owner: PDAIntrusionManager
+        private readonly TextDriftState[] _driftStates = new TextDriftState[MaxDriftTargets];
+        // COLD ALLOC: RectTransform[96] - stack for UI traversal - owner: PDAIntrusionManager
+        private readonly RectTransform[] _driftTraversalStack = new RectTransform[MaxDriftTargets];
 
         private PlayerPDA _playerPda;
         private HectonPlayerMovement _playerMovement;
@@ -1024,8 +1027,8 @@ namespace Hecton8.UI
             float glyphScale = _visualPhase == IntrusionVisualPhase.Glyphs ? 1.22f : 1f;
             for (int i = 0; i < _driftTargetCount; i++)
             {
-                RectTransform rect = _driftRects[i];
-                if (rect == null)
+                ref TextDriftState state = ref _driftStates[i];
+                if (state.Rect == null)
                     continue;
 
                 float normalizedIndex = _driftTargetCount > 1
@@ -1033,22 +1036,22 @@ namespace Hecton8.UI
                     : 0f;
                 float amplitude = math.lerp(TextDriftAmplitudeMin, TextDriftAmplitudeMax, normalizedIndex) * glyphScale;
                 float frequency = math.lerp(TextDriftFrequencyMin, TextDriftFrequencyMax, 1f - normalizedIndex);
-                float offsetX = EvaluateCheapDriftWaveSigned((_textDriftWaveTime * frequency) + _driftPhaseOffsets[i]) * amplitude;
-                Vector3 currentPos = rect.anchoredPosition3D;
-                Vector3 expectedPos = _driftBaseAnchoredPositions[i];
-                expectedPos.x += _driftAppliedOffsets[i];
+                float offsetX = EvaluateCheapDriftWaveSigned((_textDriftWaveTime * frequency) + state.PhaseOffset) * amplitude;
+                Vector3 currentPos = state.Rect.anchoredPosition3D;
+                Vector3 expectedPos = state.BaseAnchoredPosition;
+                expectedPos.x += state.AppliedOffset;
 
                 if (math.abs(currentPos.x - expectedPos.x) > 0.01f ||
                     math.abs(currentPos.y - expectedPos.y) > 0.01f ||
                     math.abs(currentPos.z - expectedPos.z) > 0.01f)
                 {
-                    _driftBaseAnchoredPositions[i] = currentPos;
+                    state.BaseAnchoredPosition = currentPos;
                 }
 
-                Vector3 basePosition = _driftBaseAnchoredPositions[i];
+                Vector3 basePosition = state.BaseAnchoredPosition;
                 basePosition.x += offsetX;
-                rect.anchoredPosition3D = basePosition;
-                _driftAppliedOffsets[i] = offsetX;
+                state.Rect.anchoredPosition3D = basePosition;
+                state.AppliedOffset = offsetX;
             }
         }
 
@@ -1068,13 +1071,13 @@ namespace Hecton8.UI
             RectTransform root = panelRoot.transform as RectTransform;
             int stackCount = 0;
             if (root != null)
-                _driftRects[MaxDriftTargets - 1 - stackCount++] = root;
+                _driftTraversalStack[MaxDriftTargets - 1 - stackCount++] = root;
 
             while (stackCount > 0 && _driftTargetCount < MaxDriftTargets)
             {
                 int stackSlot = MaxDriftTargets - stackCount;
-                RectTransform current = _driftRects[stackSlot];
-                _driftRects[stackSlot] = null;
+                RectTransform current = _driftTraversalStack[stackSlot];
+                _driftTraversalStack[stackSlot] = null;
                 stackCount--;
                 if (current == null)
                     continue;
@@ -1085,11 +1088,14 @@ namespace Hecton8.UI
                     if (rect != null)
                     {
                         int slot = _driftTargetCount;
-                        _driftTargets[slot] = text;
-                        _driftRects[slot] = rect;
-                        _driftBaseAnchoredPositions[slot] = rect.anchoredPosition3D;
-                        _driftAppliedOffsets[slot] = 0f;
-                        _driftPhaseOffsets[slot] = (slot * 0.73f) + (text.fontSize * 0.013f);
+                        _driftStates[slot] = new TextDriftState
+                        {
+                            Target = text,
+                            Rect = rect,
+                            BaseAnchoredPosition = rect.anchoredPosition3D,
+                            AppliedOffset = 0f,
+                            PhaseOffset = (slot * 0.73f) + (text.fontSize * 0.013f)
+                        };
                         _driftTargetCount++;
                     }
                 }
@@ -1098,12 +1104,12 @@ namespace Hecton8.UI
                 for (int i = childCount - 1; i >= 0 && _driftTargetCount + stackCount < MaxDriftTargets; i--)
                 {
                     if (current.GetChild(i) is RectTransform child)
-                        _driftRects[MaxDriftTargets - 1 - stackCount++] = child;
+                        _driftTraversalStack[MaxDriftTargets - 1 - stackCount++] = child;
                 }
             }
 
             for (int i = 0; i < stackCount; i++)
-                _driftRects[MaxDriftTargets - 1 - i] = null;
+                _driftTraversalStack[MaxDriftTargets - 1 - i] = null;
         }
 
         private void RebuildTextDriftTargetsCold()
@@ -1123,25 +1129,22 @@ namespace Hecton8.UI
 
             for (int i = 0; i < _driftTargetCount; i++)
             {
-                RectTransform rect = _driftRects[i];
-                if (rect != null)
+                ref TextDriftState state = ref _driftStates[i];
+                if (state.Rect != null)
                 {
-                    Vector3 currentPos = rect.anchoredPosition3D;
-                    Vector3 expectedPos = _driftBaseAnchoredPositions[i];
-                    expectedPos.x += _driftAppliedOffsets[i];
+                    Vector3 currentPos = state.Rect.anchoredPosition3D;
+                    Vector3 expectedPos = state.BaseAnchoredPosition;
+                    expectedPos.x += state.AppliedOffset;
 
                     if (math.abs(currentPos.x - expectedPos.x) <= 0.01f &&
                         math.abs(currentPos.y - expectedPos.y) <= 0.01f &&
                         math.abs(currentPos.z - expectedPos.z) <= 0.01f)
                     {
-                        rect.anchoredPosition3D = _driftBaseAnchoredPositions[i];
+                        state.Rect.anchoredPosition3D = state.BaseAnchoredPosition;
                     }
                 }
 
-                _driftTargets[i] = null;
-                _driftRects[i] = null;
-                _driftPhaseOffsets[i] = 0f;
-                _driftAppliedOffsets[i] = 0f;
+                state = default;
             }
 
             _driftTargetCount = 0;

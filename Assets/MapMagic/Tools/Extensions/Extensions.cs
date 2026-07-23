@@ -440,6 +440,10 @@ namespace Den.Tools
 			}
 		}
 
+		private static string lastGenAroundTag;
+		private static GameObject[] lastTaggedObjects;
+		private static int lastTaggedObjectsFrame = -1;
+
 		public static Vector3[] GetCamPoses (bool genAroundMainCam=true, string genAroundTag=null, Vector3[] camPoses=null)
 		{
 			if (IsEditor()) 
@@ -456,7 +460,21 @@ namespace Den.Tools
 			{
 				//finding objects with tag
 				GameObject[] taggedObjects = null;
-				if (genAroundTag!=null && genAroundTag.Length!=0) taggedObjects = GameObject.FindGameObjectsWithTag(genAroundTag);
+				if (genAroundTag!=null && genAroundTag.Length!=0)
+					{
+						int currentFrame = Time.frameCount;
+						if (genAroundTag == lastGenAroundTag && currentFrame == lastTaggedObjectsFrame)
+						{
+							taggedObjects = lastTaggedObjects;
+						}
+						else
+						{
+							taggedObjects = GameObject.FindGameObjectsWithTag(genAroundTag);
+							lastGenAroundTag = genAroundTag;
+							lastTaggedObjects = taggedObjects;
+							lastTaggedObjectsFrame = currentFrame;
+						}
+					}
 
 				//calculating cams array length and rescaling it
 				int camPosesLength = 0;

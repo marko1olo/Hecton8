@@ -9,7 +9,7 @@ public class FixControlTexture : MonoBehaviour {
 
     static void UpdateTerrains() {
         if (Application.isPlaying) return;
-        var terrains = Object.FindObjectsByType<Terrain>(FindObjectsInactive.Exclude);
+        var terrains = Terrain.activeTerrains;
         foreach (var t in terrains) {
             if (t.terrainData != null && t.terrainData.alphamapTextures.Length > 1) {
                 var block = new MaterialPropertyBlock();

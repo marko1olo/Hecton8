@@ -4491,6 +4491,173 @@ namespace Hecton8.Celestial
             ApplySurfaceAtmosphericLightingState(state);
         }
 
+        private void CalculateHazeProperties(
+            float dayWeight, float sunsetWeight, float nightWeight,
+            Color skyHorizonColor, Color skyZenithColor, Color skyNadirColor,
+            out float horizonHaze, out float hazeResponse, out Color horizonSkyTint)
+        {
+            float horizonTransmittance = EvaluateAtmosphereTransmittance(
+                0f, dayWeight, sunsetWeight, nightWeight);
+            horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
+            float lowSunFactor = 1f - Mathf.Clamp01((_currentSunAngle + 8f) * Inv88);
+            hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
+
+            horizonSkyTint = Color.Lerp(skyHorizonColor, skyZenithColor, 0.14f);
+            horizonSkyTint = Color.Lerp(horizonSkyTint, skyNadirColor, 0.05f);
+
+            if (_celestialAtmosphereLutSamples.Length > 0)
+            {
+                horizonSkyTint = Color.Lerp(horizonSkyTint, _celestialAtmosphereLutSamples[0], 0.14f);
+                horizonTransmittance = Mathf.Clamp01(_celestialAtmosphereLutSamples[0].a);
+                horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
+                hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
+            }
+            horizonSkyTint.a = 1f;
+        }
+
+        private float CalculateFogDensity(float dayVisibility, float hazeResponse)
+        {
+            float baseFogDensity = ResolveSurfaceBaseFogDensity();
+            float middayFogReduction = Mathf.Lerp(1.08f, 0.82f, dayVisibility);
+            return Mathf.Max(
+                0.0001f,
+                baseFogDensity *
+                Mathf.Lerp(0.82f, 1.28f, hazeResponse) *
+                middayFogReduction *
+                Mathf.Max(0.25f, _surfaceFogDensityMultiplier));
+        }
+
+        private void CalculateFogAndHazeColors(
+            float dayWeight, float sunsetWeight, float nightWeight, float dayVisibility, float hazeResponse,
+            Color skyZenithColor, Color atmosphereFogColor, Color horizonSkyTint, Color ambientBaseColor,
+            out Color horizonFogColor, out Color hazeColor)
+        {
+            Color fogOwnerColor = _surfaceWeatherFogOverrideActive
+                ? _surfaceWeatherFogColor
+                : Color.Lerp(
+                    atmosphereFogColor,
+                    _surfaceFogManualColor,
+                    Mathf.Clamp01(_surfaceFogManualColorBlend));
+            fogOwnerColor.a = 1f;
+
+            float skyTintWeight =
+                Mathf.Lerp(0.06f, 0.18f, hazeResponse) * Mathf.Clamp01(_surfaceFogSkyColorInfluence) +
+                Mathf.Lerp(0.02f, 0.18f, hazeResponse) * _surfaceHazeSkyTintInfluence;
+            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 1.22f, sunsetWeight);
+            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 0.82f, nightWeight);
+            skyTintWeight = Mathf.Clamp01(skyTintWeight);
+
+            float ambientWeight = Mathf.Lerp(0.08f, 0.24f, 1f - dayVisibility) *
+                                  Mathf.Clamp01(_surfaceFogAmbientColorInfluence);
+
+            horizonFogColor = Color.Lerp(fogOwnerColor, horizonSkyTint, skyTintWeight);
+            horizonFogColor = Color.Lerp(horizonFogColor, ambientBaseColor, ambientWeight);
+            float atmosphereRestoreWeight =
+                (1f - Mathf.Clamp01(_surfaceFogManualColorBlend)) *
+                Mathf.Lerp(0.18f, 0.36f, hazeResponse);
+            horizonFogColor = Color.Lerp(horizonFogColor, atmosphereFogColor, atmosphereRestoreWeight);
+
+            float fogTargetLuminance = Mathf.Max(
+                ComputePerceivedLuminance(fogOwnerColor) * Mathf.Lerp(1f, 0.88f, hazeResponse),
+                ComputePerceivedLuminance(horizonSkyTint),
+                ComputePerceivedLuminance(skyZenithColor) * Mathf.Lerp(0.42f, 0.58f, dayVisibility));
+
+            horizonFogColor = LiftColorTowardsLuminance(
+                horizonFogColor,
+                fogTargetLuminance,
+                Mathf.Lerp(0.22f, 0.38f, dayVisibility));
+            horizonFogColor = DesaturateColor(
+                horizonFogColor,
+                Mathf.Lerp(0.14f, 0.22f, dayWeight) + hazeResponse * 0.04f);
+            horizonFogColor.a = 1f;
+
+            hazeColor = Color.Lerp(
+                horizonFogColor,
+                horizonSkyTint,
+                Mathf.Clamp01(0.08f + _surfaceHazeSkyTintInfluence * 0.38f));
+            hazeColor = Color.Lerp(hazeColor, fogOwnerColor, 0.38f);
+            hazeColor = Color.Lerp(hazeColor, ResolveScriptSunsetHorizonColor(), sunsetWeight * 0.16f);
+            hazeColor = LiftColorTowardsLuminance(
+                hazeColor,
+                fogTargetLuminance,
+                Mathf.Lerp(0.24f, 0.42f, dayVisibility));
+            hazeColor = DesaturateColor(hazeColor, Mathf.Lerp(0.18f, 0.28f, dayWeight));
+            hazeColor.a = 1f;
+        }
+
+        private void CalculateHazeIntensities(
+            float sunsetWeight, float nightWeight, float hazeResponse,
+            out float hazeIntensity, out float hazeFalloff, out float hazeSunTintStrength)
+        {
+            float hazeSpread = Mathf.Max(0.5f, _surfaceHazeHorizonSpread);
+            hazeIntensity = Mathf.Lerp(0.12f, 0.34f, hazeResponse) *
+                                  Mathf.Max(0.25f, _surfaceSkyHazeIntensityMultiplier);
+            hazeIntensity *= Mathf.Lerp(1f, 1f + (hazeSpread - 1f) * 0.35f, hazeResponse);
+            hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 1.18f, sunsetWeight);
+            hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 0.42f, nightWeight);
+
+            hazeFalloff = Mathf.Lerp(6.1f, 3.8f, hazeResponse) * math.rcp(hazeSpread);
+            hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 0.9f, sunsetWeight);
+            hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 1.15f, nightWeight);
+            hazeFalloff = Mathf.Clamp(hazeFalloff, 1.35f, 8f);
+
+            hazeSunTintStrength = Mathf.Lerp(0.1f, 0.3f, hazeResponse);
+            hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 1.25f, sunsetWeight);
+            hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 0.6f, nightWeight);
+        }
+
+        private void CalculateMistShelf(
+            float sunsetWeight, float nightWeight, float hazeResponse,
+            out float mistShelfIntensity, out float mistShelfHeight, out float mistShelfSoftness)
+        {
+            float hazeSpread = Mathf.Max(0.5f, _surfaceHazeHorizonSpread);
+
+            mistShelfIntensity = Mathf.Lerp(0.22f, 0.56f, hazeResponse) *
+                                       Mathf.Clamp(_surfaceHorizonMistShelfIntensity, 0f, 2f);
+            mistShelfIntensity *= Mathf.Lerp(1f, 1f + (hazeSpread - 1f) * 0.24f, hazeResponse);
+            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 1.12f, sunsetWeight);
+            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 0.34f, nightWeight);
+            mistShelfIntensity = Mathf.Clamp(mistShelfIntensity, 0f, 2f);
+
+            mistShelfHeight = _surfaceHorizonMistShelfHeight *
+                                    Mathf.Lerp(0.92f, 1.18f, hazeResponse);
+            mistShelfHeight = Mathf.Clamp(mistShelfHeight, 0.04f, 0.32f);
+
+            mistShelfSoftness = _surfaceHorizonMistShelfSoftness *
+                                      Mathf.Lerp(0.9f, 1.12f, hazeResponse);
+            mistShelfSoftness = Mathf.Clamp(mistShelfSoftness, 0.02f, 0.24f);
+        }
+
+        private void CalculateAmbientColors(
+            Color skyZenithColor, Color skyNadirColor, Color ambientBaseColor, Color horizonFogColor,
+            out Color ambientSkyColor, out Color ambientEquatorColor, out Color ambientGroundColor)
+        {
+            ambientSkyColor = Color.Lerp(ambientBaseColor, skyZenithColor, 0.7f);
+            ambientEquatorColor = Color.Lerp(ambientBaseColor, horizonFogColor, 0.62f);
+            ambientGroundColor = Color.Lerp(skyNadirColor, ambientEquatorColor, 0.46f);
+            ambientSkyColor.a = 1f;
+            ambientEquatorColor.a = 1f;
+            ambientGroundColor.a = 1f;
+        }
+
+        private float CalculateAmbientIntensity(
+            float dayVisibility, float nightWeight, float exposureBase, Color skyHorizonColor, Color horizonFogColor)
+        {
+            float skyLuminanceMultiplier = Mathf.Max(0.35f, ResolveSkyLuminanceMultiplier());
+            float horizonBrightness = Mathf.Max(
+                ComputePerceivedLuminance(skyHorizonColor),
+                ComputePerceivedLuminance(horizonFogColor));
+            float ambientBrightnessLift = Mathf.Lerp(0.82f, 1.26f, dayVisibility);
+            ambientBrightnessLift *= Mathf.Lerp(0.86f, 1.08f, Mathf.Clamp01(horizonBrightness * 1.35f));
+            return Mathf.Clamp(
+                Mathf.Max(0.24f, exposureBase) *
+                skyLuminanceMultiplier *
+                ambientBrightnessLift *
+                Mathf.Lerp(0.9f, 1.08f, 1f - nightWeight * 0.2f),
+                0.24f,
+                2.4f);
+        }
+
         private AtmosphericLightingState BuildSurfaceAtmosphericLightingState()
         {
             EvaluateCelestialAtmosphereProfileWeights(
@@ -4516,138 +4683,38 @@ namespace Hecton8.Celestial
                 atmosphereFogColor = skyFogAnchor;
             atmosphereFogColor.a = 1f;
 
-            float horizonTransmittance = EvaluateAtmosphereTransmittance(
-                0f,
-                dayWeight,
-                sunsetWeight,
-                nightWeight);
-            float horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
-            float lowSunFactor = 1f - Mathf.Clamp01((_currentSunAngle + 8f) * Inv88);
-            float hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
-            Color ambientBaseColor = ResolveSurfaceAmbientBaseColor();
-            Color horizonSkyTint = Color.Lerp(skyHorizonColor, skyZenithColor, 0.14f);
-            horizonSkyTint = Color.Lerp(horizonSkyTint, skyNadirColor, 0.05f);
-            if (_celestialAtmosphereLutSamples.Length > 0)
-            {
-                horizonSkyTint = Color.Lerp(horizonSkyTint, _celestialAtmosphereLutSamples[0], 0.14f);
-                horizonTransmittance = Mathf.Clamp01(_celestialAtmosphereLutSamples[0].a);
-                horizonHaze = 1f - Mathf.Clamp01(horizonTransmittance);
-                hazeResponse = Mathf.Clamp01(horizonHaze * 0.72f + lowSunFactor * 0.28f);
-            }
-            horizonSkyTint.a = 1f;
+            CalculateHazeProperties(
+                dayWeight, sunsetWeight, nightWeight,
+                skyHorizonColor, skyZenithColor, skyNadirColor,
+                out float horizonHaze, out float hazeResponse, out Color horizonSkyTint);
 
-            float baseFogDensity = ResolveSurfaceBaseFogDensity();
             float dayVisibility = Mathf.Clamp01((_currentSunAngle + 2f) * Inv64);
-            float middayFogReduction = Mathf.Lerp(1.08f, 0.82f, dayVisibility);
-            float fogDensity = Mathf.Max(
-                0.0001f,
-                baseFogDensity *
-                Mathf.Lerp(0.82f, 1.28f, hazeResponse) *
-                middayFogReduction *
-                Mathf.Max(0.25f, _surfaceFogDensityMultiplier));
 
-            Color fogOwnerColor = _surfaceWeatherFogOverrideActive
-                ? _surfaceWeatherFogColor
-                : Color.Lerp(
-                    atmosphereFogColor,
-                    _surfaceFogManualColor,
-                    Mathf.Clamp01(_surfaceFogManualColorBlend));
-            fogOwnerColor.a = 1f;
+            float fogDensity = CalculateFogDensity(dayVisibility, hazeResponse);
 
-            float skyTintWeight =
-                Mathf.Lerp(0.06f, 0.18f, hazeResponse) * Mathf.Clamp01(_surfaceFogSkyColorInfluence) +
-                Mathf.Lerp(0.02f, 0.18f, hazeResponse) * _surfaceHazeSkyTintInfluence;
-            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 1.22f, sunsetWeight);
-            skyTintWeight = Mathf.Lerp(skyTintWeight, skyTintWeight * 0.82f, nightWeight);
-            skyTintWeight = Mathf.Clamp01(skyTintWeight);
+            Color ambientBaseColor = ResolveSurfaceAmbientBaseColor();
 
-            float ambientWeight = Mathf.Lerp(0.08f, 0.24f, 1f - dayVisibility) *
-                                  Mathf.Clamp01(_surfaceFogAmbientColorInfluence);
+            CalculateFogAndHazeColors(
+                dayWeight, sunsetWeight, nightWeight, dayVisibility, hazeResponse,
+                skyZenithColor, atmosphereFogColor, horizonSkyTint, ambientBaseColor,
+                out Color horizonFogColor, out Color hazeColor);
 
-            Color horizonFogColor = Color.Lerp(fogOwnerColor, horizonSkyTint, skyTintWeight);
-            horizonFogColor = Color.Lerp(horizonFogColor, ambientBaseColor, ambientWeight);
-            float atmosphereRestoreWeight =
-                (1f - Mathf.Clamp01(_surfaceFogManualColorBlend)) *
-                Mathf.Lerp(0.18f, 0.36f, hazeResponse);
-            horizonFogColor = Color.Lerp(horizonFogColor, atmosphereFogColor, atmosphereRestoreWeight);
-            float fogTargetLuminance = Mathf.Max(
-                ComputePerceivedLuminance(fogOwnerColor) * Mathf.Lerp(1f, 0.88f, hazeResponse),
-                ComputePerceivedLuminance(horizonSkyTint),
-                ComputePerceivedLuminance(skyZenithColor) * Mathf.Lerp(0.42f, 0.58f, dayVisibility));
-            horizonFogColor = LiftColorTowardsLuminance(
-                horizonFogColor,
-                fogTargetLuminance,
-                Mathf.Lerp(0.22f, 0.38f, dayVisibility));
-            horizonFogColor = DesaturateColor(
-                horizonFogColor,
-                Mathf.Lerp(0.14f, 0.22f, dayWeight) + hazeResponse * 0.04f);
-            horizonFogColor.a = 1f;
+            CalculateHazeIntensities(
+                sunsetWeight, nightWeight, hazeResponse,
+                out float hazeIntensity, out float hazeFalloff, out float hazeSunTintStrength);
 
-            float hazeSpread = Mathf.Max(0.5f, _surfaceHazeHorizonSpread);
-            float hazeIntensity = Mathf.Lerp(0.12f, 0.34f, hazeResponse) *
-                                  Mathf.Max(0.25f, _surfaceSkyHazeIntensityMultiplier);
-            hazeIntensity *= Mathf.Lerp(1f, 1f + (hazeSpread - 1f) * 0.35f, hazeResponse);
-            hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 1.18f, sunsetWeight);
-            hazeIntensity = Mathf.Lerp(hazeIntensity, hazeIntensity * 0.42f, nightWeight);
+            CalculateMistShelf(
+                sunsetWeight, nightWeight, hazeResponse,
+                out float mistShelfIntensity, out float mistShelfHeight, out float mistShelfSoftness);
 
-            float hazeFalloff = Mathf.Lerp(6.1f, 3.8f, hazeResponse) * math.rcp(hazeSpread);
-            hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 0.9f, sunsetWeight);
-            hazeFalloff = Mathf.Lerp(hazeFalloff, hazeFalloff * 1.15f, nightWeight);
-            hazeFalloff = Mathf.Clamp(hazeFalloff, 1.35f, 8f);
-
-            Color hazeColor = Color.Lerp(
-                horizonFogColor,
-                horizonSkyTint,
-                Mathf.Clamp01(0.08f + _surfaceHazeSkyTintInfluence * 0.38f));
-            hazeColor = Color.Lerp(hazeColor, fogOwnerColor, 0.38f);
-            hazeColor = Color.Lerp(hazeColor, ResolveScriptSunsetHorizonColor(), sunsetWeight * 0.16f);
-            hazeColor = LiftColorTowardsLuminance(
-                hazeColor,
-                fogTargetLuminance,
-                Mathf.Lerp(0.24f, 0.42f, dayVisibility));
-            hazeColor = DesaturateColor(hazeColor, Mathf.Lerp(0.18f, 0.28f, dayWeight));
-            hazeColor.a = 1f;
-
-            float hazeSunTintStrength = Mathf.Lerp(0.1f, 0.3f, hazeResponse);
-            hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 1.25f, sunsetWeight);
-            hazeSunTintStrength = Mathf.Lerp(hazeSunTintStrength, hazeSunTintStrength * 0.6f, nightWeight);
-
-            float mistShelfIntensity = Mathf.Lerp(0.22f, 0.56f, hazeResponse) *
-                                       Mathf.Clamp(_surfaceHorizonMistShelfIntensity, 0f, 2f);
-            mistShelfIntensity *= Mathf.Lerp(1f, 1f + (hazeSpread - 1f) * 0.24f, hazeResponse);
-            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 1.12f, sunsetWeight);
-            mistShelfIntensity = Mathf.Lerp(mistShelfIntensity, mistShelfIntensity * 0.34f, nightWeight);
-            mistShelfIntensity = Mathf.Clamp(mistShelfIntensity, 0f, 2f);
-
-            float mistShelfHeight = _surfaceHorizonMistShelfHeight *
-                                    Mathf.Lerp(0.92f, 1.18f, hazeResponse);
-            mistShelfHeight = Mathf.Clamp(mistShelfHeight, 0.04f, 0.32f);
-
-            float mistShelfSoftness = _surfaceHorizonMistShelfSoftness *
-                                      Mathf.Lerp(0.9f, 1.12f, hazeResponse);
-            mistShelfSoftness = Mathf.Clamp(mistShelfSoftness, 0.02f, 0.24f);
-
-            Color ambientSkyColor = Color.Lerp(ambientBaseColor, skyZenithColor, 0.7f);
-            Color ambientEquatorColor = Color.Lerp(ambientBaseColor, horizonFogColor, 0.62f);
-            Color ambientGroundColor = Color.Lerp(skyNadirColor, ambientEquatorColor, 0.46f);
-            ambientSkyColor.a = 1f;
-            ambientEquatorColor.a = 1f;
-            ambientGroundColor.a = 1f;
+            CalculateAmbientColors(
+                skyZenithColor, skyNadirColor, ambientBaseColor, horizonFogColor,
+                out Color ambientSkyColor, out Color ambientEquatorColor, out Color ambientGroundColor);
 
             float exposureBase = ResolveSurfaceSkyExposure();
-            float skyLuminanceMultiplier = Mathf.Max(0.35f, ResolveSkyLuminanceMultiplier());
-            float horizonBrightness = Mathf.Max(
-                ComputePerceivedLuminance(skyHorizonColor),
-                ComputePerceivedLuminance(horizonFogColor));
-            float ambientBrightnessLift = Mathf.Lerp(0.82f, 1.26f, dayVisibility);
-            ambientBrightnessLift *= Mathf.Lerp(0.86f, 1.08f, Mathf.Clamp01(horizonBrightness * 1.35f));
-            float ambientIntensity = Mathf.Clamp(
-                Mathf.Max(0.24f, exposureBase) *
-                skyLuminanceMultiplier *
-                ambientBrightnessLift *
-                Mathf.Lerp(0.9f, 1.08f, 1f - nightWeight * 0.2f),
-                0.24f,
-                2.4f);
+            float ambientIntensity = CalculateAmbientIntensity(
+                dayVisibility, nightWeight, exposureBase, skyHorizonColor, horizonFogColor);
+
             float sunIntensityMultiplier = ResolveSurfaceSunMultiplier();
             float directionalLightIntensity = ResolveSurfaceDirectionalLightIntensity(sunIntensityMultiplier);
 

@@ -375,125 +375,162 @@ namespace Hecton8.SaveSystem
 
         public static SaveData CreateNew(double playTime)
         {
-            return new SaveData
+            var data = new SaveData();
+            data.InitializeCore(playTime);
+            data.InitializePlayerAndWorld();
+            data.InitializeProgressionAndDiscovery();
+            data.InitializeAtlas6AndCorporate();
+            data.InitializeEnvironment();
+            return data;
+        }
+
+        private void InitializeCore(double playTime)
+        {
+            version = CurrentVersion;
+            contractVersionHashLo = HectonContractVersion.HashLo;
+            contractVersionHashHi = HectonContractVersion.HashHi;
+            timestamp = DateTime.Now.ToString("O");
+            totalPlayTime = playTime;
+
+            firstHourSessionTime = 0f;
+            firstHourMilestones = 0;
+            firstHourGuidanceFlags = 0;
+
+            LODQualityPreset = 1; // Default: Medium
+            DynamicResolutionEnabled = true; // Default: Enabled
+        }
+
+        private void InitializePlayerAndWorld()
+        {
+            playerStats = new PlayerStatsDTO
             {
-                version       = CurrentVersion,
-                contractVersionHashLo = HectonContractVersion.HashLo,
-                contractVersionHashHi = HectonContractVersion.HashHi,
-                timestamp     = DateTime.Now.ToString("O"),
-                totalPlayTime = playTime,
-                playerStats   = new PlayerStatsDTO
-                {
-                    health = PlayerHealthDefault,
-                    environmentTemperature = PlayerEnvironmentTemperatureDefault
-                },
-                playerKinematicState = new PlayerKinematicStateDTO(),
-                inventory     = new InventoryDTO(),
-                inventoryShadow = new InventoryShadowDTO(),
-                worldState    = new WorldStateDTO(),
-                proceduralWorldState = new ProceduralWorldStateDTO(),
-                construction  = ConstructionDTO.CreatePreallocated(),
-                scanLog       = new ScanLogDTO(),
-                barter        = new BarterDTO(),
-                fieldOperations = new FieldOperationLogDTO(),
-                beaconNetwork = new BeaconNetworkDTO(),
-                explorationMap = new ExplorationMapDTO(),
-                pdaLogbook = new PDALogbookDTO(),
-                pdaMarkers = new PDAMarkerRegistryDTO(),
-                pdaAdvisories = new PDAContextualAdvisoryDTO(),
-                proceduralLore = new ProceduralLoreStateDTO(),
-                achievements = new AchievementRegistryDTO(),
-                runModifiers = new RunModifiersDTO
-                {
-                    dailySeedId = string.Empty
-                },
-                metaCampaign = MetaCampaignDTO.CreateDefault(),
-                resourceScarcity = new ResourceScarcityDTO(),
-                environmentalStrain = new EnvironmentalStrainDTO(),
-                ecosystemState = new EcosystemStateDTO(),
-                proceduralTerrainIdentity = new ProceduralTerrainIdentityDTO(),
-                voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault(),
-                hazardZones = new HazardZoneRuntimeDTO(),
-                discoveredBiomeIds = null,
-                // COLD ALLOC: long[BiomeDiscoveryBitMask.WordCount] — packed discovered biome persistence — owner: SaveData
-                discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount],
-                lastDiscoveredBiomeId = -1,
-                narrativeDiscoveryCount = 0,
-                narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
-                narrativeDepthTier = 0,
-                audioLogDiscoveredIds = new List<string>(),
-                // COLD ALLOC: long[AudioLogDiscoveryBitMask.WordCount] — packed audio-log discovery persistence — owner: SaveData
-                audioLogDiscoveryBitWords = new long[AudioLogDiscoveryBitMask.WordCount],
-                audioLogEncryptedFragmentCount = 0,
-                audioLogEncryptedFragmentHashes = new uint[MaxEncryptedAudioLogFragments],
-                audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments],
-                // COLD ALLOC: long[IndustrialLoreBitMask.WordCount] — packed industrial lore discovery persistence — owner: SaveData
-                industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount],
-                // COLD ALLOC: long[MaxDataArchaeologyDiscoveryWords] - packed archaeology discovery persistence - owner: SaveData
-                dataArchaeologyDiscoveryBitWords = new long[MaxDataArchaeologyDiscoveryWords],
-                dataArchaeologyPartialScanCount = 0,
-                // COLD ALLOC: uint[MaxDataArchaeologyPartialScans] - partial archaeology hashes - owner: SaveData
-                dataArchaeologyPartialScanHashes = new uint[MaxDataArchaeologyPartialScans],
-                // COLD ALLOC: ushort[MaxDataArchaeologyPartialScans] - partial archaeology progress - owner: SaveData
-                dataArchaeologyPartialScanProgressPermille = new ushort[MaxDataArchaeologyPartialScans],
-                dataArchaeologyScanStateCount = 0,
-                // COLD ALLOC: int[MaxDataArchaeologyScanStates] - data archaeology scan state keys - owner: SaveData
-                dataArchaeologyScanStateKeys = new int[MaxDataArchaeologyScanStates],
-                // COLD ALLOC: byte[MaxDataArchaeologyScanStates] - data archaeology scan state values - owner: SaveData
-                dataArchaeologyScanStateValues = new byte[MaxDataArchaeologyScanStates],
-                questActiveIds = new List<string>(),
-                questCompletedIds = new List<string>(),
-                atlasSignalDetected = false,
-                atlasSignalPulseTimer = 0f,
-                atlasSignalRevealStage = 0,
-                narrativeAupTriggeredMask = 0UL,
-                suitInstalledUpgradeIds = new List<string>(),
-                suitUnlockedBlueprintIds = new List<string>(),
-                suitBrokenUpgradeIds = new List<string>(),
-                suitUpgradeMask = 0UL,
-                playerExpressionProfileId = string.Empty,
-                atlas6PlayerStatus = 0,
-                atlas6BarterCount = 0,
-                atlas6DirectiveConflictTriggered = false,
-                atlas6LiabilitySectorXenonOmegaYield = 0f,
-                atlas6LiabilityHasDisasterEvidence = false,
-                atlas6LiabilityRecoveredWorkerTagCount = 0,
-                atlas6LiabilityRecoveredWorkerTagHashes = new uint[MaxAtlas6LiabilityWorkerTags],
-                atlas6LiabilityCorporateHostilityIndex = 0f,
-                atlas6LiabilityCorporateCreditBalance = 5000f,
-                atlas6LiabilityExtractionCarrierState = 0,
-                atlas6LiabilityBiomatterExposureLevel = 0f,
-                atlas6LiabilityHaldaneLockoutActive = false,
-                atlas6LiabilityPressureSealIntegrity = 1f,
-                atlas6LiabilityBulkheadLocked = false,
-                corporateReceivedOrderIds = new List<string>(),
-                corporatePendingOrderIds = new List<string>(),
-                corporatePendingOrderTimers = new List<float>(),
-                firstHourSessionTime = 0f,
-                firstHourMilestones = 0,
-                firstHourGuidanceFlags = 0,
-                endingChoice = 0,
-                endingComplete = false,
-                endingConditionMet = false,
-                missionActiveIds = new List<string>(),
-                missionCompletedIds = new List<string>(),
-                LODQualityPreset = 1, // Default: Medium
-                DynamicResolutionEnabled = true, // Default: Enabled
-                radiationDose = 0f,
-                radiationGridOriginX = 0d,
-                radiationGridOriginY = 0d,
-                radiationGridOriginZ = 0d,
-                celestialLightPhaseSerialized = false,
-                celestialLightTimeOfDay01 = CelestialLightTimeOfDayDefault,
-                radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters,
-                radiationGridRleLength = 0,
-                radiationGridRle = new byte[RadiationGridRleMaxBytes],
-                rtgDecayCount = 0,
-                rtgDecaySourceIds = new int[MaxRtgDecayRecords],
-                rtgStartTimesSeconds = new double[MaxRtgDecayRecords],
-                rtgDecayFlags = new byte[MaxRtgDecayRecords],
-                CustomModData = new Dictionary<string, string>()
+                health = PlayerHealthDefault,
+                environmentTemperature = PlayerEnvironmentTemperatureDefault
             };
+            playerKinematicState = new PlayerKinematicStateDTO();
+            inventory = new InventoryDTO();
+            inventoryShadow = new InventoryShadowDTO();
+
+            worldState = new WorldStateDTO();
+            proceduralWorldState = new ProceduralWorldStateDTO();
+            construction = ConstructionDTO.CreatePreallocated();
+
+            runModifiers = new RunModifiersDTO
+            {
+                dailySeedId = string.Empty
+            };
+            metaCampaign = MetaCampaignDTO.CreateDefault();
+
+            resourceScarcity = new ResourceScarcityDTO();
+            environmentalStrain = new EnvironmentalStrainDTO();
+            ecosystemState = new EcosystemStateDTO();
+            proceduralTerrainIdentity = new ProceduralTerrainIdentityDTO();
+            voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
+            hazardZones = new HazardZoneRuntimeDTO();
+
+            suitInstalledUpgradeIds = new List<string>();
+            suitUnlockedBlueprintIds = new List<string>();
+            suitBrokenUpgradeIds = new List<string>();
+            suitUpgradeMask = 0UL;
+
+            playerExpressionProfileId = string.Empty;
+        }
+
+        private void InitializeProgressionAndDiscovery()
+        {
+            scanLog = new ScanLogDTO();
+            barter = new BarterDTO();
+            fieldOperations = new FieldOperationLogDTO();
+            beaconNetwork = new BeaconNetworkDTO();
+            explorationMap = new ExplorationMapDTO();
+            pdaLogbook = new PDALogbookDTO();
+            pdaMarkers = new PDAMarkerRegistryDTO();
+            pdaAdvisories = new PDAContextualAdvisoryDTO();
+            proceduralLore = new ProceduralLoreStateDTO();
+            achievements = new AchievementRegistryDTO();
+
+            discoveredBiomeIds = null;
+            discoveredBiomeBitWords = new long[BiomeDiscoveryBitMask.WordCount];
+            lastDiscoveredBiomeId = -1;
+
+            narrativeDiscoveryCount = 0;
+            narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries];
+            narrativeDepthTier = 0;
+            narrativeAupTriggeredMask = 0UL;
+
+            audioLogDiscoveredIds = new List<string>();
+            audioLogDiscoveryBitWords = new long[AudioLogDiscoveryBitMask.WordCount];
+            audioLogEncryptedFragmentCount = 0;
+            audioLogEncryptedFragmentHashes = new uint[MaxEncryptedAudioLogFragments];
+            audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments];
+
+            industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount];
+
+            dataArchaeologyDiscoveryBitWords = new long[MaxDataArchaeologyDiscoveryWords];
+            dataArchaeologyPartialScanCount = 0;
+            dataArchaeologyPartialScanHashes = new uint[MaxDataArchaeologyPartialScans];
+            dataArchaeologyPartialScanProgressPermille = new ushort[MaxDataArchaeologyPartialScans];
+            dataArchaeologyScanStateCount = 0;
+            dataArchaeologyScanStateKeys = new int[MaxDataArchaeologyScanStates];
+            dataArchaeologyScanStateValues = new byte[MaxDataArchaeologyScanStates];
+
+            questActiveIds = new List<string>();
+            questCompletedIds = new List<string>();
+
+            endingChoice = 0;
+            endingComplete = false;
+            endingConditionMet = false;
+
+            missionActiveIds = new List<string>();
+            missionCompletedIds = new List<string>();
+        }
+
+        private void InitializeAtlas6AndCorporate()
+        {
+            atlasSignalDetected = false;
+            atlasSignalPulseTimer = 0f;
+            atlasSignalRevealStage = 0;
+
+            atlas6PlayerStatus = 0;
+            atlas6BarterCount = 0;
+            atlas6DirectiveConflictTriggered = false;
+
+            atlas6LiabilitySectorXenonOmegaYield = 0f;
+            atlas6LiabilityHasDisasterEvidence = false;
+            atlas6LiabilityRecoveredWorkerTagCount = 0;
+            atlas6LiabilityRecoveredWorkerTagHashes = new uint[MaxAtlas6LiabilityWorkerTags];
+            atlas6LiabilityCorporateHostilityIndex = 0f;
+            atlas6LiabilityCorporateCreditBalance = 5000f;
+            atlas6LiabilityExtractionCarrierState = 0;
+            atlas6LiabilityBiomatterExposureLevel = 0f;
+            atlas6LiabilityHaldaneLockoutActive = false;
+            atlas6LiabilityPressureSealIntegrity = 1f;
+            atlas6LiabilityBulkheadLocked = false;
+
+            corporateReceivedOrderIds = new List<string>();
+            corporatePendingOrderIds = new List<string>();
+            corporatePendingOrderTimers = new List<float>();
+        }
+
+        private void InitializeEnvironment()
+        {
+            radiationDose = 0f;
+            radiationGridOriginX = 0d;
+            radiationGridOriginY = 0d;
+            radiationGridOriginZ = 0d;
+            radiationGridCellSizeMeters = RadiationGridDefaultCellSizeMeters;
+            radiationGridRleLength = 0;
+            radiationGridRle = new byte[RadiationGridRleMaxBytes];
+
+            celestialLightPhaseSerialized = false;
+            celestialLightTimeOfDay01 = CelestialLightTimeOfDayDefault;
+
+            rtgDecayCount = 0;
+            rtgDecaySourceIds = new int[MaxRtgDecayRecords];
+            rtgStartTimesSeconds = new double[MaxRtgDecayRecords];
+            rtgDecayFlags = new byte[MaxRtgDecayRecords];
+
+            CustomModData = new Dictionary<string, string>();
         }
 
         public void RefreshFirstHourDtoMirrors()

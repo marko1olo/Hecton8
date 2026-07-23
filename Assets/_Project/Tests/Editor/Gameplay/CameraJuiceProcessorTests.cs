@@ -167,6 +167,44 @@ namespace Hecton8.Tests.Editor.Gameplay
         }
 
         [Test]
+        public void RegisterCollisionImpulse_EqualThresholdAndMaxVelocity_PreventsDivideByZero()
+        {
+            var processor = new CameraJuiceProcessor();
+            processor.Initialize(true);
+            var suit = ScriptableObject.CreateInstance<SuitData>();
+            suit.enableCollisionShake = true;
+            suit.collisionShakeThreshold = 5f;
+            suit.collisionShakeMaxVelocity = 5f;
+            suit.collisionShakeMaxAmplitude = 1f;
+
+            processor.RegisterCollisionImpulse(10f, suit);
+
+            var type = typeof(CameraJuiceProcessor);
+            Assert.AreEqual(-1.0f, (float)type.GetField("_collisionShakeY", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor));
+
+            Object.DestroyImmediate(suit);
+        }
+
+        [Test]
+        public void RegisterCollisionImpulse_ExactThreshold_AppliesZeroShake()
+        {
+            var processor = new CameraJuiceProcessor();
+            processor.Initialize(true);
+            var suit = ScriptableObject.CreateInstance<SuitData>();
+            suit.enableCollisionShake = true;
+            suit.collisionShakeThreshold = 5f;
+            suit.collisionShakeMaxVelocity = 15f;
+            suit.collisionShakeMaxAmplitude = 1f;
+
+            processor.RegisterCollisionImpulse(5f, suit);
+
+            var type = typeof(CameraJuiceProcessor);
+            Assert.AreEqual(0.0f, (float)type.GetField("_collisionShakeY", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(processor));
+
+            Object.DestroyImmediate(suit);
+        }
+
+        [Test]
         public void RegisterSplash_WithValidSuit_SetsDipValues()
         {
             // Arrange

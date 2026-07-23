@@ -52,7 +52,7 @@ namespace Hecton8.Editor.Validation
 
                 CountSocket(socketCounts, socket.Kind);
 
-                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor zone = socket.GetZoneAnchor();
                 if (zone == null)
                 {
                     socketsOutsideZones++;

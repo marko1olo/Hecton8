@@ -166,6 +166,9 @@
   "rootTextDocCount": 78,
   "missingRootTextDocs": [],
   "unexpectedRootTextDocs": [
+    "ANTIGRAVITY_ADDENDUM_ENFORCEMENT.md",
+    "ANTIGRAVITY_ROUND6_VERIFY.md",
+    "ANTIGRAVITY_TERRAIN_MEGABRIEF.md",
     "pr_description.md"
   ],
   "rootTextDocPolicyPass": false,

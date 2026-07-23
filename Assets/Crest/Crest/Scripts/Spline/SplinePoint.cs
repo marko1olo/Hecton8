@@ -14,7 +14,13 @@ namespace Crest.Spline
 
     public abstract class SplinePointDataBase : CustomMonoBehaviour, ISplinePointCustomData
     {
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+
         public abstract Vector2 GetData();
+
+#if UNITY_EDITOR
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+#endif
 
         public void NotifyOfSplineChange()
         {
@@ -24,10 +30,12 @@ namespace Crest.Spline
             }
 
 #if UNITY_EDITOR
-            foreach (var receiver in transform.parent.GetComponents<IReceiveSplineChangeMessages>())
+            transform.parent.GetComponents(s_receivers);
+            foreach (var receiver in s_receivers)
             {
                 receiver.OnSplineChange();
             }
+            s_receivers.Clear();
 #endif
         }
     }
@@ -39,6 +47,8 @@ namespace Crest.Spline
     [AddComponentMenu(Internal.Constants.MENU_PREFIX_SPLINE + "Spline Point")]
     public class SplinePoint : CustomMonoBehaviour
     {
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+
         /// <summary>
         /// The version of this asset. Can be used to migrate across versions. This value should
         /// only be changed when the editor upgrades the version.
@@ -51,6 +61,9 @@ namespace Crest.Spline
         Transform _parent;
 
 #if UNITY_EDITOR
+        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
+        static readonly System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages> s_gizmoReceivers = new System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages>();
+
         void Update()
         {
             _parent = transform.parent;
@@ -82,10 +95,12 @@ namespace Crest.Spline
                 return;
             }
 
-            foreach (var receiver in parent.GetComponents<IReceiveSplineChangeMessages>())
+            parent.GetComponents(s_receivers);
+            foreach (var receiver in s_receivers)
             {
                 receiver.OnSplineChange();
             }
+            s_receivers.Clear();
         }
 
         void OnDisable()
@@ -122,7 +137,8 @@ namespace Crest.Spline
                 return;
             }
 
-            foreach (var receiver in transform.parent.GetComponents<IReceiveSplinePointOnDrawGizmosSelectedMessages>())
+            transform.parent.GetComponents(s_gizmoReceivers);
+            foreach (var receiver in s_gizmoReceivers)
             {
                 receiver.OnSplinePointDrawGizmosSelected(this);
             }

@@ -425,6 +425,14 @@ namespace Hecton8.World
 
             public void Dispose()
             {
+                DisposeNativeCollections();
+                DisposeCandidateMaps();
+                ClearCollections();
+                ResetCachedState();
+            }
+
+            private void DisposeNativeCollections()
+            {
                 DisposeNativeArray(ref CellSamplingInputs);
                 DisposeNativeArray(ref CellSamplingOutputs);
                 DisposeNativeArray(ref BiomeInfluenceCells);
@@ -444,7 +452,10 @@ namespace Hecton8.World
                 DisposeNativeArray(ref CandidateAcceptanceStructureAccentCountsScratch);
                 DisposeNativeArray(ref CandidateAcceptanceClusterAccentRoleMaxRatiosScratch);
                 DisposeNativeArray(ref CandidateAcceptanceStructureAccentRoleMaxCountsScratch);
+            }
 
+            private void DisposeCandidateMaps()
+            {
                 GroundRescueCandidates.Dispose();
                 ClusterRescueCandidates.Dispose();
                 ClusterFertileCandidates.Dispose();
@@ -460,7 +471,10 @@ namespace Hecton8.World
                 StructureBioCandidates.Dispose();
                 PassiveSpawnCandidates.Dispose();
                 PredatorSpawnCandidates.Dispose();
+            }
 
+            private void ClearCollections()
+            {
                 DesiredPlacements.Clear();
                 RetainedPlacements.Clear();
                 PlacementLastSeenTimes.Clear();
@@ -496,19 +510,6 @@ namespace Hecton8.World
                 PreferredFamilyPlacementCounts.Clear();
                 Array.Clear(PatternProfileCache, 0, PatternProfileCache.Length);
                 BiomeContextCache.Clear();
-                HasCachedPatternQuota = false;
-                CachedPatternQuotaPattern = default;
-                CachedPatternQuotaBiomeProfile = null;
-                CachedPatternClusterRatioStart = 0;
-                CachedPatternPassiveSpawnMin = 0;
-                CachedPatternPredatorSpawnMax = 0;
-                HasCachedBudgetScales = false;
-                CachedBudgetScalePatternProfile = null;
-                CachedBudgetScaleBiomeContext = null;
-                CachedGroundBudgetScale = 0f;
-                CachedClusterBudgetScale = 0f;
-                CachedStructureBudgetScale = 0f;
-                CachedSpawnBudgetScale = 0f;
                 Array.Clear(LayerNearRadii, 0, LayerNearRadii.Length);
                 Array.Clear(LayerMidRadii, 0, LayerMidRadii.Length);
                 Array.Clear(LayerFarRadii, 0, LayerFarRadii.Length);
@@ -518,8 +519,6 @@ namespace Hecton8.World
                 FloraGpuiCounts.Clear();
                 FloraGpuiBufferCapacities.Clear();
                 FloraGpuiInitializedPrototypes.Clear();
-                CachedLayerRadiiCellSize = -1f;
-                CachedLayerRadiiProfile = null;
                 Array.Clear(LayerTopCandidatesBuffer, 0, LayerTopCandidatesBuffer.Length);
                 Array.Clear(LayerTopValidBuffer, 0, LayerTopValidBuffer.Length);
                 Array.Clear(LayerPlacementCountsBuffer, 0, LayerPlacementCountsBuffer.Length);
@@ -535,6 +534,25 @@ namespace Hecton8.World
                 SampledBiomeCounts.Clear();
                 SampledPatternCounts.Clear();
                 SampledZoneCounts.Clear();
+            }
+
+            private void ResetCachedState()
+            {
+                HasCachedPatternQuota = false;
+                CachedPatternQuotaPattern = default;
+                CachedPatternQuotaBiomeProfile = null;
+                CachedPatternClusterRatioStart = 0;
+                CachedPatternPassiveSpawnMin = 0;
+                CachedPatternPredatorSpawnMax = 0;
+                HasCachedBudgetScales = false;
+                CachedBudgetScalePatternProfile = null;
+                CachedBudgetScaleBiomeContext = null;
+                CachedGroundBudgetScale = 0f;
+                CachedClusterBudgetScale = 0f;
+                CachedStructureBudgetScale = 0f;
+                CachedSpawnBudgetScale = 0f;
+                CachedLayerRadiiCellSize = -1f;
+                CachedLayerRadiiProfile = null;
                 FaunaSnapshotDirty = true;
                 GridPlacementBucketCount = 0;
                 GridPlacementNativeOverflowed = false;

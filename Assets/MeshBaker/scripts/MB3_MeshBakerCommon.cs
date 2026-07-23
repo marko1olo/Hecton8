@@ -25,11 +25,10 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot
 
     public int version;
 
-    //todo should be list of <Renderer>
 #if UNITY_2020_2_OR_NEWER  
     [NonReorderable]  //see MB-136 for why this is here
 #endif
-    public List<GameObject> objsToMesh;
+    public List<Renderer> objsToMesh;
 
     public abstract MB3_MeshCombiner meshCombiner
     {
@@ -198,9 +197,14 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot
         }
         else
         {
-            if (objsToMesh == null) objsToMesh = new List<GameObject>();
+            if (objsToMesh == null) objsToMesh = new List<Renderer>();
             if (objsToMesh.Count == 1 && objsToMesh[0] == null) objsToMesh.Clear();
-            return objsToMesh;
+            List<GameObject> gos = new List<GameObject>();
+            for (int i = 0; i < objsToMesh.Count; i++)
+            {
+                if (objsToMesh[i] != null) gos.Add(objsToMesh[i].gameObject);
+            }
+            return gos;
         }
     }
 
@@ -227,7 +231,7 @@ public abstract class MB3_MeshBakerCommon : MB3_MeshBakerRoot
         {
             if (objsToMesh == null)
             {
-                objsToMesh = new List<GameObject>();
+                objsToMesh = new List<Renderer>();
             }
             Debug.Log(string.Format("Purged {0} null references from objects to combine list.", objsToMesh.RemoveAll(obj => obj == null)));
         }

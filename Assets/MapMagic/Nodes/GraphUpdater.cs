@@ -131,7 +131,6 @@ namespace MapMagic.Nodes
 						"CombineGenerator",		"inputs",
 						"PropagateGenerator",	"input",
 						"StampGenerator",		"positionsIn",
-						"BlobGenerator",		"objectsIn",
 						"FlattenGenerator",		"objectsIn",
 						"ForestGenerator",		"seedlingsIn",
 						"ForestGenerator",		"otherTreesIn",

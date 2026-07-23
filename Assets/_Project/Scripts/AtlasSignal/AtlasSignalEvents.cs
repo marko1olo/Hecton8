@@ -312,12 +312,6 @@ namespace Hecton8.AtlasSignal
             return TryResolveDecodedMessage(messageHash, out messageId);
         }
 
-        [Obsolete("Use TryRaisePulse(float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaisePulse(float intensity)
-        {
-            TryRaisePulse(intensity);
-        }
-
         public static bool TryRaisePulse(float intensity)
         {
             if (!math.isfinite(intensity))
@@ -331,12 +325,6 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)AtlasSignalEventType.Pulse,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseDetected(Vector3) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseDetected(Vector3 sourcePos)
-        {
-            TryRaiseDetected(sourcePos);
         }
 
         public static bool TryRaiseDetected(Vector3 sourcePos)
@@ -354,12 +342,6 @@ namespace Hecton8.AtlasSignal
             });
         }
 
-        [Obsolete("Use TryRaiseStrengthChanged(float) so overflow/drop semantics stay visible at the producer.", true)]
-        public static void RaiseStrengthChanged(float strength)
-        {
-            TryRaiseStrengthChanged(strength);
-        }
-
         public static bool TryRaiseStrengthChanged(float strength)
         {
             if (!math.isfinite(strength))
@@ -373,12 +355,6 @@ namespace Hecton8.AtlasSignal
                 EventType = (ushort)AtlasSignalEventType.StrengthChanged,
                 Reserved = 0
             });
-        }
-
-        [Obsolete("Use TryRaiseDecoded(uint messageHash). String ingress is not allowed on first-party event lanes.", true)]
-        public static void RaiseDecoded(string messageId)
-        {
-            TryRaiseDecodedFromString(messageId);
         }
 
         private static bool TryRaiseDecodedFromString(string messageId)
@@ -403,12 +379,6 @@ namespace Hecton8.AtlasSignal
             if (hashCollision)
                 ReportDecodedMessageHashCollision(messageHash);
 
-            return TryRaiseDecoded(messageHash);
-        }
-
-        [Obsolete("Use TryRaiseDecoded(uint messageHash) so overflow/drop semantics stay visible at the producer.", true)]
-        public static bool RaiseDecoded(uint messageHash)
-        {
             return TryRaiseDecoded(messageHash);
         }
 

@@ -114,7 +114,8 @@ namespace Crest
 
             // Resources.FindObjectsOfTypeAll will get all materials that are used for this scene.
             // This can retrieve stuff excluded from the build as it gets everything in memory.
-            foreach (var material in Resources.FindObjectsOfTypeAll<Material>())
+            var materials = Resources.FindObjectsOfTypeAll<Material>();
+            foreach (var material in materials)
             {
                 if (IsWaterMaterial(material) && !_oceanMaterials.Contains(material))
                 {
@@ -124,7 +125,8 @@ namespace Crest
 
             // Finds them in scenes and prefabs.
             // This can retrieve stuff excluded from the build as it gets everything in memory.
-            foreach (var underwaterRenderer in Resources.FindObjectsOfTypeAll<UnderwaterRenderer>())
+            var underwaterRenderers = Resources.FindObjectsOfTypeAll<UnderwaterRenderer>();
+            foreach (var underwaterRenderer in underwaterRenderers)
             {
                 if (!_underwaterRenderers.Contains(underwaterRenderer))
                 {

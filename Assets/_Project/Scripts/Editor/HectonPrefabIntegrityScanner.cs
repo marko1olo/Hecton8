@@ -567,7 +567,7 @@ namespace Hecton8.Editor
                 current = current.parent;
             }
 
-            return string.Join("/", segments.ToArray());
+            return string.Join("/", segments);
         }
 
         private static void EnsureFolder(string assetPath)

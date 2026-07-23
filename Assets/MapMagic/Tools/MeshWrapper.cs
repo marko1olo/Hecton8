@@ -104,24 +104,6 @@ namespace Den.Tools
 
 		public void Append (MeshWrapper addMesh, Vector3 offset=new Vector3(), float size=1, float height=1) //custom verts length can be larger than addMesh vert count
 		{
-			/*for (int v=0; v<addMesh.verts.Length; v++) //TODO test iteration inside "if"
-			{
-				if (customVerts==null) verts[vertCounter+v] = addMesh.verts[v];// + offset;
-				else verts[vertCounter+v] = customVerts[v];
-
-				if (normals!=null && addMesh.normals!=null)
-				{
-					if (customNormals==null) normals[vertCounter+v] = addMesh.normals[v];
-					else normals[vertCounter+v] = customNormals[v];
-				}
-
-				if (uv!=null && addMesh.uv!=null) uv[vertCounter+v] = addMesh.uv[v];
-				if (uv2!=null && addMesh.uv2!=null) uv2[vertCounter+v] = addMesh.uv2[v];
-				if (uv3!=null && addMesh.uv3!=null) uv3[vertCounter+v] = addMesh.uv3[v];
-				if (uv4!=null && addMesh.uv4!=null) uv4[vertCounter+v] = addMesh.uv4[v];
-				if (colors!=null && addMesh.colors!=null) colors[vertCounter+v] = addMesh.colors[v];
-				if (tangents!=null && addMesh.tangents!=null) tangents[vertCounter+v] = addMesh.tangents[v];
-			}*/
 
 
 			//this definitely works faster:

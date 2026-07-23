@@ -284,8 +284,6 @@ namespace MapMagic.Terrains.GUI
 			if (LineRectIntersection(c, C, screenFrame)) return true;
 			if (LineRectIntersection(d, D, screenFrame)) return true;
 
-			//looking if any if the screen frame corner rays pass through bb in world space
-			//TODO, but not actually required - we are checking ray intersection anyways
 
 			return false;
 		}

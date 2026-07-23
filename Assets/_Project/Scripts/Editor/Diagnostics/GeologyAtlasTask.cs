@@ -10,8 +10,9 @@ namespace MapMagic.Editor.Diagnostics
 {
     public static class GeologyAtlasTask
     {
+        // R19 RECOMPILE TOUCH: 2026-07-23T11:20:00
         private const string OutDir =
-            @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\atlas";
+            @"C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-c29b-4dac-8a24-2f14ca51d3d2\atlas";
 
         private const int Res = 512;
 
@@ -31,6 +32,18 @@ namespace MapMagic.Editor.Diagnostics
             finally
             {
                 EditorApplication.Exit(0);
+            }
+        }
+
+        [InitializeOnLoadMethod]
+        private static void AutoRunOnBatch()
+        {
+            if (!Application.isBatchMode) return;
+            string flag = Path.Combine(OutDir, "run.flag");
+            if (File.Exists(flag))
+            {
+                try { File.Delete(flag); } catch { }
+                EditorApplication.delayCall += Run;
             }
         }
 
@@ -57,7 +70,7 @@ namespace MapMagic.Editor.Diagnostics
             };
 
             StringBuilder report = new StringBuilder();
-            report.AppendLine("GEOLOGY ATLAS — Megabrief Overhaul Evaluation");
+            report.AppendLine("GEOLOGY ATLAS — Megabrief Overhaul Evaluation (R9 Dynamic Sentinel)");
             report.AppendLine($"BUILD SENTINEL (must match source): {WorldMacroGeologyFields.BuildSentinel}");
             report.AppendLine($"Seed={p.Seed}  extent={p.WorldExtentMeters}  WaterSurfaceY={p.WaterSurfaceY}");
             report.AppendLine($"RidgeHeight={p.RidgeHeightMeters}  AbyssDepth={p.AbyssDepthMeters}  Hadal={p.HadalDepthMeters}  Trench={p.TrenchDepthMeters}");
@@ -72,10 +85,54 @@ namespace MapMagic.Editor.Diagnostics
                 foreach (var sc in scales)
                 {
                     RenderCell(pt.x, pt.z, sc.size, $"{pt.name}_{sc.tag}", in p, height, masks, report);
+                    RenderStageDumps(pt.x, pt.z, sc.size, $"{pt.name}_{sc.tag}", in p, height);
                 }
             }
 
             File.WriteAllText(Path.Combine(OutDir, "atlas_report.txt"), report.ToString());
+        }
+
+        // R16: render a hillshade of the depth field after each accumulation stage (1..7), ONE build.
+        // The stage where the zebra/rings/hairline FIRST appears is the culprit line. stage8=full=RenderCell.
+        private static void RenderStageDumps(float cx, float cz, float size, string label,
+            in WorldMacroGeologyParams p, float[] height)
+        {
+            float pixelSize = size / Res;
+            float x0 = cx - size * 0.5f;
+            float z0 = cz - size * 0.5f;
+            Vector3 lightDir = new Vector3(-1f, 0.6f, 1f).normalized;
+            WorldMacroGeologyParams localP = p;
+
+            for (int stage = 1; stage <= 7; stage++)
+            {
+                int st = stage;
+                System.Threading.Tasks.Parallel.For(0, Res, z =>
+                {
+                    float wz = z0 + (z + 0.5f) * pixelSize;
+                    for (int x = 0; x < Res; x++)
+                    {
+                        float wx = x0 + (x + 0.5f) * pixelSize;
+                        height[z * Res + x] = WorldMacroGeologyFields.EvaluateHeightMeters(wx, wz, in localP, out _, st);
+                    }
+                });
+
+                Texture2D tex = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
+                for (int z = 0; z < Res; z++)
+                {
+                    for (int x = 0; x < Res; x++)
+                    {
+                        float hL = height[z * Res + math.clamp(x - 1, 0, Res - 1)];
+                        float hR = height[z * Res + math.clamp(x + 1, 0, Res - 1)];
+                        float hD = height[math.clamp(z - 1, 0, Res - 1) * Res + x];
+                        float hU = height[math.clamp(z + 1, 0, Res - 1) * Res + x];
+                        Vector3 nrm = new Vector3(hL - hR, 2f * pixelSize, hD - hU).normalized;
+                        float intensity = Mathf.Clamp01(Vector3.Dot(nrm, lightDir)) * 0.85f + 0.15f;
+                        tex.SetPixel(x, z, new Color(intensity, intensity, intensity, 1f));
+                    }
+                }
+                Save(tex, $"{label}_stage{stage}_hillshade");
+                UnityEngine.Object.DestroyImmediate(tex);
+            }
         }
 
         private static void RenderCell(
@@ -95,17 +152,28 @@ namespace MapMagic.Editor.Diagnostics
             double mRiver = 0, mLake = 0, mStrata = 0, mFold = 0, mVolcano = 0, mMesa = 0, mDune = 0;
             int nanCount = 0;
 
-            for (int z = 0; z < Res; z++)
+            WorldMacroGeologyParams localP = p;
+            System.Threading.Tasks.Parallel.For(0, Res, z =>
             {
                 float wz = z0 + (z + 0.5f) * pixelSize;
                 for (int x = 0; x < Res; x++)
                 {
                     float wx = x0 + (x + 0.5f) * pixelSize;
                     WorldMacroGeologyFields.MacroMasks m;
-                    float h = WorldMacroGeologyFields.EvaluateHeightMeters(wx, wz, in p, out m);
+                    float h = WorldMacroGeologyFields.EvaluateHeightMeters(wx, wz, in localP, out m);
                     int idx = z * Res + x;
                     height[idx] = h;
                     masks[idx] = m;
+                }
+            });
+
+            for (int z = 0; z < Res; z++)
+            {
+                for (int x = 0; x < Res; x++)
+                {
+                    int idx = z * Res + x;
+                    float h = height[idx];
+                    WorldMacroGeologyFields.MacroMasks m = masks[idx];
 
                     if (float.IsNaN(h) || float.IsInfinity(h)) { nanCount++; continue; }
                     if (h < minH) minH = h;
@@ -125,13 +193,9 @@ namespace MapMagic.Editor.Diagnostics
             double std = var > 0 ? Math.Sqrt(var) : 0;
 
             Texture2D texHeight = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texDetail = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
             Texture2D texHill   = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
             Texture2D texSlope  = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texStruct = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texSub    = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texFeat   = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texProv   = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
+            // R14: height + hillshade + slope ONLY (Director: don't waste laptop time on the other 5 maps).
 
             Vector3 lightDir = new Vector3(-1f, 0.6f, 1f).normalized;
             long[] slopeBuckets = new long[4];
@@ -146,36 +210,46 @@ namespace MapMagic.Editor.Diagnostics
                 return height[qz * Res + qx];
             }
 
-            const int BlurR = 6;
+            const float Sigma = 3.0f;
+            const int BlurR = 9; // 3 * Sigma
+            float[] gKernel = new float[2 * BlurR + 1];
+            float gSum = 0f;
+            for (int i = -BlurR; i <= BlurR; i++)
+            {
+                float w = math.exp(-0.5f * (i * i) / (Sigma * Sigma));
+                gKernel[i + BlurR] = w;
+                gSum += w;
+            }
+            for (int i = 0; i < gKernel.Length; i++) gKernel[i] /= gSum;
+
             float[] blurTmp = new float[Res * Res];
             float[] residual = new float[Res * Res];
-            for (int z = 0; z < Res; z++)
+            System.Threading.Tasks.Parallel.For(0, Res, z =>
             {
                 for (int x = 0; x < Res; x++)
                 {
-                    float acc = 0f; int cnt = 0;
+                    float acc = 0f;
                     for (int dx = -BlurR; dx <= BlurR; dx++)
                     {
                         int qx = math.clamp(x + dx, 0, Res - 1);
-                        acc += height[z * Res + qx]; cnt++;
+                        acc += height[z * Res + qx] * gKernel[dx + BlurR];
                     }
-                    blurTmp[z * Res + x] = acc / cnt;
+                    blurTmp[z * Res + x] = acc;
                 }
-            }
-            for (int z = 0; z < Res; z++)
+            });
+            System.Threading.Tasks.Parallel.For(0, Res, z =>
             {
                 for (int x = 0; x < Res; x++)
                 {
-                    float acc = 0f; int cnt = 0;
+                    float acc = 0f;
                     for (int dz = -BlurR; dz <= BlurR; dz++)
                     {
                         int qz = math.clamp(z + dz, 0, Res - 1);
-                        acc += blurTmp[qz * Res + x]; cnt++;
+                        acc += blurTmp[qz * Res + x] * gKernel[dz + BlurR];
                     }
-                    float blurred = acc / cnt;
-                    residual[z * Res + x] = height[z * Res + x] - blurred;
+                    residual[z * Res + x] = height[z * Res + x] - acc;
                 }
-            }
+            });
 
             float SampleRes(int px, int pz)
             {
@@ -192,9 +266,6 @@ namespace MapMagic.Editor.Diagnostics
                     float hC = height[idx];
 
                     texHeight.SetPixel(x, z, DepthRamp(hC, p.HadalDepthMeters));
-
-                    float tNorm = (maxH > minH) ? (hC - minH) / (maxH - minH) : 0.5f;
-                    texDetail.SetPixel(x, z, GrayRamp(tNorm));
 
                     float hL = SampleH(x - 1, z), hR = SampleH(x + 1, z);
                     float hD = SampleH(x, z - 1), hU = SampleH(x, z + 1);
@@ -220,23 +291,12 @@ namespace MapMagic.Editor.Diagnostics
                         int bin = Mathf.Clamp((int)(ori / Mathf.PI * OriBins), 0, OriBins - 1);
                         oriHist[bin] += gmag;
                     }
-
-                    WorldMacroGeologyFields.MacroMasks m = masks[idx];
-                    texStruct.SetPixel(x, z, new Color(m.Ridge, m.Trench, m.Canyon, 1f));
-                    texSub.SetPixel(x, z, new Color(m.HardRock, m.Basin, m.Shelf, 1f));
-                    texFeat.SetPixel(x, z, new Color(m.Crater, m.River, m.Strata, 1f));
-                    texProv.SetPixel(x, z, ProvinceColor(m.ProvinceType, m.ProvinceBlend));
                 }
             }
 
             Save(texHeight, $"{label}_1_height");
-            Save(texDetail, $"{label}_1b_detail");
             Save(texHill, $"{label}_2_hillshade");
             Save(texSlope, $"{label}_3_slope");
-            Save(texStruct, $"{label}_4_structure");
-            Save(texSub, $"{label}_5_substrate");
-            Save(texFeat, $"{label}_6_features");
-            Save(texProv, $"{label}_7_province");
 
             double Pct(int b) => 100.0 * slopeBuckets[b] / n;
             double MPct(double acc) => 100.0 * acc / n;
@@ -254,19 +314,14 @@ namespace MapMagic.Editor.Diagnostics
             double oriMean = oriSum / OriBins;
             double hatchIndex = oriMean > 1e-9 ? oriPeak / oriMean : 0;
             double peakAngleDeg = (oriPeakBin + 0.5) * (180.0 / OriBins);
-            report.AppendLine($"   HATCHING index={hatchIndex:F2} (1.0=isotropic, >1.8=visible)  peak@{peakAngleDeg:F0}deg");
+            report.AppendLine($"   HATCHING index={hatchIndex:F2} [UNRELIABLE at 1km/200m — R13 proved a smooth sub-period ramp scores 5-8 with ZERO stripes; use EYES]  peak@{peakAngleDeg:F0}deg");
             report.AppendLine($"   Mask cover %: Ridge={MPct(mRidge):F1} Trench={MPct(mTrench):F1} Canyon={MPct(mCanyon):F1} Basin={MPct(mBasin):F1} Shelf={MPct(mShelf):F1} HardRock={MPct(mHardRock):F1}");
             report.AppendLine($"                 Fault={MPct(mFault):F1} Crater={MPct(mCrater):F1} River={MPct(mRiver):F1} Lake={MPct(mLake):F1} Strata={MPct(mStrata):F1} Fold={MPct(mFold):F1} Volcano={MPct(mVolcano):F1} Mesa={MPct(mMesa):F1} Dune={MPct(mDune):F1}");
             report.AppendLine("--------------------------------------------------");
 
             UnityEngine.Object.DestroyImmediate(texHeight);
-            UnityEngine.Object.DestroyImmediate(texDetail);
             UnityEngine.Object.DestroyImmediate(texHill);
             UnityEngine.Object.DestroyImmediate(texSlope);
-            UnityEngine.Object.DestroyImmediate(texStruct);
-            UnityEngine.Object.DestroyImmediate(texSub);
-            UnityEngine.Object.DestroyImmediate(texFeat);
-            UnityEngine.Object.DestroyImmediate(texProv);
         }
 
         private static void Save(Texture2D tex, string name)

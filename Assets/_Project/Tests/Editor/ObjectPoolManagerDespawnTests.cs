@@ -40,6 +40,14 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DespawnOrDeactivate_NullInstance_DoesNothing()
+        {
+            // Just verifying it doesn't throw or crash when passing null
+            ObjectPoolManager.DespawnOrDeactivate(null, null);
+            Assert.Pass("Did not crash");
+        }
+
+        [Test]
         public void Despawn_NoMarker_DestroysObject()
         {
             GameObject testObj = new GameObject("NoMarkerObj");

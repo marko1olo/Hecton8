@@ -117,6 +117,28 @@ namespace Hecton8.Tests.Editor.Caves
             // Cleanup
             UnityEngine.Object.DestroyImmediate(parentObj);
         }
+
+        [Test]
+        public void Prewarm_WithParentNullArrays_ReturnsRootTransform()
+        {
+            // Arrange
+            GameObject parentObj = new GameObject("Parent");
+
+            // Act
+            Transform result = CaveServiceRemnantRuntimeBuilder.Prewarm(
+                parentObj.transform,
+                null,
+                null,
+                null);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.name, Is.EqualTo("_ServiceRemnants"));
+            Assert.That(result.parent, Is.EqualTo(parentObj.transform));
+
+            // Cleanup
+            UnityEngine.Object.DestroyImmediate(parentObj);
+        }
     }
 }
 #endif

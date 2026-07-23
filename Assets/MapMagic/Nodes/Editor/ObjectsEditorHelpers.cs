@@ -26,8 +26,7 @@ namespace MapMagic.Nodes.GUI
 			if (multiPrefab)
 				using (Cell.LineStd) 
 				{
-					GameObject[] prefabsCopy = prefabs; //TODO: Action not taking ref. The layer should have onDraw function as Action<layer,int>, instead of just <int>
-					LayersEditor.DrawLayers(ref prefabs, onDraw: n => DrawObjectPrefabLayer(prefabsCopy,n,iconName) );
+					LayersEditor.DrawLayers(ref prefabs, onDraw: (p, n) => DrawObjectPrefabLayer(p,n,iconName) );
 				}
 			else
 			{

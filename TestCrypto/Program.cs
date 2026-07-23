@@ -6,7 +6,7 @@ using System.Text;
 class Test {
     static void Main() {
         string textToEncrypt = "Hello world!";
-        string key = "mysecretkey";
+        string key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? throw new InvalidOperationException("ENCRYPTION_KEY environment variable is not set.");
 
         byte[] encryptedBytes;
 
@@ -14,7 +14,7 @@ class Test {
         using (MemoryStream inputStream = new MemoryStream(Encoding.UTF8.GetBytes(textToEncrypt)))
         using (MemoryStream outputStream = new MemoryStream()) {
             byte[] salt = new byte[16];
-            using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider()) {
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create()) {
                 rng.GetBytes(salt);
             }
             outputStream.Write(salt, 0, salt.Length);

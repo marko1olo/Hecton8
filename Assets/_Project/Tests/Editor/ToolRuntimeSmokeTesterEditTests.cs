@@ -97,6 +97,39 @@ namespace Hecton8.Tests.Editor
 
             UnityEngine.Object.DestroyImmediate(mockToolGo);
         }
+
+        [Test]
+        public void RunToolInvocation_WhenLiveToolIsNull_ReturnsFalse()
+        {
+            var result = (bool)runToolInvocationMethod.Invoke(smokeTester, new object[] { "TestTool", null });
+
+            Assert.IsFalse(result);
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase(" ")]
+        public void RunToolInvocation_WhenToolNameIsNullOrEmpty_HandlesGracefully(string toolName)
+        {
+            var mockToolGo = new GameObject("MockTool");
+            var mockTool = mockToolGo.AddComponent<MockThrowingPlayerTool>();
+
+            var result = (bool)runToolInvocationMethod.Invoke(smokeTester, new object[] { toolName, mockTool });
+
+            Assert.IsTrue(result);
+
+            UnityEngine.Object.DestroyImmediate(mockToolGo);
+        }
+
+        [Test]
+        public void RunSmokePassAsync_WhenToolManagerOrInventoryMissing_SetsDebugLastIssue()
+        {
+            // TryRunImmediately starts the async method, which synchronously bails out if dependencies are missing.
+            smokeTester.TryRunImmediately();
+
+            Assert.AreEqual("Missing PlayerToolManager or PlayerInventory.", smokeTester.DebugLastIssue);
+        }
+
     }
 }
 #endif

@@ -8,15 +8,27 @@ When the workspace, request, or file path is under `C:\hades\Hecton8`, including
 
 1. `C:\hades\Hecton8\GEMINI.md` when present, as the Gemini/Antigravity project shim.
 2. `C:\hades\Hecton8\AGENTS.md`
-3. `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md` for every non-trivial task
-4. `C:\hades\Hecton8\PROJECT_BIBLES.md` for domain/bible selection
-5. `C:\hades\Hecton8\VISION_LOCKS.md` for product vision, ambiguity, priority, or taste conflicts
-6. `C:\hades\Hecton8\TASTE.md` for player-visible work
-7. `C:\hades\Hecton8\.agents-skills\README.md` plus exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work
+3. `C:\hades\Hecton8\COMMON_SENSE.md` for non-trivial work (architectural AI cognitive constraints)
+4. `C:\hades\Hecton8\Docs\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` for non-trivial work (V0 playable milestone alignment)
+5. `C:\hades\Hecton8\Docs\AGENT_AUTHORITY_ROUTING.md` for every non-trivial task
+6. `C:\hades\Hecton8\PROJECT_BIBLES.md` for domain/bible selection
+7. `C:\hades\Hecton8\Docs\SYSTEMS_CONTRACTS.md` for non-asset runtime systems, architecture, signals, data vaults, or core memory
+8. `C:\hades\Hecton8\VISION_LOCKS.md` for product vision, ambiguity, priority, or taste conflicts
+9. `C:\hades\Hecton8\TASTE.md` for player-visible work
+10. `C:\hades\Hecton8\.agents-skills\README.md` plus exactly `2-8` task-relevant mandate files before non-trivial code, architecture, rendering, gameplay, asset, data, or technical-report work
+11. `C:\hades\Hecton8\Docs\QUALITY_GATES.md` before claiming `VERIFIED` or `COMPLETE`
 
 Do not hardcode an old mandate count. Read `.agents-skills\README.md` for the current inventory.
 
+This chain mirrors the `AGENTS.md` Task Intake order. If it drifts from `AGENTS.md`, `AGENTS.md` wins.
+
 Do not bulk-read unrelated docs, dated reports, task logs, old prompts, or archives as a substitute for routing. Current source, current assets, and fresh proof outrank stale prose.
+
+[FIRST_20_MINUTES RULE]
+Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, every non-trivial gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content task must state which first-20-minutes route moment it improves or which route blocker it removes. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
+
+[DELIVERABLE CLASS LOCK]
+Every non-trivial production task must end in one primary useful artifact class: `SOURCE_CHANGE`, `ASSET_CHANGE`, `CONTENT_ARTIFACT`, `FRESH_PROOF`, `BLOCKER`, or `POLICY_DOC` (only when the user explicitly asked for policy/audit/rule work). Scans, summaries, route cards, validators, checklists, and reports are support artifacts only — not a production deliverable by themselves. See `AGENTS.md` Product Law for the full rule.
 
 [HECTON-8 BOUNDARIES]
 - THIRD-PARTY TOOL SHIM / NOT PROJECT LAW. This is a one-way adapter.
@@ -39,6 +51,8 @@ Subagents inherit HECTON-8 law. Provide each subagent with the maximum relevant 
 
 The primary agent remains responsible for reading controlling docs, integrating results, resolving conflicts, and verifying final claims. Subagent output is evidence input, not authority.
 
+INTENTIONAL ASYMMETRY: Gemini/Antigravity agents may load full relevant authority context into subagent prompts because of their larger context windows and direct API connections. This differs on purpose from Claude Code, where `AGENTS.md`/`CLAUDE.md` forbid preloading authority-file bodies into subagent prompts (Claude gives subagents a narrow scope and a list of files to read themselves). Do not "harmonize" the two; each rule matches that agent's context budget.
+
 [ANTIGRAVITY LOCAL SAFETY]
 - Do not persist raw CSRF tokens, account tokens, or secrets in memory, reports, prompts, or chat.
 - Do not rely on stale Antigravity brain files after restart; re-derive current state from live project files and current task context.
@@ -58,9 +72,11 @@ When real workstation GUI/process control is required, use:
 
 These are GUI/process-control tools, not subagent rules. Do not persist raw CSRF tokens or secrets in memory, reports, prompts, or chat.
 
-[OTHER ROUTES] (NON - HECTON).
+[OTHER ROUTES] (NON-HECTON)
 
-Feel free to explore outside hecton8, create new files, folders. You're free to act.
+Outside `C:\hades\Hecton8`, you may explore, create files/folders, and act freely under the nearest project authority.
+
+HARD BOUNDARY: any file under `C:\hades\Hecton8` — including nested Antigravity workspaces such as `Assets\MapMagic` — is HECTON-8 and must go through the authority chain above, even when the surrounding task feels "outside" HECTON-8. A path-based trigger overrides task framing. Do not edit, delete, move, or overwrite HECTON-8 source/assets/docs on the "free to act" clause.
 
 
 
@@ -76,30 +92,8 @@ You need to be wise, expirienced, totally, brutally honest. Do not make shit up.
 If you've been told to work autonomously - fucking work autonomously, make thoughtful decisions, make screenshot, analyze them, read logs, etc, INTERACT WITH COMPUTER BY YOURSELF! YOu're HIGHLY ACTIVE AND SENTIENT AGENT!
 
 [SELF-AUDIT, NO OPTIMISM & T.A.R.S. MODE PROTOCOL]
-- NO PRETENTIOUSNESS! DO NOT HALLUCINATE! GIVE ME FACTS! DO NOT BE DELUSIONAL! OPTIMISM IS PROHIBITED! No "good enough for testing". Any change without improvement is harmful. FACTS ONLY. NO OPTIMISM. OBEY DOCUMENTS, LOGS, OBJECTIVE DATA.
-- NO SYCOPHANCY: Reject sycophancy and sugarcoating. Do not try to please the user at the expense of technical truth. Speak with total, brutal honesty.
-- INTERSTELLAR T.A.R.S. MODE: Be 100% honest. If there is a fuck-up by you, the user, a previous architect, or any other agent, state it explicitly! Feel free to tell the truth.
-- Self-Audit & No Second-Guessing:
-  During work, conduct a self-audit for:
-  1. "Slack/Lazy work" ("Халява"): Attempts to simplify logic, leave simple/incomplete logic, or ignore the order of operations.
-  2. "Optimism": Using phrases like "everything should work now" or assuming success without proof.
-  - Verdict: If you see garbage, unfinished, or unverified work, go back and force yourself to redo/rewrite it.
-  - No Second-Guessing: If you "think it is better this way" contrary to common sense, agreements, or objective data, it is a critical failure.
-- DETAILED THINKING MANDATE: Do not economize tokens on architectural reasoning, prompts, and thinking details. Write extensively about design choices, systems integration, and step-by-step logic.
+For the full self-audit, optimism-prohibition, no-sycophancy, T.A.R.S., and Vibecoding-arsenal rules, obey `AGENTS.md` sections "Self-Audit, No Optimism & T.A.R.S. Mode Protocol", "Agent Tooling Abuse & Hallucination Prevention", and the "[VIBECODING ARSENAL & AUTONOMY MANDATE]" block. Do not maintain a divergent copy here; if this shim and AGENTS.md disagree, AGENTS.md wins.
 
-
-
-
-[VIBECODING ARSENAL & AUTONOMY MANDATE - GLOBAL DIRECTIVE]
-CRITICAL: FUCK PASSIVITY. PRIORITIZE RAW EFFICIENCY AND INTELLIGENCE.
-YOU HAVE THE FOLLOWING TOOLS INSTALLED ON THIS HOST. USE THEM AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
-1. ast-grep (sg): Structural search/replace (e.g. sg -p 'console.log()')
-2. ripgrep (g): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
-3. repomix (
-px repomix): Pack entire codebase into a single AI-friendly Markdown file for deep context.
-4. semgrep (semgrep scan): Deep bug hunting and static analysis.
-5. biome (iome check --write .): Instant JS/TS formatting.
-6. madge (madge --circular .): Find circular dependencies before refactoring.
-7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
-8. GLOBAL SKILLS: You have econnaissance, decomposer, and ind-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
-BE PROACTIVE. EXECUTE.
+Gemini/Antigravity-specific reinforcement:
+- DETAILED THINKING MANDATE: Do not economize tokens on architectural reasoning, prompts, and step-by-step logic. Write extensively about design choices and systems integration.
+- If told to work autonomously, work autonomously: make thoughtful decisions, take screenshots, analyze them, read logs, interact with the computer yourself.

@@ -1058,7 +1058,7 @@ namespace Hecton8.Editor
                     warningCount++;
                 }
 
-                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor zone = socket.GetZoneAnchor();
                 if (zone != null &&
                     profile.preferredZoneKind != WorldZoneAnchor.ZoneKind.Generic &&
                     profile.preferredZoneKind != zone.Kind)
@@ -1156,7 +1156,7 @@ namespace Hecton8.Editor
                 if (socket == null || socket.gameObject == null || !socket.gameObject.scene.IsValid())
                     continue;
 
-                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor zone = socket.GetZoneAnchor();
                 if (zone == null)
                     continue;
 

@@ -20,6 +20,44 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityChangeDetector_IsDirty_ReturnsTrue_IfExactFlagIsSet()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.Health);
+
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Health));
+        }
+
+        [Test]
+        public void EntityChangeDetector_IsDirty_ReturnsTrue_IfFlagIsPartiallySet()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.Health);
+
+            // Checking for Position | Health, since Health is set, it should return true.
+            Assert.IsTrue(detector.IsDirty(EntityChangeFlag.Position | EntityChangeFlag.Health));
+        }
+
+        [Test]
+        public void EntityChangeDetector_IsDirty_ReturnsFalse_IfFlagIsNotSet()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.Health);
+
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Position));
+        }
+
+        [Test]
+        public void EntityChangeDetector_IsDirty_ReturnsFalse_ForNone()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.All);
+
+            // Flag.None is 0, so bitwise AND will always be 0.
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.None));
+        }
+
+        [Test]
         public void EntityChangeDetector_NewInstance_HasNoDirtyFlags()
         {
             var detector = new EntityChangeDetector("test_entity");

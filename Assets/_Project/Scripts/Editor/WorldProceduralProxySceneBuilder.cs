@@ -51,7 +51,7 @@ namespace Hecton8.Editor
                 if (socket == null)
                     continue;
 
-                WorldZoneAnchor zone = socket.GetComponentInParent<WorldZoneAnchor>();
+                WorldZoneAnchor zone = socket.GetZoneAnchor();
                 WorldProceduralPlacementRule rule = ResolveRule(socket, zone, rules);
                 WorldPrefabFamilyProfile family = ResolveFamily(socket, zone, rule);
                 if (family == null)

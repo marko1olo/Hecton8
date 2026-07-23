@@ -131,6 +131,10 @@ namespace Crest
         UniversalAdditionalCameraData _cameraData;
 #endif
 
+#if UNITY_EDITOR
+        OceanPlanarReflection _editorPlanarReflection;
+#endif
+
         private long _lastRefreshOnFrame = -1;
 
         const int CULL_DISTANCE_COUNT = 32;
@@ -188,11 +192,15 @@ namespace Crest
             var editorCamera = OceanRenderer.Instance.ViewCamera;
             if (_camViewpoint.CompareTag("MainCamera") && editorCamera != null && editorCamera.cameraType == CameraType.SceneView)
             {
-                if (!editorCamera.TryGetComponent<OceanPlanarReflection>(out var editor))
+                if (_editorPlanarReflection == null || _editorPlanarReflection.gameObject != editorCamera.gameObject)
                 {
-                    editor = editorCamera.gameObject.AddComponent<OceanPlanarReflection>();
+                    if (!editorCamera.TryGetComponent<OceanPlanarReflection>(out _editorPlanarReflection))
+                    {
+                        _editorPlanarReflection = editorCamera.gameObject.AddComponent<OceanPlanarReflection>();
+                    }
                 }
 
+                var editor = _editorPlanarReflection;
                 if (editor != null)
                 {
                     editor._reflectionLayers = _reflectionLayers;

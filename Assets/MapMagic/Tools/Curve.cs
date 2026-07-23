@@ -239,9 +239,42 @@ namespace Den.Tools
 		public void UpdateLut ()
 		/// Fills the lut array with baked curve evaluations
 		{
+			if (points.Length == 0) return;
+			if (points.Length == 1)
+			{
+				for (int i = 0; i < lut.Length; i++) lut[i] = points[0].pos.y;
+				return;
+			}
+
+			int currentSegment = 0;
 			for (int i=0; i<lut.Length; i++)
-				lut[i] = EvaluatePrecise(1f*i / (lut.Length-1));
-				//TODO: can speed this up
+			{
+				float time = 1f*i / (lut.Length-1);
+
+				if (time <= points[0].pos.x)
+				{
+					lut[i] = points[0].pos.y;
+				}
+				else if (time >= points[points.Length-1].pos.x)
+				{
+					lut[i] = points[points.Length-1].pos.y;
+				}
+				else
+				{
+					while (currentSegment < points.Length - 2 && time > points[currentSegment + 1].pos.x)
+					{
+						currentSegment++;
+					}
+
+					Node prev = points[currentSegment];
+					Node next = points[currentSegment+1];
+
+					float delta = next.pos.x - prev.pos.x;
+					float relativeTime = (time - prev.pos.x) / delta;
+
+					lut[i] = EvaluatePrecise(prev, next, relativeTime);
+				}
+			}
 		}
 
 

@@ -7,6 +7,9 @@ public class MainMenuPerfTest : MonoBehaviour
 {
     public void Start()
     {
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 0;
+
         // Setup dummy hierarchy
         GameObject root = new GameObject("Root");
         for (int i = 0; i < 10; i++)

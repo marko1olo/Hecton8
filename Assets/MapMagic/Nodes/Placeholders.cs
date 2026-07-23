@@ -48,7 +48,8 @@ namespace MapMagic.Nodes
 			[NonSerialized] public Serializer.Value[] origValues = new Serializer.Value[0];
 			[NonSerialized] public UnityEngine.Object[] origUnityObjects = new UnityEngine.Object[0];
 
-			//TODO: does not serialize layers or multi-inlet links
+			// Limitation: does not serialize layers or multi-inlet links.
+			// Requires expanding the serialization system to handle complex references.
 
 			public override void Generate (TileData data, StopToken stop) { }
 
