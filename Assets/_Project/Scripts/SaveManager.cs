@@ -3436,6 +3436,11 @@ namespace Hecton8.SaveSystem
             return value > uint.MaxValue ? uint.MaxValue : (uint)value;
         }
 
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static Action TestHook_PublishSaveStatus_SimulateException;
+#endif
+
         private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
         {
             try
@@ -3454,6 +3459,10 @@ namespace Hecton8.SaveSystem
                 };
                 SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TestHook_PublishSaveStatus_SimulateException?.Invoke();
+#endif
 
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
                 {
