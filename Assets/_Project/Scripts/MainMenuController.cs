@@ -612,7 +612,19 @@ namespace Hecton.UI.MainMenu
 
             s_InteractiveRoots.Clear();
 
-            if (root.GetComponentInParent<Selectable>() != null || root.GetComponentInParent<ScrollRect>() != null)
+            bool foundInteractiveParent = false;
+            Transform p = root;
+            while (p != null)
+            {
+                if (p.gameObject.activeInHierarchy && (p.TryGetComponent<Selectable>(out _) || p.TryGetComponent<ScrollRect>(out _)))
+                {
+                    foundInteractiveParent = true;
+                    break;
+                }
+                p = p.parent;
+            }
+
+            if (foundInteractiveParent)
             {
                 s_InteractiveRoots.Add(root);
             }
