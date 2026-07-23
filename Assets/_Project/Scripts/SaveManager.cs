@@ -594,6 +594,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    TestHook_UnregisterPointer_SimulateException?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (System.Exception nativeSentinelException0)
@@ -4129,6 +4132,7 @@ namespace Hecton8.SaveSystem
 
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         internal static System.Action DisposeNativeArrayTestHook;
+        internal static System.Action TestHook_UnregisterPointer_SimulateException;
 #endif
 
         private static void DisposeTransientNativeArrayBestEffort<T>(
@@ -4180,6 +4184,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    TestHook_UnregisterPointer_SimulateException?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (Exception exception)
@@ -4191,6 +4198,9 @@ namespace Hecton8.SaveSystem
             {
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    TestHook_UnregisterPointer_SimulateException?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (Exception exception)
