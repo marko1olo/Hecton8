@@ -4040,6 +4040,11 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR
+        internal static Action s_testHookCreatePersistentNativeArrayException;
+        internal static Action s_testHookDisposeNativeArrayException;
+#endif
+
         private static NativeArray<T> CreatePersistentNativeArray<T>(
             int length,
             NativeArrayOptions options,
@@ -4049,6 +4054,9 @@ namespace Hecton8.SaveSystem
             try
             {
                 array = new NativeArray<T>(length, Allocator.Persistent, options);
+#if UNITY_EDITOR
+                s_testHookCreatePersistentNativeArrayException?.Invoke();
+#endif
                 int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
                 if (registrationId <= 0)
                     throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
@@ -4154,6 +4162,10 @@ namespace Hecton8.SaveSystem
             }
 
             array = default;
+
+#if UNITY_EDITOR
+            s_testHookDisposeNativeArrayException?.Invoke();
+#endif
 
             if (firstException != null)
                 throw firstException;
