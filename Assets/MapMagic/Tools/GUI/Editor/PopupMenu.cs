@@ -12,9 +12,6 @@ namespace Den.Tools.GUI.Popup
 			
 			public int minWidth = 100;
 
-			public const int verticalOffset = 5; //HACK: first 5 pixels of popup window could not be clicked in Unity
-			public const int verticalOffsetTmp = 4;
-
 			static GUIStyle blackLabel;
 
 			static private Texture2D background;
@@ -58,7 +55,7 @@ namespace Den.Tools.GUI.Popup
 			public void Show (Vector2 pos)
 			{
 				if (sortItems) Item.SortItems(items);
-				PopupWindow.Show(new Rect(pos.x,pos.y- verticalOffset, minWidth, 0), this);
+				PopupWindow.Show(new Rect(pos.x,pos.y, minWidth, 0), this);
 			}
 
 			public override Vector2 GetWindowSize() 
@@ -74,7 +71,7 @@ namespace Den.Tools.GUI.Popup
 
 				if (width != minWidth) width = minWidth;
 
-				return new Vector2(width, height+ verticalOffsetTmp);
+				return new Vector2(width, height);
 			}
 
 			public Rect GetIconRect (Rect srcRect, Texture2D texture)
@@ -110,14 +107,14 @@ namespace Den.Tools.GUI.Popup
 				}
 
 				Vector2 size = GetWindowSize();
-				Vector2 pos = new Vector2(0, verticalOffset);
+				Vector2 pos = new Vector2(0, 0);
 
 				//background
 				//if (Event.current.type == EventType.repaint) GUI.skin.box.Draw(fullRect, false, true, true, false);
 				UnityEngine.GUI.DrawTexture(new Rect(pos, size), background, ScaleMode.StretchToFill);
 
 				//list
-				float currentHeight = verticalOffsetTmp;
+				float currentHeight = 0;
 				int itemsCount = items.Count;
 				for (int i=0; i<itemsCount; i++)
 				{
