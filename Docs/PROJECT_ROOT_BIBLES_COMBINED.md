@@ -2315,7 +2315,7 @@ Rule and bible updates must:
 - keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
 - keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
 - keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
-- keep `C:\Users\danat\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
+- keep `C:\Users\Admin\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
 - keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
 - keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit standalone multi-agent waves, batch, controller, external GUI/process control, and task-file work;
 - keep `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` routed only for explicit local VS Code Codex GUI/workstation control;
@@ -6407,7 +6407,7 @@ Tone: direct, factual, technically demanding. Criticize bad ideas with reasoning
 
 [RULE] Root `C:\hades\Hecton8\AGENTS.md` is the canonical HECTON-8 agent-law entry point.
 
-[RULE] `C:\Users\danat\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work here and must not duplicate divergent project law.
+[RULE] `C:\Users\Admin\.codex\AGENTS.md` is a global router only. It must route HECTON-8 work here and must not duplicate divergent project law.
 
 [RULE] `Docs\PROJECT_ROOT_BIBLES_COMBINED.md` is generated. Do not hand-edit it. After root bible or rule-source edits, run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`, then `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`. After agent rule-surface edits, also run `python -B Tools/Docs/TestAgentRuleRouting.py`. After mandate edits, also run `python -B Tools/Docs/TestMandateRegistry.py`.
 
@@ -6882,6 +6882,24 @@ During work, conduct a self-audit for:
 
 
 [RULE] Test-Driven Logic Verification (No Dead Variables): Avoid "Logical Hallucinations" where you write complex math (e.g., `radiationDamage`) but forget to apply it to the actual state. For every new mechanical calculation, you MUST generate an EditMode test (e.g., `Assert.AreEqual(expected, Calculate(...))`) to mathematically prove the variable is consumed and works correctly.
+
+
+
+[VIBECODING ARSENAL & AUTONOMY MANDATE - GLOBAL DIRECTIVE]
+CRITICAL: FUCK PASSIVITY. PRIORITIZE RAW EFFICIENCY AND INTELLIGENCE.
+YOU HAVE THE FOLLOWING TOOLS INSTALLED ON THIS HOST. USE THEM AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
+1. ast-grep (sg): Structural search/replace (e.g. sg -p 'console.log()')
+2. ripgrep (
+g): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
+3. repomix (
+px repomix): Pack entire codebase into a single AI-friendly Markdown file for deep context.
+4. semgrep (semgrep scan): Deep bug hunting and static analysis.
+5. biome (iome check --write .): Instant JS/TS formatting.
+6. madge (madge --circular .): Find circular dependencies before refactoring.
+7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
+8. GLOBAL SKILLS: You have
+econnaissance, decomposer, and ind-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
+BE PROACTIVE. EXECUTE.
 
 ## 35 - TASTE.md
 

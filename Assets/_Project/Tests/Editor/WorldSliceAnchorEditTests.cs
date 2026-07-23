@@ -110,6 +110,74 @@ namespace Hecton8.Tests.Editor
             Object.DestroyImmediate(go2);
             Object.DestroyImmediate(dummyGo);
         }
+        [Test]
+        public void CopyActiveAnchorsTo_DestinationSmallerThanActiveCount_CopiesUpToCapacity()
+        {
+            // Reset static state for clean test isolation
+            MethodInfo resetMethod = typeof(WorldSliceAnchor).GetMethod("ResetStaticState", BindingFlags.NonPublic | BindingFlags.Static);
+            resetMethod?.Invoke(null, null);
+
+            GameObject go1 = new GameObject("Anchor1");
+            WorldSliceAnchor anchor1 = go1.AddComponent<WorldSliceAnchor>();
+
+            GameObject go2 = new GameObject("Anchor2");
+            WorldSliceAnchor anchor2 = go2.AddComponent<WorldSliceAnchor>();
+
+            GameObject go3 = new GameObject("Anchor3");
+            WorldSliceAnchor anchor3 = go3.AddComponent<WorldSliceAnchor>();
+
+            WorldSliceAnchor[] dest = new WorldSliceAnchor[2];
+
+            int count = WorldSliceAnchor.CopyActiveAnchorsTo(dest);
+
+            // AddComponent automatically registers the anchor since OnEnable is called.
+            // But we only have capacity for 2.
+            Assert.AreEqual(2, count, "Should have only copied 2 anchors due to destination capacity.");
+
+            Assert.IsNotNull(dest[0], "Copied anchor should not be null.");
+            Assert.IsNotNull(dest[1], "Copied anchor should not be null.");
+
+            // Cleanup
+            Object.DestroyImmediate(go1);
+            Object.DestroyImmediate(go2);
+            Object.DestroyImmediate(go3);
+        }
+        [Test]
+        public void CopyActiveAnchorsTo_WithNullAnchorInList_SkipsAndContinues()
+        {
+            // Reset static state for clean test isolation
+            MethodInfo resetMethod = typeof(WorldSliceAnchor).GetMethod("ResetStaticState", BindingFlags.NonPublic | BindingFlags.Static);
+            resetMethod?.Invoke(null, null);
+
+            GameObject go1 = new GameObject("Anchor1");
+            WorldSliceAnchor anchor1 = go1.AddComponent<WorldSliceAnchor>();
+
+            GameObject go2 = new GameObject("Anchor2");
+            WorldSliceAnchor anchor2 = go2.AddComponent<WorldSliceAnchor>();
+
+            GameObject go3 = new GameObject("Anchor3");
+            WorldSliceAnchor anchor3 = go3.AddComponent<WorldSliceAnchor>();
+
+            // Force a null into the active anchors array to test the 'if (anchor == null) continue;' branch.
+            // This simulates an edge case of an empty/null input internally.
+            FieldInfo activeAnchorsField = typeof(WorldSliceAnchor).GetField("_ActiveAnchors", BindingFlags.NonPublic | BindingFlags.Static);
+            WorldSliceAnchor[] activeAnchors = (WorldSliceAnchor[])activeAnchorsField.GetValue(null);
+            activeAnchors[1] = null;
+
+            WorldSliceAnchor[] dest = new WorldSliceAnchor[5];
+            int count = WorldSliceAnchor.CopyActiveAnchorsTo(dest);
+
+            Assert.AreEqual(2, count, "Should have skipped the null anchor and copied the other 2.");
+            Assert.AreEqual(anchor1, dest[0], "First valid anchor should be copied.");
+            Assert.AreEqual(anchor3, dest[1], "Second valid anchor should be copied.");
+
+            // Cleanup
+            Object.DestroyImmediate(go1);
+            Object.DestroyImmediate(go2);
+            Object.DestroyImmediate(go3);
+        }
+
+
     }
 }
 #endif

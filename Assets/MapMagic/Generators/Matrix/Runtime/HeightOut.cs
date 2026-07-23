@@ -228,13 +228,18 @@ namespace MapMagic.Nodes.MatrixGenerators
 			data.heights = null;
 		}
 
-		public interface IApplyHeightData : IApplyData { } //common type for all height applies
+		public interface IApplyHeightData : IApplyData
+		{
+			float terrainHeight { get; }
+		} //common type for all height applies
 		
 		public class ApplySetData : IApplyData, IApplyHeightData
 		{
 			public float[,] heights2D;
 			public float height;
 			public Coord offset;  //a partial rect to avoid reading-writing all of the terrain. Size is the size of the array. 0 is data 0. Max should not be more than data size.
+
+			public float terrainHeight => height;
 
 			public void Read (Terrain terrain) 
 			{ 
@@ -278,6 +283,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 		{
 			public float[][,] heights2DSplits;
 			public float height;
+
+			public float terrainHeight => height;
 
 			public void Apply (Terrain terrain)
 			{
@@ -390,6 +397,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 			public int margins;
 			public int splitSize;
 			public float height;
+
+			public float terrainHeight => height;
 
 			public byte[] texBytes;
 			

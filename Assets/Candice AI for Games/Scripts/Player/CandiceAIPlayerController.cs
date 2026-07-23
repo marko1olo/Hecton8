@@ -51,6 +51,11 @@ public class CandiceAIPlayerController : MonoBehaviour
     [HideInInspector]
     public bool canMove = true;
 
+    void Reset()
+    {
+        characterController = GetComponent<CharacterController>();
+    }
+
     void Start()
     {
         //get transform and controller
@@ -59,6 +64,7 @@ public class CandiceAIPlayerController : MonoBehaviour
         {
             characterController = GetComponent<CharacterController>();
         }
+
 
         //reset y rotation on start
         if (rotation.y == 0f) {

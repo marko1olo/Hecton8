@@ -36,9 +36,7 @@ namespace Den.Tools.Serialization
 			type = Type.GetType(typeLine);
 
 			if (type == null) //not exist anymore
-//				throw new Exception("Could not find type for: " + typeLine);
-{ Debug.LogError("Could not find type for: " + typeLine); return (name,null); }
-//TODO: should be exception
+				throw new Exception("Could not find type for: " + typeLine);
 
 			//id
 			int id = 0; //0 is no id

@@ -230,8 +230,8 @@ namespace MapMagic.Terrains
 			
 
 			//welding
-			//TODO: check active terrain to know if the switch is for real 
-			if (lodSwitched &&
+			bool isTerrainActive = newActiveTerrain != null && newActiveTerrain.isActiveAndEnabled;
+			if (lodSwitched && isTerrainActive &&
 				mapMagic.tiles.Contains(coord) ) //otherwise error on SwitchLod called from Generate (when tile has been moved)
 			{
 				if (useMain)
@@ -455,136 +455,6 @@ namespace MapMagic.Terrains
 		#endregion
 
 
-		#region Async/Task
-
-			/*private Task draftTask;
-			private Task mainTask;
-
-			private bool reGenDraft;
-
-
-			public async Task GenerateAsync (Graph graph, bool genMain, bool genDraft)
-			{
-				if (draft != null  &&  genDraft) draftTask = GenerateDraftAsync(graph);
-				if (main != null  &&  genMain) mainTask = GenerateMainAsync(graph);
-
-				if (draft != null  &&  genDraft) await draftTask;
-				if (main != null  &&  genMain) await mainTask;
-
-				SwitchLod();
-			}
-
-
-			public async Task GenerateDraftAsync (Graph graph)
-			{
-				if (draftTask != null && !draftTask.IsCompleted)
-					{ reGenDraft = true; return; }
-
-				draftTask = GenerateDraftAsyncInternal(graph);
-				await draftTask;
-
-				if (reGenDraft)
-				{
-					reGenDraft = false;
-					draftTask = GenerateDraftAsyncInternal(graph);
-					await draftTask;
-				}
-			}
-
-			public async Task GenerateDraftAsyncInternal (Graph graph)
-			{
-				//cancel the task that's already running
-				if (draftTask != null && !draftTask.IsCompleted)
-				{
-					//draft.Data.stop = true; //don't stop draft, make it refresh constantly
-
-					//but make it don't wait if it wasn't started
-
-					//await draftTask;
-				}
-				
-				draft.data.area = new Area(coord, (int)mapMagic.draftResolution, mapMagic.draftMargins, mapMagic.tileSize);
-				draft.data.parentGraph = graph;
-				draft.data.random = graph.random;
-				draft.data.isPreview = false; //don't preview draft in any case
-				draft.data.isDraft = false;
-				//draft.Data.stop = false;
-
-				//draft.Data.parentGraph.CheckClear(draft.Data);
-				await Task.Run( ()=> draft.data.parentGraph.CheckClear(draft.data) );
-
-				draft.data.parentGraph.Prepare(draft.data, main.terrain);
-
-				await Task.Run (() =>
-				{
-					draft.data.parentGraph.Generate(draft.data);
-					draft.data.parentGraph.Finalize(draft.data);
-				});
-
-				//draft.Data.parentGraph.Generate(draft.Data);
-				//draft.Data.parentGraph.Finalize(draft.Data);
-
-				//if (draft.Data.stop) return;
-
-				if (draft.terrain == null) draft.terrain = CreateTerrain("Draft Terrain");
-
-				while (draft.data.ApplyCount != 0)
-				{
-					ITerrainData apply = draft.data.DequeueApply(); //this will remove apply from the list
-					apply.Apply(draft.terrain);
-				}
-			}
-
-
-			public async Task GenerateMainAsync (Graph graph)
-			{
-				//cancel the task that's already running
-				if (mainTask != null && !mainTask.IsCompleted)
-				{
-					//draft.Data.stop = true; //don't stop draft, make it refresh constantly
-					await mainTask;
-				}
-				
-				main.data.area = new Area(coord, (int)mapMagic.tileResolution, mapMagic.tileMargins, mapMagic.tileSize);
-				main.data.parentGraph = graph;
-				main.data.random = graph.random;
-				main.data.isPreview = preview;
-				main.data.isDraft = false;
-				//main.Data.stop = false;
-
-				//clear changed nodes for main data first to see if draft should be switched
-				await Task.Run( ()=> main.data.parentGraph.CheckClear(main.data) );
-
-				//prepare
-				main.data.parentGraph.Prepare(main.data, main.terrain);
-
-				//generate
-				await Task.Run ( ()=>
-				{
-					main.data.parentGraph.Generate(main.data);
-					main.data.parentGraph.Finalize(main.data);
-
-					//saving last generated results to use as preview
-					//if (main.data.isPreview) 
-					//	main.data.parentGraph.lastGeneratedResults.Target = main.data.products; //TODO: to MapMagic?
-
-					//merging locks (by event?)
-					//for (int l=0; l<main.data.lockReads.Count; l++)
-					//	main.data.lockReads[l].MergeLocks(main.data.terrainApply);
-				});
-
-				//if (main.Data.stop) return;
-
-				if (main.terrain == null) main.terrain = CreateTerrain("Main Terrain");
-
-				while (main.data.ApplyCount != 0)
-				{
-					ITerrainData apply = main.data.DequeueApply(); //this will remove apply from the list
-					apply.Apply(main.terrain);
-				}
-			}*/
-
-		#endregion
 
 
 		#region Threaded

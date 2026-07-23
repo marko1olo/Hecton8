@@ -14,7 +14,10 @@ half4 SampleOceanDataAtWorldPosition(in Texture2DArray i_oceanData, in const flo
 	// Sample ocean data textures - always lerp between 2 scales, so sample two textures
 
 	const float meshScaleLerp = _CrestPerCascadeInstanceData[_LD_SliceIndex]._meshScaleLerp;
-	float lodAlpha = ComputeLodAlpha(i_positionWS, meshScaleLerp, _CrestCascadeData[0]);
+	float2 offsetFromCenter = abs(float2(i_positionWS.x - _OceanCenterPosWorld.x, i_positionWS.z - _OceanCenterPosWorld.z));
+	float taxicab_norm = max(offsetFromCenter.x, offsetFromCenter.y);
+	float lodAlpha = taxicab_norm / _CrestCascadeData[0]._scale - 1.0;
+	lodAlpha = ComputeLodAlpha(lodAlpha, meshScaleLerp);
 
 	// Sample weights. params.z allows shape to be faded out (used on last lod to support pop-less scale transitions)
 	float wt_smallerLod = (1.0 - lodAlpha) * _CrestCascadeData[_LD_SliceIndex]._weight;

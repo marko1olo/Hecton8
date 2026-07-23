@@ -44,10 +44,17 @@ namespace Hecton8.SaveSystem
     [DefaultExecutionOrder(-8000)]
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+#if UNITY_EDITOR
+        internal static Action TestHookSimulateCleanupFailure;
+#endif
         private static int _signalPushDropCount;
         private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
         private static int s_criticalSectorCorruptionNotificationMissCount;
+
+#if UNITY_EDITOR
+        internal static Action Test_OnBeforeShutdownServiceState;
+#endif
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -442,6 +449,7 @@ namespace Hecton8.SaveSystem
 
         private static class StaticNativeBuffers
         {
+            internal static System.Action TestHook_DisposeThrow;
             private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
             public static NativeArray<byte> RawWriteBuffer;
@@ -521,6 +529,7 @@ namespace Hecton8.SaveSystem
 
             public static void Dispose()
             {
+                TestHook_DisposeThrow?.Invoke();
                 lock (SaveLoadCandidateScratchSync)
                 {
                     lock (Sync)
@@ -641,6 +650,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR
+                    Test_OnBeforeShutdownServiceState?.Invoke();
+#endif
                     manager.ShutdownServiceState();
                 }
                 catch (Exception exception)
@@ -3436,6 +3448,11 @@ namespace Hecton8.SaveSystem
             return value > uint.MaxValue ? uint.MaxValue : (uint)value;
         }
 
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static Action TestHook_PublishSaveStatus_SimulateException;
+#endif
+
         private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
         {
             try
@@ -3455,6 +3472,10 @@ namespace Hecton8.SaveSystem
                 SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TestHook_PublishSaveStatus_SimulateException?.Invoke();
+#endif
+
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
                 {
                     SlotHash = slotHash,
@@ -3464,6 +3485,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3476,6 +3500,10 @@ namespace Hecton8.SaveSystem
         {
             PublishSaveStatus(ResolveSlotHash(slotIndex, slotName), operationId, state, progress01, flags);
         }
+
+#if UNITY_EDITOR
+        internal static System.Action PublishSaveLifecycleTestHook;
+#endif
 
         private static void PublishSaveStatus(uint slotHash, uint operationId, byte state, float progress01, uint flags)
         {
@@ -3504,6 +3532,9 @@ namespace Hecton8.SaveSystem
                     State = state,
                     Flags = clampedFlags
                 };
+#if UNITY_EDITOR
+                PublishSaveLifecycleTestHook?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in lifecycle);
             }
             catch (Exception exception)
@@ -3547,6 +3578,9 @@ namespace Hecton8.SaveSystem
                     Result = args.Succeeded ? (byte)1 : (byte)0,
                     Flags = args.Succeeded ? (byte)0 : (byte)1
                 };
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_PublishSaveCompleted_BeforePush?.Invoke();
+#endif
                 TryPushSignalTrackedBestEffort(in completed);
             }
             catch (Exception exception)
@@ -4040,6 +4074,11 @@ namespace Hecton8.SaveSystem
             }
         }
 
+#if UNITY_EDITOR
+        internal static Action s_testHookCreatePersistentNativeArrayException;
+        internal static Action s_testHookDisposeNativeArrayException;
+#endif
+
         private static NativeArray<T> CreatePersistentNativeArray<T>(
             int length,
             NativeArrayOptions options,
@@ -4049,6 +4088,9 @@ namespace Hecton8.SaveSystem
             try
             {
                 array = new NativeArray<T>(length, Allocator.Persistent, options);
+#if UNITY_EDITOR
+                s_testHookCreatePersistentNativeArrayException?.Invoke();
+#endif
                 int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
                 if (registrationId <= 0)
                     throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
@@ -4058,6 +4100,13 @@ namespace Hecton8.SaveSystem
             catch (Exception exception)
             {
                 Exception cleanupException = null;
+#if UNITY_EDITOR
+                if (TestHookSimulateCleanupFailure != null)
+                {
+                    try { TestHookSimulateCleanupFailure(); }
+                    catch (Exception hookEx) { cleanupException = hookEx; }
+                }
+#endif
                 DisposeNativeArrayBestEffort(ref array, ref cleanupException, sentinelLabel: sentinelLabel);
                 if (cleanupException != null)
                     throw new AggregateException(
@@ -4078,6 +4127,10 @@ namespace Hecton8.SaveSystem
             DisposeNativeArray(ref array, dependency, deferDisposal);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static System.Action DisposeNativeArrayTestHook;
+#endif
+
         private static void DisposeTransientNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
             ref Exception firstException,
@@ -4087,6 +4140,9 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                DisposeNativeArrayTestHook?.Invoke();
+#endif
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
@@ -4155,9 +4211,15 @@ namespace Hecton8.SaveSystem
 
             array = default;
 
+#if UNITY_EDITOR
+            s_testHookDisposeNativeArrayException?.Invoke();
+#endif
+
             if (firstException != null)
                 throw firstException;
         }
+
+        internal static Action<Exception> s_TestDisposeNativeArrayBestEffortHook;
 
         private static void DisposeNativeArrayBestEffort<T>(
             ref NativeArray<T> array,
@@ -4168,6 +4230,10 @@ namespace Hecton8.SaveSystem
         {
             try
             {
+                if (s_TestDisposeNativeArrayBestEffortHook != null)
+                {
+                    s_TestDisposeNativeArrayBestEffortHook(firstException);
+                }
                 DisposeNativeArray(ref array, dependency, deferDisposal);
             }
             catch (Exception exception)
@@ -4280,6 +4346,9 @@ namespace Hecton8.SaveSystem
             LogErrorBestEffort("[SaveManager] signal bridge failed: " + exception);
         }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static Action TestHook_PublishSaveCompleted_BeforePush;
+#endif
         private static void TryPushSignalTrackedBestEffort<TSignal>(in TSignal signal)
             where TSignal : unmanaged, ISignal
         {
@@ -5295,110 +5364,59 @@ namespace Hecton8.SaveSystem
             data.proceduralTerrainIdentity = identity;
         }
 
-        private static void ValidateProceduralTerrainIdentity(SaveData data)
+        private static bool CheckProceduralTerrainMacroMismatch(ProceduralTerrainIdentityDTO saved, TerrainArtifactIdentityDTO expected)
         {
-            if (data == null || !data.proceduralTerrainIdentity.HasMacroIdentity)
-                return;
+            return saved.authoringSeed != expected.AuthoringSeed ||
+                   saved.macroArtifactVersion != expected.MacroArtifactVersion ||
+                   math.abs(saved.macroChunkSizeMeters - expected.ChunkSizeMeters) > 0.001f ||
+                   saved.chunkMinX != expected.ChunkMinX ||
+                   saved.chunkMinZ != expected.ChunkMinZ ||
+                   saved.chunkMaxX != expected.ChunkMaxX ||
+                   saved.chunkMaxZ != expected.ChunkMaxZ ||
+                   saved.chunkArtifactRangeHash != expected.ChunkArtifactRangeHash;
+        }
 
-            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
-            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
-            int runtimeSeed = seedProvider != null && seedProvider.IsInitialized
-                ? seedProvider.RuntimeWorldSeed
-                : saved.runtimeSeed;
-            int worldGenerationVersionId = seedProvider != null && seedProvider.IsInitialized
-                ? math.max(0, seedProvider.RuntimeWorldGenerationVersionId)
-                : saved.worldGenerationVersionId;
+        private static bool CheckProceduralTerrainSeedMismatch(
+            ProceduralTerrainIdentityDTO saved,
+            IWorldSeedProvider seedProvider,
+            int runtimeSeed,
+            int worldGenerationVersionId)
+        {
+            return seedProvider != null &&
+                   seedProvider.IsInitialized &&
+                   ((saved.runtimeSeed != 0 && saved.runtimeSeed != runtimeSeed) ||
+                    (saved.worldGenerationVersionId > 0 &&
+                     saved.worldGenerationVersionId != worldGenerationVersionId));
+        }
 
-            TerrainArtifactIdentityDTO expected = ResolveRuntimeTerrainArtifactIdentity(
-                runtimeSeed,
-                worldGenerationVersionId);
-
-            bool macroMismatch =
-                saved.authoringSeed != expected.AuthoringSeed ||
-                saved.macroArtifactVersion != expected.MacroArtifactVersion ||
-                math.abs(saved.macroChunkSizeMeters - expected.ChunkSizeMeters) > 0.001f ||
-                saved.chunkMinX != expected.ChunkMinX ||
-                saved.chunkMinZ != expected.ChunkMinZ ||
-                saved.chunkMaxX != expected.ChunkMaxX ||
-                saved.chunkMaxZ != expected.ChunkMaxZ ||
-                saved.chunkArtifactRangeHash != expected.ChunkArtifactRangeHash;
-
-            bool seedMismatch = seedProvider != null &&
-                                seedProvider.IsInitialized &&
-                                ((saved.runtimeSeed != 0 && saved.runtimeSeed != runtimeSeed) ||
-                                 (saved.worldGenerationVersionId > 0 &&
-                                  saved.worldGenerationVersionId != worldGenerationVersionId));
-
-            bool waterMismatch = false;
+        private static bool CheckProceduralTerrainWaterMismatch(ProceduralTerrainIdentityDTO saved)
+        {
             bool hasSavedWaterCalibration =
                 (saved.flags & ProceduralTerrainIdentityDTO.FlagsWaterCalibrationPresent) != 0u &&
                 saved.waterCalibrationSourceHash != 0u;
+
             if (hasSavedWaterCalibration &&
                 TryResolveActiveWaterCalibration(out WorldWaterLevelCalibrationDTO waterSnapshot))
             {
-                waterMismatch =
+                bool waterMismatch =
                     waterSnapshot.SourceHash != 0u &&
                     waterSnapshot.SourceHash != saved.waterCalibrationSourceHash;
                 waterMismatch |=
                     math.abs(waterSnapshot.ResolvedWaterLevelY - saved.selectedWaterLevelY) > 0.01f;
-            }
-            else if (hasSavedWaterCalibration)
-            {
-                waterMismatch = true;
+                return waterMismatch;
             }
 
-            uint expectedMesoParamsHash = BuildTerrainMesoParamsHash(expected.AuthoringSeed, expected.RuntimeSeed);
-            bool materialContractMismatch =
-                saved.surfaceMaterialContractVersion != 0u &&
-                saved.surfaceMaterialContractVersion != WorldTerrainSurfaceMaterialResolver.ContractVersion;
-            bool mesoContractMismatch =
-                (saved.mesoDetailContractVersion != 0u &&
-                 saved.mesoDetailContractVersion != WorldTerrainMesoDetailFields.ContractVersion) ||
-                (saved.detailEligibilityContractVersion != 0u &&
-                 saved.detailEligibilityContractVersion != WorldTerrainDetailContracts.ContractVersion) ||
-                (saved.mesoParamsHash != 0u &&
-                 saved.mesoParamsHash != expectedMesoParamsHash);
-            bool providerIdentityMismatch =
-                saved.terrainProviderFlags != 0u &&
-                expected.Flags != 0u &&
-                (saved.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider) !=
-                (expected.Flags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider);
-            bool heightPayloadMismatch =
-                saved.heightCacheRevision > 0 &&
-                expected.CacheRevision > 0 &&
-                saved.heightCacheRevision != expected.CacheRevision;
-            bool terrainEntityMismatch =
-                saved.terrainEntityHash != 0u &&
-                expected.TerrainEntityHash != 0u &&
-                saved.terrainEntityHash != expected.TerrainEntityHash;
-
-            if (!macroMismatch &&
-                !seedMismatch &&
-                !waterMismatch &&
-                !materialContractMismatch &&
-                !mesoContractMismatch &&
-                !providerIdentityMismatch &&
-                !heightPayloadMismatch &&
-                !terrainEntityMismatch)
-            {
-                return;
-            }
-
-            float mismatchMask = 0f;
-            if (macroMismatch) mismatchMask += 1f;
-            if (seedMismatch) mismatchMask += 2f;
-            if (waterMismatch) mismatchMask += 4f;
-            if (materialContractMismatch) mismatchMask += 8f;
-            if (mesoContractMismatch) mismatchMask += 16f;
-            if (providerIdentityMismatch) mismatchMask += 32f;
-            if (heightPayloadMismatch) mismatchMask += 64f;
-            if (terrainEntityMismatch) mismatchMask += 128f;
-            PublishPerformanceWarningBestEffort(
-                TerrainIdentityMismatchTelemetryHash,
-                TerrainIdentityMismatchContextHash,
-                mismatchMask);
+            return hasSavedWaterCalibration;
+        }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static void LogProceduralTerrainIdentityMismatch(
+            ProceduralTerrainIdentityDTO saved,
+            TerrainArtifactIdentityDTO expected,
+            int runtimeSeed,
+            int worldGenerationVersionId,
+            uint expectedMesoParamsHash)
+        {
             LogWarning(
                 "[SaveManager] Procedural terrain identity mismatch: saved seed " +
                 saved.runtimeSeed +
@@ -5451,6 +5469,87 @@ namespace Hecton8.SaveSystem
                 " / terrain entity " +
                 expected.TerrainEntityHash +
                 ".");
+        }
+#endif
+
+        private static void ValidateProceduralTerrainIdentity(SaveData data)
+        {
+            if (data == null || !data.proceduralTerrainIdentity.HasMacroIdentity)
+                return;
+
+            ProceduralTerrainIdentityDTO saved = data.proceduralTerrainIdentity;
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+
+            int runtimeSeed = seedProvider != null && seedProvider.IsInitialized
+                ? seedProvider.RuntimeWorldSeed
+                : saved.runtimeSeed;
+            int worldGenerationVersionId = seedProvider != null && seedProvider.IsInitialized
+                ? math.max(0, seedProvider.RuntimeWorldGenerationVersionId)
+                : saved.worldGenerationVersionId;
+
+            TerrainArtifactIdentityDTO expected = ResolveRuntimeTerrainArtifactIdentity(
+                runtimeSeed,
+                worldGenerationVersionId);
+
+            bool macroMismatch = CheckProceduralTerrainMacroMismatch(saved, expected);
+            bool seedMismatch = CheckProceduralTerrainSeedMismatch(saved, seedProvider, runtimeSeed, worldGenerationVersionId);
+            bool waterMismatch = CheckProceduralTerrainWaterMismatch(saved);
+
+            uint expectedMesoParamsHash = BuildTerrainMesoParamsHash(expected.AuthoringSeed, expected.RuntimeSeed);
+            bool materialContractMismatch =
+                saved.surfaceMaterialContractVersion != 0u &&
+                saved.surfaceMaterialContractVersion != WorldTerrainSurfaceMaterialResolver.ContractVersion;
+            bool mesoContractMismatch =
+                (saved.mesoDetailContractVersion != 0u &&
+                 saved.mesoDetailContractVersion != WorldTerrainMesoDetailFields.ContractVersion) ||
+                (saved.detailEligibilityContractVersion != 0u &&
+                 saved.detailEligibilityContractVersion != WorldTerrainDetailContracts.ContractVersion) ||
+                (saved.mesoParamsHash != 0u &&
+                 saved.mesoParamsHash != expectedMesoParamsHash);
+            bool providerIdentityMismatch =
+                saved.terrainProviderFlags != 0u &&
+                expected.Flags != 0u &&
+                (saved.terrainProviderFlags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider) !=
+                (expected.Flags & TerrainArtifactIdentityDTO.FlagsMapMagicProvider);
+            bool heightPayloadMismatch =
+                saved.heightCacheRevision > 0 &&
+                expected.CacheRevision > 0 &&
+                saved.heightCacheRevision != expected.CacheRevision;
+            bool terrainEntityMismatch =
+                saved.terrainEntityHash != 0u &&
+                expected.TerrainEntityHash != 0u &&
+                saved.terrainEntityHash != expected.TerrainEntityHash;
+
+            if (!macroMismatch &&
+                !seedMismatch &&
+                !waterMismatch &&
+                !materialContractMismatch &&
+                !mesoContractMismatch &&
+                !providerIdentityMismatch &&
+                !heightPayloadMismatch &&
+                !terrainEntityMismatch)
+            {
+                return;
+            }
+
+            float mismatchMask = 0f;
+            if (macroMismatch) mismatchMask += 1f;
+            if (seedMismatch) mismatchMask += 2f;
+            if (waterMismatch) mismatchMask += 4f;
+            if (materialContractMismatch) mismatchMask += 8f;
+            if (mesoContractMismatch) mismatchMask += 16f;
+            if (providerIdentityMismatch) mismatchMask += 32f;
+            if (heightPayloadMismatch) mismatchMask += 64f;
+            if (terrainEntityMismatch) mismatchMask += 128f;
+
+            PublishPerformanceWarningBestEffort(
+                TerrainIdentityMismatchTelemetryHash,
+                TerrainIdentityMismatchContextHash,
+                mismatchMask);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogProceduralTerrainIdentityMismatch(
+                saved, expected, runtimeSeed, worldGenerationVersionId, expectedMesoParamsHash);
 #endif
             if (macroMismatch || seedMismatch || waterMismatch || materialContractMismatch || mesoContractMismatch)
                 TryPushGeologicalAnomalyNotification();
@@ -6314,39 +6413,6 @@ namespace Hecton8.SaveSystem
         private async Awaitable<(bool success, bool rejected)> TryRestoreVoxelDataAsync(string slotName, byte slotIndex, uint operationId, SaveData data, NativeArray<byte> loadedVoxelDeltaSnapshot)
         {
             VoxelDeltaProcessor voxelDeltaProcessor = null;
-            bool loadedVoxelDeltaSnapshotRejectedForLoad = false;
-
-            async Awaitable<(bool success, bool rejected)> FailLoad(string message, bool requiresMainThread)
-            {
-                if (requiresMainThread)
-                    await Awaitable.MainThreadAsync();
-                RecordFailure(slotName, "load", message);
-                LastOperationError = message;
-                LogError("[SaveManager] Load failed: " + message);
-                SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(message), message);
-                PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
-                HideLoadingPipelineScreen();
-                return (false, loadedVoxelDeltaSnapshotRejectedForLoad);
-            }
-
-            void TryRestoreRollbackSnapshot(bool rollbackAcquired, NativeArray<byte> rollbackSnapshot, string failureContext)
-            {
-                bool rollbackRestoreSucceeded = false;
-                if (rollbackAcquired)
-                {
-                    if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackSnapshot, out string rollbackError))
-                    {
-                        rollbackRestoreSucceeded = true;
-                    }
-                    else
-                    {
-                        LogError($"[SaveManager] Failed to restore voxel state after rejected {failureContext}: {rollbackError}");
-                    }
-                }
-
-                if (!rollbackRestoreSucceeded)
-                    voxelDeltaProcessor.LoadFromSaveData(null);
-            }
             for (int i = 0; i < _saveableCount; i++)
             {
                 ISaveable saveable = _saveables[i];
@@ -6362,78 +6428,118 @@ namespace Hecton8.SaveSystem
 
             if (voxelDeltaProcessor != null)
             {
-                if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
-                {
-                    NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
-                    bool rollbackVoxelDeltaSnapshotAcquired = false;
-                    try
-                    {
-                        bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
-                            out rollbackVoxelDeltaSnapshot,
-                            out int rollbackVoxelDeltaSnapshotBytes);
-                        if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            rollbackVoxelDeltaSnapshotAcquired = true;
-                        }
-                        else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
-                        {
-                            return await FailLoad("Voxel delta rollback snapshot copy failed before load.", requiresMainThread: true);
-                        }
-
-                        if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
-                        {
-                            loadedVoxelDeltaSnapshotRejectedForLoad = true;
-                            if (HasLoadableVoxelDeltaDtoFallback(data))
-                            {
-                                string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
-                                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
-                                {
-                                    TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
-
-                                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                                        ? "Voxel delta binary payload load failed."
-                                        : voxelFallbackError;
-                                    return await FailLoad(loadFailure, requiresMainThread: true);
-                                }
-                            }
-                            else
-                            {
-                                TryRestoreRollbackSnapshot(rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
-
-                                string loadFailure = string.IsNullOrEmpty(voxelLoadError)
-                                    ? "Voxel delta native snapshot load failed."
-                                    : voxelLoadError;
-                                return await FailLoad(loadFailure, requiresMainThread: true);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        if (rollbackVoxelDeltaSnapshotAcquired)
-                            voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
-                    }
-                }
-                else
-                {
-                    if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
-                    {
-                        string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
-                            ? "Voxel delta binary payload load failed."
-                            : voxelFallbackError;
-                        return await FailLoad(loadFailure, requiresMainThread: true);
-                    }
-                }
+                return await RestoreVoxelProcessorDataAsync(slotName, slotIndex, operationId, data, loadedVoxelDeltaSnapshot, voxelDeltaProcessor);
             }
             else if (HasVoxelDeltaPayloadForLoad(data, loadedVoxelDeltaSnapshot))
             {
-                return await FailLoad("Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", requiresMainThread: false);
+                return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, "Voxel delta payload exists, but no VoxelDeltaProcessor is registered for load.", false, false);
             }
 
+            return (true, false);
+        }
 
-        return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+        private async Awaitable<(bool success, bool rejected)> RestoreVoxelProcessorDataAsync(string slotName, byte slotIndex, uint operationId, SaveData data, NativeArray<byte> loadedVoxelDeltaSnapshot, VoxelDeltaProcessor voxelDeltaProcessor)
+        {
+            bool loadedVoxelDeltaSnapshotRejectedForLoad = false;
+
+            if (loadedVoxelDeltaSnapshot.IsCreated && loadedVoxelDeltaSnapshot.Length > 0)
+            {
+                NativeArray<byte> rollbackVoxelDeltaSnapshot = default;
+                bool rollbackVoxelDeltaSnapshotAcquired = false;
+                try
+                {
+                    bool rollbackVoxelDeltaSnapshotCopied = voxelDeltaProcessor.TryCopyNativeSnapshotToBorrowedScratch(
+                        out rollbackVoxelDeltaSnapshot,
+                        out int rollbackVoxelDeltaSnapshotBytes);
+                    if (rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                    {
+                        rollbackVoxelDeltaSnapshotAcquired = true;
+                    }
+                    else if (!rollbackVoxelDeltaSnapshotCopied && rollbackVoxelDeltaSnapshotBytes > 0)
+                    {
+                        return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, "Voxel delta rollback snapshot copy failed before load.", true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                    }
+
+                    if (!voxelDeltaProcessor.TryLoadNativeSnapshot(loadedVoxelDeltaSnapshot, out string voxelLoadError))
+                    {
+                        loadedVoxelDeltaSnapshotRejectedForLoad = true;
+                        if (HasLoadableVoxelDeltaDtoFallback(data))
+                        {
+                            string fallbackReason = string.IsNullOrEmpty(voxelLoadError)
+                                ? "Voxel delta native snapshot load failed."
+                                : voxelLoadError;
+                            LogWarning("[SaveManager] Voxel delta native snapshot rejected; falling back to binary voxel payload: " + fallbackReason);
+                            if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                            {
+                                TryRestoreRollbackSnapshot(voxelDeltaProcessor, rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "fallback payload");
+
+                                string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                                    ? "Voxel delta binary payload load failed."
+                                    : voxelFallbackError;
+                                return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                            }
+                        }
+                        else
+                        {
+                            TryRestoreRollbackSnapshot(voxelDeltaProcessor, rollbackVoxelDeltaSnapshotAcquired, rollbackVoxelDeltaSnapshot, "load snapshot");
+
+                            string loadFailure = string.IsNullOrEmpty(voxelLoadError)
+                                ? "Voxel delta native snapshot load failed."
+                                : voxelLoadError;
+                            return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                        }
+                    }
+                }
+                finally
+                {
+                    if (rollbackVoxelDeltaSnapshotAcquired)
+                        voxelDeltaProcessor.ReleaseBorrowedNativeSnapshotScratch();
+                }
+            }
+            else
+            {
+                if (!voxelDeltaProcessor.TryLoadFromSaveData(data, out string voxelFallbackError))
+                {
+                    string loadFailure = string.IsNullOrEmpty(voxelFallbackError)
+                        ? "Voxel delta binary payload load failed."
+                        : voxelFallbackError;
+                    return await FailVoxelDataLoadAsync(slotName, slotIndex, operationId, loadFailure, true, loadedVoxelDeltaSnapshotRejectedForLoad);
+                }
+            }
+
+            return (true, loadedVoxelDeltaSnapshotRejectedForLoad);
+        }
+
+        private async Awaitable<(bool success, bool rejected)> FailVoxelDataLoadAsync(string slotName, byte slotIndex, uint operationId, string message, bool requiresMainThread, bool rejected)
+        {
+            if (requiresMainThread)
+                await Awaitable.MainThreadAsync();
+            RecordFailure(slotName, "load", message);
+            LastOperationError = message;
+            LogError("[SaveManager] Load failed: " + message);
+            SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(message), message);
+            PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, LoadFailureStatusFlags);
+            HideLoadingPipelineScreen();
+            return (false, rejected);
+        }
+
+        private void TryRestoreRollbackSnapshot(VoxelDeltaProcessor voxelDeltaProcessor, bool rollbackAcquired, NativeArray<byte> rollbackSnapshot, string failureContext)
+        {
+            bool rollbackRestoreSucceeded = false;
+            if (rollbackAcquired)
+            {
+                if (voxelDeltaProcessor.TryLoadNativeSnapshot(rollbackSnapshot, out string rollbackError))
+                {
+                    rollbackRestoreSucceeded = true;
+                }
+                else
+                {
+                    LogError($"[SaveManager] Failed to restore voxel state after rejected {failureContext}: {rollbackError}");
+                }
+            }
+
+            if (!rollbackRestoreSucceeded)
+                voxelDeltaProcessor.LoadFromSaveData(null);
         }
 
         public bool SaveExists(string slotName)
@@ -7457,41 +7563,18 @@ namespace Hecton8.SaveSystem
             return true;
         }
 
-        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        private static void EvaluateAuditCandidates(
+            string slotName,
+            SaveSlotAuditResult result,
+            out bool hasSelectedCandidate,
+            out SaveLoadCandidate selectedCandidate,
+            out SaveData selectedData,
+            out bool selectedLegacyFormat)
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-            {
-                result = new SaveSlotAuditResult
-                {
-                    SlotName = string.Empty,
-                    IntegrityState = SaveSlotIntegrityState.Empty,
-                    Message = InvalidSlotNameReason
-                };
-                return false;
-            }
-
-            result = new SaveSlotAuditResult
-            {
-                SlotName = slotName,
-                Success = false,
-                Message = "Audit not attempted."
-            };
-
-            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
-            if (info == null || !info.HasAnySaveData)
-            {
-                result.Message = "No save data found for this slot.";
-                result.IntegrityState = SaveSlotIntegrityState.Empty;
-                return false;
-            }
-
-            result.Success = true;
-            result.IntegrityState = info.IntegrityState;
-
-            SaveLoadCandidate selectedCandidate = default;
-            SaveData selectedData = null;
-            bool selectedLegacyFormat = false;
-            bool hasSelectedCandidate = false;
+            hasSelectedCandidate = false;
+            selectedCandidate = default;
+            selectedData = null;
+            selectedLegacyFormat = false;
 
             int candidateCount = 0;
             lock (SaveLoadCandidateScratchSync)
@@ -7558,6 +7641,46 @@ namespace Hecton8.SaveSystem
                     ClearLoadCandidates(candidates, candidateCount);
                 }
             }
+        }
+
+        private static bool TryAuditSaveSlotInternal(string slotName, out SaveSlotAuditResult result)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+            {
+                result = new SaveSlotAuditResult
+                {
+                    SlotName = string.Empty,
+                    IntegrityState = SaveSlotIntegrityState.Empty,
+                    Message = InvalidSlotNameReason
+                };
+                return false;
+            }
+
+            result = new SaveSlotAuditResult
+            {
+                SlotName = slotName,
+                Success = false,
+                Message = "Audit not attempted."
+            };
+
+            SaveSlotInfo info = BuildSaveSlotInfoInternal(slotName);
+            if (info == null || !info.HasAnySaveData)
+            {
+                result.Message = "No save data found for this slot.";
+                result.IntegrityState = SaveSlotIntegrityState.Empty;
+                return false;
+            }
+
+            result.Success = true;
+            result.IntegrityState = info.IntegrityState;
+
+            EvaluateAuditCandidates(
+                slotName,
+                result,
+                out bool hasSelectedCandidate,
+                out SaveLoadCandidate selectedCandidate,
+                out SaveData selectedData,
+                out bool selectedLegacyFormat);
 
             result.SlotReadable = hasSelectedCandidate;
             if (!hasSelectedCandidate)
@@ -8389,63 +8512,53 @@ namespace Hecton8.SaveSystem
             return BuildSaveSlotInfoInternal(slotName);
         }
 
-        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        private struct SaveSlotInfoBuilderContext
         {
-            if (!TryResolveSafeSlotName(slotName, out slotName))
-                return null;
+            public SaveMetadata Metadata;
+            public bool HasPrimaryMetadata;
+            public bool HasBackupMetadata;
+            public bool MetadataRecoveredFromBackup;
+            public bool MetadataSynthesized;
+            public bool MetadataCorrupted;
+            public long LastWriteTicksUtc;
+            public long PrimaryBytes;
+            public long BackupBytes;
+        }
 
-            int backupRetention = GetBackupRetentionCountStatic(slotName);
-            string primarySavePath = GetPrimarySaveFilePath(slotName);
-
-            bool hasPrimarySave = FileExists(primarySavePath);
-            bool hasPrimaryMetadata = false;
-            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
-            bool hasBackupSave = false;
-            bool hasBackupMetadata = false;
-
+        private static bool HasAnyBackupSave(string slotName, int backupRetention)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
-                if (!hasBackupSave && FileExists(GetBackupSaveFilePath(slotName, generation)))
+                if (FileExists(GetBackupSaveFilePath(slotName, generation)))
                 {
-                    hasBackupSave = true;
-                    break;
+                    return true;
                 }
             }
+            return false;
+        }
 
-            if (!hasPrimarySave && !hasBackupSave)
-                return null;
-
-            SaveMetadata metadata = null;
-            bool metadataRecoveredFromBackup = false;
-            bool metadataSynthesized = false;
-            bool metadataCorrupted = false;
-
-            long lastWriteTicksUtc = 0L;
-            long primaryBytes = 0L;
-            long backupBytes = 0L;
-
-            if (hasPrimarySave)
+        private static void ProcessPrimarySaveInfo(string slotName, string primarySavePath, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (TryReadCandidateMetadata(
+                slotName,
+                SaveLoadCandidate.Primary(),
+                out SaveMetadata primaryMetadata,
+                out _, out _, out _))
             {
-                if (TryReadCandidateMetadata(
-                    slotName,
-                    SaveLoadCandidate.Primary(),
-                    out SaveMetadata primaryMetadata,
-                    out _,
-                    out _,
-                    out _))
-                {
-                    metadata = primaryMetadata;
-                    hasPrimaryMetadata = primaryMetadata != null;
-                }
-                else
-                {
-                    metadataCorrupted = true;
-                }
-
-                primaryBytes = GetPersistentFileSize(primarySavePath);
-                UpdateLastWrite(primarySavePath, ref lastWriteTicksUtc);
+                ctx.Metadata = primaryMetadata;
+                ctx.HasPrimaryMetadata = primaryMetadata != null;
+            }
+            else
+            {
+                ctx.MetadataCorrupted = true;
             }
 
+            ctx.PrimaryBytes = GetPersistentFileSize(primarySavePath);
+            UpdateLastWrite(primarySavePath, ref ctx.LastWriteTicksUtc);
+        }
+
+        private static void ProcessBackupSaves(string slotName, int backupRetention, bool hasPrimarySave, ref SaveSlotInfoBuilderContext ctx)
+        {
             for (int generation = 1; generation <= backupRetention; generation++)
             {
                 string backupSavePath = GetBackupSaveFilePath(slotName, generation);
@@ -8456,90 +8569,102 @@ namespace Hecton8.SaveSystem
                     slotName,
                     SaveLoadCandidate.Backup(generation),
                     out SaveMetadata backupMetadata,
-                    out _,
-                    out _,
-                    out _))
+                    out _, out _, out _))
                 {
-                    hasBackupMetadata = backupMetadata != null;
-                    if (metadata == null && backupMetadata != null)
+                    ctx.HasBackupMetadata = backupMetadata != null;
+                    if (ctx.Metadata == null && backupMetadata != null)
                     {
-                        metadata = backupMetadata;
-                        metadataRecoveredFromBackup = hasPrimarySave && !hasPrimaryMetadata;
+                        ctx.Metadata = backupMetadata;
+                        ctx.MetadataRecoveredFromBackup = hasPrimarySave && !ctx.HasPrimaryMetadata;
                     }
                 }
                 else
                 {
-                    metadataCorrupted = true;
+                    ctx.MetadataCorrupted = true;
                 }
+
+                ctx.BackupBytes += GetPersistentFileSize(backupSavePath);
+                UpdateLastWrite(backupSavePath, ref ctx.LastWriteTicksUtc);
+            }
+        }
+
+        private static SaveSlotIntegrityState DetermineIntegrityState(bool hasPrimarySave, bool hasBackupSave, ref SaveSlotInfoBuilderContext ctx)
+        {
+            if (ctx.MetadataCorrupted && ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.HealthyWithBackup;
+
+            if (hasPrimarySave && ctx.HasPrimaryMetadata)
+                return SaveSlotIntegrityState.Healthy;
+
+            if (!hasPrimarySave && hasBackupSave && ctx.HasBackupMetadata)
+                return SaveSlotIntegrityState.BackupOnly;
+
+            if (ctx.MetadataCorrupted && !ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.CorruptedMetadata;
+
+            if (ctx.MetadataRecoveredFromBackup)
+                return SaveSlotIntegrityState.MetadataRecoveredFromBackup;
+
+            if (ctx.MetadataSynthesized)
+                return SaveSlotIntegrityState.MetadataSynthesized;
+
+            return SaveSlotIntegrityState.MissingMetadata;
+        }
+
+        private static SaveSlotInfo BuildSaveSlotInfoInternal(string slotName)
+        {
+            if (!TryResolveSafeSlotName(slotName, out slotName))
+                return null;
+
+            int backupRetention = GetBackupRetentionCountStatic(slotName);
+            string primarySavePath = GetPrimarySaveFilePath(slotName);
+
+            bool hasPrimarySave = FileExists(primarySavePath);
+            bool hasBackupSave = HasAnyBackupSave(slotName, backupRetention);
+
+            if (!hasPrimarySave && !hasBackupSave)
+                return null;
+
+            bool hasThumbnail = File.Exists(SaveThumbnailSystem.GetThumbnailPath(slotName));
+
+            SaveSlotInfoBuilderContext ctx = new SaveSlotInfoBuilderContext();
+
+            if (hasPrimarySave)
+            {
+                ProcessPrimarySaveInfo(slotName, primarySavePath, ref ctx);
             }
 
-            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref lastWriteTicksUtc);
-            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref lastWriteTicksUtc);
+            ProcessBackupSaves(slotName, backupRetention, hasPrimarySave, ref ctx);
 
-            for (int generation = 1; generation <= backupRetention; generation++)
-            {
-                string backupSavePath = GetBackupSaveFilePath(slotName, generation);
-                backupBytes += GetPersistentFileSize(backupSavePath);
-                UpdateLastWrite(backupSavePath, ref lastWriteTicksUtc);
-            }
+            UpdateLastWrite(SaveSlotMaintenanceRecord.GetPath(slotName), ref ctx.LastWriteTicksUtc);
+            UpdateLastWrite(Path.GetFileName(SaveThumbnailSystem.GetThumbnailPath(slotName)), ref ctx.LastWriteTicksUtc);
 
-            if (metadata == null)
+            if (ctx.Metadata == null)
             {
-                metadata = SaveMetadata.CreateFallback(slotName, lastWriteTicksUtc);
-                metadataSynthesized = true;
+                ctx.Metadata = SaveMetadata.CreateFallback(slotName, ctx.LastWriteTicksUtc);
+                ctx.MetadataSynthesized = true;
             }
 
-            SaveSlotIntegrityState integrityState;
-            if (metadataCorrupted && metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.HealthyWithBackup;
-            }
-            else if (hasPrimarySave && hasPrimaryMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.Healthy;
-            }
-            else if (!hasPrimarySave && hasBackupSave && hasBackupMetadata)
-            {
-                integrityState = SaveSlotIntegrityState.BackupOnly;
-            }
-            else if (metadataCorrupted && !metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.CorruptedMetadata;
-            }
-            else if (metadataRecoveredFromBackup)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataRecoveredFromBackup;
-            }
-            else if (metadataSynthesized)
-            {
-                integrityState = SaveSlotIntegrityState.MetadataSynthesized;
-            }
-            else
-            {
-                integrityState = SaveSlotIntegrityState.MissingMetadata;
-            }
-
-            metadata.SlotName = slotName;
+            ctx.Metadata.SlotName = slotName;
 
             return new SaveSlotInfo
             {
                 SlotName = slotName,
-                Metadata = metadata,
-                IntegrityState = integrityState,
+                Metadata = ctx.Metadata,
+                IntegrityState = DetermineIntegrityState(hasPrimarySave, hasBackupSave, ref ctx),
                 HasPrimarySave = hasPrimarySave,
                 HasBackupSave = hasBackupSave,
-                HasPrimaryMetadata = hasPrimaryMetadata,
-                HasBackupMetadata = hasBackupMetadata,
+                HasPrimaryMetadata = ctx.HasPrimaryMetadata,
+                HasBackupMetadata = ctx.HasBackupMetadata,
                 HasThumbnail = hasThumbnail,
-                MetadataRecoveredFromBackup = metadataRecoveredFromBackup,
-                MetadataSynthesized = metadataSynthesized,
-                LastWriteTicksUtc = lastWriteTicksUtc,
-                PrimarySaveBytes = primaryBytes,
-                BackupSaveBytes = backupBytes
+                MetadataRecoveredFromBackup = ctx.MetadataRecoveredFromBackup,
+                MetadataSynthesized = ctx.MetadataSynthesized,
+                LastWriteTicksUtc = ctx.LastWriteTicksUtc,
+                PrimarySaveBytes = ctx.PrimaryBytes,
+                BackupSaveBytes = ctx.BackupBytes
             };
         }
 

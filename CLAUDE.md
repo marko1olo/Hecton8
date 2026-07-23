@@ -83,6 +83,7 @@ Small typo fixes, narrow mechanical edits, and ordinary chat answers may skip fu
 - Status remains `PENDING VERIFICATION` until fresh evidence exists. Docs, static scans, local builds, and agent confidence are not Unity/player/profiler/device proof.
 - Separate static/code-review-only conclusions from Unity/player/profiler/device-verified results.
 - Never claim release-ready, platform-ready, optimized, AAA, VR-ready, modding-ready, or similar public readiness without matching proof artifacts.
+- FIRST_20_MINUTES RULE: Until `Docs\ARCHITECTURE\FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md` is proven, every non-trivial gameplay, runtime, player-visible visual, UI, audio, world, asset, system, and in-world content task must state which first-20-minutes route moment it improves or which route blocker it removes. Pure rule routing, tool-shim upkeep, generated snapshot sync, narrow typo fixes, and read-only governance checks may instead state `FIRST_20_NOT_APPLICABLE: <reason>`.
 
 ## Player-visible taste standard
 

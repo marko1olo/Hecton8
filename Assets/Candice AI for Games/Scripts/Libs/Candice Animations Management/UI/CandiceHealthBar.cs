@@ -11,6 +11,13 @@ using CandiceAIforGames.AI;
 namespace CandiceAIforGames.AI
 {
 
+
+    public class CandiceHealthBarSegment : MonoBehaviour
+    {
+        public Image segmentImage;
+        public Image fillImage;
+    }
+
     public class CandiceHealthBar : MonoBehaviour
     {
 		[Header("Colors")]
@@ -57,16 +64,23 @@ namespace CandiceAIforGames.AI
 			Vector3 posOffsetBase = right * m_SizeOfSegment * (m_NumberOfSegments / 2);
 			Vector3 startPos = transform.position;
 			Quaternion rot = Quaternion.identity;
-
 			bool hasFillImage = m_Image.transform.childCount > 0 && m_Image.transform.GetChild(0).TryGetComponent<Image>(out _);
+			Image temporaryClone = Instantiate(m_Image, startPos, rot, transform);
+			temporaryClone.gameObject.SetActive(false);
+
+			CandiceHealthBarSegment segmentHelper = temporaryClone.gameObject.AddComponent<CandiceHealthBarSegment>();
+			segmentHelper.segmentImage = temporaryClone;
+			if (hasFillImage)
+			{
+				segmentHelper.fillImage = temporaryClone.transform.GetChild(0).GetComponent<Image>();
+			}
+
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-
-
-				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
+				CandiceHealthBarSegment clonedHelper = Instantiate(segmentHelper, startPos, rot, transform);
+				Image segmentImage = clonedHelper.segmentImage;
 
 				segmentImage.gameObject.SetActive(true);
-
 
 				segmentImage.fillAmount = m_SizeOfSegment;
 
@@ -74,25 +88,18 @@ namespace CandiceAIforGames.AI
 				segmentRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentRectTransform.sizeDelta.y);
 				segmentRectTransform.position += (right * i * m_SizeOfSegment) - posOffsetBase + (right * i * m_SizeOfNotch);
 
-				Transform childTransform = segmentImage.transform.GetChild(0);
-
-				if (hasFillImage)
+				if (hasFillImage && clonedHelper.fillImage != null)
 				{
-					Image segmentFillImage = childTransform.GetComponent<Image>();
+					Image segmentFillImage = clonedHelper.fillImage;
 					segmentFillImage.color = m_FillColor;
 					m_ProgressToFill.Add(segmentFillImage);
 
 					RectTransform segmentFillRectTransform = segmentFillImage.rectTransform;
 					segmentFillRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentFillRectTransform.sizeDelta.y);
 				}
-
-
-
-
-
-
-
 			}
+
+			Destroy(temporaryClone.gameObject);
 
 			UpdateSegments();
 		}

@@ -19,6 +19,11 @@ namespace MapMagic.Core
 		[NonSerialized] private int customTilesCount = -1;
 
 	
+		protected override TerrainTile ConstructTile (MonoBehaviour holder)
+		{
+			return TerrainTile.Construct((MapMagicObject)holder);
+		}
+
 		public void Pin (Coord coord, bool asDraft, MonoBehaviour holder=null)
 		/// Creates new tile at the coord if it's empty and pin it
 		{

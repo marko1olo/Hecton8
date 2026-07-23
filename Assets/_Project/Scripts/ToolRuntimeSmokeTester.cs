@@ -184,150 +184,20 @@ namespace Hecton8.Dev
                     if (prefab == null)
                         continue;
 
-                    string toolName = prefab.name;
-                    _debugLastToolName = toolName;
-
-                    PlayerTool prefabTool = _cachedTools[i];
-                    if (prefabTool == null || prefabTool.ToolData == null)
-                    {
-                        Hecton8.Core.H8Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
-                        continue;
-                    }
-
-                    LogVerbose($"BEGIN {toolName}");
-
-                    bool setupFailed = false;
-
-                    LogVerbose($"HOLSTER {toolName}");
-                    toolManager.Holster();
-                    float holsterElapsed = 0f;
-                    while (holsterElapsed < equipTimeout)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (!toolManager.IsSwapping &&
-                            toolManager.CurrentTool == null &&
-                            toolManager.CurrentSlotIndex < 0)
-                            break;
-
-                        holsterElapsed += ResolveSmokeFrameDeltaSeconds();
-                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
-                    }
-
-                    if (holsterElapsed >= equipTimeout &&
-                        (toolManager.IsSwapping || toolManager.CurrentTool != null || toolManager.CurrentSlotIndex >= 0))
-                    {
-                        Hecton8.Core.H8Debug.LogWarning(
-                            $"[ToolSmoke] HOLSTER WAIT TIMEOUT slot={toolManager.CurrentSlotIndex} " +
-                            $"tool={(toolManager.CurrentTool != null ? toolManager.CurrentTool.GetType().Name : "null")} " +
-                            $"swapping={toolManager.IsSwapping}");
-                    }
-
-                    try
-                    {
-                        int toolHashId = ItemData.ResolvePersistentHashId(prefabTool.ToolData);
-                        if (toolHashId == 0)
-                            throw new InvalidOperationException($"{toolName} ToolData has no valid persistent hash.");
-
-                        if (!playerInventory.ContainsItem(toolHashId))
-                            playerInventory.TryAddItem(toolHashId, 1);
-
-                        LogVerbose($"ASSIGN {toolName}");
-                        toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);
-                        LogVerbose($"SWITCH {toolName}");
-                        toolManager.SwitchToSlot(0);
-                        LogVerbose($"REQUESTED equip {toolName}");
-                    }
-                    catch (Exception ex)
-                    {
-                        failed++;
-                        _debugFailCount++;
-                        _debugLastIssue = "Setup exception for " + toolName;
-                        _debugLastPass = false;
-                        setupFailed = true;
-                        Hecton8.Core.H8Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
-                    }
-
-                    if (setupFailed)
-                        continue;
-
-                    float elapsed = 0f;
-                    while (elapsed < equipTimeout)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        PlayerTool currentTool = toolManager.CurrentTool;
-                        if (toolManager.CurrentSlotIndex == 0 &&
-                            currentTool != null &&
-                            ReferenceEquals(currentTool.ToolData, prefabTool.ToolData) &&
-                            !toolManager.IsSwapping)
-                            break;
-
-                        elapsed += ResolveSmokeFrameDeltaSeconds();
-                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
-                    }
-
-                    PlayerTool liveTool = toolManager.CurrentTool;
-                    if (liveTool == null || !ReferenceEquals(liveTool.ToolData, prefabTool.ToolData))
-                    {
-                        failed++;
-                        _debugFailCount++;
-                        _debugLastIssue = "Equip timeout/mismatch for " + toolName;
-                        _debugLastPass = false;
-                        Hecton8.Core.H8Debug.LogWarning(
-                            $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
-                            $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
-                            $"slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
-                        continue;
-                    }
-
-                    LogVerbose(
-                        $"EQUIPPED {toolName} -> live={liveTool.GetType().Name}, slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
-
-                    await DelayRealtimeAsync(settleDelay, cancellationToken);
-                    LogVerbose($"SETTLED {toolName}");
-
-                    bool stepPassed = RunToolInvocation(toolName, liveTool);
-                    if (stepPassed)
+                    bool? result = await TestSingleToolAsync(prefab, _cachedTools[i], cancellationToken);
+                    if (result == true)
                     {
                         passed++;
-                        _debugPassCount++;
-                        _debugLastIssue = string.Empty;
-                        _debugLastPass = true;
                     }
-                    else
+                    else if (result == false)
                     {
                         failed++;
-                        _debugFailCount++;
-                        _debugLastIssue = "Invocation failed for " + toolName;
-                        _debugLastPass = false;
                     }
-
-                    await DelayRealtimeAsync(betweenToolsDelay, cancellationToken);
                 }
 
                 if (restoreOriginalLoadout)
                 {
-                    toolManager.Holster();
-                    float holsterElapsed = 0f;
-                    while (holsterElapsed < equipTimeout)
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        if (!toolManager.IsSwapping &&
-                            toolManager.CurrentTool == null &&
-                            toolManager.CurrentSlotIndex < 0)
-                            break;
-
-                        holsterElapsed += ResolveSmokeFrameDeltaSeconds();
-                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
-                    }
-
-                    for (int i = 0; i < originalAssignments.Length; i++)
-                        toolManager.SetAssignedToolPrefab(i, originalAssignments[i], holsterIfCurrentInvalid: false);
-
-                    if (originalSlot >= 0 && originalSlot < originalAssignments.Length && originalAssignments[originalSlot] != null)
-                    {
-                        toolManager.SwitchToSlot(originalSlot);
-                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
-                    }
+                    await RestoreOriginalLoadoutAsync(originalAssignments, originalSlot, cancellationToken);
                 }
 
                 Hecton8.Core.H8Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
@@ -347,6 +217,142 @@ namespace Hecton8.Dev
             finally
             {
                 _isRunning = false;
+            }
+        }
+
+        private async Awaitable<bool?> TestSingleToolAsync(GameObject prefab, PlayerTool prefabTool, CancellationToken cancellationToken)
+        {
+            string toolName = prefab.name;
+            _debugLastToolName = toolName;
+
+            if (prefabTool == null || prefabTool.ToolData == null)
+            {
+                Hecton8.Core.H8Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
+                return null;
+            }
+
+            LogVerbose($"BEGIN {toolName}");
+            LogVerbose($"HOLSTER {toolName}");
+
+            await WaitForHolsterAsync(cancellationToken, warnOnTimeout: true);
+
+            try
+            {
+                int toolHashId = ItemData.ResolvePersistentHashId(prefabTool.ToolData);
+                if (toolHashId == 0)
+                    throw new InvalidOperationException($"{toolName} ToolData has no valid persistent hash.");
+
+                if (!playerInventory.ContainsItem(toolHashId))
+                    playerInventory.TryAddItem(toolHashId, 1);
+
+                LogVerbose($"ASSIGN {toolName}");
+                toolManager.SetAssignedToolPrefab(0, prefab, holsterIfCurrentInvalid: false);
+                LogVerbose($"SWITCH {toolName}");
+                toolManager.SwitchToSlot(0);
+                LogVerbose($"REQUESTED equip {toolName}");
+            }
+            catch (Exception ex)
+            {
+                _debugFailCount++;
+                _debugLastIssue = "Setup exception for " + toolName;
+                _debugLastPass = false;
+                Hecton8.Core.H8Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
+                return false;
+            }
+
+            await WaitForEquipAsync(prefabTool, cancellationToken);
+
+            PlayerTool liveTool = toolManager.CurrentTool;
+            if (liveTool == null || !ReferenceEquals(liveTool.ToolData, prefabTool.ToolData))
+            {
+                _debugFailCount++;
+                _debugLastIssue = "Equip timeout/mismatch for " + toolName;
+                _debugLastPass = false;
+                Hecton8.Core.H8Debug.LogWarning(
+                    $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
+                    $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
+                    $"slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
+                return false;
+            }
+
+            LogVerbose($"EQUIPPED {toolName} -> live={liveTool.GetType().Name}, slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
+
+            await DelayRealtimeAsync(settleDelay, cancellationToken);
+            LogVerbose($"SETTLED {toolName}");
+
+            bool stepPassed = RunToolInvocation(toolName, liveTool);
+            if (stepPassed)
+            {
+                _debugPassCount++;
+                _debugLastIssue = string.Empty;
+                _debugLastPass = true;
+            }
+            else
+            {
+                _debugFailCount++;
+                _debugLastIssue = "Invocation failed for " + toolName;
+                _debugLastPass = false;
+            }
+
+            await DelayRealtimeAsync(betweenToolsDelay, cancellationToken);
+            return stepPassed;
+        }
+
+        private async Awaitable WaitForHolsterAsync(CancellationToken cancellationToken, bool warnOnTimeout)
+        {
+            toolManager.Holster();
+            float holsterElapsed = 0f;
+            while (holsterElapsed < equipTimeout)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!toolManager.IsSwapping &&
+                    toolManager.CurrentTool == null &&
+                    toolManager.CurrentSlotIndex < 0)
+                    break;
+
+                holsterElapsed += ResolveSmokeFrameDeltaSeconds();
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+
+            if (warnOnTimeout && holsterElapsed >= equipTimeout &&
+                (toolManager.IsSwapping || toolManager.CurrentTool != null || toolManager.CurrentSlotIndex >= 0))
+            {
+                Hecton8.Core.H8Debug.LogWarning(
+                    $"[ToolSmoke] HOLSTER WAIT TIMEOUT slot={toolManager.CurrentSlotIndex} " +
+                    $"tool={(toolManager.CurrentTool != null ? toolManager.CurrentTool.GetType().Name : "null")} " +
+                    $"swapping={toolManager.IsSwapping}");
+            }
+        }
+
+        private async Awaitable WaitForEquipAsync(PlayerTool prefabTool, CancellationToken cancellationToken)
+        {
+            float elapsed = 0f;
+            while (elapsed < equipTimeout)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                PlayerTool currentTool = toolManager.CurrentTool;
+                if (toolManager.CurrentSlotIndex == 0 &&
+                    currentTool != null &&
+                    ReferenceEquals(currentTool.ToolData, prefabTool.ToolData) &&
+                    !toolManager.IsSwapping)
+                    break;
+
+                elapsed += ResolveSmokeFrameDeltaSeconds();
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+        }
+
+        private async Awaitable RestoreOriginalLoadoutAsync(GameObject[] originalAssignments, int originalSlot, CancellationToken cancellationToken)
+        {
+            await WaitForHolsterAsync(cancellationToken, warnOnTimeout: false);
+
+            for (int i = 0; i < originalAssignments.Length; i++)
+                toolManager.SetAssignedToolPrefab(i, originalAssignments[i], holsterIfCurrentInvalid: false);
+
+            if (originalSlot >= 0 && originalSlot < originalAssignments.Length && originalAssignments[originalSlot] != null)
+            {
+                toolManager.SwitchToSlot(originalSlot);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 
@@ -370,6 +376,12 @@ namespace Hecton8.Dev
 
         private bool RunToolInvocation(string toolName, PlayerTool liveTool)
         {
+            if (liveTool == null)
+            {
+                Hecton8.Core.H8Debug.LogError($"[ToolSmoke] EXCEPTION {toolName}: liveTool is null");
+                return false;
+            }
+
             try
             {
                 LogVerbose($"PRIMARY {toolName}");

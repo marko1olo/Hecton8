@@ -104,15 +104,26 @@ void ApplyReflectionSky
 
 	half alpha = 1.0;
 	BRDFData brdfData;
-	// TODO pull in code for specular highlight
 	InitializeBRDFData(0.0, 0.0, 1.0, smoothness, alpha, brdfData);
 	const Light mainLight = GetMainLight();
 
-	half3 lightColor = LightingPhysicallyBased(brdfData, mainLight, i_n_pixel, i_view) * i_shadow * _LightIntensityMultiplier;
+	float3 halfDir = SafeNormalize(float3(mainLight.direction) + float3(i_view));
+	float NoH = saturate(dot(i_n_pixel, halfDir));
+	half LoH = saturate(dot(mainLight.direction, halfDir));
+
+	float d = NoH * NoH * brdfData.roughness2MinusOne + 1.00001f;
+	half LoH2 = LoH * LoH;
+	half specularTerm = brdfData.roughness2 / ((d * d) * max(0.1h, LoH2) * brdfData.normalizationTerm);
+
+#if defined (SHADER_API_MOBILE) || defined (SHADER_API_SWITCH) || defined (SHADER_API_SWITCH2)
+	specularTerm = specularTerm - HALF_MIN;
+	specularTerm = clamp(specularTerm, 0.0, 100.0); // Prevent FP16 overflow on mobiles
+#endif
+
+	half3 lightColor = specularTerm * mainLight.color * saturate(dot(i_n_pixel, mainLight.direction)) * i_shadow * _LightIntensityMultiplier;
 	lightColor += WaveHarmonic::Crest::AdditionalHardLighting(i_positionWS, i_screenPos, i_n_pixel, i_view, brdfData);
 
-	// Multiply Specular here because it the BRDF doesn't seem to use it..
-	skyColour += lightColor;
+	skyColour += lightColor * _Specular;
 
 
 	// Fresnel
