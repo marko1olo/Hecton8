@@ -5860,7 +5860,7 @@ namespace Hecton8.SaveSystem
             data = null;
             payloadCursor = 0;
 
-            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, headerVersion, out prefix, out error))
+            if (!SaveDataMigration_AupV8.TryReadPayloadPrefix(rawPtr, metadataRawLength, (ushort)headerVersion, out prefix, out error))
                 return false;
 
             int cursor = prefix.PrefixSizeBytes;

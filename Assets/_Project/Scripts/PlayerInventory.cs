@@ -5800,62 +5800,11 @@ namespace Hecton8.Inventory
             int salinityFrameFlags = 0;
             try
             {
-
-                if (!TryResolveSalinityCorrosionScratchWithGuardHeld(
-                        out NativeArray<int> changedSlots,
-                        out NativeArray<float> nextDurability,
-                        out NativeArray<byte> nextDurabilityBytes,
-                        out NativeArray<ushort> nextQualityMilli,
-                        out NativeArray<ushort> nextStateFlags,
-                        out NativeArray<int> jobResult,
-                        out NativeArray<uint> brokenItemHashes))
-                {
-                    _averageEquipmentDurability01 = ResolveAverageEquipmentDurability();
-                    salinityFrameFlags = 0x14;
-                }
-                else
-                {
-                    ItemSalinityCorrosionJob salinityJob = new ItemSalinityCorrosionJob
-                    {
-                        ItemHashes = _itemHashes.AsReadOnly(),
-                        StackCounts = _stackCounts.AsReadOnly(),
-                        ItemDurability = _itemDurability.AsReadOnly(),
-                        DurabilityBytes = _durabilities.AsReadOnly(),
-                        QualityMilli = _qualityMilli.AsReadOnly(),
-                        ItemStateFlags = _itemStateFlags.AsReadOnly(),
-                        ChangedSlots = changedSlots,
-                        NextItemDurability = nextDurability,
-                        NextDurabilityBytes = nextDurabilityBytes,
-                        NextQualityMilli = nextQualityMilli,
-                        NextItemStateFlags = nextStateFlags,
-                        Result = jobResult,
-                        BrokenItemHashes = brokenItemHashes,
-                        CurrentInventoryMask = CurrentInventoryMask,
-                        SalinityFactor = _currentSalinityFactor,
-                        DegradationRate = SalinityCorrosionDegradationRatePerFrostTick / SalinityCorrosionFrostTickSeconds,
-                        DegradedMask = DegradedItemStateMask,
-                        RustedMask = RustedItemStateMask,
-                        BrokenMask = BrokenItemStateMask,
-                        DegradedThresholdMilli = DegradedQualityMilliThreshold,
-                        ElapsedSeconds = SalinityCorrosionFrostTickSeconds
-                    };
-                    salinityJob.Execute();
-
-                    int averageMilli = jobResult[InventoryCorrosionConstants.ResultAverageDurabilityMilli];
-                    _averageEquipmentDurability01 = math.saturate(averageMilli * 0.001f);
-                    changedCount = jobResult[InventoryCorrosionConstants.ResultChangedCount];
-                    brokenCount = jobResult[InventoryCorrosionConstants.ResultBrokenCount];
-                    committedChanges = changedCount <= 0 ||
-                        TryCommitSalinityCorrosionScratchWithGuardHeld(
-                            changedCount,
-                            changedSlots,
-                            nextDurability,
-                            nextDurabilityBytes,
-                            nextQualityMilli,
-                            nextStateFlags);
-                    salinityFrameFlags = changedCount > 0 ? (committedChanges ? 2 : 0x12) : 0;
-                }
-
+                ExecuteSalinityCorrosionJobWithGuardHeld(
+                    out changedCount,
+                    out brokenCount,
+                    out committedChanges,
+                    out salinityFrameFlags);
             }
             finally
             {
@@ -6018,11 +5967,12 @@ namespace Hecton8.Inventory
                 BrokenItemHashes = brokenItemHashes,
                 CurrentInventoryMask = CurrentInventoryMask,
                 SalinityFactor = _currentSalinityFactor,
-                DegradationRate = SalinityCorrosionDegradationRatePerFrostTick,
+                DegradationRate = SalinityCorrosionDegradationRatePerFrostTick / SalinityCorrosionFrostTickSeconds,
                 DegradedMask = DegradedItemStateMask,
                 RustedMask = RustedItemStateMask,
                 BrokenMask = BrokenItemStateMask,
-                DegradedThresholdMilli = DegradedQualityMilliThreshold
+                DegradedThresholdMilli = DegradedQualityMilliThreshold,
+                ElapsedSeconds = SalinityCorrosionFrostTickSeconds
             };
             salinityJob.Execute();
 
