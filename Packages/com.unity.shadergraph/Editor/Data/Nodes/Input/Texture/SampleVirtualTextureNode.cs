@@ -14,7 +14,7 @@ using UnityEngine.UIElements;
 namespace UnityEditor.ShaderGraph
 {
     [Title("Input", "Texture", SampleVirtualTextureNode.DefaultNodeTitle)]
-    class SampleVirtualTextureNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireMeshUV, IMayRequireTime, IMayRequireScreenPosition, IHasVirtualTextureFeedback
+    class SampleVirtualTextureNode : AbstractMaterialNode, IGeneratesBodyCode, IGeneratesFunction, IMayRequireMeshUV, IMayRequireTime, IMayRequireNDCPosition, IHasVirtualTextureFeedback
     {
         public const string DefaultNodeTitle = "Sample Virtual Texture";
 
@@ -564,7 +564,7 @@ namespace UnityEditor.ShaderGraph
             return true;
         }
 
-        public bool RequiresScreenPosition(ShaderStageCapability stageCapability = ShaderStageCapability.All)
+        public bool RequiresNDCPosition(ShaderStageCapability stageCapability = ShaderStageCapability.All)
         {
             // Feedback dithering requires screen position (and only works in Pixel Shader currently)
             // Note that the code that makes use of the screen position is not actually in this node,
