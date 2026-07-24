@@ -3457,6 +3457,7 @@ namespace Hecton8.SaveSystem
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal static Action TestHook_PublishSaveStatus_SimulateException;
+        internal static Action TestHook_DumpSaveBlackBox;
 #endif
 
         private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
@@ -3930,6 +3931,9 @@ namespace Hecton8.SaveSystem
                     WriteAsyncPersistenceTelemetryEntry(dumpPtr, ref cursor, in entry);
                 }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TestHook_DumpSaveBlackBox?.Invoke();
+#endif
                 if (!NativeFaultDumpWriter.TryWriteAll(AsyncPersistenceBlackBoxDumpRelativePath, dumpBytes, cursor))
                     LogWarning("[SaveManager] Save black box dump failed.");
             }
