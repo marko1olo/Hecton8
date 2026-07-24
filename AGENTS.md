@@ -103,6 +103,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [RULE] Status is `PENDING VERIFICATION` until fresh evidence exists. Unity import, Unity Console, Play Mode, profiler, GCMonitor, Frame Debugger, RenderDoc, screenshot/capture, player build, device run, save/load proof, and user approval are evidence. Docs, static scans, local `dotnet build`, and agent confidence are not runtime proof.
 
+[RULE] Bee Assembly Cache Invalidation: Never trust visual diagnostic PNG outputs or runtime test assertions after editing C# files without verifying in the Unity batchmode compile log that the target assembly DLL (e.g., Hecton8.Core.dll) was ACTUALLY recompiled by Bee (indicated by 'Csc Library/Bee/artifacts/.../Hecton8.Core.dll'). If Bee returned a cache hit or skipped recompiling the target asmdef DLL, force-delete 'Library/Bee/artifacts' or touch the corresponding asmdef file before running diagnostic renders.
+
 [RULE] Never Trust Automated Assertions Alone: Exit Code 0 or the presence of a screenshot file does NOT prove the interface is functional. A test script might capture a blank page, 404, 500, or `ERR_CONNECTION_REFUSED` and exit with 0. Test scripts must verify the HTTP response status (strictly `200 OK`). Any status other than 200 must cause the test script to fail explicitly.
 
 [RULE] Strict Healthcheck & Port Wait-on: Never launch automated browser tests (Puppeteer, Playwright) "into the void". Poll the local host until the server is responsive, starting the dev server in the background if it is down.

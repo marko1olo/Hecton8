@@ -10,7 +10,7 @@ namespace MapMagic.Editor.Diagnostics
 {
     public static class GeologyAtlasTask
     {
-        // R32 RECOMPILE TOUCH: 2026-07-24T01:05:00 rivers_and_lakes
+        // R34 RECOMPILE TOUCH: 2026-07-24T13:39:15 smooth_dunes_and_craters
         private const string OutDir =
             @"C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-c29b-4dac-8a24-2f14ca51d3d2\atlas";
 
@@ -43,7 +43,7 @@ namespace MapMagic.Editor.Diagnostics
             if (File.Exists(flag))
             {
                 try { File.Delete(flag); } catch { }
-                EditorApplication.delayCall += Run;
+                Run();
             }
         }
 
