@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
@@ -41,8 +41,19 @@ namespace MoreMountains.Tools
 		/// <param name="sKey"></param>
 		protected virtual void Encrypt(Stream inputStream, Stream outputStream, string sKey)
 		{
+			// Magic bytes to identify the new format
+			byte[] magic = Encoding.ASCII.GetBytes("SALT");
+			outputStream.Write(magic, 0, magic.Length);
+
+			byte[] salt = new byte[16];
+			using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+			{
+				rng.GetBytes(salt);
+			}
+			outputStream.Write(salt, 0, salt.Length);
+
 			RijndaelManaged algorithm = new RijndaelManaged();
-			Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, Encoding.ASCII.GetBytes(_saltText));
+			Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, salt);
 
 			algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
 			algorithm.IV = key.GetBytes(algorithm.BlockSize / 8);
@@ -59,14 +70,58 @@ namespace MoreMountains.Tools
 		/// <param name="sKey"></param>
 		protected virtual void Decrypt(Stream inputStream, Stream outputStream, string sKey)
 		{
-			RijndaelManaged algorithm = new RijndaelManaged();
-			Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, Encoding.ASCII.GetBytes(_saltText));
+			byte[] magic = new byte[4];
+			bool isNewFormat = false;
 
-			algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
-			algorithm.IV = key.GetBytes(algorithm.BlockSize / 8);
+			long startPosition = 0;
+			if (inputStream.CanSeek)
+			{
+				startPosition = inputStream.Position;
+			}
 
-			CryptoStream cryptostream = new CryptoStream(inputStream, algorithm.CreateDecryptor(), CryptoStreamMode.Read);
-			cryptostream.CopyTo(outputStream);
+			if (inputStream.Read(magic, 0, magic.Length) == 4)
+			{
+				if (Encoding.ASCII.GetString(magic) == "SALT")
+				{
+					isNewFormat = true;
+				}
+			}
+
+			if (isNewFormat)
+			{
+				byte[] salt = new byte[16];
+				inputStream.Read(salt, 0, salt.Length);
+
+				RijndaelManaged algorithm = new RijndaelManaged();
+				Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, salt);
+
+				algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
+				algorithm.IV = key.GetBytes(algorithm.BlockSize / 8);
+
+				CryptoStream cryptostream = new CryptoStream(inputStream, algorithm.CreateDecryptor(), CryptoStreamMode.Read);
+				cryptostream.CopyTo(outputStream);
+			}
+			else
+			{
+				// Reset stream to beginning for legacy format
+				if (inputStream.CanSeek)
+				{
+					inputStream.Position = startPosition;
+				}
+				else
+				{
+					throw new CryptographicException("Cannot read legacy save file from non-seekable stream.");
+				}
+
+				RijndaelManaged algorithm = new RijndaelManaged();
+				Rfc2898DeriveBytes key = new Rfc2898DeriveBytes(sKey, Encoding.ASCII.GetBytes(_saltText));
+
+				algorithm.Key = key.GetBytes(algorithm.KeySize / 8);
+				algorithm.IV = key.GetBytes(algorithm.BlockSize / 8);
+
+				CryptoStream cryptostream = new CryptoStream(inputStream, algorithm.CreateDecryptor(), CryptoStreamMode.Read);
+				cryptostream.CopyTo(outputStream);
+			}
 		}
 	}
 }
