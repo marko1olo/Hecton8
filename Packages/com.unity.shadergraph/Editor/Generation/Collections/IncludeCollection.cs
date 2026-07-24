@@ -7,7 +7,7 @@ namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
     [Serializable]
-    internal class IncludeCollection : IEnumerable<IncludeDescriptor>
+    public class IncludeCollection : IEnumerable<IncludeDescriptor>
     {
         [SerializeField]
         List<IncludeDescriptor> includes;

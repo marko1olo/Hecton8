@@ -427,8 +427,15 @@ namespace Hecton8.SaveSystem
                     nameof(LoadCandidateScratch));
             }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            internal System.Action TestHook_DisposeThrow;
+#endif
+
             public void Dispose()
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_DisposeThrow?.Invoke();
+#endif
                 Exception firstException = null;
                 DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));
                 DisposeNativeArrayBestEffort(ref CompressedSaveBuffer, ref firstException, sentinelLabel: nameof(CompressedSaveBuffer));
@@ -449,6 +456,9 @@ namespace Hecton8.SaveSystem
 
         private static class StaticNativeBuffers
         {
+            #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            internal static System.Action s_TestReleaseOwnedBufferUnregisterHook;
+            #endif
             internal static System.Action TestHook_DisposeThrow;
             private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
@@ -594,6 +604,9 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    s_TestReleaseOwnedBufferUnregisterHook?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (System.Exception nativeSentinelException0)
@@ -3451,6 +3464,7 @@ namespace Hecton8.SaveSystem
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal static Action TestHook_PublishSaveStatus_SimulateException;
+        internal static Action TestHook_DumpSaveBlackBox;
 #endif
 
         private static void PublishSaveStatus(byte slotIndex, uint operationId, byte state, float progress01, uint flags)
@@ -3924,6 +3938,9 @@ namespace Hecton8.SaveSystem
                     WriteAsyncPersistenceTelemetryEntry(dumpPtr, ref cursor, in entry);
                 }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                TestHook_DumpSaveBlackBox?.Invoke();
+#endif
                 if (!NativeFaultDumpWriter.TryWriteAll(AsyncPersistenceBlackBoxDumpRelativePath, dumpBytes, cursor))
                     LogWarning("[SaveManager] Save black box dump failed.");
             }
@@ -4129,6 +4146,7 @@ namespace Hecton8.SaveSystem
 
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         internal static System.Action DisposeNativeArrayTestHook;
+        internal static System.Action s_testHookDisposeNativeArrayImmediateSentinelUnregisterError;
 #endif
 
         private static void DisposeTransientNativeArrayBestEffort<T>(
@@ -4191,6 +4209,9 @@ namespace Hecton8.SaveSystem
             {
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    s_testHookDisposeNativeArrayImmediateSentinelUnregisterError?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (Exception exception)

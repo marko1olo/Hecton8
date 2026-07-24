@@ -14,6 +14,9 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9000)]
     public sealed class ObjectPoolManager : MonoBehaviour, IObjectPoolService, IServiceHeartbeat, IServiceShutdown
     {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+        internal static Action s_testHook_BeforeAwaitableDebtMonitorNextFrameAsync;
+#endif
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string PoolContainerRuntimeName = "[Pool]";
         private const uint PoolExhaustedReasonMissingPool = 1u;
@@ -400,6 +403,9 @@ namespace Hecton8.Core
                             continue;
 
                         UpdateDiagnostics();
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                        s_testHook_BeforeAwaitableDebtMonitorNextFrameAsync?.Invoke();
+#endif
                         await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                         if (_serviceShuttingDown)
                             return false;

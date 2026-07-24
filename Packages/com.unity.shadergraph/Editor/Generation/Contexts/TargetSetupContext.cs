@@ -7,10 +7,10 @@ namespace UnityEditor.ShaderGraph
     [GenerationAPI]
     public class TargetSetupContext
     {
-        public List<SubShaderDescriptor> subShaders { get; private set; }
+        internal List<SubShaderDescriptor> subShaders { get; private set; }
 
-        public KernelCollection kernels { get; private set; }
-        public AssetCollection assetCollection { get; private set; }
+        internal KernelCollection kernels { get; private set; }
+        internal AssetCollection assetCollection { get; private set; }
 
         // these are data that are now stored in the subshaders.
         // but for backwards compatibility with the existing Targets,
@@ -22,7 +22,7 @@ namespace UnityEditor.ShaderGraph
         private string defaultShaderGUI;
 
         // assetCollection is used to gather asset dependencies
-        public TargetSetupContext(AssetCollection assetCollection = null)
+        internal TargetSetupContext(AssetCollection assetCollection = null)
         {
             subShaders = new List<SubShaderDescriptor>();
             kernels = new KernelCollection();
@@ -49,17 +49,17 @@ namespace UnityEditor.ShaderGraph
             }
         }
 
-        public void AddSubShader(SubShaderDescriptor subShader)
+        internal void AddSubShader(SubShaderDescriptor subShader)
         {
             subShaders.Add(subShader);
         }
 
-        public void AddKernel(KernelDescriptor kernel)
+        internal void AddKernel(KernelDescriptor kernel)
         {
             kernels.Add(kernel);
         }
 
-        public void AddAssetDependency(UnityEngine.GUID guid, AssetCollection.Flags flags)
+        internal void AddAssetDependency(UnityEngine.GUID guid, AssetCollection.Flags flags)
         {
             assetCollection?.AddAssetDependency(guid, flags);
         }

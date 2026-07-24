@@ -3,7 +3,7 @@ using System;
 namespace UnityEditor.ShaderGraph
 {
     [Flags]
-    enum ShaderStageCapability
+    public enum ShaderStageCapability
     {
         None = 0,
         Vertex = 1 << 0,
@@ -11,7 +11,7 @@ namespace UnityEditor.ShaderGraph
         All = Vertex | Fragment
     }
 
-    enum ShaderStage
+    public enum ShaderStage
     {
         Vertex = 1 << 0,
         Fragment = 1 << 1

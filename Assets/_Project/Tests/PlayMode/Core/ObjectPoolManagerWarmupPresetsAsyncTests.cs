@@ -70,7 +70,7 @@ namespace Hecton8.Tests.Core
         }
 
         [Test]
-        public void WarmupPresetsAsync_CancellationRequested_ThrowsOperationCanceledException()
+        public async Task WarmupPresetsAsync_CancellationRequested_ReturnsFalseAndResetsStartedFlag()
         {
             // Set up a valid preset to ensure we enter the loop
             var type = typeof(ObjectPoolManager);
@@ -92,10 +92,13 @@ namespace Hecton8.Tests.Core
             var cts = new CancellationTokenSource();
             cts.Cancel(); // Pre-cancel
 
-            Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            {
-                await _poolManager.WarmupPresetsAsync(10.0, cts.Token);
-            });
+            bool result = await _poolManager.WarmupPresetsAsync(10.0, cts.Token);
+
+            Assert.IsFalse(result, "Expected WarmupPresetsAsync to return false when canceled.");
+
+            var startedField = type.GetField("_warmupPresetsStarted", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            bool isStarted = (bool)startedField.GetValue(_poolManager);
+            Assert.IsFalse(isStarted, "Expected _warmupPresetsStarted to be false.");
         }
 
         [Test]

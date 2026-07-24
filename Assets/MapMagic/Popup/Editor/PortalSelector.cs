@@ -21,7 +21,10 @@ namespace MapMagic.Nodes.GUI
 
 		public static void DrawPortalSelector (Graph graph, IPortalExit<object> portalExit)
 		{
-			Type exitType = portalExit.GetType().BaseType.GetGenericArguments()[0];
+			Type exitType = null;
+			foreach (Type i in portalExit.GetType().GetInterfaces())
+				if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPortalExit<>))
+					{ exitType = i.GetGenericArguments()[0]; break; }
 
 			if (itemTextStyle == null)
 			{
@@ -35,8 +38,12 @@ namespace MapMagic.Nodes.GUI
 			{
 				IPortalEnter<object> portalEnter = graph.generators[g] as IPortalEnter<object>;
 				if (portalEnter == null) continue;
-				if (portalEnter.GetType().BaseType.GetGenericArguments()[0] != exitType) continue;
-				// Note: Implementing generic portals may require significant changes to the portal selection UI and underlying data structures.
+				Type enterType = null;
+				foreach (Type i in portalEnter.GetType().GetInterfaces())
+					if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPortalEnter<>))
+						{ enterType = i.GetGenericArguments()[0]; break; }
+
+				if (enterType != exitType) continue;
 
 				Item item = new Item( portalEnter.Name, 
 					onDraw: (i, r) => EditorGUI.LabelField(r, i.name, itemTextStyle),

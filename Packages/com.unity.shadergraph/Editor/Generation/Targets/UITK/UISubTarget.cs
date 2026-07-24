@@ -332,7 +332,7 @@ namespace UnityEditor.Rendering.UITK.ShaderGraph
             return false;
         }
 
-        public override bool ValidateNodeCompatibility(AbstractMaterialNode node, out string warningMessage, out Rendering.ShaderCompilerMessageSeverity severity)
+        internal override bool ValidateNodeCompatibility(AbstractMaterialNode node, out string warningMessage, out Rendering.ShaderCompilerMessageSeverity severity)
         {
             List<UVMaterialSlot> uvSlots = new();
             node.GetInputSlots<UVMaterialSlot>(uvSlots);

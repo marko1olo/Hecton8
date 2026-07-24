@@ -1,4 +1,4 @@
-﻿// Crest Ocean System
+// Crest Ocean System
 
 // Copyright 2020 Wave Harmonic Ltd
 
@@ -17,10 +17,6 @@ namespace Crest.Spline
         static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
 
         public abstract Vector2 GetData();
-
-#if UNITY_EDITOR
-        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
-#endif
 
         public void NotifyOfSplineChange()
         {
@@ -61,7 +57,6 @@ namespace Crest.Spline
         Transform _parent;
 
 #if UNITY_EDITOR
-        static readonly System.Collections.Generic.List<IReceiveSplineChangeMessages> s_receivers = new System.Collections.Generic.List<IReceiveSplineChangeMessages>();
         static readonly System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages> s_gizmoReceivers = new System.Collections.Generic.List<IReceiveSplinePointOnDrawGizmosSelectedMessages>();
 
         void Update()

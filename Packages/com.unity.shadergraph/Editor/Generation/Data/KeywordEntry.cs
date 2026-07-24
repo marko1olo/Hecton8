@@ -4,7 +4,7 @@ namespace UnityEditor.ShaderGraph
 {
     [Serializable]
     [GenerationAPI]
-    internal struct KeywordEntry
+    public struct KeywordEntry
     {
         public int id; // Used to determine what MaterialSlot an entry belongs to
         public string displayName;

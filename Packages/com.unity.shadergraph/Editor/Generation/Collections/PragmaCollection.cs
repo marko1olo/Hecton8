@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class PragmaCollection : IEnumerable<PragmaCollection.Item>
+    public class PragmaCollection : IEnumerable<PragmaCollection.Item>
     {
         public class Item : IConditional
         {

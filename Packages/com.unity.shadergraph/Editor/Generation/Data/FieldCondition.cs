@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class FieldCondition
+    public class FieldCondition
     {
         public FieldDescriptor field { get; }
         public bool condition { get; }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class RenderStateCollection : IEnumerable<RenderStateCollection.Item>
+    public class RenderStateCollection : IEnumerable<RenderStateCollection.Item>
     {
         public class Item : IConditional
         {

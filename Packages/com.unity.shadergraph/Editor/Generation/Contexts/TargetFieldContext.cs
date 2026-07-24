@@ -5,14 +5,14 @@ namespace UnityEditor.ShaderGraph
     [GenerationAPI]
     public class TargetFieldContext
     {
-        public List<ConditionalField> conditionalFields { get; private set; }
-        public PassDescriptor pass { get; private set; }
-        public List<(BlockFieldDescriptor descriptor, bool isDefaultValue)> blocks { get; private set; }
-        public List<BlockFieldDescriptor> connectedBlocks { get; private set; }
+        internal List<ConditionalField> conditionalFields { get; private set; }
+        internal PassDescriptor pass { get; private set; }
+        internal List<(BlockFieldDescriptor descriptor, bool isDefaultValue)> blocks { get; private set; }
+        internal List<BlockFieldDescriptor> connectedBlocks { get; private set; }
         public bool hasDotsProperties { get; private set; }
 
         // NOTE: active blocks (and connectedBlocks) do not include temporarily added default blocks
-        public TargetFieldContext(PassDescriptor pass, List<(BlockFieldDescriptor descriptor, bool isDefaultValue)> activeBlocks, List<BlockFieldDescriptor> connectedBlocks, bool hasDotsProperties)
+        internal TargetFieldContext(PassDescriptor pass, List<(BlockFieldDescriptor descriptor, bool isDefaultValue)> activeBlocks, List<BlockFieldDescriptor> connectedBlocks, bool hasDotsProperties)
         {
             conditionalFields = new List<ConditionalField>();
             this.pass = pass;
@@ -21,7 +21,7 @@ namespace UnityEditor.ShaderGraph
             this.hasDotsProperties = hasDotsProperties;
         }
 
-        public void AddField(FieldDescriptor field, bool conditional = true)
+        internal void AddField(FieldDescriptor field, bool conditional = true)
         {
             conditionalFields.Add(new ConditionalField(field, conditional));
         }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal class StructCollection : IEnumerable<StructCollection.Item>
+    public class StructCollection : IEnumerable<StructCollection.Item>
     {
         public class Item : IConditional
         {

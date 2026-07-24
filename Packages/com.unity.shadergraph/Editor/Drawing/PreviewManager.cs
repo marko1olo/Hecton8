@@ -1389,11 +1389,13 @@ namespace UnityEditor.ShaderGraph.Drawing
                 var messages = ShaderUtil.GetShaderMessages(shaderData.shader);
                 if (messages.Length > 0)
                 {
-                    // TODO: Where to add errors to the stack??
                     if (shaderData.node == null)
                         return;
 
-                    m_Messenger.AddOrAppendError(this, shaderData.node.objectId, messages[0]);
+                    foreach (var message in messages)
+                    {
+                        m_Messenger.AddOrAppendError(this, shaderData.node.objectId, message);
+                    }
                     ShaderUtil.ClearShaderMessages(shaderData.shader);
                 }
             }

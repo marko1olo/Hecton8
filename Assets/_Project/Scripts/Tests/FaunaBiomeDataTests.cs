@@ -25,12 +25,12 @@ namespace Hecton8.Tests
 
             _archetype1 = ScriptableObject.CreateInstance<CreatureArchetypeData>();
             _archetype1.prefab = _dummyPrefab1;
-            _archetype1.spawnWeight = 10f;
+            _archetype1.spawnWeight = 10;
             _archetype1.maxAlivePerBiome = 5;
 
             _archetype2 = ScriptableObject.CreateInstance<CreatureArchetypeData>();
             _archetype2.prefab = _dummyPrefab2;
-            _archetype2.spawnWeight = 20f;
+            _archetype2.spawnWeight = 20;
             _archetype2.maxAlivePerBiome = 10;
         }
 

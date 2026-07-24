@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal struct FieldDependency
+    public struct FieldDependency
     {
         public FieldDescriptor field;
         public FieldDescriptor dependsOn;

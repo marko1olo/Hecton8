@@ -9,7 +9,7 @@ using Pool = UnityEngine.Pool;
 
 namespace UnityEditor.ShaderGraph
 {
-    internal static class CustomInterpolatorUtils
+    public static class CustomInterpolatorUtils
     {
         // We need to be able to adapt CustomInterpolatorNode's output if the feature couldn't work per pass.
         // there isn't really a good way to get global information about generation state during a node's generation.
@@ -30,7 +30,7 @@ namespace UnityEditor.ShaderGraph
         }
     }
 
-    internal class CustomInterpSubGen
+    public class CustomInterpSubGen
     {
         #region descriptor
 
@@ -48,7 +48,7 @@ namespace UnityEditor.ShaderGraph
         // Describes where/what/how custom interpolator behavior can be achieved through splicing and defines.
         // Generally speaking, this may require a mix of changes to client template and includes.
         [GenerationAPI]
-        internal struct Descriptor
+        public struct Descriptor
         {
             internal string src, dst; // for function or block. For macro block src is start of the macro and dst is end of the macro.
             internal string name;     // for struct or function.
@@ -73,7 +73,7 @@ namespace UnityEditor.ShaderGraph
         }
 
         [GenerationAPI]
-        internal class Collection : IEnumerable<Collection.Item>
+        public class Collection : IEnumerable<Collection.Item>
         {
             public class Item
             {

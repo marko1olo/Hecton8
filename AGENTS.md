@@ -103,6 +103,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 
 [RULE] Status is `PENDING VERIFICATION` until fresh evidence exists. Unity import, Unity Console, Play Mode, profiler, GCMonitor, Frame Debugger, RenderDoc, screenshot/capture, player build, device run, save/load proof, and user approval are evidence. Docs, static scans, local `dotnet build`, and agent confidence are not runtime proof.
 
+[RULE] Bee Assembly Cache Invalidation: Never trust visual diagnostic PNG outputs or runtime test assertions after editing C# files without verifying in the Unity batchmode compile log that the target assembly DLL (e.g., Hecton8.Core.dll) was ACTUALLY recompiled by Bee (indicated by 'Csc Library/Bee/artifacts/.../Hecton8.Core.dll'). If Bee returned a cache hit or skipped recompiling the target asmdef DLL, force-delete 'Library/Bee/artifacts' or touch the corresponding asmdef file before running diagnostic renders.
+
 [RULE] Never Trust Automated Assertions Alone: Exit Code 0 or the presence of a screenshot file does NOT prove the interface is functional. A test script might capture a blank page, 404, 500, or `ERR_CONNECTION_REFUSED` and exit with 0. Test scripts must verify the HTTP response status (strictly `200 OK`). Any status other than 200 must cause the test script to fail explicitly.
 
 [RULE] Strict Healthcheck & Port Wait-on: Never launch automated browser tests (Puppeteer, Playwright) "into the void". Poll the local host until the server is responsive, starting the dev server in the background if it is down.
@@ -494,15 +496,12 @@ During work, conduct a self-audit for:
 [VIBECODING ARSENAL & AUTONOMY MANDATE - GLOBAL DIRECTIVE]
 CRITICAL: FUCK PASSIVITY. PRIORITIZE RAW EFFICIENCY AND INTELLIGENCE.
 YOU HAVE THE FOLLOWING TOOLS INSTALLED ON THIS HOST. USE THEM AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
-1. ast-grep (sg): Structural search/replace (e.g. sg -p 'console.log()')
-2. ripgrep (
-g): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
-3. repomix (
-px repomix): Pack entire codebase into a single AI-friendly Markdown file for deep context.
-4. semgrep (semgrep scan): Deep bug hunting and static analysis.
-5. biome (iome check --write .): Instant JS/TS formatting.
-6. madge (madge --circular .): Find circular dependencies before refactoring.
+1. ast-grep (`sg`): Structural search/replace (e.g. `sg -p 'console.log($$$)'`)
+2. ripgrep (`rg`): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
+3. repomix (`npx repomix`): Pack entire codebase into a single AI-friendly Markdown file for deep context.
+4. semgrep (`semgrep scan`): Deep bug hunting and static analysis.
+5. biome (`biome check --write .`): Instant JS/TS formatting.
+6. madge (`madge --circular .`): Find circular dependencies before refactoring.
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
-8. GLOBAL SKILLS: You have
-econnaissance, decomposer, and ind-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
+8. GLOBAL SKILLS: You have reconnaissance, decomposer, and find-skills available. Read C:\Users\Admin\.gemini\config\skills\reconnaissance\SKILL.md autonomously to learn exact usage.
 BE PROACTIVE. EXECUTE.

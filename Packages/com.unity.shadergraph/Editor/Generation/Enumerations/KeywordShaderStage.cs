@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum KeywordShaderStage
+    public enum KeywordShaderStage
     {
         Default = 0,        // equivalent to ALL
 

@@ -1,7 +1,7 @@
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal enum ShaderValueType
+    public enum ShaderValueType
     {
         Boolean,
         Float,

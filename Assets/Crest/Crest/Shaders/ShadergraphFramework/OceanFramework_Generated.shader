@@ -2219,15 +2219,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -4441,15 +4433,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -9080,15 +9064,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -11163,15 +11139,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -13246,15 +13214,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -15480,15 +15440,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -20115,15 +20067,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -22198,15 +22142,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
@@ -24282,15 +24218,7 @@ Shader "Crest/Framework"
 
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)
-<<<<<<< Updated upstream
             output.WorldSpaceViewDirection =     GetWorldSpaceNormalizeViewDir(input.positionWS);
-=======
-            #if !CREST_HDRP
-            output.WorldSpaceViewDirection =     normalize(input.viewDirectionWS);
-            #else
-            output.WorldSpaceViewDirection =     input.viewDirectionWS;
-            #endif
->>>>>>> Stashed changes
             #endif
 
             #if defined(KEYWORD_PERMUTATION_0) || defined(KEYWORD_PERMUTATION_1) || defined(KEYWORD_PERMUTATION_2) || defined(KEYWORD_PERMUTATION_3) || defined(KEYWORD_PERMUTATION_4) || defined(KEYWORD_PERMUTATION_5) || defined(KEYWORD_PERMUTATION_6) || defined(KEYWORD_PERMUTATION_7)

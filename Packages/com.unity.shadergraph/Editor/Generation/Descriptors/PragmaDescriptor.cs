@@ -3,7 +3,7 @@ using System.Linq;
 namespace UnityEditor.ShaderGraph
 {
     [GenerationAPI]
-    internal struct PragmaDescriptor
+    public struct PragmaDescriptor
     {
         public string value;
     }

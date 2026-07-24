@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace UnityEditor.ShaderGraph
 {
-    internal class AdditionalCommandDescriptor
+    public class AdditionalCommandDescriptor
     {
         public string token { get; }
         public string content { get; }
