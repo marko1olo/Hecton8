@@ -179,7 +179,7 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R32_2026-07-24_RIVERS_AND_LAKES";
+        public static string BuildSentinel => "SENTINEL_R34_2026-07-24_C2CRATERS_AND_SEDIMENT";
 
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
@@ -807,6 +807,10 @@ namespace Hecton8.World
             // fractures and talus now activate only where mountains are actually steep.
             float slopeProxy = math.saturate(shelfBreakMask * 0.82f + ridgeMask * 0.72f + faultMask * 0.65f + plateEdgeMask * 0.40f + trueMountainSlope);
 
+            // Mute all high-frequency noise on flat sediment areas (slope < 0.12)
+            float sedimentTranquilityMask = 1f - math.smoothstep(0.05f, 0.15f, slopeProxy);
+            float steepRockMask = math.smoothstep(0.20f, 0.35f, slopeProxy);
+
             // =========================================================================
             // SYSTEM B: FEATURE GENERATORS (Burst-safe, deterministic, Budget-respecting)
             // =========================================================================
@@ -900,7 +904,10 @@ namespace Hecton8.World
 
                         float normalizedDist = dist / math.max(1f, radius);
                         float bowl = math.pow(1f - math.smoothstep(0f, 1f, normalizedDist), 1.55f);
-                        float rim = math.smoothstep(0f, 1f, math.max(0f, 1f - math.abs(normalizedDist - 1f) * 2.5f));
+                        
+                        // C2-continuous bell curve using cosine to eliminate C1-discontinuity red slope arc
+                        float rimDist = math.saturate(math.abs(normalizedDist - 1f) * 2.5f);
+                        float rim = math.saturate(0.5f + 0.5f * math.cos(rimDist * 3.14159f)) * math.smoothstep(1.0f, 0.95f, rimDist);
                         float peak = math.smoothstep(0f, 1f, 1f - math.smoothstep(0f, radius * 0.16f, dist)) * math.smoothstep(450f, 850f, radius) * 0.35f;
 
                         craterDepthDelta += bowl * radius * 0.18f * recipe.Craters;
@@ -1010,6 +1017,20 @@ namespace Hecton8.World
                 }
             }
 
+            // --- SEDIMENT DRIFT RIDGES (Smooth sweeping sand waves for flat shelves) ---
+            if (shelfMask > 0.3f && sedimentTranquilityMask > 0.1f)
+            {
+                float driftDir = FractalSimplexNoise01(warpedNorm * 1.5f, seed ^ 0x11AABB22u, 2) * 3.14159f;
+                float2 driftAxis = new float2(math.cos(driftDir), math.sin(driftDir));
+                float driftPhase = math.dot(warpedPos, driftAxis) * 0.004f + FractalSimplexNoise01(warpedPos * 0.001f, seed ^ 0x33CCDD44u, 2);
+                
+                // Smooth C2 waves
+                float driftWave = math.saturate(0.5f + 0.5f * math.cos(driftPhase));
+                
+                // Add volume, gated by the tranquility (flatness) and shelf presence
+                depth += driftWave * 8f * sedimentTranquilityMask * shelfMask;
+            }
+
             // --- B4: STRATIFICATION (elevation benches on slopes, broken by feather masks) ---
             // REWRITE: the old version did frac(dot(warpedPos,bandAxis)+warp) — frac() of a near-planar
             // MAP-COORDINATE field is an iso-contour field, which renders as a fingerprint (parallel
@@ -1071,7 +1092,7 @@ namespace Hecton8.World
 
             // --- B9: FRACTURED WALLS (Steep slope blocky detail - chaotic Simplex rock, no cellular brain cortex) ---
             if (stageDump == 7) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 7: +strata (before mesoFracture/talus)
-            float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * (0.5f + slopeProxy * 0.9f);
+            float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * steepRockMask;
             float intermediateErosionA = FractalSimplexNoise01(warpedPos * 0.006f + new float2(-8.2f, 15.4f), seed ^ 0x6E1A2B3Cu, 4);
             float intermediateErosionB = FractalSimplexNoise01(warpedPos * 0.018f + new float2(12.7f, -3.1f), seed ^ 0x8C3B1A4Du, 3);
             float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * 45f;
