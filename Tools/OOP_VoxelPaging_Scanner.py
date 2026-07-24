@@ -54,12 +54,11 @@ def resolve_slot(sector_hash: int) -> int:
 
 
 def next_u64(value: int) -> int:
-    x = (value + 0x9E3779B97F4A7C15) & 0xFFFFFFFFFFFFFFFF
-    x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9
-    x = (x & 0xFFFFFFFFFFFFFFFF)
-    x = (x ^ (x >> 27)) * 0x94D049BB133111EB
-    x = (x & 0xFFFFFFFFFFFFFFFF)
-    return (x ^ (x >> 31)) & 0xFFFFFFFFFFFFFFFF
+    value ^= value >> 12
+    value &= 0xFFFFFFFFFFFFFFFF
+    value ^= (value << 25) & 0xFFFFFFFFFFFFFFFF
+    value ^= value >> 27
+    return (value * 0x2545F4914F6CDD1D) & 0xFFFFFFFFFFFFFFFF
 
 
 def fuzzer(samples: int = 10000) -> dict:

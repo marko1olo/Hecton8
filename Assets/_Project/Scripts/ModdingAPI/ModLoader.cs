@@ -120,7 +120,7 @@ namespace Hecton8.Modding
             {
                 InstallHooks();
                 await Awaitable.NextFrameAsync();
-                await DiscoverAndLoadMods();
+                DiscoverAndLoadMods();
                 await Awaitable.NextFrameAsync();
                 ModLocalizationBridge.FlushPendingInjections();
             }
@@ -189,7 +189,7 @@ namespace Hecton8.Modding
             _hooksInstalled = false;
         }
 
-        private static async Awaitable DiscoverAndLoadMods()
+        private static void DiscoverAndLoadMods()
         {
 #if ENABLE_IL2CPP
             Hecton8.Core.H8Debug.LogWarning("[ModLoader] WARNING: External managed code mods require a Mono scripting backend. IL2CPP builds cannot load runtime assemblies dynamically.");
@@ -208,17 +208,9 @@ namespace Hecton8.Modding
             // COLD ALLOC: List<ModCandidate>[manifest count] — discovered manifests before dependency sort — owner: ModLoader
             List<ModCandidate> candidates = new List<ModCandidate>(manifestPaths.Count);
 
-            // COLD ALLOC: List<Awaitable<ModCandidate>>[manifest count] - async reads - owner: ModLoader
-            List<Awaitable<ModCandidate>> tasks = new List<Awaitable<ModCandidate>>(manifestPaths.Count);
             for (int i = 0; i < manifestPaths.Count; i++)
             {
-                tasks.Add(TryReadManifestAsync(manifestPaths[i]));
-            }
-
-            for (int i = 0; i < tasks.Count; i++)
-            {
-                ModCandidate candidate = await tasks[i];
-                if (candidate != null)
+                if (TryReadManifest(manifestPaths[i], out ModCandidate candidate))
                     candidates.Add(candidate);
             }
 
@@ -284,20 +276,22 @@ namespace Hecton8.Modding
             }
         }
 
-        private static async Awaitable<ModCandidate> TryReadManifestAsync(string manifestPath)
+        private static bool TryReadManifest(string manifestPath, out ModCandidate candidate)
         {
+            candidate = null;
+
             try
             {
                 if (!TryValidateManifestFileSize(manifestPath))
-                    return null;
+                    return false;
 
-                string json = await File.ReadAllTextAsync(manifestPath);
+                string json = File.ReadAllText(manifestPath);
                 ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);
 
                 if (!TryValidateModIdentifier(manifest.Id, out string modIdError))
                 {
                     Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': invalid Id. ", modIdError));
-                    return null;
+                    return false;
                 }
 
                 bool hasDeclaredEntryAssembly = !string.IsNullOrWhiteSpace(manifest.EntryAssembly);
@@ -343,7 +337,7 @@ namespace Hecton8.Modding
                     : ResolveCatalogPath(modDirectory, manifest.Id);
                 string[] localizationFiles = ResolveLocalizationFiles(modDirectory);
 
-                return BuildCandidate(
+                candidate = BuildCandidate(
                     manifest,
                     manifestPath,
                     modDirectory,
@@ -353,11 +347,12 @@ namespace Hecton8.Modding
                     hasManagedEntry,
                     catalogPath,
                     localizationFiles);
+                return true;
             }
             catch (Exception ex)
             {
                 Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Failed to read manifest '", manifestPath, "': ", ex.Message));
-                return null;
+                return false;
             }
         }
 

@@ -190,7 +190,7 @@ namespace Hecton8.World
                 LimestoneShelf = math.saturate(((shelf * (0.35f + shelfBreak * 0.28f)) + (ridge * shallow * 0.20f) + (terrace * 0.22f)) * (1f - finalRock)),
                 ClaySilt = math.saturate(((sediment * (0.58f + basin * 0.30f)) + (slump * 0.18f) + (flat * abyss * 0.16f) + (1f - patchContrast) * 0.4f) * (1f - finalRock)),
                 HardRock = finalRock,
-                BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (math.smoothstep(2200f, 2800f, sample.DepthMeters) * basin * 0.12f)) * (1f - finalRock)),
+                BrineSaltCrust = math.saturate(((trench * (0.46f + abyss * 0.34f)) + (sample.DepthMeters > 2500f ? basin * 0.12f : 0f)) * (1f - finalRock)),
                 ManganeseNodulePlain = math.saturate(nodule * abyss * flat * (0.72f + provinceJitter * 0.24f) * (1f - trench * 0.55f) * (1f - finalRock)),
                 ReefRubble = math.saturate(reef * shallow * upperWater * (0.82f + localPatch * 0.38f) * (1f - trench * 0.72f) * (1f - finalRock)),
                 SeepCrust = math.saturate(seep * (0.72f + tributary * 0.32f + erosion * 0.24f) * (1f - shelf * 0.24f) * (1f - finalRock))

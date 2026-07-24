@@ -121,6 +121,10 @@ namespace Hecton8.Construction
             RefreshDiagnostics();
         }
 
+        public void OnHoverStart() { }
+
+        public void OnHoverEnd() { }
+
         public void Interact(Transform interactor)
         {
             if (_slottedTool != null)

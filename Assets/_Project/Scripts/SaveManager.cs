@@ -45,7 +45,6 @@ namespace Hecton8.SaveSystem
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
-        private static readonly List<SaveManager> s_KnownInstances = new List<SaveManager>();
         private static int s_geologicalAnomalyNotificationMissCount;
         private static int s_criticalSectorCorruptionNotificationMissCount;
         private const long MainThreadSnapshotBudgetMs = 5L;
@@ -631,14 +630,12 @@ namespace Hecton8.SaveSystem
         private static void DisposeEditorNativeBuffersForLifecycle()
         {
             Exception firstException = null;
-            for (int i = s_KnownInstances.Count - 1; i >= 0; i--)
+            SaveManager[] managers = UnityEngine.Object.FindObjectsByType<SaveManager>(FindObjectsInactive.Include);
+            for (int i = 0; i < managers.Length; i++)
             {
-                SaveManager manager = s_KnownInstances[i];
+                SaveManager manager = managers[i];
                 if (manager == null)
-                {
-                    s_KnownInstances.RemoveAt(i);
                     continue;
-                }
 
                 try
                 {
@@ -1034,9 +1031,6 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
-            if (!s_KnownInstances.Contains(this))
-                s_KnownInstances.Add(this);
-
             if (TryDeactivateDuplicateRuntimeOwner())
                 return;
 
@@ -1169,8 +1163,6 @@ namespace Hecton8.SaveSystem
 
         private void OnDestroy()
         {
-            s_KnownInstances.Remove(this);
-
             if (_runtimeOwnerAborted)
                 return;
 
@@ -2376,51 +2368,6 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            if (!TryApplyWfcOutpostGridWritesAndSnapshot(
-                    dirtySectorHash,
-                    dirtyCellIndices,
-                    dirtyCellFlags,
-                    dirtyCellWriteCount,
-                    hasHydration,
-                    hydratedPayloadHash,
-                    hydratedPayloadBytes,
-                    hydratedCacheFlags,
-                    hydratedCacheFrame,
-                    out bool copiedGridSnapshot,
-                    out WfcOutpostPersistenceStatus status,
-                    out bool publishWriteFailure))
-            {
-                return false;
-            }
-
-            StageAndCommitWfcOutpostGridSnapshot(
-                dirtySectorHash,
-                dirtyFrame,
-                copiedGridSnapshot,
-                status,
-                publishWriteFailure);
-
-            return true;
-        }
-
-        private bool TryApplyWfcOutpostGridWritesAndSnapshot(
-            ulong dirtySectorHash,
-            Span<ushort> dirtyCellIndices,
-            Span<byte> dirtyCellFlags,
-            int dirtyCellWriteCount,
-            bool hasHydration,
-            ulong hydratedPayloadHash,
-            int hydratedPayloadBytes,
-            uint hydratedCacheFlags,
-            uint hydratedCacheFrame,
-            out bool copiedGridSnapshot,
-            out WfcOutpostPersistenceStatus status,
-            out bool publishWriteFailure)
-        {
-            copiedGridSnapshot = false;
-            status = WfcOutpostPersistenceStatus.None;
-            publishWriteFailure = false;
-
             if (!TryAcquireWfcOutpostGridWrite(
                     out NativeArray<byte> wfcGrid,
                     out VaultGenerationHandle<byte> wfcGridHandle,
@@ -2433,6 +2380,13 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            bool stageSucceeded = false;
+            bool needsCommit = false;
+            bool publishWriteFailure = false;
+            ulong packedHash = 0UL;
+            int payloadBytes = 0;
+            WfcOutpostPersistenceStatus status = WfcOutpostPersistenceStatus.None;
+            bool copiedGridSnapshot = false;
             bool appliedHydration = false;
             try
             {
@@ -2473,21 +2427,6 @@ namespace Hecton8.SaveSystem
                     hydratedPayloadBytes);
             }
 
-            return true;
-        }
-
-        private void StageAndCommitWfcOutpostGridSnapshot(
-            ulong dirtySectorHash,
-            uint dirtyFrame,
-            bool copiedGridSnapshot,
-            WfcOutpostPersistenceStatus status,
-            bool publishWriteFailure)
-        {
-            bool stageSucceeded = false;
-            bool needsCommit = false;
-            ulong packedHash = 0UL;
-            int payloadBytes = 0;
-
             if (copiedGridSnapshot)
             {
                 stageSucceeded = TryStageWfcOutpostStateSnapshotPayload(
@@ -2521,6 +2460,8 @@ namespace Hecton8.SaveSystem
                     payloadBytes,
                     out _);
             }
+
+            return true;
         }
 
         private void RecordWfcOutpostStateChangedSignalEvent(in WfcOutpostStateChangedSignal signal)
@@ -7138,79 +7079,6 @@ namespace Hecton8.SaveSystem
                 : GetPrimarySaveFilePath(slotName);
         }
 
-        private struct RepairCandidateResult
-        {
-            public SaveData Data;
-            public QuestSaveHeader PackedQuestHeader;
-            public uint[] PackedQuestStateWords;
-            public PersistentWorldDeltaRecord[] PersistentWorldItems;
-            public EcosystemSectorSaveRecord[] EcosystemSectorStates;
-            public NativeArray<byte> VoxelDeltaSnapshot;
-            public SaveMetadata Metadata;
-            public SaveLoadCandidate Candidate;
-            public bool UsedLegacyFormat;
-            public ushort PlayerDialogueChoiceFlags;
-            public string ErrorMessage;
-        }
-
-        private static bool TryFindValidRepairCandidate(string slotName, out RepairCandidateResult result)
-        {
-            result = new RepairCandidateResult();
-            bool foundValid = false;
-
-            int candidateCount = 0;
-            lock (SaveLoadCandidateScratchSync)
-            {
-                EnsureStaticLoadCandidateScratch();
-                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
-                try
-                {
-                    candidateCount = BuildLoadCandidates(slotName, candidates);
-                    for (int i = 0; i < candidateCount; i++)
-                    {
-                        SaveLoadCandidate candidate = candidates[i];
-                        if (TryLoadCandidate(
-                            slotName,
-                            candidate,
-                            out SaveData candidateData,
-                            out QuestSaveHeader candidateQuestHeader,
-                            out uint[] candidatePackedQuestStateWords,
-                            out PersistentWorldDeltaRecord[] candidateWorldItems,
-                            out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
-                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
-                            out ushort candidatePlayerDialogueChoiceFlags,
-                            out SaveMetadata loadedCandidateMetadata,
-                            out _,
-                            out _,
-                            out bool candidateUsedLegacyFormat,
-                            out _,
-                            out string candidateError))
-                        {
-                            result.Data = candidateData;
-                            result.PackedQuestHeader = candidateQuestHeader;
-                            result.PackedQuestStateWords = candidatePackedQuestStateWords;
-                            result.PersistentWorldItems = candidateWorldItems;
-                            result.EcosystemSectorStates = candidateEcosystemSectorStates;
-                            result.VoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
-                            result.Metadata = loadedCandidateMetadata;
-                            result.Candidate = candidate;
-                            result.UsedLegacyFormat = candidateUsedLegacyFormat;
-                            result.PlayerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
-                            foundValid = true;
-                            break;
-                        }
-
-                        result.ErrorMessage = candidateError;
-                    }
-                }
-                finally
-                {
-                    ClearLoadCandidates(candidates, candidateCount);
-                }
-            }
-            return foundValid;
-        }
-
         private static bool TryRepairSaveSlotInternal(string slotName, out SaveSlotRepairResult result)
         {
             if (!TryResolveSafeSlotName(slotName, out slotName))
@@ -7243,39 +7111,97 @@ namespace Hecton8.SaveSystem
 
             result.IntegrityBefore = beforeInfo.IntegrityState;
 
-            TryFindValidRepairCandidate(slotName, out RepairCandidateResult candidateResult);
+            SaveData repairedData = null;
+            QuestSaveHeader packedQuestHeader = default;
+            uint[] packedQuestStateWords = null;
+            PersistentWorldDeltaRecord[] persistentWorldItems = null;
+            EcosystemSectorSaveRecord[] ecosystemSectorStates = null;
+            NativeArray<byte> voxelDeltaSnapshot = default;
+            SaveMetadata metadataSource = beforeInfo.Metadata;
+            SaveLoadCandidate selectedCandidate = default;
+            bool usedLegacyFormat = false;
+            ushort playerDialogueChoiceFlags = 0;
+            string errorMessage = string.Empty;
 
-            SaveMetadata metadataSource = candidateResult.Metadata ?? beforeInfo.Metadata;
-
-            if (candidateResult.Data == null)
+            int candidateCount = 0;
+            lock (SaveLoadCandidateScratchSync)
             {
-                if (candidateResult.VoxelDeltaSnapshot.IsCreated)
-                    DisposeTransientNativeArrayBestEffortAndReport(ref candidateResult.VoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+                EnsureStaticLoadCandidateScratch();
+                NativeArray<SaveLoadCandidate> candidates = SaveLoadCandidateScratch;
+                try
+                {
+                    candidateCount = BuildLoadCandidates(slotName, candidates);
+                    for (int i = 0; i < candidateCount; i++)
+                    {
+                        SaveLoadCandidate candidate = candidates[i];
+                        if (TryLoadCandidate(
+                            slotName,
+                            candidate,
+                            out SaveData candidateData,
+                            out QuestSaveHeader candidateQuestHeader,
+                            out uint[] candidatePackedQuestStateWords,
+                            out PersistentWorldDeltaRecord[] candidateWorldItems,
+                            out EcosystemSectorSaveRecord[] candidateEcosystemSectorStates,
+                            out NativeArray<byte> candidateVoxelDeltaSnapshot,
+                            out ushort candidatePlayerDialogueChoiceFlags,
+                            out SaveMetadata candidateMetadata,
+                            out _,
+                            out _,
+                            out bool candidateUsedLegacyFormat,
+                            out _,
+                            out string candidateError))
+                        {
+                            repairedData = candidateData;
+                            packedQuestHeader = candidateQuestHeader;
+                            packedQuestStateWords = candidatePackedQuestStateWords;
+                            persistentWorldItems = candidateWorldItems;
+                            ecosystemSectorStates = candidateEcosystemSectorStates;
+                            voxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
+                            metadataSource = candidateMetadata ?? beforeInfo.Metadata;
+                            selectedCandidate = candidate;
+                            usedLegacyFormat = candidateUsedLegacyFormat;
+                            playerDialogueChoiceFlags = candidatePlayerDialogueChoiceFlags;
+                            break;
+                        }
 
-                result.Message = string.IsNullOrEmpty(candidateResult.ErrorMessage)
+                        errorMessage = candidateError;
+                    }
+                }
+                finally
+                {
+                    ClearLoadCandidates(candidates, candidateCount);
+                }
+            }
+
+            if (repairedData == null)
+            {
+                if (voxelDeltaSnapshot.IsCreated)
+                    DisposeTransientNativeArrayBestEffortAndReport(ref voxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                result.Message = string.IsNullOrEmpty(errorMessage)
                     ? "No valid save candidate could be repaired."
-                    : candidateResult.ErrorMessage;
+                    : errorMessage;
                 result.IntegrityAfter = beforeInfo.IntegrityState;
                 return false;
             }
 
-            bool shouldRewritePrimarySave = candidateResult.Candidate.IsBackup
+            bool shouldRewritePrimarySave = selectedCandidate.IsBackup
                 || !FileExists(GetPrimarySaveFilePath(slotName))
-                || candidateResult.UsedLegacyFormat;
+                || usedLegacyFormat;
 
             bool shouldRewritePrimaryMetadata = shouldRewritePrimarySave
                 || metadataSource == null;
 
             bool changedAnything = RepairPrimaryArtifacts(
                 slotName,
-                candidateResult.Data,
+                repairedData,
                 metadataSource,
-                candidateResult.PackedQuestHeader,
-                candidateResult.PackedQuestStateWords,
-                candidateResult.PlayerDialogueChoiceFlags,
-                candidateResult.PersistentWorldItems,
-                candidateResult.EcosystemSectorStates,
-                candidateResult.VoxelDeltaSnapshot,
+                packedQuestHeader,
+                packedQuestStateWords,
+                playerDialogueChoiceFlags,
+                persistentWorldItems,
+                ecosystemSectorStates,
+                voxelDeltaSnapshot,
                 GetBackupRetentionCountStatic(slotName),
                 shouldRewritePrimarySave);
 
@@ -7283,19 +7209,19 @@ namespace Hecton8.SaveSystem
 
             result.Success = true;
             result.ChangedAnything = changedAnything;
-            result.UsedBackupSource = candidateResult.Candidate.IsBackup;
-            result.SourceBackupGeneration = candidateResult.Candidate.IsBackup ? candidateResult.Candidate.BackupGeneration : 0;
-            result.UsedLegacyCompression = candidateResult.UsedLegacyFormat;
+            result.UsedBackupSource = selectedCandidate.IsBackup;
+            result.SourceBackupGeneration = selectedCandidate.IsBackup ? selectedCandidate.BackupGeneration : 0;
+            result.UsedLegacyCompression = usedLegacyFormat;
             result.RewrotePrimarySave = shouldRewritePrimarySave;
             result.RewrotePrimaryMetadata = shouldRewritePrimaryMetadata;
             result.IntegrityAfter = afterInfo != null ? afterInfo.IntegrityState : beforeInfo.IntegrityState;
             result.Message = changedAnything
                 ? "Slot repaired and normalized."
                 : "Slot already healthy.";
-            RecordRepairResult(result, candidateResult.Data != null ? candidateResult.Data.version : 0);
+            RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
 
-            if (candidateResult.VoxelDeltaSnapshot.IsCreated)
-                DisposeTransientNativeArrayBestEffortAndReport(ref candidateResult.VoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+            if (voxelDeltaSnapshot.IsCreated)
+                DisposeTransientNativeArrayBestEffortAndReport(ref voxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
 
             return true;
         }
@@ -7595,13 +7521,87 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                if (!TryCopyBackupToTempForPromotion(absoluteBackupPath, absoluteTempPath, tempSavePath, backupSourceBytes, out errorMessage))
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                DeleteFileIfExists(tempSavePath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                File.Copy(absoluteBackupPath, absoluteTempPath, true);
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+
+                if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError))
                 {
+                    errorMessage = string.IsNullOrEmpty(tempLengthError)
+                        ? "Critical recovery temp promoted file length could not be resolved."
+                        : tempLengthError;
+                    DeleteFileIfExists(tempSavePath);
                     return false;
                 }
 
-                if (!TryCommitTempToPrimaryForPromotion(absoluteTempPath, absolutePrimaryPath, backupSourceBytes, out errorMessage))
+                if (tempBytes != backupSourceBytes)
                 {
+                    errorMessage = "Critical recovery temp promoted file length did not match backup source.";
+                    DeleteFileIfExists(tempSavePath);
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError))
+                {
+                    errorMessage = string.IsNullOrEmpty(tempFlushError)
+                        ? "Critical recovery temp promoted file flush failed."
+                        : tempFlushError;
+                    DeleteFileIfExists(tempSavePath);
+                    return false;
+                }
+
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
+                if (File.Exists(absolutePrimaryPath))
+                {
+                    File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);
+                }
+                else
+                {
+                    File.Move(absoluteTempPath, absolutePrimaryPath);
+                }
+                AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
+
+                if (File.Exists(absoluteTempPath))
+                {
+                    try
+                    {
+                        File.Delete(absoluteTempPath);
+                    }
+                    finally
+                    {
+                        AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
+                    }
+                }
+
+                if (!File.Exists(absolutePrimaryPath))
+                {
+                    errorMessage = "Primary file was missing after atomic backup promotion.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError))
+                {
+                    errorMessage = string.IsNullOrEmpty(lengthError)
+                        ? "Critical recovery promoted primary file length could not be resolved."
+                        : lengthError;
+                    return false;
+                }
+
+                if (promotedBytes != backupSourceBytes)
+                {
+                    errorMessage = "Critical recovery promoted primary length did not match backup source.";
+                    return false;
+                }
+
+                if (!AsyncWriteManager.FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError))
+                {
+                    errorMessage = string.IsNullOrEmpty(flushError)
+                        ? "Critical recovery promoted primary flush failed."
+                        : flushError;
                     return false;
                 }
 
@@ -7621,113 +7621,6 @@ namespace Hecton8.SaveSystem
 
                 return false;
             }
-        }
-
-        private static bool TryCopyBackupToTempForPromotion(
-            string absoluteBackupPath,
-            string absoluteTempPath,
-            string tempSavePath,
-            long backupSourceBytes,
-            out string errorMessage)
-        {
-            errorMessage = string.Empty;
-
-            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-            DeleteFileIfExists(tempSavePath);
-            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-            File.Copy(absoluteBackupPath, absoluteTempPath, true);
-            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-
-            if (!AsyncWriteManager.TryGetFileLength(absoluteTempPath, out long tempBytes, out string tempLengthError))
-            {
-                errorMessage = string.IsNullOrEmpty(tempLengthError)
-                    ? "Critical recovery temp promoted file length could not be resolved."
-                    : tempLengthError;
-                DeleteFileIfExists(tempSavePath);
-                return false;
-            }
-
-            if (tempBytes != backupSourceBytes)
-            {
-                errorMessage = "Critical recovery temp promoted file length did not match backup source.";
-                DeleteFileIfExists(tempSavePath);
-                return false;
-            }
-
-            if (!AsyncWriteManager.FlushCriticalSavePath(absoluteTempPath, tempBytes, out string tempFlushError))
-            {
-                errorMessage = string.IsNullOrEmpty(tempFlushError)
-                    ? "Critical recovery temp promoted file flush failed."
-                    : tempFlushError;
-                DeleteFileIfExists(tempSavePath);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryCommitTempToPrimaryForPromotion(
-            string absoluteTempPath,
-            string absolutePrimaryPath,
-            long backupSourceBytes,
-            out string errorMessage)
-        {
-            errorMessage = string.Empty;
-
-            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-            AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
-            if (File.Exists(absolutePrimaryPath))
-            {
-                File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);
-            }
-            else
-            {
-                File.Move(absoluteTempPath, absolutePrimaryPath);
-            }
-            AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-            AsyncWriteManager.InvalidateCachedReadWindows(absolutePrimaryPath);
-
-            if (File.Exists(absoluteTempPath))
-            {
-                try
-                {
-                    File.Delete(absoluteTempPath);
-                }
-                finally
-                {
-                    AsyncWriteManager.InvalidateCachedReadWindows(absoluteTempPath);
-                }
-            }
-
-            if (!File.Exists(absolutePrimaryPath))
-            {
-                errorMessage = "Primary file was missing after atomic backup promotion.";
-                return false;
-            }
-
-            if (!AsyncWriteManager.TryGetFileLength(absolutePrimaryPath, out long promotedBytes, out string lengthError))
-            {
-                errorMessage = string.IsNullOrEmpty(lengthError)
-                    ? "Critical recovery promoted primary file length could not be resolved."
-                    : lengthError;
-                return false;
-            }
-
-            if (promotedBytes != backupSourceBytes)
-            {
-                errorMessage = "Critical recovery promoted primary length did not match backup source.";
-                return false;
-            }
-
-            if (!AsyncWriteManager.FlushCriticalSavePath(absolutePrimaryPath, promotedBytes, out string flushError))
-            {
-                errorMessage = string.IsNullOrEmpty(flushError)
-                    ? "Critical recovery promoted primary flush failed."
-                    : flushError;
-                return false;
-            }
-
-            return true;
         }
 
         private static bool TryLoadCandidate(
@@ -7868,13 +7761,42 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                return TryValidateLoadedVoxelSnapshot(
-                    data,
-                    voxelDeltaSnapshotBytes,
-                    voxelDeltaSnapshotByteLength,
-                    ref loadedVoxelDeltaSnapshot,
-                    out voxelDeltaSnapshot,
-                    out errorMessage);
+                if (voxelDeltaSnapshotBytes != voxelDeltaSnapshotByteLength)
+                {
+                    errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
+                    if (loadedVoxelDeltaSnapshot.IsCreated)
+                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                    return false;
+                }
+
+                if (voxelDeltaSnapshotBytes > 0 &&
+                    !VoxelDeltaProcessor.TryValidateNativeSnapshotForLoad(loadedVoxelDeltaSnapshot, out string voxelSnapshotValidationError))
+                {
+                    string fallbackReason = string.IsNullOrEmpty(voxelSnapshotValidationError)
+                        ? "Loaded voxel delta snapshot failed validation."
+                        : voxelSnapshotValidationError;
+                    if (HasLoadableVoxelDeltaDtoFallback(data))
+                    {
+                        LogWarning("[SaveManager] Loaded voxel delta native snapshot failed validation; falling back to binary voxel payload: " + fallbackReason);
+                        if (loadedVoxelDeltaSnapshot.IsCreated)
+                            DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                        errorMessage = string.Empty;
+                        voxelDeltaSnapshot = default;
+                        return true;
+                    }
+
+                    errorMessage = fallbackReason;
+                    if (loadedVoxelDeltaSnapshot.IsCreated)
+                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
+
+                    return false;
+                }
+
+                voxelDeltaSnapshot = loadedVoxelDeltaSnapshot;
+                loadedVoxelDeltaSnapshot = default;
+                return true;
             }
             finally
             {
@@ -7886,54 +7808,6 @@ namespace Hecton8.SaveSystem
                 ReleaseWriteBuffersBestEffort(readBuffer, ownsReadBuffer, compressedReadBuffer, ownsCompressedReadBuffer, ref cleanupException);
                 ReportPersistenceCleanupFailure("load", cleanupException);
             }
-        }
-
-        private static bool TryValidateLoadedVoxelSnapshot(
-            SaveData data,
-            int voxelDeltaSnapshotBytes,
-            int voxelDeltaSnapshotByteLength,
-            ref NativeArray<byte> loadedVoxelDeltaSnapshot,
-            out NativeArray<byte> finalVoxelDeltaSnapshot,
-            out string errorMessage)
-        {
-            finalVoxelDeltaSnapshot = default;
-            errorMessage = string.Empty;
-
-            if (voxelDeltaSnapshotBytes != voxelDeltaSnapshotByteLength)
-            {
-                errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
-                if (loadedVoxelDeltaSnapshot.IsCreated)
-                    DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                return false;
-            }
-
-            if (voxelDeltaSnapshotBytes > 0 &&
-                !VoxelDeltaProcessor.TryValidateNativeSnapshotForLoad(loadedVoxelDeltaSnapshot, out string voxelSnapshotValidationError))
-            {
-                string fallbackReason = string.IsNullOrEmpty(voxelSnapshotValidationError)
-                    ? "Loaded voxel delta snapshot failed validation."
-                    : voxelSnapshotValidationError;
-                if (HasLoadableVoxelDeltaDtoFallback(data))
-                {
-                    LogWarning("[SaveManager] Loaded voxel delta native snapshot failed validation; falling back to binary voxel payload: " + fallbackReason);
-                    if (loadedVoxelDeltaSnapshot.IsCreated)
-                        DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                    finalVoxelDeltaSnapshot = default;
-                    return true;
-                }
-
-                errorMessage = fallbackReason;
-                if (loadedVoxelDeltaSnapshot.IsCreated)
-                    DisposeTransientNativeArrayBestEffortAndReport(ref loadedVoxelDeltaSnapshot, "load", "loadedVoxelDeltaSnapshot");
-
-                return false;
-            }
-
-            finalVoxelDeltaSnapshot = loadedVoxelDeltaSnapshot;
-            loadedVoxelDeltaSnapshot = default;
-            return true;
         }
 
         private static bool TryReadCandidateMetadata(

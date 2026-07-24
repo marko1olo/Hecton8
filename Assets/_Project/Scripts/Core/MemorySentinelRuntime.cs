@@ -167,6 +167,10 @@ namespace Hecton8.Core
 
         public uint GetDependencyHash(int dependencyIndex) => 0u;
 
+        public void PreSimulationTick(in DispatcherTimingDTO timing)
+        {
+        }
+
         public JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
@@ -237,6 +241,10 @@ namespace Hecton8.Core
             IDataVault vault = ResolveVault();
             if (!CompleteValidationJob(forceComplete: false) && vault != null && TryResolveVaultBuffers(vault))
                 RecordTelemetry(vault, timing.FrameId, 0u, 0u, 0u, 0u, TelemetryFlagJobBusy, 0f);
+        }
+
+        public void VisualSyncTick(in DispatcherTimingDTO timing)
+        {
         }
 
         public static bool TryGetTunerSnapshot(out MemorySentinelTunerSnapshotDTO snapshot)
@@ -2026,6 +2034,10 @@ namespace Hecton8.Core
 
             public DispatcherFenceDomain GetFenceDomain() => DispatcherFenceDomain.Simulation;
 
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -2036,6 +2048,13 @@ namespace Hecton8.Core
                     : dependsOn;
             }
 
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         private sealed class PostSimulationPhaseSystem : IDispatcherSystem
@@ -2057,6 +2076,10 @@ namespace Hecton8.Core
 
             public uint GetDependencyHash(int dependencyIndex) => 0u;
 
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -2070,6 +2093,9 @@ namespace Hecton8.Core
                 _owner?.PostSimulationTick(in timing);
             }
 
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

@@ -657,7 +657,11 @@ namespace Hecton8.Crafting
         //  IInteractable
         // ----------------------------------------------------------
 
-        void IInteractable.Interact(Transform interactor)
+        public void OnHoverStart() { }
+
+        public void OnHoverEnd() { }
+
+        public void Interact(Transform interactor)
         {
             _playerTransform = interactor;
             _playerMovement = null;
@@ -672,7 +676,7 @@ namespace Hecton8.Crafting
             InteractionEvents.TryRaiseInteractionStarted(this, interactor);
         }
 
-        string IInteractable.GetInteractText()
+        public string GetInteractText()
         {
             return LegacyInteractText;
         }

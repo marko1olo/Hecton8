@@ -1,7 +1,5 @@
 using System.IO;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using MapMagic.Core;
@@ -114,8 +112,9 @@ namespace Hecton8.Editor
 
         private static void CaptureScreenshots()
         {
-            UnityEngine.Terrain[] terrains = UnityEngine.Terrain.activeTerrains;
+            UnityEngine.Terrain[] terrains = UnityEngine.Object.FindObjectsByType<UnityEngine.Terrain>(FindObjectsSortMode.None);
 
+            // ── Apply custom material ──
             try
             {
                 Material baseMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/HectonTerrainMaterial.mat");
@@ -125,35 +124,29 @@ namespace Hecton8.Editor
 
                 foreach (var t in terrains)
                 {
-                    if (t != null)
+                    var inj = t.GetComponent<Hecton8.World.HectonTerrainMaterialInjector>();
+                    if (inj != null) inj.enabled = false;
+
+                    if (baseMat != null)
                     {
-                        var inj = t.GetComponent<Hecton8.World.HectonTerrainMaterialInjector>();
-                        if (inj == null) inj = t.gameObject.AddComponent<Hecton8.World.HectonTerrainMaterialInjector>();
-
-                        inj.enabled = true;
-                        if (inj.customTerrainMaterial == null && baseMat != null)
-                            inj.customTerrainMaterial = baseMat;
-
-                        if (inj.customTerrainMaterial != null)
+                        Material inst = new Material(baseMat);
+                        t.materialTemplate = inst;
+                        if (albedo != null) inst.SetTexture("_AlbedoArray", albedo);
+                        if (normal != null) inst.SetTexture("_NormalArray", normal);
+                        if (mask   != null) inst.SetTexture("_MaskArray",   mask);
+                        inst.SetFloat("_UVScale",       4.0f);
+                        inst.SetFloat("_TriplanarBlend", 4.0f);
+                        inst.SetFloat("_MinDepth",  -4600f);
+                        inst.SetFloat("_MaxDepth",    500f);
+                        if (t.terrainData != null && t.terrainData.alphamapTextureCount > 0)
                         {
-                            inj.customTerrainMaterial.EnableKeyword("_NORMALMAP");
-                            inj.customTerrainMaterial.EnableKeyword("_MASKMAP");
-                            inj.customTerrainMaterial.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
-
-                            if (albedo != null) inj.customTerrainMaterial.SetTexture("_AlbedoArray", albedo);
-                            if (normal != null) inj.customTerrainMaterial.SetTexture("_NormalArray", normal);
-                            if (mask   != null) inj.customTerrainMaterial.SetTexture("_MaskArray",   mask);
-
-                            inj.customTerrainMaterial.SetFloat("_HectonUVScale", 4.0f);
-                            inj.customTerrainMaterial.SetFloat("_HectonTriplanarBlend", 4.0f);
+                            Texture2D[] alphas = t.terrainData.alphamapTextures;
+                            if (alphas.Length > 0 && alphas[0] != null) inst.SetTexture("_Control",  alphas[0]);
+                            if (alphas.Length > 1 && alphas[1] != null) inst.SetTexture("_Control1", alphas[1]);
+                            inst.SetVector("_TerrainSize", new Vector4(t.terrainData.size.x, t.terrainData.size.y, t.terrainData.size.z, 0));
                         }
-                        inj.ForceUpdate();
                     }
                 }
-
-                // FIX: Generate procedural scatter
-                Debug.Log("[TRT] Generating procedural scatter...");
-                Hecton8.Editor.ProceduralScatterRenderer.GenerateAndLogScatter(terrains);
             }
             catch (System.Exception ex) { Debug.LogException(ex); }
 
@@ -189,204 +182,30 @@ namespace Hecton8.Editor
                 var go = new GameObject("TRT_Camera");
                 cam = go.AddComponent<Camera>();
             }
-            cam.backgroundColor = new Color(0.01f, 0.02f, 0.05f); // Darker deep sea
+            cam.backgroundColor = new Color(0.05f, 0.15f, 0.25f);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.farClipPlane = 60000f;
 
-            // FIX: Setup Directional Light to ensure shaders respond properly
-            Light dirLight = Object.FindAnyObjectByType<Light>();
-            if (dirLight == null || dirLight.type != LightType.Directional)
-            {
-                GameObject lightGo = new GameObject("TRT_DirectionalLight");
-                dirLight = lightGo.AddComponent<Light>();
-                dirLight.type = LightType.Directional;
-            }
-            dirLight.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
-            dirLight.intensity = 1.5f;
-            dirLight.color = new Color(0.8f, 0.9f, 1.0f);
-            dirLight.shadows = LightShadows.Soft;
-
-            // RenderSettings setup for ambient
-            RenderSettings.fog = true;
-            RenderSettings.fogColor = new Color(0.01f, 0.03f, 0.05f);
-            RenderSettings.fogMode = FogMode.Exponential;
-            RenderSettings.fogDensity = 0.008f;
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.12f, 0.18f, 0.25f);
-
-            // Create Global Volume for PostProcessing
-            GameObject volumeGo = new GameObject("TRT_GlobalVolume");
-            volumeGo.layer = LayerMask.NameToLayer("Default");
-            var volume = volumeGo.AddComponent<UnityEngine.Rendering.Volume>();
-            volume.isGlobal = true;
-            volume.priority = 1;
-
-            var profile = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
-            volume.profile = profile;
-
-            var tonemapping = profile.Add<UnityEngine.Rendering.Universal.Tonemapping>();
-            tonemapping.mode.Override(UnityEngine.Rendering.Universal.TonemappingMode.ACES);
-
-            var bloom = profile.Add<UnityEngine.Rendering.Universal.Bloom>();
-            bloom.intensity.Override(0.4f);
-            bloom.threshold.Override(1.1f);
-            bloom.scatter.Override(0.5f);
-
-            // Add a point light to illuminate the specific shot areas
-            GameObject pointGo = new GameObject("TRT_PointLight");
-            Light pLight = pointGo.AddComponent<Light>();
-            pLight.type = LightType.Point;
-            pLight.range = 50f;
-            pLight.intensity = 3f;
-            pLight.color = new Color(0.2f, 0.6f, 1.0f);
-
-            // 1. MacroView: 10km (Orthographic top-down)
+            // Take Macro Shot (Orthographic)
             cam.orthographic = true;
             cam.orthographicSize = boundsHalf;
-            cam.transform.position = new Vector3(boundsCenter.x, 15000f, boundsCenter.z);
+            cam.transform.position = boundsCenter + new Vector3(0, 10000f, 0);
             cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            // Point light is useless at 14km range=50 — disable it for MacroView, dirLight covers everything
-            pLight.enabled = false;
-            TakeScreenshot(cam, ArtifactDir + "MacroView.png");
-            pLight.enabled = true;
+            TakeScreenshot(cam, ArtifactDir + "Macro_Direct.png");
 
+            // Take Ground Level Shot (Perspective)
             cam.orthographic = false;
             cam.fieldOfView = 60f;
-
-            // Find an interesting canyon / steep slope in the center terrain
-            Vector3 canyonPos = boundsCenter;
-            Vector3 cavePos = boundsCenter;
-            if (terrains.Length > 0)
-            {
-                float minHeight = float.MaxValue;
-                float maxHeight = float.MinValue;
-                Vector3 minPos = boundsCenter;
-                Vector3 maxPos = boundsCenter;
-
-                foreach (var t in terrains)
-                {
-                    int res = t.terrainData.heightmapResolution;
-                    for (int y = 0; y < res; y += 16)
-                    {
-                        for (int x = 0; x < res; x += 16)
-                        {
-                            float h = t.terrainData.GetHeight(x, y);
-                            if (h < minHeight) {
-                                minHeight = h;
-                                minPos = new Vector3(x, h, y);
-                                minPos.x = minPos.x / res * t.terrainData.size.x + t.transform.position.x;
-                                minPos.y = minPos.y + t.transform.position.y;
-                                minPos.z = minPos.z / res * t.terrainData.size.z + t.transform.position.z;
-                            }
-                            if (h > maxHeight) {
-                                maxHeight = h;
-                                maxPos = new Vector3(x, h, y);
-                                maxPos.x = maxPos.x / res * t.terrainData.size.x + t.transform.position.x;
-                                maxPos.y = maxPos.y + t.transform.position.y;
-                                maxPos.z = maxPos.z / res * t.terrainData.size.z + t.transform.position.z;
-                            }
-                        }
-                    }
-                } // Close foreach (var t in terrains)
-                canyonPos = Vector3.Lerp(minPos, maxPos, 0.5f); // Mid slope
-                cavePos = minPos; // Lowest point, good chance for a cave entrance or deep rift
-
-                // Adjust to proper world y height
-                UnityEngine.RaycastHit hit;
-                if (UnityEngine.Physics.Raycast(new Vector3(canyonPos.x, 10000f, canyonPos.z), Vector3.down, out hit, 20000f)) canyonPos.y = hit.point.y;
-                if (UnityEngine.Physics.Raycast(new Vector3(cavePos.x, 10000f, cavePos.z), Vector3.down, out hit, 20000f)) cavePos.y = hit.point.y;
-            }
-            // 2. CanyonView: 2km
-            RenderSettings.fog = false;
-            cam.transform.position = canyonPos + new Vector3(0f, 1500f, -1500f);
-            cam.transform.rotation = Quaternion.Euler(45f, 0f, 0f); // Pitch 45
-            pLight.enabled = false;
-            TakeScreenshot(cam, ArtifactDir + "CanyonView.png");
-            RenderSettings.fog = true;
-
-            // 3. CaveEntrance: camera hovers above cavePos looking down at the terrain surface
-            // cavePos is the lowest terrain point — we look AT the surface FROM above-side, not into the pit
-            cam.transform.position = cavePos + new Vector3(0f, 80f, -120f);
-            cam.transform.LookAt(cavePos + Vector3.up * 20f);
-            pLight.enabled = true;
-            pLight.transform.position = cam.transform.position;
-            pLight.range = 300f;
-            pLight.intensity = 8f;
-            TakeScreenshot(cam, ArtifactDir + "CaveEntrance.png");
-
-            cam.backgroundColor = Color.black; // Ensure strict black background
-
-            // 4. CaveInterior: closer, looking into the low terrain rift
-            cam.transform.position = cavePos + new Vector3(0f, 20f, -40f);
-            cam.transform.LookAt(cavePos + Vector3.up * 5f);
-            pLight.enabled = true;
-            pLight.transform.position = cam.transform.position;
-            pLight.range = 100f;
-            pLight.intensity = 5f;
-            TakeScreenshot(cam, ArtifactDir + "CaveInterior.png");
-
-            // Ecosystem Screenshots with Collision Avoidance
-            TakeScatterScreenshot(cam, "family_kelp", ArtifactDir + "Forest_Kelp.png", pLight);
-            TakeScatterScreenshot(cam, "family_coral", ArtifactDir + "Cliff_Corals.png", pLight);
-            TakeScatterScreenshot(cam, "CaveAnomaly", ArtifactDir + "Cave_Anomalies.png", pLight);
+            Vector3 groundPos = new Vector3(boundsCenter.x, groundY + 2.0f, boundsCenter.z);
+            cam.transform.position = groundPos;
+            // Look North, keeping Y the same so we look ALONG the surface
+            cam.transform.LookAt(groundPos + new Vector3(0, 0, 500f));
+            TakeScreenshot(cam, ArtifactDir + "Ground_Level.png");
 
             Debug.Log("[TRT] All screenshots captured.");
             File.WriteAllText(ArtifactDir + "mcp_success.txt", $"DONE at {System.DateTime.UtcNow:O}\nTerrains={terrains.Length}");
 
             if (Application.isBatchMode) EditorApplication.Exit(0);
-        }
-
-        private static void TakeScatterScreenshot(Camera cam, string targetNameMatch, string filename, Light pLight)
-        {
-            Vector3 objPos = Vector3.zero;
-            bool found = false;
-
-            foreach (var kvp in Hecton8.Editor.ProceduralScatterRenderer.RepresentativeInstancesByPrefab)
-            {
-                if (kvp.Key.Contains(targetNameMatch))
-                {
-                    objPos = kvp.Value;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                Debug.LogWarning($"[TRT] Could not find any instance matching '{targetNameMatch}' to screenshot.");
-                return;
-            }
-
-            // Place camera 8 meters back and 3 meters up
-            Vector3 camOffset = new Vector3(-8f, 3f, -8f);
-
-            int attempts = 0;
-            while (attempts < 8)
-            {
-                Vector3 proposedPos = objPos + camOffset;
-                cam.transform.position = proposedPos;
-                cam.transform.LookAt(objPos + Vector3.up * 1f);
-
-                // Simplified collision avoidance
-                Vector3 dir = (objPos - proposedPos).normalized;
-                float dist = Vector3.Distance(proposedPos, objPos);
-
-                if (!UnityEngine.Physics.Raycast(proposedPos, dir, dist - 1f))
-                {
-                    break; // Good position found!
-                }
-
-                camOffset = Quaternion.Euler(0, 45f, 0) * camOffset;
-                attempts++;
-            }
-
-            // Bring light close to the camera to illuminate the object
-            pLight.transform.position = cam.transform.position;
-            pLight.color = Color.white;
-            pLight.intensity = 2f;
-            pLight.range = 50f;
-
-            TakeScreenshot(cam, filename);
         }
 
         private static void TakeScreenshot(Camera cam, string filename)

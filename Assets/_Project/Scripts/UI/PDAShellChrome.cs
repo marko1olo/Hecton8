@@ -28,10 +28,10 @@ namespace Hecton8.UI
         private const string ActiveTabSpectrum = "ACTIVE TAB // SPECTRUM";
         private const string ActiveTabDiagnostics = "ACTIVE TAB // DIAGNOSTICS";
         private const string ActiveTabUnknown = "ACTIVE TAB // UNKNOWN";
-        private const string ActiveTabIntrusion = "SYSTEM STATE // HACKED";
         private const string LeftFooterFormat = "CARGO {0}/{1}  |  MASS {2:0.0} kg  |  READY TOOLS {3}/{4}";
         private const string RightFooterOnlineFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA ONLINE";
         private const string RightFooterStandbyFormat = "O2 {0:0}%  |  PWR {1:0}%  |  PDA STANDBY";
+        private const string IntrusionTabOverride = "SYSTEM STATE // HACKED";
         private const string IntrusionHintFormat = "REBOOT // HOLD {0} FOR 3.0S";
         private const string IntrusionFooterFormat = "O2 {0:0}%  |  PWR {1:0}%  |  REBOOT {2}%";
         private const string MechModeTag = "[MECH-MODE ACTIVE]";
@@ -67,7 +67,6 @@ namespace Hecton8.UI
         private static readonly int PdaTabSpectrumKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_SPECTRUM);
         private static readonly int PdaTabDiagnosticsKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_DIAGNOSTICS);
         private static readonly int PdaTabUnknownKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_UNKNOWN);
-        private static readonly int PdaTabIntrusionKeyHash = LocHash.Compute(LocalizationKeys.PDA_TAB_INTRUSION);
         private static readonly int PdaMechModeActiveKeyHash = LocHash.Compute(LocalizationKeys.PDA_MECH_MODE_ACTIVE);
         private static readonly int PdaFooterLeftKeyHash = LocHash.Compute(LocalizationKeys.PDA_FOOTER_LEFT);
         private static readonly int PdaFooterRightOnlineKeyHash = LocHash.Compute(LocalizationKeys.PDA_FOOTER_RIGHT_ONLINE);
@@ -126,7 +125,6 @@ namespace Hecton8.UI
         private readonly char[] _localizedTabSpectrumBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedTabDiagnosticsBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedTabUnknownBuffer = new char[ChromeTextBufferCapacity];
-        private readonly char[] _localizedTabIntrusionBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedLeftFooterNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedRightFooterOnlineNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
         private readonly char[] _localizedRightFooterStandbyNumericTemplateBuffer = new char[ChromeTextBufferCapacity];
@@ -140,7 +138,6 @@ namespace Hecton8.UI
         private int _localizedTabSpectrumLength;
         private int _localizedTabDiagnosticsLength;
         private int _localizedTabUnknownLength;
-        private int _localizedTabIntrusionLength;
         private int _localizedLeftFooterNumericTemplateLength;
         private int _localizedRightFooterOnlineNumericTemplateLength;
         private int _localizedRightFooterStandbyNumericTemplateLength;
@@ -883,7 +880,7 @@ namespace Hecton8.UI
             if (_tabText != null &&
                 (_lastActiveTab != activeTabIndex || _lastIntrusionActive != intrusionActive || _appliedTabVersion == int.MinValue))
             {
-                ReadOnlySpan<char> tabSpan = intrusionActive ? _localizedTabIntrusionBuffer.AsSpan(0, _localizedTabIntrusionLength) : tabName;
+                ReadOnlySpan<char> tabSpan = intrusionActive ? IntrusionTabOverride.AsSpan() : tabName;
                 CopyTextToBuffer(tabSpan, ref _tabBuffer, out int tabLength);
                 ApplyTextBuffer(
                     _tabText,
@@ -1114,7 +1111,6 @@ namespace Hecton8.UI
             _localizedTabSpectrumLength = CopyLocalizedSpan(PdaTabSpectrumKeyHash, ActiveTabSpectrum.AsSpan(), _localizedTabSpectrumBuffer);
             _localizedTabDiagnosticsLength = CopyLocalizedSpan(PdaTabDiagnosticsKeyHash, ActiveTabDiagnostics.AsSpan(), _localizedTabDiagnosticsBuffer);
             _localizedTabUnknownLength = CopyLocalizedSpan(PdaTabUnknownKeyHash, ActiveTabUnknown.AsSpan(), _localizedTabUnknownBuffer);
-            _localizedTabIntrusionLength = CopyLocalizedSpan(PdaTabIntrusionKeyHash, ActiveTabIntrusion.AsSpan(), _localizedTabIntrusionBuffer);
             _localizedMechModeTagLength = CopyLocalizedSpan(PdaMechModeActiveKeyHash, MechModeTag.AsSpan(), _localizedMechModeTagBuffer);
             ReadOnlySpan<char> leftFooterFormat = ResolveLocalizedSpan(PdaFooterLeftKeyHash, LeftFooterFormat.AsSpan());
             ReadOnlySpan<char> rightFooterOnlineFormat = ResolveLocalizedSpan(PdaFooterRightOnlineKeyHash, RightFooterOnlineFormat.AsSpan());

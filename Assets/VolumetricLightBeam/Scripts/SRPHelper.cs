@@ -75,17 +75,9 @@ namespace VLB
         }
 
 #if VLB_SRP_SUPPORT
-    static bool m_IsUsingCustomRenderPipelineCached = false;
-    static bool m_IsUsingCustomRenderPipeline;
-
     public static bool IsUsingCustomRenderPipeline()
     {
-        if (!m_IsUsingCustomRenderPipelineCached)
-        {
-            m_IsUsingCustomRenderPipeline = projectRenderPipeline != RenderPipeline.BuiltIn;
-            m_IsUsingCustomRenderPipelineCached = true;
-        }
-        return m_IsUsingCustomRenderPipeline;
+        return projectRenderPipeline != RenderPipeline.BuiltIn;
     }
 
     public static void RegisterOnBeginCameraRendering(CallbackType cb)

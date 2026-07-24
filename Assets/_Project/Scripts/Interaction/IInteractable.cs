@@ -16,13 +16,13 @@ namespace Hecton8.Interaction
         /// Called once when the player's spatial target probe first resolves this object.
         /// Use for highlight activation, UI prompts, audio cues.
         /// </summary>
-        void OnHoverStart() { }
+        void OnHoverStart();
 
         /// <summary>
         /// Called once when the player's spatial target probe leaves this object.
         /// Use for highlight deactivation, hiding UI prompts.
         /// </summary>
-        void OnHoverEnd() { }
+        void OnHoverEnd();
 
         /// <summary>
         /// Called when the player presses the interact key while hovering.

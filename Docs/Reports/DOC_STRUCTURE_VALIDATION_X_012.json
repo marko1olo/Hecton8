@@ -161,8 +161,11 @@
   ],
   "rootTextDocCount": 76,
   "missingRootTextDocs": [],
-  "unexpectedRootTextDocs": [],
-  "rootTextDocPolicyPass": true,
+  "unexpectedRootTextDocs": [
+    "ARCHITECTURE_AUDIT.md",
+    "plan.md"
+  ],
+  "rootTextDocPolicyPass": false,
   "duplicateHeaderFiles": [],
   "brokenLinkFiles": [],
   "fenceIssueFiles": [],
@@ -255,5 +258,5 @@
   "encodingPolicy": "utf-8 or utf-8-sig accepted; missing BOM is informational",
   "encodingPolicyPass": true,
   "staleParameterFiles": [],
-  "pass": true
+  "pass": false
 }

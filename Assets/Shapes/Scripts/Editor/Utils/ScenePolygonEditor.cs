@@ -69,7 +69,7 @@ namespace Shapes {
 			Vector3 rootDir = shape.transform.right;
 			Vector3 discNormal = shape.transform.forward;
 			Quaternion rot = Quaternion.LookRotation( rootDir, discNormal );
-			Matrix4x4 mtx = Matrix4x4.TRS( shape.transform.position, rot, shape.transform.lossyScale );
+			Matrix4x4 mtx = Matrix4x4.TRS( shape.transform.position, rot, Vector3.one ); // todo: scale?
 
 			bool changed = false;
 

@@ -8,6 +8,18 @@ using UnityEngine;
 
 namespace Shapes {
 
+	// hack bc for some reason TMP 3.0.9 (2022.3) doesn't have TextWrappingModes
+	#if !UNITY_6000_0_OR_NEWER
+	public enum TextWrappingModes {
+		NoWrap = 0,
+		Normal = 1,
+		[Obsolete( "Only supported in Unity 6", false )]
+		PreserveWhitespace = 2,
+		[Obsolete( "Only supported in Unity 6", false )]
+		PreserveWhitespaceNoWrap = 3
+	};
+	#endif
+
 	public class TextMeshProShapes : TextMeshPro {
 
 		[SerializeField] protected float curvature;
@@ -33,6 +45,14 @@ namespace Shapes {
 				SetVerticesDirty();
 			}
 		}
+
+		// hack bc for some reason TMP 3.0.9 (2022.3) doesn't have TextWrappingModes
+		#if !UNITY_6000_0_OR_NEWER
+		public TextWrappingModes textWrappingMode {
+			get => enableWordWrapping ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+			set => this.enableWordWrapping = value != TextWrappingModes.NoWrap;
+		}
+		#endif
 
 		protected override void OnEnable() {
 			base.OnEnable();

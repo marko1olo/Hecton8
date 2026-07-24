@@ -962,7 +962,6 @@ namespace Hecton8.Environment
         private Camera _capturedCompositionMainCamera;
         private Camera _capturedCompositionSpaceCamera;
         private Camera _shallowSunBeamSearchCamera;
-        private Camera _playerCameraComponent;
         private Transform _underwaterSuspendedMotesSearchTransform;
         private Transform _underwaterExhaleBubblesSearchTransform;
         private Transform _transitionVisorSearchRoot;
@@ -7475,13 +7474,7 @@ namespace Hecton8.Environment
 
             Camera camera = mainCamera;
             if (camera == null && playerCamera != null)
-            {
-                if (_playerCameraComponent == null || _playerCameraComponent.transform != playerCamera)
-                {
-                    _playerCameraComponent = playerCamera.GetComponent<Camera>();
-                }
-                camera = _playerCameraComponent;
-            }
+                camera = playerCamera.GetComponent<Camera>();
 
             if (camera != null && math.isfinite(camera.transform.position.y) &&
                 math.abs(resolvedWaterLevel - camera.transform.position.y) > 1000f)

@@ -294,16 +294,16 @@ namespace Hecton8.Core
 
         uint GetDependencyHash(int dependencyIndex);
 
-        void PreSimulationTick(in DispatcherTimingDTO timing) {}
+        void PreSimulationTick(in DispatcherTimingDTO timing);
 
         JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
             JobHandle dependsOn);
 
-        void PostSimulationTick(in DispatcherTimingDTO timing) {}
+        void PostSimulationTick(in DispatcherTimingDTO timing);
 
-        void VisualSyncTick(in DispatcherTimingDTO timing) {}
+        void VisualSyncTick(in DispatcherTimingDTO timing);
     }
 
     public interface IDispatcherFixedSystem
@@ -312,7 +312,7 @@ namespace Hecton8.Core
 
         JobHandle ScheduleFixedSimulation(in DispatcherTimingDTO timing, JobHandle dependsOn);
 
-        void PostFixedSimulation(in DispatcherTimingDTO timing) {}
+        void PostFixedSimulation(in DispatcherTimingDTO timing);
     }
 
     public ref struct DispatcherJobContext
@@ -365,6 +365,10 @@ namespace Hecton8.Core
             return 0u;
         }
 
+        public void PreSimulationTick(in DispatcherTimingDTO timing)
+        {
+        }
+
         public JobHandle ScheduleSimulation(
             in DispatcherTimingDTO timing,
             in DispatcherJobContext context,
@@ -385,6 +389,13 @@ namespace Hecton8.Core
             return job.Schedule(dependsOn);
         }
 
+        public void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+        }
+
+        public void VisualSyncTick(in DispatcherTimingDTO timing)
+        {
+        }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

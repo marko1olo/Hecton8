@@ -131,6 +131,10 @@ namespace Hecton8.World
         private readonly List<OceanDepthCache> _depthCacheScratch = new List<OceanDepthCache>(4);
         // COLD ALLOC: List<MonoBehaviour>[32] - Crest shifting-origin interface scratch buffer - owner: HectonCrestOceanDepthCacheBootstrap
         private readonly List<MonoBehaviour> _shiftingOriginScratch = new List<MonoBehaviour>(32);
+        // COLD ALLOC: List<ShapeGerstnerBatched>[16] - Crest gerstner rebase scratch buffer - owner: HectonCrestOceanDepthCacheBootstrap
+        private readonly List<ShapeGerstnerBatched> _gerstnerScratch = new List<ShapeGerstnerBatched>(16);
+        // COLD ALLOC: List<GameObject>[16] - scene-root scratch used to sweep distributed Crest shapes during rare origin shifts - owner: HectonCrestOceanDepthCacheBootstrap
+        private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(16);
         private HectonCelestialEngine _celestialEngine;
         private bool _loggedMissingResolvedTerrains;
 
@@ -267,11 +271,18 @@ namespace Hecton8.World
                     shiftingOrigin.SetOrigin(shiftOffset);
             }
 
-            var gerstnerBatchedInstances = UnityEngine.Object.FindObjectsByType<ShapeGerstnerBatched>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None);
-            foreach (var instance in gerstnerBatchedInstances)
+            _sceneRootScratch.Clear();
+            oceanRenderer.gameObject.scene.GetRootGameObjects(_sceneRootScratch);
+            for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
             {
-                if (instance != null)
-                    instance.SetOrigin(shiftOffset);
+                GameObject rootObject = _sceneRootScratch[rootIndex];
+                if (rootObject == null)
+                    continue;
+
+                _gerstnerScratch.Clear();
+                rootObject.GetComponentsInChildren(includeInactive: true, _gerstnerScratch);
+                for (int gerstnerIndex = 0; gerstnerIndex < _gerstnerScratch.Count; gerstnerIndex++)
+                    _gerstnerScratch[gerstnerIndex].SetOrigin(shiftOffset);
             }
 
             // Clear persistent Crest simulation state so foam and dynamic waves do not integrate the 5000 m rebase as velocity.

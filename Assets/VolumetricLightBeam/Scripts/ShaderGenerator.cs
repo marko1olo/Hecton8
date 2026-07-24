@@ -218,6 +218,12 @@ namespace VLB
                     if (configProps.renderingMode == RenderingMode.SRPBatcher)
                     {
                         passPre += NewDefine("VLB_SRP_BATCHER");
+
+                        if (rp == RenderPipeline.URP)
+                        {
+                            // force enable constant buffers to fix SRP Batcher support on Android
+                            passPre += NewLine("#pragma enable_cbuffer");
+                        }
                     }
                 }
 

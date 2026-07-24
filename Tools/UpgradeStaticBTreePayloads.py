@@ -53,6 +53,9 @@ def atomic_write_bytes(path: Path, data: bytes) -> None:
         return
 
     temp_path.write_bytes(data)
+    if path.exists() and path.stat().st_size == len(data) and path.read_bytes() == data:
+        return
+
     temp_path.replace(path)
 
 

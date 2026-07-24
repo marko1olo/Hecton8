@@ -349,27 +349,27 @@ namespace Den.Tools.Serialization
 		}
 
 
-		private static Dictionary<Type, string> typeNamesCacheWithAsm = new Dictionary<Type, string>();
-		private static Dictionary<Type, string> typeNamesCacheNoAsm = new Dictionary<Type, string>();
+		private static Dictionary<Type, string> typeNamesCache = new Dictionary<Type, string>();
 
 		private static string TypeName (Type type, char div=',', bool withAssembly=true)
 		{
-			if (div != ',')
-				return GenerateTypeName(type, div, withAssembly);
-
-			Dictionary<Type, string> cache = withAssembly ? typeNamesCacheWithAsm : typeNamesCacheNoAsm;
-			if (cache.TryGetValue(type, out string cached))
-				return cached;
-
-			lock (cache)
+			if (div == ',' && withAssembly == true)
 			{
-				if (cache.TryGetValue(type, out cached))
+				if (typeNamesCache.TryGetValue(type, out string cached))
 					return cached;
 
-				cached = GenerateTypeName(type, div, withAssembly);
-				cache.Add(type, cached);
-				return cached;
+				lock (typeNamesCache)
+				{
+					if (typeNamesCache.TryGetValue(type, out cached))
+						return cached;
+
+					cached = GenerateTypeName(type, div, withAssembly);
+					typeNamesCache.Add(type, cached);
+					return cached;
+				}
 			}
+
+			return GenerateTypeName(type, div, withAssembly);
 		}
 
 		private static string GenerateTypeName (Type type, char div=',', bool withAssembly=true)

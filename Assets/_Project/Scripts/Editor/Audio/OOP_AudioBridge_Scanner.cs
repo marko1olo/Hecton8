@@ -81,35 +81,6 @@ namespace Hecton8.Audio.Editor
             string audioMixerSanitizer = ReadAssetText(projectRoot, AudioMixerSanitizerPath, result);
             string scanner = ReadAssetText(projectRoot, "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs", result);
 
-            ScanBridge(result, bridge);
-            ScanNativePluginMatrix(result, nativePluginMatrix, projectRoot);
-            ScanMetaFiles(result, windowsLz4Meta, windowsAudioKernelMeta, projectRoot);
-            ScanMixerSanitizer(result, audioMixerSanitizer);
-            ScanRing(result, ring, ringRuntime);
-            ScanScanner(result, scanner);
-            ScanRenderer(result, renderer);
-            ScanMemory(result, memory);
-            ScanNativePlugin(result, nativePlugin);
-            ScanNativeBuildScripts(result, nativeBuildScript, nativeAndroidBuildScript, projectRoot);
-
-            if (runLiveFuzzer)
-            {
-                result.FuzzerExecuted = true;
-                result.LiveFuzzerPass = AudioBridgeConcurrencyFuzzer1314.Run(out AudioBridgeConcurrencyFuzzerResult fuzzerResult);
-                result.Fuzzer = fuzzerResult;
-                if (!result.LiveFuzzerPass)
-                    result.FailedChecks++;
-            }
-
-            result.StaticPass = result.FailedChecks == 0 || (runLiveFuzzer && result.FailedChecks == 1 && result.FuzzerExecuted && !result.Fuzzer.DataVaultAvailable);
-            result.Pass = runLiveFuzzer
-                ? result.FailedChecks == 0
-                : result.StaticPass;
-            return result;
-        }
-
-        private static void ScanBridge(ScanResult result, string bridge)
-        {
             AssertContains(result, bridge, "WriteIndexSlot = 2", "write_index_slot_even", BridgePath, "WriteIndex exported at shared-state byte offset 8.");
             AssertContains(result, bridge, "SourceChannelsSlot = 12", "source_channels_even_slot", BridgePath, "Shared-state metadata records mono/stereo ring layout in the padded shared-state contract.");
             AssertContains(result, bridge, "public int SourceChannels", "descriptor_source_channels_field", BridgePath, "Descriptor carries immutable source-channel count so native callback does not trust mutable SharedState for frame stride.");
@@ -128,12 +99,6 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, bridge, "TryDumpAudioBridgeTelemetry", "bridge_native_dump_gate", BridgePath, "Bridge exposes native telemetry dump without managed FileStream/Path/Directory use.");
             AssertContains(result, bridge, "(status & NativeAudioKernelBridgeStatus.Busy) == 0", "bridge_clear_rejects_busy", BridgePath, "TryClear does not report success while native clear is still Busy.");
             AssertContains(result, bridge, "UNITY_ANDROID", "bridge_android_native_route", BridgePath, "Android/Quest builds compile the native audio bridge route when an arm64 plugin binary is packaged.");
-            AssertNotContains(result, bridge, "WriteIndexSlot = 1", "old_write_index_slot_removed", BridgePath, "Old base+4 write-index route is absent.");
-            AssertContains(result, bridge, "MaximumCapacityFrames = 65536", "bridge_capacity_upper_bound", BridgePath, "Managed descriptor validation rejects capacities above the native frame budget.");
-        }
-
-        private static void ScanNativePluginMatrix(ScanResult result, string nativePluginMatrix, string projectRoot)
-        {
             AssertContains(result, nativePluginMatrix, "Android/arm64-v8a/libHectonAudioKernel.so", "android_audio_kernel_matrix_gate", NativePluginMatrixPath, "Android build preflight requires an arm64 HectonAudioKernel native plugin instead of silently shipping managed-only master-bus output.");
             AssertContains(result, nativePluginMatrix, "Validate(report.summary.platform, strictBuild: true)", "native_plugin_matrix_player_build_hard_fail", NativePluginMatrixPath, "Actual player builds fail on missing native plugin blockers; the advisory-only path is limited to the editor menu scan.");
             AssertContains(result, nativePluginMatrix, "RequirePlugin(", "native_plugin_matrix_file_and_importer_gate", NativePluginMatrixPath, "Single native plugin requirements validate both file presence and Unity PluginImporter routing.");
@@ -149,10 +114,29 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, nativePluginMatrix, "File.GetLastWriteTimeUtc(ToProjectAbsolutePath(assetPath))", "native_plugin_matrix_timestamp_probe", NativePluginMatrixPath, "Build preflight uses UTC timestamps from project-root absolute paths for stale native-plugin rejection.");
             AssertAnyAssetExists(result, projectRoot, new[] { "Assets/Plugins/Android/arm64-v8a/libHectonAudioKernel.so", "Assets/Plugins/Android/libs/arm64-v8a/libHectonAudioKernel.so" }, "android_audio_kernel_binary_packaged", NativePluginMatrixPath, "Android/Quest builds require a packaged arm64 HectonAudioKernel native plugin.");
             AssertAnyAssetExists(result, projectRoot, new[] { "Assets/_Project/Plugins/Android/arm64-v8a/liblz4.so", "Assets/_Project/Plugins/Android/libs/arm64-v8a/liblz4.so" }, "android_lz4_binary_packaged", NativePluginMatrixPath, "Android/Quest builds require a packaged arm64 LZ4 native plugin.");
-        }
+            AssertContains(result, windowsLz4Meta, "PluginImporter:", "windows_lz4_plugin_importer_meta", WindowsLz4MetaPath, "Windows LZ4 DLL metadata must be a Unity PluginImporter asset, not GUID-only metadata.");
+            AssertContains(result, windowsAudioKernelMeta, "PluginImporter:", "windows_audio_kernel_plugin_importer_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is imported as a Unity PluginImporter, not a GUID-only raw file.");
+            AssertContains(result, windowsAudioKernelMeta, "Standalone: Win64", "windows_audio_kernel_win64_enabled_target", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL has an explicit Win64 platform importer lane.");
+            AssertContains(result, windowsAudioKernelMeta, "CPU: x86_64", "windows_audio_kernel_x64_cpu_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is constrained to x86_64 for editor/player native loading.");
+            AssertContains(result, windowsAudioKernelMeta, "OS: Windows", "windows_audio_kernel_editor_windows_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is explicitly routed to Windows editor native loading.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Any:\n", "enabled: 0", "windows_audio_kernel_any_platform_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables the catch-all plugin lane so it cannot be imported for unsupported platforms by accident.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "enabled: 1", "windows_audio_kernel_editor_lane_enabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL explicitly enables the Windows editor plugin lane.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "CPU: x86_64", "windows_audio_kernel_editor_lane_x64", WindowsAudioKernelMetaPath, "Windows editor plugin lane is constrained to x86_64.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "OS: Windows", "windows_audio_kernel_editor_lane_windows", WindowsAudioKernelMetaPath, "Windows editor plugin lane is constrained to OS: Windows.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win\n", "enabled: 0", "windows_audio_kernel_win32_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows x86_64 DLL disables the 32-bit Windows player lane.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win64\n", "enabled: 1", "windows_audio_kernel_win64_lane_enabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL explicitly enables the Win64 player lane.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win64\n", "CPU: x86_64", "windows_audio_kernel_win64_lane_x64", WindowsAudioKernelMetaPath, "Win64 player plugin lane is constrained to x86_64.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Linux64\n", "enabled: 0", "windows_audio_kernel_linux_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables Linux player import.");
+            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: OSXUniversal\n", "enabled: 0", "windows_audio_kernel_osx_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables macOS player import.");
+            AssertFileNotOlderThan(result, projectRoot, WindowsAudioKernelDllPath, NativePluginPath, "windows_audio_kernel_dll_not_older_than_native_source", WindowsAudioKernelDllPath, "Packaged Windows DLL must be rebuilt after native source changes; Unity loads this binary, not Plugin_HectonSensoryKernel.cpp.");
+            AssertFileNotOlderThan(result, projectRoot, WindowsAudioKernelDllPath, NativeBuildScriptPath, "windows_audio_kernel_dll_not_older_than_native_build_script", WindowsAudioKernelDllPath, "Packaged Windows DLL must be rebuilt after native build-script changes.");
+            AppendCheck(result, MasterMixerPath, "master_mixer_hecton_effect_authored", Hecton8.Editor.AudioMixerSanitizer.HasMixerEffectAtPath(MasterMixerPath, Hecton8.Editor.AudioMixerSanitizer.KernelEffectName), "MasterMixer must contain a concrete native Hecton Sensory Kernel effect controller with non-empty m_EffectID; raw text token presence is not sufficient proof.");
+            AssertContains(result, audioMixerSanitizer, "internal sealed class AudioMixerNativeEffectBuildGate", "mixer_native_effect_build_gate", AudioMixerSanitizerPath, "Player builds fail if the MasterMixer native effect is not authored.");
+            AssertContains(result, audioMixerSanitizer, "AudioMixerSanitizer.HasMixerEffectAtPath", "mixer_build_gate_checks_master_kernel_effect", AudioMixerSanitizerPath, "Build gate checks the concrete MasterMixer native effect by name.");
+            AssertContains(result, audioMixerSanitizer, "return string.IsNullOrEmpty(effectId);", "mixer_sanitizer_only_removes_unresolved_empty_effects", AudioMixerSanitizerPath, "Mixer sanitizer removes unresolved empty-id effects only.");
+            AssertNotContains(result, audioMixerSanitizer, "effectName.IndexOf", "mixer_sanitizer_no_name_based_effect_removal", AudioMixerSanitizerPath, "Mixer sanitizer cannot remove a valid Hecton native effect purely by display name.");
+            AssertNotContains(result, bridge, "WriteIndexSlot = 1", "old_write_index_slot_removed", BridgePath, "Old base+4 write-index route is absent.");
 
-        private static void ScanRing(ScanResult result, string ring, string ringRuntime)
-        {
             AssertContains(result, ring, "IntPtr writeIndexPtr = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.WriteIndexSlot)", "descriptor_uses_named_slot", RingPath, "Descriptor pointer is derived from the padded slot constant.");
             AssertNotContains(result, ring, "sharedStatePtr + 1", "dense_pointer_math_removed", RingPath, "Dense int-pointer increment to write cursor is absent.");
             AssertContains(result, ring, "NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourceCopy)", "writer_source_pointer", RingPath, "SPSC writer reads source samples through native pointer access.");
@@ -228,11 +212,10 @@ namespace Hecton8.Audio.Editor
             AssertNotContains(result, ringRuntime, ".Select(", "runtime_no_linq_select", RingPath, "Runtime ring code does not use LINQ Select.");
             AssertNotContains(result, ringRuntime, ".Where(", "runtime_no_linq_where", RingPath, "Runtime ring code does not use LINQ Where.");
             AssertNotContains(result, ring, "GenerateMockAudioSamplesJob", "runtime_no_mock_audio_job", RingPath, "Burst mock-audio generator is editor-only and does not live in the runtime ring source.");
+            AssertContains(result, scanner, "GenerateMockAudioSamplesJob", "editor_mock_audio_job", "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs", "Burst mock-audio generator exists only in the editor stress scanner.");
+            AssertContains(result, scanner, "AudioBridgeConcurrencyFuzzer1314", "concurrency_fuzzer", "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs", "Editor-only SPSC producer/consumer fuzzer exists outside runtime ring source.");
             AssertNotContains(result, ring, "MixInterleavedInto(float[]", "managed_float_array_bridge_absent", RingPath, "Managed float[] bridge path is absent.");
-        }
 
-        private static void ScanRenderer(ScanResult result, string renderer)
-        {
             AssertContains(result, renderer, "TryRegisterWithRetryGate(ref descriptor", "renderer_uses_retry_gate", RendererPath, "Renderer registers native output through retry/fail-closed gate.");
             AssertContains(result, renderer, "_sampleRingBuffer.RecordBridgeFailure(bridgeStatus)", "renderer_records_bridge_failure", RendererPath, "Registration failure writes the black-box route.");
             AssertContains(result, renderer, "TryClear(out NativeAudioKernelBridgeStatus clearStatus)", "renderer_native_clear_status_checked", RendererPath, "Renderer does not drop the native registration flag unless TryClear proves the native descriptor was released.");
@@ -245,21 +228,16 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, renderer, "DisposeBuffers(disposeSabineReverbDelay: true);", "renderer_ring_contract_fail_closed_teardown", RendererPath, "Renderer has a hard teardown route for partially initialized vault-backed buffers when sample-ring contract validation fails.");
             AssertMinimumOccurrence(result, renderer, "RefreshNativeOutputBridge();", 2, "renderer_rebinds_bridge", RendererPath, "DataVault/audio configuration refresh paths re-register the bridge.");
             AssertNotContains(result, renderer, "OnAudioFilterRead", "unity_audio_callback_absent", RendererPath, "Critical renderer does not fall back to Unity managed audio callback.");
-        }
 
-        private static void ScanMemory(ScanResult result, string memory)
-        {
             AssertContains(result, memory, "AudioFrameRingTelemetry", "datavault_telemetry_lane", MemoryPath, "DataVault owns the audio bridge telemetry lane.");
             AssertContains(result, memory, "public static bool IsInitialized", "h8memory_initialized_probe", MemoryPath, "H8Memory exposes a read-only shutdown probe for fail-closed raw bridge teardown.");
             AssertNotContains(result, memory, "AudioFrameRingTelemetryDumpBytes", "datavault_no_dump_byte_lane", MemoryPath, "Obsolete DataVault dump byte lane is removed; dump scratch lives in the stable unmanaged bridge pool.");
-        }
 
-        private static void ScanNativePlugin(ScanResult result, string nativePlugin)
-        {
             AssertContains(result, nativePlugin, "kWriteIndexSlot = 2", "native_write_index_slot_even", NativePluginPath, "Native audio kernel expects the same write cursor byte offset 8 as C#.");
             AssertContains(result, nativePlugin, "kSourceChannelsSlot = 12", "native_source_channels_slot", NativePluginPath, "Native audio kernel reads the mono/stereo source layout from shared state.");
             AssertContains(result, nativePlugin, "kSharedStateSlotCount = 14", "native_shared_state_padded", NativePluginPath, "Native audio kernel requires the padded shared-state slot count.");
             AssertContains(result, nativePlugin, "kRequiredPointerAlignmentBytes = 8u", "native_required_alignment_8", NativePluginPath, "Native validation rejects pointers below the C# 8-byte alignment contract.");
+            AssertContains(result, bridge, "MaximumCapacityFrames = 65536", "bridge_capacity_upper_bound", BridgePath, "Managed descriptor validation rejects capacities above the native frame budget.");
             AssertContains(result, nativePlugin, "sizeof(SharedRingBufferDescriptor) == 56u", "native_descriptor_size_static_assert", NativePluginPath, "Native descriptor size is guarded at compile time against compiler packing drift.");
             AssertContains(result, nativePlugin, "offsetof(SharedRingBufferDescriptor, frames) == 0u", "native_descriptor_frames_offset_static_assert", NativePluginPath, "Native descriptor Frames pointer offset matches C# byte offset 0.");
             AssertContains(result, nativePlugin, "offsetof(SharedRingBufferDescriptor, sharedState) == 8u", "native_descriptor_shared_state_offset_static_assert", NativePluginPath, "Native descriptor SharedState pointer offset matches C# byte offset 8.");
@@ -323,10 +301,6 @@ namespace Hecton8.Audio.Editor
             AssertContains(result, nativePlugin, "return WriteTelemetryDumpFile(bytes, byteCount);", "native_dump_export_direct_write", NativePluginPath, "Native dump export returns the actual bounded disk write result and has no detached thread lifetime risk.");
             AssertContains(result, nativePlugin, "UnityGetAudioEffectDefinitions", "native_unity_effect_export_local", NativePluginPath, "Unity effect registration is owned by the Hecton plugin source instead of the heap-using Unity sample utility translation unit.");
             AssertContains(result, nativePlugin, "FillUnityEffectDefinition", "native_effect_definition_local_fill", NativePluginPath, "Effect definition setup uses static storage and bounded char copy in the Hecton plugin source.");
-        }
-
-        private static void ScanNativeBuildScripts(ScanResult result, string nativeBuildScript, string nativeAndroidBuildScript, string projectRoot)
-        {
             AssertNotContains(result, nativeBuildScript, "AudioPluginUtil.cpp", "native_build_excludes_sample_utility_cpp", NativeBuildScriptPath, "Native build no longer links the Unity sample utility translation unit that contains FFT/analyzer heap helpers.");
             AssertContains(result, nativeAndroidBuildScript, "aarch64-linux-android24-clang++", "native_android_build_uses_arm64_clang", NativeAndroidBuildScriptPath, "Android native build script targets the arm64 NDK clang driver used by Quest/Android player binaries.");
             AssertContains(result, nativeAndroidBuildScript, "-shared", "native_android_build_shared_library", NativeAndroidBuildScriptPath, "Android native build emits a shared library for Unity native plugin loading.");
@@ -342,41 +316,21 @@ namespace Hecton8.Audio.Editor
             AssertAssetMissing(result, projectRoot, NativePluginListPath, "native_plugin_list_removed", NativePluginListPath, "Legacy PluginList macro route is absent; Hecton effect registration is owned by Plugin_HectonSensoryKernel.cpp.");
             AssertContains(result, nativeBuildScript, "/Gy /Gw", "native_build_function_data_sections", NativeBuildScriptPath, "Windows native build emits function/data sections for the remaining Hecton plugin translation unit.");
             AssertContains(result, nativeBuildScript, "/OPT:REF /OPT:ICF", "native_build_dead_code_elimination", NativeBuildScriptPath, "Windows native link keeps explicit dead-code elimination and identical-code folding.");
-        }
 
-        private static void ScanMetaFiles(ScanResult result, string windowsLz4Meta, string windowsAudioKernelMeta, string projectRoot)
-        {
-            AssertContains(result, windowsLz4Meta, "PluginImporter:", "windows_lz4_plugin_importer_meta", WindowsLz4MetaPath, "Windows LZ4 DLL metadata must be a Unity PluginImporter asset, not GUID-only metadata.");
-            AssertContains(result, windowsAudioKernelMeta, "PluginImporter:", "windows_audio_kernel_plugin_importer_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is imported as a Unity PluginImporter, not a GUID-only raw file.");
-            AssertContains(result, windowsAudioKernelMeta, "Standalone: Win64", "windows_audio_kernel_win64_enabled_target", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL has an explicit Win64 platform importer lane.");
-            AssertContains(result, windowsAudioKernelMeta, "CPU: x86_64", "windows_audio_kernel_x64_cpu_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is constrained to x86_64 for editor/player native loading.");
-            AssertContains(result, windowsAudioKernelMeta, "OS: Windows", "windows_audio_kernel_editor_windows_meta", WindowsAudioKernelMetaPath, "Packaged Windows audio kernel DLL is explicitly routed to Windows editor native loading.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Any:\n", "enabled: 0", "windows_audio_kernel_any_platform_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables the catch-all plugin lane so it cannot be imported for unsupported platforms by accident.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "enabled: 1", "windows_audio_kernel_editor_lane_enabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL explicitly enables the Windows editor plugin lane.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "CPU: x86_64", "windows_audio_kernel_editor_lane_x64", WindowsAudioKernelMetaPath, "Windows editor plugin lane is constrained to x86_64.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Editor: Editor\n", "OS: Windows", "windows_audio_kernel_editor_lane_windows", WindowsAudioKernelMetaPath, "Windows editor plugin lane is constrained to OS: Windows.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win\n", "enabled: 0", "windows_audio_kernel_win32_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows x86_64 DLL disables the 32-bit Windows player lane.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win64\n", "enabled: 1", "windows_audio_kernel_win64_lane_enabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL explicitly enables the Win64 player lane.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Win64\n", "CPU: x86_64", "windows_audio_kernel_win64_lane_x64", WindowsAudioKernelMetaPath, "Win64 player plugin lane is constrained to x86_64.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: Linux64\n", "enabled: 0", "windows_audio_kernel_linux_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables Linux player import.");
-            AssertPluginMetaSectionContains(result, windowsAudioKernelMeta, "      Standalone: OSXUniversal\n", "enabled: 0", "windows_audio_kernel_osx_lane_disabled", WindowsAudioKernelMetaPath, "Packaged Windows DLL disables macOS player import.");
-            AssertFileNotOlderThan(result, projectRoot, WindowsAudioKernelDllPath, NativePluginPath, "windows_audio_kernel_dll_not_older_than_native_source", WindowsAudioKernelDllPath, "Packaged Windows DLL must be rebuilt after native source changes; Unity loads this binary, not Plugin_HectonSensoryKernel.cpp.");
-            AssertFileNotOlderThan(result, projectRoot, WindowsAudioKernelDllPath, NativeBuildScriptPath, "windows_audio_kernel_dll_not_older_than_native_build_script", WindowsAudioKernelDllPath, "Packaged Windows DLL must be rebuilt after native build-script changes.");
-        }
+            if (runLiveFuzzer)
+            {
+                result.FuzzerExecuted = true;
+                result.LiveFuzzerPass = AudioBridgeConcurrencyFuzzer1314.Run(out AudioBridgeConcurrencyFuzzerResult fuzzerResult);
+                result.Fuzzer = fuzzerResult;
+                if (!result.LiveFuzzerPass)
+                    result.FailedChecks++;
+            }
 
-        private static void ScanMixerSanitizer(ScanResult result, string audioMixerSanitizer)
-        {
-            AppendCheck(result, MasterMixerPath, "master_mixer_hecton_effect_authored", Hecton8.Editor.AudioMixerSanitizer.HasMixerEffectAtPath(MasterMixerPath, Hecton8.Editor.AudioMixerSanitizer.KernelEffectName), "MasterMixer must contain a concrete native Hecton Sensory Kernel effect controller with non-empty m_EffectID; raw text token presence is not sufficient proof.");
-            AssertContains(result, audioMixerSanitizer, "internal sealed class AudioMixerNativeEffectBuildGate", "mixer_native_effect_build_gate", AudioMixerSanitizerPath, "Player builds fail if the MasterMixer native effect is not authored.");
-            AssertContains(result, audioMixerSanitizer, "AudioMixerSanitizer.HasMixerEffectAtPath", "mixer_build_gate_checks_master_kernel_effect", AudioMixerSanitizerPath, "Build gate checks the concrete MasterMixer native effect by name.");
-            AssertContains(result, audioMixerSanitizer, "return string.IsNullOrEmpty(effectId);", "mixer_sanitizer_only_removes_unresolved_empty_effects", AudioMixerSanitizerPath, "Mixer sanitizer removes unresolved empty-id effects only.");
-            AssertNotContains(result, audioMixerSanitizer, "effectName.IndexOf", "mixer_sanitizer_no_name_based_effect_removal", AudioMixerSanitizerPath, "Mixer sanitizer cannot remove a valid Hecton native effect purely by display name.");
-        }
-
-        private static void ScanScanner(ScanResult result, string scanner)
-        {
-            AssertContains(result, scanner, "GenerateMockAudioSamplesJob", "editor_mock_audio_job", "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs", "Burst mock-audio generator exists only in the editor stress scanner.");
-            AssertContains(result, scanner, "AudioBridgeConcurrencyFuzzer1314", "concurrency_fuzzer", "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs", "Editor-only SPSC producer/consumer fuzzer exists outside runtime ring source.");
+            result.StaticPass = result.FailedChecks == 0 || (runLiveFuzzer && result.FailedChecks == 1 && result.FuzzerExecuted && !result.Fuzzer.DataVaultAvailable);
+            result.Pass = runLiveFuzzer
+                ? result.FailedChecks == 0
+                : result.StaticPass;
+            return result;
         }
 
         private static string ReadAssetText(string projectRoot, string assetPath, ScanResult result)

@@ -426,10 +426,13 @@ namespace Hecton8.Gameplay.AirlockPressurization
             public byte GetBucketId() => byte.MaxValue;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
             {
                 return _owner != null ? _owner.ScheduleSimulation(in timing, in context, dependsOn) : dependsOn;
             }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class PostSimulationPhaseSystem : IDispatcherSystem
@@ -446,11 +449,13 @@ namespace Hecton8.Gameplay.AirlockPressurization
             public byte GetBucketId() => byte.MaxValue;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
             public void PostSimulationTick(in DispatcherTimingDTO timing)
             {
                 _owner?.PostSimulationTick(in timing);
             }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
     }
 }

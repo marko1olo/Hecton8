@@ -107,10 +107,6 @@ namespace Hecton8.Tests.Editor.SaveSystem
             string tryCommitMmf = ExtractMethodBody(
                 runtimeSource,
                 "internal static bool TryCommitMmfPayloads(string absoluteSavePath, out string error)");
-            string writeTempFileMethod = ExtractMethodBody(
-                storageSource,
-                "private static unsafe bool TryWriteModPayloadOverrideTempFileToDisk(");
-
             string commitSubSector = ExtractMethodBody(
                 storageSource,
                 "internal static bool TryCommitModPayloadSubSector(");
@@ -127,14 +123,15 @@ namespace Hecton8.Tests.Editor.SaveSystem
                 commitSubSector,
                 "if (!TryDeleteFileIfExists(tempOverridePath, out string staleTempDeleteError))",
                 "error = staleTempDeleteError;",
-                "return false;"));
+                "return false;",
+                "if (modHash == 0u)"));
             Assert.IsTrue(ContainsTokensInOrder(
-                writeTempFileMethod,
+                commitSubSector,
                 "if (!AsyncWriteManager.WriteAll(tempOverridePath, filePtr, fileCursor, out error))",
                 "_ = TryDeleteFileIfExists(tempOverridePath, out _);",
                 "return false;"));
             Assert.IsTrue(ContainsTokensInOrder(
-                writeTempFileMethod,
+                commitSubSector,
                 "if (!AsyncWriteManager.FlushCriticalSavePath(tempOverridePath, fileCursor, out error))",
                 "_ = TryDeleteFileIfExists(tempOverridePath, out _);",
                 "return false;"));

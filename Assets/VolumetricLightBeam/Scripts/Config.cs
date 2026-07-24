@@ -197,19 +197,14 @@ namespace VLB
         public void SetURPScriptableRendererIndexToDepthCamera(Camera camera)
         {
 #if VLB_URP
+            if (urpDepthCameraScriptableRendererIndex < 0)
+                return;
+
             Debug.Assert(camera);
             var cameraData = camera.GetUniversalAdditionalCameraData();
             if (cameraData)
             {
-                cameraData.requiresDepthOption = UnityEngine.Rendering.Universal.CameraOverrideOption.Off;
-                cameraData.requiresColorOption = UnityEngine.Rendering.Universal.CameraOverrideOption.Off;
-                cameraData.requiresDepthTexture = false;
-                cameraData.requiresColorTexture = false;
-
-                if (urpDepthCameraScriptableRendererIndex >= 0)
-                {
-                    cameraData.SetRenderer(urpDepthCameraScriptableRendererIndex);
-                }
+                cameraData.SetRenderer(urpDepthCameraScriptableRendererIndex);
             }
 #endif
         }

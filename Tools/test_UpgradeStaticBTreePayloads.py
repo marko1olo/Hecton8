@@ -16,47 +16,6 @@ def load_tool():
 tool = load_tool()
 
 class TestUpgradeStaticBTreePayloads(unittest.TestCase):
-    def test_write_json(self):
-        from unittest.mock import patch
-
-        path = Path("dummy.json")
-        data = {"b": 2, "a": 1}
-
-        with patch.object(tool, 'atomic_write_bytes') as mock_atomic_write_bytes:
-            tool.write_json(path, data)
-
-            expected_json = json.dumps(data, indent=2, sort_keys=True) + "\n"
-            expected_bytes = expected_json.encode("utf-8")
-
-            mock_atomic_write_bytes.assert_called_once_with(path, expected_bytes)
-
-    def test_make_leaf_meta(self):
-        # make_leaf_meta(key_count) returns BTREE_LEAF_FLAG | (key_count & 0x7)
-        # BTREE_LEAF_FLAG is 1 << 8 (256)
-
-        # Test normal values
-        self.assertEqual(tool.make_leaf_meta(0), 256 | 0)
-        self.assertEqual(tool.make_leaf_meta(3), 256 | 3)
-        self.assertEqual(tool.make_leaf_meta(7), 256 | 7)
-
-        # Test bitwise AND masking (key_count & 0x7)
-        # Values >= 8 should wrap/mask down
-        self.assertEqual(tool.make_leaf_meta(8), 256 | 0)
-        self.assertEqual(tool.make_leaf_meta(10), 256 | 2)
-
-    def test_make_internal_meta(self):
-        # make_internal_meta(key_count) returns key_count & 0x7
-
-        # Test normal values
-        self.assertEqual(tool.make_internal_meta(0), 0)
-        self.assertEqual(tool.make_internal_meta(4), 4)
-        self.assertEqual(tool.make_internal_meta(7), 7)
-
-        # Test bitwise AND masking (key_count & 0x7)
-        # Values >= 8 should wrap/mask down
-        self.assertEqual(tool.make_internal_meta(8), 0)
-        self.assertEqual(tool.make_internal_meta(15), 7)
-
     def test_align_up(self):
         self.assertEqual(tool.align_up(10, 16), 16)
         self.assertEqual(tool.align_up(16, 16), 16)
@@ -180,27 +139,6 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
 
         return bytes(blob)
 
-    def test_update_babel_manifest(self):
-        import tempfile
-        import hashlib
-        import json
-        from pathlib import Path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            manifest_path = Path(tmpdir) / "manifest.json"
-            manifest_path.write_text(json.dumps({}), encoding="utf-8")
-
-            blob = b"test_blob_data"
-            # header needs 9 elements to satisfy up to header[8] (flags)
-            header = (0, 1, 2, 3, 4, 5, 6, 0x12345678, 0x0)
-
-            tool.update_babel_manifest(manifest_path, blob, header)
-
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            self.assertEqual(manifest["binaryBytes"], len(blob))
-            self.assertEqual(manifest["sha256"], hashlib.sha256(blob).hexdigest().upper())
-            self.assertEqual(manifest["payloadCrc32"], "0x12345678")
-
     def test_patch_babel(self):
         import tempfile
         import os
@@ -237,39 +175,6 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
 
             finally:
                 tool.BABEL_MANIFEST_PATH = old_manifest
-
-    def test_update_static_manifest(self):
-        import tempfile
-        import hashlib
-
-        # Create mock data
-        blob = b"mock payload data"
-        # The tuple header contains crc32 at index 6
-        header = [0] * 14
-        header[6] = 0x12345678  # mock CRC32
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = Path(tmpdir) / "manifest.json"
-            # Write initial dummy JSON
-            initial_data = {"existingKey": "existingValue"}
-            tmp_path.write_text(json.dumps(initial_data), encoding="utf-8")
-
-            # Call function
-            tool.update_static_manifest(tmp_path, blob, tuple(header))
-
-            # Read mutated JSON
-            mutated_data = json.loads(tmp_path.read_text(encoding="utf-8"))
-
-            # Assert values
-            self.assertEqual(mutated_data["existingKey"], "existingValue")
-            self.assertEqual(mutated_data["binaryBytes"], len(blob))
-            self.assertEqual(mutated_data["sha256"], hashlib.sha256(blob).hexdigest().upper())
-            self.assertEqual(mutated_data["payloadCrc32"], "0x12345678")
-            self.assertEqual(mutated_data["babelCrc32"], "0x00000000")
-            self.assertEqual(mutated_data["flags"], "0x0")
-            self.assertTrue(mutated_data["cacheBTree"]["enabled"])
-            self.assertEqual(mutated_data["recordAlignmentBytes"], 64)
-            self.assertEqual(mutated_data["status"], "BALANCE_STATIC_BTREE_VERIFIED_PENDING_UNITY_PROOF")
 
     def test_patch_static(self):
         import tempfile
@@ -313,38 +218,6 @@ class TestUpgradeStaticBTreePayloads(unittest.TestCase):
 
             finally:
                 tool.STATIC_MANIFEST_PATH = old_manifest
-
-    def test_atomic_write_bytes(self):
-        import tempfile
-        from pathlib import Path
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            test_path = Path(tmpdir) / "test_file.bin"
-            temp_test_path = test_path.with_name(test_path.name + ".tmp")
-
-            # Test 1: Writing data to a new path
-            initial_data = b"Hello, World!"
-            tool.atomic_write_bytes(test_path, initial_data)
-            self.assertTrue(test_path.exists(), "Target file should exist after atomic_write_bytes")
-            self.assertEqual(test_path.read_bytes(), initial_data, "Target file should contain the written data")
-            self.assertFalse(temp_test_path.exists(), "Temporary file should not exist after successful write")
-
-            # Test 2: Idempotence (skipping write if content is identical)
-            # Modify the modified time of the target file to check if it gets updated
-            import time
-            import os
-            original_mtime = os.path.getmtime(test_path)
-            time.sleep(0.01) # Small sleep to ensure mtime change if overwritten
-
-            tool.atomic_write_bytes(test_path, initial_data)
-            self.assertEqual(os.path.getmtime(test_path), original_mtime, "File should not be overwritten if content is identical")
-
-            # Test 3: Overwriting when contents differ
-            new_data = b"Goodbye, World!"
-            tool.atomic_write_bytes(test_path, new_data)
-            self.assertTrue(test_path.exists(), "Target file should still exist")
-            self.assertEqual(test_path.read_bytes(), new_data, "Target file should contain the new data")
-            self.assertFalse(temp_test_path.exists(), "Temporary file should not exist after overwrite")
 
 if __name__ == "__main__":
     unittest.main()

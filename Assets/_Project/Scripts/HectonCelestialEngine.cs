@@ -1841,8 +1841,16 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
-                if (!InitializeRuntimeAuthority())
+                GlobalTelemetryBus.Initialize();
+                if (!TryClaimCelestialRuntimeAuthority())
+                {
+                    DisableDuplicateCelestialPresentation();
                     return;
+                }
+
+                GlobalRegistry.RegisterCelestialEngineRuntime(this);
+                RefreshColdRuntimeDependencies();
+                TryRegisterHotSwapListener();
             }
 
             ForceMandatedSkyMaterialReference();
@@ -1856,50 +1864,6 @@ namespace Hecton8.Celestial
             CacheCelestialTextureDefaults();
             CacheMoonRenderers();
 
-            ResetCelestialState();
-
-            CacheCelestialOrbitReciprocals();
-            MarkAtmosphereGradientSamplesDirty();
-
-            CaptureSunDefaults();
-            CaptureBaseFlareValues();
-            CacheSunAdditionalLightDataCold();
-            CacheSunDiscRendererCold();
-            SyncCrestPrimaryLight();
-
-            ApplySkyboxMaterialOwnership(forceAssignment: true);
-            ApplyFirmamentStaticMaterialBindings(_skyMaterial);
-
-            if (Application.isPlaying)
-            {
-                InitializeRuntimeSystems();
-            }
-#if UNITY_EDITOR
-            else
-            {
-                EditorApplication.update -= EditorTick;
-                EditorApplication.update += EditorTick;
-            }
-#endif
-        }
-
-        private bool InitializeRuntimeAuthority()
-        {
-            GlobalTelemetryBus.Initialize();
-            if (!TryClaimCelestialRuntimeAuthority())
-            {
-                DisableDuplicateCelestialPresentation();
-                return false;
-            }
-
-            GlobalRegistry.RegisterCelestialEngineRuntime(this);
-            RefreshColdRuntimeDependencies();
-            TryRegisterHotSwapListener();
-            return true;
-        }
-
-        private void ResetCelestialState()
-        {
             _accumulatedOrbitalAngle = sunStartAngle;
             _currentBacklitFactor = 0f;
             _smoothedOcclusionFactor = 0f;
@@ -1932,16 +1896,15 @@ namespace Hecton8.Celestial
             _lastUploadedStormCloudDensity01 = -1f;
             _lightningFlash01 = 0f;
             _lastUploadedLightningFlash01 = -1f;
+            CacheCelestialOrbitReciprocals();
+            MarkAtmosphereGradientSamplesDirty();
 
             _previousBlendForColors = -1f;
             _lastAppliedSkyZenith = default;
             _lastAppliedSkyHorizon = default;
             _lastAppliedSkyNadir = default;
             _editorPreviewDirty = true;
-        }
 
-        private void CaptureSunDefaults()
-        {
             if (sunLight != null)
             {
                 _baseSunIntensity = sunLight.intensity;
@@ -1949,39 +1912,54 @@ namespace Hecton8.Celestial
                 _baseSunColor = sunLight.color;
                 _baseSunColorCaptured = true;
             }
-        }
 
-        private void InitializeRuntimeSystems()
-        {
-            RefreshColdRuntimeDependencies();
-            TryResolveCelestialRuntimeBuffers();
-            RefreshAtmosphereGradientSamplesIfDirty();
-            _stormCloudDensity01 = 0f;
-            _lastUploadedStormCloudDensity01 = -1f;
-            QueueStormCloudDensityShaderGlobal(0f, forceUpload: true);
-            _lightningFlash01 = 0f;
-            _lastUploadedLightningFlash01 = -1f;
-            QueueLightningFlashShaderGlobal(0f, forceUpload: true);
+            CaptureBaseFlareValues();
+            CacheSunAdditionalLightDataCold();
+            CacheSunDiscRendererCold();
+            SyncCrestPrimaryLight();
 
-            BiomeMatrixEvents.Unregister(this);
-            BiomeMatrixEvents.Register(this);
-            WeatherEvents.Unregister(this);
-            WeatherEvents.Register(this);
-            TryRegisterToTickManager();
-            TryRegisterLateFrameTickable();
-            InitializeFirmamentBakeAtStartup();
+            ApplySkyboxMaterialOwnership(forceAssignment: true);
+            ApplyFirmamentStaticMaterialBindings(_skyMaterial);
 
-            BiomeMatrixDirector director = _cachedBiomeMatrix;
-            if (director != null)
+            if (Application.isPlaying)
             {
-                _currentDepthMeters = Mathf.Max(0f, director.CurrentDepthMeters);
-                UpdateDeepTextureResidencyState();
+                RefreshColdRuntimeDependencies();
+                TryResolveCelestialRuntimeBuffers();
+                RefreshAtmosphereGradientSamplesIfDirty();
+                _stormCloudDensity01 = 0f;
+                _lastUploadedStormCloudDensity01 = -1f;
+                QueueStormCloudDensityShaderGlobal(0f, forceUpload: true);
+                _lightningFlash01 = 0f;
+                _lastUploadedLightningFlash01 = -1f;
+                QueueLightningFlashShaderGlobal(0f, forceUpload: true);
+
+                BiomeMatrixEvents.Unregister(this);
+                BiomeMatrixEvents.Register(this);
+                WeatherEvents.Unregister(this);
+                WeatherEvents.Register(this);
+                TryRegisterToTickManager();
+                TryRegisterLateFrameTickable();
+                InitializeFirmamentBakeAtStartup();
+
+                BiomeMatrixDirector director = _cachedBiomeMatrix;
+                if (director != null)
+                {
+                    _currentDepthMeters = Mathf.Max(0f, director.CurrentDepthMeters);
+                    UpdateDeepTextureResidencyState();
+                }
+                else
+                {
+                    _currentDepthMeters = 0f;
+                    RestoreCelestialTextureDefaults();
+                }
             }
+#if UNITY_EDITOR
             else
             {
-                _currentDepthMeters = 0f;
-                RestoreCelestialTextureDefaults();
+                EditorApplication.update -= EditorTick;
+                EditorApplication.update += EditorTick;
             }
+#endif
         }
 
         private void Start()
@@ -8202,6 +8180,7 @@ namespace Hecton8.Celestial
             _celestialRuntimeSnapshot = snapshot;
             _celestialRuntimeSequence = snapshot.Sequence;
         }
+
 
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {

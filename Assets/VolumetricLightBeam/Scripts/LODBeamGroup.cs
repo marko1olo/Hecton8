@@ -21,7 +21,9 @@ namespace VLB
 
         LODGroup m_LODGroup;
 
-
+#if UNITY_EDITOR
+        GameObject m_SelectionToRestore = null;
+#endif
 
         void Awake()
         {
@@ -49,39 +51,21 @@ namespace VLB
         {
             Debug.Assert(m_LODGroup != null);
 
+            LOD[] lods = m_LODGroup.GetLODs();
+            Debug.Assert(lods != null);
+
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            if(lods[lodIdx].renderers == null || lods[lodIdx].renderers.Length == 0)
             {
-                var so = new SerializedObject(m_LODGroup);
-                var lodsProp = so.FindProperty("m_LODs");
-                if (lodsProp != null && lodsProp.isArray && lodIdx >= 0 && lodIdx < lodsProp.arraySize)
+                if(renderers != null)
                 {
-                    var lodProp = lodsProp.GetArrayElementAtIndex(lodIdx);
-                    var renderersProp = lodProp.FindPropertyRelative("renderers");
-                    if (renderersProp != null && renderersProp.isArray)
-                    {
-                        renderersProp.ClearArray();
-                        if (renderers != null)
-                        {
-                            renderersProp.arraySize = renderers.Length;
-                            for (int i = 0; i < renderers.Length; i++)
-                            {
-                                var rendererProp = renderersProp.GetArrayElementAtIndex(i);
-                                var rendererRef = rendererProp.FindPropertyRelative("renderer");
-                                if (rendererRef != null)
-                                {
-                                    rendererRef.objectReferenceValue = renderers[i];
-                                }
-                            }
-                        }
-                        so.ApplyModifiedProperties();
-                        return;
-                    }
+                    // Fix a very weird Unity bug happening on 2021 and higher, where the Unity's LODGroup inspector generates errors when modifying its LOD data.
+                    // The only workaround I found is to deselect the gameobject for a bit of time.
+                    m_SelectionToRestore = Selection.activeGameObject;
+                    Selection.activeGameObject = null;
                 }
             }
 #endif
-            LOD[] lods = m_LODGroup.GetLODs();
-            Debug.Assert(lods != null);
             lods[lodIdx].renderers = renderers;
             m_LODGroup.SetLODs(lods);
         }
@@ -232,7 +216,7 @@ namespace VLB
 #if UNITY_EDITOR
         public bool IsPropertlyLoaded()
         {
-            return m_LODGroup != null && m_LODGroup.enabled;
+            return m_LODGroup != null;
         }
 
         public bool GetLODFromLODGroup(int lodIdx, ref LOD lodData)
@@ -263,6 +247,12 @@ namespace VLB
 #if UNITY_EDITOR
             if (!Application.isPlaying)
             {
+                if (m_SelectionToRestore)
+                {
+                    Selection.activeGameObject = m_SelectionToRestore;
+                    m_SelectionToRestore = null;
+                }
+
                 SetupLodGroupData();
                 UnifyBeamsProperties();
                 return;

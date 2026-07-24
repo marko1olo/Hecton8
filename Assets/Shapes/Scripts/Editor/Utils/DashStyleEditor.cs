@@ -59,8 +59,8 @@ namespace Shapes {
 				using( var chChk = new EditorGUI.ChangeCheckScope() ) {
 					EditorGUILayout.PropertyField( propSpace, new GUIContent( "Length Space" ) );
 					if( chChk.changed && propSpace.enumValueIndex == DashSpace.FixedCount.GetIndex() ) {
+						// per-instance fixup
 						// converts from dash+space to count + space ratio
-						propSpace.serializedObject.ApplyModifiedProperties();
 						foreach( Object target in propSpace.serializedObject.targetObjects ) {
 							using( SerializedObject so = new SerializedObject( target ) ) {
 								SerializedProperty pSpacing = so.FindProperty( propSpacing.propertyPath );
@@ -70,7 +70,6 @@ namespace Shapes {
 								so.ApplyModifiedProperties();
 							}
 						}
-						propSpace.serializedObject.Update();
 					}
 				}
 

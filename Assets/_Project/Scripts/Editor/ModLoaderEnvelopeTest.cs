@@ -9,7 +9,7 @@ namespace Hecton8.Editor
     public static class ModLoaderEnvelopeTest
     {
         [MenuItem("Hecton8/Verification/Test Envelope Policy")]
-        public static async void RunTest()
+        public static void RunTest()
         {
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
             string modsDir = Path.Combine(projectRoot, "Mods");
@@ -33,7 +33,7 @@ namespace Hecton8.Editor
 
             Debug.Log("[EnvelopeTest] Setup complete with manifest declaring DLL. Running ModLoader...");
 
-            await ResetAndBootstrap();
+            ResetAndBootstrap();
 
             var infos = new List<ModRuntimeInfo>();
             ModLoader.CollectRuntimeInfo(infos);
@@ -72,7 +72,7 @@ namespace Hecton8.Editor
                 Directory.Delete(testModDir, true);
         }
 
-        private static async Awaitable ResetAndBootstrap()
+        private static void ResetAndBootstrap()
         {
             var type = typeof(ModLoader);
 
@@ -93,9 +93,7 @@ namespace Hecton8.Editor
             var initMethod = type.GetMethod("DiscoverAndLoadMods", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (initMethod != null)
             {
-                var result = initMethod.Invoke(null, null);
-                if (result is Awaitable awaitable)
-                    await awaitable;
+                initMethod.Invoke(null, null);
             }
         }
     }

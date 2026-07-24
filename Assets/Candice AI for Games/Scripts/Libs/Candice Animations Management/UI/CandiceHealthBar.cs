@@ -44,7 +44,7 @@ namespace CandiceAIforGames.AI
 		public void Awake()
 		{
 			// get rect transform
-			m_RectTransform = (RectTransform)transform;
+			m_RectTransform = GetComponent<RectTransform>();
 
 			// get image
 			m_Image = GetComponentInChildren<Image>();
@@ -53,21 +53,16 @@ namespace CandiceAIforGames.AI
 
 			// count size of segments
 			m_SizeOfSegment = m_RectTransform.sizeDelta.x / m_NumberOfSegments;
-			Vector3 right = Vector3.right;
-			Vector3 posOffsetBase = right * m_SizeOfSegment * (m_NumberOfSegments / 2);
-			Vector3 startPos = transform.position;
-			Quaternion rot = Quaternion.identity;
-
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-				Image segmentImage = Instantiate(m_Image, startPos, rot, transform);
+				Image segmentImage = Instantiate(m_Image, transform.position, Quaternion.identity, transform);
 				segmentImage.gameObject.SetActive(true);
 
 				segmentImage.fillAmount = m_SizeOfSegment;
 
 				RectTransform segmentRectTransform = segmentImage.rectTransform;
 				segmentRectTransform.sizeDelta = new Vector2(m_SizeOfSegment, segmentRectTransform.sizeDelta.y);
-				segmentRectTransform.position += (right * i * m_SizeOfSegment) - posOffsetBase + (right * i * m_SizeOfNotch);
+				segmentRectTransform.position += (Vector3.right * i * m_SizeOfSegment) - (Vector3.right * m_SizeOfSegment * (m_NumberOfSegments / 2)) + (Vector3.right * i * m_SizeOfNotch);
 
 				Image segmentFillImage = segmentImage.transform.GetChild(0).GetComponent<Image>();
 				segmentFillImage.color = m_FillColor;
@@ -82,10 +77,9 @@ namespace CandiceAIforGames.AI
 
 		private void UpdateSegments()
 		{
-			int count = m_ProgressToFill.Count;
 			for (int i = 0; i < m_NumberOfSegments; i++)
 			{
-				if (i < count)
+				if (i < m_ProgressToFill.Count)
 				{
 					m_ProgressToFill[i].fillAmount = m_NumberOfSegments * _fillAmount - i;
 				}

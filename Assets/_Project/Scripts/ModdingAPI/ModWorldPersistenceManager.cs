@@ -614,8 +614,9 @@ namespace Hecton8.Modding
         private void RebuildLiveEntityLookupFromScene()
         {
             _liveEntitiesByHash.Clear();
-            List<ModSpawnedEntity> entities = ModSpawnedEntity.AllEntities;
-            for (int i = 0; i < entities.Count; i++)
+            ModSpawnedEntity[] entities = UnityEngine.Object.FindObjectsByType<ModSpawnedEntity>(
+                UnityEngine.FindObjectsInactive.Include);
+            for (int i = 0; i < entities.Length; i++)
             {
                 ModSpawnedEntity marker = entities[i];
                 if (marker == null)
@@ -869,36 +870,6 @@ namespace Hecton8.Modding
     [DisallowMultipleComponent]
     internal sealed class ModSpawnedEntity : MonoBehaviour
     {
-        // COLD ALLOC: List<ModSpawnedEntity>[128] — live spawned entity registry — owner: ModSpawnedEntity
-        internal static readonly List<ModSpawnedEntity> AllEntities = new List<ModSpawnedEntity>(128);
-
-        internal int AllEntitiesIndex = -1;
-
-        private void Awake()
-        {
-            if (AllEntitiesIndex == -1)
-            {
-                AllEntitiesIndex = AllEntities.Count;
-                AllEntities.Add(this);
-            }
-        }
-
-        private void OnDestroy()
-        {
-            if (AllEntitiesIndex >= 0 && AllEntitiesIndex < AllEntities.Count)
-            {
-                int lastIndex = AllEntities.Count - 1;
-                if (AllEntitiesIndex != lastIndex)
-                {
-                    ModSpawnedEntity lastEntity = AllEntities[lastIndex];
-                    AllEntities[AllEntitiesIndex] = lastEntity;
-                    lastEntity.AllEntitiesIndex = AllEntitiesIndex;
-                }
-                AllEntities.RemoveAt(lastIndex);
-                AllEntitiesIndex = -1;
-            }
-        }
-
         /// <summary>
         /// Stable persistent spawn identifier.
         /// </summary>

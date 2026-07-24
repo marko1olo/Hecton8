@@ -181,7 +181,7 @@ namespace Hecton8.Tests.Editor
 
             StringAssert.Contains("_loadRollbackRecords.Clear();", commit);
             StringAssert.Contains("_loadApplyPending = false;", commit);
-            StringAssert.Contains("ModSpawnedEntity.AllEntities", rebuild);
+            StringAssert.Contains("UnityEngine.Object.FindObjectsByType<ModSpawnedEntity>", rebuild);
             StringAssert.Contains("_recordIndexByHash.ContainsKey(marker.SpawnHash)", rebuild);
             StringAssert.Contains("_liveEntitiesByHash[marker.SpawnHash] = marker;", rebuild);
             StringAssert.Contains("RollbackLoadApplyIfPending();", onDisable);

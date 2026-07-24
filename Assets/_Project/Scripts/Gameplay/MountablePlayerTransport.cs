@@ -416,6 +416,14 @@ namespace Hecton8.Gameplay
             TryUnregister();
         }
 
+        void IInteractable.OnHoverStart()
+        {
+        }
+
+        void IInteractable.OnHoverEnd()
+        {
+        }
+
         void IInteractable.Interact(Transform interactor)
         {
             if (interactor == null)

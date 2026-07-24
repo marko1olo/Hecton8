@@ -414,7 +414,7 @@ namespace Hecton8.World
                 CarveStrengthMeters = 20.0f, // More aggressive carve
                 CaveThreshold = 0.65f,       // Higher threshold for Swiss Cheese intersection
                 MaxCrustDepthMeters = 400.0f,
-                SurfaceProtectionMeters = 50.0f, // 50m protection zone to prevent surface breakup and black holes
+                SurfaceProtectionMeters = 15.0f, // 15m protection zone to prevent surface breakup
                 StrataLayerThicknessMeters = 24.0f, // Shelves every 24m vertically
                 StrataShelvingStrength = 0.4f,   // Moderate shelf flattening
                 

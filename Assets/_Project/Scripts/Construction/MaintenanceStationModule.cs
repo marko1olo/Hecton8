@@ -258,6 +258,14 @@ namespace Hecton8.Construction
                 _debugIsRepairing = false;
         }
 
+        void IInteractable.OnHoverStart()
+        {
+        }
+
+        void IInteractable.OnHoverEnd()
+        {
+        }
+
         void IInteractable.Interact(Transform interactor)
         {
             PlayerInventory inventory = ResolvePlayerInventory();

@@ -2649,6 +2649,8 @@ namespace Hecton8.Physics
             public uint GetDependencyHash(int dependencyIndex) { return 0u; }
             public void PreSimulationTick(in DispatcherTimingDTO timing) { _owner.PreSimulationTick(in timing); }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class SimulationPhaseSystem : IDispatcherSystem
@@ -2660,7 +2662,10 @@ namespace Hecton8.Physics
             public byte GetBucketId() { return byte.MaxValue; }
             public int GetDependencyCount() { return 0; }
             public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return _owner.ScheduleSimulation(in timing, in context, dependsOn); }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class PostSimulationPhaseSystem : IDispatcherSystem
@@ -2672,8 +2677,10 @@ namespace Hecton8.Physics
             public byte GetBucketId() { return byte.MaxValue; }
             public int GetDependencyCount() { return 0; }
             public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
             public void PostSimulationTick(in DispatcherTimingDTO timing) { _owner.PostSimulationTick(in timing); }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
         }
 
         private sealed class VisualSyncPhaseSystem : IDispatcherSystem
@@ -2685,7 +2692,9 @@ namespace Hecton8.Physics
             public byte GetBucketId() { return byte.MaxValue; }
             public int GetDependencyCount() { return 0; }
             public uint GetDependencyHash(int dependencyIndex) { return 0u; }
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) { return dependsOn; }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
             public void VisualSyncTick(in DispatcherTimingDTO timing) { _owner.VisualSyncTick(in timing); }
         }
     }

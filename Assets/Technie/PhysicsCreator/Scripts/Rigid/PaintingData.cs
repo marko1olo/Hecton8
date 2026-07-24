@@ -109,7 +109,7 @@ namespace Technie.PhysicsCreator
 
 		// Serialised Data
 
-		public HullMeshAsset hullData;
+		public HullData hullData;
 
 		public Mesh sourceMesh;
 		public Hash160 sourceMeshHash;

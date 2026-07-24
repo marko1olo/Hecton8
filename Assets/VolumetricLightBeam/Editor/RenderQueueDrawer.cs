@@ -19,12 +19,11 @@ namespace VLB
             }
         }
 
-        public RenderQueueDrawer(SerializedProperty sprop, System.Action onDirty)
+        public RenderQueueDrawer(SerializedProperty sprop)
         {
             Debug.Assert(sprop != null);
             m_Prop = sprop;
             m_IsRenderQueueCustom = !isPropValueInEnumList;
-            m_OnDirty = onDirty;
         }
 
         public void Draw(GUIContent label)
@@ -56,15 +55,13 @@ namespace VLB
                 }
                 if (EditorGUI.EndChangeCheck())
                 {
-                    if (m_OnDirty != null)
-                        m_OnDirty();
+                    Utils._EditorSetAllBeamGeomDirty(); // TODO switch sd / hd ?
                 }
             }
         }
 
         SerializedProperty m_Prop;
         bool m_IsRenderQueueCustom = false;
-        System.Action m_OnDirty;
     }
 }
 #endif

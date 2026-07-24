@@ -170,6 +170,16 @@ namespace Hecton8.Gameplay
         //  IInteractable IMPLEMENTATION
         // ══════════════════════════════════════════════════════════
 
+        void IInteractable.OnHoverStart()
+        {
+            // Future: highlight effect
+        }
+
+        void IInteractable.OnHoverEnd()
+        {
+            // Future: remove highlight
+        }
+
         void IInteractable.Interact(Transform interactor)
         {
             // Try to swap battery with held tool

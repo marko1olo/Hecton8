@@ -25,7 +25,7 @@ namespace Hecton8.Core
         private static readonly int[] s_cameraInstanceIdCache = new int[CameraDataCacheCapacity];
         private static readonly UniversalAdditionalCameraData[] s_cameraDataCache = new UniversalAdditionalCameraData[CameraDataCacheCapacity];
         private static readonly List<GameObject> s_sceneRootScratch = new List<GameObject>(64); // COLD ALLOC: List<GameObject>[64] - scene camera prewarm roots - owner: HectonUrpTextureRequirementsGuard
-        private static readonly List<Camera> s_cameraScratch = new List<Camera>(256); // COLD ALLOC: List<Camera>[256] - scene camera prewarm cameras - owner: HectonUrpTextureRequirementsGuard
+        private static readonly List<Camera> s_cameraScratch = new List<Camera>(32); // COLD ALLOC: List<Camera>[32] - scene camera prewarm cameras - owner: HectonUrpTextureRequirementsGuard
         private static int s_cameraDataCacheCount;
         private static int s_cameraDataCacheCursor;
 
@@ -177,9 +177,6 @@ namespace Hecton8.Core
                     continue;
 
                 s_cameraScratch.Clear();
-                // OPTIMIZATION NOTE: This specifically uses the non-allocating List overload of GetComponentsInChildren.
-                // It is inside a loop over roots to preserve scene boundaries without global search array allocations.
-                // Alternative manual C# traversals cause native-boundary GC regressions.
                 root.GetComponentsInChildren(true, s_cameraScratch);
                 for (int cameraIndex = 0; cameraIndex < s_cameraScratch.Count; cameraIndex++)
                     TryCacheCameraDataCold(s_cameraScratch[cameraIndex], out _);

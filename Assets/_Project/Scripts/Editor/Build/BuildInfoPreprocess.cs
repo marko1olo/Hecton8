@@ -23,10 +23,10 @@ namespace Hecton8.Editor.Build
         public void OnPreprocessBuild(BuildReport report)
         {
             BuildInfo buildInfo = LoadOrCreateAsset();
-            string branch = RunGit("rev-parse", "--abbrev-ref", "HEAD");
-            string fullCommit = RunGit("rev-parse", "HEAD");
-            string commit = RunGit("rev-parse", "--short=12", "HEAD");
-            string dirty = RunGit("status", "--porcelain");
+            string branch = RunGit("rev-parse --abbrev-ref HEAD");
+            string fullCommit = RunGit("rev-parse HEAD");
+            string commit = RunGit("rev-parse --short=12 HEAD");
+            string dirty = RunGit("status --porcelain");
             bool isDirty = !string.IsNullOrWhiteSpace(dirty) && dirty != "unknown";
             if (isDirty)
                 commit += "-dirty";
@@ -59,23 +59,20 @@ namespace Hecton8.Editor.Build
             return buildInfo;
         }
 
-        private static string RunGit(params string[] arguments)
+        private static string RunGit(string arguments)
         {
             try
             {
                 ProcessStartInfo info = new ProcessStartInfo
                 {
                     FileName = "git",
+                    Arguments = arguments,
                     WorkingDirectory = Directory.GetCurrentDirectory(),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     CreateNoWindow = true
                 };
-                foreach (string arg in arguments)
-                {
-                    info.ArgumentList.Add(arg);
-                }
 
                 using (Process process = TryStartGitMetadataProcessNoThrow(info))
                 {

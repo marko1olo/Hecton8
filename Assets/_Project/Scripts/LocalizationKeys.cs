@@ -272,7 +272,6 @@ namespace Hecton.Localization
         public const string PDA_TAB_SPECTRUM = "PDA_TAB_SPECTRUM";
         public const string PDA_TAB_DIAGNOSTICS = "PDA_TAB_DIAGNOSTICS";
         public const string PDA_TAB_UNKNOWN = "PDA_TAB_UNKNOWN";
-        public const string PDA_TAB_INTRUSION = "PDA_TAB_INTRUSION";
         public const string PDA_FOOTER_LEFT = "PDA_FOOTER_LEFT";
         public const string PDA_FOOTER_RIGHT_ONLINE = "PDA_FOOTER_RIGHT_ONLINE";
         public const string PDA_FOOTER_RIGHT_STANDBY = "PDA_FOOTER_RIGHT_STANDBY";

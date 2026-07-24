@@ -198,6 +198,16 @@ namespace Hecton8.Gameplay
         }
 
         /// <inheritdoc />
+        void IInteractable.OnHoverStart()
+        {
+        }
+
+        /// <inheritdoc />
+        void IInteractable.OnHoverEnd()
+        {
+        }
+
+        /// <inheritdoc />
         void IInteractable.Interact(Transform interactor)
         {
             if (!allowDirectInteract || _isBroken)

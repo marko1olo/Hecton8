@@ -119,7 +119,28 @@ namespace AmplifyImpostors
 
 		[SerializeField]
 		private Renderer[] m_renderers;
-		public Renderer[] Renderers { get { return m_renderers; } set { m_renderers = value; } }
+		private MeshFilter[] m_meshFilters;
+		public Renderer[] Renderers
+		{
+			get { return m_renderers; }
+			set
+			{
+				m_renderers = value;
+				if (m_renderers != null)
+				{
+					m_meshFilters = new MeshFilter[m_renderers.Length];
+					for (int i = 0; i < m_renderers.Length; i++)
+					{
+						if (m_renderers[i] != null)
+							m_meshFilters[i] = m_renderers[i].GetComponent<MeshFilter>();
+					}
+				}
+				else
+				{
+					m_meshFilters = null;
+				}
+			}
+		}
 
 		public LODReplacement m_lodReplacement = LODReplacement.ReplaceLast;
 
@@ -366,17 +387,17 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
-			MeshFilter[] cachedMeshFilters = new MeshFilter[Renderers.Length];
+			MeshFilter[] validMeshes = new MeshFilter[ Renderers.Length ];
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
 				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 					continue;
 
-				MeshFilter mf = Renderers[ i ].GetComponent<MeshFilter>();
+				MeshFilter mf = (m_meshFilters != null && i < m_meshFilters.Length) ? m_meshFilters[ i ] : Renderers[ i ].GetComponent<MeshFilter>();
 				if( mf == null || mf.sharedMesh == null )
 					continue;
 
-				cachedMeshFilters[ i ] = mf;
+				validMeshes[ i ] = mf;
 			}
 
 			for( int x = 0; x < hframes; x++ )
@@ -388,7 +409,7 @@ namespace AmplifyImpostors
 
 					for( int i = 0; i < Renderers.Length; i++ )
 					{
-						MeshFilter mf = cachedMeshFilters[ i ];
+						MeshFilter mf = validMeshes[ i ];
 						if( mf == null )
 							continue;
 
@@ -507,20 +528,7 @@ namespace AmplifyImpostors
 			GL.sRGBWrite = true;
 
 			m_pixelOffset = Vector2.zero;
-<<<<<<< HEAD
 			RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
-=======
-
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, true, m_data.Preset.BakeShader );
-			}
-			catch( Exception e )
-			{
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
->>>>>>> origin/main
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -621,20 +629,7 @@ namespace AmplifyImpostors
 
 			bool sRGBcache = GL.sRGBWrite;
 			GL.sRGBWrite = true;
-<<<<<<< HEAD
 			RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
-=======
-
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, m_data.Preset.Output.Count, false, true, false, m_data.Preset.BakeShader );
-			}
-			catch( Exception e )
-			{
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
->>>>>>> origin/main
 
 			GL.sRGBWrite = sRGBcache;
 
@@ -884,20 +879,7 @@ namespace AmplifyImpostors
 
 			GenerateTextures( outputList, standardRendering );
 			DisplayProgress( 0.2f, "Please Wait... Baking" );
-<<<<<<< HEAD
 			RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
-=======
-
-			try
-			{
-				RenderImpostor( m_data.ImpostorType, outputList.Count, true, false, true, m_data.Preset.BakeShader );
-			}
-			catch( Exception e )
-			{
-				EditorUtility.ClearProgressBar();
-				throw e;
-			}
->>>>>>> origin/main
 
 			DisplayProgress( 0.5f, "Please Wait... Remapping" );
 
@@ -1563,27 +1545,26 @@ namespace AmplifyImpostors
 					vframes = m_data.VerticalFrames - 1;
 			}
 
-			List<MeshFilter> validMeshes = new List<MeshFilter>();
+			MeshFilter[] validMeshes = new MeshFilter[Renderers.Length];
 			for( int i = 0; i < Renderers.Length; i++ )
 			{
 				// only allow for renderers that are enabled and not marked as shadow only
 				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
 				{
-					validMeshes.Add( null );
 					continue;
 				}
 
 				// skip non-meshes, for now
-				if( !Renderers[ i ].TryGetComponent<MeshFilter>( out MeshFilter mf ) || mf.sharedMesh == null )
+				MeshFilter mf = (m_meshFilters != null && i < m_meshFilters.Length) ? m_meshFilters[ i ] : Renderers[ i ].GetComponent<MeshFilter>();
+				if( mf == null || mf.sharedMesh == null )
 				{
-					validMeshes.Add( null );
 					continue;
 				}
 
-				validMeshes.Add( mf );
+				validMeshes[ i ] = mf;
 			}
 
-			int validMeshesCount = validMeshes.Count;
+			int validMeshesCount = validMeshes.Length;
 
 			for( int x = 0; x < hframes; x++ )
 			{
@@ -1654,10 +1635,10 @@ namespace AmplifyImpostors
 						Material[] meshMaterials = Renderers[ j ].sharedMaterials;
 
 						// Draw Mesh
-							Transform childTransform = Renderers[ j ].transform;
-							MaterialPropertyBlock pBlock = new MaterialPropertyBlock();
-							Renderers[ j ].GetPropertyBlock( pBlock );
-							Matrix4x4 localMatrix = m_rootTransform.worldToLocalMatrix * childTransform.localToWorldMatrix;
+						//Transform childTransform = Renderers[ j ].transform;
+						//MaterialPropertyBlock pBlock = new MaterialPropertyBlock();
+						//Renderers[ j ].GetPropertyBlock( pBlock );
+						//Matrix4x4 localMatrix = m_rootTransform.worldToLocalMatrix * childTransform.localToWorldMatrix;
 
 						for( int k = 0; k < meshMaterials.Length; k++ )
 						{
@@ -1749,15 +1730,17 @@ namespace AmplifyImpostors
 							if( impostorMaps )
 							{
 								if( prePass > -1 )
-									commandBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, prePass, pBlock );
-								commandBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, pass, pBlock );
+									commandBuffer.DrawRenderer( Renderers[ j ], renderMaterial, k, prePass );
+								commandBuffer.DrawRenderer( Renderers[ j ], renderMaterial, k, pass );
+								//commandBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, pass, pBlock );
 							}
 
 							if( combinedAlphas )
 							{
 								if( prePass > -1 )
-									commandAlphaBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, prePass, pBlock );
-								commandAlphaBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, pass, pBlock );
+									commandAlphaBuffer.DrawRenderer( Renderers[ j ], renderMaterial, k, prePass );
+								commandAlphaBuffer.DrawRenderer( Renderers[ j ], renderMaterial, k, pass );
+								//commandAlphaBuffer.DrawMesh( mesh, localMatrix, renderMaterial, k, pass, pBlock );
 							}
 						}
 					}
@@ -1770,7 +1753,7 @@ namespace AmplifyImpostors
 			if ( combinedAlphas )
 				Graphics.ExecuteCommandBuffer( commandAlphaBuffer );
 
-			validMeshes.Clear();
+			Array.Clear(validMeshes, 0, validMeshes.Length);
 
 			foreach( var pair in bakeMats )
 			{

@@ -469,18 +469,8 @@ public class ftLightmaps {
         }
 
         // Decide which global engine lightmapping mode to use
+        // TODO: allow mixing different modes
         directionalMode = storage.dirMaps.Count != 0 ? 1 : 0;
-        if (directionalMode == 0)
-        {
-            for(int i=0; i<existingLmaps.Length; i++)
-            {
-                if (existingLmaps[i].lightmapDir != null)
-                {
-                    directionalMode = 1;
-                    break;
-                }
-            }
-        }
         bool patchedDirection = false;
         SetDirectionalMode();
 

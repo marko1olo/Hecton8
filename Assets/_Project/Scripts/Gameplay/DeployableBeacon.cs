@@ -387,6 +387,22 @@ namespace Hecton8.Gameplay
         // ==========================================================
 
         /// <summary>
+        /// Called when player's raycast first hits this object.
+        /// </summary>
+        public void OnHoverStart()
+        {
+            // Future: highlight effect
+        }
+
+        /// <summary>
+        /// Called when player's raycast leaves this object.
+        /// </summary>
+        public void OnHoverEnd()
+        {
+            // Future: remove highlight
+        }
+
+        /// <summary>
         /// Called when player presses interact key while hovering.
         /// </summary>
         public void Interact(Transform interactor)

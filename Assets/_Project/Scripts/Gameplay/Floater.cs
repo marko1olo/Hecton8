@@ -248,6 +248,16 @@ namespace Hecton8.Gameplay
         //  IInteractable
         // ══════════════════════════════════════════════════════════
 
+        void IInteractable.OnHoverStart()
+        {
+            // Could trigger highlight effect here
+        }
+
+        void IInteractable.OnHoverEnd()
+        {
+            // Could disable highlight effect here
+        }
+
         void IInteractable.Interact(Transform interactor)
         {
             switch (_state)

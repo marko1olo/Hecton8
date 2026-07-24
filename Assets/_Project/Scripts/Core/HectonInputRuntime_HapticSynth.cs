@@ -1146,6 +1146,10 @@ namespace Hecton8.Core
             public byte GetBucketId() => 0;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
+            public void PostSimulationTick(in DispatcherTimingDTO timing) { }
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+
             public JobHandle ScheduleSimulation(
                 in DispatcherTimingDTO timing,
                 in DispatcherJobContext context,
@@ -1170,7 +1174,10 @@ namespace Hecton8.Core
             public byte GetBucketId() => 0;
             public int GetDependencyCount() => 0;
             public uint GetDependencyHash(int dependencyIndex) => 0u;
+            public void PreSimulationTick(in DispatcherTimingDTO timing) { }
             public JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn) => dependsOn;
+            public void VisualSyncTick(in DispatcherTimingDTO timing) { }
+
             public void PostSimulationTick(in DispatcherTimingDTO timing)
             {
                 _owner.RunHapticSynthesisPostSimulation(timing.FrameDelta);

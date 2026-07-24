@@ -29,6 +29,8 @@ namespace Hecton8.Core.Content
         public const byte MacroDbContainsWorldState = 2;
         public const byte SeedDerivedContainsProceduralState = 3;
 
+        private const string HexDigits = "0123456789ABCDEF";
+
         /// <summary>
         /// Returns true when the slot maps to the explicit HECTON-8 slot_0..slot_2 save contract.
         /// </summary>
@@ -79,10 +81,15 @@ namespace Hecton8.Core.Content
             if (!WriteLiteral(MacroDatabaseSectorFilePrefix, destination, ref cursor))
                 return false;
 
-            if (!sectorKey.TryFormat(destination.Slice(cursor), out int hexChars, "X16"))
-                return false;
+            for (int shift = 60; shift >= 0; shift -= 4)
+            {
+                if (cursor >= destination.Length)
+                    return false;
 
-            cursor += hexChars;
+                int nibble = (int)((sectorKey >> shift) & 0xFUL);
+                destination[cursor] = HexDigits[nibble];
+                cursor++;
+            }
 
             if (!WriteLiteral(MacroDatabaseSectorFileSuffix, destination, ref cursor))
                 return false;

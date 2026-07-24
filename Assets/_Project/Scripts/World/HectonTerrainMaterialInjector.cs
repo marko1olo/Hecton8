@@ -41,19 +41,6 @@ namespace Hecton8.World
                     _terrain.materialTemplate = _instancedMaterial;
                 }
 
-                if (_instancedMaterial != null && customTerrainMaterial != null)
-                {
-                    // Copy textures (AlbedoArray, NormalArray, etc) that might have been updated
-                    // We don't use CopyPropertiesFromMaterial directly here because it might overwrite everything,
-                    // but we can copy the specific global arrays.
-                    if (customTerrainMaterial.HasProperty("_AlbedoArray")) _instancedMaterial.SetTexture("_AlbedoArray", customTerrainMaterial.GetTexture("_AlbedoArray"));
-                    if (customTerrainMaterial.HasProperty("_NormalArray")) _instancedMaterial.SetTexture("_NormalArray", customTerrainMaterial.GetTexture("_NormalArray"));
-                    if (customTerrainMaterial.HasProperty("_MaskArray")) _instancedMaterial.SetTexture("_MaskArray", customTerrainMaterial.GetTexture("_MaskArray"));
-
-                    _instancedMaterial.SetFloat("_HectonUVScale", customTerrainMaterial.GetFloat("_HectonUVScale"));
-                    _instancedMaterial.SetFloat("_HectonTriplanarBlend", customTerrainMaterial.GetFloat("_HectonTriplanarBlend"));
-                }
-
                 // Ensure splatmaps are assigned (MapMagic might update them)
                 if (_instancedMaterial != null && _terrain.terrainData.alphamapTextureCount > 0)
                 {
@@ -71,11 +58,6 @@ namespace Hecton8.World
 
                     // Update terrain size for triplanar scaling
                     _instancedMaterial.SetVector("_TerrainSize", new Vector4(_terrain.terrainData.size.x, _terrain.terrainData.size.y, _terrain.terrainData.size.z, 0));
-
-                    // [ARCHITECTURAL FIX] Enable necessary keywords for PBR doctrine
-                    _instancedMaterial.EnableKeyword("_NORMALMAP");
-                    _instancedMaterial.EnableKeyword("_TERRAIN_BLEND_HEIGHT");
-                    _instancedMaterial.EnableKeyword("_MASKMAP");
                 }
             }
         }

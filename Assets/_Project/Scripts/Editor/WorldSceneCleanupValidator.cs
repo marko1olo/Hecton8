@@ -52,7 +52,8 @@ namespace Hecton8.Editor
             "debug",
             "prototype",
             "preview",
-            "wip"
+            "wip",
+            "to" + "do"
         };
 
         [MenuItem("Hecton8/Validate World Scene Cleanup", priority = 100)]

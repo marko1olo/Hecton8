@@ -66,23 +66,13 @@ namespace Shapes {
 
 			EditorGUILayout.PropertyField( propGeometry );
 			ShapesUI.DrawTypeSwitchButtons( propSides, SideCountTypes, indexToPolygonPreset );
+			//ShapesUI.EnumButtonRow(); // todo
 			EditorGUILayout.PropertyField( propSides );
 			EditorGUILayout.PropertyField( propRoundness );
 
 			ShapesUI.FloatInSpaceField( propRadius, propRadiusSpace );
 
-			using( new EditorGUILayout.HorizontalScope() ) {
-				EditorGUILayout.PrefixLabel( "Type" );
-				EditorGUI.showMixedValue = propBorder.hasMultipleDifferentValues;
-				using( var chchk = new EditorGUI.ChangeCheckScope() ) {
-					int borderInt = propBorder.hasMultipleDifferentValues ? -1 : ( propBorder.boolValue ? 1 : 0 );
-					int newBorderInt = ShapesUI.EnumButtonRow( borderInt, new[] { "Solid", "Hollow" }, false );
-					if( chchk.changed ) {
-						propBorder.boolValue = newBorderInt == 1;
-					}
-				}
-				EditorGUI.showMixedValue = false;
-			}
+			EditorGUILayout.PropertyField( propBorder );
 			bool hasBordersInSelection = targets.Any( x => ( x as RegularPolygon ).Border );
 			using( new EditorGUI.DisabledScope( hasBordersInSelection == false ) )
 				ShapesUI.FloatInSpaceField( propThickness, propThicknessSpace );

@@ -262,7 +262,7 @@ namespace Hecton8.Dev
                 ContainsAll(modWorldPersistenceManager, "_loadRollbackRecords", "_loadApplyPending", "CaptureLoadRollbackSnapshot();", "private void RollbackLoadApplyIfPending()", "private void CommitLoadApply()") &&
                 ContainsAll(modWorldPersistenceManager, "case SaveEventType.LoadCompleted:", "CommitLoadApply();", "_restorePending = _records.Count > 0;", "case SaveEventType.LoadFailed:", "RollbackLoadApplyIfPending();", "_restorePending = false;") &&
                 ContainsAll(modWorldPersistenceManager, "catch (Exception exception)", "Failed to parse mod world payload", "RollbackLoadApplyIfPending();", "return;") &&
-                ContainsAll(modWorldPersistenceManager, "AddOrReplaceRecord(_loadRollbackRecords[i]);", "_nextSpawnSequence = Mathf.Max(1, _loadRollbackNextSpawnSequence);", "RebuildLiveEntityLookupFromScene();", "ModSpawnedEntity.AllEntities") &&
+                ContainsAll(modWorldPersistenceManager, "AddOrReplaceRecord(_loadRollbackRecords[i]);", "_nextSpawnSequence = Mathf.Max(1, _loadRollbackNextSpawnSequence);", "RebuildLiveEntityLookupFromScene();", "UnityEngine.Object.FindObjectsByType<ModSpawnedEntity>") &&
                 SourceIndex(modWorldPersistenceManager, "case SaveEventType.LoadStarted:\r\n                    RollbackLoadApplyIfPending();") == int.MaxValue &&
                 SourceIndex(modWorldPersistenceManager, "case SaveEventType.LoadStarted:\n                    RollbackLoadApplyIfPending();") == int.MaxValue;
 

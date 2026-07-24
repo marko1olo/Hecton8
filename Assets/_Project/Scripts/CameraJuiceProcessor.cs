@@ -442,33 +442,6 @@ namespace Hecton8.Gameplay
             float heavyCarryTurnScale = math.lerp(1f, HEAVY_CARRY_MAX_TURN_SWAY_SCALE, input.heavyCarryLoad);
             float transportTurnScale = math.lerp(1f, 0.9f, input.transportBoost01);
 
-            ProcessLocomotionMode(in input, suit, dt, heavyCarryAmplitudeScale, heavyCarryCadenceScale, heavyCarryLandingScale, heavyCarrySurfaceScale, heavyCarryTurnScale, transportTurnScale);
-
-            // ── Accumulate offsets ──
-            _output.localPositionOffset.y += _impactDipCurrent;
-            _output.localPositionOffset.y += _splashDipCurrent;
-            _output.localPositionOffset.y += _collisionShakeY;
-            _output.localPositionOffset.x += _collisionShakeX;
-            _output.pitchOffset += _collisionShakePitch;
-            _output.rollOffset += _externalRollImpulse;
-            _output.localPositionOffset.y += _exhaleDipCurrent;
-
-            // ── Action bob (eating, healing) ──
-            ProcessActionBob(dt);
-            _output.localPositionOffset.y += _actionBobY;
-            _output.localPositionOffset.x += _actionBobX;
-
-            ApplyTransportCameraMotionScale(in input);
-
-            _prevImmersionRatio = input.immersionRatio;
-
-            return _output;
-        }
-
-        private void ProcessLocomotionMode(in CameraJuiceInput input, SuitData suit, float dt,
-            float heavyCarryAmplitudeScale, float heavyCarryCadenceScale, float heavyCarryLandingScale,
-            float heavyCarrySurfaceScale, float heavyCarryTurnScale, float transportTurnScale)
-        {
             switch (input.locomotionMode)
             {
                 case PlayerLocomotionMode.DryGroundWalk:
@@ -528,6 +501,26 @@ namespace Hecton8.Gameplay
                     DecayWalkEffects(dt, suit);
                     break;
             }
+
+            // ── Accumulate offsets ──
+            _output.localPositionOffset.y += _impactDipCurrent;
+            _output.localPositionOffset.y += _splashDipCurrent;
+            _output.localPositionOffset.y += _collisionShakeY;
+            _output.localPositionOffset.x += _collisionShakeX;
+            _output.pitchOffset += _collisionShakePitch;
+            _output.rollOffset += _externalRollImpulse;
+            _output.localPositionOffset.y += _exhaleDipCurrent;
+
+            // ── Action bob (eating, healing) ──
+            ProcessActionBob(dt);
+            _output.localPositionOffset.y += _actionBobY;
+            _output.localPositionOffset.x += _actionBobX;
+
+            ApplyTransportCameraMotionScale(in input);
+
+            _prevImmersionRatio = input.immersionRatio;
+
+            return _output;
         }
 
         public void TrackVerticalVelocity(float v) { _preLandingVerticalVelocity = v; }
@@ -883,7 +876,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  EXHALE RHYTHM — dip only, no pitch (v7.0a)
+        //  EXHALE RHYTHM — dip only, no pitch (v7.0a fix)
         // ══════════════════════════════════════════════════════════
 
         private void ProcessExhaleRhythm(in CameraJuiceInput input, SuitData suit, float dt)

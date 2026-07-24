@@ -158,7 +158,7 @@ namespace Shapes {
 
 				// okay this is a bit of a hack but YKNOW it's fine
 				// to prevent this from being drawn for every selected object
-				if( Selection.activeGameObject == ( (Component)component ).gameObject ) {
+				if( Selection.gameObjects.Length > 0 && Selection.gameObjects[0] == ( (Component)component ).gameObject ) {
 					if( Event.current.type == EventType.MouseMove )
 						SceneView.lastActiveSceneView.Repaint();
 					if( hasAddRemoveMode || hasEditThicknessMode || hasEditColorMode ) {

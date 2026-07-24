@@ -222,7 +222,7 @@ namespace MantisLODEditor
                     mesh_count++;
                 }
             }
-            // create fixed size array
+            // create fix size array
             pm.triangles = new int[triangle_count];
 
             // reset the counter

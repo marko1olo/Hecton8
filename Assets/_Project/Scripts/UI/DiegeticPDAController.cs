@@ -92,7 +92,6 @@ namespace Hecton8.UI
         // COLD ALLOC: List<CanvasGroup>(8) - reusable PDA tablet visibility cache - owner: DiegeticPDAController
         private readonly List<CanvasGroup> _tabletVisibilityCanvasGroups = new List<CanvasGroup>(TabletCanvasGroupDiscoveryCapacity);
 
-        private bool _tabsRouted;
         private bool _registeredToTickManager;
         private bool _uiConfigured;
         private bool _lastOpenState;
@@ -445,9 +444,6 @@ namespace Hecton8.UI
 
         private void EnsureTabRoutingCache(Transform root)
         {
-            if (_tabsRouted)
-                return;
-
             if (configuredTabs == null || configuredTabs.Length != s_defaultTabNames.Length)
                 configuredTabs = new GameObject[s_defaultTabNames.Length]; // COLD ALLOC: GameObject[8] — diegetic PDA tab routing cache resize — owner: DiegeticPDAController
 
@@ -459,8 +455,6 @@ namespace Hecton8.UI
                 Transform tabTransform = root.Find(s_defaultTabNames[tabIndex]);
                 configuredTabs[tabIndex] = tabTransform != null ? tabTransform.gameObject : null;
             }
-
-            _tabsRouted = true;
         }
 
         private void ApplyPresentationState(bool openState, bool force)

@@ -199,7 +199,7 @@ $precision {tmpMaxHeight} = {amplitude} * 0.01; // cm in the interface so we mul
 $precision2 {tmpUVSpaceScale} = {tmpMaxHeight} * {tiling} / {primitiveSize};
 
 // Transform the view vector into the UV space.
-$precision3 {tmpViewDirUV}    = $precision3({tmpViewDir}.xy * {tmpUVSpaceScale}, {tmpViewDir}.z);
+$precision3 {tmpViewDirUV}    = normalize($precision3({tmpViewDir}.xy * {tmpUVSpaceScale}, {tmpViewDir}.z)); // TODO: skip normalize
 
 PerPixelHeightDisplacementParam {tmpPOMParam};
 

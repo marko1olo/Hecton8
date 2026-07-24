@@ -159,7 +159,7 @@ TerrainSample SampleHectonTerrain(float2 controlUV, float2 detailUV, float3 worl
             normalTS  += nd   * weights[k];
             metallic  += m.r  * weights[k];
             ao        += m.g  * weights[k];
-            smoothness += m.a * 0.15 * weights[k];
+            smoothness += m.a * weights[k];
         }
     }
 

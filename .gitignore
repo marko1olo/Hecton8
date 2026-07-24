@@ -202,18 +202,3 @@ Docs/AgentLogs/
 Docs/Reports/MetricCharts_Backups/
 Docs/GeneratedAssets/**/Rejected/
 mega_rs109*.py
-
-# Auto-excluded large files
-diff_1.txt
-*.txt.bak
-auto_merge_log*.txt
-pending_prs*.txt
-unmerged_prs*.txt
-unmerged_chunk*.txt
-pr_chunk*.txt
-prs.txt
-patch.py
-pr_summary.json
-CheckSplat.exe
-alphamap_check.txt
-CheckSplat.cs

@@ -123,6 +123,14 @@ namespace Hecton8.Construction
             _debugLastScrubAmount = scrubAmount;
         }
 
+        void IInteractable.OnHoverStart()
+        {
+        }
+
+        void IInteractable.OnHoverEnd()
+        {
+        }
+
         void IInteractable.Interact(Transform interactor)
         {
         }

@@ -134,21 +134,17 @@ namespace Hecton8.World
             float carve = caveMask * CarveStrengthMeters * depthFade * surfaceFade;
 
             // Strata shelving: periodic vertical density restoration.
+            // This creates flat floors in caves by pushing density back up at specific Y levels,
+            // simulating hard geological strata that resist erosion.
             float strataThickness = math.max(4.0f, StrataLayerThicknessMeters);
             float strataPhase = (float)absY / strataThickness;
+            // Triangle wave: 0 at layer boundaries, 1 at layer centers.
             float strataFrac = math.abs(math.frac(strataPhase) * 2.0f - 1.0f);
-
-            // Only push density back at layer boundaries.
+            // Only push density back at layer boundaries (where strataFrac is low).
             float strataRestore = (1.0f - strataFrac) * StrataShelvingStrength * caveMask * surfaceFade;
 
-            // Final density modification. We MUST NEVER add more rock than the base terrain!
+            // Final density modification
             float newDensity = currentDensity - carve + strataRestore;
-            newDensity = math.min(newDensity, currentDensity);
-
-            // === CRITICAL SAFETY NET ===
-            // Guarantee that caves NEVER punch through the terrain surface (creating black holes).
-            // Instead of forcing to 0.5f (which breaks gradients), we smoothly fade the carve to 0
-            // near the surface. (This is already handled by surfaceFade).
 
             Sdf[index] = newDensity;
         }

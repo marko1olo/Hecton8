@@ -59,7 +59,7 @@ namespace Shapes {
 		public static readonly int propDashShapeModifier = Shader.PropertyToID( "_DashShapeModifier" ); // line, arc, ring
 		public static readonly int propSize = Shader.PropertyToID( "_Size" ); // cuboid
 		public static readonly int propSizeSpace = Shader.PropertyToID( "_SizeSpace" ); // cuboid
-		public static readonly int propAlignment = Shader.PropertyToID( "_Alignment" ); // line, disc, polyline
+		public static readonly int propAlignment = Shader.PropertyToID( "_Alignment" ); // line, disc todo: polyline
 
 		public static readonly int propFillType = Shader.PropertyToID( "_FillType" ); // polygon (so far), -1 = no fill (unlike the enum)
 		public static readonly int propFillStart = Shader.PropertyToID( "_FillStart" ); // polygon (so far), .w is radius if we're radial

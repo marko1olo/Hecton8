@@ -55,7 +55,7 @@ namespace Technie.PhysicsCreator.Rigid
 		public List<Vector3> cachedTriangleVertices = new List<Vector3>();
 
 		// Convex hull data
-		public Mesh collisionMesh; // Computed convex hull. Reference to the stored mesh asset in HullMeshAsset
+		public Mesh collisionMesh; // Computed convex hull. Reference to the stored mesh asset in HullData
 		
 		// Box data
 		public BoxDef collisionBox;
@@ -64,7 +64,7 @@ namespace Technie.PhysicsCreator.Rigid
 		public Sphere collisionSphere; // The computed sphere data
 
 		// Face data
-		public Mesh faceCollisionMesh; // Computed mesh for face hull. Reference to the stored mesh asset in HullMeshAsset
+		public Mesh faceCollisionMesh; // Computed mesh for face hull. Reference to the stored mesh asset in HullData
 
 		// FaceAsBox data
 		public Vector3 faceBoxCenter, faceBoxSize; // The computed FaceAsBox data

@@ -109,34 +109,16 @@ namespace CandiceAIforGames.Data
 
             pos = new Vector3(parentScale.x / 2, 140, parentScale.z / 2);
             string[] filenames = CandiceSaveSystem.Instance.GetFileNames(folderName);
-
-            bool hasSaveItemPrefab = saveObject.TryGetComponent<CandiceSaveItem>(out var saveItemPrefab);
-
             foreach (string file in filenames)
             {
-                CandiceSaveItem saveItem = null;
-                GameObject obj;
-
-                if (hasSaveItemPrefab)
-                {
-                    saveItem = Instantiate(saveItemPrefab, pos, Quaternion.identity);
-                    obj = saveItem.gameObject;
-                }
-                else
-                {
-                    obj = Instantiate(saveObject, pos, Quaternion.identity);
-                    obj.TryGetComponent(out saveItem);
-                }
-
+                GameObject obj = Instantiate(saveObject, pos, Quaternion.identity);
                 obj.transform.SetParent(container.transform, false);
+                string[] names = file.Split('/');
+                string fileName = names[names.Length - 1];
 
-                int lastSlash = file.LastIndexOf('/');
-                string fileName = lastSlash >= 0 ? file.Substring(lastSlash + 1) : file;
-
-                if (saveItem != null)
+                if (obj.TryGetComponent<CandiceSaveItem>(out var saveItem))
                 {
-                    int lastDot = fileName.LastIndexOf('.');
-                    saveItem.text.text = lastDot >= 0 ? fileName.Substring(0, lastDot) : fileName;
+                    saveItem.text.text = fileName.Split('.')[0];
                     saveItem.path = folderName + "/" + fileName;
                 }
                 pos.y -= 35f;

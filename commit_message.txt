@@ -1,7 +1,4 @@
-🧪 Add unit tests for RadixSortSectorEntityStateEntriesJob
-
-🎯 What: The job RadixSortSectorEntityStateEntriesJob previously lacked test coverage, which left a gap in verifying correct behavior of the entity save state serialization logic. Added RadixSortSectorEntityStateEntriesJobEditTests and made the job internal to be accessible.
-
-📊 Coverage: Sort order by valid keys, identical keys, empty payload, array of 1 and proper assignment of secondary values (records).
-
-✨ Result: Coverage expanded on save system entity caching, improving stability and regression prevention when modifying struct/binary layout code or optimizing.
+🧪 [optimize render pipeline check]
+🎯 What: Modified IsUsingCustomRenderPipeline in Assets/VolumetricLightBeam/Scripts/SRPHelper.cs to use the cached projectRenderPipeline property instead of performing a direct API check each frame.
+📊 Coverage: static/code-only
+✨ Result: Optimized performance and resolved the TODO indicating to optimize the renderPipelineType check.

@@ -13,6 +13,18 @@
 //   • Building placement: only re-validate placement when position changes.
 //   • Reduces O(N) polling loops to event-driven notifications.
 //
+// USAGE:
+//
+//   // Mark position as changed
+//   detector.MarkDirty(EntityChangeFlag.Position);
+//
+//   // In update loop, invoke pending changes
+//   detector.FlushChanges(); // Calls all registered callbacks
+//
+//   // Subscribe to specific changes
+//   detector.OnPositionChanged += (oldPos, newPos) => { };
+//   detector.OnHealthChanged += (oldHealth, newHealth) => { };
+//
 // ZERO-GC DESIGN:
 //   • Flags are bitmask (byte) — stack allocated.
 //   • Events are Action<T1, T2> delegates (cached, no closure).

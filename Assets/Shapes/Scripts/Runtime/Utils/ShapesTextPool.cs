@@ -39,7 +39,7 @@ namespace Shapes {
 			if( Application.isPlaying )
 				DontDestroyOnLoad( holder ); // might be a lil gross, not sure
 			P text = holder.AddComponent<P>();
-			holder.hideFlags = HideFlags.HideAndDontSave;
+			holder.hideFlags = HideFlags.DontSave; // todo: debug
 			return text;
 		}
 

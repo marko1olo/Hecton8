@@ -175,6 +175,10 @@ namespace Hecton8.Gameplay
         }
 
         private static ScanListenerRegistry _listeners = new ScanListenerRegistry(ListenerCapacity);
+        // COLD ALLOC: Dictionary<uint,ScanEntryMetadata>[128] - bounded hashed scan entry metadata cache for queue listeners that still own authored strings - owner: ScanEvents
+        private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(EntryMetadataCapacity);
+        // COLD ALLOC: uint[128] - FIFO eviction ring for ScanEvents entry metadata cache - owner: ScanEvents
+        private static readonly uint[] _entryMetadataEvictionRing = new uint[EntryMetadataCapacity];
         // COLD ALLOC: ListenerSlot[16] - deferred listener mutations during scan dispatch - owner: ScanEvents
         private static readonly ListenerSlot[] _deferredListenerMutations = new ListenerSlot[DeferredListenerMutationCapacity];
         // COLD ALLOC: byte[16] - deferred listener mutation op codes during scan dispatch - owner: ScanEvents
@@ -186,6 +190,8 @@ namespace Hecton8.Gameplay
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _deferredListenerMutationCount;
+        private static int _entryMetadataEvictionWriteIndex;
+        private static int _entryMetadataEvictionCount;
         private static int _droppedEventCount;
         private static int _droppedDeferredListenerMutationCount;
         private static int _listenerExceptionCount;
@@ -212,6 +218,8 @@ namespace Hecton8.Gameplay
             ReleaseNativeQueues();
 
             _listeners.Clear();
+            _entryMetadataByHash.Clear();
+            ClearEntryMetadataEvictionRing();
             ClearDeferredListenerMutations();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
@@ -338,8 +346,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryResolveEntryMetadata(uint entryHash, out ScanEntryMetadata metadata)
         {
-            metadata = default;
-            return false;
+            return _entryMetadataByHash.TryGetValue(entryHash, out metadata);
         }
 
         private static void RegisterListenerImmediate(IScanEventListener listener)
@@ -491,6 +498,12 @@ namespace Hecton8.Gameplay
                 math.max(1, _listenerExceptionCount));
         }
 
+        [Obsolete("Use TryRaiseScanTriggered(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void RaiseScanTriggered(float3 center, float radius)
+        {
+            TryRaiseScanTriggered(center, radius);
+        }
+
         public static bool TryRaiseScanTriggered(float3 center, float radius)
         {
             return Enqueue(new ScanEventPayload
@@ -505,6 +518,12 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.Unknown,
                 Reserved = 0
             });
+        }
+
+        [Obsolete("Use TryRaiseWreckSignalPing(float3,float) so overflow/drop semantics stay visible at the producer.", true)]
+        public static bool RaiseWreckSignalPing(float3 center, float radius)
+        {
+            return TryRaiseWreckSignalPing(center, radius);
         }
 
         public static bool TryRaiseWreckSignalPing(float3 center, float radius)
@@ -531,6 +550,12 @@ namespace Hecton8.Gameplay
             return queued;
         }
 
+        [Obsolete("Use TryRaiseNodeFound(float3) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void RaiseNodeFound(float3 worldPos)
+        {
+            TryRaiseNodeFound(worldPos);
+        }
+
         public static bool TryRaiseNodeFound(float3 worldPos)
         {
             return Enqueue(new ScanEventPayload
@@ -545,6 +570,60 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.ResourceNode,
                 Reserved = 0
             });
+        }
+
+        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind). String ingress is not allowed on first-party event lanes.", true)]
+        public static void RaiseEntryDiscovered(
+            string entryId,
+            string title,
+            string category,
+            string summary,
+            ScanEntryKind kind = ScanEntryKind.Unknown)
+        {
+            TryRaiseEntryDiscoveredFromString(entryId, title, category, summary, kind);
+        }
+
+        private static bool TryRaiseEntryDiscoveredFromString(
+            string entryId,
+            string title,
+            string category,
+            string summary,
+            ScanEntryKind kind)
+        {
+            uint entryHash = ComputeEntryHash(entryId);
+            if (entryHash == 0u)
+                return false;
+
+            uint titleHash = string.IsNullOrWhiteSpace(title) ? 0u : unchecked((uint)LocHash.Compute(title));
+            uint categoryHash = string.IsNullOrWhiteSpace(category) ? 0u : unchecked((uint)LocHash.Compute(category));
+            uint summaryHash = string.IsNullOrWhiteSpace(summary) ? 0u : unchecked((uint)LocHash.Compute(summary));
+
+            if (!TryRaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind))
+                return false;
+
+            StoreEntryMetadata(new ScanEntryMetadata(
+                entryId,
+                title,
+                category,
+                summary,
+                kind,
+                entryHash,
+                titleHash,
+                categoryHash,
+                summaryHash));
+
+            return true;
+        }
+
+        [Obsolete("Use TryRaiseEntryDiscovered(uint,uint,uint,uint,ScanEntryKind) so overflow/drop semantics stay visible at the producer.", true)]
+        public static bool RaiseEntryDiscovered(
+            uint entryHash,
+            uint titleHash,
+            uint categoryHash,
+            uint summaryHash,
+            ScanEntryKind kind = ScanEntryKind.Unknown)
+        {
+            return TryRaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind);
         }
 
         public static bool TryRaiseEntryDiscovered(
@@ -571,6 +650,12 @@ namespace Hecton8.Gameplay
             });
         }
 
+        [Obsolete("Use TryRaiseFaunaFeedingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
+        {
+            TryRaiseFaunaFeedingObserved(entryHash, worldPos);
+        }
+
         public static bool TryRaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
         {
             if (entryHash == 0u)
@@ -588,6 +673,12 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.Scannable,
                 Reserved = 0
             });
+        }
+
+        [Obsolete("Use TryRaiseFaunaMatingObserved(uint,float3) so overflow/drop semantics stay visible at the producer.", true)]
+        public static void RaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
+        {
+            TryRaiseFaunaMatingObserved(entryHash, worldPos);
         }
 
         public static bool TryRaiseFaunaMatingObserved(uint entryHash, float3 worldPos)
@@ -654,6 +745,8 @@ namespace Hecton8.Gameplay
             catch
             {
                 ReleaseNativeQueues();
+                _entryMetadataByHash.Clear();
+                ClearEntryMetadataEvictionRing();
                 _pendingEventCount = 0;
                 _nextFrameEventCount = 0;
                 throw;
@@ -745,6 +838,45 @@ namespace Hecton8.Gameplay
             while (queue.TryDequeue(out _))
             {
             }
+        }
+
+        private static void StoreEntryMetadata(in ScanEntryMetadata metadata)
+        {
+            uint entryHash = metadata.EntryHash;
+            if (entryHash == 0u)
+                return;
+
+            if (_entryMetadataByHash.ContainsKey(entryHash))
+            {
+                _entryMetadataByHash[entryHash] = metadata;
+                return;
+            }
+
+            if (_entryMetadataEvictionCount >= EntryMetadataCapacity)
+            {
+                uint evictedHash = _entryMetadataEvictionRing[_entryMetadataEvictionWriteIndex];
+                if (evictedHash != 0u && evictedHash != entryHash)
+                    _entryMetadataByHash.Remove(evictedHash);
+            }
+            else
+            {
+                _entryMetadataEvictionCount++;
+            }
+
+            _entryMetadataEvictionRing[_entryMetadataEvictionWriteIndex] = entryHash;
+            _entryMetadataEvictionWriteIndex++;
+            if (_entryMetadataEvictionWriteIndex >= EntryMetadataCapacity)
+                _entryMetadataEvictionWriteIndex = 0;
+            _entryMetadataByHash[entryHash] = metadata;
+        }
+
+        private static void ClearEntryMetadataEvictionRing()
+        {
+            for (int i = 0; i < EntryMetadataCapacity; i++)
+                _entryMetadataEvictionRing[i] = 0u;
+
+            _entryMetadataEvictionWriteIndex = 0;
+            _entryMetadataEvictionCount = 0;
         }
 
         private static void DrainWithoutDispatch()

@@ -90,12 +90,12 @@ namespace Hecton8.Editor
             EditorUtility.RevealInFinder(root);
         }
 
-        [MenuItem(MenuRoot + "Clear Known PlayerPrefs (this machine)...", false, 30)]
+        [MenuItem(MenuRoot + "Clear All PlayerPrefs (this machine)...", false, 30)]
         public static void ClearPlayerPrefs()
         {
             if (!EditorUtility.DisplayDialog(
                     "Hecton Dev",
-                    "Delete known PlayerPrefs for this Unity user and editor?\n\n" +
+                    "Delete all PlayerPrefs for this Unity user and editor?\n\n" +
                     "This cannot be undone.",
                     "Clear",
                     "Cancel"))
@@ -103,22 +103,9 @@ namespace Hecton8.Editor
                 return;
             }
 
-            PlayerPrefs.DeleteKey("GameStartContext.Valid");
-            PlayerPrefs.DeleteKey("GameStartContext.StartMode");
-            PlayerPrefs.DeleteKey("GameStartContext.TargetSaveSlot");
-            PlayerPrefs.DeleteKey("GameStartContext.SpawnMode");
-            PlayerPrefs.DeleteKey("GameStartContext.IntroSceneName");
-            PlayerPrefs.DeleteKey("GameStartContext.LandingPresetName");
-            PlayerPrefs.DeleteKey("GameStartContext.TargetSceneName");
-            PlayerPrefs.DeleteKey("GameStartContext.IssuedAtUtcTicks");
-            PlayerPrefs.DeleteKey("GameStartContext.IssuedAtUtcTicks.High");
-            PlayerPrefs.DeleteKey("GameStartContext.IssuedAtUtcTicks.Low");
-            PlayerPrefs.DeleteKey("Hecton8.ShellSmoke.ResumePhase");
-            PlayerPrefs.DeleteKey("Hecton8.ShellSmoke.ResumeSaveSlot");
-            PlayerPrefs.DeleteKey("DebugLogsEnabled");
-            PlayerPrefs.DeleteKey("DebugDrawsEnabled");
+            PlayerPrefs.DeleteAll();
             PlayerPrefs.Save();
-            Debug.Log("[Hecton Dev] Known PlayerPrefs cleared.");
+            Debug.Log("[Hecton Dev] PlayerPrefs cleared.");
         }
 
         [MenuItem(MenuRoot + "Log Build & Scripting Info To Console", false, 40)]

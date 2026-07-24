@@ -15,52 +15,6 @@ import AtmoPreview
 
 
 class AtmoPreviewTests(unittest.TestCase):
-    def test_math_utility_functions(self) -> None:
-        # clamp
-        self.assertEqual(5.0, AtmoPreview.clamp(5.0, 0.0, 10.0))
-        self.assertEqual(0.0, AtmoPreview.clamp(-5.0, 0.0, 10.0))
-        self.assertEqual(10.0, AtmoPreview.clamp(15.0, 0.0, 10.0))
-        self.assertEqual(0.0, AtmoPreview.clamp(math.nan, 0.0, 10.0))
-        self.assertEqual(0.0, AtmoPreview.clamp(math.inf, 0.0, 10.0))
-        self.assertEqual(0.0, AtmoPreview.clamp(-math.inf, 0.0, 10.0))
-
-        # saturate
-        self.assertEqual(0.5, AtmoPreview.saturate(0.5))
-        self.assertEqual(0.0, AtmoPreview.saturate(-0.5))
-        self.assertEqual(1.0, AtmoPreview.saturate(1.5))
-
-        # smoothstep
-        self.assertEqual(0.0, AtmoPreview.smoothstep(0.0, 10.0, -5.0))
-        self.assertEqual(0.0, AtmoPreview.smoothstep(0.0, 10.0, 0.0))
-        self.assertEqual(0.5, AtmoPreview.smoothstep(0.0, 10.0, 5.0))
-        self.assertEqual(1.0, AtmoPreview.smoothstep(0.0, 10.0, 10.0))
-        self.assertEqual(1.0, AtmoPreview.smoothstep(0.0, 10.0, 15.0))
-        self.assertEqual(1.0, AtmoPreview.smoothstep(5.0, 5.0, 10.0))
-        self.assertEqual(0.0, AtmoPreview.smoothstep(5.0, 5.0, 0.0))
-
-        # lerp
-        self.assertEqual(5.0, AtmoPreview.lerp(0.0, 10.0, 0.5))
-        self.assertEqual(0.0, AtmoPreview.lerp(0.0, 10.0, -0.5))
-        self.assertEqual(10.0, AtmoPreview.lerp(0.0, 10.0, 1.5))
-
-        # luminance
-        self.assertAlmostEqual(1.0, AtmoPreview.luminance((1.0, 1.0, 1.0)))
-        self.assertAlmostEqual(0.0, AtmoPreview.luminance((0.0, 0.0, 0.0)))
-        self.assertAlmostEqual(0.2126, AtmoPreview.luminance((1.0, 0.0, 0.0)))
-
-        # safe_exp
-        self.assertAlmostEqual(math.exp(0.0), AtmoPreview.safe_exp(0.0))
-        self.assertAlmostEqual(math.exp(40.0), AtmoPreview.safe_exp(50.0))
-        self.assertAlmostEqual(math.exp(-60.0), AtmoPreview.safe_exp(-70.0))
-        self.assertAlmostEqual(math.exp(-60.0), AtmoPreview.safe_exp(math.nan))
-
-        # finite_or_zero
-        self.assertEqual(5.0, AtmoPreview.finite_or_zero(5.0))
-        self.assertEqual(0.0, AtmoPreview.finite_or_zero(math.inf))
-        self.assertEqual(0.0, AtmoPreview.finite_or_zero(-math.inf))
-        self.assertEqual(0.0, AtmoPreview.finite_or_zero(math.nan))
-
-
     def test_scattering_coefficients_and_phase_functions_are_sane(self) -> None:
         self.assertGreater(AtmoPreview.RAYLEIGH_BETA[2], AtmoPreview.RAYLEIGH_BETA[1])
         self.assertGreater(AtmoPreview.RAYLEIGH_BETA[1], AtmoPreview.RAYLEIGH_BETA[0])

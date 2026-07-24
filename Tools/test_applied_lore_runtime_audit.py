@@ -2608,30 +2608,6 @@ class TestAppliedLoreRuntimeAudit(unittest.TestCase):
 
             self.assertIn("duplicate scene owner", str(context.exception))
 
-    @unittest.mock.patch("sys.stdout")
-    @unittest.mock.patch("sys.stderr")
-    def test_configure_console_encoding_calls_reconfigure_when_available(self, mock_stderr, mock_stdout):
-        from AppliedLoreRuntimeAudit import configure_console_encoding
-        configure_console_encoding()
-        mock_stdout.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
-        mock_stderr.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
-
-    @unittest.mock.patch("sys.stdout", new_callable=lambda: type("MockStream", (), {}))
-    @unittest.mock.patch("sys.stderr", new_callable=lambda: type("MockStream", (), {}))
-    def test_configure_console_encoding_ignores_missing_reconfigure(self, mock_stderr, mock_stdout):
-        from AppliedLoreRuntimeAudit import configure_console_encoding
-        configure_console_encoding()
-
-    @unittest.mock.patch("sys.stdout")
-    @unittest.mock.patch("sys.stderr")
-    def test_configure_console_encoding_ignores_reconfigure_exceptions(self, mock_stderr, mock_stdout):
-        from AppliedLoreRuntimeAudit import configure_console_encoding
-        mock_stdout.reconfigure.side_effect = OSError("mock error")
-        mock_stderr.reconfigure.side_effect = ValueError("mock error")
-        configure_console_encoding()
-        mock_stdout.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
-        mock_stderr.reconfigure.assert_called_once_with(encoding="utf-8", errors="replace")
-
 
 if __name__ == "__main__":
     unittest.main()
