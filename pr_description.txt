@@ -1,3 +1,8 @@
-🎯 **What:** Added comprehensive unit tests for `SonarPingReturnTimeCalculator.Compute` to address a testing gap, focusing heavily on invalid inputs (`NaN` and `Infinity`) and negative bounds.
-📊 **Coverage:** The test suite now explicitly covers scenarios where the calculated denominator equals zero, negative bounds for clamped sound speeds, and exhaustive permutations of `NaN` and `Infinity` inputs using parameterized `TestCase` attributes.
-✨ **Result:** Improved test coverage significantly. The class is now thoroughly validated against all edge cases without relying on implicit fallback paths.
+🎯 **What:** The vulnerability fixed
+The `MicroSplatShaderGUI.cs` used the insecure `System.Random` class with a predictable seed for shuffling its modules list. This has been replaced with the cryptographically secure `System.Security.Cryptography.RandomNumberGenerator`.
+
+⚠️ **Risk:** The potential impact if left unfixed
+Although the risk is relatively low as this is primarily used in a UI shuffling step, using insecure randomness with predictable seeds is bad practice. An attacker could potentially predict the exact shuffling sequence, which could be abused if this code was ever reused or if predictability exposed internal state.
+
+🛡️ **Solution:** How the fix addresses the vulnerability
+Replaced `System.Random` with `System.Security.Cryptography.RandomNumberGenerator`. Using a `using` block, we extract random bytes to calculate the shuffle indices (`uint` modulo calculations). This ensures true unpredictability during the module permutation process.
