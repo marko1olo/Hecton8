@@ -427,8 +427,15 @@ namespace Hecton8.SaveSystem
                     nameof(LoadCandidateScratch));
             }
 
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+            internal System.Action TestHook_DisposeThrow;
+#endif
+
             public void Dispose()
             {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                TestHook_DisposeThrow?.Invoke();
+#endif
                 Exception firstException = null;
                 DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));
                 DisposeNativeArrayBestEffort(ref CompressedSaveBuffer, ref firstException, sentinelLabel: nameof(CompressedSaveBuffer));
