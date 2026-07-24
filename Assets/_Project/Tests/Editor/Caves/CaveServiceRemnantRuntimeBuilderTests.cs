@@ -139,6 +139,84 @@ namespace Hecton8.Tests.Editor.Caves
             // Cleanup
             UnityEngine.Object.DestroyImmediate(parentObj);
         }
+
+        [Test]
+        public void Prewarm_WithEmptyArrays_DoesNotThrow()
+        {
+            // Arrange
+            GameObject parentObj = new GameObject("Parent");
+            GameObject[] primitiveObjects = new GameObject[0];
+            MeshFilter[] primitiveFilters = new MeshFilter[0];
+            MeshRenderer[] primitiveRenderers = new MeshRenderer[0];
+
+            // Act
+            Transform result = null;
+            Assert.DoesNotThrow(() =>
+            {
+                result = CaveServiceRemnantRuntimeBuilder.Prewarm(
+                    parentObj.transform,
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers);
+            });
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            // Cleanup
+            UnityEngine.Object.DestroyImmediate(parentObj);
+        }
+
+        [Test]
+        public void Prewarm_WithMismatchedArrayLengths_DoesNotThrow()
+        {
+            // Arrange
+            GameObject parentObj = new GameObject("Parent");
+            GameObject[] primitiveObjects = new GameObject[5];
+            MeshFilter[] primitiveFilters = new MeshFilter[2];
+            MeshRenderer[] primitiveRenderers = new MeshRenderer[10];
+
+            // Act
+            Transform result = null;
+            Assert.DoesNotThrow(() =>
+            {
+                result = CaveServiceRemnantRuntimeBuilder.Prewarm(
+                    parentObj.transform,
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers);
+            });
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            // Cleanup
+            UnityEngine.Object.DestroyImmediate(parentObj);
+        }
+
+        [Test]
+        public void Prewarm_WithNullArrays_DoesNotThrow()
+        {
+            // Arrange
+            GameObject parentObj = new GameObject("Parent");
+
+            // Act
+            Transform result = null;
+            Assert.DoesNotThrow(() =>
+            {
+                result = CaveServiceRemnantRuntimeBuilder.Prewarm(
+                    parentObj.transform,
+                    null,
+                    null,
+                    null);
+            });
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+
+            // Cleanup
+            UnityEngine.Object.DestroyImmediate(parentObj);
+        }
     }
 }
 #endif
