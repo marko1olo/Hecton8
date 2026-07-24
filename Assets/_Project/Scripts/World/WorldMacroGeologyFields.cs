@@ -181,7 +181,7 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R42_2026-07-24_METABALL_VOLCANOES_AND_FEATHERS";
+        public static string BuildSentinel => "SENTINEL_R44_2026-07-24_SMOOTH_MIN_AND_FADES";
 
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
@@ -543,7 +543,9 @@ namespace Hecton8.World
                     if (dist < f1) { f2 = f1; f1 = dist; bestCell = cell; }
                     else if (dist < f2) { f2 = dist; }
 
-                    float w = math.exp(-provHardness * dist);
+                    // R43 STEP 1: Multiplied by smoothstep to guarantee C1-continuous fade to absolute ZERO before distance = 1.5
+                    // This mathematically eliminates 3x3 cell-grid clipping 1-pixel seam lines when cells drop out of the loop.
+                    float w = math.exp(-provHardness * dist) * math.smoothstep(1.5f, 1.0f, dist);
                     ProvinceRecipe r = ProvinceRecipe.GetRecipe(SelectGeologicalType(cell, continentality, plateEdgeMask, seed));
                     aCr += r.Craters * w; aRi += r.Rivers * w; aLa += r.Lakes * w; aSt += r.Strata * w;
                     aFo += r.Folds * w; aVo += r.Volcanic * w; aMe += r.Mesa * w; aDu += r.Dunes * w; aBr += r.BaseRough * w;
@@ -735,13 +737,13 @@ namespace Hecton8.World
             float2 skewedPosMed   = warpedPos + hillWarp * 0.5f + hillStrikeDir * (hillSkewB * 600f);
 
             // ──── R30 COMPOUND MASKING: break uniform pimple carpet into localized patchy outcrops ────
-            // Medium hills: isolated island clusters via Simplex clump mask
+            // Medium hills: isolated island clusters via Simplex clump mask (R43: 0.03 baseline prevents sterile plastic valleys)
             float clumpNoiseMed = FractalSimplexNoise01(warpedPos * 0.0018f, seed ^ 0xC1D2E3F4u, 3);
-            float clumpMaskMed  = math.smoothstep(0.4f, 0.7f, clumpNoiseMed) * hillinessMask;
+            float clumpMaskMed  = math.max(0.03f, math.smoothstep(0.4f, 0.7f, clumpNoiseMed)) * hillinessMask;
 
-            // Small outcrops: isolated, rugged patches via Fractal Simplex (not cellular Ridged web)
+            // Small outcrops: isolated, rugged patches via Fractal Simplex (R43: 0.05 baseline prevents sterile plastic valleys)
             float clumpNoiseSmall = FractalSimplexNoise01(warpedPos * 0.004f + new float2(-15.3f, 8.8f), seed ^ 0xA4B5C6D7u, 4);
-            float clumpMaskSmall  = math.smoothstep(0.65f, 0.90f, clumpNoiseSmall) * hillinessMask;
+            float clumpMaskSmall  = math.max(0.05f, math.smoothstep(0.65f, 0.90f, clumpNoiseSmall)) * hillinessMask;
 
             // Domain warp for small hills: independent noise samples for X/Y (no sin/cos iso-contour trap)
             float2 warpSmall = new float2(
@@ -827,9 +829,12 @@ namespace Hecton8.World
             // FIX: Add low-frequency spatial noise to feather the transition edges.
             float maskFeather = FractalSimplexNoise01(warpedPos * 0.002f, seed ^ 0xFEA78E12u, 2) * 0.08f - 0.04f;
 
-            // Mute all high-frequency noise on flat sediment areas, with a jagged, natural edge.
+            // Mute high-frequency noise on flat sediment areas, with a natural edge.
             float sedimentTranquilityMask = 1f - math.smoothstep(0.05f + maskFeather, 0.15f + maskFeather, slopeProxy);
-            float steepRockMask = math.smoothstep(0.20f + maskFeather, 0.35f + maskFeather, slopeProxy);
+            
+            // R43 STEP 2: Continuous power curve instead of smoothstep threshold switch.
+            // Rocks grow organically out of the slope as steepness increases without sharp activation lines.
+            float steepRockMask = math.saturate(math.pow(slopeProxy * 1.8f, 1.5f));
 
             // =========================================================================
             // SYSTEM B: FEATURE GENERATORS (Burst-safe, deterministic, Budget-respecting)
@@ -946,9 +951,10 @@ namespace Hecton8.World
             // --- B2: RIVERS & DENDRITIC CHANNELS (Asymmetric & Rugged Inland Canyons) ---
             float riverRegion = FractalSimplexNoise01(warpedPos * 0.00015f + new float2(-19.3f, 44.1f), seed ^ 0x1A2B3C4Du, 3);
             float riverGate = math.smoothstep(0.55f, 0.78f, riverRegion) * continentality * recipe.Rivers;
+            float riverFade = math.smoothstep(0.0f, 0.05f, riverGate);
 
             float riverMask = 0f;
-            if (riverGate > 0.01f)
+            if (riverFade > 0.001f)
             {
                 // Domain warp in WORLD SPACE (meters), then scale together with base frequency (NO ALIASING!)
                 float2 canyonWarp = new float2(
@@ -974,54 +980,61 @@ namespace Hecton8.World
                 float canyonFloor = math.smoothstep(0.60f, 0.99f, dendritic);
                 riverMask = canyonRim * riverGate;
                 
-                // Deep cut influenced by asymmetry, minus the floor roughness
+                // Deep cut influenced by asymmetry, minus the floor roughness, multiplied by riverFade to prevent C0 cliff
                 float cutDepth = 280f * riverMask * canyonFloor * (0.6f + bankAsymmetry * 0.4f);
-                depth += cutDepth - floorRoughness * canyonFloor * riverMask;
+                depth += (cutDepth - floorRoughness * canyonFloor * riverMask) * riverFade;
             }
             float canyonMask = riverMask; // Export for downstream
 
             // --- B3: LAKES & PLAYAS (Sediment-filled basins) ---
             float lakeRegion = FractalSimplexNoise01(warpedPos * 0.0002f + new float2(44.4f, 11.1f), seed ^ 0x55443322u, 3);
             float lakeGate = math.smoothstep(0.5f, 0.8f, lakeRegion) * continentality * recipe.Lakes;
+            float lakeFade = math.smoothstep(0.0f, 0.05f, lakeGate);
 
             float lakeMask = 0f;
-            if (lakeGate > 0.01f)
+            if (lakeFade > 0.001f)
             {
                 // Find natural regional depressions
                 float bowlNoise = FractalSimplexNoise01(warpedPos * 0.0004f + new float2(-22.2f, 33.3f), seed ^ 0x99887766u, 4);
                 lakeMask = math.smoothstep(0.55f, 0.85f, bowlNoise) * lakeGate;
                 
-                if (lakeMask > 0.01f)
+                if (lakeMask > 0.001f)
                 {
-                    // Ragged, irregular shorelines
                     float shoreFeather = FractalSimplexNoise01(warpedPos * 0.005f, seed ^ 0xE4F5A6B7u, 3);
                     lakeMask *= (0.7f + shoreFeather * 0.3f);
                     
                     // Sediment level varies slightly across the continent but forms local flat planes
                     float localSedimentLevel = 450f + FractalSimplexNoise01(warpedPos * 0.0001f, seed ^ 0x5A5A5A5Au, 2) * 400f;
                     
-                    // FILL valleys with sediment. math.min(depth, level) pulls deep valleys UP to the sediment level
-                    depth = math.lerp(depth, math.min(depth, localSedimentLevel), lakeMask * 0.85f);
+                    // R44 FIX: Use smin with k=8 meters to create a smooth C1-continuous fillet at the shoreline!
+                    float filledDepth = smin(depth, localSedimentLevel, 8f);
+                    depth = math.lerp(depth, filledDepth, lakeMask * 0.85f * lakeFade);
                     
                     // Subtle dry mud cracks/texture on the flat playa bed
                     float playaCracks = RidgedMultifractal01(warpedPos * 0.015f, seed ^ 0x6E01091Cu, 3);
-                    depth += playaCracks * 4f * lakeMask;
+                    depth += playaCracks * 4f * lakeMask * lakeFade;
                 }
             }
 
             // --- B7: MESA TABLELANDS (flat caps, NOT height-quantised) ---
             float mesaMask = 0f;
-            if (recipe.Mesa > 0.01f && continentality > 0.30f)
+            if (recipe.Mesa > 0.01f)
             {
+                float mesaContFade = math.smoothstep(0.30f, 0.35f, continentality);
                 float mesaField = FractalSimplexNoise01(warpedNorm * 1.9f + new float2(7.8f, -14.2f), seed ^ 0x8C1B3D2Eu);
-                mesaMask = math.smoothstep(0.58f, 0.74f, mesaField) * recipe.Mesa * continentality;
+                mesaMask = math.smoothstep(0.58f, 0.74f, mesaField) * recipe.Mesa * continentality * mesaContFade;
                 float mesaWeight = math.smoothstep(0.0f, 0.15f, mesaMask) * mesaMask * 0.7f;
-                if (mesaWeight > 0.0001f)
+                float mesaFade = math.smoothstep(0.0f, 0.02f, mesaWeight);
+                
+                if (mesaFade > 0.001f)
                 {
                     // cap elevation varies per broad patch (a few discrete plateau levels), continuous in space
                     float capDatum = FractalSimplexNoise01(warpedNorm * 0.8f + new float2(-5.5f, 12.1f), seed ^ 0x2D9C4B7Au);
                     float capDepth = math.lerp(560f, 260f, capDatum); // flat-top depth for this patch
-                    depth = math.lerp(depth, math.min(depth, capDepth), mesaWeight);
+                    
+                    // R44 FIX: smin with k=12 meters rounds the sharp table-top edge into a natural slope fillet
+                    float cappedDepth = smin(depth, capDepth, 12f);
+                    depth = math.lerp(depth, cappedDepth, mesaWeight * mesaFade);
                 }
             }
 
@@ -1070,13 +1083,18 @@ namespace Hecton8.World
             // --- B4: STRATIFICATION (elevation benches strictly on steep rock walls) ---
             float strataMask = 0f;
             float hardRockMask = math.saturate(ridgeMask * 0.48f + faultMask * 0.30f + plateEdgeMask * 0.18f + slopeProxy * 0.28f - basinMask * 0.18f);
-            if (!DiagStrataContourOff && (recipe.Strata > 0.01f || hardRockMask > 0.10f))
+            float rockFade = math.smoothstep(0.10f, 0.20f, hardRockMask);
+            float strataActive = math.max(recipe.Strata, rockFade);
+
+            if (!DiagStrataContourOff && strataActive > 0.001f)
             {
                 // Strict slope-gating (slopeProxy > 0.45): eliminates flat-area concentric rings on domes,
                 // while producing real elevation benches (depth) on steep canyon and mountain walls.
                 float slopeGate = math.smoothstep(0.35f, 0.65f, slopeProxy);
                 float strataStrength = math.saturate((hardRockMask * 0.8f + recipe.Strata * 0.8f) * slopeGate - volcanoMask * 1.2f - trenchMask * 0.9f - (1f - continentality) * 1.0f);
-                if (strataStrength > 0.03f)
+                strataStrength *= math.smoothstep(0.0f, 0.05f, strataActive);
+
+                if (strataStrength > 0.01f)
                 {
                     float patchLarge = FractalSimplexNoise01(warpedPos * 0.0011f + new float2(21.4f, -6.8f), seed ^ 0x51C0FFEEu);
                     float patchFeather = FractalSimplexNoise01(warpedPos * 0.0047f + new float2(-13.2f, 9.5f), seed ^ 0x1F33A7B9u);
@@ -1085,7 +1103,7 @@ namespace Hecton8.World
                                  * math.smoothstep(0.34f, 0.50f, dropout);
                     strataMask = strataStrength * broken;
 
-                    if (strataMask > 0.04f)
+                    if (strataMask > 0.001f)
                     {
                         // Real elevation-based strata (snaps depth to horizontal step-and-riser benches)
                         float tiltDir = FractalSimplexNoise01(warpedNorm * 1.3f, seed ^ 0x5B17E3A1u) * 6.2831853f;
@@ -1094,7 +1112,10 @@ namespace Hecton8.World
                         float layerScale = math.lerp(22f, 46f, FractalSimplexNoise01(warpedNorm * 0.9f + new float2(4.4f, 4.4f), seed ^ 0x2E71C4B3u));
                         float hPhase = (depth + tilt) / layerScale;
                         float f = math.frac(hPhase);
-                        float bench = math.smoothstep(0.30f, 0.70f, f);
+                        
+                        // R44 FIX: C2-continuous step function instead of sharp smoothstep edges!
+                        // Eliminates 1-pixel isoline derivative rings on Slope/Hillshade maps.
+                        float bench = f - math.sin(6.2831853f * f) * 0.15915494f;
                         float snapped = (math.floor(hPhase) + bench) * layerScale - tilt;
                         depth = math.lerp(depth, snapped, strataMask * 0.5f);
                     }
@@ -1108,6 +1129,10 @@ namespace Hecton8.World
             float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * 45f;
             if (!DiagMesoFractureOff)
                 depth += mesoFractureDelta * mesoFractureMask * (1f - abyssPlainMask * 0.6f);
+
+            // R43 STEP 3: Global micro-gravel (25m period, 1.5m amplitude). Gives tactile dirt/sand texture to valleys, stronger on rocks.
+            float microGravel = (FractalSimplexNoise01(warpedPos * 0.04f, seed ^ 0x99AA88BBu, 2) * 2f - 1f) * 1.5f;
+            depth += microGravel * (0.3f + steepRockMask * 0.7f);
 
             // TIER 4: Talus & Slump
             float concaveToe = math.saturate((basinMask * 1.5f + canyonMask * 1.2f + shelfToe * 0.84f + 0.1f) * (ridgeMask * 0.75f + faultMask * 0.62f + shelfBreakMask * 0.66f + 0.1f));
@@ -1476,6 +1501,20 @@ namespace Hecton8.World
         private static float FastSqrtPositive(float value)
         {
             return math.sqrt(math.max(0f, value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float smin(float a, float b, float k)
+        {
+            float h = math.saturate(0.5f + 0.5f * (b - a) / k);
+            return math.lerp(b, a, h) - k * h * (1f - h);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float smax(float a, float b, float k)
+        {
+            float h = math.saturate(0.5f + 0.5f * (a - b) / k);
+            return math.lerp(b, a, h) + k * h * (1f - h);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
