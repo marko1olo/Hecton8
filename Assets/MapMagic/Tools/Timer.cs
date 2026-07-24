@@ -109,7 +109,7 @@ namespace Den.Tools
 
 		public static long startTime;
 
-		public static TimerInstance[] active = new TimerInstance[maxActiveCount]; //TODO: use array to avoid GC
+		public static TimerInstance[] active = new TimerInstance[maxActiveCount];
 		public static int activeCount = 0;
 		const int maxActiveCount = 1000;
 
