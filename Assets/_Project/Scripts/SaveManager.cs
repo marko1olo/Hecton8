@@ -4146,6 +4146,7 @@ namespace Hecton8.SaveSystem
 
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
         internal static System.Action DisposeNativeArrayTestHook;
+        internal static System.Action s_testHookDisposeNativeArrayImmediateSentinelUnregisterError;
 #endif
 
         private static void DisposeTransientNativeArrayBestEffort<T>(
@@ -4208,6 +4209,9 @@ namespace Hecton8.SaveSystem
             {
                 try
                 {
+#if UNITY_EDITOR || UNITY_INCLUDE_TESTS
+                    s_testHookDisposeNativeArrayImmediateSentinelUnregisterError?.Invoke();
+#endif
                     NativeMemorySentinel.UnregisterPointer(trackedPointer);
                 }
                 catch (Exception exception)
