@@ -179,7 +179,7 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R32_2026-07-24_RIVERS_AND_LAKES";
+        public static string BuildSentinel => "SENTINEL_R33_2026-07-24_SHELF_REEFS_AND_RIPPLES";
 
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
@@ -993,21 +993,45 @@ namespace Hecton8.World
                 }
             }
 
-            // --- B8: DUNES / SEDIMENT BEDFORMS ---
+            // --- B8: DUNES / SEDIMENT BEDFORMS (Patchy Sand Ripples) ---
             float duneMask = 0f;
             if (recipe.Dunes > 0.01f || shelfMask > 0.50f)
             {
                 float duneGate = math.saturate(recipe.Dunes * 0.8f + shelfMask * 0.4f - slopeProxy * 0.6f);
-                float duneFade = math.smoothstep(0.0f, 0.15f, duneGate);
+                // Create a patch mask so dunes appear in clusters, not everywhere
+                float dunePatch = math.smoothstep(0.40f, 0.70f, FractalSimplexNoise01(warpedPos * 0.0015f, seed ^ 0xD11E2233u, 3));
+                float duneFade = math.smoothstep(0.0f, 0.15f, duneGate * dunePatch);
                 if (duneFade > 0.0001f)
                 {
-                    float duneDir = FractalSimplexNoise01(warpedNorm * 2.5f, seed ^ 0x4D3C2B1Au) * 3.14159f;
+                    float duneDir = FractalSimplexNoise01(warpedNorm * 2.5f, seed ^ 0x4D3C2B1Au, 2) * 3.14159f;
                     float2 duneAxis = new float2(math.cos(duneDir), math.sin(duneDir));
-                    float duneWave = FractalSimplexNoise01(warpedPos * 0.0025f + duneAxis * 4.1f, seed ^ 0xDEAD5678u, 3) * 2f - 1f;
-                    duneMask = duneGate;
+                    
+                    // Distort the phase with noise so the ripples aren't perfectly straight (prevents dactyloscopy)
+                    float dunePhase = math.dot(warpedPos, duneAxis) * 0.035f + FractalSimplexNoise01(warpedPos * 0.006f, seed ^ 0x9A8B7C6Du, 2) * 2.5f;
+                    
+                    // Pow(sin) gives sharper peaks and wider troughs (like real sand ripples)
+                    float duneWave = math.pow(math.sin(dunePhase) * 0.5f + 0.5f, 1.5f);
+                    duneMask = duneGate * dunePatch;
                     if (!DiagFoldsDunesOff)
-                        depth += (duneWave * 0.5f + 0.5f) * 12f * duneGate * duneFade;
+                        depth += duneWave * 9f * duneGate * dunePatch;
                 }
+            }
+
+            // --- B10: CORAL REEFS (Shallow shelf organic clusters) ---
+            // Reefs only grow in the photic zone (depth between 30m and 800m)
+            float reefDepthGate = math.saturate(1f - math.abs(depth - 415f) / 385f); 
+            // Reefs grow in clusters/patches
+            float reefRegion = math.smoothstep(0.55f, 0.85f, FractalSimplexNoise01(warpedPos * 0.002f + new float2(33f, -11f), seed ^ 0x778899AAu, 3));
+            // Suppress reefs near dirty river mouths and steep slopes
+            float reefMask = reefRegion * reefDepthGate * math.saturate(shelfMask) * (1f - riverMask) * (1f - math.smoothstep(0.2f, 0.5f, slopeProxy));
+
+            if (reefMask > 0.01f)
+            {
+                // High-frequency cellular-style bumps for coral heads, but broken up by a secondary mask
+                float coralHeads = RidgedMultifractal01(warpedPos * 0.02f, seed ^ 0xCC00AA11u, 3);
+                float coralDetail = math.smoothstep(0.4f, 1.0f, coralHeads);
+                // Raise the seabed up to form coral mounds (max 18m tall)
+                depth -= coralDetail * 18f * reefMask; 
             }
 
             // --- B4: STRATIFICATION (elevation benches on slopes, broken by feather masks) ---
@@ -1071,7 +1095,9 @@ namespace Hecton8.World
 
             // --- B9: FRACTURED WALLS (Steep slope blocky detail - chaotic Simplex rock, no cellular brain cortex) ---
             if (stageDump == 7) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 7: +strata (before mesoFracture/talus)
-            float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * (0.5f + slopeProxy * 0.9f);
+            float baseFracture = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f);
+            // Strictly gate out flat ground (slopeProxy < 0.15 is totally smooth, 0.4 is fully fractured)
+            float mesoFractureMask = baseFracture * math.smoothstep(0.15f, 0.40f, slopeProxy);
             float intermediateErosionA = FractalSimplexNoise01(warpedPos * 0.006f + new float2(-8.2f, 15.4f), seed ^ 0x6E1A2B3Cu, 4);
             float intermediateErosionB = FractalSimplexNoise01(warpedPos * 0.018f + new float2(12.7f, -3.1f), seed ^ 0x8C3B1A4Du, 3);
             float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * 45f;
