@@ -193,10 +193,10 @@ namespace MapMagic.Editor.Diagnostics
             double var = (sumSq / n) - (mean * mean);
             double std = var > 0 ? Math.Sqrt(var) : 0;
 
-            Texture2D texHeight = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texHill   = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            Texture2D texSlope  = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
-            // R14: height + hillshade + slope ONLY (Director: don't waste laptop time on the other 5 maps).
+            Texture2D texHeight   = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
+            Texture2D texHill     = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
+            Texture2D texSlope    = new Texture2D(Res, Res, TextureFormat.RGBA32, false);
+            Texture2D texFeatures = new Texture2D(Res, Res, TextureFormat.RGBA32, false); // R47: Red=Volcano, Green=Reef, Blue=Crater
 
             Vector3 lightDir = new Vector3(-1f, 0.6f, 1f).normalized;
             long[] slopeBuckets = new long[4];
@@ -282,6 +282,11 @@ namespace MapMagic.Editor.Diagnostics
                     else slopeBuckets[3]++;
                     texSlope.SetPixel(x, z, SlopeRamp(slopeDeg));
 
+                    // R48: Marker Heatmap (Red = Volcanoes, Green = Reefs/Atolls, Blue = Craters) with 4.0x contrast boost
+                    WorldMacroGeologyFields.MacroMasks m = masks[idx];
+                    Color featureMarker = new Color(math.saturate(m.Volcano * 4f), math.saturate(m.Reef * 4f), math.saturate(m.Crater * 4f), 1f);
+                    texFeatures.SetPixel(x, z, featureMarker);
+
                     float gx = SampleRes(x + 1, z) - SampleRes(x - 1, z);
                     float gz = SampleRes(x, z + 1) - SampleRes(x, z - 1);
                     float gmag = Mathf.Sqrt(gx * gx + gz * gz);
@@ -298,6 +303,7 @@ namespace MapMagic.Editor.Diagnostics
             Save(texHeight, $"{label}_1_height");
             Save(texHill, $"{label}_2_hillshade");
             Save(texSlope, $"{label}_3_slope");
+            Save(texFeatures, $"{label}_6_features");
 
             double Pct(int b) => 100.0 * slopeBuckets[b] / n;
             double MPct(double acc) => 100.0 * acc / n;

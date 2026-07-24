@@ -20,7 +20,7 @@ namespace Hecton8.PureLogic.Tests
             Assert.IsNotNull(methodInfo, "ReleaseNativeHashSet method not found");
             var genericMethod = methodInfo.MakeGenericMethod(typeof(int));
 
-            var hashSet = new NativeParallelHashSet<int>();
+            var hashSet = new NativeHashSet<int>();
             int sentinelId = 1;
 
             var countField = typeof(NativeMemorySentinel).GetField("_count", BindingFlags.NonPublic | BindingFlags.Static);

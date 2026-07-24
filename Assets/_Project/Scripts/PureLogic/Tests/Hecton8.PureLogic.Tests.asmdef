@@ -2,6 +2,7 @@
     "name":  "Hecton8.PureLogic.Tests",
     "rootNamespace":  "Hecton8.PureLogic.Tests",
     "references":  [
+                       "Unity.Collections",
                        "UnityEngine.TestRunner",
                        "UnityEditor.TestRunner",
                        "Hecton8.PureLogic",

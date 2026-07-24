@@ -129,23 +129,23 @@ namespace Hecton8.World
             switch (type)
             {
                 case 0: // ABYSSAL_PLAIN
-                    return new ProvinceRecipe { Craters = 0.05f, Rivers = 0.00f, Lakes = 0.00f, Strata = 0.10f, Folds = 0.00f, Volcanic = 0.10f, Mesa = 0.00f, Dunes = 0.30f, Reefs = 0.50f, BaseRough = 0.15f };
+                    return new ProvinceRecipe { Craters = 0.05f, Rivers = 0.00f, Lakes = 0.00f, Strata = 0.10f, Folds = 0.00f, Volcanic = 0.10f, Mesa = 0.00f, Dunes = 0.30f, Reefs = 0.80f, BaseRough = 0.15f };
                 case 1: // CRATERED_HIGHLANDS
-                    return new ProvinceRecipe { Craters = 1.00f, Rivers = 0.10f, Lakes = 0.00f, Strata = 0.30f, Folds = 0.00f, Volcanic = 0.10f, Mesa = 0.20f, Dunes = 0.00f, Reefs = 0.20f, BaseRough = 0.40f };
+                    return new ProvinceRecipe { Craters = 1.00f, Rivers = 0.10f, Lakes = 0.00f, Strata = 0.30f, Folds = 0.00f, Volcanic = 0.10f, Mesa = 0.20f, Dunes = 0.00f, Reefs = 0.50f, BaseRough = 0.40f };
                 case 2: // RIVER_LOWLANDS
                     return new ProvinceRecipe { Craters = 0.10f, Rivers = 1.00f, Lakes = 0.80f, Strata = 0.50f, Folds = 0.10f, Volcanic = 0.00f, Mesa = 0.10f, Dunes = 0.20f, Reefs = 0.40f, BaseRough = 0.30f };
                 case 3: // FOLDED_MOUNTAINS
                     return new ProvinceRecipe { Craters = 0.10f, Rivers = 0.30f, Lakes = 0.00f, Strata = 0.70f, Folds = 1.00f, Volcanic = 0.20f, Mesa = 0.00f, Dunes = 0.00f, Reefs = 0.10f, BaseRough = 0.60f };
                 case 4: // RIFT_VALLEY
-                    return new ProvinceRecipe { Craters = 0.10f, Rivers = 0.40f, Lakes = 0.30f, Strata = 0.40f, Folds = 0.30f, Volcanic = 0.60f, Mesa = 0.00f, Dunes = 0.00f, Reefs = 0.20f, BaseRough = 0.50f };
+                    return new ProvinceRecipe { Craters = 0.10f, Rivers = 0.40f, Lakes = 0.30f, Strata = 0.40f, Folds = 0.30f, Volcanic = 0.80f, Mesa = 0.00f, Dunes = 0.00f, Reefs = 0.20f, BaseRough = 0.50f };
                 case 5: // VOLCANIC_FIELD
-                    return new ProvinceRecipe { Craters = 0.20f, Rivers = 0.10f, Lakes = 0.00f, Strata = 0.20f, Folds = 0.00f, Volcanic = 1.00f, Mesa = 0.10f, Dunes = 0.10f, Reefs = 0.30f, BaseRough = 0.50f };
+                    return new ProvinceRecipe { Craters = 0.40f, Rivers = 0.10f, Lakes = 0.00f, Strata = 0.20f, Folds = 0.00f, Volcanic = 1.00f, Mesa = 0.10f, Dunes = 0.10f, Reefs = 0.30f, BaseRough = 0.50f };
                 case 6: // MESA_TABLELANDS
-                    return new ProvinceRecipe { Craters = 0.10f, Rivers = 0.30f, Lakes = 0.20f, Strata = 1.00f, Folds = 0.10f, Volcanic = 0.00f, Mesa = 1.00f, Dunes = 0.10f, Reefs = 0.20f, BaseRough = 0.30f };
+                    return new ProvinceRecipe { Craters = 0.50f, Rivers = 0.30f, Lakes = 0.20f, Strata = 1.00f, Folds = 0.10f, Volcanic = 0.00f, Mesa = 1.00f, Dunes = 0.10f, Reefs = 0.20f, BaseRough = 0.30f };
                 case 7: // DUNE_SEA
                     return new ProvinceRecipe { Craters = 0.00f, Rivers = 0.00f, Lakes = 0.00f, Strata = 0.20f, Folds = 0.00f, Volcanic = 0.00f, Mesa = 0.00f, Dunes = 1.00f, Reefs = 0.60f, BaseRough = 0.20f };
                 default:
-                    return new ProvinceRecipe { Craters = 0.10f, Rivers = 0.10f, Lakes = 0.10f, Strata = 0.20f, Folds = 0.10f, Volcanic = 0.10f, Mesa = 0.10f, Dunes = 0.10f, Reefs = 0.30f, BaseRough = 0.30f };
+                    return new ProvinceRecipe { Craters = 0.30f, Rivers = 0.10f, Lakes = 0.10f, Strata = 0.20f, Folds = 0.10f, Volcanic = 0.30f, Mesa = 0.10f, Dunes = 0.10f, Reefs = 0.50f, BaseRough = 0.30f };
             }
         }
 
@@ -181,7 +181,7 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R44_2026-07-24_SMOOTH_MIN_AND_FADES";
+        public static string BuildSentinel => "SENTINEL_R49_2026-07-25_ISLAND_UPLIFT_AND_COASTS";
 
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
@@ -687,7 +687,7 @@ namespace Hecton8.World
             float abyssPlainMask = math.saturate((1f - shelfMask) * (1f - plateEdgeMask * 0.85f) * (0.42f + plateInterior * 0.58f));
             float shelfToe = math.saturate(math.smoothstep(0.16f, 0.72f, shelfBreakMask) * (1f - shelfMask * 0.25f));
 
-            float depth = math.lerp(parameters.AbyssDepthMeters, parameters.ShelfDepthMeters, shelfMask);
+            float depth = math.lerp(parameters.AbyssDepthMeters, 120f, shelfMask);
             depth += abyssPlainMask * parameters.BasinDepthMeters * 0.35f;
 
             // R41: Add subtle organic micro-terrain noise to Stage 1 shelf so base shelf is not a smooth plastic lens
@@ -716,7 +716,7 @@ namespace Hecton8.World
 
             float mountainField = mBase;
             float mountainBelt = math.smoothstep(0.30f, 0.72f, FractalSimplexNoise01(warpedNorm * 2.1f + new float2(-8.4f, 3.1f), seed ^ 0x93A11E77u));
-            float mountainUplift = mountainField * mountainBelt * 650f * recipe.BaseRough;
+            float mountainUplift = mountainField * mountainBelt * 950f * recipe.BaseRough;
             float trueMountainSlope = math.saturate(mSlopeMag * 1500f * mountainBelt); // boosted to 0..1
 
             float hillinessField = FractalSimplexNoise01(warpedNorm * 0.9f + new float2(33.1f, -12.7f), seed ^ 0xD4E5F601u, 4);
@@ -789,6 +789,10 @@ namespace Hecton8.World
             // so oceanic trenches cannot carve 1.8km cliffs across continental landmasses!
             float oceanicTrenchGate = (1f - continentality);
             depth += trenchMask * parameters.TrenchDepthMeters * (0.78f + plateEdgeMask * 0.58f) * oceanicTrenchGate;
+
+            // R48 ADDENDUM: Subduction Crease (Terrifying deep V-cut in the center of the trench)
+            float trenchCrease = math.pow(trenchMask, 4.0f); // Narrows the effect to the absolute center
+            depth += trenchCrease * 600f * oceanicTrenchGate; // Extra 600m drop
 
             float faultNoise = RidgedMultifractal01(warpedNorm * 12.0f + new float2(-1.9f, 7.1f), seed ^ 0xCA97D1F3u, 3);
             float faultMask;
@@ -893,10 +897,17 @@ namespace Hecton8.World
                         // Organic radial domain warp
                         float volcWarp = FractalSimplexNoise01(warpedPos * 0.0008f + hash, seed ^ 0x6B1A2C3Du, 2) * 0.4f - 0.2f;
                         
+                        // R46 STEP 3: Breached calderas (asymmetric crater walls allow submarine entry)
+                        float breachNoise = FractalSimplexNoise01(warpedPos * 0.002f + hash * 100f, seed ^ 0xBEEF1234u, 2);
+                        float breach = math.smoothstep(0.3f, 0.6f, breachNoise); // 0 on breached side, 1 on intact side
+                        
+                        // R48 ADDENDUM: Radial gullies to erode the perfect cone
+                        float gullyNoise = RidgedMultifractal01(warpedPos * 0.015f + hash * 50f, seed ^ 0x99887766u, 3);
+                        float gullyErosion = gullyNoise * math.smoothstep(0.0f, 0.4f, dist) * math.smoothstep(1.2f, 0.6f, dist);
+                        
                         // SUM the exponents to create smooth, C-infinity metaball blending between adjacent volcanoes.
-                        // This mathematically eliminates the 1-pixel Voronoi boundary cell crease!
-                        float cone = math.exp(-(dist + volcWarp) * 4.2f);
-                        float caldera = (1f - math.smoothstep(0.0f, 0.08f, dist + volcWarp * 0.5f)) * 0.35f;
+                        float cone = math.exp(-(dist + volcWarp) * 4.2f) * (0.65f + 0.35f * breach) * (1f - gullyErosion * 0.6f);
+                        float caldera = (1f - math.smoothstep(0.0f, 0.08f, dist + volcWarp * 0.5f)) * 0.35f * breach;
                         
                         coneSum += cone;
                         calderaSum += caldera;
@@ -939,12 +950,41 @@ namespace Hecton8.World
                         float rim = math.saturate(0.5f + 0.5f * math.cos(rimDist * 3.14159f)) * math.smoothstep(1.0f, 0.95f, rimDist);
                         float peak = math.smoothstep(0f, 1f, 1f - math.smoothstep(0f, radius * 0.16f, dist)) * math.smoothstep(450f, 850f, radius) * 0.35f;
 
-                        craterDepthDelta += bowl * radius * 0.18f * recipe.Craters;
+                        craterDepthDelta += bowl * radius * 0.45f * recipe.Craters;
                         craterDepthDelta -= peak * radius * 0.10f * recipe.Craters;
-                        craterDepthDelta -= rim * radius * 0.08f * recipe.Craters;
+                        craterDepthDelta -= rim * radius * 0.25f * recipe.Craters;
                         craterMask = math.max(craterMask, bowl * recipe.Craters);
                     }
                 }
+
+                // R46 STEP 4: Micro-craters (30m to 180m radius) for dense impact stratification
+                float microGrid = 600f;
+                int2 mCell = new int2((int)math.floor(warpedPos.x / microGrid), (int)math.floor(warpedPos.y / microGrid));
+                for (int cdz = -1; cdz <= 1; cdz++)
+                {
+                    for (int cdx = -1; cdx <= 1; cdx++)
+                    {
+                        int2 neighbor = mCell + new int2(cdx, cdz);
+                        uint h = Hash(neighbor.x, neighbor.y, unchecked((int)(seed ^ 0x11223344u)));
+                        if (HashToUnitFloat(h ^ 0x55667788u) > (0.15f + recipe.Craters * 0.5f)) continue;
+                        
+                        float cx = (neighbor.x + HashToUnitFloat(h ^ 0x99AABBCCu)) * microGrid;
+                        float cz = (neighbor.y + HashToUnitFloat(h ^ 0xDDEEFF00u)) * microGrid;
+                        float radius = math.lerp(30f, 180f, math.pow(HashToUnitFloat(h ^ 0x11335577u), 2f));
+                        float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
+                        if (dist > radius * 1.8f) continue;
+                        
+                        float nDist = dist / math.max(1f, radius);
+                        float bowl = math.pow(1f - math.smoothstep(0f, 1f, nDist), 1.5f);
+                        float rDist = math.saturate(math.abs(nDist - 1f) * 3f);
+                        float rim = math.saturate(0.5f + 0.5f * math.cos(rDist * 3.14159f)) * math.smoothstep(1.0f, 0.95f, rDist);
+                        
+                        craterDepthDelta += bowl * radius * 0.45f * recipe.Craters;
+                        craterDepthDelta -= rim * radius * 0.25f * recipe.Craters;
+                        craterMask = math.max(craterMask, bowl * recipe.Craters);
+                    }
+                }
+
                 depth += craterDepthDelta;
             }
 
@@ -1010,9 +1050,9 @@ namespace Hecton8.World
                     float filledDepth = smin(depth, localSedimentLevel, 8f);
                     depth = math.lerp(depth, filledDepth, lakeMask * 0.85f * lakeFade);
                     
-                    // Subtle dry mud cracks/texture on the flat playa bed
+                    // Subtle dry mud cracks/texture on the flat playa bed (R45: Zero-Mean subtracted)
                     float playaCracks = RidgedMultifractal01(warpedPos * 0.015f, seed ^ 0x6E01091Cu, 3);
-                    depth += playaCracks * 4f * lakeMask * lakeFade;
+                    depth += (playaCracks - 0.15f) * 4f * lakeMask * lakeFade;
                 }
             }
 
@@ -1053,15 +1093,15 @@ namespace Hecton8.World
                 
                 duneMask = duneGate * duneFade;
                 if (!DiagFoldsDunesOff)
-                    depth += duneWave * 8.5f * duneMask; 
+                    // R45: Zero-Mean Normalization (duneWave mean ~0.35 subtracted so base elevation doesn't shift)
+                    depth += (duneWave - 0.35f) * 8.5f * duneMask; 
             }
 
             // --- B10: CORAL REEFS (Organic mounds, NO rings, C1 continuous) ---
             float reefMask = 0f;
             
-            // 1. C1-Continuous Depth Gate (NO HARD IF-STATEMENTS ON DEPTH)
-            // Grows smoothly between 15m and 380m depth. Fades out smoothly at the edges.
-            float depthGate = math.smoothstep(380f, 300f, depth) * math.smoothstep(15f, 45f, depth);
+            // 1. C1-Continuous Depth Gate (R48: Grows from surface -10m breaching down to 4500m depth)
+            float depthGate = math.smoothstep(4500f, 3500f, depth) * math.smoothstep(-10f, 20f, depth);
             
             if (depthGate > 0.001f && recipe.Reefs > 0.01f)
             {
@@ -1076,8 +1116,8 @@ namespace Hecton8.World
                 
                 reefMask = reefPatch * depthGate * recipe.Reefs;
                 
-                // 4. Add organic coral volume (up to 15m tall) smoothly gated by the mask
-                depth -= coralHeads * 15f * reefMask;
+                // 4. Add organic coral volume (R47: Increased amplitude to 35m for massive underwater structures)
+                depth -= (coralHeads - 0.33f) * 35f * reefMask;
             }
 
             // --- B4: STRATIFICATION (elevation benches strictly on steep rock walls) ---
@@ -1090,8 +1130,9 @@ namespace Hecton8.World
             {
                 // Strict slope-gating (slopeProxy > 0.45): eliminates flat-area concentric rings on domes,
                 // while producing real elevation benches (depth) on steep canyon and mountain walls.
+                // R45: Subtract duneMask * 2.0f and reefMask * 2.0f to aggressively block rock strata from carving contours into sand/coral.
                 float slopeGate = math.smoothstep(0.35f, 0.65f, slopeProxy);
-                float strataStrength = math.saturate((hardRockMask * 0.8f + recipe.Strata * 0.8f) * slopeGate - volcanoMask * 1.2f - trenchMask * 0.9f - (1f - continentality) * 1.0f);
+                float strataStrength = math.saturate((hardRockMask * 0.8f + recipe.Strata * 0.8f) * slopeGate - volcanoMask * 1.2f - trenchMask * 0.9f - (1f - continentality) * 1.0f - duneMask * 2.0f - reefMask * 2.0f);
                 strataStrength *= math.smoothstep(0.0f, 0.05f, strataActive);
 
                 if (strataStrength > 0.01f)
@@ -1126,13 +1167,22 @@ namespace Hecton8.World
             float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * steepRockMask;
             float intermediateErosionA = FractalSimplexNoise01(warpedPos * 0.006f + new float2(-8.2f, 15.4f), seed ^ 0x6E1A2B3Cu, 4);
             float intermediateErosionB = FractalSimplexNoise01(warpedPos * 0.018f + new float2(12.7f, -3.1f), seed ^ 0x8C3B1A4Du, 3);
-            float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * 45f;
+            
+            // R49: Above-water weathering (Smoothly transition from 45m underwater to 130m above water, depth < 0)
+            float aboveWaterWeathering = math.smoothstep(20f, -50f, depth); 
+            float fractureAmp = math.lerp(45f, 130f, aboveWaterWeathering);
+            float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * fractureAmp;
             if (!DiagMesoFractureOff)
                 depth += mesoFractureDelta * mesoFractureMask * (1f - abyssPlainMask * 0.6f);
 
-            // R43 STEP 3: Global micro-gravel (25m period, 1.5m amplitude). Gives tactile dirt/sand texture to valleys, stronger on rocks.
-            float microGravel = (FractalSimplexNoise01(warpedPos * 0.04f, seed ^ 0x99AA88BBu, 2) * 2f - 1f) * 1.5f;
-            depth += microGravel * (0.3f + steepRockMask * 0.7f);
+            // R46 STEP 2: FIX GRAVEL NYQUIST ALIASING (World Space Warp before frequency multiplication)
+            float2 gravelWarp = new float2(
+                FractalSimplexNoise01(warpedPos * 0.008f, seed ^ 0x11223344u, 2) * 2f - 1f,
+                FractalSimplexNoise01(warpedPos * 0.008f + new float2(5.5f, 5.5f), seed ^ 0x44332211u, 2) * 2f - 1f) * 15f;
+
+            // FIX: Warp is added to pos BEFORE multiplying by frequency (0.04)
+            float microGravel = (FractalSimplexNoise01((warpedPos + gravelWarp) * 0.04f, seed ^ 0x99AA88BBu, 2) * 2f - 1f) * 1.5f;
+            depth += microGravel * math.lerp(0.2f, 1.5f, steepRockMask); // 20cm soft bumps on sand, 1.5m rubble on rock
 
             // TIER 4: Talus & Slump
             float concaveToe = math.saturate((basinMask * 1.5f + canyonMask * 1.2f + shelfToe * 0.84f + 0.1f) * (ridgeMask * 0.75f + faultMask * 0.62f + shelfBreakMask * 0.66f + 0.1f));
@@ -1141,6 +1191,28 @@ namespace Hecton8.World
             float talusF = BillowNoise01(warpedPos * 0.071f + new float2(-5.0f, 1.7f), seed ^ 0xC3F19802u, 2);
             if (!DiagTalusOff)
                 depth += ((talusC * 0.70f + talusF * 0.30f) * 2f - 1f) * math.lerp(5f, 15f, talusMask) * talusMask;
+
+            // --- B11: COASTAL EROSION & KARST SPIRES (Above-water epics) ---
+            
+            // 1. Asymmetric Wave-Cut Cliffs (Windward erosion)
+            float waveExposure = FractalSimplexNoise01(warpedNorm * 4.5f + new float2(44f, -12f), seed ^ 0x99AABBCCu, 3);
+            float cliffAsymmetry = math.smoothstep(0.3f, 0.7f, waveExposure);
+            
+            // Gaussian bell curve isolating the exact water level (0 meters)
+            float coastalInfluence = math.exp(-math.pow(depth / 15f, 2f));
+            
+            // Carve a flat terrace at depth = +2m (just underwater). 
+            // On the exposed side, this undercuts the mountain, creating a sheer cliff above it.
+            depth = math.lerp(depth, 2f, coastalInfluence * cliffAsymmetry * 0.9f);
+
+            // 2. Rare Karst Spires (Avatar mountains)
+            float spireRegion = math.smoothstep(0.75f, 0.98f, FractalSimplexNoise01(warpedPos * 0.0008f + new float2(-22f, 55f), seed ^ 0x11223344u, 3));
+            if (spireRegion > 0.01f && depth < 100f) // Only appears near surface or above water
+            {
+                float spireNoise = RidgedMultifractal01(warpedPos * 0.012f, seed ^ 0x55667788u, 3);
+                float spires = math.pow(spireNoise, 3f) * 220f * spireRegion;
+                depth -= spires * math.smoothstep(100f, 10f, depth); // Shoots sharp vertical rock pillars UP
+            }
 
             // =========================================================================
             // SOFT CEILING: Applied AFTER all features, compressing peaks smoothly
@@ -1227,20 +1299,20 @@ namespace Hecton8.World
             float minDistSq = 64.0f;
             cellHash = new float2(0, 0);
 
-            int cx = frac.x < 0.5f ? -1 : 1;
-            int cy = frac.y < 0.5f ? -1 : 1;
-
-            for (int i = 0; i < 4; i++)
+            // R46 STEP 5: Full 3x3 loop (eliminates 83m square grid artifact D4)
+            for (int dy = -1; dy <= 1; dy++)
             {
-                int2 neighbor = new int2((i & 1) * cx, (i >> 1) * cy);
-                float2 pointHash = Hash2((int)(cell.x + neighbor.x), (int)(cell.y + neighbor.y), seed);
-                float2 diff = new float2(neighbor.x, neighbor.y) + pointHash - frac;
-                float distSq = math.lengthsq(diff);
-
-                if (distSq < minDistSq)
+                for (int dx = -1; dx <= 1; dx++)
                 {
-                    minDistSq = distSq;
-                    cellHash = pointHash;
+                    float2 pointHash = Hash2((int)(cell.x + dx), (int)(cell.y + dy), seed);
+                    float2 diff = new float2(dx, dy) + pointHash - frac;
+                    float distSq = math.lengthsq(diff);
+
+                    if (distSq < minDistSq)
+                    {
+                        minDistSq = distSq;
+                        cellHash = pointHash;
+                    }
                 }
             }
 
