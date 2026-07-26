@@ -9,7 +9,11 @@ namespace Hecton8.Editor.Terrain
     {
         private List<TerrainLayer> _layers = new List<TerrainLayer>();
         private string _exportPath = "Assets/_SourceData/Terrain/TextureArrays";
-        private int _resolution = 2048;
+        // terrain bible budget: 3 arrays x 8 slices at 1024 = 32.0 MiB VRAM resident.
+        // 2048 quadruples that to 128 MiB with no visual gain: the shader tiles at ~14 m,
+        // which puts 2048 past the screen Nyquist within a few meters of the camera.
+        private const int RequiredResolution = 1024;
+        private int _resolution = RequiredResolution;
         private TextureFormat _formatAlbedo = TextureFormat.BC7;
         private TextureFormat _formatNormal = TextureFormat.BC5;
         private TextureFormat _formatMask = TextureFormat.BC7;
@@ -25,7 +29,7 @@ namespace Hecton8.Editor.Terrain
         private void OnGUI()
         {
             GUILayout.Label("Hecton-8 URP Terrain Texture Array Builder", EditorStyles.boldLabel);
-            EditorGUILayout.HelpBox("Packs multiple TerrainLayers into Texture2DArrays for the Single-Pass Custom URP Shader. All textures MUST be the same resolution (recommended 2048x2048).", MessageType.Info);
+            EditorGUILayout.HelpBox("Packs multiple TerrainLayers into Texture2DArrays for the Single-Pass Custom URP Shader. Resolution is locked to 1024 by the terrain bible VRAM budget (32 MiB for all 3 arrays).", MessageType.Info);
 
             _resolution = EditorGUILayout.IntField("Target Resolution", _resolution);
             _exportPath = EditorGUILayout.TextField("Export Path", _exportPath);
@@ -58,6 +62,12 @@ namespace Hecton8.Editor.Terrain
             if (_layers == null || _layers.Count == 0)
             {
                 Debug.LogError("[TextureArrayBuilder] No layers specified.");
+                return;
+            }
+
+            if (_resolution != RequiredResolution)
+            {
+                Debug.LogError($"[TextureArrayBuilder] Resolution must be {RequiredResolution} (bible VRAM budget: 32 MiB for 3 arrays; 2048 costs 128 MiB for detail past the ~14 m tiling Nyquist).");
                 return;
             }
 
@@ -106,7 +116,7 @@ namespace Hecton8.Editor.Terrain
                 if (albedoRead != null)
                 {
                     EditorUtility.CompressTexture(albedoRead, _formatAlbedo, UnityEditor.TextureCompressionQuality.Best);
-                    UnityEngine.Graphics.CopyTexture(albedoRead, 0, albedoArray, i);
+                    success &= TryCopySliceCpu(albedoRead, albedoArray, i, "albedo");
                     DestroyImmediate(albedoRead);
                 }
                 else
@@ -118,7 +128,7 @@ namespace Hecton8.Editor.Terrain
                     flatAlbedo.Apply();
                     Texture2D albedoFallback = GetReadableTexture(flatAlbedo, _resolution, false, layer.diffuseRemapMin, layer.diffuseRemapMax);
                     EditorUtility.CompressTexture(albedoFallback, _formatAlbedo, UnityEditor.TextureCompressionQuality.Best);
-                    UnityEngine.Graphics.CopyTexture(albedoFallback, 0, albedoArray, i);
+                    success &= TryCopySliceCpu(albedoFallback, albedoArray, i, "albedo fallback");
                     DestroyImmediate(flatAlbedo);
                     DestroyImmediate(albedoFallback);
                 }
@@ -130,7 +140,7 @@ namespace Hecton8.Editor.Terrain
                     if (normalRead != null)
                     {
                         EditorUtility.CompressTexture(normalRead, _formatNormal, UnityEditor.TextureCompressionQuality.Best);
-                        UnityEngine.Graphics.CopyTexture(normalRead, 0, normalArray, i);
+                        success &= TryCopySliceCpu(normalRead, normalArray, i, "normal");
                         DestroyImmediate(normalRead);
                     }
                 }
@@ -145,7 +155,7 @@ namespace Hecton8.Editor.Terrain
                     flatNormal.Apply();
                     Texture2D normalRead = GetReadableTexture(flatNormal, _resolution, true, Vector4.zero, Vector4.one);
                     EditorUtility.CompressTexture(normalRead, _formatNormal, UnityEditor.TextureCompressionQuality.Best);
-                    UnityEngine.Graphics.CopyTexture(normalRead, 0, normalArray, i);
+                    success &= TryCopySliceCpu(normalRead, normalArray, i, "normal fallback");
                     DestroyImmediate(flatNormal);
                     DestroyImmediate(normalRead);
                 }
@@ -157,7 +167,7 @@ namespace Hecton8.Editor.Terrain
                     if (maskRead != null)
                     {
                         EditorUtility.CompressTexture(maskRead, _formatMask, UnityEditor.TextureCompressionQuality.Best);
-                        UnityEngine.Graphics.CopyTexture(maskRead, 0, maskArray, i);
+                        success &= TryCopySliceCpu(maskRead, maskArray, i, "mask");
                         DestroyImmediate(maskRead);
                     }
                 }
@@ -171,7 +181,7 @@ namespace Hecton8.Editor.Terrain
                     flatMask.Apply();
                     Texture2D maskRead = GetReadableTexture(flatMask, _resolution, true, Vector4.zero, Vector4.one);
                     EditorUtility.CompressTexture(maskRead, _formatMask, UnityEditor.TextureCompressionQuality.Best);
-                    UnityEngine.Graphics.CopyTexture(maskRead, 0, maskArray, i);
+                    success &= TryCopySliceCpu(maskRead, maskArray, i, "mask fallback");
                     DestroyImmediate(flatMask);
                     DestroyImmediate(maskRead);
                 }
@@ -179,9 +189,19 @@ namespace Hecton8.Editor.Terrain
 
             if (success)
             {
-                albedoArray.Apply(false, true);
-                normalArray.Apply(false, true);
-                maskArray.Apply(false, true);
+                // AssetDatabase.CreateAsset serializes the CPU-side buffer, so it must stay
+                // readable (makeNoLongerReadable would serialize freed memory) and must be
+                // populated — which is why the slices are copied with SetPixelData above,
+                // not Graphics.CopyTexture (GPU-only, leaves the CPU buffer uninitialized).
+                albedoArray.Apply(false, false);
+                normalArray.Apply(false, false);
+                maskArray.Apply(false, false);
+
+                if (IsSliceZeroConstant(albedoArray) || IsSliceZeroConstant(normalArray) || IsSliceZeroConstant(maskArray))
+                {
+                    Debug.LogError("[TextureArrayBuilder] Post-bake assert failed: slice 0 mip 0 is a constant fill in at least one array — refusing to serialize a garbage asset. Check source textures.");
+                    return;
+                }
 
                 string albedoPath = $"{_exportPath}/Terrain_AlbedoArray.asset";
                 string normalPath = $"{_exportPath}/Terrain_NormalArray.asset";
@@ -202,6 +222,49 @@ namespace Hecton8.Editor.Terrain
             {
                 Debug.LogError("[TextureArrayBuilder] Build failed due to missing or invalid textures. Check console.");
             }
+        }
+
+        /// <summary>
+        /// Copies every mip of one compressed slice into the array on the CPU side, so the
+        /// data survives AssetDatabase serialization. Graphics.CopyTexture is GPU-to-GPU and
+        /// produced assets whose payload was raw uninitialized memory (0xCD fill).
+        /// </summary>
+        private static bool TryCopySliceCpu(Texture2D source, Texture2DArray target, int slice, string context)
+        {
+            if (source == null || target == null)
+                return false;
+
+            if (source.width != target.width ||
+                source.height != target.height ||
+                source.format != target.format ||
+                source.mipmapCount < target.mipmapCount)
+            {
+                Debug.LogError($"[TextureArrayBuilder] {context} slice {slice}: source {source.width}x{source.height} {source.format} ({source.mipmapCount} mips) does not match array {target.width}x{target.height} {target.format} ({target.mipmapCount} mips).");
+                return false;
+            }
+
+            for (int mip = 0; mip < target.mipmapCount; mip++)
+            {
+                target.SetPixelData(source.GetPixelData<byte>(mip), mip, slice);
+            }
+
+            return true;
+        }
+
+        private static bool IsSliceZeroConstant(Texture2DArray array)
+        {
+            var data = array.GetPixelData<byte>(0, 0);
+            if (data.Length == 0)
+                return true;
+
+            byte first = data[0];
+            for (int i = 1; i < data.Length; i++)
+            {
+                if (data[i] != first)
+                    return false;
+            }
+
+            return true;
         }
 
         private Texture2D GetReadableTexture(Texture2D source, int targetRes, bool isLinear, Vector4 remapMin, Vector4 remapMax)
