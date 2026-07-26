@@ -488,6 +488,12 @@ namespace Hecton8.Core
                 return false;
 
             bool signalQueued = TryPublishTerrainChunkGenerated(in snapshot);
+
+            // R99: heightmap-applied is NOT physics-ready. Publish the collider truth on its own lane so the
+            // spawner's Kinematic Arrest Gate has something real to wait on (AGENTS.md requires the gate and
+            // bans time-based loading timeouts; the signal simply did not exist before this).
+            TryPublishWorldChunkPhysicsBaked(in snapshot);
+
             if (_listenerCount <= 0)
                 return signalQueued;
 
@@ -600,6 +606,56 @@ namespace Hecton8.Core
             };
 
             return TerrainChunkGeneratedEvents.TryPublish(in signal);
+        }
+
+        /// <summary>
+        /// R99: publishes the physics-collider truth for a freshly applied terrain tile.
+        /// Success requires an ENABLED <see cref="TerrainCollider"/> whose terrainData is the same object the
+        /// heightmap was written into — a collider component that exists but is disabled, or is still bound to
+        /// a different TerrainData, does not stop a player. Every failure path publishes too, with
+        /// <see cref="WorldChunkPhysicsBakedSignal.FlagBakeFailed"/>, so the gate always resolves.
+        /// </summary>
+        private static bool TryPublishWorldChunkPhysicsBaked(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            Terrain terrain = snapshot.Terrain;
+            if (terrain == null)
+                return false;
+
+            TerrainData terrainData = terrain.terrainData;
+            if (terrainData == null)
+                return false;
+
+            Vector3 terrainSize = terrainData.size;
+            if (!(terrainSize.x > 0f) || !(terrainSize.z > 0f))
+                return false;
+
+            uint flags = 0u;
+            TerrainCollider collider = terrain.GetComponent<TerrainCollider>();
+            if (collider == null)
+            {
+                flags = WorldChunkPhysicsBakedSignal.FlagColliderMissing | WorldChunkPhysicsBakedSignal.FlagBakeFailed;
+            }
+            else if (!collider.enabled || collider.terrainData != terrainData)
+            {
+                flags = WorldChunkPhysicsBakedSignal.FlagColliderMissing | WorldChunkPhysicsBakedSignal.FlagBakeFailed;
+            }
+            else
+            {
+                flags = WorldChunkPhysicsBakedSignal.FlagColliderActive | WorldChunkPhysicsBakedSignal.FlagHeightmapSynced;
+            }
+
+            WorldChunkPhysicsBakedSignal signal = new WorldChunkPhysicsBakedSignal
+            {
+                ChunkX = snapshot.TileX,
+                ChunkZ = snapshot.TileZ,
+                TerrainEntityHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId())),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                TerrainPosition = (float3)terrain.transform.position,
+                TerrainSize = (float3)terrainSize,
+                Flags = flags
+            };
+
+            return WorldChunkPhysicsBakedEvents.TryPublish(in signal);
         }
 
         private static bool TryResolveQuantizedPayloadForSnapshot(

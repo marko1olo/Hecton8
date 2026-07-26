@@ -4,7 +4,7 @@ namespace Hecton8.Core.Generated
 {
     public static class H8Hashes
     {
-        public const int TotalCount = 1249;
+        public const int TotalCount = 1250;
 
         public static class Items
         {
@@ -1490,7 +1490,7 @@ namespace Hecton8.Core.Generated
 
         public static class Signals
         {
-            public const int Count = 514;
+            public const int Count = 515;
 
             public const string ATLASSIGNALREVEALSTAGE2Id = "ATLAS_SIGNAL_REVEAL_STAGE_2";
             public const uint ATLASSIGNALREVEALSTAGE2Hash = 2388679583u;
@@ -1730,8 +1730,8 @@ namespace Hecton8.Core.Generated
             public const uint ApexPanicSignalHash = 1281845940u;
             public const string ApexProximitySignalId = "ApexProximitySignal";
             public const uint ApexProximitySignalHash = 588251734u;
-            public const string AppliedLoreTerminalPreviewSignal_65a56953Id = "AppliedLoreTerminalPreviewSignal";
-            public const uint AppliedLoreTerminalPreviewSignal_65a56953Hash = 1872439298u;
+            public const string AppliedLoreTerminalPreviewSignal_ba4773bcId = "AppliedLoreTerminalPreviewSignal";
+            public const uint AppliedLoreTerminalPreviewSignal_ba4773bcHash = 1872439298u;
             public const string AssetLoadProgressSignalId = "AssetLoadProgressSignal";
             public const uint AssetLoadProgressSignalHash = 2989547456u;
             public const string AtmosphericReentrySignalId = "AtmosphericReentrySignal";
@@ -2320,6 +2320,8 @@ namespace Hecton8.Core.Generated
             public const uint WfcOutpostGeneratedSignalHash = 229489714u;
             public const string WfcOutpostStateChangedSignalId = "WfcOutpostStateChangedSignal";
             public const uint WfcOutpostStateChangedSignalHash = 1239637218u;
+            public const string WorldChunkPhysicsBakedSignalId = "WorldChunkPhysicsBakedSignal";
+            public const uint WorldChunkPhysicsBakedSignalHash = 4147236420u;
             public const string CoreCombatDamageSignalId = "CoreCombatDamageSignal";
             public const uint CoreCombatDamageSignalHash = 1213011879u;
             public const string CoreTetherFiredSignalId = "CoreTetherFiredSignal";

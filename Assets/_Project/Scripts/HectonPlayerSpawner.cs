@@ -394,7 +394,9 @@ public class HectonPlayerSpawner : MonoBehaviour
                 return;
             }
 
-            if (TryResolveGroundHit(out _hitInfo))
+            // R99: a ground hit alone is not physics readiness — the chunk must have published an active
+            // TerrainCollider. See IsSpawnPointPhysicsReady.
+            if (TryResolveGroundHit(out _hitInfo) && IsSpawnPointPhysicsReady(searchOrigin.x, searchOrigin.y))
             {
                 terrainReady = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -431,7 +433,8 @@ public class HectonPlayerSpawner : MonoBehaviour
         // Snachala proveryaem tsentralnuyu tochku
         SpawnSearchResult centerResult = EvaluatePoint(searchOrigin.x, searchOrigin.y);
 
-        if (centerResult == SpawnSearchResult.ValidShallowWater)
+        if (centerResult == SpawnSearchResult.ValidShallowWater &&
+            IsSpawnPointPhysicsReady(_spawnPosition.x, _spawnPosition.z))
         {
             TeleportPlayer(_spawnPosition);
             return;
@@ -477,7 +480,8 @@ public class HectonPlayerSpawner : MonoBehaviour
 
                 SpawnSearchResult result = EvaluatePointFromHit(testX, testZ);
 
-                if (result == SpawnSearchResult.ValidShallowWater)
+                if (result == SpawnSearchResult.ValidShallowWater &&
+                    IsSpawnPointPhysicsReady(_spawnPosition.x, _spawnPosition.z))
                 {
                     TeleportPlayer(_spawnPosition);
                     return;
@@ -582,7 +586,8 @@ public class HectonPlayerSpawner : MonoBehaviour
                 if (groundY > waterLevel)
                 {
                     bool foundNearshore = TryFindNearshorePoint(testX, testZ);
-                    if (foundNearshore)
+                    if (foundNearshore &&
+                        IsSpawnPointPhysicsReady(_spawnPosition.x, _spawnPosition.z))
                     {
                         TeleportPlayer(_spawnPosition);
                         return;
@@ -1085,6 +1090,33 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// Teleportiruet igroka v ukazannuyu pozitsiyu.
     /// Bezopasnyy poryadok operatsiy dlya Rigidbody.
     /// </summary>
+    /// <summary>
+    /// R99 KINEMATIC ARREST GATE (partial).
+    ///
+    /// `AGENTS.md` requires the player to stay suspended until the spawn chunk's terrain physics is proven
+    /// baked, and bans time-based loading waits. Before R99 the signal named by that law
+    /// (<see cref="WorldChunkPhysicsBakedSignal"/>) did not exist at all, so this spawner released the player
+    /// purely on a raycast hit plus realtime timers — a raycast can hit a collider whose heightmap has since
+    /// been rewritten, and it cannot distinguish "collider live" from "collider disabled".
+    ///
+    /// This gate refuses a spawn point until the chunk covering it has published an ACTIVE collider.
+    /// A point whose chunk reported terminal bake failure is not accepted either: it is simply not a valid
+    /// spawn point, and the existing spiral search moves on. The pre-existing global timeout remains the
+    /// last-resort degradation path.
+    ///
+    /// STILL MISSING (not implemented here): player suspension itself — `IsSuspended`, gravity/velocity zero,
+    /// input lock and screen blackout live in the movement/UI route, which this change does not touch.
+    /// </summary>
+    private static bool IsSpawnPointPhysicsReady(float worldX, float worldZ)
+    {
+        // No terrain-bake route published in this scene (isolated sandbox / render test scenes):
+        // there is nothing to wait for, so do not deadlock the spawner on a signal that never comes.
+        if (!WorldChunkPhysicsBakedEvents.IsLaneActive)
+            return true;
+
+        return WorldChunkPhysicsBakedEvents.IsWorldPointPhysicsBaked(worldX, worldZ);
+    }
+
     private void TeleportPlayer(Vector3 position)
     {
         Vector3 platformVelocityAtTarget = _teleportPreservedPlatformVelocity;
