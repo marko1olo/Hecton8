@@ -719,6 +719,7 @@ namespace Hecton8.World
             float lateralAmplitudeMeters,
             float noiseFrequency,
             float strength,
+            double3 originAup = default,
             JobHandle dependency = default)
         {
             ValidateSdfBuffer(inputSdf, sdfWidth, sdfHeight, sdfDepth);
@@ -735,7 +736,8 @@ namespace Hecton8.World
                 SlopeThreshold = ResolveNonNegativeFinite(slopeThreshold, 0f),
                 LateralAmplitudeMeters = ResolveNonNegativeFinite(lateralAmplitudeMeters, 0f),
                 NoiseFrequency = ResolvePositiveFinite(noiseFrequency, 0.000001f),
-                Strength = math.isfinite(strength) ? math.saturate(strength) : 0f
+                Strength = math.isfinite(strength) ? math.saturate(strength) : 0f,
+                OriginAup = IsFiniteAup(originAup) ? originAup : double3.zero
             };
 
             int safeSdfWidth = math.max(1, sdfWidth);

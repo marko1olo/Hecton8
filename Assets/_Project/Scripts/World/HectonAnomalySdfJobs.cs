@@ -820,6 +820,9 @@ namespace Hecton8.World
         /// <summary>Blend strength from original SDF to displaced SDF.</summary>
         public float Strength;
 
+        /// <summary>SDF chunk origin in Absolute Universal Position (AUP).</summary>
+        public double3 OriginAup;
+
         /// <inheritdoc />
         public void Execute(int index)
         {
@@ -855,7 +858,8 @@ namespace Hecton8.World
             }
 
             float3 gridPos = new float3(x, y, z);
-            float3 noisePos = gridPos * VoxelSizeMeters * NoiseFrequency;
+            double3 worldPosAup = OriginAup + (double3)(gridPos * VoxelSizeMeters);
+            float3 noisePos = (float3)worldPosAup * NoiseFrequency;
             float noise = AnomalySdfNoise.FractalNoise3D(noisePos) * 2f - 1f;
             float lateralSq = gx * gx + gz * gz;
             float invLateral = math.rsqrt(math.max(lateralSq, 0.0000001f));
