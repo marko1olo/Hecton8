@@ -207,11 +207,6 @@ namespace Hecton8.World
             bool hasUnderwaterBounds = false;
             Bounds surfaceBounds = default;
             Bounds underwaterBounds = default;
-            Camera activeViewCamera = RefreshActiveViewCameraCache();
-            bool hasViewCamera = activeViewCamera != null;
-            if (hasViewCamera)
-                GeometryUtility.CalculateFrustumPlanes(activeViewCamera, _viewFrustumPlanes);
-
             for (int i = 0; i < _selectedChunkCount; i++)
             {
                 if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload))
@@ -220,10 +215,14 @@ namespace Hecton8.World
                     continue;
                 }
 
-                bool isVisible = !hasViewCamera || IsChunkVisible(payload.WorldBounds);
-                _selectedChunkVisibility[i] = isVisible;
-                if (!isVisible)
-                    continue;
+                // GPU per-instance frustum+HZB culling in HectonIndirectVegetationRenderer
+                // owns visibility. A CPU frustum gate here is only re-evaluated on residency
+                // changes, so chunks behind the camera at that moment never entered the
+                // aggregate buffer and could not reappear when the camera turned — GPU
+                // culling can hide instances but cannot add missing ones. The view-dependent
+                // gate also churned the aggregate instance count, defeating the dirty-page
+                // upload path. Every resident chunk stays in the buffer.
+                _selectedChunkVisibility[i] = true;
 
                 if (payload.HasSurface)
                 {

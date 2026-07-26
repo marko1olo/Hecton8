@@ -2088,6 +2088,18 @@ namespace Hecton8.World
             if (matrixWriteBuffer == null || dataWriteBuffer == null)
                 return false;
 
+            if (_lastNativeUploadInstanceCount != instanceCount)
+            {
+                // The repack that changes the aggregate count can shift every surviving
+                // instance, so no source page mask is trustworthy across a count change:
+                // mark everything dirty once and let the upload budget drain it. The count
+                // is recorded immediately so deferred pages are not re-marked next frame.
+                if (!TryMarkAllUploadedDirtyPages(instanceCount))
+                    return false;
+
+                _lastNativeUploadInstanceCount = instanceCount;
+            }
+
             bool sourceMatrixDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.MatrixDirtyPages, instanceCount, readBuffer.DirtyPageSize);
             bool sourceDataDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.InstanceDataDirtyPages, instanceCount, readBuffer.DirtyPageSize);
             if (!sourceMatrixDirty &&
@@ -2175,9 +2187,22 @@ namespace Hecton8.World
         private bool CanUseDirtyPageUpload(in HectonIndirectVegetationNativeReadBuffer readBuffer)
         {
             int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(readBuffer.InstanceCount, NativeUploadDirtyPageSize);
+            // Buffer capacity decides eligibility, not count equality with the last upload:
+            // the aggregate instance count changes on almost every finished chunk build, and
+            // requiring a bit-exact match pushed exactly those frames onto the unbudgeted
+            // four-way full UploadNativeArray path (~20 MB in one frame at ~40k instances).
+            // A count change instead re-marks every page (BindInstanceNativeDirtyPages) and
+            // the budgeted page uploader spreads the same bytes across frames.
             return readBuffer.InstanceCount > 0 &&
                    readBuffer.DirtyPageSize == NativeUploadDirtyPageSize &&
-                   _lastNativeUploadInstanceCount == readBuffer.InstanceCount &&
+                   _uploadedInstanceMatrixBufferA != null &&
+                   _uploadedInstanceMatrixBufferB != null &&
+                   _uploadedInstanceMatrixBufferA.count >= readBuffer.InstanceCount &&
+                   _uploadedInstanceMatrixBufferB.count >= readBuffer.InstanceCount &&
+                   _uploadedInstanceDataBufferA != null &&
+                   _uploadedInstanceDataBufferB != null &&
+                   _uploadedInstanceDataBufferA.count >= readBuffer.InstanceCount &&
+                   _uploadedInstanceDataBufferB.count >= readBuffer.InstanceCount &&
                    IsUploadedMatrixBuffer(_instanceMatrixBuffer) &&
                    IsUploadedDataBuffer(_instanceDataBuffer) &&
                    HasUploadedDirtyPageStorage(requiredPages);
@@ -6302,6 +6327,37 @@ namespace Hecton8.World
             try
             {
                 MarkUploadedBufferDirtyPages(sourceDirtyPages, targetDirtyPages, instanceCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in targetHandle, VaultOwnerSystemId);
+            }
+        }
+
+        private bool TryMarkAllUploadedDirtyPages(int instanceCount)
+        {
+            return TryMarkAllUploadedDirtyPagesForHandle(ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, instanceCount) &&
+                   TryMarkAllUploadedDirtyPagesForHandle(ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, instanceCount) &&
+                   TryMarkAllUploadedDirtyPagesForHandle(ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, instanceCount) &&
+                   TryMarkAllUploadedDirtyPagesForHandle(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, instanceCount);
+        }
+
+        private bool TryMarkAllUploadedDirtyPagesForHandle(
+            ref VaultGenerationHandle<byte> targetHandle,
+            BufferID targetBufferId,
+            int instanceCount)
+        {
+            if (!TryAcquireUploadedDirtyPageForWrite(ref targetHandle, targetBufferId, out IDataVault vault, out NativeArray<byte> targetDirtyPages))
+                return false;
+
+            try
+            {
+                int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+                int pageCount = math.min(requiredPages, targetDirtyPages.Length);
+                for (int i = 0; i < pageCount; i++)
+                    targetDirtyPages[i] = 1;
+
                 return true;
             }
             finally
