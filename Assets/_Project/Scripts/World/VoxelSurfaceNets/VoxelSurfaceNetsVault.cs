@@ -178,6 +178,10 @@ namespace Hecton8.World.VoxelSurfaceNets
         private const uint JobPrioritiesLock = 1u << 12;
         private const uint JobHzbTilesLock = 1u << 13;
         private const uint JobMockDensityConfigLock = 1u << 14;
+        private const uint JobColliderVerticesLock = 1u << 15;
+        private const uint JobColliderIndicesLock = 1u << 16;
+        private const uint JobColliderCellVertexMapLock = 1u << 17;
+        private const uint JobPhysicsBakeRequestsLock = 1u << 18;
         private static readonly WaitCallback TelemetryDumpWorkerCallback = RunTelemetryDumpWorker;
         private static readonly VoxelMeshingTelemetryEntry[] TelemetryDumpSnapshot =
             new VoxelMeshingTelemetryEntry[VoxelSurfaceNetsConstants.TelemetryFrames];
@@ -199,13 +203,17 @@ namespace Hecton8.World.VoxelSurfaceNets
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Vertices) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Indices) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.CellVertexMap) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.ColliderVertices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.ColliderIndices) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.ColliderCellVertexMap) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.States) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Tuning) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryRing) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.RawDebugVertices) |
-            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.IndirectArgs);
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.IndirectArgs) |
+            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.PhysicsBakeRequests);
         private static readonly ulong HzbCullJobMutationGuardMask =
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.ChunkAabbs) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Priorities) |
@@ -393,6 +401,15 @@ namespace Hecton8.World.VoxelSurfaceNets
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ColliderCellVertexMap, out handles.ColliderCellVertexMap);
         }
 
+        public static bool TryResolveViews(IDataVault vault, out VoxelSurfaceNetsVaultBuffers buffers)
+        {
+            buffers = default;
+            if (vault == null || !TryResolveExisting(vault, out VoxelSurfaceNetsVaultHandles handles))
+                return false;
+
+            return TryResolveViews(vault, ref handles, out buffers);
+        }
+
         public static bool TryResolveViews(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, out VoxelSurfaceNetsVaultBuffers buffers)
         {
             buffers = default;
@@ -512,7 +529,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                     in buffers.Handles,
                     ExtractionJobMutationGuardMask,
                     JobDensityLock | JobTuningLock | JobSurfaceEdgeMasksLock,
-                    JobVerticesLock | JobIndicesLock | JobCellVertexMapLock | JobStatesLock | JobTelemetryRingLock | JobTelemetryCursorLock | JobRawDebugVerticesLock | JobIndirectArgsLock,
+                    JobVerticesLock | JobIndicesLock | JobCellVertexMapLock | JobColliderVerticesLock | JobColliderIndicesLock | JobColliderCellVertexMapLock | JobStatesLock | JobPhysicsBakeRequestsLock | JobTelemetryRingLock | JobTelemetryCursorLock | JobRawDebugVerticesLock | JobIndirectArgsLock,
                     out lease))
                 return false;
 
@@ -720,6 +737,49 @@ namespace Hecton8.World.VoxelSurfaceNets
             JobHandle visualDependency = visualJob.Schedule(inputDependency);
             JobHandle colliderDependency = colliderJob.Schedule(inputDependency);
             outputDependency = JobHandle.CombineDependencies(visualDependency, colliderDependency);
+            return true;
+        }
+
+        [Obsolete("Use TrySchedulePhysicsBakeRequestsPinned and release the returned VoxelSurfaceNetsJobBufferLease after the JobHandle completes.", false)]
+        public static bool TrySchedulePhysicsBakeRequests(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            int meshIdBase,
+            JobHandle inputDependency,
+            out JobHandle outputDependency)
+        {
+            outputDependency = inputDependency;
+            return false;
+        }
+
+        public static bool TrySchedulePhysicsBakeRequestsPinned(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            int meshIdBase,
+            JobHandle inputDependency,
+            out JobHandle outputDependency,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            outputDependency = inputDependency;
+            lease = default;
+            if (!TryAcquireExtractionJobLease(in buffers, out lease))
+                return false;
+
+            NativeArray<ChunkMeshingStateDTO> states = buffers.States;
+            NativeArray<VoxelSurfacePhysicsBakeRequestDTO> requests = buffers.PhysicsBakeRequests;
+
+            if (!states.IsCreated || !requests.IsCreated || states.Length <= 0 || requests.Length <= 0)
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            VoxelSurfacePhysicsBakeRequestJob bakeJob = new VoxelSurfacePhysicsBakeRequestJob
+            {
+                States = states,
+                Requests = requests,
+                MeshIdBase = meshIdBase
+            };
+
+            outputDependency = bakeJob.Schedule(states.Length, 64, inputDependency);
             return true;
         }
 
