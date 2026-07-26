@@ -33,10 +33,8 @@ Write-Output 'PREFLIGHT=OK'
 
 # ---------- STEP 1: EditMode tests ----------
 Write-Output '--- STEP 1: EDITMODE TESTS ---'
-& $unity -projectPath $project -batchmode -quit `
-    -runTests -testPlatform EditMode `
-    -assemblyNames Hecton8.PureLogic.Tests `
-    -testResults $xml -logFile $log
+$p1 = Start-Process -FilePath $unity -ArgumentList "-projectPath `"$project`" -batchmode -quit -runTests -testPlatform EditMode -assemblyNames Hecton8.PureLogic.Tests -testResults `"$xml`" -logFile `"$log`"" -Wait -PassThru -NoNewWindow
+$LASTEXITCODE = $p1.ExitCode
 Write-Output "UNITY_EXIT=$LASTEXITCODE"
 
 if (-not (Test-Path $log)) { Write-Output 'FATAL: no log file produced.'; exit 12 }
@@ -107,7 +105,8 @@ foreach ($f in $fails) {
 
 # ---------- STEP 3: compile check ----------
 Write-Output '--- STEP 3: COMPILE CHECK ---'
-& $unity -projectPath $project -batchmode -quit -logFile $clog
+$p3 = Start-Process -FilePath $unity -ArgumentList "-projectPath `"$project`" -batchmode -quit -logFile `"$clog`"" -Wait -PassThru -NoNewWindow
+$LASTEXITCODE = $p3.ExitCode
 Write-Output "COMPILE_EXIT=$LASTEXITCODE"
 if (Test-Path $clog) {
     $ce = @(Select-String -Path $clog -Pattern 'error CS[0-9]+')

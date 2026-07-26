@@ -468,6 +468,29 @@ namespace Hecton8.World.VoxelSurfaceNets
                 edgeMask |= 1u << edge;
         }
 
+        /// <summary>Squared-area gate. 0.5*|cross| is the triangle area, so this rejects only
+        /// coincident or collinear vertices, never a legitimately small surface triangle.</summary>
+        private const float DegenerateTriangleAreaSqEpsilon = 1e-10f;
+
+        private bool IsEmittableTriangle(int i0, int i1, int i2)
+        {
+            if (i0 == i1 || i1 == i2 || i0 == i2)
+                return false;
+
+            if ((uint)i0 >= (uint)Vertices.Length ||
+                (uint)i1 >= (uint)Vertices.Length ||
+                (uint)i2 >= (uint)Vertices.Length)
+            {
+                return false;
+            }
+
+            float3 p0 = Vertices[i0].Position;
+            float3 p1 = Vertices[i1].Position;
+            float3 p2 = Vertices[i2].Position;
+            float3 areaCross = math.cross(p1 - p0, p2 - p0);
+            return math.lengthsq(areaCross) > DegenerateTriangleAreaSqEpsilon;
+        }
+
         private bool TryEmitQuad(
             int a,
             int b,
@@ -484,30 +507,38 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (indexCount + 6 > Indices.Length || indexCount + 6 > VoxelSurfaceNetsConstants.MaxIndices)
                 return false;
 
+            // Same winding as before, but each of the two triangles is emitted only when it has
+            // real area. A Surface-Nets cell whose vertex lands on a shared grid corner can
+            // collapse a quad into zero-area triangles, which produce garbage normals, flickering
+            // slivers and physics-bake warnings.
+            int t0b = reverse ? c : b;
+            int t0c = reverse ? b : c;
+            int t1b = reverse ? d : c;
+            int t1c = reverse ? c : d;
+
             int firstIndex = indexCount;
-            if (reverse)
+            if (IsEmittableTriangle(a, t0b, t0c))
             {
                 Indices[indexCount++] = (uint)a;
-                Indices[indexCount++] = (uint)c;
-                Indices[indexCount++] = (uint)b;
-                Indices[indexCount++] = (uint)a;
-                Indices[indexCount++] = (uint)d;
-                Indices[indexCount++] = (uint)c;
-            }
-            else
-            {
-                Indices[indexCount++] = (uint)a;
-                Indices[indexCount++] = (uint)b;
-                Indices[indexCount++] = (uint)c;
-                Indices[indexCount++] = (uint)a;
-                Indices[indexCount++] = (uint)c;
-                Indices[indexCount++] = (uint)d;
+                Indices[indexCount++] = (uint)t0b;
+                Indices[indexCount++] = (uint)t0c;
             }
 
-            if (rawCaptureGate < 0.5f || !RawDebugVertices.IsCreated || rawDebugCount + 6 > RawDebugVertices.Length)
+            if (IsEmittableTriangle(a, t1b, t1c))
+            {
+                Indices[indexCount++] = (uint)a;
+                Indices[indexCount++] = (uint)t1b;
+                Indices[indexCount++] = (uint)t1c;
+            }
+
+            int emittedIndices = indexCount - firstIndex;
+            if (emittedIndices <= 0)
                 return true;
 
-            for (int i = 0; i < 6; i++)
+            if (rawCaptureGate < 0.5f || !RawDebugVertices.IsCreated || rawDebugCount + emittedIndices > RawDebugVertices.Length)
+                return true;
+
+            for (int i = 0; i < emittedIndices; i++)
                 RawDebugVertices[rawDebugCount++] = Vertices[(int)Indices[firstIndex + i]].Position;
 
             return true;
@@ -695,20 +726,40 @@ namespace Hecton8.World.VoxelSurfaceNets
                 if (signal.Dirty == 0)
                     continue;
 
+                // An exact ChunkHash match must win over claiming a free slot. Scanning for the
+                // first "matching or empty" slot could claim an empty slot that precedes the
+                // chunk's real state entry, leaving TWO live states for one chunk hash: the stale
+                // one keeps its mesh while the new one re-meshes, which double-bakes colliders
+                // (banned duplicate-collider class) and wastes a meshing slot.
+                int targetIndex = -1;
+                int freeIndex = -1;
                 for (int stateIndex = 0; stateIndex < States.Length; stateIndex++)
                 {
-                    ChunkMeshingStateDTO state = States[stateIndex];
-                    if (state.ChunkHash != signal.ChunkHash && state.ChunkHash != 0u)
-                        continue;
+                    uint existingHash = States[stateIndex].ChunkHash;
+                    if (existingHash == signal.ChunkHash)
+                    {
+                        targetIndex = stateIndex;
+                        break;
+                    }
 
+                    if (freeIndex < 0 && existingHash == 0u)
+                        freeIndex = stateIndex;
+                }
+
+                if (targetIndex < 0)
+                    targetIndex = freeIndex;
+                if (targetIndex < 0)
+                    continue;
+
+                {
+                    ChunkMeshingStateDTO state = States[targetIndex];
                     state.ChunkOriginAup = signal.ChunkOriginAup;
                     state.ChunkHash = signal.ChunkHash;
                     state.Version = signal.Version;
                     state.Stage = (byte)VoxelMeshingStage.Dirty;
                     state.Flags = (byte)(state.Flags | VoxelMeshingFlags.Dirty | VoxelMeshingFlags.ModifiedByLaser);
                     state.Priority = signal.ForceHighPriority != 0 ? (ushort)1 : state.Priority;
-                    States[stateIndex] = state;
-                    break;
+                    States[targetIndex] = state;
                 }
             }
         }
