@@ -129,7 +129,14 @@ namespace Hecton.Localization.Tests
         {
             public string ReturnedString = "";
 
-            public ReadOnlySpan<char> GetRawSpanOrFallback(uint keyHash, ReadOnlySpan<char> fallback)
+            public ushort ActiveLanguageId => (ushort)GameLanguage.English;
+            public string GetOrFallback(string key, string fallback) => fallback;
+            public string GetFormatted(string key, params object[] args) => string.Empty;
+
+            // ILocalizationTextReadModel declares the int-hash overload; a call through the
+            // interface reference can only ever land here, so this is where the stubbed
+            // value must live. (An earlier uint overload held it and was unreachable.)
+            public ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback)
             {
                 if (!string.IsNullOrEmpty(ReturnedString))
                 {
@@ -137,11 +144,6 @@ namespace Hecton.Localization.Tests
                 }
                 return fallback;
             }
-
-            public ushort ActiveLanguageId => (ushort)GameLanguage.English;
-            public string GetOrFallback(string key, string fallback) => fallback;
-            public string GetFormatted(string key, params object[] args) => string.Empty;
-            public ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback) => fallback;
         }
 
         [Test]
