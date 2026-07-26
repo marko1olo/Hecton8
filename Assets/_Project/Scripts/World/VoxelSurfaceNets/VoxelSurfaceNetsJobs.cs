@@ -268,6 +268,8 @@ namespace Hecton8.World.VoxelSurfaceNets
                     VoxelSurfacePhysicsBakeRequestDTO req = PhysicsBakeRequests[stateIndex];
                     req.ColliderVertexCount = vertexCount;
                     req.ColliderIndexCount = indexCount;
+                    if (indexCapacityClamped)
+                        req.Flags = (byte)(req.Flags | VoxelMeshingFlags.CapacityClamped);
                     PhysicsBakeRequests[stateIndex] = req;
                 }
             }
@@ -828,7 +830,7 @@ namespace Hecton8.World.VoxelSurfaceNets
 
             ChunkMeshingStateDTO state = States[index];
             VoxelSurfacePhysicsBakeRequestDTO req = Requests[index];
-            if (state.Stage != (byte)VoxelMeshingStage.ReadyForUpload || req.ColliderIndexCount <= 0)
+            if (state.Stage != (byte)VoxelMeshingStage.ReadyForUpload || req.ColliderIndexCount <= 0 || (req.Flags & VoxelMeshingFlags.CapacityClamped) != 0)
                 return;
 
             req.MeshId = MeshIdBase + index;
@@ -837,6 +839,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             req.Version = state.Version;
             req.Pending = 1;
             req.Completed = 0;
+            req.Flags = 0;
             req._pad0 = 0;
             req._pad1 = 0UL;
             Requests[index] = req;

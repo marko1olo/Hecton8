@@ -65,9 +65,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const BufferID MockDensityConfig = BufferID.ShinobuFluidFrameSummary;
         public const BufferID PhysicsBakeRequests = BufferID.ShinobuFluidCsvScratch;
         public const BufferID HzbTiles = BufferID.ShinobuFluidMockBreach;
-        public const BufferID ColliderVertices = BufferID.ShinobuFluidCompartmentTelemetry;
-        public const BufferID ColliderIndices = BufferID.ShinobuFluidEdgeConductivity;
-        public const BufferID ColliderCellVertexMap = BufferID.ShinobuFluidTransferRemainders;
+        public const BufferID ColliderVertices = BufferID.VoxelSurfaceNetsColliderVertices;
+        public const BufferID ColliderIndices = BufferID.VoxelSurfaceNetsColliderIndices;
+        public const BufferID ColliderCellVertexMap = BufferID.VoxelSurfaceNetsColliderCellVertexMap;
     }
 
     public enum VoxelMeshingStage : byte
@@ -322,7 +322,9 @@ namespace Hecton8.World.VoxelSurfaceNets
         [FieldOffset(17)]
         public byte Completed;
         [FieldOffset(18)]
-        public ushort _pad0;
+        public byte Flags;
+        [FieldOffset(19)]
+        public byte _pad0;
         [FieldOffset(20)]
         public int ColliderIndexCount;
         [FieldOffset(24)]
