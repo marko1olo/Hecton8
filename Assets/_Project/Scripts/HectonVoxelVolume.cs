@@ -454,6 +454,7 @@ namespace Hecton8.Caves
         private BoxCollider[] _colliderChunkBakeProxies = new BoxCollider[MaxColliderChunkCount]; // COLD ALLOC: fixed collider bake proxy registry - owner: HectonVoxelVolume
         private Mesh[] _colliderChunkMeshes = new Mesh[MaxColliderChunkCount]; // COLD ALLOC: fixed live collider mesh registry - owner: HectonVoxelVolume
         private Mesh[] _colliderChunkBakeMeshes = new Mesh[MaxColliderChunkCount]; // COLD ALLOC: fixed staged collider bake mesh registry - owner: HectonVoxelVolume
+        private bool[] _colliderChunkBakeMeshReady = new bool[MaxColliderChunkCount]; // COLD ALLOC: staged mesh Physics.BakeMesh completion flags - owner: HectonVoxelVolume
         private MeshFilter _meshFilter;
         private MeshRenderer _meshRenderer;
         private MeshCollider _rootMeshCollider;
@@ -1776,21 +1777,54 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Returns true only for stale staged mesh cleanup in the legacy deferred upload queue.
+        /// True when a staged collider chunk mesh exists and its PhysX bake has completed,
+        /// so the deferred upload drain may commit it to the pooled MeshCollider.
         /// </summary>
         internal bool IsDeferredColliderChunkUploadReady(int index)
         {
-            return false;
+            if (_colliderChunkBakeMeshes == null ||
+                (uint)index >= (uint)_colliderChunkBakeMeshes.Length)
+                return false;
+
+            return _colliderChunkBakeMeshReady[index] && _colliderChunkBakeMeshes[index] != null;
         }
 
         internal Mesh GetColliderChunkBakeMesh(int index)
         {
-            return null;
+            if (_colliderChunkBakeMeshes == null ||
+                (uint)index >= (uint)_colliderChunkBakeMeshes.Length)
+                return null;
+
+            return _colliderChunkBakeMeshes[index];
         }
 
+        /// <summary>
+        /// Marks a staged collider chunk mesh as baked and commit-ready. The mesh must be the
+        /// one obtained from <see cref="GetOrCreateColliderChunkBakeMesh"/> for the same index,
+        /// already filled and already run through Physics.BakeMesh off the main thread.
+        /// </summary>
         internal bool AssignColliderChunkBakeMesh(int index, Mesh mesh)
         {
-            return false;
+            if (mesh == null ||
+                _colliderChunkBakeMeshes == null ||
+                (uint)index >= (uint)_colliderChunkBakeMeshes.Length)
+                return false;
+
+            if (!ReferenceEquals(_colliderChunkBakeMeshes[index], mesh))
+            {
+                Mesh previous = _colliderChunkBakeMeshes[index];
+                if (previous != null)
+                {
+                    previous.Clear(false);
+                    if (!global::HectonVoxelEngine.ReleaseVoxelPhysicsBakeMesh(previous))
+                        DestroyOwnedObject(previous);
+                }
+
+                _colliderChunkBakeMeshes[index] = mesh;
+            }
+
+            _colliderChunkBakeMeshReady[index] = true;
+            return true;
         }
 
         /// <summary>
@@ -1859,11 +1893,29 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Runtime collider mesh staging is disabled; primitive proxies own voxel collision.
+        /// Returns the staged bake mesh for one collider chunk, acquiring a pooled mesh from
+        /// the engine physics-bake pool on first use. Returns null when the pool is exhausted
+        /// (the pool publishes its own telemetry warning); the box proxy then stays active as
+        /// the degraded collision route for this chunk.
         /// </summary>
         internal Mesh GetOrCreateColliderChunkBakeMesh(int index)
         {
-            return null;
+            if (_colliderChunkBakeMeshes == null ||
+                (uint)index >= (uint)_colliderChunkBakeMeshes.Length)
+                return null;
+
+            Mesh mesh = _colliderChunkBakeMeshes[index];
+            if (mesh == null)
+            {
+                mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh();
+                if (mesh == null)
+                    return null;
+
+                _colliderChunkBakeMeshes[index] = mesh;
+            }
+
+            _colliderChunkBakeMeshReady[index] = false;
+            return mesh;
         }
 
         /// <summary>
@@ -1900,37 +1952,53 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Releases staged collider mesh data without publishing it to PhysX.
+        /// Publishes the staged, pre-baked collider chunk mesh to the pooled MeshCollider and
+        /// retires the primitive box proxy for that chunk. Called from the budgeted deferred
+        /// upload drain; the PhysX cook already happened off the main thread, so the
+        /// sharedMesh assignment here reuses the baked data by instance id.
         /// </summary>
         internal bool CommitDeferredColliderChunkUpload(int index)
         {
-            if (index < 0)
-                return false;
-
             int colliderCount = _colliderChunkColliders != null ? _colliderChunkColliders.Length : 0;
             int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
-            if (index < bakeMeshCount)
+            if (index < 0 || index >= colliderCount || index >= bakeMeshCount)
+                return false;
+
+            Mesh stagedMesh = _colliderChunkBakeMeshes[index];
+            if (stagedMesh == null || !_colliderChunkBakeMeshReady[index] || stagedMesh.vertexCount < 3)
+                return false;
+
+            MeshCollider collider = _colliderChunkColliders[index];
+            if (collider == null)
+                return false;
+
+            _colliderChunkBakeMeshes[index] = null;
+            _colliderChunkBakeMeshReady[index] = false;
+
+            Mesh previousLiveMesh = _colliderChunkMeshes != null && index < _colliderChunkMeshes.Length
+                ? _colliderChunkMeshes[index]
+                : null;
+
+            collider.gameObject.layer = HectonLayerMasks.VoxelCave;
+            if (!collider.gameObject.activeSelf)
+                collider.gameObject.SetActive(true);
+
+            collider.sharedMesh = stagedMesh;
+            if (_colliderChunkMeshes != null && index < _colliderChunkMeshes.Length)
+                _colliderChunkMeshes[index] = stagedMesh;
+
+            if (previousLiveMesh != null && !ReferenceEquals(previousLiveMesh, stagedMesh))
             {
-                Mesh stagedMesh = _colliderChunkBakeMeshes[index];
-                _colliderChunkBakeMeshes[index] = null;
-                if (stagedMesh != null)
-                    stagedMesh.Clear(false);
+                previousLiveMesh.Clear(false);
+                if (!global::HectonVoxelEngine.ReleaseVoxelPhysicsBakeMesh(previousLiveMesh))
+                    DestroyOwnedObject(previousLiveMesh);
             }
 
-            if (index < colliderCount)
-            {
-                MeshCollider collider = _colliderChunkColliders[index];
-                if (collider != null)
-                {
-                    collider.enabled = false;
-                    if (!collider.gameObject.activeSelf)
-                        collider.gameObject.SetActive(true);
-                }
-            }
+            // voxels.md: physics interaction is blocked until collider bake is complete.
+            collider.enabled = _bakeState == VoxelBakeState.Complete;
+            DisableColliderChunkBakeProxy(index);
 
-            EnableColliderChunkProxy(index);
-
-            return false;
+            return true;
         }
 
         /// <summary>
@@ -1943,6 +2011,7 @@ namespace Hecton8.Caves
 
             for (int i = 0; i < _colliderChunkBakeMeshes.Length; i++)
             {
+                _colliderChunkBakeMeshReady[i] = false;
                 Mesh mesh = _colliderChunkBakeMeshes[i];
                 if (mesh != null)
                     mesh.Clear(false);
@@ -1971,7 +2040,10 @@ namespace Hecton8.Caves
             EnableColliderChunkProxy(index);
             int bakeMeshCount = _colliderChunkBakeMeshes != null ? _colliderChunkBakeMeshes.Length : 0;
             if (index < bakeMeshCount)
+            {
                 _colliderChunkBakeMeshes[index] = null;
+                _colliderChunkBakeMeshReady[index] = false;
+            }
         }
 
         /// <summary>
@@ -1995,6 +2067,7 @@ namespace Hecton8.Caves
             if (index >= bakeMeshCount)
                 return;
 
+            _colliderChunkBakeMeshReady[index] = false;
             Mesh bakeMesh = _colliderChunkBakeMeshes[index];
             _colliderChunkBakeMeshes[index] = null;
             if (bakeMesh == null)
@@ -2017,6 +2090,9 @@ namespace Hecton8.Caves
             int chunkCount = Mathf.Max(Mathf.Max(colliderCount, proxyCount), Mathf.Max(meshCount, bakeMeshCount));
             for (int i = 0; i < chunkCount; i++)
             {
+                if (i < bakeMeshCount)
+                    _colliderChunkBakeMeshReady[i] = false;
+
                 MeshCollider collider = i < colliderCount ? _colliderChunkColliders[i] : null;
                 if (collider != null)
                 {

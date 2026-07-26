@@ -21,3 +21,4 @@ Never rewrite this file. Append one line per completed unit of work:
 2026-07-26T18:20Z  claude-cloud  PureLogic/Systems/VoronoiBiomeSeedCalculator.cs  added allocation-free TryCompute overload; string path left intact
 2026-07-26T18:30Z  claude-cloud  Docs/ARCHITECTURE/MULTI_AGENT_FILE_OWNERSHIP_PROTOCOL.md  new: zones, claims, freshness rule, commit discipline
 2026-07-26T18:04Z  claude-code-local  Assets/_Project/Scripts/HectonVoxelEngine.cs  VoxelMCExtractJob: edge lookup switched from managed MarchingCubesLookupTable.Calculate to native edgeTable[cubeIndex] (Burst legality, GENERATION_STACK_CONTRACTS 3.2)
+2026-07-26T18:25Z  claude-code-local  HectonVoxelVolume.cs+HectonVoxelEngine.cs  P0: restored cave collider mesh publication (staging, off-thread Physics.BakeMesh, deferred commit, proxy retirement) per HANDOFF_CLAUDE_CODE s3

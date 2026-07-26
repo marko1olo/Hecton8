@@ -8932,10 +8932,25 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal static bool EnqueueDeferredVoxelColliderUpload(Hecton8.Caves.HectonVoxelVolume volume, int chunkIndex)
     {
-        if (volume != null && chunkIndex >= 0)
-            volume.EnableColliderChunkProxy(chunkIndex);
+        if (volume == null || chunkIndex < 0)
+            return false;
 
-        return false;
+        // Fail closed to the box proxy: if the drain cannot take or service the request,
+        // the chunk keeps its degraded primitive collision instead of none at all.
+        if (!TryReserveDeferredVoxelColliderUploadSlot(null) ||
+            !EnsureDeferredVoxelColliderUploadRegistered())
+        {
+            volume.EnableColliderChunkProxy(chunkIndex);
+            return false;
+        }
+
+        _deferredVoxelColliderUploads.Add(new DeferredVoxelColliderUpload
+        {
+            Volume = volume,
+            ChunkIndex = chunkIndex,
+            Flags = DeferredVoxelColliderUploadVolumeFlag
+        });
+        return true;
     }
 
     internal static bool EnqueueDeferredVoxelColliderUpload(MeshCollider collider, Mesh mesh)
@@ -14499,6 +14514,64 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     out Vector3 proxySize);
                 volume.ConfigureColliderChunkBakeProxy(chunkIndex, proxyCenter, proxySize);
 
+                // Build the real PhysX mesh for this chunk. The box proxy above stays active
+                // until the baked mesh commits through the budgeted deferred upload drain;
+                // a null pooled mesh (pool exhausted) leaves the proxy as the degraded route.
+                Mesh chunkBakeMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
+                if (chunkBakeMesh != null)
+                {
+                    bool meshUploaded = false;
+                    if (!TryLockStreamingScratchJobLifetime(ref data.ScratchLease))
+                    {
+                        ReportVoxelMeshScratchCapacityOverflow();
+                        return false;
+                    }
+
+                    try
+                    {
+                        if (TryBuildColliderChunkLocalGeometry(
+                                data,
+                                useProjectedLocalPositions,
+                                chunkIndex,
+                                out int localVertexCount,
+                                out int localIndexCount))
+                        {
+                            meshUploaded = UploadColliderMesh(
+                                chunkBakeMesh,
+                                data.ScratchLease.ColliderLocalPositions,
+                                data.ScratchLease.ColliderLocalIndices,
+                                localVertexCount,
+                                localIndexCount);
+                        }
+                    }
+                    finally
+                    {
+                        UnlockStreamingScratchJobLifetime(ref data.ScratchLease);
+                    }
+
+                    if (meshUploaded)
+                    {
+                        // PhysX cook off the main thread; the sharedMesh assignment in the
+                        // drain then reuses the baked data by mesh instance id.
+                        int bakeMeshInstanceId = chunkBakeMesh.GetInstanceID();
+                        await Awaitable.BackgroundThreadAsync();
+                        Physics.BakeMesh(bakeMeshInstanceId, false);
+                        await Awaitable.MainThreadAsync();
+                        if (ct.IsCancellationRequested)
+                            return false;
+
+                        if (!volume.AssignColliderChunkBakeMesh(chunkIndex, chunkBakeMesh) ||
+                            !EnqueueDeferredVoxelColliderUpload(volume, chunkIndex))
+                        {
+                            volume.ReleaseColliderChunkBakeMesh(chunkIndex);
+                        }
+                    }
+                    else
+                    {
+                        volume.ReleaseColliderChunkBakeMesh(chunkIndex);
+                    }
+                }
+
                 chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
             }
 
@@ -14514,6 +14587,109 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 volume.ClearColliderChunkBakeMeshes();
             }
         }
+    }
+
+    /// <summary>
+    /// Compacts one collider chunk's triangle range (written by the classify/scatter passes
+    /// into ColliderChunkTriangleIndices) into chunk-local vertex/index scratch buffers.
+    /// Caller must hold the streaming scratch job lifetime lock. The shared ColliderLocalRemap
+    /// scratch is restored to its -1 fill before returning, so chunks can run back to back.
+    /// </summary>
+    bool TryBuildColliderChunkLocalGeometry(
+        VoxelPipelineData data,
+        bool useProjectedLocalPositions,
+        int chunkIndex,
+        out int localVertexCount,
+        out int localIndexCount)
+    {
+        localVertexCount = 0;
+        localIndexCount = 0;
+
+        NativeArray<float3> meshLocalPositions = useProjectedLocalPositions
+            ? data.ScratchLease.ProjectedLocalPositions
+            : data.WeldedPositions;
+        NativeArray<int> bucketCounts = data.ScratchLease.ColliderBucketCounts;
+        NativeArray<int> bucketOffsets = data.ScratchLease.ColliderBucketOffsets;
+        NativeArray<int> chunkTriangleIndices = data.ScratchLease.ColliderChunkTriangleIndices;
+        NativeArray<int> localRemap = data.ScratchLease.ColliderLocalRemap;
+        NativeArray<int> touchedVertexGlobals = data.ScratchLease.ColliderTouchedVertexGlobals;
+        NativeArray<float3> localPositions = data.ScratchLease.ColliderLocalPositions;
+        NativeArray<int> localIndices = data.ScratchLease.ColliderLocalIndices;
+
+        if (!meshLocalPositions.IsCreated ||
+            !bucketCounts.IsCreated ||
+            !bucketOffsets.IsCreated ||
+            !chunkTriangleIndices.IsCreated ||
+            !localRemap.IsCreated ||
+            !touchedVertexGlobals.IsCreated ||
+            !localPositions.IsCreated ||
+            !localIndices.IsCreated ||
+            (uint)chunkIndex >= (uint)bucketCounts.Length ||
+            (uint)chunkIndex >= (uint)bucketOffsets.Length)
+        {
+            ReportVoxelInvalidMeshUpload();
+            return false;
+        }
+
+        int indexStart = bucketOffsets[chunkIndex];
+        int indexCount = bucketCounts[chunkIndex];
+        if (indexCount <= 0 ||
+            (indexCount % 3) != 0 ||
+            indexStart < 0 ||
+            indexStart > chunkTriangleIndices.Length - indexCount ||
+            indexCount > localIndices.Length)
+        {
+            ReportVoxelInvalidMeshUpload();
+            return false;
+        }
+
+        int weldedCount = data.WeldedCount;
+        bool valid = true;
+        int vertexCursor = 0;
+        for (int i = 0; i < indexCount; i++)
+        {
+            int globalIndex = chunkTriangleIndices[indexStart + i];
+            if ((uint)globalIndex >= (uint)weldedCount ||
+                (uint)globalIndex >= (uint)localRemap.Length ||
+                (uint)globalIndex >= (uint)meshLocalPositions.Length)
+            {
+                valid = false;
+                break;
+            }
+
+            int localIndex = localRemap[globalIndex];
+            if (localIndex < 0)
+            {
+                if (vertexCursor >= localPositions.Length || vertexCursor >= touchedVertexGlobals.Length)
+                {
+                    valid = false;
+                    break;
+                }
+
+                localIndex = vertexCursor;
+                localRemap[globalIndex] = localIndex;
+                touchedVertexGlobals[vertexCursor] = globalIndex;
+                localPositions[vertexCursor] = meshLocalPositions[globalIndex];
+                vertexCursor++;
+            }
+
+            localIndices[i] = localIndex;
+        }
+
+        // The remap scratch is shared by every chunk of this volume build; restore the -1
+        // fill for the next chunk whether or not this one succeeded.
+        for (int i = 0; i < vertexCursor; i++)
+            localRemap[touchedVertexGlobals[i]] = -1;
+
+        if (!valid || vertexCursor < 3)
+        {
+            ReportVoxelInvalidMeshUpload();
+            return false;
+        }
+
+        localVertexCount = vertexCursor;
+        localIndexCount = indexCount;
+        return true;
     }
 
     void PrepareVolumeForBuild(GameObject go)
