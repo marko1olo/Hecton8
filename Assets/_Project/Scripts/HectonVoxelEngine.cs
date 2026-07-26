@@ -14075,6 +14075,21 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
 
         int stateIndex = math.clamp(data.VolumeIndex, 0, states.Length - 1);
+
+        if (VoxelSurfaceNetsVault.TryScheduleExtractionPinned(buffers, stateIndex, (uint)Time.frameCount, default, out JobHandle extractHandle, out var extractLease))
+        {
+            if (VoxelSurfaceNetsVault.TrySchedulePhysicsBakeRequestsPinned(buffers, 0, extractHandle, out JobHandle bakeHandle, out var bakeLease))
+            {
+                await AwaitForJobCompletionAsync(bakeHandle, ct, "surface nets extraction & bake");
+                VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref bakeLease);
+            }
+            else
+            {
+                await AwaitForJobCompletionAsync(extractHandle, ct, "surface nets extraction");
+            }
+            VoxelSurfaceNetsVault.ReleaseJobBufferLease(ref extractLease);
+        }
+
         ChunkMeshingStateDTO state = states[stateIndex];
         int vertCount = state.VertexCount;
         int indexCount = state.IndexCount;
