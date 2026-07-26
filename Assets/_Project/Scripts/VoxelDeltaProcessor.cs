@@ -7720,10 +7720,19 @@ namespace Hecton8.Caves
                 return AxisWeightedLengthApprox(local) - math.max(radius, 0.001f);
             }
 
+            /// <summary>
+            /// R99: exact Euclidean length. This used to return
+            /// <c>cmax(|v|) + (|x|+|y|+|z|) * 0.33</c>, which is NOT a distance — it is a Chebyshev/Manhattan
+            /// blend whose unit isosurface is an octahedron-cornered box, not a sphere. Directional error
+            /// ranged from +14.8% along an axis to -0.6% along the diagonal, so a "spherical" 4 m tool carve
+            /// came out roughly 0.6 m out of round, and the SDF gradient (used for the carve-boundary
+            /// normals) pointed wrong everywhere except on the axes. Every consumer of these primitives —
+            /// box, capsule, sphere — was affected. math.length is exact and Burst-vectorized; the cost is
+            /// one sqrt inside a bounded per-carve loop.
+            /// </summary>
             private static double AxisWeightedLengthApprox(double3 value)
             {
-                double3 axis = math.abs(value);
-                return math.cmax(axis) + (axis.x + axis.y + axis.z) * 0.33f;
+                return math.length(value);
             }
         }
 

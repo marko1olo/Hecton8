@@ -176,7 +176,21 @@ namespace Hecton8.World
         public const int DefaultAuthoringSeed = 880031;
         public const float MinimumWorldExtentMeters = 30000f;
         public const float DefaultChunkSizeMeters = 512f;
-        public const uint ArtifactVersion = 11u;
+        // R99: 11 -> 12. Terrain and cave GEOMETRY changed, so the artifact identity must change with it:
+        //   R98 HydraulicErosionJob   — direction integration in world-slope units (dendritic branching),
+        //                               bilinear deposit weights fixed (removed 20-60x mass amplification),
+        //                               droplet seeding moved to the write window.
+        //   R98 ThermalWeathering     — mass-conserving border guard (removed the 1-pixel perimeter trench).
+        //   R99 AbyssalShelf          — one height function instead of two disagreeing ones; meso amplitude
+        //                               no longer ramps by LOD or by position inside the chunk.
+        //   R99 live cave SDF         — exactly wrap-periodic field, unfolded strata domain, constants
+        //                               matched to the canonical carve job.
+        //
+        // MIGRATION STATUS — OPEN. SaveManager detects the mismatch (CheckProceduralTerrainMacroMismatch)
+        // but currently only warns and continues loading: a pre-R99 save will load its player position,
+        // structures and voxel carve deltas against terrain that no longer has that shape. A real
+        // migrate-or-reject route is still required before shipping; see Docs\AgentTasks\.
+        public const uint ArtifactVersion = 12u;
 
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not

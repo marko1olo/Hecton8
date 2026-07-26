@@ -10418,36 +10418,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
     }
 
-    static bool ShouldApplyCameraFacingOverhangNoise(VoxelPipelineData data)
-    {
-        IPlayerRuntimeContext playerContext = s_playerRuntimeContext;
-        if (playerContext == null ||
-            !playerContext.IsInitialized ||
-            !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
-            (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u ||
-            !AbsoluteUniversePosition.IsFinite(in movementState.PredictedAup) ||
-            !playerContext.TryGetLookRuntimeState(out PlayerLookState lookState) ||
-            (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
-        {
-            return true;
-        }
-
-        float3 cameraForward = NormalizeFastOrDefault(
-            lookState.AimForward,
-            NormalizeFastOrDefault(movementState.CameraForward, movementState.Forward));
-        if (math.lengthsq(cameraForward) <= 0.0001f)
-            return true;
-
-        AbsoluteUniversePosition playerAup = movementState.PredictedAup;
-        AbsoluteUniversePosition chunkCenterAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStartDouble);
-        float3 cameraToChunk = AbsoluteUniversePosition.ToCameraRelativeFloat3(in chunkCenterAup, in playerAup);
-        float cameraToChunkSq = math.lengthsq(cameraToChunk);
-        if (cameraToChunkSq <= 0.0001f)
-            return true;
-
-        float facingDot = math.dot(cameraToChunk, cameraForward) / math.max(LengthApprox(cameraToChunk), 0.0001f);
-        return facingDot > OverhangCameraCullDotThreshold;
-    }
+    // R99: ShouldApplyCameraFacingOverhangNoise was removed. It made pre-extraction SDF geometry depend
+    // on camera facing, so the same volume rebuilt from a different viewing angle produced different rock
+    // and a different collider. See the call site in the density pipeline for the full rationale.
 
     static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
     {
@@ -10759,28 +10732,29 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             SelectedFeature = selectedPillarFeature
         }.Schedule(pillarDetectionHandle);
 
-        if (ShouldApplyCameraFacingOverhangNoise(data))
+        // R99 SDF-TRUTH FIX: cliff overhang noise is applied to the density field BEFORE extraction, so
+        // it is part of world geometry and collision — not presentation. It used to be gated on
+        // ShouldApplyCameraFacingOverhangNoise(data) and scaled by HomeostasisBrain.GlobalQualityWeight,
+        // which meant rebuilding the SAME volume while looking away, or after a quality change, produced
+        // DIFFERENT rock and a DIFFERENT collider. voxels.md: "GlobalQualityWeight ... must not change SDF
+        // truth, carve permission, save delta identity, collision bake requirements". A camera-direction
+        // dependency additionally makes voxel carve deltas non-reproducible from seed.
+        // The cull is not a legal optimization here — back-facing chunks must be made cheaper by not
+        // building them (LOD/residency), never by giving them different geometry.
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            if (quality > 0.05f)
-            {
-                float scaledAmplitude = CliffOverhangLateralAmplitudeMeters * math.saturate(quality + 0.2f);
-                float scaledStrength = CliffOverhangBlendStrength * math.saturate(quality * 1.5f);
-
-                densityHandle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
-                    densityField,
-                    overhangDensityField,
-                    data.PtsX,
-                    data.PtsY,
-                    data.PtsZ,
-                    data.VoxelStep,
-                    CliffOverhangSlopeThreshold,
-                    scaledAmplitude,
-                    CliffOverhangNoiseFrequency,
-                    scaledStrength,
-                    densityHandle);
-                densityField = overhangDensityField;
-            }
+            densityHandle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
+                densityField,
+                overhangDensityField,
+                data.PtsX,
+                data.PtsY,
+                data.PtsZ,
+                data.VoxelStep,
+                CliffOverhangSlopeThreshold,
+                CliffOverhangLateralAmplitudeMeters,
+                CliffOverhangNoiseFrequency,
+                CliffOverhangBlendStrength,
+                densityHandle);
+            densityField = overhangDensityField;
         }
 
         var snapTopCellsJob = new SnapDualSDFTopCellsToTerrainJob

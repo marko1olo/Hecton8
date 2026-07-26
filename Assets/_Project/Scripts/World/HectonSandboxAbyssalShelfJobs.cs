@@ -154,22 +154,20 @@ namespace Hecton8.World
             return EvaluateHeightMeters(in position, in parameters);
         }
 
+        /// <summary>
+        /// R99 HEIGHT-IDENTITY FIX: this used to be a SECOND, disagreeing height function.
+        /// It ran with <c>DetailProbeMeters = max(64, cell)</c> instead of <c>max(1, cell)</c>, skipped the
+        /// meso detail layer entirely, and truncated the 64-bit AUP coordinate to float before sampling —
+        /// so the same world point resolved to a different height depending on which entry point asked.
+        /// The determinism smoke test only exercises <see cref="EvaluateFullHeightMeters"/>, so the gate
+        /// never caught it. There is now exactly ONE height function; this is a forwarding shim.
+        /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float EvaluateSeededHeightMeters(
             double2 aupXZ,
             in HectonSandboxAbyssalShelfParams parameters)
         {
-            float highWorldY = ResolveSlopeLockedHighWorldY(in parameters);
-            WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(parameters.Seed);
-            macroParams.WaterSurfaceY = 0f;
-            macroParams.DetailProbeMeters = math.max(64f, (float)math.max(1.0, parameters.AupCellSizeMeters));
-            macroParams.RidgeHeightMeters = parameters.RidgeHeightMeters;
-            macroParams.RidgeWidthMeters = parameters.RidgeWidthMeters;
-            macroParams.TrenchDepthMeters = parameters.TrenchDepthMeters;
-            macroParams.TrenchWidthMeters = parameters.TrenchWidthMeters;
-            
-            float heightMeters = WorldMacroGeologyFields.EvaluateHeightMeters((float)aupXZ.x, (float)aupXZ.y, in macroParams, out _);
-            return math.clamp(heightMeters, parameters.LowWorldY, highWorldY);
+            return EvaluateFullHeightMeters(aupXZ.x, aupXZ.y, in parameters);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -710,9 +708,6 @@ namespace Hecton8.World
                 (z - 1) * math.max(0.001, CellSizeMeters),
                 math.max(1.0, Parameters.AupCellSizeMeters));
 
-            float absoluteX = (float)world.x;
-            float absoluteZ = (float)world.y;
-
             if (Parameters.MacroGeologyArtifactVersion == WorldMacroGeologyFields.ArtifactVersion)
             {
                 WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(Parameters.Seed);
@@ -730,7 +725,10 @@ namespace Hecton8.World
             }
             else
             {
-                float height = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(absoluteX, absoluteZ, in Parameters);
+                // R99: keep the 64-bit AUP coordinate. The float cast here quantized the noise domain
+                // into 6.25 cm steps at 1000 km and 50 cm steps at 8000 km — terrain.md requires 64-bit
+                // AUP in this file, and the matching branch above already honors it.
+                float height = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(world.x, world.y, in Parameters);
                 PresampledNodes[index] = new PresampledMacroNode
                 {
                     HeightMeters = height,
@@ -761,19 +759,6 @@ namespace Hecton8.World
         public int PresampledWidth;
         public AbsoluteUniversePosition WorldOriginAup;
         public double CellSizeMeters;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float CellSizeToDetailStrength(double cellSizeMeters, float borderDistFraction = 1f)
-        {
-            float cell = (float)cellSizeMeters;
-            float t = math.saturate((cell - 1f) / 3f);
-            float lodStrength = 1f - t * t * (3f - 2f * t);
-
-            // C1 smooth transition near chunk borders for cell > 1m prevents C0 cliff steps with neighbor LODs
-            float borderFade = math.smoothstep(0f, 0.12f, borderDistFraction);
-            float edgeFactor = math.lerp(1f, borderFade, t);
-            return lodStrength * edgeFactor;
-        }
 
         public void Execute(int index)
         {
@@ -847,22 +832,34 @@ namespace Hecton8.World
                 if (OutputBrinePool.IsCreated && index < OutputBrinePool.Length)
                     OutputBrinePool[index] = centerNode.Masks.BrinePool;
 
-                float borderDistX = math.min((float)x, (float)(Width - 1 - x)) / (float)math.max(1, Width - 1);
-                float borderDistZ = math.min((float)z, (float)(Width - 1 - z)) / (float)math.max(1, Width - 1);
-                float borderDistFraction = math.min(borderDistX, borderDistZ);
-                float detailStrength = CellSizeToDetailStrength(CellSizeMeters, borderDistFraction);
+                // R99 SEAM FIX — terrain height is now LOD-INDEPENDENT and POSITION-INDEPENDENT.
+                //
+                // The removed code scaled the meso amplitude by two factors that both violate terrain law:
+                //   1. `borderDistFraction` — distance to the nearest CHUNK EDGE. The outer 12% of every
+                //      chunk had its geology faded out, printing a lattice of flat frames across the world
+                //      (on a 128-cell chunk that is a ~15-cell dead ring per side). That is precisely the
+                //      "straight lines at chunk borders" signature terrain.md classifies as a seam bug, and
+                //      it also made height depend on WHICH CHUNK asked, so overlapping evaluations of the
+                //      same world point disagreed.
+                //   2. `lodStrength` — cell size. Height that changes with LOD guarantees cracks wherever
+                //      two LODs meet, and it made this job disagree with EvaluateFullHeightMeters (which
+                //      always uses the full 70 m budget) — the two were never reconciled because the
+                //      determinism smoke test only exercises the latter.
+                //
+                // Amplitude ramps are the wrong tool for LOD: height must be identical at every LOD and
+                // detail must be resolved by FILTERING (octave/frequency band), never by fading geology in
+                // and out by position. Budget is now the same constant the full-height path uses.
+                //
+                // PENDING VERIFICATION: distant-LOD shimmer from the finest meso octave (~1.5 m content at
+                // cell sizes >= 2 m) is now unattenuated. If capture shows shimmer, the fix is band-limited
+                // octave selection inside WorldTerrainMesoDetailFields.Evaluate — NOT a position ramp.
+                WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(Parameters.Seed);
+                mesoParams.MaxMesoDeltaMeters = 70f;
 
-                if (detailStrength > 0.001f)
-                {
-                    WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(Parameters.Seed);
-                    float baseBudget = math.lerp(45f, 70f, detailStrength);
-                    mesoParams.MaxMesoDeltaMeters = math.max(1f, baseBudget);
+                WorldTerrainMesoDetailSample mesoSample = WorldTerrainMesoDetailFields.Evaluate(
+                    in macroSample, absoluteX, absoluteZ, in mesoParams);
 
-                    WorldTerrainMesoDetailSample mesoSample = WorldTerrainMesoDetailFields.Evaluate(
-                        in macroSample, absoluteX, absoluteZ, in mesoParams);
-
-                    heightMeters += mesoSample.HeightDeltaMeters * detailStrength;
-                }
+                heightMeters += mesoSample.HeightDeltaMeters;
             }
 
             OutputHeights01[index] = HectonSandboxAbyssalShelfMath.NormalizeHeight01(
