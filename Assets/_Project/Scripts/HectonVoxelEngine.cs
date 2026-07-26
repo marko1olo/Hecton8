@@ -4156,6 +4156,48 @@ public struct VoxelBiomeSampleJob : IJobParallelFor
 //  JOB 4: Vertex Colors (v4.0 — updated for cave SDF)
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+/// <summary>
+/// R99: single owner of the voxel vertex COLOR encoding.
+///
+/// Channel contract (unchanged in meaning, fixed in continuity):
+///   R = up-facing / depositional floor weight
+///   G = wall + ceiling weight (1 - R)
+///   B = reserved, always 0 — do not repurpose without Frame Debugger proof of what the voxel material
+///       actually reads from COLOR
+///   A = ambient occlusion (also mirrored into UV1.w; curvature travels in UV2.z)
+///
+/// Both producers previously wrote `normal.y &gt; 0.6f ? red : green` — a 1-bit classifier that draws a
+/// hard material line at exactly 53.1 degrees around every cave mouth, ledge and boulder. The threshold
+/// is kept as the 50/50 crossover so the overall look is preserved; only the transition is now C1, so
+/// the material interpolates across the shoulder instead of snapping.
+///
+/// The two producers are deliberately routed through ONE function: they had already been duplicated
+/// once, and duplicated field math is exactly how the live cave SDF silently drifted away from the
+/// canonical carve job.
+/// </summary>
+internal static class VoxelSurfaceColorEncoding
+{
+    /// <summary>Lower edge of the floor/wall transition (n.y), ~67.9 degrees from vertical.</summary>
+    private const float FloorTransitionMin = 0.375f;
+    /// <summary>Width of the transition band in n.y. Centred on the historical 0.6 threshold.</summary>
+    private const float FloorTransitionRange = 0.45f;
+
+    /// <summary>Continuous up-facing weight in [0,1]. 0 = wall/ceiling, 1 = floor.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static float ResolveFloorWeight(float3 normal)
+    {
+        float t = math.saturate((normal.y - FloorTransitionMin) * (1f / FloorTransitionRange));
+        return t * t * (3f - 2f * t);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    public static Color32 Resolve(float3 normal, byte aoByte)
+    {
+        int floorByte = math.clamp((int)math.round(ResolveFloorWeight(normal) * 255f), 0, 255);
+        return new Color32((byte)floorByte, (byte)(255 - floorByte), 0, aoByte);
+    }
+}
+
 public struct VoxelColorJob : IJobParallelFor
 {
     private const float MinSafeCaveMouthColorRadius = 0.1f;
@@ -4254,9 +4296,7 @@ public struct VoxelColorJob : IJobParallelFor
             ? normals[idx]
             : new float3(0f, 1f, 0f);
         byte aoByte = (byte)math.clamp((int)math.round(localizedAo * 255f), 0, 255);
-        colors[idx] = normal.y > 0.6f
-            ? new Color32(255, 0, 0, aoByte)
-            : new Color32(0, 255, 0, aoByte);
+        colors[idx] = VoxelSurfaceColorEncoding.Resolve(normal, aoByte);
     }
 
     void WriteClearColor(int idx)
@@ -4264,6 +4304,7 @@ public struct VoxelColorJob : IJobParallelFor
         if (skirtAlphaValues.IsCreated && idx < skirtAlphaValues.Length)
             skirtAlphaValues[idx] = 0f;
 
+        // Degenerate vertex: full wall weight, unoccluded. Explicit rather than incidental.
         colors[idx] = new Color32(0, 255, 0, 255);
     }
 
@@ -4493,7 +4534,7 @@ public struct VoxelPackSurfaceVertexJob : IJobParallelFor
         {
             Position = localPosition,
             Normal = normal,
-            Color = normal.y > 0.6f ? new Color32(255, 0, 0, aoByte) : new Color32(0, 255, 0, aoByte),
+            Color = VoxelSurfaceColorEncoding.Resolve(normal, aoByte),
             BakedOcclusionUv1 = new float4(0f, 0f, 0f, ao),
             DirtyBlendUv2 = new float4(dirtyBlend, skirtAlpha, curvature, chunkBorderStitch),
             RuntimePositionWS = new float4(runtimePosition.x, runtimePosition.y, runtimePosition.z, runtimePosition.y)
