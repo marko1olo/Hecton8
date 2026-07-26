@@ -857,7 +857,13 @@ internal static class VoxelDensityPipelineFaultSlots
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+// R99: FloatMode.Deterministic (was Fast). This job is the LIVE owner of cave/terrain density, and
+// voxel save deltas are stored relative to deterministic seed state. Fast-math reassociation makes the
+// same seed produce a different field across Burst versions/targets, which silently invalidates every
+// stored delta and breaks X-Ray before/after comparison. If this regresses the frame budget, the lever
+// is voxel resolution / rebuild cadence (GlobalQualityWeight), NOT reverting determinism.
+// PENDING VERIFICATION: no profiler capture for the Fast->Deterministic cost has been taken.
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
     private const byte DeltaModeAdditive = 1 << 0;
@@ -2643,8 +2649,14 @@ public struct VoxelDensityJob : IJobParallelFor
         return sum / math.max(norm, 0.0001f);
     }
 
+    /// <summary>
+    /// R99: 3D cellular/Worley distance on a lattice that wraps every cellsPerPeriod cells per axis,
+    /// making the chamber field exactly periodic over the AUP wrap period. Per-axis frequency allows
+    /// anisotropic (vertically elongated) chambers without breaking periodicity.
+    /// Returned distance is in CELL space; callers convert with the largest axis frequency.
+    /// </summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    private static float CellularDistance(float3 p, float frequency, uint seed)
+    private static float CellularDistance(float3 p, float3 frequency, int3 cellsPerPeriod, uint seed)
     {
         float3 cellPos = p * frequency;
         int3 baseCell = new int3(
@@ -2660,7 +2672,7 @@ public struct VoxelDensityJob : IJobParallelFor
             {
                 for (int dx = -1; dx <= 1; dx++)
                 {
-                    int3 neighbor = baseCell + new int3(dx, dy, dz);
+                    int3 neighbor = WrapCell3(baseCell + new int3(dx, dy, dz), cellsPerPeriod);
                     float3 feature = Hash3ToUnitFloat3(neighbor, seed);
                     float3 diff = new float3(dx, dy, dz) + feature - frac;
                     nearestSq = math.min(nearestSq, math.lengthsq(diff));
@@ -2671,27 +2683,41 @@ public struct VoxelDensityJob : IJobParallelFor
         return math.sqrt(nearestSq);
     }
 
+    /// <summary>
+    /// R99: full 3D cell hash. The previous chain hashed each output channel from a single input axis
+    /// (hx from cell.x only), so every chamber sharing a lattice column got the same feature-point X —
+    /// an axis-aligned regularity visible as gridded chamber placement. Each channel now mixes all
+    /// three coordinates.
+    /// </summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
     private static float3 Hash3ToUnitFloat3(int3 cell, uint seed)
     {
-        uint hx = Hash((uint)cell.x ^ seed ^ 0x9E3779B9u);
-        uint hy = Hash((uint)cell.y ^ hx ^ 0x58F2C779u);
-        uint hz = Hash((uint)cell.z ^ hy ^ 0x1F2A7D8Bu);
+        uint hx = Hash(cell.x, cell.y, cell.z, seed ^ 0x9E3779B9u);
+        uint hy = Hash(cell.x, cell.y, cell.z, seed ^ 0xBB67AE85u);
+        uint hz = Hash(cell.x, cell.y, cell.z, seed ^ 0x3C6EF372u);
         return new float3(
             HashToUnitFloat(hx),
             HashToUnitFloat(hy),
             HashToUnitFloat(hz));
     }
 
+    /// <summary>R99: integer hash over 3D lattice coordinates and seed (matches the canonical carve job).</summary>
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    private static uint Hash(uint h)
+    private static uint Hash(int x, int y, int z, uint seed)
     {
-        h ^= h >> 16;
-        h *= 0x85EBCA6Bu;
-        h ^= h >> 13;
-        h *= 0xC2B2AE35u;
-        h ^= h >> 16;
-        return h;
+        unchecked
+        {
+            uint h = seed;
+            h ^= (uint)x * 0x8DA6B343u;
+            h ^= (uint)y * 0xD8163841u;
+            h ^= (uint)z * 0xCB1AB31Fu;
+            h ^= h >> 16;
+            h *= 0x7FEB352Du;
+            h ^= h >> 15;
+            h *= 0x846CA68Bu;
+            h ^= h >> 16;
+            return h;
+        }
     }
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
