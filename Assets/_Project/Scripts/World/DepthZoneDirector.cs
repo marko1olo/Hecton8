@@ -486,6 +486,16 @@ namespace Hecton8.World
                     newZone != null && newZone.isThermal);
             }
 
+            // Hysteresis Band: prevent rapid 2Hz zone-switching event storms at zone boundary
+            if (_currentZone != null && newZone != _currentZone)
+            {
+                float boundaryDist = Mathf.Abs(depth - _currentZone.minDepth);
+                if (boundaryDist < 2.5f)
+                {
+                    newZone = _currentZone;
+                }
+            }
+
             if (newZone == _currentZone)
             {
                 // Proveryaem preduprezhdenie o korpuse

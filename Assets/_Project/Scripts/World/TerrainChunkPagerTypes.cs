@@ -312,7 +312,11 @@ namespace Hecton8.World
             tuning.WorkerMockDelayMinMs = math.clamp(tuning.WorkerMockDelayMinMs, 0, 10000);
             tuning.WorkerMockDelayMaxMs = math.max(tuning.WorkerMockDelayMinMs, math.clamp(tuning.WorkerMockDelayMaxMs, 0, 30000));
             tuning.Flags &= TerrainChunkPagerConstants.RequestFlagsMask;
-            tuning.CommitByteBudgetPerFrame = math.max(4096f, FiniteOr(tuning.CommitByteBudgetPerFrame, tuning.ChunkByteCapacity));
+            // R97 FIX (commit livelock): floor was 4096 while ChunkByteCapacity can be far larger —
+            // a tuned budget in [4096, chunkBytes) made every chunk fail `bytes > byteBudget` in
+            // VisualSyncTick forever: never committed, never Stale, never evicted, slot leaked until
+            // total pager deadlock. The budget must always admit at least one full chunk.
+            tuning.CommitByteBudgetPerFrame = math.max((float)tuning.ChunkByteCapacity, FiniteOr(tuning.CommitByteBudgetPerFrame, tuning.ChunkByteCapacity));
             tuning.EffectiveRingRadius = ResolveContinuousRingRadius(tuning.GlobalQualityWeight, tuning.LatencyEwmaMs, in tuning);
             tuning._pad0 = 0u;
             tuning._pad1 = 0u;
@@ -469,6 +473,10 @@ namespace Hecton8.World
                     if (staleCount < StaleSlots.Length)
                         StaleSlots[staleCount++] = slot;
                 }
+                else if (stale && distSqD <= evictMeters * evictMeters)
+                {
+                    meta.StateFlags &= ~TerrainChunkStateFlags.Stale;
+                }
 
                 Metadata[slot] = meta;
             }
@@ -516,8 +524,13 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 ChunkMetadataDTO meta = metadata[i];
+                // R97 FIX: MissingFile added to the occupancy mask. Without it, the residency job
+                // re-emitted a load request for every failed sector EVERY evaluation, which the
+                // dispatch side (whose mask does include MissingFile) rejected every frame —
+                // steady-state busywork per failed sector. Failed slots are resident until the
+                // retry/backoff lane (TerrainChunkPagerRuntime.VisualSyncTick) releases them.
                 if (meta.SectorHash == hash &&
-                    (meta.StateFlags & (TerrainChunkStateFlags.Active | TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.ReadyToCommit)) != 0u)
+                    (meta.StateFlags & (TerrainChunkStateFlags.Active | TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.ReadyToCommit | TerrainChunkStateFlags.MissingFile)) != 0u)
                 {
                     return i;
                 }

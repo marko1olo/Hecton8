@@ -181,59 +181,60 @@ namespace Hecton8.World
         // BUILD SENTINEL: proves which compiled version the atlas actually ran. If the atlas report
         // does NOT print this exact string, Unity executed a STALE assembly (cache/no reload), not
         // this source. Bump the suffix every edit round.
-        public static string BuildSentinel => "SENTINEL_R49_2026-07-25_ISLAND_UPLIFT_AND_COASTS";
+        public static string BuildSentinel => "SENTINEL_R94_2026-07-26_PURE_GPU_NO_CPU_FAKES";
 
+#if UNITY_EDITOR
         // R17 STAGE-LOCALIZED FIXES:
         public const bool DiagRidgedAsFbmMountain = true;
         public const bool DiagFoldNonPeriodic     = true;
         public const bool DiagStrataNonPeriodic   = false; // R39: Real elevation-based strata snapping
         public const bool DiagSoftMaskEdges       = true;
 
-        // R14: ALL diagnostic isolation OFF. R13 raw-probe proved the hatching METRIC is degenerate at
-        // sub-period scales (bare-noise SMOOTH-RAMP tile at 200m scored hatch 8.18 with ZERO visible
-        // stripes — a uniform gradient reads as max anisotropy). That invalidates the 1km/200m numeric
-        // FAILs we chased for 13 rounds, including the "flat-tile zebra" that drove R13. So R14 abandons
-        // the metric and evaluates the TRUE FULL SHIPPING TERRAIN by EYE only. Every isolation flag below
-        // is false → the atlas renders exactly what the Director sees in-game.
         public const bool DiagStrataContourOff = false; // R14: real terrain (was OFF R8-R13 for isolation)
         public const bool DiagPlateSeamOff = false;     // R21: PLATE CLEARED — not the primary source
         public const bool DiagShelfBreakOff = false;    // R22: SHELFBREAK CLEARED — not the primary source
-        // R9 ISOLATION: R8 proved strata+plate are NOT the P2-P5 dactyloscopy source (rings remain with
-        // both OFF; hatching P2 200m=2.43, P3 200m=4.00, P4 200m=2.31, P5 200m=1.91 — all >1.8 visible).
-        // Per-point dominant mask splits the suspects spatially: P2=Trench49%, P3/P5=Volcano, P4=Fault18%.
-        // RidgedMultifractal01 still uses the sharp n=1-abs(snoise);n=n*n crest = C1 corner = crease grain;
-        // volcano cone=exp(-dist*4.2) is RADIAL = concentric rings. These flags zero each height write so
-        // one atlas run isolates all three at once. If a point's hatching drops <1.8 → that term is its root.
+
+        public const int DiagRawProbe = 0; // R14: OFF — probe done its job.
+
         public const bool DiagTrenchOff  = false; // R11: restored (exonerated in R9)
         public const bool DiagVolcanoOff = false; // R11: restored (exonerated in R9)
         public const bool DiagFaultOff   = false; // R11: restored (exonerated in R9)
-        public const bool DiagMesoFractureOff = false; // R11: restored (exonerated in R10 — its removal made zebra WORSE)
+        public const bool DiagMesoFractureOff = false; // R11: restored
         public const bool DiagTalusOff        = false; // R11: restored
         public const bool DiagGeoNoiseOff     = false; // R11: restored
-        // R11 DECISIVE TEST: the ridged/eroded noise weight-feedback (weight=saturate(n*2)) kills higher
-        // octaves wherever octave-0 is weak → the field COLLAPSES to single-frequency octave-0 = REGULAR
-        // parallel ridges at octave-0's FIXED per-seed angle = the fingerprint + the long crest "seam"
-        // lines. R10 proved removing HF dither made it WORSE (naked octave-0 showed through). This flag
-        // makes RidgedMultifractal01 + ErodedRidge01 BROADBAND (weight stays 1, all octaves contribute).
-        // TWO-PASS PROTOCOL (RULE 1, one variable): build once with false (R11_BASE), flip to true
-        // (R11_BROAD), rebuild. Director compares hillshade+height between the two image sets ONLY.
-        public const bool DiagNoiseBroadband = false; // R11 EXONERATED weight-feedback: weight=1 removed ZERO seam/zebra pixels.
-        // R12 TWO ORTHOGONAL TESTS (each isolates one bug definitively, one atlas run):
-        //  A) DiagRidgedAsFbm: in RidgedMultifractal01 + ErodedRidge01, replace the RIDGED transform
-        //     n=1-|snoise| (which makes a SHARP CREST LINE ~1px on hillshade = the seam) with plain fBm
-        //     n=snoise*0.5+0.5 (NO crest). If the 1px hairline seams VANISH → ridged crest is the seam.
-        //  B) DiagFoldsDunesOff: zero the B5 fold sin() corrugation (line ~708) and B8 dune sin() (~841).
-        //     sin(dot(pos,axis)) = REGULAR PARALLEL world-locked waves = the zebra. If zebra VANISHES on
-        //     continental tiles (P2/P3) → fold corrugation is the dactyloscopy.
-        public const bool DiagRidgedAsFbm  = false; // R16: OFF — stage-dump shows the REAL pipeline per stage.
-        public const bool DiagFoldsDunesOff = false; // R16: OFF — real pipeline.
+
+        public const bool DiagNoiseBroadband = false;
+        public const bool DiagRidgedAsFbm  = false;
+        public const bool DiagFoldsDunesOff = false;
+#else
+        public const bool DiagRidgedAsFbmMountain = true;
+        public const bool DiagFoldNonPeriodic     = true;
+        public const bool DiagStrataNonPeriodic   = false;
+        public const bool DiagSoftMaskEdges       = true;
+
+        public const bool DiagStrataContourOff = false;
+        public const bool DiagPlateSeamOff = false;
+        public const bool DiagShelfBreakOff = false;
+
+        public const int DiagRawProbe = 0;
+
+        public const bool DiagTrenchOff  = false;
+        public const bool DiagVolcanoOff = false;
+        public const bool DiagFaultOff   = false;
+        public const bool DiagMesoFractureOff = false;
+        public const bool DiagTalusOff        = false;
+        public const bool DiagGeoNoiseOff     = false;
+
+        public const bool DiagNoiseBroadband = false;
+        public const bool DiagRidgedAsFbm  = false;
+        public const bool DiagFoldsDunesOff = false;
+#endif
         // R13 RAW PRIMITIVE PROBE. Pattern across R8-R12: removing any FEATURE makes zebra/seam WORSE or
         // unchanged, and zebra appears even on FLAT tiles (P5 1km slope 0.1%, hatch 4.33). Conclusion: the
         // artifact is NOT any added feature — it is intrinsic to the FOUNDATION every term shares:
         // noise.snoise and/or the domain warp. We never tested the bare primitive in 5 rounds. These
         // early-return probes bypass ALL geology and output pure noise so we measure where striping is born:
         //   0 = off (normal pipeline)
-        public const int DiagRawProbe = 0; // R14: OFF — probe done its job (localized the metric bug, not the primitive).
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint CombineWorldSeed(uint authoringSeed, int runtimeWorldSeed)
@@ -261,7 +262,7 @@ namespace Hecton8.World
                    math.isfinite(sanitized.WaterSurfaceY);
         }
 
-        public static WorldMacroGeologySample Evaluate(float absoluteX, float absoluteZ, in WorldMacroGeologyParams parameters)
+        public static WorldMacroGeologySample Evaluate(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters)
         {
             if (!TrySanitizeParams(in parameters, out WorldMacroGeologyParams p))
                 return default;
@@ -280,8 +281,8 @@ namespace Hecton8.World
         }
 
         public static WorldMacroGeologySample EvaluateWithCachedDifferentials(
-            float absoluteX,
-            float absoluteZ,
+            double absoluteX,
+            double absoluteZ,
             in WorldMacroGeologyParams parameters,
             float heightMeters,
             float slope01,
@@ -307,14 +308,14 @@ namespace Hecton8.World
         }
 
         public static WorldMacroGeologySample EvaluateSinglePass(
-            float absoluteX,
-            float absoluteZ,
+            double absoluteX,
+            double absoluteZ,
             in WorldMacroGeologyParams parameters)
         {
             if (!TrySanitizeParams(in parameters, out WorldMacroGeologyParams p))
                 return default;
 
-            float probe = math.max(1f, p.DetailProbeMeters);
+            double probe = math.max(1.0, (double)p.DetailProbeMeters);
             float heightC = EvaluateHeightMeters(absoluteX, absoluteZ, in p, out MacroMasks masks);
 
             float west    = EvaluateHeightMeters(absoluteX - probe, absoluteZ, in p, out _);
@@ -322,7 +323,7 @@ namespace Hecton8.World
             float south   = EvaluateHeightMeters(absoluteX, absoluteZ - probe, in p, out _);
             float north   = EvaluateHeightMeters(absoluteX, absoluteZ + probe, in p, out _);
 
-            float safeProbe = math.max(0.001f, probe);
+            float safeProbe = math.max(0.001f, (float)probe);
             float dx = (east - west) / (safeProbe * 2f);
             float dz = (north - south) / (safeProbe * 2f);
             float slope = FastSqrtPositive(dx * dx + dz * dz);
@@ -341,8 +342,8 @@ namespace Hecton8.World
         }
 
         public static WorldMacroGeologySample BuildSample(
-            float absoluteX,
-            float absoluteZ,
+            double absoluteX,
+            double absoluteZ,
             in WorldMacroGeologyParams p,
             float heightMeters,
             float slope01,
@@ -353,7 +354,7 @@ namespace Hecton8.World
         {
             float basinFlow = math.saturate(masks.Basin * 0.42f + masks.ShelfBreak * 0.24f + masks.Canyon * 0.36f + (1f - slope01) * 0.12f);
             float faultFlow = math.saturate(masks.Fault * 0.36f + masks.Trench * 0.32f + masks.PlateEdge * 0.24f);
-            float erosionVeins = RidgedMultifractal01(new float2(absoluteX, absoluteZ) * 0.00042f + new float2(13.1f, -8.4f), p.Seed ^ 0xA511E9B3u, 4);
+            float erosionVeins = RidgedMultifractal01(new float2((float)absoluteX, (float)absoluteZ) * 0.00042f + new float2(13.1f, -8.4f), p.Seed ^ 0xA511E9B3u, 4);
             float erosionFlow = math.saturate(basinFlow + faultFlow + erosionVeins * masks.Canyon * 0.65f);
             float sediment = math.saturate((1f - slope01) * 0.50f + negativeCurvature01 * 0.28f + masks.Basin * 0.36f + masks.Shelf * 0.14f + masks.Canyon * 0.18f - masks.Ridge * 0.30f - masks.HardRock * 0.34f - masks.Trench * 0.12f);
             float seep = math.saturate(masks.Fault * 0.46f + masks.PlateEdge * 0.22f + masks.Basin * 0.20f + masks.Trench * 0.20f);
@@ -390,7 +391,7 @@ namespace Hecton8.World
             return sample;
         }
 
-        public static float EvaluateHeightMeters(float absoluteX, float absoluteZ, in WorldMacroGeologyParams parameters)
+        public static float EvaluateHeightMeters(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters)
         {
             if (!TrySanitizeParams(in parameters, out WorldMacroGeologyParams p))
                 return 0f;
@@ -398,9 +399,9 @@ namespace Hecton8.World
             return EvaluateHeightMeters(absoluteX, absoluteZ, in p, out _);
         }
 
-        public static int2 ResolveChunkCoord(float absoluteX, float absoluteZ, in WorldMacroGeologyParams parameters)
+        public static int2 ResolveChunkCoord(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters)
         {
-            float chunkSize = math.max(128f, parameters.ChunkSizeMeters);
+            double chunkSize = math.max(128.0, (double)parameters.ChunkSizeMeters);
             return new int2((int)math.floor(absoluteX / chunkSize), (int)math.floor(absoluteZ / chunkSize));
         }
 
@@ -456,7 +457,7 @@ namespace Hecton8.World
             MixHash(ref hash, unchecked((uint)runtimeSeed));
             MixHash(ref hash, unchecked((uint)worldGenerationVersionId));
             MixHash(ref hash, macroArtifactVersion);
-            MixHash(ref hash, math.asuint(chunkSizeMeters));
+            MixHash(ref hash, math.asuint(math.round(chunkSizeMeters)));
             MixHash(ref hash, unchecked((uint)chunkMinX));
             MixHash(ref hash, unchecked((uint)chunkMinZ));
             MixHash(ref hash, unchecked((uint)chunkMaxX));
@@ -543,8 +544,7 @@ namespace Hecton8.World
                     if (dist < f1) { f2 = f1; f1 = dist; bestCell = cell; }
                     else if (dist < f2) { f2 = dist; }
 
-                    // R43 STEP 1: Multiplied by smoothstep to guarantee C1-continuous fade to absolute ZERO before distance = 1.5
-                    // This mathematically eliminates 3x3 cell-grid clipping 1-pixel seam lines when cells drop out of the loop.
+                    if (dist > 1.5f) continue;
                     float w = math.exp(-provHardness * dist) * math.smoothstep(1.5f, 1.0f, dist);
                     ProvinceRecipe r = ProvinceRecipe.GetRecipe(SelectGeologicalType(cell, continentality, plateEdgeMask, seed));
                     aCr += r.Craters * w; aRi += r.Rivers * w; aLa += r.Lakes * w; aSt += r.Strata * w;
@@ -583,7 +583,7 @@ namespace Hecton8.World
             return 4;                     // RIFT_VALLEY
         }
 
-        public static float EvaluateHeightMeters(float absoluteX, float absoluteZ, in WorldMacroGeologyParams parameters, out MacroMasks masks)
+        public static float EvaluateHeightMeters(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters, out MacroMasks masks)
         {
             return EvaluateHeightMeters(absoluteX, absoluteZ, in parameters, out masks, 0);
         }
@@ -593,36 +593,50 @@ namespace Hecton8.World
         // rings / hairline. 0 = full pipeline (normal). Non-zero early-returns raw (WaterSurfaceY - depth).
         //   1=base(shelf/abyss)  2=+continentRelief(mtn/foothill/plateau)  3=+ridges  4=+trench/fault/basin
         //   5=+fold  6=+volcano/crater/river/lake/mesa/dune  7=+strata  8=+mesoFracture/talus (=full)
-        public static float EvaluateHeightMeters(float absoluteX, float absoluteZ, in WorldMacroGeologyParams parameters, out MacroMasks masks, int stageDump)
+        public static float EvaluateHeightMeters(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters, out MacroMasks masks, int stageDump)
         {
-            float extent = math.max(MinimumWorldExtentMeters, parameters.WorldExtentMeters);
-            float2 pos = new float2(absoluteX, absoluteZ);
-            float2 norm = pos / extent;
-            uint seed = parameters.Seed;
+            // Use double arithmetic for macro scale and bounds
+            double extentD = math.max((double)MinimumWorldExtentMeters, parameters.WorldExtentMeters);
+            double2 posD = new double2(absoluteX, absoluteZ);
+            double2 normD = posD / extentD; 
+            uint seed = parameters.Seed; 
 
-            // TIER 1: low-frequency tectonic domain warp and F1/F2 cellular plate solve.
+            // Cast to float ONLY for the noise evaluation (which takes float2)
+            float2 normF = (float2)normD;
+            float2 pos = (float2)posD;
+            float2 norm = normF;
+
+            // TIER 1: tectonic warp
             float2 tectonicWarp = new float2(
-                FractalSimplexNoise01(norm * 0.62f + new float2(11.7f, -3.9f), seed ^ 0xB5297A4Du) * 2f - 1f,
-                FractalSimplexNoise01(norm * 0.58f + new float2(-2.1f, 8.6f), seed ^ 0x4CF5AD43u) * 2f - 1f) * 4500f;
-            float2 mesoWarp = new float2(
-                FractalSimplexNoise01(norm * 7.5f + new float2(-17.2f, 29.3f), seed ^ 0x68E31DA4u) * 2f - 1f,
-                FractalSimplexNoise01(norm * 8.1f + new float2(23.5f, -19.7f), seed ^ 0x8A1F3C4Du) * 2f - 1f) * 120f;
-            float2 warpedPos = pos + tectonicWarp + mesoWarp;
-            float2 warpedNorm = warpedPos / extent;
+                FractalSimplexNoise01(normF * 0.62f + new float2(11.7f, -3.9f), seed ^ 0xB5297A4Du) * 2f - 1f,
+                FractalSimplexNoise01(normF * 0.58f + new float2(-2.1f, 8.6f), seed ^ 0x4CF5AD43u) * 2f - 1f) * 4500f;
 
+            float2 mesoWarp = new float2(
+                FractalSimplexNoise01(normF * 7.5f + new float2(-17.2f, 29.3f), seed ^ 0x68E31DA4u) * 2f - 1f,
+                FractalSimplexNoise01(normF * 8.1f + new float2(23.5f, -19.7f), seed ^ 0x8A1F3C4Du) * 2f - 1f) * 120f;
+
+            // ADD the warp to the pristine double-precision world position
+            double2 warpedPosD = posD + (double2)tectonicWarp + (double2)mesoWarp;
+
+            // Now safely cast to local floats for the rest of the geological features
+            float2 warpedPos = (float2)warpedPosD;
+            float2 warpedNorm = (float2)(warpedPosD / extentD);
+
+#if UNITY_EDITOR
             // R13 RAW PRIMITIVE PROBE: bypass all geology, emit pure noise to locate the striping source.
             if (DiagRawProbe != 0)
             {
                 masks = default;
                 float raw;
                 if (DiagRawProbe == 1)
-                    raw = noise.snoise(pos * 0.0009f + new float2(7.3f, -4.1f));           // bare simplex, UNWARPED
+                    raw = noise.snoise(((float2)posD) * 0.0009f + new float2(7.3f, -4.1f));   // bare simplex, UNWARPED
                 else if (DiagRawProbe == 2)
                     raw = noise.snoise(warpedPos * 0.0009f + new float2(7.3f, -4.1f));      // bare simplex, WARPED
                 else
-                    raw = FractalSimplexNoise01(pos * 0.0009f, seed, 5) * 2f - 1f;          // 5-octave, UNWARPED
+                    raw = FractalSimplexNoise01(((float2)posD) * 0.0009f, seed, 5) * 2f - 1f;  // 5-octave, UNWARPED
                 return raw * 400f;
             }
+#endif
 
             float2 plateSample = warpedPos / 12000f;
             int2 plateBase = (int2)math.floor(plateSample);
@@ -790,9 +804,10 @@ namespace Hecton8.World
             float oceanicTrenchGate = (1f - continentality);
             depth += trenchMask * parameters.TrenchDepthMeters * (0.78f + plateEdgeMask * 0.58f) * oceanicTrenchGate;
 
-            // R48 ADDENDUM: Subduction Crease (Terrifying deep V-cut in the center of the trench)
-            float trenchCrease = math.pow(trenchMask, 4.0f); // Narrows the effect to the absolute center
-            depth += trenchCrease * 600f * oceanicTrenchGate; // Extra 600m drop
+            // THREAT 2 (Auditor #7): Subduction Crease Asymmetry and Depth Reduction
+            float creaseWarp = FractalSimplexNoise01(warpedPos * 0.005f, seed ^ 0x11223344u, 2) * 0.2f;
+            float trenchCrease = math.pow(math.saturate(trenchMask + creaseWarp), 6.0f);
+            depth += trenchCrease * 250f * oceanicTrenchGate;
 
             float faultNoise = RidgedMultifractal01(warpedNorm * 12.0f + new float2(-1.9f, 7.1f), seed ^ 0xCA97D1F3u, 3);
             float faultMask;
@@ -831,7 +846,7 @@ namespace Hecton8.World
             float slopeProxy = math.saturate(shelfBreakMask * 0.82f + ridgeMask * 0.72f + faultMask * 0.65f + plateEdgeMask * 0.40f + trueMountainSlope);
 
             // FIX: Add low-frequency spatial noise to feather the transition edges.
-            float maskFeather = FractalSimplexNoise01(warpedPos * 0.002f, seed ^ 0xFEA78E12u, 2) * 0.08f - 0.04f;
+            float maskFeather = DoubleFractalSimplexNoise01(warpedPosD * 0.002, seed ^ 0xFEA78E12u, 2) * 0.08f - 0.04f;
 
             // Mute high-frequency noise on flat sediment areas, with a natural edge.
             float sedimentTranquilityMask = 1f - math.smoothstep(0.05f + maskFeather, 0.15f + maskFeather, slopeProxy);
@@ -846,42 +861,44 @@ namespace Hecton8.World
 
             // --- B5: FOLD BELTS (Corrugated parallel ridges) ---
             float foldMask = 0f;
-            if (recipe.Folds > 0.01f)
+            float foldFade = math.smoothstep(0.01f, 0.03f, recipe.Folds);
+            if (foldFade > 0.001f)
             {
-                float foldAngle = FractalSimplexNoise01(warpedNorm * 1.2f, seed ^ 0x3B1A2C4Du) * 3.14159f;
+                float foldAngle = DoubleFractalSimplexNoise01((double2)warpedNorm * 1.2, seed ^ 0x3B1A2C4Du, 1) * 3.14159f;
                 float2 foldAxis = new float2(math.cos(foldAngle), math.sin(foldAngle));
 
                 if (DiagFoldNonPeriodic)
                 {
                     // R40 FIX: Use C2-smooth cosine wave instead of linear foldPhase with smoothstep(0.2, 0.8) kinks
                     // which injected 1-pixel thin derivative curves into the slope/hillshade maps on Stage 5.
-                    float foldPhase = FractalSimplexNoise01(
-                        warpedPos * 0.0012f + foldAxis * 3.7f,
+                    float foldPhase = DoubleFractalSimplexNoise01(
+                        warpedPosD * 0.0012 + (double2)(foldAxis * 3.7f),
                         seed ^ 0xF01D5EEDu, 3);
                     float foldWave = math.cos(foldPhase * 6.2831853f) * 0.5f + 0.5f;
                     float foldAsymmetry = math.pow(foldWave, 1.6f) * (0.3f + recipe.Folds * 0.7f);
-                    foldMask = foldAsymmetry * recipe.Folds * continentality;
+                    foldMask = foldAsymmetry * recipe.Folds * continentality * foldFade;
                     if (!DiagFoldsDunesOff)
-                        depth -= (foldAsymmetry - 0.5f) * 240f * continentality * (1f - abyssPlainMask);
+                        depth -= (foldAsymmetry - 0.5f) * 240f * continentality * (1f - abyssPlainMask) * foldFade;
                 }
                 else
                 {
                     float foldCoord = math.dot(warpedPos, foldAxis) * 0.0012f;
-                    float foldPattern = math.sin(foldCoord + FractalSimplexNoise01(warpedPos * 0.0003f, seed ^ 0x91F2E3D4u) * 2.5f);
+                    float foldPattern = math.sin(foldCoord + DoubleFractalSimplexNoise01(warpedPosD * 0.0003, seed ^ 0x91F2E3D4u, 1) * 2.5f);
                     float foldAsymmetry = math.pow(math.saturate(foldPattern * 0.5f + 0.5f), 1.6f);
-                    foldMask = foldAsymmetry * recipe.Folds * continentality;
+                    foldMask = foldAsymmetry * recipe.Folds * continentality * foldFade;
                     if (!DiagFoldsDunesOff)
-                        depth -= foldAsymmetry * 240f * recipe.Folds * continentality;
+                        depth -= (foldAsymmetry - 0.5f) * 240f * continentality * foldFade;
                 }
             }
 
             // --- B6: VOLCANIC FIELDS (Cones, calderas, guyots) ---
             float volcanoMask = 0f;
-            if (recipe.Volcanic > 0.01f)
+            float volcFade = math.smoothstep(0.01f, 0.03f, recipe.Volcanic);
+            if (volcFade > 0.001f)
             {
-                float2 volcSample = warpedPos * 0.00018f;
-                int2 volcCell = (int2)math.floor(volcSample);
-                float2 volcFrac = volcSample - volcCell;
+                double2 volcSampleD = warpedPosD * 0.00018;
+                int2 volcCell = (int2)math.floor((float2)volcSampleD);
+                float2 volcFrac = (float2)volcSampleD - volcCell;
 
                 float coneSum = 0f;
                 float calderaSum = 0f;
@@ -895,14 +912,14 @@ namespace Hecton8.World
                         float dist = math.length(new float2(vx, vy) + hash - volcFrac);
                         
                         // Organic radial domain warp
-                        float volcWarp = FractalSimplexNoise01(warpedPos * 0.0008f + hash, seed ^ 0x6B1A2C3Du, 2) * 0.4f - 0.2f;
+                        float volcWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.0008 + (double2)hash, seed ^ 0x6B1A2C3Du, 2) * 0.4f - 0.2f;
                         
                         // R46 STEP 3: Breached calderas (asymmetric crater walls allow submarine entry)
-                        float breachNoise = FractalSimplexNoise01(warpedPos * 0.002f + hash * 100f, seed ^ 0xBEEF1234u, 2);
+                        float breachNoise = DoubleFractalSimplexNoise01(warpedPosD * 0.002 + (double2)(hash * 100f), seed ^ 0xBEEF1234u, 2);
                         float breach = math.smoothstep(0.3f, 0.6f, breachNoise); // 0 on breached side, 1 on intact side
                         
-                        // R48 ADDENDUM: Radial gullies to erode the perfect cone
-                        float gullyNoise = RidgedMultifractal01(warpedPos * 0.015f + hash * 50f, seed ^ 0x99887766u, 3);
+                        // R65 FIX: Use lower-frequency C2-smooth Simplex noise for volcano gullies instead of sharp RidgedMultifractal creases
+                        float gullyNoise = DoubleFractalSimplexNoise01(warpedPosD * 0.003 + (double2)(hash * 50f), seed ^ 0x99887766u, 3);
                         float gullyErosion = gullyNoise * math.smoothstep(0.0f, 0.4f, dist) * math.smoothstep(1.2f, 0.6f, dist);
                         
                         // SUM the exponents to create smooth, C-infinity metaball blending between adjacent volcanoes.
@@ -913,17 +930,18 @@ namespace Hecton8.World
                         calderaSum += caldera;
                     }
                 }
-                volcanoMask = math.saturate(coneSum - calderaSum) * recipe.Volcanic;
+                volcanoMask = math.saturate(coneSum - calderaSum) * recipe.Volcanic * volcFade;
                 if (!DiagVolcanoOff)
-                    depth -= (coneSum * 380f - calderaSum * 120f) * recipe.Volcanic;
+                    depth -= (coneSum * 380f - calderaSum * 120f) * recipe.Volcanic * volcFade;
             }
 
             // --- B1: CRATERS (Impact + Collapse) ---
             float craterMask = 0f;
-            if (recipe.Craters > 0.01f)
+            float craterFade = math.smoothstep(0.01f, 0.03f, recipe.Craters);
+            if (craterFade > 0.001f)
             {
-                float craterGridSize = 2500f;
-                int2 craterCell = new int2((int)math.floor(warpedPos.x / craterGridSize), (int)math.floor(warpedPos.y / craterGridSize));
+                double craterGridSizeD = 2500.0;
+                int2 craterCell = new int2((int)math.floor(warpedPosD.x / craterGridSizeD), (int)math.floor(warpedPosD.y / craterGridSizeD));
                 float craterDepthDelta = 0f;
 
                 for (int cdz = -1; cdz <= 1; cdz++)
@@ -935,19 +953,20 @@ namespace Hecton8.World
                         if (HashToUnitFloat(h ^ 0x12345678u) > (0.12f + recipe.Craters * 0.45f))
                             continue;
 
-                        float cx = (neighbor.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSize;
-                        float cz = (neighbor.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSize;
+                        double cx = (neighbor.x + HashToUnitFloat(h ^ 0x87654321u)) * craterGridSizeD;
+                        double cz = (neighbor.y + HashToUnitFloat(h ^ 0xA1B2C3D4u)) * craterGridSizeD;
                         float radius = math.lerp(120f, 950f, math.pow(HashToUnitFloat(h ^ 0x1A2B3C4Du), 2.2f));
-                        float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
+                        float dist = (float)math.length(new double2(warpedPosD.x - cx, warpedPosD.y - cz));
                         if (dist > radius * 1.8f)
                             continue;
 
                         float normalizedDist = dist / math.max(1f, radius);
                         float bowl = math.pow(1f - math.smoothstep(0f, 1f, normalizedDist), 1.55f);
                         
-                        // C2-continuous bell curve using cosine to eliminate C1-discontinuity red slope arc
+                        // C2-continuous bell curve without periodic cosine ripple rings
                         float rimDist = math.saturate(math.abs(normalizedDist - 1f) * 2.5f);
-                        float rim = math.saturate(0.5f + 0.5f * math.cos(rimDist * 3.14159f)) * math.smoothstep(1.0f, 0.95f, rimDist);
+                        float rimB = math.saturate(1f - rimDist);
+                        float rim = (rimB * rimB * (3f - 2f * rimB)) * math.smoothstep(1.0f, 0.95f, rimDist);
                         float peak = math.smoothstep(0f, 1f, 1f - math.smoothstep(0f, radius * 0.16f, dist)) * math.smoothstep(450f, 850f, radius) * 0.35f;
 
                         craterDepthDelta += bowl * radius * 0.45f * recipe.Craters;
@@ -958,8 +977,8 @@ namespace Hecton8.World
                 }
 
                 // R46 STEP 4: Micro-craters (30m to 180m radius) for dense impact stratification
-                float microGrid = 600f;
-                int2 mCell = new int2((int)math.floor(warpedPos.x / microGrid), (int)math.floor(warpedPos.y / microGrid));
+                double microGridD = 600.0;
+                int2 mCell = new int2((int)math.floor(warpedPosD.x / microGridD), (int)math.floor(warpedPosD.y / microGridD));
                 for (int cdz = -1; cdz <= 1; cdz++)
                 {
                     for (int cdx = -1; cdx <= 1; cdx++)
@@ -968,16 +987,17 @@ namespace Hecton8.World
                         uint h = Hash(neighbor.x, neighbor.y, unchecked((int)(seed ^ 0x11223344u)));
                         if (HashToUnitFloat(h ^ 0x55667788u) > (0.15f + recipe.Craters * 0.5f)) continue;
                         
-                        float cx = (neighbor.x + HashToUnitFloat(h ^ 0x99AABBCCu)) * microGrid;
-                        float cz = (neighbor.y + HashToUnitFloat(h ^ 0xDDEEFF00u)) * microGrid;
+                        double cx = (neighbor.x + HashToUnitFloat(h ^ 0x99AABBCCu)) * microGridD;
+                        double cz = (neighbor.y + HashToUnitFloat(h ^ 0xDDEEFF00u)) * microGridD;
                         float radius = math.lerp(30f, 180f, math.pow(HashToUnitFloat(h ^ 0x11335577u), 2f));
-                        float dist = math.length(new float2(warpedPos.x - cx, warpedPos.y - cz));
+                        float dist = (float)math.length(new double2(warpedPosD.x - cx, warpedPosD.y - cz));
                         if (dist > radius * 1.8f) continue;
                         
                         float nDist = dist / math.max(1f, radius);
                         float bowl = math.pow(1f - math.smoothstep(0f, 1f, nDist), 1.5f);
                         float rDist = math.saturate(math.abs(nDist - 1f) * 3f);
-                        float rim = math.saturate(0.5f + 0.5f * math.cos(rDist * 3.14159f)) * math.smoothstep(1.0f, 0.95f, rDist);
+                        float rB = math.saturate(1f - rDist);
+                        float rim = (rB * rB * (3f - 2f * rB)) * math.smoothstep(1.0f, 0.95f, rDist);
                         
                         craterDepthDelta += bowl * radius * 0.45f * recipe.Craters;
                         craterDepthDelta -= rim * radius * 0.25f * recipe.Craters;
@@ -985,37 +1005,38 @@ namespace Hecton8.World
                     }
                 }
 
-                depth += craterDepthDelta;
+                craterMask *= craterFade;
+                depth += craterDepthDelta * craterFade;
             }
 
             // --- B2: RIVERS & DENDRITIC CHANNELS (Asymmetric & Rugged Inland Canyons) ---
-            float riverRegion = FractalSimplexNoise01(warpedPos * 0.00015f + new float2(-19.3f, 44.1f), seed ^ 0x1A2B3C4Du, 3);
+            float riverRegion = DoubleFractalSimplexNoise01(warpedPosD * 0.00015 + new double2(-19.3, 44.1), seed ^ 0x1A2B3C4Du, 3);
             float riverGate = math.smoothstep(0.55f, 0.78f, riverRegion) * continentality * recipe.Rivers;
             float riverFade = math.smoothstep(0.0f, 0.05f, riverGate);
 
             float riverMask = 0f;
             if (riverFade > 0.001f)
             {
-                // Domain warp in WORLD SPACE (meters), then scale together with base frequency (NO ALIASING!)
-                float2 canyonWarp = new float2(
-                    FractalSimplexNoise01(warpedPos * 0.0005f + new float2(12.1f, -5.5f), seed ^ 0x7E1A2B3Cu) * 2f - 1f,
-                    FractalSimplexNoise01(warpedPos * 0.0005f + new float2(-9.2f, 18.4f), seed ^ 0x3C4D5E6Fu) * 2f - 1f) * 1200f;
+                // Domain warp in WORLD SPACE (meters) calculated in 64-bit double precision!
+                double2 canyonWarpD = new double2(
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0005 + new double2(12.1, -5.5), seed ^ 0x7E1A2B3Cu, 1) * 2.0 - 1.0,
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0005 + new double2(-9.2, 18.4), seed ^ 0x3C4D5E6Fu, 1) * 2.0 - 1.0) * 1200.0;
                 
-                float2 warpedRiverPos = (warpedPos + canyonWarp) * 0.00025f;
+                double2 warpedRiverPosD = (warpedPosD + canyonWarpD) * 0.00025;
                 
-                // Base canyon channel
-                float dendritic = RidgedMultifractal01(warpedRiverPos, seed ^ 0x6DCD4A37u, 5);
+                // Base canyon channel in 64-bit double precision!
+                float dendritic = DoubleRidgedMultifractal01(warpedRiverPosD, seed ^ 0x6DCD4A37u, 5);
                 
                 // Ragged outer rim
-                float rimNoise = FractalSimplexNoise01(warpedPos * 0.003f, seed ^ 0xCAFE1234u, 3);
+                float rimNoise = DoubleFractalSimplexNoise01(warpedPosD * 0.003, seed ^ 0xCAFE1234u, 3);
                 float canyonRim = math.smoothstep(0.55f, 0.88f, dendritic) * (0.85f + rimNoise * 0.15f);
                 
-                // Asymmetric bank slope: 600m world-space offset for bank asymmetry
-                float dendriticOffset = RidgedMultifractal01((warpedPos + canyonWarp + new float2(600f, -600f)) * 0.00025f, seed ^ 0x6DCD4A37u, 5);
+                // Asymmetric bank slope: 600m world-space offset for bank asymmetry in 64-bit precision!
+                float dendriticOffset = DoubleRidgedMultifractal01((warpedPosD + canyonWarpD + new double2(600.0, -600.0)) * 0.00025, seed ^ 0x6DCD4A37u, 5);
                 float bankAsymmetry = math.smoothstep(0.4f, 0.9f, dendriticOffset);
                 
                 // Gentle floor undulation (~500m features, no pixel carpet)
-                float floorRoughness = BillowNoise01(warpedPos * 0.002f + new float2(7.7f, -3.3f), seed ^ 0x8899AABBu, 2) * 12f;
+                float floorRoughness = DoubleBillowNoise01(warpedPosD * 0.002 + new double2(7.7, -3.3), seed ^ 0x8899AABBu, 2) * 12f;
                 
                 float canyonFloor = math.smoothstep(0.60f, 0.99f, dendritic);
                 riverMask = canyonRim * riverGate;
@@ -1027,7 +1048,7 @@ namespace Hecton8.World
             float canyonMask = riverMask; // Export for downstream
 
             // --- B3: LAKES & PLAYAS (Sediment-filled basins) ---
-            float lakeRegion = FractalSimplexNoise01(warpedPos * 0.0002f + new float2(44.4f, 11.1f), seed ^ 0x55443322u, 3);
+            float lakeRegion = DoubleFractalSimplexNoise01(warpedPosD * 0.0002 + new double2(44.4, 11.1), seed ^ 0x55443322u, 3);
             float lakeGate = math.smoothstep(0.5f, 0.8f, lakeRegion) * continentality * recipe.Lakes;
             float lakeFade = math.smoothstep(0.0f, 0.05f, lakeGate);
 
@@ -1035,23 +1056,23 @@ namespace Hecton8.World
             if (lakeFade > 0.001f)
             {
                 // Find natural regional depressions
-                float bowlNoise = FractalSimplexNoise01(warpedPos * 0.0004f + new float2(-22.2f, 33.3f), seed ^ 0x99887766u, 4);
+                float bowlNoise = DoubleFractalSimplexNoise01(warpedPosD * 0.0004 + new double2(-22.2, 33.3), seed ^ 0x99887766u, 4);
                 lakeMask = math.smoothstep(0.55f, 0.85f, bowlNoise) * lakeGate;
                 
                 if (lakeMask > 0.001f)
                 {
-                    float shoreFeather = FractalSimplexNoise01(warpedPos * 0.005f, seed ^ 0xE4F5A6B7u, 3);
+                    float shoreFeather = DoubleFractalSimplexNoise01(warpedPosD * 0.005, seed ^ 0xE4F5A6B7u, 3);
                     lakeMask *= (0.7f + shoreFeather * 0.3f);
                     
                     // Sediment level varies slightly across the continent but forms local flat planes
-                    float localSedimentLevel = 450f + FractalSimplexNoise01(warpedPos * 0.0001f, seed ^ 0x5A5A5A5Au, 2) * 400f;
+                    float localSedimentLevel = 450f + DoubleFractalSimplexNoise01(warpedPosD * 0.0001, seed ^ 0x5A5A5A5Au, 2) * 400f;
                     
                     // R44 FIX: Use smin with k=8 meters to create a smooth C1-continuous fillet at the shoreline!
                     float filledDepth = smin(depth, localSedimentLevel, 8f);
                     depth = math.lerp(depth, filledDepth, lakeMask * 0.85f * lakeFade);
                     
                     // Subtle dry mud cracks/texture on the flat playa bed (R45: Zero-Mean subtracted)
-                    float playaCracks = RidgedMultifractal01(warpedPos * 0.015f, seed ^ 0x6E01091Cu, 3);
+                    float playaCracks = DoubleRidgedMultifractal01(warpedPosD * 0.015, seed ^ 0x6E01091Cu, 3);
                     depth += (playaCracks - 0.15f) * 4f * lakeMask * lakeFade;
                 }
             }
@@ -1061,7 +1082,7 @@ namespace Hecton8.World
             if (recipe.Mesa > 0.01f)
             {
                 float mesaContFade = math.smoothstep(0.30f, 0.35f, continentality);
-                float mesaField = FractalSimplexNoise01(warpedNorm * 1.9f + new float2(7.8f, -14.2f), seed ^ 0x8C1B3D2Eu);
+                float mesaField = DoubleFractalSimplexNoise01((double2)warpedNorm * 1.9 + new double2(7.8, -14.2), seed ^ 0x8C1B3D2Eu, 1);
                 mesaMask = math.smoothstep(0.58f, 0.74f, mesaField) * recipe.Mesa * continentality * mesaContFade;
                 float mesaWeight = math.smoothstep(0.0f, 0.15f, mesaMask) * mesaMask * 0.7f;
                 float mesaFade = math.smoothstep(0.0f, 0.02f, mesaWeight);
@@ -1069,7 +1090,7 @@ namespace Hecton8.World
                 if (mesaFade > 0.001f)
                 {
                     // cap elevation varies per broad patch (a few discrete plateau levels), continuous in space
-                    float capDatum = FractalSimplexNoise01(warpedNorm * 0.8f + new float2(-5.5f, 12.1f), seed ^ 0x2D9C4B7Au);
+                    float capDatum = DoubleFractalSimplexNoise01((double2)warpedNorm * 0.8 + new double2(-5.5, 12.1), seed ^ 0x2D9C4B7Au, 1);
                     float capDepth = math.lerp(560f, 260f, capDatum); // flat-top depth for this patch
                     
                     // R44 FIX: smin with k=12 meters rounds the sharp table-top edge into a natural slope fillet
@@ -1080,15 +1101,19 @@ namespace Hecton8.World
 
             // --- B8: DUNES / SEDIMENT BEDFORMS ---
             float duneMask = 0f;
-            float dunePatch = math.smoothstep(0.40f, 0.70f, FractalSimplexNoise01(warpedPos * 0.0015f, seed ^ 0xD11E2233u, 3));
+            float dunePatch = math.smoothstep(0.40f, 0.70f, DoubleFractalSimplexNoise01(warpedPosD * 0.0015, seed ^ 0xD11E2233u, 3));
             float duneGate = math.saturate(recipe.Dunes * 0.8f + shelfMask * 0.6f * dunePatch - slopeProxy * 0.7f);
             float duneFade = math.smoothstep(0.0f, 0.15f, duneGate);
 
             if (duneFade > 0.0001f)
             {
-                float duneDir = FractalSimplexNoise01(warpedNorm * 2.5f, seed ^ 0x4D3C2B1Au, 2) * 3.14159f;
+                float duneDir = DoubleFractalSimplexNoise01((double2)warpedNorm * 2.5, seed ^ 0x4D3C2B1Au, 2) * 3.14159f;
                 float2 duneAxis = new float2(math.cos(duneDir), math.sin(duneDir));
-                float dunePhase = math.dot(warpedPos, duneAxis) * 0.025f + FractalSimplexNoise01(warpedPos * 0.004f, seed ^ 0x9A8B7C6Du, 2) * 1.5f;
+                double2 duneWarpD = new double2(
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(13.4, -7.2), seed ^ 0x778899AAu, 2) * 2.0 - 1.0,
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-5.1, 18.9), seed ^ 0xBBCCDDEEu, 2) * 2.0 - 1.0) * 180.0;
+                float duneOrgWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.008, seed ^ 0x778899AAu, 3) * 12.0f;
+                float dunePhase = (float)math.dot((float2)(warpedPosD + duneWarpD), duneAxis) * 0.025f + duneOrgWarp;
                 float duneWave = math.pow(0.5f - 0.5f * math.cos(dunePhase), 1.5f);
                 
                 duneMask = duneGate * duneFade;
@@ -1099,28 +1124,24 @@ namespace Hecton8.World
 
             // --- B10: CORAL REEFS (Organic mounds, NO rings, C1 continuous) ---
             float reefMask = 0f;
+            float reefFade = math.smoothstep(0.01f, 0.03f, recipe.Reefs);
             
             // 1. C1-Continuous Depth Gate (R48: Grows from surface -10m breaching down to 4500m depth)
             float depthGate = math.smoothstep(4500f, 3500f, depth) * math.smoothstep(-10f, 20f, depth);
             
-            if (depthGate > 0.001f && recipe.Reefs > 0.01f)
+            if (depthGate > 0.001f && reefFade > 0.001f)
             {
-                // 2. Patchy clusters of reefs
-                float reefNoise = FractalSimplexNoise01(warpedPos * 0.0015f + new float2(-31.4f, 88.2f), seed ^ 0x9E8D7C6Fu, 3);
+                float reefNoise = DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-31.4, 88.2), seed ^ 0x9E8D7C6Fu, 3);
                 float reefPatch = math.smoothstep(0.50f, 0.75f, reefNoise);
                 
-                // 3. Organic coral mounds (NO SINE WAVES / NO RINGS)
-                // High-frequency Simplex creates bubbly coral heads, pow(2) isolates them into distinct mounds
-                float coralHeads = FractalSimplexNoise01(warpedPos * 0.025f, seed ^ 0xCC00AA11u, 3);
+                float coralHeads = DoubleFractalSimplexNoise01(warpedPosD * 0.025, seed ^ 0xCC00AA11u, 3);
                 coralHeads = math.pow(coralHeads, 2f); 
                 
-                reefMask = reefPatch * depthGate * recipe.Reefs;
-                
-                // 4. Add organic coral volume (R47: Increased amplitude to 35m for massive underwater structures)
+                reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
                 depth -= (coralHeads - 0.33f) * 35f * reefMask;
             }
 
-            // --- B4: STRATIFICATION (elevation benches strictly on steep rock walls) ---
+            // --- B4: STRATIFICATION (elevation benches strictly on steep continental rock walls) ---
             float strataMask = 0f;
             float hardRockMask = math.saturate(ridgeMask * 0.48f + faultMask * 0.30f + plateEdgeMask * 0.18f + slopeProxy * 0.28f - basinMask * 0.18f);
             float rockFade = math.smoothstep(0.10f, 0.20f, hardRockMask);
@@ -1128,34 +1149,33 @@ namespace Hecton8.World
 
             if (!DiagStrataContourOff && strataActive > 0.001f)
             {
-                // Strict slope-gating (slopeProxy > 0.45): eliminates flat-area concentric rings on domes,
-                // while producing real elevation benches (depth) on steep canyon and mountain walls.
-                // R45: Subtract duneMask * 2.0f and reefMask * 2.0f to aggressively block rock strata from carving contours into sand/coral.
-                float slopeGate = math.smoothstep(0.35f, 0.65f, slopeProxy);
-                float strataStrength = math.saturate((hardRockMask * 0.8f + recipe.Strata * 0.8f) * slopeGate - volcanoMask * 1.2f - trenchMask * 0.9f - (1f - continentality) * 1.0f - duneMask * 2.0f - reefMask * 2.0f);
+                // R64 PURE MATHEMATICAL STRATA B4:
+                // Strata are Y-elevation sedimentary benches, but MUST be strictly gated by slope steepness (slopeProxy > 0.40).
+                // Gentle dome peaks and volcanic cones (slopeProxy < 0.40) get slopeGate = 0.0 -> ZERO CONCENTRIC RINGS!
+                // Steep canyon and cliff walls (slopeProxy > 0.50) render razor-sharp horizontal ledges.
+                float slopeGate = math.smoothstep(0.40f, 0.70f, slopeProxy);
+                float oceanicStrataBlock = math.smoothstep(0.35f, 0.65f, continentality);
+                float strataStrength = math.saturate((hardRockMask * 0.8f + recipe.Strata * 0.8f) * slopeGate - duneMask * 2.0f - reefMask * 2.0f) * oceanicStrataBlock;
                 strataStrength *= math.smoothstep(0.0f, 0.05f, strataActive);
 
                 if (strataStrength > 0.01f)
                 {
-                    float patchLarge = FractalSimplexNoise01(warpedPos * 0.0011f + new float2(21.4f, -6.8f), seed ^ 0x51C0FFEEu);
-                    float patchFeather = FractalSimplexNoise01(warpedPos * 0.0047f + new float2(-13.2f, 9.5f), seed ^ 0x1F33A7B9u);
-                    float dropout = FractalSimplexNoise01(warpedPos * 0.0026f + new float2(3.1f, 17.7f), seed ^ 0x7C2E9D41u);
+                    float patchLarge = DoubleFractalSimplexNoise01(warpedPosD * 0.0011 + new double2(21.4, -6.8), seed ^ 0x51C0FFEEu, 1);
+                    float patchFeather = DoubleFractalSimplexNoise01(warpedPosD * 0.0047 + new double2(-13.2, 9.5), seed ^ 0x1F33A7B9u, 1);
+                    float dropout = DoubleFractalSimplexNoise01(warpedPosD * 0.0026 + new double2(3.1, 17.7), seed ^ 0x7C2E9D41u, 1);
                     float broken = math.smoothstep(0.40f, 0.62f, patchLarge * 0.55f + patchFeather * 0.45f)
                                  * math.smoothstep(0.34f, 0.50f, dropout);
                     strataMask = strataStrength * broken;
 
                     if (strataMask > 0.001f)
                     {
-                        // Real elevation-based strata (snaps depth to horizontal step-and-riser benches)
-                        float tiltDir = FractalSimplexNoise01(warpedNorm * 1.3f, seed ^ 0x5B17E3A1u) * 6.2831853f;
+                        float tiltDir = DoubleFractalSimplexNoise01((double2)warpedNorm * 1.3, seed ^ 0x5B17E3A1u, 1) * 6.2831853f;
                         float2 tiltAxis = new float2(math.cos(tiltDir), math.sin(tiltDir));
                         float tilt = math.dot(tiltAxis, warpedPos) * 0.06f;
-                        float layerScale = math.lerp(22f, 46f, FractalSimplexNoise01(warpedNorm * 0.9f + new float2(4.4f, 4.4f), seed ^ 0x2E71C4B3u));
+                        float layerScale = math.lerp(22f, 46f, DoubleFractalSimplexNoise01((double2)warpedNorm * 0.9 + new double2(4.4, 4.4), seed ^ 0x2E71C4B3u, 1));
                         float hPhase = (depth + tilt) / layerScale;
                         float f = math.frac(hPhase);
                         
-                        // R44 FIX: C2-continuous step function instead of sharp smoothstep edges!
-                        // Eliminates 1-pixel isoline derivative rings on Slope/Hillshade maps.
                         float bench = f - math.sin(6.2831853f * f) * 0.15915494f;
                         float snapped = (math.floor(hPhase) + bench) * layerScale - tilt;
                         depth = math.lerp(depth, snapped, strataMask * 0.5f);
@@ -1165,53 +1185,53 @@ namespace Hecton8.World
 
             // --- B9: FRACTURED WALLS (Steep slope blocky detail) ---
             float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * steepRockMask;
-            float intermediateErosionA = FractalSimplexNoise01(warpedPos * 0.006f + new float2(-8.2f, 15.4f), seed ^ 0x6E1A2B3Cu, 4);
-            float intermediateErosionB = FractalSimplexNoise01(warpedPos * 0.018f + new float2(12.7f, -3.1f), seed ^ 0x8C3B1A4Du, 3);
+            double2 fractureWarpD = new double2(
+                DoubleFractalSimplexNoise01(warpedPosD * 0.002 + new double2(9.1, -3.4), seed ^ 0x4B3A2C1Du, 2) * 2.0 - 1.0,
+                DoubleFractalSimplexNoise01(warpedPosD * 0.002 + new double2(-7.2, 14.8), seed ^ 0x9E8D7C6Fu, 2) * 2.0 - 1.0) * 60.0;
+            float intermediateErosionA = DoubleFractalSimplexNoise01((warpedPosD + fractureWarpD) * 0.0025 + new double2(-8.2, 15.4), seed ^ 0x6E1A2B3Cu, 4);
+            float intermediateErosionB = DoubleFractalSimplexNoise01((warpedPosD + fractureWarpD) * 0.0055 + new double2(12.7, -3.1), seed ^ 0x8C3B1A4Du, 3);
             
-            // R49: Above-water weathering (Smoothly transition from 45m underwater to 130m above water, depth < 0)
             float aboveWaterWeathering = math.smoothstep(20f, -50f, depth); 
             float fractureAmp = math.lerp(45f, 130f, aboveWaterWeathering);
             float mesoFractureDelta = ((intermediateErosionA * 0.6f + intermediateErosionB * 0.4f) * 2f - 1f) * fractureAmp;
             if (!DiagMesoFractureOff)
                 depth += mesoFractureDelta * mesoFractureMask * (1f - abyssPlainMask * 0.6f);
 
-            // R46 STEP 2: FIX GRAVEL NYQUIST ALIASING (World Space Warp before frequency multiplication)
-            float2 gravelWarp = new float2(
-                FractalSimplexNoise01(warpedPos * 0.008f, seed ^ 0x11223344u, 2) * 2f - 1f,
-                FractalSimplexNoise01(warpedPos * 0.008f + new float2(5.5f, 5.5f), seed ^ 0x44332211u, 2) * 2f - 1f) * 15f;
+            // R68 FIX: Lower microGravel frequency from 0.04 (25m wavelength) to 0.004 (250m wavelength)
+            // to maintain sub-millimeter float32 ULP precision at X = 777,000m without 2-pixel checkerboard grid aliasing on steep rock walls.
+            double2 gravelWarpD = new double2(
+                DoubleFractalSimplexNoise01(warpedPosD * 0.0015, seed ^ 0x11223344u, 2) * 2.0 - 1.0,
+                DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(5.5, 5.5), seed ^ 0x44332211u, 2) * 2.0 - 1.0) * 15.0;
 
-            // FIX: Warp is added to pos BEFORE multiplying by frequency (0.04)
-            float microGravel = (FractalSimplexNoise01((warpedPos + gravelWarp) * 0.04f, seed ^ 0x99AA88BBu, 2) * 2f - 1f) * 1.5f;
-            depth += microGravel * math.lerp(0.2f, 1.5f, steepRockMask); // 20cm soft bumps on sand, 1.5m rubble on rock
+            float microGravel = (DoubleFractalSimplexNoise01((warpedPosD + gravelWarpD) * 0.004, seed ^ 0x99AA88BBu, 2) * 2f - 1f) * 1.5f;
+            depth += microGravel * math.lerp(0.2f, 1.5f, steepRockMask);
 
             // TIER 4: Talus & Slump
             float concaveToe = math.saturate((basinMask * 1.5f + canyonMask * 1.2f + shelfToe * 0.84f + 0.1f) * (ridgeMask * 0.75f + faultMask * 0.62f + shelfBreakMask * 0.66f + 0.1f));
             float talusMask = math.saturate(math.smoothstep(0.10f, 0.62f, slopeProxy) * (1f - math.smoothstep(0.74f, 0.98f, slopeProxy)) * concaveToe);
-            float talusC = BillowNoise01(warpedPos * 0.020f + new float2(3.3f, -7.2f), seed ^ 0xE70D1A5Bu, 3);
-            float talusF = BillowNoise01(warpedPos * 0.071f + new float2(-5.0f, 1.7f), seed ^ 0xC3F19802u, 2);
+            float talusC = DoubleBillowNoise01(warpedPosD * 0.020 + new double2(3.3, -7.2), seed ^ 0xE70D1A5Bu, 3);
+            float talusF = DoubleBillowNoise01(warpedPosD * 0.071 + new double2(-5.0, 1.7), seed ^ 0xC3F19802u, 2);
             if (!DiagTalusOff)
                 depth += ((talusC * 0.70f + talusF * 0.30f) * 2f - 1f) * math.lerp(5f, 15f, talusMask) * talusMask;
 
-            // --- B11: COASTAL EROSION & KARST SPIRES (Above-water epics) ---
-            
-            // 1. Asymmetric Wave-Cut Cliffs (Windward erosion)
-            float waveExposure = FractalSimplexNoise01(warpedNorm * 4.5f + new float2(44f, -12f), seed ^ 0x99AABBCCu, 3);
+            // --- B11: COASTAL EROSION & KARST SPIRES ---
+            float waveExposure = DoubleFractalSimplexNoise01((double2)warpedNorm * 4.5 + new double2(44.0, -12.0), seed ^ 0x99AABBCCu, 3);
             float cliffAsymmetry = math.smoothstep(0.3f, 0.7f, waveExposure);
-            
-            // Gaussian bell curve isolating the exact water level (0 meters)
             float coastalInfluence = math.exp(-math.pow(depth / 15f, 2f));
-            
-            // Carve a flat terrace at depth = +2m (just underwater). 
-            // On the exposed side, this undercuts the mountain, creating a sheer cliff above it.
             depth = math.lerp(depth, 2f, coastalInfluence * cliffAsymmetry * 0.9f);
 
-            // 2. Rare Karst Spires (Avatar mountains)
-            float spireRegion = math.smoothstep(0.75f, 0.98f, FractalSimplexNoise01(warpedPos * 0.0008f + new float2(-22f, 55f), seed ^ 0x11223344u, 3));
-            if (spireRegion > 0.01f && depth < 100f) // Only appears near surface or above water
+            float spireRegion = math.smoothstep(0.75f, 0.98f, DoubleFractalSimplexNoise01(warpedPosD * 0.0008 + new double2(-22.0, 55.0), seed ^ 0x11223344u, 3));
+            if (spireRegion > 0.01f && depth < 100f)
             {
-                float spireNoise = RidgedMultifractal01(warpedPos * 0.012f, seed ^ 0x55667788u, 3);
-                float spires = math.pow(spireNoise, 3f) * 220f * spireRegion;
-                depth -= spires * math.smoothstep(100f, 10f, depth); // Shoots sharp vertical rock pillars UP
+                // R69 FIX: Add 2D domain warp and lower frequency to Karst Spires (B11)
+                // High-frequency RidgedMultifractal01 (0.012f) cubed created 83m needle pinnacles that rendered as a 2-pixel diagonal grid.
+                double2 spireWarpD = new double2(
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015, seed ^ 0x33445566u, 2) * 2.0 - 1.0,
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-8.0, 12.0), seed ^ 0x778899AAu, 2) * 2.0 - 1.0) * 40.0;
+
+                float spireNoise = DoubleRidgedMultifractal01((warpedPosD + spireWarpD) * 0.003, seed ^ 0x55667788u, 3);
+                float spires = math.pow(spireNoise, 2.2f) * 140f * spireRegion;
+                depth -= spires * math.smoothstep(100f, 10f, depth);
             }
 
             // =========================================================================
@@ -1224,6 +1244,11 @@ namespace Hecton8.World
                 depth = -260f - compressed;
             }
             depth = math.clamp(depth, -620f, parameters.HadalDepthMeters);
+
+            // R52 GAMEPLAY & BIOME MASKS (Nervous system for voxels, loot, and hazard biomes)
+            float ledgeMask = math.saturate(strataMask * math.smoothstep(0.35f, 0.05f, slopeProxy));
+            float caveEntranceMask = math.saturate(faultMask * steepRockMask);
+            float brinePoolMask = math.pow(math.saturate(trenchMask), 4.0f) * (1f - continentality);
 
             masks = new MacroMasks
             {
@@ -1249,16 +1274,20 @@ namespace Hecton8.World
                 Mesa = math.saturate(mesaMask),
                 Dune = math.saturate(duneMask),
                 Continentality = math.saturate(continentality),
-                Reef = math.saturate(reefMask)
+                Reef = math.saturate(reefMask),
+                Ledge = math.saturate(ledgeMask),
+                CaveEntrance = math.saturate(caveEntranceMask),
+                BrinePool = math.saturate(brinePoolMask)
             };
 
             return parameters.WaterSurfaceY - depth;
         }
 
-        private static DifferentialSample EvaluateDifferentials(float absoluteX, float absoluteZ, in WorldMacroGeologyParams p, out MacroMasks masks)
+        private static DifferentialSample EvaluateDifferentials(double absoluteX, double absoluteZ, in WorldMacroGeologyParams p, out MacroMasks masks)
         {
             float height = EvaluateHeightMeters(absoluteX, absoluteZ, in p, out masks);
-            float probe = math.max(1f, p.DetailProbeMeters);
+            // Probe distance set to 12.0m for optimal slope gradient balance without Nyquist red-static aliasing
+            float probe = 12.0f;
             float west = EvaluateHeightMeters(absoluteX - probe, absoluteZ, in p, out _);
             float east = EvaluateHeightMeters(absoluteX + probe, absoluteZ, in p, out _);
             float south = EvaluateHeightMeters(absoluteX, absoluteZ - probe, in p, out _);
@@ -1387,28 +1416,30 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
-        public static float RidgedMultifractal01(float2 sample, uint seed, int octaves = 5)
+        public static float RidgedMultifractal01(double2 sampleD, uint seed, int octaves = 5)
         {
             float amplitude = 1f;
             float frequency = 1f;
             float total = 0f;
             float norm = 0f;
             float weight = 1f;
-            float2 p = sample;
+            double2 p = sampleD;
             for (int octave = 0; octave < octaves; octave++)
             {
                 float ang = 0.5f + octave * 0.7548776662f + HashToUnitFloat(seed ^ (uint)(octave * 0x9E3779B9)) * 6.2831853f;
                 float sa = math.sin(ang), ca = math.cos(ang);
-                p = math.mul(new float2x2(ca, -sa, sa, ca), p);
+                double2x2 rot = new double2x2((double)ca, (double)(-sa), (double)sa, (double)ca);
+                p = math.mul(rot, p);
 
                 uint layerSeed = seed + (uint)octave * 0x9E3779B9u;
                 float seedOffsetX = HashToUnitFloat(layerSeed ^ 0x9E3779B9u) * 16f - 8f;
                 float seedOffsetY = HashToUnitFloat(layerSeed ^ 0x334EAA71u) * 16f - 8f;
-                float snoiseVal = noise.snoise(p * frequency + new float2(seedOffsetX, seedOffsetY));
-                
+                double2 samplePos = p * (double)frequency + new double2((double)seedOffsetX, (double)seedOffsetY);
+                float snoiseVal = DoubleSimplex2D(samplePos, 1.0f, layerSeed);
+
                 float n = 1f - math.abs(snoiseVal);
                 n = n * n;
-                if (DiagRidgedAsFbm || DiagRidgedAsFbmMountain) n = snoiseVal * 0.5f + 0.5f; // R12-A / R17-A: plain fBm, NO crest line
+                if (DiagRidgedAsFbm || DiagRidgedAsFbmMountain) n = snoiseVal * 0.5f + 0.5f;
                 n *= weight;
                 weight = (DiagNoiseBroadband || DiagRidgedAsFbm || DiagRidgedAsFbmMountain) ? 1f : math.saturate(n * 2f);
 
@@ -1421,28 +1452,35 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
-        public static float ErodedRidge01(float2 sample, uint seed, int octaves = 5)
+        public static float RidgedMultifractal01(float2 sample, uint seed, int octaves = 5)
+        {
+            return RidgedMultifractal01((double2)sample, seed, octaves);
+        }
+
+        public static float ErodedRidge01(double2 sampleD, uint seed, int octaves = 5)
         {
             float amplitude = 1f;
             float frequency = 1f;
             float total = 0f;
             float norm = 0f;
             float weight = 1f;
-            float2 p = sample;
+            double2 p = sampleD;
             for (int octave = 0; octave < octaves; octave++)
             {
                 float ang = 0.5f + octave * 0.7548776662f + HashToUnitFloat(seed ^ (uint)(octave * 0x9E3779B9)) * 6.2831853f;
                 float sa = math.sin(ang), ca = math.cos(ang);
-                p = math.mul(new float2x2(ca, -sa, sa, ca), p);
+                double2x2 rot = new double2x2((double)ca, (double)(-sa), (double)sa, (double)ca);
+                p = math.mul(rot, p);
 
                 uint layerSeed = seed + (uint)octave * 0x9E3779B9u;
                 float seedOffsetX = HashToUnitFloat(layerSeed ^ 0x9E3779B9u) * 16f - 8f;
                 float seedOffsetY = HashToUnitFloat(layerSeed ^ 0x334EAA71u) * 16f - 8f;
-                float snoiseVal = noise.snoise(p * frequency + new float2(seedOffsetX, seedOffsetY));
+                double2 samplePos = p * (double)frequency + new double2((double)seedOffsetX, (double)seedOffsetY);
+                float snoiseVal = DoubleSimplex2D(samplePos, 1.0f, layerSeed);
 
                 float n = 1f - math.abs(snoiseVal);
                 n = n * n * (3f - 2f * n);
-                if (DiagRidgedAsFbm || DiagRidgedAsFbmMountain) n = snoiseVal * 0.5f + 0.5f; // R12-A / R17-A: plain fBm, NO crest line
+                if (DiagRidgedAsFbm || DiagRidgedAsFbmMountain) n = snoiseVal * 0.5f + 0.5f;
                 n *= weight;
                 weight = (DiagNoiseBroadband || DiagRidgedAsFbm || DiagRidgedAsFbmMountain) ? 1f : math.saturate(0.35f + n * 0.9f);
 
@@ -1455,26 +1493,33 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
-        public static float BillowNoise01(float2 sample, uint seed, int octaves = 5)
+        public static float ErodedRidge01(float2 sample, uint seed, int octaves = 5)
+        {
+            return ErodedRidge01((double2)sample, seed, octaves);
+        }
+
+        public static float BillowNoise01(double2 sampleD, uint seed, int octaves = 5)
         {
             float amplitude = 1f;
             float frequency = 1f;
             float total = 0f;
             float norm = 0f;
-            float2 p = sample;
+            double2 p = sampleD;
             for (int octave = 0; octave < octaves; octave++)
             {
                 float ang = 0.5f + octave * 0.7548776662f + HashToUnitFloat(seed ^ (uint)(octave * 0x9E3779B9)) * 6.2831853f;
                 float sa = math.sin(ang), ca = math.cos(ang);
-                p = math.mul(new float2x2(ca, -sa, sa, ca), p);
+                double2x2 rot = new double2x2((double)ca, (double)(-sa), (double)sa, (double)ca);
+                p = math.mul(rot, p);
 
                 uint layerSeed = seed + (uint)octave * 0x9E3779B9u;
                 float seedOffsetX = HashToUnitFloat(layerSeed ^ 0x9E3779B9u) * 16f - 8f;
                 float seedOffsetY = HashToUnitFloat(layerSeed ^ 0x334EAA71u) * 16f - 8f;
-                float snoiseVal = noise.snoise(p * frequency + new float2(seedOffsetX, seedOffsetY));
-                
+                double2 samplePos = p * (double)frequency + new double2((double)seedOffsetX, (double)seedOffsetY);
+                float snoiseVal = DoubleSimplex2D(samplePos, 1.0f, layerSeed);
+
                 float n = math.abs(snoiseVal);
-                
+
                 total += n * amplitude;
                 norm += amplitude;
                 amplitude *= 0.5f;
@@ -1484,12 +1529,157 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
+        public static float BillowNoise01(float2 sample, uint seed, int octaves = 5)
+        {
+            return BillowNoise01((double2)sample, seed, octaves);
+        }
+
+        public static float DoubleBillowNoise01(double2 sampleD, uint seed, int octaves = 5)
+        {
+            return BillowNoise01(sampleD, seed, octaves);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 HashGradient2D(int cx, int cy, uint seed)
+        {
+            uint h = Hash(cx, cy, (int)seed);
+            float angle = (h & 0x00FFFFFFu) * (6.28318530718f / 16777215f);
+            return new float2(math.cos(angle), math.sin(angle));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float EvaluateSimplexGrad(int cellX, int cellY, float2 x0, uint seed)
+        {
+            int i1, j1;
+            if (x0.x > x0.y) { i1 = 1; j1 = 0; }
+            else { i1 = 0; j1 = 1; }
+
+            const float G2 = 0.2113248654051871f;
+            float2 x1 = x0 - new float2(i1, j1) + G2;
+            float2 x2 = x0 - 1.0f + 2.0f * G2;
+
+            float t0 = 0.5f - math.lengthsq(x0);
+            float t1 = 0.5f - math.lengthsq(x1);
+            float t2 = 0.5f - math.lengthsq(x2);
+
+            float n0 = 0f, n1 = 0f, n2 = 0f;
+
+            if (t0 > 0f)
+            {
+                t0 *= t0;
+                float2 g0 = HashGradient2D(cellX, cellY, seed);
+                n0 = (t0 * t0) * math.dot(g0, x0);
+            }
+            if (t1 > 0f)
+            {
+                t1 *= t1;
+                float2 g1 = HashGradient2D(cellX + i1, cellY + j1, seed);
+                n1 = (t1 * t1) * math.dot(g1, x1);
+            }
+            if (t2 > 0f)
+            {
+                t2 *= t2;
+                float2 g2 = HashGradient2D(cellX + 1, cellY + 1, seed);
+                n2 = (t2 * t2) * math.dot(g2, x2);
+            }
+
+            return 70.0f * (n0 + n1 + n2);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DoubleSimplex2D(double2 posD, float frequency, uint seed)
+        {
+            double2 p = posD * (double)frequency;
+            const double F2 = 0.3660254037844386; // 0.5 * (sqrt(3) - 1)
+            double s = (p.x + p.y) * F2;
+            double2 skewedFloor = math.floor(p + s);
+
+            int cellX = (int)skewedFloor.x;
+            int cellY = (int)skewedFloor.y;
+
+            const double G2 = 0.2113248654051871; // (3 - sqrt(3)) / 6
+            double t = (double)(cellX + cellY) * G2;
+            double2 cellOrigin = new double2((double)cellX - t, (double)cellY - t);
+            float2 localOffset = (float2)(p - cellOrigin);
+
+            return EvaluateSimplexGrad(cellX, cellY, localOffset, seed);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DoubleSimplex2D01(double2 posD, float frequency, uint seed)
+        {
+            return DoubleSimplex2D(posD, frequency, seed) * 0.5f + 0.5f;
+        }
+
+        public static float DoubleFractalSimplexNoise01(double2 posD, float frequency, uint seed, int octaves = 5)
+        {
+            float amplitude = 0.5f;
+            float currentFreq = frequency;
+            float total = 0f;
+            float norm = 0f;
+            for (int octave = 0; octave < octaves; octave++)
+            {
+                float ang = 0.5f + octave * 0.7548776662f + HashToUnitFloat(seed ^ (uint)(octave * 0x9E3779B9)) * 6.2831853f;
+                float sa = math.sin(ang), ca = math.cos(ang);
+
+                double2x2 rot = new double2x2((double)ca, (double)(-sa), (double)sa, (double)ca);
+                posD = math.mul(rot, posD);
+
+                uint layerSeed = seed + (uint)octave * 0x9E3779B9u;
+                float seedOffsetX = HashToUnitFloat(layerSeed ^ 0x9E3779B9u) * 16f - 8f;
+                float seedOffsetY = HashToUnitFloat(layerSeed ^ 0x334EAA71u) * 16f - 8f;
+
+                double2 samplePos = posD + new double2((double)seedOffsetX, (double)seedOffsetY);
+                float n = DoubleSimplex2D(samplePos, currentFreq, layerSeed) * 0.5f + 0.5f;
+
+                total += n * amplitude;
+                norm += amplitude;
+                amplitude *= 0.5f;
+                currentFreq *= 2.02f;
+            }
+
+            return total / math.max(0.0001f, norm);
+        }
+
+        public static float DoubleRidgedMultifractal01(double2 posD, float frequency, uint seed, int octaves = 5)
+        {
+            float amplitude = 1f;
+            float currentFreq = frequency;
+            float total = 0f;
+            float norm = 0f;
+            float weight = 1f;
+            for (int octave = 0; octave < octaves; octave++)
+            {
+                float ang = 0.5f + octave * 0.7548776662f + HashToUnitFloat(seed ^ (uint)(octave * 0x9E3779B9)) * 6.2831853f;
+                float sa = math.sin(ang), ca = math.cos(ang);
+
+                double2x2 rot = new double2x2((double)ca, (double)(-sa), (double)sa, (double)ca);
+                posD = math.mul(rot, posD);
+
+                uint layerSeed = seed + (uint)octave * 0x9E3779B9u;
+                float seedOffsetX = HashToUnitFloat(layerSeed ^ 0x9E3779B9u) * 16f - 8f;
+                float seedOffsetY = HashToUnitFloat(layerSeed ^ 0x334EAA71u) * 16f - 8f;
+
+                double2 samplePos = posD + new double2((double)seedOffsetX, (double)seedOffsetY);
+                float snoiseVal = DoubleSimplex2D(samplePos, currentFreq, layerSeed);
+
+                float n = 1f - math.abs(snoiseVal);
+                n = n * n;
+                n *= weight;
+                weight = math.saturate(n * 2f);
+
+                total += n * amplitude;
+                norm += amplitude;
+                amplitude *= 0.5f;
+                currentFreq *= 2.0f;
+            }
+
+            return total / math.max(0.0001f, norm);
+        }
+
         private static float SimplexNoise01(float2 sample, uint seed)
         {
-            float seedOffsetX = HashToUnitFloat(seed ^ 0x9E3779B9u) * 16f - 8f;
-            float seedOffsetY = HashToUnitFloat(seed ^ 0x334EAA71u) * 16f - 8f;
-            float n = noise.snoise(sample + new float2(seedOffsetX, seedOffsetY));
-            return n * 0.5f + 0.5f;
+            return DoubleSimplex2D((double2)sample, 1.0f, seed) * 0.5f + 0.5f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1535,7 +1725,7 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float2 Hash2(int x, int y, uint seed)
         {
-            return new float2(Hash01(x, y, seed), Hash01(x, y, seed ^ 0xA511E9B3u));
+            return new float2(Hash01(x, y, seed), Hash01(x, y, seed * 0x9E3779B9u + 0xA511E9B3u));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1635,6 +1825,9 @@ namespace Hecton8.World
             public float Dune;
             public float Continentality;
             public float Reef;
+            public float Ledge;
+            public float CaveEntrance;
+            public float BrinePool;
         }
     }
 }

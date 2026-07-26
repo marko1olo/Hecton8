@@ -3064,10 +3064,13 @@ namespace Hecton8.World
 
         private static uint ResolveGenomeMutationStableHash(in FaunaGenomeMutationRequest request)
         {
+            float safeX = request.RuntimePosition.x == 0f ? 0f : request.RuntimePosition.x;
+            float safeY = request.RuntimePosition.y == 0f ? 0f : request.RuntimePosition.y;
+            float safeZ = request.RuntimePosition.z == 0f ? 0f : request.RuntimePosition.z;
             int3 cell = new int3(
-                (int)math.floor(request.RuntimePosition.x * InvBiomassMacroCellSizeMeters),
-                (int)math.floor(request.RuntimePosition.y * InvBiomassMacroCellSizeMeters),
-                (int)math.floor(request.RuntimePosition.z * InvBiomassMacroCellSizeMeters));
+                (int)math.floor(safeX * InvBiomassMacroCellSizeMeters),
+                (int)math.floor(safeY * InvBiomassMacroCellSizeMeters),
+                (int)math.floor(safeZ * InvBiomassMacroCellSizeMeters));
             uint hash = math.hash(new int4(cell, request.SpeciesId));
             hash ^= (uint)request.Slot * 747796405u;
             return hash == 0u ? 1u : hash;
@@ -3089,9 +3092,13 @@ namespace Hecton8.World
                 return false;
 
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
+            double safeX = runtimePosition.x == 0f ? 0d : (double)runtimePosition.x;
+            double safeY = runtimePosition.y == 0f ? 0d : (double)runtimePosition.y;
+            double safeZ = runtimePosition.z == 0f ? 0d : (double)runtimePosition.z;
+
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                new double3(safeX, safeY, safeZ));
             return positionAup.IsFinite();
         }
 

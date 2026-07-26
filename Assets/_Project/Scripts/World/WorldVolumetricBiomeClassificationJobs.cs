@@ -275,10 +275,10 @@ namespace Hecton8.World
                 failureMask |= 2;
 
             uint expectedPack = HectonBiomeVisualFamilyUtility.PackCell(
-                primaryVisualFamilyId,
+                expectedVisualFamilyId,
                 secondaryVisualFamilyId,
                 blend255,
-                flags);
+                expectedFlags);
 
             if (cell.Packed != expectedPack)
                 failureMask |= 4;

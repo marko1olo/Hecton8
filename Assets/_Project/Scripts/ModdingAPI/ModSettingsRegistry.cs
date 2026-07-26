@@ -445,12 +445,20 @@ namespace Hecton8.Modding
                    options.isActiveAndEnabled;
         }
 
+        private const int MaxSettingEntries = 4096;
+
         private static void AddOrUpdateEntry(uint compoundHash, SettingEntry entry)
         {
             if (_entryIndexByHash.TryGetValue(compoundHash, out int index))
             {
                 _entries[index] = entry;
                 ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
+                return;
+            }
+
+            if (_entries.Count >= MaxSettingEntries)
+            {
+                H8Debug.LogWarning("[ModSettingsRegistry] Setting registration cap reached; ignoring additional mod setting.");
                 return;
             }
 

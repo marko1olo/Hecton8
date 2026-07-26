@@ -2351,21 +2351,27 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNegativeZero(float value)
+        {
+            return value == 0f ? 0f : value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint BuildStateHash(float3 localPosition, float distance, int revision, ushort sectorIndex)
         {
             uint hash = 2166136261u;
-            hash = (hash ^ math.asuint(localPosition.x)) * 16777619u;
-            hash = (hash ^ math.asuint(localPosition.y)) * 16777619u;
-            hash = (hash ^ math.asuint(localPosition.z)) * 16777619u;
-            hash = (hash ^ math.asuint(distance)) * 16777619u;
+            hash = (hash ^ math.asuint(SanitizeNegativeZero(localPosition.x))) * 16777619u;
+            hash = (hash ^ math.asuint(SanitizeNegativeZero(localPosition.y))) * 16777619u;
+            hash = (hash ^ math.asuint(SanitizeNegativeZero(localPosition.z))) * 16777619u;
+            hash = (hash ^ math.asuint(SanitizeNegativeZero(distance))) * 16777619u;
             hash = (hash ^ (uint)revision) * 16777619u;
             hash = (hash ^ sectorIndex) * 16777619u;
             return hash;
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct BatchSamplerJob : IJobParallelFor
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BatchSamplerJob : IJobParallelForBatch
     {
         [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
         [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
@@ -2424,34 +2430,38 @@ namespace Hecton8.World
                 ScalarData);
         }
 
-        public void Execute(int index)
+        public void Execute(int startIndex, int count)
         {
             GlobalWorldSamplerData data = BuildData();
-            GlobalWorldSampler.BuildQuery(
-                PositionsAup[index],
-                Frame,
-                EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
-                out GlobalWorldSamplerQuery query);
-
-            GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
-            Results[index] = result;
-
-            if (index == 0)
+            int end = startIndex + count;
+            for (int index = startIndex; index < end; index++)
             {
-                GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
-            }
+                GlobalWorldSampler.BuildQuery(
+                    PositionsAup[index],
+                    Frame,
+                    EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
+                    out GlobalWorldSamplerQuery query);
 
-            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
-            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
-            if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
-            {
-                GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
+                GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
+                Results[index] = result;
+
+                if (index == 0)
+                {
+                    GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
+                }
+
+                int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
+                int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
+                if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
+                {
+                    GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
+                }
             }
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct BatchLocalSamplerJob : IJobParallelFor
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BatchLocalSamplerJob : IJobParallelForBatch
     {
         [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
         [NoAlias, ReadOnly] public NativeArray<byte> HeightMaterialIds;
@@ -2510,35 +2520,39 @@ namespace Hecton8.World
                 ScalarData);
         }
 
-        public void Execute(int index)
+        public void Execute(int startIndex, int count)
         {
             GlobalWorldSamplerData data = BuildData();
-            float3 local = PositionsLocal[index];
-            double3 aup = data.ActiveChunkOriginAup + GlobalWorldSampler.Double3(local.x, local.y, local.z);
-            GlobalWorldSampler.BuildQuery(
-                aup,
-                Frame,
-                EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
-                out GlobalWorldSamplerQuery query);
-
-            GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
-            Results[index] = result;
-
-            if (index == 0)
+            int end = startIndex + count;
+            for (int index = startIndex; index < end; index++)
             {
-                GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
-            }
+                float3 local = PositionsLocal[index];
+                double3 aup = data.ActiveChunkOriginAup + GlobalWorldSampler.Double3(local.x, local.y, local.z);
+                GlobalWorldSampler.BuildQuery(
+                    aup,
+                    Frame,
+                    EstimateNormals != 0 ? GlobalWorldSamplerQueryFlags.EstimateNormal : GlobalWorldSamplerQueryFlags.None,
+                    out GlobalWorldSamplerQuery query);
 
-            int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
-            int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
-            if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
-            {
-                GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
+                GlobalWorldSampler.Sample(data, query, out TerrainSampleResult result);
+                Results[index] = result;
+
+                if (index == 0)
+                {
+                    GlobalWorldSampler.WriteTelemetryFrame(data, Frame, result);
+                }
+
+                int sampleCost = GlobalWorldSampler.ResolveTerrainSampleCost(data, EstimateNormals, result);
+                int total = GlobalWorldSampler.AddSampleCount(data, sampleCost);
+                if (GlobalWorldSampler.ShouldTripThroughputWarning(total - sampleCost, total))
+                {
+                    GlobalWorldSampler.RecordThroughputWarning(data, Frame, result);
+                }
             }
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct QualityWeightFilterJob : IJobParallelFor
     {
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<GlobalWorldSamplerQualityState> QualityStates;
@@ -2573,7 +2587,7 @@ namespace Hecton8.World
         private ulong _pad3;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockTerrainQueryStressJob : IJobParallelFor
     {
         [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
@@ -2675,7 +2689,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GradientNormalEstimationBatchJob : IJobParallelForBatch
     {
         [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
@@ -2760,7 +2774,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct MockBoidRaymarchJob : IJobParallelFor
     {
         [NoAlias, ReadOnly] public NativeArray<ushort> HeightSamples;
@@ -3495,7 +3509,41 @@ namespace Hecton8.World
                 return false;
             }
 
-            value = (integer + fraction) * sign;
+            float result = (integer + fraction) * sign;
+
+            if (index < token.Length && (token[index] == (byte)'e' || token[index] == (byte)'E'))
+            {
+                index++;
+                float expSign = 1f;
+                if (index < token.Length && token[index] == (byte)'-')
+                {
+                    expSign = -1f;
+                    index++;
+                }
+                else if (index < token.Length && token[index] == (byte)'+')
+                {
+                    index++;
+                }
+
+                int expValue = 0;
+                bool anyExpDigit = false;
+                while (index < token.Length && token[index] >= (byte)'0' && token[index] <= (byte)'9')
+                {
+                    expValue = expValue * 10 + (token[index] - (byte)'0');
+                    index++;
+                    anyExpDigit = true;
+                }
+
+                if (!anyExpDigit)
+                {
+                    return false;
+                }
+
+                float expFactor = math.pow(10f, expSign * expValue);
+                result *= expFactor;
+            }
+
+            value = result;
             return true;
         }
 

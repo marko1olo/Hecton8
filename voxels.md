@@ -27,11 +27,13 @@ Tools, construction, AI, physics, and rendering consume voxel-owned snapshots or
 
 ## SDF Contract
 
-Signed distance convention:
+Signed distance convention in production HECTON-8 SDF fields:
 
-- negative = solid;
-- zero = surface;
-- positive = void.
+- positive = solid rock (depth below terrain surface);
+- zero = surface boundary;
+- negative = void (open air or water).
+
+`ProceduralCaveSdfCarveJob` in `WorldProceduralCaveSdfJobs.cs` is the canonical owner of 3D cave carving and mandates `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]`. Coordinates use double-precision AUP wrapped via a `6627.0m` period to preserve continuity across chunk boundaries.
 
 Every SDF operation must guard division, clamp exponentials, preserve finite values, and keep material IDs or blend weights where surface materials change.
 

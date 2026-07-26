@@ -581,7 +581,7 @@ namespace Hecton8.World
 
                 float2 channelGradient = SampleAccumulationGradient(ErosionDepthMask, position);
                 float2 hydraulicForce = -gradient + channelGradient * math.max(0f, ChannelFlowBias);
-                direction = direction * safeInertia + hydraulicForce * (1f - safeInertia) + channelGradient * math.max(0f, ChannelFlowBias) * 0.35f;
+                direction = direction * safeInertia + hydraulicForce * (1f - safeInertia);
                 float directionLengthSq = math.lengthsq(direction);
                 if (directionLengthSq <= 0.0000001f)
                     direction = HashDirection(dropletIndex, step);
@@ -636,7 +636,7 @@ namespace Hecton8.World
                     break;
                 }
 
-                speed = FastSpeedMagnitude(speedSquared);
+                speed = math.min(FastSpeedMagnitude(speedSquared), 24.0f);
                 water *= 1f - safeEvaporation;
                 position = nextPosition;
 
@@ -996,17 +996,17 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void DepositAtIndex(int index, float amount)
+        private float DepositAtIndex(int index, float amount)
         {
             float actual = math.max(0f, amount);
-            ApplyHeightDelta(index, actual, actual, 0f);
+            return ApplyHeightDelta(index, actual, actual, 0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void ApplyHeightDelta(int index, float heightDelta01, float sedimentDelta01, float erosionDepthDelta01)
+        private float ApplyHeightDelta(int index, float heightDelta01, float sedimentDelta01, float erosionDepthDelta01)
         {
             if (heightDelta01 == 0f && sedimentDelta01 == 0f && erosionDepthDelta01 == 0f)
-                return;
+                return 0f;
 
             if (QueueHeightDeltas != 0)
             {
@@ -1018,16 +1018,21 @@ namespace Hecton8.World
                     ErosionDepthDelta01 = erosionDepthDelta01
                 };
                 TryEnqueueHeightDeltaBounded(HeightDeltaQueue, HeightDeltaBudget, in delta);
+                return heightDelta01;
             }
 
-            if (DeferHeightDeltaApplication != 0)
-                return;
+            float oldH = Heightmap[index];
+            float newH = math.saturate(oldH + heightDelta01);
+            float actualDelta = newH - oldH;
+            Heightmap[index] = newH;
 
-            Heightmap[index] = math.saturate(Heightmap[index] + heightDelta01);
             if (sedimentDelta01 != 0f && SedimentMask.IsCreated)
-                SedimentMask[index] += sedimentDelta01;
+                SedimentMask[index] = math.saturate(SedimentMask[index] + sedimentDelta01);
+
             if (erosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated)
-                ErosionDepthMask[index] += erosionDepthDelta01;
+                ErosionDepthMask[index] = math.saturate(ErosionDepthMask[index] + erosionDepthDelta01);
+
+            return actualDelta;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1118,25 +1123,47 @@ namespace Hecton8.World
                 return;
 
             int budget = math.max(1, MaxDeltas);
-            int applied = 0;
-            while (applied < budget && HeightDeltas.TryDequeue(out HydraulicErosionHeightDelta delta))
+            int count = math.min(budget, HeightDeltas.Count);
+            if (count <= 0)
+                return;
+
+            NativeArray<HydraulicErosionHeightDelta> batch = new NativeArray<HydraulicErosionHeightDelta>(count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            int actualCount = 0;
+            while (actualCount < count && HeightDeltas.TryDequeue(out HydraulicErosionHeightDelta delta))
             {
-                if ((uint)delta.Index >= (uint)Heightmap.Length)
-                {
-                    applied++;
-                    continue;
-                }
+                batch[actualCount++] = delta;
+            }
 
-                if (ApplyQueuedDeltas != 0)
-                {
-                    Heightmap[delta.Index] = math.saturate(Heightmap[delta.Index] + delta.HeightDelta01);
-                    if (delta.SedimentDelta01 != 0f && SedimentMask.IsCreated && (uint)delta.Index < (uint)SedimentMask.Length)
-                        SedimentMask[delta.Index] += delta.SedimentDelta01;
-                    if (delta.ErosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated && (uint)delta.Index < (uint)ErosionDepthMask.Length)
-                        ErosionDepthMask[delta.Index] += delta.ErosionDepthDelta01;
-                }
+            if (actualCount > 0)
+            {
+                // Deterministic Order: Sort batch entries by cell Index before applying to eliminate thread dequeue ordering desync
+                NativeSortExtension.Sort(batch.GetSubArray(0, actualCount), new HeightDeltaIndexComparer());
 
-                applied++;
+                for (int i = 0; i < actualCount; i++)
+                {
+                    HydraulicErosionHeightDelta delta = batch[i];
+                    if ((uint)delta.Index >= (uint)Heightmap.Length)
+                        continue;
+
+                    if (ApplyQueuedDeltas != 0)
+                    {
+                        Heightmap[delta.Index] = math.saturate(Heightmap[delta.Index] + delta.HeightDelta01);
+                        if (delta.SedimentDelta01 != 0f && SedimentMask.IsCreated && (uint)delta.Index < (uint)SedimentMask.Length)
+                            SedimentMask[delta.Index] = math.saturate(SedimentMask[delta.Index] + delta.SedimentDelta01);
+                        if (delta.ErosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated && (uint)delta.Index < (uint)ErosionDepthMask.Length)
+                            ErosionDepthMask[delta.Index] = math.saturate(ErosionDepthMask[delta.Index] + delta.ErosionDepthDelta01);
+                    }
+                }
+            }
+
+            batch.Dispose();
+        }
+
+        private struct HeightDeltaIndexComparer : System.Collections.Generic.IComparer<HydraulicErosionHeightDelta>
+        {
+            public int Compare(HydraulicErosionHeightDelta x, HydraulicErosionHeightDelta y)
+            {
+                return x.Index.CompareTo(y.Index);
             }
         }
     }

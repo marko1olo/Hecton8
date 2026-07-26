@@ -224,8 +224,16 @@ secrets.json
 
 keys.json
 
-.env*
 
-secrets.json
 
-keys.json
+
+# ============================================================================
+# Hardening (security audit 2026-07-26)
+# ============================================================================
+# Nested build output (root-only /obj/ and /build/ rules missed these):
+**/obj/
+**/bin/
+# Numbered temp spill files (e.g. *.json.tmp.12844) not caught by *.tmp:
+*.tmp.*
+# Scratch crypto test project (delete: git rm -r --cached TestCrypto):
+/TestCrypto/obj/

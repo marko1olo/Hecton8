@@ -32,6 +32,10 @@ namespace Hecton8.World
         private const string DumpPayloadLabel = "terrainChunkPagerTelemetryDumpPayload";
         private const int WorkerShutdownWaitMilliseconds = 2000;
 
+        // R97: VisualSync ticks a transiently-failed sector stays parked before its slot is
+        // released for a natural residency re-request (~4 s at 60 FPS; byte-sized field).
+        private const byte TransientChunkRetryBackoffTicks = 240;
+
         private const BufferID MetadataBufferId = BufferID.TerrainChunkPagerRuntime_MetadataBufferId;
         private const BufferID SectorCoordsBufferId = BufferID.TerrainChunkPagerRuntime_SectorCoordsBufferId;
         private const BufferID StagingBytesBufferId = BufferID.TerrainChunkPagerRuntime_StagingBytesBufferId;
@@ -594,7 +598,12 @@ namespace Hecton8.World
                 return;
             }
 
-            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: false);
+            // R97 FIX: unconditional `false` severed the VisualSync lane that drives
+            // TryReleaseDeferredShutdownState when the dispatcher slot went null during a pending
+            // deferred shutdown — the worker thread and the vault slabs then stayed unreclaimed for
+            // the rest of the session. Keep the recovery lane alive while a deferred shutdown is
+            // pending.
+            UnregisterDispatcher(keepVisualSyncForDeferredShutdown: Volatile.Read(ref _deferredShutdown) != 0);
             if (currentService == null ||
                 (_initialized == 0 && Volatile.Read(ref _deferredShutdown) == 0))
             {
@@ -1104,7 +1113,11 @@ namespace Hecton8.World
                         continue;
 
                     int bytes = math.clamp((int)meta.FileOffset, 0, _allocatedChunkByteCapacity);
-                    if (bytes <= 0 || bytes > byteBudget)
+                    // R97 FIX (forward-progress guarantee): the first commit of the frame is always
+                    // admitted even when it exceeds the remaining byte budget — paired with the
+                    // Sanitize clamp (budget >= ChunkByteCapacity) this makes the commit-livelock
+                    // class impossible regardless of runtime tuning writes.
+                    if (bytes <= 0 || (committed > 0 && bytes > byteBudget))
                         continue;
 
                     int offset = slot * _allocatedChunkByteCapacity;
@@ -1118,6 +1131,30 @@ namespace Hecton8.World
                     metadata[slot] = meta;
                     committed++;
                     byteBudget -= bytes;
+                }
+
+                // R97: transient-failure retry/backoff lane. Slots parked as MissingFile with a
+                // retry marker (_pad0 == 1, set by DrainWorkerResults for IO-class failures) count
+                // down here and are then released (metadata/coords -> default, SectorHash 0), so
+                // the residency job re-requests the sector naturally. Worst case a persistently
+                // failing file retries once per backoff window (~bounded IO), instead of poisoning
+                // the sector for the whole session. Genuine missing files (_pad0 == 0) stay parked.
+                for (int slot = 0; slot < metadataCount; slot++)
+                {
+                    ChunkMetadataDTO meta = metadata[slot];
+                    if ((meta.StateFlags & TerrainChunkStateFlags.MissingFile) == 0u || meta._pad0 == 0)
+                        continue;
+
+                    if (meta._pad1 > 0)
+                    {
+                        meta._pad1--;
+                        metadata[slot] = meta;
+                        continue;
+                    }
+
+                    // SectorHash == 0 is the free-slot condition (FindFreeSlot); stale sector coords
+                    // are harmless — dispatch rewrites them on the next allocation of this slot.
+                    metadata[slot] = default;
                 }
             }
         }
@@ -1337,6 +1374,30 @@ namespace Hecton8.World
                     meta.BufferIdRef = unchecked((uint)result.SlotIndex);
                     meta.StateFlags = TerrainChunkStateFlags.MissingFile | TerrainChunkStateFlags.Stale | TerrainChunkStateFlags.NetcodeExcluded;
                     meta.FileOffset = 0u;
+                    // R97 FIX (permanent sector poisoning): transient IO-class failures (locked file,
+                    // torn read, decode error) previously negative-cached the sector forever while the
+                    // player stayed in range. Mark them retryable with a backoff countdown; the
+                    // VisualSyncTick backoff lane frees the slot when it expires so residency
+                    // re-requests naturally. A genuinely absent file stays a permanent negative cache
+                    // (existing semantics).
+                    const uint transientMask = TerrainChunkPagerConstants.ResultFlagIoError |
+                                               TerrainChunkPagerConstants.ResultFlagLz4Error |
+                                               TerrainChunkPagerConstants.ResultFlagPartialRead |
+                                               TerrainChunkPagerConstants.ResultFlagChecksumMismatch |
+                                               TerrainChunkPagerConstants.ResultFlagInvalidHeader;
+                    bool transientFailure = (result.Flags & transientMask) != 0u &&
+                                            (result.Flags & TerrainChunkPagerConstants.ResultFlagMissingFile) == 0u;
+                    if (transientFailure)
+                    {
+                        meta._pad0 = 1;
+                        meta._pad1 = TransientChunkRetryBackoffTicks;
+                    }
+                    else
+                    {
+                        meta._pad0 = 0;
+                        meta._pad1 = 0;
+                    }
+
                     if ((result.Flags & TerrainChunkPagerConstants.ResultFlagMissingFile) != 0u)
                         IncrementMissingFile();
                     if ((result.Flags & TerrainChunkPagerConstants.ResultFlagIoError) != 0u)

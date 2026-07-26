@@ -321,7 +321,7 @@ namespace Hecton8.Modding
                         continue;
 
                     string value = entry.Value ?? string.Empty;
-                    int payloadLength = value.Length * sizeof(char);
+                    int payloadLength = value.Length > SaveBinaryStorage.ModPayloadMaxBytes ? SaveBinaryStorage.ModPayloadMaxBytes + sizeof(char) : value.Length * sizeof(char);
                     string tempOverridePath = BuildModPayloadTempOverridePath(absoluteSavePath, entry.ModHash, entry.KeyHash);
                     if (payloadLength > SaveBinaryStorage.ModPayloadMaxBytes)
                     {
@@ -513,6 +513,12 @@ namespace Hecton8.Modding
             error = string.Empty;
             if (sector.ModHash == 0u || sector.PagedSectorHash == 0L || payloadLength < 0)
                 return true;
+
+            if (!payloadBytes.IsCreated || payloadLength > payloadBytes.Length)
+            {
+                error = "Mod payload length exceeds decode buffer capacity.";
+                return false;
+            }
 
             if ((payloadLength & 1) != 0)
             {

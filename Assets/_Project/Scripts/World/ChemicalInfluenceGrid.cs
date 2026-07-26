@@ -2585,10 +2585,14 @@ namespace Hecton8.World
                 return false;
             }
 
+            float rx = runtimePosition.x == 0f ? 0.0f : runtimePosition.x;
+            float ry = runtimePosition.y == 0f ? 0.0f : runtimePosition.y;
+            float rz = runtimePosition.z == 0f ? 0.0f : runtimePosition.z;
+
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                new double3(rx, ry, rz));
             if (!resolvedAup.IsFinite())
                 return false;
 
@@ -2687,10 +2691,10 @@ namespace Hecton8.World
 
         private static float4 SamplePublishedTrilinear(NativeArray<float4> grid, float3 gridPosition)
         {
-            float3 clamped = math.clamp(gridPosition, float3.zero, new float3(GridAxisX - 1, GridAxisY - 1, GridAxisZ - 1));
-            int3 p0 = new int3((int)math.floor(clamped.x), (int)math.floor(clamped.y), (int)math.floor(clamped.z));
+            double3 clampedD = math.clamp(new double3(gridPosition.x, gridPosition.y, gridPosition.z), double3.zero, new double3(GridAxisX - 1, GridAxisY - 1, GridAxisZ - 1));
+            int3 p0 = new int3(FastFloorToInt(clampedD.x), FastFloorToInt(clampedD.y), FastFloorToInt(clampedD.z));
             int3 p1 = math.min(p0 + new int3(1), new int3(GridAxisX - 1, GridAxisY - 1, GridAxisZ - 1));
-            float3 t = clamped - p0;
+            float3 t = new float3((float)(clampedD.x - p0.x), (float)(clampedD.y - p0.y), (float)(clampedD.z - p0.z));
             float4 c000 = grid[ToGridIndex(p0.x, p0.y, p0.z)];
             float4 c100 = grid[ToGridIndex(p1.x, p0.y, p0.z)];
             float4 c010 = grid[ToGridIndex(p0.x, p1.y, p0.z)];
@@ -2710,7 +2714,10 @@ namespace Hecton8.World
 
         private static int ToGridIndex(int x, int y, int z)
         {
-            return x + z * GridAxisX + y * GridSliceStride;
+            int cx = math.clamp(x, 0, GridAxisX - 1);
+            int cy = math.clamp(y, 0, GridAxisY - 1);
+            int cz = math.clamp(z, 0, GridAxisZ - 1);
+            return cx + cz * GridAxisX + cy * GridSliceStride;
         }
 
         private static int3 AupToCell(double3 aup, float cellSize)
@@ -3764,8 +3771,10 @@ namespace Hecton8.World
             hash = (hash ^ (uint)entry.ActiveEmitters) * 16777619u;
             hash = (hash ^ (uint)entry.MockEmitters) * 16777619u;
             hash = (hash ^ (uint)entry.Iterations) * 16777619u;
-            hash = (hash ^ math.asuint(entry.MaxBlood)) * 16777619u;
-            hash = (hash ^ math.asuint(entry.GlobalQualityWeight)) * 16777619u;
+            float maxBlood = entry.MaxBlood == 0f ? 0.0f : entry.MaxBlood;
+            float globalQuality = entry.GlobalQualityWeight == 0f ? 0.0f : entry.GlobalQualityWeight;
+            hash = (hash ^ math.asuint(maxBlood)) * 16777619u;
+            hash = (hash ^ math.asuint(globalQuality)) * 16777619u;
             hash = (hash ^ entry.Flags) * 16777619u;
             return hash == 0u ? 1u : hash;
         }

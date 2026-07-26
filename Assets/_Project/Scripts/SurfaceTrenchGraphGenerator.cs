@@ -166,7 +166,11 @@ namespace Hecton8.World
                     if (rng.NextFloat() > 0.4f && counts.Structures < MAX_STRUCTURES)
                     {
                         float3 midPoint = math.lerp(seg.pointA, seg.pointB, 0.5f);
-                        float3 dir = math.normalize(seg.pointB - seg.pointA);
+                        // R95 FIX: XZ clamping can collapse a walk step at the volume border into a
+                        // zero-length segment; math.normalize(0) is NaN and poisoned the arch
+                        // structure (voxels.md: preserve finite values). normalizesafe falls back
+                        // to +X and the density job renders a valid (if arbitrary-facing) arch.
+                        float3 dir = math.normalizesafe(seg.pointB - seg.pointA, new float3(1f, 0f, 0f));
                         float3 right = new float3(dir.z, 0f, -dir.x); // Perpendicular to trench
                         float spread = seg.widthScale * 1.25f;
 

@@ -1372,9 +1372,18 @@ namespace Hecton8.World
 
         private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)
         {
+            if (!position.IsFinite())
+                return Vector3.zero;
+
             AbsoluteUniversePosition runtimeOriginAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
             float3 runtimePosition = AUPMath.ResolveCameraRelative(in position, in runtimeOriginAup);
-            return new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(runtimePosition)))
+                return Vector3.zero;
+
+            float rx = runtimePosition.x == 0f ? 0.0f : runtimePosition.x;
+            float ry = runtimePosition.y == 0f ? 0.0f : runtimePosition.y;
+            float rz = runtimePosition.z == 0f ? 0.0f : runtimePosition.z;
+            return new Vector3(rx, ry, rz);
         }
     }
 }

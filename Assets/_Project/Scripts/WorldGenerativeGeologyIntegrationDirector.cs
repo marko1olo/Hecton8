@@ -320,7 +320,7 @@ namespace Hecton8.World
 
             RestoreRecentlyMissingPlans(searchRadius, now, playerRuntimePosition, hasPlayerAup, in playerAup);
 
-            _orderedPlans.Sort(CompareByWeightDescending);
+            _orderedPlans.Sort(s_compareByWeightDescending);
             StabilizeTrackedPlans(visualQualityWeight);
 
             for (int i = 0; i < _orderedPlans.Count; i++)
@@ -624,6 +624,28 @@ namespace Hecton8.World
 
             for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
                 _bindingsByKey.Remove(_dictionaryTrimBuffer[i]);
+
+            // R95 FIX: _bindingLastSeenTimes was never trimmed but gates TryUpsertPlan insertion.
+            // After 256 lifetime-unique runtime keys the registry refused every new seam plan for
+            // the rest of the session (no new collars/cave mouths/geology volumes). Prune entries
+            // whose key is no longer selected nor tracked in the plan dictionary; their grace
+            // window simply restarts if the formation returns.
+            _dictionaryTrimBuffer.Clear();
+            Dictionary<long, float>.Enumerator lastSeenEnumerator = _bindingLastSeenTimes.GetEnumerator();
+            while (lastSeenEnumerator.MoveNext())
+            {
+                long runtimeKey = lastSeenEnumerator.Current.Key;
+                if (!_selectedRuntimeKeys.Contains(runtimeKey) && !_plansByKey.ContainsKey(runtimeKey))
+                {
+                    if (_dictionaryTrimBuffer.Count >= _dictionaryTrimBuffer.Capacity)
+                        break;
+
+                    _dictionaryTrimBuffer.Add(runtimeKey);
+                }
+            }
+
+            for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
+                _bindingLastSeenTimes.Remove(_dictionaryTrimBuffer[i]);
         }
 
         private bool TryBuildPlan(
@@ -1012,6 +1034,10 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
         }
+
+        // COLD ALLOC: Comparison<T>[1] - cached delegate so List.Sort does not allocate a fresh
+        // method-group conversion every reconcile tick - owner: WorldGenerativeGeologyIntegrationDirector.
+        private static readonly System.Comparison<WorldGenerativeGeologySeamPlan> s_compareByWeightDescending = CompareByWeightDescending;
 
         private static int CompareByWeightDescending(WorldGenerativeGeologySeamPlan left, WorldGenerativeGeologySeamPlan right)
         {

@@ -1,0 +1,26 @@
+HECTON-8 PHASE 8.5 MULTI-PASS GPU SHADER DIAGNOSTICS
+BUILD SENTINEL: SENTINEL_R95_2026-07-26_TRUE_SCALE_BLEND_FIX
+Timestamp: 2026-07-26 14:01:31
+==================================================
+Shader Loaded: True (Hecton8/URP/Terrain_TextureArray)
+AlbedoArray Bound: True
+NormalArray Bound: True
+MaskArray Bound: True
+Passes captured (non-magenta, covered): 4/4
+  PASS 1  GPU_BirdEye_4Quadrant_Materials.png (25m: Sand/Limestone/Silt/HardRock isolation)
+  PASS 2  GPU_Debug_StochasticHeatmap.png     (grazing: red<60m -> yellow -> green>120m)
+  PASS 3  GPU_Debug_Normals.png               (20m: tangent-space normals as albedo)
+  PASS 4  GPU_RealGeology_1km_Tile.png        (1:1 unsquashed, oblique 45deg dynamic-bounds framing)
+==================================================
+PASS 4 GEOLOGY — RAW HEIGHT FACTS (no hardcoded assumptions):
+  4a DIRECTED  @(-40000,15000)  GPU_RealGeology_Directed_-40k_15k.png
+     hMin=-3682,4m hMax=-3549,9m relief=132,5m viewScale=1,000
+  4b MAX-RELIEF (probe-chosen) @(24000,-18000)  GPU_RealGeology_1km_Tile.png
+     hMin=-4387,4m hMax=-262,5m relief=4124,9m viewScale=1,000 maskScore(Canyon+Fault+HardRock)=1,006
+==================================================
+NOTE: PASS 2 uses a grazing pose (not literal 100m bird's-eye) because a downward
+      100m view cannot contain the <60m red zone. Objective = full gate transition.
+NOTE: 'P3_west' / the (-40000,15000) '220m canyon' claim is NOT a codebase symbol.
+      Tile 4a renders that exact coordinate and logs its REAL relief above; tile 4b
+      is the genuine max-relief sector found by scanning EvaluateHeightMeters.
+STATUS: ALL 4 DIAGNOSTIC PASSES CAPTURED (no magenta)

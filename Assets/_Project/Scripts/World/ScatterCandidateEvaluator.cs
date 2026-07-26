@@ -97,34 +97,49 @@ namespace Hecton8.World
             if (substrate != WorldProceduralPlacementRule.FloraSubstrateMask.None)
                 return substrate;
 
-            switch (dominantMaterial)
-            {
-                case WorldTerrainSurfaceMaterialClass.ShellSand:
-                case WorldTerrainSurfaceMaterialClass.ClaySilt:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Sand;
-                case WorldTerrainSurfaceMaterialClass.LimestoneShelf:
-                case WorldTerrainSurfaceMaterialClass.HardRock:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
-                case WorldTerrainSurfaceMaterialClass.BrineSaltCrust:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Brine;
-                case WorldTerrainSurfaceMaterialClass.ManganeseNodulePlain:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Nodule;
-                case WorldTerrainSurfaceMaterialClass.ReefRubble:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Reef |
-                           WorldProceduralPlacementRule.FloraSubstrateMask.Rubble;
-                case WorldTerrainSurfaceMaterialClass.SeepCrust:
-                    return WorldProceduralPlacementRule.FloraSubstrateMask.Seep |
-                           WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
-            }
-
             float sand = math.saturate(weights.ShellSand + weights.ClaySilt + weights.ReefRubble * 0.35f);
-            float rock = math.saturate(weights.HardRock + weights.LimestoneShelf + weights.SeepCrust * 0.30f);
+            float rock = math.saturate(weights.HardRock + weights.LimestoneShelf);
             return sand >= rock
                 ? WorldProceduralPlacementRule.FloraSubstrateMask.Sand
                 : WorldProceduralPlacementRule.FloraSubstrateMask.Rock;
         }
 
-        internal static bool PassesClusterPatchEnvelope(
+        public static bool ResolveFloraSubstrateFromTerrainDetail(
+            in WorldTerrainSurfaceMaterialWeights weights,
+            WorldTerrainSurfaceMaterialClass targetMaterial)
+        {
+            return ResolveFloraSubstrateFromTerrainDetail(in weights, 0f, targetMaterial);
+        }
+
+        public static bool ResolveFloraSubstrateFromTerrainDetail(
+            in WorldTerrainSurfaceMaterialWeights weights,
+            float depthMeters,
+            WorldTerrainSurfaceMaterialClass targetMaterial)
+        {
+            float rock = math.saturate(weights.HardRock + weights.LimestoneShelf);
+            switch (targetMaterial)
+            {
+                case WorldTerrainSurfaceMaterialClass.HardRock:
+                    return weights.HardRock >= 0.18f || weights.LimestoneShelf >= 0.16f;
+                case WorldTerrainSurfaceMaterialClass.LimestoneShelf:
+                    return weights.LimestoneShelf >= 0.16f;
+                case WorldTerrainSurfaceMaterialClass.ClaySilt:
+                    return weights.ClaySilt >= 0.18f;
+                case WorldTerrainSurfaceMaterialClass.BrineSaltCrust:
+                    return weights.BrineSaltCrust >= 0.12f;
+                case WorldTerrainSurfaceMaterialClass.ManganeseNodulePlain:
+                    return depthMeters > 1200f && weights.ManganeseNodulePlain >= 0.12f;
+                case WorldTerrainSurfaceMaterialClass.ReefRubble:
+                    return weights.ReefRubble >= 0.12f;
+                case WorldTerrainSurfaceMaterialClass.SeepCrust:
+                    return weights.SeepCrust >= 0.12f;
+                case WorldTerrainSurfaceMaterialClass.ShellSand:
+                default:
+                    return weights.ShellSand >= 0.16f || (weights.ClaySilt + rock < 0.28f);
+            }
+        }
+
+        public static bool PassesClusterPatchEnvelope(
             float positionX,
             float positionZ,
             float chunkSize,
@@ -136,14 +151,11 @@ namespace Hecton8.World
             if (clusterNoiseThreshold <= 0f)
                 return true;
 
-            float safeChunkSize = math.max(1f, chunkSize);
-            int chunkX = (int)math.floor(positionX / safeChunkSize);
-            int chunkZ = (int)math.floor(positionZ / safeChunkSize);
             float patchMask = ScatterMath.EvaluateClusterPatchMask01(
                 positionX,
                 positionZ,
-                chunkX,
-                chunkZ,
+                0,
+                0,
                 clusterNoiseScale,
                 ruleIdHash,
                 familyHash);

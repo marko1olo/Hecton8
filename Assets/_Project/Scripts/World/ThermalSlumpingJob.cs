@@ -72,10 +72,10 @@ namespace Hecton8.World
             float transferScale = math.saturate(Strength) * 0.25f;
             float delta = 0f;
 
-            delta += ResolveNeighborDelta(center, InputHeights01[index - 1], talusNormalized, transferScale);
-            delta += ResolveNeighborDelta(center, InputHeights01[index + 1], talusNormalized, transferScale);
-            delta += ResolveNeighborDelta(center, InputHeights01[index - Width], talusNormalized, transferScale);
-            delta += ResolveNeighborDelta(center, InputHeights01[index + Width], talusNormalized, transferScale);
+            if (x - 1 > 0) delta += ResolveNeighborDelta(center, InputHeights01[index - 1], talusNormalized, transferScale);
+            if (x + 1 < Width - 1) delta += ResolveNeighborDelta(center, InputHeights01[index + 1], talusNormalized, transferScale);
+            if (z - 1 > 0) delta += ResolveNeighborDelta(center, InputHeights01[index - Width], talusNormalized, transferScale);
+            if (z + 1 < Height - 1) delta += ResolveNeighborDelta(center, InputHeights01[index + Width], talusNormalized, transferScale);
 
             float resolved = math.saturate(center + delta);
             OutputHeights01[index] = resolved;

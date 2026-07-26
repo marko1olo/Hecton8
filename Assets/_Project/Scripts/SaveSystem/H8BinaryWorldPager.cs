@@ -2773,7 +2773,7 @@ namespace Hecton8.Core.Persistence.Paging
                             endOffset,
                             MemoryMappedFileAccess.ReadWrite,
                             HandleInheritability.None,
-                            false);
+                            true);
                         using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
                             offset,
                             SectorHeaderBytes + storedBytes,

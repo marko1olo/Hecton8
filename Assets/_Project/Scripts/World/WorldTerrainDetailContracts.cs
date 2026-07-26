@@ -174,22 +174,30 @@ namespace Hecton8.World
             float terrace = math.saturate(sample.TerraceMask);
             float slump = math.saturate(sample.SlumpScarMask);
             float tributary = math.saturate(sample.TributaryCanyonMask);
-            float provinceJitter = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 900f, seed ^ 0x51A7E531u, 3);
-            float localPatch = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 240f, seed ^ 0xB34ACE21u, 3);
-            float finePatch = WorldMacroGeologyFields.FractalSimplexNoise01(new float2(absoluteX, absoluteZ) / 72f, seed ^ 0x6E9CF5A1u, 3);
-            float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
-            float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
-            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
-            float shellShelfPool = math.smoothstep(0.74f, 0.96f, flat) * math.smoothstep(0.58f, 0.92f, curvatureNeutral) * shallow * math.saturate(shelf * 0.76f + terrace * 0.20f + upperWater * 0.12f) * (1f - math.smoothstep(0.18f, 0.50f, negativeCurvature));
-
+            float exposedRidge = math.saturate(ridge * 0.36f + sample.FaultMask * 0.30f + hardRock * 0.56f + math.smoothstep(0.56f, 0.84f, slope) * 0.42f);
             float flatFloor = math.smoothstep(0.54f, 0.90f, flat);
             float angleOfRepose = 1f - math.smoothstep(0.36f, 0.62f, slope);
             float steepSlope = math.smoothstep(0.34f, 0.56f, slope);
             float verySteep = math.smoothstep(0.56f, 0.84f, slope);
             float convexScrape = math.smoothstep(0.18f, 0.72f, positiveCurvature) * math.smoothstep(0.28f, 0.68f, slope);
-            float exposedRidge = math.saturate(ridge * 0.36f + sample.FaultMask * 0.30f + hardRock * 0.56f + verySteep * 0.42f);
             float finalRock = math.saturate(math.max(convexScrape * 1.35f, steepSlope * (0.56f + positiveCurvature * 0.48f + verySteep * 0.36f)) + exposedRidge - negativeCurvature * flatFloor * 0.32f - sediment * angleOfRepose * 0.18f);
+            float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
+            float shellShelfPool = math.smoothstep(0.74f, 0.96f, flat) * math.smoothstep(0.58f, 0.92f, curvatureNeutral) * shallow * math.saturate(shelf * 0.76f + terrace * 0.20f + upperWater * 0.12f) * (1f - math.smoothstep(0.18f, 0.50f, negativeCurvature));
+            float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
+            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
             finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f);
+
+            // C1-Smooth Early-Exit Gate: skip 9 octaves of material noise on pure rock faces (finalRock >= 0.98)
+            float jitterGate = math.smoothstep(0.98f, 0.85f, finalRock);
+            float provinceJitter = 0.5f;
+            float localPatch = 0.5f;
+            float finePatch = 0.5f;
+            if (jitterGate > 0.0001f)
+            {
+                provinceJitter = WorldMacroGeologyFields.DoubleFractalSimplexNoise01(new double2(absoluteX, absoluteZ) / 900.0, seed ^ 0x51A7E531u, 3);
+                localPatch = WorldMacroGeologyFields.DoubleFractalSimplexNoise01(new double2(absoluteX, absoluteZ) / 240.0, seed ^ 0xB34ACE21u, 3);
+                finePatch = WorldMacroGeologyFields.DoubleFractalSimplexNoise01(new double2(absoluteX, absoluteZ) / 72.0, seed ^ 0x6E9CF5A1u, 3);
+            }
 
             float concaveFloor = math.smoothstep(0.14f, 0.66f, negativeCurvature) * flatFloor * angleOfRepose;
             float concavityDeposit = math.saturate(concaveFloor * 1.08f + slump * 0.34f + tributary * 0.34f + basin * 0.24f + sediment * 0.30f - convexScrape * 0.58f - finalRock * 0.34f);

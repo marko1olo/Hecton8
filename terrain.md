@@ -15,11 +15,12 @@ Terrain owns surface shape, biome masks, scatter eligibility, geological logic, 
 
 Current terrain source-of-truth route:
 
-- `WorldMacroGeologyFields` owns deterministic macro-geology evaluation and the terrain artifact identity contract: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash.
+- `WorldMacroGeologyFields` owns deterministic macro-geology evaluation and the terrain artifact identity contract: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash. Exact default production constants: `ShelfDepthMeters = 90.0f`, `AbyssDepthMeters = 2950.0f`, `HadalDepthMeters = 4600.0f`, `ShelfBreakWidthMeters = 5200.0f`, `RidgeHeightMeters = 1550.0f`, `RidgeWidthMeters = 2350.0f`, `TrenchDepthMeters = 900.0f`, `TrenchWidthMeters = 2200.0f`, `BasinDepthMeters = 620.0f`, `DetailProbeMeters = 120.0f`.
 - `WorldTerrainDetailContracts` owns the macro sample to terrain material/control contract: material classes, meso detail fields, packed control masks, and proof extents.
 - `WorldProceduralTerrainSplatmapJobs` consumes macro and meso fields to produce runtime terrain/surface masks. It must not invent a separate geology truth.
 - `MapMagicBridge` and MapMagic nodes are bridge/provider/bake adapters. They may supply active height payloads, splat payloads, biome matrices, and chunk identity, but the current macro-geology contract does not come from an old hand-authored MapMagic graph.
-- `WorldProceduralFieldSampler` reads the active terrain provider first, then deterministic macro-geology fallback, then synthetic fallback. This fallback order is runtime behavior, not license to ship missing terrain payloads silently.
+- `HectonTerrainSampling.hlsl` enforces stochastic anti-tiling invariants: explicit UV gradients (`ddx`, `ddy`) are pre-calculated before dynamic branching to eliminate GPU quad derivative divergence; perceptual space bilinear blending (`sqrt -> blend -> sq`) prevents anti-tiling darkening; cubic smooth weights (`w = fuv * fuv * (3.0 - 2.0 * fuv)`) enforce C2 continuity across cell boundaries.
+- `HectonSandboxAbyssalShelfJobs.cs` enforces 64-bit double precision AUP coordinates (`AupCellSizeMeters`, `DescentRadiusMeters`, `PlateCellSizeMeters`) and explicit Burst Compilation attributes `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`.
 - `SaveManager` stores and validates terrain identity. Saves reference seeds, macro artifact version, chunk range/hash, provider flags, and water calibration. They do not serialize the entire macro field into the player save.
 - Water truth remains in the ocean/water/terrain-provider calibration route. Macro geology may produce seafloor height; it does not own sea level.
 

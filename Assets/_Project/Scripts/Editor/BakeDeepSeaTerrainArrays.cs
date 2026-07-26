@@ -102,7 +102,7 @@ namespace Hecton8.Editor
                 RenderTexture previous = RenderTexture.active;
                 RenderTexture.active = tempRT;
                 
-                Texture2D tempTex = new Texture2D(width, height, TextureFormat.RGBA32, false, !isNormalMap);
+                Texture2D tempTex = new Texture2D(width, height, TextureFormat.RGBA32, false, isNormalMap);
                 tempTex.ReadPixels(new Rect(0, 0, tempTex.width, tempTex.height), 0, 0);
                 tempTex.Apply();
                 

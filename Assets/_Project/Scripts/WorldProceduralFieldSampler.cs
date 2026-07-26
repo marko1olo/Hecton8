@@ -18,7 +18,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel, IGlobalRegistryHotSwapListener
+    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel, IGlobalRegistryHotSwapListener, IMapMagicTerrainTileEventListener
     {
         private const string PatternLabelSedimentResources = "SedimentResources";
         private const string PatternLabelFertileShallows = "FertileShallows";
@@ -2259,6 +2259,11 @@ namespace Hecton8.World
             RegisterRuntimeDependencyListeners();
             RefreshColdReferences(force: true);
             BiomeMatrixEvents.Register(this);
+            // R97 FIX: seafloor height cache entries (MapMagicHeight / MacroGeologyFallback) were
+            // never invalidated when a real terrain tile streamed in or moved — gameplay depth truth
+            // stayed on fallback heights indefinitely (terrain.md failure path "stale height/chunk
+            // handle"). Tile apply/move events now clear the cache.
+            MapMagicTerrainTileEvents.Register(this);
             _isDataDirty = true;
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
@@ -2267,6 +2272,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            MapMagicTerrainTileEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
             UnregisterRuntimeDependencyListeners();
             ClearActiveRuntimeInstance();
@@ -2282,6 +2288,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            MapMagicTerrainTileEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
             UnregisterRuntimeDependencyListeners();
             CompletePendingSamplingJobForBarrier();
@@ -2380,6 +2387,14 @@ namespace Hecton8.World
 
         public void MarkScatterSamplingJobCompleted()
         {
+            // R97 FIX: previously dropped the handle and released vault buffer pins with no
+            // completion check — a caller invoking this early would free pinned buffers while
+            // CellSamplingJob was still reading them (use-after-release on vault regrow).
+            // TryComplete is a no-op when the job already finished; otherwise it forces the
+            // barrier exactly like CompletePendingSamplingJobForBarrier does.
+            if (_hasPendingSamplingJob)
+                DispatcherJobSwap.TryComplete(ref _lastSamplingJobHandle, true);
+
             _lastSamplingJobHandle = default;
             _hasPendingSamplingJob = false;
             ReleaseSamplingJobBufferPins();
@@ -2388,6 +2403,22 @@ namespace Hecton8.World
         public void MarkBurstDataDirty()
         {
             _isDataDirty = true;
+            ClearSeafloorHeightCache();
+        }
+
+        /// <summary>
+        /// R97: a MapMagic tile just applied real heights — cached MapMagic/macro-fallback samples
+        /// for that region are stale. Tile events are rare (stream-in/move), so a full cache clear
+        /// is cheaper and safer than per-tile range invalidation.
+        /// </summary>
+        void IMapMagicTerrainTileEventListener.OnMapMagicTerrainTileApplied(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            ClearSeafloorHeightCache();
+        }
+
+        /// <summary>R97: a pooled tile moved to a new grid cell — its old heights are stale everywhere.</summary>
+        void IMapMagicTerrainTileEventListener.OnMapMagicTerrainTileMoved(in MapMagicTerrainTileSnapshot snapshot)
+        {
             ClearSeafloorHeightCache();
         }
 
@@ -4139,7 +4170,12 @@ namespace Hecton8.World
             seafloorHeight = 0f;
             seafloorSource = SeafloorSource.None;
 
-            if (mapMagicBridge != null && mapMagicBridge.TryGetHeight(position.x, position.z, out seafloorHeight))
+            // R97 FIX: finite guard added — the provider lane below already had it; a NaN/Inf from a
+            // bad MapMagic payload on this primary lane was cached as depth truth and poisoned
+            // DepthMeters/slope/pattern outputs downstream.
+            if (mapMagicBridge != null &&
+                mapMagicBridge.TryGetHeight(position.x, position.z, out seafloorHeight) &&
+                math.isfinite(seafloorHeight))
             {
                 seafloorSource = SeafloorSource.MapMagicHeight;
                 return true;
@@ -4154,7 +4190,12 @@ namespace Hecton8.World
                 return true;
             }
 
-            float fallbackSurface = ResolveWaterSurfaceLevel(math.max(position.y + 120f, 120f));
+            // R97 FIX: the synthetic-lane fallback surface was derived from the QUERY's Y
+            // (position.y + 120), but the height cache is keyed by XZ only — the first caller's
+            // altitude got frozen as terrain truth for that column (query-order-dependent depth).
+            // The provider/bridge lanes inside ResolveWaterSurfaceLevel still win when present;
+            // only the last-resort constant is now Y-independent and deterministic.
+            float fallbackSurface = ResolveWaterSurfaceLevel(DefaultWaterSurfaceLevelY);
             if (TryResolveMacroGeologyFallbackHeight(position.x, position.z, out seafloorHeight))
             {
                 seafloorSource = SeafloorSource.MacroGeologyFallback;
@@ -4808,19 +4849,21 @@ namespace Hecton8.World
                 : WorldProceduralPattern.AbyssSparse;
         }
 
-        private static HectonBiomeFamilyProfile ChooseFamily(params HectonBiomeFamilyProfile[] options)
+        // R97 FIX (Zero-GC): was `params HectonBiomeFamilyProfile[]` — every fallback biome-family
+        // resolve allocated a managed array in the sample hot path. All 22 call sites pass exactly
+        // three candidates; the Burst twin (ChooseFamilyIndex) already uses the allocation-free shape.
+        private static HectonBiomeFamilyProfile ChooseFamily(
+            HectonBiomeFamilyProfile option0,
+            HectonBiomeFamilyProfile option1,
+            HectonBiomeFamilyProfile option2)
         {
-            if (options == null)
-                return null;
-
-            for (int i = 0; i < options.Length; i++)
-            {
-                if (options[i] != null)
-                    return options[i];
-            }
-
-            return null;
+            if (option0 != null)
+                return option0;
+            if (option1 != null)
+                return option1;
+            return option2;
         }
+
 
         private float EvaluateZoneBias(
             int zoneDataIndex,

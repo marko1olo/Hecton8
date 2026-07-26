@@ -725,11 +725,93 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return SafeNormalize3(half3(xy, z));
         }
 
+        float3 HectonSimplexMod289(float3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        float4 HectonSimplexMod289(float4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        float4 HectonSimplexPermute(float4 x) { return HectonSimplexMod289(((x * 34.0) + 1.0) * x); }
+        float4 HectonSimplexTaylorInvSqrt(float4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+        float HectonSimplexNoise3D(float3 v)
+        {
+            const float2 C = float2(1.0 / 6.0, 1.0 / 3.0);
+            const float4 D = float4(0.0, 0.5, 1.0, 2.0);
+
+            float3 i  = floor(v + dot(v, C.yyy));
+            float3 x0 = v - i + dot(i, C.xxx);
+
+            float3 g = step(x0.yzx, x0.xyz);
+            float3 l = 1.0 - g;
+            float3 i1 = min(g.xyz, l.zxy);
+            float3 i2 = max(g.xyz, l.zxy);
+
+            float3 x1 = x0 - i1 + C.xxx;
+            float3 x2 = x0 - i2 + C.yyy;
+            float3 x3 = x0 - D.yyy;
+
+            i = HectonSimplexMod289(i);
+            float4 p = HectonSimplexPermute(HectonSimplexPermute(HectonSimplexPermute(
+                        i.z + float4(0.0, i1.z, i2.z, 1.0))
+                    + i.y + float4(0.0, i1.y, i2.y, 1.0))
+                    + i.x + float4(0.0, i1.x, i2.x, 1.0));
+
+            float n_ = 0.142857142857;
+            float3 ns = n_ * D.wyz - D.xzx;
+
+            float4 j = p - 49.0 * floor(p * ns.z);
+
+            float4 x_ = floor(j * ns.z);
+            float4 y_ = floor(j - 7.0 * x_);
+
+            float4 x = x_ * ns.x + ns.yyyy;
+            float4 y = y_ * ns.x + ns.yyyy;
+            float4 h = 1.0 - abs(x) - abs(y);
+
+            float4 b0 = float4(x.xy, y.xy);
+            float4 b1 = float4(x.zw, y.zw);
+
+            float4 s0 = floor(b0) * 2.0 + 1.0;
+            float4 s1 = floor(b1) * 2.0 + 1.0;
+            float4 sh = -step(h, float4(0.0, 0.0, 0.0, 0.0));
+
+            float4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+            float4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+
+            float3 p0 = float3(a0.xy, h.x);
+            float3 p1 = float3(a0.zw, h.y);
+            float3 p2 = float3(a1.xy, h.z);
+            float3 p3 = float3(a1.zw, h.w);
+
+            float4 norm = HectonSimplexTaylorInvSqrt(float4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+            p0 *= norm.x;
+            p1 *= norm.y;
+            p2 *= norm.z;
+            p3 *= norm.w;
+
+            float4 m = max(0.6 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+            m = m * m;
+            return 42.0 * dot(m * m, float4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+        }
+
+        half3 ResolveOrganicBioluminescenceEmission(float3 positionWS, half vertexCaveAo)
+        {
+            float n1 = HectonSimplexNoise3D(positionWS * 0.55);
+            float n2 = HectonSimplexNoise3D(positionWS * 1.85);
+
+            float ridgedVeins = 1.0 - abs(n1 * 0.7 + n2 * 0.3);
+            ridgedVeins = smoothstep(0.92, 0.98, ridgedVeins); // TIGHT gate: only sharp zero-crossings glow as thin branching veins
+
+            float creviceMask = saturate((1.0 - vertexCaveAo) * 2.5);
+            float emissionMask = ridgedVeins * creviceMask;
+
+            half3 cyanGlow = half3(0.02h, 0.78h, 0.98h);
+            return cyanGlow * (emissionMask * 4.5h); // Brighter to compensate for tighter mask
+        }
+
         half3 ResolveVoxelTriplanarWeights(half3 normalWS)
         {
-            float sharpness = max(_VoxelTriplanarSharpness, 1.0);
-            float3 axis = pow(max(abs((float3)normalWS), float3(0.001, 0.001, 0.001)), sharpness);
-            return (half3)(axis * rcp(max(axis.x + axis.y + axis.z, 0.0001)));
+            float3 blendWeights = abs((float3)normalWS);
+            blendWeights = pow(blendWeights, 8.0); // HIGH EXPONENT: razor-sharp axis selection kills moiré interference
+            float sum = blendWeights.x + blendWeights.y + blendWeights.z;
+            return (half3)(blendWeights * rcp(max(sum, 0.0001)));
         }
 
         float2 ResolveVoxelTriplanarUv(float3 positionWS, int axis)
@@ -1090,7 +1172,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half2 materialWeights = max(color.rg, half2(0.0h, 0.0h));
                 half materialWeightSum = materialWeights.x + materialWeights.y;
                 materialWeights = materialWeightSum > 0.0001h ? materialWeights * rcp(materialWeightSum) : half2(0.0h, 1.0h);
-                half vertexCaveAo = saturate(max(color.a, input.bakedAmbientOcclusion));
+                half vertexCaveAo = saturate(color.r * max(color.a > 0.001h ? color.a : 1.0h, input.bakedAmbientOcclusion));
                 half noisyBakedAo = ResolveDepthNoiseCavityAo(samplePositionWS, vertexCaveAo);
                 half3 dominantNormalWS = SampleCinematicTwoAxisNormal(samplePositionWS, baseNormalWS);
                 half globalCutMask = EvaluateGlobalCutMask(input.positionWS);
@@ -1159,6 +1241,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half metallic = decodedMask.metallic;
                 half smoothness = saturate(lerp(decodedMask.smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
                 smoothness = saturate(smoothness + bakedOreMetallic * geologyBlend * (half)_GeologyOreGlintStrength * 0.12h);
+                // PATCHY WETNESS: modulate smoothness with low-frequency 3D Simplex noise
+                // Prevents uniform plastic wrap — creates wet puddle patches (0.82) vs dry matte rock (0.12)
+                float wetNoise = HectonSimplexNoise3D(samplePositionWS * 0.2);
+                half wetMask = (half)smoothstep(0.3, 0.7, wetNoise * 0.5 + 0.5);
+                smoothness = lerp(0.12h, 0.82h, wetMask);
                 half ambientOcclusion = saturate(noisyBakedAo * vertexCaveAo * decodedMask.occlusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
                 half caveMouthDistanceAo = saturate(input.skirtAlpha);
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
@@ -1187,7 +1274,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) +
                     (thermalColor * thermalEmission) +
                     ((half3)_ChunkDissolvePhosphorTint.rgb * caveMouthPulse * 0.18h) +
-                    ((half3)_ChunkDissolvePhosphorTint.rgb * decodedMask.emissionMask * 0.035h);
+                    ((half3)_ChunkDissolvePhosphorTint.rgb * decodedMask.emissionMask * 0.035h) +
+                    ResolveOrganicBioluminescenceEmission(samplePositionWS, vertexCaveAo);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
                 finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.xrFoveatedVector);
                 return half4(finalColor, skirtCoverage);

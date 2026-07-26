@@ -49,10 +49,13 @@ Required for large domains:
 - chunk or domain ID;
 - entry count;
 - payload length;
-- checksum;
+- checksum (`XXHash3` 64-bit validation);
 - compressed block where justified;
-- async write path;
+- async write path (Unity 6 `Awaitable` background thread);
+- `MainThreadSnapshotBudgetMs = 5L` (5 ms main thread snapshot budget ceiling);
 - crash-safe temp file then atomic replace.
+
+`SaveManager.cs` strictly enforces `ISaveable` registration with zero GC runtime allocations. Dynamic managed collections (e.g. `Dictionary<K,V>`) inside `SaveData.cs` root payloads are prohibited; serialization must use `ISerializationCallbackReceiver` with parallel flat arrays.
 
 ## 2026-06-05 H8BinaryWorldPager Source Anchor
 

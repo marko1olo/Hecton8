@@ -770,10 +770,13 @@ Required for large domains:
 - chunk or domain ID;
 - entry count;
 - payload length;
-- checksum;
+- checksum (`XXHash3` 64-bit validation);
 - compressed block where justified;
-- async write path;
+- async write path (Unity 6 `Awaitable` background thread);
+- `MainThreadSnapshotBudgetMs = 5L` (5 ms main thread snapshot budget ceiling);
 - crash-safe temp file then atomic replace.
+
+`SaveManager.cs` strictly enforces `ISaveable` registration with zero GC runtime allocations. Dynamic managed collections (e.g. `Dictionary<K,V>`) inside `SaveData.cs` root payloads are prohibited; serialization must use `ISerializationCallbackReceiver` with parallel flat arrays.
 
 ## 2026-06-05 H8BinaryWorldPager Source Anchor
 
@@ -2128,11 +2131,13 @@ Tools, construction, AI, physics, and rendering consume voxel-owned snapshots or
 
 ## SDF Contract
 
-Signed distance convention:
+Signed distance convention in production HECTON-8 SDF fields:
 
-- negative = solid;
-- zero = surface;
-- positive = void.
+- positive = solid rock (depth below terrain surface);
+- zero = surface boundary;
+- negative = void (open air or water).
+
+`ProceduralCaveSdfCarveJob` in `WorldProceduralCaveSdfJobs.cs` is the canonical owner of 3D cave carving and mandates `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]`. Coordinates use double-precision AUP wrapped via a `6627.0m` period to preserve continuity across chunk boundaries.
 
 Every SDF operation must guard division, clamp exponentials, preserve finite values, and keep material IDs or blend weights where surface materials change.
 
@@ -3627,11 +3632,12 @@ Terrain owns surface shape, biome masks, scatter eligibility, geological logic, 
 
 Current terrain source-of-truth route:
 
-- `WorldMacroGeologyFields` owns deterministic macro-geology evaluation and the terrain artifact identity contract: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash.
+- `WorldMacroGeologyFields` owns deterministic macro-geology evaluation and the terrain artifact identity contract: authoring seed, macro artifact version, chunk size, chunk range, and chunk range hash. Exact default production constants: `ShelfDepthMeters = 90.0f`, `AbyssDepthMeters = 2950.0f`, `HadalDepthMeters = 4600.0f`, `ShelfBreakWidthMeters = 5200.0f`, `RidgeHeightMeters = 1550.0f`, `RidgeWidthMeters = 2350.0f`, `TrenchDepthMeters = 900.0f`, `TrenchWidthMeters = 2200.0f`, `BasinDepthMeters = 620.0f`, `DetailProbeMeters = 120.0f`.
 - `WorldTerrainDetailContracts` owns the macro sample to terrain material/control contract: material classes, meso detail fields, packed control masks, and proof extents.
 - `WorldProceduralTerrainSplatmapJobs` consumes macro and meso fields to produce runtime terrain/surface masks. It must not invent a separate geology truth.
 - `MapMagicBridge` and MapMagic nodes are bridge/provider/bake adapters. They may supply active height payloads, splat payloads, biome matrices, and chunk identity, but the current macro-geology contract does not come from an old hand-authored MapMagic graph.
-- `WorldProceduralFieldSampler` reads the active terrain provider first, then deterministic macro-geology fallback, then synthetic fallback. This fallback order is runtime behavior, not license to ship missing terrain payloads silently.
+- `HectonTerrainSampling.hlsl` enforces stochastic anti-tiling invariants: explicit UV gradients (`ddx`, `ddy`) are pre-calculated before dynamic branching to eliminate GPU quad derivative divergence; perceptual space bilinear blending (`sqrt -> blend -> sq`) prevents anti-tiling darkening; cubic smooth weights (`w = fuv * fuv * (3.0 - 2.0 * fuv)`) enforce C2 continuity across cell boundaries.
+- `HectonSandboxAbyssalShelfJobs.cs` enforces 64-bit double precision AUP coordinates (`AupCellSizeMeters`, `DescentRadiusMeters`, `PlateCellSizeMeters`) and explicit Burst Compilation attributes `[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`.
 - `SaveManager` stores and validates terrain identity. Saves reference seeds, macro artifact version, chunk range/hash, provider flags, and water calibration. They do not serialize the entire macro field into the player save.
 - Water truth remains in the ocean/water/terrain-provider calibration route. Macro geology may produce seafloor height; it does not own sea level.
 
@@ -6496,6 +6502,8 @@ If the folder or needed image proof is unavailable, report visual status as `PEN
 ## Evidence Law
 
 [RULE] Status is `PENDING VERIFICATION` until fresh evidence exists. Unity import, Unity Console, Play Mode, profiler, GCMonitor, Frame Debugger, RenderDoc, screenshot/capture, player build, device run, save/load proof, and user approval are evidence. Docs, static scans, local `dotnet build`, and agent confidence are not runtime proof.
+
+[RULE] Bee Assembly Cache Invalidation: Never trust visual diagnostic PNG outputs or runtime test assertions after editing C# files without verifying in the Unity batchmode compile log that the target assembly DLL (e.g., Hecton8.Core.dll) was ACTUALLY recompiled by Bee (indicated by 'Csc Library/Bee/artifacts/.../Hecton8.Core.dll'). If Bee returned a cache hit or skipped recompiling the target asmdef DLL, force-delete 'Library/Bee/artifacts' or touch the corresponding asmdef file before running diagnostic renders.
 
 [RULE] Never Trust Automated Assertions Alone: Exit Code 0 or the presence of a screenshot file does NOT prove the interface is functional. A test script might capture a blank page, 404, 500, or `ERR_CONNECTION_REFUSED` and exit with 0. Test scripts must verify the HTTP response status (strictly `200 OK`). Any status other than 200 must cause the test script to fail explicitly.
 
@@ -11555,6 +11563,8 @@ Water truth is split deliberately:
 - `rendering.md` owns fog, water material, caustic projection, silt particles, wetness shaders, and GPU budget.
 - `audio.md` owns muffling, sonar, pressure groans, water ingress sound, and mix-state response.
 - `ui.md` owns instrument readout and warning presentation.
+
+`DepthZoneDirector.cs` in `Assets/_Project/Scripts/World/` owns depth zone evaluation and discovery triggers. It executes via `ISlowTickable` at a 2 Hz cadence (0.5s interval) with zero GC allocations. Zone transitions publish blittable 8-byte `DepthZoneEventPayload` structs over fixed-capacity (16 entry) native queues.
 
 No water script may become a hidden global owner for pressure, route, damage, AI, save, or vehicle truth. It must consume snapshots from the named owners and publish only its assigned presentation or authored field data.
 

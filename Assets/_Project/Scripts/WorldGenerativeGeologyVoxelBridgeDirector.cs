@@ -755,7 +755,7 @@ namespace Hecton8.World
             requestFilterEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             RefreshVoxelPoolWarmTargetHot(_sortedRequests.Count, visualQualityWeight);
             long poolWarmEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            _sortedRequests.Sort(CompareRequestsByPriority);
+            _sortedRequests.Sort(s_compareRequestsByPriority);
             int spawnBudgetUsed = 0;
             long sortEndTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
 
@@ -2019,6 +2019,10 @@ namespace Hecton8.World
             float weight = HomeostasisBrain.GlobalQualityWeight;
             return math.isfinite(weight) ? math.saturate(weight) : 1f;
         }
+
+        // COLD ALLOC: Comparison<T>[1] - cached delegate so List.Sort does not allocate a fresh
+        // method-group conversion every reconcile - owner: WorldGenerativeGeologyVoxelBridgeDirector.
+        private static readonly System.Comparison<WorldGenerativeGeologyVoxelBlendRequest> s_compareRequestsByPriority = CompareRequestsByPriority;
 
         private static int CompareRequestsByPriority(
             WorldGenerativeGeologyVoxelBlendRequest a,

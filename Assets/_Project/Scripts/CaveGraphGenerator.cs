@@ -691,9 +691,17 @@ public static class CaveGraphGenerator
             return 0;
         }
 
-        int minEntrances = math.clamp(preset.minEntrances, 1, MAX_ENTRANCES);
+        // R95 FIX: min clamp floor was 1, which force-injected a phantom entrance funnel into
+        // presets that legitimately request zero entrances (e.g. SurfaceTrench min/max = 0).
+        // Presets with minEntrances >= 1 keep byte-identical rng draw order and results.
+        int minEntrances = math.clamp(preset.minEntrances, 0, MAX_ENTRANCES);
         int maxEntrances = math.clamp(preset.maxEntrances, minEntrances, MAX_ENTRANCES);
+        if (maxEntrances <= 0)
+            return 0;
+
         int entranceCount = rng.NextInt(minEntrances, maxEntrances + 1);
+        if (entranceCount <= 0)
+            return 0;
         entranceCount = math.min(entranceCount, rooms.Length);
         entranceCount = math.min(entranceCount, entrances.Length);
 

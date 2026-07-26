@@ -48,7 +48,7 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct SurfaceNetExtractionJob : IJob
     {
@@ -365,6 +365,10 @@ namespace Hecton8.World.VoxelSurfaceNets
             return math.lerp(nearest, trilinear, interpolationWeight);
         }
 
+        /// <summary>
+        /// Calculates analytical surface normal vector via tetrahedral gradient sampling.
+        /// Guards against zero-length gradients (\nabla D = 0) to prevent NaN/Inf normal vectors.
+        /// </summary>
         private float3 CalculateTetraNormal(float3 vertexLocal, float voxelSize, float quality)
         {
             float eps = math.max(voxelSize * math.lerp(0.75f, 0.35f, Smooth01(quality)), VoxelSurfaceNetsConstants.Epsilon);
@@ -378,7 +382,10 @@ namespace Hecton8.World.VoxelSurfaceNets
                 (k1 * SampleDensityLocal(vertexLocal + (k1 * eps), voxelSize, quality)) +
                 (k2 * SampleDensityLocal(vertexLocal + (k2 * eps), voxelSize, quality)) +
                 (k3 * SampleDensityLocal(vertexLocal + (k3 * eps), voxelSize, quality));
-            float lenSq = math.max(math.dot(gradient, gradient), VoxelSurfaceNetsConstants.Epsilon);
+            float lenSq = math.dot(gradient, gradient);
+            if (lenSq < 1e-8f || !math.all(math.isfinite(gradient)))
+                return new float3(0f, 1f, 0f);
+
             return gradient * math.rsqrt(lenSq);
         }
 
@@ -395,7 +402,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return;
 
             float denom = math.abs(a - b);
-            float t = math.saturate(math.abs(a) * math.rcp(math.max(denom, VoxelSurfaceNetsConstants.Epsilon)));
+            float t = math.clamp(math.abs(a) * math.rcp(math.max(denom, VoxelSurfaceNetsConstants.Epsilon)), VoxelSurfaceNetsConstants.Epsilon, 1f - VoxelSurfaceNetsConstants.Epsilon);
             sum += math.lerp(pa * voxelSize, pb * voxelSize, t);
             hits++;
         }

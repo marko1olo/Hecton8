@@ -944,9 +944,13 @@ namespace Hecton8.World
             if (!IsFiniteAup(in originAup))
                 return false;
 
+            double safeX = runtimePosition.x == 0f ? 0d : (double)runtimePosition.x;
+            double safeY = runtimePosition.y == 0f ? 0d : (double)runtimePosition.y;
+            double safeZ = runtimePosition.z == 0f ? 0d : (double)runtimePosition.z;
+
             aup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                new double3(safeX, safeY, safeZ));
             return IsFiniteAup(in aup);
         }
 

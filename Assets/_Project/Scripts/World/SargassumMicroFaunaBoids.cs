@@ -252,7 +252,7 @@ namespace Hecton8.World
             LightStimulus = 1u << 6
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PredatorBoidConsumptionJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<BoidData> Boids;
@@ -495,7 +495,7 @@ namespace Hecton8.World
             public float Radius;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildLeviathanNodeJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<float3> SourcePath;
@@ -1796,7 +1796,7 @@ namespace Hecton8.World
         private float _hitFlashRuntimeRadius;
         private float _hitFlashRuntimeIntensity;
         private float _spatialGridCellSizeWS = 1f;
-        private Vector3 _spatialGridOriginWS = Vector3.zero;
+        private double3 _spatialGridOriginWSD = double3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
         private int _activeBoidCount;
         private int _migrationPopulationCount;
@@ -3973,18 +3973,19 @@ namespace Hecton8.World
 
         private static int BuildPopulationDensityCellId(in AbsoluteUniversePosition centerAup)
         {
-            int localX = FloorToInt(centerAup.LocalX / PopulationDensityCellSizeMeters);
-            int localY = FloorToInt(centerAup.LocalY / PopulationDensityCellSizeMeters);
-            int localZ = FloorToInt(centerAup.LocalZ / PopulationDensityCellSizeMeters);
+            double3 absD = centerAup.ToAbsoluteDouble3();
+            long cellX = (long)math.floor(absD.x / PopulationDensityCellSizeMeters);
+            long cellY = (long)math.floor(absD.y / PopulationDensityCellSizeMeters);
+            long cellZ = (long)math.floor(absD.z / PopulationDensityCellSizeMeters);
             unchecked
             {
                 uint hash = 2166136261u;
                 hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridX));
                 hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridY));
                 hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridZ));
-                hash = HashPopulationDensityComponent(hash, (uint)localX);
-                hash = HashPopulationDensityComponent(hash, (uint)localY);
-                hash = HashPopulationDensityComponent(hash, (uint)localZ);
+                hash = HashPopulationDensityComponent(hash, (uint)(cellX & 0xFFFFFFFFL));
+                hash = HashPopulationDensityComponent(hash, (uint)(cellY & 0xFFFFFFFFL));
+                hash = HashPopulationDensityComponent(hash, (uint)(cellZ & 0xFFFFFFFFL));
                 return (int)(hash & 0x7FFFFFFFu);
             }
         }
@@ -4996,60 +4997,62 @@ namespace Hecton8.World
 
             try
             {
-            float sizeX = 1f / math.max(densityWorldRect.z, 0.0001f);
-            float sizeZ = 1f / math.max(densityWorldRect.w, 0.0001f);
-            float minX = densityWorldRect.x;
-            float minZ = densityWorldRect.y;
-            float minY = waterLevel - maxDepthBelowSurface;
-            float maxY = waterLevel - minDepthBelowSurface;
-            Vector3 fallbackCenter = new Vector3(minX + sizeX * 0.5f + driftOffset.x, (minY + maxY) * 0.5f, minZ + sizeZ * 0.5f + driftOffset.z);
+                double sizeXd = 1d / math.max((double)densityWorldRect.z, 0.0001d);
+                double sizeZd = 1d / math.max((double)densityWorldRect.w, 0.0001d);
+                double minXd = (double)densityWorldRect.x;
+                double minZd = (double)densityWorldRect.y;
+                double minYd = (double)waterLevel - (double)maxDepthBelowSurface;
+                double maxYd = (double)waterLevel - (double)minDepthBelowSurface;
+                double3 driftOffsetD = new double3(driftOffset.x, driftOffset.y, driftOffset.z);
+                double3 fallbackCenterD = new double3(minXd + sizeXd * 0.5d + driftOffsetD.x, (minYd + maxYd) * 0.5d, minZd + sizeZd * 0.5d + driftOffsetD.z);
 
-            _fieldCenter = fallbackCenter;
-            _fieldExtents = new Vector3(sizeX * 0.5f, math.max(1f, maxDepthBelowSurface), sizeZ * 0.5f);
-            _renderBounds = new Bounds(_fieldCenter, new Vector3(sizeX, math.max(2f, maxDepthBelowSurface + 2f), sizeZ));
-            _debugRenderBounds = _renderBounds;
+                _fieldCenter = new Vector3((float)fallbackCenterD.x, (float)fallbackCenterD.y, (float)fallbackCenterD.z);
+                _fieldExtents = new Vector3((float)(sizeXd * 0.5d), math.max(1f, maxDepthBelowSurface), (float)(sizeZd * 0.5d));
+                _renderBounds = new Bounds(_fieldCenter, new Vector3((float)sizeXd, math.max(2f, maxDepthBelowSurface + 2f), (float)sizeZd));
+                _debugRenderBounds = _renderBounds;
 
-            int safeSpawnCount = math.clamp(spawnCount, 0, math.min(boidCount, boidState.Length));
-            for (int i = 0; i < safeSpawnCount; i++)
-            {
-                Vector3 spawnPosition = fallbackCenter;
-                SargassumGlobalDragManager.SargassumFieldSample fieldSample = default;
-                bool found = false;
-
-                for (int attempt = 0; attempt < maxSpawnAttempts; attempt++)
+                int safeSpawnCount = math.clamp(spawnCount, 0, math.min(boidCount, boidState.Length));
+                for (int i = 0; i < safeSpawnCount; i++)
                 {
-                    float u = HashToFloat01((uint)i, (uint)attempt, 0xA2F98A1Du);
-                    float v = HashToFloat01((uint)i, (uint)attempt, 0x3C6EF372u);
-                    float w = HashToFloat01((uint)i, (uint)attempt, 0x1BF5C7D5u);
+                    double3 spawnPositionD = fallbackCenterD;
+                    SargassumGlobalDragManager.SargassumFieldSample fieldSample = default;
+                    bool found = false;
 
-                    spawnPosition.x = minX + u * sizeX + driftOffset.x;
-                    spawnPosition.y = math.lerp(minY, maxY, w);
-                    spawnPosition.z = minZ + v * sizeZ + driftOffset.z;
+                    for (int attempt = 0; attempt < maxSpawnAttempts; attempt++)
+                    {
+                        float u = HashToFloat01((uint)i, (uint)attempt, 0xA2F98A1Du);
+                        float v = HashToFloat01((uint)i, (uint)attempt, 0x3C6EF372u);
+                        float w = HashToFloat01((uint)i, (uint)attempt, 0x1BF5C7D5u);
 
-                    if (!dragManager.SampleDetailedInfluence(spawnPosition, 0.45f, cruiseSpeed, out fieldSample))
-                        continue;
+                        spawnPositionD.x = minXd + (double)u * sizeXd + driftOffsetD.x;
+                        spawnPositionD.y = math.lerp(minYd, maxYd, (double)w);
+                        spawnPositionD.z = minZd + (double)v * sizeZd + driftOffsetD.z;
 
-                    if (fieldSample.Density01 < densityThreshold || fieldSample.Window01 > windowThreshold)
-                        continue;
+                        Vector3 samplePos = new Vector3((float)spawnPositionD.x, (float)spawnPositionD.y, (float)spawnPositionD.z);
+                        if (!dragManager.SampleDetailedInfluence(samplePos, 0.45f, cruiseSpeed, out fieldSample))
+                            continue;
 
-                    found = true;
-                    break;
+                        if (fieldSample.Density01 < densityThreshold || fieldSample.Window01 > windowThreshold)
+                            continue;
+
+                        found = true;
+                        break;
+                    }
+
+                    if (!found)
+                    {
+                        spawnPositionD = fallbackCenterD;
+                    }
+
+                    Vector3 velocity = BuildInitialVelocity(i);
+                    boidState[i] = new BoidData
+                    {
+                        Position = new Vector3((float)spawnPositionD.x, (float)spawnPositionD.y, (float)spawnPositionD.z),
+                        Velocity = velocity,
+                        Panic = 0f,
+                        StateFlags = DefaultBoidStateFlags
+                    };
                 }
-
-                if (!found)
-                {
-                    spawnPosition = fallbackCenter;
-                }
-
-                Vector3 velocity = BuildInitialVelocity(i);
-                boidState[i] = new BoidData
-                {
-                    Position = spawnPosition,
-                    Velocity = velocity,
-                    Panic = 0f,
-                    StateFlags = DefaultBoidStateFlags
-                };
-            }
             }
             finally
             {
@@ -5898,9 +5901,9 @@ namespace Hecton8.World
             frameConstants.FieldCenter = new float4(_fieldCenter.x, _fieldCenter.y, _fieldCenter.z, hibernation01);
             frameConstants.FieldExtents = new float4(_fieldExtents.x, _fieldExtents.y, _fieldExtents.z, _spatialGridCellSizeWS);
             frameConstants.SpatialGridOrigin = new float4(
-                _spatialGridOriginWS.x,
-                _spatialGridOriginWS.y,
-                _spatialGridOriginWS.z,
+                (float)_spatialGridOriginWSD.x,
+                (float)_spatialGridOriginWSD.y,
+                (float)_spatialGridOriginWSD.z,
                 cutMaskActive ? 1f : 0f);
             frameConstants.SpatialGridMeta = new int4(
                 _spatialGridResolution.x,
@@ -8421,28 +8424,31 @@ namespace Hecton8.World
 
         private void UpdateSpatialGridLayout()
         {
-            float baseCellSize = 2f;
-            Vector3 doubledExtents = _fieldExtents * 2f;
-            Vector3 fieldSize = new Vector3(
-                math.max(doubledExtents.x, baseCellSize),
-                math.max(doubledExtents.y, baseCellSize),
-                math.max(doubledExtents.z, baseCellSize));
-            float axisClampCellSize = math.max(
-                fieldSize.x / SpatialGridMaxAxisResolution,
-                math.max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
-            _spatialGridCellSizeWS = math.max(baseCellSize, axisClampCellSize);
+            double baseCellSizeD = 2.0d;
+            double3 doubledExtentsD = new double3(_fieldExtents.x * 2.0f, _fieldExtents.y * 2.0f, _fieldExtents.z * 2.0f);
+            double3 fieldSizeD = new double3(
+                math.max(doubledExtentsD.x, baseCellSizeD),
+                math.max(doubledExtentsD.y, baseCellSizeD),
+                math.max(doubledExtentsD.z, baseCellSizeD));
+            double axisClampCellSizeD = math.max(
+                fieldSizeD.x / SpatialGridMaxAxisResolution,
+                math.max(fieldSizeD.y / SpatialGridMaxAxisResolution, fieldSizeD.z / SpatialGridMaxAxisResolution));
+            double cellSizeD = math.max(baseCellSizeD, axisClampCellSizeD);
+            _spatialGridCellSizeWS = (float)cellSizeD;
 
-            Vector3 fieldMin = _fieldCenter - _fieldExtents;
-            Vector3 fieldMax = _fieldCenter + _fieldExtents;
-            // Negative-space-safe bounds_min anchor. The compute shader subtracts this origin before cell division.
-            _spatialGridOriginWS = new Vector3(
-                FloorToMultiple(fieldMin.x, _spatialGridCellSizeWS),
-                FloorToMultiple(fieldMin.y, _spatialGridCellSizeWS),
-                FloorToMultiple(fieldMin.z, _spatialGridCellSizeWS));
+            double3 centerD = new double3(_fieldCenter.x, _fieldCenter.y, _fieldCenter.z);
+            double3 extentsD = new double3(_fieldExtents.x, _fieldExtents.y, _fieldExtents.z);
+            double3 fieldMinD = centerD - extentsD;
+            double3 fieldMaxD = centerD + extentsD;
 
-            int resolutionX = math.clamp(CeilToIntPositive((fieldMax.x - _spatialGridOriginWS.x) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
-            int resolutionY = math.clamp(CeilToIntPositive((fieldMax.y - _spatialGridOriginWS.y) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
-            int resolutionZ = math.clamp(CeilToIntPositive((fieldMax.z - _spatialGridOriginWS.z) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
+            double originXD = FloorToMultiple64(fieldMinD.x, cellSizeD);
+            double originYD = FloorToMultiple64(fieldMinD.y, cellSizeD);
+            double originZD = FloorToMultiple64(fieldMinD.z, cellSizeD);
+            _spatialGridOriginWSD = new double3(originXD, originYD, originZD);
+
+            int resolutionX = math.clamp((int)math.ceil((fieldMaxD.x - originXD) / cellSizeD), 1, SpatialGridMaxAxisResolution);
+            int resolutionY = math.clamp((int)math.ceil((fieldMaxD.y - originYD) / cellSizeD), 1, SpatialGridMaxAxisResolution);
+            int resolutionZ = math.clamp((int)math.ceil((fieldMaxD.z - originZD) / cellSizeD), 1, SpatialGridMaxAxisResolution);
             _spatialGridResolution = new Vector3Int(resolutionX, resolutionY, resolutionZ);
             int cellCount = resolutionX * resolutionY * resolutionZ;
             _clearSpatialGridDispatchGroupCount = CeilDivPositive(cellCount, (int)_clearSpatialGridThreadGroupSizeX);
@@ -9520,18 +9526,33 @@ namespace Hecton8.World
             return value >= int.MaxValue ? int.MaxValue : (int)(value + 0.5f);
         }
 
+        private static double FloorToMultiple64(double value, double multiple)
+        {
+            double safeMultiple = math.max(0.0001d, multiple);
+            return math.floor(value / safeMultiple) * safeMultiple;
+        }
+
         private static float FloorToMultiple(float value, float multiple)
         {
             float safeMultiple = math.max(0.0001f, multiple);
             return math.floor(value / safeMultiple) * safeMultiple;
         }
 
+        private static Unity.Mathematics.Random CreateDeterministicRandom(uint boidSeed, uint salt)
+        {
+            uint state = math.max(1u, boidSeed ^ salt ^ HashSeed);
+            return new Unity.Mathematics.Random(state);
+        }
+
         private static float HashToFloat01(uint index, uint iteration, uint salt)
         {
-            uint value = index * 374761393u + iteration * 668265263u + salt + HashSeed;
-            value = (value ^ (value >> 13)) * 1274126177u;
-            value ^= value >> 16;
-            return (value & 0x00FFFFFFu) / 16777215f;
+            uint hash = (index + 1u) * 374761393u + iteration * 668265263u + salt + HashSeed;
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         private float GetAbsoluteSimulationTime()
@@ -10379,11 +10400,13 @@ namespace Hecton8.World
             {
                 try
                 {
+                    double3 offsetD = new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
                     int frontCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeFront.Length);
                     for (int i = 0; i < frontCount; i++)
                     {
                         LeviathanNodeData node = leviathanNodeFront[i];
-                        node.Position += (float3)runtimeOffset;
+                        double3 posD = new double3(node.Position.x, node.Position.y, node.Position.z) + offsetD;
+                        node.Position = new float3((float)posD.x, (float)posD.y, (float)posD.z);
                         leviathanNodeFront[i] = node;
                     }
 
@@ -10406,11 +10429,13 @@ namespace Hecton8.World
             {
                 try
                 {
+                    double3 offsetD = new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
                     int backCount = math.clamp(_leviathanPathNodeCount, 0, leviathanNodeBack.Length);
                     for (int i = 0; i < backCount; i++)
                     {
                         LeviathanNodeData node = leviathanNodeBack[i];
-                        node.Position += (float3)runtimeOffset;
+                        double3 posD = new double3(node.Position.x, node.Position.y, node.Position.z) + offsetD;
+                        node.Position = new float3((float)posD.x, (float)posD.y, (float)posD.z);
                         leviathanNodeBack[i] = node;
                     }
                 }

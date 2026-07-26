@@ -27,7 +27,7 @@ namespace Hecton8.PureLogic.Systems
             float safeResistance = Math.Clamp(ClampFinite(suitThermalResistance, 0f), 0f, 1f);
             float safeCoolingRate = Math.Max(0f, ClampFinite(coolingRate, 0.006f));
 
-            float cooling = OneMinusApproxExpNegPade33Reduced(safeCoolingRate * safeDt);
+            float cooling = OneMinusApproxExpNeg(safeCoolingRate * safeDt);
 
             float newCore = safeCore + (safeAmbient - safeCore) * cooling * (1f - safeResistance);
             return Math.Clamp(newCore, minTemp, maxTemp);
@@ -38,7 +38,15 @@ namespace Hecton8.PureLogic.Systems
             return float.IsFinite(value) ? value : fallback;
         }
 
-        private static float OneMinusApproxExpNegPade33Reduced(float value)
+        /// <summary>
+        /// Returns the Newton-cooling blend factor <c>1 - exp(-value)</c>.
+        /// Uses range reduction by 4 so the Pade(3,3) approximant of exp(-x) stays
+        /// inside its accurate band (x &lt;= 1), then recomposes the full exponent
+        /// with <c>exp(-value) = (exp(-value/4))^4</c> via two squarings.
+        /// Recomposition is mandatory: without it the factor collapses to
+        /// <c>1 - exp(-value/4)</c>, which is roughly 4x too small for small inputs.
+        /// </summary>
+        private static float OneMinusApproxExpNeg(float value)
         {
             float safe = Math.Max(0f, Math.Min(value, 4f));
             if (!float.IsFinite(safe)) safe = 0f;
@@ -48,7 +56,13 @@ namespace Hecton8.PureLogic.Systems
             float x3 = x2 * x;
             float numerator = 1f - (0.5f * x) + (0.1f * x2) - ((1f / 120f) * x3);
             float denominator = 1f + (0.5f * x) + (0.1f * x2) + ((1f / 120f) * x3);
-            return 1f - (numerator / denominator);
+            float quarterDecay = numerator / denominator;
+
+            // Undo the range reduction: (exp(-value/4))^4 == exp(-value).
+            float halfDecay = quarterDecay * quarterDecay;
+            float decay = halfDecay * halfDecay;
+
+            return Math.Max(0f, Math.Min(1f, 1f - decay));
         }
     }
 }

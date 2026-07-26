@@ -1012,6 +1012,10 @@ namespace Hecton8.Caves
                 float cellSizeX = Mathf.Max(0.0001f, voxelCellSize.x);
                 float cellSizeY = Mathf.Max(0.0001f, voxelCellSize.y);
                 float cellSizeZ = Mathf.Max(0.0001f, voxelCellSize.z);
+                // R96 FIX: containment before nearest-node clamp (see IsWithinPublishedBounds).
+                if (!IsWithinPublishedBounds(worldPosition, gridDimensions, volumeOrigin, cellSizeX, cellSizeY, cellSizeZ))
+                    return false;
+
                 float invCellSizeX = math.rcp(cellSizeX);
                 float invCellSizeY = math.rcp(cellSizeY);
                 float invCellSizeZ = math.rcp(cellSizeZ);
@@ -1295,6 +1299,10 @@ namespace Hecton8.Caves
                 float cellSizeX = Mathf.Max(0.0001f, voxelCellSize.x);
                 float cellSizeY = Mathf.Max(0.0001f, voxelCellSize.y);
                 float cellSizeZ = Mathf.Max(0.0001f, voxelCellSize.z);
+                // R96 FIX: containment before gradient sampling (see IsWithinPublishedBounds).
+                if (!IsWithinPublishedBounds(worldPosition, gridDimensions, volumeOrigin, cellSizeX, cellSizeY, cellSizeZ))
+                    return false;
+
                 int maxX = gridDimensions.x - 1;
                 int maxY = gridDimensions.y - 1;
                 int maxZ = gridDimensions.z - 1;
@@ -1447,6 +1455,17 @@ namespace Hecton8.Caves
             float cellSizeX = Mathf.Max(0.0001f, voxelCellSize.x);
             float cellSizeY = Mathf.Max(0.0001f, voxelCellSize.y);
             float cellSizeZ = Mathf.Max(0.0001f, voxelCellSize.z);
+
+            // R96 FIX (SDF read-model containment): reject positions outside the published volume
+            // bounds (half-cell tolerance) instead of clamping them onto the border. The payload is
+            // a shared single-slot vault snapshot — with 2+ active volumes, a clamped out-of-bounds
+            // read silently returned the LAST PUBLISHER's border density for a query anywhere in
+            // the world (wrong-volume corruption for sonar, burrow AI, and SDF-collision consumers).
+            // Out-of-bounds now fails safe (false); callers own the no-data path per the fail-safe
+            // query contract.
+            if (!IsWithinPublishedBounds(worldPosition, gridDimensions, volumeOrigin, cellSizeX, cellSizeY, cellSizeZ))
+                return false;
+
             float sampleX = Mathf.Clamp(
                 (worldPosition.x - volumeOrigin.x) / cellSizeX,
                 0f,
@@ -1463,6 +1482,30 @@ namespace Hecton8.Caves
             density = DecodePublishedDensity(encodedSdf, gridDimensions, sdfRange, sampleX, sampleY, sampleZ);
             density01 = Mathf.Clamp01(Mathf.Max(0f, density) / sdfRange);
             return true;
+        }
+
+        /// <summary>
+        /// True when the runtime-space position lies inside the published grid AABB expanded by half
+        /// a cell per axis. Guards every published-payload sample against reading a foreign volume's
+        /// clamped border density (the payload slot is shared across published volumes).
+        /// </summary>
+        private static bool IsWithinPublishedBounds(
+            Vector3 worldPosition,
+            Vector3Int gridDimensions,
+            Vector3 volumeOrigin,
+            float cellSizeX,
+            float cellSizeY,
+            float cellSizeZ)
+        {
+            float spanX = cellSizeX * Mathf.Max(1, gridDimensions.x - 1);
+            float spanY = cellSizeY * Mathf.Max(1, gridDimensions.y - 1);
+            float spanZ = cellSizeZ * Mathf.Max(1, gridDimensions.z - 1);
+            float tolX = cellSizeX * 0.5f;
+            float tolY = cellSizeY * 0.5f;
+            float tolZ = cellSizeZ * 0.5f;
+            return worldPosition.x >= volumeOrigin.x - tolX && worldPosition.x <= volumeOrigin.x + spanX + tolX &&
+                   worldPosition.y >= volumeOrigin.y - tolY && worldPosition.y <= volumeOrigin.y + spanY + tolY &&
+                   worldPosition.z >= volumeOrigin.z - tolZ && worldPosition.z <= volumeOrigin.z + spanZ + tolZ;
         }
 
         private static float DecodePublishedDensity(
@@ -3940,7 +3983,10 @@ namespace Hecton8.Caves
                 CacheRuntimeComponentsCold();
 
             bool visualsStable = _bakeState == VoxelBakeState.Complete;
-            bool collisionAllowed = _bakeState != VoxelBakeState.Idle;
+            // R95 FIX (voxels.md: "physics interaction is blocked until collider bake is complete"):
+            // Pending/Baking previously counted as collision-allowed. Latent today (no collider mesh is
+            // assigned before completion), but the gate must match the law before mesh upload returns.
+            bool collisionAllowed = _bakeState == VoxelBakeState.Complete;
             if (_meshRenderer != null)
             {
                 Material targetMaterial = null;

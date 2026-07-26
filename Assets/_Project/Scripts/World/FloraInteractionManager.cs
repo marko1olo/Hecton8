@@ -213,7 +213,7 @@ namespace Hecton8.World
             [FieldOffset(28)] private uint _pad1;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct PopulateCascadePhaseSeedsJob : IJobParallelFor
         {
             private const float BaseAnimationFrameSeconds = 1f / 60f;
@@ -295,7 +295,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ParasiteGrowthJob : IJobParallelFor
         {
             [NoAlias] public NativeArray<ParasiteNode> Nodes;
@@ -382,7 +382,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct DecayFloraForcesJob : IJobParallelFor
         {
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
@@ -424,7 +424,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct AccumulateFloraForcesJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<WakeSource> WakeSources;
@@ -492,12 +492,18 @@ namespace Hecton8.World
                                        intensityFinite;
 
                     AbsoluteUniversePosition sourceAup = source.PositionAup;
-                    float3 sourceLocal = ResolveAupLocalDelta(in sourceAup, in FieldCenterAup);
-                    bool sourceLocalFinite = math.all(math.isfinite(sourceLocal));
-                    float3 safeSourceLocal = math.select(sampleLocal, sourceLocal, sourceLocalFinite);
-                    float3 delta = sampleLocal - safeSourceLocal;
-                    delta.y *= 0.55f;
-                    float distanceSq = math.lengthsq(delta);
+                    double3 sampleLocalD = new double3(
+                        (x - halfIndex) * (double)safeCellSize,
+                        (y - halfIndex) * (double)safeCellSize,
+                        (z - halfIndex) * (double)safeCellSize);
+                    double3 sourceLocalD = ResolveAupLocalDeltaDouble(in sourceAup, in FieldCenterAup);
+                    bool sourceLocalFinite = math.all(math.isfinite(sourceLocalD));
+                    double3 safeSourceLocalD = math.select(sampleLocalD, sourceLocalD, sourceLocalFinite);
+                    double3 deltaD = sampleLocalD - safeSourceLocalD;
+                    deltaD.y *= 0.55d;
+                    double distanceSqD = math.lengthsq(deltaD);
+                    float distanceSq = (float)distanceSqD;
+                    float3 delta = new float3((float)deltaD.x, (float)deltaD.y, (float)deltaD.z);
                     float radiusSq = safeRadius * safeRadius;
                     bool valid = sourceValid & sourceLocalFinite & math.isfinite(distanceSq) & distanceSq < radiusSq;
                     float validWeight = math.select(0f, 1f, valid);
@@ -548,7 +554,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct MockDisplacementInjectorJob : IJobParallelFor
         {
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDisplacementDTO> FieldValues;
@@ -614,7 +620,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct UploadDisplacementTextureJob : IJob
         {
             [ReadOnly, NoAlias] public NativeArray<FloraDisplacementDTO> FieldValues;
@@ -640,8 +646,9 @@ namespace Hecton8.World
                 for (int i = 0; i < safeCount; i++)
                 {
                     FloraDisplacementDTO value = FieldValues[i];
-                    float magnitudeSq = math.lengthsq(value.ForceVector);
-                    bool finite = math.isfinite(magnitudeSq);
+                    bool forceFinite = math.all(math.isfinite(value.ForceVector));
+                    float magnitudeSq = math.select(0f, math.lengthsq(value.ForceVector), forceFinite);
+                    bool finite = forceFinite & math.isfinite(magnitudeSq);
                     bool nonZero = finite & magnitudeSq > 0.0000001f;
                     outputFlags |= math.select(0u, FloraSwayFieldNaNFlag, !finite);
                     nonZeroCells += math.select(0u, 1u, nonZero);
@@ -730,7 +737,7 @@ namespace Hecton8.World
                    oldZ < 0 || oldZ >= safeResolution;
         }
 
-        private static float3 ResolveAupLocalDelta(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
+        private static double3 ResolveAupLocalDeltaDouble(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
         {
             const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
             const double maxLocalDeltaMeters = 1048576d;
@@ -738,7 +745,12 @@ namespace Hecton8.World
                 (((double)source.GridX - origin.GridX) * cellSize) + ((double)source.LocalX - origin.LocalX),
                 (((double)source.GridY - origin.GridY) * cellSize) + ((double)source.LocalY - origin.LocalY),
                 (((double)source.GridZ - origin.GridZ) * cellSize) + ((double)source.LocalZ - origin.LocalZ));
-            delta = math.clamp(delta, new double3(-maxLocalDeltaMeters), new double3(maxLocalDeltaMeters));
+            return math.clamp(delta, new double3(-maxLocalDeltaMeters), new double3(maxLocalDeltaMeters));
+        }
+
+        private static float3 ResolveAupLocalDelta(in AbsoluteUniversePosition source, in AbsoluteUniversePosition origin)
+        {
+            double3 delta = ResolveAupLocalDeltaDouble(in source, in origin);
             float3 result = new float3((float)delta.x, (float)delta.y, (float)delta.z);
             return math.select(float3.zero, result, math.all(math.isfinite(result)));
         }

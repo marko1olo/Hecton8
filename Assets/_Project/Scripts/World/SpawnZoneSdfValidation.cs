@@ -616,9 +616,9 @@ namespace Hecton8.World
                 hash = SpawnZoneSdfMath.HashRequest(in request, hash);
             }
 
-            int cursor = TelemetryCursor[0];
-            int slot = math.abs(cursor) % TelemetryRing.Length;
-            TelemetryCursor[0] = cursor + 1;
+            int cursor = (TelemetryCursor[0] + 1) & 0x7FFFFFFF;
+            TelemetryCursor[0] = cursor;
+            int slot = cursor % TelemetryRing.Length;
 
             float threshold = math.max(0.001f, Tuning.CatastrophicMicrosecondThreshold);
             float queryUs = math.select(SpawnZoneSdfValidationConstants.TimingUnavailableMicroseconds, QueryMicroseconds, math.isfinite(QueryMicroseconds) && QueryMicroseconds >= 0f);
@@ -1275,8 +1275,9 @@ namespace Hecton8.World
                 return;
             }
 
-            int slot = math.abs(cursor[0]) % telemetry.Length;
-            cursor[0] = cursor[0] + 1;
+            int nextCursor = (cursor[0] + 1) & 0x7FFFFFFF;
+            cursor[0] = nextCursor;
+            int slot = nextCursor % telemetry.Length;
             SpawnValidationTelemetryEntry entry = default;
             entry.LastTargetAUP = request.TargetAUP;
             entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;

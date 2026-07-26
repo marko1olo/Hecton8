@@ -513,9 +513,15 @@ namespace Hecton8.World
             float spawnChance = math.saturate(caveSpawnProbability * routeQuality);
 
             // Generate candidates around player within search radius
-            // Use deterministic seeding based on biome and position
+            // Use deterministic seeding based on biome and position.
+            // R95 FIX: the old additive seed (biomeSeed + floor(x/100) + floor(z/100)) was
+            // diagonal-degenerate — every cell along (x+1, z-1) shared one seed, repeating the same
+            // candidate pattern down whole diagonals. Proper 2D cell hash decorrelates the axes.
             int biomeSeed = _cachedBiomeRuntimeContext.FamilyHash;
-            uint seed = (uint)(biomeSeed + Mathf.FloorToInt(routeAnchor.x / 100f) + Mathf.FloorToInt(routeAnchor.z / 100f));
+            uint seed = HashCandidateCellSeed(
+                Mathf.FloorToInt(routeAnchor.x / 100f),
+                Mathf.FloorToInt(routeAnchor.z / 100f),
+                biomeSeed);
             if (seed == 0u)
                 seed = 1u;
 
@@ -608,7 +614,7 @@ namespace Hecton8.World
             _pendingCaveSpawns[caveKey] = pendingState;
             _debugPendingCaves = _pendingCaveSpawns.Count;
 
-            uint seed = unchecked((uint)caveKey);
+            uint seed = MixCaveKeyToSeed(caveKey);
             _ = SpawnCaveAsync(activeVoxelEngine, caveKey, position, preset, seed, pendingState);
         }
 
@@ -1019,7 +1025,51 @@ namespace Hecton8.World
             int x = Mathf.FloorToInt(position.x / 100f);
             int z = Mathf.FloorToInt(position.z / 100f);
 
-            return ((long)x << 32) | ((long)z << 16) | (uint)biomeHash;
+            // R95 FIX: the old packing ((long)x << 32) | ((long)z << 16) | (uint)biomeHash ORed a
+            // sign-extended z over both the x field and the biome hash, colliding distinct cells
+            // (wrong dedupe/lookup) and truncating the derived generation seed to a value that did
+            // not depend on x at all (identical cave topology repeated along every 100 m z-band).
+            // Disjoint 21-bit lanes: +/-1,048,575 cells (~+/-104,857 km) per axis, hash sign-folded.
+            long xBits = ((long)x & 0x1FFFFF) << 42;
+            long zBits = ((long)z & 0x1FFFFF) << 21;
+            long bBits = (((uint)biomeHash ^ ((uint)biomeHash >> 21)) & 0x1FFFFF);
+            return xBits | zBits | bBits;
+        }
+
+        /// <summary>Decorrelated 2D cell-hash seed (x and z mixed independently, not summed).</summary>
+        private static uint HashCandidateCellSeed(int cellX, int cellZ, int biomeSeed)
+        {
+            unchecked
+            {
+                uint hash = (uint)cellX * 0x8DA6B343u;
+                hash ^= (uint)cellZ * 0xD8163841u;
+                hash ^= (uint)biomeSeed + 0x9E3779B9u + (hash << 6) + (hash >> 2);
+                hash ^= hash >> 16;
+                hash *= 0x7FEB352Du;
+                hash ^= hash >> 15;
+                hash *= 0x846CA68Bu;
+                hash ^= hash >> 16;
+                return hash;
+            }
+        }
+
+        /// <summary>
+        /// Derives the cave generation seed from the FULL 64-bit cave key via a splitmix64-style
+        /// finalizer, so the seed depends on x, z, and biome (the old truncation dropped x entirely).
+        /// </summary>
+        private static uint MixCaveKeyToSeed(long caveKey)
+        {
+            unchecked
+            {
+                ulong v = (ulong)caveKey;
+                v ^= v >> 30;
+                v *= 0xBF58476D1CE4E5B9ul;
+                v ^= v >> 27;
+                v *= 0x94D049BB133111EBul;
+                v ^= v >> 31;
+                uint seed = (uint)(v ^ (v >> 32));
+                return seed == 0u ? 1u : seed;
+            }
         }
 
         private void CleanupUnsupportedCaves()

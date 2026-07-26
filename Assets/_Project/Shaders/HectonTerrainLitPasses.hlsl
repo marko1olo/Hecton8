@@ -143,156 +143,11 @@ void InitializeBakedGIData(Varyings IN, inout InputData inputData)
 #endif
 }
 
-#ifndef TERRAIN_SPLAT_BASEPASS
-
-void NormalMapMix(float4 uvSplat01, float4 uvSplat23, inout half4 splatControl, inout half3 mixedNormal)
-{
-    #if defined(_NORMALMAP)
-        half3 nrm = half(0.0);
-        nrm += splatControl.r * UnpackNormalScale(SAMPLE_TEXTURE2D(_Normal0, sampler_Normal0, uvSplat01.xy), _NormalScale0);
-        nrm += splatControl.g * UnpackNormalScale(SAMPLE_TEXTURE2D(_Normal1, sampler_Normal0, uvSplat01.zw), _NormalScale1);
-        nrm += splatControl.b * UnpackNormalScale(SAMPLE_TEXTURE2D(_Normal2, sampler_Normal0, uvSplat23.xy), _NormalScale2);
-        nrm += splatControl.a * UnpackNormalScale(SAMPLE_TEXTURE2D(_Normal3, sampler_Normal0, uvSplat23.zw), _NormalScale3);
-
-        // avoid risk of NaN when normalizing.
-        #if !HALF_IS_FLOAT
-            nrm.z += half(0.01);
-        #else
-            nrm.z += 1e-5f;
-        #endif
-
-        mixedNormal = normalize(nrm.xyz);
-    #endif
-}
-
-void SplatmapMix(float4 uvMainAndLM, float4 uvSplat01, float4 uvSplat23, inout half4 splatControl, out half weight, out half4 mixedDiffuse, out half4 defaultSmoothness, inout half3 mixedNormal)
-{
-    half4 diffAlbedo[4];
-
-    diffAlbedo[0] = SAMPLE_TEXTURE2D(_Splat0, sampler_Splat0, uvSplat01.xy);
-    diffAlbedo[1] = SAMPLE_TEXTURE2D(_Splat1, sampler_Splat0, uvSplat01.zw);
-    diffAlbedo[2] = SAMPLE_TEXTURE2D(_Splat2, sampler_Splat0, uvSplat23.xy);
-    diffAlbedo[3] = SAMPLE_TEXTURE2D(_Splat3, sampler_Splat0, uvSplat23.zw);
-
-    // This might be a bit of a gamble -- the assumption here is that if the diffuseMap has no
-    // alpha channel, then diffAlbedo[n].a = 1.0 (and _DiffuseHasAlphaN = 0.0)
-    // Prior to coming in, _SmoothnessN is actually set to max(_DiffuseHasAlphaN, _SmoothnessN)
-    // This means that if we have an alpha channel, _SmoothnessN is locked to 1.0 and
-    // otherwise, the true slider value is passed down and diffAlbedo[n].a == 1.0.
-    defaultSmoothness = half4(diffAlbedo[0].a, diffAlbedo[1].a, diffAlbedo[2].a, diffAlbedo[3].a);
-    defaultSmoothness *= half4(_Smoothness0, _Smoothness1, _Smoothness2, _Smoothness3);
-
-#ifndef _TERRAIN_BLEND_HEIGHT // density blending
-    if(_NumLayersCount <= 4)
-    {
-        // 20.0 is the number of steps in inputAlphaMask (Density mask. We decided 20 empirically)
-        half4 opacityAsDensity = saturate((half4(diffAlbedo[0].a, diffAlbedo[1].a, diffAlbedo[2].a, diffAlbedo[3].a) - (1 - splatControl)) * 20.0);
-        opacityAsDensity += 0.001h * splatControl;      // if all weights are zero, default to what the blend mask says
-        half4 useOpacityAsDensityParam = { _DiffuseRemapScale0.w, _DiffuseRemapScale1.w, _DiffuseRemapScale2.w, _DiffuseRemapScale3.w }; // 1 is off
-        splatControl = lerp(opacityAsDensity, splatControl, useOpacityAsDensityParam);
-    }
-#endif
-
-    // Now that splatControl has changed, we can compute the final weight and normalize
-    weight = dot(splatControl, 1.0h);
-
-#ifdef TERRAIN_SPLAT_ADDPASS
-    clip(weight <= 0.005h ? -1.0h : 1.0h);
-#endif
-
-#ifndef _TERRAIN_BASEMAP_GEN
-    // Normalize weights before lighting and restore weights in final modifier functions so that the overal
-    // lighting result can be correctly weighted.
-    splatControl /= (weight + HALF_MIN);
-#endif
-
-    mixedDiffuse = 0.0h;
-    mixedDiffuse += diffAlbedo[0] * half4(_DiffuseRemapScale0.rgb * splatControl.rrr, 1.0h);
-    mixedDiffuse += diffAlbedo[1] * half4(_DiffuseRemapScale1.rgb * splatControl.ggg, 1.0h);
-    mixedDiffuse += diffAlbedo[2] * half4(_DiffuseRemapScale2.rgb * splatControl.bbb, 1.0h);
-    mixedDiffuse += diffAlbedo[3] * half4(_DiffuseRemapScale3.rgb * splatControl.aaa, 1.0h);
-
-    NormalMapMix(uvSplat01, uvSplat23, splatControl, mixedNormal);
-}
-
-#endif
-
-#ifdef _TERRAIN_BLEND_HEIGHT
-void HeightBasedSplatModify(inout half4 splatControl, in half4 masks[4])
-{
-    // heights are in mask blue channel, we multiply by the splat Control weights to get combined height
-    half4 splatHeight = half4(masks[0].b, masks[1].b, masks[2].b, masks[3].b) * splatControl.rgba;
-    half maxHeight = max(splatHeight.r, max(splatHeight.g, max(splatHeight.b, splatHeight.a)));
-
-    // Ensure that the transition height is not zero.
-    half transition = max(_HeightTransition, 1e-5);
-
-    // This sets the highest splat to "transition", and everything else to a lower value relative to that, clamping to zero
-    // Then we clamp this to zero and normalize everything
-    half4 weightedHeights = splatHeight + transition - maxHeight.xxxx;
-    weightedHeights = max(0, weightedHeights);
-
-    // We need to add an epsilon here for active layers (hence the blendMask again)
-    // so that at least a layer shows up if everything's too low.
-    weightedHeights = (weightedHeights + 1e-6) * splatControl;
-
-    // Normalize (and clamp to epsilon to keep from dividing by zero)
-    half sumHeight = max(dot(weightedHeights, half4(1, 1, 1, 1)), 1e-6);
-    splatControl = weightedHeights / sumHeight.xxxx;
-}
-#endif
-
-void SplatmapFinalColor(inout half4 color, half fogCoord)
-{
-    color.rgb *= color.a;
-
-    #ifndef TERRAIN_GBUFFER // Technically we don't need fogCoord, but it is still passed from the vertex shader.
-
-    #ifdef TERRAIN_SPLAT_ADDPASS
-        color.rgb = MixFogColor(color.rgb, half3(0,0,0), fogCoord);
-    #else
-        color.rgb = MixFog(color.rgb, fogCoord);
-    #endif
-
-    #endif
-}
-
-void SetupTerrainDebugTextureData(inout InputData inputData, float2 uv)
-{
-    #if defined(DEBUG_DISPLAY)
-        #if defined(TERRAIN_SPLAT_ADDPASS)
-            if (_DebugMipInfoMode != DEBUGMIPINFOMODE_NONE)
-            {
-                discard; // Layer 4 & beyond are done additively, doesn't make sense for the mipmap streaming debug views -> stop.
-            }
-        #endif
-
-        switch (_DebugMipMapTerrainTextureMode)
-        {
-            case DEBUGMIPMAPMODETERRAINTEXTURE_CONTROL:
-                SETUP_DEBUG_TEXTURE_DATA_FOR_TEX(inputData, TRANSFORM_TEX(uv, _Control), _Control);
-                break;
-            case DEBUGMIPMAPMODETERRAINTEXTURE_LAYER0:
-                SETUP_DEBUG_TEXTURE_DATA_FOR_TEX(inputData, TRANSFORM_TEX(uv, _Splat0), _Splat0);
-                break;
-            case DEBUGMIPMAPMODETERRAINTEXTURE_LAYER1:
-                SETUP_DEBUG_TEXTURE_DATA_FOR_TEX(inputData, TRANSFORM_TEX(uv, _Splat1), _Splat1);
-                break;
-            case DEBUGMIPMAPMODETERRAINTEXTURE_LAYER2:
-                SETUP_DEBUG_TEXTURE_DATA_FOR_TEX(inputData, TRANSFORM_TEX(uv, _Splat2), _Splat2);
-                break;
-            case DEBUGMIPMAPMODETERRAINTEXTURE_LAYER3:
-                SETUP_DEBUG_TEXTURE_DATA_FOR_TEX(inputData, TRANSFORM_TEX(uv, _Splat3), _Splat3);
-                break;
-            default:
-                break;
-        }
-
-        // TERRAIN_STREAM_INFO: no streamInfo will have been set (no MeshRenderer); set status to "6" to reflect in the debug status that this is a terrain
-        // also, set the per-material status to "4" to indicate warnings
-        inputData.streamInfo = TERRAIN_STREAM_INFO;
-    #endif
-}
+// NOTE: Legacy URP SplatmapMix, NormalMapMix, HeightBasedSplatModify,
+// SplatmapFinalColor, SetupTerrainDebugTextureData, and ComputeMasks have been
+// removed (R78). ForwardLit uses SampleHectonTerrain() from HectonTerrainSampling.hlsl.
+// Meta pass uses HectonTerrainMetaPass.hlsl. The old functions sampled _Splat0..3
+// which are never bound by HectonTerrainMaterialInjector.
 
 ///////////////////////////////////////////////////////////////////////////////
 //                  Vertex and Fragment functions                            //
@@ -358,30 +213,6 @@ Varyings SplatmapVert(Attributes v)
     return o;
 }
 
-void ComputeMasks(out half4 masks[4], half4 hasMask, Varyings IN)
-{
-    masks[0] = 0.5h;
-    masks[1] = 0.5h;
-    masks[2] = 0.5h;
-    masks[3] = 0.5h;
-
-#ifdef _MASKMAP
-    masks[0] = lerp(masks[0], SAMPLE_TEXTURE2D(_Mask0, sampler_Mask0, IN.uvSplat01.xy), hasMask.x);
-    masks[1] = lerp(masks[1], SAMPLE_TEXTURE2D(_Mask1, sampler_Mask0, IN.uvSplat01.zw), hasMask.y);
-    masks[2] = lerp(masks[2], SAMPLE_TEXTURE2D(_Mask2, sampler_Mask0, IN.uvSplat23.xy), hasMask.z);
-    masks[3] = lerp(masks[3], SAMPLE_TEXTURE2D(_Mask3, sampler_Mask0, IN.uvSplat23.zw), hasMask.w);
-#endif
-
-    masks[0] *= _MaskMapRemapScale0.rgba;
-    masks[0] += _MaskMapRemapOffset0.rgba;
-    masks[1] *= _MaskMapRemapScale1.rgba;
-    masks[1] += _MaskMapRemapOffset1.rgba;
-    masks[2] *= _MaskMapRemapScale2.rgba;
-    masks[2] += _MaskMapRemapOffset2.rgba;
-    masks[3] *= _MaskMapRemapScale3.rgba;
-    masks[3] += _MaskMapRemapOffset3.rgba;
-}
-
 // Used in Standard Terrain shader
 void SplatmapFragment(
     Varyings IN
@@ -400,7 +231,10 @@ void SplatmapFragment(
 #if defined(_NORMALMAP) && !defined(ENABLE_TERRAIN_PERPIXEL_NORMAL)
     normalWS = IN.normal.xyz;
     float3 viewDirWS = half3(IN.normal.w, IN.tangent.w, IN.bitangent.w);
-    float3 viewDirTS = mul(half3x3(IN.tangent.xyz, IN.bitangent.xyz, IN.normal.xyz), viewDirWS);
+    // R95 FIX: -IN.tangent matches stock URP TerrainLitPasses and InitializeInputData above.
+    // The terrain vertex tangent cross((0,0,1), n) points -X; the negation aligns the TBN X axis
+    // with increasing U. Without it, normal-map detail lit response is mirrored east-west.
+    float3 viewDirTS = mul(half3x3(-IN.tangent.xyz, IN.bitangent.xyz, IN.normal.xyz), viewDirWS);
 #else
     normalWS = normalize(IN.normal);
     float3 viewDirWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
@@ -408,6 +242,18 @@ void SplatmapFragment(
 #endif
 
     TerrainSample ts = SampleHectonTerrain(IN.uvMainAndLM.xy, IN.uvMainAndLM.xy, IN.positionWS, normalWS, viewDirTS);
+
+    // --- HECTON-8 Phase 8.5 GPU diagnostic: unlit passthrough ---
+    // For the debug variants SampleHectonTerrain has already packed the diagnostic value into
+    // ts.albedo. Emit it directly (no PBR, no fog mix) so the framebuffer readback is the exact
+    // encoded value. Base variant (neither keyword) falls through to the normal lit path below.
+#if defined(_DEBUG_NORMALS) || defined(_DEBUG_STOCHASTIC_FADE)
+    outColor = half4(ts.albedo, 1.0);
+    #ifdef _WRITE_RENDERING_LAYERS
+    outRenderingLayers = outRenderingLayersSetup(outColor, GetMeshRenderingLayer());
+    #endif
+    return;
+#endif
 
     half3 albedo = ts.albedo;
     half3 normalTS = ts.normalTS;
@@ -417,7 +263,9 @@ void SplatmapFragment(
     half alpha = 1.0;
 
 #if defined(_NORMALMAP) && !defined(ENABLE_TERRAIN_PERPIXEL_NORMAL)
-    normalWS = TransformTangentToWorld(normalTS, half3x3(IN.tangent.xyz, IN.bitangent.xyz, IN.normal.xyz));
+    // R95 FIX: -IN.tangent (stock URP convention; see viewDirTS note above). This branch previously
+    // dropped the negation, flipping the X of all sampled normal detail in the lighting basis.
+    normalWS = TransformTangentToWorld(normalTS, half3x3(-IN.tangent.xyz, IN.bitangent.xyz, IN.normal.xyz));
     normalWS = NormalizeNormalPerPixel(normalWS);
 #elif !defined(_NORMALMAP)
     normalWS = NormalizeNormalPerPixel(normalWS);

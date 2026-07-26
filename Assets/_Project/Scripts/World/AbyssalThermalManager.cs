@@ -4913,10 +4913,14 @@ namespace Hecton8.World
             const uint fnvPrime = 16777619u;
             uint hash = fnvOffset;
             float3 quantized = math.round(new float3(positionWS.x, positionWS.y, positionWS.z) * 0.25f);
-            hash = FoldThermalSourceHash(hash, math.asuint(quantized.x), fnvPrime);
-            hash = FoldThermalSourceHash(hash, math.asuint(quantized.y), fnvPrime);
-            hash = FoldThermalSourceHash(hash, math.asuint(quantized.z), fnvPrime);
-            hash = FoldThermalSourceHash(hash, math.asuint(radiusWS), fnvPrime);
+            float qx = quantized.x == 0f ? 0.0f : quantized.x;
+            float qy = quantized.y == 0f ? 0.0f : quantized.y;
+            float qz = quantized.z == 0f ? 0.0f : quantized.z;
+            float rWS = radiusWS == 0f ? 0.0f : radiusWS;
+            hash = FoldThermalSourceHash(hash, math.asuint(qx), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(qy), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(qz), fnvPrime);
+            hash = FoldThermalSourceHash(hash, math.asuint(rWS), fnvPrime);
             return hash == 0u ? 1u : hash;
         }
 
@@ -6347,7 +6351,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ThermalMapJacobiJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<float> Previous;

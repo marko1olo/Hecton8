@@ -279,7 +279,7 @@ namespace Hecton8.World
         }
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct PredictiveChunkResidencyJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<ChunkResidencyDTO> Chunks;

@@ -4385,7 +4385,7 @@ namespace Hecton8.World
             return (value & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearDearLieClaimsJob : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1: Claims is a Vault-backed 64-byte claim array sized to the visible flora lane before scheduling; each worker writes only its own index during the clear pass.
@@ -4403,7 +4403,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ClearDearLieBucketsJob : IJobParallelFor
         {
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<int> BucketHeads;
@@ -4418,7 +4418,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct BuildDearLieSpatialHashJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<Matrix4x4> Matrices;
@@ -4465,7 +4465,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private unsafe struct ResolveDearLieDamageJob : IJobParallelFor
         {
             // SAFETY_JUSTIFICATION_PARAGRAPH_1: Matrices, Metadata, Health, Claims, Results, Counters, Events, and bucket arrays are distinct native lanes; Dear Lie transient lanes are Vault-backed and locked while jobs hold pointers.
@@ -4653,7 +4653,7 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateMockFloraDamageJob : IJobParallelFor
         {
             [NoAlias, NativeDisableParallelForRestriction] public NativeArray<FloraDestructionEventDTO> Events;

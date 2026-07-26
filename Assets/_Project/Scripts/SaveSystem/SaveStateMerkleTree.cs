@@ -965,7 +965,7 @@ namespace Hecton8.SaveSystem
                                 endOffset,
                                 MemoryMappedFileAccess.ReadWrite,
                                 HandleInheritability.None,
-                                false);
+                                true);
                             using MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(
                                 appendOffset,
                                 appendBytes,

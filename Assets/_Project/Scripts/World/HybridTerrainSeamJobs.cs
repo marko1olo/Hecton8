@@ -26,8 +26,8 @@ namespace Hecton8.World.Terrain
     public static class HybridTerrainSeamMath
     {
         public const float CloseHeightBandMeters = 5f;
-        public const float RaymarchHalfSpanMeters = 5f;
-        public const int RaymarchStepCount = 16;
+        public const float RaymarchHalfSpanMeters = 15f;  // Increased from 5f to catch overhangs up to 30m above terrain
+        public const int RaymarchStepCount = 48;          // Scaled 3x with span to preserve ~0.625m/step at max quality
         public const float ExpensiveSamplingStartWeight = 0.30f;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -108,6 +108,10 @@ namespace Hecton8.World.Terrain
             if (PatchWidth <= 0 || PatchHeight <= 0 || HeightmapResolution <= 1)
                 return;
 
+#if UNITY_EDITOR
+            UnityEngine.Debug.Assert(math.all(TerrainPosition == float3.zero), "TerrainPosition ABI must be zero.");
+#endif
+
             float qualityWeight = ResolveJobQualityWeight();
             float expensiveWeight = HybridTerrainSeamMath.ResolveExpensiveSamplingWeight(qualityWeight);
             int raymarchSteps = HybridTerrainSeamMath.ResolveRaymarchStepCount(qualityWeight);
@@ -142,7 +146,7 @@ namespace Hecton8.World.Terrain
                     plan.CanyonSignal * 0.12f +
                     plan.CompositionPotential * 0.15f +
                     plan.CaveBlendWeight * 0.10f);
-                float blendWeight = falloff * math.max(planWeight, math.saturate(plan.CaveBlendWeight));
+                float blendWeight = falloff * math.saturate(planWeight);
                 mask01 = math.max(mask01, blendWeight);
 
                 if (expensiveWeight <= 0.0001f)
@@ -225,9 +229,10 @@ namespace Hecton8.World.Terrain
         private static float SampleAnalyticSdf(float3 position, in HybridTerrainSeamPlanNative plan)
         {
             float3 halfSize = math.max(plan.VoxelSize * 0.5f, new float3(0.25f, 0.25f, 0.25f));
-            float3 normalized = (position - plan.TerrainLocalVoxelCenter) * math.rcp(halfSize);
-            float dominantScale = math.cmin(halfSize);
-            return (HybridTerrainSeamMath.LengthFromSq(math.lengthsq(normalized)) - 1f) * dominantScale;
+            float3 d = math.abs(position - plan.TerrainLocalVoxelCenter) - halfSize;
+            float externalDist = math.length(math.max(d, 0.0f));
+            float internalDist = math.min(math.cmax(d), 0.0f);
+            return externalDist + internalDist;
         }
     }
 

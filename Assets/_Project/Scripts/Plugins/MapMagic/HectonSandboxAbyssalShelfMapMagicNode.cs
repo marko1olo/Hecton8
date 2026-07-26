@@ -31,8 +31,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static readonly uint _mapMagicContextHash =
             unchecked((uint)LocHash.Compute("MapMagic.SandboxAbyssalShelf"));
 
-        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 1000f;
-        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -4000f;
+        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
+        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 15000f;
         [Den.Tools.GUI.ValAttribute("Exponential Falloff")] public float macroExponentialFalloff = 3.1f;
         [Den.Tools.GUI.ValAttribute("Shelf Run m")] public float shelfRunMeters = 15000f;
@@ -52,6 +52,21 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Trench Sharpness")] public float trenchSharpness = 2.4f;
         [Den.Tools.GUI.ValAttribute("Island Radius m")] public float islandCenterRadiusMeters = 2600f;
         [Den.Tools.GUI.ValAttribute("Island Junction")] public float islandJunctionThreshold = 0.58f;
+        [Den.Tools.GUI.ValAttribute("Reef Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> reefMaskOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Playa Lake Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> lakeMaskOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Steep Rock Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> steepRockOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Continentality", "Outlet")]
+        public readonly Outlet<MatrixWorld> continentalityOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Ledge Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> ledgeMaskOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Cave Entrance Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> caveEntranceOut = new Outlet<MatrixWorld>();
+        [Den.Tools.GUI.ValAttribute("Brine Pool Mask", "Outlet")]
+        public readonly Outlet<MatrixWorld> brinePoolOut = new Outlet<MatrixWorld>();
+
         [Den.Tools.GUI.ValAttribute("Seed")] public int seed = WorldMacroGeologyFields.DefaultAuthoringSeed;
 
         [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = false;
@@ -80,6 +95,17 @@ namespace MapMagic.Nodes.MatrixGenerators
                 data.area.full.worldSize,
                 data.globals.height);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            float expectedHeight = math.max(highWorldY, lowWorldY + 1f) - lowWorldY;
+            float globalsHeight = data.globals.height;
+            if (math.abs(globalsHeight - expectedHeight) > 1f)
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[HectonMacroGeology] TerrainData.size.y ({globalsHeight:F1}m) != geology Y-span ({expectedHeight:F1}m). " +
+                    $"Graph terrain height should equal HighWorldY - LowWorldY = {expectedHeight:F1}m.");
+            }
+#endif
+
             float[] target = dst.arr;
             int cellCount = target != null ? target.Length : 0;
             int width = math.max(1, dst.rect.size.x);
@@ -96,16 +122,47 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             NativeArray<float> rawHeights = default;
             NativeArray<float> quantizedHeights = default;
+            NativeArray<float> reefArr = default;
+            NativeArray<float> lakeArr = default;
+            NativeArray<float> steepRockArr = default;
+            NativeArray<float> continentalityArr = default;
+            NativeArray<float> ledgeArr = default;
+            NativeArray<float> caveEntranceArr = default;
+            NativeArray<float> brinePoolArr = default;
+
             int rawHeightsRegistrationId = 0;
             int quantizedHeightsRegistrationId = 0;
+            int reefRegId = 0;
+            int lakeRegId = 0;
+            int steepRockRegId = 0;
+            int continentalityRegId = 0;
+            int ledgeRegId = 0;
+            int caveEntranceRegId = 0;
+            int brinePoolRegId = 0;
+
             JobHandle generationHandle = default;
             bool generationHandleScheduled = false;
             try
             {
                 rawHeights = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 quantizedHeights = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                reefArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                lakeArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                steepRockArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                continentalityArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                ledgeArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                caveEntranceArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                brinePoolArr = new NativeArray<float>(cellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
                 rawHeightsRegistrationId = RegisterTempJobArray(rawHeights, nameof(rawHeights));
                 quantizedHeightsRegistrationId = RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
+                reefRegId = RegisterTempJobArray(reefArr, nameof(reefArr));
+                lakeRegId = RegisterTempJobArray(lakeArr, nameof(lakeArr));
+                steepRockRegId = RegisterTempJobArray(steepRockArr, nameof(steepRockArr));
+                continentalityRegId = RegisterTempJobArray(continentalityArr, nameof(continentalityArr));
+                ledgeRegId = RegisterTempJobArray(ledgeArr, nameof(ledgeArr));
+                caveEntranceRegId = RegisterTempJobArray(caveEntranceArr, nameof(caveEntranceArr));
+                brinePoolRegId = RegisterTempJobArray(brinePoolArr, nameof(brinePoolArr));
 
                 double sampleCellSizeMeters = ResolveCellSizeMeters(dst);
                 AbsoluteUniversePosition worldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
@@ -162,6 +219,13 @@ namespace MapMagic.Nodes.MatrixGenerators
                 {
                     PresampledNodes = presampledNodes,
                     OutputHeights01 = rawHeights,
+                    OutputReef = reefArr,
+                    OutputLake = lakeArr,
+                    OutputSteepRock = steepRockArr,
+                    OutputContinentality = continentalityArr,
+                    OutputLedge = ledgeArr,
+                    OutputCaveEntrance = caveEntranceArr,
+                    OutputBrinePool = brinePoolArr,
                     Parameters = parameters,
                     Width = width,
                     PresampledWidth = presampledWidth,
@@ -235,6 +299,50 @@ namespace MapMagic.Nodes.MatrixGenerators
                 NativeArray<float>.Copy(finalHeights, target, cellCount);
 
                 data.StoreProduct(this, dst);
+
+                // Store products for connected gameplay & geology outlets
+                if (reefMaskOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(reefArr, mat.arr, cellCount);
+                    data.StoreProduct(reefMaskOut, mat);
+                }
+                if (lakeMaskOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(lakeArr, mat.arr, cellCount);
+                    data.StoreProduct(lakeMaskOut, mat);
+                }
+                if (steepRockOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(steepRockArr, mat.arr, cellCount);
+                    data.StoreProduct(steepRockOut, mat);
+                }
+                if (continentalityOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(continentalityArr, mat.arr, cellCount);
+                    data.StoreProduct(continentalityOut, mat);
+                }
+                if (ledgeMaskOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(ledgeArr, mat.arr, cellCount);
+                    data.StoreProduct(ledgeMaskOut, mat);
+                }
+                if (caveEntranceOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(caveEntranceArr, mat.arr, cellCount);
+                    data.StoreProduct(caveEntranceOut, mat);
+                }
+                if (brinePoolOut != null)
+                {
+                    MatrixWorld mat = new MatrixWorld(dst.rect, dst.worldPos, dst.worldSize);
+                    NativeArray<float>.Copy(brinePoolArr, mat.arr, cellCount);
+                    data.StoreProduct(brinePoolOut, mat);
+                }
             }
             finally
             {
@@ -243,6 +351,13 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 DisposeTracked(ref rawHeights, ref rawHeightsRegistrationId);
                 DisposeTracked(ref quantizedHeights, ref quantizedHeightsRegistrationId);
+                DisposeTracked(ref reefArr, ref reefRegId);
+                DisposeTracked(ref lakeArr, ref lakeRegId);
+                DisposeTracked(ref steepRockArr, ref steepRockRegId);
+                DisposeTracked(ref continentalityArr, ref continentalityRegId);
+                DisposeTracked(ref ledgeArr, ref ledgeRegId);
+                DisposeTracked(ref caveEntranceArr, ref caveEntranceRegId);
+                DisposeTracked(ref brinePoolArr, ref brinePoolRegId);
             }
         }
 

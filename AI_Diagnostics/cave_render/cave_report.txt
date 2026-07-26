@@ -1,0 +1,8 @@
+H8 3D ISOLATED CAVE DIAGNOSTIC REPORT (PHASE 14 ANALYTIC NORMALS WET PBR)
+Timestamp: 2026-07-26 15:29:51
+Grid Resolution: 32x32x32 (Voxel Pitch: 0,5m)
+SDF Bounds: Min=-3,663m, Max=25,000m, NaNs=0
+Cavity Centroid Grid Index: (16, 16, 18)
+Mesh Stats: Vertices=3180, Triangles=6356, Indices=19068
+Mesh Bounds Center: (15.50, 15.48, 15.50)
+Mesh Bounds Extents: (13.00, 12.98, 13.00)

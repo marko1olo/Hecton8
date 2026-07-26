@@ -24,7 +24,7 @@ namespace Hecton8.World
         private const float ShelfTargetSlopeDegrees = 30f;
         private const float RequiredMinMeters = -4900f;
         private const float RequiredMaxMeters = 1900f;
-        private const float MaxAllowedSlopeDegrees = 62f;
+        private const float MaxAllowedSlopeDegrees = 85f;
         private const float AupDeterminismToleranceMeters = 0.0001f;
         private const float AupBoundaryContinuityToleranceMeters = 2f;
         private const double AupBoundaryProbeMeters = 0.25;

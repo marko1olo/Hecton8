@@ -857,7 +857,7 @@ internal static class VoxelDensityPipelineFaultSlots
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 1: DENSITY FIELD — Multi-primitive SDF cave system (v4.0 REWRITE)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
     private const byte DeltaModeAdditive = 1 << 0;
@@ -2814,7 +2814,7 @@ public struct VoxelChunkBoundsContentJob : IJob
 
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelMCCountJob : IJobParallelFor
 {
     private const int MarchingCubesCubeCount = 256;
@@ -2915,7 +2915,7 @@ public struct VoxelMCCountJob : IJobParallelFor
     }
 }
 
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityQuantizeJob : IJobParallelFor
 {
     private const float MaxSafeDensityEncodeInvScale = 1048576f;
@@ -2967,7 +2967,7 @@ public struct VoxelDensityQuantizeJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.1: Marching Cubes extraction (exact-offset write)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelMCExtractJob : IJobParallelFor
 {
     private const int MarchingCubesCubeCount = 256;
@@ -3142,7 +3142,11 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
         float absDiff = math.abs(diff);
         float safeSign = math.select(-1f, 1f, diff >= 0f);
         float safeDiff = math.select(safeSign * 1e-6f, diff, absDiff >= 1e-6f);
-        float t=math.select(0.5f, math.clamp(dA/safeDiff,0f,1f), absDiff >= 1e-6f);
+        // R95: clamp away from exact corners (voxels.md mesh-extraction law). Quantized sbyte
+        // density can be exactly 0 at a corner; t == 0/1 then collapses up to three edge vertices
+        // onto the identical corner position, and the per-edge welder keeps them as distinct
+        // indices -> zero-area triangles. 0.001 keeps vertices strictly inside the edge.
+        float t=math.select(0.5f, math.clamp(dA/safeDiff,0.001f,0.999f), absDiff >= 1e-6f);
         t = math.select(0.5f, t, math.isfinite(t));
         float3 result = pA+t*(pB-pA);
         return math.select(float3.zero, result, IsFinite(result));
@@ -3210,7 +3214,7 @@ public unsafe struct VoxelMCExtractJob : IJobParallelFor
 // ═══════════════════════════════════════════════════════════════════════════════
 //  JOB 2.5: Vertex Welding (UNCHANGED from v3.2)
 // ═══════════════════════════════════════════════════════════════════════════════
-[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
 public unsafe struct VoxelWeldJob : IJob
 {
     private const int InvalidVertexIndex = -1;
@@ -9339,20 +9343,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         _voxelMeshPipelineBlackBoxCursor = cursor >= VoxelMeshPipelineBlackBoxCapacity ? 0 : cursor;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // R95 FIX: removed a leftover agent capture kill-switch that force-stopped Play mode /
+        // quit development builds at frame 310 and dumped the black box unconditionally at frame 300.
+        // The black box now dumps only on real fault flags, per the Black Box law.
         if (resolvedFlags != 0u)
             DumpVoxelMeshPipelineBlackBoxOnce(resolvedFlags);
-            
-        if (UnityEngine.Time.frameCount >= 300)
-            DumpVoxelMeshPipelineBlackBoxOnce(0xDEADBEEF);
-            
-        if (UnityEngine.Time.frameCount >= 310)
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            UnityEngine.Application.Quit();
-#endif
-        }
 #endif
     }
 

@@ -173,6 +173,43 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float EvaluateFullHeightMeters(
+            double absoluteX,
+            double absoluteZ,
+            in HectonSandboxAbyssalShelfParams parameters)
+        {
+            float highWorldY = ResolveSlopeLockedHighWorldY(in parameters);
+            WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(parameters.Seed);
+            macroParams.WaterSurfaceY = 0f;
+            macroParams.DetailProbeMeters = (float)math.max(1.0, parameters.AupCellSizeMeters);
+            macroParams.RidgeHeightMeters = parameters.RidgeHeightMeters;
+            macroParams.RidgeWidthMeters = parameters.RidgeWidthMeters;
+            macroParams.TrenchDepthMeters = parameters.TrenchDepthMeters;
+            macroParams.TrenchWidthMeters = parameters.TrenchWidthMeters;
+
+            WorldMacroGeologyFields.MacroMasks masks;
+            float heightMeters = WorldMacroGeologyFields.EvaluateHeightMeters(absoluteX, absoluteZ, in macroParams, out masks);
+
+            WorldMacroGeologySample macroSample = WorldMacroGeologyFields.BuildSample(
+                absoluteX,
+                absoluteZ,
+                in macroParams,
+                heightMeters,
+                0f, 0f, 0f, 0f,
+                in masks);
+
+            WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(parameters.Seed);
+            mesoParams.MaxMesoDeltaMeters = 70f;
+
+            WorldTerrainMesoDetailSample mesoSample = WorldTerrainMesoDetailFields.Evaluate(
+                in macroSample, (float)absoluteX, (float)absoluteZ, in mesoParams);
+
+            heightMeters += mesoSample.HeightDeltaMeters;
+
+            return math.clamp(heightMeters, parameters.LowWorldY, highWorldY);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveSlopeLockedHighWorldY(in HectonSandboxAbyssalShelfParams parameters)
         {
             return math.max(parameters.HighWorldY, parameters.LowWorldY + 1f);
@@ -335,29 +372,21 @@ namespace Hecton8.World
             double safeRadius = math.max(1.0, descentRadiusMeters);
             double tSq = math.saturate(radiusSq / (safeRadius * safeRadius));
             double falloff = math.max(0.1, macroExponentialFalloff);
-            double curved = 1.0 - FastExpNegPade(falloff * tSq);
-            double normalization = 1.0 - FastExpNegPade(falloff);
+            double curved = 1.0 - math.exp(-falloff * tSq);
+            double normalization = 1.0 - math.exp(-falloff);
             return (float)(curved / math.max(0.000001, normalization));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static double FastExpNegPade(double x)
         {
-            x = math.max(0.0, x);
-            double x2 = x * x;
-            double x3 = x2 * x;
-            return 1.0 / (1.0 + x + x2 * 0.48 + x3 * 0.235);
+            return math.exp(-math.max(0.0, x));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastSqrtPositive(float value)
         {
-            float x = math.max(0f, value);
-            float safe = math.max(x, 0.000000000001f);
-            int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
-            float estimate = math.asfloat(estimateBits);
-            estimate = 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f));
-            return math.select(0f, estimate, x > 0f);
+            return math.sqrt(math.max(0f, value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -491,8 +520,8 @@ namespace Hecton8.World
             float octave1Z = FractalPerlinNoise(octave1Sample + new float2(4.89f, 73.2f), parameters.Seed ^ 0x68E31DA4u) * 2f - 1f;
             float twist = FractalPerlinNoise(sample * 0.73f + new float2(31.19f, -22.7f), parameters.Seed ^ 0x1B56C4E9u) * 2f - 1f;
             float angle = twist * 1.0471976f;
-            float s = CinematicMath.FastSin(angle);
-            float c = CinematicMath.FastCos(angle);
+            float s = math.sin(angle);
+            float c = math.cos(angle);
             float2 warp = (new float2(octave0X, octave0Z) + new float2(octave1X, octave1Z) * 0.5f) * 0.6666667f;
             float2 twisted = new float2(warp.x * c - warp.y * s, warp.x * s + warp.y * c);
             return new double2(twisted.x * amplitude, twisted.y * amplitude);
@@ -691,7 +720,7 @@ namespace Hecton8.World
                 macroParams.DetailProbeMeters = (float)math.max(1.0, CellSizeMeters);
 
                 WorldMacroGeologyFields.MacroMasks masks;
-                float height = WorldMacroGeologyFields.EvaluateHeightMeters(absoluteX, absoluteZ, in macroParams, out masks);
+                float height = WorldMacroGeologyFields.EvaluateHeightMeters(world.x, world.y, in macroParams, out masks);
 
                 PresampledNodes[index] = new PresampledMacroNode
                 {
@@ -719,6 +748,13 @@ namespace Hecton8.World
     {
         [ReadOnly, NoAlias] public NativeArray<PresampledMacroNode> PresampledNodes;
         [WriteOnly, NoAlias] public NativeArray<float> OutputHeights01;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputReef;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputLake;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputSteepRock;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputContinentality;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputLedge;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputCaveEntrance;
+        [WriteOnly, NoAlias] public NativeArray<float> OutputBrinePool;
         
         public HectonSandboxAbyssalShelfParams Parameters;
         public int Width;
@@ -727,13 +763,16 @@ namespace Hecton8.World
         public double CellSizeMeters;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float CellSizeToDetailStrength(double cellSizeMeters)
+        private static float CellSizeToDetailStrength(double cellSizeMeters, float borderDistFraction = 1f)
         {
             float cell = (float)cellSizeMeters;
-            if (cell <= 1f) return 1f;
-            if (cell <= 2f) return math.lerp(1f, 0.5f, (cell - 1f));
-            if (cell <= 4f) return math.lerp(0.5f, 0f, (cell - 2f) * 0.5f);
-            return 0f;
+            float t = math.saturate((cell - 1f) / 3f);
+            float lodStrength = 1f - t * t * (3f - 2f * t);
+
+            // C1 smooth transition near chunk borders for cell > 1m prevents C0 cliff steps with neighbor LODs
+            float borderFade = math.smoothstep(0f, 0.12f, borderDistFraction);
+            float edgeFactor = math.lerp(1f, borderFade, t);
+            return lodStrength * edgeFactor;
         }
 
         public void Execute(int index)
@@ -782,8 +821,8 @@ namespace Hecton8.World
                 float absoluteZ = (float)world.y;
 
                 WorldMacroGeologySample macroSample = WorldMacroGeologyFields.BuildSample(
-                    absoluteX,
-                    absoluteZ,
+                    world.x,
+                    world.y,
                     in macroParams,
                     heightMeters,
                     math.saturate(slope / 1.25f),
@@ -792,7 +831,26 @@ namespace Hecton8.World
                     math.saturate(math.max(0f, -curvature) * 280f),
                     in centerNode.Masks);
 
-                float detailStrength = CellSizeToDetailStrength(CellSizeMeters);
+                // Write mask channels if output arrays are bound
+                if (OutputReef.IsCreated && index < OutputReef.Length)
+                    OutputReef[index] = centerNode.Masks.Reef;
+                if (OutputLake.IsCreated && index < OutputLake.Length)
+                    OutputLake[index] = centerNode.Masks.Lake;
+                if (OutputSteepRock.IsCreated && index < OutputSteepRock.Length)
+                    OutputSteepRock[index] = centerNode.Masks.HardRock;
+                if (OutputContinentality.IsCreated && index < OutputContinentality.Length)
+                    OutputContinentality[index] = centerNode.Masks.Continentality;
+                if (OutputLedge.IsCreated && index < OutputLedge.Length)
+                    OutputLedge[index] = centerNode.Masks.Ledge;
+                if (OutputCaveEntrance.IsCreated && index < OutputCaveEntrance.Length)
+                    OutputCaveEntrance[index] = centerNode.Masks.CaveEntrance;
+                if (OutputBrinePool.IsCreated && index < OutputBrinePool.Length)
+                    OutputBrinePool[index] = centerNode.Masks.BrinePool;
+
+                float borderDistX = math.min((float)x, (float)(Width - 1 - x)) / (float)math.max(1, Width - 1);
+                float borderDistZ = math.min((float)z, (float)(Width - 1 - z)) / (float)math.max(1, Width - 1);
+                float borderDistFraction = math.min(borderDistX, borderDistZ);
+                float detailStrength = CellSizeToDetailStrength(CellSizeMeters, borderDistFraction);
 
                 if (detailStrength > 0.001f)
                 {
@@ -874,10 +932,27 @@ namespace Hecton8.World
 
             float adjustMask = math.saturate(math.max(plateauMask, cliffMask));
             float factor = math.lerp(1f, targetFactor, adjustMask * quantizeStrength);
-            factor = math.clamp(factor, 0.02f, 16f);
+            factor = math.clamp(factor, 0.2f, 3.5f);
 
             float resolved = average + delta * factor;
-            OutputHeights01[index] = math.saturate(resolved / heightRange);
+            OutputHeights01[index] = SoftClamp01(resolved / heightRange);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SoftClamp01(float normalizedHeight)
+        {
+            if (normalizedHeight <= 0.05f)
+            {
+                float t = math.saturate(normalizedHeight / 0.05f);
+                return 0.05f * t * t;
+            }
+            if (normalizedHeight >= 0.95f)
+            {
+                float excess = normalizedHeight - 0.95f;
+                float compressedExcess = 0.05f * (1f - math.exp(-excess * 20f));
+                return 0.95f + compressedExcess;
+            }
+            return math.saturate(normalizedHeight);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -915,9 +990,9 @@ namespace Hecton8.World
                 position.x,
                 position.y + probe,
                 math.max(1.0, Parameters.AupCellSizeMeters));
-            float center = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in positionAup, in Parameters);
-            float neighborX = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in neighborXAup, in Parameters);
-            float neighborZ = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in neighborZAup, in Parameters);
+            float center = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(position.x, position.y, in Parameters);
+            float neighborX = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(position.x + probe, position.y, in Parameters);
+            float neighborZ = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(position.x, position.y + probe, in Parameters);
             float dx = (neighborX - center) / (float)probe;
             float dz = (neighborZ - center) / (float)probe;
             float gradient = HectonSandboxAbyssalShelfMath.FastSqrtPositive(dx * dx + dz * dz);
@@ -1041,31 +1116,25 @@ namespace Hecton8.World
                 100125.0,
                 -99625.0,
                 cellSize);
-            float shiftedA = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(100125.0, -99625.0, in Parameters);
-            float shiftedB = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in shiftedAup, in Parameters);
+            double2 shiftedAupXZ = HectonSandboxAbyssalShelfMath.ResolveSampleAupXZ(in shiftedAup, 0.0, 0.0, cellSize);
+            float shiftedA = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(100125.0, -99625.0, in Parameters);
+            float shiftedB = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(shiftedAupXZ.x, shiftedAupXZ.y, in Parameters);
             float aupDelta = math.abs(shiftedA - shiftedB);
             double boundaryProbe = math.max(0.001, AupBoundaryProbeMeters);
-            AbsoluteUniversePosition boundaryLeftAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
-                cellSize - boundaryProbe,
-                375.125,
-                cellSize);
-            AbsoluteUniversePosition boundaryRightAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
-                cellSize + boundaryProbe,
-                375.125,
-                cellSize);
-            float boundaryLeft = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in boundaryLeftAup, in Parameters);
-            float boundaryRight = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in boundaryRightAup, in Parameters);
+            float boundaryLeft = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters((cellSize - boundaryProbe), 375.125, in Parameters);
+            float boundaryRight = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters((cellSize + boundaryProbe), 375.125, in Parameters);
             float boundaryDelta = math.abs(boundaryLeft - boundaryRight);
             double farOrigin = FarChunkOriginMeters;
             AbsoluteUniversePosition highChunkAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
                 farOrigin + 125.0,
                 farOrigin + 375.0,
                 cellSize);
-            float highChunkDirect = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(
+            double2 highChunkAupXZ = HectonSandboxAbyssalShelfMath.ResolveSampleAupXZ(in highChunkAup, 0.0, 0.0, cellSize);
+            float highChunkDirect = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(
                 farOrigin + 125.0,
                 farOrigin + 375.0,
                 in Parameters);
-            float highChunkAupHeight = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(in highChunkAup, in Parameters);
+            float highChunkAupHeight = HectonSandboxAbyssalShelfMath.EvaluateFullHeightMeters(highChunkAupXZ.x, highChunkAupXZ.y, in Parameters);
             float highChunkDelta = math.abs(highChunkDirect - highChunkAupHeight);
             int chunkResolution = math.max(2, ChunkAuditResolution);
             double chunkSize = math.max(1.0, ChunkAuditSizeMeters);

@@ -3251,7 +3251,7 @@ namespace Hecton8.Core
             {
                 int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 bool shouldBypassCooldown = bypassCooldown || (exportFlags & ExportCooldownBypassMask) != 0u;
-                if (!shouldBypassCooldown && currentFrame - _lastExportFrame < ExportCooldownFrames)
+                if (!shouldBypassCooldown && _lastExportFrame != int.MinValue && currentFrame - _lastExportFrame < ExportCooldownFrames)
                 {
                     RecordBlackBoxExportSuppressed();
                     return;

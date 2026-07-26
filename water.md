@@ -60,6 +60,8 @@ Water truth is split deliberately:
 - `audio.md` owns muffling, sonar, pressure groans, water ingress sound, and mix-state response.
 - `ui.md` owns instrument readout and warning presentation.
 
+`DepthZoneDirector.cs` in `Assets/_Project/Scripts/World/` owns depth zone evaluation and discovery triggers. It executes via `ISlowTickable` at a 2 Hz cadence (0.5s interval) with zero GC allocations. Zone transitions publish blittable 8-byte `DepthZoneEventPayload` structs over fixed-capacity (16 entry) native queues.
+
 No water script may become a hidden global owner for pressure, route, damage, AI, save, or vehicle truth. It must consume snapshots from the named owners and publish only its assigned presentation or authored field data.
 
 ## 2.1 Current Static Source Anchor - Ocean Kinematics

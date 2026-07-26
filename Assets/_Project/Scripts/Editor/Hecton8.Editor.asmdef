@@ -35,7 +35,8 @@
         "GPUInstancer",
         "Den.Tools",
         "MapMagic",
-        "ShapesRuntime"
+        "ShapesRuntime",
+        "Hecton8.World.VoxelSurfaceNets"
     ],
     "includePlatforms": [
         "Editor"

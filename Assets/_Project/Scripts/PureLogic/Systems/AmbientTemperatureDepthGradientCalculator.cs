@@ -18,9 +18,24 @@ namespace Hecton8.PureLogic.Systems
             if (float.IsNaN(latitudeDegrees) || float.IsInfinity(latitudeDegrees)) latitudeDegrees = 0f;
 
             depth = Math.Max(0f, depth);
-            latitudeDegrees = Math.Clamp(latitudeDegrees, -maxLatitude, maxLatitude);
 
-            float latitudeFactor = Math.Abs(latitudeDegrees) / maxLatitude;
+            // maxLatitude is a divisor and a clamp bound, so it needs the same validation as
+            // the state inputs above. Previously maxLatitude == 0 evaluated 0f/0f and returned
+            // NaN, and a negative maxLatitude produced inverted bounds that made Math.Clamp
+            // throw ArgumentException from inside this allocation-free calculator.
+            // A sign slip is read as the band magnitude; a degenerate band reads as equatorial.
+            float safeMaxLatitude = float.IsFinite(maxLatitude) ? Math.Abs(maxLatitude) : 90f;
+
+            float latitudeFactor;
+            if (safeMaxLatitude <= 0f)
+            {
+                latitudeFactor = 0f;
+            }
+            else
+            {
+                latitudeDegrees = Math.Clamp(latitudeDegrees, -safeMaxLatitude, safeMaxLatitude);
+                latitudeFactor = Math.Abs(latitudeDegrees) / safeMaxLatitude;
+            }
             float deepSeaTemp = deepSeaEquatorTemp - ((deepSeaEquatorTemp - deepSeaPoleTemp) * latitudeFactor);
             float drop = (surfaceTemp - deepSeaTemp) * (1f - (float)Math.Exp(-gradientCoefficient * depth));
             float result = surfaceTemp - drop;

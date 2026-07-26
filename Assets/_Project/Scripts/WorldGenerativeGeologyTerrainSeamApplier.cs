@@ -605,12 +605,20 @@ namespace Hecton8.World
                 if (!HasHybridTerrainSeamState())
                     return;
 
+                // R96 FIX: the vault heightmap copy feeds only the hybrid projection path, which is
+                // guarded by `if (Application.isPlaying) return;` further down this class — at
+                // runtime the copy of up to a full 513x513 quantized heightmap per signal was pure
+                // wasted SlowTick CPU with zero consumers. Keep DRAINING the signal queue at runtime
+                // (producers must not saturate), but skip the dead vault ingest. Edit-mode behavior
+                // is unchanged. Remove this guard together with the play-mode early-outs if the
+                // runtime hybrid projection route is ever enabled.
+                bool ingestToVault = !Application.isPlaying;
                 int drained = 0;
                 int copiedSamples = 0;
                 while (drained < TerrainChunkSignalDrainBudget &&
                        TerrainChunkGeneratedEvents.TryDequeue(out TerrainChunkGeneratedSignal signal))
                 {
-                    if (TryIngestSignalHeightmapToVault(in signal, out int signalSamples))
+                    if (ingestToVault && TryIngestSignalHeightmapToVault(in signal, out int signalSamples))
                     {
                         _debugHeightmapVaultSamples = signalSamples;
                         _debugDrainedTerrainChunkSamples += signalSamples;

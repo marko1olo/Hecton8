@@ -4,7 +4,8 @@ using UnityEngine;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Publishes shader-only sediment response. No capture camera, render texture, or compute pass is owned here.
+    /// Publishes fallback and procedural shader sediment parameters (_HectonSedimentOverlayParamsA/B, tints)
+    /// to global URP materials. Provides a clear integration boundary for dynamic erosion compute shaders via SetSedimentMaskMap.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)]
@@ -39,6 +40,9 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Current normalized coverage strength used by shader overlays.")]
         private float _debugOverlayIntensity;
 
+        private Texture _activeMaskTexture;
+        private Vector4 _activeWorldRect;
+
         private void Awake()
         {
             PublishGlobals();
@@ -59,11 +63,29 @@ namespace Hecton8.World
             PublishFallbackGlobals();
         }
 
+        /// <summary>
+        /// Dynamically binds active compute sediment mask texture and world space UV rectangle bounds.
+        /// </summary>
+        /// <param name="maskTex">Active compute sediment accumulation texture (e.g. R16_UNORM/R8_UNORM).</param>
+        /// <param name="worldRect">World bounds Vector4 (minX, minZ, width, height).</param>
+        public void SetSedimentMaskMap(Texture maskTex, Vector4 worldRect)
+        {
+            _activeMaskTexture = maskTex;
+            _activeWorldRect = worldRect;
+            if (isActiveAndEnabled)
+            {
+                PublishGlobals();
+            }
+        }
+
         private void PublishGlobals()
         {
             float threshold = math.saturate(upFacingThreshold);
-            Shader.SetGlobalTexture(_SedimentMaskTextureId, Texture2D.blackTexture);
-            Shader.SetGlobalVector(_SedimentWorldRectId, Vector4.zero);
+            Texture maskTex = _activeMaskTexture != null ? _activeMaskTexture : Texture2D.blackTexture;
+            Vector4 worldRect = _activeMaskTexture != null ? _activeWorldRect : Vector4.zero;
+
+            Shader.SetGlobalTexture(_SedimentMaskTextureId, maskTex);
+            Shader.SetGlobalVector(_SedimentWorldRectId, worldRect);
             Shader.SetGlobalVector(
                 _SedimentOverlayParamsAId,
                 new Vector4(
@@ -109,3 +131,4 @@ namespace Hecton8.World
 #endif
     }
 }
+
