@@ -1998,6 +1998,22 @@ namespace Hecton8.Caves
             collider.enabled = _bakeState == VoxelBakeState.Complete;
             DisableColliderChunkBakeProxy(index);
 
+            if (collider.enabled)
+            {
+                var pos = transform.position;
+                WorldChunkPhysicsBakedSignal signal = new WorldChunkPhysicsBakedSignal
+                {
+                    ChunkX = (int)math.floor(pos.x / 100f),
+                    ChunkZ = (int)math.floor(pos.z / 100f),
+                    TerrainEntityHash = (uint)gameObject.GetInstanceID(),
+                    Frame = (uint)UnityEngine.Time.frameCount,
+                    TerrainPosition = pos,
+                    TerrainSize = new float3(100f, 100f, 100f),
+                    Flags = WorldChunkPhysicsBakedSignal.FlagColliderActive | WorldChunkPhysicsBakedSignal.FlagHeightmapSynced
+                };
+                WorldChunkPhysicsBakedEvents.TryPublish(in signal);
+            }
+
             return true;
         }
 
