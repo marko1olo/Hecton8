@@ -25,6 +25,7 @@ using Hecton8.Dev;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
+using Hecton8.World.VoxelSurfaceNets;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -14042,6 +14043,107 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     ReleaseVoxelSurfaceMesh(reservedSurfaceMesh);
             }
         }
+    }
+
+    async Awaitable<bool> ApplySurfaceNetsColliderMeshesAsync(
+        HectonVoxelVolume volume,
+        VoxelPipelineData data,
+        float3 localVolumeOrigin,
+        CancellationToken ct)
+    {
+        if (volume == null)
+            return false;
+
+        IDataVault vault = GlobalRegistry.DataVault;
+        if (vault == null)
+            vault = _vault;
+
+        if (vault == null || !VoxelSurfaceNetsVault.TryResolveViews(vault, out VoxelSurfaceNetsVaultBuffers buffers))
+        {
+            volume.DisableColliderChunksForCinematicFake();
+            return false;
+        }
+
+        NativeArray<VoxelVertexDTO> colliderVertices = buffers.ColliderVertices;
+        NativeArray<uint> colliderIndices = buffers.ColliderIndices;
+        NativeArray<ChunkMeshingStateDTO> states = buffers.States;
+
+        if (!colliderVertices.IsCreated || !colliderIndices.IsCreated || !states.IsCreated)
+        {
+            volume.DisableColliderChunksForCinematicFake();
+            return false;
+        }
+
+        int stateIndex = math.clamp(data.VolumeIndex, 0, states.Length - 1);
+        ChunkMeshingStateDTO state = states[stateIndex];
+        int vertCount = state.VertexCount;
+        int indexCount = state.IndexCount;
+
+        if (vertCount <= 0 || indexCount <= 0 || vertCount > colliderVertices.Length || indexCount > colliderIndices.Length)
+        {
+            volume.DisableColliderChunksForCinematicFake();
+            return true;
+        }
+
+        int colliderChunkCount = ResolveColliderChunkCount(indexCount / 3);
+        if (!volume.TryUsePrewarmedColliderChunkCapacity(colliderChunkCount))
+        {
+            volume.DisableColliderChunksForCinematicFake();
+            return false;
+        }
+
+        BoxCollider chunkProxy = volume.GetColliderChunkBakeProxy(0);
+        if (chunkProxy != null)
+        {
+            float3 boundsMin = localVolumeOrigin;
+            float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
+            ResolveVoxelColliderChunkBakeProxyBounds(
+                0,
+                colliderChunkCount,
+                boundsMin,
+                boundsSize,
+                data.VoxelStep,
+                out Vector3 proxyCenter,
+                out Vector3 proxySize);
+            volume.ConfigureColliderChunkBakeProxy(0, proxyCenter, proxySize);
+        }
+
+        Mesh chunkBakeMesh = volume.GetOrCreateColliderChunkBakeMesh(0);
+        if (chunkBakeMesh != null)
+        {
+            Vector3[] positions = new Vector3[vertCount];
+            for (int i = 0; i < vertCount; i++)
+            {
+                positions[i] = colliderVertices[i].Position;
+            }
+
+            int[] indices = new int[indexCount];
+            for (int i = 0; i < indexCount; i++)
+            {
+                indices[i] = (int)colliderIndices[i];
+            }
+
+            chunkBakeMesh.Clear(false);
+            chunkBakeMesh.SetVertices(positions);
+            chunkBakeMesh.SetTriangles(indices, 0);
+
+            UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
+            await Awaitable.BackgroundThreadAsync();
+            Physics.BakeMesh(bakeMeshEntityId, false);
+            await Awaitable.MainThreadAsync();
+
+            if (ct.IsCancellationRequested)
+                return false;
+
+            if (!volume.AssignColliderChunkBakeMesh(0, chunkBakeMesh) ||
+                !EnqueueDeferredVoxelColliderUpload(volume, 0))
+            {
+                volume.ReleaseColliderChunkBakeMesh(0);
+            }
+        }
+
+        volume.SetActiveColliderChunkCount(colliderChunkCount);
+        return true;
     }
 
     static bool TryResolveSelectedChthonicPillarRecord(in VoxelPipelineData data, out AnomalyFeatureRecord record)
