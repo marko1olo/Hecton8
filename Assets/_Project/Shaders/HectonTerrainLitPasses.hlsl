@@ -328,6 +328,12 @@ VaryingsLean ShadowPassVertex(AttributesLean v)
 {
     VaryingsLean o = (VaryingsLean)0;
     UNITY_SETUP_INSTANCE_ID(v);
+    // R99 XR FIX: VaryingsLean declares UNITY_VERTEX_OUTPUT_STEREO, but this pass never initialized it.
+    // Under Single Pass Instanced stereo the eye index is then undefined for the terrain SHADOW pass
+    // only — SplatmapVert and DepthOnlyVertex in this same file both initialize it, and stock URP
+    // TerrainLitPasses does too. Terrain shadows would resolve against the wrong eye's matrices.
+    // No-op outside stereo rendering, so the flat-screen path is unaffected.
+    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
     TerrainInstancing(v.position, v.normalOS, v.texcoord);
 
     float3 positionWS = TransformObjectToWorld(v.position.xyz);
